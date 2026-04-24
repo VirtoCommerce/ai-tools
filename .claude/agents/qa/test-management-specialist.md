@@ -34,7 +34,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 | **REST API** | CRUD, auth, validation, error codes | `[HTTP]` `[AUTH]` `[SETUP]` | `[STATUS]` `[BODY]` `[SCHEMA]` `[HEADER]` | Suite 14+ |
 | **GraphQL xAPI** | Queries, mutations, `errors[]`, perf | `[GQL]` `[VAR]` `[AUTH]` | `[ERRORS]` `[DATA]` `[COUNT]` `[MATH]` | Suite 15 |
 | **Admin UI** | Blade CRUD, grids, forms, widgets | `[BLADE]` `[GRID]` `[SAVE]` | `[TOAST]` `[FORM]` `[BLADE]` `[GRID]` | Suite 16-34 |
-| **Storefront UI** | User journeys, forms, navigation | `[NAV]` `[ACT]` `[WAIT]` | `[DOM]` `[STATE]` `[MATH]` `[FORMAT]` | Suite 01-13 |
+| **Storefront UI** | User journeys, forms, navigation | `[NAV]` `[ACT]` `[WAIT]` `[JOURNEY]` | `[DOM]` `[STATE]` `[MATH]` `[FORMAT]` | Suite 01-13 |
 | **E2E Cross-Layer** | Full flows: storefront → API → admin | `--- LAYER ---` markers | Assertions from ≥2 layers | Suite 00 |
 
 **Layer detection:** REST endpoints → `api` | GraphQL ops → `graphql` | Admin blades/grids → `admin` | Storefront UI → storefront | Spans ≥2 layers → `e2e` (always for P0)
@@ -64,7 +64,34 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 - **REAL UI labels** — "Add to Cart" not "Submit button". **Layer-appropriate tags** — API: `[HTTP]`/`[STATUS]`, not `[NAV]`/`[ACT]`
 - **Cross-layer verification** — storefront + API + Admin. **Search index lag** — 30-60s for changes
-- **One scenario per case**. **`{{VAR}}` bindings** (e.g., `{{FRONT_URL}}`, `{{TEST_USER_EMAIL}}`, `{{PRODUCT_SKU}}`) — never hardcode. **Feature traceability** — all layers link to same VCST-XXXX
+- **One scenario per case** — for Storefront UI user journeys, the scenario IS the journey (see Frontend Journey Exception below). **`{{VAR}}` bindings** (e.g., `{{FRONT_URL}}`, `{{TEST_USER_EMAIL}}`, `{{PRODUCT_SKU}}`) — never hardcode. **Feature traceability** — all layers link to same VCST-XXXX
+- **ISTQB writing rules (enforced by `/qa-review-tests`):**
+  - **Case independence** — `Preconditions` express required **state**, never "after running <ID>". Tests must run in any order
+  - **Reference, don't duplicate** — if setup duplicates another case's first ≥70% of steps, use `Preconditions: state from <ID> (state summary)` instead of restating the flow
+  - **Requirement traceability** — Critical/High cases MUST have a JIRA ticket (`VCST-XXXX`) or `REQ-*` ID in `References`. `BL-*` alone is insufficient — it goes in `Business_Rule`
+  - **Per-feature P+N+B mix** — every feature group with ≥3 cases needs at least 1 positive + 1 negative + 1 boundary (boundary waived only for features without ordered/numeric inputs)
+
+### Frontend Journey Exception
+
+Default rule is "one scenario per case". For Storefront UI features where behavior depends on **cross-screen state**, write **one continuous journey case** instead of sharding into atomic per-screen cases — the bugs live in the seams.
+
+**Use a journey case when:**
+- Behavior under test is **continuity of state** across ≥2 screens (cart persistence, form data carry-over, session, selected org/ship-to, applied coupon)
+- User goal requires **sequential completion** (checkout, registration+first-purchase, quote→order)
+- Regression target is a **full user flow** listed in `e2e-scenario-catalog.md` (E2E-*)
+
+**Stay atomic when:**
+- Single-screen validation (field error, toast, label, empty state)
+- Widget/component behavior (facet chip removal, quantity stepper)
+- API/GraphQL/Admin layers — always atomic
+
+**Journey case requirements:**
+- `[JOURNEY]` tag in `Section` column (e.g., `Checkout > Guest > [JOURNEY]`) so the regression runner groups them correctly
+- `Steps` block uses `--- SCREEN: <name> ---` dividers between screens (same pattern as `--- LAYER ---` in E2E)
+- Every screen boundary gets at least one `[ASSERT]` before the next `[NAV]`
+- `Failure_Signals` must include at least one **mid-journey** signal (e.g., cart badge drops to 0 after login, shipping step resets on browser-back)
+- `Cleanup` restores a neutral state even if the journey aborts midway
+- Counts as **one scenario** — the journey is the unit; atomicity is preserved at that grain
 
 ---
 
@@ -172,15 +199,23 @@ BLOCKED ❌ → escalate to qa-lead
    - **REST API layer**: `/qa-api cases REST <module>` — reads `api-test-case-patterns.md` for coverage checklist + `xapi-query-ref.md` for endpoint signatures
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
+   - **Storefront journey cases**: for features listed in `e2e-scenario-catalog.md` (E2E-*) or flows with cross-screen state (checkout, cart→order, BOPIS end-to-end, login+purchase), prefer one journey case over a set of atomic screen cases — see Frontend Journey Exception above
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
+   - **All generated cases start with `Automation_Status = Draft`** — they are NOT regression-eligible until promoted to `Reviewed` in step 7 below
    - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
    - Minimum per API/GraphQL operation: 1 happy path + 2 negative cases (missing auth, invalid input)
    - Each test case must record which technique produced it (EP, BVA, Decision Table, Pairwise, State Transition, Classification Tree, Error Guessing) for traceability
-7. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
-8. **Organize into suites** — API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00
-9. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
-10. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
-11. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority, coverage %, delegation per layer, JIRA links
+7. **Peer review gate (MANDATORY — ISTQB)** — before cases enter any suite:
+   1. Run `/qa-review-tests file <path>` on the freshly generated CSV. Fix all Blockers and Critical findings; reduce Highs where practical
+   2. Verdict must be ≥ **PASS WITH WARNINGS** (zero Blockers, ≤3 Criticals). If NEEDS FIXES, iterate on the cases and re-review
+   3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`
+   4. **You do NOT self-promote** — only after `qa-lead-orchestrator` explicit approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`)
+   5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
+8. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
+9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00. `Draft` cases live in `tests/Sprint-current/VCST-XXXX/` until promoted
+10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
+11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
+12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links
 
 ### Cross-Layer Verification Checklist (every P0/P1 E2E case)
 
@@ -202,5 +237,5 @@ BLOCKED ❌ → escalate to qa-lead
 
 ### Scope Boundaries
 
-**You create**: Test plans, Feature Test Matrices, layer-specific test cases via `--layer`, suites, RTMs, test data, delegation recommendations. You explore UI, API, GraphQL to validate.
-**You don't**: Execute full test runs, component/a11y testing, go/no-go decisions.
+**You create**: Test plans, Feature Test Matrices, layer-specific test cases via `--layer` (as `Draft`), suites, RTMs, test data, delegation recommendations. You explore UI, API, GraphQL to validate. You run `/qa-review-tests` on your own output and fix findings before handoff.
+**You don't**: Execute full test runs, component/a11y testing, go/no-go decisions. **You don't self-promote `Draft → Reviewed`** — that is `qa-lead-orchestrator`'s approval authority.

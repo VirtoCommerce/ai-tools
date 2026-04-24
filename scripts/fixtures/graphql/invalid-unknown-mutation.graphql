@@ -1,0 +1,8 @@
+# DV-006 case: calling a mutation that does not exist in the xAPI schema.
+# 'createCart' is NOT a real mutation — the xAPI auto-creates carts via the
+# 'cart' query. Expected: runner reports DV-006 with message mentioning createCart.
+mutation {
+  createCart(storeId: "B2B-store") {
+    id
+  }
+}

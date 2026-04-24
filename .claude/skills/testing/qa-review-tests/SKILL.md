@@ -23,20 +23,21 @@ Review test cases against quality criteria to catch issues before regression run
 
 - **review-criteria.md** — Full review criteria catalog with severity levels, check descriptions, and examples of good vs bad patterns.
 
-## Review Dimensions (8)
+## Review Dimensions (9)
 
 | # | Dimension | What It Catches | Severity | Mode |
 |---|-----------|----------------|----------|------|
 | 1 | **Structure** | Malformed CSV, missing columns, empty required fields, invalid ID format | Blocker | Static |
 | 2 | **Determinism** | Vague steps that two agents would execute differently; ambiguous assertions | Critical | Static |
-| 3 | **Completeness** | Missing preconditions, empty assertions, no failure signals, missing cleanup | High | Static |
+| 3 | **Completeness** | Missing preconditions, empty assertions, no failure signals, missing cleanup, **implicit case ordering (C-008)** | High | Static |
 | 4 | **Testability** | Assertions that can't be objectively verified ("looks correct", "works properly") | High | Static |
-| 5 | **Data Validity** | Referenced `{{VAR}}` bindings, hardcoded URLs/credentials, stale SKUs, **GraphQL schema mismatches** (DV-006–DV-011: invalid operations, missing command wrapper, wrong args/fields) | Blocker–High | Static |
-| 6 | **BL/ECL Coverage** | Missing `Business_Rule` refs, missing `Edge_Case_Refs` for relevant domains, uncovered BL-* invariants | Medium | Static |
-| 7 | **Duplication** | Overlapping test cases within the suite or across suites testing the same scenario | Medium | Static |
+| 5 | **Data Validity** | Referenced `{{VAR}}` bindings, hardcoded URLs/credentials, stale SKUs, **GraphQL schema mismatches** (DV-006–DV-011: invalid operations, missing command wrapper, wrong args/fields), **thin happy-path field selection** (DV-012) | Blocker–High | Static |
+| 6 | **BL/ECL Coverage + Requirement Traceability** | Missing `Business_Rule` refs, missing `Edge_Case_Refs` for relevant domains, uncovered BL-* invariants, **missing JIRA/REQ link for Critical/High (REQ-001)** | High–Medium | Static |
+| 7 | **Duplication** | Overlapping test cases within the suite or across suites; **restated setup instead of `state from <ID>` reference (DUP-004)** | Medium | Static |
 | 8 | **Environment Verification** | Steps reference UI elements/pages/flows that don't exist or have changed in the live environment | Critical | Live (`--verify`) |
+| 9 | **Technique Coverage** | Feature group (shared `Section` parent or `References` ticket, ≥3 cases) missing the ISTQB positive + negative + boundary mix (TC-001) | Medium | Static |
 
-Dimensions 1-7 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification.
+Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification.
 
 ## Execution
 
@@ -85,7 +86,8 @@ For every test case row, evaluate:
 - [ ] No compound steps (two actions in one line)
 
 #### Completeness (Dimension 3)
-- [ ] `Preconditions` describe the required starting state
+- [ ] `Preconditions` describe the required starting **state** — not prior case execution (C-008)
+- [ ] `Preconditions` do NOT contain "after running <ID>" / "requires <ID> to have passed" phrasing (C-008)
 - [ ] `Test_Data` has `key={{VAR}}` bindings for all env-dependent values used in steps
 - [ ] `Assertions` has at least 2 tagged assertions
 - [ ] `Cross_Layer_Checks` present for any test that involves a mutation
@@ -113,13 +115,23 @@ For every test case row, evaluate:
   - [ ] MoneyType uses `currency { code }` not `currencyCode` (DV-011)
 - [ ] Referenced products/SKUs exist in `test-data/` or use `{{TEST_SKU}}`
 - [ ] Referenced org users use `{{ORG_USER_EMAIL}}` not hardcoded emails
+- [ ] **Golden Rule — no hardcoded env-dependent values** (DV-013…DV-018):
+  - [ ] No GUIDs/entity IDs for products/catalogs/categories/users/orgs/orders (DV-013) — use `@td()` resolver or runtime resolution
+  - [ ] No literal SKUs / product names outside `test-data/` fixtures (DV-014) — use `{{TEST_SKU}}` or `@td(ALIAS.sku)`
+  - [ ] No literal user emails outside `.env` vars or agent-user-pool slots (DV-015)
+  - [ ] No exact-value assertions on env-dependent data (DV-016) — assert structural invariants (math identity, ordering, relation, shape/regex) instead of literal prices, order numbers, slugs, titles, counts
+  - [ ] No literal addresses / coupon codes / fixture values outside `test-data/` (DV-017)
+  - [ ] No magic numbers without named-constant comment (DV-018)
+- [ ] **Exception — environment constants are allowed:** virtual-catalog root `fc596540...`, store ID, admin login, and other stable-across-deploys values documented in `knowledge/catalog.md` or `knowledge/store-settings.md`
 
-#### BL/ECL Coverage (Dimension 6)
+#### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
 - [ ] `BL-*` IDs exist in `business-logic.md`
 - [ ] `Edge_Case_Refs` populated for domains that have ECL patterns
 - [ ] For P0/Critical cases: at least one `BL-*` rule mapped
 - [ ] Cross-reference: are there BL-* invariants for this domain with no test cases covering them?
+- [ ] **For Critical/High cases, `References` contains a JIRA ticket (`VCST-XXXX`), `REQ-*` ID, or user-story link (REQ-001)** — a lone `BL-*` in References does NOT satisfy this
+- [ ] Infrastructure/smoke cases with no originating ticket use `References: smoke-baseline` (explicit placeholder, never empty)
 
 ### Step 4: Cross-Suite Duplication Check (Dimension 7)
 
@@ -127,7 +139,20 @@ Compare test cases across suites in the same domain:
 1. Extract (Title, Section, Steps summary) tuples from all suites in scope
 2. Flag cases where two different suites test the same scenario (>80% step overlap)
 3. Flag cases where the same BL-* invariant is tested identically in multiple suites (acceptable if different layers)
-4. Note: duplication across layers (storefront vs API vs admin) is EXPECTED and NOT a finding
+4. **Within a single suite**, detect cases whose first ≥70% of tagged Step lines duplicate another earlier case's setup sequence — emit **DUP-004** recommending a `Preconditions: state from <ID>` preamble instead of the restated flow
+5. Note: duplication across layers (storefront vs API vs admin) is EXPECTED and NOT a finding
+
+### Step 4b: Technique Coverage Check (Dimension 9)
+
+Applied per **feature group**, not per individual case. A feature group is the set of cases sharing the same `Section` parent (e.g., `Cart > Add`, `Payment > CyberSource`) OR the same ticket in `References`.
+
+1. Group cases by `Section` parent; fall back to `References` grouping when Section has only one level.
+2. For every group with **≥3 cases**, check the mix:
+   - **Positive** — at least 1 case whose Title contains no `error`, `invalid`, `expired`, `rejected`, `fail`, `denied` keyword and whose Steps end with a successful state assertion.
+   - **Negative** — at least 1 case testing invalid input, permission denial, expired state, or an error path.
+   - **Boundary** — at least 1 case at the edge of an ordered input (quantity, price, date range, string length, pagination) **if** the feature has any such input. Waived if the feature has no ordered inputs (e.g., pure flag toggle, lookup by ID).
+3. Emit **TC-001** (Medium) for each group missing one or more of {positive, negative, boundary}. Include the feature group name, missing technique(s), and a seed Title suggestion for the gap case (e.g., `Cart > Coupon — add: expired-coupon rejection case`).
+4. Skip groups with <3 cases — they are assumed to be narrow scope and exempt from the mix requirement.
 
 ### Step 5: Generate Review Report
 
@@ -150,9 +175,10 @@ Output a structured report:
 | Completeness | N | ... | ... | ... | ... |
 | Testability | N | ... | ... | ... | ... |
 | Data Validity | N | ... | ... | ... | ... |
-| BL/ECL Coverage | N | ... | ... | ... | ... |
+| BL/ECL Coverage + Req Traceability | N | ... | ... | ... | ... |
 | Duplication | N | ... | ... | ... | ... |
 | Env Verification | N | ... | ... | ... | ... |
+| Technique Coverage | N | — | — | — | ... |
 | **Total** | **N** | **X** | **X** | **X** | **X** |
 
 ### Verdict: [PASS | PASS WITH WARNINGS | NEEDS FIXES]
@@ -185,6 +211,14 @@ BL-* invariants in this domain with no corresponding test cases:
 
 ECL-* patterns relevant to this domain but not referenced:
 - ECL-X.X: [pattern] — **not covered**
+
+### Technique Coverage Gaps (Dimension 9 — TC-001)
+
+Feature groups missing ISTQB positive + negative + boundary mix:
+| Feature Group | Cases | Has Positive | Has Negative | Has Boundary | Seed Title for Gap |
+|---------------|-------|--------------|--------------|--------------|--------------------|
+| Cart > Coupon | 5 | ✅ | ❌ | ❌ | Cart > Coupon — Expired Coupon Rejected; Cart > Coupon — Max Discount Cap Boundary |
+| ... | ... | ... | ... | ... | ... |
 
 ### Duplication Candidates
 
@@ -287,6 +321,7 @@ Non-fixable issues (flagged for manual review):
 - **Actionable findings only** — every finding must include a specific suggested fix, not just "this is wrong"
 - **Preserve IDs** — never suggest renumbering or changing test case IDs
 - **Cross-suite duplication is expected across layers** — only flag duplication within the same layer/type
+- **Peer review is mandatory (ISTQB)** — a case is not "ready for regression" until (a) `/qa-review-tests` returns verdict ≥ PASS WITH WARNINGS, AND (b) a human reviewer or `qa-lead-orchestrator` approves. Track review state via `Automation_Status` values: `Draft` (just generated, unreviewed), `Reviewed` (passed `/qa-review-tests` + peer-approved), `Automated`/`Manual`/`Semi-Automated` (execution mode — assumes Reviewed). Cases stuck in `Draft` MUST NOT be included in regression selections.
 
 ## Agent Delegation
 

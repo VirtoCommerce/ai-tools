@@ -70,10 +70,43 @@ Tells the agent which known failure patterns to actively look for during executi
 ### Preconditions
 Human-readable state requirements before the test can run. Use `{{VAR}}` for env-bound values.
 
+**Independence rule (ISTQB):** express required **state**, never a prior case's execution. Cases must be independent.
+- ❌ Forbidden: `after running CART-007`, `following CART-007`, `requires CART-007 to have passed`
+- ✅ Allowed: enumerate the state (`user logged in as {{USER_EMAIL}}, cart contains {{TEST_SKU}} at qty=1`)
+- ✅ Allowed (reference form — avoid repetition): `state from CART-007 (user logged in, {{TEST_SKU}} in cart, qty=1)` — the parenthesized summary describes the state; the ID is a shortcut to that state, not an execution dependency
+
+**When to use `state from <ID>`:** if the first ≥70% of your setup steps would duplicate another earlier case in the same suite. Reference instead of restating — but ALWAYS include the state summary in parentheses so a reader does not need to open the referenced case to understand the starting conditions.
+
 Examples:
 - `User logged in as {{USER_EMAIL}}, cart empty`
 - `B2C variation product with VirtoFrontend_UI_Layout=B2C property exists in catalog`
 - `{{FRONT_URL}} accessible, search index healthy`
+- `state from CART-007 (user logged in, {{TEST_SKU}} in cart qty=1, mini-cart visible)`
+
+**`[PRE:*]` Execution Tags (imperative — runner performs these actions):**
+
+Place `[PRE:*]` tags at the top of the Preconditions cell, one per line, before any plain-text conditions. The runner processes each tag left-to-right before executing Steps. Full tag vocabulary and decision tree: `.claude/agents/knowledge/test-execution-preflight.md`.
+
+| Tag | When to Use |
+|-----|-------------|
+| `[PRE:CLEAR_SESSION]` | First test in a new user-context block (different user than previous test) |
+| `[PRE:SIGNIN_AS:<alias>]` | Every test that requires a specific user identity (B2B org user, personal user, admin) |
+| `[PRE:SWITCH_ORG:<alias>]` | Test requires a specific org context; place after SIGNIN_AS |
+| `[PRE:RESET_CART]` | Test is cart-sensitive and prior tests may have left items in cart |
+| `[PRE:SIGNOUT]` | Explicit sign-out required (standalone, without immediate re-sign-in) |
+| `[PRE:CLEAR_CACHE]` | Post-deploy test immediately following a module hotfix |
+| `[PRE:VERIFY_AUTH:<alias>]` | Assert session identity without changing it |
+
+**Rule:** test cases that require specific auth/org/cart state MUST use `[PRE:*]` tags rather than prose preconditions the runner may ignore.
+
+Example Preconditions cell value:
+```
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Org has ≥2 active addresses seeded across ≥2 countries.
+2. Cart shipping section is visible.
+```
 
 ### Test_Data
 Explicit `{{VAR}}` bindings only. Comma-separated `key={{VAR}}` pairs.
@@ -197,11 +230,30 @@ Examples:
 > **Logout convention (GOLDEN RULE, see BL-AUTH-007):** "Sign out" / "Logout" in Steps or Cleanup always means the storefront account-menu popup sequence — click user name in top header → click **Logout** in popup (selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`). NEVER write Steps like `Navigate to /sign-out` or `Click logout button in header` — no such page or header-level button exists. Runners execute the popup sequence regardless of how loosely the Step is phrased.
 
 ### References
-JIRA ticket IDs, sprint test IDs, or other test case IDs. Space or comma separated.
-Examples: `VCST-4499`, `VCST-3387 VCST-4499`, `BL-CART-001`
+**Source of demand** for the test — JIRA ticket IDs, requirement IDs, or user-story links. Space or comma separated.
+
+- **Required for Critical/High cases** — must contain at least one `VCST-XXXX`, `REQ-*`, or user-story link
+- `BL-*` IDs belong in `Business_Rule`, NOT here (they are internal invariants, not requirements)
+- Infrastructure/smoke cases with no originating ticket use the placeholder `smoke-baseline` (never leave empty)
+
+Examples: `VCST-4499`, `VCST-3387 VCST-4499`, `REQ-PAY-007`, `smoke-baseline`
 
 ### Automation_Status
-`Automated` | `Manual` | `Semi-Automated`
+Dual-purpose field: **review state** + **execution mode**.
+
+| Value | Meaning | Included in regression? |
+|-------|---------|-------------------------|
+| `Draft` | Just generated, not yet reviewed. Default output of `/qa-test-cases-generator`. | **No** — excluded from all regression selections |
+| `Reviewed` | Passed `/qa-review-tests` ≥ PASS WITH WARNINGS AND peer-approved (human or `qa-lead-orchestrator`), but execution mode not yet assigned | Yes — eligible for manual execution |
+| `Automated` | Reviewed + MCP-executable by an agent | Yes |
+| `Manual` | Reviewed + requires human execution (no MCP path) | Yes (manual test runs only) |
+| `Semi-Automated` | Reviewed + partially automated (agent sets up, human verifies) | Yes (manual test runs only) |
+
+**Promotion rule (ISTQB peer-review principle):** a case moves from `Draft` → `Reviewed` only when:
+1. `/qa-review-tests` returns verdict ≥ PASS WITH WARNINGS (zero Blockers, ≤3 Critical findings), AND
+2. A human reviewer or `qa-lead-orchestrator` explicitly approves.
+
+From `Reviewed`, the author assigns the execution mode (`Automated` / `Manual` / `Semi-Automated`) based on MCP-executability.
 
 ---
 
@@ -283,45 +335,62 @@ Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI inte
 
 ### Layer: GraphQL xAPI
 
-Tests executed in the **GraphiQL UI** at `{{BACK_URL}}/ui/graphiql`. GraphiQL uses CodeMirror editors — see `graphiql-interaction.md` for reliable interaction patterns (auth token, editor, execute). Key rules: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**. See **"GraphQL mutation validation"** section below for mandatory 3-step validation before test case approval.
+**Execution is migrating from the GraphiQL UI to a Node runner** (`scripts/graphql-runner.ts`). The runner validates every query against the introspected schema *before* sending (catches DV-006/008/009/010/011 at lint time with zero HTTP cost), executes via direct `fetch` to `/graphql`, and writes JSON evidence — no browser, no CodeMirror brittleness. Key rules stay: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**.
+
+New cases MUST use the **runner-native format** below. Existing cases with `[NAV]/[ACT]/[GQL]/[READ]` GraphiQL UI tags are **legacy** — migrate on touch.
+
+#### Runner-Native Format (PREFERRED)
+
+Runner-native cases are browser-free. Every GraphQL operation in the Steps column is a block with a short `<label>` tying OP + EXEC + assertions together; multi-op cases list multiple blocks.
 
 **Step tags (Steps column):**
 
-| Tag | Meaning | Agent Action |
-|-----|---------|-------------|
-| `[NAV]` | Navigate to GraphiQL UI | `browser_navigate` to `{{BACK_URL}}/ui/graphiql` |
-| `[AUTH]` | Set Bearer token in Headers tab | Obtain token via POST `{{BACK_URL}}/connect/token`, set in Headers editor via `execCommand('insertText')` — see `graphiql-interaction.md § Setting Auth Token`. MUST verify token appears in Headers panel (not Variables) |
-| `[ACT]` | Interact with GraphiQL editor | Click editor → Ctrl+A → Backspace → type query/mutation via `browser_type` |
-| `[GQL]` | Execute GraphQL query or mutation | Click Execute (▶) button or press Ctrl+Enter |
-| `[READ]` | Read response from response panel | `browser_snapshot` or `browser_evaluate` to extract response JSON |
-| `[SETUP]` | Create prerequisite data (cart, user, product) | Execute setup mutations in GraphiQL or REST API |
-| `[TEARDOWN]` | Clean up created data | Execute cleanup mutations in GraphiQL or REST API |
+| Tag | Meaning | Runner Action |
+|-----|---------|---------------|
+| `[AUTH role=<alias>]` | Acquire/use OAuth token for the given role | Fetch `/connect/token` with the role's credentials (cached per run); attach `Authorization: Bearer <token>` to subsequent ops |
+| `[GQL-OP <label>]` | Start a GraphQL operation block. Query/mutation text follows on indented lines below | Parse + validate against schema; fail before send on DV-006…DV-011 |
+| `[GQL-VARS <label>]` | Optional JSON variables object for that op | Substitute `{{VAR}}` / `@td()` tokens in the JSON body |
+| `[GQL-EXEC <label>]` | Execute the op previously defined with this label | POST `{query, variables}` to `/graphql`; record request+response to evidence |
+| `[GQL-CAPTURE <label>.<jsonpath> → <VAR>]` | Save a response field as a run-scoped variable for downstream ops | Evaluate JSONPath against the response; bind `{{VAR}}` |
+| `[SETUP]` | Create prerequisite data via an op (still runner-native) | Uses `[GQL-OP setup_<n>]` + `[GQL-EXEC setup_<n>]` internally |
+| `[TEARDOWN]` | Cleanup ops | Same as setup; always runs even on failure |
 | `[WAIT]` | Wait for async processing (reindex, event) | Poll or delay |
-| `[VAR]` | Extract value from response for next step | Save `id` from response panel |
 
-**Assertion tags (Assertions column):**
+**Assertion tags (Assertions column)** — all assertions include `label=<op-label>` to tie back to the op:
 
 | Tag | Checks |
 |-----|--------|
-| `[RESPONSE]` | Response panel shows data (no red error banner in GraphiQL) |
-| `[ERRORS]` | `errors[]` is empty (or contains expected error for negative tests) |
-| `[DATA]` | Response `data` field has expected structure and values |
-| `[NULL]` | Specific field is null or non-null as expected |
-| `[COUNT]` | `totalCount` or array length matches expectation |
-| `[MATH]` | Calculated field (totals, subtotals) matches formula |
-| `[PERF]` | Query execution time within threshold |
+| `[ERRORS label=<L>]` | `errors[]` empty (or contains expected error for negative tests) |
+| `[DATA label=<L>]` | Response `data` field has expected structure/values — use JSONPath or regex |
+| `[NULL label=<L>]` | Specific field is null or non-null as expected |
+| `[COUNT label=<L>]` | `totalCount` or array length matches (supports `>= N` / `< N`) |
+| `[MATH label=<L>]` | Calculated field matches a formula, not a literal |
+| `[PERF label=<L>]` | Response time within threshold (ms) |
 
 **Cross-layer (Cross_Layer_Checks column):**
 
 | Tag | Checks |
 |-----|--------|
-| `[ROUNDTRIP]` | Mutation → clear editor → type query → execute → confirms data persisted |
-| `[STOREFRONT]` | Storefront UI reflects the GraphQL state change |
-| `[ADMIN]` | Admin SPA shows the entity/change |
-| `[CONSOLE]` | No JS errors in GraphiQL during execution |
+| `[ROUNDTRIP label=<L>]` | Issue a read op after a write op; runner asserts persistence |
+| `[STOREFRONT]` | Storefront UI reflects the GraphQL state change (optional, usually in E2E layer) |
+| `[ADMIN]` | Admin REST API confirms the entity/change |
 | `[EVENT]` | Platform events/notifications triggered |
 
-**Worked example:** see `test-case-examples.md` → GraphQL xAPI — GQL-042
+**Label rules** — enforced by `/qa-review-tests`:
+- Every `[GQL-OP <L>]` must be paired with exactly one `[GQL-EXEC <L>]` later in Steps
+- Every `[GQL-VARS <L>]` / `[GQL-CAPTURE <L>.*]` must refer to a declared `<L>`
+- Assertions with `label=<L>` must refer to a declared `<L>`
+- `<L>` is free-form but SHOULD be semantic: `happy_path`, `xss_name`, `probe_before`, `cleanup`
+
+**Worked example:** see `test-case-examples.md` → GraphQL Runner — GQL-030 (migrated).
+
+#### Legacy Format (GraphiQL UI — for unmigrated cases only)
+
+Retained until all GraphQL suites are migrated. Do NOT use for new cases. The tags below drive a Playwright browser against `{{BACK_URL}}/ui/graphiql` — see `graphiql-interaction.md` for CodeMirror interaction patterns.
+
+**Legacy step tags:** `[NAV]` (navigate to GraphiQL), `[AUTH]` (set Bearer via `execCommand('insertText')`), `[ACT]` (clear/type in editor), `[GQL]` (click Execute), `[READ]` (snapshot response panel), `[VAR]` (extract response field). **Legacy cross-layer:** `[ROUNDTRIP]` (clear editor → query → execute), `[CONSOLE]` (no GraphiQL JS errors).
+
+Legacy cases will be flagged by `/qa-review-tests` (Medium) with a migration suggestion once runner coverage for the module is complete.
 
 ---
 

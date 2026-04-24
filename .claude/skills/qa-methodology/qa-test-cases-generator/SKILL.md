@@ -187,15 +187,15 @@ ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test
 - [ ] **Priority** — Critical/High/Medium/Low based on risk and business impact
 - [ ] **Business_Rule** — At least one `BL-*` ID (leave blank only for pure UI tests)
 - [ ] **Edge_Case_Refs** — `ECL-*` IDs if the case covers a known edge case pattern
-- [ ] **Preconditions** — Human-readable state requirements, use `{{VAR}}` for env values
+- [ ] **Preconditions** — Human-readable state requirements, use `{{VAR}}` for env values. Express as **state**, never as "after running <ID>" (ISTQB independence rule). If setup duplicates another case's first ≥70% of steps, use `Preconditions: state from <ID> (state summary)` instead of restating the flow (avoid-repetition rule).
 - [ ] **Test_Data** — Only `key={{VAR}}` bindings, comma-separated
 - [ ] **Steps** — Every step tagged: `[NAV]`, `[ACT]`, `[WAIT]`, `[SCROLL]`, `[KEY]`. One action per line. WAIT after every state-changing ACT
 - [ ] **Assertions** — Tagged: `[DOM]`, `[STATE]`, `[MATH]`, `[FORMAT]`, `[NAV]`. Explicit predicates, no vague language
 - [ ] **Cross_Layer_Checks** — Tagged: `[API]`, `[CONSOLE]`, `[NETWORK]`, `[ADMIN]`, `[EMAIL]`. Every mutation MUST check `errors[]` is empty
 - [ ] **Failure_Signals** — At least 2: one timeout signal + one API/console signal
 - [ ] **Cleanup** — State restoration or `none`
-- [ ] **References** — JIRA ticket IDs, related BL-* IDs
-- [ ] **Automation_Status** — `Automated` (default for MCP-executable cases)
+- [ ] **References** — **REQUIRED for Critical/High:** JIRA ticket (`VCST-XXXX`), `REQ-*` ID, or user-story link. `BL-*` IDs alone do NOT satisfy this — those belong in `Business_Rule`. Infrastructure/smoke cases use `smoke-baseline` placeholder (never empty).
+- [ ] **Automation_Status** — `Draft` for just-generated cases (default out of this skill). Promote to `Reviewed` only after `/qa-review-tests` returns ≥ PASS WITH WARNINGS AND a human/`qa-lead-orchestrator` approves. `Automated`/`Manual`/`Semi-Automated` = execution mode (implies Reviewed).
 
 ### Step 5: Validate & Output
 
@@ -311,10 +311,16 @@ Generated test cases route to the correct executing agent by layer:
 - **Minimum effective set** — a smaller suite of targeted cases is better than a large suite of shallow ones. Prefer 5 focused cases over 20 that repeat the same failure mode.
 - **Format is non-negotiable** — every case MUST use all 15 columns from `test-case-template.md`
 - **No vague assertions** — "page loads correctly" is not an assertion. Use `[DOM] product title visible` or `[NAV] URL matches /product/*`
-- **No compound steps** — one action per `[ACT]` line. Wrong: `click Add to Cart and verify badge`. Right: separate `[ACT]` and `[ASSERT]`
+- **No compound steps** — one action per `[ACT]` line. Wrong: `click Add to Cart and verify badge`. Right: separate `[ACT]` and `[ASSERT]`. This rule still applies inside journey cases — each action is one `[ACT]`; the journey is built from many sequential `[ACT]`/`[ASSERT]` rounds, not from compound lines
+- **Frontend journeys are exceptions to atomicity** — for Storefront UI flows where behavior depends on cross-screen state (checkout, cart→order, login+purchase, BOPIS end-to-end, address/org switch mid-journey), write one journey case with `--- SCREEN: <name> ---` dividers in `Steps`, `[JOURNEY]` tag in `Section`, and an `[ASSERT]` at every screen boundary. Do NOT shard into atomic per-screen cases. See `agents/qa/test-management-specialist.md` → Frontend Journey Exception for full criteria
 - **Always `{{VAR}}`** — never hardcode URLs, credentials, or SKUs in steps
 - **Every mutation → `errors[]` check** — GraphQL HTTP 200 does not mean success in xAPI
 - **Minimum 2 failure signals** per case (timeout + API/console)
 - **Negative cases are mandatory** — for every happy path, generate at least one negative/error case — pick the failure mode most likely to slip through, not all possible invalid inputs
+- **Per-feature P+N+B mix (ISTQB)** — any feature group with ≥3 cases MUST include at least 1 positive + 1 negative + 1 boundary case (boundary waived only if the feature has no ordered/numeric input). Verified by `/qa-review-tests` Dimension 9 (TC-001)
+- **Cases must be independent (ISTQB)** — `Preconditions` express required **state**, never "after running <ID>". Order-dependence between cases is forbidden; use `state from <ID>` to reference an earlier case's end-state by its described state, not by its execution
+- **Avoid repetition by reference** — if two cases share ≥70% of setup steps, the later case uses `Preconditions: state from <ID> (summary)` and `Steps:` starts from the point of divergence. Do NOT restate login/navigate/add-to-cart flows across cases in the same suite
+- **Requirement traceability is mandatory for Critical/High** — `References` column MUST contain a JIRA ticket or `REQ-*` ID for any Critical/High case. `BL-*` alone is not traceability — it is business-rule mapping
+- **Cases leave this skill as `Draft`** — peer review via `/qa-review-tests` + human approval promotes to `Reviewed`. Only `Reviewed`+ cases enter regression selections
 - **ID stability** — never reuse or renumber IDs. Deleted cases leave gaps in numbering
 - **Ask before writing** — present generated cases for review before appending to any suite CSV file

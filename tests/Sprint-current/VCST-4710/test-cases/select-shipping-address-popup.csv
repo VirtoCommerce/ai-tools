@@ -1,0 +1,416 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"SA-001","Select Shipping Address — Full Happy-Path Journey (B2B org user)","Checkout > Cart > Shipping Address > [JOURNEY]","P0","BL-CHK-003; BL-CHK-005; BL-PRICE-002","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. User is authenticated as B2B org member with org that has ≥2 active addresses seeded across ≥2 countries.
+2. Cart contains ≥1 item.
+3. Cart shipping section shows a current shipping address.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+target_address: @td(TECHFLOW_ADDR_US_NEW_YORK.line1), @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+FRONT_URL: {{FRONT_URL}}","--- SCREEN: Cart ---
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Cart page loads; shipping section is visible
+[ASSERT] Shipping section shows current address (any org address)
+[ACT] Click the pencil/edit icon (data-test-id=""select-address-button"") in the shipping section
+[WAIT] ""Select address"" dialog appears
+
+--- SCREEN: Popup: Select address ---
+[ASSERT] Dialog heading reads ""Select address""
+[ASSERT] Three facet dropdowns are visible: Country, State/Province, City
+[ASSERT] Search field is visible and empty
+[ASSERT] Address table displays ≥1 row with columns: Address, Description, Country, Active
+[ACT] Locate the row matching @td(TECHFLOW_ADDR_US_NEW_YORK.city) in the Address column
+[ACT] Click the ""Select"" button on that row
+[WAIT] Row becomes the active row (""Select"" button disappears from that row)
+[ACT] Click the ""OK"" button
+[WAIT] Dialog closes
+
+--- SCREEN: Cart (order summary) ---
+[WAIT] Cart shipping section updates (allow up to 5s for recalculation)
+[ASSERT] Shipping section now shows @td(TECHFLOW_ADDR_US_NEW_YORK.city) in the address display
+[ASSERT] No JS errors in browser console","[DOM] Dialog title == ""Select address""
+[DOM] After OK: shipping section city text contains @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+[STATE] Active row in table: ""Select"" button absent from selected row after click
+[STATE] Dialog is closed after OK click
+[FORMAT] Shipping address line format: street, city, state, country visible","[API] After address change, network request to update cart/shipment resolves 2xx
+[CONSOLE] No JS errors at any screen boundary
+[NETWORK] No 4xx/5xx on cart update request","1. Dialog does not open (pencil icon unresponsive)
+2. Address table is empty despite seeded org addresses
+3. ""OK"" click does not close dialog
+4. Cart shipping section does not update after OK
+5. Console shows JS error on dialog open or close","Navigate to {{FRONT_URL}}/cart; verify cart still shows a shipping address (any valid org address)","Source: VCST-4710 / PR #129; BL-CHK-003; BL-CHK-005; BL-PRICE-002","Manual"
+"SA-002","Popup Opens and Displays Correct Structure","Checkout > Cart > Shipping Address > Open","P0","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Cart has ≥1 item with shipping section visible.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Cart page fully loaded
+[ACT] Click pencil icon (data-test-id=""select-address-button"") in shipping section
+[WAIT] Dialog appears","[DOM] Dialog modal is present in accessibility tree with role=""dialog""
+[DOM] Heading text == ""Select address""
+[DOM] Three buttons labeled Country, State/Province, City are visible (facet dropdowns)
+[DOM] Search input field is present (ARIA label contains ""Search"")
+[DOM] Address table has ≥4 column headers: Address, Description, Country, Active
+[DOM] ""Add new"" button is present
+[DOM] ""OK"" button is present
+[DOM] ""Close"" (X) button is present","[CONSOLE] No JS errors on open","1. Dialog does not appear
+2. Facet buttons missing
+3. Address table missing columns
+4. Console error on dialog open","[ACT] Click Close (X) button to dismiss dialog","Source: VCST-4710 / PR #129","Manual"
+"SA-003","Country Facet Filters Address List","Checkout > Cart > Shipping Address > Facets","P0","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Org has addresses in ≥2 distinct countries (US and CA seeded).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Click pencil icon (data-test-id=""select-address-button"")
+[WAIT] Dialog open; note total row count before filtering
+[ACT] Click the ""Country"" facet dropdown
+[WAIT] Country options list appears
+[ACT] Select the checkbox for ""United States of America"" (or displayed country name)
+[WAIT] Address table refreshes","[DOM] Country dropdown shows available countries with item counts in parentheses
+[MATH] Row count after filtering < row count before filtering (if org has multi-country addresses)
+[DOM] All visible rows have Country column value matching the selected country
+[STATE] Country facet button shows active/selected indicator
+[DOM] State/Province and City facets remain visible","[API] Filter interaction triggers no 5xx
+[CONSOLE] No JS errors during filter application","1. Dropdown does not open
+2. Selecting country has no effect on table rows
+3. Row count does not decrease for multi-country org
+4. Non-matching country rows remain visible","[ACT] Click Country facet again; deselect the checkbox to clear filter","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-004","State/Province Facet Cascades from Country Selection","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Country facet already active with a selection.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; select ""United States of America"" in Country facet
+[WAIT] Table filtered to US addresses
+[ACT] Click ""State/Province"" facet dropdown
+[WAIT] State/Province options appear
+[ACT] Select a state that exists in the seeded data (e.g., ""New York"")
+[WAIT] Table refreshes","[DOM] State/Province dropdown only shows states present in the currently filtered (US) result set
+[MATH] Row count after state selection ≤ row count after country-only filter
+[DOM] All visible rows have a city/state matching the selected state
+[STATE] Both Country and State/Province facets show active indicators","[CONSOLE] No JS errors on cascade","1. State/Province dropdown shows states from other countries
+2. Table does not narrow further after state selection
+3. State facet shows options not present in any US address","[ACT] Clear both facets","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-005","City Facet Further Narrows Results (Third-Level Cascade)","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Country + State facets already applied. City facet available.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+target_city: @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; apply Country=US, State=New York
+[ACT] Click ""City"" facet; select @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+[WAIT] Table refreshes","[DOM] Only rows with city == @td(TECHFLOW_ADDR_US_NEW_YORK.city) are shown
+[MATH] Row count ≤ state-filtered row count
+[STATE] All three facets show active indicators","[CONSOLE] No JS errors","1. City facet not available when country+state selected
+2. City selection shows rows from other cities
+3. Zero rows shown despite seeded data for this city","[ACT] Clear all facets","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-006","Clearing a Facet Restores Previous Result Set","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. At least one facet is active with filtered results.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; apply Country facet (e.g., US); note filtered row count = N1
+[ACT] Apply State facet; note row count = N2 (N2 ≤ N1)
+[ACT] Click State facet; deselect current state checkbox
+[WAIT] Table refreshes","[MATH] Row count after clearing State == N1 (back to country-only filter)
+[STATE] State/Province facet indicator no longer shows active/selected state
+[STATE] Country facet indicator still shows active","[CONSOLE] No JS errors on clear","1. Clearing state leaves row count at N2 (does not restore)
+2. Clearing state also clears country selection unexpectedly
+3. Table shows wrong rows after partial clear","[ACT] Clear remaining facets","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-007","Free-Text Search Returns Matching Addresses","Checkout > Cart > Shipping Address > Search","P0","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Authenticated B2B org user with seeded org addresses. No facets active.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+search_term: @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup
+[ACT] Type @td(TECHFLOW_ADDR_US_NEW_YORK.city) into the search field
+[WAIT] Results update (allow up to 3s)","[DOM] All displayed rows contain the search term in Address or Description column
+[MATH] Row count ≥ 1 (seeded addresses for this city exist)
+[DOM] Search field retains typed text","[CONSOLE] No JS errors on search input","1. Search field does not accept input
+2. Results do not update after typing
+3. Results show addresses that do not match the search term
+4. Zero results for a known-existing city name","[ACT] Clear search field","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-008","Search + Facet Combination — Intersection Logic","Checkout > Cart > Shipping Address > Search","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Authenticated B2B org user. Multiple addresses across countries and cities.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; apply Country=Canada facet
+[WAIT] Results filtered to CA addresses
+[ACT] Type @td(TECHFLOW_ADDR_CA_TORONTO.city) into search field
+[WAIT] Results update","[DOM] Rows match BOTH the Country=Canada filter AND the search term (intersection, not union)
+[MATH] Row count ≤ CA-only filtered count
+[DOM] No rows from US or GB are shown despite search term possibly matching their address text","[CONSOLE] No JS errors","1. Search overrides facet — shows all matching rows ignoring country filter
+2. Zero results when both criteria have valid matches (AND logic broken)
+3. Results contain non-CA addresses","[ACT] Clear search field and facets","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-009","Search No-Results State — Empty State Message","Checkout > Cart > Shipping Address > Search","P1","BL-CHK-003","ECL-3.1; ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+no_match_term: {{ADDR_NO_MATCH_TERM}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup
+[ACT] Type {{ADDR_NO_MATCH_TERM}} (a string guaranteed not to match any org address) into search field
+[WAIT] Results update","[DOM] Address table shows zero data rows
+[DOM] An empty-state message or indicator is displayed (e.g., ""No addresses found"" or equivalent)
+[DOM] ""OK"" button remains present but selecting it without a row selection is handled gracefully
+[STATE] Search field still shows the entered text","[CONSOLE] No JS errors on empty result","1. Table disappears entirely instead of showing empty state
+2. Error message (not empty-state message) appears
+3. Application crashes or freezes on zero results","[ACT] Clear search field to restore full list","Source: VCST-4710 / PR #129; ECL-3.1; ECL-3.2","Manual"
+"SA-010","BVA — Single-Character Search Term","Checkout > Cart > Shipping Address > Search","P2","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user with seeded addresses.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+single_char: {{ADDR_SINGLE_CHAR_TERM}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup
+[ACT] Type {{ADDR_SINGLE_CHAR_TERM}} (single character, e.g., ""N"") into search field
+[WAIT] Results update (up to 3s)","[DOM] Either: (a) results are returned for addresses containing the character, OR (b) search requires minimum 2+ chars and shows a hint — one of these two states is shown (document which)
+[DOM] No crash, no blank page
+[STATE] Search field accepts single character input","[CONSOLE] No JS errors on 1-char input","1. Application crashes on 1-char input
+2. Infinite loading spinner on 1-char input
+3. All addresses shown with no filtering (search silently ignored)","[ACT] Clear search field","Source: VCST-4710 / PR #129; ECL-3.2; BVA boundary","Manual"
+"SA-011","Sorting — Table Column Sort Toggle","Checkout > Cart > Shipping Address > Sort","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user with ≥3 seeded addresses.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; note default sort order of Address column (capture first 3 rows)
+[ACT] Click the ""Address"" column header
+[WAIT] Table rows re-order
+[ACT] Click ""Address"" column header again
+[WAIT] Table rows re-order (opposite direction)","[DOM] After first click: rows sorted ascending by address text (A→Z) OR descending (whichever is not default)
+[DOM] After second click: sort direction reverses from previous state
+[STATE] Sort indicator (arrow/icon) on column header reflects current sort direction","[CONSOLE] No JS errors on sort toggle","1. Column header click has no effect on row order
+2. Sort indicator not shown/updated
+3. Rows disappear on sort click","[ACT] None required — sort is display-only","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-012","Sorting Preserved After Facet Change","Checkout > Cart > Shipping Address > Sort","P2","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Sort applied; then facet applied.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup; click Address column to apply sort (ascending)
+[ACT] Apply Country facet
+[WAIT] Table filtered","[DOM] Filtered rows are still in ascending-by-address order (sort NOT reset by facet application)
+[STATE] Sort indicator still visible on Address column","[CONSOLE] No JS errors","1. Sort resets to default after facet applied (ECL-3.2 seam)
+2. Sort indicator disappears after filter","[ACT] Clear facet","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-013","Close Without Selection — Address Unchanged","Checkout > Cart > Shipping Address > Open","P0","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user. Cart has a current shipping address.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Note the current shipping address text in the cart shipping section
+[ACT] Open popup (click pencil icon)
+[ACT] Do NOT click any row or change selection
+[ACT] Click the Close (X) button
+[WAIT] Dialog closes","[DOM] Cart shipping section still shows the same address as before the popup was opened (no change)
+[STATE] No cart update API call triggered (check Network tab)
+[DOM] Cart total and shipping cost unchanged","[NETWORK] No PATCH/PUT to cart/shipment endpoint on close-without-selection","1. Shipping address changes to a different address after dismiss
+2. Shipping address cleared after dismiss
+3. Cart total changes","None required","Source: VCST-4710 / PR #129; BL-CHK-003","Manual"
+"SA-014","OK Without Row Selection — Graceful Handling","Checkout > Cart > Shipping Address > Open","P1","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user. Popup open, no row selected.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ACT] Do NOT click any address row
+[ACT] Click the ""OK"" button","[DOM] Either: (a) dialog closes and current address is unchanged, OR (b) ""OK"" is disabled until a row is selected, OR (c) a validation message appears — one of these three states is shown (document which; flag if OK silently clears the address)
+[STATE] If dialog closes: cart shipping address is unchanged
+[DOM] No JS error toast or crash","[NETWORK] No unexpected cart update call if OK is clicked without selection","1. OK click clears the existing shipping address
+2. Application crashes or hangs
+3. Blank/invalid address set on cart","If address was cleared: re-select correct address and click OK","Source: VCST-4710 / PR #129; BL-CHK-003","Manual"
+"SA-015","Address Selection Updates Cart Shipping Cost (BL-CHK-005)","Checkout > Cart > Shipping Address > Post-Selection","P0","BL-CHK-005; BL-PRICE-002","ECL-2.3","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Org has addresses in ≥2 different states/countries with different shipping zones.
+2. Cart contains a shippable item.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+addr_a: @td(TECHFLOW_ADDR_US_NEW_YORK.city)
+addr_b: @td(TECHFLOW_ADDR_CA_TORONTO.city)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Note current shipping method name and cost
+[ACT] Open popup; select @td(TECHFLOW_ADDR_CA_TORONTO.city) (different country from current)
+[ACT] Click OK; wait for cart recalculation (up to 10s)","[STATE] Shipping method resets or prompts re-selection (BL-CHK-005: method depends on address)
+[MATH] Shipping cost may change after address change (expected — different zone)
+[DOM] Tax line item (if shown) reflects new destination (BL-PRICE-002)
+[STATE] No stale shipping rate from previous address persisted","[API] Cart/shipment recalculation request resolves 2xx
+[NETWORK] No 422/500 on recalculation","1. Shipping method does not reset despite zone change (BL-CHK-005 violation)
+2. Old address zone rates persist (ECL-2.3 stale cart)
+3. Tax not recalculated for new country
+4. Cart total shows NaN or blank","Re-select original address or navigate away","Source: VCST-4710 / PR #129; BL-CHK-005; BL-PRICE-002; ECL-2.3","Manual"
+"SA-016","Add New Address Button Navigates Correctly","Checkout > Cart > Shipping Address > Add New","P1","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user with popup open.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ACT] Click the ""Add new"" button
+[WAIT] Navigation or nested dialog occurs","[DOM] Either: (a) user is navigated to an address creation form/page, OR (b) an ""Add address"" nested form appears within the popup
+[STATE] If navigated away: cart is preserved (not cleared)
+[DOM] No crash or JS error","[CONSOLE] No JS errors on Add new click","1. ""Add new"" click has no effect
+2. Navigation leads to a 404
+3. Cart is cleared after navigation","Navigate back to cart if redirected; dismiss any nested form","Source: VCST-4710 / PR #129","Manual"
+"SA-017","Org Context — Address List is Org-Scoped (Not Cross-Org)","Checkout > Cart > Shipping Address > Org Scope","P0","BL-B2B-005; BL-CART-005; BL-CROSS-008",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. User is member of exactly one org (TechFlow).
+2. Another org exists in the system with different addresses.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ASSERT] Note all address entries and their associated org/description
+[ACT] Verify no addresses from other orgs are listed (spot-check addresses not in @td(TECHFLOW_ORG_ADDRESSES) set)","[DOM] All displayed addresses belong to @td(ORG_TECHFLOW.org_name) org
+[MATH] Total row count matches expected count for TechFlow org addresses (≥2, from seeded data)
+[DOM] No addresses from other orgs visible","[API] Address list query includes org_id scoping parameter
+[NETWORK] Request to address list endpoint carries correct org context header/param","1. Addresses from other orgs appear in the list
+2. Address list is empty despite seeded org addresses
+3. No org_id parameter in the address fetch request","Dismiss popup","Source: VCST-4710 / PR #129; BL-B2B-005; BL-CART-005; BL-CROSS-008","Manual"
+"SA-018","Facet Counts Match Actual Row Counts","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Authenticated B2B org user with known address distribution across countries.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ACT] Click Country facet dropdown; observe count shown per country option (e.g., ""United States of America (N)"")
+[ACT] Select each country one at a time; count actual visible rows in table after each selection
+[WAIT] 2s after each selection for table to update","[MATH] For each country facet option: count shown in facet label == actual rows in table after selecting that country
+[DOM] Facet counts are consistent before and after individual selections","[CONSOLE] No JS errors","1. Facet count shows N but table shows M rows (N ≠ M) — data inconsistency
+2. Facet shows count 0 for a country with known seeded addresses","[ACT] Clear all facets","Source: VCST-4710 / PR #129; ECL-3.2","Manual"
+"SA-019","Pagination or Scroll — Large Address List Handling","Checkout > Cart > Shipping Address > Table","P2","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. Org has ≥15 seeded addresses (TechFlow has 22).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup (no facets, no search)
+[SCROLL] Scroll within the address table to determine whether all rows are loaded or pagination is present","[DOM] Either: (a) all 22 rows are visible via scroll (virtual scroll or full load), OR (b) pagination controls present (page N of M)
+[MATH] Total rows accessible == total org address count
+[DOM] No row truncation — all seeded addresses reachable","[CONSOLE] No JS errors on scroll","1. Only first N rows visible with no way to access the rest
+2. Scroll causes infinite spinner or layout break
+3. Row count displayed ≠ actual count accessible","Dismiss popup","Source: VCST-4710 / PR #129","Manual"
+"SA-020","Colombia Address Anomaly — Popup Does Not Show Stale/Invalid Address","Checkout > Cart > Shipping Address > Data Integrity","P0","BL-CHK-003; BL-CROSS-008","ECL-2.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+1. Cart shipping section currently shows a Colombia (CO) address.
+2. Popup address list does NOT include this Colombia address in org's address book.","mainUser: {{USER_EMAIL}} / {{USER_PASSWORD}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ASSERT] Shipping section shows a Colombia address (observe and document the full address text)
+[ACT] Open popup (click pencil icon)
+[WAIT] Dialog opens
+[ASSERT] Observe all rows in the address table — check whether the Colombia address appears
+[ACT] Click Close (X) to dismiss without selection","[DOM] Colombia address either: (a) appears in the popup table so it CAN be managed, OR (b) is absent from the popup table (data inconsistency — cart holds an address not in org book)
+[STATE] If absent: cart shipping address is unchanged after Close (no silent replacement)
+[DOM] No error toast or crash on open when current cart address is not in popup list","[API] Cart/shipment address reference vs. org address book — document the discrepancy
+[NETWORK] No unexpected 422/500 on popup open when cart address is not in org book","1. Popup opens and silently replaces Colombia address with a default org address (data loss — not user-initiated)
+2. Popup crashes on open because current cart address is not in org book
+3. Cart shipping address changes without user action after popup close","Document current state; do not change cart address","Source: VCST-4710 / PR #129; ECL-2.3; BL-CHK-003 — risk seam: cart holds address not in org book","Manual"
+"SA-021","Search Field Security — XSS and SQL Injection Probes","Checkout > Cart > Shipping Address > Security","P1","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user with popup open.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+xss_probe: <script>alert(1)</script>
+sqli_probe: ' OR 1=1 --
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ACT] Type the XSS probe string (<script>alert(1)</script>) into the search field
+[WAIT] 2s; check for alert dialog or console errors
+[ACT] Clear the search field; type the SQL injection probe (' OR 1=1 --) into the search field
+[WAIT] 2s; observe results","[DOM] No browser alert dialog appears (XSS not executed)
+[DOM] XSS probe text displayed as literal text in search field, not rendered as HTML
+[DOM] SQL injection probe returns zero results (not all records)
+[CONSOLE] No JS errors triggered by probe input
+[DOM] No application error page or stack trace visible","[CONSOLE] No unhandled exceptions from probe input
+[NETWORK] No 500 errors from API on probe input","1. Alert dialog appears (XSS executed — critical vulnerability)
+2. Search returns ALL addresses on SQLi probe (injection successful)
+3. Application error page shown on probe input","[ACT] Clear search field; dismiss popup","Source: VCST-4710 / PR #129; Error Guessing; OWASP A03","Manual"
+"SA-022","Session Timeout While Popup Open — Re-authentication Handling","Checkout > Cart > Shipping Address > Auth","P2","BL-CHK-003","ECL-1.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. User session expires while the address popup is open (simulate by invalidating token or waiting for session timeout — or use DevTools to clear auth cookie).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ACT] Simulate session expiry (e.g., clear auth cookie via DevTools console: document.cookie approach, or wait for natural expiry)
+[ACT] Attempt to click an address row or the OK button","[DOM] Either: (a) user is redirected to sign-in page with cart preserved, OR (b) an error message appears indicating session expired — no silent failure
+[STATE] No data corruption or orphaned cart changes","[NETWORK] 401 returned on any popup interaction after session expiry
+[CONSOLE] Auth error logged appropriately","1. Action proceeds silently without valid session
+2. Application freezes with spinner
+3. Cart corrupted after session expiry mid-popup","Sign in again and verify cart state","Source: VCST-4710 / PR #129; ECL-1.2; BL-CHK-003","Manual"
+"SA-023","Active Column — Selected Row Indicator Semantics","Checkout > Cart > Shipping Address > Table","P1","BL-CHK-003",,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user. Cart has an existing shipping address. Popup is open.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
+[ASSERT] Observe the ""Active"" column for all rows
+[ASSERT] Identify which row corresponds to the currently-selected cart shipping address
+[ACT] Note: the currently active row should NOT show a ""Select"" button; other rows SHOULD show ""Select""","[DOM] The row matching the current cart shipping address has no ""Select"" button in Active column (it IS the active selection)
+[DOM] All other rows have a visible ""Select"" button in Active column
+[DOM] After clicking ""Select"" on a different row: that row's button disappears; previously active row gets a ""Select"" button OR remains without one (document actual behavior)
+[STATE] Exactly one row is in ""active"" state at any time","[CONSOLE] No JS errors on row selection","1. All rows show ""Select"" button (active row not distinguished)
+2. No rows show ""Select"" button (cannot select any address)
+3. Multiple rows appear active simultaneously","Dismiss popup","Source: VCST-4710 / PR #129; Error Guessing (inverted affordance pattern)","Manual"
+"SA-024","Personal User — Popup Shows Only Personal Addresses (No Org Address Leakage)","Checkout > Cart > Shipping Address > Org Scope","P0","BL-B2B-005; BL-CART-005",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER2]
+[PRE:RESET_CART]
+1. User is authenticated as a personal account (no org membership).
+2. Cart contains ≥1 item with a shipping address set.
+3. Other org users with address books exist in the system (isolation check target).","personalUser: {{USER2_EMAIL}} / {{USER2_PASSWORD}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart as {{USER2_EMAIL}}
+[WAIT] Cart page loads; Shipping details section visible
+[ACT] Click the pencil/edit icon (data-test-id=""select-address-button"") in the Shipping address field
+[WAIT] ""Select address"" dialog appears
+[ASSERT] Observe all rows in the address table","[DOM] Dialog opens with heading ""Select address""
+[DOM] Address table contains ONLY personal addresses belonging to {{USER2_EMAIL}} — no org addresses from any other account visible
+[DOM] Table column headers are: Recipient name, Address, Phone, Email, Active (5 columns — personal user schema)
+[DOM] No org-owned addresses (e.g., TechFlow org addresses) appear in the list
+[STATE] If user has 0 personal addresses: empty state is shown (not org addresses as fallback)","[API] Address list request is scoped to personal contact — verify no org_id in request parameters
+[CONSOLE] No JS errors on open
+[NETWORK] No 4xx/5xx on address list fetch","1. Org addresses from any other account are visible in the list (data isolation breach — critical)
+2. Dialog does not open for personal user
+3. Empty state shown even though user has a personal address seeded","[ACT] Click Close (X) to dismiss popup","Source: VCST-4710 / PR #129; BL-B2B-005; BL-CART-005; EP (personal vs. B2B account partition). Live-verified 2026-04-24: popup opens; shows 1 personal address (mila mila / Address 1, City, 2323); 5-column schema; no org addresses visible.","Manual"
+"SA-025","Personal User — Popup Column Schema Differs from B2B (Recipient Name/Phone/Email vs Description/Country)","Checkout > Cart > Shipping Address > Table","P1","BL-B2B-005",,"[PRE:SIGNIN_AS:USER2]
+1. Personal account user with ≥1 personal address seeded.","personalUser: {{USER2_EMAIL}} / {{USER2_PASSWORD}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart as {{USER2_EMAIL}}; open popup","[DOM] Table header row contains exactly 5 columns: Recipient name, Address, Phone, Email, Active
+[DOM] Column ""Description"" is NOT present (B2B-only column)
+[DOM] Column ""Country"" is NOT present (B2B-only column)
+[DOM] Recipient name cell shows the contact name associated with the address
+[DOM] Phone and Email cells display the contact's phone/email values (or empty if not set)","[CONSOLE] No JS errors","1. Column headers match B2B schema (Address/Description/Country/Active) for a personal user — wrong schema rendered
+2. Recipient name column is blank for all rows
+3. Table header row is missing entirely","Dismiss popup","Source: VCST-4710 / PR #129; BL-B2B-005; EP (account type determines column schema). Live-verified 2026-04-24: personal popup shows Recipient name/Address/Phone/Email/Active; B2B shows Address/Description/Country/Active.","Manual"
+"SA-026","Personal User — Only 2 Facets Present (Country and City; No State/Province)","Checkout > Cart > Shipping Address > Facets","P2","BL-B2B-005","ECL-3.2","[PRE:SIGNIN_AS:USER2]
+1. Personal account user.","personalUser: {{USER2_EMAIL}} / {{USER2_PASSWORD}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart as {{USER2_EMAIL}}; open popup
+[ASSERT] Count the facet dropdown buttons in the filter bar","[DOM] Exactly 2 facet buttons are visible: Country and City
+[DOM] ""State/Province"" facet button is NOT present for personal user popup
+[DOM] Search field is present (same as B2B)
+[DOM] ""Add new"" and ""OK"" buttons are present","[CONSOLE] No JS errors","1. State/Province facet is shown for personal user (inconsistency with live observation)
+2. More than 2 or fewer than 2 facet buttons visible
+3. No facet buttons visible at all","Dismiss popup","Source: VCST-4710 / PR #129; BL-B2B-005; ECL-3.2; EP (facet set differs by account type). Live-verified 2026-04-24: personal popup has Country + City only; B2B popup has Country + State/Province + City.","Manual"
+"SA-027","State/Province Facet Visible — Org Has ≥1 US Address with Non-Null regionId","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003; BL-CHK-008","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Org address book contains ≥1 US address with non-null regionId (New York state — seeded in TechFlow).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+us_addr: @td(TECHFLOW_ADDR_US_NEW_YORK.regionCode)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Click pencil icon to open popup
+[WAIT] Dialog opens; observe facet bar","[DOM] ""State/Province"" facet button IS present in the facet bar (term aggregation returned ≥1 value)
+[ACT] Click ""State/Province"" facet dropdown
+[WAIT] Options list appears
+[DOM] Dropdown contains at least one US state option (e.g., ""New York"" or state code matching @td(TECHFLOW_ADDR_US_NEW_YORK.regionCode))
+[DOM] Country and City facets are also present","[CONSOLE] No JS errors on facet render","1. State/Province facet button is absent despite org having US address with non-null regionId (BL-CHK-008 violation)
+2. State/Province dropdown opens but shows empty list
+3. US state value does not appear in options","[ACT] Clear facets; dismiss popup","Source: VCST-4710 / PR #129; BL-CHK-008; Decision Table (address has regionId → facet rendered)","Manual"
+"SA-028","State/Province Facet Visible — Org Has ≥1 Canadian Address with Non-Null regionId","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003; BL-CHK-008","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Org address book contains ≥1 Canadian address with non-null regionId (Ontario — seeded as TECHFLOW_ADDR_CA_TORONTO).","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+ca_addr: @td(TECHFLOW_ADDR_CA_TORONTO.city)
+ca_region: @td(TECHFLOW_ADDR_CA_TORONTO.regionCode)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Click pencil icon to open popup
+[WAIT] Dialog opens; observe facet bar
+[ACT] Click ""Country"" facet; select Canada
+[WAIT] Table filtered to CA addresses
+[ACT] Click ""State/Province"" facet dropdown
+[WAIT] Options list appears","[DOM] ""State/Province"" facet button IS present after filtering to Canada
+[DOM] Dropdown contains at least one Canadian province option (e.g., ""Ontario"" or province code matching @td(TECHFLOW_ADDR_CA_TORONTO.regionCode))
+[MATH] At least one CA row with non-null regionId exists in the filtered set","[CONSOLE] No JS errors","1. State/Province facet absent for CA country filter (BL-CHK-008 violation)
+2. State/Province dropdown shows only US states despite Canada filter
+3. Province value for Ontario not present in options","[ACT] Clear facets; dismiss popup","Source: VCST-4710 / PR #129; BL-CHK-008; Decision Table (CA address has regionId → facet rendered). TECHFLOW_ADDR_CA_TORONTO confirmed: countryCode=CA, regionCode=ON.","Manual"
+"SA-029","State/Province Facet Absent — Personal User Has Only Non-US/CA Addresses (All regionId Null)","Checkout > Cart > Shipping Address > Facets","P1","BL-CHK-003; BL-CHK-008","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER2]
+1. Personal account user ({{USER2_EMAIL}}).
+2. Personal address book contains ONLY addresses with null regionId (Albania address — confirmed live 2026-04-24).","personalUser: {{USER2_EMAIL}} / {{USER2_PASSWORD}}
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart as {{USER2_EMAIL}}
+[ACT] Click pencil icon to open popup
+[WAIT] Dialog opens
+[ASSERT] Examine the facet bar — count facet buttons and identify their labels","[DOM] ""State/Province"" facet button is NOT present in DOM (absent, not hidden/empty)
+[DOM] Exactly 2 facets visible: Country and City
+[DOM] No stub or collapsed State/Province element in the facet bar","[CONSOLE] No JS errors on open
+[NETWORK] Verify address list API response: term aggregation for regionId returns empty array (term: [])","1. State/Province facet button IS present despite all addresses having null regionId (BL-CHK-008 violation)
+2. State/Province button present but clicking shows empty dropdown (incorrect — button should not render at all)
+3. Facet bar shows 3 items with State/Province empty","[ACT] Dismiss popup","Source: VCST-4710 / PR #129; BL-CHK-008; Decision Table (all regionId null → facet hidden). Live context: Mila Müller / Albania address / null regionId confirmed 2026-04-24.","Manual"
+"SA-030","State/Province Facet Visible but Shows Only US States When Org Has Mixed US + GB Addresses","Checkout > Cart > Shipping Address > Facets","P2","BL-CHK-003; BL-CHK-008","ECL-3.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. Authenticated B2B org user.
+2. Org has both US addresses (non-null regionId) AND GB/UK addresses (null regionId) in address book — TechFlow org satisfies this condition.","orgUser: @td(TECHFLOW_ADMIN.email) / @td(TECHFLOW_ADMIN.password)
+org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
+uk_addr: @td(TECHFLOW_ADDR_UK_LONDON.city)
+FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Open popup (no facets applied)
+[WAIT] Dialog opens with full unfiltered org address list
+[ASSERT] State/Province facet button is present (US addresses with regionId exist in the set)
+[ACT] Click ""State/Province"" facet dropdown
+[WAIT] Options list appears
+[ASSERT] Check whether GB/UK region values appear alongside US state values
+[ACT] Verify GB address rows are still visible in the unfiltered table","[DOM] State/Province facet IS present (US addresses drive term aggregation for regionId)
+[DOM] Dropdown options contain only US state values — no GB region/county entries (GB addresses have null regionId → not indexed in aggregation)
+[DOM] GB address rows (e.g., @td(TECHFLOW_ADDR_UK_LONDON.city)) are visible in the unfiltered address table
+[MATH] GB rows are NOT hidden or excluded from the list merely because State/Province facet is active in unselected state","[CONSOLE] No JS errors","1. State/Province facet is absent despite US addresses being present (BL-CHK-008 violation)
+2. State/Province dropdown lists GB regions/counties mixed with US states (regionId logic error)
+3. GB addresses disappear from table when State/Province facet is opened (unintended filter side-effect)","[ACT] Clear facets; dismiss popup","Source: VCST-4710 / PR #129; BL-CHK-008; Error Guessing / Classification Tree (mixed regionId population — some null, some non-null).","Manual"

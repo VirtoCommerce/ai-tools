@@ -1,35 +1,58 @@
 import { env } from './config.js';
 
-console.log('FRONT_URL:', env.FRONT_URL);
-console.log('BACK_URL:', env.BACK_URL);
-console.log('VIRTO_START_FRONT:', env.VIRTO_START_FRONT);
-console.log('VIRTO_START_BACK:', env.VIRTO_START_BACK);
-console.log('STORYBOOK_URL:', env.STORYBOOK_URL);
-console.log('STORYBOOK_DEV_URL:', env.STORYBOOK_DEV_URL);
-console.log('ADMIN:', env.ADMIN);
-console.log('ADMIN_PASSWORD:', env.ADMIN_PASSWORD);
-console.log('USER2_EMAIL:', env.USER2_EMAIL);
-console.log('USER2_PASSWORD:', env.USER2_PASSWORD);
-console.log('USER_EMAIL:', env.USER_EMAIL);
-console.log('USER_PASSWORD:', env.USER_PASSWORD);
-console.log('USER_VIRTO:', env.USER_VIRTO);
-console.log('USER_VIRTO_PASSWORD:', env.USER_VIRTO_PASSWORD);
-console.log('STORE_ID:', env.STORE_ID);
-console.log('SKYFLOW_VISA:', env.SKYFLOW_VISA);
-console.log('SKYFLOW_MASTERCARD:', env.SKYFLOW_MASTERCARD);
-console.log('SKYFLOW_EXPIRY:', env.SKYFLOW_EXPIRY);
-console.log('SKYFLOW_CVV:', env.SKYFLOW_CVV);
-console.log('CYBERSOURCE_CARD:', env.CYBERSOURCE_CARD);
-console.log('CYBERSOURCE_EXPIRY:', env.CYBERSOURCE_EXPIRY);
-console.log('CYBERSOURCE_CVV:', env.CYBERSOURCE_CVV);
-console.log('AUTHORIZNET_CARD:', env.AUTHORIZNET_CARD);
-console.log('AUTHORIZNET_EXPIRY:', env.AUTHORIZNET_EXPIRY);
-console.log('AUTHORIZNET_CVV:', env.AUTHORIZNET_CVV);
-console.log('DATATRANCE_MASTERCARD:', env.DATATRANCE_MASTERCARD);
-console.log('DATATRANCE_EXPIRY:', env.DATATRANCE_EXPIRY);
-console.log('DATATRANCE_CVV:', env.DATATRANCE_CVV);
-console.log('DATATRANCE_OTP:', env.DATATRANCE_OTP);
-console.log('FIGMA_API_KEY:', env.FIGMA_API_KEY);
-console.log('BROWSERSTACK_USERNAME:', env.BROWSERSTACK_USERNAME);
-console.log('BROWSERSTACK_ACCESS_KEY:', env.BROWSERSTACK_ACCESS_KEY);
-console.log('POSTMAN_API_KEY:', env.POSTMAN_API_KEY);
+// Mask values — never print raw secrets. Report presence + length only.
+// If you need to see a value, read .env directly.
+const report = (name) => {
+    const value = env[name];
+    if (value === undefined || value === null || value === '') {
+        console.log(`${name}: EMPTY`);
+    } else {
+        console.log(`${name}: SET (len=${String(value).length})`);
+    }
+};
+
+[
+    'FRONT_URL',
+    'BACK_URL',
+    'VIRTO_START_FRONT',
+    'VIRTO_START_BACK',
+    'STORYBOOK_URL',
+    'STORYBOOK_DEV_URL',
+    'ADMIN',
+    'ADMIN_PASSWORD',
+    'USER2_EMAIL',
+    'USER2_PASSWORD',
+    'USER_EMAIL',
+    'USER_PASSWORD',
+    'USER_VIRTO',
+    'USER_VIRTO_PASSWORD',
+    'STORE_ID',
+    'SKYFLOW_VISA',
+    'SKYFLOW_MASTERCARD',
+    'SKYFLOW_EXPIRY',
+    'SKYFLOW_CVV',
+    'CYBERSOURCE_CARD',
+    'CYBERSOURCE_EXPIRY',
+    'CYBERSOURCE_CVV',
+    'CYBERSOURCE_3DS_FRICTIONLESS_CARD',
+    'CYBERSOURCE_3DS_CHALLENGE_CARD',
+    'CYBERSOURCE_3DS_OTP',
+    'LOCKOUT_TEST_EMAIL',
+    'LOCKOUT_TEST_PASSWORD',
+    'MULTI_ORG_USER_EMAIL',
+    'MULTI_ORG_USER_PASSWORD',
+    'ORG_USER_EMAIL',
+    'EUR_USER_EMAIL',
+    'EUR_USER_PASSWORD',
+    'AUTHORIZNET_CARD',
+    'AUTHORIZNET_EXPIRY',
+    'AUTHORIZNET_CVV',
+    'DATATRANCE_MASTERCARD',
+    'DATATRANCE_EXPIRY',
+    'DATATRANCE_CVV',
+    'DATATRANCE_OTP',
+    'FIGMA_API_KEY',
+    'BROWSERSTACK_USERNAME',
+    'BROWSERSTACK_ACCESS_KEY',
+    'POSTMAN_API_KEY',
+].forEach(report);

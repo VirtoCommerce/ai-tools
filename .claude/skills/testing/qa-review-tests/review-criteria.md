@@ -128,6 +128,13 @@ Ensures the test case has all information an agent needs to execute independentl
 - **Impact:** State leakage between tests — cart items, created orders, etc. persist.
 - **Auto-fixable:** Yes — infer from steps: mutations that create state → cleanup needed; read-only → `none`.
 
+### C-008: Implicit case ordering in Preconditions `[High]`
+- **Detection:** `Preconditions` says "after running <ID>", "following <ID>", "requires <ID> to have passed", or similar phrases that describe prior-case execution rather than required state. ISTQB rule: cases must be independent — preconditions are expressed as **state**, not as prior test runs.
+- **Bad:** `Preconditions: CART-007 must be run first`
+- **Good:** `Preconditions: cart contains {{TEST_SKU}} at quantity 1, user logged in as {{USER_EMAIL}}`
+- **Allowed exception:** `Preconditions: state from <ID>` is permitted **only** when it unambiguously references the end-state of another case that itself has an enumerated state description. This is the codified form of DUP-004 (avoid-repetition-by-reference), not an escape hatch for order-dependence.
+- **Auto-fixable:** No — requires restating the flow as explicit state.
+
 ---
 
 ## Dimension 4: Testability
@@ -223,6 +230,69 @@ Ensures all referenced data is valid and resolvable.
 - **Good:** `listPrice { amount currency { code } }`
 - **Auto-fixable:** Yes — replace `currencyCode` with `currency { code }`.
 
+### DV-013: Hardcoded entity ID / GUID `[High]`
+- **Detection:** Steps, Assertions, Preconditions, or Test_Data contain a UUID/GUID literal (`[0-9a-f]{8}-[0-9a-f]{4}-...`) or numeric entity ID that refers to a product, catalog, category, user, organization, or order. Exception: documented **environment constants** in `.claude/agents/knowledge/catalog.md` or `knowledge/store-settings.md` (e.g., virtual-catalog root `fc596540...`, store ID `B2B-store`) are allowed because they are stable across deploys.
+- **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
+- **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
+- **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.
+- **Auto-fixable:** No — requires domain choice on how to resolve.
+
+### DV-014: Hardcoded SKU or product identifier `[High]`
+- **Detection:** Steps, Assertions, or Test_Data contain a literal SKU like `KC3000-1TB`, a product name like `Kingston KC3000 1TB`, or a variant code that is not the generic `{{TEST_SKU}}` placeholder or a `TEST-*` seeded pattern. Exception: product fixtures explicitly seeded for the suite under `test-data/products/*.csv` and resolved via `@td(ALIAS.field)`.
+- **Impact:** Catalog re-imports rename products; hardcoded SKUs break the test without indicating a real defect.
+- **Bad:** `[NAV] {{FRONT_URL}}/product/kingston-kc3000-1tb` with assertion `[DOM] title = 'Kingston KC3000 1TB'`
+- **Good:** "Any simple product SKU" OR `@td(CFG_TSHIRT.sku)` OR a regex shape assertion `[NAV] URL matches /product/[a-z0-9-]+`
+- **Auto-fixable:** No — requires resolver wiring or generic phrasing.
+
+### DV-015: Hardcoded user email or literal identity `[High]`
+- **Detection:** Steps or Preconditions contain a literal email (e.g., `john.smith.2024@example.com`, `test-emily.johnson-20260310@test-agent.com`) instead of the agent-user-pool slot reference or a known `{{*_EMAIL}}` env var. The canonical pool at `test-data/users/agent-user-pool.csv` is referenced **by role/slot**, never by literal email. Throwaway users use pattern `{purpose}-{timestamp}@test-agent.com` generated at runtime.
+- **Impact:** Pool accounts get rotated and re-seeded; stale literal emails lead to login failure → false BLOCKED.
+- **Bad:** `[ACT] fill 'Email': test-emily.johnson-20260310@test-agent.com`
+- **Good:** `[ACT] fill 'Email': {{ORG_USER_EMAIL}}` OR "Login as any TechFlow org maintainer (pool slot 2)"
+- **Auto-fixable:** Partial — literal emails matching known env vars can be replaced; unknown emails need manual review.
+
+### DV-016: Exact-value assertion on environment-dependent data `[High]`
+- **Detection:** Assertions contain literal prices (e.g., `$99.99`, `subtotal = 299.99`), literal order numbers (`CO260421-00005`), literal URL slugs (`/product/kingston-kc3000`), literal section titles derived from catalog content, or literal count values tied to current catalog state. The Golden Rule: assert **structural invariants** (ordering, math identity, relation, shape/regex), never the literal.
+- **Impact:** Product data, pricing, and slugs change over time; assertions fail without any product defect. Pattern is #2 cause of false failures after hardcoded GUIDs.
+- **Bad examples:**
+  - `[MATH] subtotal = $299.99`
+  - `[NAV] URL is /product/kingston-kc3000-1tb`
+  - `[DOM] section title = 'Rear wheel 26 double-wall'`
+  - `[STATE] order number = CO260421-00005`
+- **Good examples:**
+  - `[MATH] subtotal = line total 1 + line total 2 + ... (2 decimal places)` (math identity)
+  - `[MATH] subtotal > 0 AND total = subtotal + tax + shipping` (invariant)
+  - `[NAV] URL matches /product/[a-z0-9-]+` (shape/regex)
+  - `[FORMAT] order number matches /^CO\d{6}-\d{5}$/` (shape)
+  - `[STATE] capture order number from confirmation page → reference as {{ORDER_ID}} in downstream steps` (runtime-captured variable)
+- **Auto-fixable:** No — requires choosing the right invariant (identity, ordering, relation, shape).
+
+### DV-017: Hardcoded fixture literal (address, coupon, etc.) `[Medium]`
+- **Detection:** Steps or Test_Data contain a literal address (street, city, zip lines), coupon code (`SAVE20`), or similar fixture value that could be resolved via `@td()` against `test-data/`. Exception: one-off values clearly documented as "for this test only" with an inline comment explaining why a fixture was not used.
+- **Impact:** Fixtures get refreshed (coupons expire, addresses get reseeded); duplicated literals across cases make updates expensive.
+- **Bad:** `[ACT] fill 'Coupon': SAVE20`
+- **Good:** `[ACT] fill 'Coupon': @td(COUPON_PERCENTAGE_OFF.code)` OR semantic fixture name documented in `test-data/aliases.json`
+- **Auto-fixable:** Partial — reviewer can propose the `@td()` form if a matching alias exists in `test-data/aliases.json`; authoring a new alias requires human action.
+
+### DV-018: Magic number without named constant `[Medium]`
+- **Detection:** Steps/Assertions/Failure_Signals contain raw numeric literals for timeouts, quantities, TTLs, thresholds, or retry counts without a short justification/naming comment. Inline regex literals and math formulas are exempt.
+- **Impact:** Intent of the number is opaque; tuning is error-prone across cases.
+- **Bad:** `[WAIT] 5000ms after click` ; `[ACT] set quantity to 50`
+- **Good:** `[WAIT] STEPPER_DEBOUNCE_MS (300) after quantity change` ; `[ACT] set quantity to MAX_QTY_PER_LINE (50) — boundary of BL-CART-003`
+- **Auto-fixable:** No — requires the author's domain intent.
+
+### DV-012: Thin field selection on GraphQL happy-path test `[High]`
+- **Detection:** (GraphQL suites only) A happy-path query/mutation test requests a minimal selection set (e.g., `{ id }`, `{ totalCount }`, single-field or 2-field subset) without a Steps-column comment identifying it as a permitted exception. Policy: `SKILL.md` (qa-api) → "Happy-path field selection" and `api-test-case-patterns.md` → "Happy Path Patterns".
+- **Rule:** Happy-path tests MUST request the full field selection set of the return type — all non-deprecated scalar fields plus at least one level of expansion for every nested object (`{ amount currency { code } }`, not just `{ amount }`).
+- **Permitted exceptions** (the Steps column MUST include a comment naming the role):
+  1. Counter/invariant probe before/after a mutation (e.g., `{ totalCount }` for duplicate-skip verification)
+  2. Cross-layer roundtrip querying only the fields needed to match a prior write
+  3. Dedicated "minimal selection" schema-coverage test (one per operation, per `graphql-checklist.md:141-144`)
+- **Bad:** `query { currentCustomerAddresses(first: 50) { items { id } } }` on a happy-path test with no exception comment — null checks and nested resolver correctness are not observable.
+- **Good:** `query { currentCustomerAddresses(first: 50) { totalCount items { id line1 line2 city countryCode countryName postalCode regionId regionName addressType isFavorite firstName lastName organization phone email } } }` — full contract covered.
+- **Good (exception):** `query { currentCustomerAddresses(first: 50) { totalCount } }  # counter probe — <COUNT_BEFORE> vs <COUNT_AFTER> for duplicate-skip invariant` — role named in Steps.
+- **Auto-fixable:** Partial — reviewer can expand to full selection from `graphql-schema.md` type definition, but should flag for human confirmation when the test's role is ambiguous (counter probe vs. under-specified happy path).
+
 ---
 
 ## Dimension 6: BL/ECL Coverage
@@ -249,6 +319,14 @@ Validates business logic traceability and edge case coverage.
 - **Detection:** An ECL-* pattern is relevant to this domain but no test case references it.
 - **Output:** List as coverage gap in the report (informational — not all ECL patterns need coverage).
 
+### REQ-001: Missing requirement link for Critical/High case `[High]`
+- **Detection:** Priority is `Critical` or `High` but `References` column contains no JIRA ticket (`VCST-XXXX`), requirement ID (`REQ-*`), or user-story link. A lone `BL-*` in References does not satisfy this — BL-* belongs in `Business_Rule`; `References` is for the **source of demand** (ticket, story, acceptance criterion).
+- **Impact:** No traceability from test to requirement — cannot answer "which requirement is at risk if this case fails?" or "which cases cover VCST-XXXX?".
+- **Bad:** `References: BL-CART-001` (only an internal invariant, no ticket)
+- **Good:** `References: VCST-4499` or `References: VCST-4499, VCST-3387`
+- **Exception:** Infrastructure/smoke cases with no originating ticket may use `References: smoke-baseline` (explicit placeholder, not empty).
+- **Auto-fixable:** No — requires looking up the originating ticket.
+
 ---
 
 ## Dimension 7: Duplication
@@ -267,6 +345,13 @@ Identifies redundant test cases that waste execution time without adding coverag
 ### DUP-003: Cross-suite duplicate (different layers) `[Informational]`
 - **Detection:** Two cases test the same feature but from different layers (one via UI, one via API).
 - **Action:** This is EXPECTED and good practice — flag as informational only, no action needed.
+
+### DUP-004: Repeated preconditions instead of reference `[Medium]`
+- **Detection:** A case's `Steps` column restates a setup flow (login, add-to-cart, create-org) whose first ≥70% of tagged lines match another earlier case in the same suite. ISTQB rule: avoid repetition — reference another case's ID in preconditions instead of duplicating its steps.
+- **Bad:** CART-014 restates the 6 login + navigate + add-to-cart steps from CART-007 before testing quantity update.
+- **Good:** CART-014 `Preconditions: state from CART-007 (user logged in, {{TEST_SKU}} in cart, qty=1)` and `Steps:` starts from the quantity-update action.
+- **Auto-fixable:** Partial — reviewer can detect the overlap and propose the `state from <ID>` preamble, but the reduced Steps block requires human confirmation that no necessary context is lost.
+- **Interaction with C-008:** `state from <ID>` references are allowed and are the *correct* way to avoid repetition. Only order-dependent phrasing ("after running <ID>") is forbidden.
 
 ---
 
@@ -309,6 +394,23 @@ Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox
 - **Detection:** `qa-testing-expert` walks through the first 3-4 steps of a P0/Critical case and gets blocked (modal doesn't appear, next page doesn't load, action has no effect).
 - **Impact:** Test case describes a flow that no longer works as written.
 - **Evidence:** Screenshot at the point of blockage + console log.
+
+---
+
+## Dimension 9: Technique Coverage (Static)
+
+Validates that every feature block covers the ISTQB-minimum mix of design techniques: **positive (happy path) + negative (invalid input / error handling) + boundary (edge of partition)**. Applied per **feature group** (rows sharing the same `Section` parent or `References` ticket), not per individual case.
+
+### TC-001: Feature lacks positive + negative + boundary mix `[Medium]`
+- **Detection:** Group rows by `Section` parent (e.g., `Cart > Add`) or by ticket in `References`. For each group with ≥3 cases, check that the set covers:
+  1. **At least 1 positive** — a happy-path case (no `error`, `invalid`, `expired`, `rejected`, `fail` keywords in Title).
+  2. **At least 1 negative** — an invalid-input / permission-denied / error-state case.
+  3. **At least 1 boundary** — when any input in the feature is numeric, ordered, or quantity-based (price, quantity, date range, string length, pagination). If the feature has no ordered inputs, boundary is waived.
+- **Groups with <3 cases** are exempt (assumed to be narrow scope — not a feature block).
+- **Bad:** A `Cart > Coupon` group with 5 cases, all happy-path variations of valid coupon codes. No invalid-coupon case, no max-discount-cap boundary.
+- **Good:** 1× valid coupon applies, 1× expired coupon rejected, 1× coupon exceeds cart subtotal cap (boundary).
+- **Output:** List the feature group, which of {positive, negative, boundary} is missing, and suggest a case title seed (e.g., "add: expired-coupon rejection; add: boundary at max-cap").
+- **Auto-fixable:** No — generating the missing case requires domain judgment. Hand off to `/qa-test-cases-generator` with the gap as input.
 
 ---
 

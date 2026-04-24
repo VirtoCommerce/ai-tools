@@ -1,0 +1,7 @@
+# DV-008 case: wrong argument name on a real query.
+# 'products' accepts a 'query' arg, not 'keyword'. Expected: runner reports DV-008.
+query WrongArg {
+  products(keyword: "laptop") {
+    totalCount
+  }
+}

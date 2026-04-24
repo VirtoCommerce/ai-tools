@@ -1,0 +1,18 @@
+# DV-011 case: wrong MoneyType structure.
+# MoneyType is '{ amount currency { code } }' — 'currencyCode' directly on a
+# money field does not exist. This surfaces as a DV-009 (wrong response field)
+# from graphql-js, which is the right user-facing fix: expand to currency { code }.
+query MoneyShape {
+  products(query: "laptop", first: 1) {
+    items {
+      id
+      name
+      price {
+        actual {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+}

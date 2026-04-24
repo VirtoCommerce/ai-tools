@@ -41,6 +41,8 @@ The originals remain at `tests/Sprint-current/VCST-4710/test-cases/*.csv`.
 | VCST-4710-GQ-008 | GQL-055 | 050d-graphql-xprofile | ready |
 | VCST-4710-ADM-001 | CUST-063 | 026-customer-contacts | ready |
 | VCST-4710-ADM-002 | CUST-064 | 026-customer-contacts | ready |
+| VCST-4710-SF-021 | CHK-107 | 011-checkout-flow | Manual |
+| VCST-4710-SF-022 | CHK-108 | 011-checkout-flow | Manual |
 
 ## Bug-Blocked Cases
 

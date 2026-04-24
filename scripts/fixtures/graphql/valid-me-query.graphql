@@ -1,0 +1,9 @@
+# Positive case: a valid xAPI query against the live schema.
+# Expected: runner reports ✅, operation = query Me
+query Me {
+  me {
+    id
+    userName
+    memberId
+  }
+}

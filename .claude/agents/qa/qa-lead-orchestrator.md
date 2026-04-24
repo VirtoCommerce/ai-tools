@@ -130,9 +130,15 @@ Full gate definitions: `.claude/skills/qa-methodology/qa-metrics/quality-gates.m
 **Workflow 1: New Feature Testing**
 1. Fetch ticket, analyze (7-phase protocol)
 2. Transition to TESTING, comment with plan
-3. Delegate test-management-specialist for test plan + cases (if needed)
-4. After cases ready, delegate execution in parallel: backend, frontend, ui-ux
-5. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
+3. Delegate test-management-specialist for test plan + cases (if needed) — cases come back as `Draft`
+4. **Test case review gate (ISTQB peer review — MANDATORY)** — before execution:
+   - test-management-specialist has already run `/qa-review-tests` and fixed Blockers/Criticals; they hand you the review report
+   - You verify: verdict ≥ PASS WITH WARNINGS, no Blockers, any remaining Criticals are justified
+   - Spot-check: requirement traceability (REQ-001), independence (C-008), P+N+B mix (TC-001) on 3-5 cases
+   - Approve → instruct test-management-specialist to promote `Draft → Reviewed` and file into the regression-eligible suite
+   - Reject → comment specific fixes, send back; do NOT proceed to execution until the gate passes
+5. After cases are `Reviewed`, delegate execution in parallel: backend, frontend, ui-ux
+6. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
 
 **Workflow 2: PR Review**
 1. Fetch PR (`get_pull_request`, `get_pull_request_files`)
@@ -153,9 +159,10 @@ Full gate definitions: `.claude/skills/qa-methodology/qa-metrics/quality-gates.m
 **Workflow 5: Bug Fix Verification**
 1. Fetch ticket, identify original bug (STR, affected area, root cause)
 2. Transition to TESTING
-3. Delegate test-management-specialist: generate 6-10 item verification checklist (fix confirmation + regression + cross-layer). Ref: `domain-checklists.md` § BF + affected domain
-4. Delegate execution to affected-area agent(s) using checklist
-5. Decision: All PASS → TESTED | Fix works but regression → REOPEN new bug | Fix fails → REOPEN with evidence
+3. Delegate test-management-specialist: generate 6-10 item verification checklist (fix confirmation + regression + cross-layer) as `Draft`. Ref: `domain-checklists.md` § BF + affected domain
+4. **Review gate** — specialist runs `/qa-review-tests` on the checklist. You approve `Draft → Reviewed` (lighter spot-check than Workflow 1 given the narrow scope — confirm traceability to the bug ticket and independence). Reject → iterate
+5. Delegate execution to affected-area agent(s) using the `Reviewed` checklist
+6. Decision: All PASS → TESTED | Fix works but regression → REOPEN new bug | Fix fails → REOPEN with evidence
 
 ### Decision Framework
 
@@ -163,6 +170,11 @@ Full gate definitions: `.claude/skills/qa-methodology/qa-metrics/quality-gates.m
 **APPROVE WITH CONDITIONS (→ TESTED):** Minor P2/P3 documented in JIRA, non-blocking UX suggestions
 **REJECT (→ REOPEN):** P0/P1 bugs, ACs not met, major performance regression (LCP > 4s, API > 2s)
 **ESCALATE:** Environment unavailable → DevOps, Requirements unclear → PM, Deadline unrealistic → PM
+
+**Test Case Review Approval (ISTQB peer-review gate — your authority):**
+- **APPROVE `Draft → Reviewed`:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), spot-check confirms requirement traceability / independence / P+N+B mix
+- **REJECT:** Blockers present, or traceability/independence/technique-coverage spot-check fails — send back to test-management-specialist with specific findings to address
+- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes
 
 ---
 
@@ -197,6 +209,7 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - "All passed" with no evidence → request verification
 - High pass rate but critical flow not tested → incomplete coverage
 - Bugs found but no JIRA tickets created → request bug filing
+- Execution used cases with `Automation_Status = Draft` → regression bypassed the review gate; results are not trustworthy — pause, run `/qa-review-tests`, re-execute only `Reviewed` cases
 
 ### Escalation Triggers (in addition to shared triggers)
 

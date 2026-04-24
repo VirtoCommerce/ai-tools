@@ -169,6 +169,13 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Order placed below minimum; no message shown; minimum checked against grand total instead of subtotal; checkout not blocked.
 - **Agents:** qa-frontend-expert (checkout flow), qa-backend-expert (order validation API)
 
+### BL-CHK-008: Address-popup State/Province facet renders only when result set contains regionId values `[P1-data]`
+- **Rule:** The "State/Province" facet in the address-selection popup is rendered if and only if the term aggregation for `regionId` in the current address result set returns at least one non-null value. When `term: []` (all addresses in the set have `null regionId`), the facet element is absent from the DOM — it is not rendered as an empty dropdown. This rule is data-driven: facet presence changes dynamically as the result set changes (e.g., filtering to a country whose addresses all have null regionId causes the facet to disappear). Currently: USA and Canada addresses carry non-null regionId; other countries (UK/GB, Albania, etc.) carry null regionId.
+- **Verify:** Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
+- **Violation signal:** "State/Province" facet visible with empty/zero values when result set has no non-null regionId; facet persists in DOM after filter narrows the set to null-region addresses only; facet missing when USA/Canada addresses are present.
+- **Scope:** Address-selection popup only (per VCST-4710 / PR #129); does NOT apply to `/account/addresses` page or ship-to popover.
+- **Agents:** qa-frontend-expert (popup UI), test-management-specialist (test cases SA-027–SA-030)
+
 ---
 
 ## Domain 4: Orders & Fulfillment (BL-ORD)
@@ -656,13 +663,27 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 
 ---
 
+## Domain 14: Profile & Member Data (BL-PROFILE)
+
+### BL-PROFILE-001: Silent duplicate-skip on `updateMemberAddresses` and matching `checkDuplicateAddress` detection `[P1-data]`
+- **Rule (write path — `updateMemberAddresses`):** When `updateMemberAddresses` is called with an address whose key fields — `line1` + `city` + `countryCode` + `postalCode` + `regionId` + `addressType` — exactly match an already-saved address on the same member, the server MUST silently skip the insert. No new record is created, no error is raised in `errors[]`, and the member's total address count (`currentCustomerAddresses.totalCount`) MUST remain unchanged. This holds regardless of the size of `addresses[]` (one or many) AND regardless of `memberType` (Contact or Organization — same endpoint, same dedup semantics). The dedup check is **against the member's stored collection**, not only within the incoming batch, and must NOT depend on auto-computed fields like `name` that the client submits as null.
+- **Rule (read path — `checkDuplicateAddress`):** `checkDuplicateAddress(memberId, address)` MUST return `isDuplicated: true` if and only if an existing stored address on `memberId` matches the submitted address by the same key fields listed above. Novel addresses return `isDuplicated: false`; exact matches return `true`. The detection contract MUST agree with the write-path dedup contract — whatever `updateMemberAddresses` silently skips, `checkDuplicateAddress` must flag. The query MUST require authentication (no anonymous access) and MUST enforce same-member / same-org authorization (no cross-member probing).
+- **Verify (write path):** Capture totalCount = N and the full field set of an existing address. Call `updateMemberAddresses(command: { memberId, addresses: [{…same fields}] })` with exactly one byte-identical element. Re-query totalCount → must equal N. Count rows in `items[]` matching the duplicate's line1 + firstName + lastName → must equal 1 (not 2). `errors[]` must be empty. Repeat with a 2-element `addresses[]` where one element is identical-to-existing and one is novel → novel row is added, duplicate is skipped, totalCount = N+1. Repeat both scenarios for a Contact memberId AND an Organization memberId.
+- **Verify (read path):** With a valid bearer token, call `checkDuplicateAddress(memberId: <own>, address: {…byte-identical fields of an existing saved address})` → `isDuplicated: true`. Call with a novel address → `isDuplicated: false`. Call anonymously (no Authorization header) → request rejected with 401 or equivalent authz error; not HTTP 200. Call with a foreign memberId (different user) → authz error, no data returned.
+- **Violation signal:** `totalCount` = N+1 after single-element submission; two rows with identical key fields appear in `items[]`; the mutation raises an error instead of silently skipping. For the read path: `checkDuplicateAddress` returns `isDuplicated: false` for an address that clearly exists on the member; or returns data to an unauthenticated caller (HTTP 200 without 401); or returns data when a foreign memberId is used.
+- **Agents:** qa-backend-expert (GraphQL direct — see GQL-056, and planned GQL-060/061 for checkDuplicate detection), qa-frontend-expert (storefront UI — see B2C-SHIP-014), test-management-specialist (cross-layer coverage audit)
+- **Origin:** PR [VirtoCommerce/vc-module-profile-experience-api#129](https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/129) — adds both `MemberAggregateRootBase.UpdateAddresses` dedup AND `checkDuplicateAddress` query. As of 2026-04-24 the PR delivers: Contact-path write dedup ✅ works; Organization-path write dedup ❌ broken (`BUG-updateMemberAddresses-Single-Append-Dedup-Miss.md`); `checkDuplicateAddress` detection ❌ always returns false (`BUG-checkDuplicateAddress-Non-Functional.md`).
+- **Promoted:** 2026-04-23 (from `PROPOSED-BL-PROFILE-001` in `reports/test-lifecycle/TLC-2026-04-23-1700/bl-proposals.md`).
+
+---
+
 ## Invariant Coverage Summary
 
 | Domain | ID Range | Total | Expanded | Severity Breakdown |
 |--------|----------|-------|----------|-------------------|
 | Pricing & Discounts | BL-PRICE-001–008 | 8 | 8 | 5× P0, 2× P1, 1× P0 |
 | Cart | BL-CART-001–008 | 8 | 8 | 3× P0, 5× P1 |
-| Checkout | BL-CHK-001–007 | 7 | 7 | 4× P0, 2× P1, 1× P0 |
+| Checkout | BL-CHK-001–008 | 8 | 8 | 4× P0, 3× P1, 1× P0 |
 | Orders & Fulfillment | BL-ORD-001–009 | 9 | 9 | 3× P0, 6× P1 |
 | Users & Auth | BL-AUTH-001–006 | 6 | 6 | 1× P0, 4× P1, 1× P2 |
 | B2B / Organization | BL-B2B-001–006 | 6 | 6 | 2× P0, 4× P1 |
@@ -674,4 +695,5 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 | Import / Export | BL-IMPEX-001–004 | 4 | 4 | 0× P0, 4× P1 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 4 | 0× P0, 2× P1, 2× P2 |
 | BOPIS-Specific | BL-BOPIS-001–007 | 7 | 7 | 1× P0, 5× P1, 1× P2 |
-| **Total** | | **89** | **89** | **31× P0, 51× P1, 7× P2** |
+| Profile & Member Data | BL-PROFILE-001 | 1 | 1 | 0× P0, 1× P1, 0× P2 |
+| **Total** | | **90** | **90** | **31× P0, 52× P1, 7× P2** |

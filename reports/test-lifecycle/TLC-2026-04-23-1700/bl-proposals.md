@@ -9,7 +9,10 @@ Per project memory (`feedback_business_logic_promotion.md`): business-logic.md i
 
 ## New Invariants Proposed
 
-### PROPOSED-BL-PROFILE-001: Silent duplicate-skip on updateMemberAddresses `[P1-data]`
+### PROPOSED-BL-PROFILE-001: Silent duplicate-skip on updateMemberAddresses `[P1-data]` — **PROMOTED 2026-04-23 → BL-PROFILE-001**
+
+> **Status: PROMOTED** to `.claude/agents/knowledge/business-logic.md` as BL-PROFILE-001 under new **Domain 14: Profile & Member Data (BL-PROFILE)**. Current implementation violates the invariant (see `reports/bugs/open/BUG-updateMemberAddresses-Single-Append-Dedup-Miss.md`). The BL represents intended behavior; tests GQL-056 and B2C-SHIP-014 assert it and currently FAIL — correctly catching the code defect.
+
 
 - **Rule:** When `updateMemberAddresses` (xProfile GraphQL mutation) is called with an address object whose key fields (`line1` + `city` + `countryCode` + `postalCode` + `regionId` + `addressType`) exactly match an already-saved address on the same member, the duplicate address MUST be silently skipped — no new record inserted, no error raised in `errors[]`, and the total address count for the member MUST remain unchanged. The mutation returns success.
 - **Verify:**

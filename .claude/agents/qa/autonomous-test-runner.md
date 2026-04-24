@@ -50,7 +50,9 @@ For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` o
      content: "▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title>"
      summary: "Suite {{SUITE_ID}}: running test N/TOTAL"
    ```
-2. **Preconditions**: unmet → `BLOCKED`.
+2. **Preconditions**: Read the `Preconditions` column.
+   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED`.
+   - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals** + common signals.
 4. **Execute Steps** by tag. Inline `[ASSERT]` = immediate-fail checkpoint.
 5. **Evaluate Assertions** — BL-* violation = FAIL even if DOM passed.

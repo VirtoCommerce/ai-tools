@@ -1657,5 +1657,82 @@
     "line2": "Level 40",
     "isDefault": true,
     "notes": "VCST-4710 seed — default org address (isDefault=true). Primary UK/ENG fixture for GB country-facet tests."
+  },
+  "ADDR_SINGLE_CHAR_TERM": {
+    "_inline": true,
+    "value": "N",
+    "notes": "VCST-4710 SA-010 BVA lower-boundary search term for address-popup search field. Single character. Expected to match any address containing 'N' (most addresses)."
+  },
+  "ADDR_NO_MATCH_TERM": {
+    "_inline": true,
+    "value": "xyzzy-no-match-99999",
+    "notes": "VCST-4710 SA-009 EP empty-results search term for address-popup search field. Guaranteed not to match any seeded address; drives the no-results empty state."
+  },
+  "USER2": {
+    "_inline": true,
+    "email_env": "USER2_EMAIL",
+    "password_env": "USER2_PASSWORD",
+    "name": "Personal test account (no org membership)",
+    "type": "personal",
+    "org_id": null,
+    "notes": "Credentials resolved at runtime from .env USER2_EMAIL / USER2_PASSWORD — per feedback_agents_read_env_creds, passwords are NEVER stored inline. Live-verified 2026-04-24: address popup shows 2 facets (Country+City), 5-column table (Recipient name/Address/Phone/Email/Active), 1 address (Albania, null regionId). Used for personal-account popup schema tests (SA-024/025/026/029 in suite 081)."
+  },
+  "ORG_USER_DEFAULT": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-015"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
+    },
+    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / Password1!) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
+  },
+  "ORG_XSS": {
+    "file": "security/xss-payloads",
+    "filter": {
+      "payload_id": "XSS-003"
+    },
+    "fields": {
+      "payload": "payload",
+      "description": "name"
+    },
+    "notes": "Golden Rule DV-017 fixture — XSS payload for organization-name validation tests (GQL-030). Keeps the literal '<script>alert(1)</script>Org' out of CSV cells."
+  },
+  "PHONE_XSS_HTML": {
+    "file": "security/xss-payloads",
+    "filter": {
+      "payload_id": "XSS-004"
+    },
+    "fields": {
+      "payload": "payload",
+      "description": "name"
+    },
+    "notes": "HTML-injection payload for phone-field validation (GQL-031). NoHtmlTags validator should reject."
+  },
+  "PHONE_OVERSIZED": {
+    "file": "security/xss-payloads",
+    "filter": {
+      "payload_id": "XSS-005"
+    },
+    "fields": {
+      "payload": "payload",
+      "description": "name"
+    },
+    "notes": "65-char string exceeding MaxLength(64) on Contact.phones — boundary fixture for GQL-031."
+  },
+  "ADDR_LINE1_XSS": {
+    "file": "security/xss-payloads",
+    "filter": {
+      "payload_id": "XSS-007"
+    },
+    "fields": {
+      "payload": "payload",
+      "description": "name"
+    },
+    "notes": "HTML-injection payload for address line1 validation (GQL-032)."
   }
 }

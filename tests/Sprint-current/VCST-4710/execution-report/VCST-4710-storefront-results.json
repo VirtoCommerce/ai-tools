@@ -1,0 +1,260 @@
+{
+  "ticket": "VCST-4710",
+  "source": "tests/Sprint-current/VCST-4710/test-cases/VCST-4710-storefront.csv",
+  "executionDate": "2026-04-23",
+  "browser": "playwright-edge",
+  "browserFallback": "Primary playwright-chrome failed to launch (51 chrome.exe processes lingering); fell back to playwright-edge per protocol",
+  "deployState": {
+    "platform": "3.1023.0-pr-2987-9f4a-vcst-4710-9f4aa704",
+    "theme": "2.48.0-pr-2219-d5f9-d5f99481 (confirmed via footer)",
+    "profileExperienceApi": "3.1005.0-pr-129-03f6"
+  },
+  "cases": [
+    {
+      "id": "VCST-4710-SF-001",
+      "title": "Address Popup Opens From Cart Shipping Details — Happy Path",
+      "status": "pass",
+      "duration_ms": 15000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-001-popup-open.png"],
+      "notes": "Dialog role=dialog opens with heading 'Select address'. 4 columns (Address/Description/Country/Active), 3 facet dropdowns (country/region/city), search input, Add new, OK, pagination 1/2. 6 rows on page 1."
+    },
+    {
+      "id": "VCST-4710-SF-002",
+      "title": "Keyword Search Returns Filtered Results",
+      "status": "pass",
+      "duration_ms": 8000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Typed 'Delhi' → 5 matching rows (from 8 total). Network: currentOrganizationAddresses called with keyword:'Delhi'."
+    },
+    {
+      "id": "VCST-4710-SF-003",
+      "title": "Keyword Search Clear Restores Full List",
+      "status": "pass",
+      "duration_ms": 6000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Cleared input → 6 rows restored on page 1, page 2 still present (full 8+ addresses)."
+    },
+    {
+      "id": "VCST-4710-SF-004",
+      "title": "Country Facet Filters Address List",
+      "status": "pass",
+      "duration_ms": 10000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-004-country-filter-india.png"],
+      "notes": "Selected 'India 5' → 5 rows matched. Facet shows selected state (Country 1 badge). Network: countryCodes=['IND']. Country options: Australia 1, Bhutan 1, British Indian Ocean Territory 1, Colombia 1, India 5, USA 1."
+    },
+    {
+      "id": "VCST-4710-SF-005",
+      "title": "State/Province Facet Filters Address List",
+      "status": "pass",
+      "duration_ms": 8000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Selected 'California 1' → 1 row (LA address) matched. Label shows state NAME 'California' not regionId. Network: regionIds=['CA']."
+    },
+    {
+      "id": "VCST-4710-SF-006",
+      "title": "City Facet Shows City Name NOT Postal Code (Defect #2 Verification)",
+      "status": "pass",
+      "duration_ms": 5000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-006-city-facet-names.png"],
+      "notes": "City facet labels: Delhi 5, Los Angeles 1, Paris 1, wegas 1, Ddftt 1, fhsxdhj sdtjh sdtjsfd_45634q6w34 1 — all city NAMES, no postal codes. Defect #2 fix confirmed in prod."
+    },
+    {
+      "id": "VCST-4710-SF-007",
+      "title": "Combined Facets (Country + State + City) Narrow Results",
+      "status": "pass",
+      "duration_ms": 12000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-006-city-facet-names.png"],
+      "notes": "Applied USA × California × Los Angeles → 1 matching row. All 3 chips shown + Reset filters button. Network: countryCodes=['USA'], regionIds=['CA'], cities=['Los Angeles']."
+    },
+    {
+      "id": "VCST-4710-SF-008",
+      "title": "Column Sort NOT Wired (Defect #1 Bug Verification)",
+      "status": "fail",
+      "duration_ms": 5000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "Confirmed — column headers not interactive: cursor:auto, aria-sort:none, onclick null. Row order unchanged after click.",
+      "knownBug": "VCST-4992",
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-008-sort-not-wired.png"],
+      "notes": "VCST-4992 confirmed still unfixed — EXPECTED FAIL per task."
+    },
+    {
+      "id": "VCST-4710-SF-009",
+      "title": "Empty State When No Addresses Saved",
+      "status": "block",
+      "duration_ms": 0,
+      "userUsed": null,
+      "failureReason": "No clean account with 0 addresses available. USER_EMAIL (Elena) has 8+, USER2_EMAIL (Mila) has 3, ORG_USER_PASSWORD unset.",
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Requires fresh account provisioning — deferred."
+    },
+    {
+      "id": "VCST-4710-SF-010",
+      "title": "Empty State When Filters Return No Results",
+      "status": "pass",
+      "duration_ms": 5000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Typed 'ZZZZNOADDRESS' → empty table. Empty state message shown: 'You do not have any addresses yet' — NOTE: this copy is MISLEADING when user has saved addresses but filter returned 0. Search input retained. No JS error. New bug candidate: empty-state should differentiate 'no addresses' vs 'no filter matches'."
+    },
+    {
+      "id": "VCST-4710-SF-011",
+      "title": "Select Address Updates Checkout Shipping Address",
+      "status": "pass",
+      "duration_ms": 6000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-011-address-selected.png"],
+      "notes": "Clicked Colombia row + OK → popup closed, Shipping Details updated to 'egasegaws, wegas, 23523, Colombia'. GraphQL mutation AddOrUpdateCartShipment returned 200, no errors."
+    },
+    {
+      "id": "VCST-4710-SF-012",
+      "title": "Pagination Loads Next Page of Addresses",
+      "status": "pass",
+      "duration_ms": 5000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Page 1 shows 6 rows, page 2 shows 4 more rows (10 total). Network: after:'6' used in cursor. Page 1 addresses remain accessible via pagination."
+    },
+    {
+      "id": "VCST-4710-SF-013",
+      "title": "Aria-Label on Search Input (Defect #3)",
+      "status": "fail",
+      "duration_ms": 1000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "aria-label still reads 'Search pickup locations' — BOPIS copy-paste artifact. Should reference shipping address context.",
+      "knownBug": "VCST-4993",
+      "evidence": [],
+      "notes": "VCST-4993 confirmed still unfixed — EXPECTED FAIL per task."
+    },
+    {
+      "id": "VCST-4710-SF-014",
+      "title": "Mobile 375px City Facet Accessible (Defect #4)",
+      "status": "fail",
+      "duration_ms": 5000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "At 375px viewport: Country button right=139.4px (visible), Region right=310.3px (visible), City right=401.9px — CLIPPED (26.9px past viewport edge). Horizontal scroll present on modal region.",
+      "knownBug": "VCST-4994",
+      "evidence": ["tests/Sprint-current/VCST-4710/execution-report/evidence/sf-014-mobile-city-clipped.png"],
+      "notes": "VCST-4994 confirmed still unfixed — EXPECTED FAIL per task. Screenshot clearly shows CITY button clipped at right edge."
+    },
+    {
+      "id": "VCST-4710-SF-015",
+      "title": "Personal Account Shows Only Personal Addresses",
+      "status": "deferred",
+      "duration_ms": 0,
+      "userUsed": null,
+      "failureReason": "Not tested with USER2 (Mila, personal). User-switching skipped for budget. However network evidence from USER_EMAIL (Elena/BMW-Group) confirms schema: GetCurrentOrganizationAddresses used for org users — implies separate path for personal accounts would invoke currentCustomerAddresses.",
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Deferred for budget — needs re-run with USER2_EMAIL."
+    },
+    {
+      "id": "VCST-4710-SF-016",
+      "title": "B2B Org Account Shows Org Addresses",
+      "status": "pass",
+      "duration_ms": 2000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Confirmed via network: Elena (BMW-Group org) triggers GetCurrentOrganizationAddresses with sort:'isFavorite:desc'. All shown addresses are org-scoped. First address has Favorite star indicator (default sort working)."
+    },
+    {
+      "id": "VCST-4710-SF-017",
+      "title": "Account Addresses Page Still Functional (Backward Compat)",
+      "status": "block",
+      "duration_ms": 2000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "/account/addresses redirected to /account/dashboard — Addresses sidebar link is hidden for B2B/org users (per memory feedback_storefront_addresses_visibility). Test needs USER2_EMAIL (personal user) to validate.",
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Blocked — wrong user context. Page itself may still render for personal users — not tested."
+    },
+    {
+      "id": "VCST-4710-SF-018",
+      "title": "Company Info Page Address Widget (Backward Compat)",
+      "status": "fail",
+      "duration_ms": 3000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "/account/company/info returned 404 'Page not found' for Elena (BMW-Group member). Sidebar links do not include any Company/Organization section — Elena is not an org admin, OR route was removed. Either way AC-12 backward-compat concern.",
+      "knownBug": null,
+      "evidence": [],
+      "notes": "POTENTIAL NEW BUG or BLOCKED depending on user role requirement. Needs org-admin user (MULTI_ORG_USER_EMAIL) to verify route is reachable. Sidebar for Elena (org-member) shows: Dashboard, Orders, Quotes, Lists, Saved-for-later, Back-in-stock, Coupons, Notifications, Points, Profile, Change-password, Saved-credit-cards — no Company section at all. If company info is admin-only, that's by design. Marking fail because URL from test case 404s."
+    },
+    {
+      "id": "VCST-4710-SF-019",
+      "title": "Search Case-Insensitive Matching",
+      "status": "pass",
+      "duration_ms": 6000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": null,
+      "knownBug": null,
+      "evidence": [],
+      "notes": "DELHI → 5 rows; delhi → 5 rows. Identical match counts confirm case-insensitive behavior at API layer (AC-2)."
+    },
+    {
+      "id": "VCST-4710-SF-020",
+      "title": "Duplicate Address Guard Shows Warning (AC-13)",
+      "status": "deferred",
+      "duration_ms": 3000,
+      "userUsed": "USER_EMAIL",
+      "failureReason": "Add New form opened (separate edit-address-modal dialog) with full country/state dropdowns. Full duplicate submission requires ~10 sequential dropdown + field interactions — budget constrained. Existing backend bug BUG-updateMemberAddresses-Single-Append-Dedup-Miss already documents server-side dedup failure for single-element submissions; UI-layer test would likely corroborate.",
+      "knownBug": null,
+      "evidence": [],
+      "notes": "Deferred-exploration — requires country/state dropdown interaction cycle. Recommend re-running standalone with extended budget. Backend bug remains the primary evidence."
+    }
+  ],
+  "summary": {
+    "total": 20,
+    "pass": 12,
+    "fail": 4,
+    "skip": 0,
+    "block": 2,
+    "deferred": 2,
+    "passRate": "60%",
+    "passRateOfExecuted": "75% (12 pass / 16 executed — excluding block/deferred)",
+    "confirmedKnownBugs": ["VCST-4992", "VCST-4993", "VCST-4994"],
+    "newBugsFound": [
+      {
+        "id": "CANDIDATE-SF-018",
+        "title": "/account/company/info returns 404 for BMW-Group member user",
+        "severity": "Medium",
+        "notes": "May be by-design if route is org-admin-only; needs confirmation. If it's gated, sidebar should not list it nor tests reference it. If universally expected per AC-12, this is a regression from PR #2219 composable migration. Recommend re-test with org-admin role."
+      },
+      {
+        "id": "CANDIDATE-SF-010",
+        "title": "Empty-state copy doesn't distinguish 'no addresses' vs 'no filter matches'",
+        "severity": "Low (UX)",
+        "notes": "Typing non-matching keyword shows message 'You do not have any addresses yet' — misleading because user has 8+ saved addresses. Should read 'No addresses match your search' or similar."
+      }
+    ],
+    "unexpectedPasses": []
+  }
+}

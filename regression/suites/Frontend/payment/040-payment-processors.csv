@@ -1,5 +1,8 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"PAY-AN-001","Authorize.Net - Complete Payment Flow","Authorize.Net","High","BL-PAY-003","ECL-14.6, ECL-9.1","- Logged in as registered user
+"PAY-AN-001","Authorize.Net - Complete Payment Flow","Authorize.Net","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Authorize.Net payment processor configured and active
 - Authorize.Net test credentials set in environment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart
@@ -17,7 +20,9 @@
 [STATE] Order confirmation displays order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Authorize.Net payment method recorded
 [NETWORK] Payment request sent to Authorize.Net endpoint; no raw card data in storefront API requests","No redirect to /checkout/payment after clicking Place Order from cart; payment form does not load; order confirmation not reached; mutation returns errors[]","Cancel order via admin","google-analytics","Manual"
-"PAY-AN-002","Authorize.Net - Invalid Card Number Validation","Authorize.Net","High","BL-PAY-003","ECL-9.1","- Logged in as registered user
+"PAY-AN-002","Authorize.Net - Invalid Card Number Validation","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment (reached by clicking Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
 [WAIT] Wait for payment form to load
@@ -29,7 +34,9 @@
 [STATE] Payment submission blocked for Luhn-failing card number
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired or mutation returns errors[]
 [CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; form submits and reaches payment processor with known-bad card; user navigated away from /checkout/payment unexpectedly","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-AN-003","Authorize.Net - Empty Fields Validation","Authorize.Net","High","BL-PAY-003","ECL-9.1","- Logged in as registered user
+"PAY-AN-003","Authorize.Net - Empty Fields Validation","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach {{FRONT_URL}}/checkout/payment
 [WAIT] Wait for Authorize.Net payment form to fully load
@@ -40,7 +47,9 @@
 [STATE] Form submission blocked until all fields are valid
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors","Single generic error shown instead of per-field errors; form submits with empty fields; only some fields validated on empty submit","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-AN-004","Authorize.Net - Transaction ID on Order Confirmation","Authorize.Net","Medium","BL-PAY-003","ECL-14.6","- Logged in as registered user
+"PAY-AN-004","Authorize.Net - Transaction ID on Order Confirmation","Authorize.Net","Medium","BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Authorize.Net payment processor configured with test credentials","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; complete Authorize.Net payment form on {{FRONT_URL}}/checkout/payment
 [ACT] Fill payment form with {{TEST_CARD_NUMBER}}, {{TEST_CARD_EXP}}, {{TEST_CARD_CVV}}; submit payment
@@ -51,7 +60,9 @@
 [DOM] Order confirmation shows order number
 [DOM] Order details page or confirmation shows transaction ID / payment reference","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order in admin shows Authorize.Net transaction ID in payment details","No transaction ID visible on confirmation or order details; order confirmation page not reached; order absent from account history","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-AN-005","Authorize.Net - Order Visible in Admin with Payment Details","Authorize.Net","High","BL-PAY-003","ECL-14.6","- Authorize.Net payment completed (PAY-AN-001 passed or equivalent)
+"PAY-AN-005","Authorize.Net - Order Visible in Admin with Payment Details","Authorize.Net","High","BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Authorize.Net payment completed (PAY-AN-001 passed or equivalent)
 - Admin login credentials available","FRONT_URL={{FRONT_URL}}, ADMIN_URL={{ADMIN_URL}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Complete Authorize.Net payment flow (navigate to {{FRONT_URL}}/cart, place order, complete payment at /checkout/payment); note the order number from confirmation
 [NAV] Open {{ADMIN_URL}} in a separate browser context; log in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
 [NAV] Navigate to Orders section; search for the order by order number
@@ -64,7 +75,9 @@
 [DOM] Transaction ID field populated in payment details
 [MATH] Order total in admin equals storefront cart total","[API] createOrderFromCart GraphQL mutation errors[] was empty at time of order creation
 [ADMIN] Order status reflects successful payment authorization","Order not found in admin; payment method label missing or incorrect; transaction ID absent; total mismatch between storefront and admin","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-DT-001","Datatrans - Complete Payment Flow","Datatrans","High","BL-PAY-003","ECL-14.6, ECL-9.1","- Logged in as registered user
+"PAY-DT-001","Datatrans - Complete Payment Flow","Datatrans","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Datatrans payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
 [ACT] Click 'Place Order' from cart page — this redirects to Datatrans payment flow at {{FRONT_URL}}/checkout/payment
@@ -78,7 +91,9 @@
 [DOM] Order confirmation shows order number and summary","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Datatrans payment method
 [NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","google-analytics","Manual"
-"PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-14.6","- Logged in as registered user
+"PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Datatrans configured
 - OTP value available from DATATRANCE_OTP environment variable","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
@@ -95,7 +110,8 @@
 [NAV] After valid OTP submission user returns to storefront confirmation page
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-1.2","- Logged in as registered user
+"PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Logged in as registered user
 - Cart has at least one item
 - Datatrans OTP prompt currently displayed (preceded by card entry step)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[KEY] This test begins at the Datatrans OTP prompt — reach this state by completing card entry in Datatrans form (see PAY-DT-002 for navigation)
 [ACT] At OTP input: fill OTP field with '000000' (intentionally incorrect)
@@ -111,7 +127,9 @@
 [NAV] Correct OTP leads to successful return to storefront
 [STATE] Only one order created — no duplicate from the failed first OTP attempt","[API] createOrderFromCart GraphQL mutation errors[] is empty on final successful submission
 [ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","BL-PAY-003","ECL-9.1","- Logged in as registered user
+"PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Datatrans payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Datatrans form at {{FRONT_URL}}/checkout/payment
 [ACT] Fill card number field with a value that fails Luhn check (e.g., a sequential number that is clearly invalid)
@@ -122,7 +140,9 @@
 [STATE] Datatrans form blocks progression with invalid card
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-PAY-003","ECL-14.6, ECL-9.1","- Logged in as registered user
+"PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Datatrans configured
 - OTP from DATATRANCE_OTP available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
@@ -139,7 +159,9 @@
 [MATH] Totals on confirmation match original cart totals
 [NAV] Order visible in account order history","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order in admin with correct total and Datatrans payment method","No automatic redirect — user stranded on Datatrans page; order confirmation page missing order number; cart contents not reflected on confirmation; order absent from account history","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-SKY-001","Skyflow - Complete Payment Flow","Skyflow","High","BL-PAY-003","ECL-14.6, ECL-9.1","- Logged in as registered user
+"PAY-SKY-001","Skyflow - Complete Payment Flow","Skyflow","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment processor configured
 - Skyflow VISA test card credentials in environment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Skyflow payment method if not pre-selected
@@ -154,7 +176,9 @@
 [STATE] Card data tokenized by Skyflow — not transmitted as raw PAN","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [NETWORK] Raw VISA card number absent from all network payloads (tokenized by Skyflow)
 [ADMIN] Order in admin with Skyflow payment method and tokenized card reference","No redirect to /checkout/payment after Place Order; Skyflow form does not load; payment tokenization fails; order confirmation not reached","Cancel order via admin","config.js","Manual"
-"PAY-SKY-002","Skyflow - Mastercard Payment","Skyflow","High","BL-PAY-003","ECL-14.6, ECL-9.1","- Logged in as registered user
+"PAY-SKY-002","Skyflow - Mastercard Payment","Skyflow","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow configured
 - Mastercard test card available in SKYFLOW_MASTERCARD env var
@@ -171,7 +195,9 @@
 [ADMIN] Order in admin records Mastercard as payment instrument","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [NETWORK] Raw Mastercard PAN absent from all network request payloads
 [ADMIN] Skyflow token (not raw PAN) stored as payment reference in order","Mastercard not detected as card type; VISA icon shown for Mastercard number; payment rejected for valid MC test card; raw card number visible in network request","Cancel order via admin","Coverage Gap Analysis","Manual"
-"PAY-SKY-003","Skyflow - Invalid Card Number Validation","Skyflow","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-SKY-003","Skyflow - Invalid Card Number Validation","Skyflow","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
 [ACT] Fill 'Card Number' iframe field with '@td(CYBERSOURCE_INVALID.number)' (fails Luhn check)
@@ -184,7 +210,9 @@
 [STATE] Payment submission blocked for invalid card
 [DOM] Validation error clears when valid card number entered","[API] No createOrderFromCart GraphQL mutation fired while card is invalid
 [CONSOLE] No unhandled JS errors from Skyflow iframe","Invalid card accepted silently; validation error does not appear after tab-out; error shown but form still submittable","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-SKY-004","Skyflow - Empty Fields Validation","Skyflow","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-SKY-004","Skyflow - Empty Fields Validation","Skyflow","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
 [ACT] Leave all Skyflow payment fields ('Card Number', 'Expiry Date', 'CVV') empty
@@ -196,7 +224,9 @@
 [STATE] Form submission blocked until all required fields filled
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors from Skyflow SDK","Single generic error instead of per-field errors; some fields not validated on empty submit; form submits with empty fields","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-SKY-005","Skyflow - Real-time Card Type Detection","Skyflow","Medium","BL-PAY-001","ECL-14.6","- Logged in as registered user
+"PAY-SKY-005","Skyflow - Real-time Card Type Detection","Skyflow","Medium","BL-PAY-001","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment form loaded at {{FRONT_URL}}/checkout/payment","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Skyflow form at {{FRONT_URL}}/checkout/payment
 [ACT] Click into 'Card Number' field; type '4' (Visa BIN prefix)
@@ -208,7 +238,9 @@
 [ASSERT] Detection is responsive — updates after each relevant BIN digit","[DOM] Card type icon area updates in real-time based on BIN prefix entered
 [STATE] Correct card brand icon highlighted (Visa for '4' prefix, MC for '51-55' prefix)
 [STATE] Other card type icons visually de-emphasized when a type is detected","[CONSOLE] No JS errors from Skyflow card detection logic","No card type icon shown after BIN entry; wrong card brand detected; icon updates only after full card number entered (not real-time)","none — no order placed","Coverage Gap Analysis","Manual"
-"PAY-SAVED-001","Saved Card - Returning User Pays Without Re-entering Card Details","Saved Cards","High","BL-PAY-003, BL-PAY-001","ECL-14.6","- Logged in as registered user who has previously completed a successful CyberSource payment
+"PAY-SAVED-001","Saved Card - Returning User Pays Without Re-entering Card Details","Saved Cards","High","BL-PAY-003, BL-PAY-001","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user who has previously completed a successful CyberSource payment
 - A saved/tokenized card exists in the user's account (from prior payment)
 - Cart has at least one item
 - CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{RETURNING_USER_EMAIL}}, USER_PASSWORD={{RETURNING_USER_PASSWORD}}","[NAV] Log in as {{RETURNING_USER_EMAIL}} / {{RETURNING_USER_PASSWORD}} — a user with a previously saved card
@@ -227,7 +259,9 @@
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Network request uses stored token — raw card PAN (@td(CYBERSOURCE_VISA.number)) absent from all payloads
 [ADMIN] Order in admin shows payment method as stored card / tokenized reference","Saved card not shown after prior successful payment; user forced to re-enter full card details; raw card number visible in network payload for saved-card payment; order fails when using saved card but succeeds when entering card manually","Cancel order via admin if created","Checklist #9 item 12; ECL-14.6; BL-PAY-003; BL-PAY-001","Manual"
-"PAY-SWITCH-001","Payment Method Switch - Form Resets When Switching Processors","Payment Method Switching","Medium","BL-PAY-004","ECL-7.1","- Logged in as registered user
+"PAY-SWITCH-001","Payment Method Switch - Form Resets When Switching Processors","Payment Method Switching","Medium","BL-PAY-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - At least two payment processors enabled (e.g., CyberSource and another method such as Skyflow or manual/PO)
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; confirm at least two payment method options are visible
@@ -244,7 +278,9 @@
 [STATE] No stale card data persisted in any input field after payment method switch
 [STATE] The alternative payment method form renders correctly when its option is selected","[CONSOLE] No JS errors from CyberSource Flex Microform during form reset and re-initialization
 [NETWORK] No payment tokenization request fired when switching payment methods (only on Place Order)","Previously entered card data still present in iframe fields after switching away (data leak); switching causes JS error breaking payment form; switching back to CyberSource shows empty form but Place Order fires with stale token","none — no order created","ECL-7.1; BL-PAY-004","Manual"
-"PAY-MANUAL-001","Manual Payment - Purchase Order Placed with Pending Payment Status","Manual Payments","Medium","BL-PAY-003","","- Logged in as registered B2B user (organization member with PO payment permission)
+"PAY-MANUAL-001","Manual Payment - Purchase Order Placed with Pending Payment Status","Manual Payments","Medium","BL-PAY-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered B2B user (organization member with PO payment permission)
 - Cart has at least one item
 - 'Purchase Order' or 'Wire Transfer' (manual/offline) payment method enabled in store settings
 - Admin access available to verify order status","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{B2B_USER_EMAIL}}, USER_PASSWORD={{B2B_USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, PO_NUMBER=PO-TEST-{{TIMESTAMP}}","[NAV] Log in as {{B2B_USER_EMAIL}} / {{B2B_USER_PASSWORD}}; add at least one item to cart
@@ -264,7 +300,9 @@
 [DOM] Order confirmation indicates pending/offline payment status — not shown as 'Paid'
 [ADMIN] Order in admin with payment status 'Pending' or 'New' (not 'Paid')","[API] createOrderFromCart GraphQL mutation errors[] is empty for manual payment flow
 [ADMIN] Order payment method recorded as Purchase Order / Wire Transfer in admin order details","Manual payment option not shown to B2B user; form incorrectly shows card input fields for manual payment; order placed but shows 'Paid' status immediately (BL-PAY-003 violation); order not visible in admin after placement","Cancel order via admin","Checklist #9 item 11; BL-PAY-003","Manual"
-"PAY-SKTOK-001","Skyflow Tokenization - Raw Card PAN Absent from All Network Requests","Skyflow > Tokenization","Medium","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+"PAY-SKTOK-001","Skyflow Tokenization - Raw Card PAN Absent from All Network Requests","Skyflow > Tokenization","Medium","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - Skyflow payment processor configured
 - Browser DevTools Network tab open and recording ALL requests (including XHR/Fetch)
@@ -282,7 +320,9 @@
 [NETWORK] Skyflow token (UUID or alphanumeric) present in the request sent to Virto Commerce backend instead of raw PAN
 [NAV] Order confirmation reached — tokenization did not block payment flow","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order in admin shows Skyflow token or masked card reference — not raw PAN","Raw card number '@td(CYBERSOURCE_VISA.number)' found in any network request payload (BL-PAY-001 / BL-PAY-002 violation); Skyflow token not present in backend request; tokenization request fails causing order to not complete; token format is full PAN rather than opaque reference","Cancel order via admin","Checklist #9 item 10; ECL-9.1; BL-PAY-001; BL-PAY-002","Manual"
-"PAY-DECLINE-008","After Decline User Can Switch Payment Method Entirely","Payment > Decline > Method Switch","High","BL-CHK-004","ECL-1.1","User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
+"PAY-DECLINE-008","After Decline User Can Switch Payment Method Entirely","Payment > Decline > Method Switch","High","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to payment step
@@ -299,7 +339,9 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [STATE] checkout state preserved during method switch","[API] new payment method used in final order creation
 [CONSOLE] no JS errors during method switch
 [NETWORK] no 5xx","payment method selector locked after decline; cannot switch methods; previous method form persists; checkout state lost during switch","Cancel test order via admin","Coverage Gap Analysis","Manual"
-"PAY-SKY-006","Skyflow Payment Form Renders on Checkout Payment Page","Payment > Skyflow > Form Render","Critical","BL-PAY-004","ECL-1.1","User logged in; items in cart; Skyflow payment processor configured; checkout completed to payment step","url={{FRONT_URL}}
+"PAY-SKY-006","Skyflow Payment Form Renders on Checkout Payment Page","Payment > Skyflow > Form Render","Critical","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; items in cart; Skyflow payment processor configured; checkout completed to payment step","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 [ACT] complete checkout steps (address + shipping)
@@ -315,7 +357,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 [DOM] submit button visible and enabled","[NETWORK] Skyflow SDK/iframe loaded successfully
 [CONSOLE] no JS errors on payment page load
 [NETWORK] no 4xx/5xx on page load","Skyflow form does not render; blank payment page; missing fields; JS error prevents form load; wrong payment page URL","None - no order placed","Coverage Gap Analysis","Manual"
-"PAY-SKY-007","Skyflow Invalid Card Number Rejected With Error","Payment > Skyflow > Validation","High","BL-PAY-004","ECL-1.1","Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
+"PAY-SKY-007","Skyflow Invalid Card Number Rejected With Error","Payment > Skyflow > Validation","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout/payment
 [ACT] enter invalid card number (e.g., @td(CYBERSOURCE_INVALID.number))
@@ -329,7 +373,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout
 [DOM] card number field editable after error","[NETWORK] no successful payment transaction
 [CONSOLE] no unhandled JS errors
 [NETWORK] no 5xx","invalid card accepted; no error message; order created with invalid card; form crashes on validation; generic error without card-specific message","None","Coverage Gap Analysis","Manual"
-"PAY-SKY-008","Skyflow Empty Required Fields Blocked","Payment > Skyflow > Empty Fields","High","BL-PAY-004","ECL-1.1","Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
+"PAY-SKY-008","Skyflow Empty Required Fields Blocked","Payment > Skyflow > Empty Fields","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Skyflow payment form rendered on /checkout/payment","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout/payment
 [ACT] leave all payment fields empty (card number + expiry + CVV)
@@ -341,7 +387,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to Skyflow payment form at /checkout
 [DOM] no loading/processing state triggered","[NETWORK] no payment request sent with empty fields
 [CONSOLE] no JS errors
 [NETWORK] no outbound payment API call","form submits with empty fields; no validation errors shown; payment request sent with empty data; single generic error instead of field-level errors","None","Coverage Gap Analysis","Manual"
-"PAY-SKY-009","Skyflow Successful Payment Redirects to Confirmation","Payment > Skyflow > Success Flow","Critical","BL-CHK-004","ECL-1.1","Skyflow payment form rendered on /checkout/payment; valid test card available","url={{FRONT_URL}}
+"PAY-SKY-009","Skyflow Successful Payment Redirects to Confirmation","Payment > Skyflow > Success Flow","Critical","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Skyflow payment form rendered on /checkout/payment; valid test card available","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 skyflow_card={{SKYFLOW_VISA}}
@@ -359,7 +407,9 @@ skyflow_cvv={{SKYFLOW_CVV}}","[NAV] navigate to Skyflow payment form at /checkou
 [STATE] order created successfully with Skyflow payment","[API] createOrderFromCart mutation succeeds
 [CONSOLE] no JS errors during payment flow
 [NETWORK] no 5xx; successful payment response","stuck on payment page; redirect fails; order not created; payment processed but no confirmation; blank confirmation page","Cancel test order via admin","Coverage Gap Analysis","Manual"
-"PAY-AN-006","Authorize.Net Form Renders on Checkout Payment Page","Payment > Authorize.Net > Form Render","Critical","BL-PAY-004","ECL-1.1","User logged in; items in cart; Authorize.Net payment processor configured","url={{FRONT_URL}}
+"PAY-AN-006","Authorize.Net Form Renders on Checkout Payment Page","Payment > Authorize.Net > Form Render","Critical","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; items in cart; Authorize.Net payment processor configured","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 [ACT] complete checkout steps (address + shipping)
@@ -374,7 +424,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 [DOM] submit button visible and enabled","[NETWORK] Authorize.Net SDK/form loaded
 [CONSOLE] no JS errors on payment page
 [NETWORK] no 4xx/5xx on page load","form does not render; blank payment page; missing fields; wrong payment processor form shown","None","Coverage Gap Analysis","Manual"
-"PAY-AN-007","Authorize.Net Invalid Card Rejected With Error","Payment > Authorize.Net > Validation","High","BL-PAY-004","ECL-1.1","Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
+"PAY-AN-007","Authorize.Net Invalid Card Rejected With Error","Payment > Authorize.Net > Validation","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
 [ACT] enter invalid card number (e.g., 0000000000000000)
@@ -388,7 +440,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /ch
 [DOM] form fields editable after error","[NETWORK] no successful payment transaction
 [CONSOLE] no unhandled JS errors
 [NETWORK] no 5xx","invalid card accepted; no error; order created; form crashes","None","Coverage Gap Analysis","Manual"
-"PAY-AN-008","Authorize.Net Empty Required Fields Blocked","Payment > Authorize.Net > Empty Fields","High","BL-PAY-004","ECL-1.1","Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
+"PAY-AN-008","Authorize.Net Empty Required Fields Blocked","Payment > Authorize.Net > Empty Fields","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net payment form rendered on /checkout/payment","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
 [ACT] leave all payment fields empty
@@ -400,7 +454,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /ch
 [DOM] no loading state triggered","[NETWORK] no payment API call with empty data
 [CONSOLE] no JS errors
 [NETWORK] no outbound POST","form submits with empty fields; no validation; payment attempted with empty data","None","Coverage Gap Analysis","Manual"
-"PAY-AN-009","Authorize.Net Successful Payment Redirects to Confirmation","Payment > Authorize.Net > Success Flow","Critical","BL-CHK-004","ECL-1.1","Authorize.Net form rendered; valid test card available","url={{FRONT_URL}}
+"PAY-AN-009","Authorize.Net Successful Payment Redirects to Confirmation","Payment > Authorize.Net > Success Flow","Critical","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net form rendered; valid test card available","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 authnet_card={{AUTHORIZNET_CARD}}

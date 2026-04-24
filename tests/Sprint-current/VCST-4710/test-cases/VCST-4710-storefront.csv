@@ -221,3 +221,118 @@ VCST-4710-SF-020,"Address Popup — Duplicate Address Guard Shows Warning (AC-13
 [STATE] duplicate address is NOT saved silently — user is informed","[API] checkDuplicateAddress query called before save; isDuplicated = true; errors[] is empty
 [CONSOLE] no JS errors on duplicate check
 [NETWORK] no 4xx/5xx","duplicate address saved without any warning; checkDuplicateAddress not called; generic error shown instead of duplicate-specific message; OQ-8 blocks this case","Close popup or discard duplicate address","Source: VCST-4710 / ba-report-2026-04-23; AC-13","Manual"
+VCST-4710-SF-021,"Journey: Create 6 Addresses via Self-Service + Verify in Cart Popup","Checkout > Shipping > Journey > Address Self-Service",Critical,"BL-PROFILE-001, BL-B2B-001","ECL-5.1, ECL-3.1, ECL-3.2, ECL-14.1","User logged in as {{USER2_EMAIL}} (personal non-org account). Note address count N at test start — use N+6 in all count assertions. If existing addresses cannot be cleared prior to run, assertions reference N+6 not literal 6. Cart has at least 1 item (add during test). {{TEST_SKU}} available and in stock.","url={{FRONT_URL}}, user2_email={{USER2_EMAIL}}, user2_password={{USER2_PASSWORD}}, sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}
+[WAIT] storefront home page loaded
+[ACT] sign in as {{USER2_EMAIL}} / {{USER2_PASSWORD}}
+[WAIT] authenticated — user name visible in header
+[NAV] {{FRONT_URL}}/account/addresses
+[WAIT] addresses page loaded; note totalCount = N (record value for later assertions)
+[ACT] click 'Add new address' button
+[WAIT] add address form or modal opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '47 Elm St'; fill 'City': 'Portland'; fill 'State/Region': 'OR'; fill 'Postal Code': '97201'; select 'Country': 'United States' (countryCode USA)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[ACT] click 'Add new address' button
+[WAIT] add address form opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '1200 Pike St'; fill 'City': 'Seattle'; fill 'State/Region': 'WA'; fill 'Postal Code': '9820' (intentional 4-digit fat-finger)
+[ACT] click 'Create' or 'Save' button
+[WAIT] observe validation response
+[ASSERT] validation error visible on Postal Code field (invalid format for USA)
+[ACT] correct Postal Code field to '98201'
+[ACT] select 'Country': 'United States' (countryCode USA)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[ACT] click 'Add new address' button
+[WAIT] add address form opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '12 Rideau St'; fill 'City': 'Ottawa'; fill 'State/Region': 'ON'; fill 'Postal Code': 'K1N 8W6'; select 'Country': 'Canada' (countryCode CAN)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[ACT] click 'Add new address' button
+[WAIT] add address form opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '88 Congress St'; fill 'City': 'Boston'; fill 'State/Region': 'MA'; fill 'Postal Code': '02114'; select 'Country': 'United States' (countryCode USA)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[ACT] click 'Add new address' button
+[WAIT] add address form opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '22 Baker St'; fill 'City': 'London'; fill 'Postal Code': 'NW1 6XE'; select 'Country': 'United Kingdom' (countryCode GBR)
+[ASSERT] State/Region field is either hidden or clearly optional for GBR (regionId=null is valid)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[ACT] click 'Add new address' button
+[WAIT] add address form opens
+[ACT] fill 'First Name': test recipient first name; fill 'Last Name': test recipient last name; fill 'Line 1': '5 Main Rd'; fill 'City': 'Salem'; fill 'State/Region': 'OR'; fill 'Postal Code': '97301'; select 'Country': 'United States' (countryCode USA)
+[ACT] click 'Create' or 'Save' button
+[WAIT] form closes; address list refreshes
+[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] product detail page loaded
+[ACT] click 'Add to Cart' button
+[WAIT] success notification visible OR cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with at least 1 item
+[ACT] click 'Please select a shipping address' link or pencil icon in Shipping Details section
+[WAIT] address selection popup opens
+[ACT] type 'Portland' in keyword search input
+[ACT] click magnifying-glass submit button
+[WAIT] filtered results appear
+[ASSERT] address row containing '47 Elm St' and 'Portland' is visible in results
+[ACT] clear search input
+[WAIT] full list restores
+[ACT] click 'Country' facet dropdown
+[WAIT] country options appear
+[ASSERT] USA, CAN, and GBR options each have positive count badges
+[ACT] click 'State' facet dropdown (with Country = USA active or unfiltered)
+[WAIT] state options appear
+[ASSERT] OR and MA options are each present with count badges
+[ACT] select address row containing '88 Congress St' / 'Boston' / 'MA' to close popup
+[WAIT] popup closes; Shipping Details section updates","[DOM] after all 6 Create actions, address list totalCount = N+6 (if any addresses were silently deduped the count will be less — record as potential BL-PROFILE-001 violation)
+[DOM] address list contains all 6 added entries (USA/Portland, USA/Seattle, CAN/Ottawa, USA/Boston, GBR/London, USA/Salem) — verify by scrolling list
+[DOM] address popup shows at least N+6 rows before any filtering
+[DOM] Country facet shows USA, CAN, GBR each with count badge > 0
+[DOM] State facet shows OR and MA options when USA addresses are in scope
+[DOM] keyword search for 'Portland' returns only address(es) containing Portland
+[DOM] Shipping Details section shows '88 Congress St', 'Boston', 'MA' after address #4 selected
+[STATE] popup closed after address selection","[API] each 'Create' form submission triggers updateMemberAddresses mutation returning HTTP 200 and errors[] empty; if this fails see BUG-updateMemberAddresses-Single-Append-Dedup-Miss (open)
+[API] currentCustomerAddresses query called on page load and on popup open; totalCount increments correctly each time
+[API] currentCustomerAddresses totalCount = N+6 before filtering (cross-reference with UI count)
+[CONSOLE] no JS errors during any address creation or popup interaction
+[NETWORK] no 4xx/5xx on any /graphql request during the entire journey","totalCount does not reach N+6 after 6 saves (silent dedup miss — see BUG-updateMemberAddresses-Single-Append-Dedup-Miss open); popup opens blank or with spinner >5s; validation error on Postal Code does not appear for '9820' (4-digit US zip); GBR address rejected for missing State/Region despite regionId being optional for UK; Country facet does not show CAN or GBR despite saved addresses; Shipping Details does not update to Boston/MA after selection; 4xx/5xx on any updateMemberAddresses or currentCustomerAddresses call","Navigate to {{FRONT_URL}}/account/addresses and delete the 6 addresses added in this test to restore a clean state for subsequent runs; sign out via account-menu popup (click user name in header → click 'Logout')","VCST-4710 / PR #129 / real-user-behavior feedback 2026-04-23; BL-PROFILE-001; BL-B2B-001; BUG-updateMemberAddresses-Single-Append-Dedup-Miss","Manual"
+VCST-4710-SF-022,"Journey: Guest-to-Auth Transition With Address Popup Availability","Checkout > Shipping > Journey > Guest-to-Auth",High,"BL-AUTH-001, BL-CART-008, BL-B2B-001","ECL-14.3","Browser in clean anonymous session (no auth cookie). {{USER_EMAIL}} is an org-affiliated user with at least 3 saved addresses. {{TEST_SKU}} is available in stock and addable as guest.","url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}, sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}
+[WAIT] storefront home page loaded
+[ASSERT] Sign In link or button visible in header (confirms anonymous/guest state)
+[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] product detail page loaded
+[ACT] click 'Add to Cart' button
+[WAIT] success notification visible OR cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with item {{TEST_SKU}} visible
+[ASSERT] Shipping Details section shows an inline one-off address entry form — NOT a 'select existing address' link or popup trigger (guests have no saved addresses)
+[ASSERT] no 'Please select a shipping address' popup CTA visible for anonymous user
+[ACT] click 'Sign In' link or button in header
+[WAIT] sign-in page or modal appears
+[ACT] fill 'Email': {{USER_EMAIL}}; fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign In' or 'Login' button
+[WAIT] authenticated — user name visible in header
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded
+[ASSERT] cart still contains item {{TEST_SKU}} (guest cart merged into authenticated cart per BL-CART-008)
+[ASSERT] Shipping Details section now shows 'Please select a shipping address' link or pencil icon (popup-enabled flow)
+[ACT] click 'Please select a shipping address' link or pencil icon
+[WAIT] address selection popup opens
+[ASSERT] address list renders at least 3 rows (the authenticated user's saved addresses)
+[ACT] click any address row to select it
+[WAIT] popup closes; Shipping Details updates
+[ACT] click user name in top-right header to open account-menu popup
+[ACT] click 'Logout' in account-menu popup
+[WAIT] signed out — Sign In link visible in header
+[ASSERT] cart is cleared or reverts to guest empty state per BL-CART-008 / BL-AUTH-001","[DOM] as anonymous: Shipping Details shows inline address form (not popup CTA)
+[DOM] as anonymous: no 'Please select a shipping address' popup trigger present
+[STATE] after sign-in: cart contains item {{TEST_SKU}} (merge — BL-CART-008)
+[DOM] after sign-in: Shipping Details shows 'Please select a shipping address' link or pencil icon
+[DOM] popup opens and lists at least 3 saved addresses with search input and facet dropdowns
+[DOM] Shipping Details updates to the selected address after popup selection
+[STATE] after sign-out: cart clears or shows guest empty state (sign-out does not preserve authenticated cart items in guest session — BL-CART-008)","[API] as anonymous: currentCustomerAddresses is NOT called (no network request to /graphql with this query while guest — verify in network tab)
+[API] after sign-in: currentCustomerAddresses called on popup open; errors[] is empty; returns items with at least 3 addresses
+[API] addOrUpdateCartShipment (or equivalent address selection mutation) returns HTTP 200; errors[] is empty
+[API] cart query before and after sign-in — lineItems contain {{TEST_SKU}} in both cases (verifies BL-CART-008 merge)
+[CONSOLE] no JS errors during anonymous add-to-cart, sign-in, popup interaction, or sign-out
+[NETWORK] no 4xx/5xx on any /graphql request; no 401 errors in authenticated cart context after sign-in","inline address form absent as guest (popup CTA shown to anonymous user — sign the scope of BL-CHK-001 is being violated); cart loses item {{TEST_SKU}} after sign-in (BL-CART-008 merge failure); popup CTA absent after sign-in despite user having saved addresses; popup opens blank or with spinner >5s; currentCustomerAddresses called while user is still anonymous (data leakage signal); 4xx/5xx on any post-auth /graphql request","Sign out (if not already signed out); clear any remaining test items from cart; no address changes to undo (no addresses were created in this case)","VCST-4710 / PR #129 / real-user-behavior feedback 2026-04-23; BL-AUTH-001; BL-CART-008; BL-B2B-001; BL-CHK-001","Manual"

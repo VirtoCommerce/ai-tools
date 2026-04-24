@@ -162,6 +162,7 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 - Use correct mutation names per schema (e.g., `removeCartItem` not `removeItem`, `changeCartItemQuantity` not `changeItemQuantity`)
 - Consult `.claude/agents/knowledge/graphql-schema.md` for authoritative field names and types
 - Verify every query/mutation name and input type via introspection before writing
+- **Happy-path field selection (mandatory):** every happy-path query/mutation test MUST request the **full field selection set** of the return type — all non-deprecated scalar fields plus at least one level of expansion for every nested object (`{ amount currency { code } }`, not just `{ amount }`). Null checks, type correctness, and nested resolver correctness are only observable when fields are in the selection set. Minimal selection (`{ id }`, `{ totalCount }`) is allowed ONLY for: (a) counter/invariant probes before/after a mutation, (b) cross-layer roundtrips that match a write, (c) the dedicated "minimal selection" schema-coverage test (one per operation, per the tier rule in `graphql-checklist.md:141-144`). When using a minimal selection, add a comment in Steps naming the role.
 
 ---
 

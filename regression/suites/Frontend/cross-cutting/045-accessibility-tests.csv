@@ -1,6 +1,6 @@
-ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-A11Y-KB-001,Keyboard Navigation - BOPIS Modal,Keyboard > Navigation,High,BL-A11Y-001,ECL-11.1,"- BOPIS modal accessible
-- Keyboard only (no mouse)",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}} and find a product with BOPIS (pickup) option
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"A11Y-KB-001","Keyboard Navigation - BOPIS Modal","Keyboard > Navigation","High","BL-A11Y-001","ECL-11.1","- BOPIS modal accessible
+- Keyboard only (no mouse)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and find a product with BOPIS (pickup) option
 [KEY] Tab to the pickup / Store Pickup option
 [KEY] Press Enter to open the BOPIS modal
 [KEY] Tab through all interactive elements in the modal
@@ -10,8 +10,8 @@ A11Y-KB-001,Keyboard Navigation - BOPIS Modal,Keyboard > Navigation,High,BL-A11Y
 [ACT] Complete the entire pickup flow using keyboard only (no mouse interaction)","[DOM] All interactive elements reachable via Tab key
 [STATE] Visible focus indicator present on each focused element
 [STATE] Logical tab order maintained throughout modal
-[STATE] Entire BOPIS pickup flow completable without mouse","[CONSOLE] no JS errors on Tab/Enter key events","focus indicator not visible on any element; keyboard trap outside modal; Tab skips an interactive element; flow not completable without mouse","Close modal if still open; clear cart","VCST-4499 TC-014",Manual
-A11Y-KB-002,Keyboard Navigation - Payment Form,Keyboard > Navigation,High,BL-A11Y-001,ECL-11.1,"- Payment form displayed (CyberSource or other processor)",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}} and proceed to the payment step
+[STATE] Entire BOPIS pickup flow completable without mouse","[CONSOLE] no JS errors on Tab/Enter key events","focus indicator not visible on any element; keyboard trap outside modal; Tab skips an interactive element; flow not completable without mouse","Close modal if still open; clear cart","VCST-4499 TC-014","Manual"
+"A11Y-KB-002","Keyboard Navigation - Payment Form","Keyboard > Navigation","High","BL-A11Y-001","ECL-11.1","- Payment form displayed (CyberSource or other processor)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and proceed to the payment step
 [KEY] Tab into the card number field (may be inside a CyberSource iframe)
 [KEY] Tab through fields in order: cardholder name → expiry date → CVV
 [KEY] Tab to the Place Order / Submit button
@@ -19,106 +19,114 @@ A11Y-KB-002,Keyboard Navigation - Payment Form,Keyboard > Navigation,High,BL-A11
 [ACT] Enter test card data via keyboard only and submit the form","[DOM] Tab order: Card Number → Cardholder Name → Expiry → CVV → Submit
 [STATE] Data enterable in every field via keyboard alone
 [STATE] Focus transitions correctly into iframe and back to parent page
-[STATE] Form submittable via keyboard without mouse","[CONSOLE] no iframe focus errors; [NETWORK] payment tokenisation request fires on keyboard submit","focus stuck inside iframe; cannot reach CVV or submit via Tab; iframe focus handoff fails","Clear cart / cancel test order","VCST-3387",Manual
-A11Y-KB-003,Focus Indicators - All Interactive,Keyboard > Focus,High,BL-A11Y-001,ECL-11.1,"- Any page with interactive elements loaded",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}} home page
+[STATE] Form submittable via keyboard without mouse","[CONSOLE] no iframe focus errors; [NETWORK] payment tokenisation request fires on keyboard submit","focus stuck inside iframe; cannot reach CVV or submit via Tab; iframe focus handoff fails","Clear cart / cancel test order","VCST-3387","Manual"
+"A11Y-KB-003","Focus Indicators - All Interactive","Keyboard > Focus","High","BL-A11Y-001","ECL-11.1","- Any page with interactive elements loaded","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} home page
 [KEY] Tab through every interactive element on the page (buttons, inputs, links, custom components)
 [ASSERT] Verify visible focus ring on buttons
 [ASSERT] Verify visible focus ring on text inputs
 [ASSERT] Verify visible focus ring on links
 [ASSERT] Verify visible focus ring on custom components (dropdowns, pickers, toggles)","[DOM] Every interactive element has a visible focus indicator when focused
 [STATE] Focus ring meets 3:1 contrast minimum against adjacent background
-[STATE] High-contrast focus outline not removed via outline:none without replacement","[CONSOLE] no CSS errors suppressing focus styles","focus indicator not visible on any interactive element; outline:none without visible replacement; focus ring contrast below 3:1","—","WCAG 2.4.7",Manual
-A11Y-KB-004,Escape Key - Modal Close,Keyboard > Shortcuts,Medium,BL-A11Y-001,ECL-11.1,"- Modal open (BOPIS or other dialog)",store={{FRONT_URL}},"[NAV] Navigate to a page on {{FRONT_URL}} with a modal trigger (e.g., BOPIS or filter dialog)
+[STATE] High-contrast focus outline not removed via outline:none without replacement","[CONSOLE] no CSS errors suppressing focus styles","focus indicator not visible on any interactive element; outline:none without visible replacement; focus ring contrast below 3:1","—","WCAG 2.4.7","Manual"
+"A11Y-KB-004","Escape Key - Modal Close","Keyboard > Shortcuts","Medium","BL-A11Y-001","ECL-11.1","- Modal open (BOPIS or other dialog)","store={{FRONT_URL}}","[NAV] Navigate to a page on {{FRONT_URL}} with a modal trigger (e.g., BOPIS or filter dialog)
 [ACT] Open the modal
 [KEY] Press Escape key
 [ASSERT] Verify modal closes
 [ASSERT] Verify focus returns to the element that triggered the modal","[STATE] Escape key closes the open modal
 [STATE] Focus returns to trigger element after modal close
-[STATE] No residual keyboard trap after modal dismissal","[CONSOLE] no JS errors on Escape keypress","modal does not close on Escape; focus does not return to trigger element; keyboard trap persists after close","—","WCAG 2.1.2",Manual
-A11Y-KB-005,Focus Trap - Open Modal,Keyboard > Focus,High,BL-A11Y-001,ECL-11.1,"- Modal open",store={{FRONT_URL}},"[NAV] Open a modal dialog on {{FRONT_URL}}
+[STATE] No residual keyboard trap after modal dismissal","[CONSOLE] no JS errors on Escape keypress","modal does not close on Escape; focus does not return to trigger element; keyboard trap persists after close","—","WCAG 2.1.2","Manual"
+"A11Y-KB-005","Focus Trap - Open Modal","Keyboard > Focus","High","BL-A11Y-001","ECL-11.1","- Modal open","store={{FRONT_URL}}","[NAV] Open a modal dialog on {{FRONT_URL}}
 [KEY] Tab through all modal content to reach the last focusable element
 [KEY] Press Tab once more past the last element
 [ASSERT] Verify focus wraps back to the first focusable element inside the modal
 [KEY] Press Shift+Tab from the first focusable element
 [ASSERT] Verify focus wraps to the last focusable element inside the modal","[STATE] Focus is trapped within the open modal (intentional containment — correct per WCAG 2.1 exception)
 [STATE] Tab cycles forward within modal only; cannot reach elements behind overlay
-[STATE] Shift+Tab cycles backward within modal only","[CONSOLE] no focus management errors","Tab exits modal and reaches background page elements; Shift+Tab escapes modal upward; focus not contained in modal","Close modal after test","WCAG 2.4.3",Manual
-A11Y-SR-001,Screen Reader - Modal Announcement,Screen Reader > Modals,High,BL-A11Y-002,ECL-11.2,"- Screen reader active (NVDA on Windows or VoiceOver on macOS)
-- BOPIS flow ready",store={{FRONT_URL}},"[NAV] Activate NVDA (Windows) or VoiceOver (macOS)
+[STATE] Shift+Tab cycles backward within modal only","[CONSOLE] no focus management errors","Tab exits modal and reaches background page elements; Shift+Tab escapes modal upward; focus not contained in modal","Close modal after test","WCAG 2.4.3","Manual"
+"A11Y-SR-001","Screen Reader - Modal Announcement","Screen Reader > Modals","High","BL-A11Y-002","ECL-11.2","- Screen reader active (NVDA on Windows or VoiceOver on macOS)
+- BOPIS flow ready","store={{FRONT_URL}}","[NAV] Activate NVDA (Windows) or VoiceOver (macOS)
 [NAV] Navigate to {{FRONT_URL}} and find a BOPIS-enabled product
 [ACT] Trigger the pickup modal open
 [WAIT] Wait for screen reader to announce the modal
 [ASSERT] Listen for modal/dialog role announcement
 [ASSERT] Verify modal title and purpose are stated by the screen reader","[STATE] Modal announced immediately on open
 [STATE] Screen reader announces dialog title and purpose
-[DOM] role=""dialog"" present on modal container; screen reader identifies it as Dialog","[CONSOLE] no ARIA errors on modal open; [API] no silent failures loading store availability data","screen reader does not announce modal; role not announced; modal title absent from announcement","Close modal; deactivate screen reader if needed","VCST-4499",Manual
-A11Y-SR-002,Screen Reader - List Items,Screen Reader > Lists,High,BL-A11Y-002,ECL-11.2,"- Screen reader active
-- Store location list visible in BOPIS modal",store={{FRONT_URL}},"[NAV] Open BOPIS modal on {{FRONT_URL}} with screen reader active
+[DOM] role=""dialog"" present on modal container; screen reader identifies it as Dialog","[CONSOLE] no ARIA errors on modal open; [API] no silent failures loading store availability data","screen reader does not announce modal; role not announced; modal title absent from announcement","Close modal; deactivate screen reader if needed","VCST-4499","Manual"
+"A11Y-SR-002","Screen Reader - List Items","Screen Reader > Lists","High","BL-A11Y-002","ECL-11.2","- Screen reader active
+- Store location list visible in BOPIS modal","store={{FRONT_URL}}","[NAV] Open BOPIS modal on {{FRONT_URL}} with screen reader active
 [NAV] Navigate to the store location list
 [ASSERT] Listen for list item announcements from screen reader
 [ASSERT] Verify list count is announced (e.g., ""list of 5 items"")
 [KEY] Tab / arrow-key through items and confirm each item's details are read aloud","[STATE] Screen reader announces list items with position (e.g., ""1 of 5"")
 [DOM] List uses semantic <ul>/<li> or role=""listbox""/role=""option"" with correct count
-[STATE] Each item's details (store name, distance, availability) are readable by screen reader","[CONSOLE] no ARIA list warnings","screen reader does not announce list; count not stated; position not announced; item details unreadable","—","VCST-4499",Manual
-A11Y-SR-003,Screen Reader - Form Fields,Screen Reader > Forms,High,BL-A11Y-002,ECL-11.2,"- Screen reader active
-- Form open (checkout, registration, or search)",store={{FRONT_URL}},"[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address form) with screen reader active
+[STATE] Each item's details (store name, distance, availability) are readable by screen reader","[CONSOLE] no ARIA list warnings","screen reader does not announce list; count not stated; position not announced; item details unreadable","—","VCST-4499","Manual"
+"A11Y-SR-003","Screen Reader - Form Fields","Screen Reader > Forms","High","BL-A11Y-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Screen reader active
+- Form open (checkout, registration, or search)","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address form) with screen reader active
 [KEY] Tab through each form field
 [ASSERT] Verify field label is announced for each input
 [ASSERT] Verify required status is announced for mandatory fields
 [ACT] Submit form with errors and verify error messages are announced","[STATE] Field labels read aloud on field focus
 [STATE] Required state announced (e.g., ""required"")
 [STATE] Error messages announced when triggered
-[DOM] <label for=""id""> association correct or aria-labelledby set","[CONSOLE] no missing-label warnings","field label not announced; required state silent; error message not announced after injection","—","WCAG 1.3.1",Manual
-A11Y-SR-004,Screen Reader - Error Messages,Screen Reader > Errors,High,BL-A11Y-004,ECL-11.2,"- Screen reader active
-- Form with client-side or server-side validation",store={{FRONT_URL}},"[NAV] Navigate to a form (e.g., checkout address or login) on {{FRONT_URL}} with screen reader active
+[DOM] <label for=""id""> association correct or aria-labelledby set","[CONSOLE] no missing-label warnings","field label not announced; required state silent; error message not announced after injection","—","WCAG 1.3.1","Manual"
+"A11Y-SR-004","Screen Reader - Error Messages","Screen Reader > Errors","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Screen reader active
+- Form with client-side or server-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form (e.g., checkout address or login) on {{FRONT_URL}} with screen reader active
 [ACT] Submit the form leaving required fields empty to trigger validation errors
 [ASSERT] Verify error messages are announced immediately by the screen reader
 [KEY] Navigate to each errored field and confirm specific error text is read aloud","[STATE] Errors announced immediately upon form submission (via aria-live or focus shift)
 [STATE] Can navigate to each error and hear its specific description
 [STATE] Error text is clear and actionable
-[DOM] Error messages linked to fields via aria-describedby or aria-errormessage","[CONSOLE] no ARIA live-region errors","errors not announced; screen reader silent after form submission; error text vague or missing","—","WCAG 3.3.1",Manual
-A11Y-SR-005,Screen Reader - Buttons,Screen Reader > Controls,Medium,BL-A11Y-002,ECL-11.2,"- Screen reader active",store={{FRONT_URL}},"[NAV] Navigate to any page on {{FRONT_URL}} with interactive buttons using screen reader active
+[DOM] Error messages linked to fields via aria-describedby or aria-errormessage","[CONSOLE] no ARIA live-region errors","errors not announced; screen reader silent after form submission; error text vague or missing","—","WCAG 3.3.1","Manual"
+"A11Y-SR-005","Screen Reader - Buttons","Screen Reader > Controls","Medium","BL-A11Y-002","ECL-11.2","- Screen reader active","store={{FRONT_URL}}","[NAV] Navigate to any page on {{FRONT_URL}} with interactive buttons using screen reader active
 [KEY] Tab to each button
 [ASSERT] Verify button text or aria-label is announced
 [ASSERT] Verify ""button"" role is stated by screen reader","[STATE] Button accessible name (text or aria-label) announced on focus
 [DOM] role=""button"" or native <button> element present
-[STATE] Action purpose is clear from announcement — no generic ""button"" without context","[CONSOLE] no missing-accessible-name warnings","button text not announced; role not stated; generic label with no context","—","WCAG 4.1.2",Manual
-A11Y-ARIA-001,ARIA Labels - Custom Controls,ARIA > Labels,High,BL-A11Y-002,"","- Browser DevTools open
-- Custom components visible (dropdowns, pickers, toggles)",store={{FRONT_URL}},"[NAV] Navigate to a page on {{FRONT_URL}} with custom interactive components
+[STATE] Action purpose is clear from announcement — no generic ""button"" without context","[CONSOLE] no missing-accessible-name warnings","button text not announced; role not stated; generic label with no context","—","WCAG 4.1.2","Manual"
+"A11Y-ARIA-001","ARIA Labels - Custom Controls","ARIA > Labels","High","BL-A11Y-002",,"- Browser DevTools open
+- Custom components visible (dropdowns, pickers, toggles)","store={{FRONT_URL}}","[NAV] Navigate to a page on {{FRONT_URL}} with custom interactive components
 [ACT] Open DevTools → Elements panel
 [ACT] Inspect each custom control (dropdown, toggle, variant picker)
 [ASSERT] Verify aria-label or aria-labelledby is present on each control
 [ASSERT] Verify labels are descriptive and not generic","[DOM] aria-label or aria-labelledby present on every custom control
 [DOM] Labels are descriptive (e.g., ""Select size"") not generic (e.g., ""button"")
-[DOM] No interactive element with empty or missing accessible name","[CONSOLE] no axe missing-label violations","ARIA label absent on custom control; generic label (""button"", ""click here""); aria-labelledby references non-existent id","—","WCAG 4.1.2",Manual
-A11Y-ARIA-002,ARIA Roles - Modal Dialog,ARIA > Roles,High,BL-A11Y-002,"","- Modal open
-- Browser DevTools open",store={{FRONT_URL}},"[NAV] Open a modal dialog on {{FRONT_URL}}
+[DOM] No interactive element with empty or missing accessible name","[CONSOLE] no axe missing-label violations","ARIA label absent on custom control; generic label (""button"", ""click here""); aria-labelledby references non-existent id","—","WCAG 4.1.2","Manual"
+"A11Y-ARIA-002","ARIA Roles - Modal Dialog","ARIA > Roles","High","BL-A11Y-002",,"- Modal open
+- Browser DevTools open","store={{FRONT_URL}}","[NAV] Open a modal dialog on {{FRONT_URL}}
 [ACT] Open DevTools → Elements panel
 [ASSERT] Inspect modal container and verify role=""dialog""
 [ASSERT] Verify aria-modal=""true"" attribute is present
 [ASSERT] Verify aria-labelledby references the id of the modal's visible title element","[DOM] role=""dialog"" set on modal container
 [DOM] aria-modal=""true"" present
-[DOM] aria-labelledby value matches the id of the modal's visible title","[CONSOLE] no ARIA role warnings","role=""dialog"" absent; aria-modal missing; aria-labelledby references wrong or missing id","Close modal","WCAG 4.1.2",Manual
-A11Y-ARIA-003,ARIA Live Regions,ARIA > Live,Medium,BL-A11Y-004,ECL-11.2,"- Dynamic content area visible (cart badge, notifications, search results)",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}} with a dynamic content area
+[DOM] aria-labelledby value matches the id of the modal's visible title","[CONSOLE] no ARIA role warnings","role=""dialog"" absent; aria-modal missing; aria-labelledby references wrong or missing id","Close modal","WCAG 4.1.2","Manual"
+"A11Y-ARIA-003","ARIA Live Regions","ARIA > Live","Medium","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Dynamic content area visible (cart badge, notifications, search results)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with a dynamic content area
 [ACT] Trigger a content update (e.g., add item to cart, submit search query)
 [ACT] Open DevTools → Elements and locate the aria-live region for that update
 [ASSERT] Verify aria-live attribute is present with appropriate politeness level (polite or assertive)
 [ASSERT] Verify the update is announced without being excessively verbose","[DOM] aria-live=""polite"" (or ""assertive"" for critical alerts) present on dynamic regions
 [STATE] Content updates are announced to screen reader
-[STATE] Announcement is concise and not repetitive","[CONSOLE] no live-region-related ARIA errors","aria-live missing on dynamic region; update not announced; announcement excessively verbose or fires repeatedly","—","WCAG 4.1.3",Manual
-A11Y-AXE-001,axe DevTools Scan - Critical,Automated > axe,Critical,BL-A11Y-004,"","- axe DevTools browser extension installed",store={{FRONT_URL}},"[NAV] Navigate to target page on {{FRONT_URL}} (home, catalog, cart, or checkout)
+[STATE] Announcement is concise and not repetitive","[CONSOLE] no live-region-related ARIA errors","aria-live missing on dynamic region; update not announced; announcement excessively verbose or fires repeatedly","—","WCAG 4.1.3","Manual"
+"A11Y-AXE-001","axe DevTools Scan - Critical","Automated > axe","Critical","BL-A11Y-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- axe DevTools browser extension installed","store={{FRONT_URL}}","[NAV] Navigate to target page on {{FRONT_URL}} (home, catalog, cart, or checkout)
 [ACT] Open the axe DevTools panel in the browser
 [ACT] Run a full accessibility scan of the page
 [ASSERT] Review the Critical violations list
 [ACT] Document all critical findings with element selectors and WCAG criterion references","[STATE] Zero critical axe violations on the scanned page
 [STATE] All critical issues resolved before release
-[DOM] No elements blocking access to core functionality","[CONSOLE] axe.run() result: violations filtered by impact === 'critical' returns empty array; [NETWORK] page fully loaded before scan fires","axe reports one or more critical violations; core user journey blocked by accessibility barrier","—","WCAG 2.1 AA",Manual
-A11Y-AXE-002,axe DevTools Scan - Serious,Automated > axe,High,BL-A11Y-004,"","- axe DevTools browser extension installed",store={{FRONT_URL}},"[NAV] Navigate to target page on {{FRONT_URL}}
+[DOM] No elements blocking access to core functionality","[CONSOLE] axe.run() result: violations filtered by impact === 'critical' returns empty array; [NETWORK] page fully loaded before scan fires","axe reports one or more critical violations; core user journey blocked by accessibility barrier","—","WCAG 2.1 AA","Manual"
+"A11Y-AXE-002","axe DevTools Scan - Serious","Automated > axe","High","BL-A11Y-004",,"- axe DevTools browser extension installed","store={{FRONT_URL}}","[NAV] Navigate to target page on {{FRONT_URL}}
 [ACT] Run axe DevTools scan
 [ASSERT] Review Serious violations list
 [ACT] Prioritise findings and document remediation plan with owner and timeline","[STATE] Serious issues documented with element selectors, WCAG criterion, and remediation owner
-[STATE] Count of serious violations does not exceed established baseline (no regressions)","[CONSOLE] axe.run() serious violation count does not exceed baseline","axe reports new serious violation not present in baseline; regression introduced since last scan","—","WCAG 2.1 AA",Manual
-A11Y-CC-001,Color Contrast - Text,Color Contrast > Text,High,BL-A11Y-003,"","- Contrast checker tool available (browser extension or DevTools accessibility panel)",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[STATE] Count of serious violations does not exceed established baseline (no regressions)","[CONSOLE] axe.run() serious violation count does not exceed baseline","axe reports new serious violation not present in baseline; regression introduced since last scan","—","WCAG 2.1 AA","Manual"
+"A11Y-CC-001","Color Contrast - Text","Color Contrast > Text","High","BL-A11Y-003",,"- Contrast checker tool available (browser extension or DevTools accessibility panel)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Use contrast checker on body text (paragraphs, list items)
 [ASSERT] Verify contrast ratio ≥ 4.5:1 for normal text
 [ACT] Use contrast checker on headings and large text (18px+ or 14px+ bold)
@@ -126,8 +134,8 @@ A11Y-CC-001,Color Contrast - Text,Color Contrast > Text,High,BL-A11Y-003,"","- C
 [ACT] Check link text contrast in default, hover, and visited states","[FORMAT] Normal text contrast ratio ≥ 4.5:1 against background
 [FORMAT] Large text (≥18px or ≥14px bold) contrast ratio ≥ 3:1
 [FORMAT] Link text contrast ≥ 4.5:1 in all states
-[STATE] All text is readable against its background","[CONSOLE] no CSS rendering errors; [NETWORK] fonts fully loaded","normal text contrast below 4.5:1; large text below 3:1; link text indistinguishable from background","—","WCAG 1.4.3",Manual
-A11Y-CC-002,Color Contrast - UI Components,Color Contrast > UI,High,BL-A11Y-003,"","- Contrast checker tool available",store={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
+[STATE] All text is readable against its background","[CONSOLE] no CSS rendering errors; [NETWORK] fonts fully loaded","normal text contrast below 4.5:1; large text below 3:1; link text indistinguishable from background","—","WCAG 1.4.3","Manual"
+"A11Y-CC-002","Color Contrast - UI Components","Color Contrast > UI","High","BL-A11Y-003",,"- Contrast checker tool available","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Check button background vs. button text contrast
 [ASSERT] Verify ≥ 3:1 for button component
 [ACT] Check input field border vs. page background contrast
@@ -136,45 +144,51 @@ A11Y-CC-002,Color Contrast - UI Components,Color Contrast > UI,High,BL-A11Y-003,
 [ASSERT] Verify ≥ 3:1 for focus ring","[FORMAT] Buttons: contrast ratio ≥ 3:1 (text to background AND border to surrounding area)
 [FORMAT] Input borders: ≥ 3:1 against page background
 [FORMAT] Focus indicators: ≥ 3:1 against adjacent background
-[STATE] Hover, active, and disabled interactive states all meet threshold","[CONSOLE] no CSS theming errors","UI component contrast below 3:1; focus ring invisible against background; disabled state indistinguishable","—","WCAG 1.4.11",Manual
-A11Y-CC-003,Color Not Sole Indicator,Color Usage > Meaning,High,BL-A11Y-003,"","- Error states visible on a form
-- Status indicators visible (success, warning, info)",store={{FRONT_URL}},"[NAV] Navigate to a form or status area on {{FRONT_URL}} and trigger an error state
+[STATE] Hover, active, and disabled interactive states all meet threshold","[CONSOLE] no CSS theming errors","UI component contrast below 3:1; focus ring invisible against background; disabled state indistinguishable","—","WCAG 1.4.11","Manual"
+"A11Y-CC-003","Color Not Sole Indicator","Color Usage > Meaning","High","BL-A11Y-003",,"- Error states visible on a form
+- Status indicators visible (success, warning, info)","store={{FRONT_URL}}","[NAV] Navigate to a form or status area on {{FRONT_URL}} and trigger an error state
 [ASSERT] Verify error indication uses an icon or text label in addition to color
 [NAV] Find success, warning, and info status indicators
 [ASSERT] Verify each status uses a text label or icon independently of color
 [ACT] Simulate colorblindness via DevTools Rendering → Emulate vision deficiencies and verify indicators remain distinguishable","[STATE] Errors conveyed by icon + color — not color alone
 [STATE] Success/warning/info statuses have text label or icon independent of color
-[STATE] All status indicators distinguishable in grayscale and colorblind simulation","[CONSOLE] no rendering errors during vision emulation","error uses only red color with no icon or text; status indistinguishable in grayscale; colorblind simulation reveals loss of meaning","—","WCAG 1.4.1",Manual
-A11Y-IMG-001,Images - Alt Text,Images > Alt,High,BL-A11Y-002,"","- Catalog or product detail page with images loaded",store={{FRONT_URL}},"[NAV] Navigate to a catalog or product detail page on {{FRONT_URL}}
+[STATE] All status indicators distinguishable in grayscale and colorblind simulation","[CONSOLE] no rendering errors during vision emulation","error uses only red color with no icon or text; status indistinguishable in grayscale; colorblind simulation reveals loss of meaning","—","WCAG 1.4.1","Manual"
+"A11Y-IMG-001","Images - Alt Text","Images > Alt","High","BL-A11Y-002",,"- Catalog or product detail page with images loaded","store={{FRONT_URL}}","[NAV] Navigate to a catalog or product detail page on {{FRONT_URL}}
 [ACT] Open DevTools → Elements and inspect all <img> elements on the page
 [ASSERT] Verify product images have descriptive alt attributes reflecting product name/context
 [ASSERT] Verify decorative images have alt=""""
 [ASSERT] Verify no <img> elements are missing the alt attribute entirely","[DOM] Product images have descriptive alt text
 [DOM] Decorative images have alt=""""
-[DOM] Zero <img> elements with missing (absent) alt attribute","[CONSOLE] no axe image-alt violations","product image missing alt; decorative image has descriptive alt (causes unnecessary screen reader verbosity); alt attribute entirely absent","—","WCAG 1.1.1",Manual
-A11Y-FORM-001,Form Labels - Input Association,Forms > Labels,High,BL-A11Y-002,"","- Form with inputs (checkout, registration, or search)",store={{FRONT_URL}},"[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address form)
+[DOM] Zero <img> elements with missing (absent) alt attribute","[CONSOLE] no axe image-alt violations","product image missing alt; decorative image has descriptive alt (causes unnecessary screen reader verbosity); alt attribute entirely absent","—","WCAG 1.1.1","Manual"
+"A11Y-FORM-001","Form Labels - Input Association","Forms > Labels","High","BL-A11Y-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Form with inputs (checkout, registration, or search)","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address form)
 [ACT] Open DevTools → Elements panel
 [ASSERT] Verify each <input> has an associated <label> via matching for=""id""
 [ASSERT] Verify aria-label or aria-labelledby is present where a visible label is absent
 [ACT] Test with screen reader: Tab to each field and confirm label is announced","[DOM] All inputs have associated labels (for/id pairing or aria-labelledby)
 [STATE] Screen reader announces correct label on field focus
-[DOM] No orphaned inputs without accessible names","[CONSOLE] no axe label-missing violations","input has no associated label; for/id mismatch; aria-labelledby references missing id","—","WCAG 1.3.1",Manual
-A11Y-FORM-002,Error Identification,Forms > Errors,High,BL-A11Y-004,ECL-11.2,"- Form with client-side validation",store={{FRONT_URL}},"[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address or login)
+[DOM] No orphaned inputs without accessible names","[CONSOLE] no axe label-missing violations","input has no associated label; for/id mismatch; aria-labelledby references missing id","—","WCAG 1.3.1","Manual"
+"A11Y-FORM-002","Error Identification","Forms > Errors","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Form with client-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address or login)
 [ACT] Submit the form with required fields left empty to trigger validation errors
 [ASSERT] Verify each error is clearly identified with text (not only by color)
 [ASSERT] Verify error messages are programmatically linked to their fields via aria-describedby or aria-errormessage
 [ASSERT] Verify error messages provide actionable suggestions where appropriate","[STATE] Errors identified with text label — not color alone
 [DOM] Error messages linked to fields via aria-describedby or aria-errormessage
 [STATE] Actionable error suggestions provided where feasible (e.g., ""Enter a valid email address"")
-[STATE] Focus moves to first error or errors announced via live region","[CONSOLE] no axe form-error violations","error identified by color only; error message not linked to field; no suggestion text; focus not directed to errors after submission","—","WCAG 3.3.1",Manual
-A11Y-TOUCH-001,Touch Target Size,Mobile > Touch,High,BL-A11Y-004,"","- Mobile viewport active (375×812 or 390×844)",store={{FRONT_URL}},"[NAV] Resize browser to mobile viewport (375px wide) via DevTools device emulation or browser_resize
+[STATE] Focus moves to first error or errors announced via live region","[CONSOLE] no axe form-error violations","error identified by color only; error message not linked to field; no suggestion text; focus not directed to errors after submission","—","WCAG 3.3.1","Manual"
+"A11Y-TOUCH-001","Touch Target Size","Mobile > Touch","High","BL-A11Y-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Mobile viewport active (375×812 or 390×844)","store={{FRONT_URL}}","[NAV] Resize browser to mobile viewport (375px wide) via DevTools device emulation or browser_resize
 [NAV] Navigate to {{FRONT_URL}} catalog page and cart page
 [ACT] Inspect interactive elements: buttons, links, quantity controls, close/dismiss icons
 [ASSERT] Verify each touch target measures at least 44×44px via DevTools computed styles
 [ASSERT] Verify adequate spacing between adjacent touch targets to prevent mis-taps","[DOM] All interactive touch targets ≥ 44×44px (width and height in computed styles)
 [STATE] Adjacent targets have sufficient spacing — no targets overlapping or directly adjacent with less than 8px gap
-[STATE] Elements easy to tap accurately without activating neighbouring elements","[CONSOLE] no layout errors at mobile viewport","touch target measures below 44×44px; targets too close causing mis-taps; overflow or clipping at mobile viewport","Restore desktop viewport after test","WCAG 2.5.5",Manual
-A11Y-VCP-001,VcVariantPicker - States,Component > Picker,High,BL-A11Y-002,"","- Product page with variant picker (VcVariantPicker component) loaded",store={{FRONT_URL}},"[NAV] Navigate to a product detail page on {{FRONT_URL}} that has variant options (size, color, etc.)
+[STATE] Elements easy to tap accurately without activating neighbouring elements","[CONSOLE] no layout errors at mobile viewport","touch target measures below 44×44px; targets too close causing mis-taps; overflow or clipping at mobile viewport","Restore desktop viewport after test","WCAG 2.5.5","Manual"
+"A11Y-VCP-001","VcVariantPicker - States","Component > Picker","High","BL-A11Y-002",,"- Product page with variant picker (VcVariantPicker component) loaded","store={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} that has variant options (size, color, etc.)
 [ACT] browser_snapshot to inspect VcVariantPicker DOM at rest (default state)
 [ASSERT] Verify unselected options are visible and distinguishable
 [ACT] browser_hover over an option to trigger hover state
@@ -185,4 +199,4 @@ A11Y-VCP-001,VcVariantPicker - States,Component > Picker,High,BL-A11Y-002,"","- 
 [ASSERT] Inspect selected state: visual highlight + aria-checked or aria-selected = ""true""","[DOM] Default, hover, focus, and selected states are visually distinguishable
 [DOM] Selected state reflected programmatically: aria-checked=""true"" or aria-selected=""true"" on the chosen option
 [STATE] Screen reader can distinguish selected from unselected options
-[DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373",Automated
+[DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373","Automated"

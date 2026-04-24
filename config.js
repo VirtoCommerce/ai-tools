@@ -3,35 +3,27 @@ import { config } from 'dotenv';
 // Load environment variables from .env file
 config({ path: '.env' });
 
-// Validate required environment variables
+// Validate required environment variables.
+// Required = core flows (URLs, storefront/admin auth, base payment cards) that must exist for any suite to run.
+// Scope-specific vars (staging, 3DS, lockout, BrowserStack) are optional — suites that need them fail fast at runtime.
 const requiredVars = [
     'FRONT_URL',
     'BACK_URL',
-    'VIRTO_START_FRONT',
-    'VIRTO_START_BACK',
     'STORYBOOK_URL',
     'STORYBOOK_DEV_URL',
     'ADMIN',
-    'ADMIN_PASSWORD',   
+    'ADMIN_PASSWORD',
     'USER_EMAIL',
     'USER_PASSWORD',
     'USER2_EMAIL',
     'USER2_PASSWORD',
-    'USER_VIRTO',
-    'USER_VIRTO_PASSWORD',
     'STORE_ID',
-    'SKYFLOW_VISA',
     'SKYFLOW_MASTERCARD',
     'SKYFLOW_EXPIRY',
     'SKYFLOW_CVV',
     'CYBERSOURCE_CARD',
     'CYBERSOURCE_EXPIRY',
     'CYBERSOURCE_CVV',
-    'CYBERSOURCE_3DS_FRICTIONLESS_CARD',
-    'CYBERSOURCE_3DS_CHALLENGE_CARD',
-    'CYBERSOURCE_3DS_OTP',
-    'LOCKOUT_TEST_EMAIL',
-    'LOCKOUT_TEST_PASSWORD',
     'AUTHORIZNET_CARD',
     'AUTHORIZNET_EXPIRY',
     'AUTHORIZNET_CVV',
@@ -40,11 +32,7 @@ const requiredVars = [
     'DATATRANCE_CVV',
     'DATATRANCE_OTP',
     'FIGMA_API_KEY',
-    'BROWSERSTACK_USERNAME',
-    'BROWSERSTACK_ACCESS_KEY',
     'POSTMAN_API_KEY'
-    
-    
 ];
 
 const missingVars = requiredVars.filter(varName => !process.env[varName]);
@@ -67,28 +55,28 @@ export const env = {
     // Application URLs
     FRONT_URL: getEnvVar('FRONT_URL'),
     BACK_URL: getEnvVar('BACK_URL'),
-    VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT'),
-    VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK'),
+    VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT', ''),
+    VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK', ''),
     STORYBOOK_URL: getEnvVar('STORYBOOK_URL'),
     STORYBOOK_DEV_URL: getEnvVar('STORYBOOK_DEV_URL'),
-    
+
     // Admin credentials
     ADMIN: getEnvVar('ADMIN'),
     ADMIN_PASSWORD: getEnvVar('ADMIN_PASSWORD'),
-    
+
     // User credentials
     USER_EMAIL: getEnvVar('USER_EMAIL'),
     USER_PASSWORD: getEnvVar('USER_PASSWORD'),
     USER2_EMAIL: getEnvVar('USER2_EMAIL'),
     USER2_PASSWORD: getEnvVar('USER2_PASSWORD'),
-    USER_VIRTO: getEnvVar('USER_VIRTO'),
-    USER_VIRTO_PASSWORD: getEnvVar('USER_VIRTO_PASSWORD'),
+    USER_VIRTO: getEnvVar('USER_VIRTO', ''),
+    USER_VIRTO_PASSWORD: getEnvVar('USER_VIRTO_PASSWORD', ''),
     
     // Store configuration
     STORE_ID: getEnvVar('STORE_ID'),
     
     // Skyflow payment configuration
-    SKYFLOW_VISA: getEnvVar('SKYFLOW_VISA'),
+    SKYFLOW_VISA: getEnvVar('SKYFLOW_VISA', ''),
     SKYFLOW_MASTERCARD: getEnvVar('SKYFLOW_MASTERCARD'),
     SKYFLOW_EXPIRY: getEnvVar('SKYFLOW_EXPIRY'),
     SKYFLOW_CVV: getEnvVar('SKYFLOW_CVV'),   
@@ -98,14 +86,14 @@ export const env = {
     CYBERSOURCE_CARD: getEnvVar('CYBERSOURCE_CARD'),
     CYBERSOURCE_EXPIRY: getEnvVar('CYBERSOURCE_EXPIRY'),
     CYBERSOURCE_CVV: getEnvVar('CYBERSOURCE_CVV'),
-    CYBERSOURCE_3DS_FRICTIONLESS_CARD: getEnvVar('CYBERSOURCE_3DS_FRICTIONLESS_CARD'),
-    CYBERSOURCE_3DS_CHALLENGE_CARD: getEnvVar('CYBERSOURCE_3DS_CHALLENGE_CARD'),
-    CYBERSOURCE_3DS_OTP: getEnvVar('CYBERSOURCE_3DS_OTP'),
+    CYBERSOURCE_3DS_FRICTIONLESS_CARD: getEnvVar('CYBERSOURCE_3DS_FRICTIONLESS_CARD', ''),
+    CYBERSOURCE_3DS_CHALLENGE_CARD: getEnvVar('CYBERSOURCE_3DS_CHALLENGE_CARD', ''),
+    CYBERSOURCE_3DS_OTP: getEnvVar('CYBERSOURCE_3DS_OTP', ''),
 
     // Dedicated lockout-test account (for SEC-AUTH-003, SEC-RATE-001/002)
     // Isolated from the agent pool so brute-force lockout tests do not block parallel slot accounts.
-    LOCKOUT_TEST_EMAIL: getEnvVar('LOCKOUT_TEST_EMAIL'),
-    LOCKOUT_TEST_PASSWORD: getEnvVar('LOCKOUT_TEST_PASSWORD'),
+    LOCKOUT_TEST_EMAIL: getEnvVar('LOCKOUT_TEST_EMAIL', ''),
+    LOCKOUT_TEST_PASSWORD: getEnvVar('LOCKOUT_TEST_PASSWORD', ''),
     
     // Authorize.Net payment configuration
     AUTHORIZNET_CARD: getEnvVar('AUTHORIZNET_CARD'),
@@ -121,9 +109,9 @@ export const env = {
     // Figma API key
     FIGMA_API_KEY: getEnvVar('FIGMA_API_KEY'),
 
-    // Browserstack credentials
-    BROWSERSTACK_USERNAME: getEnvVar('BROWSERSTACK_USERNAME'),
-    BROWSERSTACK_ACCESS_KEY: getEnvVar('BROWSERSTACK_ACCESS_KEY'),
+    // Browserstack credentials (optional — only needed for cross-browser cloud runs)
+    BROWSERSTACK_USERNAME: getEnvVar('BROWSERSTACK_USERNAME', ''),
+    BROWSERSTACK_ACCESS_KEY: getEnvVar('BROWSERSTACK_ACCESS_KEY', ''),
 
     // Builder.io integration (optional)
     BUILDER_IO_URL: getEnvVar('BUILDER_IO_URL', 'https://builder.io/content'),

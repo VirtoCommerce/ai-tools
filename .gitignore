@@ -9,6 +9,7 @@ test-results/
 results/
 .claude/settings.local.json
 .mcp.json
+scripts/.graphql-schema.cache.json
 
 # Regression / lifecycle / coverage run evidence — ephemeral by policy
 reports/regression/REG-*/**/*.png

@@ -1,5 +1,8 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"PAY-CS-001","CyberSource - Valid Form Submission","CyberSource > Positive","Critical","BL-PAY-004","ECL-14.6","- Logged in as registered user
+"PAY-CS-001","CyberSource - Valid Form Submission","CyberSource > Positive","Critical","BL-PAY-004","ECL-14.6","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment processor configured and active
 - Browser DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart — CyberSource payment form is on cart page
@@ -17,7 +20,9 @@
 [DOM] Order confirmation page displays order number","[API] Verify createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Confirm payment token (not raw card number) sent in request payload
 [ADMIN] Confirm order appears in admin Orders list with status reflecting payment attempt","Order confirmation page not reached; inline validation error appears unexpectedly; network request contains raw card number","Cancel order via admin if order was created","VCST-3387 TC-POS-001","Manual"
-"PAY-CS-002","CyberSource - Special Characters in Cardholder Name","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
+"PAY-CS-002","CyberSource - Special Characters in Cardholder Name","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
@@ -33,7 +38,9 @@
 [STATE] No validation error triggered for any of the tested name formats
 [NAV] Order submission proceeds after valid name entry","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [NETWORK] Cardholder name transmitted correctly in tokenization request","Name field strips special characters silently; validation error fires on valid international name characters; form refuses to submit with accented characters","Cancel order via admin if order was created","VCST-3387 TC-POS-004","Manual"
-"PAY-CS-003","CyberSource - Expiry Date Format Variations","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","- Logged in as registered user
+"PAY-CS-003","CyberSource - Expiry Date Format Variations","CyberSource > Positive","Medium","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
@@ -46,7 +53,9 @@
 [ASSERT] All three input styles display as MM/YYYY","[FORMAT] Expiry date field displays value as MM/YYYY regardless of input style
 [DOM] No validation error shown for any accepted format variant
 [STATE] Form is submittable after each valid format entry","[API] createOrderFromCart GraphQL mutation errors[] is empty on submission","Field rejects valid expiry formats; auto-formatting breaks cursor position causing incorrect value; MM/YYYY display not achieved","Cancel order via admin if order was created","VCST-3387 TC-POS-005","Manual"
-"PAY-CS-004","CyberSource - Invalid Card Number Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-004","CyberSource - Invalid Card Number Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'Card Number' iframe field; fill '@td(CYBERSOURCE_INVALID.number)'
@@ -58,7 +67,9 @@
 [STATE] 'Place Order' button does not trigger order creation
 [NAV] User remains on {{FRONT_URL}}/cart — no navigation to confirmation","[API] No createOrderFromCart GraphQL mutation is fired
 [CONSOLE] No unhandled JS exceptions from iframe communication","No error shown for clearly invalid card; form submits with Luhn-failing card number; user is navigated away from cart page","none — no order created","VCST-3387 TC-NEG-001","Manual"
-"PAY-CS-005","CyberSource - Empty Card Number Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-005","CyberSource - Empty Card Number Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Leave 'Card Number' field empty
@@ -70,7 +81,9 @@
 [STATE] Form submission blocked; no spinner or loading state triggered
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors from iframe","No error message for blank card; form submits and order created without card number; error message missing but field highlighted only","none — no order created","VCST-3387 TC-NEG-002","Manual"
-"PAY-CS-006","CyberSource - Empty Cardholder Name Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-006","CyberSource - Empty Cardholder Name Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - Known bug: form may submit without name (document outcome)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
@@ -83,7 +96,9 @@
 [STATE] Form blocked from submission when name is empty
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired if validation blocks submission; if bug present and mutation fires — check errors[]
 [CONSOLE] No unhandled exceptions","Form submits successfully without cardholder name (known bug — document if still present); no error message displayed; field not highlighted","Cancel order via admin if order was placed despite empty name (known bug path)","VCST-3387 TC-NEG-003","Manual"
-"PAY-CS-007","CyberSource - Expired Card Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-007","CyberSource - Expired Card Rejected","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
@@ -94,7 +109,9 @@
 [STATE] Submission blocked; no order processing initiated
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors","Expired date accepted without error; form submits with past expiry; error message missing or generic","none — no order created","VCST-3387 TC-NEG-004","Manual"
-"PAY-CS-008","CyberSource - Empty Expiry Date Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-008","CyberSource - Empty Expiry Date Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
@@ -105,7 +122,9 @@
 [STATE] Form submission blocked
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors from iframe","No error for blank expiry; form submits without expiry date; field highlighted but no readable error text","none — no order created","VCST-3387 TC-NEG-005","Manual"
-"PAY-CS-009","CyberSource - Invalid Expiry Month Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-009","CyberSource - Invalid Expiry Month Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
@@ -119,7 +138,9 @@
 [STATE] Form blocked for all three invalid month inputs
 [NAV] User remains on {{FRONT_URL}}/cart for all attempts","[API] No createOrderFromCart GraphQL mutation fired for any invalid expiry
 [CONSOLE] No unhandled errors","Any invalid month value accepted; field only validates on one boundary but not others; error message absent or unclear","none — no order created","VCST-3387 TC-NEG-006","Manual"
-"PAY-CS-010","CyberSource - Invalid CVV Length Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-010","CyberSource - Invalid CVV Length Rejected","CyberSource > Negative","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
@@ -130,7 +151,9 @@
 [STATE] Form blocked for invalid CVV lengths
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No unhandled iframe errors","CVV shorter than 3 digits accepted silently; field allows more than 4 characters; length error not shown to user","none — no order created","VCST-3387 TC-NEG-007","Manual"
-"PAY-CS-011","CyberSource - Empty CVV Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-011","CyberSource - Empty CVV Blocked","CyberSource > Negative","Critical","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
@@ -141,7 +164,9 @@
 [STATE] Submission blocked; no order processing spinner appears
 [NAV] User remains on {{FRONT_URL}}/cart","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No JS errors","No error shown for empty CVV; form submits and reaches payment processor without CVV; error present but field not focused","none — no order created","VCST-3387 TC-NEG-008","Manual"
-"PAY-CS-012","CyberSource - Non-numeric CVV Rejected","CyberSource > Negative","Medium","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-012","CyberSource - Non-numeric CVV Rejected","CyberSource > Negative","Medium","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry)","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'CVV' iframe field; attempt to type 'abc'
@@ -154,7 +179,9 @@
 [STATE] Field contains only numeric content after attempted non-numeric input
 [NAV] Form does not submit with non-numeric CVV","[API] No createOrderFromCart GraphQL mutation fired
 [CONSOLE] No unhandled iframe communication errors","Letters accepted in CVV field; alpha characters appear in masked display; form submits with non-numeric CVV","none — no order created","VCST-3387 TC-NEG-009","Manual"
-"PAY-CS-013","CyberSource - Card Number Auto-Formatting","CyberSource > Validation","Medium","BL-PAY-001","ECL-14.6","- Logged in as registered user
+"PAY-CS-013","CyberSource - Card Number Auto-Formatting","CyberSource > Validation","Medium","BL-PAY-001","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'Card Number' iframe field
@@ -163,7 +190,9 @@
 [ASSERT] Cursor position maintained correctly after auto-formatting (can continue typing naturally)","[FORMAT] Card Number field displays 16-digit number in '#### #### #### ####' format automatically
 [DOM] No validation error triggered by auto-formatting
 [STATE] Field value usable for further interaction after formatting applied","[CONSOLE] No JS errors from iframe auto-format logic","Card number displayed without spaces after typing; spaces inserted but cursor jumps to wrong position making continued typing impossible; formatting applied inconsistently","none — no order placed","VCST-3387 TC-VAL-003","Manual"
-"PAY-CS-014","CyberSource - Visa Card Type Detection","CyberSource > Validation","Medium","BL-PAY-001","ECL-14.6","- Logged in as registered user
+"PAY-CS-014","CyberSource - Visa Card Type Detection","CyberSource > Validation","Medium","BL-PAY-001","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'Card Number' iframe field
@@ -174,7 +203,9 @@
 [ASSERT] Visa icon remains highlighted; card type indicator shows 'Visa'","[DOM] Card type icon area shows Visa icon as active/highlighted after Visa BIN entered
 [STATE] Other card type icons visually de-emphasized
 [FORMAT] Card type indicator updates in real-time as digits are entered","[CONSOLE] No JS errors during BIN detection","No card type icon appears; wrong card type detected for Visa BIN; icon shows but never updates as more digits entered","none — no order placed","VCST-3387 TC-VAL-002","Manual"
-"PAY-CS-015","CyberSource - CVV Input Masking","CyberSource > Validation","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-CS-015","CyberSource - CVV Input Masking","CyberSource > Validation","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and confirm CyberSource payment form is visible
 [ACT] Click into 'CVV' iframe field; type '@td(CYBERSOURCE_VISA.cvv)'
@@ -184,7 +215,9 @@
 [STATE] Masking applied immediately on each character input
 [FORMAT] Input type or iframe rendering prevents plaintext display of CVV","[CONSOLE] No JS in parent page can read CVV value (cross-origin iframe restriction)
 [NETWORK] CVV not present in any network payload in cleartext","CVV digits displayed as plaintext in the field; masking applied only after focus-out; masking absent in the iframe rendering","none — no order placed","VCST-3387 TC-VAL-006","Manual"
-"PAY-SEC-001","CyberSource - Card Number Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+"PAY-SEC-001","CyberSource - Card Number Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - Browser DevTools Elements panel available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and locate CyberSource payment section
@@ -198,7 +231,9 @@
 [STATE] Cross-origin iframe policy enforced — parent JS cannot access iframe content
 [FORMAT] iframe sandbox attributes present if applicable","[NETWORK] No request from parent page origin reads card number value
 [CONSOLE] Cross-origin error thrown on attempted iframe content access (expected/correct behavior)","Card Number field found directly in parent page DOM without iframe; iframe src on same origin as storefront; no cross-origin error thrown on console access attempt","none — no order placed","VCST-3387 TC-SEC-001","Manual"
-"PAY-SEC-002","CyberSource - CVV Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+"PAY-SEC-002","CyberSource - CVV Field in Secure Iframe","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - Browser DevTools Elements panel available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and locate CyberSource CVV field
@@ -210,7 +245,9 @@
 [STATE] iframe sandboxing prevents parent page from accessing CVV field content
 [FORMAT] Separate iframe used for CVV (may be same or different iframe from card number)","[NETWORK] No request carries raw CVV value
 [CONSOLE] Cross-origin error is thrown (expected) when parent attempts to access CVV iframe","CVV field found directly in parent DOM; single iframe serving both card and CVV but from same-origin domain; no error thrown on cross-origin access attempt","none — no order placed","VCST-3387 TC-SEC-002","Manual"
-"PAY-SEC-003","CyberSource - No Raw Card Data in Network Requests","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+"PAY-SEC-003","CyberSource - No Raw Card Data in Network Requests","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - DevTools Network tab open and recording before form interaction","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Network tab; begin recording
@@ -225,7 +262,9 @@
 [NETWORK] CVV '@td(CYBERSOURCE_VISA.cvv)' absent from all request payloads
 [STATE] Only tokenized references or encrypted data present in payment-related requests","[NETWORK] All payment-related requests use HTTPS (check protocol column)
 [CONSOLE] No JS errors indicating tokenization failure","Raw card number found in any network request body; CVV found in any request payload; requests made over HTTP rather than HTTPS","Cancel order via admin if order was created","VCST-3387 TC-SEC-004","Manual"
-"PAY-SEC-004","CyberSource - No Card Data in Browser Storage","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","- Logged in as registered user
+"PAY-SEC-004","CyberSource - No Card Data in Browser Storage","CyberSource > Security","Critical","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; open DevTools Application tab
 [ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'
@@ -239,7 +278,9 @@
 [STATE] sessionStorage contains no card number or CVV values
 [STATE] Cookies do not contain raw card data","[CONSOLE] No JS writes card data to storage (no localStorage.setItem calls with card data visible)
 [NETWORK] Storage not populated from any API response containing card data","Card number found in localStorage or sessionStorage; CVV stored in any browser storage mechanism; cookie value contains raw card digits","Cancel order via admin if order was created","VCST-3387 TC-SEC-005","Manual"
-"PAY-SEC-005","CyberSource - All Payment Pages Served Over HTTPS","CyberSource > Security","Critical","BL-PAY-006","ECL-9.1","- Logged in as registered user
+"PAY-SEC-005","CyberSource - All Payment Pages Served Over HTTPS","CyberSource > Security","Critical","BL-PAY-006","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - DevTools Network tab open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; verify address bar shows 'https://'
@@ -254,7 +295,9 @@
 [NETWORK] No HTTP requests in Network tab for payment-related resources
 [CONSOLE] No mixed-content warnings in browser console","[NETWORK] Certificate valid — no SSL errors in DevTools
 [CONSOLE] No security policy violation errors","Any page, iframe, or API request uses HTTP instead of HTTPS; mixed-content browser warning appears; SSL certificate error shown","none — no order placed","VCST-3387 TC-SEC-006","Manual"
-"PAY-SEC-006","CyberSource - JWT Token Authentication in Iframe","CyberSource > Security","High","BL-PAY-001","ECL-9.1","- Logged in as registered user
+"PAY-SEC-006","CyberSource - JWT Token Authentication in Iframe","CyberSource > Security","High","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment form visible on {{FRONT_URL}}/cart
 - DevTools Elements and Network panels open","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; locate CyberSource payment iframe(s) in DevTools Elements panel
@@ -267,7 +310,9 @@
 [STATE] JWT is unique per page load — not reused across sessions
 [DOM] Token present in iframe src attribute before any user interaction","[NETWORK] JWT token sent in authorization-related requests
 [CONSOLE] No JWT decode errors in console","JWT token absent from iframe src; token present but reused across multiple sessions (static value); token format incorrect (fewer or more than three segments)","none — no order placed","VCST-3387 TC-INT-002","Manual"
-"PAY-3DS-001","CyberSource 3DS - Challenge Flow Completed Successfully","CyberSource > 3D Secure","High","BL-PAY-003, BL-PAY-004","ECL-9.1","- Logged in as registered user
+"PAY-3DS-001","CyberSource 3DS - Challenge Flow Completed Successfully","CyberSource > 3D Secure","High","BL-PAY-003, BL-PAY-004","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment processor configured and active
 - 3DS-enrolled test card available (obtain from CyberSource test card documentation — e.g. a card that triggers a challenge window)
@@ -288,7 +333,9 @@
 [DOM] Order confirmation shows order number and ordered items","[API] createOrderFromCart GraphQL mutation response has no errors[] entries after 3DS completion
 [NETWORK] 3DS authentication token (payer_auth_enroll_reply or equivalent) present in CyberSource request — not raw card data
 [ADMIN] Order in admin Orders list with status reflecting successful 3DS-authenticated payment","3DS challenge dialog never appears — authentication silently bypassed; challenge dialog appears but cannot be interacted with (blocked by popup blocker or iframe sandbox); order fails after successful challenge completion; raw card data visible in network payloads","Cancel order via admin if order was created","Checklist #9 item 4; ECL-9.1; BL-PAY-003; BL-PAY-004","Manual"
-"PAY-3DS-002","CyberSource 3DS - Failed Authentication Blocked","CyberSource > 3D Secure","High","BL-PAY-003, BL-PAY-004","ECL-9.1","- Logged in as registered user
+"PAY-3DS-002","CyberSource 3DS - Failed Authentication Blocked","CyberSource > 3D Secure","High","BL-PAY-003, BL-PAY-004","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
 - Cart has at least one item
 - CyberSource payment processor configured and active
 - 3DS-enrolled test card available that triggers a challenge

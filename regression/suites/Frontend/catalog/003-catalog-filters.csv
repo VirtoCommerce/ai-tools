@@ -1,5 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CAT-004","Category - Facet Filtering","Catalog > Filters","High","BL-CAT-002","","Category with faceted products exists","url={{FRONT_URL}}","[NAV] Navigate to any category with facets on {{FRONT_URL}}
+"CAT-004","Category - Facet Filtering","Catalog > Filters","High","BL-CAT-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with faceted products exists","url={{FRONT_URL}}","[NAV] Navigate to any category with facets on {{FRONT_URL}}
 [ASSERT] Verify facet panel is visible in sidebar
 [ACT] Click on any available facet value (e.g., any option from any facet group)
 [WAIT] Wait for product list to update
@@ -11,7 +13,8 @@
 [MATH] Multiple facets combine with AND logic — result count after 2 filters <= result count after 1 filter
 [DOM] Result count label updates after each filter action","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Spinner >5s after filter click; facet panel not rendering; result count unchanged after filter; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-005","Category - Price Range Filter","Catalog > Filters","High","BL-CAT-002","","Products with varying prices exist in category","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-005","Category - Price Range Filter","Catalog > Filters","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Products with varying prices exist in category","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ASSERT] Locate price range filter (slider or min/max inputs)
 [ACT] Set minimum price value (choose any value above 0 that is below the page maximum)
 [ACT] Set maximum price value (choose any value that is above the minimum but below the page maximum)
@@ -22,7 +25,8 @@
 [DOM] Products outside price range are not shown
 [DOM] Result count updates to reflect filtered set (count >= 0)","[NETWORK] no 4xx/5xx on price filter request
 [CONSOLE] no TypeError or JS errors","Price filter controls not rendering; products outside range still visible; result count unchanged; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-006","Category - Clear Filters","Catalog > Filters","Medium","BL-CAT-004","","Filters applied to a category page","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-006","Category - Clear Filters","Catalog > Filters","Medium","BL-CAT-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Filters applied to a category page","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply multiple filters (e.g., any facet value + price range)
 [WAIT] Wait for filtered results to load
 [ACT] Click 'Clear all' or 'Reset filters' button
@@ -32,7 +36,8 @@
 [DOM] Filter sidebar UI reset — no values selected
 [STATE] URL cleaned of filter parameters","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Reset button not visible; filters remain after reset; products not restored; URL still contains filter params; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-008","Category - Pagination","Catalog > Pagination","Medium","BL-CAT-005","","Category with 20+ products","url={{FRONT_URL}}","[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
+"CAT-008","Category - Pagination","Catalog > Pagination","Medium","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with 20+ products","url={{FRONT_URL}}","[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
 [SCROLL] Scroll to pagination controls
 [ASSERT] Verify pagination controls are visible
 [ACT] Click page 2
@@ -45,7 +50,8 @@
 [DOM] Previous button returns to page 1 product set
 [MATH] Total product count consistent across pages","[NETWORK] no 4xx/5xx on pagination request
 [CONSOLE] no TypeError or JS errors","Pagination controls not rendering; same products on page 2; Previous not navigating back; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-009","Category - Products Per Page","Catalog > Pagination","Low","BL-CAT-005","","Category with many products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-009","Category - Products Per Page","Catalog > Pagination","Low","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with many products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ASSERT] Locate 'per page' or items-per-page dropdown
 [ACT] Change 'per page' value (select any value different from the current one)
 [WAIT] Wait for product list to update
@@ -53,7 +59,8 @@
 [MATH] Visible product card count matches selected per-page value
 [STATE] URL or state updates to reflect new per-page setting","[NETWORK] no 4xx/5xx on per-page change request
 [CONSOLE] no TypeError or JS errors","Per-page selector not rendering; product count unchanged after change; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-014","Filter Chips - Facet Filter Chip Display","Catalog > Filters > Chips","High","BL-CAT-002","","Category with faceted products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-014","Filter Chips - Facet Filter Chip Display","Catalog > Filters > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with faceted products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ASSERT] Verify facet panel is visible
 [ACT] Click on any available facet value (pick any option from any facet group, e.g., any brand or type value)
 [WAIT] Wait for chip bar to update
@@ -64,7 +71,8 @@
 [MATH] Product count updates after chip applied (count > 0 or 0 if no products match)
 [STATE] URL contains filter parameter matching chip value","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Chip not appearing after filter click; chip label incorrect; close button absent; product count not updating; URL missing filter param; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-015","Filter Chips - Checkbox Control Chips (Show in stock)","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with stock filter available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-015","Filter Chips - Checkbox Control Chips (Show in stock)","Catalog > Filters > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with stock filter available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Toggle 'Show in stock' checkbox to ON
 [WAIT] Wait for chip bar to update
 [ASSERT] Verify chip labeled 'Show in stock' appears
@@ -76,7 +84,8 @@
 [STATE] Only 'Show in stock' filter removed; other filters preserved
 [MATH] Product count updates on each toggle","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Chip not appearing when checkbox toggled; chip removal also removes other filters; product count unchanged; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-016","Filter Chips - Checkbox Control Chips (Purchased before)","Catalog > Filters > Chips","High","BL-CAT-002","ECL-3.1","Category page with stock filter; user has purchase history","url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Navigate to any category page on {{FRONT_URL}} as authenticated user
+"CAT-016","Filter Chips - Checkbox Control Chips (Purchased before)","Catalog > Filters > Chips","High","BL-CAT-002","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with stock filter; user has purchase history","url={{FRONT_URL}}; email={{USER_EMAIL}}; password={{USER_PASSWORD}}","[NAV] Navigate to any category page on {{FRONT_URL}} as authenticated user
 [ACT] Toggle 'Purchased before' checkbox to ON
 [WAIT] Wait for chip bar to update
 [ASSERT] Verify chip labeled 'Purchased before' appears
@@ -88,7 +97,8 @@
 [MATH] Product count reflects filtered set (>= 0)
 [STATE] Removing chip unchecks the checkbox","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Chip not appearing for authenticated user; chip and checkbox state out of sync; product count unchanged; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-017","Filter Chips - Checkbox Control Chips (Available at branches)","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with branch selection enabled","url={{FRONT_URL}}","[NAV] Navigate to any category page with branch filter on {{FRONT_URL}}
+"CAT-017","Filter Chips - Checkbox Control Chips (Available at branches)","Catalog > Filters > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with branch selection enabled","url={{FRONT_URL}}","[NAV] Navigate to any category page with branch filter on {{FRONT_URL}}
 [ACT] Select one or more branches in 'Available at branches'
 [WAIT] Wait for chip bar to update
 [ASSERT] Verify chip appears showing selected branch count (e.g., 'Branches (2)')
@@ -98,7 +108,8 @@
 [STATE] Closing chip clears all selected branches simultaneously
 [MATH] Product count updates after branch selection and after removal","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Branch chip not appearing; chip count not matching selected branches; chip removal only clears one branch; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-018","Reset Filters - Combined Facet + Checkbox Reset","Catalog > Filters > Reset","Critical","BL-CAT-004","","Category page with multiple filter types available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-018","Reset Filters - Combined Facet + Checkbox Reset","Catalog > Filters > Reset","Critical","BL-CAT-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with multiple filter types available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply any available facet filter value (pick any option from the facet panel)
 [WAIT] Wait for chip to appear
 [ACT] Toggle 'Show in stock' checkbox to ON
@@ -112,7 +123,8 @@
 [MATH] Full unfiltered product count restored (count >= count with filters applied)
 [DOM] 'Reset filters' button disappears when no filters active","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Any chip remaining after reset; any checkbox still checked after reset; URL still has filter params; product count not fully restored; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-019","Reset Filters - Zero Results State","Catalog > Filters > Reset","Critical","BL-CAT-004","","Category page with filters available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-019","Reset Filters - Zero Results State","Catalog > Filters > Reset","Critical","BL-CAT-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with filters available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply filters until 0 products are shown (combine conflicting facet values or price ranges that exclude all products)
 [WAIT] Wait for empty state UI
 [ASSERT] Verify 'No results' message is displayed
@@ -124,7 +136,8 @@
 [MATH] Full product count > 0 restored after reset
 [STATE] All filter chips and checkboxes cleared","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","No-results message not showing; Reset button missing from empty state; products not restoring after reset; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-020","Reset Filters - Category Page Context Preserved","Catalog > Filters > Reset","High","BL-CAT-004","","On any named category page (resolve a category slug at runtime from the main navigation)","url={{FRONT_URL}}","[NAV] Navigate to any named category page on {{FRONT_URL}} (resolve a category slug at runtime from the navigation menu — pick any leaf category)
+"CAT-020","Reset Filters - Category Page Context Preserved","Catalog > Filters > Reset","High","BL-CAT-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+On any named category page (resolve a category slug at runtime from the main navigation)","url={{FRONT_URL}}","[NAV] Navigate to any named category page on {{FRONT_URL}} (resolve a category slug at runtime from the navigation menu — pick any leaf category)
 [ACT] Apply multiple filters
 [WAIT] Wait for filtered results
 [ACT] Click 'Reset filters' button
@@ -135,7 +148,8 @@
 [MATH] Full category product count > 0 restored
 [STATE] No filter chips or params in URL","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Reset redirects to /catalog instead of staying on category; category products not restored; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-022","Filter Chips - Individual Close vs Reset All","Catalog > Filters > Chips","High","BL-CAT-002","","Category page with multiple filters available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-022","Filter Chips - Individual Close vs Reset All","Catalog > Filters > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with multiple filters available","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply 3 or more filters (mix of facet and checkbox)
 [WAIT] Wait for all chips to appear
 [ACT] Click the x close button on ONE chip
@@ -149,7 +163,8 @@
 [MATH] Product count updates after each individual close
 [STATE] 'Reset filters' button clears all remaining filters in one action","[NETWORK] no 4xx/5xx on each filter removal
 [CONSOLE] no TypeError or JS errors","Closing one chip removes multiple filters; product count not updating after individual close; Reset not clearing all remaining; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-023","Filters - Browser Back/Forward Navigation","Catalog > Filters > Navigation","Medium","BL-CAT-003","","Category page with filters","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-023","Filters - Browser Back/Forward Navigation","Catalog > Filters > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with filters","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply any filter value A (note the chip label)
 [WAIT] Wait for chip and URL param
 [ACT] Apply any different filter value B (note the chip label)
@@ -164,7 +179,8 @@
 [STATE] Chips sync correctly with browser history navigation
 [STATE] URL params match chip state at each step","[NETWORK] no 4xx/5xx on history navigation
 [CONSOLE] no TypeError or JS errors","Back button removes all filters instead of just the last; chips not syncing with URL state after history navigation; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-024","Filters - Page Refresh Preserves State","Catalog > Filters > Navigation","Medium","BL-CAT-003","","Category page with filters applied","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-024","Filters - Page Refresh Preserves State","Catalog > Filters > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with filters applied","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply multiple filters
 [WAIT] Wait for chips and URL params to be set
 [KEY] Press F5 (or Ctrl+R) to refresh the page
@@ -175,7 +191,8 @@
 [STATE] Checkboxes reflect correct checked state after reload
 [DOM] Reset button functional after refresh","[NETWORK] no 4xx/5xx on page reload
 [CONSOLE] no TypeError or JS errors","Chips not rendering after refresh; checkboxes losing state after refresh; Reset not working after refresh; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-025","Filters - Multi-select Within Facet Group","Catalog > Filters","High","BL-CAT-002","","Category with multi-value facets","url={{FRONT_URL}}","[NAV] Navigate to any category page with multi-value facets on {{FRONT_URL}}
+"CAT-025","Filters - Multi-select Within Facet Group","Catalog > Filters","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with multi-value facets","url={{FRONT_URL}}","[NAV] Navigate to any category page with multi-value facets on {{FRONT_URL}}
 [ACT] Select 2 or more values within the same facet group (pick any 2 available options from a single group)
 [WAIT] Wait for chips to appear
 [ASSERT] Verify separate chip for each selected value
@@ -187,7 +204,8 @@
 [STATE] Removing one chip does not remove other values in same facet group
 [MATH] Product count updates after each chip change","[NETWORK] no 4xx/5xx on multi-select filter requests
 [CONSOLE] no TypeError or JS errors","Chips not appearing for each selected value; facet header not showing count; closing one chip removes all values in group; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"CAT-026","Facet Filter Badge - Size xs Renders Legibly","Catalog > Filters > Badge","High","BL-CAT-002","","Category with faceted filters and products available","url={{FRONT_URL}}","[NAV] Navigate to any category page with facets on {{FRONT_URL}}
+"CAT-026","Facet Filter Badge - Size xs Renders Legibly","Catalog > Filters > Badge","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with faceted filters and products available","url={{FRONT_URL}}","[NAV] Navigate to any category page with facets on {{FRONT_URL}}
 [ACT] Apply any facet filter value
 [WAIT] Wait for filter chip with badge to appear
 [ASSERT] Locate the badge element on the filter chip
@@ -195,21 +213,24 @@
 [DOM] Badge text is legible — not clipped or overflowing container
 [DOM] Badge has sufficient visual contrast against background
 [DOM] Badge shape and padding appear correct at xs size","[CONSOLE] no TypeError or JS errors","Badge text clipped or overflowing; badge not visible against background; badge absent from chip; console TypeError","none","VCST-4623","Manual"
-"CAT-027","Facet Filter Badge - Double-Digit Count Uses Correct Padding","Catalog > Filters > Badge","High","BL-CAT-002","","Category with enough filter values to select 10 or more from a single facet group","url={{FRONT_URL}}","[NAV] Navigate to any category page with a large facet group (10+ available values) on {{FRONT_URL}}
+"CAT-027","Facet Filter Badge - Double-Digit Count Uses Correct Padding","Catalog > Filters > Badge","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with enough filter values to select 10 or more from a single facet group","url={{FRONT_URL}}","[NAV] Navigate to any category page with a large facet group (10+ available values) on {{FRONT_URL}}
 [ACT] Select 10 or more values from the same facet group
 [WAIT] Wait for facet header badge to update
 [ASSERT] Verify badge shows a double-digit count correctly","[DOM] Badge shows a double-digit count (>= 10)
 [DOM] Badge width expands to fit the double-digit number (dynamic padding)
 [DOM] Count not clipped or truncated
 [DOM] Badge proportionally correct at double-digit count","[CONSOLE] no TypeError or JS errors","Badge truncating double-digit count; badge overflow at 10+; count not matching applied filters; console TypeError","none","VCST-4623","Manual"
-"CAT-029","Facet Filter Badge - WCAG Contrast at xs Size","Catalog > Filters > Badge > Accessibility","High","BL-CAT-002","","Category with facets; DevTools or accessibility checker available","url={{FRONT_URL}}","[NAV] Navigate to any category page with facets on {{FRONT_URL}}
+"CAT-029","Facet Filter Badge - WCAG Contrast at xs Size","Catalog > Filters > Badge > Accessibility","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with facets; DevTools or accessibility checker available","url={{FRONT_URL}}","[NAV] Navigate to any category page with facets on {{FRONT_URL}}
 [ACT] Apply any filter to display a filter chip with badge
 [WAIT] Wait for chip with badge to render
 [ACT] Open browser DevTools Accessibility panel or contrast checker
 [ASSERT] Measure badge text contrast ratio against badge background","[DOM] Badge text contrast ratio >= 4.5:1 against badge background (WCAG AA for normal text)
 [DOM] Contrast maintained at xs badge size despite reduced padding
 [DOM] Badge meets WCAG 2.1 Level AA criterion 1.4.3","[CONSOLE] no TypeError or JS errors","Contrast ratio below 4.5:1; badge failing WCAG AA; DevTools flagging color contrast issue; console TypeError","none","VCST-4623","Manual"
-"CAT-030","Range Facet - Non-Price Numeric Property Rendering","Catalog > Filters > Range","Critical","BL-CAT-002","ECL-3.2","Category with a numeric range property (non-price) configured in Admin > Stores > Aggregation properties; range filter visible on that category page; resolve the category URL and range property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a non-price numeric range filter in its facet panel on {{FRONT_URL}} (resolve the category URL at runtime by inspecting the filter bar for any range filter that is not the price range)
+"CAT-030","Range Facet - Non-Price Numeric Property Rendering","Catalog > Filters > Range","Critical","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with a numeric range property (non-price) configured in Admin > Stores > Aggregation properties; range filter visible on that category page; resolve the category URL and range property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a non-price numeric range filter in its facet panel on {{FRONT_URL}} (resolve the category URL at runtime by inspecting the filter bar for any range filter that is not the price range)
 [WAIT] Wait for category page and filter bar to load
 [ASSERT] Locate the non-price numeric range filter button in the filter bar (e.g., a property like volume, weight, or size)
 [ACT] Click the range filter button to open the range dropdown
@@ -225,7 +246,8 @@
 [DOM] Products outside the selected range are excluded","[NETWORK] POST /graphql (products) returns HTTP 200 with the range filter applied
 [NETWORK] Response totalCount matches displayed product count
 [CONSOLE] no TypeError or JS errors","Range filter button missing from filter bar; slider not rendering; products outside range appearing; range values corrupted in URL; console TypeError","none","VP-9035, VCST-4833, GAP-RF-01","Manual"
-"CAT-031","Range Facet - VP-9035 Regression: Underscore Field Name Preserved in Chip","Catalog > Filters > Range > Regression","Critical","BL-CAT-002, BL-SRCH-001","ECL-3.2","Category page with an underscore-named numeric property range filter configured (e.g., a property whose name contains an underscore character); VP-9035 fix deployed; resolve the category URL and property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a range filter whose field name contains an underscore character on {{FRONT_URL}} (resolve at runtime by inspecting the aggregation properties or filter bar labels)
+"CAT-031","Range Facet - VP-9035 Regression: Underscore Field Name Preserved in Chip","Catalog > Filters > Range > Regression","Critical","BL-CAT-002, BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with an underscore-named numeric property range filter configured (e.g., a property whose name contains an underscore character); VP-9035 fix deployed; resolve the category URL and property name at runtime","url={{FRONT_URL}}","[NAV] Navigate to a category page that has a range filter whose field name contains an underscore character on {{FRONT_URL}} (resolve at runtime by inspecting the aggregation properties or filter bar labels)
 [WAIT] Wait for filter bar to load
 [ACT] Click the underscore-named range filter button
 [ACT] Enter a value above the minimum in the min input field and press Enter
@@ -240,7 +262,8 @@
 [NETWORK] Response aggregations match the full field name
 [NETWORK] No mismatched IsApplied states in aggregation response
 [CONSOLE] no TypeError or JS errors","Filter chip shows truncated name without underscore; URL mutates to wrong facet range; products outside range visible; GetFieldName splits on underscore","none","VP-9035, VCST-4833, GAP-RF-02","Manual"
-"CAT-032","Range Facet - Price Range Chip Display and Removal","Catalog > Filters > Range > Chips","High","BL-CAT-002","","Category page with price range filter available","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
+"CAT-032","Range Facet - Price Range Chip Display and Removal","Catalog > Filters > Range > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter available","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter bar to load
 [ACT] Open price range filter dropdown/slider
 [ASSERT] Note the current min and max price values shown
@@ -256,7 +279,8 @@
 [MATH] Product count returns to original unfiltered count after chip removal
 [STATE] URL filter parameters are cleared after chip removal","[NETWORK] no 4xx/5xx on range filter apply and remove
 [CONSOLE] no TypeError or JS errors","Range chip not appearing after filter apply; chip label missing range values; chip removal not clearing filter; products not restoring after chip close; URL retaining filter params; console TypeError","none","GAP-RF-03","Manual"
-"CAT-033","Range Facet - Slider Min Greater Than Max Validation","Catalog > Filters > Range > Validation","Medium","BL-CAT-002","","Category page with price range slider or min/max input fields","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
+"CAT-033","Range Facet - Slider Min Greater Than Max Validation","Catalog > Filters > Range > Validation","Medium","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range slider or min/max input fields","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter controls
 [ACT] Open price range filter
 [ASSERT] Note the current min and max bounds from the page
@@ -267,7 +291,8 @@
 [DOM] Filter chip shows the corrected range (lower value to higher value)
 [DOM] No JS crash or broken UI state","[NETWORK] No 4xx/5xx triggered by invalid range input
 [CONSOLE] no TypeError or JS errors","JS crash on invalid range; empty page with no error message; corrupted URL params; console TypeError","none","GAP-RF-04","Manual"
-"CAT-034","Range Facet - Combined with Term Facet (AND Logic)","Catalog > Filters > Range > Combined","High","BL-CAT-002","ECL-3.2","Category page with both term facets (e.g., Brand or Type) and range facets (price) available","url={{FRONT_URL}}","[NAV] Navigate to any category page with multiple filter types on {{FRONT_URL}}
+"CAT-034","Range Facet - Combined with Term Facet (AND Logic)","Catalog > Filters > Range > Combined","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with both term facets (e.g., Brand or Type) and range facets (price) available","url={{FRONT_URL}}","[NAV] Navigate to any category page with multiple filter types on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ACT] Apply any term facet filter value
 [WAIT] Wait for filtered results; note result count as Count_Brand
@@ -283,7 +308,8 @@
 [DOM] Both chips visible when both filters active
 [STATE] Removing range chip preserves term facet chip","[NETWORK] POST /graphql returns results matching both filter and facet criteria
 [CONSOLE] no TypeError or JS errors","Combined filter returning more results than single filter (OR instead of AND); products outside price range appearing with correct facet value; removing range chip also removes term chip; console TypeError","none","GAP-RF-05","Manual"
-"CAT-035","Range Facet - URL Persistence on Refresh and Back/Forward","Catalog > Filters > Range > Navigation","Medium","BL-CAT-003","","Category page with price range filter applied","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-035","Range Facet - URL Persistence on Refresh and Back/Forward","Catalog > Filters > Range > Navigation","Medium","BL-CAT-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter applied","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply any price range filter (choose any valid range)
 [WAIT] Wait for filtered results and URL to update
 [ASSERT] Note the URL contains price range parameter
@@ -301,7 +327,8 @@
 [DOM] Range filter chip renders correctly after refresh and back navigation
 [MATH] Filtered product count is consistent before and after refresh","[NETWORK] no 4xx/5xx on refresh or back navigation
 [CONSOLE] no TypeError or JS errors","Range filter cleared after refresh; chip not rendering after back navigation; URL losing filter params; different product count after refresh; console TypeError","none","GAP-RF-06","Manual"
-"CAT-036","Range Facet - Cascading Bucket Counts Accuracy","Catalog > Filters > Range > Counts","High","BL-SRCH-001","ECL-3.2","Category page with price range filter showing bucket options (e.g., distinct price ranges with product counts)","url={{FRONT_URL}}","[NAV] Navigate to any category page with range facet buckets on {{FRONT_URL}}
+"CAT-036","Range Facet - Cascading Bucket Counts Accuracy","Catalog > Filters > Range > Counts","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter showing bucket options (e.g., distinct price ranges with product counts)","url={{FRONT_URL}}","[NAV] Navigate to any category page with range facet buckets on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ASSERT] Locate range facet with bucket options showing product counts
 [ASSERT] Note the count for each bucket (each count is a non-negative integer)
@@ -316,7 +343,8 @@
 [DOM] Each range bucket displays a non-negative count
 [STATE] Zero-count buckets are either hidden or shown as (0)","[NETWORK] POST /graphql aggregation counts match displayed bucket counts
 [CONSOLE] no TypeError or JS errors","Bucket count shown does not match number of products displayed; bucket counts not updating after term facet applied; zero products returned for non-zero bucket; console TypeError","none","BL-SRCH-001, ECL-3.2, GAP-RF-07","Manual"
-"CAT-037","Range Facet - Currency Switch Updates Price Range Values","Catalog > Filters > Range > Currency","High","BL-CAT-002, BL-PRICE-005","","Category page with price range filter; store supports multiple currencies","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
+"CAT-037","Range Facet - Currency Switch Updates Price Range Values","Catalog > Filters > Range > Currency","High","BL-CAT-002, BL-PRICE-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter; store supports multiple currencies","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for filter panel to load
 [ASSERT] Note price range min/max values in default currency
 [ACT] Switch currency using the currency selector (select any alternative currency)
@@ -331,7 +359,8 @@
 [STATE] Product count may decrease significantly if few products have prices in the new currency — this is expected behavior (BL-PRICE-005)","[NETWORK] POST /graphql uses currencyCode matching selected currency
 [NETWORK] Filter parameter uses price.[currency_code] (not the previous currency)
 [CONSOLE] no TypeError or JS errors","Range values unchanged after currency switch; products showing previous-currency prices; mixed currencies in filter and product cards; filter parameter still using old currency; console TypeError","none","BL-PRICE-005, GAP-RF-08","Manual"
-"CAT-038","Range Facet - Open-Ended Range: Up To Maximum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
+"CAT-038","Range Facet - Open-Ended Range: Up To Maximum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for range filter to load
 [ASSERT] Note the current price range min and max values from the filter controls
 [ACT] Set range with only maximum value (leave min empty or at the page minimum, set max to any value below the page maximum)
@@ -343,7 +372,8 @@
 [DOM] Filter chip shows an open-ended upper-bound label (e.g., 'price: <= X' with the chosen max value)
 [MATH] Product count > 0 (valid range has products) and matches actual products at or below maximum","[NETWORK] GraphQL filter uses open-ended syntax [TO max_value] in URL facets parameter
 [CONSOLE] no TypeError or JS errors","Products above maximum appearing in results; filter chip showing wrong range; product count mismatch; console TypeError","none","GAP-RF-09","Manual"
-"CAT-039","Range Facet - Open-Ended Range: From Minimum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
+"CAT-039","Range Facet - Open-Ended Range: From Minimum","Catalog > Filters > Range > Boundaries","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Category page with price range filter; products at various price points","url={{FRONT_URL}}","[NAV] Navigate to any category page with price range filter on {{FRONT_URL}}
 [WAIT] Wait for range filter to load
 [ASSERT] Note the current price range min and max values from the filter controls
 [ACT] Set range with only minimum value (set min to any value above the page minimum, leave max empty or at the page maximum)

@@ -22,6 +22,27 @@ Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Con
 | `References` | JIRA / sprint ticket IDs — include in bug reports |
 | `Automation_Status` | Automated/Manual/Semi-Automated — record in results |
 
+## Precondition Tags (`[PRE:*]`)
+
+`[PRE:*]` tags appear in the `Preconditions` column and specify **execution-time state-setup actions** that the runner performs via browser UI before executing the test's `Steps` block. They are imperative (runner acts) not merely declarative (runner verifies). Full protocol: `.claude/agents/knowledge/test-execution-preflight.md`.
+
+| Tag | Action |
+|-----|--------|
+| `[PRE:SIGNOUT]` | Sign out via account-menu popup if currently signed in |
+| `[PRE:SIGNIN_AS:<alias>]` | Sign in as the user resolved from `<alias>` (e.g., `TECHFLOW_ADMIN`, `USER2`, `USER_DEFAULT`); sign out first if different user is active |
+| `[PRE:SWITCH_ORG:<alias>]` | Switch to the org identified by `<alias>` via org-switcher UI; execute after sign-in |
+| `[PRE:RESET_CART]` | Clear all items from the cart via UI; proceed even if clear partially fails |
+| `[PRE:CLEAR_SESSION]` | Full sign-out + fresh page load to purge session; use at user-context block boundaries |
+| `[PRE:CLEAR_CACHE]` | Cache-busting navigate to force fresh asset load after module hotfix deployments |
+| `[PRE:VERIFY_AUTH:<alias>]` | Assert current session is `<alias>` without changing state; BLOCKED on mismatch |
+
+**Canonical tag order when multiple tags appear on one case:**
+`[PRE:CLEAR_SESSION]` → `[PRE:SIGNOUT]` → `[PRE:SIGNIN_AS]` → `[PRE:SWITCH_ORG]` → `[PRE:RESET_CART]` → `[PRE:CLEAR_CACHE]` → `[PRE:VERIFY_AUTH]`
+
+**Idempotency rule:** Detect state before acting. If required state is already met, skip the action and proceed.
+
+**Failure policy:** `[PRE:SIGNIN_AS]`, `[PRE:SIGNOUT]`, `[PRE:SWITCH_ORG]`, `[PRE:CLEAR_SESSION]`, `[PRE:CLEAR_CACHE]`, and `[PRE:VERIFY_AUTH]` failures → mark test **BLOCKED**. `[PRE:RESET_CART]` failure → **log warning only**, do NOT block.
+
 ## Step Type Tags → Playwright MCP tools
 
 | Tag | Tool |

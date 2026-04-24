@@ -1,5 +1,8 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"BOPIS-080","Guest BOPIS Checkout — Select Pickup and Complete Order","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","Guest session (not logged in); Products in cart with BOPIS-eligible items; At least one pickup location configured; guest checkout enabled (createAnonymousOrderEnabled=true)","url={{FRONT_URL}};sku={{TEST_SKU}}","[SETUP] generate guest email for this run: smoke-bopis-080-{current_unix_ms}@test-agent.com — store as $GUEST_EMAIL_080 for use in subsequent steps
+"BOPIS-080","Guest BOPIS Checkout — Select Pickup and Complete Order","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Guest session (not logged in); Products in cart with BOPIS-eligible items; At least one pickup location configured; guest checkout enabled (createAnonymousOrderEnabled=true)","url={{FRONT_URL}};sku={{TEST_SKU}}","[SETUP] generate guest email for this run: smoke-bopis-080-{current_unix_ms}@test-agent.com — store as $GUEST_EMAIL_080 for use in subsequent steps
 [NAV] {{FRONT_URL}}/cart
 [ASSERT] user is not authenticated (no account menu visible)
 [ACT] click 'Pickup' radio button in delivery options
@@ -21,7 +24,9 @@
 [FORMAT] confirmation email or on-screen confirmation references pickup location","[CONSOLE] no JS errors during guest checkout flow
 [NETWORK] POST /cart/checkout returns 2xx; no 4xx auth errors blocking guest
 [API] order created with fulfillment type = pickup; no shipping address attached","Guest blocked at checkout with 'Login required' message; Pickup location details missing from order confirmation; Shipping address section appears on confirmation; Order confirmation shows wrong fulfillment type; guest checkout disabled (BL-CHK-001 — verify createAnonymousOrderEnabled=true in store settings before running)","Navigate to account creation page if needed; otherwise no cleanup required","Coverage Gap Analysis","Generated"
-"BOPIS-081","Guest BOPIS Order — Post-Purchase Account Registration","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","[DEPENDS ON BOPIS-080] Guest BOPIS order completed in same session as BOPIS-080; Order confirmation page still open; Registration option available post-purchase; guest checkout enabled","url={{FRONT_URL}};sku={{TEST_SKU}};password={{USER_PASSWORD}}","[SETUP] this case depends on BOPIS-080 completing successfully in the same session; $GUEST_EMAIL_080 must be set from BOPIS-080 [SETUP] step
+"BOPIS-081","Guest BOPIS Order — Post-Purchase Account Registration","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[DEPENDS ON BOPIS-080] Guest BOPIS order completed in same session as BOPIS-080; Order confirmation page still open; Registration option available post-purchase; guest checkout enabled","url={{FRONT_URL}};sku={{TEST_SKU}};password={{USER_PASSWORD}}","[SETUP] this case depends on BOPIS-080 completing successfully in the same session; $GUEST_EMAIL_080 must be set from BOPIS-080 [SETUP] step
 [NAV] {{FRONT_URL}}/cart
 [ACT] complete guest BOPIS checkout (select pickup location, enter $GUEST_EMAIL_080 as email, place order)
 [WAIT] order confirmation page loads with pickup details
@@ -41,7 +46,9 @@
 [STATE] guest order is associated with the newly created account","[CONSOLE] no JS errors during account creation flow
 [NETWORK] registration POST returns 2xx; account creation successful
 [API] guest order linked to new account in platform — order visible via account orders endpoint","Post-purchase registration prompt missing; Email not pre-filled in registration form; BOPIS order not visible in order history after registration; Order history shows shipping address instead of pickup location; Case cannot run without BOPIS-080 completing first","Delete test account created with $GUEST_EMAIL_080 after case execution; navigate away","Coverage Gap Analysis","Generated"
-"BOPIS-082","Change Pickup Location Mid-Checkout — Address Updates on Order Review","BOPIS > Checkout","High","BL-BOPIS-004","ECL-14.2","Authenticated user; Cart with BOPIS-eligible items; At least two distinct pickup locations configured (Location A and Location B)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-082","Change Pickup Location Mid-Checkout — Address Updates on Order Review","BOPIS > Checkout","High","BL-BOPIS-004","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with BOPIS-eligible items; At least two distinct pickup locations configured (Location A and Location B)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] select 'Pickup' delivery option
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
@@ -63,7 +70,9 @@
 [FORMAT] pickup address format matches Location B's configured address (street, city, state, zip)","[CONSOLE] no JS errors when switching locations mid-checkout
 [NETWORK] cart update request returns 2xx after location change; response body contains Location B identifier
 [API] cart query returns updated fulfillmentCenterId matching Location B after change","Stale Location A address still showing after Location B selected; Checkout page not refreshing pickup details; Network request to update pickup location returns 4xx/5xx; Duplicate or conflicting address entries visible","Clear cart or return to cart page","Coverage Gap Analysis","Generated"
-"BOPIS-083","Change From Pickup to Delivery Mid-Checkout — Shipping Form Appears","BOPIS > Checkout","High","BL-BOPIS-004","ECL-14.2","Authenticated user; Cart with items; Pickup location already selected; Delivery/shipping option available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-083","Change From Pickup to Delivery Mid-Checkout — Shipping Form Appears","BOPIS > Checkout","High","BL-BOPIS-004","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with items; Pickup location already selected; Delivery/shipping option available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] select 'Pickup' delivery option
 [ACT] select any available pickup location and confirm
 [WAIT] pickup location shown in cart
@@ -83,7 +92,9 @@
 [DOM] 'Shipping' or delivery-related label replaces 'Pickup' label in order summary","[CONSOLE] no JS errors during fulfillment type switch
 [NETWORK] cart update request returns 2xx when switching to delivery; cart no longer has fulfillmentCenterId set
 [API] cart response shows delivery/shipping fulfillment type, pickup location cleared","Shipping address form does not appear after switching to delivery; Pickup location section still visible after switching; Shipping cost not added to order total; Cart API still shows pickup fulfillment type after switch","Clear cart","Coverage Gap Analysis","Generated"
-"BOPIS-084","BOPIS with Product Discount Coupon — Discount Applied to Subtotal","BOPIS > Promotions","Medium","BL-BOPIS-002","ECL-13.1","Authenticated user; Cart with BOPIS-eligible product; COUPON_10PCT (COU-001) must be seeded and active — 10% off product coupon","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+"BOPIS-084","BOPIS with Product Discount Coupon — Discount Applied to Subtotal","BOPIS > Promotions","Medium","BL-BOPIS-002","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with BOPIS-eligible product; COUPON_10PCT (COU-001) must be seeded and active — 10% off product coupon","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [ACT] add product {{TEST_SKU}} to cart
 [ACT] select 'Pickup' delivery option
 [ACT] select and confirm a pickup location
@@ -101,7 +112,9 @@
 [DOM] order total = discounted subtotal + taxes (no shipping added)","[CONSOLE] no JS errors during coupon application
 [NETWORK] coupon apply API returns 2xx; response body contains discount amount
 [API] cart query confirms @td(COUPON_10PCT.promo_name) promotion applied with correct discount value; fulfillment type still pickup","Coupon rejected with 'not applicable' error for pickup orders; Discount amount not deducted from subtotal; Shipping cost erroneously added after coupon applied; Order total calculation incorrect","Remove coupon; clear cart","Coverage Gap Analysis","Generated"
-"BOPIS-085","BOPIS with Free-Shipping Coupon — No Error and $0 Shipping Unchanged","BOPIS > Promotions","Medium","BL-BOPIS-002","ECL-13.1","Authenticated user; Cart with BOPIS-eligible product; COUPON_FREESHIP (COU-020) must be seeded and active — free shipping coupon","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_FREESHIP.code)","[NAV] {{FRONT_URL}}/cart
+"BOPIS-085","BOPIS with Free-Shipping Coupon — No Error and $0 Shipping Unchanged","BOPIS > Promotions","Medium","BL-BOPIS-002","ECL-13.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with BOPIS-eligible product; COUPON_FREESHIP (COU-020) must be seeded and active — free shipping coupon","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_FREESHIP.code)","[NAV] {{FRONT_URL}}/cart
 [ACT] add product {{TEST_SKU}} to cart
 [ACT] select 'Pickup' delivery option
 [ACT] select and confirm a pickup location
@@ -118,7 +131,9 @@
 [DOM] no negative shipping amount or unexpected line items in order summary","[CONSOLE] no JS errors or uncaught exceptions during coupon application
 [NETWORK] coupon apply API returns 2xx (not 4xx); no error in response body
 [API] cart query confirms $0 shipping; @td(COUPON_FREESHIP.promo_name) recorded but has no monetary effect on pickup","Free-shipping coupon triggers error 'coupon not valid' for pickup; Shipping line shows negative amount; Subtotal incorrectly modified by free-shipping coupon; Coupon system blocks pickup checkout","Remove coupon; clear cart","Coverage Gap Analysis","Generated"
-"BOPIS-086","Multiple Items Assigned to Different Pickup Locations in One Order","BOPIS > Multi-Location","Medium","BL-BOPIS-005","ECL-14.3","Authenticated user; At least two BOPIS-eligible products available — PROD_HEADPHONES (PROD-001) and PROD_LAPTOP (PROD-002) are the seeded fixtures; At least two distinct pickup store locations configured; Precondition check: verify platform supports per-item pickup location assignment before running (if not supported, mark N/A and document in Failure_Signals)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku1={{TEST_SKU}};sku2=@td(PROD_LAPTOP.sku)","[NAV] {{FRONT_URL}}/cart
+"BOPIS-086","Multiple Items Assigned to Different Pickup Locations in One Order","BOPIS > Multi-Location","Medium","BL-BOPIS-005","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; At least two BOPIS-eligible products available — PROD_HEADPHONES (PROD-001) and PROD_LAPTOP (PROD-002) are the seeded fixtures; At least two distinct pickup store locations configured; Precondition check: verify platform supports per-item pickup location assignment before running (if not supported, mark N/A and document in Failure_Signals)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku1={{TEST_SKU}};sku2=@td(PROD_LAPTOP.sku)","[NAV] {{FRONT_URL}}/cart
 [ACT] add product {{TEST_SKU}} to cart
 [ACT] add product @td(PROD_LAPTOP.sku) to cart
 [WAIT] both items visible in cart
@@ -137,7 +152,9 @@
 [STATE] no conflicting or merged pickup location entry (each item retains its assigned location)","[CONSOLE] no JS errors when assigning multiple pickup locations
 [NETWORK] cart update requests for each item return 2xx; no conflict errors
 [API] order created with two fulfillment groups — each with correct store and item assignment","Platform does not support per-item pickup assignment (mark test as N/A and document platform capability gap); Only one pickup location shown for both items; @td(PROD_LAPTOP.sku) item pickup location overrides item 1 assignment; Order confirmation collapses both items into single pickup entry","Clear cart after test","Coverage Gap Analysis","Generated"
-"BOPIS-089","BOPIS Checkout Order Total Formula (BL-CHK-006)","BOPIS > Checkout > Order Total","Critical","BL-CHK-006,BL-BOPIS-002","ECL-14.1","Authenticated user; Cart with at least one BOPIS-eligible product; Pickup location confirmed; Tax-applicable store configuration; COUPON_10PCT (COU-001) seeded and active for discount component verification","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+"BOPIS-089","BOPIS Checkout Order Total Formula (BL-CHK-006)","BOPIS > Checkout > Order Total","Critical","BL-CHK-006,BL-BOPIS-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with at least one BOPIS-eligible product; Pickup location confirmed; Tax-applicable store configuration; COUPON_10PCT (COU-001) seeded and active for discount component verification","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};coupon=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [ACT] add product {{TEST_SKU}} to cart (quantity 2)
 [WAIT] cart loads with line item
 [ACT] note line item subtotal = unit_price × qty
@@ -163,7 +180,9 @@
 [NETWORK] cart query taxTotal and subTotal fields match displayed values
 [API] placed order total in xAPI order response matches confirmation page total
 [ADMIN] Admin order blade shows identical total to confirmation page","Total mismatch between cart and checkout page; Total mismatch between checkout and confirmation; Admin shows different total (BL-CHK-006 violation); Unexplained $0.01+ discrepancy at any stage; Shipping not $0 for pickup order","Cancel order via admin if needed; remove coupon; clear cart","BL-CHK-006,BL-BOPIS-002,Coverage Gap Analysis","Manual"
-"BOPIS-090","Cart-Level Pickup Toggle: $0 Shipping, No Shipping Address, Single Pickup Shipment (BL-BOPIS-002, BL-BOPIS-006)","BOPIS > Checkout > Pickup Toggle","Critical","BL-BOPIS-002,BL-BOPIS-006,BL-CHK-006","ECL-14.1","Authenticated user; Cart with 2+ BOPIS-eligible products; At least one pickup location configured; Storefront v2.48.0 — cart-level Pickup/Shipping toggle under 'Shipping Details' (per-line mixed-mode not available in this version)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"BOPIS-090","Cart-Level Pickup Toggle: $0 Shipping, No Shipping Address, Single Pickup Shipment (BL-BOPIS-002, BL-BOPIS-006)","BOPIS > Checkout > Pickup Toggle","Critical","BL-BOPIS-002,BL-BOPIS-006,BL-CHK-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart with 2+ BOPIS-eligible products; At least one pickup location configured; Storefront v2.48.0 — cart-level Pickup/Shipping toggle under 'Shipping Details' (per-line mixed-mode not available in this version)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [ACT] add product {{TEST_SKU}} to cart (quantity 2, or add a second BOPIS-eligible product)
 [WAIT] cart loads with line items visible
 [ACT] locate 'Shipping Details' section on cart page
@@ -197,7 +216,8 @@
 [NETWORK] browser_network_requests: cart update on Pickup toggle selection returns 2xx; GA4 dataLayer contains ep.shipping_tier=Pickup after toggle
 [API] cart xAPI query returns single shipments[] entry with fulfillmentCenterId populated and shippingAddress null
 [ADMIN] Admin order blade confirms fulfillmentType = Pickup; shippingAddress absent","Pickup toggle absent from 'Shipping Details' section; Shipping cost not $0 after selecting Pickup (BL-BOPIS-002 violation); Shipping address form shown on checkout for pure-BOPIS cart (BL-BOPIS-006 violation); Billing address form missing from checkout; Order total includes non-zero shipping for pickup (BL-CHK-006 violation); GA4 ep.shipping_tier not emitting 'Pickup'; Cart xAPI returns zero shipments or shipment without fulfillmentCenterId; Admin order shows shipping address for pickup order","Cancel order via Admin if created; clear cart","BL-BOPIS-002,BL-BOPIS-006,BL-CHK-006","Manual"
-"BOPIS-088","Completed BOPIS Order Appears Correctly in Order History","BOPIS > Order History","Medium","BL-BOPIS-006","ECL-14.1","Authenticated user who has previously completed at least one BOPIS pickup order; Order is in 'Processing' or 'Completed' status","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+"BOPIS-088","Completed BOPIS Order Appears Correctly in Order History","BOPIS > Order History","Medium","BL-BOPIS-006","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Authenticated user who has previously completed at least one BOPIS pickup order; Order is in 'Processing' or 'Completed' status","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [ACT] log in with credentials {{USER_EMAIL}} / {{USER_PASSWORD}}
 [WAIT] authenticated; account menu visible
 [NAV] {{FRONT_URL}}/account/orders

@@ -18,7 +18,8 @@
   "affectedSuites": ["050d", "010", "006"],
   "casesAnalyzed": 62,
   "casesSynced": 3,
-  "casesGenerated": 7,
+  "casesGenerated": 5,
+  "casesRemovedAfterPMClarification": ["B2C-SHIP-015", "B2C-SHIP-016"],
   "casesReviewed": 10,
   "casesVerified": 5,
   "filesModified": [
@@ -35,7 +36,7 @@
   ],
   "testCountChanges": {
     "050d": { "before": 22, "after": 26, "delta": 4, "added": ["GQL-056", "GQL-057", "GQL-058", "GQL-059"] },
-    "010": { "before": 51, "after": 54, "delta": 3, "added": ["B2C-SHIP-014", "B2C-SHIP-015", "B2C-SHIP-016"], "synced": ["B2C-SHIP-001", "B2C-SHIP-002"] },
+    "010": { "before": 51, "after": 52, "delta": 1, "added": ["B2C-SHIP-014"], "removed": ["B2C-SHIP-015", "B2C-SHIP-016"], "synced": ["B2C-SHIP-001", "B2C-SHIP-002"], "note": "SHIP-015/016 removed after user confirmed PR #129 advanced search/facets are scoped to checkout popup only (CHK-087..106 in 011) — not to /account/addresses" },
     "006": { "before": 39, "after": 39, "delta": 0, "synced": ["B2C-ORG-004"] }
   },
   "gateResults": {
@@ -46,7 +47,7 @@
     "G5_DataValidity": "PASS",
     "G6_BLECLCoverage": "WARN (PROPOSED-BL-PROFILE-001 awaits approval)",
     "G7_Duplication": "PASS",
-    "G8_Environment": "WARN (B2C-SHIP-015/016 features not present on /account/addresses in current theme build; only checkout popup has facets/search)",
+    "G8_Environment": "PASS (after user confirmed PR #129 advanced search/facets are checkout-only; SHIP-015/016 removed; remaining cases all verified)",
     "G9_Sync": "PASS"
   },
   "environmentVerify": {
@@ -57,9 +58,9 @@
     "suspectedFindings": [
       {
         "id": "F1",
-        "severity": "Medium",
-        "description": "PR #129 advanced search + country/state/city facets are NOT visible in /account/addresses listing OR header ship-to popover — only in checkout address-selection popup (covered by prior run CHK-087..106). Could be intentional scope or future deliverable. Needs PM clarification before filing as bug.",
-        "impact": "B2C-SHIP-015 and B2C-SHIP-016 describe aspirational behavior — set Automation_Status:blocked-by-frontend-scope or remove pending decision"
+        "severity": "Resolved",
+        "description": "PR #129 advanced search + country/state/city facets are intentionally scoped to the checkout address-selection popup only — NOT /account/addresses or header ship-to popover. Confirmed by user 2026-04-23. Not a bug.",
+        "resolution": "B2C-SHIP-015 and B2C-SHIP-016 removed from 010-b2c-bulk-ship-dashboard.csv; testCount adjusted from 54 to 52. B2C-SHIP-014 softened: no longer requires UI pre-check or warning — tests only the server-side silent-skip invariant via updateMemberAddresses."
       },
       {
         "id": "F2",
@@ -98,16 +99,13 @@
     "stale": []
   },
   "manualDecisionsRequired": [
-    "F1: PM confirmation of PR #129 scope — is advanced search intended for /account/addresses and ship-to header, or checkout popup only? Affects B2C-SHIP-015/016 status.",
     "BL: approve/edit/reject PROPOSED-BL-PROFILE-001 before promoting to business-logic.md",
-    "B2C-SHIP-014: live-walk Add Duplicate flow to determine warning-vs-silent-skip branch; narrow assertions",
     "GQL-058: admin lookup helper needed for foreign memberId; flag as Manual execution until provided",
     "GQL-056/058: verify checkDuplicateAddress.duplicateId field exists in live schema and extend assertions if so"
   ],
   "nextSteps": [
-    "User decision on F1 (scope) → update B2C-SHIP-015/016 accordingly",
     "User review bl-proposals.md and manually promote to business-logic.md if approved",
     "Fix browser tooling blockers B1/B2",
-    "Optional: /qa-regression 050d,010,006 once decisions applied"
+    "Optional: /qa-regression 050d,010,006 to execute the new + synced cases"
   ]
 }

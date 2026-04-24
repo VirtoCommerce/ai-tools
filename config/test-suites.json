@@ -237,8 +237,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 54,
-      "estimatedMinutes": 36,
+      "testCount": 52,
+      "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2c",
@@ -256,8 +256,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 62,
-      "estimatedMinutes": 29,
+      "testCount": 64,
+      "estimatedMinutes": 37,
       "agent": "qa-frontend-expert",
       "tags": [
         "checkout",
@@ -1701,6 +1701,29 @@
         "cross-layer",
         "revenue-critical"
       ]
+    },
+    {
+      "id": "081",
+      "name": "Select Shipping Address Popup",
+      "file": "regression/suites/Frontend/checkout/081-select-shipping-address-popup.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 30,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "checkout",
+        "address",
+        "shipping",
+        "popup",
+        "facets",
+        "search",
+        "VCST-4710",
+        "PR-129",
+        "sprint"
+      ]
     }
   ],
   "selections": {
@@ -1740,7 +1763,8 @@
       "055",
       "056",
       "065",
-      "073"
+      "073",
+      "081"
     ],
     "catalog": [
       "001",
@@ -1848,7 +1872,8 @@
       "072b",
       "072c",
       "072d",
-      "077"
+      "077",
+      "081"
     ],
     "backend": [
       "017",
@@ -1977,7 +2002,8 @@
       "075",
       "077",
       "078",
-      "079"
+      "079",
+      "081"
     ],
     "full": [
       "001",
@@ -2067,7 +2093,8 @@
       "077",
       "078",
       "079",
-      "080"
+      "080",
+      "081"
     ],
     "domain:purchase-flow": [
       "011",
@@ -2093,7 +2120,8 @@
       "055",
       "056",
       "065",
-      "073"
+      "073",
+      "081"
     ],
     "domain:catalog-search": [
       "001",

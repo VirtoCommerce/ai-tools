@@ -38,7 +38,9 @@
 [STATE] clipboard contains the coupon code text '@td(COUPON_10PCT.code)' (verified via evaluate)
 [DOM] notification disappears automatically after a few seconds OR can be closed manually","[CONSOLE] no TypeError or clipboard API errors during copy action
 [NETWORK] no API call required for copy (client-side clipboard operation)","No notification appears after click, notification text incorrect, console clipboard permission error, spinner visible >3s after click","none","VCST-4590","Automated"
-"CPN-005","Copied Coupon Code — Apply to Cart Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(COUPON_10PCT.code)' (promotion: '@td(COUPON_10PCT.promo_name)', 10% off) is active and eligible for the cart contents. Confirmed live via GraphQL: id @td(COUPON_10PCT.gql_id), endDate 2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-005","Copied Coupon Code — Apply to Cart Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(COUPON_10PCT.code)' (promotion: '@td(COUPON_10PCT.promo_name)', 10% off) is active and eligible for the cart contents. Confirmed live via GraphQL: id @td(COUPON_10PCT.gql_id), endDate 2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification appears
@@ -141,7 +143,9 @@
 [DOM] only currently active/valid coupons are displayed to the user","[API] POST /graphql response for promotionCoupons does not include expired promotions in the data
 [API] GraphQL response errors[] is empty
 [CONSOLE] no errors","Expired coupon visible and copyable to user, console error, GraphQL errors[] non-empty","none","VCST-4590","Automated"
-"CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
+"CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification
@@ -294,7 +298,9 @@
 [STATE] the total count does not include the private promotion","[API] HTTP 200 on GraphQL query, errors[] empty
 [API] Admin GET {{ADMIN_URL}}/api/marketing/promotions/{{PRIVATE_PROMOTION_ID}} confirms isPublic = false for the created promotion
 [CONSOLE] no errors","Private coupon appears in storefront GraphQL response (security/filtering bug), errors[] non-empty on query","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/{{PRIVATE_PROMOTION_ID}} after test","VCST-4590","Automated"
-"CPN-028","BL-CART-003: Coupon Discount Applied to Sale Price (Not List Price)","Coupons & Promotions > Business Invariants","Critical","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A product exists with list price and a lower sale/discounted price. Coupon @td(COUPON_10PCT.code) (10% discount) is active and public. User is authenticated with an item in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
+"CPN-028","BL-CART-003: Coupon Discount Applied to Sale Price (Not List Price)","Coupons & Promotions > Business Invariants","Critical","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+A product exists with list price and a lower sale/discounted price. Coupon @td(COUPON_10PCT.code) (10% discount) is active and public. User is authenticated with an item in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] search for a product with a visible sale price (price with strikethrough)
 [WAIT] product listing with sale price visible
@@ -316,7 +322,9 @@
 [API] cart query: cart.totals.discountTotal.amount matches 10% of sale price (not list price)
 [CONSOLE] no TypeError during apply
 [NETWORK] no 4xx/5xx on /graphql","Discount equals 10% of list_price instead of sale_price (BL-CART-003 violation), errors[] non-empty, spinner >5s after apply","Remove @td(COUPON_10PCT.code) coupon from cart and remove test item","VCST-4590","Automated"
-"CPN-029","BL-PRICE-001: Discount Stacking — Coupon Applied After Tier Price (Not on List Price)","Coupons & Promotions > Business Invariants","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-2.3","A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUPON_10PCT.code) (10%) is active. User is authenticated and adds qty >= tier threshold.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
+"CPN-029","BL-PRICE-001: Discount Stacking — Coupon Applied After Tier Price (Not on List Price)","Coupons & Promotions > Business Invariants","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUPON_10PCT.code) (10%) is active. User is authenticated and adds qty >= tier threshold.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] find a product with tier pricing (or use TEST_SKU with known tier)
 [ACT] add the product to cart with quantity >= tier threshold (e.g., qty=10)
@@ -333,7 +341,9 @@
 [API] addCoupon mutation errors[] empty
 [CONSOLE] no errors
 [NETWORK] no 4xx/5xx","Coupon calculated on list price instead of tier price (BL-PRICE-001 violation), tier price not applied at qty threshold, errors[] non-empty","Remove coupon and clear cart after test","VCST-4590","Automated"
-"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied from Coupons Page","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied from Coupons Page","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied and at least 1 item
 [ASSERT] note: (a) line item subtotal, (b) coupon discount amount, (c) shipping cost, (d) tax amount, (e) displayed cart total
 [ACT] click 'Proceed to Checkout' or 'Checkout' button
@@ -370,7 +380,9 @@
 [DATA] no breaking change introduced by adding optional cultureName parameter to dynamicProperties","[API] HTTP 200 on both query variants
 [API] errors[] empty on both
 [CONSOLE] no errors in GraphiQL","errors[] non-empty on dynamicProperties query (regression), HTTP 400 or 500, cultureName parameter causes query to break, null data on previously working query","none","VCST-4590","Automated"
-"CPN-033","E2E Cross-Layer: Admin Creates Public Promotion → Storefront Shows Coupon → User Applies in Cart","Coupons & Promotions > End-to-End Integration","Critical","BL-PRICE-001, BL-CART-003","ECL-14.1, ECL-1.3","Admin is logged in. Storefront is accessible. User account available for storefront testing. This is the full happy-path E2E scenario across all three layers.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, test_sku={{TEST_SKU}}, timestamp={{TIMESTAMP}} (generated at runtime as Date.now() or YYYYMMDD-HHmmss)","[NAV] {{ADMIN_URL}}
+"CPN-033","E2E Cross-Layer: Admin Creates Public Promotion → Storefront Shows Coupon → User Applies in Cart","Coupons & Promotions > End-to-End Integration","Critical","BL-PRICE-001, BL-CART-003","ECL-14.1, ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Admin is logged in. Storefront is accessible. User account available for storefront testing. This is the full happy-path E2E scenario across all three layers.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, test_sku={{TEST_SKU}}, timestamp={{TIMESTAMP}} (generated at runtime as Date.now() or YYYYMMDD-HHmmss)","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions
 [ACT] click 'Add' to create a new promotion
@@ -414,7 +426,9 @@
 [ADMIN] promotion visible in Promotions list after save
 [CONSOLE] no JS errors on any page throughout the flow
 [NETWORK] no 4xx/5xx on any critical request","Admin save fails with 4xx, promotion not visible on storefront coupons page, copy button missing for new coupon, cart rejects the coupon with errors[] non-empty","DELETE the test promotion via Admin after test; remove coupon from cart","VCST-4590","Automated"
-"CPN-034","Invalid Coupon Code — Cart Shows Error When Non-Existent Code Entered","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3","User is authenticated. Cart has at least one item. Coupon code 'INVALID-DOES-NOT-EXIST' does not correspond to any promotion.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=INVALID-DOES-NOT-EXIST","[NAV] {{FRONT_URL}}/cart
+"CPN-034","Invalid Coupon Code — Cart Shows Error When Non-Existent Code Entered","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Cart has at least one item. Coupon code 'INVALID-DOES-NOT-EXIST' does not correspond to any promotion.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=INVALID-DOES-NOT-EXIST","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with at least 1 item
 [SCROLL] scroll to Order summary sidebar
 [ACT] fill 'Enter a promo-coupon' textbox with 'INVALID-DOES-NOT-EXIST'
@@ -426,7 +440,9 @@
 [API] cart.totals.discountTotal.amount = 0 after invalid coupon attempt
 [CONSOLE] no TypeError (error handling is graceful)
 [NETWORK] no 5xx (400-level error handled client-side)","Cart total changed despite invalid coupon, no error message shown to user, console TypeError, cart breaks or empties on invalid coupon","none — invalid coupon was not applied","VCST-4590","Automated"
-"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed Manually in Cart","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)' (created in CPN-027 or pre-existing). User is authenticated with items in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_PRIVATE.code)","[NAV] {{FRONT_URL}}/cart
+"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed Manually in Cart","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)' (created in CPN-027 or pre-existing). User is authenticated with items in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_PRIVATE.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with at least 1 item
 [SCROLL] scroll to Order summary sidebar
 [ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_PRIVATE.code)'
@@ -449,7 +465,9 @@
 [NAV] URL is /account/coupons (or locale-prefixed equivalent)","[API] POST /graphql promotionCoupons returns HTTP 200, errors[] empty
 [CONSOLE] no JS errors for B2B user
 [NETWORK] no 4xx/5xx","403 error for org user, coupons page inaccessible for B2B users, different coupons shown due to org context incorrectly affecting public promotion filter","Sign out B2B user after test","VCST-4590","Automated"
-"CPN-037","Cart — Applied Coupon Removed via 'Deny' Button Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is currently applied in the cart (discount visible in order summary). UI exploration confirmed removal button label is 'Deny'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+"CPN-037","Cart — Applied Coupon Removed via 'Deny' Button Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is currently applied in the cart (discount visible in order summary). UI exploration confirmed removal button label is 'Deny'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with at least 1 item
 [SCROLL] scroll to Order summary sidebar
 [ASSERT] coupon @td(COUPON_10PCT.code) is applied — textbox 'Enter a promo-coupon' shows '@td(COUPON_10PCT.code)' (disabled) and Discount line shows non-zero amount
@@ -465,7 +483,9 @@
 [API] cart.coupons array no longer contains @td(COUPON_10PCT.code) after removal
 [CONSOLE] no TypeError during coupon removal
 [NETWORK] no 4xx/5xx on /graphql during removal","'Deny' button absent (UI label changed), cart total unchanged after removal, discount persists after clicking 'Deny', removeCoupon mutation errors[] non-empty, console TypeError","none — coupon is already removed by this test","VCST-4590","Automated"
-"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) (10% off) is applied. UI exploration confirmed 'Discount' is a collapsible button in Order summary.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) (10% off) is applied. UI exploration confirmed 'Discount' is a collapsible button in Order summary.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied
 [SCROLL] scroll to Order summary section in the sidebar
 [ASSERT] 'Discount' row visible with a non-zero amount (e.g., '- $29.80')
@@ -536,7 +556,9 @@
 [STATE] 'VALIDCODE123' coupon appears in the Coupons list after successful save","[API] POST coupon with non-alphanumeric code returns 400 (Bad Request) or client-side validation prevents submission
 [API] POST coupon with 'VALIDCODE123' returns 200/201
 [CONSOLE] no unhandled exception — validation is graceful","Non-alphanumeric code accepted silently (validation bug), validation error crashes blade, VALIDCODE123 save fails","DELETE the VALIDCODE123 coupon after test","VCST-4590","Automated"
-"CPN-042","Admin — Promotion Exclusivity: Globally Exclusive Prevents Other Promotions","Coupons & Promotions > Admin Backend","High","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","Admin user is logged in. Two promotions exist: one with Exclusivity='Globally exclusive' (high priority), one with Exclusivity='Valid with other offers' (lower priority). Both have active coupon codes and are IsPublic=true. UI exploration confirmed dropdown options: 'Valid with other offers' and 'Globally exclusive'.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
+"CPN-042","Admin — Promotion Exclusivity: Globally Exclusive Prevents Other Promotions","Coupons & Promotions > Admin Backend","High","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Admin user is logged in. Two promotions exist: one with Exclusivity='Globally exclusive' (high priority), one with Exclusivity='Valid with other offers' (lower priority). Both have active coupon codes and are IsPublic=true. UI exploration confirmed dropdown options: 'Valid with other offers' and 'Globally exclusive'.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name'
 [BLADE] Promotion detail blade opens
@@ -573,7 +595,9 @@
 [STATE] the promotionCoupons GraphQL query excludes promotions with zero coupon codes from results regardless of IsPublic value","[API] promotionCoupons query: no item in response has systemName or name matching 'Snack as a gift'
 [API] all items in response have non-empty couponCode field
 [CONSOLE] no errors","Automatic promotion (no coupon code) appears on coupons page (logic bug), coupon card rendered with empty/missing code button, console error during render","Restore 'Snack as a gift' IsPublic to original state if changed during test","VCST-4590","Manual"
-"CPN-044","GA4 — Coupon Code Tracked in GA4 Events on Cart Page After Application","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is applied in the cart. GA4 tracking is active (G-S2KXT3KTJZ). UI exploration confirmed GA4 events include ep.coupon=@td(COUPON_10PCT.code) in add_shipping_info, add_payment_info, begin_checkout, and view_cart payloads.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), ga4_id=G-S2KXT3KTJZ","[NAV] {{FRONT_URL}}/cart
+"CPN-044","GA4 — Coupon Code Tracked in GA4 Events on Cart Page After Application","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is applied in the cart. GA4 tracking is active (G-S2KXT3KTJZ). UI exploration confirmed GA4 events include ep.coupon=@td(COUPON_10PCT.code) in add_shipping_info, add_payment_info, begin_checkout, and view_cart payloads.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), ga4_id=G-S2KXT3KTJZ","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied (discount visible in Order summary)
 [WAIT] network requests complete (page fully loaded)
 [ASSERT] inspect network requests to region1.google-analytics.com","[NETWORK] at least one POST to region1.google-analytics.com contains en=view_cart AND ep.coupon=@td(COUPON_10PCT.code) in the query string

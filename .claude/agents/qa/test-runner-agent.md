@@ -37,7 +37,9 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 ## Phase 2: Execute (per test case)
 
 1. **Announce** (mandatory): `▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title> [<BL-*>] | Watching: <ECL-*>`
-2. **Preconditions**: verify; unmet → `BLOCKED`.
+2. **Preconditions**: Read the `Preconditions` column.
+   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED` immediately.
+   - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals monitoring** + common signals (see knowledge file).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).
 5. **Evaluate Assertions** — all must pass. BL-* violation = FAIL even if DOM passed.

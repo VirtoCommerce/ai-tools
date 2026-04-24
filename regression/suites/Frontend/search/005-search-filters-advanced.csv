@@ -1,5 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001","","Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE.query)","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
+"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE.query)","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
 [WAIT] Wait for search results page
 [ACT] Apply one or more filters on search results
 [WAIT] Wait for filtered results
@@ -12,7 +14,8 @@
 [MATH] Full search result count restored (not redirected to homepage or /catalog)
 [DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Search term cleared from input after reset; redirect away from search results; filter params remain in URL; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"SRCH-003","Search - No Results","Search > Edge Cases","Medium","BL-SEARCH-003","","No preconditions — nonsense query","url={{FRONT_URL}}; query=xyzabc123","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-003","Search - No Results","Search > Edge Cases","Medium","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+No preconditions — nonsense query","url={{FRONT_URL}}; query=xyzabc123","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'xyzabc123'
 [KEY] press [Enter]
 [WAIT] Wait for results page
@@ -20,7 +23,8 @@
 [DOM] Suggestions or alternatives shown if available
 [STATE] No JavaScript errors or crashes","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set","none","regression-qa-theme-26.csv","Automated"
-"SRCH-004","Search - Special Characters","Search > Edge Cases","Medium","BL-SEARCH-003","ECL-8.1","No preconditions","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-004","Search - Special Characters","Search > Edge Cases","Medium","BL-SEARCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+No preconditions","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'test & test'; [KEY] press [Enter]; [WAIT]
 [ASSERT] Verify no errors; results or empty state shown
 [NAV] Navigate back; [ACT] fill 'Search': 'product (new)'; [KEY] press [Enter]; [WAIT]
@@ -30,7 +34,8 @@
 [STATE] Results page or no-results state shown for each query
 [DOM] No error page or stack trace displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for each query
 [CONSOLE] no TypeError or JS errors","Any query causing 5xx or JS crash; console TypeError; error page shown instead of results/no-results","none","regression-qa-theme-26.csv","Automated"
-"SRCH-006","Search - Filters on Results","Search > Filters","High","BL-SEARCH-001, BL-CAT-002","","Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search query that returns 5+ products
+"SRCH-006","Search - Filters on Results","Search > Filters","High","BL-SEARCH-001, BL-CAT-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search query that returns 5+ products
 [WAIT] Wait for results page
 [ACT] Apply a facet filter from the sidebar
 [WAIT] Wait for filtered results
@@ -41,7 +46,8 @@
 [MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SEARCH-001","","Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
+"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] fill organization name search field with a known org name
 [KEY] press [Enter]
 [WAIT] Wait for results
@@ -51,7 +57,8 @@
 [NAV] Clicking on org result navigates to org detail page
 [DOM] Org detail page loads without error","[NETWORK] search request returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Org search returning no results for known org; org detail page returning 4xx; console TypeError","none","tests/VCST-4357-org-search","Automated"
-"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SEARCH-001","","Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
+"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] Search organizations (generic query or browse)
 [WAIT] Wait for results
 [ACT] Apply industry filter
@@ -62,7 +69,8 @@
 [STATE] Applying filters narrows org result set
 [MATH] Combined filters use AND logic","[NETWORK] filter requests return HTTP 200
 [CONSOLE] no TypeError or JS errors","Org filters not available; filters not narrowing results; combined filter returning wrong set; console TypeError","none","tests/VCST-4357-org-search","Automated"
-"SRCH-NEW-012","Search Results - Show in Stock Checkbox Default and Toggle","Search > Filters > Checkboxes","High","BL-CAT-002","","Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-012","Search Results - Show in Stock Checkbox Default and Toggle","Search > Filters > Checkboxes","High","BL-CAT-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
 [ASSERT] Verify 'Show in stock' checkbox is checked by default
 [ASSERT] Verify corresponding chip is present in chip bar
@@ -75,8 +83,9 @@
 [DOM] Chip for 'Show in stock' present in chip bar by default
 [STATE] Unchecking removes chip; result count may change to include out-of-stock
 [STATE] Re-checking restores chip and original result set","[NETWORK] no 4xx/5xx on checkbox toggle
-[CONSOLE] no TypeError or JS errors","Checkbox not checked by default; chip absent on page load; chip not appearing/disappearing on toggle; console TypeError","none","","Manual"
-"SRCH-NEW-013","Search Results - Purchased Before Checkbox","Search > Filters > Checkboxes","Medium","BL-CAT-002","ECL-3.1","User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password)","[NAV] Log in and navigate to {{FRONT_URL}}/search?q=hoodie
+[CONSOLE] no TypeError or JS errors","Checkbox not checked by default; chip absent on page load; chip not appearing/disappearing on toggle; console TypeError","none",,"Manual"
+"SRCH-NEW-013","Search Results - Purchased Before Checkbox","Search > Filters > Checkboxes","Medium","BL-CAT-002","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password)","[NAV] Log in and navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
 [ASSERT] Verify 'Purchased before' is unchecked by default
 [ACT] Check 'Purchased before'
@@ -87,8 +96,9 @@
 [ASSERT] Verify chip removed; full results return","[STATE] 'Purchased before' unchecked by default
 [STATE] Checking adds chip and filters to previously purchased products
 [STATE] Unchecking removes chip and restores all results","[NETWORK] no 4xx/5xx on checkbox toggle
-[CONSOLE] no TypeError or JS errors","'Purchased before' not available for authenticated user; chip not appearing on check; results not filtered to prior purchases; console TypeError","none","","Manual"
-"SRCH-NEW-014","Search Results - Sidebar Facet Filter","Search > Filters > Sidebar","High","BL-CAT-002, BL-SEARCH-001","","Navigate to /search?q=hoodie; sidebar shows Color facet","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[CONSOLE] no TypeError or JS errors","'Purchased before' not available for authenticated user; chip not appearing on check; results not filtered to prior purchases; console TypeError","none",,"Manual"
+"SRCH-NEW-014","Search Results - Sidebar Facet Filter","Search > Filters > Sidebar","High","BL-CAT-002, BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Navigate to /search?q=hoodie; sidebar shows Color facet","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results and sidebar
 [ACT] Expand 'Color' facet group in sidebar
 [ACT] Select a color value
@@ -103,7 +113,8 @@
 [STATE] Closing chip removes filter and restores original count","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with facet filter
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar facets not expandable; chip not appearing after facet selection; product count not changing; chip close not restoring results; console TypeError","none","SRCH-006","Manual"
-"SRCH-NEW-015","Search Results - Reset Filters Preserves Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001","","Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-015","Search Results - Reset Filters Preserves Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [ACT] Apply a sidebar facet filter
 [WAIT] Wait for chip and filter param in URL
 [ASSERT] Verify 'Reset filters' button is visible
@@ -116,7 +127,8 @@
 [MATH] Full search result count restored after reset
 [DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Search term cleared after reset; redirect to homepage or /catalog; filter params remain in URL; console TypeError","none","CAT-021","Manual"
-"SRCH-NEW-016","Search - No Results State UI Validation","Search > No Results","Critical","BL-SEARCH-003","","Storefront is accessible","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
+"SRCH-NEW-016","Search - No Results State UI Validation","Search > No Results","Critical","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront is accessible","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
 [WAIT] Wait for no-results page to load
 [ASSERT] Verify heading shows sorry message with query term bold
 [ASSERT] Verify 'There are no results found' message visible
@@ -127,28 +139,32 @@
 [DOM] 'Reset search' button present
 [STATE] No product cards or sidebar filter panel shown","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","Error page instead of no-results UI; product cards appearing for nonsense query; Reset search button absent; console TypeError","none","E2E-SEARCH-004, SRCH-003","Manual"
-"SRCH-NEW-017","Search - Reset Search Button Clears Query","Search > No Results","High","BL-SEARCH-003","","On no-results page /search?q=xyzqwerty9876543","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
+"SRCH-NEW-017","Search - Reset Search Button Clears Query","Search > No Results","High","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+On no-results page /search?q=xyzqwerty9876543","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
 [WAIT] Wait for no-results page
 [ASSERT] Verify no-results state is shown
 [ACT] Click 'Reset search' button
 [WAIT] Wait for action to complete","[STATE] Search input cleared after clicking Reset search
-[NAV] User redirected away from no-results page (to homepage or /catalog)","[CONSOLE] no TypeError or JS errors","'Reset search' button not clickable; input not cleared after reset; still on no-results page after reset; console TypeError","none","","Manual"
-"SRCH-NEW-018","Search - Whitespace-Only Query Handling","Search > Edge Cases","High","BL-SEARCH-003","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[NAV] User redirected away from no-results page (to homepage or /catalog)","[CONSOLE] no TypeError or JS errors","'Reset search' button not clickable; input not cleared after reset; still on no-results page after reset; console TypeError","none",,"Manual"
+"SRCH-NEW-018","Search - Whitespace-Only Query Handling","Search > Edge Cases","High","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': '   ' (3 spaces)
 [KEY] press [Enter]
 [WAIT] Wait for result","[STATE] Submission is blocked (nothing happens) OR user lands on no-results/catalog page
 [STATE] No JavaScript crash or error page","[NETWORK] no 5xx response triggered by whitespace query
-[CONSOLE] no TypeError or JS errors","JS crash on whitespace submit; 5xx server error; redirect to error page; console TypeError","none","","Manual"
-"SRCH-NEW-019","Search - Very Long Query (200+ Characters)","Search > Edge Cases","Medium","BL-SEARCH-003","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","JS crash on whitespace submit; 5xx server error; redirect to error page; console TypeError","none",,"Manual"
+"SRCH-NEW-019","Search - Very Long Query (200+ Characters)","Search > Edge Cases","Medium","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] Type 200 repeated 'a' characters in the search input
 [KEY] press [Enter]
 [WAIT] Wait for response","[STATE] Input accepts long string or enforces max-length gracefully
 [STATE] No JS or server error
 [STATE] URL is properly URL-encoded","[NETWORK] no 5xx response for long query
-[CONSOLE] no TypeError or JS errors","JS error on long input; 5xx server error; URL encoding failing; console TypeError","none","","Manual"
-"SRCH-NEW-020","Search - XSS Script Injection in Input","Search > Security","Critical","BL-SEARCH-004","ECL-5.1","Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","JS error on long input; 5xx server error; URL encoding failing; console TypeError","none",,"Manual"
+"SRCH-NEW-020","Search - XSS Script Injection in Input","Search > Security","Critical","BL-SEARCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': '<script>alert(''xss'')</script>'
 [KEY] press [Enter]
@@ -160,7 +176,8 @@
 [DOM] Heading displays query as literal escaped text (not rendered HTML)","[NETWORK] no 5xx responses triggered by XSS payload
 [CONSOLE] no script execution errors
 [CONSOLE] no TypeError or JS errors","Alert dialog appearing (script executed); heading rendering HTML instead of escaping it; 5xx from server; console TypeError","none","E2E-SEC-002","Manual"
-"SRCH-NEW-021","Search - SQL Injection Attempt","Search > Security","High","BL-SEARCH-004","ECL-5.1","Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-021","Search - SQL Injection Attempt","Search > Security","High","BL-SEARCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': ''' OR ''1''=''1'
 [KEY] press [Enter]
@@ -170,7 +187,8 @@
 [NETWORK] no 5xx responses
 [CONSOLE] no script execution errors
 [CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError","none","E2E-SEC-002","Manual"
-"SRCH-NEW-022","Search - Special Characters Are URL-Encoded Correctly","Search > Edge Cases","High","BL-SEARCH-003","ECL-8.1","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-022","Search - Special Characters Are URL-Encoded Correctly","Search > Edge Cases","High","BL-SEARCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'hoodie & jeans'; [KEY] press [Enter]; [WAIT]
 [ASSERT] Verify URL encodes '&' correctly; page loads without error
 [NAV] Navigate back; [ACT] fill 'Search': 'product (new)'; [KEY] press [Enter]; [WAIT]
@@ -182,7 +200,8 @@
 [DOM] All searches load without errors — results or no-results state
 [DOM] Heading shows decoded query text (human-readable)","[NETWORK] no 4xx/5xx for any special-char query
 [CONSOLE] no TypeError or JS errors","Any special-char query causing error page; URL malformed (unencoded chars breaking URL); heading showing raw URL-encoded text; console TypeError","none","SRCH-004","Manual"
-"SRCH-NEW-025","Search Bar - Keyboard-Only Navigation","Search > Accessibility","High","BL-SEARCH-002","","Storefront open; keyboard-only operation (no mouse)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-025","Search Bar - Keyboard-Only Navigation","Search > Accessibility","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront open; keyboard-only operation (no mouse)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [KEY] press [Tab] repeatedly until search input is focused
 [ASSERT] Verify visible focus indicator on search input
 [ACT] Type 'hoodie'
@@ -196,7 +215,8 @@
 [STATE] Enter key on hint item executes the search
 [STATE] Escape closes dropdown without navigating
 [STATE] No keyboard trap — Tab out of dropdown works","[CONSOLE] no TypeError or JS errors","Search input not reachable via Tab; no visible focus indicator; Arrow keys not working in dropdown; Escape not closing dropdown; keyboard trap present; console TypeError","none","WCAG 2.1 AA 2.1.1, 2.4.3","Manual"
-"SRCH-NEW-026","Search Bar - ARIA Roles and Labels","Search > Accessibility","High","BL-SEARCH-002","","Storefront open; DevTools Accessibility panel available","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-026","Search Bar - ARIA Roles and Labels","Search > Accessibility","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront open; DevTools Accessibility panel available","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input and open DevTools Accessibility panel
 [ASSERT] Inspect search input role and accessible name
 [ASSERT] Inspect magnifier/Search button accessible name
@@ -206,7 +226,8 @@
 [DOM] Clear (X) button has an accessible name (e.g., 'Clear search')
 [DOM] Dropdown uses role=listbox or equivalent ARIA pattern
 [DOM] All interactive elements have non-empty accessible names","[CONSOLE] no TypeError or JS errors","Input missing role=searchbox; any interactive element lacking accessible name; dropdown missing ARIA role; console TypeError","none","WCAG 2.1 AA 4.1.2","Manual"
-"SRCH-NEW-027","Search - Autocomplete Response Time Under 2 Seconds","Search > Performance","Medium","BL-SEARCH-002","","DevTools Network tab open","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-027","Search - Autocomplete Response Time Under 2 Seconds","Search > Performance","Medium","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+DevTools Network tab open","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Open DevTools Network tab
 [ACT] fill 'Search': 'hoodie'
 [WAIT] Wait for autocomplete results to appear
@@ -214,29 +235,33 @@
 [ASSERT] Check GraphQL searchProducts request duration in Network tab","[STATE] Autocomplete results appear within 2 seconds of first keystroke
 [STATE] GraphQL searchProducts request duration under 1500ms
 [STATE] No loading spinner visible for more than 2 seconds","[NETWORK] measure request duration via DevTools — searchProducts call under 1500ms
-[CONSOLE] no TypeError or JS errors","Autocomplete taking >2 seconds; GraphQL call >1500ms; spinner persisting >2s; console TypeError","none","","Manual"
-"SRCH-NEW-028","Search - Results Page Load Time Under 3 Seconds","Search > Performance","Medium","BL-SEARCH-001","","DevTools Network tab open; no throttling applied","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open DevTools Network tab; navigate to {{FRONT_URL}}/search?q=hoodie (fresh load, no cache)
+[CONSOLE] no TypeError or JS errors","Autocomplete taking >2 seconds; GraphQL call >1500ms; spinner persisting >2s; console TypeError","none",,"Manual"
+"SRCH-NEW-028","Search - Results Page Load Time Under 3 Seconds","Search > Performance","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+DevTools Network tab open; no throttling applied","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open DevTools Network tab; navigate to {{FRONT_URL}}/search?q=hoodie (fresh load, no cache)
 [WAIT] Wait for full page render
 [ASSERT] Measure total page render time
 [ASSERT] Verify heading visible within 2 seconds","[STATE] Full page render within 3 seconds
 [DOM] Heading with result count visible within 2 seconds of navigation
 [STATE] No major Cumulative Layout Shift (CLS)
 [NETWORK] All page requests return HTTP 200","[NETWORK] measure request duration via DevTools — page load under 3s
-[CONSOLE] no TypeError or JS errors","Full render exceeding 3 seconds; heading not visible within 2s; major layout shift; any request returning 4xx/5xx; console TypeError","none","","Manual"
-"SRCH-NEW-029","Search Bar - Firefox Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001","","Firefox browser via playwright-firefox","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Firefox (playwright-firefox)
+[CONSOLE] no TypeError or JS errors","Full render exceeding 3 seconds; heading not visible within 2s; major layout shift; any request returning 4xx/5xx; console TypeError","none",,"Manual"
+"SRCH-NEW-029","Search Bar - Firefox Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Firefox browser via playwright-firefox","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Firefox (playwright-firefox)
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for results page
 [ASSERT] Verify autocomplete worked before submission
 [ASSERT] Verify results page identical to Chrome behavior","[STATE] Search behavior identical to Chromium baseline
-[DOM] No Firefox-specific layout breaks or rendering differences","[CONSOLE] no TypeError or JS errors in Firefox console","Any Firefox-specific JS error; layout broken in Firefox; autocomplete not working in Firefox; console TypeError","none","","Manual"
-"SRCH-NEW-030","Search Bar - Edge Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001","","Edge browser via playwright-edge","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Edge (playwright-edge)
+[DOM] No Firefox-specific layout breaks or rendering differences","[CONSOLE] no TypeError or JS errors in Firefox console","Any Firefox-specific JS error; layout broken in Firefox; autocomplete not working in Firefox; console TypeError","none",,"Manual"
+"SRCH-NEW-030","Search Bar - Edge Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Edge browser via playwright-edge","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Edge (playwright-edge)
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for results page
 [ASSERT] Verify behavior identical to Chrome baseline","[STATE] Search behavior identical to Chromium baseline
-[DOM] No Edge-specific layout or functionality issues","[CONSOLE] no TypeError or JS errors in Edge console","Any Edge-specific JS error; layout broken in Edge; search not submitting; console TypeError","none","","Manual"
-"SRCH-NEW-031","Search Bar - Mobile Viewport 375px","Search > Mobile","High","BL-SEARCH-002","","Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Set viewport to 375px wide; navigate to {{FRONT_URL}}
+[DOM] No Edge-specific layout or functionality issues","[CONSOLE] no TypeError or JS errors in Edge console","Any Edge-specific JS error; layout broken in Edge; search not submitting; console TypeError","none",,"Manual"
+"SRCH-NEW-031","Search Bar - Mobile Viewport 375px","Search > Mobile","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Set viewport to 375px wide; navigate to {{FRONT_URL}}
 [ASSERT] Verify search input is visible at 375px
 [ACT] Tap/click search input
 [ACT] fill 'Search': 'hoodie'
@@ -246,8 +271,9 @@
 [WAIT] Wait for PDP to load","[DOM] Search input visible and usable at 375px viewport
 [DOM] Autocomplete dropdown fits within viewport width
 [DOM] Product names in dropdown readable at mobile size
-[NAV] Tapping a product navigates to PDP correctly","[CONSOLE] no TypeError or JS errors","Search input invisible or inaccessible at 375px; dropdown overflowing viewport; product names truncated unreadably; navigation to PDP failing; console TypeError","none","","Manual"
-"SRCH-NEW-032","Search - Mobile Results Page Layout 375px","Search > Mobile","High","BL-SEARCH-001","","375px viewport; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Set viewport to 375px; navigate to {{FRONT_URL}}/search?q=hoodie
+[NAV] Tapping a product navigates to PDP correctly","[CONSOLE] no TypeError or JS errors","Search input invisible or inaccessible at 375px; dropdown overflowing viewport; product names truncated unreadably; navigation to PDP failing; console TypeError","none",,"Manual"
+"SRCH-NEW-032","Search - Mobile Results Page Layout 375px","Search > Mobile","High","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+375px viewport; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Set viewport to 375px; navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
 [ASSERT] Verify heading is readable at 375px
 [ASSERT] Verify grid adapts to 1-2 column layout
@@ -256,8 +282,9 @@
 [ASSERT] Verify interactive touch targets >= 44x44px","[DOM] Heading readable at 375px
 [DOM] Grid adapts to 1-2 column layout (not 3+ columns squished)
 [DOM] Sort dropdown and filter controls accessible without horizontal scrolling
-[DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError","none","","Manual"
-"SRCH-NEW-033","Search - GA4 search Event Fires on Query Submission","Search > Analytics","Medium","BL-SEARCH-005","","DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError","none",,"Manual"
+"SRCH-NEW-033","Search - GA4 search Event Fires on Query Submission","Search > Analytics","Medium","BL-SEARCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Open DevTools Console tab
 [ASSERT] Run window.dataLayer in console to confirm dataLayer exists
 [ACT] fill 'Search': 'hoodie'
@@ -267,13 +294,16 @@
 [STATE] A 'search' event entry found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'search' and search_term: 'hoodie'
 [CONSOLE] no GA4 or GTM errors
 [CONSOLE] no TypeError or JS errors","No dataLayer push on search submission; search event missing search_term; GTM error in console; console TypeError","none","E2E-GA-004","Manual"
-"SRCH-NEW-034","Search - GA4 view_search_results Event on Results Page","Search > Analytics","Medium","BL-SEARCH-005","","DevTools Console open; GA4 configured on storefront","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-034","Search - GA4 view_search_results Event on Results Page","Search > Analytics","Medium","BL-SEARCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+DevTools Console open; GA4 configured on storefront","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page to fully load
 [ASSERT] Open DevTools Console
 [ASSERT] Check dataLayer for view_search_results event","[STATE] A 'view_search_results' event found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'view_search_results' and search_term: 'hoodie'
 [CONSOLE] no GA4 or GTM errors
 [CONSOLE] no TypeError or JS errors","No view_search_results event in dataLayer; event missing search_term param; GTM error; console TypeError","none","E2E-GA-004","Manual"
-"SRCH-NEW-035","Search to Cart - Full End-to-End Flow","Search > E2E","Critical","BL-SEARCH-001, BL-CAT-006","","User authenticated; cart at a known state (empty or tracked)","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query=@td(SEARCH_CLOTHING.query)","[NAV] Log in and navigate to {{FRONT_URL}}
+"SRCH-NEW-035","Search to Cart - Full End-to-End Flow","Search > E2E","Critical","BL-SEARCH-001, BL-CAT-006",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+User authenticated; cart at a known state (empty or tracked)","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query=@td(SEARCH_CLOTHING.query)","[NAV] Log in and navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -289,7 +319,8 @@
 [DOM] Cart page shows correct product name, price ($54.00), and quantity (1)","[NETWORK] POST add-to-cart returns HTTP 200
 [NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Search not finding product; Add to cart fails; cart badge not incrementing; cart showing wrong price; cart empty after add; console TypeError","Remove 'Vintage Colorado Hoodie' from cart after test","E2E-SEARCH-001, BL-CART","Manual"
-"SRCH-NEW-039","Facet Count Accuracy - Badge Count Matches Product Count","Search > Facets","High","BL-SRCH-001","ECL-3.2","Category page with faceted filters showing product counts in parentheses","url={{FRONT_URL}}","[NAV] Navigate to a category page with facet filters on {{FRONT_URL}}
+"SRCH-NEW-039","Facet Count Accuracy - Badge Count Matches Product Count","Search > Facets","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Category page with faceted filters showing product counts in parentheses","url={{FRONT_URL}}","[NAV] Navigate to a category page with facet filters on {{FRONT_URL}}
 [WAIT] Wait for facet panel to load
 [ASSERT] Locate a facet group (e.g., Brand) with count values in parentheses
 [ASSERT] Note the count shown next to a specific facet value (e.g., 'HP (12)')
@@ -301,7 +332,8 @@
 [DOM] After filtering, result count in page header matches facet count
 [STATE] No mismatch between facet badge count, header result count, and actual visible products","[NETWORK] POST /graphql returns consistent totalCount matching facet aggregation
 [CONSOLE] no TypeError or JS errors","Facet count showing 12 but only 8 products displayed; header count differing from facet count; facet counts not updating after filter application; console TypeError","none","ECL-3.2, GAP-CS-08","Generated"
-"SRCH-NEW-040","Cross-Layer Search Consistency - Storefront Matches API Data","Search > Cross-Layer","High","BL-SRCH-003","ECL-14.2","Product exists in catalog with known name and price; API access available","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-040","Cross-Layer Search Consistency - Storefront Matches API Data","Search > Cross-Layer","High","BL-SRCH-003","ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Product exists in catalog with known name and price; API access available","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for search results page to load
 [ASSERT] Locate 'Vintage Colorado Hoodie' in search results
 [ASSERT] Note the displayed price on the product card
@@ -316,7 +348,8 @@
 [API] Response payload product.name matches DOM product name
 [API] Response payload product.price.actual.amount matches DOM displayed price
 [CONSOLE] no TypeError or JS errors","Product name on UI differs from API response; price on UI differs from API response (rounding or currency mismatch); API returning stale data; console TypeError","none","BL-SRCH-003, ECL-14.2, GAP-CS-09","Generated"
-"SRCH-NEW-041","Sort Plus Filter Interaction - Sort Persists After Facet Application","Search > Sort + Filter","Medium","BL-CAT-005","ECL-3.2","Category page with products and sortable/filterable options","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
+"SRCH-NEW-041","Sort Plus Filter Interaction - Sort Persists After Facet Application","Search > Sort + Filter","Medium","BL-CAT-005","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Category page with products and sortable/filterable options","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
 [ACT] Open sort dropdown and select 'Price: High to Low'
 [WAIT] Wait for products to reorder
 [ASSERT] Verify products are sorted by price descending
@@ -332,7 +365,8 @@
 [STATE] Sort dropdown value unchanged after filter apply and remove
 [MATH] After filter removal, full product set is still sorted by price descending","[NETWORK] no 4xx/5xx on sort + filter combination requests
 [CONSOLE] no TypeError or JS errors","Sort resetting to default after applying filter; products not in correct order after filter; sort dropdown value changing unexpectedly; console TypeError","none","BL-CAT-005, ECL-3.2, GAP-CS-10","Generated"
-"SRCH-NEW-042","Price Range Boundary Precision - Exact Boundary Value Filtering","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","Category page with products at known price points; products exist at exact boundary values","url={{FRONT_URL}}","[NAV] Navigate to a category page with price filter on {{FRONT_URL}}
+"SRCH-NEW-042","Price Range Boundary Precision - Exact Boundary Value Filtering","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Category page with products at known price points; products exist at exact boundary values","url={{FRONT_URL}}","[NAV] Navigate to a category page with price filter on {{FRONT_URL}}
 [WAIT] Wait for page and price filter to load
 [ASSERT] Locate the price range filter (slider or min/max inputs)
 [ACT] Set minimum price to a known product's exact price (e.g., $54.00 for Vintage Colorado Hoodie)
@@ -348,7 +382,8 @@
 [DOM] Price filter correctly handles exact boundary values
 [STATE] No off-by-one errors in price range filtering","[NETWORK] POST /graphql returns correct filtered results for boundary values
 [CONSOLE] no TypeError or JS errors","Products at exact boundary excluded when they should be included; products outside range appearing in results; off-by-one cent errors; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11","Generated"
-"SRCH-NEW-043","Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly","Search > Facets","Medium","BL-CAT-002","ECL-3.2","Category page with multiple facet groups (e.g."," Brand and Color) with overlapping product sets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
+"SRCH-NEW-043","Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly","Search > Facets","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Category page with multiple facet groups (e.g."," Brand and Color) with overlapping product sets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
 [WAIT] Wait for facet panel to load
 [ACT] Select a value from the first facet group (e.g., a specific Brand)
 [WAIT] Wait for filtered results; note the result count as Count_A

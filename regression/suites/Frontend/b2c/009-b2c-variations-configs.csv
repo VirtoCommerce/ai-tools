@@ -1,5 +1,8 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"B2C-VAR-001","Product Variations - Size Selection","B2C Features > Variations","Critical","BL-B2C-001","ECL-7.1","Product with size variations (S/M/L/XL)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size variations (e.g., T-Shirt)
+"B2C-VAR-001","Product Variations - Size Selection","B2C Features > Variations","Critical","BL-B2C-001","ECL-7.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with size variations (S/M/L/XL)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size variations (e.g., T-Shirt)
 2. [ASSERT] Verify size selector displays
 3. [ASSERT] Verify all sizes listed (S, M, L, XL)
 4. [ACT] Click size 'M'
@@ -14,7 +17,9 @@
 [DOM] Correct SKU for selected size variant shown
 [FORMAT] Price correct for selected size variant","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Size selector does not display; incorrect size shown in cart; Add to Cart not enabled after size selection; cart shows wrong SKU","remove item from cart","VCST-4547","Automated"
-"B2C-VAR-002","Product Variations - Color Selection","B2C Features > Variations","Critical","BL-B2C-001","","Product with color variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with colors (e.g., Blue, Red, Black, White)
+"B2C-VAR-002","Product Variations - Color Selection","B2C Features > Variations","Critical","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with color variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with colors (e.g., Blue, Red, Black, White)
 2. [ASSERT] Verify color selector displays
 3. [ACT] Click color 'Blue'
 4. [ASSERT] Verify Blue is selected
@@ -27,7 +32,9 @@
 [DOM] Cart shows: Product Name - Color: Blue
 [DOM] Correct color variant SKU in cart","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Color selector missing; image does not update on color change; wrong color variant SKU in cart","remove item from cart","VCST-4547","Automated"
-"B2C-VAR-003","Product Variations - Multi-Attribute (Size + Color)","B2C Features > Variations","Critical","BL-B2C-001","ECL-7.1","Product with size and color variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-VAR-003","Product Variations - Multi-Attribute (Size + Color)","B2C Features > Variations","Critical","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with size and color variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ASSERT] Verify both size and color selectors display
 3. [ACT] Select Size: M
 4. [ASSERT] Verify color options update to only colors available in size M
@@ -43,7 +50,9 @@
 [DOM] Cart shows: Product - Size: M, Color: Blue
 [DOM] Correct variant SKU and price in cart","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Invalid attribute combinations selectable; price not updating on variant change; cart shows wrong SKU or attribute combo","remove item from cart","VCST-4547","Automated"
-"B2C-VAR-004","Product Variations - Out of Stock Variant","B2C Features > Variations","High","BL-B2C-001","","Product with some variants out of stock","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-VAR-004","Product Variations - Out of Stock Variant","B2C Features > Variations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with some variants out of stock","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ACT] Select size that is out of stock
 3. [ASSERT] Verify out of stock message displayed
 4. [ASSERT] Verify Add to Cart is disabled
@@ -53,7 +62,9 @@
 [STATE] Add to Cart button disabled for out of stock variant
 [STATE] Add to Cart button enabled after selecting in-stock variant
 [DOM] Stock status badge visible per variant","[CONSOLE] no uncaught JS errors","Out of stock variant not grayed; Add to Cart enabled for OOS variant; no out of stock message shown","none","VCST-4547","Manual"
-"B2C-VAR-005","Product Variations - Price Updates by Variant","B2C Features > Variations","High","BL-B2C-001","ECL-7.1","Product with variant-specific pricing (e.g., size affects price)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size-based pricing
+"B2C-VAR-005","Product Variations - Price Updates by Variant","B2C Features > Variations","High","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with variant-specific pricing (e.g., size affects price)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size-based pricing
 2. [ASSERT] Note default price (e.g., $29.99 for size S)
 3. [ACT] Select size L
 4. [ASSERT] Verify price updates (e.g., $34.99)
@@ -65,7 +76,9 @@
 [MATH] Cart line price matches selected variant price
 [MATH] Checkout total uses correct variant pricing","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Price does not update on variant change; cart shows incorrect price for selected variant","remove item from cart","VCST-4547","Manual"
-"B2C-VAR-006","Product Variations - Mobile Variant Selection","B2C Features > Variations","Critical","BL-B2C-001","","Mobile device (375x667), product with variations","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open product page on mobile viewport (375x667)
+"B2C-VAR-006","Product Variations - Mobile Variant Selection","B2C Features > Variations","Critical","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Mobile device (375x667), product with variations","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open product page on mobile viewport (375x667)
 2. [SCROLL] Scroll to variant selectors
 3. [ACT] Tap size selector
 4. [ASSERT] Verify selector opens (native picker or custom)
@@ -76,7 +89,8 @@
 [STATE] Selected values clearly visible after tap
 [DOM] Add to Cart button accessible on mobile
 [DOM] No horizontal scrolling required","[CONSOLE] no uncaught JS errors","Selectors too small to tap; selection not registering on touch; Add to Cart not accessible on mobile","none","VCST-4547","Manual"
-"B2C-VAR-007","Product Variations - Image Gallery per Variant","B2C Features > Variations","Medium","BL-B2C-001","","Product with variant-specific images","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with color variants
+"B2C-VAR-007","Product Variations - Image Gallery per Variant","B2C Features > Variations","Medium","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product with variant-specific images","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with color variants
 2. [ASSERT] View image gallery for default variant
 3. [ACT] Select color: Red
 4. [ASSERT] Verify image gallery updates to red variant images
@@ -86,7 +100,9 @@
 [DOM] Main image updates immediately on variant selection
 [DOM] Thumbnail gallery updates to show variant images
 [DOM] Gallery position resets to first image on variant switch","[CONSOLE] no uncaught JS errors","Main image or thumbnails not updating when variant changes; gallery shows images from wrong variant","none","VCST-4547","Manual"
-"B2C-VAR-008","Product Variations - Default Variant Selection","B2C Features > Variations","Medium","BL-B2C-001","","Product with multiple variants","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
+"B2C-VAR-008","Product Variations - Default Variant Selection","B2C Features > Variations","Medium","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with multiple variants","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product page
 2. [ASSERT] Verify default variant pre-selected
 3. [ASSERT] Verify Add to Cart is enabled (if default variant in stock)
 4. [ACT] Add to cart without changing selection
@@ -94,7 +110,9 @@
 [STATE] Add to Cart enabled immediately without user interaction
 [DOM] Default variant SKU in cart matches expected default","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Page loads without any variant selected; Add to Cart requires selection when it should not; wrong default variant added to cart","remove item from cart","VCST-4547","Manual"
-"B2C-VAR-009","Product Variations - Add Multiple Variants to Cart","B2C Features > Variations","High","BL-B2C-001","ECL-7.1","Product with variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+"B2C-VAR-009","Product Variations - Add Multiple Variants to Cart","B2C Features > Variations","High","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with variations","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
 2. [ACT] Select Size: S, Color: Blue
 3. [ACT] Click Add to Cart
 4. [WAIT] Wait for cart confirmation
@@ -107,7 +125,8 @@
 [DOM] Each line has its own quantity field
 [MATH] Subtotal sums both variants correctly","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Only one variant shown in cart; variants merged into single line; incorrect subtotal calculation","remove item from cart","VCST-4547","Automated"
-"B2C-VAR-010","Product Variations - Variant URL Parameters","B2C Features > Variations","Medium","BL-B2C-001","","Product with variations","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+"B2C-VAR-010","Product Variations - Variant URL Parameters","B2C Features > Variations","Medium","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product with variations","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
 2. [ACT] Select Size: L, Color: Black
 3. [ASSERT] Check URL for variant params (e.g., ?size=L&color=Black)
 4. [ACT] Copy URL and open in new tab
@@ -115,7 +134,8 @@
 6. [ASSERT] Verify correct variant pre-selected on load","[NAV] URL updates with human-readable variant parameters
 [STATE] Opening variant URL pre-selects that variant
 [NAV] Back button works correctly after variant URL changes","[CONSOLE] no uncaught JS errors","URL does not update with variant params; direct variant URL does not pre-select the variant; URL uses internal IDs instead of readable names","none","VCST-4547","Manual"
-"B2C-VAR-011","VcVariantPickerGroup - All Variant Options Render Correctly","B2C Features > Variations > UI","High","BL-B2C-001","","Product with multiple variation options (size, colour), Storybook changes deployed","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size and colour variants
+"B2C-VAR-011","VcVariantPickerGroup - All Variant Options Render Correctly","B2C Features > Variations > UI","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product with multiple variation options (size, colour), Storybook changes deployed","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product with size and colour variants
 2. [ASSERT] Observe the variant picker UI (colour swatches, size buttons)
 3. [ACT] Click various variant options
 4. [ASSERT] Verify visual feedback for selected, unselected, and disabled states","[DOM] All variant options render (no blank spaces or broken swatches)
@@ -123,7 +143,9 @@
 [STATE] Unselected state clearly differs from selected
 [STATE] Disabled or out-of-stock variant shown grayed
 [DOM] No visual regression from Storybook StoryFn to StoryObj migration","[CONSOLE] no uncaught JS errors","Blank swatches; broken variant picker; selected/unselected states visually identical; OOS variants not grayed","none","VCST-4233","Manual"
-"B2C-CONFIG-001","Product Configuration - Configurable Options","B2C Features > Configurations","Critical","BL-B2C-001","ECL-7.1","Product with configurations (e.g., custom PC, engraved item)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-001","Product Configuration - Configurable Options","B2C Features > Configurations","Critical","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with configurations (e.g., custom PC, engraved item)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ASSERT] Verify configuration options display
 3. [ACT] Select option 1: Processor: Intel i7
 4. [ASSERT] Verify price updates (+$100)
@@ -141,7 +163,9 @@
 [STATE] Add to Cart enabled after all required options selected
 [DOM] Cart shows configured product with all selected options","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Configuration options not displaying; price not updating on selection; cart shows base price instead of configured price","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-002","Product Configuration - Required Options","B2C Features > Configurations","High","BL-B2C-001","","Product with required configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-002","Product Configuration - Required Options","B2C Features > Configurations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with required configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ASSERT] Verify required options are marked (asterisk or 'Required')
 3. [ACT] Attempt to add to cart without selecting required options
 4. [ASSERT] Verify error: 'Please select all required options'
@@ -152,7 +176,9 @@
 [DOM] Error message shown if add attempted without required selections
 [DOM] Optional vs required distinction clear in UI","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Add to Cart enabled without required selections; error message not shown; required options not visually distinguished from optional","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-003","Product Configuration - Optional Add-Ons","B2C Features > Configurations","Medium","BL-B2C-001","ECL-7.1","Product with optional add-ons (warranty, gift wrap)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
+"B2C-CONFIG-003","Product Configuration - Optional Add-Ons","B2C Features > Configurations","Medium","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with optional add-ons (warranty, gift wrap)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product
 2. [SCROLL] Scroll to optional add-ons section
 3. [ASSERT] Verify add-ons listed: Extended Warranty (+$50), Gift Wrap (+$5)
 4. [ACT] Check Extended Warranty
@@ -167,7 +193,9 @@
 [MATH] Price updates when add-on checked; reverts when unchecked
 [DOM] Cart shows selected add-ons as sub-items or separate lines","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Add-ons not shown; price not updating when add-on checked; add-ons missing from cart","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-004","Product Configuration - Text Input (Engraving)","B2C Features > Configurations","High","BL-B2C-001","","Product with text customization (engraving, monogram)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to engravable product
+"B2C-CONFIG-004","Product Configuration - Text Input (Engraving)","B2C Features > Configurations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with text customization (engraving, monogram)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to engravable product
 2. [ACT] Enter text in engraving field: 'Happy Birthday'
 3. [ASSERT] Verify character count: 14/20
 4. [ACT] Attempt to enter text exceeding 20-character limit
@@ -179,7 +207,9 @@
 [STATE] Cannot exceed character limit (blocked or error shown)
 [DOM] Cart displays: Product + Engraving: 'Happy Birthday'","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Character limit not enforced; character count not shown in real time; engraving text missing from cart","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-005","Product Configuration - Image Upload","B2C Features > Configurations","Medium","BL-B2C-001","","Product allowing image upload (custom print)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product requiring image upload
+"B2C-CONFIG-005","Product Configuration - Image Upload","B2C Features > Configurations","Medium","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product allowing image upload (custom print)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to product requiring image upload
 2. [ASSERT] Verify upload area: 'Upload your photo'
 3. [ACT] Click upload or drag a valid JPG/PNG image
 4. [ASSERT] Verify image uploads and thumbnail preview shown
@@ -191,7 +221,9 @@
 [DOM] File size limit enforced (5MB max)
 [DOM] Thumbnail preview shown after valid upload
 [DOM] Cart shows configured product with uploaded image reference","[CONSOLE] no uncaught JS errors","Upload field missing; invalid file types accepted without error; thumbnail not shown after upload; file size limit not enforced","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-006","Product Configuration - Dependent Options","B2C Features > Configurations","High","BL-B2C-001","","Product with dependent configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-006","Product Configuration - Dependent Options","B2C Features > Configurations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product with dependent configuration options","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ACT] Select Color: Blue
 3. [ASSERT] Verify Size options update to only sizes available in Blue
 4. [ACT] Select Size: M
@@ -202,7 +234,9 @@
 [DOM] Clear indication when options filtered (e.g., 'Size XL not available in Blue')
 [STATE] Configuration prevents impossible combinations","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Invalid size/color combinations selectable; dependent options not filtering after first selection","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-007","Product Configuration - Bundle/Kit Builder","B2C Features > Configurations","Medium","BL-B2C-001","ECL-7.1","Bundle product (build your own gift basket)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to bundle product
+"B2C-CONFIG-007","Product Configuration - Bundle/Kit Builder","B2C Features > Configurations","Medium","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Bundle product (build your own gift basket)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to bundle product
 2. [ASSERT] Verify multi-step bundle builder displays
 3. [ACT] Step 1: Select base: Small/Medium/Large basket
 4. [ACT] Step 2: Choose 5 items from catalog (min 3, max 10)
@@ -216,7 +250,9 @@
 [MATH] Total = base price + sum of selected item prices
 [DOM] Cart shows bundle as single product with components listed","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Bundle builder not displaying steps; minimum item rule not enforced; running total not updating; cart shows components separately instead of as bundle","remove item from cart","VCST-4547","Manual"
-"B2C-CONFIG-008","Product Configuration - Price Calculation Accuracy","B2C Features > Configurations","Critical","BL-B2C-001","ECL-7.1","Configurable product with multiple price modifiers","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-008","Product Configuration - Price Calculation Accuracy","B2C Features > Configurations","Critical","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Configurable product with multiple price modifiers","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ASSERT] Note base price: $100
 3. [ACT] Select option with +$50 modifier
 4. [ASSERT] Verify total: $150
@@ -232,7 +268,8 @@
 [MATH] Cart price matches configured price: $165
 [MATH] Checkout and order confirmation use $165 (no price discrepancies)","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Rounding errors in price calculation; cart price differs from configured price; checkout uses different price than cart","remove item from cart","VCST-4547","Automated"
-"B2C-CONFIG-009","Product Configuration - Save Configuration for Later","B2C Features > Configurations","Low","BL-B2C-001","","Logged in user, configurable product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-009","Product Configuration - Save Configuration for Later","B2C Features > Configurations","Low","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Logged in user, configurable product","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ACT] Select multiple options to configure product
 3. [ACT] Click 'Save Configuration' button
 4. [ACT] Enter name: 'My Custom PC'
@@ -244,7 +281,8 @@
 [DOM] Saved configuration stored with given name: 'My Custom PC'
 [STATE] Loading saved config restores all option selections correctly
 [DOM] Configuration visible in user account or product page","[CONSOLE] no uncaught JS errors","Save Configuration button missing; saved config not restoring all options; config not persisting after navigation","none","VCST-4547","Manual"
-"B2C-CONFIG-010","Product Configuration - Reset Configuration","B2C Features > Configurations","Medium","BL-B2C-001","","Product configured with multiple options selected","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [ACT] Configure product by selecting 5+ options
+"B2C-CONFIG-010","Product Configuration - Reset Configuration","B2C Features > Configurations","Medium","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product configured with multiple options selected","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [ACT] Configure product by selecting 5+ options
 2. [ACT] Click 'Reset' or 'Clear All' button
 3. [ASSERT] Verify confirmation prompt (if applicable)
 4. [ACT] Confirm reset
@@ -253,7 +291,9 @@
 [STATE] All options reset to default or unselected state after confirm
 [FORMAT] Price reverts to base price
 [DOM] No confirmation prompt references unsaved changes (config not persistent until cart)","[CONSOLE] no uncaught JS errors","Reset button missing; some options remain selected after reset; price not reverting to base price","none","VCST-4547","Manual"
-"B2C-CONFIG-011","Product Configuration - Mobile Configuration UI","B2C Features > Configurations","High","BL-B2C-001","","Mobile device (375x667), configurable product","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open configurable product on mobile viewport (375x667)
+"B2C-CONFIG-011","Product Configuration - Mobile Configuration UI","B2C Features > Configurations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Mobile device (375x667), configurable product","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Open configurable product on mobile viewport (375x667)
 2. [SCROLL] Scroll to configuration section
 3. [ACT] Interact with option selectors on mobile
 4. [ASSERT] Verify mobile-optimized UI
@@ -265,7 +305,9 @@
 [DOM] Price updates visible (sticky footer or always-visible element)
 [DOM] No horizontal scrolling
 [DOM] Add to Cart accessible without scrolling off-screen","[CONSOLE] no uncaught JS errors","Horizontal scrolling on mobile; swatches too small to tap; price updates hidden below fold; Add to Cart not accessible","none","VCST-4547","Manual"
-"B2C-CONFIG-012","Product Configuration - Accessibility","B2C Features > Configurations","High","BL-B2C-001","","Configurable product, keyboard and screen reader available","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product using keyboard only (Tab key)
+"B2C-CONFIG-012","Product Configuration - Accessibility","B2C Features > Configurations","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Configurable product, keyboard and screen reader available","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to product using keyboard only (Tab key)
 2. [KEY] Tab through configuration options
 3. [ASSERT] Verify focus indicators are visible
 4. [KEY] Select options using Enter or Space
@@ -279,7 +321,9 @@
 [DOM] Screen reader announces: option labels, current selection, price changes, required vs optional
 [DOM] Error messages announced
 [DOM] WCAG 2.1 AA compliant","[CONSOLE] no uncaught JS errors","Focus indicator missing; options not reachable by Tab; screen reader not announcing price changes; ARIA labels missing","none","VCST-4547","Manual"
-"B2C-CONFIG-013","Configurable Product - Discount Scales Correctly with Quantity","B2C Features > Configurations > Pricing","Critical","BL-B2C-001","ECL-7.1","Configurable product with discounted options, quantity > 1","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (e.g., bike builder)
+"B2C-CONFIG-013","Configurable Product - Discount Scales Correctly with Quantity","B2C Features > Configurations > Pricing","Critical","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Configurable product with discounted options, quantity > 1","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (e.g., bike builder)
 2. [ACT] Select a configuration option that has a discount (list price > sale price)
 3. [ACT] Set quantity to 2 or more
 4. [ASSERT] Observe the subtotal in the configuration section
@@ -290,7 +334,8 @@
 [FORMAT] No pricing discrepancy between product page and cart
 [DOM] VCST-4586 regression: sale price used for all quantity calculations","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Subtotal uses listPrice instead of salePrice; discount amount not scaling with quantity; pricing discrepancy between product page and cart","remove item from cart","VCST-4586","Manual"
-"B2C-CONFIG-014","Configurable Product - Sale Price Displayed as Primary Price","B2C Features > Configurations > Pricing","Critical","BL-B2C-001","","Configurable product with discounted options (list price != sale price)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
+"B2C-CONFIG-014","Configurable Product - Sale Price Displayed as Primary Price","B2C Features > Configurations > Pricing","Critical","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Configurable product with discounted options (list price != sale price)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product
 2. [ACT] Select an option with a discount applied (list price > sale price)
 3. [ASSERT] Observe price display in configuration section
 4. [ASSERT] Verify which price is shown prominently","[DOM] Sale price (salePrice) displayed prominently (bold, dark color)
@@ -298,13 +343,15 @@
 [FORMAT] Visual presentation: salePrice = primary; listPrice = secondary or crossed out
 [FORMAT] Example: $88.00 sale shown large; $126.00 crossed out shown smaller
 [DOM] VCST-4586 regression: sale price must be primary","[CONSOLE] no uncaught JS errors","List price shown as primary price; sale price shown with strikethrough (reversed display); no strikethrough on list price","none","VCST-4586","Manual"
-"B2C-CONFIG-015","Configurable Product - Mobile Sale Price Display","B2C Features > Configurations > Pricing > Mobile","High","BL-B2C-001","","Mobile viewport (375x667), configurable product with discounted options","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Set viewport to 375x667
+"B2C-CONFIG-015","Configurable Product - Mobile Sale Price Display","B2C Features > Configurations > Pricing > Mobile","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Mobile viewport (375x667), configurable product with discounted options","url={{FRONT_URL}};viewport=375x667;sku={{TEST_SKU}}","1. [NAV] Set viewport to 375x667
 2. [NAV] Navigate to configurable product
 3. [ACT] Select an option with a discount
 4. [ASSERT] Observe price display in configuration section on mobile","[DOM] Mobile fallback price component shows sale price as primary (not list price)
 [DOM] Sale price visible in mobile configuration section
 [FORMAT] VCST-4586 regression: list price must NOT be shown as primary on mobile","[CONSOLE] no uncaught JS errors","List price shown as primary on mobile; sale price hidden or shown as secondary on mobile","none","VCST-4586","Manual"
-"B2C-CONFIG-016","Configurable Product - No Auto-Scroll on First Collapsed Section Click","B2C Features > Configurations > Interaction","High","BL-B2C-001","","Fresh page load of configurable product with multiple accordion sections (some collapsed by default)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (fresh load - no cached state)
+"B2C-CONFIG-016","Configurable Product - No Auto-Scroll on First Collapsed Section Click","B2C Features > Configurations > Interaction","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Fresh page load of configurable product with multiple accordion sections (some collapsed by default)","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Navigate to configurable product page (fresh load - no cached state)
 2. [WAIT] Wait for page to fully load
 3. [ASSERT] Locate a configuration accordion section that is COLLAPSED by default
 4. [ACT] Click the accordion header to expand it
@@ -314,7 +361,8 @@
 [NAV] Scroll position remains where user was before click
 [STATE] Selected option confirmed as checked after 1-2 seconds
 [DOM] VCST-4612 regression case: no auto-scroll on first click","[CONSOLE] no uncaught JS errors","Page auto-scrolls after clicking radio button in newly expanded section; radio button selection reverts to None after first click","none","VCST-4612","Manual"
-"B2C-CONFIG-017","Configurable Product - First Click Radio Selection Sticks (No Revert)","B2C Features > Configurations > Interaction","High","BL-B2C-001","","Fresh page load, configurable product with collapsed accordion sections","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Fresh page load of configurable product
+"B2C-CONFIG-017","Configurable Product - First Click Radio Selection Sticks (No Revert)","B2C Features > Configurations > Interaction","High","BL-B2C-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Fresh page load, configurable product with collapsed accordion sections","url={{FRONT_URL}};sku={{TEST_SKU}}","1. [NAV] Fresh page load of configurable product
 2. [ACT] Expand a collapsed accordion section
 3. [ACT] Click a radio button option (first option in newly expanded section)
 4. [WAIT] Wait 1-2 seconds
@@ -322,7 +370,9 @@
 [FORMAT] Price updates to reflect the selected option
 [DOM] Section header updates to show selected option name
 [STATE] VCST-4612 regression case: selection revert bug must not recur","[CONSOLE] no uncaught JS errors","Radio button selection reverts to None or default value 1-2 seconds after click; price not updating; section header not updating","none","VCST-4612","Manual"
-"B2C-CONFIG-018","Edit Configured Product in Cart - Reopen Configurator with Previous Selections","B2C Features > Configurations","High","BL-B2C-001","ECL-7.1","User logged in; configurable product already in cart with specific options selected (e.g., Section 1: Option A, Section 2: Option B)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}}","1. [NAV] Navigate to cart at {{FRONT_URL}}/cart
+"B2C-CONFIG-018","Edit Configured Product in Cart - Reopen Configurator with Previous Selections","B2C Features > Configurations","High","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; configurable product already in cart with specific options selected (e.g., Section 1: Option A, Section 2: Option B)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}}","1. [NAV] Navigate to cart at {{FRONT_URL}}/cart
 2. [ASSERT] Verify configured product is listed with its selected options summary
 3. [ACT] Click the 'Edit' button on the configured cart line item
 4. [ASSERT] Verify configurator reopens (product configurator page or modal)
@@ -341,7 +391,9 @@
 [FORMAT] Updated cart line price matches new configuration total","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx or 5xx on configurator load or cart update","Edit button missing from configured cart line; configurator reopens with default/empty selections instead of saved ones; running total on reopen shows wrong price; price not updating after option change; cart not reflecting updated configuration after save","remove item from cart","E2E-CONFIG-005","Manual"
-"B2C-CONFIG-019","Edit Configured Product in Cart - Price Reflects New Configuration","B2C Features > Configurations","High","BL-B2C-001","ECL-7.1","User logged in; configurable product in cart; original config price known (e.g., $725 = base $500 + Section 1 $100 + Section 2 $125)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}};original_price=725","1. [NAV] Navigate to {{FRONT_URL}}/cart
+"B2C-CONFIG-019","Edit Configured Product in Cart - Price Reflects New Configuration","B2C Features > Configurations","High","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; configurable product in cart; original config price known (e.g., $725 = base $500 + Section 1 $100 + Section 2 $125)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_CONFIGURABLE}};original_price=725","1. [NAV] Navigate to {{FRONT_URL}}/cart
 2. [ASSERT] Note original configured cart line price (e.g., $725)
 3. [ACT] Click 'Edit' on the configured cart line
 4. [ASSERT] Configurator opens with original selections pre-loaded
@@ -357,7 +409,9 @@
 [STATE] Quantity unchanged after edit (still 1)","[API] mutation errors[] is empty on cart update
 [CONSOLE] no uncaught JS errors
 [NETWORK] cart update request returns 200","Cart price unchanged after editing configuration; running total not updating in configurator; cart subtotal not recalculating; original price persisting instead of updated price","remove item from cart","E2E-CONFIG-005","Manual"
-"B2C-VAR-012","Unavailable Variant Combinations - Incompatible Options Disabled","B2C Features > Variations","Medium","BL-B2C-001","ECL-7.1","Product page with size and color variations where some combos are unavailable (e.g., XL in Red is out of stock or not offered)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_VARIANTS}}","1. [NAV] Navigate to a product with size and color variant selectors
+"B2C-VAR-012","Unavailable Variant Combinations - Incompatible Options Disabled","B2C Features > Variations","Medium","BL-B2C-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product page with size and color variations where some combos are unavailable (e.g., XL in Red is out of stock or not offered)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU_VARIANTS}}","1. [NAV] Navigate to a product with size and color variant selectors
 2. [ASSERT] Verify both size and color selectors are visible
 3. [ACT] Select size 'XL'
 4. [ASSERT] Verify that color options unavailable in XL (e.g., Red) are visually disabled or crossed-out

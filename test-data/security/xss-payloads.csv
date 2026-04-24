@@ -1,0 +1,8 @@
+payload_id,name,payload,target_field_hint,notes
+XSS-001,Script tag bare,<script>alert(1)</script>,text fields,Classic script tag; expected to be rejected by EnableNoHtmlTagsValidation
+XSS-002,Img onerror,<img src=x onerror=alert(1)>,text fields,Image tag with onerror JS handler
+XSS-003,Org name with script,<script>alert(1)</script>Org,organization name,XSS payload wrapped in org-like text; used by GQL-030
+XSS-004,Phone HTML tag,<img src=x onerror=alert(1)>,phone,HTML injection attempt in phone field; used by GQL-031
+XSS-005,Phone oversized,11111111111111111111111111111111111111111111111111111111111111111,phone,65-char string to exceed MaxLength(64); used by GQL-031
+XSS-006,SVG onload,<svg onload=alert(1)>,text fields,SVG tag with onload handler
+XSS-007,Line1 img payload,<img onerror=alert(1)>,address line1,Address line injection; used by GQL-032

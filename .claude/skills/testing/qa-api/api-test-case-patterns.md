@@ -223,6 +223,30 @@ Failure_Signals: errors[] non-empty in [mutationName] response
 
 ---
 
+## Happy Path Patterns
+
+### GraphQL happy-path field selection (mandatory):
+
+Every happy-path GraphQL query/mutation test MUST request the **full field selection set** for the return type:
+
+- All non-deprecated scalar fields of the root return type
+- At least one level of expansion for every nested object (`{ amount currency { code } }`, not just `{ amount }`)
+- Every field named in the Business Rule being verified
+
+**Rationale:** a happy-path test's job is to prove the full contract holds — null checks, type correctness, enum membership, and nested resolver correctness are only observable when the field is in the selection set. `{ totalCount }`-only or `{ id }`-only queries cannot assert that non-nullable fields are populated or that nested resolvers return well-formed data.
+
+**Exceptions** (minimal selection is allowed ONLY in these roles, and the Steps column MUST include a comment naming the role):
+
+1. **Counter/invariant probe** — `{ totalCount }` before/after a mutation to detect row-count change (e.g., duplicate-skip verification)
+2. **Cross-layer roundtrip** — query only the fields needed to match a prior write (e.g., `{ items { line1 city } }` after an address mutation)
+3. **Dedicated minimal-selection schema-coverage test** — one per operation, per the three-tier rule in `graphql-checklist.md:141-144`
+
+### REST happy-path payload:
+
+REST happy-path tests assert the documented response schema — validate every field listed in the API contract, not just the primary key.
+
+---
+
 ## Negative Test Patterns
 
 Always include these for every new operation:

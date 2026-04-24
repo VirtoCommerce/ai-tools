@@ -23,7 +23,9 @@
     "seed:teardown": "node scripts/seed-test-data.js teardown",
     "seed:dry-run": "node scripts/seed-test-data.js catalog --dry-run --verbose",
     "schema:refresh": "node scripts/refresh-graphql-schema.mjs",
-    "schema:check": "node scripts/refresh-graphql-schema.mjs --dry-run > /dev/null"
+    "schema:check": "node scripts/refresh-graphql-schema.mjs --dry-run > /dev/null",
+    "graphql:validate": "npx tsx scripts/graphql-runner.ts --all-fixtures",
+    "graphql:validate:refresh": "npx tsx scripts/graphql-runner.ts --all-fixtures --refresh-schema"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,7 @@
     "@playwright/mcp": "^0.0.45",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.1.0",
+    "graphql": "^16.13.2",
     "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
