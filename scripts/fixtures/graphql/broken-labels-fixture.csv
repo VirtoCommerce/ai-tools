@@ -1,0 +1,22 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-TYPO-01,"Typo in EXEC label","GraphQL > Fixture",High,—,—,"—","—","[AUTH role=ORG_USER]
+[GQL-OP valid_name]
+  mutation { createOrganization(command: { name: ""X"" }) { id } }
+[GQL-EXEC xss_name]","[ERRORS label=valid_name] errors[] empty","—","—","—","local-fixture",Draft
+GQL-MISS-02,"OP without EXEC","GraphQL > Fixture",High,—,—,"—","—","[AUTH role=ORG_USER]
+[GQL-OP solo_op]
+  query { me { id } }","[ERRORS label=solo_op] errors[] empty","—","—","—","local-fixture",Draft
+GQL-DUP-03,"OP with two EXECs","GraphQL > Fixture",High,—,—,"—","—","[AUTH role=ORG_USER]
+[GQL-OP double_exec]
+  query { me { id } }
+[GQL-EXEC double_exec]
+[GQL-EXEC double_exec]","[ERRORS label=double_exec] errors[] empty","—","—","—","local-fixture",Draft
+GQL-VARS-04,"VARS refers to undeclared label","GraphQL > Fixture",High,—,—,"—","—","[AUTH role=ORG_USER]
+[GQL-OP real_op]
+  query { me { id } }
+[GQL-VARS ghost_op]
+  {}
+[GQL-EXEC real_op]","[ERRORS label=real_op] errors[] empty","—","—","—","local-fixture",Draft
+GQL-LEGACY-99,"Legacy GraphiQL UI case (should be skipped)","GraphQL > Fixture",High,—,—,"—","—","[NAV] {{BACK_URL}}/ui/graphiql
+[ACT] Type mutation: mutation { me { id } }
+[GQL] Click Execute","[ERRORS] errors[] empty","—","—","—","local-fixture",Legacy
