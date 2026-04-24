@@ -123,6 +123,10 @@ For every test case row, evaluate:
   - [ ] No literal addresses / coupon codes / fixture values outside `test-data/` (DV-017)
   - [ ] No magic numbers without named-constant comment (DV-018)
 - [ ] **Exception — environment constants are allowed:** virtual-catalog root `fc596540...`, store ID, admin login, and other stable-across-deploys values documented in `knowledge/catalog.md` or `knowledge/store-settings.md`
+- [ ] **Runner-native GraphQL step structure** (DV-019) — run `npm run graphql:lint-labels -- <csv-path>` for every GraphQL suite that uses `[GQL-OP]`/`[GQL-EXEC]` tags. Must exit 0. Catches:
+  - [ ] Every `[GQL-OP <L>]` paired with exactly one `[GQL-EXEC <L>]`
+  - [ ] Every `[GQL-EXEC <L>]` has a matching `[GQL-OP <L>]`
+  - [ ] Every `[GQL-VARS <L>]` / `[GQL-CAPTURE <L>.*]` refers to a declared op label
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
@@ -132,6 +136,20 @@ For every test case row, evaluate:
 - [ ] Cross-reference: are there BL-* invariants for this domain with no test cases covering them?
 - [ ] **For Critical/High cases, `References` contains a JIRA ticket (`VCST-XXXX`), `REQ-*` ID, or user-story link (REQ-001)** — a lone `BL-*` in References does NOT satisfy this
 - [ ] Infrastructure/smoke cases with no originating ticket use `References: smoke-baseline` (explicit placeholder, never empty)
+
+### Step 3.5: Runner-Native GraphQL Label Pairing (Dimension 5 — DV-019)
+
+When the scope includes any file under `regression/suites/Backend/graphql/` (or any CSV that declares `[GQL-OP]`/`[GQL-EXEC]` in Steps), run the label-pairing linter as a deterministic structural check:
+
+```bash
+npm run graphql:lint-labels -- <csv-path>
+```
+
+Merge the output into the Data Validity dimension (DV-019 for label mismatches, S-007 for CSV-parse errors the linter surfaces while reading). The linter automatically skips legacy GraphiQL-UI cases (no `[GQL-OP]` tags), so this check is safe to run against mixed suites and does not require a live environment.
+
+Severity rules:
+- DV-019 findings → **Critical** (runner will exit at structural validation before any GraphQL is sent; case is dead code)
+- S-007 findings → **Blocker** (CSV-parse error; the whole file cannot be read reliably)
 
 ### Step 4: Cross-Suite Duplication Check (Dimension 7)
 

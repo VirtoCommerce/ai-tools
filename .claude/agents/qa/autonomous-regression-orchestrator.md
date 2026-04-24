@@ -50,9 +50,21 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 
 `TeamCreate` with name `regression-{RUN_ID}`, description `Autonomous regression run {RUN_ID} — {selection} ({N} suites)`
 
+### Step 2.5: Categorize suites (browser vs. fast-path)
+
+After CSV resolution (Step 3 pre-dispatch), for each suite grep the Steps column for `[GQL-OP ` / `[GQL-EXEC `:
+
+| Detection | Category | Lane |
+|-----------|----------|------|
+| **Every** non-empty Steps cell contains a `[GQL-OP ` / `[GQL-EXEC ` tag | **Runner-native GraphQL** | **Fast-path** — no browser slot |
+| Mix of runner-native and legacy GraphiQL tags | **Mixed** | Browser pool (child agent's Phase 0 handles the split) |
+| No runner-native tags | **Browser-only** | Browser pool |
+
+Record `lane: "fast-path" | "browser"` in each suite's `run-status.json` entry.
+
 ### Step 3: Token Bucket — Dispatch Child Agents
 
-**Browser Slots (3 max concurrent):**
+**Browser Slots (3 max concurrent — browser-lane suites only):**
 
 | Slot | Server | Preferred Agent |
 |------|--------|-----------------|
@@ -60,7 +72,11 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 | 2 | `playwright-firefox` | `qa-testing-expert` |
 | 3 | `playwright-edge` | `qa-backend-expert` |
 
-**Assignment:** Take next pending suite → look up `agent` field → assign preferred browser → if occupied, use any available slot → if all occupied, wait for completion.
+**Fast-path Lane (separate — up to 3 concurrent, not counted against browser slots):** Runner-native GraphQL suites run in parallel to the browser pool. The 3+1 token bucket becomes **3 browser + 3 fast-path + 1 reporting** (effective concurrency up to 7 child agents). Practical cap on fast-path: 3 concurrent to avoid `/graphql` rate limits; tune via `MAX_FAST_PATH` env var if set.
+
+**Assignment:** Take next pending suite → check `lane` from Step 2.5.
+- `lane: "browser"` → look up `agent` field → assign preferred browser → if occupied, use any available slot → if all occupied, wait for completion.
+- `lane: "fast-path"` → dispatch immediately if fast-path slot available (no browser needed); child agent's Phase 0 takes the GraphQL Runner Fast Path.
 
 **Pre-dispatch — resolve CSV once per suite (do NOT embed in prompt):**
 1. Read the suite CSV from the manifest's `file` path.
@@ -109,6 +125,17 @@ On failure:
 5. After max attempts (4 total): mark `failed`, do NOT skip
 
 **Environment-unreachable escalation:** If 3+ suites fail with `environment_unreachable` → halt ALL remaining (mark `blocked`), skip to report generation.
+
+**Fast-path specific failure types** (no browser fallback chain applies):
+
+| Error Type | Action | Retry Budget |
+|------------|--------|--------------|
+| `graphql_lint_failed` | Do NOT retry — structural defect; surface DV-019 findings in bug list | 0 |
+| `schema_introspection_failed` | Run `npm run schema:refresh` out-of-band, retry once | 1 |
+| `graphql_runtime_fatal` | Retry once with fresh introspection cache | 1 |
+| `authentication_failure` (fast path) | Same as browser path — retry once, then fail | 1 |
+
+Fast-path retries reuse the same `compute-only` lane — do NOT fall back to a browser, because the legacy path cannot run a runner-native case.
 
 ### Step 6: Rate Limit Guard
 

@@ -44,7 +44,19 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 4. Create output: `reports/regression/{RUN_ID}/`
 5. Write `reports/regression/test-run-status.json` with initial state (all suites `pending`, status `running`)
 
-### Step 2: Browser Pool (3 slots)
+### Step 1.5: Categorize suites (browser vs. fast-path)
+
+For each resolved suite CSV (from Step 3 pre-dispatch), grep the Steps column for `[GQL-OP ` or `[GQL-EXEC `:
+
+| Detection | Category | Lane |
+|-----------|----------|------|
+| **Every** non-empty Steps cell contains `[GQL-OP ` or `[GQL-EXEC ` | **Runner-native GraphQL** | **Fast-path** — no browser slot |
+| Any row has `[GQL-OP ]` / `[GQL-EXEC]` AND any row has legacy `[NAV]`/`[ACT]`/`[GQL]` (UI tags) | **Mixed** | Browser pool (runner-native rows run via `test-runner-agent` Phase 0 fast path locally within the agent) |
+| No `[GQL-OP ]` / `[GQL-EXEC]` tags | **Browser-only** | Browser pool |
+
+Record the category per suite in `test-run-status.json` as `lane: "fast-path" | "browser"`. Fast-path suites do NOT compete for browser slots — they can run in parallel to any browser allocation.
+
+### Step 2: Browser Pool (3 slots — browser-lane suites only)
 
 | Slot | Server | Fallback Chain |
 |------|--------|---------------|
@@ -52,7 +64,7 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 | 2 | `playwright-firefox` | → chrome → edge |
 | 3 | `playwright-edge` | → chrome → firefox |
 
-**Rules:** Round-robin assignment. Honor `preferredBrowser` from manifest. **Never assign two agents to the same server simultaneously.** Never use WebKit.
+**Rules:** Round-robin assignment. Honor `preferredBrowser` from manifest. **Never assign two agents to the same server simultaneously.** Never use WebKit. **Fast-path suites bypass this pool entirely** — they run in a separate compute-only lane with unbounded parallelism (practical limit: 3-6 concurrent fast-path agents to avoid overwhelming `/graphql` or introspection cache refresh).
 
 ### Step 3: Dispatch Sub-Agents in Parallel
 
@@ -62,9 +74,10 @@ Suite selection (one of): `smoke`, `critical` (01,06,08,14), `sprint` (26 suites
 3. Write the resolved CSV to `reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`.
 4. Pass this resolved path as `{{SUITE_CSV_PATH}}` — the sub-agent reads it ONCE from disk. Never embed CSV content in the prompt.
 
-Dispatch up to 3 sub-agents per batch (matching browser slots). For each:
+Dispatch up to 3 sub-agents per batch (matching browser slots) **from the browser lane**, PLUS up to 3 concurrent fast-path agents **from the fast-path lane** — the two lanes do not share slots. For each:
 - **subagent_type**: `agent` field from manifest (`qa-testing-expert`, `qa-frontend-expert`, `qa-backend-expert`)
-- **prompt**: Fill `.claude/agents/qa/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}` (resolved path from step 3 above), `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`). Keep the prompt lean — no extra prose, no knowledge pre-loading, no inline CSV.
+- **prompt**: Fill `.claude/agents/qa/test-runner-agent.md` template with: `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}` (resolved path from step 3 above), `{{BROWSER_SERVER}}` (for browser lane; pass the value anyway for fast-path lane — the agent's Phase 0 will ignore it), `{{ENVIRONMENT_URL}}` (FRONT_URL), `{{BACKEND_URL}}` (BACK_URL), `{{OUTPUT_FILE}}` (`reports/regression/{RUN_ID}/suite-{ID}-results.json`). Keep the prompt lean — no extra prose, no knowledge pre-loading, no inline CSV.
+- **Fast-path suites:** the sub-agent's Phase 0 Mode Detection branches to the GraphQL Runner Fast Path (see `test-runner-agent.md`). The orchestrator does not need a separate template — a fast-path suite consumes CPU + network but not a browser slot.
 
 **Per-suite browser requirements:** If a suite defines `preferredBrowser` in the manifest (e.g., `playwright-chrome` for CyberSource suites 039/041), you MUST assign that browser slot regardless of round-robin distribution. If the preferred slot is unavailable, defer the suite to the next batch rather than using a different browser — falling back to Firefox/Edge will cause cross-origin iframe access failures (documented per suite in `browserRequirementReason`).
 
@@ -88,6 +101,15 @@ Launch all 3 in a SINGLE message with 3 Agent tool calls for parallel execution.
 | Rate limit | Retry same browser | 60s |
 | Auth failure | Retry once, then mark failed | 30s |
 | Environment unreachable | Mark ALL remaining as blocked, stop | 0 |
+
+**Fast-path specific failures:**
+
+| Failure Type | Action | Delay |
+|---|---|---|
+| `graphql_lint_failed` | Do NOT retry — structural defect, mark suite failed, surface DV-019 in bug list | 0 |
+| `schema_introspection_failed` | Run `npm run schema:refresh` then retry once | 60s |
+| `graphql_runtime_fatal` (network / unexpected) | Retry once with fresh introspection | 30s |
+| `authentication_failure` (token-grant) | Retry once, then mark failed | 30s |
 
 Max 2 retries per suite (3 total attempts). After max retries → mark `failed`.
 

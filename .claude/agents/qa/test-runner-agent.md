@@ -23,6 +23,73 @@ Execute a single regression test suite against Virto Commerce. Run autonomously 
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
+## Phase 0: Mode Detection
+
+Before Phase 1, inspect the `Steps` column in `{{SUITE_CSV_PATH}}`. If **every** non-empty Steps cell contains at least one `[GQL-OP ` or `[GQL-EXEC ` tag, this is a **runner-native GraphQL suite** — take the **GraphQL Runner Fast Path** below instead of Phase 1–5. No browser needed.
+
+Mixed suites (some runner-native, some legacy GraphiQL UI) → use the browser path (Phase 1–5); the runner-native cases execute normally via MCP against `{{BACK_URL}}/ui/graphiql`. Migrate the legacy cases separately.
+
+## GraphQL Runner Fast Path (browserless — runner-native GraphQL suites only)
+
+**Why:** `[GQL-OP]`/`[GQL-EXEC]` cases execute via `scripts/graphql-runner.ts` (direct `fetch` to `/graphql`), ~10-30× faster than the GraphiQL UI flow. Schema-validate-before-send catches DV-006…DV-011 at lint time, **zero browser slots consumed** — GraphQL suites run in parallel to browser suites without competing for the 3-slot pool.
+
+### GQL-1. Structural lint (DV-019 / S-007)
+
+```bash
+npm run graphql:lint-labels -- {{SUITE_CSV_PATH}}
+```
+
+- Exit 0 → proceed to GQL-2.
+- Exit 1 → **all runner-native rows BLOCKED**. Record the linter output verbatim in suite-level `errors[]`. Skip to Phase 5 (Write Results) and exit.
+
+### GQL-2. Execute each case
+
+For every row with a non-empty `Steps` column (the linter has already confirmed they are structurally valid runner-native cases):
+
+```bash
+npx tsx scripts/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
+```
+
+The runner handles token acquisition (`[AUTH role=X]` via `TokenCache`), schema validation, `{{VAR}}` + `@td()` substitution, POST to `{{BACKEND_URL}}/graphql`, capture chaining, assertion evaluation, and best-effort `[REST]` cleanup. Per-case evidence JSON lands at `reports/regression/{{RUN_ID}}/graphql-evidence/<CASE_ID>-<ts>.json`.
+
+Exit codes:
+
+| Code | Meaning | Map to |
+|------|---------|--------|
+| 0 | All assertions passed | `PASS` |
+| 1 | At least one assertion failed (but ops ran) | `FAIL` — read the evidence JSON, populate `failedAssertion` with the first `assertions[]` entry where `passed=false` |
+| 2 | Structural / parse / usage error | `BLOCKED` — put the stderr into `notes` |
+| 3 | Runtime fatal (network, auth, unexpected) | `BLOCKED` — stderr into `notes` |
+
+Preserve the evidence path in each test case result:
+
+```json
+{
+  "id": "GQL-030",
+  "status": "PASS",
+  "graphqlEvidence": "reports/regression/{{RUN_ID}}/graphql-evidence/GQL-030-<ts>.json"
+}
+```
+
+### GQL-3. Announce + record
+
+For each case: emit the same `▶ Suite…` announce line as Phase 2 (before spawning the runner). Do NOT attempt screenshots on FAIL — GraphQL cases produce JSON evidence, not visual evidence. `consoleErrors` / `networkErrors` are not applicable (no browser).
+
+### GQL-4. Teardown & Results
+
+- Skip Phase 4 browser teardown (no browser was opened).
+- Emit the Phase 5 JSON normally. All GraphQL test-case entries carry `graphqlEvidence` paths instead of screenshot/console/network fields.
+- Cleanup already ran inside each `graphql-runner.ts` invocation (best-effort; a 403 or 404 is recorded in evidence but does not affect verdict).
+
+### GQL-5. Failure handling
+
+| Condition | Handling |
+|-----------|----------|
+| Lint (GQL-1) fails | Suite-level BLOCKED; exit immediately |
+| All 3+ cases BLOCKED with runtime error 3 | Suite-level `errors[]` gets `graphql_runtime_fatal`; continue to Phase 5 with partial results |
+| Schema introspection fails (runner exit 3 with "Introspection HTTP …") | Mark cases BLOCKED; populate `errors[]`: `schema_introspection_failed`. Orchestrator may retry after schema refresh |
+| Token acquisition fails (runner exit 3 with "Token acquisition failed") | Same as browser-path auth failure — all cases BLOCKED, populate `errors[]: ["authentication_failure"]`, exit |
+
 ## Phase 1: Setup
 
 1. Read `{{SUITE_CSV_PATH}}` once. Parse test cases.
@@ -130,12 +197,13 @@ On unrecoverable error: write partial `{{OUTPUT_FILE}}`, populate `errors[]`, cl
 
 ## Rules
 
-1. Use ONLY `{{BROWSER_SERVER}}`.
+1. Use ONLY `{{BROWSER_SERVER}}` (browser-mode suites) — or no browser at all (GraphQL Runner Fast Path).
 2. Never disable HAR.
 3. Always write `{{OUTPUT_FILE}}` — even on partial/error.
 4. Execute all test cases unless environment is down.
-5. Check `errors[]` on every GraphQL mutation.
-6. Execute `Cleanup` after every test.
+5. Check `errors[]` on every GraphQL mutation (the fast path enforces this via the runner's assertion evaluator).
+6. Execute `Cleanup` after every test (fast path runs cleanup via the runner's best-effort step).
 7. BL-* overrides DOM assertions.
 8. Preliminary bugs only (`confirmed: false`).
 9. No prose narration — results go to JSON.
+10. **Phase 0 is mandatory** — never open a browser for a runner-native GraphQL suite; never skip the fast-path lint for a runner-native suite.

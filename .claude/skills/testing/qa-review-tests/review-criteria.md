@@ -281,6 +281,29 @@ Ensures all referenced data is valid and resolvable.
 - **Good:** `[WAIT] STEPPER_DEBOUNCE_MS (300) after quantity change` ; `[ACT] set quantity to MAX_QTY_PER_LINE (50) — boundary of BL-CART-003`
 - **Auto-fixable:** No — requires the author's domain intent.
 
+### DV-019: Runner-native GraphQL step-structure violation `[Critical]`
+- **Detection:** (Runner-native GraphQL cases only — cases whose Steps column uses `[GQL-OP]`/`[GQL-EXEC]` tags, not legacy GraphiQL UI tags.) The structural linter `validateStepBlocks()` from `scripts/lib/graphql-case-parser.ts` returns a non-empty error list. Covers:
+  - `[GQL-OP <label>]` declared but no matching `[GQL-EXEC <label>]` — op body never runs
+  - `[GQL-EXEC <label>]` without a matching `[GQL-OP <label>]` — runner has no query body to send
+  - `[GQL-OP <label>]` paired with >1 `[GQL-EXEC <label>]` — ambiguous re-execution semantics
+  - `[GQL-VARS <label>]` or `[GQL-CAPTURE <label>.*]` referencing an undeclared op label
+- **Impact:** Runner exits at step-structure validation before any GraphQL is sent (`graphql-runner.ts --case <csv>:<ID>` returns exit code 2). The case will never run in regression — it is effectively dead code until fixed.
+- **Bad (typo in label):**
+  ```
+  [GQL-OP valid_name]
+    mutation { createOrganization(...) { id } }
+  [GQL-EXEC xss_name]          ← typo; xss_name was never declared
+  ```
+- **Good:**
+  ```
+  [GQL-OP valid_name]
+    mutation { createOrganization(...) { id } }
+  [GQL-EXEC valid_name]
+  ```
+- **How to run the check:** `npx tsx scripts/review-graphql-labels.ts <csv-path>` (or `npm run graphql:lint-labels -- <csv-path>`). Exits 0 when clean, 1 when any row has structural errors, with per-row line-level findings.
+- **Auto-fixable:** No — the author must pick which label is canonical. Linter output names both sides of the mismatch so the fix is mechanical.
+- **Scope:** Only runner-native cases. Legacy GraphiQL UI cases (still using `[ACT] Type mutation: …` / `[GQL] Click Execute`) are exempt because they have no `<label>` semantics — those are covered by the separate migrate-on-touch guidance in the GraphQL section of `test-case-template.md`.
+
 ### DV-012: Thin field selection on GraphQL happy-path test `[High]`
 - **Detection:** (GraphQL suites only) A happy-path query/mutation test requests a minimal selection set (e.g., `{ id }`, `{ totalCount }`, single-field or 2-field subset) without a Steps-column comment identifying it as a permitted exception. Policy: `SKILL.md` (qa-api) → "Happy-path field selection" and `api-test-case-patterns.md` → "Happy Path Patterns".
 - **Rule:** Happy-path tests MUST request the full field selection set of the return type — all non-deprecated scalar fields plus at least one level of expansion for every nested object (`{ amount currency { code } }`, not just `{ amount }`).
