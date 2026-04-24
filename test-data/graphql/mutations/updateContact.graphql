@@ -1,0 +1,24 @@
+# name: updateContact
+# category: profile
+# role: ORG_USER
+# purpose: Update contact profile fields (firstName/lastName required to preserve)
+# required-vars: CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String)
+# optional-vars: PHONES (String[] JSON encoded), EMAILS (String[] JSON encoded)
+# last-validated: 2026-04-24
+# known-issues:
+#   - BL: EnableNoHtmlTagsValidation rejects HTML in phones
+#   - BL: MaxLength(64) on phones
+# used-by: GQL-031 (phone XSS/oversize), VCST-4803 related
+
+mutation {
+  updateContact(command: {
+    id: "{{CONTACT_ID}}"
+    firstName: "{{FIRST_NAME}}"
+    lastName: "{{LAST_NAME}}"
+  }) {
+    id
+    firstName
+    lastName
+    fullName
+  }
+}

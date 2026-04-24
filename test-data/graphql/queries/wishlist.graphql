@@ -1,0 +1,23 @@
+# name: wishlist
+# category: wishlist
+# role: ORG_USER
+# purpose: Single wishlist detail by listId
+# required-vars: LIST_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) 050h wishlist suites
+
+query {
+  wishlist(listId: "{{LIST_ID}}") {
+    id name storeId customerId itemsCount
+    scope description modifiedDate
+    subTotal { amount currency { code } }
+    items {
+      id productId sku name quantity
+      placedPrice { amount currency { code } }
+      listPrice { amount }
+      salePrice { amount }
+    }
+  }
+}

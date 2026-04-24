@@ -1,0 +1,374 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-070,"xCart — removeShipment Happy Path","GraphQL > xCart > removeShipment",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Runner-native. addItem + set shipment (captures shipmentId from shipments[0].id) + removeShipment → verify shipments[] empty.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: {
+          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          firstName: ""Test"" lastName: ""User"" line1: ""123 Test St""
+          postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
+        }
+      }
+    }) { id shipments { id } }
+  }
+[GQL-EXEC set_shipment]
+[GQL-CAPTURE set_shipment.data.addOrUpdateCartShipment.shipments.0.id → SHIPMENT_ID]
+[GQL-OP remove_shipment]
+  mutation {
+    removeShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipmentId: ""{{SHIPMENT_ID}}""
+    }) { id shipments { id } }
+  }
+[GQL-EXEC remove_shipment]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=remove_shipment] errors[] empty
+[DATA label=remove_shipment] data.removeShipment.id is non-null
+[COUNT label=remove_shipment] data.removeShipment.shipments.length = 0","[ROUNDTRIP label=remove_shipment] shipmentId no longer present in shipments[]","errors[] non-empty; shipments[] still contains removed shipment; shippingTotal.amount > 0 after remove",none — clearCart at end,xAPI; graphql-schema.md — Mutation.removeShipment,Automated
+GQL-071,"xCart — removeShipment with Invalid shipmentId","GraphQL > xCart > removeShipment",High,BL-GQL-001,ECL-14.1; ECL-9.1,"Runner-native. Calls removeShipment on zero-GUID without any real shipment present. Verifies graceful structured response.","bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP remove_bogus]
+  mutation {
+    removeShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipmentId: ""00000000-0000-0000-0000-000000000000""
+    }) { id shipments { id } }
+  }
+[GQL-EXEC remove_bogus]","[DATA label=remove_bogus] data.removeShipment.id is non-null","[EVIDENCE] Either errors[] non-empty with not-found OR silent no-op (shipments[] unchanged). NO HTTP 500 or stack traces.","HTTP 500; unhandled exception; real shipments removed by invalid ID",none — nothing added,xAPI; graphql-schema.md — Mutation.removeShipment error contract,Automated
+GQL-072,"xCart — addOrUpdateCartPayment Sets DefaultManualPaymentMethod","GraphQL > xCart > addOrUpdateCartPayment",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Adds item, then sets payment method DefaultManualPaymentMethod. Verifies payments[] populated.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP set_payment]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
+    }) { id payments { id paymentGatewayCode } }
+  }
+[GQL-EXEC set_payment]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=set_payment] errors[] empty
+[DATA label=set_payment] data.addOrUpdateCartPayment.id is non-null
+[DATA label=set_payment] data.addOrUpdateCartPayment.payments is non-null","[EVIDENCE] payments[] contains at least one entry with paymentGatewayCode=DefaultManualPaymentMethod","errors[] non-empty; payments[] empty after mutation; paymentGatewayCode mismatch",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartPayment,Automated
+GQL-073,"xCart — addOrUpdateCartPayment Changes Method","GraphQL > xCart > addOrUpdateCartPayment",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Sets payment to DefaultManualPaymentMethod, then calls addOrUpdateCartPayment again with same gateway to verify idempotent update (no duplicate payments[] entries).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP set_payment_first]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
+    }) { id payments { id paymentGatewayCode } }
+  }
+[GQL-EXEC set_payment_first]
+[GQL-OP set_payment_again]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
+    }) { id payments { id paymentGatewayCode } }
+  }
+[GQL-EXEC set_payment_again]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=set_payment_first] errors[] empty
+[ERRORS label=set_payment_again] errors[] empty
+[DATA label=set_payment_again] data.addOrUpdateCartPayment.payments is non-null","[EVIDENCE] payments.length stays ≤ 1 after second call (idempotent, no duplicate entry). Both calls use same gateway.","errors[] non-empty; payments[] has 2 duplicate entries after second call (non-idempotent)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartPayment idempotence,Automated
+GQL-074,"xCart — mergeCart Happy Path","GraphQL > xCart > mergeCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Creates a named second cart (addItem with cartName) and merges it into the default. Verifies default cart absorbs items.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_to_default]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_to_default]
+[GQL-CAPTURE add_to_default.data.addItem.id → DEFAULT_CART_ID]
+[GQL-OP add_to_second]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-MERGE-SECOND""
+      productId: ""{{PRODUCT_2}}"" quantity: 1
+    }) { id name itemsCount }
+  }
+[GQL-EXEC add_to_second]
+[GQL-CAPTURE add_to_second.data.addItem.id → SECOND_CART_ID]
+[GQL-OP merge]
+  mutation {
+    mergeCart(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      secondCartId: ""{{SECOND_CART_ID}}""
+    }) { id itemsCount items { productId } }
+  }
+[GQL-EXEC merge]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=merge] errors[] empty
+[DATA label=merge] data.mergeCart.id is non-null
+[COUNT label=merge] data.mergeCart.itemsCount >= 2","[EVIDENCE] mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence.","errors[] non-empty; itemsCount = 1 (second cart items not merged); PRODUCT_2 missing from default cart",Second cart remains unless explicitly removed — add manual cleanup if needed,xAPI; graphql-schema.md — Mutation.mergeCart,Automated
+GQL-075,"xCart — mergeCart with deleteAfterMerge=true","GraphQL > xCart > mergeCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Merges a named second cart into default with deleteAfterMerge=true. Verifies second cart is deleted post-merge.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_to_default]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_to_default]
+[GQL-OP add_to_second]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-MERGE-DELETE""
+      productId: ""{{PRODUCT_2}}"" quantity: 1
+    }) { id }
+  }
+[GQL-EXEC add_to_second]
+[GQL-CAPTURE add_to_second.data.addItem.id → SECOND_CART_ID]
+[GQL-OP merge]
+  mutation {
+    mergeCart(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      secondCartId: ""{{SECOND_CART_ID}}""
+      deleteAfterMerge: true
+    }) { id itemsCount }
+  }
+[GQL-EXEC merge]
+[GQL-OP verify_second_gone]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-MERGE-DELETE"") { id } }
+[GQL-EXEC verify_second_gone]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=merge] errors[] empty
+[COUNT label=merge] data.mergeCart.itemsCount >= 2
+[DATA label=verify_second_gone] data.cart is null","[ROUNDTRIP label=verify_second_gone] Second cart by name returns null (deleted)","errors[] non-empty; second cart still accessible after delete; data loss on default",Default cart still has merged items — clearCart at end,xAPI; graphql-schema.md — Mutation.mergeCart deleteAfterMerge,Automated
+GQL-076,"xCart — removeCart Happy Path","GraphQL > xCart > removeCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Creates a NAMED cart (not default — removing default is risky), removes it, verifies removal.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP create_named]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-REMOVE-CART""
+      productId: ""{{PRODUCT_ID}}"" quantity: 1
+    }) { id name }
+  }
+[GQL-EXEC create_named]
+[GQL-CAPTURE create_named.data.addItem.id → TARGET_CART_ID]
+[GQL-OP remove]
+  mutation { removeCart(command: { cartId: ""{{TARGET_CART_ID}}"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC remove]
+[GQL-OP verify_gone]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cartName: ""AGENT-TEST-REMOVE-CART"") { id } }
+[GQL-EXEC verify_gone]","[ERRORS label=remove] errors[] empty
+[DATA label=remove] data.removeCart = true
+[DATA label=verify_gone] data.cart is null","[EVIDENCE] removeCart returns Boolean (no sub-selection on Boolean — DV-010 trap)","errors[] non-empty; removeCart returns false; cart still queryable after remove",none — cart deleted,xAPI; graphql-schema.md — Mutation.removeCart,Automated
+GQL-077,"xCart — removeCart with Invalid cartId","GraphQL > xCart > removeCart",High,BL-GQL-001,ECL-14.1; ECL-9.1,"Runner-native. Attempts removeCart with zero-GUID cartId. Expects false or error — never HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP remove_bogus]
+  mutation { removeCart(command: { cartId: ""00000000-0000-0000-0000-000000000000"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC remove_bogus]","—","[EVIDENCE] Either data.removeCart = false OR errors[] non-empty with descriptive not-found. NO HTTP 500 or stack traces. No real user cart deleted by invalid ID.","HTTP 500; real user cart deleted; stack trace leaks",none,xAPI; graphql-schema.md — Mutation.removeCart error contract,Automated
+GQL-078,"xCart — removeCartItem with Invalid lineItemId","GraphQL > xCart > removeCartItem",High,BL-GQL-001,ECL-14.1; ECL-9.1,"Runner-native. Adds a real item, then calls removeCartItem on zero-GUID lineItemId. Verifies real item is preserved (no corruption).","bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_real]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id items { id } } }
+[GQL-EXEC add_real]
+[GQL-OP remove_bogus]
+  mutation {
+    removeCartItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      lineItemId: ""00000000-0000-0000-0000-000000000000""
+    }) { id itemsCount items { id } }
+  }
+[GQL-EXEC remove_bogus]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[COUNT label=remove_bogus] data.removeCartItem.itemsCount = 1","[EVIDENCE] Either errors[] non-empty with not-found OR itemsCount preserved at 1 (real item intact). NO HTTP 500.","HTTP 500; real item removed by invalid ID (cart data corruption — P0); itemsCount = 0",none — clearCart at end,xAPI; graphql-schema.md — Mutation.removeCartItem error contract,Automated
+GQL-079,"xCart — addOrUpdateCartShipment Updates Method","GraphQL > xCart > addOrUpdateCartShipment",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Sets FixedRate/Ground, then updates to FixedRate/Air (same method code but different option). Verifies shipment updated in place (not duplicated).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP shipment_ground]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id shipments { id shipmentMethodCode shipmentMethodOption } }
+  }
+[GQL-EXEC shipment_ground]
+[GQL-CAPTURE shipment_ground.data.addOrUpdateCartShipment.shipments.0.id → SHIPMENT_ID]
+[GQL-OP shipment_air]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        id: ""{{SHIPMENT_ID}}""
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Air"" price: 250
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id shipments { id shipmentMethodCode shipmentMethodOption } }
+  }
+[GQL-EXEC shipment_air]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=shipment_ground] errors[] empty
+[ERRORS label=shipment_air] errors[] empty
+[DATA label=shipment_air] data.addOrUpdateCartShipment.shipments is non-null
+[COUNT label=shipment_air] data.addOrUpdateCartShipment.shipments.length = 1","[EVIDENCE] shipments[0].shipmentMethodOption = Air (updated, not duplicated). shipments.length stays at 1 — single shipment mutation is UPDATE, not INSERT.","errors[] non-empty; shipments[] has 2 entries (duplicate instead of update); shipmentMethodOption still Ground",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartShipment,Automated
+GQL-092,"xCart — getSavedForLater Query","GraphQL > xCart > getSavedForLater",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Queries user's save-for-later cart (typically a named cart of type 'saved-for-later'). May return null or empty if user has none.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP get_sfl]
+  query {
+    getSavedForLater(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
+      id name itemsCount items { productId quantity }
+    }
+  }
+[GQL-EXEC get_sfl]","[ERRORS label=get_sfl] errors[] empty","[EVIDENCE] data.getSavedForLater is non-null (returns a cart even if empty) OR null if user has never used save-for-later. Either is acceptable.","HTTP 500; unhandled exception; stack trace leaks",none — read-only,xAPI; graphql-schema.md — Query.getSavedForLater,Automated
+GQL-094,"xCart — configurationItems Query","GraphQL > xCart > configurationItems",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"BLOCKED: Requires a configurable product (CFG-001 etc. from aliases.json) added to cart via createConfiguredLineItem before configurationItems query can be exercised. Configurable-product add flow is complex (section IDs, dependency chains) — see test-data/products/configurable-products.csv.","—","[MANUAL-BLOCKED] Needs configurable-product setup. Execute via legacy GraphiQL suite 050b GQL-094.","[MANUAL] blocked on configurable-product setup","[EVIDENCE] Track as Draft","—",none — read-only once executed,xAPI; legacy 050b GQL-094,Draft
+GQL-098,"xCart — Shipment Address Update Preserves Key (No DB Duplication)","GraphQL > xCart > Address",Critical,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"Runner-native. Sets shipment address, captures address.id/key, updates the address (same key), verifies address is UPDATED in place (not duplicated in cart.addresses[]).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP shipment_first]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        deliveryAddress: {
+          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          firstName: ""Test"" lastName: ""User"" line1: ""123 Test St""
+          postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
+        }
+      }
+    }) { id shipments { id deliveryAddress { city line1 } } }
+  }
+[GQL-EXEC shipment_first]
+[GQL-CAPTURE shipment_first.data.addOrUpdateCartShipment.shipments.0.id → SHIPMENT_ID]
+[GQL-OP shipment_update]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        id: ""{{SHIPMENT_ID}}""
+        deliveryAddress: {
+          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          firstName: ""Updated"" lastName: ""User"" line1: ""456 Updated Blvd""
+          postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
+        }
+      }
+    }) { id shipments { id deliveryAddress { city line1 firstName } } }
+  }
+[GQL-EXEC shipment_update]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=shipment_update] errors[] empty
+[COUNT label=shipment_update] data.addOrUpdateCartShipment.shipments.length = 1
+[DATA label=shipment_update] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.line1 = 456 Updated Blvd","[EVIDENCE] shipments.length stays 1 across updates (no DB duplication). deliveryAddress.firstName=Updated after second call (update-in-place verified).","errors[] non-empty; shipments[] has 2 entries (duplicate shipment); line1 still = 123 Test St (stale cache)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartShipment address key preservation,Automated

@@ -1,0 +1,15 @@
+# name: removeWishlist
+# category: wishlist
+# role: ORG_USER (owner)
+# purpose: Delete a wishlist by listId (cleanup pair for createWishlist)
+# required-vars: LIST_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) 050h wishlist cleanup
+
+mutation {
+  removeWishlist(command: {
+    listId: "{{LIST_ID}}"
+  })
+}

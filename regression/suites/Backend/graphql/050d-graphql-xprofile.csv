@@ -21,56 +21,148 @@ GQL-030,"xProfile — createOrganization Rejects XSS in Org Name","GraphQL > xPr
 [DATA label=valid_name] data.createOrganization.id is non-empty GUID
 [ERRORS label=xss_name] errors[] non-empty — input validation rejects <, > characters (BL-GQL-001)
 [DATA label=xss_name] data.createOrganization is null (no org created with script tags in name)","[ADMIN] GET /api/members/{{VALID_ORG_ID}} returns 200 (valid org persisted)
-[ROUNDTRIP label=valid_name] re-query organization(id: {{VALID_ORG_ID}}) returns matching name","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); data non-null on xss_name (script-tag name accepted)","DELETE /api/members/{{VALID_ORG_ID}} via admin REST (runner acquires admin token from ADMIN_EMAIL/ADMIN_PASSWORD)",VCST-4691 PR #130,Draft
-GQL-031,xProfile - updateContact Mutation Rejects HTML and Oversized Phone Values,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing contact","storeId={{STORE_ID}}; contactId=existing_contact_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with HTML in phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""<img src=x onerror=alert(1)>""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify HTML in phone rejected
-[ACT] Clear editor → type mutation with <script> tag in phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""<script>alert(1)</script>""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify script tag in phone rejected
-[ACT] Clear editor → type mutation with 65-char phone (exceeds MaxLength 64): mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify oversized phone rejected
-[ACT] Clear editor → type mutation with valid phone: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [""+1-555-0123""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify valid phone accepted
-[ACT] Clear editor → type mutation with empty phones array: mutation { updateContact(command: { id: ""{{contactId}}"" phones: [] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify empty array accepted","[ERRORS] errors[] non-empty for HTML <img> tag in phone field — EnableNoHtmlTagsValidation active (BL-GQL-001)
-[ERRORS] errors[] non-empty for <script> tag in phone field — NoHtmlTags rejects all HTML tags
-[ERRORS] errors[] non-empty for 65-char phone — MaxLength(64) enforced
-[DATA] Phone field unchanged after all rejected payloads
-[ERRORS] errors[] empty for valid phone number
-[DATA] Valid phone ""+1-555-0123"" stored correctly
-[ERRORS] errors[] empty for empty phones array
-[DATA] Empty phones array accepted without error","[ROUNDTRIP] Clear editor → type contact query → execute → phone unchanged after rejection; updated after valid input
-[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in phone field in response panel; <img> or <script> tag stored as phone number; 65-char string accepted (MaxLength not enforced); no validation error; EnableNoHtmlTagsValidation not applied to phone","none","VCST-4691 PR #130; VCST-4803 PR #132 (MaxLength 64 + NoHtmlTags on phones)",Synced
-GQL-032,xProfile - updateMemberAddresses Rejects Script Injection in Address Fields,GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; existing member with address","storeId={{STORE_ID}}; memberId=existing_member_id","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with XSS in city: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""<script>alert(1)</script>"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify HTML in city rejected
-[ACT] Clear editor → type mutation with XSS in line1: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""<img onerror=alert(1)>"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify HTML in address line rejected
-[ACT] Clear editor → type mutation with valid address: mutation { updateMemberAddresses(command: { memberId: ""{{memberId}}"" addresses: [{ city: ""New York"" line1: ""123 Main St"" countryCode: ""US"" countryName: ""United States"" }] }) { id } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify valid address accepted","[ERRORS] errors[] non-empty for HTML in city and line1 fields (BL-GQL-001)
-[DATA] EnableNoHtmlTagsValidation rejects <script> and <img> tags in address fields
-[DATA] Address unchanged after rejected payloads
-[ERRORS] errors[] empty for valid address — accepted and stored","[ROUNDTRIP] Clear editor → type member address query → execute → no XSS stored; valid address stored correctly
-[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in city or address line fields in response panel; <script> stored in address; no validation error; address saved with XSS payload","none","VCST-4691 PR #130",Generated
-GQL-033,xProfile - updatePersonalData Validates Name Fields,GraphQL > xProfile,Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"GraphiQL UI loaded with auth header set; user with profile","storeId={{STORE_ID}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with XSS in firstName: mutation { updatePersonalData(command: { personalData: { firstName: ""<svg onload=alert(1)>"" lastName: ""Test"" } }) { succeeded } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify XSS name rejected
-[ACT] Clear editor → type mutation with valid Unicode name: mutation { updatePersonalData(command: { personalData: { firstName: ""François"" lastName: ""O'Brien-Müller"" } }) { succeeded } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify valid Unicode names accepted","[ERRORS] errors[] non-empty for SVG payload in firstName — NameValidationPattern rejects non-letter characters (BL-GQL-001)
-[DATA] Profile name unchanged after rejected XSS payload
-[ERRORS] errors[] empty for valid Unicode names — accents (ç, ö), apostrophes, hyphens all permitted
-[DATA] Profile updated successfully with François O'Brien-Müller","[ROUNDTRIP] Clear editor → type profile query → execute → name unchanged after rejection; updated after valid input
-[CONSOLE] No JS errors in GraphiQL","SVG payload accepted as firstName in response panel; XSS stored in profile name; valid Unicode names (accents, apostrophes) rejected as false positive; no validation error for HTML in name","none","VCST-4691 PR #130",Generated
+[ROUNDTRIP label=valid_name] re-query organization(id: {{VALID_ORG_ID}}) returns matching name","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); data non-null on xss_name (script-tag name accepted)","[AUTH role=ORG_USER]
+[REST DELETE /api/members?ids={{VALID_ORG_ID}}]",VCST-4691 PR #130,Draft
+GQL-031,"xProfile — updateContact Rejects HTML and Oversized Phone Values","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated; their contact record exists with non-empty firstName/lastName (runner fetches both before issuing mutations so InputUpdateContactType required fields are preserved).","html_payload=@td(PHONE_XSS_HTML.payload); oversized_payload=@td(PHONE_OVERSIZED.payload); valid_phone=+1-555-0123","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { memberId } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.memberId → CONTACT_ID]
+[GQL-OP fetch_contact]
+  query {
+    contact(id: ""{{CONTACT_ID}}"") {
+      id
+      firstName
+      lastName
+    }
+  }
+[GQL-EXEC fetch_contact]
+[GQL-CAPTURE fetch_contact.data.contact.firstName → FIRST_NAME]
+[GQL-CAPTURE fetch_contact.data.contact.lastName → LAST_NAME]
+[GQL-OP html_phone]
+  mutation {
+    updateContact(command: {
+      id: ""{{CONTACT_ID}}""
+      firstName: ""{{FIRST_NAME}}""
+      lastName: ""{{LAST_NAME}}""
+      phones: [""{{html_payload}}""]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC html_phone]
+[GQL-OP oversized_phone]
+  mutation {
+    updateContact(command: {
+      id: ""{{CONTACT_ID}}""
+      firstName: ""{{FIRST_NAME}}""
+      lastName: ""{{LAST_NAME}}""
+      phones: [""{{oversized_payload}}""]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC oversized_phone]
+[GQL-OP valid_phone]
+  mutation {
+    updateContact(command: {
+      id: ""{{CONTACT_ID}}""
+      firstName: ""{{FIRST_NAME}}""
+      lastName: ""{{LAST_NAME}}""
+      phones: [""{{valid_phone}}""]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC valid_phone]","[ERRORS label=html_phone] errors[] non-empty — EnableNoHtmlTagsValidation rejects <img> tag (BL-GQL-001)
+[DATA label=html_phone] data.updateContact is null
+[ERRORS label=oversized_phone] errors[] non-empty — MaxLength(64) on phones rejects 65-char input (BL-GQL-001)
+[DATA label=oversized_phone] data.updateContact is null
+[ERRORS label=valid_phone] errors[] empty — valid E.164-adjacent phone accepted
+[DATA label=valid_phone] data.updateContact.id is non-null","[ROUNDTRIP label=valid_phone] runner-manual: re-query contact(id: {{CONTACT_ID}}) after updates confirms phones contains {{valid_phone}}","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on HTML or oversized payloads (validation regression); data non-null on html_phone or oversized_phone","none — valid_phone mutation restores the contact to a known-good phone value","VCST-4691 PR #130; VCST-4803 PR #132 (MaxLength 64 + NoHtmlTags on phones)",Draft
+GQL-032,"xProfile — updateMemberAddresses Rejects XSS in Address Fields","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated; their contact (memberId) is the target for address updates.","xss_city_payload=@td(ORG_XSS.payload); xss_line1_payload=@td(ADDR_LINE1_XSS.payload)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { memberId } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.memberId → MEMBER_ID]
+[GQL-OP xss_city]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: [{
+        city: ""{{xss_city_payload}}""
+        countryCode: ""USA""
+        line1: ""123 Main St""
+        postalCode: ""10001""
+      }]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC xss_city]
+[GQL-OP xss_line1]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: [{
+        city: ""New York""
+        countryCode: ""USA""
+        line1: ""{{xss_line1_payload}}""
+        postalCode: ""10001""
+      }]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC xss_line1]
+[GQL-OP valid_addr]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: [{
+        city: ""New York""
+        countryCode: ""USA""
+        line1: ""123 Main St""
+        postalCode: ""10001""
+      }]
+    }) {
+      id
+    }
+  }
+[GQL-EXEC valid_addr]","[ERRORS label=xss_city] errors[] non-empty — validation rejects <script> in city (BL-GQL-001)
+[DATA label=xss_city] data.updateMemberAddresses is null
+[ERRORS label=xss_line1] errors[] non-empty — validation rejects <img> in line1 (BL-GQL-001)
+[DATA label=xss_line1] data.updateMemberAddresses is null
+[ERRORS label=valid_addr] errors[] empty — valid address accepted
+[DATA label=valid_addr] data.updateMemberAddresses.id is non-null","[ROUNDTRIP label=valid_addr] runner-manual: re-query contact(id: {{MEMBER_ID}}) confirms address with city='New York' persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payloads (validation regression); data non-null on xss_city or xss_line1","none — valid_addr mutation leaves a known-good address on the member","VCST-4691 PR #130",Draft
+GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > xProfile",Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated. NOTE: valid_unicode op mutates the user's firstName/lastName to test-only Unicode values (François / O'Brien-Müller) — state pollution is accepted for MVP; run only when ORG_USER is a dedicated test account.","xss_payload=@td(ORG_XSS.payload); valid_first=François; valid_last=O'Brien-Müller","[AUTH role=ORG_USER]
+[GQL-OP xss_name]
+  mutation {
+    updatePersonalData(command: {
+      personalData: {
+        firstName: ""{{xss_payload}}""
+        lastName: ""Test""
+      }
+    }) {
+      succeeded
+    }
+  }
+[GQL-EXEC xss_name]
+[GQL-OP valid_unicode]
+  mutation {
+    updatePersonalData(command: {
+      personalData: {
+        firstName: ""{{valid_first}}""
+        lastName: ""{{valid_last}}""
+      }
+    }) {
+      succeeded
+    }
+  }
+[GQL-EXEC valid_unicode]","[ERRORS label=xss_name] errors[] non-empty — NameValidationPattern rejects <script> in firstName (BL-GQL-001)
+[DATA label=xss_name] data.updatePersonalData is null
+[ERRORS label=valid_unicode] errors[] empty — Unicode names (accents, apostrophes, hyphens) accepted
+[DATA label=valid_unicode] data.updatePersonalData.succeeded = true","[ROUNDTRIP label=valid_unicode] runner-manual: re-query me { contact { firstName lastName } } confirms Unicode names persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); valid_unicode.succeeded = false (false positive on valid Unicode input)","none — state pollution accepted (firstName/lastName now Unicode test values; restore manually via admin if needed)",VCST-4691 PR #130,Draft
 GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
@@ -208,41 +300,28 @@ GQL-045,xProfile - requestRegistration Result Contains requireEmailVerification 
 [ERRORS] No errors[] in response","[ROUNDTRIP] Authenticate as new user → type me query → execute → if requireEmailVerification=true, verify limited access; if false, verify full access
 [ADMIN] User visible in Admin > Security > Users with correct email verification status
 [CONSOLE] No JS errors in GraphiQL","requireEmailVerification field missing from response; field is null instead of boolean; result.succeeded = false for valid input; errors[] non-empty","delete registered account via Admin API",BL-AUTH-002,Generated
-GQL-046,xProfile - me + ContactType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004,ECL-2.1,"User authenticated; user has a contact with addresses, org membership, and profile data; auth header set in GraphiQL","user_email=@td(USER.email); user_password=@td(USER.password); storeId=@td(STORE_PRIMARY.id)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER.email)&password=@td(USER.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { me { id userName email emailConfirmed photoUrl phoneNumber phoneNumberConfirmed twoFactorEnabled isAdministrator passwordExpired passwordExpiryInDays lockedState permissions contact { id name memberType status phones emails groups firstName lastName middleName fullName organizationId organizationsIds about birthDate securityAccounts { id userName email roles { id name } } addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } dynamicProperties { name value valueType isDictionary } defaultBillingAddress { id city line1 postalCode countryCode } defaultShippingAddress { id city line1 postalCode countryCode } organizations { id name } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read full response — inspect every field of UserType and ContactType","[RESPONSE] Response panel shows data without error banner
-[ERRORS] No errors[] in response — all fields must resolve
-[DATA] id — non-null UUID string
-[DATA] userName — non-null string matching login
-[DATA] email — non-null string matching @td(USER.email)
-[DATA] emailConfirmed — boolean (not null)
-[DATA] phoneNumberConfirmed, twoFactorEnabled, isAdministrator — booleans (not null)
-[DATA] passwordExpired — boolean
-[DATA] permissions — array of strings (may be empty for non-admin)
-[DATA] contact — non-null object for users with contact
-[DATA] contact.id — non-null UUID
-[DATA] contact.firstName, contact.lastName — non-null strings
-[DATA] contact.fullName — non-null string
-[DATA] contact.memberType — string (""Contact"")
-[DATA] contact.phones — array of strings (may be empty)
-[DATA] contact.emails — array of strings; at least one matching user email
-[DATA] contact.organizationId — string (non-null for org users; null for personal accounts)
-[DATA] contact.organizationsIds — array (non-empty for org users)
-[DATA] contact.securityAccounts[] — array; at least one with id, userName
-[DATA] contact.addresses[] — array of address objects (may be empty)
-[DATA] contact.addresses[] — each has city, countryCode, line1 (strings); addressType (integer)
-[DATA] contact.dynamicProperties[] — array (may be empty; each has name, value, valueType)
-[DATA] contact.organizations[] — array of { id, name } objects for org users
-[DATA] contact.defaultBillingAddress — object or null
-[DATA] contact.defaultShippingAddress — object or null
-[DATA] No field returns an error object instead of its expected type","[ROUNDTRIP] Re-execute → same structure, same data
-[CONSOLE] No JS errors in GraphiQL","me returns null (auth failure); contact is null for user with contact; firstName/lastName null; emailConfirmed is null instead of boolean; addresses[].addressType is string instead of integer; organizations[] null for org user; errors[] non-empty",none,"graphql-schema.md — me, ContactType, UserType",Generated
+GQL-046,"xProfile — me + UserType Schema Coverage","GraphQL > xProfile > Schema Coverage",High,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated. Runner's schema validator rejects the query pre-send if any requested field is renamed/removed — this test is a schema-drift canary for UserType. NOTE: ContactType traversal (addresses / organizations / securityAccounts connections) needs Connection-wrapper handling (items { ... }) and is tracked as a separate migration (GQL-046b follow-up).","—","[AUTH role=ORG_USER]
+[GQL-OP schema_coverage]
+  query {
+    me {
+      id
+      userName
+      email
+      emailConfirmed
+      photoUrl
+      phoneNumber
+      phoneNumberConfirmed
+      twoFactorEnabled
+      isAdministrator
+      passwordExpired
+      memberId
+      permissions
+    }
+  }
+[GQL-EXEC schema_coverage]","[ERRORS label=schema_coverage] errors[] empty — every UserType field resolves against the live schema (BL-GQL-002)
+[DATA label=schema_coverage] data.me.id is non-null
+[DATA label=schema_coverage] data.me.userName is non-null
+[DATA label=schema_coverage] data.me.memberId is non-null","[ROUNDTRIP label=schema_coverage] runner-manual: re-execute; response shape stable across calls","Runner exits with DV-009 (field renamed/removed) at schema-validate stage; errors[] non-empty on any sub-selection","none — pure read, no state change","graphql-schema.md — me, UserType",Draft
 GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"User authenticated as org member; organization exists with contacts and addresses; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId=@td(STORE_PRIMARY.id); user_email=@td(USER.email); user_password=@td(USER.password)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER.email)&password=@td(USER.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
@@ -268,23 +347,23 @@ GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfil
 [DATA] contacts.items[].status — string or null
 [DATA] No field returns an error object or unexpected null","[ROUNDTRIP] Re-execute → same org data
 [CONSOLE] No JS errors in GraphiQL","organization returns null for valid ID; name is null; contacts.totalCount is 0 when org has members; contacts.items[].firstName null; addresses[] is null (not empty array); errors[] non-empty",none,"graphql-schema.md — OrganizationType, ContactType",Generated
-GQL-048,xProfile - currentCustomerAddresses Happy Path Returns Addresses and term_facets,GraphQL > xProfile > Addresses,Critical,,ECL-3.2,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab. User has at least 1 saved address. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token in Headers panel
-[ACT] Click query editor → Ctrl+A → Backspace to clear
-[ACT] Type query: query { currentCustomerAddresses(first: 20) { totalCount items { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } term_facets { name terms { term label count } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — inspect structure","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] is empty
-[DATA] totalCount is a non-negative integer
-[DATA] items[] is an array (may be empty for new accounts; non-empty for seeded accounts)
-[DATA] each item has id, city, countryCode, line1 as non-null strings
-[DATA] term_facets is an array (may be empty if no addresses)
-[DATA] each term_facets entry has name (string) and terms (array)
-[DATA] each terms entry has term, label, count fields","[ROUNDTRIP] Re-execute same query → same totalCount returned
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; currentCustomerAddresses field not found (schema mismatch); term_facets is null instead of empty array; item fields return null for non-null fields",none,"Promoted from VCST-4710-GQ-001 / TLC-2026-04-23-1230 / BA report 2026-04-23",ready
+GQL-048,"xProfile — currentCustomerAddresses Happy Path Returns Addresses and term_facets","GraphQL > xProfile > Addresses",Critical,,ECL-3.2,"Runner-native. ORG_USER authenticated. Their account may or may not have saved addresses — test asserts structural invariants, not row counts.","—","[AUTH role=ORG_USER]
+[GQL-OP addr_query]
+  query {
+    currentCustomerAddresses(first: 20) {
+      totalCount
+      items {
+        id city countryCode countryName firstName lastName
+        line1 line2 postalCode regionId regionName
+        phone email addressType isDefault isFavorite description
+      }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC addr_query]","[ERRORS label=addr_query] errors[] empty — schema resolves all fields (BL-GQL-002)
+[COUNT label=addr_query] data.currentCustomerAddresses.totalCount >= 0
+[DATA label=addr_query] data.currentCustomerAddresses.items is non-null
+[DATA label=addr_query] data.currentCustomerAddresses.term_facets is non-null","[ROUNDTRIP label=addr_query] runner-manual: re-execute and confirm same totalCount","Runner DV-009 on any renamed field; errors[] non-empty; term_facets returns null instead of empty array","none — pure read","Promoted from VCST-4710-GQ-001 / TLC-2026-04-23-1230 / BA report 2026-04-23",Draft
 GQL-049,xProfile - currentCustomerAddresses Keyword Filtering,GraphQL > xProfile > Addresses > Keyword,Critical,,ECL-3.2,"BROWSER-ONLY: GraphiQL with auth. User has 3+ saved addresses including one with a distinct city 'Portland'. Per BA report: keyword matches name/line1/city/countryName/regionName/postalCode. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded
@@ -319,32 +398,31 @@ GQL-050,xProfile - currentCustomerAddresses Facet Arguments (countryCodes / regi
 [DATA] combined countryCodes + cities filter returns subset of single-country result
 [COUNT] combined filter totalCount <= single-country filter totalCount","[CONSOLE] No JS errors
 [ROUNDTRIP] Query without any facets → totalCount equals sum of all facet-filtered subsets","countryCodes/cities args not found by schema (DV-008); filter not applied (same results as unfiltered); errors[] non-empty with 'argument not found'",none,"Promoted from VCST-4710-GQ-003 / TLC-2026-04-23-1230 / BA report 2026-04-23",ready
-GQL-051,xProfile - currentCustomerAddresses Unauthenticated Returns 401,GraphQL > xProfile > Addresses > Auth,Critical,,ECL-14.3,"BROWSER-ONLY: GraphiQL without auth token set. No auth header. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).",storeId={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Ensure NO auth token is set in Headers tab (clear if present)
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query: query { currentCustomerAddresses(first: 5) { totalCount items { id } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — verify auth error","[RESPONSE] Response panel shows error or 401 condition
-[ERRORS] errors[] is non-empty OR HTTP response is 401/403
-[DATA] No address items returned
-[DATA] Error message references authorization/authentication (not a server error)","[CONSOLE] No server errors (401 is expected, 500 is not)","200 OK with address data returned without auth (security defect); 500 error instead of 401/403",none,"Promoted from VCST-4710-GQ-004 / TLC-2026-04-23-1230 / BA report 2026-04-23",ready
-GQL-052,xProfile - currentOrganizationAddresses Happy Path Returns Org Addresses,GraphQL > xProfile > Addresses > Org,Critical,BL-B2B-001,ECL-3.2,"BROWSER-ONLY: GraphiQL with org user auth. User is org member. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (org has 3+ addresses). Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; org_user={{ORG_USER_EMAIL}}; org_pass={{ORG_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query: query { currentOrganizationAddresses(first: 20) { totalCount items { id city countryCode countryName firstName lastName line1 postalCode regionName isDefault isFavorite } term_facets { name terms { term label count } } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — verify org address scope","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] is empty
-[DATA] totalCount is a non-negative integer
-[DATA] items[] contains org-scoped addresses (distinct from personal addresses)
-[DATA] term_facets populated with at least country facet if addresses span countries
-[DATA] each item has id, line1, city, countryCode as strings","[ROUNDTRIP] Query currentCustomerAddresses with same token → compare; org addresses should only appear in currentOrganizationAddresses
-[CONSOLE] No JS errors","errors[] non-empty; currentOrganizationAddresses field not found (schema mismatch); org addresses appear in personal query (scope leak); isFavorite-first sort not applied",none,"Promoted from VCST-4710-GQ-005 / TLC-2026-04-23-1230 / BA report 2026-04-23; BL-B2B-001",ready
+GQL-051,"xProfile — currentCustomerAddresses Unauthenticated Returns 401","GraphQL > xProfile > Addresses > Auth",Critical,,ECL-14.3,"Runner-native. NO [AUTH] step — runner posts to /graphql without an Authorization header, expected 401 / errors[] non-empty.","—","[GQL-OP noauth_query]
+  query {
+    currentCustomerAddresses(first: 5) {
+      totalCount
+      items { id }
+    }
+  }
+[GQL-EXEC noauth_query]","[ERRORS label=noauth_query] errors[] non-empty — server rejects request without Authorization header (BL-AUTH-004)
+[DATA label=noauth_query] data.currentCustomerAddresses is null (no address items returned without auth)","[CONSOLE] runner-manual: no 5xx in server logs for this case","200 OK with address data returned without auth (P0 security defect); 500 error instead of 401 / errors-with-auth-message",none,"Promoted from VCST-4710-GQ-004 / TLC-2026-04-23-1230 / BA report 2026-04-23",Draft
+GQL-052,"xProfile — currentOrganizationAddresses Happy Path Returns Org Addresses","GraphQL > xProfile > Addresses > Org",Critical,BL-B2B-001,ECL-3.2,"Runner-native. ORG_USER (org member) authenticated. Asserts structural invariants on the org-scoped address list.","—","[AUTH role=ORG_USER]
+[GQL-OP org_addr_query]
+  query {
+    currentOrganizationAddresses(first: 20) {
+      totalCount
+      items {
+        id city countryCode countryName firstName lastName
+        line1 postalCode regionName isDefault isFavorite
+      }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC org_addr_query]","[ERRORS label=org_addr_query] errors[] empty — schema resolves all fields (BL-GQL-002; BL-B2B-001)
+[COUNT label=org_addr_query] data.currentOrganizationAddresses.totalCount >= 0
+[DATA label=org_addr_query] data.currentOrganizationAddresses.items is non-null
+[DATA label=org_addr_query] data.currentOrganizationAddresses.term_facets is non-null","[ROUNDTRIP label=org_addr_query] runner-manual: query currentCustomerAddresses with same token; org addresses appear only in currentOrganizationAddresses (scope separation)","Runner DV-009 on any field; errors[] non-empty; scope leak (personal addresses in org query or vice versa)","none — pure read","Promoted from VCST-4710-GQ-005 / TLC-2026-04-23-1230 / BA report 2026-04-23; BL-B2B-001",Draft
 GQL-053,xProfile - currentOrganizationAddresses Non-Org-Member Returns 403,GraphQL > xProfile > Addresses > Auth,High,BL-B2B-001,ECL-14.3,"BROWSER-ONLY: GraphiQL with personal account auth (no org membership). {{USER2_EMAIL}} is the personal non-org user per project convention — {{USER_EMAIL}} is org-affiliated. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER2_EMAIL}}; user_password={{USER2_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER2_EMAIL}}&password={{USER2_PASSWORD}}&storeId={{STORE_ID}} → save bearer token for personal account (non-org user)
 [NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL editor loaded

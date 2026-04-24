@@ -1,0 +1,22 @@
+# name: addItemsCart
+# category: cart
+# role: ORG_USER
+# purpose: Add multiple products to the cart in a single call (bulk add)
+# required-vars: STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewCartItemType)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) 050b cart bulk suites
+# runner-note: Pass cartItems array via [GQL-VARS label] as JSON {"items": [{"productId":"...", "quantity":3}, ...]}
+
+mutation AddItemsCart($items: [InputNewCartItemType]!) {
+  addItemsCart(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    cartItems: $items
+  }) {
+    id
+    itemsCount itemsQuantity
+    items { id productId sku name quantity }
+  }
+}

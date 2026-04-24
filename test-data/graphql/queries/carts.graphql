@@ -1,0 +1,20 @@
+# name: carts
+# category: cart
+# role: ORG_USER
+# purpose: List user's carts (paginated)
+# required-vars: (none)
+# optional-vars: STORE_ID (String), FIRST (Int, default 10)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) cart-list suites
+
+query {
+  carts(first: 10) {
+    totalCount
+    items {
+      id name storeId status
+      itemsCount itemsQuantity
+      total { amount currency { code } }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# name: contact
+# category: profile
+# role: ORG_USER
+# purpose: Fetch ContactType full profile by id (for pre-mutation field preservation)
+# required-vars: CONTACT_ID (String — memberId from me query)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: GQL-031 (fetch_contact — preserves firstName/lastName for updateContact)
+
+query {
+  contact(id: "{{CONTACT_ID}}") {
+    id
+    firstName
+    lastName
+    fullName
+    emails
+    phones
+    organizationsIds
+    organizations {
+      totalCount
+      items { id name }
+    }
+  }
+}

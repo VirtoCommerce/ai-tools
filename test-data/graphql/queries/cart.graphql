@@ -1,0 +1,37 @@
+# name: cart
+# category: cart
+# role: ORG_USER (authenticated) or PUBLIC (anonymous cart)
+# purpose: Fetch the current cart for a store/currency
+# required-vars: STORE_ID (String), CURRENCY_CODE (String)
+# optional-vars: CART_ID (String), CART_NAME (String, default "default"), USER_ID (String)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) cart suites (050b)
+
+query {
+  cart(
+    storeId: "{{STORE_ID}}"
+    currencyCode: "{{CURRENCY_CODE}}"
+  ) {
+    id name status storeId customerId organizationId
+    itemsCount itemsQuantity
+    total { amount currency { code } }
+    subTotal { amount }
+    subTotalWithTax { amount }
+    taxTotal { amount }
+    shippingTotal { amount }
+    discountTotal { amount }
+    items {
+      id productId sku name quantity
+      placedPrice { amount currency { code } }
+      listPrice { amount }
+      salePrice { amount }
+      extendedPrice { amount }
+      discountTotal { amount }
+    }
+    addresses { id addressType city countryCode line1 postalCode }
+    coupons { code isAppliedSuccessfully }
+    availableShippingMethods { code name price { amount } }
+    availablePaymentMethods { code paymentMethodType }
+  }
+}

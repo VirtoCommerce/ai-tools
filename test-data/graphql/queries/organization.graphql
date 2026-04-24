@@ -1,0 +1,28 @@
+# name: organization
+# category: profile
+# role: ORG_USER
+# purpose: Organization detail by id
+# required-vars: ORG_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) organization suites
+
+query {
+  organization(id: "{{ORG_ID}}") {
+    id name status memberType
+    description businessCategory
+    ownerId parentId
+    phones emails groups
+    defaultBillingAddress { id city countryCode line1 postalCode }
+    defaultShippingAddress { id city countryCode line1 postalCode }
+    addresses {
+      totalCount
+      items { id addressType city countryCode line1 postalCode }
+    }
+    contacts {
+      totalCount
+      items { id fullName firstName lastName }
+    }
+  }
+}

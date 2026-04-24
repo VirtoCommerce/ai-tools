@@ -1,0 +1,18 @@
+# name: me
+# category: profile
+# role: ORG_USER
+# purpose: Return current user identity and memberId (for downstream contact/address queries)
+# required-vars: (none)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: GQL-031, GQL-032 (as setup_me to capture memberId)
+
+query {
+  me {
+    id
+    userName
+    email
+    memberId
+  }
+}

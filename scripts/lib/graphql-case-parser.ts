@@ -16,6 +16,7 @@ export type StepBlock =
   | VarsStep
   | ExecStep
   | CaptureStep
+  | RestStep
   | UnknownStep;
 
 export interface AuthStep {
@@ -49,6 +50,14 @@ export interface CaptureStep {
   label: string;
   path: string;
   variable: string;
+  raw: string;
+}
+
+export interface RestStep {
+  kind: "REST";
+  method: string;
+  path: string;
+  body?: string;
   raw: string;
 }
 
@@ -176,6 +185,29 @@ export function parseSteps(cell: string): StepBlock[] {
       continue;
     }
 
+    const restMatch = line.match(/^\[REST\s+(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s*\]\s*$/i);
+    if (restMatch) {
+      const method = restMatch[1].toUpperCase();
+      const path = restMatch[2];
+      const bodyLines: string[] = [];
+      i++;
+      while (i < lines.length) {
+        const nextLine = lines[i];
+        if (isStepTag(nextLine.trim())) break;
+        bodyLines.push(nextLine);
+        i++;
+      }
+      const body = bodyLines.join("\n").trim();
+      blocks.push({
+        kind: "REST",
+        method,
+        path,
+        body: body || undefined,
+        raw,
+      });
+      continue;
+    }
+
     const tagMatch = line.match(/^\[(\w[\w-]*)\]/);
     if (tagMatch) {
       blocks.push({ kind: "UNKNOWN", tag: tagMatch[1], raw });
@@ -187,7 +219,7 @@ export function parseSteps(cell: string): StepBlock[] {
 }
 
 function isStepTag(line: string): boolean {
-  return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|WAIT|SETUP|TEARDOWN)\b/i.test(line);
+  return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
 }
 
 /**

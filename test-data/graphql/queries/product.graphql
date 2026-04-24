@@ -1,0 +1,30 @@
+# name: product
+# category: catalog
+# role: PUBLIC or ORG_USER
+# purpose: Single product detail by id
+# required-vars: PRODUCT_ID (String), STORE_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) product-detail suites
+
+query {
+  product(
+    id: "{{PRODUCT_ID}}"
+    storeId: "{{STORE_ID}}"
+  ) {
+    id code catalogId productType name slug
+    imgSrc brandName isConfigurable
+    description { content languageCode }
+    price {
+      actual { amount currency { code } }
+      list { amount }
+      discountAmount { amount }
+    }
+    availabilityData { isAvailable isBuyable isInStock availableQuantity }
+    properties { name label propertyType propertyValueType }
+    images { name url }
+    variations { id name code }
+    breadcrumbs { itemId title }
+  }
+}

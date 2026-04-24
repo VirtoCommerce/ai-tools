@@ -1,0 +1,25 @@
+# name: order-detail
+# category: orders
+# role: ORG_USER
+# purpose: Single order detail — standard field selection (id/status/items/addresses/inPayments/shipments)
+# required-vars: ORDER_NUMBER (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: GQL-012
+
+query {
+  order(number: "{{ORDER_NUMBER}}") {
+    id number status createdDate
+    customerId customerName storeId storeName
+    total { amount currency { code } }
+    subTotal { amount }
+    shippingTotal { amount }
+    taxTotal { amount }
+    discountTotal { amount }
+    items { id productId sku name quantity price { amount } }
+    addresses { id city countryCode firstName lastName line1 }
+    inPayments { id gatewayCode paymentMethod { code paymentMethodType } sum { amount } }
+    shipments { id shipmentMethodCode deliveryAddress { city countryCode line1 } price { amount } }
+  }
+}

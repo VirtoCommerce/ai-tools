@@ -1,0 +1,272 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-013,"xOrder — createOrderFromCart Happy Path","GraphQL > xOrder",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-005; BL-ORD-005,ECL-14.1; ECL-2.1,"Runner-native. Full checkout → createOrderFromCart. Uses an isolated named cart (AGENT-TEST-ORDER-013) to avoid state leaks from other order-creation tests that run against the same default cart. CREATES A REAL ORDER — Admin cleanup required if needed.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-ORDER-013""
+      productId: ""{{PRODUCT_ID}}"" quantity: 1
+    }) { id }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-ORDER-013""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartName: ""AGENT-TEST-ORDER-013""
+      payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
+    }) { id }
+  }
+[GQL-EXEC set_payment]
+[GQL-OP create_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number status } }
+[GQL-EXEC create_order]","[ERRORS label=create_order] errors[] empty
+[DATA label=create_order] data.createOrderFromCart.id is non-empty GUID
+[DATA label=create_order] data.createOrderFromCart.number is non-null
+[DATA label=create_order] data.createOrderFromCart.status is non-null","[EVIDENCE] order.status should be New / Processing / Payment required on happy path — document actual value","errors[] non-empty; order.id null; status empty",Creates real order — cancel via Admin API if needed,xAPI; graphql-schema.md; order-creation-matrix.md,Draft
+GQL-021,"xCart — Cart Uses Live Price After Admin Price Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"BLOCKED: Requires Admin API access to flip a product's price between two values within the test run. Runner has no admin-auth or REST PUT helper for pricelists. Mark Draft until runner gains Admin REST primitives.","—","[MANUAL-BLOCKED] Needs admin REST PUT /api/pricing/pricelists/<id>/prices. Execute via legacy GraphiQL + Postman.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after price change",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
+GQL-023,"xCart — Price Update Reflected on Re-query After Admin Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"BLOCKED: Same as GQL-021 — needs Admin REST price-change primitive.","—","[MANUAL-BLOCKED] Same as GQL-021.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after re-query",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
+GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-14.1; ECL-2.1,"Runner-native. Full checkout + createOrderFromCart + second createOrderFromCart on same cartId. Expects second call to fail gracefully (not create duplicate order). CREATES A REAL ORDER.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP create_first]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC create_first]
+[GQL-OP create_second]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC create_second]","[ERRORS label=create_first] errors[] empty
+[DATA label=create_first] data.createOrderFromCart.id is non-null","[EVIDENCE] create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id.","Two orders created with different ids (duplicate inventory decrement — P0); HTTP 500; silent success",Creates real order — Admin cleanup if needed,xAPI; graphql-schema.md; BL-ORD-005 order idempotency,Automated
+GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-14.1; ECL-9.1,"Runner-native. Covered pragmatically by GQL-024 — the second createOrderFromCart assertion. This case adds explicit graceful-error verification for the second attempt on a converted cart.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP create_first]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id } }
+[GQL-EXEC create_first]
+[GQL-OP create_second]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id } }
+[GQL-EXEC create_second]","[ERRORS label=create_first] errors[] empty","[EVIDENCE] create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash.","HTTP 500; unhandled exception; stack trace in errors[]; duplicate order created",Creates real order,xAPI; BL-ORD-005 graceful handling,Automated
+GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-010,ECL-14.1; ECL-2.1,"Runner-native. Create order, then attempt to addItem to the same (now converted) cartId → expect error or no-op (no items added).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+      }
+    }) { id }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP create_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id } }
+[GQL-EXEC create_order]
+[GQL-OP add_after_convert]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartId: ""{{CART_ID}}""
+      productId: ""{{PRODUCT_ID}}"" quantity: 1
+    }) { id itemsCount status }
+  }
+[GQL-EXEC add_after_convert]","[ERRORS label=create_order] errors[] empty","[EVIDENCE] add_after_convert: data.addItem.status should reflect converted/processed state OR errors[] non-empty. The cart must NOT accept new items. NO HTTP 500.","Converted cart silently accepts new addItem (P0 — duplicate inventory decrement after order); HTTP 500",Creates real order,xAPI; BL-CROSS-010 cart lifecycle,Draft
+GQL-027,"xCart — Currency Switch Updates Line Item Prices","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Needs changeCartCurrency mutation or equivalent + a product with prices in both USD and EUR. Runner currently filters to USD-only products (price.USD filter). Complex multi-currency fixture required. Mark Draft.","—","[MANUAL-BLOCKED] Needs multi-currency product + changeCartCurrency mutation. Execute via legacy GraphiQL.","[MANUAL] blocked on multi-currency fixture","[EVIDENCE] Track as Draft","Currency switch leaves stale USD prices on items after flip to EUR",Restore cart currency,xAPI; BL-CROSS-003 currency,Draft
+GQL-028,"xCart — Shipping Rates Recalculate After Currency Switch","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Same complexity as GQL-027 — multi-currency cart setup.","—","[MANUAL-BLOCKED] Same as GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Shipping rates stale in old currency",—,xAPI; BL-CROSS-003,Draft
+GQL-029,"xCart — Product Without Currency Price Flagged","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Same complexity — needs deliberate multi-currency cart setup + product with missing-currency price.","—","[MANUAL-BLOCKED] Same as GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Product silently shows 0.00 in new currency",—,xAPI; BL-CROSS-003,Draft
+GQL-053,"xOrder — createOrderFromCart with Empty Cart","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Clears cart then attempts createOrderFromCart on empty cart. Expects errors[] non-empty with empty-cart message.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-CAPTURE pre_clear.data.clearCart.id → CART_ID]
+[GQL-OP create_empty]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number status } }
+[GQL-EXEC create_empty]","[DATA label=create_empty] data.createOrderFromCart is null","[EVIDENCE] create_empty: either errors[] non-empty with empty-cart/validation message OR data.createOrderFromCart is null. NO HTTP 500 or server crash. Order must NOT be created.","Order created with 0 items (P0: empty order); HTTP 500; stack trace in errors[].message",none — cart already empty,xAPI; BL-ORD-005 empty-cart validation,Automated
+GQL-054,"xOrder — createOrderFromCart with Invalid cartId","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Attempts createOrderFromCart with a zero-GUID cartId. Expects graceful error.","bogus_cart=00000000-0000-0000-0000-000000000001","[AUTH role=ORG_USER]
+[GQL-OP create_bogus]
+  mutation {
+    createOrderFromCart(command: { cartId: ""00000000-0000-0000-0000-000000000001"" }) { id number status }
+  }
+[GQL-EXEC create_bogus]","[ERRORS label=create_bogus] errors[] non-empty — cart not found (BL-GQL-001)
+[DATA label=create_bogus] data.createOrderFromCart is null","[EVIDENCE] Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path.","Order created for non-existent cart; HTTP 500; stack trace in errors[].message",none,xAPI; BL-GQL-001 error contract,Automated
+GQL-055,"xOrder — createOrderFromCart Without Auth","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. No [AUTH] block — attempts createOrderFromCart anonymously. Expects Unauthorized.","—","[GQL-OP create_noauth]
+  mutation { createOrderFromCart(command: { cartId: ""00000000-0000-0000-0000-000000000002"" }) { id } }
+[GQL-EXEC create_noauth]","[ERRORS label=create_noauth] errors[] non-empty — Unauthorized (BL-GQL-004)
+[DATA label=create_noauth] data.createOrderFromCart is null","[EVIDENCE] errors[].extensions.code = Unauthorized. No sensitive info in messages.","Order created without auth (P0 security); data non-null; HTTP 500",none,xAPI; BL-GQL-004 auth,Automated
+GQL-095,"Catalog — productConfiguration Query","GraphQL > Catalog > productConfiguration",High,BL-GQL-001; BL-GQL-002,ECL-14.1; ECL-2.1,"BLOCKED: Requires a configurable product ID (from aliases.json CFG-* entries). productConfiguration query returns ConfigurationSections for a given configurable product.","—","[MANUAL-BLOCKED] Needs configurable product GUID captured at runtime. Legacy suite runs via GraphiQL.","[MANUAL] blocked on configurable product fixture","[EVIDENCE] Track as Draft","—",none — read-only,xAPI; BL-CFG-001,Draft
+GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level CartType field from graphql-schema.md. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cart_full]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
+      id name status storeId customerId customerName organizationId
+      itemsCount itemsQuantity type
+      total { amount currency { code } }
+      subTotal { amount }
+      subTotalWithTax { amount }
+      taxTotal { amount }
+      shippingTotal { amount }
+      discountTotal { amount }
+      fee { amount }
+      feeWithTax { amount }
+      feeTotal { amount }
+      feeTotalWithTax { amount }
+      handlingTotal { amount }
+      handlingTotalWithTax { amount }
+      items { id productId sku name quantity }
+      addresses { id city countryCode firstName lastName }
+      coupons { code isAppliedSuccessfully }
+      shipments { id shipmentMethodCode }
+      payments { id paymentGatewayCode }
+      availableShippingMethods { code name }
+      availablePaymentMethods { code paymentMethodType }
+      validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC cart_full]","[ERRORS label=cart_full] errors[] empty — every CartType field in graphql-schema.md must resolve
+[DATA label=cart_full] data.cart is non-null
+[DATA label=cart_full] data.cart.id is non-null
+[DATA label=cart_full] data.cart.storeId is non-null
+[DATA label=cart_full] data.cart.total is non-null
+[DATA label=cart_full] data.cart.items is non-null","[ROUNDTRIP label=cart_full] re-execute — identical response structure","Any CartType field renamed/removed (DV-009); MoneyType drift (currencyCode vs currency.code)",none — read-only,xAPI; graphql-schema.md — CartType full coverage,Automated
+GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Adds an item, then queries every LineItemType field. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP cart_items_full]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
+      items {
+        id productId sku name quantity
+        listPrice { amount }
+        salePrice { amount }
+        placedPrice { amount }
+        extendedPrice { amount }
+        discountAmount { amount }
+        taxTotal { amount }
+        taxPercentRate
+        imageUrl
+        productType
+        isGift
+        selectedForCheckout
+        catalogId
+        categoryId
+      }
+    }
+  }
+[GQL-EXEC cart_items_full]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=cart_items_full] errors[] empty
+[DATA label=cart_items_full] data.cart.items is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift",none — clearCart at end,xAPI; graphql-schema.md — LineItemType full coverage,Automated
+GQL-099,"Catalog — productConfiguration Query Exposes maxLength","GraphQL > Catalog > productConfiguration > Schema",High,BL-GQL-002; BL-CFG-001,ECL-2.1,"BLOCKED: Requires a configurable product with a Text section that has maxLength set. Legacy suite covers this via specific CFG-* fixtures. Mark Draft until runner has configurable-product primitives.","—","[MANUAL-BLOCKED] Needs configurable-product Text section fixture.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength field missing from productConfiguration schema",none,xAPI; BL-CFG-001,Draft
+GQL-100,"xCart — addItem Rejects CustomText Exceeding Section MaxLength","GraphQL > xCart > Configuration Validation",High,BL-GQL-001; BL-CFG-001,ECL-14.1; ECL-2.1,"BLOCKED: Needs (a) configurable product with Text section (maxLength), (b) addItem with configurationSections payload exceeding maxLength. Complex fixture + mutation shape.","—","[MANUAL-BLOCKED] Needs configurable-product Text section with maxLength.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength not enforced; oversized custom text silently accepted",none,xAPI; BL-CFG-001 validation,Draft

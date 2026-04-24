@@ -25,7 +25,11 @@
     "schema:refresh": "node scripts/refresh-graphql-schema.mjs",
     "schema:check": "node scripts/refresh-graphql-schema.mjs --dry-run > /dev/null",
     "graphql:validate": "npx tsx scripts/graphql-runner.ts --all-fixtures",
-    "graphql:validate:refresh": "npx tsx scripts/graphql-runner.ts --all-fixtures --refresh-schema"
+    "graphql:validate:refresh": "npx tsx scripts/graphql-runner.ts --all-fixtures --refresh-schema",
+    "graphql:lint-labels": "npx tsx scripts/review-graphql-labels.ts",
+    "graphql:cleanup-leaked": "npx tsx scripts/cleanup-leaked-orgs.ts",
+    "graphql:fixtures:validate": "npx tsx scripts/validate-graphql-fixtures.ts",
+    "graphql:fixtures:validate:refresh": "npx tsx scripts/validate-graphql-fixtures.ts --refresh"
   },
   "repository": {
     "type": "git",

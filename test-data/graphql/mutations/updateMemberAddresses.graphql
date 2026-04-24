@@ -1,0 +1,26 @@
+# name: updateMemberAddresses
+# category: profile
+# role: ORG_USER (the member being updated, or admin)
+# purpose: Replace a member's address book (full-list semantics)
+# required-vars: MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String)
+# optional-vars: FIRST_NAME, LAST_NAME, REGION_ID, PHONE, EMAIL, ADDRESS_TYPE (Int)
+# last-validated: 2026-04-24
+# known-issues:
+#   - BL: EnableNoHtmlTagsValidation applies to city/line1/line2 (XSS rejected)
+#   - Semantics are REPLACE (pass full desired list each call)
+# used-by: GQL-032 (XSS on city/line1)
+
+mutation {
+  updateMemberAddresses(command: {
+    memberId: "{{MEMBER_ID}}"
+    addresses: [{
+      city: "{{CITY}}"
+      countryCode: "{{COUNTRY_CODE}}"
+      line1: "{{LINE1}}"
+      postalCode: "{{POSTAL_CODE}}"
+    }]
+  }) {
+    id
+    memberType
+  }
+}

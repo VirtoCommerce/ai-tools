@@ -1,0 +1,23 @@
+# name: addCoupon
+# category: cart
+# role: ORG_USER
+# purpose: Apply a coupon code to the current cart
+# required-vars: STORE_ID (String), USER_ID (String), COUPON_CODE (String)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues:
+#   - Invalid/expired coupon returns coupons[].isAppliedSuccessfully=false (no schema error)
+# used-by: (future) 050b coupons suites
+
+mutation {
+  addCoupon(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    couponCode: "{{COUPON_CODE}}"
+  }) {
+    id
+    coupons { code isAppliedSuccessfully }
+    discountTotal { amount }
+    total { amount currency { code } }
+  }
+}

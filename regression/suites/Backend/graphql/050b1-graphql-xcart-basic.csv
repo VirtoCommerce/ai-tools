@@ -1,0 +1,432 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-005,"xCart — Get or Create Cart via Query","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. ORG_USER authenticated. cart query auto-creates user's default cart if none exists. NOTE: userId is listed as optional in schema but resolver returns Forbidden without it — always pass userId explicitly.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP get_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      id name itemsCount
+      items { id productId quantity }
+    }
+  }
+[GQL-EXEC get_cart]
+[GQL-CAPTURE get_cart.data.cart.id → CART_ID]","[ERRORS label=get_cart] errors[] empty
+[DATA label=get_cart] data.cart is non-null
+[DATA label=get_cart] data.cart.id is non-empty GUID
+[DATA label=get_cart] data.cart.items is non-null","[ROUNDTRIP label=get_cart] re-execute same query → same cart.id returned","errors[] non-empty with Forbidden code (userId missing); cart null; id empty or malformed","none — read-only, auto-create is idempotent",xAPI; graphql-schema.md — Query.cart CartType,Automated
+GQL-006,"xCart — addItem Adds Product to Cart","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Captures real product GUID, clears cart, adds 1 item, verifies itemsCount + productId + quantity.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_one]
+  mutation {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 2 }) {
+      id itemsCount items { id productId quantity listPrice { amount } }
+    }
+  }
+[GQL-EXEC add_one]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=add_one] errors[] empty
+[COUNT label=add_one] data.addItem.itemsCount = 1
+[DATA label=add_one] data.addItem.items.0.productId = {{PRODUCT_ID}}
+[COUNT label=add_one] data.addItem.items.0.quantity = 2
+[DATA label=add_one] data.addItem.items.0.id is non-null","[EVIDENCE] items[0].listPrice.amount should be > 0 on a priced product — runner-manual","errors[] non-empty; itemsCount not incremented; quantity mismatch; listPrice missing",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addItem,Automated
+GQL-007,"xCart — changeCartItemQuantity Updates Qty","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. addItem qty=1, then changeCartItemQuantity to qty=5, verify quantity and subTotal recalc.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id items { id } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_qty]
+  mutation {
+    changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 5 }) {
+      id items { id quantity } subTotal { amount }
+    }
+  }
+[GQL-EXEC change_qty]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=change_qty] errors[] empty
+[DATA label=change_qty] data.changeCartItemQuantity.items.0.id = {{LINE_ITEM_ID}}
+[COUNT label=change_qty] data.changeCartItemQuantity.items.0.quantity = 5
+[DATA label=change_qty] data.changeCartItemQuantity.subTotal is non-null","[EVIDENCE] subTotal.amount = listPrice * 5 (runner-manual verification of totals recalc)","errors[] non-empty; quantity still 1; subtotal not recalculated",none — clearCart at end,xAPI; graphql-schema.md — Mutation.changeCartItemQuantity,Automated
+GQL-008,"xCart — removeCartItem Removes Line Item","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. addItem then removeCartItem by lineItemId, verify itemsCount drops.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id items { id } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP remove_item]
+  mutation {
+    removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" }) {
+      id itemsCount items { id }
+    }
+  }
+[GQL-EXEC remove_item]","[ERRORS label=remove_item] errors[] empty
+[COUNT label=remove_item] data.removeCartItem.itemsCount = 0
+[COUNT label=remove_item] data.removeCartItem.items.length = 0","[ROUNDTRIP label=remove_item] cart remains valid (id still present), just emptied","errors[] non-empty; itemsCount unchanged; cart becomes null after removal",none — cart is empty after remove,xAPI; graphql-schema.md — Mutation.removeCartItem,Automated
+GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Runner-native. Requires cart with at least 1 item. Adds shipment with a New York deliveryAddress, then re-queries cart to verify address persisted.","addr_city=New York; addr_state=NY; addr_zip=10001; addr_country=US","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      shipment: {
+        deliveryAddress: {
+          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          firstName: ""Test"" lastName: ""User""
+          line1: ""123 Test St"" postalCode: ""10001""
+          regionId: ""NY"" regionName: ""New York""
+        }
+      }
+    }) {
+      id
+      shipments { deliveryAddress { city countryCode line1 postalCode regionName } }
+    }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=set_shipment] errors[] empty
+[DATA label=set_shipment] data.addOrUpdateCartShipment.id is non-null
+[DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.city = New York
+[DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.countryCode = US
+[DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.postalCode = 10001","[ROUNDTRIP label=set_shipment] cart query confirms shipment.deliveryAddress fields populated","errors[] non-empty; address fields null; validationErrors on shipment; countryCode or regionId wrong",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartShipment,Automated
+GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Applies a seeded valid coupon (QA10OFF via @td alias) then an invalid one to verify graceful rejection.","valid_coupon=@td(COUPON_10PCT.code); invalid_coupon=BADCODE_NOPE_99999","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-OP apply_valid]
+  mutation {
+    addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""@td(COUPON_10PCT.code)"" }) {
+      id coupons { code isAppliedSuccessfully } discountTotal { amount }
+    }
+  }
+[GQL-EXEC apply_valid]
+[GQL-OP apply_invalid]
+  mutation {
+    addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""BADCODE_NOPE_99999"" }) {
+      id coupons { code isAppliedSuccessfully }
+    }
+  }
+[GQL-EXEC apply_invalid]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=apply_valid] errors[] empty
+[DATA label=apply_valid] data.addCoupon.coupons is non-null","[EVIDENCE] apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true; discountTotal.amount > 0. Review evidence JSON.
+[EVIDENCE] apply_invalid: either errors[] non-empty with descriptive message OR coupons[] entry with isAppliedSuccessfully=false. No HTTP 500.","HTTP 500 on coupon apply; stack trace in errors[].message; valid coupon rejected; invalid coupon silently accepted as applied",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addCoupon,Automated
+GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native but CREATES A REAL ORDER — no easy teardown via runner. Sequence: addItem → addOrUpdateCartShipment (FixedRate w/ price) → addOrUpdateCartPayment (DefaultManualPaymentMethod) → createOrderFromCart. See order-creation-matrix.md § GraphQL xAPI Checkout Flow for required price-match on shipment.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP set_shipment]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
+        deliveryAddress: {
+          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          firstName: ""Test"" lastName: ""User""
+          line1: ""123 Test St"" postalCode: ""10001""
+          regionId: ""NY"" regionName: ""New York""
+        }
+      }
+    }) { id }
+  }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
+    }) { id }
+  }
+[GQL-EXEC set_payment]
+[GQL-OP create_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number status } }
+[GQL-EXEC create_order]","[ERRORS label=set_shipment] errors[] empty
+[ERRORS label=set_payment] errors[] empty
+[ERRORS label=create_order] errors[] empty
+[DATA label=create_order] data.createOrderFromCart.id is non-empty GUID
+[DATA label=create_order] data.createOrderFromCart.number is non-null
+[DATA label=create_order] data.createOrderFromCart.status is non-null","[EVIDENCE] End-to-end flow completes; order.status = New/Processing (runner-manual)","Any mutation errors[] non-empty; cart totals stale; availableShippingMethods empty; order not created",Test creates a real order — cancel via Admin API if needed (no runner-side teardown),xAPI; graphql-schema.md; order-creation-matrix.md § GraphQL xAPI Checkout Flow,Automated
+GQL-046,"xCart — updateCartQuantity Single Item Happy Path","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. addItem qty=1, then updateCartQuantity sets qty=3 via items[{productId, quantity}]. items[] list must use productId, not lineItemId.","new_qty=3","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_one]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_one]
+[GQL-OP bulk_update]
+  mutation {
+    updateCartQuantity(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      items: [{ productId: ""{{PRODUCT_ID}}"" quantity: 3 }]
+    }) {
+      id itemsCount items { productId quantity }
+    }
+  }
+[GQL-EXEC bulk_update]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=bulk_update] errors[] empty
+[COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 1
+[DATA label=bulk_update] data.updateCartQuantity.items.0.productId = {{PRODUCT_ID}}
+[COUNT label=bulk_update] data.updateCartQuantity.items.0.quantity = 3","[ROUNDTRIP label=bulk_update] cart query confirms qty=3 persisted","errors[] non-empty; quantity still 1; items[] duplicated",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity,Automated
+GQL-047,"xCart — updateCartQuantity Bulk Updates Multiple Items","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Captures 2 real product GUIDs. addItem each with qty=1, then bulk-update via updateCartQuantity to qty=2/4.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_first]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_first]
+[GQL-OP add_second]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_second]
+[GQL-OP bulk_update]
+  mutation {
+    updateCartQuantity(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      items: [
+        { productId: ""{{PRODUCT_1}}"" quantity: 2 }
+        { productId: ""{{PRODUCT_2}}"" quantity: 4 }
+      ]
+    }) {
+      id itemsCount items { productId quantity }
+    }
+  }
+[GQL-EXEC bulk_update]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=bulk_update] errors[] empty
+[COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 2
+[COUNT label=bulk_update] data.updateCartQuantity.items.length = 2","[EVIDENCE] Verify both items in response have the updated quantities (2 + 4) matching inputs — runner-manual evidence check","errors[] non-empty; itemsCount = 1 (partial); both items quantity = 1 (update ignored)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity,Automated
+GQL-048,"xCart — updateCartQuantity quantity=0 Removes Item","GraphQL > xCart > Quantity",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Verifies setting quantity=0 via updateCartQuantity removes the item (expected per legacy spec).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_one]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_one]
+[GQL-OP set_zero]
+  mutation {
+    updateCartQuantity(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      items: [{ productId: ""{{PRODUCT_ID}}"" quantity: 0 }]
+    }) {
+      id itemsCount items { productId quantity }
+    }
+  }
+[GQL-EXEC set_zero]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=set_zero] errors[] empty","[EVIDENCE] set_zero: either data.updateCartQuantity.itemsCount=0 with items[] empty (qty=0 removes) OR items[].quantity=0 retained (qty=0 kept — surprising). Document observed branch.","HTTP 500; item remains with qty=1; stack trace in errors[].message",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity,Automated
+GQL-049,"xCart — updateCartQuantity Exceeds Available Stock","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-004; BL-CART-002,ECL-14.1; ECL-2.1,"BLOCKED: Requires LOW_STOCK_SKU fixture (aliases.json PROD_LOW_STOCK — template only, NOT seeded in QA). Once seeded, test addItem qty=999 against 5-unit stock → expect errors[] non-empty with stock-exceeded message OR clamp to stock-level.","—","[MANUAL-BLOCKED] Needs LOW_STOCK_SKU env var + seeded product with stock=5. See aliases.json PROD_LOW_STOCK. Execute once seeded.","[MANUAL] blocked on env fixture","—","quantity=999 accepted silently (oversold risk); no validation message returned",manual cleanup required once seeded,xAPI; graphql-schema.md; aliases.json PROD_LOW_STOCK,Draft
+GQL-050,"xCart — updateCartQuantity Non-Existent ProductId","GraphQL > xCart > Quantity",High,BL-GQL-001,ECL-14.1; ECL-9.1,"Runner-native. Attempts updateCartQuantity on a zero-GUID productId. Verifies structured error or graceful no-op.","bogus_product=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP update_bogus]
+  mutation {
+    updateCartQuantity(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      items: [{ productId: ""00000000-0000-0000-0000-000000000000"" quantity: 1 }]
+    }) {
+      id itemsCount items { productId quantity }
+    }
+  }
+[GQL-EXEC update_bogus]","—","[EVIDENCE] update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[].","HTTP 500; phantom line item created for non-existent product; existing items corrupted; stack trace in errors[]",none — nothing added if graceful,xAPI; graphql-schema.md — Mutation.updateCartQuantity error contract,Automated
+GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"Runner-native. Add 2 items qty=1, bulk-update qty=2/3, verify subTotal recalculated.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_first]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_first]
+[GQL-OP add_second]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id subTotal { amount } } }
+[GQL-EXEC add_second]
+[GQL-OP bulk_update]
+  mutation {
+    updateCartQuantity(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      items: [
+        { productId: ""{{PRODUCT_1}}"" quantity: 2 }
+        { productId: ""{{PRODUCT_2}}"" quantity: 3 }
+      ]
+    }) {
+      id itemsCount subTotal { amount } items { productId quantity extendedPrice { amount } }
+    }
+  }
+[GQL-EXEC bulk_update]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=bulk_update] errors[] empty
+[COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 2
+[DATA label=bulk_update] data.updateCartQuantity.subTotal is non-null","[EVIDENCE] Verify bulk_update.subTotal.amount > add_second.subTotal.amount (qty increased → total increased). extendedPrice[i].amount = listPrice × quantity.","errors[] non-empty; subTotal unchanged after qty bump; subTotal decreased; extendedPrice mismatch (stale cache)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity MoneyType,Automated
+GQL-059,"xCart — clearCart Empties Cart With Items","GraphQL > xCart > clearCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Adds 2 items, calls clearCart, verifies cart is emptied but still valid.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prods]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prods]
+[GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
+[GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_first]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_first]
+[GQL-OP add_second]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_2}}"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC add_second]
+[GQL-OP clear_it]
+  mutation {
+    clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) {
+      id itemsCount items { id } subTotal { amount }
+    }
+  }
+[GQL-EXEC clear_it]","[ERRORS label=clear_it] errors[] empty
+[DATA label=clear_it] data.clearCart.id is non-null
+[COUNT label=clear_it] data.clearCart.itemsCount = 0
+[COUNT label=clear_it] data.clearCart.items.length = 0","[EVIDENCE] clearCart.subTotal.amount should be 0 after clear — runner-manual","errors[] non-empty; itemsCount > 0 after clear; items[] non-empty; cart.id null (should not be deleted)",none — already empty,xAPI; graphql-schema.md — Mutation.clearCart,Automated
+GQL-060,"xCart — clearCart on Already-Empty Cart is Idempotent","GraphQL > xCart > clearCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Calls clearCart twice consecutively — both must succeed (idempotent, no HTTP 500).","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP clear_first]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC clear_first]
+[GQL-OP clear_second]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC clear_second]","[ERRORS label=clear_first] errors[] empty
+[COUNT label=clear_first] data.clearCart.itemsCount = 0
+[ERRORS label=clear_second] errors[] empty
+[COUNT label=clear_second] data.clearCart.itemsCount = 0","[ROUNDTRIP label=clear_second] same cart.id returned across both clears (idempotent)","errors[] non-empty on second clear; HTTP 500; unhandled exception",none — cart already empty,xAPI; graphql-schema.md — Mutation.clearCart idempotence,Automated
+GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCart > carts",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Queries user's carts with first=5. May return 0+ carts depending on history.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP list_carts]
+  query {
+    carts(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 5) {
+      totalCount
+      items { id name itemsCount }
+    }
+  }
+[GQL-EXEC list_carts]","[ERRORS label=list_carts] errors[] empty
+[DATA label=list_carts] data.carts is non-null
+[COUNT label=list_carts] data.carts.totalCount >= 0
+[DATA label=list_carts] data.carts.items is non-null","[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount","errors[] non-empty; carts null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.carts,Automated

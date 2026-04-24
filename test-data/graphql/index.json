@@ -1,0 +1,181 @@
+{
+  "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
+  "lastValidated": "2026-04-24",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "totalFixtures": 24,
+  "queries": {
+    "me": {
+      "path": "queries/me.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "usedBy": ["GQL-031", "GQL-032"]
+    },
+    "contact": {
+      "path": "queries/contact.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": ["CONTACT_ID"],
+      "usedBy": ["GQL-031"]
+    },
+    "currentCustomerAddresses": {
+      "path": "queries/currentCustomerAddresses.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "usedBy": ["GQL-048"]
+    },
+    "organization": {
+      "path": "queries/organization.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": ["ORG_ID"]
+    },
+    "orders-list": {
+      "path": "queries/orders-list.graphql",
+      "category": "orders",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "usedBy": ["GQL-011", "GQL-012", "GQL-013"]
+    },
+    "order-detail": {
+      "path": "queries/order-detail.graphql",
+      "category": "orders",
+      "role": "ORG_USER",
+      "requiredVars": ["ORDER_NUMBER"],
+      "usedBy": ["GQL-012"]
+    },
+    "order-detail-full": {
+      "path": "queries/order-detail-full.graphql",
+      "category": "orders",
+      "role": "ORG_USER",
+      "requiredVars": ["ORDER_NUMBER"],
+      "usedBy": ["GQL-013"],
+      "knownIssues": [
+        "resolver INVALID_OPERATION on order.coupons (server bug)",
+        "resolver INVALID_OPERATION on order.currency.name (server bug)"
+      ]
+    },
+    "product": {
+      "path": "queries/product.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["PRODUCT_ID", "STORE_ID"]
+    },
+    "products": {
+      "path": "queries/products.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID", "CATALOG_SUBTREE_ID"],
+      "knownIssues": [
+        "empty results without category.subtree filter"
+      ]
+    },
+    "cart": {
+      "path": "queries/cart.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "CURRENCY_CODE"]
+    },
+    "carts": {
+      "path": "queries/carts.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": []
+    },
+    "wishlist": {
+      "path": "queries/wishlist.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": ["LIST_ID"]
+    },
+    "wishlists": {
+      "path": "queries/wishlists.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": []
+    }
+  },
+  "mutations": {
+    "createOrganization": {
+      "path": "mutations/createOrganization.graphql",
+      "category": "organization",
+      "role": "ORG_USER",
+      "requiredVars": ["ORG_NAME"],
+      "cleanupRequired": true,
+      "cleanupStep": "[REST DELETE /api/members?ids={{VALID_ORG_ID}}]",
+      "usedBy": ["GQL-030"]
+    },
+    "updateContact": {
+      "path": "mutations/updateContact.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": ["CONTACT_ID", "FIRST_NAME", "LAST_NAME"],
+      "usedBy": ["GQL-031"]
+    },
+    "updateMemberAddresses": {
+      "path": "mutations/updateMemberAddresses.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": ["MEMBER_ID", "CITY", "COUNTRY_CODE", "LINE1", "POSTAL_CODE"],
+      "usedBy": ["GQL-032"],
+      "semantics": "REPLACE — pass full desired list each call"
+    },
+    "deleteMemberAddresses": {
+      "path": "mutations/deleteMemberAddresses.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": ["MEMBER_ID", "CITY", "COUNTRY_CODE", "LINE1", "POSTAL_CODE"]
+    },
+    "addItem": {
+      "path": "mutations/addItem.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "PRODUCT_ID"],
+      "gqlVars": { "qty": "Int!" },
+      "runnerNote": "Pass quantity via [GQL-VARS label] JSON {\"qty\": 3}"
+    },
+    "addItemsCart": {
+      "path": "mutations/addItemsCart.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "items": "[InputNewCartItemType]!" },
+      "runnerNote": "Pass cartItems via [GQL-VARS label] JSON {\"items\": [...]}"
+    },
+    "removeCartItem": {
+      "path": "mutations/removeCartItem.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"]
+    },
+    "changeCartItemQuantity": {
+      "path": "mutations/changeCartItemQuantity.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "qty": "Int!" },
+      "runnerNote": "Pass quantity via [GQL-VARS label] JSON {\"qty\": 3}"
+    },
+    "addCoupon": {
+      "path": "mutations/addCoupon.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "COUPON_CODE"]
+    },
+    "createWishlist": {
+      "path": "mutations/createWishlist.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LIST_NAME"],
+      "cleanupRequired": true,
+      "cleanupPair": "removeWishlist"
+    },
+    "removeWishlist": {
+      "path": "mutations/removeWishlist.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": ["LIST_ID"]
+    }
+  }
+}

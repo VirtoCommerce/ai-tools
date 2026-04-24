@@ -1,0 +1,25 @@
+# name: deleteMemberAddresses
+# category: profile
+# role: ORG_USER
+# purpose: Delete specific addresses from a member's address book
+# required-vars: MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues:
+#   - Deletion matching key is the full address object — pass exact values
+# used-by: (future) 050d deletion cases
+
+mutation {
+  deleteMemberAddresses(command: {
+    memberId: "{{MEMBER_ID}}"
+    addresses: [{
+      city: "{{CITY}}"
+      countryCode: "{{COUNTRY_CODE}}"
+      line1: "{{LINE1}}"
+      postalCode: "{{POSTAL_CODE}}"
+    }]
+  }) {
+    id
+    memberType
+  }
+}

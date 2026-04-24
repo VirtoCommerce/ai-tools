@@ -1,0 +1,21 @@
+# name: wishlists
+# category: wishlist
+# role: ORG_USER
+# purpose: List user's wishlists (paginated)
+# required-vars: (none)
+# optional-vars: STORE_ID (String), USER_ID (String), FIRST (Int, default 10)
+# last-validated: 2026-04-24
+# known-issues: (none)
+# used-by: (future) 050h wishlist suites
+
+query {
+  wishlists(first: 10) {
+    totalCount
+    items {
+      id name storeId customerId itemsCount
+      scope description
+      modifiedDate
+      subTotal { amount currency { code } }
+    }
+  }
+}

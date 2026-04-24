@@ -1,0 +1,24 @@
+# name: changeCartItemQuantity
+# category: cart
+# role: ORG_USER
+# purpose: Update quantity of an existing cart line item
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int)
+# optional-vars: (none)
+# last-validated: 2026-04-24
+# known-issues:
+#   - Quantity must be >= 1; zero/negative should return validation error
+# used-by: (future) 050b cart quantity suites
+# runner-note: QUANTITY must be passed via [GQL-VARS label] block as JSON {"qty": 3}
+
+mutation ChangeCartItemQuantity($qty: Int!) {
+  changeCartItemQuantity(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    quantity: $qty
+  }) {
+    id
+    itemsCount itemsQuantity
+    items { id productId sku quantity }
+  }
+}

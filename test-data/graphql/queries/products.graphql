@@ -1,0 +1,31 @@
+# name: products
+# category: catalog
+# role: PUBLIC or ORG_USER
+# purpose: Paginated product list; MUST include the B2B virtual catalog subtree filter so storefront resolvers return rows
+# required-vars: STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog)
+# optional-vars: QUERY (String), FIRST (Int, default 20)
+# last-validated: 2026-04-24
+# known-issues:
+#   - Without category.subtree filter, results are empty even though products exist (BL feedback)
+# used-by: (future) catalog suites
+
+query {
+  products(
+    storeId: "{{STORE_ID}}"
+    first: 20
+    filter: "category.subtree:{{CATALOG_SUBTREE_ID}}"
+  ) {
+    totalCount
+    items {
+      id code name slug
+      imgSrc brandName
+      price {
+        actual { amount currency { code } }
+        list { amount }
+        discountAmount { amount }
+      }
+      availabilityData { isAvailable isInStock availableQuantity }
+    }
+    term_facets { name terms { term label count } }
+  }
+}
