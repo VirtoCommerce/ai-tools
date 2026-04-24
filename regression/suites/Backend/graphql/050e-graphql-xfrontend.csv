@@ -1,112 +1,85 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-052,pageContext - Homepage Slug Resolution,GraphQL > pageContext,Critical,BL-GQL-002,ECL-2.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. No auth required for pageContext query. Store configured with homepage.","storeId={{STORE_ID}}; permalink=""/""; cultureName=""en-US""","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId storeName catalogId storeUrl defaultLanguage { cultureName } defaultCurrency { code } } whiteLabelingSettings { themePresetName logoUrl } user { id userName } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify all four sub-objects present","[RESPONSE] Response panel shows data without error banner
-[DATA] slugInfo.entityInfo is non-null for homepage permalink
-[DATA] slugInfo.entityInfo.objectType is a known type (e.g., ""ContentFile"" or ""Page"")
-[DATA] slugInfo.entityInfo.isActive = true
-[DATA] slugInfo.entityInfo.semanticUrl = ""/""
-[DATA] slugInfo.redirectUrl is null (no redirect for homepage)
-[DATA] store.storeId = {{STORE_ID}}
-[DATA] store.storeName is non-empty string
-[DATA] store.defaultLanguage.cultureName is non-empty (e.g., ""en-US"")
-[DATA] store.defaultCurrency.code is non-empty (e.g., ""USD"")
-[DATA] whiteLabelingSettings.themePresetName is non-empty string
-[DATA] user is present (Anonymous user context when no auth token)
-[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute same query → identical response (deterministic)
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty; slugInfo null for homepage; store.storeId empty; defaultCurrency or defaultLanguage null; whiteLabelingSettings null; response panel blank or crash",none,xAPI,Generated
-GQL-053,pageContext - CMS Page Permalink + slugInfo Category Resolution,GraphQL > pageContext,Critical,"BL-GQL-002; BL-CAT-001",ECL-2.1,"GraphiQL UI loaded; CMS pages exist (e.g., /contacts); catalog categories exist. NOTE: pageContext.permalink resolves CMS pages (ContentFile); catalog categories/products resolve via separate slugInfo(slug:) query.","storeId={{STORE_ID}}; cmsPermalink=""contacts""; categorySlug=""online-courses/software-testing-courses""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with CMS page permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""contacts"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify CMS page resolves via pageContext
-[ACT] Clear editor → type slugInfo query for category: query { slugInfo(storeId: ""{{STORE_ID}}"" slug: ""printers"") { entityInfo { id objectType semanticUrl isActive } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify category resolves via slugInfo","[DATA] CMS page: slugInfo.entityInfo.objectType = ""ContentFile""
-[DATA] CMS page: slugInfo.entityInfo.id is non-empty
-[DATA] CMS page: slugInfo.entityInfo.semanticUrl = ""contacts""
-[DATA] CMS page: slugInfo.entityInfo.isActive = true
-[DATA] CMS page: store.storeId = {{STORE_ID}} (store context present)
-[DATA] Category: entityInfo.objectType = ""Category""
-[DATA] Category: entityInfo.id is non-empty
-[DATA] Category: entityInfo.isActive = true
-[DATA] Each entity type resolves via the correct query (pageContext for CMS pages, slugInfo for catalog)
-[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute each query → same entityInfo returned
-[CONSOLE] No JS errors in GraphiQL","CMS page entityInfo null for known /contacts permalink; objectType wrong; category not resolved via slugInfo; errors[] in response; isActive = false for active entity",none,"xAPI, BL-CAT-001",Generated
-GQL-054,pageContext - Store Settings in Response,GraphQL > pageContext > Store,High,BL-AUTH-002,ECL-2.1,"GraphiQL UI loaded; store configured with known settings","storeId={{STORE_ID}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { store { storeId storeName storeUrl defaultLanguage { cultureName twoLetterLanguageName } defaultCurrency { code symbol } availableLanguages { cultureName } availableCurrencies { code } settings { emailVerificationEnabled emailVerificationRequired anonymousUsersAllowed seoLinkType } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify settings match expected store configuration","[RESPONSE] Response panel shows data without error banner
-[DATA] store.settings.emailVerificationEnabled is boolean
-[DATA] store.settings.emailVerificationRequired is boolean
-[DATA] store.settings.anonymousUsersAllowed is boolean
-[DATA] store.settings.seoLinkType is non-empty string
-[DATA] store.availableLanguages is non-empty array with at least one language
-[DATA] store.availableCurrencies is non-empty array with at least one currency
-[DATA] store.defaultLanguage.cultureName matches one of availableLanguages entries
-[DATA] store.defaultCurrency.code matches one of availableCurrencies entries
-[DATA] store.storeUrl is a valid URL string or non-empty
-[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute → same settings returned (deterministic)
-[ADMIN] Admin > Stores > {{STORE_ID}} settings match the returned values
-[CONSOLE] No JS errors in GraphiQL","settings null; emailVerificationEnabled missing; availableLanguages empty; defaultLanguage not in availableLanguages list; errors[] in response",none,BL-AUTH-002,Generated
-GQL-055,pageContext - Authenticated vs Anonymous User Context,GraphQL > pageContext > User,High,"BL-AUTH-004; BL-AUTH-006",ECL-2.1,"GraphiQL UI loaded; user credentials available for authenticated test","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Ensure Headers tab is empty (no auth token) → click query editor
-[ACT] Type query: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { user { id userName email roles { name } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — record anonymous user context
-[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type same query: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { user { id userName email roles { name } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — compare authenticated user context vs anonymous","[DATA] Anonymous: user.userName is null or ""Anonymous"" or similar anonymous identifier
-[DATA] Anonymous: user.email is null or empty (no PII exposed for anonymous)
-[DATA] Anonymous: user.roles is null or empty array (no elevated permissions)
-[DATA] Authenticated: user.userName = {{USER_EMAIL}} or account username
-[DATA] Authenticated: user.email = {{USER_EMAIL}}
-[DATA] Authenticated: user.id is non-empty string (different from anonymous id)
-[DATA] Authenticated: user.roles is non-empty (at least one role assigned)
-[DATA] No cross-contamination: anonymous query does NOT return authenticated user data
-[ERRORS] No errors[] in either response","[ROUNDTRIP] Remove auth header → re-execute → back to anonymous context
-[CONSOLE] No JS errors in GraphiQL","Authenticated user data returned without auth token (P0 data leak); anonymous user has email populated; authenticated user has empty id; roles populated for anonymous; errors[] in response","none (read-only query)",BL-AUTH-004,Generated
-GQL-056,pageContext - Invalid Permalink Returns Null SlugInfo,GraphQL > pageContext > Error Handling,High,BL-GQL-002,ECL-14.1,"GraphiQL UI loaded; no auth required","storeId={{STORE_ID}}; invalidPermalink=""this-page-definitely-does-not-exist-xyz-999""","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query with invalid permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""this-page-definitely-does-not-exist-xyz-999"") { slugInfo { entityInfo { id objectType semanticUrl isActive } redirectUrl } store { storeId } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify graceful null handling
-[ACT] Clear editor → type query with empty permalink: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: """") { slugInfo { entityInfo { id objectType } } store { storeId } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify empty permalink handling","[RESPONSE] Response panel shows data (not crash or 500)
-[DATA] Invalid permalink: slugInfo.entityInfo is null (no entity for this URL)
-[DATA] Invalid permalink: slugInfo.redirectUrl is null (no redirect configured)
-[DATA] Invalid permalink: store still returned with valid storeId (store context unaffected)
-[DATA] Empty permalink: similar graceful handling (null entityInfo or root page)
-[DATA] No stack traces or internal paths in response
-[ERRORS] No top-level errors[] in response (invalid permalink is not an error — just null slug)","[ROUNDTRIP] Re-execute valid permalink (""/"") → entityInfo returns correctly (query still functional)
-[CONSOLE] No JS errors in GraphiQL","500 error or GraphiQL crash for invalid permalink; top-level errors[] instead of null slugInfo; stack trace in response; store context null due to invalid permalink; GraphiQL frozen after invalid query",none,xAPI,Generated
-GQL-057,pageContext - Organization-Scoped White Labeling Settings,GraphQL > pageContext > WhiteLabeling,High,BL-WL-001,ECL-2.1,"GraphiQL UI loaded; organization with custom branding exists; organizationId known; auth header set (org member)","storeId={{STORE_ID}}; organizationId=known org with custom branding; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query without organizationId: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"") { whiteLabelingSettings { themePresetName logoUrl secondaryLogoUrl faviconUrl footerLinks { title url } mainMenuLinks { title url } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — record default (store-level) white labeling settings
-[ACT] Clear editor → type query with organizationId: query { pageContext(storeId: ""{{STORE_ID}}"" permalink: ""/"" organizationId: ""<ORG_ID>"") { whiteLabelingSettings { themePresetName logoUrl secondaryLogoUrl faviconUrl footerLinks { title url } mainMenuLinks { title url } organizationId } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — compare org-scoped vs default white labeling","[DATA] Default query: whiteLabelingSettings reflects store-level branding
-[DATA] Org-scoped query: whiteLabelingSettings.organizationId = <ORG_ID> (if org has custom branding)
-[DATA] If org has custom logo: logoUrl differs from default store logoUrl
-[DATA] If org has custom theme: themePresetName may differ from store default
-[DATA] mainMenuLinks and footerLinks may differ between store and org scope
-[DATA] Org-scoped query does NOT return another organization's branding
-[ERRORS] No errors[] in either response","[ROUNDTRIP] Re-execute without organizationId → back to store-level branding
-[CONSOLE] No JS errors in GraphiQL","Org-scoped query returns store branding (org override not applied); org branding returned without organizationId (leaking); errors[] when organizationId passed; wrong org's branding returned",none,BL-WL-001,Generated
+GQL-052,"xFrontend — pageContext Homepage Slug Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with storeId + empty permalink. Expects store metadata populated. No auth required.","—","[GQL-OP homepage_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: """") {
+      store { storeId storeName catalogId storeUrl }
+      slugInfo { entityInfo { objectId objectType semanticUrl id } redirectUrl }
+      user { id memberId }
+    }
+  }
+[GQL-EXEC homepage_ctx]","[ERRORS label=homepage_ctx] errors[] empty
+[DATA label=homepage_ctx] data.pageContext is non-null
+[DATA label=homepage_ctx] data.pageContext.store is non-null
+[DATA label=homepage_ctx] data.pageContext.store.storeId is non-null","[ROUNDTRIP label=homepage_ctx] re-execute → same store metadata returned","errors[] non-empty; store null; storeId mismatch",none — read-only,xAPI; graphql-schema.md — Query.pageContext,Automated
+GQL-053,"xFrontend — pageContext CMS Permalink Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with a sample permalink. Verifies slugInfo structure is present.","sample_permalink=/search","[GQL-OP search_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: ""/search"") {
+      slugInfo { entityInfo { objectType semanticUrl id } redirectUrl }
+      store { storeId }
+    }
+  }
+[GQL-EXEC search_ctx]","[ERRORS label=search_ctx] errors[] empty
+[DATA label=search_ctx] data.pageContext is non-null
+[DATA label=search_ctx] data.pageContext.slugInfo is non-null","[EVIDENCE] slugInfo.entityInfo may be populated if /search resolves to a known entity, or null if permalink is a pure route. Both acceptable.","errors[] non-empty; pageContext null",none — read-only,xAPI; graphql-schema.md — SlugInfoResponseType,Automated
+GQL-054,"xFrontend — pageContext Store Settings in Response","GraphQL > xFrontend",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries pageContext and asserts store.defaultLanguage + store.defaultCurrency + store.availableLanguages/Currencies are populated.","—","[GQL-OP store_settings]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
+      store {
+        storeId storeName catalogId
+        defaultLanguage { cultureName nativeName }
+        defaultCurrency { code symbol }
+        availableLanguages { cultureName }
+        availableCurrencies { code }
+      }
+    }
+  }
+[GQL-EXEC store_settings]","[ERRORS label=store_settings] errors[] empty
+[DATA label=store_settings] data.pageContext.store is non-null
+[DATA label=store_settings] data.pageContext.store.defaultLanguage is non-null
+[DATA label=store_settings] data.pageContext.store.defaultCurrency is non-null","[EVIDENCE] defaultLanguage.cultureName and defaultCurrency.code populated; availableLanguages/Currencies are non-empty lists","Schema drift on StoreResponseType (DV-009); defaultLanguage/Currency null",none — read-only,xAPI; graphql-schema.md — StoreResponseType,Automated
+GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context","GraphQL > xFrontend",High,BL-GQL-001; BL-GQL-004,ECL-2.1,"Runner-native. Calls pageContext twice — first anonymous, then authenticated. Verifies user resolution differs.","—","[GQL-OP anon_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
+      user { id memberId }
+    }
+  }
+[GQL-EXEC anon_ctx]
+[AUTH role=ORG_USER]
+[GQL-OP auth_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
+      user { id memberId contact { id firstName } }
+    }
+  }
+[GQL-EXEC auth_ctx]","[ERRORS label=anon_ctx] errors[] empty
+[ERRORS label=auth_ctx] errors[] empty
+[DATA label=auth_ctx] data.pageContext.user is non-null
+[DATA label=auth_ctx] data.pageContext.user.id is non-null","[EVIDENCE] auth_ctx.user.id is a real GUID matching ORG_USER. anon_ctx.user.id differs (anonymous id or null).","auth_ctx returns null user; anon_ctx leaks authenticated data",none — read-only,xAPI; graphql-schema.md — PageContextResponseType.user,Automated
+GQL-056,"xFrontend — pageContext Invalid Permalink","GraphQL > xFrontend",High,BL-GQL-001,ECL-9.1,"Runner-native. Calls pageContext with a permalink that doesn't exist. Expects slugInfo.entityInfo=null without HTTP 500.","bogus_permalink=/nonexistent-xyz-agent-test-404","[GQL-OP bogus_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: ""/nonexistent-xyz-agent-test-404"") {
+      slugInfo { entityInfo { objectType semanticUrl } redirectUrl }
+      store { storeId }
+    }
+  }
+[GQL-EXEC bogus_ctx]","[ERRORS label=bogus_ctx] errors[] empty
+[DATA label=bogus_ctx] data.pageContext is non-null","[EVIDENCE] Invalid permalink → entityInfo null + store still populated. No HTTP 500 or stack trace.","HTTP 500; crash; stack trace in errors[]; entityInfo populated with arbitrary data",none — read-only,xAPI; graphql-schema.md — SlugInfoResponseType error behavior,Automated
+GQL-057,"xFrontend — pageContext Organization-Scoped White Labeling","GraphQL > xFrontend",High,BL-B2B-001; BL-GQL-002,ECL-2.1,"Runner-native. ORG_USER queries pageContext with their organizationId. Verifies whiteLabelingSettings schema resolves (value may be null if org has no WL config).","—","[AUTH role=ORG_USER]
+[GQL-OP me_org]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC me_org]
+[GQL-CAPTURE me_org.data.me.contact.organizationId → ORG_ID]
+[GQL-OP wl_ctx]
+  query {
+    pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", organizationId: ""{{ORG_ID}}"") {
+      whiteLabelingSettings {
+        userId organizationId storeId
+        logoUrl secondaryLogoUrl faviconUrl themePresetName
+        isOrganizationLogoUploaded
+      }
+      store { storeId }
+    }
+  }
+[GQL-EXEC wl_ctx]","[ERRORS label=wl_ctx] errors[] empty
+[DATA label=wl_ctx] data.pageContext is non-null
+[DATA label=wl_ctx] data.pageContext.store is non-null","[EVIDENCE] whiteLabelingSettings may be null (org has no WL config) or populated with fields. Either is acceptable for schema-coverage.","Schema drift on WhiteLabelingSettingsType (DV-009); HTTP 500",none — read-only,xAPI; graphql-schema.md — WhiteLabelingSettingsType BL-B2B-001,Automated

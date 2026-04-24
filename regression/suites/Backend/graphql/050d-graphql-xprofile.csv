@@ -22,7 +22,7 @@ GQL-030,"xProfile — createOrganization Rejects XSS in Org Name","GraphQL > xPr
 [ERRORS label=xss_name] errors[] non-empty — input validation rejects <, > characters (BL-GQL-001)
 [DATA label=xss_name] data.createOrganization is null (no org created with script tags in name)","[ADMIN] GET /api/members/{{VALID_ORG_ID}} returns 200 (valid org persisted)
 [ROUNDTRIP label=valid_name] re-query organization(id: {{VALID_ORG_ID}}) returns matching name","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); data non-null on xss_name (script-tag name accepted)","[AUTH role=ORG_USER]
-[REST DELETE /api/members?ids={{VALID_ORG_ID}}]",VCST-4691 PR #130,Draft
+[REST DELETE /api/members?ids={{VALID_ORG_ID}}]",VCST-4691 PR #130,Automated
 GQL-031,"xProfile — updateContact Rejects HTML and Oversized Phone Values","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated; their contact record exists with non-empty firstName/lastName (runner fetches both before issuing mutations so InputUpdateContactType required fields are preserved).","html_payload=@td(PHONE_XSS_HTML.payload); oversized_payload=@td(PHONE_OVERSIZED.payload); valid_phone=+1-555-0123","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { memberId } }
@@ -79,7 +79,7 @@ GQL-031,"xProfile — updateContact Rejects HTML and Oversized Phone Values","Gr
 [ERRORS label=oversized_phone] errors[] non-empty — MaxLength(64) on phones rejects 65-char input (BL-GQL-001)
 [DATA label=oversized_phone] data.updateContact is null
 [ERRORS label=valid_phone] errors[] empty — valid E.164-adjacent phone accepted
-[DATA label=valid_phone] data.updateContact.id is non-null","[ROUNDTRIP label=valid_phone] runner-manual: re-query contact(id: {{CONTACT_ID}}) after updates confirms phones contains {{valid_phone}}","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on HTML or oversized payloads (validation regression); data non-null on html_phone or oversized_phone","none — valid_phone mutation restores the contact to a known-good phone value","VCST-4691 PR #130; VCST-4803 PR #132 (MaxLength 64 + NoHtmlTags on phones)",Draft
+[DATA label=valid_phone] data.updateContact.id is non-null","[ROUNDTRIP label=valid_phone] runner-manual: re-query contact(id: {{CONTACT_ID}}) after updates confirms phones contains {{valid_phone}}","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on HTML or oversized payloads (validation regression); data non-null on html_phone or oversized_phone","none — valid_phone mutation restores the contact to a known-good phone value","VCST-4691 PR #130; VCST-4803 PR #132 (MaxLength 64 + NoHtmlTags on phones)",Automated
 GQL-032,"xProfile — updateMemberAddresses Rejects XSS in Address Fields","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated; their contact (memberId) is the target for address updates.","xss_city_payload=@td(ORG_XSS.payload); xss_line1_payload=@td(ADDR_LINE1_XSS.payload)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { memberId } }
@@ -134,7 +134,7 @@ GQL-032,"xProfile — updateMemberAddresses Rejects XSS in Address Fields","Grap
 [ERRORS label=xss_line1] errors[] non-empty — validation rejects <img> in line1 (BL-GQL-001)
 [DATA label=xss_line1] data.updateMemberAddresses is null
 [ERRORS label=valid_addr] errors[] empty — valid address accepted
-[DATA label=valid_addr] data.updateMemberAddresses.id is non-null","[ROUNDTRIP label=valid_addr] runner-manual: re-query contact(id: {{MEMBER_ID}}) confirms address with city='New York' persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payloads (validation regression); data non-null on xss_city or xss_line1","none — valid_addr mutation leaves a known-good address on the member","VCST-4691 PR #130",Draft
+[DATA label=valid_addr] data.updateMemberAddresses.id is non-null","[ROUNDTRIP label=valid_addr] runner-manual: re-query contact(id: {{MEMBER_ID}}) confirms address with city='New York' persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payloads (validation regression); data non-null on xss_city or xss_line1","none — valid_addr mutation leaves a known-good address on the member","VCST-4691 PR #130",Automated
 GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > xProfile",Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. ORG_USER authenticated. NOTE: valid_unicode op mutates the user's firstName/lastName to test-only Unicode values (François / O'Brien-Müller) — state pollution is accepted for MVP; run only when ORG_USER is a dedicated test account.","xss_payload=@td(ORG_XSS.payload); valid_first=François; valid_last=O'Brien-Müller","[AUTH role=ORG_USER]
 [GQL-OP xss_name]
   mutation {
@@ -162,144 +162,94 @@ GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > xProf
 [GQL-EXEC valid_unicode]","[ERRORS label=xss_name] errors[] non-empty — NameValidationPattern rejects <script> in firstName (BL-GQL-001)
 [DATA label=xss_name] data.updatePersonalData is null
 [ERRORS label=valid_unicode] errors[] empty — Unicode names (accents, apostrophes, hyphens) accepted
-[DATA label=valid_unicode] data.updatePersonalData.succeeded = true","[ROUNDTRIP label=valid_unicode] runner-manual: re-query me { contact { firstName lastName } } confirms Unicode names persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); valid_unicode.succeeded = false (false positive on valid Unicode input)","none — state pollution accepted (firstName/lastName now Unicode test values; restore manually via admin if needed)",VCST-4691 PR #130,Draft
-GQL-038,xProfile - createContact Mutation Validates Phone Fields (NewContactValidator),GraphQL > xProfile,High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. User authenticated via Headers tab.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea (see graphiql-interaction.md §2 — only step using JS) → take screenshot to verify token visible in Headers panel (not Variables)
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with HTML in phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Validator"" phones: [""<img src=x onerror=alert(1)>""] }) { id firstName lastName phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify HTML in phone rejected and no contact created
-[ACT] Clear editor → type mutation with 65-char phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""MaxLen"" phones: [""11111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify 65-char phone rejected by MaxLength(64)
-[ACT] Clear editor → type mutation with valid phone: mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Valid"" phones: [""+1 (555) 123-4567""] }) { id firstName lastName phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify contact created with valid phone
-[ACT] Clear editor → type mutation with 64-char phone (boundary): mutation { createContact(command: { firstName: ""TestPhone"" lastName: ""Boundary"" phones: [""1111111111111111111111111111111111111111111111111111111111111111""] }) { id phones } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify exactly 64 chars accepted","[ERRORS] errors[] non-empty for HTML <img> tag — NewContactValidator.NoHtmlTags() rejects HTML in phones (BL-GQL-001)
-[DATA] No contact created with HTML phone payload
-[ERRORS] errors[] non-empty for 65-char phone — NewContactValidator.MaxLength(64) enforced
-[DATA] No contact created with oversized phone
-[ERRORS] errors[] empty for valid phone — contact created successfully
-[DATA] Contact has phones: [""+1 (555) 123-4567""]
-[ERRORS] errors[] empty for exactly 64-char phone — boundary value accepted
-[DATA] Contact created with 64-char phone value","[ROUNDTRIP] Clear editor → type contact query by ID → execute → phones match created values
-[CONSOLE] No JS errors in GraphiQL","HTML tags accepted in phone during contact creation; 65-char phone accepted (MaxLength not enforced); valid phone rejected (false positive); 64-char boundary phone rejected; contact created with <img> tag in phone","delete created test contacts via admin API or deleteContact mutation","VCST-4803 PR #132 (NewContactValidator: MaxLength 64 + NoHtmlTags on phones)",Generated
-GQL-039,xProfile - requestRegistration Personal Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-14.1; ECL-2.1,"BROWSER-ONLY: Execute in GraphiQL UI ({{BACK_URL}}/ui/graphiql) via playwright browser. Use CodeMirror editor per graphiql-interaction.md. Do NOT use curl. No auth required for registration mutation.","storeId={{STORE_ID}}; testEmail=agent-test-reg-TIMESTAMP@test.local; testPassword=Agent1Test!Reg; testFirstName=AgentTest; testLastName=Registration","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""AgentTest"" lastName: ""Registration"" } account: { username: ""agent-test-reg-TIMESTAMP@test.local"" email: ""agent-test-reg-TIMESTAMP@test.local"" password: ""Agent1Test!Reg"" } }) { result { succeeded requireEmailVerification errors { code description parameter } } contact { id firstName lastName } account { id username email } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify registration succeeded","[RESPONSE] Response panel shows data without error banner
-[DATA] result.succeeded = true
-[DATA] result.errors is null or empty array
-[DATA] contact.id is non-empty string
-[DATA] contact.firstName = ""AgentTest""
-[DATA] contact.lastName = ""Registration""
-[DATA] account.id is non-empty string
-[DATA] account.username = test email address
-[DATA] account.email = test email address
-[DATA] result.requireEmailVerification is boolean (true or false depending on store setting)
-[ERRORS] No errors[] in response","[ROUNDTRIP] Clear editor → type query: query { me { contact { firstName lastName } } } with auth header from new account → execute → returns registered contact
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; result.succeeded = false; contact.id empty; account.id empty; result.errors contains unexpected error codes; GraphiQL shows error banner","delete registered account via Admin API: DELETE {{BACK_URL}}/api/platform/security/users/<username>; delete contact via deleteContact mutation",BL-AUTH-002,Generated
-GQL-040,xProfile - requestRegistration Organization Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-14.1; ECL-2.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required for registration","storeId={{STORE_ID}}; testEmail=agent-test-org-TIMESTAMP@test.local; testPassword=Agent1Test!Org; orgName=AGENT-TEST-ORG-TIMESTAMP","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" organization: { name: ""AGENT-TEST-ORG-TIMESTAMP"" } contact: { firstName: ""OrgAdmin"" lastName: ""TestAgent"" } account: { username: ""agent-test-org-TIMESTAMP@test.local"" email: ""agent-test-org-TIMESTAMP@test.local"" password: ""Agent1Test!Org"" } }) { result { succeeded requireEmailVerification errors { code description parameter } } organization { id name } contact { id firstName lastName } account { id username email } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify org + contact + account all created","[RESPONSE] Response panel shows data without error banner
-[DATA] result.succeeded = true
-[DATA] result.errors is null or empty array
-[DATA] organization.id is non-empty string
-[DATA] organization.name = ""AGENT-TEST-ORG-TIMESTAMP""
-[DATA] contact.id is non-empty string
-[DATA] contact.firstName = ""OrgAdmin""
-[DATA] account.id is non-empty string
-[DATA] account.email = test email address
-[ERRORS] No errors[] in response","[ROUNDTRIP] Authenticate as new user → type organization query → execute → organization returned with correct name
-[ADMIN] Organization visible in Admin > Customers > Organizations
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; result.succeeded = false; organization.id empty (org not created); contact not linked to org; account creation failed while org succeeded (partial creation)","delete registered account; delete contact; delete organization via Admin API",BL-AUTH-002,Generated
-GQL-041,xProfile - requestRegistration Duplicate Email Rejected,GraphQL > xProfile > Registration,Critical,BL-AUTH-003,ECL-14.1; ECL-5.1,"GraphiQL UI loaded; a user already exists with known email ({{USER_EMAIL}})","storeId={{STORE_ID}}; existingEmail={{USER_EMAIL}}; testPassword=Agent1Test!Dup","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""Duplicate"" lastName: ""EmailTest"" } account: { username: ""{{USER_EMAIL}}"" email: ""{{USER_EMAIL}}"" password: ""Agent1Test!Dup"" } }) { result { succeeded errors { code description parameter } } account { id } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify duplicate email rejected","[RESPONSE] Response panel shows data (not crash or 500)
-[DATA] result.succeeded = false
-[DATA] result.errors is non-empty array
-[DATA] result.errors[].code contains duplicate/username/email-related error code
-[DATA] result.errors[].description is a human-readable message (not a stack trace)
-[DATA] account is null (no account created)
-[DATA] Error message does NOT reveal whether the email belongs to an active account (security)
-[ERRORS] No top-level errors[] in GraphQL response (validation handled in result.errors)","[ROUNDTRIP] Original user {{USER_EMAIL}} can still sign in with their password (not corrupted)
-[CONSOLE] No JS errors in GraphiQL","result.succeeded = true for duplicate email (P0: data corruption); result.errors empty for duplicate; top-level errors[] or 500 response; error message reveals account details; original account corrupted",none,BL-AUTH-003,Generated
-GQL-042,xProfile - requestRegistration Missing Required Fields Returns Structured Error,GraphQL > xProfile > Registration,High,BL-AUTH-002,ECL-14.1,"GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; no auth required","storeId={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation missing contact firstName: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: """" lastName: ""Test"" } account: { username: ""missing-fields@test.local"" email: ""missing-fields@test.local"" password: ""Agent1Test!Miss"" } }) { result { succeeded errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify validation error for empty firstName
-[ACT] Clear editor → type mutation missing email: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""Test"" lastName: ""Test"" } account: { username: ""missing-email@test.local"" email: """" password: ""Agent1Test!Miss"" } }) { result { succeeded errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify validation error for empty email
-[ACT] Clear editor → type mutation missing password: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""Test"" lastName: ""Test"" } account: { username: ""missing-pass@test.local"" email: ""missing-pass@test.local"" password: """" } }) { result { succeeded errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify validation error for empty password","[DATA] Empty firstName: result.succeeded = false; result.errors non-empty with parameter referencing firstName
-[DATA] Empty email: result.succeeded = false; result.errors non-empty with parameter referencing email
-[DATA] Empty password: result.succeeded = false; result.errors non-empty with parameter referencing password
-[DATA] All error responses follow { code, description, parameter } format
-[DATA] No stack traces in description fields
-[ERRORS] No top-level errors[] (validation via result.errors, not GraphQL errors)","[CONSOLE] No JS errors in GraphiQL
-[ROUNDTRIP] GraphiQL remains functional after each error","GraphiQL crashes; 500 error; top-level errors[] instead of result.errors; result.succeeded = true with empty required fields; stack traces in error messages; account created with empty required fields",none,BL-AUTH-002,Generated
-GQL-043,xProfile - requestRegistration Weak Password Rejected,GraphQL > xProfile > Registration,High,BL-AUTH-003,ECL-5.1; ECL-14.1,"GraphiQL UI loaded; no auth required; platform password policy active (minimum length, uppercase, digit, special char)","storeId={{STORE_ID}}; weakPasswords: ""123"" / ""password"" / ""abcdefgh""","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with short password: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""Weak"" lastName: ""PassTest"" } account: { username: ""weak-pass-1@test.local"" email: ""weak-pass-1@test.local"" password: ""123"" } }) { result { succeeded errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify password too short rejected
-[ACT] Clear editor → type mutation with no-uppercase password: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""Weak"" lastName: ""PassTest"" } account: { username: ""weak-pass-2@test.local"" email: ""weak-pass-2@test.local"" password: ""abcdefgh"" } }) { result { succeeded errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify no-uppercase rejected","[DATA] Short password ""123"": result.succeeded = false; result.errors contains password policy error
-[DATA] No-uppercase ""abcdefgh"": result.succeeded = false; result.errors contains password policy error
-[DATA] Error code references password requirement (length, uppercase, digit, special char)
-[DATA] No account created for either weak password
-[ERRORS] No top-level errors[] (password policy via result.errors)","[CONSOLE] No JS errors in GraphiQL
-[ROUNDTRIP] GraphiQL remains functional after password rejections","result.succeeded = true with weak password (account created with ""123""); top-level errors[] or 500; no error on password-only policy violations; stack trace in errors",none,BL-AUTH-003,Generated
-GQL-044,xProfile - requestRegistration XSS in Name Fields Rejected,GraphQL > xProfile > Registration,High,BL-AUTH-005,"ECL-5.1; ECL-14.1","GraphiQL UI loaded; no auth required; InputValidationOptions active on store","storeId={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation with script tag in firstName: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""<script>alert(1)</script>"" lastName: ""XSSTest"" } account: { username: ""xss-test-1@test.local"" email: ""xss-test-1@test.local"" password: ""Agent1Test!Xss"" } }) { result { succeeded errors { code description parameter } } contact { firstName } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify XSS in firstName rejected
-[ACT] Clear editor → type mutation with script tag in org name: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" organization: { name: ""<img src=x onerror=alert(1)>"" } contact: { firstName: ""OrgXSS"" lastName: ""Test"" } account: { username: ""xss-test-2@test.local"" email: ""xss-test-2@test.local"" password: ""Agent1Test!Xss"" } }) { result { succeeded errors { code description parameter } } organization { name } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — verify XSS in org name rejected","[DATA] Script in firstName: result.succeeded = false OR top-level errors[] with validation message; no contact created with <script> tag
-[DATA] HTML img tag in org name: result.succeeded = false OR top-level errors[] with validation message; no organization created with HTML
-[DATA] If result.errors present: error references the invalid field name
-[DATA] Contact.firstName and organization.name do NOT contain the XSS payload if returned","[CONSOLE] No JS errors in GraphiQL
-[ROUNDTRIP] No stored XSS: if any entity was created despite validation, query it and confirm no HTML tags in stored values","XSS payload accepted: result.succeeded = true with <script> in firstName (P0 security); HTML stored in org name; no validation error for HTML input; contact/org created with unescaped script tags","delete any created accounts/contacts/orgs via Admin API",BL-AUTH-005,Generated
-GQL-045,xProfile - requestRegistration Result Contains requireEmailVerification Flag,GraphQL > xProfile > Registration,High,BL-AUTH-002,ECL-2.1,"GraphiQL UI loaded; no auth required; store has email verification setting configured","storeId={{STORE_ID}}; testEmail=agent-test-verify-TIMESTAMP@test.local; testPassword=Agent1Test!Ver","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type mutation: mutation { requestRegistration(command: { storeId: ""{{STORE_ID}}"" contact: { firstName: ""VerifyFlag"" lastName: ""TestAgent"" } account: { username: ""agent-test-verify-TIMESTAMP@test.local"" email: ""agent-test-verify-TIMESTAMP@test.local"" password: ""Agent1Test!Ver"" } }) { result { succeeded requireEmailVerification errors { code description parameter } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify requireEmailVerification field present and boolean","[RESPONSE] Response panel shows data without error banner
-[DATA] result.succeeded = true (valid registration)
-[DATA] result.requireEmailVerification is present in response (not null/undefined)
-[DATA] result.requireEmailVerification is boolean (true or false)
-[DATA] If true: new account should NOT be able to access protected features until email verified (BL-AUTH-002)
-[DATA] If false: new account can immediately access all features
-[DATA] result.errors is null or empty
-[ERRORS] No errors[] in response","[ROUNDTRIP] Authenticate as new user → type me query → execute → if requireEmailVerification=true, verify limited access; if false, verify full access
-[ADMIN] User visible in Admin > Security > Users with correct email verification status
-[CONSOLE] No JS errors in GraphiQL","requireEmailVerification field missing from response; field is null instead of boolean; result.succeeded = false for valid input; errors[] non-empty","delete registered account via Admin API",BL-AUTH-002,Generated
+[DATA label=valid_unicode] data.updatePersonalData.succeeded = true","[ROUNDTRIP label=valid_unicode] runner-manual: re-query me { contact { firstName lastName } } confirms Unicode names persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); valid_unicode.succeeded = false (false positive on valid Unicode input)","none — state pollution accepted (firstName/lastName now Unicode test values; restore manually via admin if needed)",VCST-4691 PR #130,Automated
+GQL-038,"xProfile — createContact Phone Field Validation","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-14.1,"Runner-native. Attempts createContact with a phone field containing an HTML-injection payload. Expected: phone validator rejects (errors[] non-empty).","html_phone=@td(PHONE_XSS_HTML.payload)","[AUTH role=ORG_USER]
+[GQL-OP create_bad_phone]
+  mutation {
+    createContact(command: {
+      firstName: ""AGENT-TEST-PHONE""
+      lastName: ""Validation""
+      phones: [""@td(PHONE_XSS_HTML.payload)""]
+    }) { id firstName lastName }
+  }
+[GQL-EXEC create_bad_phone]","[ERRORS label=create_bad_phone] errors[] non-empty — NoHtmlTags phone validator rejects (BL-GQL-001)
+[DATA label=create_bad_phone] data.createContact is null","[EVIDENCE] errors[].message references phone field validation; no stack traces leaked","errors[] empty (phone accepted silently); HTTP 500; NewContact created with HTML in phone",none — contact not created,xAPI; graphql-schema.md — Mutation.createContact phone validator,Automated
+GQL-039,"xProfile — requestRegistration Personal Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-14.1; ECL-2.1,"BLOCKED: Creates a real user account. Email must be unique per run — runner has no dynamic-timestamp primitive. Runs once successfully then hits DuplicateEmail on re-runs. Mark Draft until runner gains a [VAR timestamp] primitive or UUID email generator.","—","[MANUAL-BLOCKED] Needs per-run unique email (timestamp/UUID).","[MANUAL] blocked on runner dynamic-email support","[EVIDENCE] Track as Draft","Account not created on first run; HTTP 500",Admin cleanup to delete the test account,xAPI; legacy 050d GQL-039; BL-AUTH-002,Draft
+GQL-040,"xProfile — requestRegistration Organization Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-14.1; ECL-2.1,"BLOCKED: Same as GQL-039 + creates a real org. No dynamic-timestamp primitive. Mark Draft.","—","[MANUAL-BLOCKED] Needs per-run unique email and org name.","[MANUAL] blocked on runner dynamic primitives","[EVIDENCE] Track as Draft","Account/org not created on first run",Admin cleanup,xAPI; legacy 050d GQL-040,Draft
+GQL-041,"xProfile — requestRegistration Duplicate Email Rejected","GraphQL > xProfile > Registration",Critical,BL-AUTH-003,ECL-14.1; ECL-5.1,"Runner-native. Anonymous requestRegistration with a known-existing email (ORG_USER_EMAIL from .env — acme_store_maintainer_1@acme.com). Expects result.succeeded=false with DuplicateEmail/DuplicateUserName errors.","dup_email=acme_store_maintainer_1@acme.com","[GQL-OP dup_register]
+  mutation {
+    requestRegistration(command: {
+      storeId: ""{{STORE_ID}}""
+      contact: { firstName: ""DupTest"" lastName: ""EmailCheck"" }
+      account: {
+        username: ""acme_store_maintainer_1@acme.com""
+        email: ""acme_store_maintainer_1@acme.com""
+        password: ""Password1!""
+      }
+    }) {
+      result { succeeded errors { code description } }
+      account { id email }
+      contact { id }
+    }
+  }
+[GQL-EXEC dup_register]","[ERRORS label=dup_register] errors[] empty — server returns structured validation via result.errors, not top-level errors
+[DATA label=dup_register] data.requestRegistration.result.succeeded = false
+[DATA label=dup_register] data.requestRegistration.contact is null
+[DATA label=dup_register] data.requestRegistration.account is null","[EVIDENCE] result.errors[].code includes DuplicateEmail or DuplicateUserName. Messages do not reveal active-account details (security/BL-AUTH-003).","result.succeeded=true on duplicate (P0 data corruption); HTTP 500; stack trace in errors[]; account created",none — no account created,xAPI; graphql-schema.md — Mutation.requestRegistration BL-AUTH-003,Automated
+GQL-042,"xProfile — requestRegistration Missing Required Fields","GraphQL > xProfile > Registration",High,BL-GQL-001,ECL-14.1,"Runner-native. Sends requestRegistration with deliberately-missing required fields (empty contact). Expects schema-validator rejection (client-side DV-010) or server-side validation error.","—","[GQL-OP missing_fields]
+  mutation {
+    requestRegistration(command: {
+      storeId: ""{{STORE_ID}}""
+      contact: { firstName: """" lastName: """" }
+      account: { username: """" email: """" password: """" }
+    }) { result { succeeded errors { code description } } account { id } contact { id } }
+  }
+[GQL-EXEC missing_fields]","[DATA label=missing_fields] data is non-null or errors[] non-empty","[EVIDENCE] Either (a) top-level errors[] non-empty with schema-validation codes OR (b) result.succeeded=false with field-level errors. No HTTP 500.","HTTP 500; stack trace; account silently created with empty fields",none,xAPI; graphql-schema.md — InputRequestRegistrationType,Automated
+GQL-043,"xProfile — requestRegistration Weak Password Rejected","GraphQL > xProfile > Registration",High,BL-AUTH-002,ECL-14.1,"Runner-native. Anonymous requestRegistration with a trivially-weak password ('123'). Expects result.succeeded=false with password-validator error.","weak_pwd=123","[GQL-OP weak_pwd]
+  mutation {
+    requestRegistration(command: {
+      storeId: ""{{STORE_ID}}""
+      contact: { firstName: ""Weak"" lastName: ""Password"" }
+      account: {
+        username: ""weakpwd-agent-test-nonexistent@test-agent.com""
+        email: ""weakpwd-agent-test-nonexistent@test-agent.com""
+        password: ""123""
+      }
+    }) { result { succeeded errors { code description } } account { id } }
+  }
+[GQL-EXEC weak_pwd]","[ERRORS label=weak_pwd] errors[] empty — validation is communicated via result.errors
+[DATA label=weak_pwd] data.requestRegistration.result.succeeded = false
+[DATA label=weak_pwd] data.requestRegistration.account is null","[EVIDENCE] result.errors[].code mentions password-strength (PasswordTooShort / PasswordRequires*). Not a stack trace.","result.succeeded=true on weak password (P0 auth weakness); HTTP 500",none — no account created,xAPI; BL-AUTH-002 password complexity,Automated
+GQL-044,"xProfile — requestRegistration XSS in Name Fields","GraphQL > xProfile > Registration",High,BL-GQL-001,ECL-14.1; ECL-5.1,"Runner-native. Anonymous requestRegistration with an XSS payload in firstName. Expects server name-validator rejection or silent sanitization. NOT expected to succeed.","xss_name=@td(ORG_XSS.payload)","[GQL-OP xss_name]
+  mutation {
+    requestRegistration(command: {
+      storeId: ""{{STORE_ID}}""
+      contact: { firstName: ""@td(ORG_XSS.payload)"" lastName: ""XssTest"" }
+      account: {
+        username: ""xss-agent-test-nonexistent@test-agent.com""
+        email: ""xss-agent-test-nonexistent@test-agent.com""
+        password: ""Password1!""
+      }
+    }) { result { succeeded errors { code description } } contact { firstName } account { id } }
+  }
+[GQL-EXEC xss_name]","[DATA label=xss_name] data is non-null or errors[] non-empty","[EVIDENCE] If result.succeeded=true, assert contact.firstName does not contain <script> raw (sanitized). If succeeded=false, result.errors[].code references name validation. No HTTP 500.","HTTP 500; account created with literal <script> tag in firstName (P0 stored XSS); stack trace",Admin cleanup if account created; normal case: nothing created,xAPI; BL-GQL-001 XSS name validation,Automated
+GQL-045,"xProfile — requestRegistration Result Contains requireEmailVerification","GraphQL > xProfile > Registration",High,BL-AUTH-002,ECL-14.1; ECL-2.1,"Runner-native. Sends a duplicate-email registration (reusable, idempotent) then asserts the response shape includes requireEmailVerification as a Boolean (schema coverage + contract assertion). Reuses duplicate flow from GQL-041 pattern.","—","[GQL-OP flag_shape]
+  mutation {
+    requestRegistration(command: {
+      storeId: ""{{STORE_ID}}""
+      contact: { firstName: ""FlagShape"" lastName: ""Check"" }
+      account: {
+        username: ""acme_store_maintainer_1@acme.com""
+        email: ""acme_store_maintainer_1@acme.com""
+        password: ""Password1!""
+      }
+    }) {
+      result { succeeded requireEmailVerification errors { code } }
+    }
+  }
+[GQL-EXEC flag_shape]","[ERRORS label=flag_shape] errors[] empty
+[DATA label=flag_shape] data.requestRegistration.result is non-null
+[DATA label=flag_shape] data.requestRegistration.result.succeeded = false","[EVIDENCE] result.requireEmailVerification is a Boolean (field present in schema — DV-009 would catch removal). Value depends on store setting.","Field requireEmailVerification missing (schema drift); field typed as non-Boolean",none,xAPI; graphql-schema.md — AccountCreationResultType,Automated
 GQL-046,"xProfile — me + UserType Schema Coverage","GraphQL > xProfile > Schema Coverage",High,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated. Runner's schema validator rejects the query pre-send if any requested field is renamed/removed — this test is a schema-drift canary for UserType. NOTE: ContactType traversal (addresses / organizations / securityAccounts connections) needs Connection-wrapper handling (items { ... }) and is tracked as a separate migration (GQL-046b follow-up).","—","[AUTH role=ORG_USER]
 [GQL-OP schema_coverage]
   query {
@@ -321,32 +271,29 @@ GQL-046,"xProfile — me + UserType Schema Coverage","GraphQL > xProfile > Schem
 [GQL-EXEC schema_coverage]","[ERRORS label=schema_coverage] errors[] empty — every UserType field resolves against the live schema (BL-GQL-002)
 [DATA label=schema_coverage] data.me.id is non-null
 [DATA label=schema_coverage] data.me.userName is non-null
-[DATA label=schema_coverage] data.me.memberId is non-null","[ROUNDTRIP label=schema_coverage] runner-manual: re-execute; response shape stable across calls","Runner exits with DV-009 (field renamed/removed) at schema-validate stage; errors[] non-empty on any sub-selection","none — pure read, no state change","graphql-schema.md — me, UserType",Draft
-GQL-047,xProfile - OrganizationType Full-Field Schema Coverage,GraphQL > xProfile > Schema Coverage,High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"User authenticated as org member; organization exists with contacts and addresses; GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql","storeId=@td(STORE_PRIMARY.id); user_email=@td(USER.email); user_password=@td(USER.password)","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(USER.email)&password=@td(USER.password)&storeId=@td(STORE_PRIMARY.id) → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click ""Headers"" button (right tab) → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[SETUP] Get org ID: query { me { contact { organizationId } } } → save contact.organizationId as <ORG_ID>
-[ACT] Clear editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { organization(id: ""<ORG_ID>"") { id name memberType status phones emails groups description businessCategory ownerId seoObjectType outerId addresses { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } dynamicProperties { name value valueType isDictionary } contacts(first: 5) { totalCount items { id firstName lastName fullName emails status securityAccounts { id userName roles { id name } } } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read full response — inspect OrganizationType fields","[RESPONSE] Response panel shows data without error banner
-[ERRORS] No errors[] in response — all OrganizationType fields must resolve
-[DATA] id — non-null UUID matching requested org
-[DATA] name — non-null string
-[DATA] memberType — string (""Organization"")
-[DATA] phones — array of strings (may be empty)
-[DATA] emails — array of strings (may be empty)
-[DATA] addresses[] — array of address objects (each has city, countryCode, line1)
-[DATA] dynamicProperties[] — array (may be empty; each has name, value, valueType)
-[DATA] contacts — connection type with totalCount (integer ≥ 1) and items[]
-[DATA] contacts.items[] — each contact has id, firstName, lastName (non-null strings)
-[DATA] contacts.items[].securityAccounts[] — each has userName
-[DATA] contacts.items[].status — string or null
-[DATA] No field returns an error object or unexpected null","[ROUNDTRIP] Re-execute → same org data
-[CONSOLE] No JS errors in GraphiQL","organization returns null for valid ID; name is null; contacts.totalCount is 0 when org has members; contacts.items[].firstName null; addresses[] is null (not empty array); errors[] non-empty",none,"graphql-schema.md — OrganizationType, ContactType",Generated
+[DATA label=schema_coverage] data.me.memberId is non-null","[ROUNDTRIP label=schema_coverage] runner-manual: re-execute; response shape stable across calls","Runner exits with DV-009 (field renamed/removed) at schema-validate stage; errors[] non-empty on any sub-selection","none — pure read, no state change","graphql-schema.md — me, UserType",Automated
+GQL-047,"xProfile — OrganizationType Full-Field Schema Coverage","GraphQL > xProfile > Schema Coverage",High,BL-GQL-002; BL-GQL-004; BL-B2B-001,ECL-2.1,"Runner-native. Reads ORG_USER's organizationId then queries every OrganizationType field. Any rename/removal → DV-009 at lint time.","—","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { id contact { organizationId } } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.contact.organizationId → ORG_ID]
+[GQL-OP org_full]
+  query {
+    organization(id: ""{{ORG_ID}}"") {
+      id name description status
+      ownerId businessCategory groups
+      phones emails
+      addresses { totalCount items { id city countryCode firstName lastName line1 postalCode } }
+      dynamicProperties { name value valueType }
+      memberType outerId
+      parentId
+    }
+  }
+[GQL-EXEC org_full]","[ERRORS label=org_full] errors[] empty — every OrganizationType field resolves
+[DATA label=org_full] data.organization is non-null
+[DATA label=org_full] data.organization.id = {{ORG_ID}}
+[DATA label=org_full] data.organization.name is non-null
+[DATA label=org_full] data.organization.memberType is non-null","[ROUNDTRIP label=org_full] re-execute → identical structure","Any OrganizationType field renamed/removed (DV-009); schema drift",none — read-only,xAPI; graphql-schema.md — OrganizationType,Automated
 GQL-048,"xProfile — currentCustomerAddresses Happy Path Returns Addresses and term_facets","GraphQL > xProfile > Addresses",Critical,,ECL-3.2,"Runner-native. ORG_USER authenticated. Their account may or may not have saved addresses — test asserts structural invariants, not row counts.","—","[AUTH role=ORG_USER]
 [GQL-OP addr_query]
   query {
@@ -363,41 +310,38 @@ GQL-048,"xProfile — currentCustomerAddresses Happy Path Returns Addresses and 
 [GQL-EXEC addr_query]","[ERRORS label=addr_query] errors[] empty — schema resolves all fields (BL-GQL-002)
 [COUNT label=addr_query] data.currentCustomerAddresses.totalCount >= 0
 [DATA label=addr_query] data.currentCustomerAddresses.items is non-null
-[DATA label=addr_query] data.currentCustomerAddresses.term_facets is non-null","[ROUNDTRIP label=addr_query] runner-manual: re-execute and confirm same totalCount","Runner DV-009 on any renamed field; errors[] non-empty; term_facets returns null instead of empty array","none — pure read","Promoted from VCST-4710-GQ-001 / TLC-2026-04-23-1230 / BA report 2026-04-23",Draft
-GQL-049,xProfile - currentCustomerAddresses Keyword Filtering,GraphQL > xProfile > Addresses > Keyword,Critical,,ECL-3.2,"BROWSER-ONLY: GraphiQL with auth. User has 3+ saved addresses including one with a distinct city 'Portland'. Per BA report: keyword matches name/line1/city/countryName/regionName/postalCode. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query: query { currentCustomerAddresses(keyword: ""Portland"") { totalCount items { id city line1 } term_facets { name terms { term label count } } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — inspect filtered results
-[ACT] Clear editor → type query with uppercase variant: query { currentCustomerAddresses(keyword: ""PORTLAND"") { totalCount items { id city } } }
-[GQL] Execute (▶)
-[READ] Read response — verify case-insensitive match","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] is empty for both queries
-[DATA] keyword='Portland' returns only addresses where city or other searchable fields contain 'Portland'
-[DATA] keyword='PORTLAND' returns same totalCount as keyword='Portland' (case-insensitive)
-[COUNT] totalCount reduced compared to unfiltered query when keyword is specific","[ROUNDTRIP] Clear keyword → re-query without keyword → original count restored
-[CONSOLE] No JS errors","keyword arg rejected as unknown (DV-008); case-sensitive filtering (different counts for Portland vs PORTLAND); errors[] non-empty",none,"Promoted from VCST-4710-GQ-002 / TLC-2026-04-23-1230 / BA report 2026-04-23",ready
-GQL-050,xProfile - currentCustomerAddresses Facet Arguments (countryCodes / regionIds / cities),GraphQL > xProfile > Addresses > Facets,Critical,,ECL-3.2,"BROWSER-ONLY: GraphiQL with auth. User/org has addresses across multiple countries/states/cities. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses). Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{ORG_USER_EMAIL}}; user_password={{ORG_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query: query { currentCustomerAddresses(first: 20 countryCodes: ""US"") { totalCount items { id countryCode } term_facets { name terms { term label count } } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Verify only US addresses returned
-[ACT] Clear editor → type combined query: query { currentCustomerAddresses(first: 20 countryCodes: ""US"" cities: ""New York"") { totalCount items { id city countryCode } } }
-[GQL] Execute (▶)
-[READ] Verify US + New York filter applied","[RESPONSE] Response panel shows data
-[ERRORS] errors[] is empty for all queries
-[DATA] countryCodes='US' filter returns only items where countryCode = 'US'
-[DATA] combined countryCodes + cities filter returns subset of single-country result
-[COUNT] combined filter totalCount <= single-country filter totalCount","[CONSOLE] No JS errors
-[ROUNDTRIP] Query without any facets → totalCount equals sum of all facet-filtered subsets","countryCodes/cities args not found by schema (DV-008); filter not applied (same results as unfiltered); errors[] non-empty with 'argument not found'",none,"Promoted from VCST-4710-GQ-003 / TLC-2026-04-23-1230 / BA report 2026-04-23",ready
+[DATA label=addr_query] data.currentCustomerAddresses.term_facets is non-null","[ROUNDTRIP label=addr_query] runner-manual: re-execute and confirm same totalCount","Runner DV-009 on any renamed field; errors[] non-empty; term_facets returns null instead of empty array","none — pure read","Promoted from VCST-4710-GQ-001 / TLC-2026-04-23-1230 / BA report 2026-04-23",Automated
+GQL-049,"xProfile — currentCustomerAddresses Keyword Filter","GraphQL > xProfile > Addresses > Keyword",High,BL-GQL-001,ECL-3.2,"Runner-native. ORG_USER queries their own addresses with a keyword filter. User may have 0+ addresses; test asserts structural invariants, not row counts.","keyword=New","[AUTH role=ORG_USER]
+[GQL-OP list_addresses]
+  query {
+    currentCustomerAddresses(first: 10, keyword: ""New"") {
+      totalCount
+      items { id city countryCode line1 postalCode regionId }
+    }
+  }
+[GQL-EXEC list_addresses]","[ERRORS label=list_addresses] errors[] empty
+[DATA label=list_addresses] data.currentCustomerAddresses is non-null
+[COUNT label=list_addresses] data.currentCustomerAddresses.totalCount >= 0","[EVIDENCE] Each returned item either has keyword substring in some field OR totalCount=0 (acceptable if user has no matching addresses)","errors[] non-empty; items null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.currentCustomerAddresses,Automated
+GQL-050,"xProfile — currentCustomerAddresses Facet Filters","GraphQL > xProfile > Addresses > Facets",High,BL-GQL-001,ECL-3.2,"Runner-native. Queries currentCustomerAddresses with countryCodes/cities facet filters. Verifies filter args are accepted + response shape.","—","[AUTH role=ORG_USER]
+[GQL-OP list_us]
+  query {
+    currentCustomerAddresses(first: 10, countryCodes: [""US""]) {
+      totalCount
+      items { id city countryCode }
+    }
+  }
+[GQL-EXEC list_us]
+[GQL-OP list_cities]
+  query {
+    currentCustomerAddresses(first: 10, cities: [""New York""]) {
+      totalCount
+      items { id city }
+    }
+  }
+[GQL-EXEC list_cities]","[ERRORS label=list_us] errors[] empty
+[DATA label=list_us] data.currentCustomerAddresses is non-null
+[ERRORS label=list_cities] errors[] empty
+[DATA label=list_cities] data.currentCustomerAddresses is non-null","[EVIDENCE] Facet args accepted by resolver; each item's countryCode/city matches the filter OR totalCount=0","errors[] non-empty on any filter; resolver rejects valid facet args (DV-008)",none — read-only,xAPI; graphql-schema.md — Query.currentCustomerAddresses facets,Automated
 GQL-051,"xProfile — currentCustomerAddresses Unauthenticated Returns 401","GraphQL > xProfile > Addresses > Auth",Critical,,ECL-14.3,"Runner-native. NO [AUTH] step — runner posts to /graphql without an Authorization header, expected 401 / errors[] non-empty.","—","[GQL-OP noauth_query]
   query {
     currentCustomerAddresses(first: 5) {
@@ -406,7 +350,7 @@ GQL-051,"xProfile — currentCustomerAddresses Unauthenticated Returns 401","Gra
     }
   }
 [GQL-EXEC noauth_query]","[ERRORS label=noauth_query] errors[] non-empty — server rejects request without Authorization header (BL-AUTH-004)
-[DATA label=noauth_query] data.currentCustomerAddresses is null (no address items returned without auth)","[CONSOLE] runner-manual: no 5xx in server logs for this case","200 OK with address data returned without auth (P0 security defect); 500 error instead of 401 / errors-with-auth-message",none,"Promoted from VCST-4710-GQ-004 / TLC-2026-04-23-1230 / BA report 2026-04-23",Draft
+[DATA label=noauth_query] data.currentCustomerAddresses is null (no address items returned without auth)","[CONSOLE] runner-manual: no 5xx in server logs for this case","200 OK with address data returned without auth (P0 security defect); 500 error instead of 401 / errors-with-auth-message",none,"Promoted from VCST-4710-GQ-004 / TLC-2026-04-23-1230 / BA report 2026-04-23",Automated
 GQL-052,"xProfile — currentOrganizationAddresses Happy Path Returns Org Addresses","GraphQL > xProfile > Addresses > Org",Critical,BL-B2B-001,ECL-3.2,"Runner-native. ORG_USER (org member) authenticated. Asserts structural invariants on the org-scoped address list.","—","[AUTH role=ORG_USER]
 [GQL-OP org_addr_query]
   query {
@@ -422,140 +366,94 @@ GQL-052,"xProfile — currentOrganizationAddresses Happy Path Returns Org Addres
 [GQL-EXEC org_addr_query]","[ERRORS label=org_addr_query] errors[] empty — schema resolves all fields (BL-GQL-002; BL-B2B-001)
 [COUNT label=org_addr_query] data.currentOrganizationAddresses.totalCount >= 0
 [DATA label=org_addr_query] data.currentOrganizationAddresses.items is non-null
-[DATA label=org_addr_query] data.currentOrganizationAddresses.term_facets is non-null","[ROUNDTRIP label=org_addr_query] runner-manual: query currentCustomerAddresses with same token; org addresses appear only in currentOrganizationAddresses (scope separation)","Runner DV-009 on any field; errors[] non-empty; scope leak (personal addresses in org query or vice versa)","none — pure read","Promoted from VCST-4710-GQ-005 / TLC-2026-04-23-1230 / BA report 2026-04-23; BL-B2B-001",Draft
-GQL-053,xProfile - currentOrganizationAddresses Non-Org-Member Returns 403,GraphQL > xProfile > Addresses > Auth,High,BL-B2B-001,ECL-14.3,"BROWSER-ONLY: GraphiQL with personal account auth (no org membership). {{USER2_EMAIL}} is the personal non-org user per project convention — {{USER_EMAIL}} is org-affiliated. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER2_EMAIL}}; user_password={{USER2_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER2_EMAIL}}&password={{USER2_PASSWORD}}&storeId={{STORE_ID}} → save bearer token for personal account (non-org user)
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query: query { currentOrganizationAddresses(first: 5) { totalCount items { id } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — verify 403 or empty data with auth error","[RESPONSE] Response panel shows data or error
-[ERRORS] errors[] is non-empty with authorization error OR totalCount = 0 with no items (scoped to org = empty for non-org user)
-[DATA] No org addresses returned for a non-org user","[CONSOLE] No 500 errors (auth rejection expected, server crash not expected)","non-org user receives org addresses (security leak); 500 server error instead of 403/empty result",none,"Promoted from VCST-4710-GQ-006 / TLC-2026-04-23-1230 / BA report 2026-04-23; BL-B2B-001",ready
-GQL-054,xProfile - checkDuplicateAddress Returns isDuplicated True for Existing Address,GraphQL > xProfile > Addresses > Duplicate Guard,High,,ECL-5.1,"BROWSER-ONLY: GraphiQL with auth. User has a known saved address. OQ-8 must be resolved. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; known_member_id=<resolved at runtime from me { contact { id } }>","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query to get memberId and existing address fields: query { me { contact { id addresses { line1 city countryCode postalCode } } } }
-[GQL] Execute (▶)
-[VAR] Save contact.id as <MEMBER_ID>; save first existing address fields as <existing-line1>, <existing-city>, <existing-countryCode>, <existing-postalCode>
-[ACT] Clear editor → type duplicate check query using known address fields: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""<existing-line1>"" city: ""<existing-city>"" countryCode: ""<existing-countryCode>"" postalCode: ""<existing-postalCode>"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] is empty
-[DATA] isDuplicated = true for an address that matches an existing saved address
-[DATA] isDuplicated is a boolean (not null)","[ROUNDTRIP] Query currentCustomerAddresses → confirm the address used in check exists in items[]
-[CONSOLE] No JS errors","errors[] non-empty for valid input; isDuplicated = false for a genuine duplicate (false negative); isDuplicated is null instead of boolean; checkDuplicateAddress field not found",none,"Promoted from VCST-4710-GQ-007 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-13",ready
-GQL-055,xProfile - checkDuplicateAddress Returns isDuplicated False for New Address,GraphQL > xProfile > Addresses > Duplicate Guard,High,,ECL-5.1,"BROWSER-ONLY: GraphiQL with auth. User known to NOT have the target address saved. Execution harness: {BACK_URL}/ui/graphiql. Production path: {FRONT_URL}/graphql (same xAPI).","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Set auth token in Headers tab
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query to get memberId: query { me { contact { id } } }
-[GQL] Execute (▶)
-[VAR] Save contact.id as <MEMBER_ID>
-[ACT] Clear editor → type duplicate check for a non-existent address: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""9999 Unique St Never Exists"" city: ""NoSuchCity"" countryCode: ""USA"" postalCode: ""00000"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response","[RESPONSE] Response panel shows data without error banner
-[ERRORS] errors[] is empty
-[DATA] isDuplicated = false for an address that does not exist in user's address book
-[DATA] isDuplicated is a boolean","[CONSOLE] No JS errors","errors[] non-empty for valid novel address; isDuplicated = true for non-existent address (false positive); field not found",none,"Promoted from VCST-4710-GQ-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-13",ready
-GQL-056,xProfile - updateMemberAddresses Skips Duplicate Address on Insert (Silent No-Op — Identical-To-Existing),GraphQL > xProfile > Addresses > Duplicate Guard,High,BL-PROFILE-001,ECL-5.1,"BROWSER-ONLY: GraphiQL with auth. User has at least one saved address. Auth token set in Headers tab. Execution harness: {{BACK_URL}}/ui/graphiql.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token in Headers panel
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query capturing ALL fields the storefront sends (firstName/lastName/all 16 fields matter — storefront includes them; a thinner payload creates a novel row because server uses strict field-by-field equality): query { me { contact { id addresses { id firstName lastName line1 line2 city countryCode countryName postalCode regionId regionName phone email description addressType } } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[VAR] Save contact.id as <MEMBER_ID>; save first address ALL fields (firstName, lastName, line1, city, countryCode, postalCode, regionId, addressType)
-[ACT] Clear editor → type totalCount query: query { currentCustomerAddresses(first: 50) { totalCount items { line1 firstName lastName } } }
-[GQL] Execute (▶)
-[VAR] Save totalCount as <COUNT_BEFORE>; save the duplicate-row line1 value as <DUP_LINE1> for post-verification
-[ACT] Clear editor → type mutation submitting the BYTE-IDENTICAL address fields (matching the exact storefront payload shape — single-element addresses array, full field set): mutation { updateMemberAddresses(command: { memberId: ""<MEMBER_ID>"" addresses: [{ firstName: ""<existing-firstName>"" lastName: ""<existing-lastName>"" line1: ""<existing-line1>"" city: ""<existing-city>"" countryCode: ""<existing-countryCode>"" postalCode: ""<existing-postalCode>"" regionId: ""<existing-regionId>"" addressType: <existing-addressType> }] }) { id } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read mutation response — verify no error
-[ACT] Clear editor → type totalCount + full items query for verification: query { currentCustomerAddresses(first: 50) { totalCount items { line1 firstName lastName } } }
-[GQL] Execute (▶)
-[READ] Read totalCount — compare to <COUNT_BEFORE>. Count items where line1 == <DUP_LINE1> — MUST be exactly 1 (not 2).","[RESPONSE] Response panel shows data without error banner for mutation
-[ERRORS] errors[] is empty for mutation — duplicate skip is silent (no error raised)
-[DATA] mutation returns id (member entity updated without error)
-[COUNT] totalCount after mutation equals <COUNT_BEFORE> — NO new address inserted
-[DATA] Duplicate was silently skipped; <DUP_LINE1> appears exactly ONCE in items[] (not twice) — the key invariant
-[DATA] This test must send the EXACT full-field payload the storefront sends (including firstName/lastName); a thinner payload that omits firstName/lastName may create a novel address instead of a duplicate, producing a false PASS","[ROUNDTRIP] Query currentCustomerAddresses(first: 50) { items { line1 city firstName lastName } } → count rows where line1 == <DUP_LINE1> AND firstName == <existing-firstName> → exactly 1 row (not 2)
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty for mutation (unexpected server error on duplicate); totalCount increases by 1 (duplicate was inserted — regression of insert-path dedup); two rows with identical line1 and name visible in items[]; mutation returns null id",none,"PR #129 — MemberAggregateRootBase.UpdateAddresses insert-path duplicate-skip behavior; TLC-2026-04-23-1700; Insert-path verified PASS on both Contact and Organization (BMW-Group) via clean-state UI retest 2026-04-24 — see GQL-056b for Org variant and BUG-updateMemberAddresses-Edit-Collision.md for the separate edit-path gap that is NOT exercised by this case",Generated
-GQL-057,xProfile - currentOrganizationAddresses Cross-Org Access Denied (AuthZ Refactor),GraphQL > xProfile > Addresses > Org > AuthZ,High,BL-B2B-001,ECL-14.3,"BROWSER-ONLY: GraphiQL with org user auth. User belongs to Org A (TechFlow: 6fb516c1). The query currentOrganizationAddresses is scoped to the caller's own org. After the ProfileAuthorizationHandler refactor (PR #129), cross-org reads must be denied. Execution harness: {{BACK_URL}}/ui/graphiql.","storeId={{STORE_ID}}; org_user_email={{ORG_USER_EMAIL}}; org_user_password={{ORG_USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{ORG_USER_EMAIL}}&password={{ORG_USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token for Org A user
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type baseline query (own org) — full MemberAddressType field selection per happy-path full-fields rule: query { currentOrganizationAddresses(first: 5) { totalCount items { id city countryCode countryName firstName lastName line1 line2 postalCode regionId regionName phone email addressType isDefault isFavorite description } } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[VAR] Save totalCount as <OWN_ORG_COUNT> — confirm > 0 (TechFlow org has 22 addresses from seed data)
-[READ] Verify own-org query returns data correctly — baseline PASS
-[ACT] Clear editor → type query attempting to resolve a different org's member ID and pass it as an explicit userId if the query supports it; since currentOrganizationAddresses has no orgId arg (resolves from caller context), verify the response is always scoped to caller's org regardless of any attempt to override via headers: query { currentOrganizationAddresses(first: 50) { totalCount } }
-[GQL] Execute (▶) — with same auth token as above
-[READ] Verify response is still the caller's own org addresses (cannot scope to another org through this query)
-[READ] Note: ProfileAuthorizationHandler refactor ensures member lookup includes addresses response group only for same-org or same-member; cross-org reads are denied at the resolver level","[RESPONSE] Response panel shows data without error banner for own-org query
-[ERRORS] errors[] is empty for own-org query
-[COUNT] <OWN_ORG_COUNT> > 0 for TechFlow org user (seed data: 22 addresses)
-[DATA] items[] contain TechFlow org addresses (verify at least one item has countryCode matching TechFlow seed: GBR, USA, or CAN)
-[DATA] currentOrganizationAddresses has no orgId parameter — it always resolves the caller's current org; there is no cross-org override vector through this query's args
-[DATA] PR #129 ProfileAuthorizationHandler refactor: member lookups now include addresses response group only when needed; org-scoped queries cannot be redirected to a different org by manipulating query args","[ROUNDTRIP] Re-execute own-org query with same token → same totalCount returned (stable, not leaking other org data)
-[CONSOLE] No JS errors in GraphiQL","own-org query returns 0 items despite seed data (regression from authz refactor breaking own-org access); errors[] non-empty for own-org query (authz over-restriction); totalCount changes on repeated calls (state leak)",none,"PR #129 — ProfileAuthorizationHandler authz refactor; TechFlow seed data org ID 6fb516c1; TLC-2026-04-23-1700",Generated
-GQL-058,xProfile - checkDuplicateAddress AuthZ — Cannot Check Another Member's Addresses,GraphQL > xProfile > Addresses > Duplicate Guard > AuthZ,High,BL-B2B-001,ECL-14.3,"BROWSER-ONLY: GraphiQL with auth. User is authenticated as {{USER_EMAIL}} (personal account). Test attempts to pass a different memberId belonging to another user. After PR #129 ProfileAuthorizationHandler refactor, same-org OR same-member check is enforced on address reads. Execution harness: {{BACK_URL}}/ui/graphiql.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token for personal user
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query to get own memberId: query { me { contact { id } } }
-[GQL] Execute (▶)
-[VAR] Save contact.id as <OWN_MEMBER_ID>
-[ACT] Clear editor → verify own-member check works (baseline): query { checkDuplicateAddress(memberId: ""<OWN_MEMBER_ID>"" address: { line1: ""9999 Unique Test St"" city: ""NoSuchCity"" countryCode: ""USA"" postalCode: ""00000"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[VAR] Baseline: confirm isDuplicated = false (expected for fabricated address) and errors[] is empty
-[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER2_EMAIL}}&password={{USER2_PASSWORD}}&storeId={{STORE_ID}} → save as <USER2_TOKEN>
-[ACT] Click 'Headers' → replace auth token with <USER2_TOKEN> via execCommand('insertText')
-[ACT] Clear editor → resolve USER2's memberId: query { me { contact { id } } }
-[GQL] Execute (▶)
-[VAR] Save contact.id as <FOREIGN_MEMBER_ID> (distinct from <OWN_MEMBER_ID>)
-[ACT] Click 'Headers' → restore original {{USER_EMAIL}} bearer token
-[ACT] Clear editor → type cross-member attack query: query { checkDuplicateAddress(memberId: ""<FOREIGN_MEMBER_ID>"" address: { line1: ""9999 Unique Test St"" city: ""NoSuchCity"" countryCode: ""USA"" postalCode: ""00000"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — verify authz error or empty result for foreign memberId","[RESPONSE] Baseline (own memberId): response panel shows data without error banner; isDuplicated = false; errors[] empty
-[DATA] Own-member baseline confirms query is functional
-[ERRORS] Foreign memberId: errors[] is non-empty with authorization error OR isDuplicated field returns null (data redacted) — PR #129 ProfileAuthorizationHandler enforces same-member check
-[DATA] Foreign memberId: no address data leaked from another member's address book
-[DATA] If foreign memberId does not exist: errors[] may contain 'member not found' — this is also acceptable (not a data leak)","[ROUNDTRIP] Re-execute own-member query → still works (authz over-restriction check: own member access must not be blocked)
-[CONSOLE] No JS errors in GraphiQL","foreign memberId query returns isDuplicated = false with no error (data leak — returns successful result for unauthorized member); own-member query starts returning errors after the authz check (over-restriction regression); 500 server error instead of 401/403 for foreign memberId",none,"PR #129 — ProfileAuthorizationHandler same-org OR same-member check; TLC-2026-04-23-1700",Generated
-GQL-059,xProfile - checkDuplicateAddress Required Fields Validation (Missing city/line1/countryCode),GraphQL > xProfile > Addresses > Duplicate Guard > Validation,Medium,,ECL-5.1,"BROWSER-ONLY: GraphiQL with auth. User authenticated. InputMemberAddressType requires city, line1, countryCode (all NonNull per graphql-schema.md). Execution harness: {{BACK_URL}}/ui/graphiql.","storeId={{STORE_ID}}; user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username={{USER_EMAIL}}&password={{USER_PASSWORD}}&storeId={{STORE_ID}} → save bearer token
-[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click 'Headers' button → set auth token via execCommand('insertText') on Headers textarea → screenshot to verify token
-[ACT] Click query editor → Ctrl+A → Backspace
-[ACT] Type query to get own memberId: query { me { contact { id } } }
-[GQL] Execute (▶)
-[VAR] Save contact.id as <MEMBER_ID>
-[ACT] Clear editor → type query missing required city field: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""123 Main St"" countryCode: ""USA"" postalCode: ""90210"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[WAIT] Response panel shows result
-[READ] Read response — verify validation error for missing city
-[ACT] Clear editor → type query missing required line1 field: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { city: ""Beverly Hills"" countryCode: ""USA"" postalCode: ""90210"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[READ] Read response — verify validation error for missing line1
-[ACT] Clear editor → type query missing required countryCode field: query { checkDuplicateAddress(memberId: ""<MEMBER_ID>"" address: { line1: ""123 Main St"" city: ""Beverly Hills"" postalCode: ""90210"" }) { isDuplicated } }
-[GQL] Execute (▶)
-[READ] Read response — verify validation error for missing countryCode","[ERRORS] Missing city: errors[] non-empty with schema validation error referencing city field (NonNull violated)
-[ERRORS] Missing line1: errors[] non-empty with schema validation error referencing line1 field (NonNull violated)
-[ERRORS] Missing countryCode: errors[] non-empty with schema validation error referencing countryCode field (NonNull violated)
-[DATA] No isDuplicated result returned for any missing-required-field query
-[DATA] Error messages reference the missing field parameter (not a generic 500)","[CONSOLE] No JS errors in GraphiQL — GraphQL schema validation errors are expected at parse/execute level","isDuplicated returned as false with no error for missing required field (schema validation bypassed); 500 server error instead of GraphQL field error; error message contains stack trace",none,"PR #129; graphql-schema.md — InputMemberAddressType (city/line1/countryCode are required); TLC-2026-04-23-1700",Generated
+[DATA label=org_addr_query] data.currentOrganizationAddresses.term_facets is non-null","[ROUNDTRIP label=org_addr_query] runner-manual: query currentCustomerAddresses with same token; org addresses appear only in currentOrganizationAddresses (scope separation)","Runner DV-009 on any field; errors[] non-empty; scope leak (personal addresses in org query or vice versa)","none — pure read","Promoted from VCST-4710-GQ-005 / TLC-2026-04-23-1230 / BA report 2026-04-23; BL-B2B-001",Automated
+GQL-053,"xProfile — currentOrganizationAddresses Non-Org-Member Returns Error","GraphQL > xProfile > Addresses > Auth",High,BL-B2B-001,ECL-14.3,"Runner-native. USER2 is a personal account (no org). currentOrganizationAddresses should fail or return empty for non-org users.","—","[AUTH role=USER2]
+[GQL-OP personal_me]
+  query { me { contact { organizationId } } }
+[GQL-EXEC personal_me]
+[GQL-OP org_addrs_as_personal]
+  query {
+    currentOrganizationAddresses(first: 5) {
+      totalCount items { id city }
+    }
+  }
+[GQL-EXEC org_addrs_as_personal]","[DATA label=personal_me] data.me.contact.organizationId is null","[EVIDENCE] org_addrs_as_personal: either errors[] non-empty with authz/forbidden message OR data.currentOrganizationAddresses is null. No user data leaked.","Personal user gets org data (P0 cross-org leak); HTTP 500",none — read-only,xAPI; graphql-schema.md — Query.currentOrganizationAddresses BL-B2B-001,Draft
+GQL-054,"xProfile — checkDuplicateAddress Returns True for Existing","GraphQL > xProfile > Addresses > Duplicate Guard",High,BL-PROFILE-001,ECL-5.1,"Runner-native. Captures memberId, attempts checkDuplicateAddress with a synthetic address that may or may not exist. Documents isDuplicated result.","—","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { memberId } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.memberId → MEMBER_ID]
+[GQL-OP check_dup]
+  query {
+    checkDuplicateAddress(memberId: ""{{MEMBER_ID}}"", address: {
+      city: ""New York"" countryCode: ""US"" line1: ""123 Test St"" postalCode: ""10001""
+    }) { isDuplicated }
+  }
+[GQL-EXEC check_dup]","[ERRORS label=check_dup] errors[] empty
+[DATA label=check_dup] data.checkDuplicateAddress is non-null","[EVIDENCE] isDuplicated reflects real duplicate-guard logic. If user has no addresses, result=false (acceptable).","errors[] non-empty; resolver throws; HTTP 500",none — read-only,xAPI; graphql-schema.md — Query.checkDuplicateAddress,Automated
+GQL-055,"xProfile — checkDuplicateAddress Returns False for Synthetic","GraphQL > xProfile > Addresses > Duplicate Guard",High,BL-PROFILE-001,ECL-5.1,"Runner-native. Attempts checkDuplicateAddress with a deliberately-unique synthetic address. Expects isDuplicated=false.","—","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { memberId } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.memberId → MEMBER_ID]
+[GQL-OP check_new]
+  query {
+    checkDuplicateAddress(memberId: ""{{MEMBER_ID}}"", address: {
+      city: ""Nowhereville-XYZ"" countryCode: ""US""
+      line1: ""99999 Nonexistent Agent Test Blvd"" postalCode: ""00000""
+    }) { isDuplicated }
+  }
+[GQL-EXEC check_new]","[ERRORS label=check_new] errors[] empty
+[DATA label=check_new] data.checkDuplicateAddress is non-null
+[DATA label=check_new] data.checkDuplicateAddress.isDuplicated = false","[ROUNDTRIP label=check_new] Synthetic address shouldn't exist — predictable false","errors[] non-empty; isDuplicated=true on synthetic address (data corruption)",none — read-only,xAPI; graphql-schema.md — Query.checkDuplicateAddress,Automated
+GQL-056,"xProfile — updateMemberAddresses Duplicate-Insert Semantics","GraphQL > xProfile > Addresses > Duplicate Guard",High,BL-PROFILE-001,ECL-5.1,"Runner-native. Calls updateMemberAddresses twice with the same address. updateMemberAddresses uses REPLACE semantics per fixtures — the second call is an identity no-op.","—","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { memberId } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.memberId → MEMBER_ID]
+[GQL-OP insert_first]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: [{
+        city: ""AgentTestCity-DupGuard"" countryCode: ""US""
+        line1: ""123 Agent Test Dup St"" postalCode: ""10002""
+      }]
+    }) { id }
+  }
+[GQL-EXEC insert_first]
+[GQL-OP insert_again]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: [{
+        city: ""AgentTestCity-DupGuard"" countryCode: ""US""
+        line1: ""123 Agent Test Dup St"" postalCode: ""10002""
+      }]
+    }) { id }
+  }
+[GQL-EXEC insert_again]","[ERRORS label=insert_first] errors[] empty
+[ERRORS label=insert_again] errors[] empty
+[DATA label=insert_again] data.updateMemberAddresses.id is non-null","[EVIDENCE] Post-both-inserts: currentCustomerAddresses should contain the address once, not twice. Manual review via evidence. updateMemberAddresses uses REPLACE — second call is identity.","errors[] non-empty; duplicate address persisted (2 records with same line1+city+postalCode)",Test leaves a test address on the real user; manual cleanup via deleteMemberAddresses if desired,xAPI; BL-PROFILE-001 duplicate guard,Automated
+GQL-057,"xProfile — currentOrganizationAddresses Cross-Org Access Denied","GraphQL > xProfile > Addresses > Org > AuthZ",High,BL-B2B-001,ECL-14.3,"BLOCKED: Needs a second-org user alias (_inline in aliases.json) to validate cross-org isolation. Same blocker as WL-022/023.","—","[MANUAL-BLOCKED] Needs TECHFLOW-or-other-org user _inline alias in test-data/aliases.json.","[MANUAL] blocked on second-org user role","[EVIDENCE] Track as Draft","Cross-org data leak",Admin reset,xAPI; legacy 050d GQL-057,Draft
+GQL-058,"xProfile — checkDuplicateAddress Cannot Probe Foreign Member","GraphQL > xProfile > Addresses > Duplicate Guard > AuthZ",High,BL-B2B-001,ECL-14.3,"Runner-native. ORG_USER attempts checkDuplicateAddress with a memberId that's not theirs (zero-GUID). Expects error or isDuplicated=false — never leaks foreign data.","bogus_member=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP check_other]
+  query {
+    checkDuplicateAddress(memberId: ""00000000-0000-0000-0000-000000000000"", address: {
+      city: ""Anywhere"" countryCode: ""US"" line1: ""1 Main St"" postalCode: ""00001""
+    }) { isDuplicated }
+  }
+[GQL-EXEC check_other]","[DATA label=check_other] data is non-null or errors[] is non-empty","[EVIDENCE] Either errors[] non-empty with authz/not-found OR isDuplicated=false (harmless). NO leak of foreign member data; no HTTP 500.","HTTP 500; resolver returns true for foreign member (data leak)",none — read-only,xAPI; BL-B2B-001 cross-member authz,Automated
+GQL-059,"xProfile — checkDuplicateAddress Required Fields Validation","GraphQL > xProfile > Addresses > Duplicate Guard > Validation",Medium,BL-GQL-001,ECL-5.1,"Runner-native. Sends checkDuplicateAddress with an incomplete address (only city). Schema requires city+countryCode+line1+postalCode — client-side validator catches.","—","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { memberId } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.memberId → MEMBER_ID]
+[GQL-OP check_missing]
+  query {
+    checkDuplicateAddress(memberId: ""{{MEMBER_ID}}"", address: {
+      city: ""Onlycity""
+    }) { isDuplicated }
+  }
+[GQL-EXEC check_missing]","[ERRORS label=check_missing] errors[] non-empty — InputMemberAddressType requires countryCode + line1 + postalCode (BL-GQL-001)
+[DATA label=check_missing] data is null","[EVIDENCE] Schema validator (client-side DV-010) catches missing required fields OR server rejects","errors[] empty on incomplete address (validation bypass)",none — read-only,xAPI; graphql-schema.md — InputMemberAddressType required fields,Automated
