@@ -344,3 +344,117 @@ A re-run of 050i is required after BUG-050i-001 is fixed to close the mutation-p
 - Per-suite results: `reports/regression/REG-2026-04-27-1047/suite-050i-results.json`
 - Status tracker: `reports/regression/test-run-status.json` (run completed, both bugs catalogued)
 - Evidence: `reports/regression/graphql-evidence/CFG-GQL-*-1777286*.json` (12 files, this run)
+
+---
+
+# Re-run #4: REG-2026-04-27-1101 (after JSONPath filter predicate)
+
+## Verdict: 11/12 PASS — cleanest state pending backend fix
+
+| Metric | Value |
+|--------|-------|
+| Run ID | REG-2026-04-27-1101 |
+| Selection | `050i` (fourth pass today) |
+| Pass Rate | **91.7% (11/12)** |
+| Trajectory | 5/12 → 7/12 → 9/12 → **11/12** across four runs (<2 hours) |
+| Sole Failure | CFG-GQL-011 — real backend defect BUG-050i-007 (3rd consecutive reproduction) |
+
+## Fix Verified This Run
+
+**`scripts/lib/graphql-assertions.ts` — `getByPath` JSONPath filter syntax:**
+
+```
+data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
+```
+
+The `[?key=value]` segment selects the first array element where `element[key] === value`. Variables in the value position are substituted (via `{{VAR}}`) before the path reaches `getByPath`. Smoke-tested with order-flipped input before the run; lookup-by-sectionId resolves correctly regardless of array order; missing keys fail cleanly with `undefined`.
+
+CFG-GQL-008 and CFG-GQL-010 read-back assertions migrated from fixed-index to sectionId-lookup. **Both swung from FAIL to PASS.**
+
+## Per-Case Verdict — Full 4-Run Trajectory
+
+| Case | 0919 | 1009 | 1047 | **1101** | Outcome |
+|------|------|------|------|---------:|---------|
+| CFG-GQL-001 | ✅ | ✅ | ✅ | **✅ 7/7** | unchanged |
+| CFG-GQL-002 | ✅ | ✅ | ✅ | **✅ 3/3** | unchanged |
+| CFG-GQL-003 | ✅ | ✅ | ✅ | **✅ 1/1** | unchanged |
+| CFG-GQL-004 | ✅ | ✅ | ✅ | **✅ 6/6** | unchanged |
+| CFG-GQL-005 | ✅ | ✅ | ✅ | **✅ 2/2** | unchanged |
+| CFG-GQL-006 | 🔴 | 🟡 | ✅ | **✅ 5/5** | unchanged-PASS |
+| CFG-GQL-007 | 🔴 | ⚪ | ✅ | **✅ 4/4** | unchanged-PASS |
+| CFG-GQL-008 | 🔴 | ❌ | ❌ | **✅ 8/8** | **was-FAIL-now-PASS** (filter unblocks) |
+| CFG-GQL-009 | 🔴 | ❌ | ✅ | **✅ 10/10** | unchanged-PASS |
+| CFG-GQL-010 | 🔴 | ❌ | ❌ | **✅ 8/8** | **was-FAIL-now-PASS** (filter unblocks) |
+| CFG-GQL-011 | 🔴 | 🟡 | ❌ | **❌ 7/9** | still-FAIL-same-cause (BUG-050i-007) |
+| CFG-GQL-012 | 🔴 | ❌ | ✅ | **✅ 11/11** | unchanged-PASS |
+
+## Bug Status
+
+### ✅ Closed this run
+
+| Bug | Resolution |
+|-----|------------|
+| BUG-050i-001 (parser blocker) | Fixed in commit 47c5daf; verified 4 runs |
+| BUG-050i-002 (CFG_HOODIE.id) | Fixed via refresh script + duplicate alias removal |
+| BUG-050i-003 (addItem-without-sections — was a CSV authoring issue, not backend) | Fixed via CSV re-authoring |
+| BUG-050i-004 (numeric DATA operators) | Fixed in `graphql-assertions.ts`; verified 2 runs |
+| BUG-050i-005 (CFG-GQL-007 hard assertions) | CSV strengthened; verified 2 runs |
+| BUG-050i-006 (CFG-GQL-011 weak assertions) | CSV strengthened — and this is what surfaced BUG-050i-007 |
+| **BUG-050i-008 (configurationItems[] order non-determinism)** | **Closed test-side via JSONPath filter; CFG-GQL-008 + 010 PASS** |
+
+### ⚠️ Open — single remaining
+
+**BUG-050i-007 — High, backend defect (3rd reproduction)**
+
+`removeConfigurationItem` and `removeConfigurationItems` are silent no-ops on configurable line items in xCart 3.1009.0.
+
+- Mutations return 200 OK + `errors[] empty` ✓
+- Post-state read-back shows length=2 after both `remove_one` (expected 1) AND `remove_all` (expected 0)
+- Both mutation response payload AND dedicated `configurationItems` query confirm the sections were not removed
+
+Suspected causes:
+- Regression in `RemoveConfigurationItemCommand` / `RemoveConfigurationItemsCommand` handlers
+- Command-input contract drift on `lineItemId` / `configuredLineItemId` binding
+- By-design silent rejection of required-section removal that should be a structured error
+
+**Not exercised by storefront PDP** (which uses `changeCartConfiguredItem` — verified working in CFG-GQL-012). Breaks any direct GraphQL client and any UI exposing individual section removal.
+
+**Evidence:** `reports/regression/graphql-evidence/CFG-GQL-011-1777288*.json`
+
+**App Insights timestamp window for vcst-qa correlation:** 2026-04-27T11:05:38–43Z
+
+**Recommended action:** Open JIRA against `vc-module-x-cart` with the captured evidence.
+
+## Coverage Status After Run 4
+
+| Business Rule | Status |
+|---------------|--------|
+| BL-GQL-001 (query path) | ✅ Verified (5 cases) |
+| BL-GQL-001 (mutation path: preview, add, update, bulk, atomic) | ✅ Verified (5 cases) |
+| BL-GQL-001 (mutation path: remove) | ❌ BUG-050i-007 |
+| BL-CAT-006 (configurable structure) | ✅ Verified |
+| BL-PRICE-001 (price math: preview + atomic) | ✅ Verified (006 + 012) |
+| BL-CART-001 (cart add/update/atomic) | ✅ Verified |
+| BL-CART-001 (cart remove) | ❌ blocked by BUG-050i-007 |
+| BL-CHK-001 (preview soft-reject) | ✅ Verified |
+
+## Trajectory Recap
+
+| Run | Pass | Each round closed | Each round surfaced |
+|-----|-----:|-------------------|---------------------|
+| 0919 | 5/12 | (initial) | parser blocker |
+| 1009 | 7/12 | parser back-fill + CFG_HOODIE.id | addItem-without-sections (CSV authoring) |
+| 1047 | 9/12 | CSV re-author + numeric ops + soft-reject hard assertions | ordering non-determinism + remove no-op |
+| **1101** | **11/12** | **JSONPath filter** | (only the real backend defect remains) |
+
+Each run closed at least one issue and surfaced at most one new one — disciplined progression to the cleanest possible green state pending backend fix.
+
+## Next Action
+
+**Open JIRA for BUG-050i-007** against `vc-module-x-cart`. Full reproduction + 4 runs of evidence + 3 distinct evidence JSONs available. After backend fix, single re-run will close the suite at 12/12.
+
+## Artifacts (Run 4)
+
+- Per-suite results: `reports/regression/REG-2026-04-27-1101/suite-050i-results.json`
+- Status tracker: `reports/regression/test-run-status.json` (run completed)
+- Evidence: 12 files at `reports/regression/graphql-evidence/CFG-GQL-*-1777288*.json`

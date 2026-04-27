@@ -38,28 +38,32 @@
 [STATE] clipboard contains the coupon code text '@td(COUPON_10PCT.code)' (verified via evaluate)
 [DOM] notification disappears automatically after a few seconds OR can be closed manually","[CONSOLE] no TypeError or clipboard API errors during copy action
 [NETWORK] no API call required for copy (client-side clipboard operation)","No notification appears after click, notification text incorrect, console clipboard permission error, spinner visible >3s after click","none","VCST-4590","Automated"
-"CPN-005","Copied Coupon Code — Apply to Cart Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-005","Copied Coupon Code — Apply to Cart via Coupons Sidebar Yields Correct Discount (E2E)","Coupons & Promotions > End-to-End Flow","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(COUPON_10PCT.code)' (promotion: '@td(COUPON_10PCT.promo_name)', 10% off) is active and eligible for the cart contents. Confirmed live via GraphQL: id @td(COUPON_10PCT.gql_id), endDate 2026-12-31.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
+User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(COUPON_10PCT.code)' (promotion: '@td(COUPON_10PCT.promo_name)', 10% off) is active, eligible for the cart contents, and appears in the user's pre-listed available coupons sidebar. Confirmed live via GraphQL: id @td(COUPON_10PCT.gql_id), endDate 2026-12-31. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification appears
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loaded with at least 1 item
-[SCROLL] scroll to Order summary sidebar
-[ACT] click 'Enter a promo-coupon' textbox
-[KEY] Ctrl+V (paste copied code)
-[WAIT] coupon code '@td(COUPON_10PCT.code)' appears in the textbox
-[WAIT] coupon is applied automatically OR press Enter to apply
-[WAIT] discount reflected in Order summary","[DOM] coupon '@td(COUPON_10PCT.code)' is shown in the 'Enter a promo-coupon' textbox (now disabled/applied state)
-[DOM] 'Deny' button appears next to the applied coupon textbox
-[DOM] Discount line item appears in Order summary showing a non-zero amount (e.g., '- $29.80')
+[SCROLL] scroll down past OrderSummary widget to locate 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Discount & coupons' widget heading visible
+[ASSERT] '@td(COUPON_10PCT.promo_name)' preset coupon card is visible in the widget
+[WAIT] locate 'Custom code' card at the bottom of the widget
+[ACT] click into the 'Enter custom code' input inside the 'Custom code' card
+[KEY] Ctrl+V (paste copied code '@td(COUPON_10PCT.code)')
+[WAIT] code appears in input
+[ACT] click the arrow-right apply button on the 'Custom code' card
+[WAIT] card transitions to applied state (green/success border, round-check icon, trash icon visible)
+[WAIT] discount reflected in OrderSummary","[DOM] 'Custom code' card shows applied state: success-green border, round-check icon, trash icon
+[DOM] Discount line item appears in OrderSummary showing a non-zero amount (e.g., '- $29.80')
+[STATE] coupon '@td(COUPON_10PCT.code)' card is in applied state within .coupons-section
 [MATH] new cart total = subtotal - coupon_discount + shipping + tax
 [FORMAT] discount amount displays with currency symbol and 2 decimal places","[API] POST /graphql (addCoupon mutation) returns HTTP 200
 [API] addCoupon response errors[] is empty
-[API] cart.coupons contains code '@td(COUPON_10PCT.code)' after apply
+[API] cart.coupons contains code '@td(COUPON_10PCT.code)' with isAppliedSuccessfully=true after apply
 [CONSOLE] no TypeError during coupon apply
-[NETWORK] no 4xx/5xx on /graphql during coupon apply","'Enter a promo-coupon' textbox not found, paste does not fill the textbox, 'Deny' button absent after apply, spinner >5s after apply, errors[] non-empty in mutation response, discount amount is zero after successful apply","Click 'Deny' button to remove @td(COUPON_10PCT.code) coupon from cart after test","VCST-4590","Automated"
+[NETWORK] no 4xx/5xx on /graphql during coupon apply","'Discount & coupons' widget not found on /cart, custom code card absent, applied state not reached (green border missing), trash icon not visible after apply, spinner >5s, errors[] non-empty, discount amount is zero after successful apply","Click trash icon on applied coupon card to remove @td(COUPON_10PCT.code) after test","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-006","Multiple Coupons Listed — Each Card Has Functional Copy Button","Coupons & Promotions > Display","High","BL-PRICE-001","ECL-1.3","User is authenticated. 14 active public coupons exist per live GraphQL query: @td(COUPON_20PCT.code), @td(COUPON_FIXED5.code), @td(COUPON_FREESHIP.code), @td(COUPON_WINE.code), @td(COUPON_WELCOME.code), @td(COUPON_SHIPPING.code), @td(COUPON_THRESH50.code), @td(COUPON_E2E.code), @td(COUPON_SPECIAL_CHARS.code), @td(COUPON_10PCT.code), @td(COUPON_EXCLUSIVE.code), @td(COUPON_TOP20.code), super, wine.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [WAIT] multiple coupon cards visible
@@ -145,18 +149,19 @@ User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(CO
 [CONSOLE] no errors","Expired coupon visible and copyable to user, console error, GraphQL errors[] non-empty","none","VCST-4590","Automated"
 "CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
+User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible with at least 1 item. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
 [ACT] click '@td(COUPON_10PCT.code) Click to copy' button
 [WAIT] 'Coupon copied successfully' notification
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
-[SCROLL] scroll to Order summary sidebar
-[ACT] click 'Enter a promo-coupon' textbox
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Custom code' card visible at bottom of widget
+[ACT] click into 'Enter custom code' input on the Custom code card
 [KEY] Ctrl+V
-[WAIT] code appears in textbox","[DOM] coupon code in 'Enter a promo-coupon' textbox after paste reads exactly '@td(COUPON_10PCT.code)' (uppercase, no leading/trailing whitespace)
+[WAIT] code appears in input","[DOM] coupon code in 'Enter custom code' input after paste reads exactly '@td(COUPON_10PCT.code)' (uppercase, no leading/trailing whitespace)
 [DOM] no lowercase conversion, no space padding, no truncation of the code","[CONSOLE] no clipboard errors
-[NETWORK] no errors","Code pasted as lowercase '@td(COUPON_10PCT.code)', trailing space in pasted value, code truncated or mangled","none — do not apply the coupon, just verify the pasted value","VCST-4590","Automated"
+[NETWORK] no errors","Code pasted as lowercase '@td(COUPON_10PCT.code)', trailing space in pasted value, code truncated or mangled, 'Enter custom code' input not found in .coupons-section","none — do not apply the coupon, just verify the pasted value","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-017","Localized URL — Coupons Page Accessible Under Locale Prefix","Coupons & Promotions > Localization","Low","BL-PRICE-001","ECL-4.2","User is authenticated. Store supports at least one non-default locale. CULTURE_NAME env var set to a non-default locale.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, culture_name={{CULTURE_NAME}}","[NAV] {{FRONT_URL}}/{{CULTURE_NAME}}/account/coupons
 [WAIT] page loads","[DOM] 'All coupons & promotions' heading visible (or localized equivalent)
 [DOM] coupon cards rendered with correct data
@@ -300,7 +305,7 @@ User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is 
 [CONSOLE] no errors","Private coupon appears in storefront GraphQL response (security/filtering bug), errors[] non-empty on query","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/{{PRIVATE_PROMOTION_ID}} after test","VCST-4590","Automated"
 "CPN-028","BL-CART-003: Coupon Discount Applied to Sale Price (Not List Price)","Coupons & Promotions > Business Invariants","Critical","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-A product exists with list price and a lower sale/discounted price. Coupon @td(COUPON_10PCT.code) (10% discount) is active and public. User is authenticated with an item in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
+A product exists with list price and a lower sale/discounted price. Coupon @td(COUPON_10PCT.code) (10% discount) is active and public, and appears in the user's pre-listed available coupons. User is authenticated with an item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] search for a product with a visible sale price (price with strikethrough)
 [WAIT] product listing with sale price visible
@@ -312,19 +317,22 @@ A product exists with list price and a lower sale/discounted price. Coupon @td(C
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
 [ASSERT] note cart line subtotal = sale_price × quantity
-[SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_10PCT.code)'
-[WAIT] Discount line appears in Order summary (auto-applied or press Enter)","[MATH] discount amount = 10% × sale_price (NOT 10% × list_price)
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_10PCT.promo_name)' preset coupon card visible with default state (dashed border, arrow-right apply button)
+[ACT] click the arrow-right (apply) button on the '@td(COUPON_10PCT.promo_name)' preset coupon card
+[WAIT] card transitions to applied state (green border, check icon, trash icon)
+[WAIT] Discount line appears in OrderSummary","[MATH] discount amount = 10% × sale_price (NOT 10% × list_price)
 [MATH] new cart total = sale_price - (10% × sale_price) = 90% × sale_price
+[DOM] '@td(COUPON_10PCT.promo_name)' card shows applied state: green/success border, round-check icon visible
 [DOM] discount line in cart totals shows the correct calculated discount amount
 [FORMAT] all prices and discount amounts display with exactly 2 decimal places
 [STATE] BL-CART-003 is satisfied: coupon applies to already-discounted price","[API] addCoupon mutation returns HTTP 200, errors[] empty
-[API] cart query: cart.totals.discountTotal.amount matches 10% of sale price (not list price)
+[API] cart query: cart.coupons[0].isAppliedSuccessfully=true; cart.totals.discountTotal.amount matches 10% of sale price (not list price)
 [CONSOLE] no TypeError during apply
-[NETWORK] no 4xx/5xx on /graphql","Discount equals 10% of list_price instead of sale_price (BL-CART-003 violation), errors[] non-empty, spinner >5s after apply","Remove @td(COUPON_10PCT.code) coupon from cart and remove test item","VCST-4590","Automated"
+[NETWORK] no 4xx/5xx on /graphql","Discount equals 10% of list_price instead of sale_price (BL-CART-003 violation), preset card apply button not found in .coupons-section, applied state not reached (green border missing), errors[] non-empty, spinner >5s after apply","Click trash icon on applied '@td(COUPON_10PCT.promo_name)' card to remove coupon; remove test item","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-029","BL-PRICE-001: Discount Stacking — Coupon Applied After Tier Price (Not on List Price)","Coupons & Promotions > Business Invariants","Critical","BL-PRICE-001, BL-CART-003","ECL-1.3, ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUPON_10PCT.code) (10%) is active. User is authenticated and adds qty >= tier threshold.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
+A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUPON_10PCT.code) (10%) is active, public, and appears in the user's pre-listed available coupons. User is authenticated and adds qty >= tier threshold. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, test_sku={{TEST_SKU}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog loads
 [ACT] find a product with tier pricing (or use TEST_SKU with known tier)
 [ACT] add the product to cart with quantity >= tier threshold (e.g., qty=10)
@@ -332,20 +340,26 @@ A product has tier pricing (e.g., 10+ units = lower tier price). Coupon @td(COUP
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
 [ASSERT] note the unit price displayed (should be tier price, lower than list)
-[SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_10PCT.code)'
-[WAIT] Discount line appears in Order summary","[MATH] coupon discount = 10% × (tier_price × quantity)
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_10PCT.promo_name)' preset coupon card visible in widget
+[ACT] click the arrow-right (apply) button on the '@td(COUPON_10PCT.promo_name)' preset coupon card
+[WAIT] card transitions to applied state (green border, check icon)
+[WAIT] Discount line appears in OrderSummary","[MATH] coupon discount = 10% × (tier_price × quantity)
 [MATH] final total = tier_price × quantity - coupon_discount (no hidden list-price recalculation)
 [STATE] BL-PRICE-001 satisfied: stacking order is (1) tier price replaces list, (2) coupon applies to tier price
+[DOM] '@td(COUPON_10PCT.promo_name)' card shows applied state in .coupons-section
 [FORMAT] all monetary amounts display with 2 decimal places","[API] cart query: placedPrice for the item = tier_price (not list_price)
-[API] addCoupon mutation errors[] empty
+[API] addCoupon mutation errors[] empty; cart.coupons[0].isAppliedSuccessfully=true
 [CONSOLE] no errors
-[NETWORK] no 4xx/5xx","Coupon calculated on list price instead of tier price (BL-PRICE-001 violation), tier price not applied at qty threshold, errors[] non-empty","Remove coupon and clear cart after test","VCST-4590","Automated"
-"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied from Coupons Page","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx","Coupon calculated on list price instead of tier price (BL-PRICE-001 violation), tier price not applied at qty threshold, errors[] non-empty, preset card not found in .coupons-section","Click trash icon to remove coupon; clear cart after test","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
+"CPN-030","BL-CHK-006: Order Total Formula Correct After Coupon Applied via Coupons Sidebar","Coupons & Promotions > Business Invariants","Critical","BL-CHK-006, BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow accessible.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied and at least 1 item
-[ASSERT] note: (a) line item subtotal, (b) coupon discount amount, (c) shipping cost, (d) tax amount, (e) displayed cart total
+User is authenticated. Cart has at least 1 item ({{TEST_SKU}}). '@td(COUPON_10PCT.code)' coupon is active, public, and applied via the 'Discount & coupons' sidebar widget (.coupons-section) — card shows applied state (green border). Checkout flow accessible. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 1 item
+[SCROLL] past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ACT] click apply button on '@td(COUPON_10PCT.promo_name)' preset card (or use custom code card) to apply @td(COUPON_10PCT.code)
+[WAIT] card in applied state (green border, check icon)
+[ASSERT] record: (a) line item subtotal, (b) coupon discount amount, (c) shipping cost, (d) tax amount, (e) displayed cart total in OrderSummary
 [ACT] click 'Proceed to Checkout' or 'Checkout' button
 [WAIT] checkout page loads
 [ASSERT] note checkout summary: subtotal, discount, shipping, tax, total
@@ -357,7 +371,7 @@ CPN-005 or CPN-028 passed. Cart has item with coupon applied. Checkout flow acce
 [FORMAT] all monetary amounts display with exactly 2 decimal places on both cart and checkout pages","[API] cart GraphQL query: totals.grandTotal.amount = sum(lineTotals) - discountTotal + shippingTotal + taxTotal
 [API] cart query errors[] is empty
 [NETWORK] no 4xx/5xx on checkout page load
-[CONSOLE] no JS errors during checkout load","Total discrepancy > $0.00 between cart and checkout (BL-CHK-006 violation), hidden fee appears, console TypeError on checkout load","Navigate away from checkout without placing order; restore cart if needed","VCST-4590","Automated"
+[CONSOLE] no JS errors during checkout load","Total discrepancy > $0.00 between cart and checkout (BL-CHK-006 violation), hidden fee appears, applied coupon discount vanishes at checkout, console TypeError on checkout load","Navigate away from checkout without placing order; restore cart if needed","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-031","DB Migration — AddLocalizations Migration Applied in QA Environment","Coupons & Promotions > Backend Infrastructure","High","BL-PRICE-001","ECL-14.1","Admin access to backend for module version check. Migration '20260223160251_AddLocalizations' must be applied for LocalizedString fields to function.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Platform > Modules (or Settings > Information)
@@ -412,46 +426,59 @@ Admin is logged in. Storefront is accessible. User account available for storefr
 [WAIT] item in cart
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with item
-[SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with 'E2E-XTEST-{{TIMESTAMP}}' (paste from clipboard or type)
-[WAIT] coupon applied automatically OR press Enter
-[WAIT] discount applied in cart totals","[DOM] Admin: promotion saved without error
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Discount & coupons' heading visible
+[WAIT] locate 'Custom code' card at bottom of widget
+[ACT] click into 'Enter custom code' input on the Custom code card
+[ACT] type 'E2E-XTEST-{{TIMESTAMP}}' (or paste from clipboard)
+[ACT] click the arrow-right apply button on the Custom code card
+[WAIT] card transitions to applied state (green border, check icon, trash icon)
+[WAIT] discount applied in OrderSummary","[DOM] Admin: promotion saved without error
 [DOM] Storefront: new coupon card visible on coupons page within 10s of Admin save
 [DOM] Storefront: 'Coupon copied successfully' notification on click
-[DOM] Cart: coupon applied with $5 discount line item
+[DOM] Cart: 'Discount & coupons' widget visible below OrderSummary (.coupons-section)
+[DOM] Cart: Custom code card shows applied state (green border, check icon) after typing and applying E2E-XTEST-{{TIMESTAMP}}
+[DOM] Cart: coupon applied with $5 discount line item in OrderSummary
 [MATH] cart total = original subtotal - $5 (minus any shipping/tax additions)
-[STATE] full E2E flow completed: Admin create → storefront display → clipboard copy → cart apply","[API] Admin promotion creation: HTTP 200/201
-[API] addCoupon mutation: errors[] empty
-[API] cart.coupons contains the new coupon code after apply
+[STATE] full E2E flow completed: Admin create → storefront display → clipboard copy → cart apply via sidebar","[API] Admin promotion creation: HTTP 200/201
+[API] addCoupon mutation: errors[] empty; cart.coupons[0].isAppliedSuccessfully=true
+[API] cart.coupons contains 'E2E-XTEST-{{TIMESTAMP}}' after apply
 [ADMIN] promotion visible in Promotions list after save
 [CONSOLE] no JS errors on any page throughout the flow
-[NETWORK] no 4xx/5xx on any critical request","Admin save fails with 4xx, promotion not visible on storefront coupons page, copy button missing for new coupon, cart rejects the coupon with errors[] non-empty","DELETE the test promotion via Admin after test; remove coupon from cart","VCST-4590","Automated"
-"CPN-034","Invalid Coupon Code — Cart Shows Error When Non-Existent Code Entered","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx on any critical request","Admin save fails with 4xx, promotion not visible on storefront coupons page, copy button missing for new coupon, 'Discount & coupons' widget not found on /cart, Custom code card absent or non-functional, cart rejects the coupon with errors[] non-empty","DELETE the test promotion via Admin after test; click trash icon on applied coupon card to remove from cart","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
+"CPN-034","Invalid Coupon Code — Cart Sidebar Shows Error When Non-Existent Code Entered","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Cart has at least one item. Coupon code 'INVALID-DOES-NOT-EXIST' does not correspond to any promotion.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=INVALID-DOES-NOT-EXIST","[NAV] {{FRONT_URL}}/cart
+User is authenticated. Cart has at least one item. Coupon code 'INVALID-DOES-NOT-EXIST' does not correspond to any promotion. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=INVALID-DOES-NOT-EXIST","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with at least 1 item
-[SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with 'INVALID-DOES-NOT-EXIST'
-[WAIT] page responds to input (auto-apply or press Enter)
-[WAIT] response from apply action","[DOM] error message displayed near coupon field (e.g., 'Coupon not valid', 'Invalid coupon code', or similar)
-[DOM] no discount line item appears in cart totals
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Custom code' card visible at bottom of widget
+[ACT] click into 'Enter custom code' input on the Custom code card
+[ACT] type 'INVALID-DOES-NOT-EXIST'
+[ACT] click the arrow-right apply button on the Custom code card
+[WAIT] card responds to apply action (either transitions to error state or shows feedback)","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' displayed below input
+[DOM] apply button on the error-state card is disabled
+[DOM] no discount line item appears in OrderSummary
 [STATE] cart total remains unchanged from pre-coupon value
-[STATE] cart is NOT in an error state — items still visible and purchasable","[API] addCoupon mutation: cart.coupons[].isAppliedSuccessfully = false for the invalid code
+[STATE] cart is NOT in an error state — items still visible and purchasable","[API] addCoupon mutation: cart.coupons[].isAppliedSuccessfully = false OR GraphQL errors[] contains coupon error for the invalid code
 [API] cart.totals.discountTotal.amount = 0 after invalid coupon attempt
 [CONSOLE] no TypeError (error handling is graceful)
-[NETWORK] no 5xx (400-level error handled client-side)","Cart total changed despite invalid coupon, no error message shown to user, console TypeError, cart breaks or empties on invalid coupon","none — invalid coupon was not applied","VCST-4590","Automated"
-"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed Manually in Cart","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 5xx (error handled client-side)","Cart total changed despite invalid coupon, 'This code is not valid' text not shown (wrong error message), console TypeError, cart breaks or empties on invalid coupon, 'Custom code' card not found in .coupons-section","none — invalid coupon was not applied; no cleanup needed","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
+"CPN-035","Non-Public Promotion Coupon Code Rejected When Typed in Custom Code Card","Coupons & Promotions > Negative Cases","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)' (created in CPN-027 or pre-existing). User is authenticated with items in cart.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_PRIVATE.code)","[NAV] {{FRONT_URL}}/cart
+A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)' (created in CPN-027 or pre-existing). User is authenticated with items in cart. The private promotion does NOT appear in the pre-listed coupons sidebar. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_PRIVATE.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with at least 1 item
-[SCROLL] scroll to Order summary sidebar
-[ACT] fill 'Enter a promo-coupon' textbox with '@td(COUPON_PRIVATE.code)'
-[WAIT] page responds (auto-apply or press Enter)
-[WAIT] response","[DOM] error message or 'not applied' feedback displayed (the code exists but the promotion is not public)
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_PRIVATE.code)' coupon does NOT appear as a preset card in the widget (private promotions are not listed)
+[ACT] click into 'Enter custom code' input on the Custom code card
+[ACT] type '@td(COUPON_PRIVATE.code)'
+[ACT] click the arrow-right apply button
+[WAIT] page responds
+[WAIT] response received","[DOM] Custom code card transitions to error state: dashed border, red receipt-tax icon, error text 'This code is not valid' (type: invalid) OR apply button becomes disabled without discount
 [STATE] cart total unchanged — no discount applied
-[STATE] '@td(COUPON_PRIVATE.code)' coupon NOT shown as applied in cart","[API] addCoupon mutation response: cart.coupons[].isAppliedSuccessfully = false for code '@td(COUPON_PRIVATE.code)' OR coupon entry absent from cart.coupons[] entirely
-[API] errors[] behavior depends on implementation — either errors[] non-empty or cart.coupons[].isAppliedSuccessfully=false signals rejection
-[CONSOLE] no TypeError","Private coupon silently applies and grants discount (security/revenue bug), cart breaks on this code","none","VCST-4590","Automated"
+[STATE] '@td(COUPON_PRIVATE.code)' coupon NOT shown as applied in cart (card remains in error or default state, not applied state)
+[DOM] no green border on the custom card for this private code","[API] addCoupon mutation response: cart.coupons[].isAppliedSuccessfully = false for code '@td(COUPON_PRIVATE.code)' OR coupon entry absent from cart.coupons[]
+[API] errors[] behavior depends on implementation — either errors[] non-empty or isAppliedSuccessfully=false signals rejection
+[CONSOLE] no TypeError","Private coupon silently applies and grants discount (security/revenue bug), cart breaks on this code, '@td(COUPON_PRIVATE.code)' appears as preset card in sidebar (should be hidden for non-public promos)","none — no coupon was applied","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-036","B2B Org User — Coupons Page Accessible and Shows Store-Scoped Coupons","Coupons & Promotions > Access","High","BL-PRICE-001, BL-PRICE-007","ECL-14.3","User is authenticated as a B2B organization member ({{ORG_USER_EMAIL}}). Organization is active. Store has public coupons configured.","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in page
 [ACT] fill email: {{ORG_USER_EMAIL}}
@@ -465,39 +492,42 @@ A promotion exists with IsPublic=false and coupon code '@td(COUPON_PRIVATE.code)
 [NAV] URL is /account/coupons (or locale-prefixed equivalent)","[API] POST /graphql promotionCoupons returns HTTP 200, errors[] empty
 [CONSOLE] no JS errors for B2B user
 [NETWORK] no 4xx/5xx","403 error for org user, coupons page inaccessible for B2B users, different coupons shown due to org context incorrectly affecting public promotion filter","Sign out B2B user after test","VCST-4590","Automated"
-"CPN-037","Cart — Applied Coupon Removed via 'Deny' Button Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-037","Cart — Applied Coupon Removed via Trash Icon on Coupon Card Restores Original Total","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-PRICE-001","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is currently applied in the cart (discount visible in order summary). UI exploration confirmed removal button label is 'Deny'.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is currently applied via the 'Discount & coupons' sidebar widget — the corresponding coupon card shows applied state (green border, round-check icon, trash/outline-trash icon). Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with at least 1 item
-[SCROLL] scroll to Order summary sidebar
-[ASSERT] coupon @td(COUPON_10PCT.code) is applied — textbox 'Enter a promo-coupon' shows '@td(COUPON_10PCT.code)' (disabled) and Discount line shows non-zero amount
-[ASSERT] 'Deny' button is visible next to the applied coupon code
-[ACT] note the current cart total displayed
-[ACT] click 'Deny' button next to the applied coupon
-[WAIT] page updates — coupon removed","[DOM] 'Enter a promo-coupon' textbox is now empty and enabled (ready for new code entry)
-[DOM] Discount line in Order summary disappears OR shows $0.00
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_10PCT.promo_name)' coupon card is in applied state: green/success border, round-check icon, trash (outline-trash) icon visible
+[ASSERT] Discount line in OrderSummary shows non-zero amount
+[ACT] note the current cart total displayed in OrderSummary
+[ACT] click the trash (outline-trash) icon on the '@td(COUPON_10PCT.promo_name)' applied coupon card
+[WAIT] page updates — coupon removed","[DOM] '@td(COUPON_10PCT.promo_name)' card returns to default state: dashed border, receipt-tax icon, arrow-right apply button (per JIRA AC#5: code display / card presence is retained, not cleared)
+[DOM] Discount line in OrderSummary disappears OR shows $0.00
 [MATH] cart total after removal = original subtotal + shipping + tax (coupon discount no longer subtracted)
-[DOM] 'Deny' button no longer visible next to coupon field
+[DOM] round-check and trash icons no longer visible on the card (card is in default state)
 [DOM] cart items are still present and quantities unchanged","[API] POST /graphql removeCoupon mutation returns HTTP 200
 [API] removeCoupon response errors[] is empty
-[API] cart.coupons array no longer contains @td(COUPON_10PCT.code) after removal
+[API] cart.coupons array no longer contains @td(COUPON_10PCT.code) after removal (or isAppliedSuccessfully=false)
 [CONSOLE] no TypeError during coupon removal
-[NETWORK] no 4xx/5xx on /graphql during removal","'Deny' button absent (UI label changed), cart total unchanged after removal, discount persists after clicking 'Deny', removeCoupon mutation errors[] non-empty, console TypeError","none — coupon is already removed by this test","VCST-4590","Automated"
-"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx on /graphql during removal","Trash icon absent on applied card (UI regression), cart total unchanged after removal, discount persists after clicking trash icon, removeCoupon mutation errors[] non-empty, console TypeError, card is fully cleared (code field empty — violates JIRA AC#5)","none — coupon is already removed by this test","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
+"CPN-038","Cart — Discount Breakdown Expandable Section Shows Per-Coupon Discount Amount After Sidebar Apply","Coupons & Promotions > Cart Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) (10% off) is applied. UI exploration confirmed 'Discount' is a collapsible button in Order summary.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied
-[SCROLL] scroll to Order summary section in the sidebar
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) (10% off) applied via 'Discount & coupons' sidebar widget (.coupons-section) — card in applied state (green border). UI exploration confirmed 'Discount' is a collapsible button in OrderSummary. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads
+[SCROLL] past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ACT] apply @td(COUPON_10PCT.code) via preset card or custom code card
+[WAIT] coupon card in applied state (green border, check icon)
+[SCROLL] back up to OrderSummary section in sidebar
 [ASSERT] 'Discount' row visible with a non-zero amount (e.g., '- $29.80')
 [ASSERT] 'Discount' row is a button (has expand chevron)
 [ACT] click 'Discount' button to expand the breakdown
 [WAIT] breakdown list appears below Discount row","[DOM] breakdown list appears showing at least one item with label '@td(COUPON_10PCT.code)' and amount '-US$29.80' (or equivalent for cart subtotal)
 [DOM] per-coupon line format: coupon code text + formatted negative currency amount
-[MATH] sum of per-coupon amounts in breakdown equals the total Discount amount shown in Order summary
+[MATH] sum of per-coupon amounts in breakdown equals the total Discount amount shown in OrderSummary
 [DOM] clicking 'Discount' button again collapses the breakdown (toggle behavior)","[API] cart.totals.discountTotal.amount matches the sum displayed in the breakdown
 [API] cart query errors[] is empty
 [CONSOLE] no JS errors during expand/collapse
-[NETWORK] no API calls triggered by expanding the breakdown (client-side only)","Discount row not clickable, breakdown does not appear, per-coupon line shows wrong code or wrong amount, sum mismatch between breakdown and total","Remove @td(COUPON_10PCT.code) coupon from cart via Deny button after test (coupon remains applied — may affect subsequent cart tests)","VCST-4590","Automated"
+[NETWORK] no API calls triggered by expanding the breakdown (client-side only)","Discount row not clickable, breakdown does not appear, per-coupon line shows wrong code or wrong amount, sum mismatch between breakdown and total, 'Discount & coupons' widget not found","Click trash icon on applied coupon card to remove @td(COUPON_10PCT.code) from cart after test","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-039","Admin — Coupon-Level Usage Limits: Maximum Use Number and Maximum Uses Per Customer","Coupons & Promotions > Admin Backend","High","BL-PRICE-001, BL-CART-003","ECL-14.1","Admin user is logged in. A promotion exists with at least one coupon code. UI exploration confirmed coupon detail blade shows 'Maximum use number' and 'Maximum uses per customer' spinbuttons.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions
@@ -568,18 +598,20 @@ Admin user is logged in. Two promotions exist: one with Exclusivity='Globally ex
 [SAVE] click 'Save' and wait for save confirmation
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with at least 1 item
-[SCROLL] scroll to 'Enter a promo-coupon' input
-[ACT] type '@td(COUPON_10PCT.code)' in coupon input
-[KEY] Enter to apply coupon
-[WAIT] @td(COUPON_10PCT.code) applied (discount visible)
-[ACT] type a second coupon code (e.g., '@td(COUPON_20PCT.code)') in the coupon input
-[KEY] Enter to apply second coupon
-[WAIT] response","[DOM] Admin: Exclusivity saved as 'Globally exclusive' persists after blade reopen
-[DOM] Cart: After @td(COUPON_10PCT.code) (globally exclusive) is applied, attempting to apply a second coupon results in rejection — second coupon NOT applied
-[STATE] only one promotion discount (@td(COUPON_10PCT.code)) appears in Order summary breakdown
-[MATH] discount = 10% × subtotal only (no additional SUPER discount stacked)","[API] addCoupon mutation for second coupon: cart.coupons[].isAppliedSuccessfully=false for the second code OR errors[] indicates exclusive promotion conflict
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_10PCT.promo_name)' preset card visible in widget
+[ACT] click apply button on '@td(COUPON_10PCT.promo_name)' preset card
+[WAIT] @td(COUPON_10PCT.code) applied (card shows applied state: green border, check icon; discount visible in OrderSummary)
+[SCROLL] to 'Custom code' card at bottom of widget
+[ACT] click into 'Enter custom code' input
+[ACT] type '@td(COUPON_20PCT.code)' (second coupon code)
+[ACT] click the arrow-right apply button on the Custom code card
+[WAIT] response to second coupon apply attempt","[DOM] Admin: Exclusivity saved as 'Globally exclusive' persists after blade reopen
+[DOM] Cart: After @td(COUPON_10PCT.code) (globally exclusive) is applied, Custom code card transitions to error state (dashed border, red icon, error text) for the second coupon — second coupon NOT applied
+[STATE] '@td(COUPON_10PCT.promo_name)' preset card remains in applied state; only one discount in OrderSummary breakdown
+[MATH] discount = 10% × subtotal only (no additional discount stacked)","[API] addCoupon mutation for second coupon: cart.coupons[].isAppliedSuccessfully=false for the second code OR errors[] indicates exclusive promotion conflict; radio-button behavior fires: removeCoupon for first then addCoupon for second — but second should fail (globally exclusive first coupon must remain)
 [API] GET promotion: exclusivity field = 'Globally exclusive'
-[CONSOLE] no TypeError on second coupon attempt","Globally exclusive promotion allows stacking with other coupons (revenue leakage bug), Exclusivity dropdown missing from Admin blade, second coupon silently applies","Restore Exclusivity to 'Valid with other offers' on @td(COUPON_10PCT.code) after test; remove all applied coupons from cart","VCST-4590","Automated"
+[CONSOLE] no TypeError on second coupon attempt","Globally exclusive promotion allows stacking with other coupons (revenue leakage bug), Exclusivity dropdown missing from Admin blade, second coupon silently applies (BL-CART-009 violation)","Restore Exclusivity to 'Valid with other offers' on @td(COUPON_10PCT.code) after test; click trash icon on applied coupon card to remove from cart","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CPN-043","Coupons Page — Automatic Promotion Without Coupon Code Does Not Appear","Coupons & Promotions > Business Logic","High","BL-PRICE-001","ECL-1.3","An automatic promotion exists (IsPublic=true, IsActive=true, zero coupon codes). UI exploration confirmed 'Snack as a gift' has 0 coupons but 686 usage history entries. These automatic promotions must not appear on the storefront coupons page.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and locate 'Snack as a gift'

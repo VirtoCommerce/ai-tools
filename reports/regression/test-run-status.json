@@ -1,42 +1,62 @@
 {
-  "runId": "REG-2026-04-27-1101",
-  "status": "running",
-  "startedAt": "2026-04-27T11:01:00Z",
-  "completedAt": null,
-  "selection": "050i",
-  "priorRun": "REG-2026-04-27-1047",
-  "_priorRun_passRate": "75.0% (9/12)",
-  "environment": "https://vcst-qa-storefront.govirto.com",
-  "backendUrl": "https://vcst-qa.govirto.com",
-  "note": "Fourth 050i pass after [?key=value] filter predicate added to graphql-assertions.ts and CFG-GQL-008/010 assertions migrated from fixed-index to sectionId-lookup. Expected: 11/12 (CFG-GQL-011 remains real backend defect BUG-050i-007).",
-  "deployState": {
+  "runId": "REG-2026-04-27-1930",
+  "status": "completed",
+  "startedAt": "2026-04-27T17:30:29Z",
+  "completedAt": "2026-04-27T17:33:30Z",
+  "selection": "050j",
+  "environment": "QA",
+  "priorRun": "REG-2026-04-27-1901",
+  "buildState": {
+    "theme": "vc-theme-b2b-vue-2.48.0-pr-2269-cd06-cd06f094",
     "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
-    "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
-    "VirtoCommerce.XCart": "3.1009.0",
-    "VirtoCommerce.XCatalog": "3.1004.0",
-    "VirtoCommerce.Xapi": "3.1006.0",
-    "VirtoCommerce.Catalog": "3.1020.0"
+    "Marketing": "3.1003.0",
+    "MarketingExperienceApi": "3.1001.0",
+    "XCart": "3.1009.0",
+    "Cart": "3.1003.0"
   },
-  "fixesUnderTest": [
-    "scripts/lib/graphql-assertions.ts — getByPath now supports [?key=value] filter for array-element lookup by field, insulating assertions from backend response-ordering shifts",
-    "regression/suites/Backend/graphql/050i-graphql-configurations.csv — CFG-GQL-008 and CFG-GQL-010 read_back assertions migrated to sectionId-lookup syntax"
+  "notes": "Re-run of 050j (prior run REG-2026-04-27-1901 PASSED 13/13 ~30 min ago). Env HEALTHY. Build state cached from prior run; no redeploy detected. MKT-GQL-009 SKIPPED (manual admin step) — automated subset 12/12 PASS.",
+  "batches": [
+    {
+      "batch": 1,
+      "suites": ["050j"],
+      "lane": "fast-path",
+      "startedAt": "2026-04-27T17:30:29Z",
+      "completedAt": "2026-04-27T17:33:30Z"
+    }
   ],
   "suites": {
-    "050i": {
-      "name": "GraphQL Configurable Products",
+    "050j": {
+      "name": "GraphQL xMarketing (promotionCoupons)",
       "priority": "P1",
       "agent": "qa-backend-expert",
-      "browser": "none (script-based runner)",
+      "browser": "none (graphql-runner fast-path)",
+      "lane": "fast-path",
       "batch": 1,
-      "status": "pending",
-      "attempts": 0,
-      "result": null,
-      "passRate": null,
-      "total": 12,
-      "outputFile": "reports/regression/REG-2026-04-27-1101/suite-050i-results.json"
+      "status": "completed",
+      "attempts": 1,
+      "result": {
+        "total": 13,
+        "passed": 12,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 1,
+        "passRate": "92.3%",
+        "automatedPassRate": "100.0%"
+      },
+      "outputFile": "reports/regression/REG-2026-04-27-1930/050j-results.json"
     }
   },
-  "totals": null,
-  "bugs": [],
-  "consolidatedReport": "reports/regression/regression-2026-04-27.md"
+  "finalSummary": {
+    "totalCases": 13,
+    "passed": 12,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 1,
+    "overallPassRate": "92.3%",
+    "automatedPassRate": "100.0%",
+    "p0Bugs": 0,
+    "p1Bugs": 0,
+    "qualityGateVerdict": "APPROVED",
+    "reportFile": "reports/regression/REG-2026-04-27-1930/regression-report.md"
+  }
 }

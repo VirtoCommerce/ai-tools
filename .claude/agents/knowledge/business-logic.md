@@ -123,6 +123,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined.
 - **Agents:** qa-frontend-expert (sign-in flow), qa-backend-expert (cart merge API)
 
+### BL-CART-009: Radio-button coupon transition `[P1-data]`
+- **Rule:** When the storefront `applyCoupon(code)` is called with a code different from the currently applied coupon, the system MUST first call `removeCoupon` on the existing coupon and complete that mutation before calling `validateCoupon` + `addCoupon` for the new code. The cart MUST NOT hold two coupons simultaneously during the transition. The intermediate state (after remove, before add) MUST NOT be visible to the user — the UI shows the previous card returning to default state and the new card transitioning to applied state, but never two applied cards at once.
+- **Verify:** Apply coupon A → assert `cart.coupons[]` contains exactly one entry with `code: A, isAppliedSuccessfully: true`. Apply coupon B (different code) → network trace shows: `removeCoupon` mutation 200 → `validateCoupon` query → `addCoupon` mutation 200, in that order. Final `cart.coupons[]` contains only B. Discount math reflects only B's reward.
+- **Violation signal:** `cart.coupons[]` briefly or permanently contains 2 entries; `addCoupon` mutation fires before `removeCoupon` completes (out-of-order or parallel); UI flashes both cards in applied state; second coupon's discount stacks on top of the first.
+- **Agents:** qa-frontend-expert (UI state transitions on `<CouponsSection>` widget), qa-backend-expert (mutation sequencing & cart state)
+
 ---
 
 ## Domain 3: Checkout (BL-CHK)

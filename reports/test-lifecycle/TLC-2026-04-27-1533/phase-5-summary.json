@@ -1,0 +1,59 @@
+{
+  "run_id": "TLC-2026-04-27-1533",
+  "phase": 5,
+  "ticket": "VCST-4896",
+  "pr": "2269",
+  "build": "2.48.0-pr-2269-cd06-cd06f094",
+  "browser": "playwright-firefox",
+  "env": "vcst-qa-storefront.govirto.com",
+  "user": "Emily Johnson (TechFlow B2B org)",
+  "verified_at": "2026-04-27T13:58:00Z",
+  "ac5_verdict": "PASS",
+  "ac5_man_001_resolved": true,
+  "totals": {
+    "VERIFIED": 16,
+    "CHANGED": 2,
+    "BROKEN": 0,
+    "BLOCKED": 0
+  },
+  "console_errors": 0,
+  "network_5xx": 0,
+  "graphql_errors": 0,
+  "results": [
+    { "id": "A1", "target": "/cart reachability", "status": "VERIFIED" },
+    { "id": "A2", "target": "/account/coupons reachability", "status": "VERIFIED" },
+    { "id": "A3", "target": "/checkout/review reachability", "status": "CHANGED", "note": "URL no longer exists; redirects to /cart" },
+    { "id": "B1", "target": ".coupons-section widget exists below order summary", "status": "VERIFIED" },
+    { "id": "B2", "target": "Widget title 'Discount & coupons'", "status": "VERIFIED" },
+    { "id": "B3", "target": "5 coupon cards (4 preset + 1 custom)", "status": "VERIFIED" },
+    { "id": "B4", "target": "Custom code input placeholder", "status": "VERIFIED" },
+    { "id": "B5", "target": "Apply button arrow-right icon", "status": "VERIFIED" },
+    { "id": "B6", "target": "View all link href + target=_blank", "status": "VERIFIED" },
+    { "id": "B7", "target": "Order summary lacks legacy coupon input", "status": "VERIFIED" },
+    { "id": "CART-059", "target": "Apply valid coupon", "status": "VERIFIED", "network": "ValidateCoupon 200, AddCoupon 200" },
+    { "id": "CART-067", "target": "Discount math after apply", "status": "VERIFIED" },
+    { "id": "CART-060", "target": "Invalid code error state", "status": "VERIFIED", "network": "ValidateCoupon returns false; no AddCoupon call" },
+    { "id": "CART-062", "target": "AC#5 trash retention", "status": "VERIFIED", "ac5": "Code retained in input after cancel" },
+    { "id": "CART-064", "target": "View-all link new tab", "status": "VERIFIED" },
+    { "id": "CONSOLE", "target": "Console baseline", "status": "VERIFIED", "errors": 0 },
+    { "id": "CPN-005", "target": "Spot-check Click-to-copy + legacy input absence", "status": "VERIFIED" },
+    { "id": "CHK-018", "target": "Spot-check review-page disabled coupon input", "status": "CHANGED", "note": "/checkout/review URL gone; case must be rescoped/obsoleted" }
+  ],
+  "screenshots": [
+    "01-cart-coupons-section.png",
+    "02-flow1-applied-state.png",
+    "03-AC5-after-trash-code-retained.png",
+    "04-flow3-invalid-code-error.png",
+    "05-account-coupons-page.png"
+  ],
+  "recommendations": [
+    "Mark CHK-018 OBSOLETE in Phase 6 (no /checkout/review page in PR #2269)",
+    "Refine selectors: trash/apply buttons are inside .vc-input__decorator, not separate .coupon-card__remove",
+    "Add CART-NEW-A: itemised discount accordion under Order Summary",
+    "Add CART-NEW-B: auto-promo + coupon coexistence/swap behavior",
+    "Add CART-NEW-C: rapid double-click race on ValidateCoupon-then-AddCoupon"
+  ],
+  "env_health": "HEALTHY",
+  "build_correct": true,
+  "widget_live": true
+}

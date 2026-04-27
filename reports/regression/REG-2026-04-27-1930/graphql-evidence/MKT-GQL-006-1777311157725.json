@@ -1,0 +1,130 @@
+{
+  "caseId": "MKT-GQL-006",
+  "title": "promotionCoupons — Pagination Correctness (first/after)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T17:32:37.725Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-27T17:32:37.142Z",
+      "expiresAt": "2026-04-27T18:02:36.142Z"
+    }
+  ],
+  "variables": {
+    "P1_TOTAL": "19",
+    "P1_ITEM0_ID": "3eca81fb-48bf-4706-8db7-6b10bbbb358f",
+    "P1_ITEM1_ID": "6a01dc60-f10e-4782-be88-82c80bdc1519",
+    "P2_TOTAL": "19",
+    "P2_ITEM0_ID": "7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc"
+  },
+  "operations": [
+    {
+      "label": "page1",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 2 after: \"0\") {\n      totalCount items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "promotionCoupons": {
+            "totalCount": 19,
+            "items": [
+              {
+                "id": "3eca81fb-48bf-4706-8db7-6b10bbbb358f",
+                "couponCode": "E2E-COUPON"
+              },
+              {
+                "id": "6a01dc60-f10e-4782-be88-82c80bdc1519",
+                "couponCode": "THRESH50"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 368
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "page2",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 2 after: \"2\") {\n      totalCount items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "promotionCoupons": {
+            "totalCount": 19,
+            "items": [
+              {
+                "id": "7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc",
+                "couponCode": "CAT20"
+              },
+              {
+                "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+                "couponCode": "FREESHIP"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 206
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=page1] errors[] empty",
+      "label": "page1",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=page2] errors[] empty",
+      "label": "page2",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=page1] data.promotionCoupons.items.length <= 2",
+      "label": "page1",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.promotionCoupons.items.length <= 2",
+      "actual": "data.promotionCoupons.items.length = 2"
+    },
+    {
+      "raw": "[COUNT label=page2] data.promotionCoupons.items.length <= 2",
+      "label": "page2",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.promotionCoupons.items.length <= 2",
+      "actual": "data.promotionCoupons.items.length = 2"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] {{P1_TOTAL}} = {{P2_TOTAL}} — totalCount stable across pages (BL-GQL-002) — verify in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "{{P1_TOTAL}} = {{P2_TOTAL}} — totalCount stable across pages (BL-GQL-002) — verify in evidence JSON",
+      "resolved": "19 = 19 — totalCount stable across pages (BL-GQL-002) — verify in evidence JSON"
+    },
+    {
+      "raw": "[EVIDENCE] {{P2_ITEM0_ID}} != {{P1_ITEM0_ID}} AND {{P2_ITEM0_ID}} != {{P1_ITEM1_ID}} — no duplicate item between pages",
+      "layer": "EVIDENCE",
+      "note": "{{P2_ITEM0_ID}} != {{P1_ITEM0_ID}} AND {{P2_ITEM0_ID}} != {{P1_ITEM1_ID}} — no duplicate item between pages",
+      "resolved": "7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc != 3eca81fb-48bf-4706-8db7-6b10bbbb358f AND 7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc != 6a01dc60-f10e-4782-be88-82c80bdc1519 — no duplicate item between pages"
+    }
+  ],
+  "cleanup": "none — read-only"
+}

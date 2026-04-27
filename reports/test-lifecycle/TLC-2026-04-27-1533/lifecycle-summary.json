@@ -1,0 +1,103 @@
+{
+  "runId": "TLC-2026-04-27-1533",
+  "inputType": "change-source",
+  "source": "VCST-4896 + PR #2269 (vc-frontend)",
+  "date": "2026-04-27",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
+    "theme": "2.48.0-pr-2269-cd06-cd06f094",
+    "themeArtifactConfirmsPRDeployed": true,
+    "relevantModules": {
+      "VirtoCommerce.Marketing": "3.1003.0",
+      "VirtoCommerce.MarketingExperienceApi": "3.1001.0",
+      "VirtoCommerce.XCart": "3.1009.0",
+      "VirtoCommerce.Cart": "3.1003.0",
+      "VirtoCommerce.XOrder": "3.1002.0"
+    }
+  },
+  "changedModules": ["vc-frontend storefront (Cart UI), Marketing (via promotion-coupons consumption)"],
+  "changedLayers": ["storefront"],
+  "affectedSuites": ["028", "077", "012", "013"],
+  "casesAnalyzed": 28,
+  "casesSynced": 13,
+  "casesGenerated": 13,
+  "casesReviewed": 26,
+  "casesVerified": 18,
+  "liveResults": {
+    "VERIFIED": 16,
+    "CHANGED": 2,
+    "BROKEN": 0,
+    "BLOCKED": 0,
+    "consoleErrors": 0,
+    "network5xx": 0,
+    "graphqlErrors": 0,
+    "ac5_man_001_resolved": true,
+    "ac5_verdict": "PASS"
+  },
+  "filesModified": [
+    "regression/suites/Frontend/marketing/077-coupons-promotions-storefront.csv",
+    "regression/suites/Frontend/checkout/012-checkout-guest.csv",
+    "regression/suites/Frontend/checkout/013-checkout-b2b.csv",
+    "regression/suites/Frontend/cart/028-cart-core.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "WARN",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "WARN",
+    "G7_duplication": "PASS",
+    "G8_environment": "PASS",
+    "G9_sync": "WARN"
+  },
+  "openManualItems": [
+    {"id": "MAN-001", "status": "RESOLVED", "verdict": "PASS"},
+    {"id": "MAN-002", "status": "OPEN", "owner": "qa-seed-data", "blocks": ["CART-065"]},
+    {"id": "MAN-003", "status": "OPEN", "owner": "qa-backend-expert", "blocks": ["CART-066"]},
+    {"id": "MAN-004", "status": "OPEN", "owner": "user", "blocks": ["CART-068"], "ask": "Confirm checkout_coupon_enabled flag intent"},
+    {"id": "MAN-005", "status": "OPEN", "owner": "qa-testing-expert", "blocks": ["CPN-042"], "ask": "Live verify A→B preset swap radio-button"},
+    {"id": "MAN-006", "status": "OPEN", "owner": "user", "blocks": ["CHK-018", "CHK-037", "CART-069"], "ask": "PR #2269 removed /checkout/review page — out of JIRA AC scope; clarify with PR author"}
+  ],
+  "blProposals": {
+    "new": [
+      {
+        "proposedId": "PROPOSED-BL-CART-009",
+        "severity": "P1-data",
+        "rule": "When applyCoupon(code) is called with a code different from the currently applied coupon, the system MUST first call removeCartCoupon on the existing coupon before calling addCartCoupon for the new code. Cart MUST NOT hold two coupons simultaneously during this transition.",
+        "verify": "Network trace shows removeCoupon mutation completes before addCoupon mutation fires; cart.coupons[] never contains 2 entries simultaneously.",
+        "violationSignal": "Two coupons applied simultaneously; addCoupon fires before removeCoupon completes; cart.coupons[] has stale entry post-swap.",
+        "agents": ["qa-frontend-expert", "qa-backend-expert"],
+        "source": "client-app/shared/cart/composables/useCoupon.ts in PR #2269 lines 23-43; JIRA VCST-4896 AC#4",
+        "triggeredByCases": ["CART-061", "CPN-042"]
+      }
+    ],
+    "stale": []
+  },
+  "jiraACCoverage": {
+    "AC1_widget_renders": {"cases": ["CART-057", "CART-063"], "liveVerified": true},
+    "AC2_preset_cards": {"cases": ["CART-058", "CART-064", "CART-065"], "liveVerified": true},
+    "AC3_custom_apply_errors": {"cases": ["CART-059", "CART-060", "CART-066"], "liveVerified": "partial — failed-error path deferred to MAN-003"},
+    "AC4_radio_button": {"cases": ["CART-061", "CPN-042"], "liveVerified": "code-verified; live verify deferred to MAN-005"},
+    "AC5_trash_retention": {"cases": ["CART-062", "CPN-037"], "liveVerified": true, "verdict": "PASS"},
+    "AC6_view_all_link": {"cases": ["CART-064"], "liveVerified": true},
+    "AC7_checkout_review_readonly": {"cases": ["CART-069", "CHK-018", "CHK-037"], "liveVerified": "CHANGED — /checkout/review removed in PR #2269; out of JIRA AC scope (MAN-006)"},
+    "AC8_no_inline_field": {"cases": ["CART-063", "CPN-005"], "liveVerified": true}
+  },
+  "scopeExpansion": {
+    "finding": "/checkout/review page removed in PR #2269 (redirects to /cart) — appears to unify cart-as-checkout. NOT documented in JIRA AC.",
+    "impact": "CHK-018, CHK-037, CART-069 reference this page",
+    "action": "Flag with PR author via MAN-006; possible separate JIRA story needed; do NOT block VCST-4896 sidebar feature on this"
+  },
+  "nextSteps": [
+    "Resolve MAN-006 with PR author before running regression on CHK-018/CHK-037/CART-069",
+    "Resolve MAN-004 with PR author re: checkout_coupon_enabled flag",
+    "Refine selectors in CART-058/059/061/062 to .coupon-card button",
+    "Provision NO_COUPON_USER_EMAIL seed (MAN-002)",
+    "Approve/revise PROPOSED-BL-CART-009 manually",
+    "After resolutions: run /qa-regression 028 077 012 013",
+    "Promote Draft → Reviewed via qa-lead-orchestrator"
+  ]
+}

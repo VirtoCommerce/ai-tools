@@ -1,0 +1,70 @@
+{
+  "caseId": "MKT-GQL-005",
+  "title": "promotionCoupons — Missing Required storeId Argument (Schema Validation)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T17:32:32.249Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "operations": [
+    {
+      "label": "missing_storeid",
+      "query": "query {\n    promotionCoupons(first: 10) {\n      totalCount items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 0,
+        "ok": false,
+        "data": null,
+        "errors": [
+          {
+            "code": "DV-GENERIC",
+            "message": "Field \"promotionCoupons\" argument \"storeId\" of type \"String!\" is required, but it was not provided."
+          }
+        ],
+        "elapsed_ms": 0
+      },
+      "schemaValid": false,
+      "schemaErrors": [
+        {
+          "code": "DV-GENERIC",
+          "message": "Field \"promotionCoupons\" argument \"storeId\" of type \"String!\" is required, but it was not provided."
+        }
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=missing_storeid] errors[] non-empty — promotionCoupons requires storeId argument (DV-008/DV-010) (BL-GQL-001)",
+      "label": "missing_storeid",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] has 1 entry"
+    },
+    {
+      "raw": "[DATA label=missing_storeid] data is null",
+      "label": "missing_storeid",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data is null",
+      "actual": "data is null"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Error message references the missing argument name \"storeId\" — verify in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "Error message references the missing argument name \"storeId\" — verify in evidence JSON",
+      "resolved": "Error message references the missing argument name \"storeId\" — verify in evidence JSON"
+    },
+    {
+      "raw": "[EVIDENCE] No stack traces, internal paths, or SQL fragments in error message — verify in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "No stack traces, internal paths, or SQL fragments in error message — verify in evidence JSON",
+      "resolved": "No stack traces, internal paths, or SQL fragments in error message — verify in evidence JSON"
+    }
+  ],
+  "cleanup": "none — lint-only case"
+}

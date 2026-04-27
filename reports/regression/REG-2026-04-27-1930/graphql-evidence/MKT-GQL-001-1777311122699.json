@@ -1,0 +1,278 @@
+{
+  "caseId": "MKT-GQL-001",
+  "title": "promotionCoupons — Happy Path Query",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T17:32:02.698Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-27T17:32:02.518Z",
+      "expiresAt": "2026-04-27T18:02:02.518Z"
+    }
+  ],
+  "variables": {
+    "COUPON_TOTAL": "19",
+    "SAMPLE_COUPON": "E2E-COUPON"
+  },
+  "operations": [
+    {
+      "label": "list_coupons",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 20) {\n      totalCount\n      items { id systemName name label description couponCode endDate }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "promotionCoupons": {
+            "totalCount": 19,
+            "items": [
+              {
+                "id": "3eca81fb-48bf-4706-8db7-6b10bbbb358f",
+                "systemName": "[E2E Test] Coupon",
+                "name": "[E2E Test] Coupon",
+                "label": null,
+                "description": "E2E test coupon -- $5 fixed dollar off cart",
+                "couponCode": "E2E-COUPON",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "6a01dc60-f10e-4782-be88-82c80bdc1519",
+                "systemName": "QA Cart Threshold",
+                "name": "QA Cart Threshold",
+                "label": null,
+                "description": "10% off cart when subtotal >= $50",
+                "couponCode": "THRESH50",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc",
+                "systemName": "QA Category Percent",
+                "name": "QA Category Percent",
+                "label": null,
+                "description": "20% off specific product category",
+                "couponCode": "CAT20",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+                "systemName": "QA Free Shipping",
+                "name": "QA Free Shipping",
+                "label": null,
+                "description": "Free shipping -- $99 off shipping cost",
+                "couponCode": "FREESHIP",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "85548cf9-9e90-4cd3-997f-997c4a58ea2b",
+                "systemName": "Wine Discount",
+                "name": "Wine Discount",
+                "label": null,
+                "description": "10% off Wine category products",
+                "couponCode": "WINE",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "99aed378-f2c8-4ebc-a970-4b06777ab123",
+                "systemName": "QA Fixed Dollar Off",
+                "name": "QA Fixed Dollar Off",
+                "label": null,
+                "description": "Fixed $5 dollar off cart subtotal",
+                "couponCode": "FIXED5",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "aa9d2cde-c8c4-46e3-993a-12945a78a8db",
+                "systemName": "Simple QA Coupon",
+                "name": "Simple QA Coupon",
+                "label": null,
+                "description": "Simple 5% off cart subtotal coupon for QA testing",
+                "couponCode": "QA",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "aed3efee-1eaa-4573-8e27-00a422aeea3a",
+                "systemName": "Coupon on discount for shipping",
+                "name": "Coupon on discount for shipping",
+                "label": null,
+                "description": "Coupon on discount for shipping",
+                "couponCode": "AIR",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "c92789eb-1061-4f5e-93d2-a98549ff5c17",
+                "systemName": "Register and get 15% for all",
+                "name": "Register and get 15% for all",
+                "label": null,
+                "description": "For new customer get a 15% discount for all items",
+                "couponCode": "FREE",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "986d3b97-66bb-4745-ba32-64339ede8574",
+                "systemName": "QA Exclusivity Test - Globally Exclusive",
+                "name": "QA Exclusivity Test - Globally Exclusive",
+                "label": null,
+                "description": "Globally exclusive -- blocks all other coupons",
+                "couponCode": "EXCLUSIVE10",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "fe4cc866-7037-4f68-8934-e8c36bc2cbc2",
+                "systemName": "QA Test - VCST-4590 Coupon Public",
+                "name": "QA Test - VCST-4590 Coupon Public",
+                "label": null,
+                "description": "QA Coupon English Description",
+                "couponCode": "QA10OFF",
+                "endDate": "2026-12-31T23:59:59Z"
+              },
+              {
+                "id": "320499a8-74f8-4afe-9f75-b8731df00ed8",
+                "systemName": "Test 100%",
+                "name": "Test 100%",
+                "label": null,
+                "description": "$30.00 off cart subtotal",
+                "couponCode": "super",
+                "endDate": "2026-04-29T22:00:00Z"
+              },
+              {
+                "id": "4a9b9afd-c2a7-433b-81d9-68d9d331ce58",
+                "systemName": "Muesli as a gift",
+                "name": "Muesli as a gift",
+                "label": null,
+                "description": "BALISTO MUESLI MIX GREEN BOX 20X37GR",
+                "couponCode": "MUESLI",
+                "endDate": null
+              },
+              {
+                "id": "55a8989a-aa86-40b2-9046-292496ec3393",
+                "systemName": "Test coupon",
+                "name": "Test coupon",
+                "label": null,
+                "description": "$20.00 off for cart subtotal is at least 100.00 excluding",
+                "couponCode": "QA2",
+                "endDate": "2026-04-30T22:00:00Z"
+              },
+              {
+                "id": "718f3f12-eb9c-4fb1-a561-a60368113867",
+                "systemName": "Code1",
+                "name": "Code1",
+                "label": null,
+                "description": null,
+                "couponCode": "code",
+                "endDate": null
+              },
+              {
+                "id": "89db2600-acd5-4743-851b-13440adc1180",
+                "systemName": "10$ OFF",
+                "name": "10$ OFF",
+                "label": null,
+                "description": null,
+                "couponCode": "ONE",
+                "endDate": null
+              },
+              {
+                "id": "b9a9fd76449d4f88b053972e39703075",
+                "systemName": "LOVE coupon",
+                "name": "LOVE coupon",
+                "label": null,
+                "description": "Enter LOVE coupon and get 50% for whole cart",
+                "couponCode": "LOVE",
+                "endDate": "2026-06-17T22:00:00Z"
+              },
+              {
+                "id": "e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97",
+                "systemName": "Wine as a gift",
+                "name": "Wine as a gift",
+                "label": null,
+                "description": "COTE SOLEIL Merlot 0.75L: Elegance in Every Sip",
+                "couponCode": "wine",
+                "endDate": null
+              },
+              {
+                "id": "f7d9a31c-bc17-4998-a45c-593f6fe4c40b",
+                "systemName": "CODE2",
+                "name": "CODE2",
+                "label": null,
+                "description": null,
+                "couponCode": "CODE",
+                "endDate": "2026-05-26T22:00:00Z"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 173
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=list_coupons] errors[] empty",
+      "label": "list_coupons",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=list_coupons] data.promotionCoupons is non-null",
+      "label": "list_coupons",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.promotionCoupons is non-null",
+      "actual": "data.promotionCoupons = {\"totalCount\":19,\"items\":[{\"id\":\"3eca81fb-48bf-4706-8db7-6b10bbbb358f\",\"systemName\":\"[E2E Test] Coupon\",\"name\":\"[E2E Test] Coupon\",\"label\":null,\"description\":\"E2E test coupon -- $5 fixed dollar off ca…"
+    },
+    {
+      "raw": "[COUNT label=list_coupons] data.promotionCoupons.totalCount >= 1",
+      "label": "list_coupons",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.promotionCoupons.totalCount >= 1",
+      "actual": "data.promotionCoupons.totalCount = 19"
+    },
+    {
+      "raw": "[DATA label=list_coupons] data.promotionCoupons.items.0.id is non-null",
+      "label": "list_coupons",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.promotionCoupons.items.0.id is non-null",
+      "actual": "data.promotionCoupons.items.0.id = \"3eca81fb-48bf-4706-8db7-6b10bbbb358f\""
+    },
+    {
+      "raw": "[DATA label=list_coupons] data.promotionCoupons.items.0.systemName is non-null",
+      "label": "list_coupons",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.promotionCoupons.items.0.systemName is non-null",
+      "actual": "data.promotionCoupons.items.0.systemName = \"[E2E Test] Coupon\""
+    },
+    {
+      "raw": "[DATA label=list_coupons] data.promotionCoupons.items.0.couponCode is non-null",
+      "label": "list_coupons",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.promotionCoupons.items.0.couponCode is non-null",
+      "actual": "data.promotionCoupons.items.0.couponCode = \"E2E-COUPON\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] All returned items have couponCode != null — promotions without coupons must be excluded by the resolver (BL-PRICE-001) — verify by scanning items[] in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "All returned items have couponCode != null — promotions without coupons must be excluded by the resolver (BL-PRICE-001) — verify by scanning items[] in evidence JSON",
+      "resolved": "All returned items have couponCode != null — promotions without coupons must be excluded by the resolver (BL-PRICE-001) — verify by scanning items[] in evidence JSON"
+    },
+    {
+      "raw": "[EVIDENCE] endDate is ISO-8601 string when present; null acceptable for open-ended promotions",
+      "layer": "EVIDENCE",
+      "note": "endDate is ISO-8601 string when present; null acceptable for open-ended promotions",
+      "resolved": "endDate is ISO-8601 string when present; null acceptable for open-ended promotions"
+    }
+  ],
+  "cleanup": "none — read-only query"
+}

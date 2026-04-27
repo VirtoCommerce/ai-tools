@@ -510,3 +510,248 @@ skus={{TEST_SKU}}, {{TEST_SKU_2}}, {{TEST_SKU_3}}","[NAV] log in to {{FRONT_URL}
 [STATE] cart badge unchanged (item is in cart, just unselected)
 [MATH] subtotal after re-check = original 3-item subtotal","[CONSOLE] no JS errors during selection/deselection
 [NETWORK] no 4xx/5xx on selection toggle","no checkbox controls visible; deselecting does not update subtotal; deselected item removed from cart instead of retained","none (all items remain in cart; reset selection state)","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: removed checkout-flow dependency (deferred to suite 011 CHK-cases); scoped to cart-page selection UI only. Precondition strengthened to require exactly 3 items."
+"CART-057","Coupons Sidebar — Widget Renders Below OrderSummary on /cart","Cart > Coupons Sidebar","Critical","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. At least 1 product in cart. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page fully loads
+[SCROLL] scroll down the right sidebar past the OrderSummary widget
+[ASSERT] 'Discount & coupons' widget heading visible below OrderSummary
+[ASSERT] widget root element .coupons-section is present in DOM
+[ASSERT] up to 4 preset coupon cards visible (or none if user has no available promotion coupons)
+[ASSERT] 'Custom code' card visible at the bottom of the widget
+[ASSERT] 'View all coupons & promotions' link visible in the widget","[DOM] widget heading reads 'Discount & coupons'
+[DOM] .coupons-section exists in DOM and is below .order-summary in document order
+[DOM] max 4 preset coupon cards rendered (usePromotionCoupons(4) cap)
+[DOM] preset coupon cards sorted by endDate ASC (soonest expiring first — visually verify card order if end dates are visible)
+[DOM] 'Custom code' card is present with placeholder text 'Enter custom code'
+[DOM] 'View all coupons & promotions' link text is visible and it targets blank (_blank)","[CONSOLE] no JS errors on cart page load
+[NETWORK] no 4xx/5xx on any requests during widget render","widget heading absent, .coupons-section missing from DOM, 'Custom code' card not rendered, more than 4 preset cards visible (cap not applied), 'View all coupons & promotions' link missing","none","VCST-4896, VCST-4590","Draft"
+"CART-058","Coupons Sidebar — Preset Coupon Apply Happy Path","Cart > Coupons Sidebar > Apply","Critical","BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item ({{TEST_SKU}}). At least one preset coupon card (@td(COUPON_10PCT.code) — promotion '@td(COUPON_10PCT.promo_name)') is visible in the 'Discount & coupons' widget. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 1 item
+[SCROLL] scroll to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] '@td(COUPON_10PCT.promo_name)' preset card visible with default state (dashed border, receipt-tax icon, arrow-right apply button)
+[ACT] click the arrow-right (apply) button on '@td(COUPON_10PCT.promo_name)' card
+[WAIT] wait for API response and card state transition
+[ASSERT] card transitions to applied state
+[SCROLL] scroll up to OrderSummary
+[ASSERT] Discount line item visible in OrderSummary with non-zero amount","[DOM] '@td(COUPON_10PCT.promo_name)' card shows applied state: success-green/highlighted border, round-check icon visible, outline-trash icon visible, arrow-right apply button replaced by trash icon
+[DOM] Discount line item in OrderSummary displays a non-zero negative currency amount
+[MATH] OrderSummary total = subtotal - coupon_discount + shipping + tax (2 decimal places)
+[STATE] card view transitions from default to applied","[API] addCoupon mutation: HTTP 200, errors[] empty
+[API] cart.coupons[0].isAppliedSuccessfully = true after mutation
+[CONSOLE] no JS errors during apply
+[NETWORK] no 4xx/5xx on /graphql","card does not transition to applied state after click (green border missing), discount line absent from OrderSummary, errors[] non-empty, console TypeError, preset card apply button not found in .coupons-section","Click trash icon on applied card to remove coupon after test","VCST-4896 AC#2, VCST-4590","Draft"
+"CART-059","Coupons Sidebar — Custom Code Apply Valid Code","Cart > Coupons Sidebar > Custom Code","Critical","BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. A valid coupon code ({{VALID_COUPON_CODE}}) exists that is NOT pre-listed in the sidebar as a preset card (or any valid code). Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+coupon_code={{VALID_COUPON_CODE}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Custom code' card visible with 'Enter custom code' placeholder and arrow-right apply button
+[ACT] click into 'Enter custom code' input on the Custom code card
+[ACT] type {{VALID_COUPON_CODE}}
+[ACT] click the arrow-right apply button on the Custom code card
+[WAIT] wait for card state transition
+[SCROLL] scroll up to OrderSummary
+[ASSERT] Discount line item visible in OrderSummary","[DOM] Custom code card transitions to applied state: success-green border, round-check icon, trash icon
+[DOM] Discount line item appears in OrderSummary with non-zero amount
+[STATE] card view = 'applied' (not 'default', not 'error')","[API] addCoupon mutation: HTTP 200, errors[] empty
+[API] cart.coupons[0].isAppliedSuccessfully = true
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","Custom code card not found, applied state not reached, discount line absent, errors[] non-empty","Click trash icon to remove coupon after test","VCST-4896 AC#4, VCST-4590","Draft"
+"CART-060","Coupons Sidebar — Custom Code Apply Invalid Code Shows Error State","Cart > Coupons Sidebar > Custom Code > Negative","Critical","BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. Code 'BOGUS123' does not correspond to any promotion. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ACT] click into 'Enter custom code' input
+[ACT] type 'BOGUS123'
+[ACT] click arrow-right apply button
+[WAIT] wait for card response
+[ASSERT] card transitions to error state
+[ASSERT] error text visible on card","[DOM] Custom code card shows error state: dashed border, red receipt-tax icon visible, error text 'This code is not valid' displayed below input (maps to t('common.messages.invalid_coupon'))
+[DOM] arrow-right apply button becomes disabled in error state
+[DOM] no discount line item in OrderSummary
+[STATE] cart total unchanged from before apply attempt","[API] addCoupon mutation: cart.coupons[].isAppliedSuccessfully=false OR errors[] non-empty with coupon error
+[API] cart.totals.discountTotal.amount = 0
+[CONSOLE] no TypeError — error state rendered gracefully
+[NETWORK] no 5xx","error text not displayed (no feedback to user), wrong error message shown (not 'This code is not valid'), cart total changed after invalid code, console TypeError, 'BOGUS123' somehow applied","none — no coupon was applied","VCST-4896 AC#4, AC#6, AC#8","Draft"
+"CART-061","Coupons Sidebar — Radio-Button Behavior: Applying B While A Is Active Auto-Removes A","Cart > Coupons Sidebar > Radio Behavior","Critical","BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. Two valid coupon codes available: @td(COUPON_10PCT.code) and @td(COUPON_20PCT.code) (or any second valid code). Both are applicable to the cart. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Decision Table (one coupon active + apply second).","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+coupon_a=@td(COUPON_10PCT.code)
+coupon_b=@td(COUPON_20PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ACT] apply @td(COUPON_10PCT.code) (via preset card or custom code card)
+[WAIT] @td(COUPON_10PCT.code) card shows applied state (green border, check icon)
+[ASSERT] verify network: only addCoupon mutation for @td(COUPON_10PCT.code) fired; no removeCoupon
+[ACT] now apply @td(COUPON_20PCT.code) (via its preset card apply button, or via Custom code card with typed code)
+[WAIT] wait for all mutations to complete
+[ASSERT] @td(COUPON_20PCT.code) card shows applied state
+[ASSERT] @td(COUPON_10PCT.code) card returns to default state (not applied)
+[SCROLL] scroll up to OrderSummary
+[ASSERT] only one discount line in OrderSummary (corresponding to @td(COUPON_20PCT.code))","[DOM] @td(COUPON_20PCT.code) card: applied state (green border, check icon, trash icon)
+[DOM] @td(COUPON_10PCT.code) card: default state (dashed border, arrow-right apply button — not applied)
+[STATE] only one coupon is applied at a time (radio-button behavior — VCST-4896 AC#3)
+[DOM] OrderSummary discount line reflects @td(COUPON_20PCT.code) discount only (not stacked)","[API] network sequence: removeCoupon for @td(COUPON_10PCT.code) fires BEFORE addCoupon for @td(COUPON_20PCT.code)
+[API] cart.coupons[] contains only @td(COUPON_20PCT.code) after the sequence (or only 1 entry with isAppliedSuccessfully=true)
+[API] errors[] empty on both mutations
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","both coupons shown as applied simultaneously (multi-coupon stacking — BL-CART-003 violation), @td(COUPON_10PCT.code) card remains in applied state after @td(COUPON_20PCT.code) applied, discount amount = sum of both coupons, removeCoupon mutation not fired for A","Click trash icon to remove active coupon after test","VCST-4896 AC#3, BL-CART-009","Draft"
+"CART-062","Coupons Sidebar — Cancel Applied Coupon via Trash Icon","Cart > Coupons Sidebar > Cancel","Critical","BL-CART-003","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. @td(COUPON_10PCT.code) is applied via the 'Discount & coupons' widget — card in applied state. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (applied → default).","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ACT] apply @td(COUPON_10PCT.code) (preset card or custom code card)
+[WAIT] card shows applied state (green border, check icon, trash icon)
+[ASSERT] record cart total in OrderSummary (with discount)
+[ACT] click the trash (outline-trash) icon on the applied '@td(COUPON_10PCT.promo_name)' card
+[WAIT] wait for removeCoupon mutation and UI update
+[ASSERT] card returns to default state
+[ASSERT] OrderSummary discount line removed
+[ASSERT] verify JIRA AC#5: code/card presence retained (card is NOT cleared from DOM, input is NOT wiped)","[DOM] card returns to default state: dashed border, receipt-tax icon, arrow-right apply button (not trash icon)
+[DOM] JIRA AC#5 compliance: the card is still present in the widget after removal (code display NOT cleared); users can re-apply
+[DOM] Discount line in OrderSummary disappears or shows $0.00
+[MATH] cart total after removal = pre-coupon subtotal + shipping + tax (discount fully removed)
+[STATE] cart.coupons[] no longer contains @td(COUPON_10PCT.code) (or isAppliedSuccessfully=false)","[API] removeCoupon mutation: HTTP 200, errors[] empty
+[API] cart.coupons[] does not contain @td(COUPON_10PCT.code) with isAppliedSuccessfully=true after removal
+[CONSOLE] no TypeError during removal
+[NETWORK] no 4xx/5xx","trash icon absent on applied card (cannot remove), discount persists in OrderSummary after removal, card disappears from DOM entirely after removal (violates AC#5 — code display should be retained), cart total unchanged, removeCoupon errors[] non-empty","none — coupon removed by this test","VCST-4896 AC#5, AC#6, VCST-4590","Draft"
+"CART-063","Coupons Sidebar — OrderSummary Contains No Inline Coupon Input (Regression Guard)","Cart > Coupons Sidebar > Regression","Critical","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. At least 1 item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Error Guessing (guard against regression re-introduction of removed inline coupon input).","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] scroll to the OrderSummary widget in the right sidebar
+[ASSERT] inspect OrderSummary (.order-summary) DOM for old inline coupon input
+[ASSERT] verify no textbox with label 'Enter a promo-coupon' or 'Promo code' exists inside .order-summary
+[ASSERT] verify no 'Deny' button or VcActionInput for coupon code exists inside .order-summary
+[ASSERT] 'Discount & coupons' widget (.coupons-section) exists BELOW the OrderSummary widget (not inside it)","[DOM] no VcActionInput or text input with label 'Enter a promo-coupon' inside .order-summary
+[DOM] no 'Deny' button or remove-coupon button inside .order-summary
+[DOM] .coupons-section exists in DOM and is NOT a child of .order-summary
+[DOM] OrderSummary widget renders cleanly without coupon entry UI","[CONSOLE] no JS errors on cart page load
+[NETWORK] no 4xx/5xx","'Enter a promo-coupon' textbox found inside .order-summary (regression), 'Deny' button found inside .order-summary (regression), coupon input re-introduced into OrderSummary section","none","VCST-4896 (behavior change), VCST-4590","Draft"
+"CART-064","Coupons Sidebar — View All Coupons Link Opens New Tab","Cart > Coupons Sidebar > Navigation","High","BL-CART-003","ECL-4.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. At least 1 item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'View all coupons & promotions' link visible in widget (class: coupons-section__link)
+[ASSERT] verify the link element has target='_blank' attribute
+[ACT] click 'View all coupons & promotions' link
+[WAIT] new tab opens
+[ASSERT] new tab URL is {{FRONT_URL}}/account/coupons (or locale-prefixed equivalent)
+[ASSERT] new tab renders 'All coupons & promotions' page heading","[DOM] 'View all coupons & promotions' link exists with target='_blank' attribute
+[NAV] link opens /account/coupons in a NEW browser tab (not same tab navigation)
+[STATE] original /cart tab remains open and cart content is unaffected after link click","[CONSOLE] no JS errors during link click
+[NETWORK] no 4xx/5xx on /account/coupons page load in new tab","link missing from widget, link navigates in same tab (target not _blank), /account/coupons returns 4xx, original cart tab navigated away from","Close the new tab opened to /account/coupons after test","VCST-4896 AC#1, VCST-4590","Draft"
+"CART-065","Coupons Sidebar — Empty State: No Preset Cards When User Has No Available Promotion Coupons","Cart > Coupons Sidebar > Edge Cases","High","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+SEED REQUIRED: A user account with NO targeted/available promotion coupons must be used. Provision via a separate user account with no public promotions assigned — or use a test user for whom no public promotion coupons are currently active. Set {{NO_COUPON_USER_EMAIL}} + {{NO_COUPON_USER_PASSWORD}} env vars. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Error Guessing / ECL-14.1 (empty state).","url={{FRONT_URL}}/cart
+user={{NO_COUPON_USER_EMAIL}}
+password={{NO_COUPON_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{NO_COUPON_USER_EMAIL}}
+[ACT] add at least 1 product to cart
+[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] widget heading 'Discount & coupons' is visible
+[ASSERT] no preset coupon cards rendered (empty preset section)
+[ASSERT] 'Custom code' card is still present and functional
+[ACT] click into 'Enter custom code' input and type a valid code ({{VALID_COUPON_CODE}})
+[ACT] click apply button
+[WAIT] result","[DOM] 'Discount & coupons' widget renders even when user has no pre-listed coupons (empty state is valid)
+[DOM] no preset coupon cards in the widget — only the 'Custom code' card
+[STATE] 'Custom code' card still fully functional in empty-preset state (applies valid code successfully)
+[DOM] 'View all coupons & promotions' link still visible even in empty preset state","[CONSOLE] no JS errors during empty-state widget render
+[NETWORK] no 4xx/5xx","widget absent when user has no pre-listed coupons (should still render for custom code entry), preset section crashes on empty state, 'Custom code' card non-functional in empty state","Remove applied coupon via trash icon if applied successfully; sign out test user","VCST-4896 AC#1, AC#9 (empty state)","Draft"
+"CART-066","Coupons Sidebar — Failed Coupon (System Error) Shows Correct Error Text","Cart > Coupons Sidebar > Error Handling","High","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. A scenario where the backend returns a system error on coupon validation is reproducible (network throttle, backend mock, or known flaky coupon that triggers type:'failed' path). MANUAL VERIFICATION REQUIRED — automated reproduction of backend errors may not be feasible without a mock server. Theme 2.48.0-pr-2269-cd06 or later deployed.","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ACT] trigger a backend system error on coupon validation — either: (a) use browser DevTools Network to intercept and return 500 on addCoupon, OR (b) apply a coupon code known to trigger exception path, OR (c) use a backend mock that returns couponError.type='failed'
+[ACT] type any coupon code in 'Enter custom code' input
+[ACT] click apply button
+[WAIT] wait for error response","[DOM] Custom code card transitions to error state with error text 'Something went wrong with the coupon. Please try again.' (maps to t('common.messages.failed_coupon') — NOT 'This code is not valid')
+[DOM] error state: dashed border, red receipt-tax icon
+[STATE] cart total unchanged from before attempt","[CONSOLE] no unhandled promise rejection — error handled gracefully (type:'failed' path in useCoupon.ts)
+[NETWORK] error intercepted at network level (500 or exception)","'This code is not valid' shown instead of 'Something went wrong...' (wrong error type), unhandled promise rejection in console, cart crashes on backend error","Restore network to normal after test (remove DevTools intercept)","VCST-4896 AC#8, VCST-4590","Draft"
+"CART-067","Coupons Sidebar — i18n: Widget Labels Render in Non-English Locale","Cart > Coupons Sidebar > i18n","Medium","BL-CART-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. Store supports at least one non-English locale (e.g., 'de'). CULTURE_NAME env var set. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: Error Guessing (i18n coverage).","url={{FRONT_URL}}/{{CULTURE_NAME}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+culture_name={{CULTURE_NAME}}","[NAV] navigate to {{FRONT_URL}}/{{CULTURE_NAME}}/cart (locale-prefixed URL)
+[WAIT] cart page loads in locale {{CULTURE_NAME}}
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] widget heading is localized (NOT the English key 'shared.cart.coupons_section.title' raw string)
+[ASSERT] 'Custom code' label on the custom card is localized
+[ASSERT] placeholder 'Enter custom code' is localized
+[ASSERT] 'View all coupons & promotions' link text is localized","[DOM] widget heading shows translated string (not a raw i18n key like 'shared.cart.coupons_section.title')
+[DOM] 'Custom code' label shows translated text
+[DOM] 'Enter custom code' placeholder shows translated text
+[DOM] 'View all coupons & promotions' link shows translated text
+[STATE] all 4 NEW i18n keys introduced in VCST-4896 are properly translated for locale {{CULTURE_NAME}}","[CONSOLE] no i18n missing-key warnings in browser console
+[NETWORK] no 4xx/5xx on locale-prefixed cart URL","raw i18n key strings visible in widget (missing translations), widget heading in English despite non-English locale, console i18n warning about missing key","none","VCST-4896 (i18n), VCST-4590","Draft"
+"CART-068","Coupons Sidebar — checkout_coupon_enabled Flag No Longer Hides Widget (Behavior Change Flag)","Cart > Coupons Sidebar > Config","Medium","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+ADVISORY TEST — confirm intent with PR author before promoting to regression. Admin access required to toggle $cfg.checkout_coupon_enabled store setting. User logged in. At least 1 item in cart. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (config toggle change).","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+admin_url={{ADMIN_URL}}
+admin_email={{ADMIN_EMAIL}}
+admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}} — log in as admin
+[ACT] navigate to Stores > [store] > Settings and locate 'checkout_coupon_enabled' (or equivalent feature flag)
+[ACT] set checkout_coupon_enabled = false (disabled)
+[SAVE] save the store setting
+[WAIT] 5s for propagation
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 1 item
+[SCROLL] to right sidebar below OrderSummary
+[ASSERT] observe whether 'Discount & coupons' widget (.coupons-section) is visible or hidden
+[ACT] restore checkout_coupon_enabled = true (re-enable) after observation
+[SAVE] save restored setting","[DOM] EXPECTED (per VCST-4896 PR behavior): 'Discount & coupons' widget (.coupons-section) is STILL VISIBLE even when checkout_coupon_enabled=false (the flag no longer gates the sidebar widget — only gated the old OrderSummary inline input)
+[STATE] This is a BEHAVIOR CHANGE from pre-VCST-4896 where the flag hid the coupon UI entirely
+[DOM] If widget is HIDDEN when flag=false: this contradicts the PR behavior and should be flagged as a regression or unintended side-effect","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","widget hidden when checkout_coupon_enabled=false (if this occurs, flag as potential regression or undocumented intent), setting change not propagated within 5s, admin setting not found","Restore checkout_coupon_enabled = true after test","VCST-4896 (behavior change: feature flag scope), MANUAL ADVISORY — confirm intent with PR author","Draft"
+"CART-069","Coupons Sidebar — Applied Coupon Code Visible as Read-Only on Checkout Review Step","Cart > Coupons Sidebar > Checkout Integration","High","BL-CART-003, BL-CHK-006","ECL-1.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in. Cart has at least 1 item. @td(COUPON_10PCT.code) is applicable to cart. Checkout flow accessible. Theme 2.48.0-pr-2269-cd06 or later deployed. Design Technique: State Transition (cart applied → checkout review step).","url={{FRONT_URL}}/cart
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[SCROLL] to 'Discount & coupons' widget (.coupons-section)
+[ACT] apply @td(COUPON_10PCT.code) via preset card or custom code card
+[WAIT] card in applied state (green border, check icon)
+[ASSERT] discount line visible in OrderSummary
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] checkout page loads and progresses to review step
+[ASSERT] on review step, locate the applied coupon display","[DOM] checkout review step shows a disabled (read-only) VcActionInput displaying '@td(COUPON_10PCT.code)' — the applied coupon code is visible but non-editable on the review page (per checkout/review.vue: appliedCouponCode)
+[DOM] coupon discount line is present in the checkout order summary (discount carried through from /cart)
+[STATE] coupon applied on /cart carries through to checkout review without being reset","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
+[CONSOLE] no JS errors during cart → checkout navigation
+[NETWORK] no 4xx/5xx","coupon code not visible on checkout review (appliedCouponCode missing from review.vue), discount disappears at checkout review, cart.coupons reset on checkout navigation, console TypeError on checkout page","Navigate away without placing order; remove coupon from cart if needed","VCST-4896 AC#review-step, VCST-4590","Draft"

@@ -1,0 +1,194 @@
+{
+  "caseId": "MKT-GQL-011",
+  "title": "promotionCoupons — Error Schema: No Internal Data Leak",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T17:33:12.306Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-27T17:33:12.152Z",
+      "expiresAt": "2026-04-27T18:03:11.152Z"
+    }
+  ],
+  "variables": {},
+  "operations": [
+    {
+      "label": "unknown_field",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 5) {\n      items { id INVALID_FIELD }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 0,
+        "ok": false,
+        "data": null,
+        "errors": [
+          {
+            "code": "DV-009",
+            "message": "Cannot query field \"INVALID_FIELD\" on type \"PromotionCouponType\"."
+          }
+        ],
+        "elapsed_ms": 0
+      },
+      "schemaValid": false,
+      "schemaErrors": [
+        {
+          "code": "DV-009",
+          "message": "Cannot query field \"INVALID_FIELD\" on type \"PromotionCouponType\"."
+        }
+      ]
+    },
+    {
+      "label": "large_first",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 10000) {\n      totalCount items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "promotionCoupons": {
+            "totalCount": 19,
+            "items": [
+              {
+                "id": "3eca81fb-48bf-4706-8db7-6b10bbbb358f",
+                "couponCode": "E2E-COUPON"
+              },
+              {
+                "id": "6a01dc60-f10e-4782-be88-82c80bdc1519",
+                "couponCode": "THRESH50"
+              },
+              {
+                "id": "7fe3b6f1-4eb3-4b94-80b2-d1fd0007bbdc",
+                "couponCode": "CAT20"
+              },
+              {
+                "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+                "couponCode": "FREESHIP"
+              },
+              {
+                "id": "85548cf9-9e90-4cd3-997f-997c4a58ea2b",
+                "couponCode": "WINE"
+              },
+              {
+                "id": "99aed378-f2c8-4ebc-a970-4b06777ab123",
+                "couponCode": "FIXED5"
+              },
+              {
+                "id": "aa9d2cde-c8c4-46e3-993a-12945a78a8db",
+                "couponCode": "QA"
+              },
+              {
+                "id": "aed3efee-1eaa-4573-8e27-00a422aeea3a",
+                "couponCode": "AIR"
+              },
+              {
+                "id": "c92789eb-1061-4f5e-93d2-a98549ff5c17",
+                "couponCode": "FREE"
+              },
+              {
+                "id": "986d3b97-66bb-4745-ba32-64339ede8574",
+                "couponCode": "EXCLUSIVE10"
+              },
+              {
+                "id": "fe4cc866-7037-4f68-8934-e8c36bc2cbc2",
+                "couponCode": "QA10OFF"
+              },
+              {
+                "id": "320499a8-74f8-4afe-9f75-b8731df00ed8",
+                "couponCode": "super"
+              },
+              {
+                "id": "4a9b9afd-c2a7-433b-81d9-68d9d331ce58",
+                "couponCode": "MUESLI"
+              },
+              {
+                "id": "55a8989a-aa86-40b2-9046-292496ec3393",
+                "couponCode": "QA2"
+              },
+              {
+                "id": "718f3f12-eb9c-4fb1-a561-a60368113867",
+                "couponCode": "code"
+              },
+              {
+                "id": "89db2600-acd5-4743-851b-13440adc1180",
+                "couponCode": "ONE"
+              },
+              {
+                "id": "b9a9fd76449d4f88b053972e39703075",
+                "couponCode": "LOVE"
+              },
+              {
+                "id": "e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97",
+                "couponCode": "wine"
+              },
+              {
+                "id": "f7d9a31c-bc17-4998-a45c-593f6fe4c40b",
+                "couponCode": "CODE"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 145
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=unknown_field] errors[] non-empty — unknown field INVALID_FIELD on PromotionCouponType (DV-009) (BL-GQL-001)",
+      "label": "unknown_field",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] has 1 entry"
+    },
+    {
+      "raw": "[DATA label=unknown_field] data is null",
+      "label": "unknown_field",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data is null",
+      "actual": "data is null"
+    },
+    {
+      "raw": "[ERRORS label=large_first] errors[] empty — server returns full result set without error or cap",
+      "label": "large_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=large_first] data.promotionCoupons.totalCount >= 1",
+      "label": "large_first",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.promotionCoupons.totalCount >= 1",
+      "actual": "data.promotionCoupons.totalCount = 19"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] unknown_field error message references the field name \"INVALID_FIELD\" by name — verify in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "unknown_field error message references the field name \"INVALID_FIELD\" by name — verify in evidence JSON",
+      "resolved": "unknown_field error message references the field name \"INVALID_FIELD\" by name — verify in evidence JSON"
+    },
+    {
+      "raw": "[EVIDENCE] No stack traces, file paths, connection strings, or SQL fragments in any error message (BL-AUTH-005) — verify in evidence JSON",
+      "layer": "EVIDENCE",
+      "note": "No stack traces, file paths, connection strings, or SQL fragments in any error message (BL-AUTH-005) — verify in evidence JSON",
+      "resolved": "No stack traces, file paths, connection strings, or SQL fragments in any error message (BL-AUTH-005) — verify in evidence JSON"
+    },
+    {
+      "raw": "[PERF label=large_first] elapsed_ms target < 2000ms (no timeout on absurd first value)",
+      "layer": "PERF",
+      "note": "elapsed_ms target < 2000ms (no timeout on absurd first value)",
+      "resolved": "elapsed_ms target < 2000ms (no timeout on absurd first value)"
+    }
+  ],
+  "cleanup": "none — read-only"
+}

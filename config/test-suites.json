@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 93,
+    "totalSuites": 94,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -533,13 +533,14 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 31,
-      "estimatedMinutes": 22,
+      "testCount": 44,
+      "estimatedMinutes": 32,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",
         "add-to-cart",
         "quantity",
+        "coupons-sidebar",
         "revenue-critical",
         "sprint"
       ]
@@ -1157,6 +1158,26 @@
       ]
     },
     {
+      "id": "050j",
+      "name": "GraphQL xMarketing (promotionCoupons)",
+      "file": "regression/suites/Backend/graphql/050j-graphql-xmarketing.csv",
+      "domain": "marketing",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 13,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xmarketing",
+        "promotion-coupons",
+        "marketing",
+        "sprint"
+      ]
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -1742,21 +1763,22 @@
     },
     {
       "id": "079",
-      "name": "xMarketing",
+      "name": "xMarketing Admin & REST",
       "file": "regression/suites/Backend/xmarketing/079-xmarketing.csv",
       "domain": "marketing",
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 38,
-      "estimatedMinutes": 27,
+      "testCount": 25,
+      "estimatedMinutes": 22,
       "agent": "qa-backend-expert",
       "tags": [
         "marketing",
         "xmarketing",
         "promotions",
-        "graphql",
-        "xapi",
+        "coupons",
+        "dynamic-content",
+        "rbac",
         "sprint"
       ]
     },

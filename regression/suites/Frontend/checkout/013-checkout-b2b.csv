@@ -113,27 +113,37 @@ B2B org with contract/tier pricing configured, products have org-specific prices
 [API] Order payload shows contract/org price not catalog price
 [ADMIN] Order in admin shows contract pricing applied
 [CONSOLE] No pricing calculation errors","Standard catalog price shown instead of contract price; price changes to catalog price at checkout step","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Generated"
-"CHK-037","B2B Checkout - Coupon on Top of Contract Price","Checkout > B2B > Promotions","High","BL-CHK-004","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CHK-037","B2B Checkout - Coupon on Top of Contract Price (Apply on Cart via Sidebar, Verify Read-Only on Review)","Checkout > B2B > Promotions","High","BL-CHK-004","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Valid coupon code applicable to B2B org users must exist in system ({{VALID_COUPON_CODE}}). Provision via Admin > Marketing > Promotions > create promotion with coupon code, applicable to B2B users and stackable with contract pricing. Also requires: product with contract/org-specific pricing configured for {{ORG_USER_EMAIL}} org.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}, coupon={{VALID_COUPON_CODE}}","[NAV] Log in as {{ORG_USER_EMAIL}}
+SEED REQUIRED: Valid coupon code applicable to B2B org users must exist in system ({{VALID_COUPON_CODE}}). Provision via Admin > Marketing > Promotions > create promotion with coupon code, applicable to B2B users and stackable with contract pricing. Also requires: product with contract/org-specific pricing configured for {{ORG_USER_EMAIL}} org. NOTE: As of VCST-4896 (theme 2.48.0-pr-2269-cd06), coupon entry is in the 'Discount & coupons' sidebar widget on /cart — NOT in the checkout flow. Apply coupon on /cart before proceeding to checkout. The checkout review step shows applied code read-only.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}, coupon={{VALID_COUPON_CODE}}","[NAV] Log in as {{ORG_USER_EMAIL}}
 [ACT] Add product with contract pricing to cart
-[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
-[ASSERT] Verify contract price shown in cart
-[ACT] Locate coupon code field
-[ACT] Enter {{VALID_COUPON_CODE}} in coupon field
-[ACT] click 'Apply'
-[WAIT] Wait for discount to apply
-[ASSERT] Verify discount applied per configured stacking rules
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] Verify contract price shown for the product in cart line items
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Discount & coupons' widget heading visible
+[ACT] click into 'Enter custom code' input on the Custom code card
+[ACT] type {{VALID_COUPON_CODE}}
+[ACT] click the arrow-right apply button
+[WAIT] card transitions to applied state (green border, check icon, trash icon)
+[ASSERT] Discount line appears in OrderSummary with non-zero amount
 [ASSERT] Verify cart total = contract price - coupon discount + shipping + tax
+[ACT] click 'Checkout' or 'Proceed to Checkout'
+[WAIT] checkout loads
+[ASSERT] on checkout review step: verify applied coupon code displayed in disabled (read-only) VcActionInput
+[ACT] complete checkout (address, shipping, payment)
 [ACT] click 'Place Order'
-[ASSERT] Verify confirmation shows coupon as separate discount line","[DOM] Coupon field accessible for B2B users
-[STATE] Valid coupon accepted
+[WAIT] confirmation page loads
+[ASSERT] Verify confirmation shows coupon as separate discount line","[DOM] 'Discount & coupons' widget accessible for B2B org users on /cart
+[STATE] Valid coupon accepted — card shows applied state (green border, check icon)
 [MATH] Total = contract price - coupon discount + shipping + tax (no double-discounting)
-[DOM] Coupon discount shown as separate line item
-[DOM] Confirmation page shows coupon discount","[API] createOrderFromCart mutation response errors[] is empty
+[DOM] Coupon discount shown as separate line in OrderSummary on /cart
+[DOM] Checkout review step shows applied coupon code in disabled (read-only) VcActionInput
+[DOM] Confirmation page shows coupon discount","[API] addCoupon mutation response errors[] is empty; cart.coupons[0].isAppliedSuccessfully=true
+[API] createOrderFromCart mutation response errors[] is empty
 [API] verify org context is non-null (me.organization)
 [ADMIN] Order in admin shows coupon and contract price as separate line items
-[CONSOLE] No pricing errors with coupon + contract price combination","Coupon not accepted for B2B user; double discounting applied; coupon absent from confirmation; {{VALID_COUPON_CODE}} rejected (seed not provisioned)","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Manual — BLOCKED pending seed: valid coupon code for B2B users ({{VALID_COUPON_CODE}}) not provisioned in QA. SEED verdict 2026-04-21."
+[CONSOLE] No pricing errors with coupon + contract price combination","'Discount & coupons' widget not found on /cart for B2B users (regression), coupon not accepted for B2B user, double discounting applied, coupon absent from confirmation, read-only coupon display missing on /checkout/review, {{VALID_COUPON_CODE}} rejected (seed not provisioned)","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
 "CHK-038","B2B Checkout - PO Number Validation","Checkout > B2B > Validation","High","BL-CHK-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Logged in as B2B org user at checkout, PO Number field visible. SPEC NOTE: PO Number field is OPTIONAL (required=false) in current implementation — no 'PO Number is required' error is expected on empty submit. No maximum character length cap is enforced. Assertions for required-field error and length-cap validation are REMOVED from this case — they reflect a spec that does not match current behavior.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] Log in as {{ORG_USER_EMAIL}} and navigate to checkout

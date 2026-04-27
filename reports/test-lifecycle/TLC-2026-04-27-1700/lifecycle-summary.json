@@ -1,0 +1,80 @@
+{
+  "runId": "TLC-2026-04-27-1700",
+  "inputType": "direct-scope",
+  "source": "review 050j",
+  "date": "2026-04-27",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
+    "theme": null,
+    "relevantModules": {
+      "VirtoCommerce.Marketing": "3.1003.0",
+      "VirtoCommerce.MarketingExperienceApi": "3.1001.0",
+      "VirtoCommerce.Xapi": "3.1006.0",
+      "VirtoCommerce.XCart": "3.1009.0",
+      "VirtoCommerce.Cart": "3.1003.0"
+    }
+  },
+  "affectedSuites": ["050j"],
+  "phase2Skipped": "direct-scope (no change source)",
+  "phase5Skipped": "replaced by live introspection probes against /graphql (anon + ORG_USER + 4 negatives)",
+  "casesAnalyzed": 13,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 13,
+  "casesAutoFixed": 5,
+  "phase3": {
+    "gapsIdentified": 10,
+    "gapsByPriority": {"P0": 0, "P1": 4, "P2": 6},
+    "newNeeded": ["GAP-001 cursor-pagination", "GAP-003 keyword-filter", "GAP-004 sort", "GAP-006 userId-scoping", "GAP-008 expired-endDate-filter"],
+    "deferred": ["GAP-002 edges-selection", "GAP-005 currencyCode", "GAP-007 coupon-exhaustion", "GAP-009 e2e-idempotency", "GAP-010 dual-error-code"]
+  },
+  "phase4": {
+    "findingsBySeverity": {"blocker": 0, "critical": 0, "high": 5, "medium": 6, "informational": 7},
+    "autoFixesApplied": [
+      {"caseId": "MKT-GQL-011", "dimension": "testability", "fix": "totalCount >= 0 → >= 1 (was trivially true; live env has 19)"},
+      {"caseId": "MKT-GQL-011", "dimension": "testability", "fix": "Clarified large_first description: server returns full 19 items, no cap"},
+      {"caseId": "MKT-GQL-008", "dimension": "testability", "fix": "Replaced unfalsifiable 'null or fallback' with structural invariant"},
+      {"caseId": "MKT-GQL-006", "dimension": "determinism", "fix": "Pagination-model clarification + cross-ref to GAP-001"},
+      {"caseId": "MKT-GQL-013", "dimension": "determinism", "fix": "Title corrected — DataLoader detection requires within-request analysis, not sequential top-level queries"}
+    ],
+    "mustFixManual": [
+      {"caseId": "MKT-GQL-009", "dimension": "completeness", "issue": "Core deactivation invariant is in [EVIDENCE] not [ASSERTION] — runner will not enforce"},
+      {"scope": "suite-wide", "dimension": "blEclCoverage", "issue": "BL-GQL-001/002/004 referenced by all 13 cases but absent from business-logic.md"}
+    ],
+    "shouldFixManual": [
+      {"caseId": "MKT-GQL-002", "dimension": "completeness", "issue": "Introspection assertion only checks __type non-null — does not detect missing promotionCoupons field"},
+      {"caseId": "MKT-GQL-009", "dimension": "determinism", "issue": "[MANUAL] step uses GUID; operators search Admin by name. Capture systemName."},
+      {"caseId": "MKT-GQL-007", "dimension": "completeness", "issue": "Preconditions require seeded promotions but no seed-data file referenced"},
+      {"caseId": "MKT-GQL-003", "dimension": "blEclCoverage", "issue": "ECL-2.1 (race conditions) not relevant to anonymous auth gate"},
+      {"caseId": "MKT-GQL-006", "dimension": "dataValidity", "issue": "Magic numbers after:'0'/'2' lack named-constant justification"}
+    ]
+  },
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS_AT_THRESHOLD",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "WARN",
+    "G7_duplication": "PASS",
+    "G8_environment": "N/A",
+    "G9_sync": "N/A"
+  },
+  "filesModified": ["regression/suites/Backend/graphql/050j-graphql-xmarketing.csv"],
+  "blProposals": {
+    "new": [
+      {"proposedId": "PROPOSED-BL-GQL-001", "severity": "P1-data", "rule": "GraphQL queries must conform to schema introspection contract; field names, arg types, return types match cached introspection. Field selection on missing fields, missing required args, or unknown root fields must surface DV-006/DV-008/DV-009/DV-010 errors with data=null.", "source": "Cross-suite usage in 050a-i family; supported by live probes 2026-04-27 against vcst-qa /graphql", "triggeredByCases": ["MKT-GQL-001", "MKT-GQL-002", "MKT-GQL-005", "MKT-GQL-011"]},
+      {"proposedId": "PROPOSED-BL-GQL-002", "severity": "P1-data", "rule": "Connection-style queries with first/after pagination must return stable totalCount across pages; items must not duplicate across consecutive pages; localized fields are locale-stable when cultureName is provided; performance is response-time stable across repeated identical calls.", "source": "Cross-suite usage in 050a-i family; supported by 050h wishlist + 050a catalog patterns", "triggeredByCases": ["MKT-GQL-006", "MKT-GQL-008", "MKT-GQL-012", "MKT-GQL-013"]},
+      {"proposedId": "PROPOSED-BL-GQL-004", "severity": "P0-revenue", "rule": "Resolver-level auth gating: protected resolvers must reject anonymous callers with errors[].extensions.code=Unauthorized + data=null; cross-store/cross-tenant requests by authenticated users must reject with extensions.code=Forbidden + data=null. No HTTP 401/403 — GraphQL error envelope only.", "source": "050g GQL-016 noauth_orders + live probe 2026-04-27 anon promotionCoupons → Unauthorized; wrong-store → Forbidden", "triggeredByCases": ["MKT-GQL-003", "MKT-GQL-004"]}
+    ],
+    "stale": []
+  },
+  "nextSteps": [
+    "Convert MKT-GQL-009 EVIDENCE predicates to automated [COUNT]/[DATA] assertions",
+    "Submit PROPOSED-BL-GQL-001/002/004 to qa-lead-orchestrator (cross-suite knowledge-base task)",
+    "Apply 5 should-fix manual items in next pass",
+    "Optional: generate 5 NEW_NEEDED tests (MKT-GQL-014..018) — adds +5 tests, ~+5 minutes",
+    "Run /qa-regression 050j or include in marketing/backend selection groups"
+  ]
+}

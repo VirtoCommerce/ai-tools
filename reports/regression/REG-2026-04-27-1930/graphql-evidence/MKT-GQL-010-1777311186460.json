@@ -1,0 +1,216 @@
+{
+  "caseId": "MKT-GQL-010",
+  "title": "promotionCoupons — E2E: Apply Returned CouponCode in Cart",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T17:33:06.459Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-27T17:33:00.201Z",
+      "expiresAt": "2026-04-27T18:02:59.201Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1",
+    "COUPON_CODE": "E2E-COUPON",
+    "PRODUCT_ID": "60a67fe6-f418-488a-b685-45353c07973c"
+  },
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id contact { organizationId } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1",
+            "contact": {
+              "organizationId": "organization-acme-store"
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 238
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_coupons",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 1) {\n      items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "promotionCoupons": {
+            "items": [
+              {
+                "id": "3eca81fb-48bf-4706-8db7-6b10bbbb358f",
+                "couponCode": "E2E-COUPON"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 192
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "60a67fe6-f418-488a-b685-45353c07973c"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 497
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 4249
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"60a67fe6-f418-488a-b685-45353c07973c\" quantity: 1 }) { id discountTotal { amount } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "discountTotal": {
+              "amount": 0.01
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 513
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_coupon",
+      "query": "mutation {\n    addCoupon(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" couponCode: \"E2E-COUPON\" }) {\n      id\n      coupons { code isAppliedSuccessfully }\n      discountTotal { amount }\n      total { amount }\n      subTotal { amount }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "coupons": [
+              {
+                "code": "E2E-COUPON",
+                "isAppliedSuccessfully": true
+              }
+            ],
+            "discountTotal": {
+              "amount": 5.01
+            },
+            "total": {
+              "amount": 113.99
+            },
+            "subTotal": {
+              "amount": 100
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 558
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=setup_coupons] errors[] empty",
+      "label": "setup_coupons",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=apply_coupon] errors[] empty — coupon applied without server error",
+      "label": "apply_coupon",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=apply_coupon] data.addCoupon.coupons is non-null",
+      "label": "apply_coupon",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addCoupon.coupons is non-null",
+      "actual": "data.addCoupon.coupons = [{\"code\":\"E2E-COUPON\",\"isAppliedSuccessfully\":true}]"
+    },
+    {
+      "raw": "[COUNT label=apply_coupon] data.addCoupon.coupons.length >= 1",
+      "label": "apply_coupon",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addCoupon.coupons.length >= 1",
+      "actual": "data.addCoupon.coupons.length = 1"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] data.addCoupon.coupons[] contains an entry with code = {{COUPON_CODE}} AND isAppliedSuccessfully = true (BL-CART-003)",
+      "layer": "EVIDENCE",
+      "note": "data.addCoupon.coupons[] contains an entry with code = {{COUPON_CODE}} AND isAppliedSuccessfully = true (BL-CART-003)",
+      "resolved": "data.addCoupon.coupons[] contains an entry with code = E2E-COUPON AND isAppliedSuccessfully = true (BL-CART-003)"
+    },
+    {
+      "raw": "[EVIDENCE] data.addCoupon.discountTotal.amount > 0 — coupon produced a real discount (BL-PRICE-001)",
+      "layer": "EVIDENCE",
+      "note": "data.addCoupon.discountTotal.amount > 0 — coupon produced a real discount (BL-PRICE-001)",
+      "resolved": "data.addCoupon.discountTotal.amount > 0 — coupon produced a real discount (BL-PRICE-001)"
+    },
+    {
+      "raw": "[EVIDENCE] data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency",
+      "layer": "EVIDENCE",
+      "note": "data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency",
+      "resolved": "data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency"
+    }
+  ],
+  "cleanup": "[GQL-OP cleanup_clear] mutation { clearCart(command: { storeId: \\\"{{STORE_ID}}\\\" userId: \\\"user-acme-store-maintainer-1\\\" }) { id } } [GQL-EXEC cleanup_clear]"
+}
