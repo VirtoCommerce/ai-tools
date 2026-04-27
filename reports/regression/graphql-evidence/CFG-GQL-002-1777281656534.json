@@ -1,0 +1,68 @@
+{
+  "caseId": "CFG-GQL-002",
+  "title": "productConfiguration — Non-Configurable Product Returns Empty",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T09:20:56.534Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "configurable_id": "@td(CFG_HOODIE.id)"
+  },
+  "operations": [
+    {
+      "label": "get_plain",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"@td(CFG_HOODIE.id)\"\n      storeId: \"B2B-store\"\n      cultureName: \"en-US\"\n      currencyCode: \"USD\"\n    ) {\n      configurationSections { id type }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 685
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_plain] errors[] empty",
+      "label": "get_plain",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=get_plain] data.productConfiguration is non-null",
+      "label": "get_plain",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration is non-null",
+      "actual": "data.productConfiguration = {\"configurationSections\":[]}"
+    },
+    {
+      "raw": "[COUNT label=get_plain] data.productConfiguration.configurationSections.length = 0",
+      "label": "get_plain",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.length = 0",
+      "actual": "data.productConfiguration.configurationSections.length = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] No HTTP 500; structured GraphQL response (runner-manual)",
+      "layer": "EVIDENCE",
+      "note": "No HTTP 500; structured GraphQL response (runner-manual)",
+      "resolved": "No HTTP 500; structured GraphQL response (runner-manual)"
+    }
+  ],
+  "cleanup": "none"
+}

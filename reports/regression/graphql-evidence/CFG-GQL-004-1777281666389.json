@@ -1,0 +1,103 @@
+{
+  "caseId": "CFG-GQL-004",
+  "title": "productConfiguration — Text Section maxLength Returned",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T09:21:06.388Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "configurable_id": "e5ae288e-369e-423d-9647-3548797a398a",
+    "expected_maxLength": "30"
+  },
+  "operations": [
+    {
+      "label": "get_text",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"e5ae288e-369e-423d-9647-3548797a398a\"\n      storeId: \"B2B-store\"\n      cultureName: \"en-US\"\n    ) {\n      configurationSections { id name type isRequired maxLength allowCustomText allowTextOptions }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "b447a771-4808-4590-ab79-290d8cc8869f",
+                "name": "Engraving Text",
+                "type": "Text",
+                "isRequired": true,
+                "maxLength": 30,
+                "allowCustomText": true,
+                "allowTextOptions": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 447
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_text] errors[] empty",
+      "label": "get_text",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=get_text] data.productConfiguration.configurationSections.length = 1",
+      "label": "get_text",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.length = 1",
+      "actual": "data.productConfiguration.configurationSections.length = 1"
+    },
+    {
+      "raw": "[DATA label=get_text] data.productConfiguration.configurationSections.0.type = Text",
+      "label": "get_text",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.type = Text",
+      "actual": "data.productConfiguration.configurationSections.0.type = Text"
+    },
+    {
+      "raw": "[DATA label=get_text] data.productConfiguration.configurationSections.0.isRequired = true",
+      "label": "get_text",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.isRequired = true",
+      "actual": "data.productConfiguration.configurationSections.0.isRequired = true"
+    },
+    {
+      "raw": "[DATA label=get_text] data.productConfiguration.configurationSections.0.maxLength = 30",
+      "label": "get_text",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.maxLength = 30",
+      "actual": "data.productConfiguration.configurationSections.0.maxLength = 30"
+    },
+    {
+      "raw": "[DATA label=get_text] data.productConfiguration.configurationSections.0.allowCustomText = true",
+      "label": "get_text",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.allowCustomText = true",
+      "actual": "data.productConfiguration.configurationSections.0.allowCustomText = true"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP label=get_text] storefront PDP enforces maxLength=30 in Text input (runner-manual via /products/configurable-hat path on CFG_RING)",
+      "layer": "ROUNDTRIP",
+      "note": "storefront PDP enforces maxLength=30 in Text input (runner-manual via /products/configurable-hat path on CFG_RING)",
+      "resolved": "storefront PDP enforces maxLength=30 in Text input (runner-manual via /products/configurable-hat path on CFG_RING)"
+    }
+  ],
+  "cleanup": "none"
+}

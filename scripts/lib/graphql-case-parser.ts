@@ -156,10 +156,12 @@ export function parseSteps(cell: string): StepBlock[] {
         }
         body = chunk.join("\n").trim();
         blocks.push({ kind: "GQL-VARS", label, variablesJson: body, raw });
+        i = backfillEmptyOpFromContinuation(blocks, lines, label, i);
         continue;
       }
       blocks.push({ kind: "GQL-VARS", label, variablesJson: body, raw });
       i++;
+      i = backfillEmptyOpFromContinuation(blocks, lines, label, i);
       continue;
     }
 
@@ -220,6 +222,51 @@ export function parseSteps(cell: string): StepBlock[] {
 
 function isStepTag(line: string): boolean {
   return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
+}
+
+/**
+ * Supports CSVs that author the operation body AFTER [GQL-VARS]:
+ *   [GQL-OP foo]
+ *   [GQL-VARS foo] {inline JSON}
+ *     mutation Foo { ... }
+ *   [GQL-EXEC foo]
+ *
+ * The OP block's body absorber (line 127) stops at the immediate [GQL-VARS]
+ * step tag with body="". Without this back-fill, the trailing mutation lines
+ * fall through unrecognized and OP.query stays empty — which breaks GQL-EXEC.
+ *
+ * After a [GQL-VARS <label>] is pushed, if continuation lines follow that
+ * aren't step tags, AND the most-recent same-label GQL-OP has empty query,
+ * absorb those lines as that OP's query body. Returns the advanced cursor.
+ */
+function backfillEmptyOpFromContinuation(
+  blocks: StepBlock[],
+  lines: string[],
+  label: string,
+  i: number
+): number {
+  const target = findEmptyOpForLabel(blocks, label);
+  if (!target) return i;
+  const tail: string[] = [];
+  while (i < lines.length) {
+    const nextLine = lines[i];
+    if (isStepTag(nextLine.trim())) break;
+    tail.push(nextLine);
+    i++;
+  }
+  const joined = tail.join("\n").trim();
+  if (joined) target.query = joined;
+  return i;
+}
+
+function findEmptyOpForLabel(blocks: StepBlock[], label: string): OpStep | null {
+  for (let j = blocks.length - 1; j >= 0; j--) {
+    const b = blocks[j];
+    if (b.kind === "GQL-OP" && b.label === label) {
+      return b.query === "" ? b : null;
+    }
+  }
+  return null;
 }
 
 /**

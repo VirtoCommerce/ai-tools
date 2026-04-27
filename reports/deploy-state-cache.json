@@ -1,0 +1,29 @@
+{
+  "capturedAt": "2026-04-27T00:00:00Z",
+  "source": "VirtoCommerce/vc-deploy-dev branch vcst-qa",
+  "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
+  "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
+  "prerelease": {
+    "VirtoCommerce.Customer": "3.1007.0-pr-293-8ddd",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0-pr-129-2998",
+    "VirtoCommerce.Shipping": "3.1003.0-pr-67-ae8e"
+  },
+  "stableModules": {
+    "VirtoCommerce.XCatalog": "3.1004.0",
+    "VirtoCommerce.XCart": "3.1009.0",
+    "VirtoCommerce.XOrder": "3.1002.0",
+    "VirtoCommerce.XFrontend": "3.1000.0",
+    "VirtoCommerce.XCMS": "3.1001.0",
+    "VirtoCommerce.Xapi": "3.1006.0",
+    "VirtoCommerce.WhiteLabeling": "3.1001.0",
+    "VirtoCommerce.Store": "3.1002.0",
+    "VirtoCommerce.Catalog": "3.1020.0"
+  },
+  "changesVsPrev_REG_2026_04_24_2334": [
+    "platform: 3.1023.0-pr-2987-9f4a → 3.1025.0-pr-2987-eb8e",
+    "VirtoCommerce.Customer: 3.1007.0-alpha.976-vcst-4710 → 3.1007.0-pr-293-8ddd",
+    "theme unchanged",
+    "ProfileExperienceApiModule unchanged",
+    "XCart/XCatalog/Xapi/Catalog (configurable products stack) UNCHANGED — relevant for 050i"
+  ]
+}

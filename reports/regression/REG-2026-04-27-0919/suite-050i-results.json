@@ -1,0 +1,203 @@
+{
+  "suiteId": "050i",
+  "runId": "REG-2026-04-27-0919",
+  "startedAt": "2026-04-27T09:20:45Z",
+  "completedAt": "2026-04-27T09:23:49Z",
+  "totals": { "total": 12, "passed": 5, "failed": 7, "skipped": 0, "blocked": 0 },
+  "passRate": "41.7%",
+  "earlyStop": true,
+  "earlyStopReason": "7 of 12 cases (58%) failed with the same root cause — exceeds 50% threshold. Halting per orchestrator instruction. Suspected root cause: CSV step-block authoring pattern incompatible with runner parser (NOT a backend regression).",
+  "rootCauseClassification": "tooling/test-infrastructure",
+  "backendRegression": false,
+  "schemaValidated": true,
+  "deployState": {
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710",
+    "theme": "2.48.0-pr-2219-d1d4",
+    "xCart": "3.1009.0",
+    "xCatalog": "3.1004.0",
+    "xApi": "3.1006.0",
+    "catalog": "3.1020.0"
+  },
+  "cases": [
+    {
+      "id": "CFG-GQL-001",
+      "title": "productConfiguration — Happy Path Two Required Product Sections",
+      "priority": "Critical",
+      "result": "passed",
+      "durationMs": 3324,
+      "evidence": "reports/regression/graphql-evidence/CFG-GQL-001-1777281651143.json",
+      "assertionsRun": 7,
+      "assertionsPassed": 7,
+      "notes": "All 7 hard assertions passed. CFG_LAPTOP returns 2 required Product sections (RAM + Storage) with non-empty options[] including product refs and listPrice. Cross-layer evidence verified manually."
+    },
+    {
+      "id": "CFG-GQL-002",
+      "title": "productConfiguration — Non-Configurable Product Returns Empty",
+      "priority": "High",
+      "result": "passed",
+      "durationMs": 685,
+      "evidence": "reports/regression/graphql-evidence/CFG-GQL-002-1777281656534.json",
+      "assertionsRun": 3,
+      "assertionsPassed": 3,
+      "notes": "All 3 assertions passed. Backend returned empty configurationSections (graceful) for non-configurable product. WARNING: test-data alias resolver could not resolve @td(CFG_HOODIE.id) — alias has only name/slug/url/price fields. Query was sent with literal @td token as configurableProductId. Backend still returned correct shape (empty sections) which satisfies the 'non-configurable returns empty' invariant. Recommend orchestrator: extend test-data/aliases.json to add 'id' field on CFG_HOODIE so this test exercises a real product path. Not a defect in production code."
+    },
+    {
+      "id": "CFG-GQL-003",
+      "title": "productConfiguration — Invalid GUID — Graceful Empty",
+      "priority": "High",
+      "result": "passed",
+      "durationMs": 419,
+      "evidence": "reports/regression/graphql-evidence/CFG-GQL-003-1777281657922.json",
+      "assertionsRun": 1,
+      "assertionsPassed": 1,
+      "notes": "Zero-GUID returned data.productConfiguration.configurationSections=[] with errors[] empty. No HTTP 500. Resolver respects error contract (BL-GQL-001)."
+    },
+    {
+      "id": "CFG-GQL-004",
+      "title": "productConfiguration — Text Section maxLength Returned",
+      "priority": "Critical",
+      "result": "passed",
+      "durationMs": 447,
+      "evidence": "reports/regression/graphql-evidence/CFG-GQL-004-1777281666389.json",
+      "assertionsRun": 6,
+      "assertionsPassed": 6,
+      "notes": "CFG_RING returns 1 Text section with maxLength=30, isRequired=true, allowCustomText=true. PR #2235 / VCST-4806 fix is intact in xCatalog 3.1004.0."
+    },
+    {
+      "id": "CFG-GQL-005",
+      "title": "productConfiguration — Conditional Sections dependsOnSectionId",
+      "priority": "High",
+      "result": "passed",
+      "durationMs": 602,
+      "evidence": "reports/regression/graphql-evidence/CFG-GQL-005-1777281667953.json",
+      "assertionsRun": 2,
+      "assertionsPassed": 2,
+      "notes": "CFG_CONDITIONAL_BIKE returns 4 sections. Manually inspected dependsOnSectionId topology: root 'Frame Type' (dep=null), 'Wheel Set' and 'Frame Color' depend on Frame Type, 'Tire Type' depends on Wheel Set. Chain A->B->C with sibling D verified (VCST-4713 cascade intact)."
+    },
+    {
+      "id": "CFG-GQL-006",
+      "title": "createConfiguredLineItem — Happy Path Preview With Required Selections",
+      "priority": "Critical",
+      "result": "failed",
+      "durationMs": 2416,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Runner threw: '[GQL-EXEC create_preview] has no matching [GQL-OP create_preview]'. Root cause: CSV step block uses [GQL-OP create_preview] immediately followed by [GQL-VARS create_preview] {inline JSON} on the next line, then the multi-line mutation body. The parser (scripts/lib/graphql-case-parser.ts:122-140) absorbs body lines until next step tag, but [GQL-VARS] IS a step tag — so OP body stops immediately, query=''. Then VARS captures inline JSON and advances by 1 line; subsequent mutation body lines fall through unrecognized. At [GQL-EXEC] time, op.query is empty (graphql-runner.ts:462) which throws this misleading error message. This is a CSV-authoring + runner-parser convention mismatch, NOT a backend defect. Manual schema validation of the mutation body confirmed it is valid against live xAPI schema."
+    },
+    {
+      "id": "CFG-GQL-007",
+      "title": "createConfiguredLineItem — Missing Required Section Returns Errors",
+      "priority": "High",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same root cause as CFG-GQL-006 — [GQL-OP create_empty] followed immediately by [GQL-VARS create_empty] inline. OP query empty -> parser throws at EXEC time."
+    },
+    {
+      "id": "CFG-GQL-008",
+      "title": "addConfigurationItem + configurationItems — Roundtrip",
+      "priority": "Critical",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same parser issue at [GQL-EXEC add_section]. Note: setup steps (auth, me, cleanup_pre, get_def, add_item) executed successfully. However add_item.items.0.id captured as EMPTY STRING — addItem mutation returned 200 OK but items[] empty in response. Could indicate cart-state issue (e.g., auth user already has stale cart, race with cleanup_pre, or addItem semantics changed). Worth investigating once runner parser is fixed. Cannot assess backend behavior beyond add_item until runner is fixed."
+    },
+    {
+      "id": "CFG-GQL-009",
+      "title": "addConfigurationItems Bulk + updateConfigurationItem Replace",
+      "priority": "Critical",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same parser issue at [GQL-EXEC bulk_add]. Same empty-LINE_ITEM_ID pattern observed in setup."
+    },
+    {
+      "id": "CFG-GQL-010",
+      "title": "updateConfigurationItems Bulk Update",
+      "priority": "High",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same parser issue at [GQL-EXEC bulk_update]."
+    },
+    {
+      "id": "CFG-GQL-011",
+      "title": "removeConfigurationItem + removeConfigurationItems",
+      "priority": "High",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same parser issue at [GQL-EXEC bulk_add]."
+    },
+    {
+      "id": "CFG-GQL-012",
+      "title": "changeCartConfiguredItem — Atomic Reconfigure With Quantity",
+      "priority": "High",
+      "result": "failed",
+      "durationMs": 0,
+      "evidence": null,
+      "assertionsRun": 0,
+      "assertionsPassed": 0,
+      "failureReason": "RUNNER_PARSER",
+      "notes": "Same parser issue at [GQL-EXEC seed_config]."
+    }
+  ],
+  "bugs": [
+    {
+      "caseId": "CFG-GQL-006..012 (block)",
+      "severity": "High",
+      "title": "GraphQL runner parser fails when [GQL-OP] is immediately followed by [GQL-VARS] without OP body — CSV authoring convention breaks 7 of 12 cases in 050i suite",
+      "businessRule": "Test-infrastructure invariant: runner-native CSV format must support both '[GQL-OP] body / [GQL-VARS] inline / [GQL-EXEC]' and '[GQL-OP] / [GQL-VARS] inline / mutation-body / [GQL-EXEC]' patterns, OR the CSV authoring guide must mandate the working pattern explicitly.",
+      "evidence": "scripts/lib/graphql-case-parser.ts:98-219 (parseSteps) — OP body absorption stops at next step tag (line 129 isStepTag check); since [GQL-VARS] is recognized as a step tag, OP body becomes empty when VARS is the very next line. graphql-runner.ts:462 then throws 'has no matching [GQL-OP]' which is misleading — the OP IS registered, just with empty query.",
+      "observed": "All 7 mutation cases (CFG-GQL-006..012) error before the actual mutation is sent to /graphql. Backend is never exercised.",
+      "expected": "Either (a) parser should also absorb mutation body that follows GQL-VARS (treat continuation lines as the OP query body), or (b) CSV must place mutation body INSIDE the [GQL-OP] block before [GQL-VARS], or (c) error message should clearly say 'OP block has empty query body — did you put GQL-VARS before the query body?'",
+      "recommendedFix": "Update CSV authoring convention in test-case-template.md: '[GQL-OP label] MUST be followed by the GraphQL query/mutation body BEFORE any [GQL-VARS label] block.' Then re-author rows 6-12 of regression/suites/Backend/graphql/050i-graphql-configurations.csv accordingly. Alternatively, enhance the parser to merge orphan mutation body lines (after GQL-VARS) into the most recent GQL-OP block. Defer to test-management-specialist for CSV edits (runner-side fix is preferred to avoid re-authoring N suites).",
+      "scope": "tooling — affects 050i (this suite) and any future GraphQL suites that adopt the same step-block ordering. Other 050* suites may already use the working convention; spot-check during fix."
+    },
+    {
+      "caseId": "CFG-GQL-002",
+      "severity": "Low",
+      "title": "Test data alias CFG_HOODIE is missing 'id' field — assertions still pass but query receives literal @td token",
+      "businessRule": "Test-data convention: aliases referenced via @td(ALIAS.id) must expose an 'id' field. CFG_HOODIE only has name/slug/url/price.",
+      "evidence": "Runner stderr: '[test-data-resolver] Failed to resolve @td(CFG_HOODIE.id): Unknown field id on alias CFG_HOODIE. Available: name, slug, url, price'",
+      "observed": "Runner sent literal string '@td(CFG_HOODIE.id)' as configurableProductId. Backend treated it as not-found and returned empty configurationSections — coincidentally satisfying the test's 'non-configurable returns empty' invariant.",
+      "expected": "Test-data alias should include 'id' field; query should send a real CFG_HOODIE product GUID; backend's empty-sections response then proves true non-configurable behavior (not just not-found behavior).",
+      "recommendedFix": "Add 'id' field to CFG_HOODIE entry in test-data/aliases.json. Verify aligned with test-data/products/configurable-products.csv and CFG-003 source row."
+    }
+  ],
+  "businessRulesValidated": [
+    "BL-GQL-001 (partially — read-only query path verified for happy/empty/invalid; mutation path NOT verified due to runner blocker)",
+    "BL-CAT-006 (configurable product structure: required sections, types, options — verified)",
+    "BL-PRICE-001 (NOT verified — depends on createConfiguredLineItem cases 006-012)",
+    "BL-CART-001 (NOT verified — depends on cart-bound mutation cases 008-012)"
+  ],
+  "businessRulesNotVerified": [
+    "Mutation contract (createConfiguredLineItem, addConfigurationItem(s), updateConfigurationItem(s), removeConfigurationItem(s), changeCartConfiguredItem)",
+    "Cart-bound configuration roundtrip (BL-CART-001)",
+    "Configurable product price math (base + options sum, BL-PRICE-001)"
+  ],
+  "evidencePaths": [
+    "reports/regression/graphql-evidence/CFG-GQL-001-1777281651143.json",
+    "reports/regression/graphql-evidence/CFG-GQL-002-1777281656534.json",
+    "reports/regression/graphql-evidence/CFG-GQL-003-1777281657922.json",
+    "reports/regression/graphql-evidence/CFG-GQL-004-1777281666389.json",
+    "reports/regression/graphql-evidence/CFG-GQL-005-1777281667953.json"
+  ]
+}

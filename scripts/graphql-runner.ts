@@ -459,8 +459,15 @@ async function executeBlock(
 
     case "GQL-EXEC": {
       const op = ctx.operations.get(block.label);
-      if (!op || !op.query) {
+      if (!op) {
         throw new Error(`[GQL-EXEC ${block.label}] has no matching [GQL-OP ${block.label}]`);
+      }
+      if (!op.query) {
+        throw new Error(
+          `[GQL-EXEC ${block.label}] OP block has empty query body — ` +
+          `is the query/mutation body present between [GQL-OP ${block.label}] and [GQL-EXEC ${block.label}]? ` +
+          `If [GQL-VARS ${block.label}] precedes the body, ensure parser back-fill is in effect (graphql-case-parser.ts).`
+        );
       }
 
       // Validate against schema before send

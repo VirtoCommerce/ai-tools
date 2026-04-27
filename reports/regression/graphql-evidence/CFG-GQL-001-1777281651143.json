@@ -1,0 +1,207 @@
+{
+  "caseId": "CFG-GQL-001",
+  "title": "productConfiguration — Happy Path Two Required Product Sections",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T09:20:51.142Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "configurable_id": "c972b4d0-25c2-4d7c-8a18-9360a8889bc3",
+    "SECTION_RAM_ID": "37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630",
+    "OPT_RAM_BASE_ID": "78159cd4-29ca-45d4-aa9f-56d4c6959a57"
+  },
+  "operations": [
+    {
+      "label": "get_config",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"c972b4d0-25c2-4d7c-8a18-9360a8889bc3\"\n      storeId: \"B2B-store\"\n      cultureName: \"en-US\"\n      currencyCode: \"USD\"\n    ) {\n      configurationSections { id name isRequired type maxLength dependsOnSectionId options { id text product { id name } listPrice { amount currency { code } } } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630",
+                "name": "RAM",
+                "isRequired": true,
+                "type": "Product",
+                "maxLength": null,
+                "dependsOnSectionId": null,
+                "options": [
+                  {
+                    "id": "12cb9708-89d4-4b50-981e-8fa70db7df51",
+                    "text": null,
+                    "product": {
+                      "id": "78159cd4-29ca-45d4-aa9f-56d4c6959a57",
+                      "name": "AGENT-TEST-Config-Laptop-16GB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 100,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "452527f0-1047-4d51-933c-fe72595e02ab",
+                    "text": null,
+                    "product": {
+                      "id": "5d7d2838-b429-48fb-bdaf-3b5cf485600f",
+                      "name": "AGENT-TEST-Config-Laptop-32GB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 250,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "bb62e161-c8d0-404d-9438-9bcd59641ab1",
+                    "text": null,
+                    "product": {
+                      "id": "db1945df-bef0-4927-9287-8f9db7b9779e",
+                      "name": "AGENT-TEST-Config-Laptop-8GB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 0,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "29e873db-d5b2-4390-8016-3d2888bef27d",
+                "name": "Storage",
+                "isRequired": true,
+                "type": "Product",
+                "maxLength": null,
+                "dependsOnSectionId": null,
+                "options": [
+                  {
+                    "id": "0092ccae-02b4-4bd9-8982-f384351439e1",
+                    "text": null,
+                    "product": {
+                      "id": "363bf9fe-d5fb-4297-b379-ec2c2f717092",
+                      "name": "AGENT-TEST-Config-Laptop-256GB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 0,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "51f0e7da-02ef-4dca-a92c-01b15261908d",
+                    "text": null,
+                    "product": {
+                      "id": "0975e74e-7983-4e98-a2da-e5cef621fc73",
+                      "name": "AGENT-TEST-Config-Laptop-512GB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 75,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "6a4680f9-6daa-4827-b18d-9370b44a8400",
+                    "text": null,
+                    "product": {
+                      "id": "b55b6041-cce7-46aa-b4a3-de97ff819203",
+                      "name": "AGENT-TEST-Config-Laptop-1TB-20260324"
+                    },
+                    "listPrice": {
+                      "amount": 150,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 3324
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_config] errors[] empty",
+      "label": "get_config",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections is non-null",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections is non-null",
+      "actual": "data.productConfiguration.configurationSections = [{\"id\":\"37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630\",\"name\":\"RAM\",\"isRequired\":true,\"type\":\"Product\",\"maxLength\":null,\"dependsOnSectionId\":null,\"options\":[{\"id\":\"12cb9708-89d4-4b50-981e-8fa70db7df51\",\"text\":…"
+    },
+    {
+      "raw": "[COUNT label=get_config] data.productConfiguration.configurationSections.length = 2",
+      "label": "get_config",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.length = 2",
+      "actual": "data.productConfiguration.configurationSections.length = 2"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.0.type = Product",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.type = Product",
+      "actual": "data.productConfiguration.configurationSections.0.type = Product"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.0.isRequired = true",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.isRequired = true",
+      "actual": "data.productConfiguration.configurationSections.0.isRequired = true"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.1.type = Product",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.1.type = Product",
+      "actual": "data.productConfiguration.configurationSections.1.type = Product"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.1.isRequired = true",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.1.isRequired = true",
+      "actual": "data.productConfiguration.configurationSections.1.isRequired = true"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Both sections have non-empty options[] with product references and listPrice (runner-manual)",
+      "layer": "EVIDENCE",
+      "note": "Both sections have non-empty options[] with product references and listPrice (runner-manual)",
+      "resolved": "Both sections have non-empty options[] with product references and listPrice (runner-manual)"
+    }
+  ],
+  "cleanup": "none — read-only query"
+}

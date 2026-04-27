@@ -1,0 +1,58 @@
+{
+  "caseId": "CFG-GQL-003",
+  "title": "productConfiguration — Invalid GUID — Graceful Empty",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T09:20:57.921Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "bogus_id": "00000000-0000-0000-0000-000000000000"
+  },
+  "operations": [
+    {
+      "label": "bogus_config",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"00000000-0000-0000-0000-000000000000\"\n      storeId: \"B2B-store\"\n    ) {\n      configurationSections { id }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 419
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[DATA label=bogus_config] data is non-null OR errors[] is non-empty",
+      "label": "bogus_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data is non-null",
+      "actual": "data = {\"productConfiguration\":{\"configurationSections\":[]}}"
+    }
+  ],
+  "infoAssertions": [
+    {
+      "raw": "[EVIDENCE] No HTTP 500 in network response",
+      "layer": "EVIDENCE",
+      "note": "No HTTP 500 in network response"
+    }
+  ],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] If errors[], message is descriptive (not stack trace); response time < 2s (runner-manual)",
+      "layer": "EVIDENCE",
+      "note": "If errors[], message is descriptive (not stack trace); response time < 2s (runner-manual)",
+      "resolved": "If errors[], message is descriptive (not stack trace); response time < 2s (runner-manual)"
+    }
+  ],
+  "cleanup": "none"
+}

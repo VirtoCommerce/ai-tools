@@ -1,0 +1,91 @@
+{
+  "caseId": "CFG-GQL-005",
+  "title": "productConfiguration — Conditional Sections dependsOnSectionId",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-27T09:21:07.953Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "configurable_id": "2ac50978-0163-4fa1-b6e7-ce9101ba720d"
+  },
+  "operations": [
+    {
+      "label": "get_cascade",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"2ac50978-0163-4fa1-b6e7-ce9101ba720d\"\n      storeId: \"B2B-store\"\n    ) {\n      configurationSections { id name isRequired dependsOnSectionId }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "a3ea3283-c40e-44c1-9534-c1a3cc06da75",
+                "name": "Frame Type",
+                "isRequired": true,
+                "dependsOnSectionId": null
+              },
+              {
+                "id": "8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2",
+                "name": "Wheel Set",
+                "isRequired": false,
+                "dependsOnSectionId": "a3ea3283-c40e-44c1-9534-c1a3cc06da75"
+              },
+              {
+                "id": "b0b1692a-c663-4f66-ac3f-2f3307b1ff42",
+                "name": "Frame Color",
+                "isRequired": false,
+                "dependsOnSectionId": "a3ea3283-c40e-44c1-9534-c1a3cc06da75"
+              },
+              {
+                "id": "12fbadbf-b1e8-496e-9576-18b929a654a8",
+                "name": "Tire Type",
+                "isRequired": false,
+                "dependsOnSectionId": "8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 602
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_cascade] errors[] empty",
+      "label": "get_cascade",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=get_cascade] data.productConfiguration.configurationSections.length = 4",
+      "label": "get_cascade",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.length = 4",
+      "actual": "data.productConfiguration.configurationSections.length = 4"
+    }
+  ],
+  "infoAssertions": [
+    {
+      "raw": "[EVIDENCE] At least one section has non-null dependsOnSectionId pointing at the root section's id (the root has dependsOnSectionId=null) — runner-manual",
+      "layer": "EVIDENCE",
+      "note": "At least one section has non-null dependsOnSectionId pointing at the root section's id (the root has dependsOnSectionId=null) — runner-manual"
+    }
+  ],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] dependsOnSectionId values cross-reference sibling/parent ids in the response",
+      "layer": "EVIDENCE",
+      "note": "dependsOnSectionId values cross-reference sibling/parent ids in the response",
+      "resolved": "dependsOnSectionId values cross-reference sibling/parent ids in the response"
+    }
+  ],
+  "cleanup": "none"
+}
