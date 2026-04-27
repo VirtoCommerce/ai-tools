@@ -1,0 +1,681 @@
+===== CFG-GQL-001 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-001 ===
+Title:  productConfiguration — Happy Path Two Required Product Sections
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 4 blocks
+
+• [GQL-EXEC get_config] POST /graphql
+  200 OK — 495ms — 0 errors
+• [GQL-CAPTURE get_config.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_config.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+
+Assertions (7):
+  ✅ [ERRORS label=get_config]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=get_config]
+       expected: data.productConfiguration.configurationSections is non-null
+       actual:   data.productConfiguration.configurationSections = [{"id":"37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630","name":"RAM","isRequired":true,"type":"Product","maxLength":null,"dependsOnSectionId":null,"options":[{"id":"12cb9708-89d4-4b50-981e-8fa70db7df51","text":…
+  ✅ [COUNT label=get_config]
+       expected: data.productConfiguration.configurationSections.length = 2
+       actual:   data.productConfiguration.configurationSections.length = 2
+  ✅ [DATA label=get_config]
+       expected: data.productConfiguration.configurationSections.0.type = Product
+       actual:   data.productConfiguration.configurationSections.0.type = Product
+  ✅ [DATA label=get_config]
+       expected: data.productConfiguration.configurationSections.0.isRequired = true
+       actual:   data.productConfiguration.configurationSections.0.isRequired = true
+  ✅ [DATA label=get_config]
+       expected: data.productConfiguration.configurationSections.1.type = Product
+       actual:   data.productConfiguration.configurationSections.1.type = Product
+  ✅ [DATA label=get_config]
+       expected: data.productConfiguration.configurationSections.1.isRequired = true
+       actual:   data.productConfiguration.configurationSections.1.isRequired = true
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] Both sections have non-empty options[] with product references and listPrice (runner-manual)
+
+Cleanup (NOT automatically executed in MVP):
+  none — read-only query
+
+=== Verdict: PASS (7/7 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-001-1777286566335.json
+===== CFG-GQL-002 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-002 ===
+Title:  productConfiguration — Non-Configurable Product Returns Empty
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = 4b1de1b0-b220-4092-9336-9ad462216719
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC get_plain] POST /graphql
+  200 OK — 212ms — 0 errors
+
+Assertions (3):
+  ✅ [ERRORS label=get_plain]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=get_plain]
+       expected: data.productConfiguration is non-null
+       actual:   data.productConfiguration = {"configurationSections":[]}
+  ✅ [COUNT label=get_plain]
+       expected: data.productConfiguration.configurationSections.length = 0
+       actual:   data.productConfiguration.configurationSections.length = 0
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] No HTTP 500; structured GraphQL response (runner-manual)
+
+=== Verdict: PASS (3/3 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-002-1777286567527.json
+===== CFG-GQL-003 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-003 ===
+Title:  productConfiguration — Invalid GUID — Graceful Empty
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  bogus_id = 00000000-0000-0000-0000-000000000000
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC bogus_config] POST /graphql
+  200 OK — 412ms — 0 errors
+
+Assertions (1):
+  ✅ [DATA label=bogus_config]
+       expected: data is non-null
+       actual:   data = {"productConfiguration":{"configurationSections":[]}}
+
+Info-only tags (1, not evaluated in GraphQL layer):
+  · [EVIDENCE] No HTTP 500 in network response
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] If errors[], message is descriptive (not stack trace); response time < 2s (runner-manual)
+
+=== Verdict: PASS (1/1 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-003-1777286568899.json
+===== CFG-GQL-004 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-004 ===
+Title:  productConfiguration — Text Section maxLength Returned
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 2):
+  configurable_id = e5ae288e-369e-423d-9647-3548797a398a
+  expected_maxLength = 30
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC get_text] POST /graphql
+  200 OK — 254ms — 0 errors
+
+Assertions (6):
+  ✅ [ERRORS label=get_text]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [COUNT label=get_text]
+       expected: data.productConfiguration.configurationSections.length = 1
+       actual:   data.productConfiguration.configurationSections.length = 1
+  ✅ [DATA label=get_text]
+       expected: data.productConfiguration.configurationSections.0.type = Text
+       actual:   data.productConfiguration.configurationSections.0.type = Text
+  ✅ [DATA label=get_text]
+       expected: data.productConfiguration.configurationSections.0.isRequired = true
+       actual:   data.productConfiguration.configurationSections.0.isRequired = true
+  ✅ [DATA label=get_text]
+       expected: data.productConfiguration.configurationSections.0.maxLength = 30
+       actual:   data.productConfiguration.configurationSections.0.maxLength = 30
+  ✅ [DATA label=get_text]
+       expected: data.productConfiguration.configurationSections.0.allowCustomText = true
+       actual:   data.productConfiguration.configurationSections.0.allowCustomText = true
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] storefront PDP enforces maxLength=30 in Text input (runner-manual via /products/configurable-hat path on CFG_RING)
+
+=== Verdict: PASS (6/6 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-004-1777286570178.json
+===== CFG-GQL-005 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-005 ===
+Title:  productConfiguration — Conditional Sections dependsOnSectionId
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = 2ac50978-0163-4fa1-b6e7-ce9101ba720d
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC get_cascade] POST /graphql
+  200 OK — 684ms — 0 errors
+
+Assertions (2):
+  ✅ [ERRORS label=get_cascade]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [COUNT label=get_cascade]
+       expected: data.productConfiguration.configurationSections.length = 4
+       actual:   data.productConfiguration.configurationSections.length = 4
+
+Info-only tags (1, not evaluated in GraphQL layer):
+  · [EVIDENCE] At least one section has non-null dependsOnSectionId pointing at the root section's id (the root has dependsOnSectionId=null) — runner-manual
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] dependsOnSectionId values cross-reference sibling/parent ids in the response
+
+=== Verdict: PASS (2/2 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-005-1777286571842.json
+===== CFG-GQL-006 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-006 ===
+Title:  createConfiguredLineItem — Happy Path Preview With Required Selections
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 9 blocks
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 300ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+
+• [GQL-EXEC create_preview] POST /graphql
+  200 OK — 215ms — 0 errors
+
+Assertions (5):
+  ✅ [ERRORS label=create_preview]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=create_preview]
+       expected: data.createConfiguredLineItem is non-null
+       actual:   data.createConfiguredLineItem = {"id":null,"quantity":1,"listPrice":{"amount":1099,"currency":{"code":"USD"}},"extendedPrice":{"amount":1099,"currency":{"code":"USD"}}}
+  ✅ [COUNT label=create_preview]
+       expected: data.createConfiguredLineItem.quantity = 1
+       actual:   data.createConfiguredLineItem.quantity = 1
+  ✅ [DATA label=create_preview]
+       expected: data.createConfiguredLineItem.extendedPrice.amount > 0
+       actual:   data.createConfiguredLineItem.extendedPrice.amount = 1099
+  ✅ [DATA label=create_preview]
+       expected: data.createConfiguredLineItem.listPrice.currency.code = USD
+       actual:   data.createConfiguredLineItem.listPrice.currency.code = USD
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] Preview does not appear in /carts list — confirms it does NOT mutate cart (runner-manual)
+
+Cleanup (NOT automatically executed in MVP):
+  none — preview only
+
+=== Verdict: PASS (5/5 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-006-1777286573360.json
+===== CFG-GQL-007 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-007 ===
+Title:  createConfiguredLineItem — Empty Required Sections Returns Draft (id=null)
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 3 blocks
+
+• [GQL-EXEC create_empty] POST /graphql
+  200 OK — 254ms — 0 errors
+
+Assertions (4):
+  ✅ [ERRORS label=create_empty]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=create_empty]
+       expected: data.createConfiguredLineItem is non-null
+       actual:   data.createConfiguredLineItem = {"id":null,"quantity":1,"extendedPrice":{"amount":999,"currency":{"code":"USD"}}}
+  ✅ [DATA label=create_empty]
+       expected: data.createConfiguredLineItem.id is null
+       actual:   data.createConfiguredLineItem.id is null
+  ✅ [DATA label=create_empty]
+       expected: data.createConfiguredLineItem.quantity = 1
+       actual:   data.createConfiguredLineItem.quantity = 1
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] No HTTP 500. id=null indicates soft-reject — line item not committable. BL-CHK-001 cart enforcement is verified separately via addItem-with-empty-config (silent no-op).
+
+=== Verdict: PASS (4/4 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-007-1777286574571.json
+===== CFG-GQL-008 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-008 ===
+Title:  addConfigurationItem (upsert) + configurationItems — Roundtrip
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 24 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (527ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 140ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 606ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 165ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID] = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 722ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = 80e3932b-0aa5-4265-afd3-df7ce1d9fc4b
+
+• [GQL-EXEC add_section] POST /graphql
+  200 OK — 1278ms — 0 errors
+
+• [GQL-EXEC read_back] POST /graphql
+  200 OK — 302ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 297ms — 0 errors
+
+Assertions (10):
+  ✅ [ERRORS label=add_item]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=add_item]
+       expected: data.addItem.itemsCount = 1
+       actual:   data.addItem.itemsCount = 1
+  ✅ [COUNT label=add_item]
+       expected: data.addItem.items.0.configurationItems.length = 2
+       actual:   data.addItem.items.0.configurationItems.length = 2
+  ✅ [ERRORS label=add_section]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=read_back]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [COUNT label=read_back]
+       expected: data.configurationItems.configurationItems.length = 2
+       actual:   data.configurationItems.configurationItems.length = 2
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.0.sectionId = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+       actual:   data.configurationItems.configurationItems.0.sectionId = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.0.productId = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+       actual:   data.configurationItems.configurationItems.0.productId = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.1.sectionId = 29e873db-d5b2-4390-8016-3d2888bef27d
+       actual:   data.configurationItems.configurationItems.1.sectionId = 29e873db-d5b2-4390-8016-3d2888bef27d
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.1.productId = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+       actual:   data.configurationItems.configurationItems.1.productId = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] addConfigurationItem upsert behavior verified — same sectionId, swapped productId, length unchanged (runner-manual)
+
+Cleanup (NOT automatically executed in MVP):
+  cleanup_post clears cart inline
+
+=== Verdict: PASS (10/10 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-008-1777286579649.json
+===== CFG-GQL-009 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-009 ===
+Title:  addConfigurationItems Bulk (upsert) + updateConfigurationItem Replace
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 28 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (435ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 137ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 615ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 224ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID] = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID] = 0975e74e-7983-4e98-a2da-e5cef621fc73
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 563ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = af45a7ee-93d3-4985-b52e-8ecdb83eb1e3
+
+• [GQL-EXEC bulk_add] POST /graphql
+  200 OK — 814ms — 0 errors
+
+• [GQL-EXEC update_one] POST /graphql
+  200 OK — 946ms — 0 errors
+
+• [GQL-EXEC read_back] POST /graphql
+  200 OK — 506ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 359ms — 0 errors
+
+Assertions (10):
+  ✅ [ERRORS label=add_item]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=add_item]
+       expected: data.addItem.itemsCount = 1
+       actual:   data.addItem.itemsCount = 1
+  ✅ [ERRORS label=bulk_add]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=update_one]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=read_back]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [COUNT label=read_back]
+       expected: data.configurationItems.configurationItems.length = 2
+       actual:   data.configurationItems.configurationItems.length = 2
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.0.sectionId = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+       actual:   data.configurationItems.configurationItems.0.sectionId = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.0.productId = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+       actual:   data.configurationItems.configurationItems.0.productId = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.1.sectionId = 29e873db-d5b2-4390-8016-3d2888bef27d
+       actual:   data.configurationItems.configurationItems.1.sectionId = 29e873db-d5b2-4390-8016-3d2888bef27d
+  ✅ [DATA label=read_back]
+       expected: data.configurationItems.configurationItems.1.productId = 0975e74e-7983-4e98-a2da-e5cef621fc73
+       actual:   data.configurationItems.configurationItems.1.productId = 0975e74e-7983-4e98-a2da-e5cef621fc73
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] bulk_add upserted both sections to UPGRADE, then update_one reverted only RAM; Storage stays UPGRADE — confirms bulk and single mutations do not interfere (runner-manual)
+
+Cleanup (NOT automatically executed in MVP):
+  cleanup_post inline
+
+=== Verdict: PASS (10/10 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-009-1777286585242.json
+===== CFG-GQL-010 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-010 ===
+Title:  updateConfigurationItems Bulk Update — Read-back Verified
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 25 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (622ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 139ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 282ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 180ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID] = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID] = 0975e74e-7983-4e98-a2da-e5cef621fc73
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 673ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = f5cdb28c-113a-4c7c-b008-866208124e2f
+
+• [GQL-EXEC bulk_update] POST /graphql
+  200 OK — 621ms — 0 errors
+
+• [GQL-EXEC read_back] POST /graphql
+  200 OK — 222ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 379ms — 0 errors
+
+Assertions (2):
+  ✅ [ERRORS label=bulk_update]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=bulk_update]
+       expected: data.updateConfigurationItems.items.0.configurationItems is non-null
+       actual:   data.updateConfigurationItems.items.0.configurationItems = [{"id":"53d53f1a-945a-4afc-b869-5f0c0eb4e3f6","sectionId":"37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630","productId":"5d7d2838-b429-48fb-bdaf-3b5cf485600f"},{"id":"fb37d02b-e2fe-40ac-a279-cb70782990d6","secti…
+
+Info-only tags (1, not evaluated in GraphQL layer):
+  · [EVIDENCE] data.updateConfigurationItems.items.0.configurationItems contains both SECTION_RAM_ID with productId=OPT_RAM_UPGRADE_ID AND SECTION_STORAGE_ID with productId=OPT_STORAGE_UPGRADE_ID (runner-manual)
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] re-read configurationItems and confirm both updates persisted
+
+Cleanup (NOT automatically executed in MVP):
+  cleanup_post inline
+
+=== Verdict: PASS (2/2 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-010-1777286589345.json
+===== CFG-GQL-011 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-011 ===
+Title:  removeConfigurationItem + removeConfigurationItems — Read-back Verified
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 28 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (501ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 143ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 355ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 235ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 621ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = f10d03f4-4a53-48b7-81b1-ce0e666f8df7
+
+• [GQL-EXEC remove_one] POST /graphql
+  200 OK — 584ms — 0 errors
+
+• [GQL-EXEC read_after_remove_one] POST /graphql
+  200 OK — 286ms — 0 errors
+
+• [GQL-EXEC remove_all] POST /graphql
+  200 OK — 599ms — 0 errors
+
+• [GQL-EXEC read_after_remove_all] POST /graphql
+  200 OK — 279ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 307ms — 0 errors
+
+Assertions (9):
+  ✅ [ERRORS label=add_item]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=add_item]
+       expected: data.addItem.itemsCount = 1
+       actual:   data.addItem.itemsCount = 1
+  ✅ [COUNT label=add_item]
+       expected: data.addItem.items.0.configurationItems.length = 2
+       actual:   data.addItem.items.0.configurationItems.length = 2
+  ✅ [ERRORS label=remove_one]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=read_after_remove_one]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ❌ [COUNT label=read_after_remove_one]
+       expected: data.configurationItems.configurationItems.length = 1
+       actual:   data.configurationItems.configurationItems.length = 2
+  ✅ [ERRORS label=remove_all]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=read_after_remove_all]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ❌ [COUNT label=read_after_remove_all]
+       expected: data.configurationItems.configurationItems.length = 0
+       actual:   data.configurationItems.configurationItems.length = 2
+
+Cross_Layer_Checks (2, runner-manual for now):
+  · [EVIDENCE] After remove_one, the surviving section is SECTION_STORAGE_ID (runner-manual)
+  · [EVIDENCE] removeConfigurationItems with already-removed RAM section is idempotent — no error (runner-manual)
+
+Cleanup (NOT automatically executed in MVP):
+  cleanup_post inline
+
+=== Verdict: FAIL (7/9 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-011-1777286594252.json
+===== CFG-GQL-012 =====
+[dotenv@17.3.1] injecting env (50) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-012 ===
+Title:  changeCartConfiguredItem — Atomic Reconfigure With Quantity
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = c972b4d0-25c2-4d7c-8a18-9360a8889bc3
+
+Steps parsed: 26 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (505ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 132ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 318ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 187ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 37e4d83b-3bb9-4ff8-bf69-6b5a1ba83630
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = 78159cd4-29ca-45d4-aa9f-56d4c6959a57
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID] = 5d7d2838-b429-48fb-bdaf-3b5cf485600f
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = 29e873db-d5b2-4390-8016-3d2888bef27d
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = 363bf9fe-d5fb-4297-b379-ec2c2f717092
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID] = 0975e74e-7983-4e98-a2da-e5cef621fc73
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 325ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = 
+
+• [GQL-EXEC seed_config] POST /graphql
+  200 OK — 293ms — 0 errors
+
+• [GQL-EXEC atomic_change] POST /graphql
+  200 OK — 164ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 155ms — 0 errors
+
+Assertions (3):
+  ✅ [ERRORS label=atomic_change]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ❌ [DATA label=atomic_change]
+       expected: data.changeCartConfiguredItem.items.0.quantity = 3
+       actual:   data.changeCartConfiguredItem.items.0.quantity = undefined
+  ❌ [DATA label=atomic_change]
+       expected: data.changeCartConfiguredItem.items.0.extendedPrice.amount > 0
+       actual:   data.changeCartConfiguredItem.items.0.extendedPrice.amount = undefined (not numeric)
+
+Info-only tags (1, not evaluated in GraphQL layer):
+  · [EVIDENCE] data.changeCartConfiguredItem.items.0.configurationItems contains SECTION_RAM_ID with OPT_RAM_UPGRADE_ID AND SECTION_STORAGE_ID with OPT_STORAGE_UPGRADE_ID (runner-manual)
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] re-query cart and verify quantity=3 AND both sections show upgrade options
+
+Cleanup (NOT automatically executed in MVP):
+  cleanup_post inline
+
+=== Verdict: FAIL (1/3 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-012-1777286597345.json

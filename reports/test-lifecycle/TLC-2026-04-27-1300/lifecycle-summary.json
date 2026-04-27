@@ -1,0 +1,82 @@
+{
+  "runId": "TLC-2026-04-27-1300",
+  "inputType": "direct-scope",
+  "source": "suite 050i",
+  "date": "2026-04-27",
+  "verdict": "NEEDS FIXES",
+  "build": {
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710",
+    "theme": "2.48.0-pr-2219-d1d4",
+    "relevantModules": {
+      "VirtoCommerce.XCatalog": "3.1004.0",
+      "VirtoCommerce.XCart": "3.1009.0",
+      "VirtoCommerce.Xapi": "3.1006.0",
+      "VirtoCommerce.Catalog": "3.1020.0"
+    }
+  },
+  "affectedSuites": ["050i"],
+  "casesAnalyzed": 12,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 12,
+  "casesVerified": 12,
+  "liveResults": {
+    "pass": 10,
+    "fail": 2,
+    "totalAssertions": 72,
+    "totalAssertionsPassed": 56,
+    "passRate": "83.3%",
+    "passRateBeforeParserFix": "41.7%",
+    "casesUnlockedByParserFix": ["CFG-GQL-006", "CFG-GQL-007", "CFG-GQL-008", "CFG-GQL-009", "CFG-GQL-010"]
+  },
+  "filesModified": [],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "WARN",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "WARN",
+    "G7_duplication": "PASS",
+    "G8_environment": "FAIL",
+    "G9_sync": "N/A"
+  },
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "Critical",
+      "dimension": "Environment / Backend",
+      "category": "BACKEND_BUG",
+      "issue": "xAPI removeConfigurationItem and removeConfigurationItems mutations silent no-op — return HTTP 200 + no errors but configuration sections persist",
+      "case": "CFG-GQL-011",
+      "action": "File JIRA bug; test case is correct as-written",
+      "owner": "vc-module-x-cart owners"
+    },
+    {
+      "id": "F-2",
+      "severity": "High",
+      "dimension": "Testability",
+      "category": "TEST_FRAGILITY",
+      "issue": "CFG-GQL-012 read-back assertions order-dependent; backend configurationItems query returns items in different order than mutation response",
+      "case": "CFG-GQL-012",
+      "action": "Drop order-sensitive index reads (approach a); awaiting user approval",
+      "owner": "test-management-specialist"
+    },
+    {
+      "id": "F-3",
+      "severity": "Advisory",
+      "dimension": "BL Coverage",
+      "category": "CROSS_SUITE",
+      "issue": "BL-GQL-001/002 referenced but not in business-logic.md (same status as 050a/c/d/e/f)",
+      "action": "Cross-suite --update-bl pass; not 050i-specific",
+      "owner": "deferred"
+    }
+  ],
+  "blProposals": null,
+  "deltaVsPriorRun": {
+    "priorRun": "REG-2026-04-27-0919",
+    "before": "5 PASS / 7 FAIL (parser bug masked all 7 mutation cases)",
+    "after": "10 PASS / 2 FAIL (parser fix unlocked 5 cases; 2 remaining failures are independent — F-1 backend, F-2 test fragility)",
+    "improvement": "+5 cases unlocked, +41.6 pts pass-rate"
+  }
+}

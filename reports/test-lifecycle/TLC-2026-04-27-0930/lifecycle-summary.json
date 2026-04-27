@@ -1,0 +1,67 @@
+{
+  "runId": "TLC-2026-04-27-0930",
+  "inputType": "direct-scope",
+  "source": "suite 050f",
+  "date": "2026-04-27",
+  "verdict": "APPROVED",
+  "build": {
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710",
+    "theme": "2.48.0-pr-2219-d1d4",
+    "relevantModules": {
+      "VirtoCommerce.XCMS": "3.1001.0",
+      "VirtoCommerce.Xapi": "3.1006.0",
+      "VirtoCommerce.WhiteLabeling": "3.1001.0",
+      "VirtoCommerce.Store": "3.1002.0"
+    }
+  },
+  "affectedSuites": ["050f"],
+  "casesAnalyzed": 12,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 12,
+  "casesVerified": 12,
+  "liveResults": {
+    "pass": 12,
+    "fail": 0,
+    "totalAssertions": 29,
+    "totalAssertionsPassed": 29,
+    "httpCalls": 15,
+    "http200": 15,
+    "graphqlErrors": 0,
+    "elapsedMsTotal": 4076,
+    "elapsedMsMedian": 230,
+    "elapsedMsMax": 593
+  },
+  "filesModified": [
+    "regression/suites/Backend/graphql/050f-graphql-xcms.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "WARN",
+    "G7_duplication": "PASS",
+    "G8_environment": "PASS",
+    "G9_sync": "N/A"
+  },
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "Medium",
+      "dimension": "Coverage",
+      "issue": "builderPage(storeId, pageId) query not exercised in 050f",
+      "action": "Defer to Page Builder suite (VCST-4872); not in 050f scope"
+    },
+    {
+      "id": "F-2",
+      "severity": "Advisory",
+      "dimension": "BL Coverage",
+      "issue": "BL-GQL-001 / BL-GQL-002 referenced across all 050* suites and 050f but not in business-logic.md",
+      "action": "Run --update-bl pass at cross-suite level; not 050f-specific"
+    }
+  ],
+  "blProposals": null
+}

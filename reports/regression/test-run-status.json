@@ -1,31 +1,26 @@
 {
-  "runId": "REG-2026-04-27-0919",
-  "status": "completed",
-  "startedAt": "2026-04-27T09:19:28Z",
-  "completedAt": "2026-04-27T09:23:49Z",
+  "runId": "REG-2026-04-27-1101",
+  "status": "running",
+  "startedAt": "2026-04-27T11:01:00Z",
+  "completedAt": null,
   "selection": "050i",
-  "priorRun": "REG-2026-04-24-2334",
-  "_priorRun_selection": "050d",
-  "_priorRun_passRate": "100.0%",
+  "priorRun": "REG-2026-04-27-1047",
+  "_priorRun_passRate": "75.0% (9/12)",
   "environment": "https://vcst-qa-storefront.govirto.com",
   "backendUrl": "https://vcst-qa.govirto.com",
-  "note": "GraphQL Configurable Products. 5/5 query cases PASS; 7 mutation cases BLOCKED at runner-parser layer (CSV [GQL-OP]→[GQL-VARS]→body ordering incompatible with parseSteps). NOT a backend regression — mutation path UNVERIFIED.",
+  "note": "Fourth 050i pass after [?key=value] filter predicate added to graphql-assertions.ts and CFG-GQL-008/010 assertions migrated from fixed-index to sectionId-lookup. Expected: 11/12 (CFG-GQL-011 remains real backend defect BUG-050i-007).",
   "deployState": {
     "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
     "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
-    "VirtoCommerce.Customer": "3.1007.0-pr-293-8ddd",
-    "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0-pr-129-2998",
-    "VirtoCommerce.Shipping": "3.1003.0-pr-67-ae8e",
-    "VirtoCommerce.XCatalog": "3.1004.0",
     "VirtoCommerce.XCart": "3.1009.0",
+    "VirtoCommerce.XCatalog": "3.1004.0",
     "VirtoCommerce.Xapi": "3.1006.0",
-    "VirtoCommerce.Catalog": "3.1020.0",
-    "changesVsREG2334": [
-      "platform: 9f4a → eb8e (PR-2987 advanced)",
-      "Customer: alpha.976-vcst-4710 → pr-293-8ddd",
-      "Configurable-products stack (XCart/XCatalog/Xapi/Catalog) UNCHANGED"
-    ]
+    "VirtoCommerce.Catalog": "3.1020.0"
   },
+  "fixesUnderTest": [
+    "scripts/lib/graphql-assertions.ts — getByPath now supports [?key=value] filter for array-element lookup by field, insulating assertions from backend response-ordering shifts",
+    "regression/suites/Backend/graphql/050i-graphql-configurations.csv — CFG-GQL-008 and CFG-GQL-010 read_back assertions migrated to sectionId-lookup syntax"
+  ],
   "suites": {
     "050i": {
       "name": "GraphQL Configurable Products",
@@ -33,82 +28,15 @@
       "agent": "qa-backend-expert",
       "browser": "none (script-based runner)",
       "batch": 1,
-      "status": "completed",
-      "attempts": 1,
-      "result": "failed",
-      "passRate": "41.7%",
-      "passRateNote": "5/12 PASS — 7 cases blocked at parser layer, NOT runtime. Backend not regressed.",
+      "status": "pending",
+      "attempts": 0,
+      "result": null,
+      "passRate": null,
       "total": 12,
-      "passed": 5,
-      "failed": 7,
-      "skipped": 0,
-      "blocked": 0,
-      "earlyStop": true,
-      "rootCauseClassification": "tooling/test-infrastructure",
-      "backendRegression": false,
-      "outputFile": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json",
-      "casesPassed": ["CFG-GQL-001", "CFG-GQL-002", "CFG-GQL-003", "CFG-GQL-004", "CFG-GQL-005"],
-      "casesFailed": ["CFG-GQL-006", "CFG-GQL-007", "CFG-GQL-008", "CFG-GQL-009", "CFG-GQL-010", "CFG-GQL-011", "CFG-GQL-012"],
-      "openBugs": [
-        "BUG-050i-001 (High, tooling) — graphql-case-parser.ts: [GQL-OP] body absorption stops at [GQL-VARS] step tag, leaving OP query empty when VARS precedes mutation body",
-        "BUG-050i-002 (Low, test-data) — CFG_HOODIE alias missing 'id' field in test-data/aliases.json"
-      ]
+      "outputFile": "reports/regression/REG-2026-04-27-1101/suite-050i-results.json"
     }
   },
-  "totals": {
-    "run": "REG-2026-04-27-0919",
-    "suites": 1,
-    "suitesPass": 0,
-    "suitesFailed": 1,
-    "suitesBlocked": 0,
-    "cases": 12,
-    "passed": 5,
-    "failed": 7,
-    "skipped": 0,
-    "blocked": 0,
-    "executableCases": 12,
-    "executablePassed": 5,
-    "executablePassRate": "41.7%",
-    "overallPassRate": "41.7% (5/12)"
-  },
-  "bugs": [
-    {
-      "id": "BUG-050i-001",
-      "severity": "High",
-      "category": "tooling",
-      "scope": "test-infrastructure",
-      "caseIds": ["CFG-GQL-006", "CFG-GQL-007", "CFG-GQL-008", "CFG-GQL-009", "CFG-GQL-010", "CFG-GQL-011", "CFG-GQL-012"],
-      "title": "graphql-case-parser leaves OP query empty when [GQL-VARS] immediately follows [GQL-OP]; mutation body is then unrecognized — 7 cases blocked before HTTP",
-      "rootCauseFile": "scripts/lib/graphql-case-parser.ts:122-164",
-      "fixOptions": [
-        "Parser fix (preferred): merge orphan continuation lines after GQL-VARS into the most-recent GQL-OP block.",
-        "CSV authoring rule: place mutation body INSIDE the [GQL-OP] block BEFORE [GQL-VARS]; document in test-case-template.md and re-author rows 6-12 of 050i."
-      ],
-      "owner": "test-management-specialist (CSV) or scripts owner (parser)",
-      "evidence": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json"
-    },
-    {
-      "id": "BUG-050i-002",
-      "severity": "Low",
-      "category": "test-data",
-      "caseIds": ["CFG-GQL-002"],
-      "title": "CFG_HOODIE alias missing 'id' field — runner sends literal '@td(CFG_HOODIE.id)' as productId; assertions pass coincidentally",
-      "rootCauseFile": "test-data/aliases.json (CFG_HOODIE entry, lines 43-54 and duplicate 1018+)",
-      "owner": "test-management-specialist",
-      "evidence": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json (CFG-GQL-002 notes)"
-    }
-  ],
-  "businessRulesValidated": ["BL-GQL-001 (query path only)", "BL-CAT-006"],
-  "businessRulesNotVerified": ["BL-GQL-001 (mutation path)", "BL-CART-001", "BL-PRICE-001"],
-  "consolidatedReport": "reports/regression/regression-2026-04-27.md",
-  "recommendation": "Fix BUG-050i-001 (parser or CSV authoring), then re-run 050i to verify mutation path. Suggest /qa-sync-tests or /qa-review-tests on suites 050a..050i to spot-check whether other suites use the same blocking step-block ordering.",
-  "priorRuns": {
-    "REG-2026-04-24-2334": {
-      "selection": "050d",
-      "result": "passed",
-      "passRate": "100.0%",
-      "cases": "23/23 (3 skipped Draft)",
-      "bugs": 0
-    }
-  }
+  "totals": null,
+  "bugs": [],
+  "consolidatedReport": "reports/regression/regression-2026-04-27.md"
 }

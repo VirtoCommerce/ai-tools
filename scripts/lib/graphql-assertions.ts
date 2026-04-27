@@ -271,6 +271,33 @@ function evaluateDataPredicate(
     };
   }
 
+  const numericMatch = predicate.match(/^(\S+)\s*(>=|<=|>|<)\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (numericMatch) {
+    const [, path, op, nStr] = numericMatch;
+    const value = getByPath(r.data, path);
+    const n = Number(nStr);
+    const actualNum = typeof value === "number" ? value : Number(value);
+    let passed = false;
+    if (Number.isFinite(actualNum)) {
+      switch (op) {
+        case ">": passed = actualNum > n; break;
+        case ">=": passed = actualNum >= n; break;
+        case "<": passed = actualNum < n; break;
+        case "<=": passed = actualNum <= n; break;
+      }
+    }
+    return {
+      raw: a.raw,
+      label: a.label,
+      kind: "DATA",
+      passed,
+      expected: `${path} ${op} ${n}`,
+      actual: Number.isFinite(actualNum)
+        ? `${path} = ${actualNum}`
+        : `${path} = ${jsonSummary(value)} (not numeric)`,
+    };
+  }
+
   const equalsMatch = predicate.match(/^(\S+)\s*=\s*(.+)$/);
   if (equalsMatch) {
     const [, path, rawExpected] = equalsMatch;
@@ -381,11 +408,39 @@ function getByPath(obj: unknown, path: string): unknown {
   // Accept both the natural "data.foo.bar" (author-facing) and the
   // internal shape where `obj` is already `response.data`. Strip a leading
   // "data." if present so authors don't have to remember the distinction.
+  //
+  // Path segments support:
+  //   - object property: `foo`
+  //   - numeric array index: `0`
+  //   - JSONPath-style filter: `foo[?key=value]` selects the first array
+  //     element of `foo` where element.key === value. Insulates assertions
+  //     from backend response-shape ordering shifts. Variables in the value
+  //     position should be substituted (via {{VAR}}) before the path
+  //     reaches getByPath.
   const normalized = path.startsWith("data.") ? path.slice(5) : path === "data" ? "" : path;
   const parts = normalized ? normalized.split(".") : [];
   let cur: unknown = obj;
   for (const p of parts) {
     if (cur === null || cur === undefined) return undefined;
+
+    const filterMatch = p.match(/^(\w+)?\[\?(\w+)=([^\]]+)\]$/);
+    if (filterMatch) {
+      const [, propName, key, val] = filterMatch;
+      let target: unknown = cur;
+      if (propName) {
+        if (typeof cur !== "object" || cur === null) return undefined;
+        target = (cur as Record<string, unknown>)[propName];
+      }
+      if (!Array.isArray(target)) return undefined;
+      cur = target.find(
+        (item) =>
+          item !== null &&
+          typeof item === "object" &&
+          String((item as Record<string, unknown>)[key]) === val
+      );
+      continue;
+    }
+
     if (/^\d+$/.test(p) && Array.isArray(cur)) {
       cur = cur[Number(p)];
     } else if (typeof cur === "object" && cur !== null) {

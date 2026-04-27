@@ -243,9 +243,9 @@
       "agent": "qa-frontend-expert",
       "tags": [
         "b2c",
-        "bulk-order",
-        "ship-to",
+        "ship-to",           
         "dashboard",
+        "bulk-order",  
         "sprint"
       ]
     },
@@ -1091,8 +1091,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 1,
-      "estimatedMinutes": 2,
+      "testCount": 13,
+      "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",

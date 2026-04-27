@@ -74,6 +74,8 @@ export const env = {
     
     // Store configuration
     STORE_ID: getEnvVar('STORE_ID'),
+    STOREFRONT_DOMAIN: getEnvVar('STOREFRONT_DOMAIN', ''),
+    TEST_USER_ID: getEnvVar('TEST_USER_ID', ''),
     
     // Skyflow payment configuration
     SKYFLOW_VISA: getEnvVar('SKYFLOW_VISA', ''),
