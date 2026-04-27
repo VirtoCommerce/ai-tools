@@ -1,0 +1,20 @@
+# name: unSelectAllCartItems
+# category: cart
+# role: ORG_USER
+# purpose: Bulk-unselect every item in the cart (selectedForCheckout=false on all)
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+
+mutation {
+  unSelectAllCartItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+  }) {
+    id
+    itemsCount
+    subTotal { amount currency { code } }
+    items { id selectedForCheckout }
+  }
+}

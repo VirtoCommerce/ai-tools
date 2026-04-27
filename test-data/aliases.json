@@ -1,8 +1,68 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.1.0",
-    "updated": "2026-04-21"
+    "version": "1.2.0",
+    "updated": "2026-04-27"
+  },
+  "CFG_LAPTOP": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-013" },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Two required Product sections (RAM, Storage). 9 price combos $999-$1399. For GraphQL configuration suite (050i)."
+  },
+  "CFG_RING": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-017" },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Required Text section, maxLength=30. For Text-section validation tests."
+  },
+  "CFG_GIFTBOX": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-019" },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Optional Text section, maxLength=100. For optional Text happy path."
+  },
+  "CFG_HOODIE": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-003" },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Non-configurable product baseline. productConfiguration should return empty/null configurationSections."
+  },
+  "CFG_CONDITIONAL_BIKE": {
+    "file": "products/configurable-products",
+    "filter": { "product_id": "CFG-022" },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "VCST-4713 conditional cascade A->B->C with sibling D. Tests dependsOnSectionId in productConfiguration response."
   },
   "CYBERSOURCE_VISA": {
     "file": "payment/test-cards",
@@ -947,18 +1007,6 @@
     "file": "products/configurable-products",
     "filter": {
       "product_id": "CFG-002"
-    },
-    "fields": {
-      "name": "product_name",
-      "slug": "product_slug",
-      "url": "storefront_url",
-      "price": "base_price"
-    }
-  },
-  "CFG_HOODIE": {
-    "file": "products/configurable-products",
-    "filter": {
-      "product_id": "CFG-003"
     },
     "fields": {
       "name": "product_name",

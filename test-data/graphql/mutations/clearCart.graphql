@@ -1,0 +1,19 @@
+# name: clearCart
+# category: cart
+# role: ORG_USER (or PUBLIC anon cart)
+# purpose: Remove all items from the user's cart — primary teardown primitive for cart suites
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# used-by: 050b1, 050b2, 050b3, 050b4 (60+ inline copies — prefer this fixture)
+
+mutation {
+  clearCart(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+  }) {
+    id
+    itemsCount
+  }
+}

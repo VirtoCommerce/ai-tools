@@ -1,0 +1,16 @@
+# name: removeCart
+# category: cart
+# role: ORG_USER
+# purpose: Permanently delete a cart by id. Returns Boolean.
+# required-vars: USER_ID (String), CART_ID (String — capture from earlier cart query)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - Returns Boolean directly (no nested object); destination assertion is data.removeCart = true|false.
+
+mutation {
+  removeCart(command: {
+    cartId: "{{CART_ID}}"
+    userId: "{{USER_ID}}"
+  })
+}

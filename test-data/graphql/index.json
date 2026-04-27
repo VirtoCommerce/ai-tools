@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-04-24",
+  "lastValidated": "2026-04-27",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 24,
+  "totalFixtures": 54,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -24,6 +24,29 @@
       "role": "ORG_USER",
       "requiredVars": [],
       "usedBy": ["GQL-048"]
+    },
+    "currentOrganizationAddresses": {
+      "path": "queries/currentOrganizationAddresses.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "gqlVars": {
+        "after": "String",
+        "first": "Int",
+        "sort": "String",
+        "countryCodes": "[String]",
+        "regionIds": "[String]",
+        "cities": "[String]",
+        "keyword": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON",
+      "exampleVars": {
+        "first": 6,
+        "after": "0",
+        "sort": "isFavorite:desc",
+        "countryCodes": ["AUS"],
+        "keyword": ""
+      }
     },
     "organization": {
       "path": "queries/organization.graphql",
@@ -71,6 +94,57 @@
         "empty results without category.subtree filter"
       ]
     },
+    "categories": {
+      "path": "queries/categories.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": { "first": "Int", "sort": "String", "filter": "String" },
+      "exampleVars": { "first": 10, "sort": "name:asc" }
+    },
+    "category": {
+      "path": "queries/category.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID", "CATEGORY_ID"]
+    },
+    "brands": {
+      "path": "queries/brands.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": { "first": "Int", "sort": "String", "keyword": "String" },
+      "exampleVars": { "first": 5, "sort": "name:asc" },
+      "knownIssues": [
+        "uses `keyword` arg (not `query` like products)"
+      ]
+    },
+    "brand": {
+      "path": "queries/brand.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID", "BRAND_ID"],
+      "knownIssues": [
+        "synthetic-object response for invalid id (zero-guid + null fields)"
+      ]
+    },
+    "slugInfo": {
+      "path": "queries/slugInfo.graphql",
+      "category": "catalog",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": { "slug": "String!" },
+      "runnerNote": "Pass slug via [GQL-VARS label] JSON",
+      "exampleVars": { "slug": "electronics" }
+    },
+    "pages": {
+      "path": "queries/pages.graphql",
+      "category": "cms",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID"],
+      "gqlVars": { "keyword": "String!", "first": "Int", "after": "String" },
+      "exampleVars": { "first": 10, "keyword": "" }
+    },
     "cart": {
       "path": "queries/cart.graphql",
       "category": "cart",
@@ -82,6 +156,40 @@
       "category": "cart",
       "role": "ORG_USER",
       "requiredVars": []
+    },
+    "productConfiguration": {
+      "path": "queries/productConfiguration.graphql",
+      "category": "configurable-products",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID", "CONFIGURABLE_PRODUCT_ID"]
+    },
+    "configurationItems": {
+      "path": "queries/configurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "LINE_ITEM_ID"]
+    },
+    "promotionCoupons": {
+      "path": "queries/promotionCoupons.graphql",
+      "category": "marketing",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "gqlVars": {
+        "cultureName": "String!",
+        "storeId": "String!",
+        "userId": "String!",
+        "first": "Int",
+        "after": "String",
+        "sort": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON",
+      "exampleVars": {
+        "storeId": "B2B-store",
+        "userId": "42765f34-51cf-4994-806b-e82e65fd5c14",
+        "cultureName": "en-US",
+        "first": 16,
+        "after": "0"
+      }
     },
     "wishlist": {
       "path": "queries/wishlist.graphql",
@@ -163,6 +271,89 @@
       "role": "ORG_USER",
       "requiredVars": ["STORE_ID", "USER_ID", "COUPON_CODE"]
     },
+    "removeCoupon": {
+      "path": "mutations/removeCoupon.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "COUPON_CODE"],
+      "knownIssues": [
+        "removing a non-applied coupon is a silent no-op (success), not an error"
+      ]
+    },
+    "clearCart": {
+      "path": "mutations/clearCart.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "purpose": "Primary cart-suite teardown primitive (60+ inline copies pre-fixture)"
+    },
+    "removeCart": {
+      "path": "mutations/removeCart.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["USER_ID", "CART_ID"],
+      "knownIssues": [
+        "returns Boolean directly (data.removeCart = true|false), not a nested object"
+      ]
+    },
+    "addOrUpdateCartShipment": {
+      "path": "mutations/addOrUpdateCartShipment.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "shipment": "InputShipmentType!" },
+      "runnerNote": "Pass full shipment via [GQL-VARS label] JSON; price MUST match available shipping rate",
+      "knownIssues": [
+        "CartShipmentValidator rejects mismatched price — query availableShippingMethods first"
+      ]
+    },
+    "addOrUpdateCartPayment": {
+      "path": "mutations/addOrUpdateCartPayment.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "payment": "InputPaymentType!" },
+      "runnerNote": "Pass full payment via [GQL-VARS label] JSON; DefaultManualPaymentMethod works without external processor"
+    },
+    "selectCartItems": {
+      "path": "mutations/selectCartItems.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "lineItemIds": "[String!]!" },
+      "runnerNote": "Pass line item IDs via [GQL-VARS label] JSON"
+    },
+    "unSelectCartItems": {
+      "path": "mutations/unSelectCartItems.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "lineItemIds": "[String!]!" },
+      "runnerNote": "Pass line item IDs via [GQL-VARS label] JSON"
+    },
+    "selectAllCartItems": {
+      "path": "mutations/selectAllCartItems.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"]
+    },
+    "unSelectAllCartItems": {
+      "path": "mutations/unSelectAllCartItems.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"]
+    },
+    "createOrderFromCart": {
+      "path": "mutations/createOrderFromCart.graphql",
+      "category": "order",
+      "role": "ORG_USER",
+      "requiredVars": ["CART_ID"],
+      "cleanupRequired": true,
+      "cleanupStep": "Cancel order via Admin API; or use disposable account",
+      "knownIssues": [
+        "creates a real order in the system — sequence: addItem → addOrUpdateCartShipment → addOrUpdateCartPayment → createOrderFromCart"
+      ]
+    },
     "createWishlist": {
       "path": "mutations/createWishlist.graphql",
       "category": "wishlist",
@@ -176,6 +367,81 @@
       "category": "wishlist",
       "role": "ORG_USER",
       "requiredVars": ["LIST_ID"]
+    },
+    "addWishlistItem": {
+      "path": "mutations/addWishlistItem.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": ["LIST_ID", "PRODUCT_ID"],
+      "gqlVars": { "qty": "Int!" },
+      "runnerNote": "Pass quantity via [GQL-VARS label] JSON {\"qty\": 2}"
+    },
+    "createCartFromWishlist": {
+      "path": "mutations/createCartFromWishlist.graphql",
+      "category": "wishlist",
+      "role": "ORG_USER",
+      "requiredVars": ["LIST_ID"]
+    },
+    "createConfiguredLineItem": {
+      "path": "mutations/createConfiguredLineItem.graphql",
+      "category": "configurable-products",
+      "role": "PUBLIC",
+      "requiredVars": ["STORE_ID", "CONFIGURABLE_PRODUCT_ID"],
+      "gqlVars": { "configurationSections": "[ConfigurationSectionInput]" },
+      "runnerNote": "Returns ConfigurationLineItemType preview — does NOT mutate cart"
+    },
+    "addConfigurationItem": {
+      "path": "mutations/addConfigurationItem.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSection": "ConfigurationSectionInput!" },
+      "runnerNote": "Pass section via [GQL-VARS label] JSON; type=Product|Text|File"
+    },
+    "addConfigurationItems": {
+      "path": "mutations/addConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSections": "[ConfigurationSectionInput!]!" }
+    },
+    "updateConfigurationItem": {
+      "path": "mutations/updateConfigurationItem.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSection": "ConfigurationSectionInput!" },
+      "semantics": "REPLACE — pass full desired ConfigurationSectionInput each call"
+    },
+    "updateConfigurationItems": {
+      "path": "mutations/updateConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSections": "[ConfigurationSectionInput!]!" },
+      "semantics": "REPLACE — pass full desired list each call"
+    },
+    "removeConfigurationItem": {
+      "path": "mutations/removeConfigurationItem.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSection": "ConfigurationSectionInput!" }
+    },
+    "removeConfigurationItems": {
+      "path": "mutations/removeConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "configurationSections": "[ConfigurationSectionInput!]!" }
+    },
+    "changeCartConfiguredItem": {
+      "path": "mutations/changeCartConfiguredItem.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": { "qty": "Int", "configurationSections": "[ConfigurationSectionInput]" },
+      "semantics": "REPLACE — atomic re-configure of quantity + sections"
     }
   }
 }

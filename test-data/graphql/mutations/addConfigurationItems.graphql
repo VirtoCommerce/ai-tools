@@ -1,0 +1,29 @@
+# name: addConfigurationItems
+# category: configurable-products
+# role: ORG_USER
+# purpose: Bulk-add multiple configuration sections to a cart line item in one round-trip
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "configurationSections": "[ConfigurationSectionInput!]!" }
+# runner-note: Pass full list of sections via [GQL-VARS label] JSON
+
+mutation AddConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+  addConfigurationItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSections: $configurationSections
+  }) {
+    id
+    itemsCount
+    items {
+      id
+      productId
+      configurationItems {
+        id sectionId type productId customText quantity
+      }
+    }
+  }
+}

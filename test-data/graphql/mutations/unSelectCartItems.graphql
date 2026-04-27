@@ -1,0 +1,24 @@
+# name: unSelectCartItems
+# category: cart
+# role: ORG_USER
+# purpose: Mark specific line items as unselected for checkout (selectedForCheckout=false)
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - Invalid lineItemId should be a graceful no-op (preserve real items). HTTP 500 = bug.
+# gql-vars: { "lineItemIds": "[String!]!" }
+# runner-note: Pass line item IDs via [GQL-VARS label] JSON, e.g. {"lineItemIds": ["{{LINE_ITEM_ID}}"]}
+
+mutation UnSelectCartItems($lineItemIds: [String!]!) {
+  unSelectCartItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemIds: $lineItemIds
+  }) {
+    id
+    itemsCount
+    subTotal { amount currency { code } }
+    items { id selectedForCheckout }
+  }
+}

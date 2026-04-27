@@ -1,0 +1,27 @@
+# name: addOrUpdateCartPayment
+# category: cart
+# role: ORG_USER
+# purpose: Set / update the cart's payment (gateway code, billing address). Required before createOrderFromCart.
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: PAYMENT_ID (String — to update existing payment in-place)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "payment": "InputPaymentType!" }
+# runner-note: paymentGatewayCode "DefaultManualPaymentMethod" works without external processor; see order-creation-matrix.md
+# example-vars: {"payment": {"paymentGatewayCode": "DefaultManualPaymentMethod", "billingAddress": {"city": "New York", "countryCode": "US", "countryName": "United States", "firstName": "Test", "lastName": "User", "line1": "123 Test St", "postalCode": "10001", "regionId": "NY", "regionName": "New York"}}}
+
+mutation AddOrUpdateCartPayment($payment: InputPaymentType!) {
+  addOrUpdateCartPayment(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    payment: $payment
+  }) {
+    id
+    payments {
+      id
+      paymentGatewayCode
+      amount { amount currency { code } }
+      billingAddress { city countryCode postalCode line1 firstName lastName }
+    }
+  }
+}

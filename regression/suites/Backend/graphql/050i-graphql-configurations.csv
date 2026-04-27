@@ -1,0 +1,330 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CFG-GQL-001,"productConfiguration — Happy Path Two Required Product Sections","GraphQL > Configurable Products > Query",Critical,BL-GQL-001; BL-CAT-006,ECL-2.1,"Runner-native. PUBLIC role (no auth required for productConfiguration). Uses CFG_LAPTOP (CFG-013) — two required Product sections (RAM, Storage).","configurable_id=@td(CFG_LAPTOP.id)","[GQL-OP get_config]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_LAPTOP.id)""
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+      currencyCode: ""USD""
+    ) {
+      configurationSections { id name isRequired type maxLength dependsOnSectionId options { id text product { id name } listPrice { amount currency { code } } } }
+    }
+  }
+[GQL-EXEC get_config]
+[GQL-CAPTURE get_config.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_config.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]","[ERRORS label=get_config] errors[] empty
+[DATA label=get_config] data.productConfiguration.configurationSections is non-null
+[COUNT label=get_config] data.productConfiguration.configurationSections.length = 2
+[DATA label=get_config] data.productConfiguration.configurationSections.0.type = Product
+[DATA label=get_config] data.productConfiguration.configurationSections.0.isRequired = true
+[DATA label=get_config] data.productConfiguration.configurationSections.1.type = Product
+[DATA label=get_config] data.productConfiguration.configurationSections.1.isRequired = true","[EVIDENCE] Both sections have non-empty options[] with product references and listPrice (runner-manual)","errors[] non-empty; configurationSections null/empty for known configurable product; options[] empty; section.type missing or wrong",none — read-only query,xAPI; graphql-schema.md — Query.productConfiguration; CFG-013,Automated
+CFG-GQL-002,"productConfiguration — Non-Configurable Product Returns Empty","GraphQL > Configurable Products > Query",High,BL-GQL-001,ECL-9.1,"Runner-native. CFG_HOODIE (CFG-003) is a plain Physical product (no configuration). Resolver should return empty configurationSections — NOT an error.","configurable_id=@td(CFG_HOODIE.id)","[GQL-OP get_plain]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_HOODIE.id)""
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+      currencyCode: ""USD""
+    ) {
+      configurationSections { id type }
+    }
+  }
+[GQL-EXEC get_plain]","[ERRORS label=get_plain] errors[] empty
+[DATA label=get_plain] data.productConfiguration is non-null
+[COUNT label=get_plain] data.productConfiguration.configurationSections.length = 0","[EVIDENCE] No HTTP 500; structured GraphQL response (runner-manual)","errors[] non-empty for plain product; HTTP 500; configurationSections returns null instead of empty array",none,xAPI; CFG-003 Physical baseline,Automated
+CFG-GQL-003,"productConfiguration — Invalid GUID — Graceful Empty","GraphQL > Configurable Products > Query",High,BL-GQL-001,ECL-9.1,"Runner-native. Zero-GUID configurableProductId. Resolver MUST NOT 500. Either errors[] non-empty with descriptive not-found OR empty configurationSections.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP bogus_config]
+  query {
+    productConfiguration(
+      configurableProductId: ""00000000-0000-0000-0000-000000000000""
+      storeId: ""{{STORE_ID}}""
+    ) {
+      configurationSections { id }
+    }
+  }
+[GQL-EXEC bogus_config]","[DATA label=bogus_config] data is non-null OR errors[] is non-empty
+[EVIDENCE] No HTTP 500 in network response","[EVIDENCE] If errors[], message is descriptive (not stack trace); response time < 2s (runner-manual)","HTTP 500; raw stack trace in errors[]; resolver hangs",none,xAPI; resolver error contract,Automated
+CFG-GQL-004,"productConfiguration — Text Section maxLength Returned","GraphQL > Configurable Products > Query",Critical,BL-GQL-001; BL-CAT-006,ECL-7.1; ECL-2.1,"Runner-native. CFG_RING (CFG-017) has a single REQUIRED Text section with maxLength=30. Verify section.maxLength is returned to the storefront for client-side validation (PR #2235).","configurable_id=@td(CFG_RING.id); expected_maxLength=30","[GQL-OP get_text]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_RING.id)""
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+    ) {
+      configurationSections { id name type isRequired maxLength allowCustomText allowTextOptions }
+    }
+  }
+[GQL-EXEC get_text]","[ERRORS label=get_text] errors[] empty
+[COUNT label=get_text] data.productConfiguration.configurationSections.length = 1
+[DATA label=get_text] data.productConfiguration.configurationSections.0.type = Text
+[DATA label=get_text] data.productConfiguration.configurationSections.0.isRequired = true
+[DATA label=get_text] data.productConfiguration.configurationSections.0.maxLength = 30
+[DATA label=get_text] data.productConfiguration.configurationSections.0.allowCustomText = true","[ROUNDTRIP label=get_text] storefront PDP enforces maxLength=30 in Text input (runner-manual via /products/configurable-hat path on CFG_RING)","maxLength returned null/0 for known Text section (would break client validation per VCST-4806); type wrong",none,xAPI; VCST-4806; PR #2235; CFG-017,Automated
+CFG-GQL-005,"productConfiguration — Conditional Sections dependsOnSectionId","GraphQL > Configurable Products > Query",High,BL-GQL-001; BL-CAT-006,ECL-7.1,"Runner-native. CFG_CONDITIONAL_BIKE (CFG-022) — chain A→B→C with sibling D (both depend on A). Verify dependsOnSectionId is populated for child sections so storefront can render conditional cascade.","configurable_id=@td(CFG_CONDITIONAL_BIKE.id)","[GQL-OP get_cascade]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_CONDITIONAL_BIKE.id)""
+      storeId: ""{{STORE_ID}}""
+    ) {
+      configurationSections { id name isRequired dependsOnSectionId }
+    }
+  }
+[GQL-EXEC get_cascade]","[ERRORS label=get_cascade] errors[] empty
+[COUNT label=get_cascade] data.productConfiguration.configurationSections.length = 4
+[EVIDENCE] At least one section has non-null dependsOnSectionId pointing at the root section's id (the root has dependsOnSectionId=null) — runner-manual","[EVIDENCE] dependsOnSectionId values cross-reference sibling/parent ids in the response","All sections have null dependsOnSectionId (cascade lost); only 3 sections returned",none,xAPI; VCST-4713; CFG-022,Automated
+CFG-GQL-006,"createConfiguredLineItem — Happy Path Preview With Required Selections","GraphQL > Configurable Products > Mutation",Critical,BL-GQL-001; BL-PRICE-001,ECL-2.1,"Runner-native. PUBLIC. Builds a preview ConfigurationLineItemType with both required Product sections selected for CFG_LAPTOP. Does NOT mutate cart. Captures section IDs from upstream productConfiguration query.","configurable_id=@td(CFG_LAPTOP.id)","[GQL-OP get_def]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_LAPTOP.id)""
+      storeId: ""{{STORE_ID}}""
+    ) {
+      configurationSections { id type isRequired options { product { id } } }
+    }
+  }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP create_preview]
+[GQL-VARS create_preview] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation CreateConfiguredLineItem($configurationSections: [ConfigurationSectionInput]) {
+    createConfiguredLineItem(command: {
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      configurableProductId: ""@td(CFG_LAPTOP.id)""
+      configurationSections: $configurationSections
+    }) {
+      id quantity
+      listPrice { amount currency { code } }
+      extendedPrice { amount currency { code } }
+    }
+  }
+[GQL-EXEC create_preview]","[ERRORS label=create_preview] errors[] empty
+[DATA label=create_preview] data.createConfiguredLineItem is non-null
+[COUNT label=create_preview] data.createConfiguredLineItem.quantity = 1
+[DATA label=create_preview] data.createConfiguredLineItem.extendedPrice.amount > 0
+[DATA label=create_preview] data.createConfiguredLineItem.listPrice.currency.code = USD","[EVIDENCE] Preview does not appear in /carts list — confirms it does NOT mutate cart (runner-manual)","errors[] non-empty for valid selections; extendedPrice 0 or null; price math diverges from base+option sum",none — preview only,xAPI; Mutation.createConfiguredLineItem,Automated
+CFG-GQL-007,"createConfiguredLineItem — Missing Required Section Returns Errors","GraphQL > Configurable Products > Mutation",High,BL-GQL-001,ECL-9.1,"Runner-native. CFG_LAPTOP has 2 REQUIRED Product sections. Pass empty configurationSections — expect validation errors[] non-empty. Mutation must NOT silently succeed (would break checkout invariant BL-CHK-001).","configurable_id=@td(CFG_LAPTOP.id)","[GQL-OP create_empty]
+[GQL-VARS create_empty] {""configurationSections"": []}
+  mutation CreateConfiguredLineItem($configurationSections: [ConfigurationSectionInput]) {
+    createConfiguredLineItem(command: {
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      configurableProductId: ""@td(CFG_LAPTOP.id)""
+      configurationSections: $configurationSections
+    }) {
+      id quantity
+    }
+  }
+[GQL-EXEC create_empty]","[EVIDENCE] errors[] non-empty OR data.createConfiguredLineItem is non-null with extendedPrice = base price only (no required sections counted) — accept either, but validation-first response is preferred per BL-CHK-001
+[EVIDENCE] No HTTP 500","[EVIDENCE] error message references missing required sections (runner-manual)","HTTP 500; resolver returns price WITHOUT noting required-section gap (silent BL-CHK-001 violation)",none,xAPI; BL-CHK-001 enforcement,Automated
+CFG-GQL-008,"addConfigurationItem + configurationItems — Roundtrip","GraphQL > Configurable Products > Mutation",Critical,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER auth. Adds CFG_LAPTOP to cart, attaches one Product configuration section (RAM base option), reads it back via configurationItems, asserts configurationItems[].sectionId matches the section just added. Cleans up with clearCart.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-OP add_item]
+  mutation AddItem($qty: Int!) { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: $qty }) { id items { id productId } } }
+[GQL-VARS add_item] {""qty"": 1}
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP add_section]
+[GQL-VARS add_section] {""configurationSection"": {""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}}
+  mutation AddConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+    addConfigurationItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection }) {
+      id items { id configurationItems { id sectionId type productId } }
+    }
+  }
+[GQL-EXEC add_section]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId type productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=add_section] errors[] empty
+[ERRORS label=read_back] errors[] empty
+[DATA label=add_section] data.addConfigurationItem.items.0.configurationItems is non-null
+[DATA label=read_back] data.configurationItems.configurationItems is non-null
+[COUNT label=read_back] data.configurationItems.configurationItems.length >= 1
+[DATA label=read_back] data.configurationItems.configurationItems.0.sectionId = {{SECTION_RAM_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems.0.type = Product","[ROUNDTRIP label=cart_query] re-query cart, verify items[0].configurationItems contains added section (runner-manual)","add_section errors[] non-empty; configurationItems read-back missing the section just added; sectionId mismatch",cleanup_post clears cart inline,xAPI; Mutations.addConfigurationItem; Query.configurationItems,Automated
+CFG-GQL-009,"addConfigurationItems Bulk + updateConfigurationItem Replace","GraphQL > Configurable Products > Mutation",Critical,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. Add CFG_LAPTOP to cart, bulk-add both required Product sections (RAM + Storage) in one call, then updateConfigurationItem to swap RAM to a different option. Verify final state has new RAM option.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+  mutation AddItem($qty: Int!) { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: $qty }) { id items { id } } }
+[GQL-VARS add_item] {""qty"": 1}
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP bulk_add]
+[GQL-VARS bulk_add] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation AddConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+    addConfigurationItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC bulk_add]
+[GQL-OP update_one]
+[GQL-VARS update_one] {""configurationSection"": {""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}}
+  mutation UpdateConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+    updateConfigurationItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection }) {
+      id items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC update_one]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=bulk_add] errors[] empty
+[ERRORS label=update_one] errors[] empty
+[DATA label=bulk_add] data.addConfigurationItems.items.0.configurationItems is non-null
+[EVIDENCE] After update_one, the RAM section's productId is OPT_RAM_UPGRADE_ID (not OPT_RAM_BASE_ID) — runner-manual
+[COUNT label=bulk_add] data.addConfigurationItems.items.0.configurationItems.length >= 2","[ROUNDTRIP label=cart_query] cart query confirms RAM section has new productId post-update","bulk_add silently drops one section; update_one returns success but RAM section unchanged; configurationItems.length < 2 after bulk add",cleanup_post inline,xAPI; Mutations.addConfigurationItems and updateConfigurationItem,Automated
+CFG-GQL-010,"updateConfigurationItems Bulk Update","GraphQL > Configurable Products > Mutation",High,BL-GQL-001,ECL-2.1,"Runner-native. ORG_USER. Build same starting state as CFG-GQL-009, then call updateConfigurationItems to swap BOTH sections in one round-trip. Verify both sections reflect the new productIds.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
+[GQL-OP add_item]
+  mutation AddItem($qty: Int!) { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: $qty }) { id items { id } } }
+[GQL-VARS add_item] {""qty"": 1}
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP bulk_update]
+[GQL-VARS bulk_update] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation UpdateConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+    updateConfigurationItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC bulk_update]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=bulk_update] errors[] empty
+[DATA label=bulk_update] data.updateConfigurationItems.items.0.configurationItems is non-null
+[EVIDENCE] data.updateConfigurationItems.items.0.configurationItems contains both SECTION_RAM_ID with productId=OPT_RAM_UPGRADE_ID AND SECTION_STORAGE_ID with productId=OPT_STORAGE_UPGRADE_ID (runner-manual)","[ROUNDTRIP] re-read configurationItems and confirm both updates persisted","bulk_update silently drops one of the two updates; sectionId mismatched in response; HTTP 500",cleanup_post inline,xAPI; Mutation.updateConfigurationItems,Automated
+CFG-GQL-011,"removeConfigurationItem + removeConfigurationItems","GraphQL > Configurable Products > Mutation",High,BL-GQL-001,ECL-2.1,"Runner-native. ORG_USER. Add CFG_LAPTOP, attach both sections, then removeConfigurationItem on RAM section, then removeConfigurationItems with both section ids (idempotent — second call must succeed even if RAM already gone).","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+  mutation AddItem($qty: Int!) { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: $qty }) { id items { id } } }
+[GQL-VARS add_item] {""qty"": 1}
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP bulk_add]
+[GQL-VARS bulk_add] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+    addConfigurationItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id items { id configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC bulk_add]
+[GQL-OP remove_one]
+[GQL-VARS remove_one] {""configurationSection"": {""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product""}}
+  mutation RemoveConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+    removeConfigurationItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection }) {
+      id items { id configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC remove_one]
+[GQL-OP remove_all]
+[GQL-VARS remove_all] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product""}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product""}]}
+  mutation RemoveConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+    removeConfigurationItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id items { id configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC remove_all]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=remove_one] errors[] empty
+[ERRORS label=remove_all] errors[] empty
+[EVIDENCE] After remove_one, configurationItems no longer contains SECTION_RAM_ID; STORAGE remains (runner-manual)
+[EVIDENCE] After remove_all, line item's configurationItems is empty or omits both sections (runner-manual)","[ROUNDTRIP] read configurationItems after remove_all — should be empty/null","remove_one returns success but section persists; remove_all errors when one section already removed (must be idempotent); HTTP 500",cleanup_post inline,xAPI; Mutations.removeConfigurationItem and removeConfigurationItems,Automated
+CFG-GQL-012,"changeCartConfiguredItem — Atomic Reconfigure With Quantity","GraphQL > Configurable Products > Mutation",High,BL-GQL-001; BL-PRICE-001,ECL-2.1,"Runner-native. ORG_USER. Add CFG_LAPTOP with quantity=1 + base RAM/Storage. Then changeCartConfiguredItem to set quantity=3 AND replace both sections with upgrade options in a single mutation. Verify final state matches expected.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
+[GQL-OP add_item]
+  mutation AddItem($qty: Int!) { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: $qty }) { id items { id } } }
+[GQL-VARS add_item] {""qty"": 1}
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP seed_config]
+[GQL-VARS seed_config] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+    addConfigurationItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) { id }
+  }
+[GQL-EXEC seed_config]
+[GQL-OP atomic_change]
+[GQL-VARS atomic_change] {""qty"": 3, ""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: $qty configurationSections: $configurationSections }) {
+      id items { id quantity extendedPrice { amount } configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC atomic_change]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=atomic_change] errors[] empty
+[DATA label=atomic_change] data.changeCartConfiguredItem.items.0.quantity = 3
+[EVIDENCE] data.changeCartConfiguredItem.items.0.configurationItems contains SECTION_RAM_ID with OPT_RAM_UPGRADE_ID AND SECTION_STORAGE_ID with OPT_STORAGE_UPGRADE_ID (runner-manual)
+[DATA label=atomic_change] data.changeCartConfiguredItem.items.0.extendedPrice.amount > 0","[ROUNDTRIP] re-query cart and verify quantity=3 AND both sections show upgrade options","quantity not updated atomically with config change; config update silently dropped; HTTP 500; partial update (one of the two changes lost)",cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem,Automated

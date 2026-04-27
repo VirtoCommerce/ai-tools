@@ -1,147 +1,114 @@
 {
-  "runId": "REG-2026-04-23-2230",
+  "runId": "REG-2026-04-27-0919",
   "status": "completed",
-  "startedAt": "2026-04-23T17:00:31Z",
-  "completedAt": "2026-04-23T17:42:00Z",
-  "selection": "050d",
-  "priorRun": "REG-2026-04-23-2200",
-  "_prior2200_passRate": "92.3%",
-  "_prior2200_gql053_status": "BLOCKED (USER_EMAIL is org-affiliated; non-org precondition unmet)",
-  "_prior2130_status": "blocked",
-  "_prior2130_reason": "All 3 browser MCP contexts unavailable: playwright-edge B2 profile lock, playwright-chrome user data dir conflict (open chrome.exe PIDs), playwright-firefox B1 known-broken.",
-  "priorRunREG1700": "REG-2026-04-23-1700",
-  "_archived_runId": "REG-2026-04-23-1700",
-  "_archived_status": "completed",
-  "_archived_startedAt": "2026-04-23T17:00:00Z",
-  "_archived_completedAt": "2026-04-23T16:10:00Z",
-  "_archived_selection": "050d,010,006",
+  "startedAt": "2026-04-27T09:19:28Z",
+  "completedAt": "2026-04-27T09:23:49Z",
+  "selection": "050i",
+  "priorRun": "REG-2026-04-24-2334",
+  "_priorRun_selection": "050d",
+  "_priorRun_passRate": "100.0%",
   "environment": "https://vcst-qa-storefront.govirto.com",
   "backendUrl": "https://vcst-qa.govirto.com",
-  "note": "Targeted run for TLC-2026-04-23-1700 address management cases.",
+  "note": "GraphQL Configurable Products. 5/5 query cases PASS; 7 mutation cases BLOCKED at runner-parser layer (CSV [GQL-OP]→[GQL-VARS]→body ordering incompatible with parseSteps). NOT a backend regression — mutation path UNVERIFIED.",
   "deployState": {
-    "platform": "3.1023.0-pr-2987-9f4a-vcst-4710-9f4aa704",
-    "theme": "2.48.0-pr-2219-d5f9-d5f99481",
-    "VirtoCommerce.Customer": "3.1007.0-alpha.976-vcst-4710",
-    "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0-pr-129-03f6"
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
+    "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
+    "VirtoCommerce.Customer": "3.1007.0-pr-293-8ddd",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0-pr-129-2998",
+    "VirtoCommerce.Shipping": "3.1003.0-pr-67-ae8e",
+    "VirtoCommerce.XCatalog": "3.1004.0",
+    "VirtoCommerce.XCart": "3.1009.0",
+    "VirtoCommerce.Xapi": "3.1006.0",
+    "VirtoCommerce.Catalog": "3.1020.0",
+    "changesVsREG2334": [
+      "platform: 9f4a → eb8e (PR-2987 advanced)",
+      "Customer: alpha.976-vcst-4710 → pr-293-8ddd",
+      "Configurable-products stack (XCart/XCatalog/Xapi/Catalog) UNCHANGED"
+    ]
   },
-  "knownBlockers": [
-    "B1: playwright-firefox Juggler pipe timeout (~180s) — do not use",
-    "B2: playwright-edge profile lock after session end — sequence Edge-dependent suites",
-    "B3: playwright-chrome user data dir conflict — used playwright-edge fallback for suites 010 and 006"
-  ],
   "suites": {
-    "050d": {
-      "name": "GraphQL xProfile",
+    "050i": {
+      "name": "GraphQL Configurable Products",
       "priority": "P1",
       "agent": "qa-backend-expert",
-      "browser": "playwright-edge",
+      "browser": "none (script-based runner)",
       "batch": 1,
       "status": "completed",
       "attempts": 1,
       "result": "failed",
-      "passRate": "92.3%",
-      "total": 26,
-      "passed": 24,
-      "failed": 2,
+      "passRate": "41.7%",
+      "passRateNote": "5/12 PASS — 7 cases blocked at parser layer, NOT runtime. Backend not regressed.",
+      "total": 12,
+      "passed": 5,
+      "failed": 7,
       "skipped": 0,
       "blocked": 0,
-      "outputFile": "reports/regression/REG-2026-04-23-2230/suite-050d-results.json",
-      "vsREG2200": {
-        "GQL-053": "BLOCKED → PASS (USER2_EMAIL / milamuller2024@yahoo.com personal non-org user; returns totalCount=0, items=[] — correct empty scope)",
-        "GQL-033": "FAIL → FAIL (unchanged — Unicode ç/ü rejected by NameValidationPattern)",
-        "GQL-058": "FAIL → FAIL (unchanged — BUG-050d-002 authz bypass persists)"
-      },
-      "openBugs": ["BUG-050d-001-v2 (GQL-033 Unicode)", "BUG-050d-002 (GQL-058 authz)"]
-    },
-    "010": {
-      "name": "B2C Bulk Ship Dashboard",
-      "priority": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-edge",
-      "batch": 1,
-      "status": "completed",
-      "attempts": 1,
-      "result": "failed",
-      "passRate": "87%",
-      "total": 38,
-      "passed": 33,
-      "failed": 1,
-      "skipped": 8,
-      "blocked": 1,
-      "note": "playwright-chrome unavailable (user data dir conflict) — executed on playwright-edge fallback",
-      "outputFile": "reports/regression/REG-2026-04-23-1700/suite-010-results.json"
-    },
-    "006": {
-      "name": "B2C Organization",
-      "priority": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-edge",
-      "batch": 2,
-      "status": "completed",
-      "attempts": 1,
-      "result": "blocked",
-      "passRate": "100% (of executable 2/2)",
-      "total": 39,
-      "passed": 2,
-      "failed": 0,
-      "skipped": 0,
-      "blocked": 37,
-      "note": "37/39 cases BLOCKED — no multi-org user in agent pool (ORG_USER_EMAIL empty). 2 executable cases PASSED: B2C-ORG-010 (single-org no-switcher) and B2C-ORG-039 (XSS prevention).",
-      "outputFile": "reports/regression/REG-2026-04-23-1700/suite-006-results.json"
+      "earlyStop": true,
+      "rootCauseClassification": "tooling/test-infrastructure",
+      "backendRegression": false,
+      "outputFile": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json",
+      "casesPassed": ["CFG-GQL-001", "CFG-GQL-002", "CFG-GQL-003", "CFG-GQL-004", "CFG-GQL-005"],
+      "casesFailed": ["CFG-GQL-006", "CFG-GQL-007", "CFG-GQL-008", "CFG-GQL-009", "CFG-GQL-010", "CFG-GQL-011", "CFG-GQL-012"],
+      "openBugs": [
+        "BUG-050i-001 (High, tooling) — graphql-case-parser.ts: [GQL-OP] body absorption stops at [GQL-VARS] step tag, leaving OP query empty when VARS precedes mutation body",
+        "BUG-050i-002 (Low, test-data) — CFG_HOODIE alias missing 'id' field in test-data/aliases.json"
+      ]
     }
   },
   "totals": {
-    "run": "REG-2026-04-23-2230",
+    "run": "REG-2026-04-27-0919",
     "suites": 1,
     "suitesPass": 0,
     "suitesFailed": 1,
     "suitesBlocked": 0,
-    "cases": 26,
-    "passed": 24,
-    "failed": 2,
+    "cases": 12,
+    "passed": 5,
+    "failed": 7,
     "skipped": 0,
     "blocked": 0,
-    "executableCases": 26,
-    "executablePassed": 24,
-    "executablePassRate": "92.3%",
-    "overallPassRate": "92.3%"
+    "executableCases": 12,
+    "executablePassed": 5,
+    "executablePassRate": "41.7%",
+    "overallPassRate": "41.7% (5/12)"
   },
   "bugs": [
     {
-      "id": "BUG-050d-001-v2",
-      "severity": "Medium",
-      "suite": "050d",
-      "caseId": "GQL-033",
-      "title": "updatePersonalData rejects valid Unicode accented names (ç, ü) — NameValidationPattern appears ASCII-only",
-      "businessRule": "BL-GQL-001",
-      "status": "NEW in REG-2026-04-23-2230",
-      "confirmed": false
+      "id": "BUG-050i-001",
+      "severity": "High",
+      "category": "tooling",
+      "scope": "test-infrastructure",
+      "caseIds": ["CFG-GQL-006", "CFG-GQL-007", "CFG-GQL-008", "CFG-GQL-009", "CFG-GQL-010", "CFG-GQL-011", "CFG-GQL-012"],
+      "title": "graphql-case-parser leaves OP query empty when [GQL-VARS] immediately follows [GQL-OP]; mutation body is then unrecognized — 7 cases blocked before HTTP",
+      "rootCauseFile": "scripts/lib/graphql-case-parser.ts:122-164",
+      "fixOptions": [
+        "Parser fix (preferred): merge orphan continuation lines after GQL-VARS into the most-recent GQL-OP block.",
+        "CSV authoring rule: place mutation body INSIDE the [GQL-OP] block BEFORE [GQL-VARS]; document in test-case-template.md and re-author rows 6-12 of 050i."
+      ],
+      "owner": "test-management-specialist (CSV) or scripts owner (parser)",
+      "evidence": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json"
     },
     {
-      "id": "BUG-050d-002",
-      "severity": "High",
-      "suite": "050d",
-      "caseId": "GQL-058",
-      "title": "checkDuplicateAddress allows cross-member authZ bypass — no error for foreign memberId",
-      "businessRule": "BL-B2B-001",
-      "status": "PERSISTS — confirmed in REG-2200 and REG-2230; PR #129 fix not effective for this code path",
-      "confirmed": false
+      "id": "BUG-050i-002",
+      "severity": "Low",
+      "category": "test-data",
+      "caseIds": ["CFG-GQL-002"],
+      "title": "CFG_HOODIE alias missing 'id' field — runner sends literal '@td(CFG_HOODIE.id)' as productId; assertions pass coincidentally",
+      "rootCauseFile": "test-data/aliases.json (CFG_HOODIE entry, lines 43-54 and duplicate 1018+)",
+      "owner": "test-management-specialist",
+      "evidence": "reports/regression/REG-2026-04-27-0919/suite-050i-results.json (CFG-GQL-002 notes)"
     }
   ],
-  "resolvedBugs": [
-    {
-      "id": "BUG-050d-001",
-      "title": "updateMemberAddresses does NOT silently skip duplicate addresses",
-      "resolvedIn": "REG-2026-04-23-2200",
-      "caseId": "GQL-056",
-      "note": "PR #129 duplicate-skip now working. countBefore=4, countAfter=4. BUG resolved."
-    },
-    {
-      "id": "BUG-050d-003",
-      "title": "checkDuplicateAddress returns isDuplicated=false for addresses that DO exist",
-      "resolvedIn": "REG-2026-04-23-2200",
-      "caseId": "GQL-054",
-      "note": "Fix confirmed. isDuplicated=true correctly returned for known address."
+  "businessRulesValidated": ["BL-GQL-001 (query path only)", "BL-CAT-006"],
+  "businessRulesNotVerified": ["BL-GQL-001 (mutation path)", "BL-CART-001", "BL-PRICE-001"],
+  "consolidatedReport": "reports/regression/regression-2026-04-27.md",
+  "recommendation": "Fix BUG-050i-001 (parser or CSV authoring), then re-run 050i to verify mutation path. Suggest /qa-sync-tests or /qa-review-tests on suites 050a..050i to spot-check whether other suites use the same blocking step-block ordering.",
+  "priorRuns": {
+    "REG-2026-04-24-2334": {
+      "selection": "050d",
+      "result": "passed",
+      "passRate": "100.0%",
+      "cases": "23/23 (3 skipped Draft)",
+      "bugs": 0
     }
-  ]
+  }
 }

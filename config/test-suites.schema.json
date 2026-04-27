@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtocommerce.com/schemas/test-suites.json",
+  "title": "Test Suite Manifest",
+  "description": "Regression manifest for parallel orchestration. `selections` holds rule objects; consumers expand them at load time. Run `npm run suites:lint` to validate, `npm run suites:sync` to refresh _meta + sort suites.",
+  "type": "object",
+  "required": ["_meta", "defaults", "browserPool", "suites", "selections"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "_meta": {
+      "type": "object",
+      "required": ["version", "description", "generated", "totalSuites", "domains", "layers", "concerns"],
+      "properties": {
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "generated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "totalSuites": { "type": "integer", "minimum": 0 },
+        "csvFormat": { "type": "string" },
+        "domains": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "layers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "concerns": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "defaults": { "type": "object", "additionalProperties": true },
+    "browserPool": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slot", "serverName", "browserName", "status"],
+        "properties": {
+          "slot": { "type": "integer", "minimum": 1 },
+          "serverName": { "type": "string" },
+          "browserName": { "enum": ["chromium", "firefox", "webkit"] },
+          "channel": { "type": ["string", "null"] },
+          "status": { "enum": ["available", "busy", "disabled"] }
+        }
+      }
+    },
+    "suites": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "file", "domain", "layer", "concern", "priority", "testCount", "estimatedMinutes", "agent", "tags"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
+          "name": { "type": "string" },
+          "file": { "type": "string", "pattern": "^regression/suites/.+\\.csv$" },
+          "domain": { "type": "string" },
+          "layer": { "enum": ["frontend", "backend"] },
+          "concern": { "enum": ["functional", "non-functional", "api", "admin"] },
+          "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+          "testCount": { "type": "integer", "minimum": 0 },
+          "estimatedMinutes": { "type": "integer", "minimum": 0 },
+          "agent": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "preferredBrowser": { "type": "string" },
+          "browserRequirementReason": { "type": "string" }
+        }
+      }
+    },
+    "selections": {
+      "type": "object",
+      "description": "Selection name -> rule. Keys prefixed with `_` (e.g. `_doc`) are ignored. Rule shapes: { include } | { all: true } | { where }, optionally with `exclude` and `include`.",
+      "patternProperties": {
+        "^_": {},
+        "^[^_].*": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["include"],
+              "additionalProperties": false,
+              "properties": {
+                "include": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+                "exclude": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["all"],
+              "additionalProperties": false,
+              "properties": {
+                "all": { "const": true },
+                "exclude": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["where"],
+              "additionalProperties": false,
+              "properties": {
+                "where": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "minProperties": 1,
+                  "properties": {
+                    "domain": { "type": "string" },
+                    "layer": { "enum": ["frontend", "backend"] },
+                    "concern": { "enum": ["functional", "non-functional", "api", "admin"] },
+                    "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+                    "tag": { "type": "string" },
+                    "tagAny": { "type": "array", "items": { "type": "string" } }
+                  }
+                },
+                "include": { "type": "array", "items": { "type": "string" } },
+                "exclude": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

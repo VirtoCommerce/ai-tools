@@ -1,0 +1,21 @@
+# name: slugInfo
+# category: catalog
+# role: PUBLIC or ORG_USER
+# purpose: Resolve a URL slug → entity info (objectType: Category | Product | Brand | StaticContent | Vendor)
+# required-vars: STORE_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "slug": "String!" }
+# runner-note: Pass slug via [GQL-VARS label] JSON, e.g. {"slug": "electronics"}; capture from upstream products/categories/brands query
+# example-vars: {"slug": "electronics"}
+
+query SlugInfo($slug: String!) {
+  slugInfo(slug: $slug, storeId: "{{STORE_ID}}") {
+    entityInfo {
+      objectType
+      id
+      semanticUrl
+    }
+  }
+}

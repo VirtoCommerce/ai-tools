@@ -1,0 +1,39 @@
+# name: promotionCoupons
+# category: marketing
+# role: ORG_USER
+# purpose: List active promotion coupons available to a user in a store (paginated)
+# required-vars: (none)
+# optional-vars: (all passed via GQL operation variables — see gql-vars)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "cultureName": "String!", "storeId": "String!", "userId": "String!", "first": "Int", "after": "String", "sort": "String" }
+# runner-note: Pass variables via [GQL-VARS label] JSON
+# example-vars: {"storeId": "B2B-store", "userId": "42765f34-51cf-4994-806b-e82e65fd5c14", "cultureName": "en-US", "first": 16, "after": "0"}
+
+query GetPromotionCoupons(
+  $cultureName: String!
+  $storeId: String!
+  $userId: String!
+  $first: Int
+  $after: String
+  $sort: String
+) {
+  promotionCoupons(
+    cultureName: $cultureName
+    storeId: $storeId
+    userId: $userId
+    first: $first
+    after: $after
+    sort: $sort
+  ) {
+    totalCount
+    items {
+      id
+      endDate
+      label
+      name
+      description
+      couponCode
+    }
+  }
+}

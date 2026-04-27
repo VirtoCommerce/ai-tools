@@ -27,7 +27,7 @@
 | **CMS / Page Builder** | — | 059, 060 | Content → Pages, Menus, Blog | `/api/content/` | xCMS |
 | **Platform Core** | — | 020, 021, 063 | Settings → Users, Roles, Permissions | `/api/platform/` | — |
 | **Platform API** | — | 049 | — | `/api/*` | — |
-| **GraphQL xAPI** | — | 050 | — | `/graphql` | xCart, xCatalog, xOrder, xCMS, xProfile |
+| **GraphQL xAPI** | — | 050 | — | `/graphql` | xCart, xCatalog, xOrder, xCMS, xProfile|
 | **Store** | — | 034, 035 | Stores → Configuration, Rounding | `/api/stores/` | — |
 | **Assets** | — | 062 | Assets → Blob Storage | `/api/assets/` | — |
 | **Import/Export** | — | 064 | Data Import/Export pages | `/api/bulk/` | — |

@@ -1,0 +1,30 @@
+# name: createConfiguredLineItem
+# category: configurable-products
+# role: PUBLIC or ORG_USER
+# purpose: Build a (preview) configured line item for a configurable product — used to validate selections + price math BEFORE adding to cart
+# required-vars: STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String)
+# optional-vars: CURRENCY_CODE (String, default "USD"), CULTURE_NAME (String, default "en-US")
+# last-validated: 2026-04-27
+# known-issues:
+#   - Returns a ConfigurationLineItemType (preview) — does NOT mutate the cart. Use addItem or addConfigurationItem to persist.
+# gql-vars: { "configurationSections": "[ConfigurationSectionInput]" }
+# runner-note: Pass selected sections via [GQL-VARS label] JSON
+# example-vars: {"configurationSections": [{"sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": {"productId": "{{OPT_16GB_ID}}", "quantity": 1, "selectedForCheckout": true}}]}
+
+mutation CreateConfiguredLineItem($configurationSections: [ConfigurationSectionInput]) {
+  createConfiguredLineItem(command: {
+    storeId: "{{STORE_ID}}"
+    currencyCode: "USD"
+    cultureName: "en-US"
+    configurableProductId: "{{CONFIGURABLE_PRODUCT_ID}}"
+    configurationSections: $configurationSections
+  }) {
+    id
+    quantity
+    listPrice { amount currency { code } }
+    salePrice { amount currency { code } }
+    extendedPrice { amount currency { code } }
+    discountAmount { amount currency { code } }
+    product { id name slug code }
+  }
+}

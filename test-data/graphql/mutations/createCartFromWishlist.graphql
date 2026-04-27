@@ -1,0 +1,19 @@
+# name: createCartFromWishlist
+# category: wishlist
+# role: ORG_USER
+# purpose: Convert a wishlist into an active cart (copies all wishlist items into cart)
+# required-vars: LIST_ID (String — capture from wishlists query)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+
+mutation {
+  createCartFromWishlist(command: {
+    listId: "{{LIST_ID}}"
+  }) {
+    id
+    name
+    itemsCount
+    items { id productId quantity }
+  }
+}

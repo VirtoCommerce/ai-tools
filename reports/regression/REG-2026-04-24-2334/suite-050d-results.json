@@ -1,0 +1,242 @@
+{
+  "runId": "REG-2026-04-24-2334",
+  "suite": "050d",
+  "suiteName": "GraphQL xProfile",
+  "startedAt": "2026-04-24T21:35:58.000Z",
+  "completedAt": "2026-04-24T21:37:08.000Z",
+  "total": 26,
+  "passed": 23,
+  "failed": 0,
+  "blocked": 0,
+  "skipped": 3,
+  "passRate": "100.0%",
+  "notes": "Pass rate is computed over executed cases (23/23). 3 cases (GQL-039/040/057) are Draft/MANUAL-BLOCKED in CSV and skipped by instruction. Both prior open bugs (BUG-050d-001-v2, BUG-050d-002) RESOLVED at ProfileExperienceApiModule 3.1005.0-pr-129-2998.",
+  "cases": [
+    {
+      "id": "GQL-030",
+      "title": "xProfile — createOrganization Rejects XSS in Org Name",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-030-1777066560109.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-031",
+      "title": "xProfile — updateContact Rejects HTML and Oversized Phone Values",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-031-1777066562945.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-032",
+      "title": "xProfile — updateMemberAddresses Rejects XSS in Address Fields",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-032-1777066565507.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-033",
+      "title": "xProfile — updatePersonalData Validates Name Fields (Unicode accepted)",
+      "priority": "Medium",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-033-1777066572888.json",
+      "vsPrior": "FAIL→PASS",
+      "note": "BUG-050d-001-v2 RESOLVED — Unicode names (François, O'Brien-Müller) now accepted; valid_unicode.succeeded=true, errors[] empty."
+    },
+    {
+      "id": "GQL-038",
+      "title": "xProfile — createContact Phone Field Validation",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-038-1777066574590.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-039",
+      "title": "xProfile — requestRegistration Personal Account Happy Path",
+      "priority": "Critical",
+      "status": "skip",
+      "evidenceFile": null,
+      "failureReason": "Draft / MANUAL-BLOCKED — runner lacks dynamic-email primitive",
+      "vsPrior": "SKIP→SKIP"
+    },
+    {
+      "id": "GQL-040",
+      "title": "xProfile — requestRegistration Organization Account Happy Path",
+      "priority": "Critical",
+      "status": "skip",
+      "evidenceFile": null,
+      "failureReason": "Draft / MANUAL-BLOCKED — runner lacks dynamic-email primitive",
+      "vsPrior": "SKIP→SKIP"
+    },
+    {
+      "id": "GQL-041",
+      "title": "xProfile — requestRegistration Duplicate Email Rejected",
+      "priority": "Critical",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-041-1777066576240.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-042",
+      "title": "xProfile — requestRegistration Missing Required Fields",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-042-1777066581651.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-043",
+      "title": "xProfile — requestRegistration Weak Password Rejected",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-043-1777066583009.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-044",
+      "title": "xProfile — requestRegistration XSS in Name Fields",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-044-1777066584227.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-045",
+      "title": "xProfile — requestRegistration Result Contains requireEmailVerification",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-045-1777066589351.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-046",
+      "title": "xProfile — me + UserType Schema Coverage",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-046-1777066590955.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-047",
+      "title": "xProfile — OrganizationType Full-Field Schema Coverage",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-047-1777066592811.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-048",
+      "title": "xProfile — currentCustomerAddresses Happy Path Returns Addresses and term_facets",
+      "priority": "Critical",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-048-1777066597836.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-049",
+      "title": "xProfile — currentCustomerAddresses Keyword Filter",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-049-1777066599697.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-050",
+      "title": "xProfile — currentCustomerAddresses Facet Filters",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-050-1777066601667.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-051",
+      "title": "xProfile — currentCustomerAddresses Unauthenticated Returns 401",
+      "priority": "Critical",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-051-1777066607290.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-052",
+      "title": "xProfile — currentOrganizationAddresses Happy Path Returns Org Addresses",
+      "priority": "Critical",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-052-1777066608995.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-053",
+      "title": "xProfile — currentOrganizationAddresses Non-Org-Member Returns Error",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-053-1777066610998.json",
+      "vsPrior": "BLOCKED→PASS",
+      "note": "Now executes with USER2 role (personal account, organizationId=null). Previously blocked on ORG_USER precondition."
+    },
+    {
+      "id": "GQL-054",
+      "title": "xProfile — checkDuplicateAddress Returns True for Existing",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-054-1777066616414.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-055",
+      "title": "xProfile — checkDuplicateAddress Returns False for Synthetic",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-055-1777066618248.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-056",
+      "title": "xProfile — updateMemberAddresses Duplicate-Insert Semantics",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-056-1777066620573.json",
+      "vsPrior": "PASS→PASS"
+    },
+    {
+      "id": "GQL-057",
+      "title": "xProfile — currentOrganizationAddresses Cross-Org Access Denied",
+      "priority": "High",
+      "status": "skip",
+      "evidenceFile": null,
+      "failureReason": "Draft / MANUAL-BLOCKED — needs second-org user alias",
+      "vsPrior": "SKIP→SKIP"
+    },
+    {
+      "id": "GQL-058",
+      "title": "xProfile — checkDuplicateAddress Cannot Probe Foreign Member",
+      "priority": "High",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-058-1777066625893.json",
+      "vsPrior": "FAIL→PASS",
+      "note": "BUG-050d-002 RESOLVED — foreign zero-GUID memberId returns isDuplicated=false (harmless, no leaked foreign member data). PR #129 fix effective at pr-129-2998."
+    },
+    {
+      "id": "GQL-059",
+      "title": "xProfile — checkDuplicateAddress Required Fields Validation",
+      "priority": "Medium",
+      "status": "pass",
+      "evidenceFile": "reports/regression/graphql-evidence/GQL-059-1777066627532.json",
+      "vsPrior": "PASS→PASS"
+    }
+  ],
+  "bugs": [],
+  "bugStatusVsPrior": {
+    "BUG-050d-001-v2": "resolved",
+    "BUG-050d-002": "resolved"
+  },
+  "environment": {
+    "backendUrl": "https://vcst-qa.govirto.com",
+    "platform": "3.1023.0-pr-2987-9f4a-vcst-4710-9f4aa704",
+    "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
+    "customer": "3.1007.0-alpha.976-vcst-4710",
+    "profileExperienceApi": "3.1005.0-pr-129-2998"
+  }
+}

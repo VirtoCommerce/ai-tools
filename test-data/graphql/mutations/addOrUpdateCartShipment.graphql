@@ -1,0 +1,31 @@
+# name: addOrUpdateCartShipment
+# category: cart
+# role: ORG_USER
+# purpose: Set / update the cart's shipment (method, price, delivery address). Primary checkout-flow primitive.
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: SHIPMENT_ID (String — to update existing shipment in-place; omit to add)
+# last-validated: 2026-04-27
+# known-issues:
+#   - price MUST match available shipping rate (CartShipmentValidator). Query availableShippingMethods first.
+# gql-vars: { "shipment": "InputShipmentType!" }
+# runner-note: Pass full shipment object via [GQL-VARS label] JSON; see order-creation-matrix.md for FixedRate/Ground (price=150) and Air (price=250) on QA
+# example-vars: {"shipment": {"shipmentMethodCode": "FixedRate", "shipmentMethodOption": "Ground", "price": 150, "deliveryAddress": {"city": "New York", "countryCode": "US", "countryName": "United States", "firstName": "Test", "lastName": "User", "line1": "123 Test St", "postalCode": "10001", "regionId": "NY", "regionName": "New York"}}}
+
+mutation AddOrUpdateCartShipment($shipment: InputShipmentType!) {
+  addOrUpdateCartShipment(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    shipment: $shipment
+  }) {
+    id
+    shipments {
+      id
+      shipmentMethodCode
+      shipmentMethodOption
+      price { amount currency { code } }
+      deliveryAddress {
+        city countryCode postalCode regionId regionName line1 firstName lastName
+      }
+    }
+  }
+}

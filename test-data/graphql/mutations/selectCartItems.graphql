@@ -1,0 +1,24 @@
+# name: selectCartItems
+# category: cart
+# role: ORG_USER
+# purpose: Mark specific line items as selected for checkout (selectedForCheckout=true)
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - Idempotent on already-selected items (does NOT error).
+# gql-vars: { "lineItemIds": "[String!]!" }
+# runner-note: Pass line item IDs via [GQL-VARS label] JSON, e.g. {"lineItemIds": ["{{LINE_ITEM_ID}}"]}
+
+mutation SelectCartItems($lineItemIds: [String!]!) {
+  selectCartItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemIds: $lineItemIds
+  }) {
+    id
+    itemsCount
+    subTotal { amount currency { code } }
+    items { id selectedForCheckout }
+  }
+}

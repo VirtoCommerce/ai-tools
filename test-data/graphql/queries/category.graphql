@@ -1,0 +1,27 @@
+# name: category
+# category: catalog
+# role: PUBLIC or ORG_USER
+# purpose: Single category by id with name, slug, level, code
+# required-vars: STORE_ID (String), CATEGORY_ID (String)
+# optional-vars: CULTURE_NAME (String, default "en-US")
+# last-validated: 2026-04-27
+# known-issues: (none)
+
+query {
+  category(
+    id: "{{CATEGORY_ID}}"
+    storeId: "{{STORE_ID}}"
+    cultureName: "en-US"
+  ) {
+    id
+    code
+    name
+    level
+    slug
+    seoInfo {
+      semanticUrl
+      pageTitle
+      metaDescription
+    }
+  }
+}

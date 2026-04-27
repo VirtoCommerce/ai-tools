@@ -1,0 +1,25 @@
+# name: removeConfigurationItems
+# category: configurable-products
+# role: ORG_USER
+# purpose: Bulk-remove multiple configuration sections from a cart line item
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "configurationSections": "[ConfigurationSectionInput!]!" }
+
+mutation RemoveConfigurationItems($configurationSections: [ConfigurationSectionInput!]!) {
+  removeConfigurationItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSections: $configurationSections
+  }) {
+    id
+    itemsCount
+    items {
+      id
+      configurationItems { id sectionId type }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# name: removeConfigurationItem
+# category: configurable-products
+# role: ORG_USER
+# purpose: Remove a single configuration section from a cart line item (clears that section's selection)
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - The required `configurationSection` input identifies WHICH section to remove (by sectionId/type); option/customText/fileUrls fields are ignored.
+# gql-vars: { "configurationSection": "ConfigurationSectionInput!" }
+
+mutation RemoveConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+  removeConfigurationItem(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSection: $configurationSection
+  }) {
+    id
+    itemsCount
+    items {
+      id
+      configurationItems { id sectionId type }
+    }
+  }
+}

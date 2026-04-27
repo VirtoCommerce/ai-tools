@@ -1,0 +1,21 @@
+# name: removeCoupon
+# category: cart
+# role: ORG_USER
+# purpose: Remove an applied coupon from the cart by code (silent no-op if code wasn't applied)
+# required-vars: STORE_ID (String), USER_ID (String), COUPON_CODE (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - Removing a coupon that was never applied returns 200 OK (silent no-op) by design — not an error.
+
+mutation {
+  removeCoupon(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    couponCode: "{{COUPON_CODE}}"
+  }) {
+    id
+    coupons { code }
+    discountTotal { amount currency { code } }
+  }
+}

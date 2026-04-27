@@ -36,6 +36,9 @@ interface ManifestSuite {
   id: string;
   name: string;
   file: string;
+  domain: string;
+  layer: string;
+  concern: string;
   priority: string;
   testCount: number;
   estimatedMinutes: number;
@@ -43,12 +46,26 @@ interface ManifestSuite {
   tags: string[];
 }
 
+type WhereFilter = {
+  domain?: string;
+  layer?: string;
+  concern?: string;
+  priority?: string;
+  tag?: string;
+  tagAny?: string[];
+};
+
+type SelectionRule =
+  | { include: string[]; exclude?: string[] }
+  | { all: true; exclude?: string[] }
+  | { where: WhereFilter; include?: string[]; exclude?: string[] };
+
 interface Manifest {
   _meta: { version: string; description: string; generated: string; totalSuites: number };
   defaults: Record<string, unknown>;
   browserPool: unknown[];
   suites: ManifestSuite[];
-  selections: Record<string, string[]>;
+  selections: Record<string, SelectionRule>;
 }
 
 function loadManifest(): Manifest {
@@ -106,18 +123,49 @@ function validateEnv(): void {
 
 // --- Resolve suites from selection string ---
 
+function matchesWhere(suite: ManifestSuite, where: WhereFilter): boolean {
+  if (where.domain && suite.domain !== where.domain) return false;
+  if (where.layer && suite.layer !== where.layer) return false;
+  if (where.concern && suite.concern !== where.concern) return false;
+  if (where.priority && suite.priority !== where.priority) return false;
+  if (where.tag && !suite.tags.includes(where.tag)) return false;
+  if (where.tagAny && !where.tagAny.some((t) => suite.tags.includes(t))) return false;
+  return true;
+}
+
+function expandSelection(rule: SelectionRule): string[] {
+  // Order policy: include preserves author order; where/all use sorted suite order.
+  let ids: string[];
+  if ("include" in rule && !("where" in rule) && !("all" in rule)) {
+    ids = [...rule.include];
+  } else if ("all" in rule) {
+    ids = manifest.suites.map((s) => s.id);
+  } else if ("where" in rule) {
+    ids = manifest.suites.filter((s) => matchesWhere(s, rule.where)).map((s) => s.id);
+    if (rule.include) {
+      for (const id of rule.include) if (!ids.includes(id)) ids.push(id);
+    }
+  } else {
+    throw new Error(`Invalid selection rule: ${JSON.stringify(rule)}`);
+  }
+  if ("exclude" in rule && rule.exclude) {
+    const ex = new Set(rule.exclude);
+    ids = ids.filter((id) => !ex.has(id));
+  }
+  return ids;
+}
+
 function resolveSuites(selection: string): string[] {
-  // Check manifest selections first (smoke, critical, sprint, full, frontend, backend)
-  if (manifest.selections[selection]) {
-    return manifest.selections[selection];
+  const rule = manifest.selections[selection];
+  if (rule) {
+    return expandSelection(rule);
   }
   // Comma-separated IDs like "01,02,03"
   const ids = selection.split(",").map((s) => s.trim().padStart(2, "0"));
 
-  // Validate all IDs exist in manifest
   const invalidIds = ids.filter((id) => !SUITE_MAP[id]);
   if (invalidIds.length > 0) {
-    const validGroups = Object.keys(manifest.selections).join(", ");
+    const validGroups = Object.keys(manifest.selections).filter((k) => !k.startsWith("_")).join(", ");
     const validIds = Object.keys(SUITE_MAP).join(", ");
     console.error(`Unknown suite ID(s): ${invalidIds.join(", ")}`);
     console.error(`Valid selections: ${validGroups}`);

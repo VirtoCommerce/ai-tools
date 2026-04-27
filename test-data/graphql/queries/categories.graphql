@@ -1,0 +1,34 @@
+# name: categories
+# category: catalog
+# role: PUBLIC or ORG_USER
+# purpose: List storefront category tree with child relations and slugs
+# required-vars: STORE_ID (String)
+# optional-vars: CULTURE_NAME (String, default "en-US")
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "first": "Int", "sort": "String", "filter": "String" }
+# runner-note: Pass paging/sort via [GQL-VARS label] JSON, e.g. {"first": 10, "sort": "name:asc"}
+# example-vars: {"first": 10, "sort": "name:asc"}
+
+query Categories($first: Int, $sort: String, $filter: String) {
+  categories(
+    storeId: "{{STORE_ID}}"
+    cultureName: "en-US"
+    first: $first
+    sort: $sort
+    filter: $filter
+  ) {
+    totalCount
+    items {
+      id
+      code
+      name
+      slug
+      level
+      childCategories {
+        id
+        name
+      }
+    }
+  }
+}

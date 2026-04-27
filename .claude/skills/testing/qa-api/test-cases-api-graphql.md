@@ -170,6 +170,8 @@ POST with invalid data types -> descriptive validation messages
 GraphQL endpoint: `${BACK_URL}/graphql` or via Graphiql: `${BACK_URL}/ui/graphiql`
 Reference docs: https://docs.virtocommerce.org/platform/developer-guide/GraphQL-Storefront-API-Reference-xAPI/
 
+> **Before writing a new query/mutation**, check the curated fixture library at [test-data/graphql/index.json](../../../../test-data/graphql/index.json). It indexes ~25 schema-validated `.graphql` files (queries + mutations) with headers declaring required-vars, optional-vars, `gqlVars`, and `exampleVars`. Reuse a fixture path in your test case rather than re-typing the query body. Add new queries by dropping a `.graphql` file in [test-data/graphql/queries/](../../../../test-data/graphql/queries/), registering it in `index.json`, and running `npm run graphql:fixtures:validate`. The schema reference in [agents/knowledge/graphql-schema.md](../../../agents/knowledge/graphql-schema.md) has the full reuse policy.
+
 ### A. xCatalog Queries (GQL-001 to GQL-004, GQL-019)
 
 ```graphql

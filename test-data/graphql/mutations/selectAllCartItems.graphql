@@ -1,0 +1,19 @@
+# name: selectAllCartItems
+# category: cart
+# role: ORG_USER
+# purpose: Bulk-select every item in the cart for checkout
+# required-vars: STORE_ID (String), USER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+
+mutation {
+  selectAllCartItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+  }) {
+    id
+    itemsCount
+    items { id selectedForCheckout }
+  }
+}

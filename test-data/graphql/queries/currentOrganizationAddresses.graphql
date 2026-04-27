@@ -1,0 +1,62 @@
+# name: currentOrganizationAddresses
+# category: profile
+# role: ORG_USER
+# purpose: Current organization's saved addresses with facets — paginated, filterable by country/region/city/keyword
+# required-vars: (none)
+# optional-vars: AFTER (String), FIRST (Int), SORT (String), COUNTRY_CODES ([String]), REGION_IDS ([String]), CITIES ([String]), KEYWORD (String)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "after": "String", "first": "Int", "sort": "String", "countryCodes": "[String]", "regionIds": "[String]", "cities": "[String]", "keyword": "String" }
+# runner-note: Pass variables via [GQL-VARS label] JSON
+# example-vars: {"first": 6, "after": "0", "sort": "isFavorite:desc", "countryCodes": ["AUS"], "keyword": ""}
+
+query GetCurrentOrganizationAddresses(
+  $after: String
+  $first: Int
+  $sort: String
+  $countryCodes: [String]
+  $regionIds: [String]
+  $cities: [String]
+  $keyword: String
+) {
+  currentOrganizationAddresses(
+    after: $after
+    first: $first
+    sort: $sort
+    countryCodes: $countryCodes
+    regionIds: $regionIds
+    cities: $cities
+    keyword: $keyword
+  ) {
+    totalCount
+    items {
+      id
+      name
+      organization
+      firstName
+      lastName
+      line1
+      line2
+      city
+      countryCode
+      countryName
+      regionId
+      regionName
+      postalCode
+      isDefault
+      isFavorite
+      phone
+      email
+      description
+      addressType
+    }
+    term_facets {
+      name
+      terms {
+        term
+        label
+        count
+      }
+    }
+  }
+}

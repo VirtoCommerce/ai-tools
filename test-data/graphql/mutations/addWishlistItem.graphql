@@ -1,0 +1,24 @@
+# name: addWishlistItem
+# category: wishlist
+# role: ORG_USER
+# purpose: Add a product to an existing wishlist with a quantity
+# required-vars: LIST_ID (String), PRODUCT_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "qty": "Int!" }
+# runner-note: Pass quantity via [GQL-VARS label] JSON, e.g. {"qty": 2}
+# example-vars: {"qty": 1}
+
+mutation AddWishlistItem($qty: Int!) {
+  addWishlistItem(command: {
+    listId: "{{LIST_ID}}"
+    productId: "{{PRODUCT_ID}}"
+    quantity: $qty
+  }) {
+    id
+    name
+    itemsCount
+    items { id productId quantity }
+  }
+}

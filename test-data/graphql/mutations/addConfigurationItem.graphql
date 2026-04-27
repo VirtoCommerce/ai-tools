@@ -1,0 +1,36 @@
+# name: addConfigurationItem
+# category: configurable-products
+# role: ORG_USER
+# purpose: Add a single configuration section selection to an existing cart line item (Product / Text / File section)
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues: (none)
+# gql-vars: { "configurationSection": "ConfigurationSectionInput!" }
+# runner-note: Pass section via [GQL-VARS label] JSON. Product section: option={productId, quantity, selectedForCheckout}. Text section: customText. File section: fileUrls=[].
+# example-vars: {"configurationSection": {"sectionId": "{{SECTION_ID}}", "type": "Product", "option": {"productId": "{{OPTION_PRODUCT_ID}}", "quantity": 1, "selectedForCheckout": true}}}
+
+mutation AddConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+  addConfigurationItem(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSection: $configurationSection
+  }) {
+    id
+    itemsCount
+    items {
+      id
+      productId
+      configurationItems {
+        id
+        sectionId
+        type
+        productId
+        customText
+        quantity
+        extendedPrice { amount currency { code } }
+      }
+    }
+  }
+}

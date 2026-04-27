@@ -1,0 +1,31 @@
+# name: changeCartConfiguredItem
+# category: configurable-products
+# role: ORG_USER
+# purpose: Atomic re-configure of a cart line item — change quantity AND replace full configuration in one mutation
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-04-27
+# known-issues:
+#   - REPLACE semantics for both quantity and configurationSections; pass desired final state.
+# gql-vars: { "qty": "Int", "configurationSections": "[ConfigurationSectionInput]" }
+# runner-note: Pass quantity + sections via [GQL-VARS label] JSON
+
+mutation ChangeCartConfiguredItem($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+  changeCartConfiguredItem(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    quantity: $qty
+    configurationSections: $configurationSections
+  }) {
+    id
+    itemsCount
+    items {
+      id
+      productId
+      quantity
+      extendedPrice { amount }
+      configurationItems { id sectionId type productId customText quantity }
+    }
+  }
+}

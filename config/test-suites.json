@@ -1,9 +1,10 @@
 {
+  "$schema": "./test-suites.schema.json",
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-03-23",
-    "totalSuites": 88,
+    "generated": "2026-04-27",
+    "totalSuites": 93,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1137,6 +1138,25 @@
       ]
     },
     {
+      "id": "050i",
+      "name": "GraphQL Configurable Products",
+      "file": "regression/suites/Backend/graphql/050i-graphql-configurations.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 12,
+      "estimatedMinutes": 14,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "configurable-products",
+        "configurations",
+        "sprint"
+      ]
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -1565,25 +1585,6 @@
       ]
     },
     {
-      "id": "072d",
-      "name": "Configurable Products File & Text Sections",
-      "file": "regression/suites/Frontend/configurable-products/072b-file-text-section-cases.csv",
-      "domain": "catalog-search",
-      "layer": "frontend",
-      "concern": "functional",
-      "priority": "P1",
-      "testCount": 19,
-      "estimatedMinutes": 15,
-      "agent": "qa-frontend-expert",
-      "tags": [
-        "configurable-products",
-        "file-upload",
-        "text-input",
-        "validation",
-        "sprint"
-      ]
-    },
-    {
       "id": "072c",
       "name": "Configurable Products Cross-Cutting",
       "file": "regression/suites/Frontend/configurable-products/072c-configurable-products-cross.csv",
@@ -1599,6 +1600,25 @@
         "cross-browser",
         "graphql",
         "security",
+        "sprint"
+      ]
+    },
+    {
+      "id": "072d",
+      "name": "Configurable Products File & Text Sections",
+      "file": "regression/suites/Frontend/configurable-products/072b-file-text-section-cases.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 19,
+      "estimatedMinutes": 15,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "file-upload",
+        "text-input",
+        "validation",
         "sprint"
       ]
     },
@@ -1694,26 +1714,6 @@
       ]
     },
     {
-      "id": "079",
-      "name": "xMarketing",
-      "file": "regression/suites/Backend/xmarketing/079-xmarketing.csv",
-      "domain": "marketing",
-      "layer": "backend",
-      "concern": "admin",
-      "priority": "P1",
-      "testCount": 38,
-      "estimatedMinutes": 27,
-      "agent": "qa-backend-expert",
-      "tags": [
-        "marketing",
-        "xmarketing",
-        "promotions",
-        "graphql",
-        "xapi",
-        "sprint"
-      ]
-    },
-    {
       "id": "078",
       "name": "Backend Smoke Tests",
       "file": "regression/suites/Backend/smoke/078-backend-smoke-tests.csv",
@@ -1738,6 +1738,26 @@
         "inventory",
         "auth",
         "regression"
+      ]
+    },
+    {
+      "id": "079",
+      "name": "xMarketing",
+      "file": "regression/suites/Backend/xmarketing/079-xmarketing.csv",
+      "domain": "marketing",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 38,
+      "estimatedMinutes": 27,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "marketing",
+        "xmarketing",
+        "promotions",
+        "graphql",
+        "xapi",
+        "sprint"
       ]
     },
     {
@@ -1785,592 +1805,207 @@
     }
   ],
   "selections": {
-    "smoke": [
-      "042",
-      "078"
-    ],
-    "critical": [
-      "042",
-      "078",
-      "039",
-      "044",
-      "049"
-    ],
-    "release": [
-      "080"
-    ],
-    "purchase-flow": [
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "017",
-      "018",
-      "019",
-      "028",
-      "029",
-      "030",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "054",
-      "055",
-      "056",
-      "065",
-      "073",
-      "081"
-    ],
-    "catalog": [
-      "001",
-      "002",
-      "003",
-      "051",
-      "053"
-    ],
-    "search": [
-      "004",
-      "005",
-      "061"
-    ],
-    "orders": [
-      "014",
-      "015",
-      "017",
-      "018",
-      "019"
-    ],
-    "auth": [
-      "031",
-      "032",
-      "033"
-    ],
-    "b2c": [
-      "006",
-      "007",
-      "008",
-      "009",
-      "010"
-    ],
-    "marketing": [
-      "023",
-      "024",
-      "025",
-      "077",
-      "079"
-    ],
-    "platform": [
-      "020",
-      "021",
-      "063"
-    ],
-    "bopis": [
-      "036",
-      "037",
-      "038"
-    ],
-    "payment": [
-      "039",
-      "040",
-      "041"
-    ],
-    "configurable-products": [
-      "052",
-      "072",
-      "072b",
-      "072c",
-      "072d"
-    ],
-    "whitelabeling": [
-      "067",
-      "070",
-      "071"
-    ],
-    "frontend": [
-      "001",
-      "002",
-      "003",
-      "004",
-      "005",
-      "006",
-      "007",
-      "008",
-      "009",
-      "010",
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "028",
-      "029",
-      "030",
-      "031",
-      "032",
-      "033",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "042",
-      "043",
-      "044",
-      "045",
-      "046",
-      "047",
-      "048",
-      "070",
-      "071",
-      "072",
-      "072b",
-      "072c",
-      "072d",
-      "077",
-      "081"
-    ],
-    "backend": [
-      "017",
-      "018",
-      "019",
-      "020",
-      "021",
-      "023",
-      "024",
-      "025",
-      "026",
-      "027",
-      "034",
-      "035",
-      "049",
-      "050a",
-      "050b1",
-      "050b2",
-      "050b3",
-      "050b4",
-      "050c",
-      "050d",
-      "050e",
-      "050f",
-      "050g",
-      "050h",
-      "051",
-      "052",
-      "053",
-      "054",
-      "055",
-      "056",
-      "057",
-      "058",
-      "059",
-      "060",
-      "061",
-      "062",
-      "063",
-      "064",
-      "065",
-      "066",
-      "067",
-      "068",
-      "069",
-      "073",
-      "074",
-      "075",
-      "076",
-      "078",
-      "079"
-    ],
-    "sprint": [
-      "001",
-      "002",
-      "003",
-      "004",
-      "005",
-      "006",
-      "007",
-      "008",
-      "009",
-      "010",
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "017",
-      "018",
-      "019",
-      "020",
-      "021",
-      "023",
-      "024",
-      "025",
-      "026",
-      "027",
-      "028",
-      "029",
-      "030",
-      "031",
-      "032",
-      "033",
-      "034",
-      "035",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "042",
-      "044",
-      "048",
-      "049",
-      "050a",
-      "050b1",
-      "050b2",
-      "050b3",
-      "050b4",
-      "050c",
-      "050d",
-      "050e",
-      "050f",
-      "050g",
-      "050h",
-      "051",
-      "052",
-      "053",
-      "054",
-      "055",
-      "056",
-      "057",
-      "058",
-      "059",
-      "060",
-      "061",
-      "062",
-      "064",
-      "065",
-      "066",
-      "067",
-      "070",
-      "071",
-      "072",
-      "072b",
-      "072c",
-      "072d",
-      "073",
-      "074",
-      "075",
-      "077",
-      "078",
-      "079",
-      "081"
-    ],
-    "full": [
-      "001",
-      "002",
-      "003",
-      "004",
-      "005",
-      "006",
-      "007",
-      "008",
-      "009",
-      "010",
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "017",
-      "018",
-      "019",
-      "020",
-      "021",
-      "023",
-      "024",
-      "025",
-      "026",
-      "027",
-      "028",
-      "029",
-      "030",
-      "031",
-      "032",
-      "033",
-      "034",
-      "035",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "042",
-      "043",
-      "044",
-      "045",
-      "046",
-      "047",
-      "048",
-      "049",
-      "050a",
-      "050b1",
-      "050b2",
-      "050b3",
-      "050b4",
-      "050c",
-      "050d",
-      "050e",
-      "050f",
-      "050g",
-      "050h",
-      "051",
-      "052",
-      "053",
-      "054",
-      "055",
-      "056",
-      "057",
-      "058",
-      "059",
-      "060",
-      "061",
-      "062",
-      "063",
-      "064",
-      "065",
-      "066",
-      "067",
-      "068",
-      "069",
-      "070",
-      "071",
-      "072",
-      "072b",
-      "072c",
-      "072d",
-      "073",
-      "074",
-      "075",
-      "076",
-      "077",
-      "078",
-      "079",
-      "080",
-      "081"
-    ],
-    "domain:purchase-flow": [
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "017",
-      "018",
-      "019",
-      "028",
-      "029",
-      "030",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "050b1",
-      "050b2",
-      "050b3",
-      "050b4",
-      "050c",
-      "054",
-      "055",
-      "056",
-      "065",
-      "073",
-      "081"
-    ],
-    "domain:catalog-search": [
-      "001",
-      "002",
-      "003",
-      "004",
-      "005",
-      "050a",
-      "051",
-      "052",
-      "053",
-      "061",
-      "072",
-      "072b",
-      "072c",
-      "072d"
-    ],
-    "domain:auth-security": [
-      "031",
-      "032",
-      "033",
-      "044",
-      "049",
-      "050d"
-    ],
-    "domain:marketing": [
-      "023",
-      "024",
-      "025",
-      "077",
-      "079"
-    ],
-    "domain:content-cms": [
-      "050f",
-      "059",
-      "060",
-      "062",
-      "069"
-    ],
-    "domain:customer-b2b": [
-      "006",
-      "007",
-      "008",
-      "009",
-      "010",
-      "026",
-      "027",
-      "050h",
-      "074",
-      "075"
-    ],
-    "domain:platform-config": [
-      "020",
-      "021",
-      "034",
-      "035",
-      "050e",
-      "063",
-      "064",
-      "076"
-    ],
-    "domain:communication": [
-      "057",
-      "058",
-      "068"
-    ],
-    "domain:branding": [
-      "066",
-      "067",
-      "070",
-      "071"
-    ],
-    "domain:cross-cutting": [
-      "042",
-      "043",
-      "045",
-      "046",
-      "047",
-      "048",
-      "050g",
-      "080"
-    ],
-    "concern:functional": [
-      "001",
-      "002",
-      "003",
-      "004",
-      "005",
-      "006",
-      "007",
-      "008",
-      "009",
-      "010",
-      "011",
-      "012",
-      "013",
-      "014",
-      "015",
-      "028",
-      "029",
-      "030",
-      "031",
-      "032",
-      "033",
-      "036",
-      "037",
-      "038",
-      "039",
-      "040",
-      "041",
-      "042",
-      "044",
-      "070",
-      "071",
-      "072",
-      "072b",
-      "072c",
-      "072d",
-      "077",
-      "080"
-    ],
-    "concern:non-functional": [
-      "043",
-      "045",
-      "046",
-      "047",
-      "048"
-    ],
-    "concern:api": [
-      "049",
-      "050a",
-      "050b1",
-      "050b2",
-      "050b3",
-      "050b4",
-      "050c",
-      "050d",
-      "050e",
-      "050f",
-      "050g",
-      "050h"
-    ],
-    "concern:admin": [
-      "017",
-      "018",
-      "019",
-      "020",
-      "021",
-      "023",
-      "024",
-      "025",
-      "026",
-      "027",
-      "034",
-      "035",
-      "051",
-      "052",
-      "053",
-      "054",
-      "055",
-      "056",
-      "057",
-      "058",
-      "059",
-      "060",
-      "061",
-      "062",
-      "063",
-      "064",
-      "065",
-      "066",
-      "067",
-      "068",
-      "069",
-      "073",
-      "074",
-      "075",
-      "076",
-      "079"
-    ]
+    "_doc": "Source of truth for `selections` below. Run `npm run suites:sync` to regenerate `selections` after edits. Rule shapes: { include: [...] } | { all: true, exclude?: [...] } | { where: {domain|layer|concern|priority|tag|tagAny}, include?: [...], exclude?: [...] }.",
+    "smoke": {
+      "include": [
+        "042",
+        "078"
+      ]
+    },
+    "critical": {
+      "include": [
+        "042",
+        "078",
+        "039",
+        "044",
+        "049"
+      ]
+    },
+    "release": {
+      "include": [
+        "080"
+      ]
+    },
+    "purchase-flow": {
+      "where": {
+        "domain": "purchase-flow"
+      },
+      "exclude": [
+        "050b1",
+        "050b2",
+        "050b3",
+        "050b4",
+        "050c"
+      ]
+    },
+    "catalog": {
+      "include": [
+        "001",
+        "002",
+        "003",
+        "051",
+        "053"
+      ]
+    },
+    "search": {
+      "include": [
+        "004",
+        "005",
+        "061"
+      ]
+    },
+    "orders": {
+      "include": [
+        "014",
+        "015",
+        "017",
+        "018",
+        "019"
+      ]
+    },
+    "auth": {
+      "include": [
+        "031",
+        "032",
+        "033"
+      ]
+    },
+    "platform": {
+      "include": [
+        "020",
+        "021",
+        "063"
+      ]
+    },
+    "marketing": {
+      "where": {
+        "domain": "marketing"
+      }
+    },
+    "b2c": {
+      "where": {
+        "tag": "b2c"
+      }
+    },
+    "bopis": {
+      "where": {
+        "tag": "bopis"
+      }
+    },
+    "payment": {
+      "where": {
+        "tag": "payment"
+      }
+    },
+    "whitelabeling": {
+      "where": {
+        "tag": "whitelabeling"
+      }
+    },
+    "configurable-products": {
+      "where": {
+        "tag": "configurable-products"
+      }
+    },
+    "frontend": {
+      "where": {
+        "layer": "frontend"
+      },
+      "exclude": [
+        "080"
+      ]
+    },
+    "backend": {
+      "where": {
+        "layer": "backend"
+      }
+    },
+    "sprint": {
+      "all": true,
+      "exclude": [
+        "043",
+        "045",
+        "046",
+        "047",
+        "063",
+        "068",
+        "069",
+        "076",
+        "080"
+      ]
+    },
+    "full": {
+      "all": true
+    },
+    "domain:purchase-flow": {
+      "where": {
+        "domain": "purchase-flow"
+      }
+    },
+    "domain:catalog-search": {
+      "where": {
+        "domain": "catalog-search"
+      }
+    },
+    "domain:auth-security": {
+      "where": {
+        "domain": "auth-security"
+      }
+    },
+    "domain:marketing": {
+      "where": {
+        "domain": "marketing"
+      }
+    },
+    "domain:content-cms": {
+      "where": {
+        "domain": "content-cms"
+      }
+    },
+    "domain:customer-b2b": {
+      "where": {
+        "domain": "customer-b2b"
+      }
+    },
+    "domain:platform-config": {
+      "where": {
+        "domain": "platform-config"
+      }
+    },
+    "domain:communication": {
+      "where": {
+        "domain": "communication"
+      }
+    },
+    "domain:branding": {
+      "where": {
+        "domain": "branding"
+      }
+    },
+    "domain:cross-cutting": {
+      "where": {
+        "domain": "cross-cutting"
+      }
+    },
+    "concern:functional": {
+      "where": {
+        "concern": "functional"
+      }
+    },
+    "concern:non-functional": {
+      "where": {
+        "concern": "non-functional"
+      }
+    },
+    "concern:api": {
+      "where": {
+        "concern": "api"
+      }
+    },
+    "concern:admin": {
+      "where": {
+        "concern": "admin"
+      }
+    }
   }
 }
