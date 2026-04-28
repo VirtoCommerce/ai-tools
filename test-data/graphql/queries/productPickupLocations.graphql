@@ -1,0 +1,75 @@
+# name: productPickupLocations
+# category: pickup
+# role: PUBLIC
+# purpose: Pickup locations available for a specific product (BOPIS) with per-location availability, ETA, and on-hand quantity.
+# required-vars: PRODUCT_ID (String), STORE_ID (String)
+# optional-vars: (paging/keyword/sort via GQL operation variables — see gql-vars)
+# last-validated: 2026-04-28
+# known-issues:
+#   - availabilityType enum: Today | Transfer | GlobalTransfer (Today = stocked at this location)
+
+# gql-vars: { "productId": "String!", "storeId": "String!", "cultureName": "String!", "after": "String", "first": "Int", "keyword": "String", "sort": "String" }
+# runner-note: Pass variables via [GQL-VARS label] JSON. productId / storeId / cultureName are mandatory.
+# example-vars: {"productId": "{{PRODUCT_ID}}", "storeId": "B2B-store", "cultureName": "en-US", "first": 20, "after": "0", "sort": "name:asc", "keyword": ""}
+
+query GetProductPickupLocations(
+  $productId: String!
+  $storeId: String!
+  $cultureName: String!
+  $after: String
+  $first: Int
+  $keyword: String
+  $sort: String
+) {
+  productPickupLocations(
+    productId: $productId
+    storeId: $storeId
+    cultureName: $cultureName
+    after: $after
+    first: $first
+    keyword: $keyword
+    sort: $sort
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    items {
+      id
+      isActive
+      name
+      description
+      contactEmail
+      contactPhone
+      workingHours
+      deliveryDays
+      storageDays
+      geoLocation
+      availabilityType
+      availabilityNote
+      availableQuantity
+      address {
+        id
+        key
+        name
+        organization
+        countryCode
+        countryName
+        regionId
+        regionName
+        city
+        postalCode
+        line1
+        line2
+        phone
+        email
+        outerId
+        description
+        addressType
+      }
+    }
+  }
+}

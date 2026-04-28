@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "captured": "2026-04-28T11:19Z",
+    "endpoint": "https://vcst-qa-storefront.govirto.com/graphql",
+    "operation": "GetPromotionCoupons",
+    "user": "test-john.mitchell-20260310@test-agent.com",
+    "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+    "storeId": "B2B-store",
+    "cultureName": "en-US",
+    "first": 16,
+    "after": "0",
+    "build": "Ver. 2.48.0-pr-2269-dfb0-dfb0c1e5",
+    "totalCount": 15
+  },
+  "summary": "All 17 sort-variable variants below produced byte-identical item ordering. The sort variable is silently ignored. No GraphQL errors emitted for any input including completely invalid syntax.",
+  "expected_order_canonical": [
+    "FREESHIP", "FIXED5", "QA", "AIR", "FREE", "EXCLUSIVE10", "QA10OFF",
+    "super", "MUESLI", "QA2", "code", "ONE", "LOVE", "wine-gift", "CODE"
+  ],
+  "test_cases": [
+    { "id": "TC01", "sort": null, "label": "no sort variable (omitted)", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC02", "sort": "endDate:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC03", "sort": "endDate:desc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC04", "sort": "name:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC05", "sort": "name:desc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC06", "sort": "couponCode:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC07", "sort": "couponCode:desc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC08a", "sort": "endDate:asc;name:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC08b", "sort": "endDate:asc,name:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC09", "sort": "doesnotexist:asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC10", "sort": "", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC11", "sort": "endDate ASC", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC12", "sort": "endDate-asc", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC13", "sort": "endDate:ascending", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC14", "sort": "endDate", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC15", "sort": "-endDate", "http": 200, "errors": null, "match_canonical": true },
+    { "id": "TC16", "sort": "+endDate", "http": 200, "errors": null, "match_canonical": true }
+  ],
+  "schema_introspection": {
+    "field": "promotionCoupons",
+    "args": ["after", "first", "keyword", "sort", "storeId", "userId", "currencyCode", "cultureName"],
+    "sort_arg_type": "String (nullable)",
+    "note": "sort arg is declared in the schema but resolver does not honor it"
+  }
+}

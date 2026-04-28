@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-04-27T09:14:17.010Z
+**Validated at:** 2026-04-28T18:13:15.440Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 54 fixtures — 54 passed, 0 failed
+**Total:** 57 fixtures — 57 passed, 0 failed
 
-## ✅ Passed Fixtures (54)
+## ✅ Passed Fixtures (57)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -19,6 +19,7 @@
 | brand | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), BRAND_ID (String) | 2026-04-27 | 1 noted |
 | brands | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-04-27 | 1 noted |
 | cart | query | ORG_USER (authenticated) or PUBLIC (anonymous cart) | cart | STORE_ID (String), CURRENCY_CODE (String) | 2026-04-24 | 1 noted |
+| cartPickupLocations | query | ORG_USER | pickup | CART_ID (String), STORE_ID (String) | 2026-04-28 | 2 noted |
 | carts | query | ORG_USER | cart | (none) | 2026-04-24 | 1 noted |
 | categories | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-04-27 | 1 noted |
 | category | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATEGORY_ID (String) | 2026-04-27 | 1 noted |
@@ -41,8 +42,10 @@
 | orders-list | query | ORG_USER | orders | (none) | 2026-04-24 | 1 noted |
 | organization | query | ORG_USER | profile | ORG_ID (String) | 2026-04-24 | 1 noted |
 | pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-04-27 | 1 noted |
+| pickupLocations | query | PUBLIC | pickup | (none) | 2026-04-28 | 1 noted |
 | product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-04-24 | 1 noted |
 | productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID c972b4d0-25c2-4d7c-8a18-9360a8889bc3) | 2026-04-27 | 1 noted |
+| productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-04-28 | 1 noted |
 | products | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog) | 2026-04-24 | 1 noted |
 | promotionCoupons | query | ORG_USER | marketing | (none) | 2026-04-27 | 1 noted |
 | removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-04-27 | 1 noted |
@@ -97,6 +100,10 @@
 
 **cart**:
 - (none)
+
+**cartPickupLocations**:
+- availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock
+- facet arg accepts comma-separated facet field names; filter arg uses the standard xAPI filter syntax (e.g. "address.countryCode:USA")
 
 **carts**:
 - (none)
@@ -166,11 +173,17 @@
 **pages**:
 - (none)
 
+**pickupLocations**:
+- (none)
+
 **product**:
 - (none)
 
 **productConfiguration**:
 - cultureName description in schema says "Currency code" — schema description bug; correct semantics are culture (e.g. "en-US")
+
+**productPickupLocations**:
+- availabilityType enum: Today | Transfer | GlobalTransfer (Today = stocked at this location)
 
 **products**:
 - Without category.subtree filter, results are empty even though products exist (BL feedback)

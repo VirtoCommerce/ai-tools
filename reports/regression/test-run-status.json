@@ -1,62 +1,63 @@
 {
-  "runId": "REG-2026-04-27-1930",
-  "status": "completed",
-  "startedAt": "2026-04-27T17:30:29Z",
-  "completedAt": "2026-04-27T17:33:30Z",
-  "selection": "050j",
+  "runId": "REG-2026-04-28-1822",
+  "status": "running",
+  "startedAt": "2026-04-28T18:22:00Z",
+  "selection": "bopis",
   "environment": "QA",
-  "priorRun": "REG-2026-04-27-1901",
   "buildState": {
-    "theme": "vc-theme-b2b-vue-2.48.0-pr-2269-cd06-cd06f094",
-    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
-    "Marketing": "3.1003.0",
-    "MarketingExperienceApi": "3.1001.0",
-    "XCart": "3.1009.0",
-    "Cart": "3.1003.0"
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue 2.48.0-pr-2269-dfb0-dfb0c1e5",
+    "XPickup": "VirtoCommerce.XPickup_3.1001.0-pr-8-3380"
   },
-  "notes": "Re-run of 050j (prior run REG-2026-04-27-1901 PASSED 13/13 ~30 min ago). Env HEALTHY. Build state cached from prior run; no redeploy detected. MKT-GQL-009 SKIPPED (manual admin step) — automated subset 12/12 PASS.",
+  "seed": null,
+  "teardown": false,
+  "browserPoolNote": "playwright-chrome: chromium not installed — fallback applied. 036→firefox, 037→edge (sequential), 038→edge (sequential after 037)",
   "batches": [
     {
       "batch": 1,
-      "suites": ["050j"],
-      "lane": "fast-path",
-      "startedAt": "2026-04-27T17:30:29Z",
-      "completedAt": "2026-04-27T17:33:30Z"
+      "suites": ["036", "037", "038"],
+      "lane": "browser",
+      "startedAt": "2026-04-28T18:22:00Z",
+      "completedAt": null
     }
   ],
   "suites": {
-    "050j": {
-      "name": "GraphQL xMarketing (promotionCoupons)",
-      "priority": "P1",
-      "agent": "qa-backend-expert",
-      "browser": "none (graphql-runner fast-path)",
-      "lane": "fast-path",
+    "036": {
+      "name": "BOPIS Store Selector",
+      "priority": "P0/P1",
+      "agent": "qa-frontend-expert",
+      "browser": "playwright-firefox",
+      "browserOriginal": "playwright-chrome",
+      "browserFallbackReason": "chromium not installed",
+      "lane": "browser",
       "batch": 1,
-      "status": "completed",
+      "status": "running",
       "attempts": 1,
-      "result": {
-        "total": 13,
-        "passed": 12,
-        "failed": 0,
-        "blocked": 0,
-        "skipped": 1,
-        "passRate": "92.3%",
-        "automatedPassRate": "100.0%"
-      },
-      "outputFile": "reports/regression/REG-2026-04-27-1930/050j-results.json"
+      "outputFile": "reports/regression/REG-2026-04-28-1822/suite-036-results.json"
+    },
+    "037": {
+      "name": "BOPIS Cart",
+      "priority": "P0/P1",
+      "agent": "qa-frontend-expert",
+      "browser": "playwright-edge",
+      "browserOriginal": "playwright-firefox",
+      "browserFallbackReason": "firefox reassigned — sequential execution",
+      "lane": "browser",
+      "batch": 1,
+      "status": "pending",
+      "attempts": 0,
+      "outputFile": "reports/regression/REG-2026-04-28-1822/suite-037-results.json"
+    },
+    "038": {
+      "name": "BOPIS Checkout",
+      "priority": "P0/P1",
+      "agent": "qa-frontend-expert",
+      "browser": "playwright-edge",
+      "lane": "browser",
+      "batch": 1,
+      "status": "pending",
+      "attempts": 0,
+      "outputFile": "reports/regression/REG-2026-04-28-1822/suite-038-results.json"
     }
-  },
-  "finalSummary": {
-    "totalCases": 13,
-    "passed": 12,
-    "failed": 0,
-    "blocked": 0,
-    "skipped": 1,
-    "overallPassRate": "92.3%",
-    "automatedPassRate": "100.0%",
-    "p0Bugs": 0,
-    "p1Bugs": 0,
-    "qualityGateVerdict": "APPROVED",
-    "reportFile": "reports/regression/REG-2026-04-27-1930/regression-report.md"
   }
 }

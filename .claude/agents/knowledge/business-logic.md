@@ -589,6 +589,14 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Cross-reference:** VCST-4518 (map collapse regression)
 - **Agents:** qa-frontend-expert (BOPIS modal layout), ui-ux-expert (layout measurement)
 
+### BL-BOPIS-008: Confirmed cart pickup location always returned at items[0] of cartPickupLocations `[P1-data]`
+- **Rule:** Pickup locations referenced by any cart shipment (`cart.Shipments[].PickupLocationId`, distinct, non-null) must appear at `items[0]` of the `cartPickupLocations` xAPI response, regardless of paging (`first`), keyword search, facet, or filter. Backend resolves the missing IDs separately and prepends them to the result set, ordered by `PickupLocation.Name`. This guarantees the storefront BOPIS modal can pre-select the confirmed location on reopen even when it would otherwise be paged or filtered out.
+- **Verify:** Set `cart.Shipments.PickupLocationId` to a location alphabetically/positionally beyond the first paged batch (e.g., 51+ of 102) → query `cartPickupLocations(cartId, storeId, first: 1)` → assert `items[0].id` matches the confirmed location ID. Repeat with `keyword` that matches zero other locations → still returned at `items[0]`. Storefront: confirm a far-page location → close modal → reopen → radio is checked, location at top of list with no scrolling, map centered on location.
+- **Violation signal:** Confirmed pickup location absent from `cartPickupLocations` response; location returned but not at `items[0]`; modal reopen shows no checked radio; map zoomed out to default after reopen; location only appears after applying matching keyword/filter; multiple confirmed locations from same cart not all returned.
+- **Cross-reference:** VCST-4707 (pre-selection pagination bug); PR [VirtoCommerce/vc-module-x-pickup#8](https://github.com/VirtoCommerce/vc-module-x-pickup/pull/8) — adds `IncludeLocationIds` field on `MultipleProductsPickupLocationSearchCriteria` and prepend logic in `ProductPickupLocationService.SearchPickupLocationsAsync`.
+- **Agents:** qa-frontend-expert (BOPIS modal reopen pre-selection — see BOPIS-091), qa-backend-expert (`cartPickupLocations` xAPI — see GQL-094)
+- **Promoted:** 2026-04-28 (from `PROPOSED-BL-BOPIS-008` in `reports/test-lifecycle/TLC-2026-04-28-2050/lifecycle-report.md`).
+
 ---
 
 ## Domain 11: Notifications (BL-NOTIF)

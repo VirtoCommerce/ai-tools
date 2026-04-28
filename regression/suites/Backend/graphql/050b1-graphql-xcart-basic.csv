@@ -430,3 +430,69 @@ GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCar
 [DATA label=list_carts] data.carts is non-null
 [COUNT label=list_carts] data.carts.totalCount >= 0
 [DATA label=list_carts] data.carts.items is non-null","[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount","errors[] non-empty; carts null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.carts,Automated
+GQL-094,"xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)","GraphQL > xCart > Pickup Locations",Critical,"BL-BOPIS-007; BL-GQL-001","ECL-14.2","Runner-native. Requires: (1) addItem with a BOPIS-eligible product, (2) addOrUpdateCartShipment with pickupLocationId from cartPickupLocations to set confirmed location. Schema-verified: cartPickupLocations(cartId!, storeId!, cultureName!, keyword, filter, first, after, sort, facet) — see graphql-schema.md Query.cart section. InputShipmentType.pickupLocationId is OptionalString per schema. NOTE: The new IncludeLocationIds semantic from PR vc-module-x-pickup#8 ensures confirmed location prepends at items[0] even when keyword/filter would exclude it.","—","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP probe_all_locations]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 200) {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC probe_all_locations]
+[GQL-CAPTURE probe_all_locations.data.cartPickupLocations.items.last.id → LAST_LOCATION_ID]
+[GQL-OP set_shipment_pickup]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        pickupLocationId: ""{{LAST_LOCATION_ID}}""
+      }
+    }) {
+      id
+      shipments { pickupLocation { id } fulfillmentCenterId }
+    }
+  }
+[GQL-EXEC set_shipment_pickup]
+[GQL-OP query_keyword_exclude]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 keyword: ""xyzabc_no_such_location_999"") {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC query_keyword_exclude]
+[GQL-OP query_paged_small]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1) {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC query_paged_small]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=probe_all_locations] errors[] empty
+[COUNT label=probe_all_locations] data.cartPickupLocations.totalCount >= 1
+[DATA label=probe_all_locations] data.cartPickupLocations.items is non-null
+[ERRORS label=set_shipment_pickup] errors[] empty
+[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.id is non-null
+[ERRORS label=query_keyword_exclude] errors[] empty
+[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}} (confirmed location at index 0 despite keyword exclusion — VCST-4707 fix assertion)
+[ERRORS label=query_paged_small] errors[] empty
+[DATA label=query_paged_small] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}} (confirmed location at index 0 with first:1 paging — VCST-4707 fix assertion)","[ROUNDTRIP label=query_keyword_exclude] confirmed location (LAST_LOCATION_ID) is present at items[0] in query_keyword_exclude response — IncludeLocationIds semantic verified; keyword that matches 0 other locations still returns confirmed location
+[ROUNDTRIP label=query_paged_small] confirmed location at items[0] with first:1 — not excluded by small page size","probe_all_locations errors[] non-empty; totalCount=0 (no pickup locations configured for store); set_shipment_pickup errors[] non-empty (pickupLocationId field unsupported or validation error — may indicate schema mismatch); query_keyword_exclude items[0].id != LAST_LOCATION_ID (VCST-4707 regression — fix not working); query_paged_small items empty (location not prepended for first:1)",none — clearCart at end,"VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED; xAPI; graphql-schema.md — Query.cartPickupLocations; InputShipmentType.pickupLocationId",Draft

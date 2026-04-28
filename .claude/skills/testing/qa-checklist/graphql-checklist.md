@@ -2,7 +2,7 @@
 
 > Domain checklist #23 for `test-management-specialist` agent and `/qa-checklist` skill. Covers xAPI GraphQL endpoint testing across all modules: xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote, xPushMessages, xMarketing.
 
-**46 items | Related suites: 15 (GraphQL xAPI), 41 (Coupons & Promotions) | E2E Catalog: E2E-GQL**
+**83 items | Related suites: 15 (GraphQL xAPI), 41 (Coupons & Promotions) | E2E Catalog: E2E-GQL**
 
 **Scope:** `POST {BACK_URL}/graphql` — all xAPI domains. Requires `Authorization: Bearer {token}` for protected operations. Store context: `storeId`, `cultureName`, `currencyCode` on most queries.
 
@@ -29,8 +29,15 @@
 
 ## xCart — Configurable Products
 
-- [ ] Product configuration: `productConfiguration` query returns available sections and options; `configurationItems` returns current configuration state
-- [ ] Configured line items: `createConfiguredLineItem` creates item with selected options → `changeCartConfiguredItem` updates configuration — cart price reflects configured total
+- [ ] `productConfiguration` query: returns `configurationSections[]` with `id`, `type` (Product/Text/File), `name`, `description`, `isRequired`; each section's `options[]` includes `quantity`, `listPrice`, `salePrice`, `discountAmount`, `extendedPrice`, and full `product` (id/name/code/properties)
+- [ ] `productConfiguration` parameters: `configurableProductId` + `storeId` required; `userId`/`cultureName`/`currencyCode` optional; `userId` propagates tier-pricing and org-specific pricelists into option prices
+- [ ] `productConfiguration` for non-configurable product id: returns empty sections (or descriptive error in `errors[]`), HTTP 200, no 500
+- [ ] `createConfiguredLineItem` mutation: payload shape `configurationSections: [{ sectionId, value: { productId, quantity } }]` creates a line with `currency`, `listPrice`, `salePrice`, `discountAmount`, `extendedPrice` matching the running configurator total
+- [ ] `createConfiguredLineItem` validation: missing required section → `errors[]` populated, no line created; invalid `sectionId` or option `productId` → descriptive error; HTTP 200
+- [ ] `changeCartConfiguredItem` mutation: quantity-only change preserves `configurationItems[]`, recalculates totals; section-replacement clears prior `configurationItems` and writes new ones; both return updated cart with `items[].configurationItems[]`
+- [ ] `configurationItems` query: `cartId` + `lineItemId` filter returns array of `{ id, name, quantity, productId, sectionId }` (`CartConfigurationItemType` shape); non-configured line returns empty `[]`, not error
+- [ ] Text section serialization: Custom input persists as `customText`; preset selection persists as `optionId` reference (NOT re-encoded as `customText`); switching between Custom and preset clears the unused field
+- [ ] File section: file upload section accepts file reference in payload, persists across `productConfiguration` reload; required-file validation enforced server-side
 
 ## xCart — Wishlists & Saved for Later
 

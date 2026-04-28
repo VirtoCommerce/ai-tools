@@ -1,0 +1,421 @@
+{
+  "tc01_no_sort": {
+    "requestVariables": {
+      "cultureName": "en-US",
+      "storeId": "B2B-store",
+      "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "first": 16,
+      "after": "0"
+    },
+    "httpStatus": 200,
+    "response": {
+      "data": {
+        "promotionCoupons": {
+          "totalCount": 15,
+          "items": [
+            {
+              "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$99 off",
+              "name": "QA Free Shipping",
+              "description": "Free shipping -- $99 off shipping cost",
+              "couponCode": "FREESHIP"
+            },
+            {
+              "id": "99aed378-f2c8-4ebc-a970-4b06777ab123",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$5",
+              "name": "QA Fixed Dollar Off",
+              "description": "Fixed $5 dollar off cart subtotal",
+              "couponCode": "FIXED5"
+            },
+            {
+              "id": "aa9d2cde-c8c4-46e3-993a-12945a78a8db",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "5% off cart subtotal",
+              "name": "Simple QA Coupon",
+              "description": "Simple 5% off cart subtotal coupon for QA testing",
+              "couponCode": "QA"
+            },
+            {
+              "id": "aed3efee-1eaa-4573-8e27-00a422aeea3a",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10% off for shipping",
+              "name": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "description": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "couponCode": "AIR"
+            },
+            {
+              "id": "c92789eb-1061-4f5e-93d2-a98549ff5c17",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "15%",
+              "name": "Register and get 15% for all",
+              "description": "For new customer get a 15% discount for all items",
+              "couponCode": "FREE"
+            },
+            {
+              "id": "986d3b97-66bb-4745-ba32-64339ede8574",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Exclusivity Test - Globally Exclusive en",
+              "description": "QA Exclusivity Test - Globally Exclusive en",
+              "couponCode": "EXCLUSIVE10"
+            },
+            {
+              "id": "fe4cc866-7037-4f68-8934-e8c36bc2cbc2",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Coupon English Name",
+              "description": "English coupon description for QA",
+              "couponCode": "QA10OFF"
+            },
+            {
+              "id": "320499a8-74f8-4afe-9f75-b8731df00ed8",
+              "endDate": "2026-04-29T22:00:00Z",
+              "label": "$30.00 off cart subtotal",
+              "name": "Test 100%",
+              "description": "$30.00 off cart subtotal",
+              "couponCode": "super"
+            },
+            {
+              "id": "4a9b9afd-c2a7-433b-81d9-68d9d331ce58",
+              "endDate": null,
+              "label": "GIFT: Muesli",
+              "name": "Muesli as a gift",
+              "description": "BALISTO MUESLI MIX GREEN BOX 20X37GR",
+              "couponCode": "MUESLI"
+            },
+            {
+              "id": "55a8989a-aa86-40b2-9046-292496ec3393",
+              "endDate": "2026-04-30T22:00:00Z",
+              "label": "$20.00 off for cart",
+              "name": "Test coupon",
+              "description": "$20.00 off for cart subtotal is at least 100.00 excluding",
+              "couponCode": "QA2"
+            },
+            {
+              "id": "718f3f12-eb9c-4fb1-a561-a60368113867",
+              "endDate": null,
+              "label": null,
+              "name": "Code1",
+              "description": null,
+              "couponCode": "code"
+            },
+            {
+              "id": "89db2600-acd5-4743-851b-13440adc1180",
+              "endDate": null,
+              "label": "10$ OFF",
+              "name": "en 10$ OFF cart subtotal",
+              "description": "Everyone gets 10$ discount on cart subtotal",
+              "couponCode": "ONE"
+            },
+            {
+              "id": "b9a9fd76449d4f88b053972e39703075",
+              "endDate": "2026-06-17T22:00:00Z",
+              "label": "get 50% for whole cart",
+              "name": "LOVE coupon",
+              "description": "Enter LOVE coupon and get 50% for whole cart",
+              "couponCode": "LOVE"
+            },
+            {
+              "id": "e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97",
+              "endDate": null,
+              "label": "Gift: wine",
+              "name": "Wine as a gift",
+              "description": "COTE SOLEIL Merlot 0.75L: Elegance in Every Sip",
+              "couponCode": "wine-gift"
+            },
+            {
+              "id": "f7d9a31c-bc17-4998-a45c-593f6fe4c40b",
+              "endDate": "2026-05-26T22:00:00Z",
+              "label": null,
+              "name": "CODE2",
+              "description": null,
+              "couponCode": "CODE"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "tc04_name_asc": {
+    "requestVariables": {
+      "cultureName": "en-US",
+      "storeId": "B2B-store",
+      "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "first": 16,
+      "after": "0",
+      "sort": "name:asc"
+    },
+    "httpStatus": 200,
+    "response": {
+      "data": {
+        "promotionCoupons": {
+          "totalCount": 15,
+          "items": [
+            {
+              "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$99 off",
+              "name": "QA Free Shipping",
+              "description": "Free shipping -- $99 off shipping cost",
+              "couponCode": "FREESHIP"
+            },
+            {
+              "id": "99aed378-f2c8-4ebc-a970-4b06777ab123",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$5",
+              "name": "QA Fixed Dollar Off",
+              "description": "Fixed $5 dollar off cart subtotal",
+              "couponCode": "FIXED5"
+            },
+            {
+              "id": "aa9d2cde-c8c4-46e3-993a-12945a78a8db",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "5% off cart subtotal",
+              "name": "Simple QA Coupon",
+              "description": "Simple 5% off cart subtotal coupon for QA testing",
+              "couponCode": "QA"
+            },
+            {
+              "id": "aed3efee-1eaa-4573-8e27-00a422aeea3a",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10% off for shipping",
+              "name": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "description": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "couponCode": "AIR"
+            },
+            {
+              "id": "c92789eb-1061-4f5e-93d2-a98549ff5c17",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "15%",
+              "name": "Register and get 15% for all",
+              "description": "For new customer get a 15% discount for all items",
+              "couponCode": "FREE"
+            },
+            {
+              "id": "986d3b97-66bb-4745-ba32-64339ede8574",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Exclusivity Test - Globally Exclusive en",
+              "description": "QA Exclusivity Test - Globally Exclusive en",
+              "couponCode": "EXCLUSIVE10"
+            },
+            {
+              "id": "fe4cc866-7037-4f68-8934-e8c36bc2cbc2",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Coupon English Name",
+              "description": "English coupon description for QA",
+              "couponCode": "QA10OFF"
+            },
+            {
+              "id": "320499a8-74f8-4afe-9f75-b8731df00ed8",
+              "endDate": "2026-04-29T22:00:00Z",
+              "label": "$30.00 off cart subtotal",
+              "name": "Test 100%",
+              "description": "$30.00 off cart subtotal",
+              "couponCode": "super"
+            },
+            {
+              "id": "4a9b9afd-c2a7-433b-81d9-68d9d331ce58",
+              "endDate": null,
+              "label": "GIFT: Muesli",
+              "name": "Muesli as a gift",
+              "description": "BALISTO MUESLI MIX GREEN BOX 20X37GR",
+              "couponCode": "MUESLI"
+            },
+            {
+              "id": "55a8989a-aa86-40b2-9046-292496ec3393",
+              "endDate": "2026-04-30T22:00:00Z",
+              "label": "$20.00 off for cart",
+              "name": "Test coupon",
+              "description": "$20.00 off for cart subtotal is at least 100.00 excluding",
+              "couponCode": "QA2"
+            },
+            {
+              "id": "718f3f12-eb9c-4fb1-a561-a60368113867",
+              "endDate": null,
+              "label": null,
+              "name": "Code1",
+              "description": null,
+              "couponCode": "code"
+            },
+            {
+              "id": "89db2600-acd5-4743-851b-13440adc1180",
+              "endDate": null,
+              "label": "10$ OFF",
+              "name": "en 10$ OFF cart subtotal",
+              "description": "Everyone gets 10$ discount on cart subtotal",
+              "couponCode": "ONE"
+            },
+            {
+              "id": "b9a9fd76449d4f88b053972e39703075",
+              "endDate": "2026-06-17T22:00:00Z",
+              "label": "get 50% for whole cart",
+              "name": "LOVE coupon",
+              "description": "Enter LOVE coupon and get 50% for whole cart",
+              "couponCode": "LOVE"
+            },
+            {
+              "id": "e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97",
+              "endDate": null,
+              "label": "Gift: wine",
+              "name": "Wine as a gift",
+              "description": "COTE SOLEIL Merlot 0.75L: Elegance in Every Sip",
+              "couponCode": "wine-gift"
+            },
+            {
+              "id": "f7d9a31c-bc17-4998-a45c-593f6fe4c40b",
+              "endDate": "2026-05-26T22:00:00Z",
+              "label": null,
+              "name": "CODE2",
+              "description": null,
+              "couponCode": "CODE"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "tc09_bad_field_doesnotexist": {
+    "requestVariables": {
+      "cultureName": "en-US",
+      "storeId": "B2B-store",
+      "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "first": 16,
+      "after": "0",
+      "sort": "doesnotexist:asc"
+    },
+    "httpStatus": 200,
+    "response": {
+      "data": {
+        "promotionCoupons": {
+          "totalCount": 15,
+          "items": [
+            {
+              "id": "80291b4a-561e-4610-9014-486b4fdd2bab",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$99 off",
+              "name": "QA Free Shipping",
+              "description": "Free shipping -- $99 off shipping cost",
+              "couponCode": "FREESHIP"
+            },
+            {
+              "id": "99aed378-f2c8-4ebc-a970-4b06777ab123",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "$5",
+              "name": "QA Fixed Dollar Off",
+              "description": "Fixed $5 dollar off cart subtotal",
+              "couponCode": "FIXED5"
+            },
+            {
+              "id": "aa9d2cde-c8c4-46e3-993a-12945a78a8db",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "5% off cart subtotal",
+              "name": "Simple QA Coupon",
+              "description": "Simple 5% off cart subtotal coupon for QA testing",
+              "couponCode": "QA"
+            },
+            {
+              "id": "aed3efee-1eaa-4573-8e27-00a422aeea3a",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10% off for shipping",
+              "name": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "description": "Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping Coupon on discount for shipping",
+              "couponCode": "AIR"
+            },
+            {
+              "id": "c92789eb-1061-4f5e-93d2-a98549ff5c17",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "15%",
+              "name": "Register and get 15% for all",
+              "description": "For new customer get a 15% discount for all items",
+              "couponCode": "FREE"
+            },
+            {
+              "id": "986d3b97-66bb-4745-ba32-64339ede8574",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Exclusivity Test - Globally Exclusive en",
+              "description": "QA Exclusivity Test - Globally Exclusive en",
+              "couponCode": "EXCLUSIVE10"
+            },
+            {
+              "id": "fe4cc866-7037-4f68-8934-e8c36bc2cbc2",
+              "endDate": "2026-12-31T23:59:59Z",
+              "label": "10.00 % off",
+              "name": "QA Coupon English Name",
+              "description": "English coupon description for QA",
+              "couponCode": "QA10OFF"
+            },
+            {
+              "id": "320499a8-74f8-4afe-9f75-b8731df00ed8",
+              "endDate": "2026-04-29T22:00:00Z",
+              "label": "$30.00 off cart subtotal",
+              "name": "Test 100%",
+              "description": "$30.00 off cart subtotal",
+              "couponCode": "super"
+            },
+            {
+              "id": "4a9b9afd-c2a7-433b-81d9-68d9d331ce58",
+              "endDate": null,
+              "label": "GIFT: Muesli",
+              "name": "Muesli as a gift",
+              "description": "BALISTO MUESLI MIX GREEN BOX 20X37GR",
+              "couponCode": "MUESLI"
+            },
+            {
+              "id": "55a8989a-aa86-40b2-9046-292496ec3393",
+              "endDate": "2026-04-30T22:00:00Z",
+              "label": "$20.00 off for cart",
+              "name": "Test coupon",
+              "description": "$20.00 off for cart subtotal is at least 100.00 excluding",
+              "couponCode": "QA2"
+            },
+            {
+              "id": "718f3f12-eb9c-4fb1-a561-a60368113867",
+              "endDate": null,
+              "label": null,
+              "name": "Code1",
+              "description": null,
+              "couponCode": "code"
+            },
+            {
+              "id": "89db2600-acd5-4743-851b-13440adc1180",
+              "endDate": null,
+              "label": "10$ OFF",
+              "name": "en 10$ OFF cart subtotal",
+              "description": "Everyone gets 10$ discount on cart subtotal",
+              "couponCode": "ONE"
+            },
+            {
+              "id": "b9a9fd76449d4f88b053972e39703075",
+              "endDate": "2026-06-17T22:00:00Z",
+              "label": "get 50% for whole cart",
+              "name": "LOVE coupon",
+              "description": "Enter LOVE coupon and get 50% for whole cart",
+              "couponCode": "LOVE"
+            },
+            {
+              "id": "e4ccb0c0-baf5-4bab-bb9b-fd383c2b6f97",
+              "endDate": null,
+              "label": "Gift: wine",
+              "name": "Wine as a gift",
+              "description": "COTE SOLEIL Merlot 0.75L: Elegance in Every Sip",
+              "couponCode": "wine-gift"
+            },
+            {
+              "id": "f7d9a31c-bc17-4998-a45c-593f6fe4c40b",
+              "endDate": "2026-05-26T22:00:00Z",
+              "label": null,
+              "name": "CODE2",
+              "description": null,
+              "couponCode": "CODE"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

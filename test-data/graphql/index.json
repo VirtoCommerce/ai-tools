@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-04-27",
+  "lastValidated": "2026-04-28",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 54,
+  "totalFixtures": 57,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -202,6 +202,84 @@
       "category": "wishlist",
       "role": "ORG_USER",
       "requiredVars": []
+    },
+    "pickupLocations": {
+      "path": "queries/pickupLocations.graphql",
+      "category": "pickup",
+      "role": "PUBLIC",
+      "requiredVars": [],
+      "gqlVars": {
+        "storeId": "String",
+        "after": "String",
+        "first": "Int",
+        "keyword": "String",
+        "sort": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON. storeId is optional in schema but should be supplied for store-scoped results.",
+      "exampleVars": {
+        "storeId": "B2B-store",
+        "first": 20,
+        "after": "0",
+        "sort": "name:asc",
+        "keyword": ""
+      }
+    },
+    "productPickupLocations": {
+      "path": "queries/productPickupLocations.graphql",
+      "category": "pickup",
+      "role": "PUBLIC",
+      "requiredVars": ["PRODUCT_ID", "STORE_ID"],
+      "gqlVars": {
+        "productId": "String!",
+        "storeId": "String!",
+        "cultureName": "String!",
+        "after": "String",
+        "first": "Int",
+        "keyword": "String",
+        "sort": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON. productId / storeId / cultureName are mandatory. availabilityType enum: Today | Transfer | GlobalTransfer.",
+      "exampleVars": {
+        "productId": "{{PRODUCT_ID}}",
+        "storeId": "B2B-store",
+        "cultureName": "en-US",
+        "first": 20,
+        "after": "0",
+        "sort": "name:asc",
+        "keyword": ""
+      }
+    },
+    "cartPickupLocations": {
+      "path": "queries/cartPickupLocations.graphql",
+      "category": "pickup",
+      "role": "ORG_USER",
+      "requiredVars": ["CART_ID", "STORE_ID"],
+      "gqlVars": {
+        "cartId": "String!",
+        "storeId": "String!",
+        "cultureName": "String!",
+        "after": "String",
+        "first": "Int",
+        "keyword": "String",
+        "sort": "String",
+        "facet": "String",
+        "filter": "String"
+      },
+      "runnerNote": "Pass variables via [GQL-VARS label] JSON. cartId / storeId / cultureName are mandatory. facet uses comma-separated field names; filter uses xAPI filter syntax.",
+      "exampleVars": {
+        "cartId": "{{CART_ID}}",
+        "storeId": "B2B-store",
+        "cultureName": "en-US",
+        "first": 20,
+        "after": "0",
+        "sort": "name:asc",
+        "keyword": "",
+        "facet": "address.countryCode address.regionName",
+        "filter": ""
+      },
+      "knownIssues": [
+        "availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock"
+      ]
     }
   },
   "mutations": {

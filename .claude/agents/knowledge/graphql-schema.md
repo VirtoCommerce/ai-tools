@@ -24,7 +24,7 @@
 
 Before writing a new query or mutation from scratch, **check the curated fixture library** at [test-data/graphql/index.json](../../../test-data/graphql/index.json). It indexes ~25 schema-validated `.graphql` files under [test-data/graphql/queries/](../../../test-data/graphql/queries/) and [test-data/graphql/mutations/](../../../test-data/graphql/mutations/).
 
-- **When to reuse**: 44 fixtures across these categories:
+- **When to reuse**: 47 fixtures across these categories:
   - **profile queries**: `me`, `contact`, `currentCustomerAddresses`, `currentOrganizationAddresses`, `organization`
   - **catalog queries**: `product`, `products`, `category`, `categories`, `brand`, `brands`, `slugInfo`
   - **configurable-products queries**: `productConfiguration`, `configurationItems`
@@ -33,6 +33,7 @@ Before writing a new query or mutation from scratch, **check the curated fixture
   - **wishlist queries**: `wishlist`, `wishlists`
   - **cms queries**: `pages`
   - **marketing queries**: `promotionCoupons`
+  - **pickup queries**: `pickupLocations`, `productPickupLocations`, `cartPickupLocations`
   - **profile mutations**: `updateContact`, `updateMemberAddresses`, `deleteMemberAddresses`, `createOrganization`
   - **cart mutations**: `addItem`, `addItemsCart`, `removeCartItem`, `changeCartItemQuantity`, `clearCart`, `removeCart`, `addCoupon`, `removeCoupon`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `selectCartItems`, `unSelectCartItems`, `selectAllCartItems`, `unSelectAllCartItems`
   - **configurable-products mutations**: `createConfiguredLineItem`, `addConfigurationItem`, `addConfigurationItems`, `updateConfigurationItem`, `updateConfigurationItems`, `removeConfigurationItem`, `removeConfigurationItems`, `changeCartConfiguredItem`

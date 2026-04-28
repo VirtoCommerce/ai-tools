@@ -532,3 +532,32 @@ Authenticated user; Cart with BOPIS-eligible items; 10 or more pickup locations 
 [DOM] selected location from later pages confirmed in cart correctly
 [STATE] no duplicate location entries after loading more","[CONSOLE] no JS errors during scroll or load-more action
 [NETWORK] location list API (or paginated endpoint) returns 2xx for subsequent page requests; page/offset params increment correctly","Only initial batch of locations visible with no way to see more; Load-more button present but clicking it produces no action; Locations from later pages appear duplicated; Network request for next page returns 4xx/5xx","Close modal; navigate away","Coverage Gap Analysis","Generated"
+"BOPIS-091","VCST-4707 Regression — Confirmed Pagination-Boundary Location Appears at Top of Modal on Reopen","BOPIS > Location Selector > Pagination Pre-selection","Critical","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart contains at least one BOPIS-eligible item; System has more pickup locations than can be shown in the initial load batch (i.e., more locations exist beyond the initial visible list — load-all to confirm); At least one location is reachable only by scrolling/loading beyond the first batch","url={{FRONT_URL}};sku={{TEST_SKU}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens; initial location list rendered
+[SCROLL] scroll to bottom of location list repeatedly and/or click 'Load more' until no more locations load
+[WAIT] all pickup locations are rendered in the list
+[ASSERT] record total visible location count; it must exceed the initial-batch size (confirming pagination boundary exists)
+[ACT] identify the last location entry in the fully-loaded list — note its name as LAST_LOCATION (runtime value; do NOT hardcode)
+[ACT] click on LAST_LOCATION in the list
+[WAIT] location info card opens for LAST_LOCATION
+[ACT] click 'Select' button in location info card
+[WAIT] info card closes
+[ACT] click 'Confirm' button
+[WAIT] modal closes; LAST_LOCATION name shown in cart summary
+[ASSERT] LAST_LOCATION name is displayed in cart shipping section
+[ACT] click 'Select pickup location' again (reopen modal)
+[WAIT] pickup location modal reopens
+[ASSERT] radio button next to LAST_LOCATION is checked (pre-selected)
+[ASSERT] LAST_LOCATION entry is visible in the list WITHOUT scrolling (prepended to top of list — index 0)
+[ASSERT] no keyword filter or facet is applied (search field is empty; filter chips are absent)
+[ASSERT] map is panned/zoomed to LAST_LOCATION marker (not reset to default zoom-out view)","[DOM] radio button next to LAST_LOCATION is in checked state when modal reopens
+[STATE] LAST_LOCATION appears at or near the top of the location list on reopen — no scrolling required to see it
+[STATE] no keyword filter pre-applied on modal reopen that would hide other locations
+[DOM] search field is empty on reopen (no stale keyword from previous session)
+[STATE] map is centered on or near LAST_LOCATION marker on reopen (not zoomed-out default state)","[NETWORK] browser_network_requests: on modal reopen, cartPickupLocations GraphQL query response items[0].id = LAST_LOCATION id (confirmed location prepended at index 0 regardless of keyword/filter/paging)
+[API] cartPickupLocations response errors[] is empty
+[CONSOLE] no TypeError or JS errors during modal reopen or location list render","Modal opens with no radio checked (VCST-4707 regression — pre-selection lost); LAST_LOCATION not visible without scrolling on reopen (not prepended); Map zoomed out to default state on reopen; Search field contains stale keyword that filters out LAST_LOCATION; cartPickupLocations query errors[] non-empty; LAST_LOCATION appears only after full scroll (not at index 0)","Click 'X' to close modal; clear pickup selection from cart","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Draft"

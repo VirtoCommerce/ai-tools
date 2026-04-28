@@ -1,0 +1,99 @@
+# name: cartPickupLocations
+# category: pickup
+# role: ORG_USER
+# purpose: Pickup locations capable of fulfilling the entire current cart (BOPIS) — per-location availability + facets/filter for narrowing the list.
+# required-vars: CART_ID (String), STORE_ID (String)
+# optional-vars: (paging/keyword/sort/facet/filter via GQL operation variables — see gql-vars)
+# last-validated: 2026-04-28
+# known-issues:
+#   - availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock
+#   - facet arg accepts comma-separated facet field names; filter arg uses the standard xAPI filter syntax (e.g. "address.countryCode:USA")
+
+# gql-vars: { "cartId": "String!", "storeId": "String!", "cultureName": "String!", "after": "String", "first": "Int", "keyword": "String", "sort": "String", "facet": "String", "filter": "String" }
+# runner-note: Pass variables via [GQL-VARS label] JSON. cartId / storeId / cultureName are mandatory.
+# example-vars: {"cartId": "{{CART_ID}}", "storeId": "B2B-store", "cultureName": "en-US", "first": 20, "after": "0", "sort": "name:asc", "keyword": "", "facet": "address.countryCode address.regionName", "filter": ""}
+
+query GetCartPickupLocations(
+  $cartId: String!
+  $storeId: String!
+  $cultureName: String!
+  $after: String
+  $first: Int
+  $keyword: String
+  $sort: String
+  $facet: String
+  $filter: String
+) {
+  cartPickupLocations(
+    cartId: $cartId
+    storeId: $storeId
+    cultureName: $cultureName
+    after: $after
+    first: $first
+    keyword: $keyword
+    sort: $sort
+    facet: $facet
+    filter: $filter
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    items {
+      id
+      isActive
+      name
+      description
+      contactEmail
+      contactPhone
+      workingHours
+      deliveryDays
+      storageDays
+      geoLocation
+      availabilityType
+      availabilityNote
+      availableQuantity
+      address {
+        id
+        key
+        name
+        organization
+        countryCode
+        countryName
+        regionId
+        regionName
+        city
+        postalCode
+        line1
+        line2
+        phone
+        email
+        outerId
+        description
+        addressType
+      }
+    }
+    term_facets {
+      name
+      terms {
+        term
+        label
+        count
+      }
+    }
+    range_facets {
+      name
+      ranges {
+        from
+        to
+        count
+      }
+    }
+    filter_facets {
+      name
+    }
+  }
+}

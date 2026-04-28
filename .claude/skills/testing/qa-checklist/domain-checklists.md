@@ -4,7 +4,9 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
 
-**32 storefront domains + 1 cross-domain checklist | 412 checklist items** — every checked item should map to at least one test case.
+**33 storefront domains + 1 cross-domain checklist | 411 checklist items** — every checked item should map to at least one test case.
+
+> **GraphQL test coverage**: GraphQL xAPI checklist items are maintained in [`graphql-checklist.md`](./graphql-checklist.md), not here. This file focuses on storefront UI/UX behavior.
 
 ## Summary
 
@@ -17,24 +19,24 @@
 | 5 | Add to Cart | 10 | E2E-CART | 01, 04a |
 | 6 | Search | 12 | E2E-SEARCH | 03, 26 |
 | 7 | Ship-to Selector | 6 | E2E-CHK | 04a, 04b |
-| 8 | Cart/Checkout | 17 | E2E-CHK | 04a, 04b, 06 |
+| 8 | Cart/Checkout | 19 | E2E-CHK | 04a, 04b, 06 |
 | 9 | Payment | 12 | E2E-PAY | 06 |
-| 10 | Orders | 7 | E2E-ORD | 01, 04c, 20 |
+| 10 | Orders | 11 | E2E-ORD | 01, 04c, 20 |
 | 11 | Company Info | 6 | E2E-ORG | 02, 21 |
 | 12 | Company Members | 12 | E2E-MEMBER | 02, 21 |
 | 13 | Multi-Org | 11 | E2E-ORG | 02, 21 |
-| 14 | Product Configurations & Variations | 56 | E2E-CONFIG | 36 |
+| 14 | Product Configurations & Variations | 55 | E2E-CONFIG | 36 |
 | 15 | PDP (Product Detail Page) | 11 | E2E-CAT | 01, 03 |
 | 16 | Google Analytics | 11 | E2E-GA | 07 |
 | 17 | Anonymous Flow | 8 | E2E-CHK | 04a, 04b |
 | 18 | Cart Merge | 7 | E2E-CART | 04a, 30 |
 | 19 | BOPIS (Pickup) | 12 | E2E-BOPIS | 05, 30 |
-| 20 | B2B Quotes & RFQ | 13 | E2E-QUOTE | 04c, 20 |
-| 21 | B2B Lists & Quick Order | 12 | E2E-LIST | 13 |
+| 20 | B2B Quotes & RFQ | 14 | E2E-QUOTE | 04c, 20 |
+| 21 | B2B Lists & Quick Order | 13 | E2E-LIST | 13 |
 | 22 | Localization & i18n | 7 | E2E-L10N | 10 |
 | 23 | Notifications | 12 | E2E-NOTIF | 24 |
 | 24 | White Labeling | 13 | E2E-WL | 32, 35 |
-| 25 | Account Management | 12 | E2E-ACCT | 01, 02, 13 |
+| 25 | Account Management | 13 | E2E-ACCT | 01, 02, 13 |
 | 26 | Storefront Push Messages | 12 | E2E-PUSH | 33 |
 | 27 | Coupons & Promotions | 12 | E2E-PROMO | 41, 23, 42 |
 | 28 | Security | 10 | E2E-SEC | 08 |
@@ -42,6 +44,7 @@
 | 30 | Performance | 8 | E2E-PERF | 11 |
 | 31 | Browser Compatibility | 7 | E2E-COMPAT | 12 |
 | 32 | B2C Features | 10 | E2E-B2C | 13 |
+| 33 | Subscriptions & Recurring Orders | 10 | E2E-SUB | 14 |
 | **BF** | **Bug Fix Verification** | **10** | *cross-domain* | *per bug* |
 
 ---
@@ -157,6 +160,8 @@
 - [ ] Loyalty points as payment: apply points balance to reduce order total, insufficient points blocked (if loyalty enabled)
 - [ ] Recently browsed products: cart page displays recently viewed products section below main cart content (if feature enabled)
 - [ ] Loyalty gifts display: preselected loyalty gifts shown on cart page when loyalty program awards free items
+- [ ] Purchase Order Number (B2B): `purchaseOrderNumber` field editable on cart, persists to created order, visible in order detail (`changePurchaseOrderNumber` mutation)
+- [ ] Multi-cart / named cart support: user can create multiple named carts (e.g. "Default", "Office Supplies"), switch between them, items isolated per cart, merge items from multiple carts into one final order
 
 ## 9. Payment
 - [ ] Skyflow Visa: card entry → tokenization → payment success → order status "Paid"
@@ -173,13 +178,18 @@
 - [ ] Saved card reuse: previously tokenized card selectable from saved payment methods list
 
 ## 10. Orders
-- [ ] Order detail page: items, quantities, prices, addresses, payment, shipping, status
-- [ ] Order history table: list view, pagination
-- [ ] Filters: date range, status (New, Processing, Shipped, Completed, Cancelled)
-- [ ] Search by order number
-- [ ] Reorder: items added to cart with correct qty, current prices (may differ)
-- [ ] Order status lifecycle: Admin updates status → storefront reflects
-- [ ] Tracking number visible when shipped
+- [ ] Order detail page: items, quantities, prices, addresses, payment, shipping, status, invoice number, purchase order number (B2B)
+- [ ] Order history table (`/account/orders`): list view, pagination
+- [ ] "All orders" / "My orders" tabs: B2B users see all org orders vs own orders only; personal accounts hide tab switcher
+- [ ] Filters: date range (created from/to), status (New, Processing, Shipped, Completed, Cancelled), keyword search
+- [ ] Search by order number or invoice number
+- [ ] Sort options: by date, status, total — ascending and descending
+- [ ] Reorder: items added to cart with correct qty, current prices (may differ from original order), unavailable items flagged
+- [ ] Order status lifecycle: Admin updates status → storefront reflects (real-time or on next page load)
+- [ ] Tracking number visible when shipped, link to carrier tracking page (if integrated)
+- [ ] B2B Order Approval workflow: order placed in "Pending Approval" status → maintainer approves via `approveOrder` mutation → status moves to "Approved", `approvedBy` and `approvedDate` populated; reject path also exercised
+- [ ] Order approval permissions: only roles with approval permission can approve/reject; non-approvers see read-only view
+- [ ] Currency-aware totals: order shows correct currency and language reflecting the locale at checkout time
 
 ## 11. Company Info
 - [ ] Organization details page (`/account/company`): company name, description, addresses, phones displayed
@@ -239,7 +249,8 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Required product section (`isRequired: true`): cannot proceed without selecting an option
 - [ ] Optional product section (`isRequired: false`): can skip section, configuration still valid
 - [ ] Multiple options in one section: only one selectable at a time (radio-style), or multiple if allowed
-- [ ] Option prices reflect current pricing (list price, sale price if applicable)
+- [ ] Per-option pricing fields populated: `listPrice`, `salePrice`, `discountAmount` (when on sale), `extendedPrice` — values match current Pricelist for the user/org context
+- [ ] Out-of-stock option: greyed/disabled in section, cannot be selected, configuration cannot complete with it
 
 #### Text Section Type
 - [ ] Text section renders input field for custom/predefined text entry
@@ -248,14 +259,18 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Optional text section: can leave blank without blocking configuration
 - [ ] Text input character limits / validation rules enforced (if configured)
 - [ ] Predefined text options: dropdown or selection list of preset text values
+- [ ] Custom-vs-preset serialization: Custom input serialized as `customText` payload; preset selection serialized as `optionId` reference (NOT re-encoded as `customText`)
+- [ ] `maxLength` scope: validation applies ONLY to Custom input, preset option labels are NOT length-validated even if longer than `maxLength`
+- [ ] Switching from preset → Custom (and back): payload toggles between optionId and customText cleanly, no stale value left behind
 
 #### File Section Type
 - [ ] File section renders file upload control (e.g., logo uploads, custom artwork)
 - [ ] Required file section: cannot complete configuration without uploading a file
 - [ ] Optional file section: configuration valid without file attachment
-- [ ] File type validation: only accepted formats allowed (image, PDF, etc.)
+- [ ] File type validation: only accepted formats allowed (image, PDF, etc.) — invalid type rejected with user-friendly error
 - [ ] File size limits enforced with user-friendly error message
 - [ ] Uploaded file preview displayed after successful upload
+- [ ] Replace/remove uploaded file: previous file cleared from configuration, new file persisted on save
 
 ### Configurable Products — Storefront UX
 - [ ] "Customize" CTA on PDP opens configurator (not standard "Add to Cart")
@@ -272,23 +287,17 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 ### Configurable Products — Cart & Checkout
 - [ ] Configured product in cart: shows selected options per section (product name, text value, file name)
 - [ ] Cart line item displays configuration details, not just parent product name
-- [ ] Edit configured product in cart: reopens configurator with previous selections pre-filled
-- [ ] Remove configured product from cart: entire configuration removed as one unit
+- [ ] Edit configured product in cart: reopens configurator with previous selections pre-filled, save dispatches `changeCartConfiguredItem` mutation
+- [ ] Remove configured product from cart: entire configuration removed as one unit (parent line + child `configurationItems`)
 - [ ] Price in cart matches running total from configurator (sum of all section option prices)
-- [ ] Quantity change on configured cart item: recalculates total (qty × configured price)
-- [ ] Multiple configurations of same base product: appear as separate cart lines
-- [ ] Configured product persists through cart merge (anonymous → authenticated)
+- [ ] Quantity change on configured cart item: dispatches `changeCartConfiguredItem` with new `quantity`, recalculates total (qty × configured price)
+- [ ] Multiple configurations of same base product: appear as separate cart lines (independent `lineItemId`)
+- [ ] Configured product persists through cart merge (anonymous → authenticated): `configurationItems` carried over intact
 - [ ] Configured product survives cart persistence across sessions
 - [ ] Checkout displays configuration details in order summary
 - [ ] Order confirmation / order history shows full configuration breakdown
 
-### Configurable Products — GraphQL API (`productConfiguration` query)
-- [ ] `productConfiguration` query returns `configurationSections` with `id`, `type`, `name`, `description`, `isRequired`
-- [ ] Each section contains `options` array with `quantity`, `extendedPrice`, and `product` details
-- [ ] Section `type` field correctly reflects: `Product`, `Text`, or `File`
-- [ ] Required parameters: `configurableProductId` + `storeId`; optional: `userId`, `cultureName`, `currencyCode`
-- [ ] Non-configurable product ID returns empty sections or appropriate error
-- [ ] `CartConfigurationItemType` in cart: `id`, `name`, `sectionId`, `productId`, `quantity` fields populated
+> **GraphQL API coverage** for `productConfiguration`, `createConfiguredLineItem`, `changeCartConfiguredItem`, and `configurationItems` lives in [`graphql-checklist.md`](./graphql-checklist.md) — keep this domain checklist UI/UX-focused.
 
 ### Test Data
 - [ ] Category `/products-with-options`: 8 configurable + 7 variation products as test data
@@ -358,10 +367,10 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Quote negotiation: Admin responds with pricing → storefront shows quote received
 - [ ] Accept quote → converts to order with quoted prices (not catalog prices)
 - [ ] Decline quote: `declineQuoteRequest` → status "Declined" → Admin sees rejection with reason
-- [ ] Quote with substitutions: Admin offers alternate product → buyer reviews
 - [ ] Quote expiry: expired quote shows "Expired", cannot convert to order (BL-B2B-003)
 - [ ] Quote comment thread: add/edit comments during negotiation visible to both buyer and Admin
-- [ ] Quote line items preserve tier pricing: quantity thresholds reflected in quoted prices
+- [ ] Quote line items preserve tier pricing: `selectedTierPrice` (quantity + price) carried over from cart, listPrice/salePrice visible per item
+- [ ] Quote substitutions: Admin offers alternate product on a line — buyer reviews substitution, accepts/rejects per line
 - [ ] Quote detail page (`/account/quotes/{id}`): line items, prices, status, comments, actions
 - [ ] Quote history (`/account/quotes`): list view, filter by status, pagination, sort by date
 - [ ] Approve workflow: `approveQuoteRequest` mutation for admin approval before conversion
@@ -371,8 +380,9 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Create list → name it → add products from catalog → manage items (qty, remove)
 - [ ] List rename / delete: edit list name, delete list with confirmation prompt
 - [ ] Add to cart from list: select items or "Select All" → verify cart totals
-- [ ] Shared list: visible to other org members, sharing permissions (who can edit items)
-- [ ] Private list: scoped to creator, not visible to other org members
+- [ ] Shared list (`scope: "organization"`): visible to other org members, sharing permissions (who can edit items)
+- [ ] Private list (`scope: "user"`): scoped to creator, not visible to other org members
+- [ ] Bulk add to cart from list: `addBulkItemsCart` mutation — multiple SKUs/qty in one request, partial-success handling (some lines OK, some invalid)
 - [ ] Quick Order page: enter SKU directly → autocomplete/suggestions, product image preview → set qty → "Add All to Cart"
 - [ ] Wishlist: add from PDP (heart icon) → manage in Account → move to cart
 - [ ] Bulk order page (`/bulk-order`): multi-row entry, paste from spreadsheet, error handling for invalid SKUs
@@ -431,6 +441,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Personal vs corporate account differences: "Addresses" link visible only for personal accounts (not org users)
 - [ ] Personal addresses (`/account/addresses`): add, edit, delete address, set default, form validation
 - [ ] Account menu redesign: dropdown with user info + organizations list (radio buttons + search), no account nav links in dropdown
+- [ ] Loyalty Points History (`/account/points-history`): current balance, earned/redeemed transactions per order with date and amount, pagination, filter by `operationType` (Earned, Redeemed) — link displayed only when loyalty program is enabled
 - [ ] Empty states: each account page handles zero-data gracefully (no orders, no cards, no coupons)
 
 ## 26. Storefront Push Messages
@@ -515,6 +526,19 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Recently browsed: recently viewed products section on homepage/cart/PDP sidebar
 - [ ] Promotional banners: homepage hero banners, category-level promotions render with correct links
 - [ ] Single-user account: personal account without organization context, "Addresses" link visible in sidebar
+
+## 33. Subscriptions & Recurring Orders
+> Applies only when the **Subscription** module is enabled for the store. Skip this section in environments without subscriptions configured.
+- [ ] Create subscription from cart/order: convert eligible items into a recurring schedule (interval, count or end-date)
+- [ ] Subscription detail page (`/account/subscriptions/{id}`): items, schedule, next run date, status (Active, Paused, Cancelled)
+- [ ] Subscriptions list (`/account/subscriptions`): pagination, filter by status, sort by next run date
+- [ ] Pause subscription → next recurring order skipped, status reflected; resume restores schedule
+- [ ] Cancel subscription → no future orders generated, history preserved; cancellation reason captured (if configured)
+- [ ] Edit subscription items: change quantity / remove line / add line; new schedule recalculates totals
+- [ ] Edit schedule: change interval (daily/weekly/monthly), end date, or recurrence count; validation on minimum/maximum interval
+- [ ] Recurring order generation: Admin job creates child order on next run date with current pricing; failure (e.g. payment decline, out-of-stock) handled per policy
+- [ ] Subscription notifications: email/push when child order is created, when payment fails, when subscription is about to expire
+- [ ] Permissions: only the subscription owner (or org maintainer for org-scoped subs) can pause/cancel/edit; other roles see read-only
 
 ---
 

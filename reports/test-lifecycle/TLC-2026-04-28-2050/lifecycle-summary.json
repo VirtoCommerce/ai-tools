@@ -1,0 +1,102 @@
+{
+  "runId": "TLC-2026-04-28-2050",
+  "inputType": "change-source",
+  "source": "PR #8 vc-module-x-pickup",
+  "sourceUrl": "https://github.com/VirtoCommerce/vc-module-x-pickup/pull/8",
+  "jira": "VCST-4707",
+  "jiraTitle": "[BOPIS] Pre-selection fails for pickup locations outside first 50 results (pagination bug)",
+  "date": "2026-04-28T20:50:00Z",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue 2.48.0-pr-2269-dfb0-dfb0c1e5",
+    "moduleUnderTest": "VirtoCommerce.XPickup_3.1001.0-pr-8-3380"
+  },
+  "changedModules": ["VirtoCommerce.XPickup"],
+  "changedLayers": ["backend", "graphql"],
+  "affectedSuites": ["036", "037", "038", "042", "050b1"],
+  "casesAnalyzed": 10,
+  "casesSynced": 0,
+  "casesSyncProposed": 1,
+  "casesGenerated": 2,
+  "casesReviewed": 12,
+  "casesVerified": 1,
+  "filesModified": [
+    "regression/suites/Frontend/bopis/036-bopis-store-selector.csv",
+    "regression/suites/Backend/graphql/050b1-graphql-xcart-basic.csv",
+    "reports/full-cycle/last-deploy-state.json"
+  ],
+  "generatedCases": [
+    {
+      "id": "BOPIS-091",
+      "suite": "036",
+      "layer": "frontend",
+      "priority": "Critical",
+      "title": "VCST-4707 Regression — Confirmed Pagination-Boundary Location Appears at Top of Modal on Reopen"
+    },
+    {
+      "id": "GQL-094",
+      "suite": "050b1",
+      "layer": "graphql",
+      "priority": "Critical",
+      "title": "xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)"
+    }
+  ],
+  "syncProposals": [
+    {
+      "caseId": "BOPIS-087",
+      "suite": "036",
+      "classification": "INCOMPLETE",
+      "status": "diff-presented-awaiting-confirmation"
+    }
+  ],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "PASS",
+    "G7_duplication": "PASS",
+    "G8_environment": "PASS",
+    "G9_sync": "WARN"
+  },
+  "phase5": {
+    "verdict": "VERIFIED",
+    "browser": "playwright-edge",
+    "browserFallbackReason": "playwright-firefox not installed; used fallback chain",
+    "totalLocationsInEnv": 102,
+    "initialBatchSize": 50,
+    "selectedTestLocation": "Westend Foxpost (HUN, Budapest)",
+    "preselectionVerified": true,
+    "graphqlItems0Match": true,
+    "consoleErrors": 0,
+    "budgetSeconds": 270,
+    "evidenceDir": "reports/test-lifecycle/TLC-2026-04-28-2050/evidence/"
+  },
+  "blProposals": {
+    "new": [
+      {
+        "proposedId": "PROPOSED-BL-BOPIS-008",
+        "severity": "P1-data",
+        "rule": "Pickup locations confirmed in cart shipments must appear at items[0] of cartPickupLocations response regardless of paging, keyword, or filter. Confirmed location is fetched separately and prepended (ordered by PickupLocation.Name).",
+        "verify": "Set cart shipment.pickupLocationId to a location alphabetically/positionally beyond the initial paged batch. Reopen modal or query cartPickupLocations with empty/exclusionary keyword and small first param. Assert items[0].id matches the confirmed pickup location ID.",
+        "violationSignal": "Confirmed pickup location not at items[0]; modal reopen shows no checked radio; location absent from response when keyword/filter would otherwise exclude it.",
+        "agents": "qa-frontend-expert (modal reopen), qa-backend-expert (cartPickupLocations xAPI)",
+        "source": "JIRA VCST-4707 + PR https://github.com/VirtoCommerce/vc-module-x-pickup/pull/8",
+        "triggeredByCases": ["BOPIS-091", "GQL-094"],
+        "applied": false,
+        "applicationStatus": "draft-only — --update-bl flag was OFF; per feedback_business_logic_promotion.md memory, requires explicit per-entry user approval before promotion to business-logic.md"
+      }
+    ],
+    "stale": []
+  },
+  "recommendations": [
+    "Apply BOPIS-087 diff to complete G9 gate (PASS instead of WARN)",
+    "Install Firefox on QA agent host: npx playwright install firefox",
+    "Promote BOPIS-091 and GQL-094 from Draft to Reviewed after peer review",
+    "Run /qa-regression bopis after BOPIS-087 update to exercise the fix in standard regression",
+    "Transition VCST-4707 to Verified/Done in JIRA — Phase 5 confirmed fix works",
+    "Consider filing a separate VCST UX ticket for missing user-facing pickup-modal pagination control (locations beyond first 50 reachable only via filter/keyword/pre-selection)"
+  ]
+}

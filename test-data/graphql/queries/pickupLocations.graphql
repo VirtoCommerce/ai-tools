@@ -1,0 +1,66 @@
+# name: pickupLocations
+# category: pickup
+# role: PUBLIC
+# purpose: Store-level pickup locations master list — paginated, sortable, keyword-searchable. Returns PickupLocationType (no per-product availability).
+# required-vars: (none)
+# optional-vars: (all passed via GQL operation variables — see gql-vars)
+# last-validated: 2026-04-28
+# known-issues: (none)
+# gql-vars: { "storeId": "String", "after": "String", "first": "Int", "keyword": "String", "sort": "String" }
+# runner-note: Pass variables via [GQL-VARS label] JSON. storeId is optional in the schema but should always be supplied for store-scoped results.
+# example-vars: {"storeId": "B2B-store", "first": 20, "after": "0", "sort": "name:asc", "keyword": ""}
+
+query GetPickupLocations(
+  $storeId: String
+  $after: String
+  $first: Int
+  $keyword: String
+  $sort: String
+) {
+  pickupLocations(
+    storeId: $storeId
+    after: $after
+    first: $first
+    keyword: $keyword
+    sort: $sort
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    items {
+      id
+      isActive
+      name
+      description
+      contactEmail
+      contactPhone
+      workingHours
+      deliveryDays
+      storageDays
+      geoLocation
+      address {
+        id
+        key
+        name
+        organization
+        countryCode
+        countryName
+        regionId
+        regionName
+        city
+        postalCode
+        line1
+        line2
+        phone
+        email
+        outerId
+        description
+        addressType
+      }
+    }
+  }
+}
