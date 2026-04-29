@@ -1,0 +1,123 @@
+{
+  "ticket": "VCST-4987",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "round": 2,
+  "previous_round_verdict": "FIX_INCOMPLETE",
+  "verified_at": "2026-04-29T13:05:00Z",
+  "verifier": "qa-frontend-expert",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "2.48.0-pr-2272-f40a-f40a2483",
+    "theme_head_sha": "f40a2483",
+    "xcart": "3.1011.0-pr-113-b17e",
+    "xcart_head_sha": "b17e8778",
+    "cart": "3.1003.0",
+    "catalog": "3.1020.0",
+    "xapi": "3.1006.0",
+    "frontend_pr": "vc-frontend#2272",
+    "xcart_pr": "vc-module-x-cart#113"
+  },
+  "environment": {
+    "url": "https://vcst-qa-storefront.govirto.com",
+    "browser": "playwright-chrome",
+    "locale": "en-US",
+    "viewport": "1920x1080",
+    "user": "Coffee shop / Elena Mutykova",
+    "user_email": "mutykovaelena@gmail.com"
+  },
+  "product_under_test": {
+    "name": "Off-Road Bike. Configurable product",
+    "sku": "INN-69077289",
+    "id": "958d0762-404c-4a6f-a45a-46ed4943f5f0",
+    "url": "/products-with-options/configurations/off-road-bike",
+    "section_under_test": {
+      "name": "Text1",
+      "type": "Text",
+      "required": true,
+      "max_length": 5,
+      "section_id": "b7c05532-c5cc-4ebb-b208-bcd36bea4e1a",
+      "preset_under_test": "TEST_QA",
+      "preset_length": 7
+    }
+  },
+  "str_result": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "intermittent": false,
+    "details": [
+      { "run": 1, "result": "PASS", "lineItemId": "db7c9ed4-4b4d-435d-b270-6abbbae43c83" },
+      { "run": 2, "result": "PASS", "lineItemId": "9b1369bb-0e7f-439e-8fbd-6c82c559f324" },
+      { "run": 3, "result": "PASS", "lineItemId": "cd1d75d8-56ab-4aea-86f2-67e804086eaf" }
+    ]
+  },
+  "checklist_counts": {
+    "total": 10,
+    "pass": 9,
+    "partial": 1,
+    "fail": 0,
+    "blocked": 0,
+    "items": [
+      { "id": 1, "label": "STR runs 1-3 add to cart end-to-end", "result": "PASS" },
+      { "id": 2, "label": "addItem response no MAX_LENGTH_EXCEEDED for preset", "result": "PASS" },
+      { "id": 3, "label": "Edit-cart parity: switch Custom abc -> TEST_QA via Update", "result": "PASS" },
+      { "id": 4, "label": "Server symmetry: rejects invalid customText with MAX_LENGTH_EXCEEDED", "result": "PASS" },
+      { "id": 5, "label": "Validation-error surface (toast) on rejected update", "result": "PARTIAL", "note": "Server rejects correctly and cart state stays unchanged, but no toast/inline error is surfaced to the user. Recommend follow-up bug." },
+      { "id": 6, "label": "Custom input 'abc' (3 chars) Add still works", "result": "PASS" },
+      { "id": 7, "label": "Required-section empty: Add-to-cart disabled", "result": "PASS" },
+      { "id": 8, "label": "No new console errors / 4xx/5xx on graphql", "result": "PASS" },
+      { "id": 9, "label": "Custom textbox clear on switch to preset", "result": "PASS" },
+      { "id": 10, "label": "Preset label longer than maxLength edge", "result": "PASS" }
+    ]
+  },
+  "regression_issues": [],
+  "side_effects": [
+    { "kind": "spot-check", "product": "Vintage Wedding cake", "result": "PASS", "note": "Other configurable product still adds to cart cleanly; no regression in shared add-to-cart.vue path." },
+    { "kind": "ux", "result": "OBSERVATION", "note": "Server validation error message is technical: 'Configuration section CustomText exceeds the maximum allowed length of 5 characters'. Recommend design-system review for friendlier user-facing copy. NOT a blocker." },
+    { "kind": "ux", "result": "OBSERVATION", "note": "Edit mode does not pre-fill the existing customText / radio selection. Out of scope for VCST-4987." }
+  ],
+  "graphql_evidence": {
+    "addItem_no_maxlength_error_for_preset": true,
+    "changeCartConfiguredItem_returns_validation_error_on_overlength": true,
+    "validation_error_code": "CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED",
+    "validation_error_message": "Configuration section CustomText exceeds the maximum allowed length of 5 characters",
+    "validation_error_object_id": "b7c05532-c5cc-4ebb-b208-bcd36bea4e1a",
+    "preserved_customText_after_rejection": "TEST_QA",
+    "evidence_file": "graphql-evidence.json"
+  },
+  "business_rules_verified": [
+    "BL-CART-* (configurable line item add returns full cart with itemsQuantity:1)",
+    "BL-CHK-006 (Order total formula: subtotal-discount+tax+shipping=total: 650-100+110+0=660)",
+    "VCST-4987 invariant: IsPredefinedTextOptionSelected() bypasses maxLength when customText matches a preset.text (TEST_QA 7 > maxLength 5 accepted)",
+    "VCST-4987 server symmetry: CartAggregate.UpdateConfiguredLineItemAsync now validates and returns errors instead of persisting"
+  ],
+  "business_rules_violated": [],
+  "recommendation": {
+    "primary": "Verified / Ready for Closure — Original VCST-4987 symptom no longer reproduces.",
+    "follow_ups": [
+      { "type": "BUG", "severity": "Medium", "title": "Update-cart toast does not surface cart-level CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED to user; user sees silent no-op." },
+      { "type": "UX", "severity": "Low", "title": "Edit mode does not pre-fill existing customText/radio selection." },
+      { "type": "UX", "severity": "Low", "title": "Validation-error copy is technical/jargon — design-system review for friendlier copy." }
+    ]
+  },
+  "evidence_paths": {
+    "report": "tests/Sprint-current/VCST-4987/run-2-2026-04-29/verification-report.md",
+    "summary_json": "tests/Sprint-current/VCST-4987/run-2-2026-04-29/verification-summary.json",
+    "screenshots": [
+      "screenshots/run1-step5-preset-selected-button-enabled.png",
+      "screenshots/run1-step6-cart-count-1.png",
+      "screenshots/run2-step5-preset-selected-button-enabled.png",
+      "screenshots/run2-step6-cart-count-1.png",
+      "screenshots/run3-step5-preset-selected-button-enabled.png",
+      "screenshots/run3-step6-cart-count-1.png",
+      "screenshots/edit-cart-update-success.png",
+      "screenshots/edit-cart-overlength-toast.png",
+      "screenshots/edit-cart-overlength-toast-fullpage.png",
+      "screenshots/custom-textbox-cleared-on-switch.png",
+      "screenshots/00-initial-cart-state.png"
+    ],
+    "har": "network.har.txt",
+    "graphql": "graphql-evidence.json",
+    "console": "console.log"
+  }
+}

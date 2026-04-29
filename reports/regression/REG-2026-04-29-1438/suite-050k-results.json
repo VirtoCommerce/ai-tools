@@ -1,0 +1,105 @@
+{
+  "suiteId": "050k",
+  "suiteName": "GraphQL xPickup — BOPIS Pickup Locations",
+  "runId": "REG-2026-04-29-1438",
+  "browser": "none (GraphQL Runner Fast Path)",
+  "environment": "Backend GraphQL",
+  "comparedTo": "REG-2026-04-29-1057",
+  "startedAt": "2026-04-29T14:38:00.000Z",
+  "completedAt": "2026-04-29T14:46:00.000Z",
+  "totalCases": 6,
+  "passed": 4,
+  "failed": 2,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "66.7%",
+  "testCases": [
+    {
+      "id": "GQL-094",
+      "status": "PASS",
+      "previousStatus": "FAIL",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-094-1777466392516.json"
+    },
+    {
+      "id": "GQL-127",
+      "status": "PASS",
+      "previousStatus": "FAIL",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-127-1777466403050.json"
+    },
+    {
+      "id": "GQL-128",
+      "status": "PASS",
+      "previousStatus": "PASS",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-128-1777466412852.json"
+    },
+    {
+      "id": "GQL-129",
+      "status": "PASS",
+      "previousStatus": "PASS",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-129-1777466424441.json"
+    },
+    {
+      "id": "GQL-130",
+      "status": "FAIL",
+      "previousStatus": "BLOCKED",
+      "title": "xCart Pickup — cartPickupLocations facet Returns term_facets Structure",
+      "section": "Backend/graphql",
+      "priority": "Medium",
+      "businessRule": "BL-PICKUP-005",
+      "edgeCaseRefs": "GAP-XPICKUP-001",
+      "failedAssertion": "[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Cart setup now deterministic (add_item PASS, validationErrors=0 PASS — BUG-050k-004 fix validated). API returns term_facets=[] for all three requested facets (address.countryCode, address.regionName, address.city). Second failure is a runner parse error on the [DATA label=probe_facets] 'is non-empty' predicate (DV-019 candidate). Product gap: cartPickupLocations does not yet implement facet aggregation. Confirmed product gap GAP-XPICKUP-001 — requires PR #8 scope confirmation.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-130-1777466440355.json"
+    },
+    {
+      "id": "GQL-131",
+      "status": "FAIL",
+      "previousStatus": "BLOCKED",
+      "title": "xCart Pickup — cartPickupLocations filter Narrows Result Set",
+      "section": "Backend/graphql",
+      "priority": "Medium",
+      "businessRule": "BL-PICKUP-006",
+      "edgeCaseRefs": "GAP-XPICKUP-002",
+      "failedAssertion": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Cart setup now deterministic (add_item PASS, validationErrors=0 PASS — BUG-050k-004 fix validated). filter=address.countryCode:USA returns totalCount=0 when unfiltered baseline returns 102 USA locations. Filter argument is accepted by the API (no errors[]) but has no effect — all locations have countryCode=USA yet the filtered query returns 0. Product gap GAP-XPICKUP-002 — cartPickupLocations filter argument not implemented in PR #8. 2 cross-OP [COUNT] predicates demoted to [EVIDENCE] (BUG-050k-003 fix applied). 8/9 assertions pass.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1438/graphql-evidence/GQL-131-1777466454874.json"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_050k_GAP001",
+      "title": "cartPickupLocations: term_facets argument accepted but returns empty array — facet aggregation not implemented",
+      "severity": "Medium",
+      "testCaseId": "GQL-130",
+      "businessRule": "BL-PICKUP-005",
+      "edgeCaseRef": "GAP-XPICKUP-001",
+      "failedAssertion": "[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1",
+      "stepsToReproduce": "1. Add product b3f5bd0c-45e4-46dc-8f2d-ad089718fc32 to cart via addItem mutation. 2. Execute cartPickupLocations with facet='address.countryCode address.regionName address.city'. 3. Inspect term_facets in response.",
+      "expected": "term_facets contains at least 1 entry for each of the 3 requested facets with populated terms[] (name, label, count)",
+      "actual": "term_facets = [] — empty array returned regardless of facet argument",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_050k_GAP002",
+      "title": "cartPickupLocations: filter argument accepted but returns 0 results — filter predicate not applied",
+      "severity": "Medium",
+      "testCaseId": "GQL-131",
+      "businessRule": "BL-PICKUP-006",
+      "edgeCaseRef": "GAP-XPICKUP-002",
+      "failedAssertion": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1",
+      "stepsToReproduce": "1. Add product to cart via addItem. 2. Execute cartPickupLocations with no filter → totalCount=102 (baseline). 3. Execute with filter='address.countryCode:USA' (all 102 locations are USA). 4. Check totalCount.",
+      "expected": "Filtered query with address.countryCode:USA should return totalCount=102 (all locations match) — filter narrows but does not eliminate when all locations satisfy the predicate",
+      "actual": "totalCount=0 — filter argument silently discards all results. API returns no errors[].",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

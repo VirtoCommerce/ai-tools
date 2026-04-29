@@ -1,0 +1,346 @@
+{
+  "caseId": "GQL-131",
+  "title": "xCart Pickup — cartPickupLocations filter Narrows Result Set",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050k-graphql-xpickup.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-04-29T08:43:13.892Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-29T08:43:11.046Z",
+      "expiresAt": "2026-04-29T09:13:11.046Z"
+    }
+  ],
+  "variables": {
+    "filter_nomatch": "address.countryCode:ZZZ",
+    "store_id": "{{STORE_ID}}",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_ID": "60a67fe6-f418-488a-b685-45353c07973c",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "SEED_COUNTRY": "USA"
+  },
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 265
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "60a67fe6-f418-488a-b685-45353c07973c"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 215
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 907
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"60a67fe6-f418-488a-b685-45353c07973c\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 455
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_baseline",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 sort: \"name:asc\") {\n      totalCount items { id name address { countryCode } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "f0a96dea-5b92-4e05-af14-fa7891deeab7",
+                "name": "New Hector",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "95d2ca4e-cfeb-43aa-9024-016b9a7650dd",
+                "name": "Mathewmouth",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "0e2bfa22-ab42-47da-9e98-9abcde49432c",
+                "name": "Toronto Investment and Trade Centre",
+                "address": {
+                  "countryCode": "CAN"
+                }
+              },
+              {
+                "id": "2b7c2123-7fc8-4516-8df1-e7c608f25de8",
+                "name": "Airoport&the International Centre",
+                "address": {
+                  "countryCode": "CAN"
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 169
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_filter_match",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 200 filter: \"address.countryCode:USA\") {\n      totalCount items { id address { countryCode } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 143
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_filter_nomatch",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 filter: \"address.countryCode:ZZZ_NOT_A_COUNTRY\") {\n      totalCount items { id }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 148
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_sort_desc",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 sort: \"name:desc\") {\n      totalCount items { id name }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough"
+              },
+              {
+                "id": "f0a96dea-5b92-4e05-af14-fa7891deeab7",
+                "name": "New Hector"
+              },
+              {
+                "id": "95d2ca4e-cfeb-43aa-9024-016b9a7650dd",
+                "name": "Mathewmouth"
+              },
+              {
+                "id": "0e2bfa22-ab42-47da-9e98-9abcde49432c",
+                "name": "Toronto Investment and Trade Centre"
+              },
+              {
+                "id": "2b7c2123-7fc8-4516-8df1-e7c608f25de8",
+                "name": "Airoport&the International Centre"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 160
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 373
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=probe_baseline] errors[] empty",
+      "label": "probe_baseline",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_baseline",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 102"
+    },
+    {
+      "raw": "[ERRORS label=probe_filter_match] errors[] empty",
+      "label": "probe_filter_match",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_filter_match",
+      "kind": "COUNT",
+      "passed": false,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 0"
+    },
+    {
+      "raw": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount <= probe_baseline.data.cartPickupLocations.totalCount",
+      "label": "probe_filter_match",
+      "kind": "COUNT",
+      "passed": false,
+      "expected": "data.cartPickupLocations.totalCount <= probe_baseline.data.cartPickupLocations.totalCount",
+      "actual": "unrecognized COUNT predicate"
+    },
+    {
+      "raw": "[ERRORS label=probe_filter_nomatch] errors[] empty",
+      "label": "probe_filter_nomatch",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=probe_sort_desc] errors[] empty",
+      "label": "probe_sort_desc",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_sort_desc] data.cartPickupLocations.totalCount = probe_baseline.data.cartPickupLocations.totalCount",
+      "label": "probe_sort_desc",
+      "kind": "COUNT",
+      "passed": false,
+      "expected": "data.cartPickupLocations.totalCount = probe_baseline.data.cartPickupLocations.totalCount",
+      "actual": "unrecognized COUNT predicate"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan",
+      "layer": "EVIDENCE",
+      "note": "every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan",
+      "resolved": "every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan"
+    },
+    {
+      "raw": "[EVIDENCE] probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0",
+      "layer": "EVIDENCE",
+      "note": "probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0",
+      "resolved": "probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0"
+    },
+    {
+      "raw": "[EVIDENCE] probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check",
+      "layer": "EVIDENCE",
+      "note": "probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check",
+      "resolved": "probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check"
+    },
+    {
+      "raw": "[ROUNDTRIP label=probe_sort_desc] same totalCount as baseline (sort does not change result set, only order)",
+      "layer": "ROUNDTRIP",
+      "note": "same totalCount as baseline (sort does not change result set, only order)",
+      "resolved": "same totalCount as baseline (sort does not change result set, only order)"
+    }
+  ],
+  "cleanup": "none — clearCart at end"
+}

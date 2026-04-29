@@ -1,0 +1,63 @@
+{
+  "runId": "TLC-2026-04-29-1100",
+  "inputType": "direct-scope",
+  "source": "review 050k",
+  "date": "2026-04-29",
+  "verdict": "NEEDS_FIXES",
+  "build": {
+    "platform": "3.1025.0",
+    "modules": {
+      "VirtoCommerce.XPickup": "3.1001.0-pr-8-3380",
+      "VirtoCommerce.XCart": "3.1010.0",
+      "VirtoCommerce.XCatalog": "3.1005.0",
+      "VirtoCommerce.Xapi": "3.1006.0",
+      "VirtoCommerce.Inventory": "3.1001.0"
+    }
+  },
+  "affectedSuites": ["050k"],
+  "casesAnalyzed": 6,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 6,
+  "casesVerified": 0,
+  "filesModified": [],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "WARN",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "FAIL",
+    "G6_coverage": "FAIL",
+    "G7_duplication": "PASS",
+    "G8_environment": "SKIP",
+    "G9_sync": "N/A"
+  },
+  "findings": {
+    "critical": 1,
+    "high": 3,
+    "medium": 4,
+    "low": 1,
+    "total": 9
+  },
+  "mustFix": [
+    {"id": "F-1", "severity": "Critical", "cases": ["GQL-094","GQL-127","GQL-128","GQL-129","GQL-130","GQL-131"], "dimension": "BL/ECL Coverage", "issue": "BL-BOPIS-007 is wrong invariant (storefront map UI) for API-layer pickup queries", "fix": "Re-map per query: GQL-094/129/130/131→BL-BOPIS-008; GQL-127→BL-BOPIS-005; GQL-128→BL-BOPIS-003. Drop -PROPOSED suffix on GQL-094 (promoted 2026-04-28)."},
+    {"id": "F-2", "severity": "High", "cases": ["GQL-094"], "dimension": "Data Validity (DV-010)", "issue": "addOrUpdateCartShipment for pickup omits price:0 (BL-BOPIS-002 mandates $0 pickup shipping)", "fix": "Add price: 0 to shipment block."},
+    {"id": "F-3", "severity": "High", "cases": ["GQL-127","GQL-128","GQL-131"], "dimension": "BL/ECL Coverage (REQ-001)", "issue": "High-priority cases missing JIRA reference", "fix": "GQL-127→VCST-4707; GQL-128→VCST-4618; GQL-131→VCST-4618."},
+    {"id": "F-4", "severity": "High", "cases": ["GQL-127","GQL-128","GQL-129","GQL-130","GQL-131"], "dimension": "Structure (S-006)", "issue": "Automation_Status=Automated on unreviewed cases", "fix": "Reset to Draft."}
+  ],
+  "shouldFix": [
+    {"id": "F-5", "severity": "Medium", "cases": ["GQL-129","GQL-131"], "dimension": "BL/ECL Coverage", "issue": "ECL-9.1 (Fake Reviews) inapplicable", "fix": "Replace with ECL-14.1 or remove."},
+    {"id": "F-6", "severity": "Medium", "cases": ["GQL-094","GQL-129","GQL-130","GQL-131"], "dimension": "Completeness (C-002)", "issue": "Test_Data omits store_id binding", "fix": "Add store_id={{STORE_ID}}."},
+    {"id": "F-7", "severity": "Medium", "cases": ["GQL-094"], "dimension": "Data Validity (DV-012)", "issue": "Thin field selection on probe_all_locations not self-documenting", "fix": "Add capture-probe note."},
+    {"id": "F-8", "severity": "Medium", "cases": ["GQL-094"], "dimension": "Data Validity (DV-009)", "issue": "ShipmentType.pickupLocation sub-fields not enumerated in schema.md", "fix": "Run npm run schema:refresh to confirm."}
+  ],
+  "recommendedAdditions": [
+    {"id": "GQL-132", "title": "cartPickupLocations with empty cart returns valid response", "priority": "P1", "rationale": "VCST-4618 archive TC-BE-008 not covered"},
+    {"id": "GQL-133", "title": "cartPickupLocations two configurable variants sharing ProductId deduplicates", "priority": "P1", "rationale": "Core VCST-4618 regression — no runner-native case"},
+    {"id": "GQL-134", "title": "Cursor pagination — confirmed location prepend-once across pages", "priority": "P2", "rationale": "after cursor + IncludeLocationIds boundary unverified"},
+    {"id": "GQL-135", "title": "productPickupLocations keyword narrows result set", "priority": "P2", "rationale": "Keyword parity with GQL-129"}
+  ],
+  "userPreservedChanges": {
+    "GQL-094": "User updated to use @td(BUYABLE_NO_MIN_QTY.id) alias addressing BUG-050b1-003 (silent addItem rejection from PRODUCT_MIN_MAX_QTY) discovered in REG-2026-04-29-0929. Added validationErrors response field + assertion. Preserved — not reverted."
+  }
+}

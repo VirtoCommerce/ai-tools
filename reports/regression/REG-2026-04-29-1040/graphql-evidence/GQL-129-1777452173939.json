@@ -1,0 +1,775 @@
+{
+  "caseId": "GQL-129",
+  "title": "xCart Pickup — cartPickupLocations Keyword Search Narrows Result Set",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050k-graphql-xpickup.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-29T08:42:53.939Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-29T08:42:50.131Z",
+      "expiresAt": "2026-04-29T09:12:50.131Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "nonexistent_keyword": "xyzabc_no_such_location_999",
+    "store_id": "{{STORE_ID}}",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "SEED_CITY": "New York"
+  },
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 132
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1117
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1287
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_baseline",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5) {\n      totalCount items { id name address { city } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "2108d7c9-6aad-46a7-b4c5-a46593cb0ac8",
+                "name": "Brooklyn Academy of Music",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "018f53ef-2d51-4e29-a46c-0f4b2782707d",
+                "name": "Queens Crossing",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "38e58798-6c60-4413-b405-abf4b38de806",
+                "name": "Staten Island Children's Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "5a806252-713c-4f89-8bc4-f0d345b90bc5",
+                "name": "Tramsheds - ( Australia )",
+                "address": {
+                  "city": "Sidney"
+                }
+              },
+              {
+                "id": "a261afde-afcd-43ae-8dcb-6ec48721859f",
+                "name": "9/11 Memorial - Main_2; Transfer_1",
+                "address": {
+                  "city": "New York"
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 165
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_keyword_match",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 200 keyword: \"New York\") {\n      totalCount items { id name address { city } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 71,
+            "items": [
+              {
+                "id": "2108d7c9-6aad-46a7-b4c5-a46593cb0ac8",
+                "name": "Brooklyn Academy of Music",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "018f53ef-2d51-4e29-a46c-0f4b2782707d",
+                "name": "Queens Crossing",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "38e58798-6c60-4413-b405-abf4b38de806",
+                "name": "Staten Island Children's Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a261afde-afcd-43ae-8dcb-6ec48721859f",
+                "name": "9/11 Memorial - Main_2; Transfer_1",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a38178ee-0312-466c-80ae-0c9399e78e59",
+                "name": "Apollo Theater",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "99b17969-1576-485f-b081-ff0bd0e87fd5",
+                "name": "Apple Williamsburg - Main Illinois",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a0bc3319-531e-45ba-bb48-18cf06bc2843",
+                "name": "Arthur Avenue Retail Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "c127efbc-2522-47eb-b999-6c9aaffadd04",
+                "name": "Atlantic Terminal Mall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "3663abaa-6266-4da7-87e2-c6f89c4f7cb5",
+                "name": "Barclays' Center. Amazon pickup point. Work hours M-Sun: 6-24",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "b65630d5-2371-4dc7-ad44-d914fa5d554c",
+                "name": "Bloomingdale’s",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "121b2787-02d3-431c-bb93-751fafdebda1",
+                "name": "Bronx Terminal Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "8e09eaff-40c7-49fd-80f0-6141318ab208",
+                "name": "Bronx Zoo",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "fd857cc7-0b4d-4f19-8153-2598117f3ad4",
+                "name": "Brooklyn Bridge Park",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "1931affa-c4cc-4854-8ab0-1d1f483016b7",
+                "name": "Brooklyn Children's Museum - Main_2; Transfer_3",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "39aad7e1-44ce-4007-b4a2-6bbb89cbb4a5",
+                "name": "Brooklyn Flea (Fulton Stall)",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "df7a5b7d-19f3-45eb-aee7-473a993b1ea1",
+                "name": "Brooklyn Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "219cfa09-be83-4c1e-87b8-6b3a6e200678",
+                "name": "Carnegie Hall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "facb6cce-2d70-422c-baef-48aa43b80c8f",
+                "name": "Central Park Zoo",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "4c159ef6-07e8-4cfb-abe3-cd353e640ace",
+                "name": "Chelsea Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "fa63eb0b-84fa-47d0-b786-3a474780523f",
+                "name": "Chrysler Building- Main_2",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "6c8e6ea9-5645-488e-aa5d-510897259b52",
+                "name": "Coney Island Boardwalk",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "6ecf4a5b-55d9-43fe-8f95-348b4777cb2c",
+                "name": "Dekalb Market Hall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "35ed6a47-8d40-4acb-a0ba-468b07b69ee0",
+                "name": "Empire State Building - Main_1; Transfer_1_2_3",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "8e85e49b-5e5c-43de-a7cb-0944dc589cbf",
+                "name": "Essex Street Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "8b3cbc81-8bfa-4195-8cfd-f84671197add",
+                "name": "Flatiron Building - Main_1; Transfer_2",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "ba6286a0-1abe-4857-9489-3bdfc08250fa",
+                "name": "Flushing Commons",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "9290d3f4-0b89-4832-8be3-cbee99fde43a",
+                "name": "Fort Tryon Park - Transfer_3 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "7852b75d-e9c1-4de2-b1c4-c29a561c810c",
+                "name": "Fulton Mall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "966f251f-cd2f-4b29-a90e-be2ed12303f8",
+                "name": "Grand Central Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "30e43bfd-0876-4389-a303-71501d1a94cf",
+                "name": "Hunts Point Produce Market",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "f39627b8-83de-479e-a4ab-545f37b5efb3",
+                "name": "Intrepid Sea, Air & Space Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "77dea1dc-7cf7-481e-bbcf-23e4641d9cf3",
+                "name": "Lincoln Center",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "72b6285e-fb04-4e7e-919e-28bedaf24a53",
+                "name": "Little Island - Transfer_2 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "135fdfb8-786b-46b9-9953-49b5a06f1b1a",
+                "name": "Luna Park",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "749319ff-eb7d-4021-b98b-067904a468f4",
+                "name": "Macy’s Herald Square",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "bfcae1e2-4791-478f-8037-55df8cc772b6",
+                "name": "Madison Square Garden",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a30a891f-5ecf-4b9c-a225-634a9c3af3b8",
+                "name": "Manhattan Mall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "7227b3d1-99fa-46e5-a2b2-371a72b8431d",
+                "name": "Metropolitan Opera House",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "c9ed5ee3-1212-416a-9608-e42ebb2b95b9",
+                "name": "MoMA PS1-Main_2; Transfer_2",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "3005d691-d5b9-4a67-9f0a-6dacdc0bbff0",
+                "name": "Museum of Arts and Design",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a07d7ef6-289b-445f-885c-a735343f2308",
+                "name": "Museum of the City of New York",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "c76769ff-91d3-401e-a6d1-f23d194aca79",
+                "name": "New Museum - Main_2; Transfer_1_2_3",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "e845c619-3a29-4a9b-bcd7-eccbeae9a8cf",
+                "name": "New York Botanical Garden",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "b7163232-e1e8-4e03-ab63-d3d01791ef42",
+                "name": "New York Hall of Science",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a6edbf38-6d4a-44c8-a994-ab53dbbaaa4d",
+                "name": "New York Public Library",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "b7230a90-a0e2-4378-b6f6-9ca94eec09be",
+                "name": "One World Observatory - Main_1; Transfer_3",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "f4ae2ef1-48ee-470b-9c24-c21cc29c0de2",
+                "name": "Queens Center",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "d0c4ef93-7ffa-4187-af83-f09c067ff8ed",
+                "name": "Queens Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "4852c16d-cfea-4703-b0a8-f32e5e66e590",
+                "name": "Rockefeller Center Shops",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a3bcbe15-54c4-4829-9ca8-afa302150ae3",
+                "name": "Snug Harbor Cultural Center",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "55d24898-0367-4872-9387-23bed11c68df",
+                "name": "Socrates Sculpture Park",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "58b2aa75-90f1-4e4b-b3d0-44251ee81511",
+                "name": "Solomon R. Guggenheim Museum",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "f66101e3-9507-4db0-b972-8c92b4da062f",
+                "name": "South Street Seaport - Transfer_1 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "3c5a10ad-a89c-4017-8de8-589ed60593ca",
+                "name": "St. Patrick's Cathedral - Transfer_1_2_3 USA San Francisco FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "b70b894e-1a35-4563-980a-eabcb120bb6a",
+                "name": "Staten Island Ferry Terminal",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "46c51092-4d41-40a8-be40-dde08c06abcd",
+                "name": "Staten Island Mall",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "e340e1b0-a7ce-4279-9014-a3c94ce04de4",
+                "name": "Stop & Shop Co-op City",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "ca135017-6afa-43ed-9c02-6d67705ef85b",
+                "name": "Target Fresh Meadows",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "bde1ee04-14a7-48a8-96b4-efd0754531d5",
+                "name": "The Frick Collection",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "6652e112-d105-419a-ae46-b4e1c6c8204c",
+                "name": "The High Line - Main_1; Transfer_1",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "a67ffd1a-01be-4256-85af-8251d2b0858f",
+                "name": "The Metropolitan Museum of Art",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "bc44d635-b3f3-4c78-9f5a-31d5010052f3",
+                "name": "The Shops at Atlas Park",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "81be1cf9-b410-4c7e-8b39-97e532cde8e7",
+                "name": "The Shops at Columbus Circle",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "aa6b56bf-3754-4697-a155-e7cb8f51deb4",
+                "name": "Times Square - Main_2 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "bb6942b0-7a14-49f0-a174-d34fb288ed6a",
+                "name": "Trader Joe’s Parkchester",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "6c9f8e8b-53de-4b47-93ec-d999ed09fb62",
+                "name": "Trinity Church - Transfer_1_3 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "ee76fb17-a9e7-4f2a-8ae7-dcf36d689b74",
+                "name": "Wall Street - Main_3 FFC",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "44d0ee17-4af2-4f40-b956-205225d3e3d3",
+                "name": "Washington Square Park",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "17acd922-baee-494c-af73-e1813cf7e566",
+                "name": "Westfield World Trade Center",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "df33bb74-3d59-44e2-84ef-ecca274bf4f3",
+                "name": "Whole Foods Market Astoria",
+                "address": {
+                  "city": "New York"
+                }
+              },
+              {
+                "id": "96d40851-e9ef-4d55-b882-81d6b4337cbf",
+                "name": "Whole Foods Market Prospect Heights",
+                "address": {
+                  "city": "New York"
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 185
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_keyword_nomatch",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 keyword: \"xyzabc_no_such_location_999\") {\n      totalCount items { id }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 151
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 759
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_item] errors[] empty",
+      "label": "add_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_item] data.addItem.validationErrors.length = 0",
+      "label": "add_item",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors.length = 0",
+      "actual": "data.addItem.validationErrors.length = 0"
+    },
+    {
+      "raw": "[ERRORS label=probe_baseline] errors[] empty",
+      "label": "probe_baseline",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_baseline",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 102"
+    },
+    {
+      "raw": "[ERRORS label=probe_keyword_match] errors[] empty",
+      "label": "probe_keyword_match",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_keyword_match] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_keyword_match",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 71"
+    },
+    {
+      "raw": "[ERRORS label=probe_keyword_nomatch] errors[] empty",
+      "label": "probe_keyword_nomatch",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] probe_keyword_match.totalCount <= probe_baseline.totalCount (keyword narrows or equals total — runner-manual cross-OP comparison)",
+      "layer": "EVIDENCE",
+      "note": "probe_keyword_match.totalCount <= probe_baseline.totalCount (keyword narrows or equals total — runner-manual cross-OP comparison)",
+      "resolved": "probe_keyword_match.totalCount <= probe_baseline.totalCount (keyword narrows or equals total — runner-manual cross-OP comparison)"
+    },
+    {
+      "raw": "[EVIDENCE] every probe_keyword_match.items[i].address.city contains SEED_CITY (substring or full match) — runner-manual scan of response",
+      "layer": "EVIDENCE",
+      "note": "every probe_keyword_match.items[i].address.city contains SEED_CITY (substring or full match) — runner-manual scan of response",
+      "resolved": "every probe_keyword_match.items[i].address.city contains SEED_CITY (substring or full match) — runner-manual scan of response"
+    },
+    {
+      "raw": "[EVIDENCE] probe_keyword_nomatch.totalCount = 0 (fresh cart has no confirmed pickup → IncludeLocationIds prepend does not trigger; covered by GQL-094)",
+      "layer": "EVIDENCE",
+      "note": "probe_keyword_nomatch.totalCount = 0 (fresh cart has no confirmed pickup → IncludeLocationIds prepend does not trigger; covered by GQL-094)",
+      "resolved": "probe_keyword_nomatch.totalCount = 0 (fresh cart has no confirmed pickup → IncludeLocationIds prepend does not trigger; covered by GQL-094)"
+    },
+    {
+      "raw": "[EVIDENCE] Re-run probe_keyword_match with SEED_CITY in upper case (e.g. via separate runner step) → totalCount must equal probe_keyword_match.totalCount (case-insensitive search per VCST-4650) — runner-manual",
+      "layer": "EVIDENCE",
+      "note": "Re-run probe_keyword_match with SEED_CITY in upper case (e.g. via separate runner step) → totalCount must equal probe_keyword_match.totalCount (case-insensitive search per VCST-4650) — runner-manual",
+      "resolved": "Re-run probe_keyword_match with SEED_CITY in upper case (e.g. via separate runner step) → totalCount must equal probe_keyword_match.totalCount (case-insensitive search per VCST-4650) — runner-manual"
+    }
+  ],
+  "cleanup": "none — clearCart at end"
+}

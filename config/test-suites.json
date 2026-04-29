@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 94,
+    "totalSuites": 95,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -960,7 +960,7 @@
       "concern": "api",
       "priority": "P1",
       "testCount": 16,
-      "estimatedMinutes": 14,
+      "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -1174,6 +1174,26 @@
         "xmarketing",
         "promotion-coupons",
         "marketing",
+        "sprint"
+      ]
+    },
+    {
+      "id": "050k",
+      "name": "GraphQL xPickup",
+      "file": "regression/suites/Backend/graphql/050k-graphql-xpickup.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 6,
+      "estimatedMinutes": 11,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xpickup",
+        "pickup",
+        "bopis",
         "sprint"
       ]
     },
@@ -1857,7 +1877,8 @@
         "050b2",
         "050b3",
         "050b4",
-        "050c"
+        "050c",
+        "050k"
       ]
     },
     "catalog": {

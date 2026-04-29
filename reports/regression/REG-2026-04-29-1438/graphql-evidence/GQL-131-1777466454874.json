@@ -1,0 +1,339 @@
+{
+  "caseId": "GQL-131",
+  "title": "xCart Pickup — cartPickupLocations filter Narrows Result Set",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050k-graphql-xpickup.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-04-29T12:40:54.873Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-29T12:40:50.128Z",
+      "expiresAt": "2026-04-29T13:10:50.128Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "filter_nomatch": "address.countryCode:ZZZ",
+    "store_id": "{{STORE_ID}}",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "SEED_COUNTRY": "USA"
+  },
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 149
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1095
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1756
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_baseline",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 sort: \"name:asc\") {\n      totalCount items { id name address { countryCode } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "f0a96dea-5b92-4e05-af14-fa7891deeab7",
+                "name": "New Hector",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "95d2ca4e-cfeb-43aa-9024-016b9a7650dd",
+                "name": "Mathewmouth",
+                "address": {
+                  "countryCode": "USA"
+                }
+              },
+              {
+                "id": "0e2bfa22-ab42-47da-9e98-9abcde49432c",
+                "name": "Toronto Investment and Trade Centre",
+                "address": {
+                  "countryCode": "CAN"
+                }
+              },
+              {
+                "id": "2b7c2123-7fc8-4516-8df1-e7c608f25de8",
+                "name": "Airoport&the International Centre",
+                "address": {
+                  "countryCode": "CAN"
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 174
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_filter_match",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 200 filter: \"address.countryCode:USA\") {\n      totalCount items { id address { countryCode } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 184
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_filter_nomatch",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 filter: \"address.countryCode:ZZZ_NOT_A_COUNTRY\") {\n      totalCount items { id }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 148
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_sort_desc",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 sort: \"name:desc\") {\n      totalCount items { id name }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough"
+              },
+              {
+                "id": "f0a96dea-5b92-4e05-af14-fa7891deeab7",
+                "name": "New Hector"
+              },
+              {
+                "id": "95d2ca4e-cfeb-43aa-9024-016b9a7650dd",
+                "name": "Mathewmouth"
+              },
+              {
+                "id": "0e2bfa22-ab42-47da-9e98-9abcde49432c",
+                "name": "Toronto Investment and Trade Centre"
+              },
+              {
+                "id": "2b7c2123-7fc8-4516-8df1-e7c608f25de8",
+                "name": "Airoport&the International Centre"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 155
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1072
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_item] errors[] empty",
+      "label": "add_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_item] data.addItem.validationErrors.length = 0",
+      "label": "add_item",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors.length = 0",
+      "actual": "data.addItem.validationErrors.length = 0"
+    },
+    {
+      "raw": "[ERRORS label=probe_baseline] errors[] empty",
+      "label": "probe_baseline",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_baseline",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 102"
+    },
+    {
+      "raw": "[ERRORS label=probe_filter_match] errors[] empty",
+      "label": "probe_filter_match",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_filter_match",
+      "kind": "COUNT",
+      "passed": false,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 0"
+    },
+    {
+      "raw": "[ERRORS label=probe_filter_nomatch] errors[] empty",
+      "label": "probe_filter_nomatch",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=probe_sort_desc] errors[] empty",
+      "label": "probe_sort_desc",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_sort_desc] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_sort_desc",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 102"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] probe_filter_match.totalCount <= probe_baseline.totalCount (filter narrows or equals total — runner-manual cross-OP comparison)",
+      "layer": "EVIDENCE",
+      "note": "probe_filter_match.totalCount <= probe_baseline.totalCount (filter narrows or equals total — runner-manual cross-OP comparison)",
+      "resolved": "probe_filter_match.totalCount <= probe_baseline.totalCount (filter narrows or equals total — runner-manual cross-OP comparison)"
+    },
+    {
+      "raw": "[EVIDENCE] every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan",
+      "layer": "EVIDENCE",
+      "note": "every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan",
+      "resolved": "every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan"
+    },
+    {
+      "raw": "[EVIDENCE] probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0",
+      "layer": "EVIDENCE",
+      "note": "probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0",
+      "resolved": "probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0"
+    },
+    {
+      "raw": "[EVIDENCE] probe_sort_desc.totalCount = probe_baseline.totalCount (sort does not change result set, only order — runner-manual cross-OP comparison)",
+      "layer": "EVIDENCE",
+      "note": "probe_sort_desc.totalCount = probe_baseline.totalCount (sort does not change result set, only order — runner-manual cross-OP comparison)",
+      "resolved": "probe_sort_desc.totalCount = probe_baseline.totalCount (sort does not change result set, only order — runner-manual cross-OP comparison)"
+    },
+    {
+      "raw": "[EVIDENCE] probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check",
+      "layer": "EVIDENCE",
+      "note": "probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check",
+      "resolved": "probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check"
+    }
+  ],
+  "cleanup": "none — clearCart at end"
+}

@@ -1,0 +1,444 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - 'button "Language: English (United States) en" [ref=e9] [cursor=pointer]':
+            - generic [ref=e10]: "Language:"
+            - img "English (United States)" [ref=e11]
+            - generic [ref=e12]: en
+            - img [ref=e14]
+          - 'button "Currency: USD" [ref=e19] [cursor=pointer]':
+            - generic [ref=e20]: "Currency:"
+            - generic [ref=e21]: USD
+            - img [ref=e23]
+          - 'button "Ship to: Select address" [ref=e28] [cursor=pointer]':
+            - img [ref=e30]
+            - generic [ref=e32]: "Ship to:"
+            - generic [ref=e33]: Select address
+            - img [ref=e35]
+        - generic [ref=e37]:
+          - 'button "Theme: light" [ref=e39] [cursor=pointer]':
+            - 'button "Theme: light" [ref=e40]':
+              - img [ref=e42]
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - generic [ref=e49]: "Call us:"
+            - link "+1 (213) 603 3536" [ref=e50] [cursor=pointer]:
+              - /url: tel:+1 (213) 603 3536
+          - link "Dashboard" [ref=e52] [cursor=pointer]:
+            - /url: /account/dashboard
+          - link "Contacts" [ref=e54] [cursor=pointer]:
+            - /url: /contacts
+          - button "Account menu" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]: Mila Müller
+            - img [ref=e60]
+      - generic [ref=e62]:
+        - navigation "Main menu" [ref=e64]:
+          - link "B2B-store" [ref=e65] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=e66]
+          - generic [ref=e69]:
+            - searchbox "Search" [ref=e70]
+            - generic [ref=e71]:
+              - button "Barcode scan" [ref=e72] [cursor=pointer]:
+                - img [ref=e75]
+              - button "Search" [ref=e77] [cursor=pointer]:
+                - img [ref=e80]
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - link "Bulk order" [ref=e84] [cursor=pointer]:
+                - /url: /bulk-order
+                - img [ref=e87]
+                - generic [ref=e89]: Bulk order
+            - listitem [ref=e90]:
+              - link "Compare" [ref=e91] [cursor=pointer]:
+                - /url: /compare
+                - img [ref=e94]
+                - generic [ref=e96]: Compare
+            - listitem [ref=e97]:
+              - link "Lists" [ref=e98] [cursor=pointer]:
+                - /url: /account/lists
+                - img [ref=e101]
+                - generic [ref=e103]: Lists
+            - listitem [ref=e104]:
+              - link "Orders" [ref=e105] [cursor=pointer]:
+                - /url: /account/orders
+                - img [ref=e108]
+                - generic [ref=e110]: Orders
+            - listitem [ref=e111]:
+              - button "2 Notifications" [ref=e114] [cursor=pointer]:
+                - generic [ref=e115]:
+                  - img [ref=e117]
+                  - generic [ref=e120]: "2"
+                - generic [ref=e121]: Notifications
+            - listitem [ref=e122]:
+              - link "Cart" [ref=e123] [cursor=pointer]:
+                - /url: /cart
+                - img [ref=e126]
+                - generic [ref=e128]: Cart
+        - navigation "Main navigation" [ref=e129]:
+          - button "All products" [ref=e132] [cursor=pointer]:
+            - img [ref=e134]
+            - generic [ref=e136]: All products
+          - menubar "Navigation" [ref=e138]:
+            - menuitem "Alcoholic Drinks" [ref=e139] [cursor=pointer]
+            - menuitem "Accessories" [ref=e140] [cursor=pointer]
+            - menuitem "Jewelry and gems" [ref=e141] [cursor=pointer]
+            - menuitem "Car covers" [ref=e142] [cursor=pointer]
+            - menuitem "Home appliance" [ref=e143] [cursor=pointer]
+            - menuitem "Juice" [ref=e144] [cursor=pointer]
+            - menuitem "Kitchen supplies" [ref=e145] [cursor=pointer]
+            - menuitem "Products with options" [ref=e146] [cursor=pointer]
+            - menuitem "Soft drinks" [ref=e147] [cursor=pointer]
+            - menuitem "Snacks" [ref=e148] [cursor=pointer]
+            - menuitem "Printers" [ref=e149] [cursor=pointer]
+            - menuitem "Rental home" [ref=e150] [cursor=pointer]
+            - menuitem "TV new" [ref=e151] [cursor=pointer]
+            - menuitem "All BRANDS" [ref=e152] [cursor=pointer]
+            - menuitem "SEE ALL PRODUCTS" [ref=e153] [cursor=pointer]
+      - main [ref=e154]:
+        - generic [ref=e157]:
+          - img [ref=e159]
+          - generic [ref=e162]:
+            - navigation "Breadcrumbs navigation" [ref=e163]:
+              - list [ref=e164]:
+                - listitem [ref=e165]:
+                  - link "Home" [ref=e166] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e167]: /
+                - listitem [ref=e168]:
+                  - link "Catalog" [ref=e169] [cursor=pointer]:
+                    - /url: /catalog
+                - listitem [ref=e170]: /
+                - listitem [ref=e171]:
+                  - link "Kitchen supplies" [ref=e172] [cursor=pointer]:
+                    - /url: /kitchen-supplies
+                - listitem [ref=e173]: /
+                - listitem [ref=e174]:
+                  - link "Everything for Kitchen" [ref=e175] [cursor=pointer]:
+                    - /url: /kitchen-supplies/everything-for-kitchen
+                - listitem [ref=e176]: /
+                - listitem [ref=e177]: Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces.
+            - heading "Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces." [level=1] [ref=e178]
+            - generic [ref=e180]:
+              - generic [ref=e181]: "Rating:"
+              - button "Rating 5 out of 5" [disabled] [ref=e183]
+              - generic [ref=e185]:
+                - text: "5"
+                - generic [ref=e186]: /
+                - text: "5"
+            - generic [ref=e188]:
+              - generic [ref=e191]:
+                - generic [ref=e195]:
+                  - generic [ref=e197]:
+                    - generic [ref=e198]:
+                      - img [ref=e201]
+                      - generic [ref=e204]:
+                        - img "Image 1" [ref=e206]
+                        - img "Image 2" [ref=e208]
+                    - generic [ref=e210]:
+                      - button "Previous" [disabled] [ref=e211]:
+                        - img [ref=e213]
+                      - generic [ref=e216]:
+                        - img "Image 1" [ref=e218] [cursor=pointer]
+                        - img "Image 2" [ref=e220] [cursor=pointer]
+                      - button "Next" [disabled] [ref=e221]:
+                        - img [ref=e223]
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - generic [ref=e228]:
+                        - img [ref=e231]
+                        - heading "Properties" [level=2] [ref=e233]
+                      - generic [ref=e241]:
+                        - generic [ref=e242]:
+                          - generic [ref=e243]: Color
+                          - generic [ref=e244]: Multicolor
+                        - generic [ref=e245]:
+                          - generic [ref=e246]: Set
+                          - generic [ref=e247]: "500"
+                    - generic [ref=e248]:
+                      - generic [ref=e249]:
+                        - img [ref=e252]
+                        - heading "Description" [level=2] [ref=e254]
+                      - paragraph [ref=e259]:
+                        - emphasis [ref=e260]: 500pcs Christmas Paper Straws Striped Dot Drink Straws Decorative Straws With Christmas Tree Star Snowflake Gift Jar Pattern Christmas Party Supplies, 8 Styles For Restaurant/ Hotel/ Commercial
+                - generic [ref=e261]:
+                  - generic [ref=e263]:
+                    - img [ref=e267]
+                    - generic [ref=e269]: Feedback
+                  - generic "Feedback" [ref=e271]:
+                    - generic [ref=e272]:
+                      - generic [ref=e273]:
+                        - generic [ref=e274]: "Rating:"
+                        - button "Rating 5 out of 5" [disabled] [ref=e276]
+                        - generic [ref=e278]:
+                          - text: "5"
+                          - generic [ref=e279]: /
+                          - text: "5"
+                      - generic [ref=e280]:
+                        - generic [ref=e281]: Sort by date
+                        - generic [ref=e282]: Sort by date
+                        - generic [ref=e288] [cursor=pointer]:
+                          - combobox "Date, new to old" [ref=e289]
+                          - button "Toggle dropdown" [ref=e291]:
+                            - img [ref=e293]
+                    - region "Product reviews" [ref=e296]:
+                      - article [ref=e297]:
+                        - generic [ref=e298]:
+                          - generic [ref=e299]:
+                            - heading "weyakessado-9128@yopmail.com" [level=3] [ref=e300]
+                            - generic [ref=e301]: Sep 23, 2024
+                          - generic [ref=e302]:
+                            - generic [ref=e303]: Rating 5 out of 5
+                            - generic [ref=e304]:
+                              - button "Rating 1 out of 5, not available for selection" [disabled] [ref=e305]
+                              - button "Rating 2 out of 5, not available for selection" [disabled] [ref=e307]
+                              - button "Rating 3 out of 5, not available for selection" [disabled] [ref=e309]
+                              - button "Rating 4 out of 5, not available for selection" [disabled] [ref=e311]
+                              - button "Rating 5 out of 5, not available for selection" [disabled] [ref=e313]
+                        - paragraph [ref=e315]: Mikky
+                - generic [ref=e316]:
+                  - generic [ref=e318]:
+                    - img [ref=e322]
+                    - generic [ref=e324]: Product variations
+                  - generic "Product variations" [ref=e326]:
+                    - generic [ref=e327]:
+                      - generic [ref=e328]:
+                        - button "List" [ref=e330] [cursor=pointer]:
+                          - img [ref=e332]
+                          - generic [ref=e334]: List
+                        - button "Table" [ref=e336] [cursor=pointer]:
+                          - img [ref=e338]
+                          - generic [ref=e340]: Table
+                      - button "Filters" [ref=e341] [cursor=pointer]:
+                        - generic [ref=e343]: Filters
+                    - generic [ref=e346]:
+                      - generic [ref=e348]:
+                        - img "BENDING STRAWS PAPER STRIPED ASSORTED 22CM-6MM PACK 500PCS" [ref=e350]
+                        - generic [ref=e351]:
+                          - link "BENDING STRAWS PAPER STRIPED ASSORTED 22CM-6MM PACK 500PCS" [ref=e354] [cursor=pointer]:
+                            - /url: /kitchen-supplies/everything-for-kitchen/BENDING-STRAWS-PAPER-STRIPED-ASSORTED-25CM-6MM-PACK-1000PCS
+                          - generic [ref=e355]:
+                            - generic [ref=e356]:
+                              - generic [ref=e357]: Material
+                              - generic [ref=e359]: Paper
+                            - generic [ref=e360]:
+                              - generic [ref=e361]: Vendor
+                              - generic [ref=e363]: New Vendor
+                          - generic [ref=e365]: $77.00
+                          - generic [ref=e368]:
+                            - generic [ref=e370]:
+                              - button "Decrease quantity" [disabled] [ref=e372]:
+                                - img [ref=e375]
+                              - spinbutton "Product quantity" [ref=e377]: "0"
+                              - button "Increase quantity" [ref=e379] [cursor=pointer]:
+                                - img [ref=e382]
+                            - generic "In stock" [ref=e385]:
+                              - generic [ref=e386]:
+                                - img [ref=e388]
+                                - generic [ref=e390]: "898"
+                      - generic [ref=e392]:
+                        - img "BENDING STRAWS PAPER STRIPED ASSORTED 22CM-6MM PACK 500PCS" [ref=e394]
+                        - generic [ref=e395]:
+                          - link "BENDING STRAWS PAPER STRIPED ASSORTED 22CM-6MM PACK 500PCS" [ref=e398] [cursor=pointer]:
+                            - /url: /kitchen-supplies/everything-for-kitchen/BENDING-STRAWS-PAPER-STRIPED-ASSORTED-15CM-6MM-PACK-200PCS
+                          - generic [ref=e400]:
+                            - generic [ref=e401]: Material
+                            - generic [ref=e403]: Paper
+                          - generic [ref=e404]:
+                            - generic [ref=e405]: $19.55
+                            - generic [ref=e406]: $25.00
+                          - generic [ref=e409]:
+                            - generic [ref=e411]:
+                              - button "Decrease quantity" [disabled] [ref=e413]:
+                                - img [ref=e416]
+                              - spinbutton "Product quantity" [ref=e418]: "0"
+                              - button "Increase quantity" [ref=e420] [cursor=pointer]:
+                                - img [ref=e423]
+                            - generic "In stock" [ref=e426]:
+                              - generic [ref=e427]:
+                                - img [ref=e429]
+                                - generic [ref=e431]: "37"
+                      - generic [ref=e433]:
+                        - img "Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces." [ref=e435]
+                        - generic [ref=e436]:
+                          - link "Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces." [ref=e439] [cursor=pointer]:
+                            - /url: /kitchen-supplies/everything-for-kitchen/BENDING-STRAWS-PAPER-STRIPED-ASSORTED-22CM-6MM-PACK-500PCS
+                          - generic [ref=e441]:
+                            - generic [ref=e442]: Material
+                            - generic [ref=e444]: Paper
+                          - generic [ref=e446]: $555.00
+                          - generic [ref=e449]:
+                            - generic [ref=e451]:
+                              - button "Decrease quantity" [disabled] [ref=e453]:
+                                - img [ref=e456]
+                              - spinbutton "Product quantity" [ref=e458]: "0"
+                              - button "Increase quantity" [ref=e460] [cursor=pointer]:
+                                - img [ref=e463]
+                            - generic "In stock" [ref=e466]:
+                              - generic [ref=e467]:
+                                - img [ref=e469]
+                                - generic [ref=e471]: "4290"
+              - complementary "Sidebar" [ref=e472]:
+                - generic [ref=e473]:
+                  - generic [ref=e474]:
+                    - generic [ref=e477]: Price and delivery
+                    - generic "Price and delivery" [ref=e479]:
+                      - generic [ref=e480]:
+                        - generic [ref=e481]:
+                          - generic [ref=e482]: "Variations in cart:"
+                          - generic [ref=e483]: "0"
+                        - link "View cart" [ref=e484] [cursor=pointer]:
+                          - /url: /cart
+                          - generic [ref=e486]: View cart
+                    - generic [ref=e488]:
+                      - button "Add to list" [ref=e489] [cursor=pointer]:
+                        - img [ref=e492]
+                      - button "Add to Compare" [ref=e494] [cursor=pointer]:
+                        - img [ref=e497]
+                      - button "Share" [ref=e501] [cursor=pointer]:
+                        - img [ref=e503]
+                      - link "Send link by email" [ref=e505] [cursor=pointer]:
+                        - /url: mailto:?subject=Have%20a%20look%20at%20the%20product%3A%20Christmas%20paper%20straws%2C%20striped%20dot%20drink%20straws%2C%20decorative%20straws%20with%20Christmas%20tree%2C%20star%2C%20snowflake%2C%20gift%20jar%20pattern.%20Christmas%20party%20supplies%2C%2022cm-6mm%2C%20pack%20of%20500%20pieces.&body=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Fkitchen-supplies%2Feverything-for-kitchen%2FBENDING-STRAWS-PAPER-STRIPED-ASSORTED-22CM-6MM-PACK-500PCS
+                        - img [ref=e507]
+                      - button "Print" [ref=e509] [cursor=pointer]:
+                        - img [ref=e511]
+                  - generic [ref=e513]:
+                    - generic [ref=e516]: Shipment options
+                    - generic [ref=e519]:
+                      - img "Check pickup locations" [ref=e520]
+                      - button "Check pickup locations" [ref=e521] [cursor=pointer]:
+                        - generic [ref=e522]: Check pickup locations
+                        - img [ref=e524]
+            - generic [ref=e526]:
+              - generic [ref=e528]:
+                - img [ref=e532]
+                - generic [ref=e534]: Customers bought together
+              - generic "Customers bought together" [ref=e536]:
+                - generic [ref=e538]:
+                  - generic [ref=e540]:
+                    - img "Samsung HU8000 Series 48\" Class Full HD Smart 3D LED TV" [ref=e544]
+                    - generic [ref=e545]:
+                      - link "Samsung HU8000 Series 48\" Class Full HD Smart 3D LED TV" [ref=e548] [cursor=pointer]:
+                        - /url: /product/5834aac09b7e4e279a5b41c993c36e22
+                      - generic [ref=e549]: New Vendor
+                      - generic [ref=e551]: $245.00
+                  - generic [ref=e553]:
+                    - img "VIZIO M-Series M70-C3 70\"-Class Full-Array 4K Smart LED TV" [ref=e557]
+                    - generic [ref=e558]:
+                      - link "VIZIO M-Series M70-C3 70\"-Class Full-Array 4K Smart LED TV" [ref=e560] [cursor=pointer]:
+                        - /url: /product/be4ab6701f84440ea84ccd09210cbe0a
+                      - generic [ref=e563]: $155.00
+                  - generic [ref=e565]:
+                    - img "Gold-Plated Silver Set with Cubic Zirconia Beads" [ref=e569]
+                    - generic [ref=e570]:
+                      - link "Gold-Plated Silver Set with Cubic Zirconia Beads" [ref=e572] [cursor=pointer]:
+                        - /url: /product/b130d1b8-3e1b-4f04-8d7a-59f0b9b023e2
+                      - generic [ref=e575]: $330.00
+                  - generic [ref=e577]:
+                    - img "Samsung JS9500 Series 65\"-Class 4K SUHD Smart 3D Curved LED TV" [ref=e581]
+                    - generic [ref=e582]:
+                      - link "Samsung JS9500 Series 65\"-Class 4K SUHD Smart 3D Curved LED TV" [ref=e585] [cursor=pointer]:
+                        - /url: /product/5de40fc944cd435f90b19869217f09bb
+                      - generic [ref=e586]: New Vendor
+                      - generic [ref=e588]: $550.00
+                  - generic [ref=e590]:
+                    - img "Soft Wavy Lines Phone Case For iphone 15 11 12 13 14 Pro Max XS MaxCandy Bumper Transparent Cases Cover" [ref=e594]
+                    - generic [ref=e595]:
+                      - link "Soft Wavy Lines Phone Case For iphone 15 11 12 13 14 Pro Max XS MaxCandy Bumper Transparent Cases Cover" [ref=e597] [cursor=pointer]:
+                        - /url: /product/46415f23-f4dd-4a77-916f-f1ba2ebceac4
+                      - generic [ref=e599]:
+                        - generic [ref=e600]: $99.99
+                        - generic [ref=e601]: $100.00
+      - contentinfo "Footer" [ref=e602]:
+        - generic [ref=e603]:
+          - img "B2B-store" [ref=e605]
+          - navigation [ref=e606]:
+            - generic [ref=e607]:
+              - generic [ref=e610]: Account details
+              - generic [ref=e612]:
+                - link "Orders" [ref=e614] [cursor=pointer]:
+                  - /url: /account/orders
+                - link "Notifications" [ref=e616] [cursor=pointer]:
+                  - /url: /account/notifications
+                - link "Quote requests" [ref=e618] [cursor=pointer]:
+                  - /url: /account/quotes
+            - generic [ref=e619]:
+              - generic [ref=e622]: About us
+              - generic [ref=e624]:
+                - link "About Virto" [ref=e626] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/about-us
+                - link "Our partners" [ref=e628] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/our-partners
+                - link "Manufacturer partners" [ref=e630] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/solutions/b2b-portal-for-manufacturers
+                - link "News" [ref=e632] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/blog/category/news
+                - link "Careers" [ref=e634] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/career
+                - link "News" [ref=e636] [cursor=pointer]:
+                  - /url: /news
+            - generic [ref=e637]:
+              - generic [ref=e640]: Popular categories
+              - generic [ref=e642]:
+                - link "Allbiz" [ref=e644] [cursor=pointer]:
+                  - /url: /category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847
+                - link "Computer, Office, Education" [ref=e646] [cursor=pointer]:
+                  - /url: /category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e
+                - link "Consumer Electronics" [ref=e648] [cursor=pointer]:
+                  - /url: /category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578
+                - link "Home Appliances" [ref=e650] [cursor=pointer]:
+                  - /url: /category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d
+                - link "Phones and Accessories" [ref=e652] [cursor=pointer]:
+                  - /url: /category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac
+            - generic [ref=e653]:
+              - generic [ref=e656]: Online resources
+              - generic [ref=e658]:
+                - link "Sign Up" [ref=e660] [cursor=pointer]:
+                  - /url: /sign-up
+                - link "Catalog" [ref=e662] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Demo Landing" [ref=e664] [cursor=pointer]:
+                  - /url: /demo-landing
+                - link "Builder I.O" [ref=e666] [cursor=pointer]:
+                  - /url: https://www.builder.io/
+            - generic [ref=e667]:
+              - generic [ref=e670]: External links
+              - generic [ref=e672]:
+                - link "Vcst-admin" [ref=e674] [cursor=pointer]:
+                  - /url: https://vcst-qa.govirto.com/
+                - link "Virto-start" [ref=e676] [cursor=pointer]:
+                  - /url: https://virtostart-demo-store.govirto.com/
+            - generic [ref=e677]:
+              - generic [ref=e680]: Customer support
+              - generic [ref=e682]:
+                - link "Catalog" [ref=e684] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Contact Us" [ref=e686] [cursor=pointer]:
+                  - /url: /contacts
+                - link "Find a Branch" [ref=e688] [cursor=pointer]:
+                  - /url: /branch/vendor-fulfillment
+            - generic [ref=e689]:
+              - generic [ref=e692]: Brands
+              - link "All popular brands" [ref=e696] [cursor=pointer]:
+                - /url: /brands
+        - generic [ref=e697]:
+          - generic [ref=e698]:
+            - text: Ver. 2.48.0-pr-2269-dfb0-dfb0c1e5. © 2026
+            - strong [ref=e699]: Virto Commerce
+            - text: . All rights reserved
+          - generic [ref=e700]:
+            - text: ASP.NET ecommerce platform
+            - link "Virto Commerce" [ref=e701] [cursor=pointer]:
+              - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA" [ref=e702]':
+      - generic [ref=e704]: QA
+  - region "Notifications"

@@ -1,0 +1,268 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-094,"xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)","GraphQL > xCart > Pickup Locations",Critical,"BL-BOPIS-008; BL-BOPIS-002; BL-GQL-001","ECL-14.1; ECL-14.2","Runner-native. Requires: (1) addItem with a BOPIS-eligible product, (2) addOrUpdateCartShipment with shipmentMethodCode:'BuyOnlinePickupInStore' + shipmentMethodOption:'Pickup' + pickupLocationId + price:0 (BL-BOPIS-002 — pickup shipping cost MUST be $0; CartShipmentValidator rejects shipments whose price does not match a known rate; per order-creation-matrix.md the canonical pickup binding is BuyOnlinePickupInStore/Pickup = $0). Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee addItem(qty:1) succeeds without PRODUCT_MIN_MAX_QTY rejection — original setup_prod filter returned product 8e0eaa82 with min_qty=10, causing silent addItem rejection → empty cart → cartPickupLocations returned 0 (REG-2026-04-29-0929 BUG-050b1-003). probe_all_locations uses sort:'name:desc' so items.0 is the alphabetically-LAST location → captured as LAST_LOCATION_ID. query_paged_small then uses sort:'name:asc' first:1 → natural items.0 is alphabetically-FIRST and would NOT equal LAST_LOCATION_ID without the IncludeLocationIds prepend; assertion items.0.id = LAST_LOCATION_ID is therefore a true regression check (REG-2026-04-29-1015 BUG-050k-001 fix — runner does not support .items.last.id capture syntax, replaced with sort+items.0). REG-2026-04-29-1040 BUG-050k-001-v2 fix: addOrUpdateCartShipment was returning JSON_READER because shipmentMethodCode was missing — added BuyOnlinePickupInStore/Pickup binding (sourced from order-creation-matrix.md and confirmed via REG-2026-04-29-0929 availableShippingMethods probe). Schema-verified: cartPickupLocations(cartId!, storeId!, cultureName!, keyword, filter, first, after, sort, facet) — see graphql-schema.md Query.cart section. InputShipmentType: shipmentMethodCode/shipmentMethodOption/pickupLocationId all OptionalString; price OptionalDecimal. NOTE: The new IncludeLocationIds semantic from PR vc-module-x-pickup#8 ensures confirmed location prepends at items[0] even when keyword/filter would exclude it.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP probe_all_locations]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 200 sort: ""name:desc"") {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC probe_all_locations]
+[GQL-CAPTURE probe_all_locations.data.cartPickupLocations.items.0.id → LAST_LOCATION_ID]
+[GQL-OP set_shipment_pickup]
+  mutation {
+    addOrUpdateCartShipment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      shipment: {
+        shipmentMethodCode: ""BuyOnlinePickupInStore""
+        shipmentMethodOption: ""Pickup""
+        pickupLocationId: ""{{LAST_LOCATION_ID}}""
+        price: 0
+      }
+    }) {
+      id
+      shipments { shipmentMethodCode shipmentMethodOption pickupLocation { id } fulfillmentCenterId }
+    }
+  }
+[GQL-EXEC set_shipment_pickup]
+[GQL-OP query_keyword_exclude]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 keyword: ""xyzabc_no_such_location_999"") {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC query_keyword_exclude]
+[GQL-OP query_paged_small]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1 sort: ""name:asc"") {
+      totalCount
+      items { id name }
+    }
+  }
+[GQL-EXEC query_paged_small]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors = 0
+[ERRORS label=probe_all_locations] errors[] empty
+[COUNT label=probe_all_locations] data.cartPickupLocations.totalCount >= 1
+[DATA label=probe_all_locations] data.cartPickupLocations.items is non-null
+[ERRORS label=set_shipment_pickup] errors[] empty
+[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.id is non-null
+[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.shipmentMethodCode = BuyOnlinePickupInStore
+[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.shipmentMethodOption = Pickup
+[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.pickupLocation.id = {{LAST_LOCATION_ID}}
+[ERRORS label=query_keyword_exclude] errors[] empty
+[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}}
+[ERRORS label=query_paged_small] errors[] empty
+[DATA label=query_paged_small] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}}","[ROUNDTRIP label=query_keyword_exclude] VCST-4707 fix assertion — confirmed location (LAST_LOCATION_ID) is present at items[0] despite keyword that matches 0 other locations; IncludeLocationIds semantic verified
+[ROUNDTRIP label=query_paged_small] VCST-4707 fix assertion — confirmed location at items[0] with first:1 paging; not excluded by small page size","add_item validationErrors non-empty (PRODUCT_MIN_MAX_QTY — product has min-qty rule; update BUYABLE_NO_MIN_QTY alias); probe_all_locations totalCount=0 (empty cart — means add_item was silently rejected); set_shipment_pickup errors[] non-empty with extensions.code='JSON_READER' (shipmentMethodCode missing or scalar coercion failure); set_shipment_pickup shipmentMethodCode != BuyOnlinePickupInStore (binding lost); query_keyword_exclude items[0].id != LAST_LOCATION_ID (VCST-4707 regression — IncludeLocationIds prepend not working)",none — clearCart at end,"VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008; BL-BOPIS-002; xAPI; graphql-schema.md — Query.cartPickupLocations; InputShipmentType.pickupLocationId; aliases.json BUYABLE_NO_MIN_QTY; REG-2026-04-29-0929; REG-2026-04-29-1438 (validated PASS)",Automated
+GQL-127,"xPickup — pickupLocations Store-Level Query Returns Active Locations","GraphQL > xPickup > pickupLocations",High,"BL-BOPIS-005; BL-GQL-001","ECL-14.2","Runner-native. Schema-verified: pickupLocations(storeId, after, first, keyword, sort) — see graphql-schema.md Query.cart section. Returns store-level pickup locations master list (no per-product availability). BL-BOPIS-005: inactive/closed locations excluded from selector — items[].isActive must be true. Full field selection per feedback_graphql_full_field_selection rule. Reference fixture: test-data/graphql/queries/pickupLocations.graphql.","sort=name:asc; first=20; keyword_match=Main","[AUTH role=ORG_USER]
+[GQL-OP list_locations]
+  query {
+    pickupLocations(storeId: ""{{STORE_ID}}"" first: 20 sort: ""name:asc"") {
+      totalCount
+      pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+      items {
+        id isActive name description contactEmail contactPhone
+        workingHours deliveryDays storageDays geoLocation
+        address {
+          id key name organization countryCode countryName
+          regionId regionName city postalCode line1 line2
+          phone email outerId description addressType
+        }
+      }
+    }
+  }
+[GQL-EXEC list_locations]
+[GQL-OP list_locations_keyword]
+  query {
+    pickupLocations(storeId: ""{{STORE_ID}}"" first: 5 keyword: ""Main"") {
+      totalCount
+      items { id name address { city countryCode } }
+    }
+  }
+[GQL-EXEC list_locations_keyword]","[ERRORS label=list_locations] errors[] empty
+[DATA label=list_locations] data.pickupLocations is non-null
+[COUNT label=list_locations] data.pickupLocations.totalCount >= 0
+[DATA label=list_locations] data.pickupLocations.items is non-null
+[DATA label=list_locations] data.pickupLocations.pageInfo is non-null
+[ERRORS label=list_locations_keyword] errors[] empty
+[DATA label=list_locations_keyword] data.pickupLocations.items is non-null","[ROUNDTRIP label=list_locations] re-execute same query → same totalCount (deterministic, read-only)
+[EVIDENCE] list_locations_keyword.totalCount <= list_locations.totalCount (keyword narrows or equals total — runner-manual cross-OP comparison)
+[EVIDENCE] If items present, items[0] has populated address with countryCode + city; isActive=true on returned items — runner-manual
+[EVIDENCE] pageInfo.hasNextPage matches totalCount > first (true when more pages exist)","errors[] non-empty; pickupLocations null; items[].address all-null fields; pageInfo missing; keyword filter returns more than total (would indicate broken filter)",none — read-only,"VCST-4707; xAPI; graphql-schema.md — Query.pickupLocations; test-data/graphql/queries/pickupLocations.graphql; BL-BOPIS-005; REG-2026-04-29-1438 (validated PASS)",Automated
+GQL-128,"xPickup — productPickupLocations Returns Product-Specific Availability","GraphQL > xPickup > productPickupLocations",High,"BL-BOPIS-003; BL-GQL-001","ECL-14.2","Runner-native. Captures BOPIS-eligible product GUID, then queries productPickupLocations. Schema-verified: productPickupLocations(productId!, storeId!, cultureName!, after, first, keyword, sort) — see graphql-schema.md Query.cart section. Returns per-location availability with availabilityType enum (Today | Transfer | GlobalTransfer) and availableQuantity. BL-BOPIS-003: FFC availability label matches actual stock — availabilityType + availableQuantity must reflect underlying inventory. Reference fixture: test-data/graphql/queries/productPickupLocations.graphql. Full field selection per feedback_graphql_full_field_selection rule.","sort=name:asc; first=20","[AUTH role=ORG_USER]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP product_locations]
+  query {
+    productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 20 sort: ""name:asc"") {
+      totalCount
+      pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+      items {
+        id isActive name description contactEmail contactPhone
+        workingHours deliveryDays storageDays geoLocation
+        availabilityType availabilityNote availableQuantity
+        address {
+          id key name organization countryCode countryName
+          regionId regionName city postalCode line1 line2
+          phone email outerId description addressType
+        }
+      }
+    }
+  }
+[GQL-EXEC product_locations]","[ERRORS label=product_locations] errors[] empty
+[DATA label=product_locations] data.productPickupLocations is non-null
+[COUNT label=product_locations] data.productPickupLocations.totalCount >= 0
+[DATA label=product_locations] data.productPickupLocations.items is non-null
+[DATA label=product_locations] data.productPickupLocations.pageInfo is non-null","[EVIDENCE] If items present, items[0].availabilityType is one of: Today | Transfer | GlobalTransfer (per known-issues note in productPickupLocations.graphql fixture) — runner-manual
+[EVIDENCE] items[0].availableQuantity is non-negative when present; address.countryCode + city populated
+[ROUNDTRIP label=product_locations] re-execute → same totalCount (deterministic, read-only)","errors[] non-empty; productPickupLocations null; availabilityType missing or outside enum; availableQuantity negative; products query returns 0 (no BOPIS-eligible product seeded)",none — read-only,"VCST-4618; xAPI; graphql-schema.md — Query.productPickupLocations; test-data/graphql/queries/productPickupLocations.graphql; BL-BOPIS-003; REG-2026-04-29-1438 (validated PASS)",Automated
+GQL-129,"xCart Pickup — cartPickupLocations Keyword Search Narrows Result Set","GraphQL > xCart > Pickup Locations > Search",High,"BL-BOPIS-008; BL-GQL-001","ECL-14.1; ECL-14.2","Runner-native counter-probe test. Captures a real city from baseline, applies keyword search, verifies narrowing AND that returned items match the seed city. Also verifies non-matching keyword returns empty (no confirmed pickup set, so IncludeLocationIds does not prepend — BL-BOPIS-008 only fires when a pickup is confirmed). Avoids hardcoded keywords per feedback_env_resilience — derives from response. Per VCST-4650, xAPI keyword search is case-insensitive across address fields — covered as runner-manual EVIDENCE since CSV captures cannot transform case. Uses @td(BUYABLE_NO_MIN_QTY.id) alias to guarantee addItem(qty:1) succeeds (REG-2026-04-29-1015 BUG-050k-002 fix — dynamic products filter was returning min_qty=10 product, causing silent addItem rejection → empty cart → cartPickupLocations returned 0).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); nonexistent_keyword=xyzabc_no_such_location_999; store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP probe_baseline]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5) {
+      totalCount items { id name address { city } }
+    }
+  }
+[GQL-EXEC probe_baseline]
+[GQL-CAPTURE probe_baseline.data.cartPickupLocations.items.0.address.city → SEED_CITY]
+[GQL-OP probe_keyword_match]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 200 keyword: ""{{SEED_CITY}}"") {
+      totalCount items { id name address { city } }
+    }
+  }
+[GQL-EXEC probe_keyword_match]
+[GQL-OP probe_keyword_nomatch]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 keyword: ""xyzabc_no_such_location_999"") {
+      totalCount items { id }
+    }
+  }
+[GQL-EXEC probe_keyword_nomatch]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[ERRORS label=probe_baseline] errors[] empty
+[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1
+[ERRORS label=probe_keyword_match] errors[] empty
+[COUNT label=probe_keyword_match] data.cartPickupLocations.totalCount >= 1
+[ERRORS label=probe_keyword_nomatch] errors[] empty","[EVIDENCE] probe_keyword_match.totalCount <= probe_baseline.totalCount (keyword narrows or equals total — runner-manual cross-OP comparison)
+[EVIDENCE] every probe_keyword_match.items[i].address.city contains SEED_CITY (substring or full match) — runner-manual scan of response
+[EVIDENCE] probe_keyword_nomatch.totalCount = 0 (fresh cart has no confirmed pickup → IncludeLocationIds prepend does not trigger; covered by GQL-094)
+[EVIDENCE] Re-run probe_keyword_match with SEED_CITY in upper case (e.g. via separate runner step) → totalCount must equal probe_keyword_match.totalCount (case-insensitive search per VCST-4650) — runner-manual","probe_keyword_match.totalCount > probe_baseline.totalCount (keyword broadens — broken filter); probe_keyword_match items contain wrong city; probe_keyword_nomatch.totalCount > 0 with no confirmed pickup (broken filter or unintended IncludeLocationIds path); HTTP 500 on any probe",none — clearCart at end,"VCST-4650; xAPI; graphql-schema.md — Query.cartPickupLocations; BL-BOPIS-008; REG-2026-04-29-1438 (validated PASS)",Automated
+GQL-130,"xCart Pickup — cartPickupLocations facet Returns term_facets Structure","GraphQL > xCart > Pickup Locations > Facets",High,"BL-BOPIS-008; BL-GQL-001","ECL-14.2","Runner-native schema-coverage test. Verifies facet arg returns term_facets aggregation structure with name + terms[term, label, count]. Schema-verified: cartPickupLocations(facet: String) returns term_facets per fixture cartPickupLocations.graphql. Facet field names follow xAPI dotted form: 'address.countryCode address.regionName address.city'. Tagged as schema-coverage so minimal cart setup is acceptable. Uses @td(BUYABLE_NO_MIN_QTY.id) alias for deterministic addItem (BUG-050k-004 fix — previously used dynamic products filter that could resolve to min_qty=10 product non-deterministically).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); facet=address.countryCode address.regionName address.city; store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP probe_facets]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 facet: ""address.countryCode address.regionName address.city"") {
+      totalCount
+      items { id name address { city regionName countryCode } }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC probe_facets]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[ERRORS label=probe_facets] errors[] empty
+[DATA label=probe_facets] data.cartPickupLocations.term_facets is non-null
+[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1
+[DATA label=probe_facets] data.cartPickupLocations.term_facets.0.name is non-empty","[EVIDENCE] term_facets contains entries for each requested facet (address.countryCode, address.regionName, address.city) when locations exist with those values populated — runner-manual check
+[EVIDENCE] each term_facets entry's terms[].count is a positive integer; sum of counts across a facet ≤ totalCount
+[EVIDENCE] term and label are non-empty strings on each terms[] entry","term_facets null with non-empty items[]; term_facets[].terms missing count field; HTTP 500; facet arg silently ignored (term_facets empty when locations clearly differ across countries/regions)",none — clearCart at end,"VCST-4618 (TC-BE-010); GAP-XPICKUP-001 (cartPickupLocations.term_facets unwired in PR #8 — out of PR scope per PR title 'Include selected pickup locations'); xAPI; graphql-schema.md — Query.cartPickupLocations; test-data/graphql/queries/cartPickupLocations.graphql term_facets selection; BL-BOPIS-008; REG-2026-04-29-1438 (cart setup PASS, term_facets product gap)",Draft
+GQL-131,"xCart Pickup — cartPickupLocations filter Narrows Result Set","GraphQL > xCart > Pickup Locations > Filter",High,"BL-BOPIS-008; BL-GQL-001","ECL-14.1; ECL-14.2","Runner-native counter-probe test. Verifies filter arg (xAPI filter syntax) narrows result set. Captures a real countryCode from baseline response, applies filter:'address.countryCode:<captured>' and verifies subset matches; then applies a non-existent country filter and expects empty (or just confirmed location). Avoids hardcoded country/region values per feedback_env_resilience. Uses @td(BUYABLE_NO_MIN_QTY.id) alias for deterministic addItem (BUG-050k-004 fix). Cross-OP COUNT predicates demoted to [EVIDENCE] runner-manual checks (BUG-050k-003 fix — runner does not support cross-operation totalCount comparisons).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); filter_nomatch=address.countryCode:ZZZ; store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-OP probe_baseline]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 sort: ""name:asc"") {
+      totalCount items { id name address { countryCode } }
+    }
+  }
+[GQL-EXEC probe_baseline]
+[GQL-CAPTURE probe_baseline.data.cartPickupLocations.items.0.address.countryCode → SEED_COUNTRY]
+[GQL-OP probe_filter_match]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 200 filter: ""address.countryCode:{{SEED_COUNTRY}}"") {
+      totalCount items { id address { countryCode } }
+    }
+  }
+[GQL-EXEC probe_filter_match]
+[GQL-OP probe_filter_nomatch]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 filter: ""address.countryCode:ZZZ_NOT_A_COUNTRY"") {
+      totalCount items { id }
+    }
+  }
+[GQL-EXEC probe_filter_nomatch]
+[GQL-OP probe_sort_desc]
+  query {
+    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 sort: ""name:desc"") {
+      totalCount items { id name }
+    }
+  }
+[GQL-EXEC probe_sort_desc]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[ERRORS label=probe_baseline] errors[] empty
+[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1
+[ERRORS label=probe_filter_match] errors[] empty
+[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1
+[ERRORS label=probe_filter_nomatch] errors[] empty
+[ERRORS label=probe_sort_desc] errors[] empty
+[COUNT label=probe_sort_desc] data.cartPickupLocations.totalCount >= 1","[EVIDENCE] probe_filter_match.totalCount <= probe_baseline.totalCount (filter narrows or equals total — runner-manual cross-OP comparison)
+[EVIDENCE] every probe_filter_match.items[i].address.countryCode = SEED_COUNTRY (filter applied correctly) — runner-manual scan
+[EVIDENCE] probe_filter_nomatch.totalCount = 0 OR equals 1 if a confirmed pickup is set (IncludeLocationIds prepend) — covered separately by GQL-094; for fresh cart with no shipment confirmed, expect 0
+[EVIDENCE] probe_sort_desc.totalCount = probe_baseline.totalCount (sort does not change result set, only order — runner-manual cross-OP comparison)
+[EVIDENCE] probe_sort_desc.items[0].name >= probe_sort_desc.items[1].name (descending order) when totalCount >= 2 — runner-manual ordering check","probe_filter_match.totalCount > probe_baseline.totalCount (filter broadens — broken); probe_filter_match items contain wrong countryCode (filter ignored); probe_filter_nomatch.totalCount > 0 with no confirmed pickup (broken filter); probe_sort_desc.totalCount differs from baseline (sort changed dataset); HTTP 500; xAPI filter syntax error returned",none — clearCart at end,"VCST-4618; GAP-XPICKUP-002 (cartPickupLocations.filter unwired in PR #8 — out of PR scope per PR title 'Include selected pickup locations'); xAPI; graphql-schema.md — Query.cartPickupLocations; xAPI filter syntax 'address.countryCode:<value>'; BL-BOPIS-008; REG-2026-04-29-1438 (cart setup PASS, filter product gap)",Draft

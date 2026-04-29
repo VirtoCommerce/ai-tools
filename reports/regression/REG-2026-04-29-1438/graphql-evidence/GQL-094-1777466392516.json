@@ -1,0 +1,731 @@
+{
+  "caseId": "GQL-094",
+  "title": "xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050k-graphql-xpickup.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-04-29T12:39:52.515Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-04-29T12:39:47.983Z",
+      "expiresAt": "2026-04-29T13:09:47.983Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "store_id": "{{STORE_ID}}",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "LAST_LOCATION_ID": "3e77a4dc-46af-41f5-bac5-012a6fec19a7"
+  },
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 140
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1159
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1250
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "probe_all_locations",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 200 sort: \"name:desc\") {\n      totalCount\n      items { id name }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough"
+              },
+              {
+                "id": "f0a96dea-5b92-4e05-af14-fa7891deeab7",
+                "name": "New Hector"
+              },
+              {
+                "id": "95d2ca4e-cfeb-43aa-9024-016b9a7650dd",
+                "name": "Mathewmouth"
+              },
+              {
+                "id": "0e2bfa22-ab42-47da-9e98-9abcde49432c",
+                "name": "Toronto Investment and Trade Centre"
+              },
+              {
+                "id": "2b7c2123-7fc8-4516-8df1-e7c608f25de8",
+                "name": "Airoport&the International Centre"
+              },
+              {
+                "id": "05ac4573-a509-4995-895e-f0f41285d904",
+                "name": "B2B - Bristol branch UK ;)"
+              },
+              {
+                "id": "7fb55ed4-62ca-44f3-b1d1-45a6bd059f7d",
+                "name": "South Schuylershire"
+              },
+              {
+                "id": "5a806252-713c-4f89-8bc4-f0d345b90bc5",
+                "name": "Tramsheds - ( Australia )"
+              },
+              {
+                "id": "ee91a9e1-8592-4ad2-83c0-0da54a0896b5",
+                "name": "New Maximilianbury"
+              },
+              {
+                "id": "cf8a888a-1ace-40a8-afdd-e18fc66a9f01",
+                "name": "Mrazhaven"
+              },
+              {
+                "id": "69b6e14f-0997-4054-bb51-6dffc10c2b9a",
+                "name": "West Jeffery"
+              },
+              {
+                "id": "0e344bce-079b-4772-92d9-53af820e71cd",
+                "name": "East Palma"
+              },
+              {
+                "id": "b5e87c7b-c393-4fd7-97f3-31dec3e3b7f3",
+                "name": "Zacharyside"
+              },
+              {
+                "id": "b692585c-ee38-4a37-90b0-c4065a0b4916",
+                "name": "East Garrett"
+              },
+              {
+                "id": "8734a4cf-7cd8-4a1f-a417-12e0d23dec6a",
+                "name": "West Karlieville"
+              },
+              {
+                "id": "8de12f56-15f3-46ba-8bca-06c3be3ba5b5",
+                "name": "Billund, Lego House"
+              },
+              {
+                "id": "3a554b16-3573-490b-889a-cde7b1d8243e",
+                "name": "FedEx Ship Center – Seattle, WA"
+              },
+              {
+                "id": "500f4d09-cd81-4016-a025-377f4de36147",
+                "name": "Lake Audreanneburgh"
+              },
+              {
+                "id": "4594df6b-4ecb-47f1-bb68-73c8bbff2564",
+                "name": "Westend Foxpost"
+              },
+              {
+                "id": "aed1e80c-5473-449e-8aab-fd642b4637d0",
+                "name": "DPD - Sanghaj"
+              },
+              {
+                "id": "17acd922-baee-494c-af73-e1813cf7e566",
+                "name": "Westfield World Trade Center"
+              },
+              {
+                "id": "81be1cf9-b410-4c7e-8b39-97e532cde8e7",
+                "name": "The Shops at Columbus Circle"
+              },
+              {
+                "id": "a30a891f-5ecf-4b9c-a225-634a9c3af3b8",
+                "name": "Manhattan Mall"
+              },
+              {
+                "id": "b65630d5-2371-4dc7-ad44-d914fa5d554c",
+                "name": "Bloomingdale’s"
+              },
+              {
+                "id": "4c159ef6-07e8-4cfb-abe3-cd353e640ace",
+                "name": "Chelsea Market"
+              },
+              {
+                "id": "362a17d3-4896-4dac-894f-652f5b1411c4",
+                "name": "Berjaya Megamall Kuantan"
+              },
+              {
+                "id": "8e85e49b-5e5c-43de-a7cb-0944dc589cbf",
+                "name": "Essex Street Market"
+              },
+              {
+                "id": "966f251f-cd2f-4b29-a90e-be2ed12303f8",
+                "name": "Grand Central Market"
+              },
+              {
+                "id": "4852c16d-cfea-4703-b0a8-f32e5e66e590",
+                "name": "Rockefeller Center Shops"
+              },
+              {
+                "id": "c127efbc-2522-47eb-b999-6c9aaffadd04",
+                "name": "Atlantic Terminal Mall"
+              },
+              {
+                "id": "c2c45b7c-6e33-4c59-a0e4-ca73588c6ad5",
+                "name": "Publix Super Market at The Crossings"
+              },
+              {
+                "id": "6ecf4a5b-55d9-43fe-8f95-348b4777cb2c",
+                "name": "Dekalb Market Hall"
+              },
+              {
+                "id": "39aad7e1-44ce-4007-b4a2-6bbb89cbb4a5",
+                "name": "Brooklyn Flea (Fulton Stall)"
+              },
+              {
+                "id": "fb81606d-3528-437c-b77a-d7d2487e871b",
+                "name": "Best Buy; San Francisco"
+              },
+              {
+                "id": "7852b75d-e9c1-4de2-b1c4-c29a561c810c",
+                "name": "Fulton Mall"
+              },
+              {
+                "id": "96d40851-e9ef-4d55-b882-81d6b4337cbf",
+                "name": "Whole Foods Market Prospect Heights"
+              },
+              {
+                "id": "99b17969-1576-485f-b081-ff0bd0e87fd5",
+                "name": "Apple Williamsburg - Main Illinois"
+              },
+              {
+                "id": "f4ae2ef1-48ee-470b-9c24-c21cc29c0de2",
+                "name": "Queens Center"
+              },
+              {
+                "id": "bc44d635-b3f3-4c78-9f5a-31d5010052f3",
+                "name": "The Shops at Atlas Park"
+              },
+              {
+                "id": "ba6286a0-1abe-4857-9489-3bdfc08250fa",
+                "name": "Flushing Commons"
+              },
+              {
+                "id": "018f53ef-2d51-4e29-a46c-0f4b2782707d",
+                "name": "Queens Crossing"
+              },
+              {
+                "id": "16e6e8d3-7dec-4048-bdbb-cd4219b7e3b6",
+                "name": "KYOTO AEON MALL KUMIYAMA"
+              },
+              {
+                "id": "df33bb74-3d59-44e2-84ef-ecca274bf4f3",
+                "name": "Whole Foods Market Astoria"
+              },
+              {
+                "id": "ca135017-6afa-43ed-9c02-6d67705ef85b",
+                "name": "Target Fresh Meadows"
+              },
+              {
+                "id": "121b2787-02d3-431c-bb93-751fafdebda1",
+                "name": "Bronx Terminal Market"
+              },
+              {
+                "id": "5da5b478-1764-411b-a065-055379fef3a5",
+                "name": "Piccadilly Centre - SA"
+              },
+              {
+                "id": "30e43bfd-0876-4389-a303-71501d1a94cf",
+                "name": "Hunts Point Produce Market"
+              },
+              {
+                "id": "a0bc3319-531e-45ba-bb48-18cf06bc2843",
+                "name": "Arthur Avenue Retail Market"
+              },
+              {
+                "id": "a419a5a8-0e94-41ac-9111-8015839165fe",
+                "name": "Oriental Plaza - SA"
+              },
+              {
+                "id": "bb6942b0-7a14-49f0-a174-d34fb288ed6a",
+                "name": "Trader Joe’s Parkchester"
+              },
+              {
+                "id": "e340e1b0-a7ce-4279-9014-a3c94ce04de4",
+                "name": "Stop & Shop Co-op City"
+              },
+              {
+                "id": "ceee8b8d-6540-41cc-ada2-1d23c1b768a6",
+                "name": "Isringhausen Imports - Springfield"
+              },
+              {
+                "id": "749319ff-eb7d-4021-b98b-067904a468f4",
+                "name": "Macy’s Herald Square"
+              },
+              {
+                "id": "20993a36-d21b-41f0-b17b-2d51fb4eae6a",
+                "name": "Westfield Century City - LA - GEOPoint"
+              },
+              {
+                "id": "a67ffd1a-01be-4256-85af-8251d2b0858f",
+                "name": "The Metropolitan Museum of Art"
+              },
+              {
+                "id": "58b2aa75-90f1-4e4b-b3d0-44251ee81511",
+                "name": "Solomon R. Guggenheim Museum"
+              },
+              {
+                "id": "bde1ee04-14a7-48a8-96b4-efd0754531d5",
+                "name": "The Frick Collection"
+              },
+              {
+                "id": "f39627b8-83de-479e-a4ab-545f37b5efb3",
+                "name": "Intrepid Sea, Air & Space Museum"
+              },
+              {
+                "id": "df7a5b7d-19f3-45eb-aee7-473a993b1ea1",
+                "name": "Brooklyn Museum"
+              },
+              {
+                "id": "46c51092-4d41-40a8-be40-dde08c06abcd",
+                "name": "Staten Island Mall"
+              },
+              {
+                "id": "b70b894e-1a35-4563-980a-eabcb120bb6a",
+                "name": "Staten Island Ferry Terminal"
+              },
+              {
+                "id": "3663abaa-6266-4da7-87e2-c6f89c4f7cb5",
+                "name": "Barclays' Center. Amazon pickup point. Work hours M-Sun: 6-24"
+              },
+              {
+                "id": "bfcae1e2-4791-478f-8037-55df8cc772b6",
+                "name": "Madison Square Garden"
+              },
+              {
+                "id": "77dea1dc-7cf7-481e-bbcf-23e4641d9cf3",
+                "name": "Lincoln Center"
+              },
+              {
+                "id": "c649bf03-7096-4c5e-b59f-575063abbc43",
+                "name": "IKEA Atlanta"
+              },
+              {
+                "id": "219cfa09-be83-4c1e-87b8-6b3a6e200678",
+                "name": "Carnegie Hall"
+              },
+              {
+                "id": "a38178ee-0312-466c-80ae-0c9399e78e59",
+                "name": "Apollo Theater"
+              },
+              {
+                "id": "7227b3d1-99fa-46e5-a2b2-371a72b8431d",
+                "name": "Metropolitan Opera House"
+              },
+              {
+                "id": "2108d7c9-6aad-46a7-b4c5-a46593cb0ac8",
+                "name": "Brooklyn Academy of Music"
+              },
+              {
+                "id": "a6edbf38-6d4a-44c8-a994-ab53dbbaaa4d",
+                "name": "New York Public Library"
+              },
+              {
+                "id": "8e09eaff-40c7-49fd-80f0-6141318ab208",
+                "name": "Bronx Zoo"
+              },
+              {
+                "id": "e845c619-3a29-4a9b-bcd7-eccbeae9a8cf",
+                "name": "New York Botanical Garden"
+              },
+              {
+                "id": "6c8e6ea9-5645-488e-aa5d-510897259b52",
+                "name": "Coney Island Boardwalk"
+              },
+              {
+                "id": "135fdfb8-786b-46b9-9953-49b5a06f1b1a",
+                "name": "Luna Park"
+              },
+              {
+                "id": "fd857cc7-0b4d-4f19-8153-2598117f3ad4",
+                "name": "Brooklyn Bridge Park"
+              },
+              {
+                "id": "44d0ee17-4af2-4f40-b956-205225d3e3d3",
+                "name": "Washington Square Park"
+              },
+              {
+                "id": "facb6cce-2d70-422c-baef-48aa43b80c8f",
+                "name": "Central Park Zoo"
+              },
+              {
+                "id": "a07d7ef6-289b-445f-885c-a735343f2308",
+                "name": "Museum of the City of New York"
+              },
+              {
+                "id": "d0c4ef93-7ffa-4187-af83-f09c067ff8ed",
+                "name": "Queens Museum"
+              },
+              {
+                "id": "b7163232-e1e8-4e03-ab63-d3d01791ef42",
+                "name": "New York Hall of Science"
+              },
+              {
+                "id": "55d24898-0367-4872-9387-23bed11c68df",
+                "name": "Socrates Sculpture Park"
+              },
+              {
+                "id": "a3bcbe15-54c4-4829-9ca8-afa302150ae3",
+                "name": "Snug Harbor Cultural Center"
+              },
+              {
+                "id": "38e58798-6c60-4413-b405-abf4b38de806",
+                "name": "Staten Island Children's Museum"
+              },
+              {
+                "id": "3005d691-d5b9-4a67-9f0a-6dacdc0bbff0",
+                "name": "Museum of Arts and Design"
+              },
+              {
+                "id": "c76769ff-91d3-401e-a6d1-f23d194aca79",
+                "name": "New Museum - Main_2; Transfer_1_2_3"
+              },
+              {
+                "id": "1931affa-c4cc-4854-8ab0-1d1f483016b7",
+                "name": "Brooklyn Children's Museum - Main_2; Transfer_3"
+              },
+              {
+                "id": "c9ed5ee3-1212-416a-9608-e42ebb2b95b9",
+                "name": "MoMA PS1-Main_2; Transfer_2"
+              },
+              {
+                "id": "a261afde-afcd-43ae-8dcb-6ec48721859f",
+                "name": "9/11 Memorial - Main_2; Transfer_1"
+              },
+              {
+                "id": "fa63eb0b-84fa-47d0-b786-3a474780523f",
+                "name": "Chrysler Building- Main_2"
+              },
+              {
+                "id": "35ed6a47-8d40-4acb-a0ba-468b07b69ee0",
+                "name": "Empire State Building - Main_1; Transfer_1_2_3"
+              },
+              {
+                "id": "b7230a90-a0e2-4378-b6f6-9ca94eec09be",
+                "name": "One World Observatory - Main_1; Transfer_3"
+              },
+              {
+                "id": "8b3cbc81-8bfa-4195-8cfd-f84671197add",
+                "name": "Flatiron Building - Main_1; Transfer_2"
+              },
+              {
+                "id": "6652e112-d105-419a-ae46-b4e1c6c8204c",
+                "name": "The High Line - Main_1; Transfer_1"
+              },
+              {
+                "id": "887a19f9-9e3e-4f59-a79f-8b0f69724863",
+                "name": "Costco Wholesale - Transfer_2_3 USA San Francisco FFC"
+              },
+              {
+                "id": "3c5a10ad-a89c-4017-8de8-589ed60593ca",
+                "name": "St. Patrick's Cathedral - Transfer_1_2_3 USA San Francisco FFC"
+              },
+              {
+                "id": "6c9f8e8b-53de-4b47-93ec-d999ed09fb62",
+                "name": "Trinity Church - Transfer_1_3 FFC"
+              },
+              {
+                "id": "9290d3f4-0b89-4832-8be3-cbee99fde43a",
+                "name": "Fort Tryon Park - Transfer_3 FFC"
+              },
+              {
+                "id": "72b6285e-fb04-4e7e-919e-28bedaf24a53",
+                "name": "Little Island - Transfer_2 FFC"
+              },
+              {
+                "id": "f66101e3-9507-4db0-b972-8c92b4da062f",
+                "name": "South Street Seaport - Transfer_1 FFC"
+              },
+              {
+                "id": "ee76fb17-a9e7-4f2a-8ae7-dcf36d689b74",
+                "name": "Wall Street - Main_3 FFC"
+              },
+              {
+                "id": "aa6b56bf-3754-4697-a155-e7cb8f51deb4",
+                "name": "Times Square - Main_2 FFC"
+              },
+              {
+                "id": "ffd6a838-4270-4c6c-8abb-cd294fb46d89",
+                "name": "Lower East Side*Michigan"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 502
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment_pickup",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      shipment: {\n        shipmentMethodCode: \"BuyOnlinePickupInStore\"\n        shipmentMethodOption: \"Pickup\"\n        pickupLocationId: \"3e77a4dc-46af-41f5-bac5-012a6fec19a7\"\n        price: 0\n      }\n    }) {\n      id\n      shipments { shipmentMethodCode shipmentMethodOption pickupLocation { id } fulfillmentCenterId }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "shipments": [
+              {
+                "shipmentMethodCode": "BuyOnlinePickupInStore",
+                "shipmentMethodOption": "Pickup",
+                "pickupLocation": {
+                  "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7"
+                },
+                "fulfillmentCenterId": null
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 771
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "query_keyword_exclude",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 5 keyword: \"xyzabc_no_such_location_999\") {\n      totalCount\n      items { id name }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 0,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 192
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "query_paged_small",
+      "query": "query {\n    cartPickupLocations(cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" storeId: \"B2B-store\" cultureName: \"en-US\" first: 1 sort: \"name:asc\") {\n      totalCount\n      items { id name }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cartPickupLocations": {
+            "totalCount": 102,
+            "items": [
+              {
+                "id": "3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+                "name": "Colinborough"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 160
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 345
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_item] errors[] empty",
+      "label": "add_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_item] data.addItem.validationErrors = 0",
+      "label": "add_item",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors = 0",
+      "actual": "data.addItem.validationErrors = 0"
+    },
+    {
+      "raw": "[ERRORS label=probe_all_locations] errors[] empty",
+      "label": "probe_all_locations",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=probe_all_locations] data.cartPickupLocations.totalCount >= 1",
+      "label": "probe_all_locations",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cartPickupLocations.totalCount >= 1",
+      "actual": "data.cartPickupLocations.totalCount = 102"
+    },
+    {
+      "raw": "[DATA label=probe_all_locations] data.cartPickupLocations.items is non-null",
+      "label": "probe_all_locations",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cartPickupLocations.items is non-null",
+      "actual": "data.cartPickupLocations.items = [{\"id\":\"3e77a4dc-46af-41f5-bac5-012a6fec19a7\",\"name\":\"Colinborough\"},{\"id\":\"f0a96dea-5b92-4e05-af14-fa7891deeab7\",\"name\":\"New Hector\"},{\"id\":\"95d2ca4e-cfeb-43aa-9024-016b9a7650dd\",\"name\":\"Mathewmouth\"…"
+    },
+    {
+      "raw": "[ERRORS label=set_shipment_pickup] errors[] empty",
+      "label": "set_shipment_pickup",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.id is non-null",
+      "label": "set_shipment_pickup",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addOrUpdateCartShipment.id is non-null",
+      "actual": "data.addOrUpdateCartShipment.id = \"e60ab4c3-ce13-417b-a69c-a21b2d799565\""
+    },
+    {
+      "raw": "[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.shipmentMethodCode = BuyOnlinePickupInStore",
+      "label": "set_shipment_pickup",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addOrUpdateCartShipment.shipments.0.shipmentMethodCode = BuyOnlinePickupInStore",
+      "actual": "data.addOrUpdateCartShipment.shipments.0.shipmentMethodCode = BuyOnlinePickupInStore"
+    },
+    {
+      "raw": "[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.shipmentMethodOption = Pickup",
+      "label": "set_shipment_pickup",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addOrUpdateCartShipment.shipments.0.shipmentMethodOption = Pickup",
+      "actual": "data.addOrUpdateCartShipment.shipments.0.shipmentMethodOption = Pickup"
+    },
+    {
+      "raw": "[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.shipments.0.pickupLocation.id = {{LAST_LOCATION_ID}}",
+      "label": "set_shipment_pickup",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addOrUpdateCartShipment.shipments.0.pickupLocation.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+      "actual": "data.addOrUpdateCartShipment.shipments.0.pickupLocation.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7"
+    },
+    {
+      "raw": "[ERRORS label=query_keyword_exclude] errors[] empty",
+      "label": "query_keyword_exclude",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}}",
+      "label": "query_keyword_exclude",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cartPickupLocations.items.0.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+      "actual": "data.cartPickupLocations.items.0.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7"
+    },
+    {
+      "raw": "[ERRORS label=query_paged_small] errors[] empty",
+      "label": "query_paged_small",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=query_paged_small] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}}",
+      "label": "query_paged_small",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cartPickupLocations.items.0.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7",
+      "actual": "data.cartPickupLocations.items.0.id = 3e77a4dc-46af-41f5-bac5-012a6fec19a7"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP label=query_keyword_exclude] VCST-4707 fix assertion — confirmed location (LAST_LOCATION_ID) is present at items[0] despite keyword that matches 0 other locations; IncludeLocationIds semantic verified",
+      "layer": "ROUNDTRIP",
+      "note": "VCST-4707 fix assertion — confirmed location (LAST_LOCATION_ID) is present at items[0] despite keyword that matches 0 other locations; IncludeLocationIds semantic verified",
+      "resolved": "VCST-4707 fix assertion — confirmed location (LAST_LOCATION_ID) is present at items[0] despite keyword that matches 0 other locations; IncludeLocationIds semantic verified"
+    },
+    {
+      "raw": "[ROUNDTRIP label=query_paged_small] VCST-4707 fix assertion — confirmed location at items[0] with first:1 paging; not excluded by small page size",
+      "layer": "ROUNDTRIP",
+      "note": "VCST-4707 fix assertion — confirmed location at items[0] with first:1 paging; not excluded by small page size",
+      "resolved": "VCST-4707 fix assertion — confirmed location at items[0] with first:1 paging; not excluded by small page size"
+    }
+  ],
+  "cleanup": "none — clearCart at end"
+}

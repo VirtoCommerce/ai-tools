@@ -1,0 +1,153 @@
+{
+  "suiteId": "050k",
+  "suiteName": "GraphQL xPickup",
+  "runId": "REG-2026-04-29-1040",
+  "browser": "none (GraphQL Runner Fast Path)",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-04-29T08:42:23.000Z",
+  "completedAt": "2026-04-29T08:43:14.000Z",
+  "comparedTo": "REG-2026-04-29-1015",
+  "totalCases": 6,
+  "passed": 2,
+  "failed": 4,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "33.3%",
+  "lintStatus": "PASS",
+  "module": "VirtoCommerce.XPickup 3.1001.0-pr-8-3380",
+  "testCases": [
+    {
+      "id": "GQL-094",
+      "status": "FAIL",
+      "previousStatus": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)",
+      "section": "GraphQL > xCart > Pickup Locations",
+      "priority": "Critical",
+      "businessRule": "BL-BOPIS-008; BL-BOPIS-002",
+      "edgeCaseRefs": "ECL-14.1; ECL-14.2",
+      "failedAssertions": [
+        "[ERRORS label=set_shipment_pickup] errors[] empty — actual: JSON_READER error from addOrUpdateCartShipment",
+        "[DATA label=set_shipment_pickup] data.addOrUpdateCartShipment.id is non-null — actual: null",
+        "[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = LAST_LOCATION_ID — actual: undefined (items=[] because shipment not confirmed)",
+        "[DATA label=query_paged_small] data.cartPickupLocations.items.0.id = LAST_LOCATION_ID — RUNNER FALSE-NEGATIVE: actual value (3e77a4dc) equals expected but runner marked FAIL (note text in assertion string causes comparison mismatch)"
+      ],
+      "notes": "BUG-050k-001 fix PARTIALLY WORKED: LAST_LOCATION_ID capture is now non-empty (3e77a4dc-46af-41f5-bac5-012a6fec19a7 = 'Colinborough' via sort:desc). However addOrUpdateCartShipment now fails with JSON_READER error (code: JSON_READER) — a NEW failure mode. The mutation reaches the server with correct pickupLocationId and price:0 but server throws a JSON deserialization error. Because the shipment confirmation step fails, query_keyword_exclude items=[] (expected behavior — no confirmed pickup = no prepend). query_paged_small with sort:name:asc first:1 returns 'Colinborough' (id=3e77a4dc) — which equals LAST_LOCATION_ID — but runner marks assertion FAIL (false negative: note text appended to assertion string breaks equality comparison). The paged_small PASS/FAIL is inconclusive for VCST-4707 evaluation because the shipment was never set.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1040/graphql-evidence/GQL-094-1777452148150.json",
+      "consoleErrors": [],
+      "networkErrors": []
+    },
+    {
+      "id": "GQL-127",
+      "status": "FAIL",
+      "previousStatus": "FAIL",
+      "title": "xPickup — pickupLocations Store-Level Query Returns Active Locations",
+      "section": "GraphQL > xPickup > pickupLocations",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-005; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.2",
+      "failedAssertions": [
+        "[COUNT label=list_locations_keyword] data.pickupLocations.totalCount <= list_locations.totalCount — unrecognized COUNT predicate (cross-OP comparison not supported by runner)"
+      ],
+      "notes": "Same runner limitation as REG-2026-04-29-1015 — cross-OP COUNT comparison is unsupported. 7/8 functional assertions pass: 102 locations, keyword 'Main' returns 2 results ('Times Square - Main_2 FFC', 'Wall Street - Main_3 FFC'), pageInfo correct, all isActive=true. Product behavior correct. Test infrastructure defect only.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1040/graphql-evidence/GQL-127-1777452155451.json",
+      "consoleErrors": [],
+      "networkErrors": []
+    },
+    {
+      "id": "GQL-128",
+      "status": "PASS",
+      "previousStatus": "PASS"
+    },
+    {
+      "id": "GQL-129",
+      "status": "PASS",
+      "previousStatus": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations Keyword Search Narrows Result Set",
+      "notes": "BUG-050k-002 fix VALIDATED: @td(BUYABLE_NO_MIN_QTY.id) resolves to b3f5bd0c (Canvas Pencil Case), addItem(qty:1) succeeds with validationErrors=[], CART_ID captured, probe_baseline returns totalCount=102, SEED_CITY='New York' captured (non-empty), probe_keyword_match returns totalCount=71. All 7 assertions PASS.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1040/graphql-evidence/GQL-129-1777452173939.json"
+    },
+    {
+      "id": "GQL-130",
+      "status": "FAIL",
+      "previousStatus": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations facet Returns term_facets Structure",
+      "section": "GraphQL > xCart > Pickup Locations > Facets",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-008; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.2",
+      "failedAssertions": [
+        "[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1 — actual: 0 (term_facets=[])",
+        "[DATA label=probe_facets] data.cartPickupLocations.term_facets.0.name is non-empty — unrecognized predicate (runner CSV quality issue)",
+        "[DATA label=probe_facets] data.cartPickupLocations.term_facets.0.terms is non-null — actual: null (empty array means index 0 is null)"
+      ],
+      "notes": "GAP-XPICKUP-001 confirmed persistent: term_facets=[] despite 102 locations with mixed countryCode (USA, AUS, etc.) and correct cart setup. Facet aggregation not implemented in cartPickupLocations for PR#8 build. PRODUCT_ID=60a67fe6, addItem succeeded, totalCount=102. Two assertion failures are runner predicate issues (non-empty string, cross-OP index null); the core failure is term_facets.length=0.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1040/graphql-evidence/GQL-130-1777452184437.json",
+      "consoleErrors": [],
+      "networkErrors": []
+    },
+    {
+      "id": "GQL-131",
+      "status": "FAIL",
+      "previousStatus": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations filter Narrows Result Set",
+      "section": "GraphQL > xCart > Pickup Locations > Filter",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-008; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.1; ECL-14.2",
+      "failedAssertions": [
+        "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1 — actual: 0 (filter address.countryCode:USA returned 0 results from 102 locations)",
+        "[COUNT label=probe_filter_match] totalCount <= probe_baseline.totalCount — unrecognized COUNT predicate (cross-OP)",
+        "[COUNT label=probe_sort_desc] totalCount = probe_baseline.totalCount — unrecognized COUNT predicate (cross-OP)"
+      ],
+      "notes": "GAP-XPICKUP-002 confirmed persistent: filter 'address.countryCode:USA' returns totalCount=0 while baseline has 102 locations with SEED_COUNTRY=USA. Filter arg is accepted without error but has no effect (or inverted behavior). Consistent with GQL-130 finding — facet+filter not wired in cartPickupLocations for PR#8. Two cross-OP assertion failures are runner limitations.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1040/graphql-evidence/GQL-131-1777452193893.json",
+      "consoleErrors": [],
+      "networkErrors": []
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_050k_001_v2",
+      "title": "addOrUpdateCartShipment throws JSON_READER when pickupLocationId is set with price:0",
+      "severity": "Critical",
+      "testCaseId": "GQL-094",
+      "businessRule": "BL-BOPIS-002; BL-BOPIS-008",
+      "edgeCaseRef": "ECL-14.1",
+      "failedAssertion": "[ERRORS label=set_shipment_pickup] errors[] empty",
+      "stepsToReproduce": "1. Acquire ORG_USER token. 2. addItem(BUYABLE_NO_MIN_QTY, qty:1) → cart created. 3. cartPickupLocations(sort:name:desc) → capture items[0].id as LAST_LOCATION_ID. 4. addOrUpdateCartShipment(pickupLocationId: LAST_LOCATION_ID, price: 0). 5. Observe response.",
+      "expected": "Shipment confirmed, id non-null, errors[] empty",
+      "actual": "errors[0].message='Error trying to resolve field addOrUpdateCartShipment', extensions.code='JSON_READER'. Shipment not created. VCST-4707 IncludeLocationIds prepend cannot be tested because confirmed-location prerequisite fails.",
+      "notes": "This is a new failure mode replacing the previous BUG-050k-001 (empty LAST_LOCATION_ID). The LAST_LOCATION_ID capture was fixed but the mutation now fails with a server-side JSON deserialization error. The JSON_READER code typically indicates a field type mismatch — likely InputShipmentType.price expects a non-nullable type that rejects 0 or the pickupLocationId field serialization is broken in PR#8. Recommend checking InputShipmentType schema in PR#8 diff.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG_050k_003",
+      "title": "cartPickupLocations facet argument returns empty term_facets (feature not implemented in PR#8)",
+      "severity": "High",
+      "testCaseId": "GQL-130",
+      "businessRule": "BL-BOPIS-008",
+      "edgeCaseRef": "ECL-14.2",
+      "failedAssertion": "[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1",
+      "stepsToReproduce": "1. addItem any product. 2. cartPickupLocations(facet: 'address.countryCode address.regionName address.city'). 3. Read term_facets.",
+      "expected": "term_facets contains >= 1 facet bucket for address.countryCode (multiple countries in dataset)",
+      "actual": "term_facets = [] despite 102 locations with mixed countryCode (USA/AUS/etc.)",
+      "notes": "Consistent with GAP-XPICKUP-001 from REG-2026-04-29-1015. Facet aggregation appears unimplemented in cartPickupLocations for PR#8 scope.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG_050k_004",
+      "title": "cartPickupLocations filter argument silently returns 0 results when matching locations exist",
+      "severity": "High",
+      "testCaseId": "GQL-131",
+      "businessRule": "BL-BOPIS-008",
+      "edgeCaseRef": "ECL-14.1; ECL-14.2",
+      "failedAssertion": "[COUNT label=probe_filter_match] data.cartPickupLocations.totalCount >= 1",
+      "stepsToReproduce": "1. addItem any product. 2. cartPickupLocations(first:5) → capture items[0].address.countryCode (USA). 3. cartPickupLocations(filter: 'address.countryCode:USA'). 4. Check totalCount.",
+      "expected": "totalCount >= 1 (USA locations exist in dataset)",
+      "actual": "totalCount = 0 — filter returns empty set when 102 locations with countryCode=USA exist",
+      "notes": "Consistent with GAP-XPICKUP-002 from REG-2026-04-29-1015. Filter argument accepted without error but produces no results. Combined with GQL-130 facet failure, both aggregation features appear non-functional in PR#8.",
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

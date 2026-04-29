@@ -1,0 +1,207 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - 'button "Language: English (United States) en" [ref=e9] [cursor=pointer]':
+            - generic [ref=e10]: "Language:"
+            - img "English (United States)" [ref=e11]
+            - generic [ref=e12]: en
+            - img [ref=e14]
+          - 'button "Currency: USD" [ref=e19] [cursor=pointer]':
+            - generic [ref=e20]: "Currency:"
+            - generic [ref=e21]: USD
+            - img [ref=e23]
+          - 'button "Ship to: Select address" [ref=e28] [cursor=pointer]':
+            - img [ref=e30]
+            - generic [ref=e32]: "Ship to:"
+            - generic [ref=e33]: Select address
+            - img [ref=e35]
+        - generic [ref=e37]:
+          - 'button "Theme: light" [ref=e39] [cursor=pointer]':
+            - 'button "Theme: light" [ref=e40]':
+              - img [ref=e42]
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - generic [ref=e49]: "Call us:"
+            - link "+1 (213) 603 3536" [ref=e50] [cursor=pointer]:
+              - /url: tel:+1 (213) 603 3536
+          - link "Dashboard" [ref=e52] [cursor=pointer]:
+            - /url: /account/dashboard
+          - link "Contacts" [ref=e54] [cursor=pointer]:
+            - /url: /contacts
+          - button "Account menu" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]: Mila Müller
+            - img [ref=e60]
+      - generic [ref=e62]:
+        - navigation "Main menu" [ref=e64]:
+          - link "B2B-store" [ref=e65] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=e66]
+          - generic [ref=e69]:
+            - searchbox "Search" [ref=e70]
+            - generic [ref=e71]:
+              - button "Barcode scan" [ref=e72] [cursor=pointer]:
+                - img [ref=e75]
+              - button "Search" [ref=e77] [cursor=pointer]:
+                - img [ref=e80]
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - link "Bulk order" [ref=e84] [cursor=pointer]:
+                - /url: /bulk-order
+                - img [ref=e87]
+                - generic [ref=e89]: Bulk order
+            - listitem [ref=e90]:
+              - link "Compare" [ref=e91] [cursor=pointer]:
+                - /url: /compare
+                - img [ref=e94]
+                - generic [ref=e96]: Compare
+            - listitem [ref=e97]:
+              - link "Lists" [ref=e98] [cursor=pointer]:
+                - /url: /account/lists
+                - img [ref=e101]
+                - generic [ref=e103]: Lists
+            - listitem [ref=e104]:
+              - link "Orders" [ref=e105] [cursor=pointer]:
+                - /url: /account/orders
+                - img [ref=e108]
+                - generic [ref=e110]: Orders
+            - listitem [ref=e111]:
+              - button "2 Notifications" [ref=e114] [cursor=pointer]:
+                - generic [ref=e115]
+                - generic [ref=e121]: Notifications
+            - listitem [ref=e122]:
+              - link "22 Cart" [ref=e123] [cursor=pointer]:
+                - /url: /cart
+                - generic [ref=e124]
+                - generic [ref=e130]: Cart
+        - navigation "Main navigation" [ref=e131]:
+          - button "All products" [ref=e134] [cursor=pointer]:
+            - img [ref=e136]
+            - generic [ref=e138]: All products
+          - menubar "Navigation" [ref=e140]:
+            - menuitem "Alcoholic Drinks" [ref=e141] [cursor=pointer]
+            - menuitem "Accessories" [ref=e142] [cursor=pointer]
+            - menuitem "Jewelry and gems" [ref=e143] [cursor=pointer]
+            - menuitem "Car covers" [ref=e144] [cursor=pointer]
+            - menuitem "Home appliance" [ref=e145] [cursor=pointer]
+            - menuitem "Juice" [ref=e146] [cursor=pointer]
+            - menuitem "Kitchen supplies" [ref=e147] [cursor=pointer]
+            - menuitem "Products with options" [ref=e148] [cursor=pointer]
+            - menuitem "Soft drinks" [ref=e149] [cursor=pointer]
+            - menuitem "Snacks" [ref=e150] [cursor=pointer]
+            - menuitem "Printers" [ref=e151] [cursor=pointer]
+            - menuitem "Rental home" [ref=e152] [cursor=pointer]
+            - menuitem "TV new" [ref=e153] [cursor=pointer]
+            - menuitem "All BRANDS" [ref=e154] [cursor=pointer]
+            - menuitem "SEE ALL PRODUCTS" [ref=e155] [cursor=pointer]
+      - main [ref=e156]:
+        - generic [ref=e157]:
+          - img [ref=e159]
+          - generic [ref=e162]:
+            - navigation "Breadcrumbs navigation" [ref=e163]:
+              - list [ref=e164]:
+                - listitem [ref=e165]
+                - listitem [ref=e167]: /
+                - listitem [ref=e168]: Cart
+            - heading "Cart" [level=1] [ref=e169]
+            - generic [ref=e171]:
+              - generic [ref=e173]:
+                - generic [ref=e176]
+                - generic [ref=e276]
+                - generic [ref=e308]
+                - generic [ref=e355]
+                - generic [ref=e393]
+              - complementary "Sidebar" [ref=e408]:
+                - generic [ref=e409]
+      - contentinfo "Footer" [ref=e554]:
+        - generic [ref=e555]:
+          - img "B2B-store" [ref=e557]
+          - navigation [ref=e558]:
+            - generic [ref=e559]:
+              - generic [ref=e562]: Account details
+              - generic [ref=e564]:
+                - link "Orders" [ref=e566] [cursor=pointer]:
+                  - /url: /account/orders
+                - link "Notifications" [ref=e568] [cursor=pointer]:
+                  - /url: /account/notifications
+                - link "Quote requests" [ref=e570] [cursor=pointer]:
+                  - /url: /account/quotes
+            - generic [ref=e571]:
+              - generic [ref=e574]: About us
+              - generic [ref=e576]:
+                - link "About Virto" [ref=e578] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/about-us
+                - link "Our partners" [ref=e580] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/our-partners
+                - link "Manufacturer partners" [ref=e582] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/solutions/b2b-portal-for-manufacturers
+                - link "News" [ref=e584] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/blog/category/news
+                - link "Careers" [ref=e586] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/career
+                - link "News" [ref=e588] [cursor=pointer]:
+                  - /url: /news
+            - generic [ref=e589]:
+              - generic [ref=e592]: Popular categories
+              - generic [ref=e594]:
+                - link "Allbiz" [ref=e596] [cursor=pointer]:
+                  - /url: /category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847
+                - link "Computer, Office, Education" [ref=e598] [cursor=pointer]:
+                  - /url: /category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e
+                - link "Consumer Electronics" [ref=e600] [cursor=pointer]:
+                  - /url: /category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578
+                - link "Home Appliances" [ref=e602] [cursor=pointer]:
+                  - /url: /category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d
+                - link "Phones and Accessories" [ref=e604] [cursor=pointer]:
+                  - /url: /category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac
+            - generic [ref=e605]:
+              - generic [ref=e608]: Online resources
+              - generic [ref=e610]:
+                - link "Sign Up" [ref=e612] [cursor=pointer]:
+                  - /url: /sign-up
+                - link "Catalog" [ref=e614] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Demo Landing" [ref=e616] [cursor=pointer]:
+                  - /url: /demo-landing
+                - link "Builder I.O" [ref=e618] [cursor=pointer]:
+                  - /url: https://www.builder.io/
+            - generic [ref=e619]:
+              - generic [ref=e622]: External links
+              - generic [ref=e624]:
+                - link "Vcst-admin" [ref=e626] [cursor=pointer]:
+                  - /url: https://vcst-qa.govirto.com/
+                - link "Virto-start" [ref=e628] [cursor=pointer]:
+                  - /url: https://virtostart-demo-store.govirto.com/
+            - generic [ref=e629]:
+              - generic [ref=e632]: Customer support
+              - generic [ref=e634]:
+                - link "Catalog" [ref=e636] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Contact Us" [ref=e638] [cursor=pointer]:
+                  - /url: /contacts
+                - link "Find a Branch" [ref=e640] [cursor=pointer]:
+                  - /url: /branch/vendor-fulfillment
+            - generic [ref=e641]:
+              - generic [ref=e644]: Brands
+              - link "All popular brands" [ref=e648] [cursor=pointer]:
+                - /url: /brands
+        - generic [ref=e649]:
+          - generic [ref=e650]:
+            - text: Ver. 2.48.0-pr-2269-dfb0-dfb0c1e5. © 2026
+            - strong [ref=e651]: Virto Commerce
+            - text: . All rights reserved
+          - generic [ref=e652]:
+            - text: ASP.NET ecommerce platform
+            - link "Virto Commerce" [ref=e653] [cursor=pointer]:
+              - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA" [ref=e654]':
+      - generic [ref=e656]: QA
+  - region "Notifications"

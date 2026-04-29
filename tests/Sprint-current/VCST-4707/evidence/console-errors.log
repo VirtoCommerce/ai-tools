@@ -1,0 +1,14 @@
+Total messages: 110 (Errors: 1, Warnings: 102)
+Returning 1 messages for level "error"
+
+ApolloError: Error trying to resolve field 'addOrUpdateCartShipment'.
+    at new t (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:57:153)
+    at https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:61:70910
+    at f (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:8541)
+    at https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:8456
+    at new Promise (<anonymous>)
+    at Object.then (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:8423)
+    at Object.next (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:8551)
+    at hQ (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:1912)
+    at gC (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:2323)
+    at t.next (https://vcst-qa-storefront.govirto.com/assets/vendor-3X8Ox2Qz.js:56:2846)

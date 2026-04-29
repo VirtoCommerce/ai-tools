@@ -1631,6 +1631,16 @@
     },
     "notes": "Reuses existing CFG-001 Configurable Hat as the canonical configurable fixture for cart-merge scenarios. Unblocks CART-061. Env var: CONFIGURABLE_SKU."
   },
+  "BUYABLE_NO_MIN_QTY": {
+    "file": "products/standard",
+    "filter": { "product_id": "STD-001" },
+    "fields": {
+      "id": "product_id_guid",
+      "min_qty": "min_quantity",
+      "max_qty": "max_quantity"
+    },
+    "notes": "B2B parent product buyable at qty=1, no max cap (max_qty=0 means unlimited). Verified 2026-04-29: addItem(qty:1) returns itemsCount=1, validationErrors=[]. Canvas Pencil Case GUID b3f5bd0c-45e4-46dc-8f2d-ad089718fc32. For GraphQL xCart suites (050b1, 050k) that need addItem(qty:1) to succeed without PRODUCT_MIN_MAX_QTY rejection. Root cause: original setup_prod filter returned parent 8e0eaa82 with min_qty=10, causing silent rejection (REG-2026-04-29-0929 / BUG-050b1-001)."
+  },
   "USER_MULTI_ORG": {
     "file": "b2b/users",
     "filter": {

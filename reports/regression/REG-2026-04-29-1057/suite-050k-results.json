@@ -1,0 +1,111 @@
+{
+  "suiteId": "050k",
+  "suiteName": "GraphQL xPickup — VCST-4707 IncludeLocationIds regression suite",
+  "runId": "REG-2026-04-29-1057",
+  "browser": "none (GraphQL Fast Path)",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-04-29T10:57:00.000Z",
+  "completedAt": "2026-04-29T11:05:00.000Z",
+  "totalCases": 6,
+  "passed": 3,
+  "failed": 3,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "50.0%",
+  "comparedTo": "REG-2026-04-29-1040",
+  "testCases": [
+    {
+      "id": "GQL-094",
+      "status": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations Returns Confirmed Location Regardless of keyword/filter/paging (VCST-4707)",
+      "section": "GraphQL > xCart > Pickup Locations",
+      "priority": "Critical",
+      "businessRule": "BL-BOPIS-008; BL-BOPIS-002; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.1; ECL-14.2",
+      "previousStatus": "FAIL",
+      "failedAssertion": "[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}} (confirmed location at index 0 despite keyword exclusion — VCST-4707 fix assertion)",
+      "notes": "RUNNER FALSE-NEGATIVE — both failing assertions show actual=expected at the data level. The runner's equality check includes the full assertion string with parenthetical annotation in the 'expected' value but compares against the raw data path result (without annotation), causing a string mismatch despite values being identical. Effective verdicts: (1) set_shipment_pickup: NO JSON_READER — BuyOnlinePickupInStore/Pickup binding accepted, shipmentMethodCode=BuyOnlinePickupInStore confirmed, shipmentMethodOption=Pickup confirmed, pickupLocation.id=3e77a4dc confirmed. (2) query_keyword_exclude: items.0.id=3e77a4dc matches LAST_LOCATION_ID — VCST-4707 IncludeLocationIds prepend WORKS despite exclusion keyword. (3) query_paged_small: items.0.id=3e77a4dc matches LAST_LOCATION_ID — prepend also works with first:1 paging. All 14 assertions pass on data values; 2 fail on runner string-matching bug. True status: PASS (data-verified).",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-094-1777465796802.json"
+    },
+    {
+      "id": "GQL-127",
+      "status": "FAIL",
+      "title": "xPickup — pickupLocations Store-Level Query Returns Active Locations",
+      "section": "GraphQL > xPickup > pickupLocations",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-005; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.2",
+      "previousStatus": "FAIL",
+      "failedAssertion": "[COUNT label=list_locations_keyword] data.pickupLocations.totalCount <= list_locations.totalCount (keyword narrows or equals total)",
+      "notes": "RUNNER LIMITATION — cross-OP COUNT comparison not supported by runner. 7/8 functional assertions pass. Product behavior correct: 102 locations total, keyword 'Main' returns 2 results (Times Square - Main_2 FFC, Wall Street - Main_3 FFC), pageInfo intact, isActive=true on all returned items. No product defect. Same failure mode as REG-2026-04-29-1040.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-127-1777465821431.json"
+    },
+    {
+      "id": "GQL-128",
+      "status": "PASS",
+      "previousStatus": "PASS",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-128-1777465831873.json"
+    },
+    {
+      "id": "GQL-129",
+      "status": "PASS",
+      "previousStatus": "PASS",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-129-1777465842664.json"
+    },
+    {
+      "id": "GQL-130",
+      "status": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations facet Returns term_facets Structure",
+      "section": "GraphQL > xCart > Pickup Locations > Facets",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-008; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.2",
+      "previousStatus": "FAIL",
+      "failedAssertion": "[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1",
+      "notes": "PRODUCT GAP (GAP-XPICKUP-001) — term_facets returned [] despite facet argument passing address.countryCode/address.regionName/address.city and 102 locations existing. Cart setup correct: addItem succeeded for product 8e0eaa82 (min_qty=10, but this case doesn't assert validationErrors count — however probe_facets totalCount not captured so silent rejection indeterminate). Additional failures: runner does not support 'is non-empty' predicate and null-index on empty array. Core gap unchanged from prior runs.",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-130-1777465851427.json"
+    },
+    {
+      "id": "GQL-131",
+      "status": "FAIL",
+      "title": "xCart Pickup — cartPickupLocations filter Narrows Result Set",
+      "section": "GraphQL > xCart > Pickup Locations > Filter",
+      "priority": "High",
+      "businessRule": "BL-BOPIS-008; BL-GQL-001",
+      "edgeCaseRefs": "ECL-14.1; ECL-14.2",
+      "previousStatus": "FAIL",
+      "failedAssertion": "[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1",
+      "notes": "MIXED: product gap + silent addItem rejection. probe_baseline returned totalCount=0 — cart has no items. GQL-131 uses dynamic setup_prod filter which returns product 8e0eaa82 (min_qty=10); addItem(qty:1) silently rejected (validationErrors not selected in add_item response). SEED_COUNTRY captured as empty string. All downstream assertions cascade-fail. Two additional COUNT failures are runner cross-OP comparison limitations. Core filter gap (GAP-XPICKUP-002) from REG-1040 still present, but also blocked by same min_qty product issue. Fix: use @td(BUYABLE_NO_MIN_QTY.id) alias in GQL-131 setup (same fix applied to GQL-094 and GQL-129).",
+      "graphqlEvidence": "reports/regression/REG-2026-04-29-1057/graphql-evidence/GQL-131-1777465862627.json"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_050k_001_v3",
+      "title": "graphql-runner assertion equality check includes parenthetical annotation text, causing false-negative FAIL on GQL-094 VCST-4707 assertions",
+      "severity": "Medium",
+      "testCaseId": "GQL-094",
+      "businessRule": "BL-GQL-001",
+      "edgeCaseRef": "ECL-14.1",
+      "failedAssertion": "[DATA label=query_keyword_exclude] data.cartPickupLocations.items.0.id = {{LAST_LOCATION_ID}} (confirmed location...)",
+      "stepsToReproduce": "1. Run GQL-094 via graphql-runner. 2. Observe assertion text includes parenthetical note after the expected value. 3. Runner compares full 'expected' string (with annotation) against raw actual data path value (without annotation). 4. String mismatch despite data values being identical.",
+      "expected": "Runner strips parenthetical annotation from expected value before equality comparison; GQL-094 reports PASS",
+      "actual": "Runner reports FAIL; expected shows '...3e77a4dc (confirmed location at index 0...) — VCST-4707 fix assertion', actual shows '...3e77a4dc'. Data values are identical.",
+      "confirmed": false
+    },
+    {
+      "id": "BUG_050k_004",
+      "title": "GQL-131: cartPickupLocations returns 0 locations when filter product (8e0eaa82) has min_qty=10 — same root cause as BUG-050b1-003",
+      "severity": "Medium",
+      "testCaseId": "GQL-131",
+      "businessRule": "BL-BOPIS-008",
+      "edgeCaseRef": "ECL-14.1",
+      "failedAssertion": "[COUNT label=probe_baseline] data.cartPickupLocations.totalCount >= 1",
+      "stepsToReproduce": "1. GQL-131 uses setup_prod dynamic filter returning product 8e0eaa82 (min_qty=10). 2. addItem(qty:1) returns HTTP 200 with no graphql errors but validationErrors not selected. 3. Cart is empty (silent min_qty rejection). 4. cartPickupLocations returns totalCount=0.",
+      "expected": "GQL-131 uses @td(BUYABLE_NO_MIN_QTY.id) alias (b3f5bd0c) so addItem(qty:1) succeeds and probe_baseline returns totalCount>=1",
+      "actual": "Dynamic setup_prod returns 8e0eaa82 (min_qty=10); addItem silently rejected; probe_baseline totalCount=0",
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}
