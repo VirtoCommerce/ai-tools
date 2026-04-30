@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CPN-001","Coupons & Promotions Page — Authenticated Access and Page Load","Coupons & Promotions > Access","Critical","BL-PRICE-001","ECL-4.2, ECL-14.1","User is authenticated as {{USER_EMAIL}}. Store has at least one active public coupon/promotion configured in Admin. Module VirtoCommerce.MarketingExperienceApi deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] Dashboard page loads and sidebar is visible
 [ASSERT] sidebar Marketing section is visible
@@ -770,3 +770,108 @@ User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code)
 [DOM] no error messages, no JavaScript exceptions visible on the page","[API] POST /graphql for promotionCoupons returns HTTP 200 with empty items array, errors[] empty
 [CONSOLE] no TypeError or render errors for empty state
 [NETWORK] no 4xx/5xx","Blank white page on empty state, console TypeError on empty array, layout broken when no cards to render","none","VCST-4590","Manual"
+
+"CPN-054","Cart Page — Coupon Sidebar Shows Preset Coupon Cards from promotionCoupons Query","Coupons & Promotions > Cart Sidebar > VCST-4896","Critical","BL-CART-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart
+- At least 1 public active promotion with a coupon code exists in the store
+- User is on the cart page","store={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to the cart page at {{FRONT_URL}}/cart
+[ASSERT] browser_snapshot to confirm cart page is loaded with cart items
+[ASSERT] Verify the coupons/discounts sidebar section (.coupons-section or equivalent) is visible on the cart page
+[ASSERT] Verify preset coupon cards are rendered inside the sidebar section — each card shows at minimum: promotion name or description and a coupon code button
+[ASSERT] Verify the coupon code {{couponCode}} is visible on one of the preset cards
+[ASSERT] Verify ""Discount & coupons"" heading or equivalent label is present above the sidebar","[DOM] Coupon sidebar section rendered on cart page with at least 1 preset coupon card (VCST-4896 new feature)
+[DOM] Each preset card shows promotion name/description and a clickable coupon code or ""Apply"" button
+[STATE] promotionCoupons GraphQL query was fired with correct storeId and userId to populate the cards
+[STATE] Only public active promotions with coupon codes are shown (no automatic-only promotions)","[NETWORK] promotionCoupons GraphQL request fired with storeId={{STORE_ID}} and authenticated userId; response contains the coupon shown in sidebar
+[CONSOLE] no JS errors during cart page load","coupon sidebar section absent from cart page (VCST-4896 regression); preset coupon cards not rendered despite active public coupons existing; sidebar shows spinner indefinitely; promotionCoupons request not fired; 4xx/5xx on promotionCoupons query","Navigate away from cart page","VCST-4896; BL-CART-003","Reviewed"
+"CPN-055","Cart Page — Clicking Preset Coupon Card Apply Button Applies Coupon and Shows Discount","Coupons & Promotions > Cart Sidebar > VCST-4896","Critical","BL-CART-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart
+- At least 1 public active percentage or fixed-amount coupon exists
+- Cart page is loaded with preset coupon cards visible","store={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_URL}}/cart
+[ASSERT] Verify preset coupon cards are visible in the sidebar
+[ACT] browser_click the ""Apply"" button (or coupon code button) on the preset card for {{couponCode}}
+[WAIT] Wait for cart total to update
+[ASSERT] browser_snapshot to confirm coupon applied state
+[ASSERT] Verify a discount line item appears in the cart totals area
+[ASSERT] Verify the coupon code is shown in the applied coupons list (within cart or sidebar)
+[ASSERT] Verify cart total is reduced by the discount amount","[DOM] Cart totals section shows discount line item after coupon applied
+[DOM] Applied coupon code visible in the coupon applied area
+[MATH] Cart total = subtotal - discount (correct calculation)
+[STATE] BL-CART-003: discount applied to effective (possibly sale) price, not list price","[NETWORK] addCoupon GraphQL mutation fires with correct couponCode, storeId, userId; mutation returns errors[]=[] and updated cart
+[NETWORK] Cart re-fetch or mutation response shows updated discountTotal and total
+[CONSOLE] no JS errors during coupon application","preset card ""Apply"" button not clickable (VCST-4896 regression); coupon applied but discount line item absent from totals; cart total unchanged after coupon applied; addCoupon mutation returns errors[]; toast/error shown despite valid coupon","Remove applied coupon via trash icon or navigate away from cart","VCST-4896; BL-CART-003","Reviewed"
+"CPN-056","Cart Page — Removing Applied Coupon via Sidebar Restores Original Cart Total","Coupons & Promotions > Cart Sidebar > VCST-4896","Critical","BL-CART-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart
+- A coupon has been applied to the cart (state from CPN-055 or apply any valid coupon first)","store={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_URL}}/cart
+[ACT] Apply coupon {{couponCode}} if not already applied (click preset card Apply button)
+[ASSERT] Confirm cart total is discounted
+[ASSERT] Capture the original (pre-discount) subtotal value for comparison
+[ACT] browser_click the remove/trash icon next to the applied coupon in the sidebar or cart totals
+[WAIT] Wait for cart to recalculate
+[ASSERT] browser_snapshot to capture post-removal state
+[ASSERT] Verify discount line item is gone from cart totals
+[ASSERT] Verify cart total equals the original subtotal (discount fully reversed)","[DOM] Discount line item absent from cart totals after coupon removal
+[MATH] Cart total restored to original subtotal (+ tax/shipping if applicable) after removal
+[STATE] Applied coupon indicator/badge cleared from sidebar
+[DOM] Preset coupon card for the removed coupon reappears or re-enables in the sidebar","[NETWORK] removeCoupon GraphQL mutation fires with couponCode, storeId, userId; mutation returns updated cart with discountTotal=0 for that coupon
+[CONSOLE] no JS errors during coupon removal","coupon remove button not visible or not clickable; cart total unchanged after removal; discount persists after removal (removeCoupon mutation not fired); cart shows 0 total after removal (over-correction); coupon card does not reappear in sidebar after removal","Navigate away from cart; ensure cart is empty or reset for next test","VCST-4896; BL-CART-003","Reviewed"
+"CPN-057","Cart Page — Expired Coupon Not Shown in Sidebar Preset Cards","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-PRICE-002","ECL-09.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart
+- At least 1 EXPIRED coupon exists (endDate in the past)
+- At least 1 ACTIVE coupon exists (to confirm sidebar is populated)","store={{FRONT_URL}}
+expiredCouponCode=@td(COUPONS.expiredCode)
+activeCouponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_URL}}/cart
+[ASSERT] Verify the coupon sidebar section is visible
+[ASSERT] Verify at least 1 active coupon card is shown ({{activeCouponCode}} is present)
+[ASSERT] Verify the expired coupon {{expiredCouponCode}} is NOT present in the preset cards list
+[ASSERT] Scan the full sidebar card list to confirm no expired/inactive coupon codes are displayed","[DOM] Expired coupon card absent from cart sidebar preset cards list
+[DOM] Active valid coupons ARE shown (sidebar not blank)
+[STATE] BL-PRICE-002: expired promotions are excluded from promotionCoupons query response; no expired codes rendered in sidebar","[NETWORK] promotionCoupons GraphQL response does not contain the expired coupon entry; active coupon IS in response
+[CONSOLE] no JS errors","expired coupon appears in sidebar preset cards (BL-PRICE-002 violation); sidebar shows no cards at all when only expired coupons exist but active coupons are also present; expired coupon code can be applied via Apply button","Navigate away from cart","VCST-4896; BL-PRICE-002; ECL-09.1","Reviewed"
+"CPN-058","Cart Page — Unauthenticated User Does Not See Preset Coupon Cards in Sidebar","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003","","[PRE:SIGNOUT]
+- Cart has at least 1 product (anonymous cart)
+- Public active coupons exist in the store","store={{FRONT_URL}}","[NAV] Navigate to cart page at {{FRONT_URL}}/cart as an anonymous (signed-out) user
+[ASSERT] browser_snapshot to capture anonymous cart page
+[ASSERT] Verify the coupons sidebar section is either: (a) absent, (b) shows a sign-in CTA, or (c) shows a manual code entry only — but does NOT show preset coupon cards
+[ASSERT] Verify no promotionCoupons GraphQL request is fired for an anonymous user (or if fired, userId is absent/null)","[DOM] No preset coupon cards rendered for unauthenticated user (cards require user identity)
+[STATE] If coupon input is shown, it is a manual code entry field, not preset cards from promotionCoupons
+[STATE] No data scope leak: authenticated promotionCoupons results not exposed to anonymous session","[NETWORK] promotionCoupons not called with a real userId for anonymous user; if called, userId parameter is absent or null
+[CONSOLE] no JS errors or auth-related GraphQL errors during anonymous cart view","preset coupon cards visible for anonymous user (data scope leak); promotionCoupons called with hardcoded or leaked userId for anonymous session; page shows 401/403 error instead of graceful no-cards state","No cleanup needed for anonymous session","VCST-4896; BL-CART-003","Reviewed"
+"CPN-059","Cart Sidebar — Percentage Coupon Applied to Sale Price, Not List Price (BL-CART-003)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-003","ECL-03.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Product with an active sale price (salePrice < listPrice) added to cart
+- A percentage discount coupon exists and is available in sidebar preset cards","store={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] Navigate to cart page at {{FRONT_URL}}/cart
+[ASSERT] Verify cart item shows sale price (not list price) in the cart line item
+[ASSERT] Capture the displayed sale price value for computation reference
+[ACT] Apply coupon {{couponCode}} via the sidebar preset card Apply button
+[WAIT] Wait for cart recalculation
+[ASSERT] Verify the discount amount equals the coupon percentage applied to the SALE price (not the list price)
+[ASSERT] Verify final cart total = sale price - discount (not list price - discount)","[MATH] Discount = salePrice x couponPercentage (BL-CART-003: coupon applies to effective price)
+[MATH] Cart total reflects: salePrice - discount + shipping + tax
+[STATE] Coupon does NOT calculate discount from list price when sale price is active","[NETWORK] addCoupon mutation response discountTotal consistent with salePrice x percentage; no errors[]
+[CONSOLE] no JS errors during coupon application with sale price product","discount calculated from list price instead of sale price (BL-CART-003 violation); discount amount larger than expected (list price base used); cart total incorrect","Remove applied coupon; navigate away from cart","VCST-4896; BL-CART-003; ECL-03.1","Reviewed"
+"CPN-060","Cart Sidebar — Only Best Coupon Discount Applied When Multiple Applied (BL-CART-009 Radio Policy)","Coupons & Promotions > Cart Sidebar > VCST-4896","High","BL-CART-009","ECL-03.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart
+- At least 2 different public coupon codes available in sidebar preset cards
+- Store uses BestReward promotion policy (radio-button: only best discount wins)","store={{FRONT_URL}}
+coupon1=@td(COUPONS.percentageCode)
+coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_URL}}/cart
+[ACT] Apply coupon {{coupon1}} via preset card Apply button
+[WAIT] Wait for discount to apply
+[ASSERT] Verify discount from {{coupon1}} is applied; note the discount amount D1
+[ACT] Apply coupon {{coupon2}} via preset card Apply button (if second apply is allowed by UI)
+[WAIT] Wait for cart recalculation
+[ASSERT] Verify final discount reflects only the better of D1 or D2 (BL-CART-009: best-reward policy)
+[ASSERT] Verify the cart does not double-stack both discounts","[MATH] Final discount = max(D1, D2) — only the larger discount is applied under BestReward policy
+[STATE] BL-CART-009: BestRewardPromotionPolicy selects the single highest-value reward; both coupons do not stack
+[STATE] If store uses AllRewards policy, both discounts stack — note which policy is active in the test environment","[NETWORK] Cart GraphQL response discountTotal consistent with best-reward calculation; no errors[]
+[CONSOLE] no JS errors when applying a second coupon to a cart that already has one applied","both coupons stack beyond BestReward policy (BL-CART-009 violation — only if store uses BestReward); second coupon application throws unhandled error; discount total drops to 0 after second coupon applied; cart total increases after second coupon","Remove all applied coupons; navigate away from cart","VCST-4896; BL-CART-009; ECL-03.2","Reviewed"

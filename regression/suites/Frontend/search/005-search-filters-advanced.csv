@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE.query)","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
@@ -400,3 +400,30 @@ Category page with multiple facet groups (e.g."," Brand and Color) with overlapp
 [MATH] No products appear that match only one of the two criteria
 [DOM] Chip bar shows chips for both active facets","[NETWORK] POST /graphql returns filtered results with correct AND combination
 [CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-12"
+"SRCH-NEW-044","Facet Terms Ordered by Dictionary Item Priority (not alphabetically)","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
+- At least one dictionary-type facet property configured with explicit priority ordering on dictionary items (e.g. TerrainConditions or Weather facet)
+- Products indexed with those property values","facet_property: dictionary-type property with known priority order
+expected_order: e.g. [Sand, Turf/Grass, Mud, Stoney Ground, Pavement, Synthetic] (by priority)","[NAV] Navigate to {{FRONT_URL}} catalog/category page that has dictionary-type facets
+[ASSERT] Identify a facet with explicitly-configured dictionary item priorities (e.g. TerrainConditions)
+[ASSERT] Record the displayed order of terms in that facet panel
+[ASSERT] Verify that terms appear in the configured priority order, not alphabetical order","[DOM] Facet terms appear in dictionary item priority order
+[DOM] Term order matches priority assigned in Admin for that property
+[DOM] Order is NOT alphabetical when priority-based order differs from alphabetical","[NETWORK] POST /graphql (searchProducts or products query) returns facet terms in priority order
+[CONSOLE] No JS errors loading facets","Terms appear alphabetically instead of by priority; terms appear by match count (count-descending) instead; facet terms order changes on page reload","none","VCST-4729","Reviewed"
+"SRCH-NEW-045","Facet Term Order Stable Across Page Reloads","Search Filters > Facet Sort Order","Medium","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
+- At least one dictionary-type facet property configured with explicit priority ordering (same catalog page as SRCH-NEW-044)
+- Products indexed with those property values","facet_property: same dictionary-type property used in SRCH-NEW-044 (do NOT depend on SRCH-NEW-044 having run first — verify the facet exists independently before proceeding)","[NAV] Navigate to the same catalog page as verified in SRCH-NEW-044
+[ASSERT] Record facet term order for the dictionary-type facet
+[ACT] Reload the page (F5 / browser refresh)
+[ASSERT] Record facet term order again after reload
+[ASSERT] Compare pre-reload and post-reload orders","[DOM] Facet term order is identical before and after reload
+[DOM] Priority-based order is preserved on reload (not randomly re-sorted)","[NETWORK] Both requests return identical facet term arrays
+[CONSOLE] No JS errors","Facet order changes between reloads; terms revert to alphabetical or count-based on reload","none","VCST-4729","Reviewed"
+"SRCH-NEW-046","Facet Terms Without Priority Default to Consistent Fallback Order","Search Filters > Facet Sort Order","Low","BL-CAT-002","","[PRE:CLEAR_SESSION]
+- Catalog page with a facet property whose dictionary items have no explicit priority set (all priority = 0 or null)","facet_property: non-prioritized dictionary facet","[NAV] Navigate to catalog page with a non-prioritized dictionary facet
+[ASSERT] Record displayed facet term order
+[ASSERT] Verify the order is consistent (e.g. alphabetical or count-descending) and documented
+[ACT] Reload the page
+[ASSERT] Verify same fallback order after reload","[DOM] Facet terms appear in a consistent deterministic order (alphabetical or count-descending, not random)
+[DOM] Same order on reload","[NETWORK] API returns consistent term ordering
+[CONSOLE] No JS errors","Terms in random order; order differs on reload; no fallback order defined causing inconsistent display","none","VCST-4729","Reviewed"

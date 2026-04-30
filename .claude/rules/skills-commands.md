@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (14) — `.claude/commands/`
+## Slash Commands (15) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -8,13 +8,14 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 |---------|-----------|-------------|---------|
 | `/qa-smoke` | `[storefront\|admin]` | No | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
 | `/qa-test` | `VCST-XXXX \| feature \| PR #N` | No | Test a JIRA ticket, feature, or PR |
-| `/qa-regression` | `[smoke\|critical\|sprint\|full\|frontend\|backend\|IDs]` | No | Run regression suites in parallel |
+| `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
 | `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |
 | `/qa-test-lifecycle` | `suite <ID> \| domain <name> \| VCST-XXXX \| PR #NNN \| module <name> \| diff \| changelog <ver>` | No | Unified test case pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve. Handles change-driven sync and direct scope quality review. Delegates to test-management-specialist + qa-testing-expert |
+| `/qa-test-plan` | `Sprint26-08 \| 26-08 \| current \| last` | No | Build a sprint test plan: pull JIRA Done Stories/Bugs + merged vc-frontend PRs in the sprint window, score risk per domain, map to regression suites, and write `tests/SprintXX-XX/sprint-XX-XX-test-plan.md`. Delegates Sections 5.2 + 6 to test-management-specialist |
 | `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ | No | Merged into `/qa-test-lifecycle`. Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead |
 | `/qa-verify-fix` | `VCST-XXXX` | No | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition JIRA |
 | `/qa-seed-data` | `[minimal\|catalog\|b2b\|pricing\|full\|teardown]` | No | Generate test data via Postman MCP or tear down AGENT-TEST-* entities |

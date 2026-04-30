@@ -470,3 +470,94 @@ Storefront accessible. User logged in. CFG-029 deployed and indexed.","user={{US
 [STATE] Scenario 2: A=Extra A; B required visible; cart blocked until Premium selected; total=$135.00
 [DATA] Scenario 2 configurationItems: Add Extras=Extra A + Extra Type=Premium both present
 [COUNT] Scenario 1 configurationItems: 0 entries (A=None excluded); Scenario 2: 2 entries","[API] Both addItem calls errors[] empty; [GQL] getCart configurationItems correct per scenario; [CONSOLE] No JS errors in either scenario","Scenario 1 cart blocked by hidden required child; Scenario 2 cart not blocked before B filled; wrong entry count in either scenario; price wrong in either scenario","Remove both cart items after test","VCST-4713","Manual"
+
+"CFG-E2E-071-COND","E2E: VCST-4713 Variation Parent Section — Child Revealed, Both Sections In configurationItems","Configurable Products > E2E > Conditional > Variation Parent","High","BL-CFG-003; BL-CFG-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Product with Variation parent + dependent child section available
+- Product can be added to cart","store={{FRONT_URL}}
+productUrl=@td(CFG_CONDITIONAL_BIKE.url)","--- LAYER: STOREFRONT ---
+[NAV] Navigate to configurable product PDP at {{productUrl}}
+[ACT] Select a non-None option in the Variation parent section
+[ASSERT] Verify dependent child section becomes visible
+[ACT] Select an option in the child section
+[ACT] browser_click ""Add to Cart""
+[WAIT] Wait for cart badge to update
+--- LAYER: API ---
+[ASSERT] Capture the most recent addItem GraphQL request from network log
+[ASSERT] Verify configurationItems contains entries for BOTH the Variation parent section and the child section
+[ASSERT] Verify no errors[] in addItem response
+--- LAYER: STOREFRONT ---
+[NAV] Navigate to cart page
+[ASSERT] Verify cart item shows configured options for both parent and child sections","[STATE] Both Variation parent and child section options present in configurationItems (API payload)
+[DOM] Cart item display shows options from both sections
+[STATE] Cart total reflects any priced options from both sections
+[STATE] errors[] is empty in addItem mutation response","[NETWORK] addItem POST body contains configurationItems with 2 entries (parent + child); HTTP 200 response
+[CONSOLE] no JS errors end-to-end from PDP to cart
+[ADMIN] (optional) Navigate to Admin > Orders if order is placed — both configured options appear in order line item","addItem payload contains only parent section option, not child (VCST-4713 E2E regression); child section option missing from cart display; errors[] non-empty in addItem response; cart total incorrect (child priced option not included)","Remove product from cart; navigate away","VCST-4713; BL-CFG-003; BL-CFG-004","Reviewed"
+"CFG-E2E-072-COND","E2E: VCST-4713 Mid-Session Condition Switch — Only Final Visible Section State in Cart","Configurable Products > E2E > Conditional > Mid-Session Switch","High","BL-CFG-003; BL-CFG-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Product has parent section (P) with >=2 non-None options, each revealing a DIFFERENT child section (C1, C2)
+- Or: Product has parent with child, where switching parent option changes which child is active","store={{FRONT_URL}}
+productUrl=@td(CFG_CONDITIONAL_BIKE.url)","--- LAYER: STOREFRONT ---
+[NAV] Navigate to configurable product PDP at {{productUrl}}
+[ACT] Select Option-A in parent section -- child section C1 becomes visible
+[ACT] Select an option in C1
+[ACT] Select Option-B in parent section -- C1 hides, C2 (or same child reset) becomes relevant
+[ASSERT] Verify previously configured C1 value is cleared from the UI (hidden section value purged)
+[ACT] Select an option in the now-visible child section
+[ACT] browser_click ""Add to Cart""
+[WAIT] Wait for cart update
+--- LAYER: API ---
+[ASSERT] Capture addItem GraphQL request
+[ASSERT] Verify configurationItems reflects only the FINAL selections (Option-B for parent, new child selection)
+[ASSERT] Verify C1 previous selection is NOT present in configurationItems","[STATE] configurationItems contains only the final visible section selections at cart submit time
+[STATE] Values from previously-hidden sections are excluded (clearHiddenSectionValues applied correctly)
+[DOM] Cart item shows only the final configured options, not stale options from earlier in the session","[NETWORK] addItem body does not contain Option-A or the C1 selection; HTTP 200
+[CONSOLE] no JS errors on option switch sequence","stale C1 value present in configurationItems after parent was switched to Option-B; cart shows both C1 and final-state options (union instead of final state); Add to Cart fails due to stale hidden section value","Remove product from cart; navigate away","VCST-4713; BL-CFG-003; BL-CFG-004","Reviewed"
+"CFG-E2E-073-COND","E2E: VCST-4713 Admin Configures Conditional Section — Storefront Reflects Show/Hide Rule","Configurable Products > E2E > Conditional > Admin -> Storefront","High","BL-CFG-003","","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- Configurable product with at least one Product-type section exists in Admin catalog
+- No conditional dependency currently configured between sections","store={{FRONT_URL}}
+backUrl={{BACK_URL}}
+productId=@td(CFG_CONDITIONAL_BIKE.id)","--- LAYER: ADMIN ---
+[NAV] Navigate to Admin > Catalog > Configurable Products at {{backUrl}}
+[ACT] Open the product at {{productId}}
+[ACT] Select a child section and set its parentSectionId to the product's first section (making it conditional)
+[SAVE] Save the product configuration
+[ASSERT] Verify save confirmation toast/message appears without errors
+--- LAYER: STOREFRONT ---
+[WAIT:60s] Wait up to 60 seconds for search index to reflect updated conditional rule — poll productConfiguration(configurableProductId, storeId) query and assert returned section graph matches the just-saved Admin config
+[NAV] Navigate to the product PDP on {{store}} for {{productId}}
+[ASSERT] Verify the child section is now hidden at page load (condition not yet met)
+[ACT] Select an option in the parent section
+[ASSERT] Verify the child section appears
+[ACT] Reset parent to None
+[ASSERT] Verify child section hides again","[ADMIN] Conditional relationship saved without error
+[DOM] Storefront PDP reflects the newly configured conditional rule: child hidden until parent has value
+[STATE] Round-trip confirmed: Admin config change -> storefront behavior update","[NETWORK] Admin save API returns 200; [NETWORK] productConfiguration GraphQL on storefront returns dependsOnSectionId for child section after update
+[CONSOLE] no errors in admin or storefront during configuration or visibility transition","Admin save fails when setting parentSectionId; storefront does not reflect new conditional rule after save (cache issue); child section always visible on storefront despite conditional config; search index delay causes old config to be served > 60s","Optionally revert the conditional configuration in Admin to original state; sign out of admin","VCST-4713; BL-CFG-003","Reviewed"
+"CFG-E2E-074-COND","E2E: VCST-4713 Required Child Section Hidden When Parent=None — Cart Not Blocked","Configurable Products > E2E > Conditional > Required Hidden Child","High","BL-CFG-004; BL-CFG-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Product has optional parent section P (includes None option) and required child section C (isRequired=true, parentSectionId=P)
+- When P=None, C is hidden; when P has value, C is visible and required","store={{FRONT_URL}}
+productUrl=@td(CFG_REQ_CHILD_OPT_PARENT.url)","--- LAYER: STOREFRONT ---
+[NAV] Navigate to configurable product PDP at {{productUrl}}
+[ASSERT] Verify parent section P is visible with None pre-selected
+[ASSERT] Verify required child section C is hidden
+[ASSERT] Verify Add to Cart button is enabled (hidden required section does not block cart)
+[ACT] browser_click ""Add to Cart"" while C is hidden
+[WAIT] Wait for cart update
+[ASSERT] Verify product was added to cart successfully (no validation error about C)
+--- LAYER: API ---
+[ASSERT] Verify addItem GraphQL response has no errors[]; configurationItems does not include section C
+--- LAYER: STOREFRONT ---
+[ACT] browser_click parent section P and select a non-None option -- C becomes visible
+[ASSERT] Verify Add to Cart is now DISABLED (required C is visible but not filled)
+[ACT] Select an option in C
+[ASSERT] Verify Add to Cart is now ENABLED again
+[ACT] browser_click ""Add to Cart""
+[ASSERT] Verify product added to cart with both P and C in configurationItems","[STATE] Add to Cart is enabled when required child section C is hidden (parent=None)
+[STATE] Add to Cart is disabled when required child section C is visible but unfilled
+[STATE] Add to Cart is re-enabled when required visible section C is filled
+[STATE] configurationItems correctly excludes C when hidden, includes C when visible and filled","[NETWORK] First addItem (C hidden): configurationItems excludes C, HTTP 200 no errors
+[NETWORK] Second addItem (C visible+filled): configurationItems includes both P and C, HTTP 200
+[CONSOLE] no JS errors during the full flow","Cart blocked by hidden required section (VCST-4713 required-hidden regression); cart not blocked when required visible section is unfilled; C appears in configurationItems when it was hidden; cart badge does not update after add","Remove both cart items added during test; navigate away","VCST-4713; BL-CFG-003; BL-CFG-004","Reviewed"

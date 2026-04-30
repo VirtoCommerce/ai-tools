@@ -625,3 +625,32 @@ PickPoints modal open; Locations in multiple countries configured","url={{FRONT_
 [DOM] location list identical between all-selected and unfiltered states
 [MATH] count(all countries selected) == count(unfiltered)","[CONSOLE] no TypeError or JS errors during select-all operation
 [NETWORK] filter API returns complete location set when all countries selected","Fewer locations shown with all countries selected than with no filter (missing locations); All-countries count != unfiltered count; Specific countries' locations missing from results (e.g., USA locations absent)","Close modal; navigate away","VCST-4775","Manual"
+"BOPIS-080","VCST-4707 Regression — Cart-Context Confirmed Location Beyond Page 1 Pre-selected on Modal Reopen","BOPIS > Cart > Pagination Pre-selection > Regression","Critical","BL-BOPIS-008","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart contains at least one BOPIS-eligible item (added via cart page); System has more pickup locations than the initial modal load batch (>50); VCST-4707 fix deployed; Test run on the cart page (not product page) pickup selector","url={{FRONT_URL}};sku=@td(BOPIS.testSku)","[NAV] {{FRONT_URL}}/cart
+[ACT] add item to cart if cart is empty — use search or direct PDP navigate then 'Add to Cart'
+[WAIT] cart page shows item; BOPIS pickup option available
+[ACT] select 'Pickup' delivery option on cart page
+[ACT] click 'Select pickup location' button on cart page
+[WAIT] pickup location modal opens; initial location list rendered
+[SCROLL] scroll to bottom of initial location list
+[ACT] click 'Load more' or trigger infinite scroll until a second batch of locations loads
+[WAIT] additional locations appear; total count now exceeds initial batch size
+[ACT] select a location from the second-page batch (any location that was NOT visible in the initial load) — note its name as CART_PAGE2_LOCATION
+[ACT] click 'Select' in the info card for CART_PAGE2_LOCATION
+[ACT] click 'Confirm' button
+[WAIT] modal closes; CART_PAGE2_LOCATION displayed in cart summary row
+[ASSERT] CART_PAGE2_LOCATION name appears in cart shipping summary
+[ACT] click 'Select pickup location' on cart page (reopen modal)
+[WAIT] modal reopens
+[ASSERT] radio button next to CART_PAGE2_LOCATION is checked (pre-selected)
+[ASSERT] CART_PAGE2_LOCATION is visible in the list without any scrolling (prepended to top by IncludeLocationIds)
+[ASSERT] search field is empty; no filter chips applied
+[ACT] click 'Confirm' again without changing selection
+[WAIT] modal closes
+[ASSERT] cart summary still shows CART_PAGE2_LOCATION unchanged","[STATE] CART_PAGE2_LOCATION pre-selected (radio checked) on reopen from cart page
+[STATE] CART_PAGE2_LOCATION visible at top of list without scrolling — BL-BOPIS-008 confirmed via cart-page entry point
+[DOM] cart summary shows CART_PAGE2_LOCATION name before and after re-confirmation
+[STATE] no stale filter or keyword applied on modal reopen","[NETWORK] cartPickupLocations GraphQL query on modal reopen from cart: response items[0].id = CART_PAGE2_LOCATION id; request includes IncludeLocationIds parameter
+[API] cartPickupLocations errors[] is empty
+[CONSOLE] no JS errors during cart-page pickup interactions","Radio button unchecked on reopen (VCST-4707 regression for cart-page entry point); CART_PAGE2_LOCATION not visible at top — requires scrolling (IncludeLocationIds not applied for cart path); Cart summary loses location name after re-confirmation; Modal errors on reopen from cart page","Clear pickup selection from cart; navigate away","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Reviewed"

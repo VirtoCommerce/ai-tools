@@ -1,6 +1,6 @@
 ---
 description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
-argument-hint: "[smoke|critical|sprint|full|frontend|backend|01,04,06] [--autonomous] [--seed=minimal|catalog|b2b|pricing|full] [--teardown]"
+argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|01,04,06] [--autonomous] [--seed=...] [--teardown] [--no-plan]"
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,9 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke (Suite 01)
 /qa-regression smoke                       # Suite 01 only (~15 min)
 /qa-regression critical                    # P0 suites: 01, 06, 08, 14
-/qa-regression sprint                      # Sprint release suites (26 suites)
+/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs Section 5.1 suites; falls back to static group if no plan
+/qa-regression sprint:26-09                # Pin to a specific sprint plan (reads docs/Sprint plans/sprint-26-09-summary.json)
+/qa-regression sprint --no-plan            # Force static `sprint` selection group from test-suites.json (skip plan lookup)
 /qa-regression full                        # All 36 suites (production release)
 /qa-regression frontend                    # Frontend suites: 01-13, 35-36
 /qa-regression backend                     # Backend suites: 14-34
@@ -36,6 +38,7 @@ When `--autonomous` is specified, delegate to `autonomous-regression-orchestrato
 
 - **`--seed=<profile>`** — Pre-seed test data via `/qa-seed-data <profile>` **before** the regression run begins. Valid profiles: `minimal`, `catalog`, `b2b`, `pricing`, `full`. Executes as Step 0.5 (see pipeline below). Skip if already seeded for the same session.
 - **`--teardown`** — After the regression run completes (pass or fail), invoke `/qa-seed-data teardown` to remove all `AGENT-TEST-*` entities. Use with short-lived seed data; skip if other agents are sharing the seeded entities.
+- **`--no-plan`** — Only meaningful with `sprint` selection. Skips the sprint plan lookup and falls back to the static `sprint` selection group from `config/test-suites.json`. Use when running a generic sprint-scope regression that's not tied to a specific Done sprint plan.
 
 **Do NOT use `--seed` with `smoke`** — suite 042 validates infrastructure/login paths only and gains nothing from seeding (adds 5-15 min with no coverage benefit). Warn the user and proceed without seeding.
 
@@ -78,8 +81,39 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 5. **On seed failure** — abort the regression run. Report the seeding error to the user with the failed profile; do not attempt to run suites against unseeded state.
 6. **Record seed state** — capture seed profile + timestamp in the run report header so bug triage knows the data context.
 
-### Step 1 — Read Manifest
-Read `config/test-suites.json` to load suite definitions, browser pool, and selection groups. Resolve the requested selection into suite IDs.
+### Step 1 — Read Manifest & Resolve Selection
+
+**1a. Read manifest** — Load `config/test-suites.json` for suite definitions, browser pool, and selection groups.
+
+**1b. Resolve selection into suite IDs.** Default path: look up the selection in the manifest's `selections` block.
+
+**1c. Sprint-plan resolution** (only when selection is `sprint` or `sprint:XX-YY`, and `--no-plan` is NOT set):
+
+The static `sprint` selection group in `test-suites.json` is a generic "all P0+P1" superset. When a sprint test plan exists for the active sprint, prefer its **Section 5.1 suite list** — it's been risk-scored and scoped to the actual Done items.
+
+Resolution order:
+
+1. **Explicit pin** (`sprint:XX-YY`) → read `docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
+
+2. **Bare `sprint`** → auto-detect the active sprint plan:
+   - List `docs/Sprint plans/sprint-*-summary.json` files
+   - Pick the one whose `endDate` is closest to (but not after) today's date — i.e. the most-recent-completed sprint plan
+   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
+
+3. **Read** `summary.json` and extract `suitesActivated[]` — these are the suite IDs to run. Validate every ID exists in `test-suites.json` (warn and drop unknowns rather than failing).
+
+4. **Resolved-from-plan output** — log to the run report header:
+   ```
+   Selection: sprint (resolved from docs/Sprint plans/sprint-26-09-summary.json)
+   Sprint: Sprint26-09 (2026-04-29 – 2026-05-12)
+   Suites: 042, 044, 011, 036, 037, 038, 028, 029, 077, 050, 072, 072b, 052
+   Test cases estimated: 63-72 (per plan)
+   Plan link: docs/Sprint plans/sprint-26-09-test-plan.md
+   ```
+
+5. **`--no-plan` opt-out** → skip 1c entirely; use the static `sprint` group from the manifest.
+
+**1d. Other selections** (`smoke`, `critical`, `full`, `frontend`, `backend`, comma-separated IDs) → manifest-only, no plan lookup.
 
 ### Step 2 — Generate Run ID
 Create `REG-YYYY-MM-DD-HHMM` and output directory `reports/regression/{RUN_ID}/`.
@@ -138,7 +172,8 @@ Never assign two agents to the same browser. Never use WebKit on Windows.
 |-----------|--------|----------|
 | `smoke` | 01 | Daily pre-deploy |
 | `critical` | 01, 06, 08, 14 | P0 gate |
-| `sprint` | 26 suites | Sprint release |
+| `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to static group (26 suites) when no plan exists or `--no-plan` is set | Sprint release |
+| `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
 | `full` | All 36 | Production release |
 | `frontend` | 01-13, 35-36 | Frontend only |
 | `backend` | 14-34 | Backend only |
@@ -158,3 +193,6 @@ Never assign two agents to the same browser. Never use WebKit on Windows.
 - `--seed` with `smoke`/`042` is rejected — smoke tests don't need seeded data; warn and skip seeding
 - `--seed` runs sequentially before Step 1; it blocks the regression run and must succeed
 - `--teardown` runs after the report is written; failures are logged but don't fail the run
+- **Sprint-plan precedence:** When selection is `sprint`, `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
+- **Plan-driven runs are still validated against the manifest** — every `suitesActivated[]` ID must exist in `config/test-suites.json` (warn and drop unknowns rather than failing the run).
+- **No silent fallback:** if `sprint:XX-YY` is pinned but the plan file is missing, abort with a clear error instructing the user to run `/qa-test-plan {XX-YY}` first or add `--no-plan`.

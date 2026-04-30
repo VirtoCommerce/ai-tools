@@ -1,4 +1,4 @@
-ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+﻿ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 MKT-GQL-001,"promotionCoupons — Happy Path Query","GraphQL > Marketing > promotionCoupons",Critical,BL-GQL-001; BL-GQL-002; BL-PRICE-001,ECL-2.1,"Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least one active+public promotion with a coupon code. Asserts the public xMarketing query returns a connection-style response with non-null couponCode on every item (filter contract).","—","[AUTH role=ORG_USER]
 [GQL-OP list_coupons]
   query {
@@ -279,3 +279,121 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=n1_run1] data.promotionCoupons.items is non-null","[EVIDENCE] All items[].couponCode are non-null on every run — DataLoader resolved couponCode field correctly (BL-GQL-002)
 [PERF label=n1_run1] elapsed_ms target < 1000ms for 10 items
 [PERF] N+1 detection (runner-v2): elapsed_ms across the 5 runs should be roughly flat — review evidence for proportional growth","Any couponCode null on any run (DataLoader miss); response time grows proportionally with repetition (N+1 regression); errors[] non-empty on any run",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; performance-thresholds.md; VCST-4590,Automated
+
+"MKT-GQL-014","xMarketing — addCoupon Mutation: Valid Code Applies Coupon and Returns Updated Cart","GraphQL > xMarketing > Mutations > addCoupon","Critical","BL-CART-003","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart
+- A valid active public coupon code exists","endpoint={{BACK_URL}}/xapi/graphql
+storeId={{STORE_ID}}
+userId={{ORG_USER_ID}}
+couponCode=@td(COUPONS.percentageCode)","[AUTH role=ORG_USER]
+[GQL-OP addCouponHappy]
+mutation AddCoupon($command: InputAddCouponType!) {
+  addCoupon(command: $command) {
+    id
+    coupons {
+      code
+      promotionId
+    }
+    discountTotal { amount currency { code } }
+    total { amount currency { code } }
+    subTotal { amount currency { code } }
+    errors { code description objectId parameter }
+  }
+}
+[GQL-VARS addCouponHappy]
+{
+  ""command"": {
+    ""couponCode"": ""{{couponCode}}"",
+    ""storeId"": ""{{storeId}}"",
+    ""userId"": ""{{userId}}""
+  }
+}
+[GQL-EXEC addCouponHappy]
+[GQL-CAPTURE addCouponHappy.data.addCoupon.coupons -> APPLIED_COUPONS]
+[GQL-CAPTURE addCouponHappy.data.addCoupon.discountTotal.amount -> DISCOUNT_AMOUNT]","[ERRORS addCouponHappy=L] errors[] is empty (no validation or auth errors)
+[DATA addCouponHappy=L] data.addCoupon.coupons[] contains entry with code={{couponCode}}
+[DATA addCouponHappy=L] data.addCoupon.discountTotal.amount > 0
+[DATA addCouponHappy=L] data.addCoupon.total.amount < data.addCoupon.subTotal.amount (discount reduces total)
+[DATA addCouponHappy=L] data.addCoupon.coupons[0].code matches {{couponCode}} exactly (case-preserved)","[ROUNDTRIP] Run cart query after addCoupon mutation; verify coupons[] in cart query response also contains {{couponCode}} with same discount values","errors[] non-empty for valid coupon code; coupons[] absent from mutation response; discountTotal.amount = 0 despite valid coupon; total >= subTotal after coupon (discount not applied)","[TEARDOWN] Run removeCoupon mutation to remove {{couponCode}} from cart after test","VCST-4896; BL-CART-003","Reviewed"
+"MKT-GQL-015","xMarketing — addCoupon Mutation: Invalid Code Returns Error in errors[]","GraphQL > xMarketing > Mutations > addCoupon","Critical","BL-CART-003","ECL-04.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart","endpoint={{BACK_URL}}/xapi/graphql
+storeId={{STORE_ID}}
+userId={{ORG_USER_ID}}
+invalidCode=@td(COUPONS.invalidCode)","[AUTH role=ORG_USER]
+[GQL-OP addCouponInvalid]
+mutation AddCoupon($command: InputAddCouponType!) {
+  addCoupon(command: $command) {
+    id
+    coupons { code }
+    discountTotal { amount currency { code } }
+    total { amount currency { code } }
+    errors { code description objectId parameter }
+  }
+}
+[GQL-VARS addCouponInvalid]
+{
+  ""command"": {
+    ""couponCode"": ""{{invalidCode}}"",
+    ""storeId"": ""{{storeId}}"",
+    ""userId"": ""{{userId}}""
+  }
+}
+[GQL-EXEC addCouponInvalid]","[ERRORS addCouponInvalid=L] errors[] is NON-EMPTY — at least 1 error entry for invalid coupon code
+[DATA addCouponInvalid=L] data.addCoupon.coupons[] does NOT contain {{invalidCode}}
+[DATA addCouponInvalid=L] data.addCoupon.discountTotal.amount = 0 (no discount applied)
+[DATA addCouponInvalid=L] data.addCoupon.total.amount unchanged (cart not modified)
+[DATA addCouponInvalid=L] errors[0].code is a meaningful error code (not null or empty string)","[ROUNDTRIP] Run cart query after mutation; verify cart coupons[] does NOT contain {{invalidCode}}","errors[] empty for invalid coupon code (silent failure); invalid coupon added to coupons[] despite being non-existent; HTTP 500 instead of GraphQL errors[]; cart total changes despite invalid code","No cleanup needed — invalid code was not applied","VCST-4896; BL-CART-003; ECL-04.1","Reviewed"
+"MKT-GQL-016","xMarketing — removeCoupon Mutation: Applied Coupon Removed, Cart Total Restored","GraphQL > xMarketing > Mutations > removeCoupon","Critical","BL-CART-003","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product in cart
+- Coupon {{couponCode}} applied to cart (run addCoupon mutation first or pre-apply via UI)","endpoint={{BACK_URL}}/xapi/graphql
+storeId={{STORE_ID}}
+userId={{ORG_USER_ID}}
+couponCode=@td(COUPONS.percentageCode)","[AUTH role=ORG_USER]
+[GQL-OP addCouponForRemove]
+mutation AddCoupon($command: InputAddCouponType!) {
+  addCoupon(command: $command) {
+    id
+    coupons { code }
+    discountTotal { amount currency { code } }
+    total { amount currency { code } }
+    errors { code description }
+  }
+}
+[GQL-VARS addCouponForRemove]
+{
+  ""command"": {
+    ""couponCode"": ""{{couponCode}}"",
+    ""storeId"": ""{{storeId}}"",
+    ""userId"": ""{{userId}}""
+  }
+}
+[GQL-EXEC addCouponForRemove]
+[GQL-CAPTURE addCouponForRemove.data.addCoupon.total.amount -> DISCOUNTED_TOTAL]
+[GQL-OP removeCouponOp]
+mutation RemoveCoupon($command: InputRemoveCouponType!) {
+  removeCoupon(command: $command) {
+    id
+    coupons { code }
+    discountTotal { amount currency { code } }
+    total { amount currency { code } }
+    subTotal { amount currency { code } }
+    errors { code description objectId parameter }
+  }
+}
+[GQL-VARS removeCouponOp]
+{
+  ""command"": {
+    ""couponCode"": ""{{couponCode}}"",
+    ""storeId"": ""{{storeId}}"",
+    ""userId"": ""{{userId}}""
+  }
+}
+[GQL-EXEC removeCouponOp]
+[GQL-CAPTURE removeCouponOp.data.removeCoupon.total.amount -> RESTORED_TOTAL]","[ERRORS removeCouponOp=L] errors[] is empty after removeCoupon mutation
+[DATA removeCouponOp=L] data.removeCoupon.coupons[] does NOT contain {{couponCode}} after removal
+[DATA removeCouponOp=L] data.removeCoupon.discountTotal.amount = 0 (discount cleared)
+[DATA removeCouponOp=L] data.removeCoupon.total.amount > DISCOUNTED_TOTAL (total restored toward subTotal)
+[MATH removeCouponOp=L] RESTORED_TOTAL >= DISCOUNTED_TOTAL (removal increases total back toward original)","[ROUNDTRIP] Run cart query after removeCoupon; verify coupons[] in cart query response is empty and discountTotal.amount = 0","errors[] non-empty for valid removal request; coupon still present in coupons[] after removal; discountTotal still > 0 after removal; total unchanged after removal (mutation had no effect); HTTP 500 on removeCoupon","Cart is clean after removeCoupon; no teardown needed","VCST-4896; BL-CART-003","Reviewed"

@@ -1,0 +1,88 @@
+{
+  "sprint": "Sprint26-08",
+  "startDate": "2026-04-14",
+  "endDate": "2026-04-28",
+  "documentStatus": "Draft",
+  "theme": "Configurable Products maturation, Marketing/Coupons storefront, Checkout address search, Frontend BEM refactor, Page Builder localization, BOPIS pagination fix",
+  "doneCounts": {
+    "stories": 15,
+    "bugs": 16,
+    "tasks": 9,
+    "spikes": 1,
+    "reviewTasks": 4,
+    "total": 47
+  },
+  "testRelevantCount": 30,
+  "mergedFrontendPRs": 27,
+  "mergedModulePRs": 0,
+  "domains": [
+    { "name": "Configurable Products", "score": 20, "level": "Critical" },
+    { "name": "Checkout / Shipping Address Popup", "score": 20, "level": "Critical" },
+    { "name": "BOPIS Pickup Pre-selection", "score": 16, "level": "Critical" },
+    { "name": "Marketing / Coupons Sidebar", "score": 16, "level": "Critical" },
+    { "name": "Auth / Security", "score": 15, "level": "High" },
+    { "name": "Search Component Rework", "score": 12, "level": "High" },
+    { "name": "CMS / Page Builder", "score": 9, "level": "Medium" },
+    { "name": "Orders / Admin", "score": 9, "level": "Medium" },
+    { "name": "Analytics / GA4", "score": 9, "level": "Medium" },
+    { "name": "Frontend BEM Refactor", "score": 9, "level": "Medium" },
+    { "name": "Payment Localization", "score": 6, "level": "Medium" },
+    { "name": "Platform", "score": 4, "level": "Low" },
+    { "name": "Wishlist", "score": 4, "level": "Low" }
+  ],
+  "suitesActivated": [
+    "042", "044", "031", "032",
+    "036", "037", "038",
+    "028", "029",
+    "011", "012", "013",
+    "077", "023", "025",
+    "050b2", "050b3", "050i", "050j", "050k",
+    "072", "072b", "052",
+    "004", "005",
+    "059", "060",
+    "017", "018",
+    "039", "040", "043",
+    "020", "021"
+  ],
+  "suitesByPriority": {
+    "P0": ["042", "044", "031", "011", "039"],
+    "P1": ["032", "036", "037", "038", "028", "029", "012", "013", "077", "023", "025", "050b2", "050b3", "050i", "050j", "050k", "072", "072b", "052", "004", "005", "040"],
+    "P2": ["059", "060", "017", "018", "043", "020", "021"]
+  },
+  "graphqlSuiteMapping": {
+    "_comment": "Plan Section 5.1 lists '050' generically; manifest splits xAPI by domain. Mapping by sprint trigger:",
+    "VCST-4896 (Coupons sidebar)": ["050b2", "050j"],
+    "VCST-4710 (Checkout address popup)": ["050b3"],
+    "VCST-4707 (BOPIS pickup)": ["050k"],
+    "VCST-4713 (Configurable products)": ["050i"]
+  },
+  "newCasesEstimate": "63-72",
+  "criticalTickets": [
+    "VCST-4992",
+    "VCST-4707",
+    "VCST-4710",
+    "VCST-4713",
+    "VCST-4896",
+    "VCST-4934",
+    "VCST-4991",
+    "VCST-4800"
+  ],
+  "coverageGaps": [
+    { "id": "GAP-01", "ticket": "VCST-4710", "targetSuites": ["011", "050b3"] },
+    { "id": "GAP-02", "ticket": "VCST-4992", "targetSuites": ["011", "048"] },
+    { "id": "GAP-03", "ticket": "VCST-4713", "targetSuites": ["072", "072b"] },
+    { "id": "GAP-04", "ticket": "VCST-4896", "targetSuites": ["050b2", "050j", "077"] },
+    { "id": "GAP-05", "ticket": "VCST-4707", "targetSuites": ["036", "037"] },
+    { "id": "GAP-06", "ticket": "VCST-4800", "targetSuites": ["043"] },
+    { "id": "GAP-07", "ticket": "VCST-4893", "targetSuites": ["040"] },
+    { "id": "GAP-08", "ticket": "VCST-4729", "targetSuites": ["004", "005"] },
+    { "id": "GAP-09", "ticket": "VCST-4725", "targetSuites": ["059"] },
+    { "id": "GAP-10", "ticket": "VCST-4983", "targetSuites": ["017", "018", "049"] },
+    { "id": "GAP-11", "ticket": "VCST-2284/2285", "targetSuites": ["004"] },
+    { "id": "GAP-12", "ticket": "BEM refactor", "targetSuites": ["042"] }
+  ],
+  "outOfScopeCount": 17,
+  "artifacts": "docs/Sprint plans/",
+  "planFile": "docs/Sprint plans/sprint-26-08-test-plan.md",
+  "generatedBy": "manual backfill from sprint-26-08-test-plan.md (2026-04-30)"
+}

@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CHK-001","Checkout - Delivery Option Selection","Checkout > Shipping","Critical","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Products in cart","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
@@ -1095,3 +1095,130 @@ Browser in clean anonymous session (no auth cookie — use private/incognito mod
 [API] addOrUpdateCartShipment (or address selection mutation) returns HTTP 200; errors[] is empty
 [CONSOLE] no JS errors during anonymous add-to-cart, sign-in transition, popup interaction, or sign-out
 [NETWORK] no 4xx/5xx on any /graphql request; no 401 errors in authenticated cart context after sign-in","inline address form absent for anonymous user (popup CTA shown to guest — BL-CHK-001 violation); cart loses {{TEST_SKU}} after sign-in (BL-CART-008 merge failure — cart badge shows 0); popup CTA absent after sign-in despite saved addresses (feature toggle off or composable regression); popup opens blank or spinner >5s; currentCustomerAddresses fired while still anonymous (data scope leak); 4xx/5xx on any post-auth /graphql call","Sign out if not already signed out; remove any remaining test items from cart; no addresses were created so no address cleanup needed","Promoted from VCST-4710-SF-022 / real-user-behavior feedback 2026-04-23; VCST-4710 / PR #129; BL-AUTH-001; BL-CART-008; BL-B2B-001; BL-CHK-001","Manual"
+
+"CHK-109","Address Popup — Keyword Search by Name Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-05.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has >=3 saved addresses with different names
+- Checkout is at the shipping step","store={{FRONT_URL}}
+searchTerm=@td(ADDRESS_SEARCH.nameNeedle)","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ASSERT] browser_snapshot to confirm popup is visible with address list
+[ACT] browser_click on the search input (data-test-id=""search-keyword-input"" or equivalent)
+[ACT] browser_type the partial name keyword from {{searchTerm}}
+[WAIT] Wait for address list to update (debounce)
+[ASSERT] browser_snapshot to capture filtered results
+[ASSERT] Verify only addresses whose name contains the search keyword are shown
+[ASSERT] Verify addresses NOT matching the keyword are absent from the list
+[ASSERT] Verify match count in the list or pagination indicator reflects the filtered count","[DOM] Address list contains only rows matching the keyword in name/address fields
+[DOM] Non-matching addresses are not rendered in the list
+[STATE] Search input retains the typed keyword (not cleared on debounce)
+[STATE] Empty state message shown if no addresses match the keyword","[NETWORK] currentCustomerAddresses (or currentOrganizationAddresses) GraphQL call contains keyword argument equal to the typed value; response count matches visible rows
+[CONSOLE] no JS errors during keyword input or list update","popup search input non-interactive (VCST-4710 regression); list not filtered after typing; all addresses still visible after keyword entry; 4xx/5xx on filtered GraphQL request","Close popup without selecting; navigate away from checkout","VCST-4710; PR #129; BL-CHK-008; ECL-05.1","Reviewed"
+"CHK-110","Address Popup — Keyword Search by City/ZIP Filters Address List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","ECL-05.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has >=3 saved addresses across different cities or ZIP codes
+- Checkout is at the shipping step","store={{FRONT_URL}}
+zipNeedle=@td(ADDRESS_SEARCH.zipNeedle)
+cityNeedle=@td(ADDRESS_SEARCH.cityNeedle)","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ASSERT] Verify popup is visible and address list is populated
+[ACT] browser_click on the search input
+[ACT] browser_type the city name from {{cityNeedle}}
+[WAIT] Wait for list to debounce and update
+[ASSERT] Verify list shows only addresses in that city
+[ACT] Clear the search field (click clear/X button if present, or select-all and delete)
+[ACT] browser_type the ZIP code from {{zipNeedle}}
+[WAIT] Wait for list to update
+[ASSERT] Verify list shows only addresses matching that ZIP","[DOM] City-based search: only addresses in matching city are displayed
+[DOM] ZIP-based search: only addresses with matching postal code are displayed
+[STATE] Clearing the search field restores the full unfiltered address list
+[STATE] Each search is independent -- no stale results from prior search","[NETWORK] GraphQL keyword argument reflects typed city/ZIP on each search; list count consistent with response
+[CONSOLE] no JS errors on input clear or re-type","city search returns wrong-city addresses; ZIP search returns no results even when matching address exists; clearing search does not restore full list; stale results from prior search term persist","Close popup without selecting; navigate away from checkout","VCST-4710; PR #129; BL-CHK-008","Reviewed"
+"CHK-111","Address Popup — Country Facet Filters Address List to Selected Country","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-06.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has saved addresses in >=2 different countries
+- Checkout is at the shipping step","store={{FRONT_URL}}
+targetCountry=USA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ASSERT] Verify popup is visible and address list shows addresses from multiple countries
+[ACT] browser_click on the Country dropdown/facet (data-test-id=""filter-country"" or equivalent)
+[ASSERT] Verify dropdown lists at least the countries present in the user address set
+[ACT] Select one country from {{targetCountry}}
+[WAIT] Wait for address list to update
+[ASSERT] browser_snapshot to capture filtered state
+[ASSERT] Verify all displayed addresses belong to the selected country
+[ASSERT] Verify addresses from other countries are no longer visible","[DOM] Address list filtered to selected country only
+[DOM] Country facet dropdown shows the selected value as active
+[STATE] Addresses from other countries are hidden -- not just sorted to the bottom
+[STATE] Address count reflects filtered subset","[NETWORK] GraphQL countryCodes argument on currentCustomerAddresses / currentOrganizationAddresses contains the selected country code; response count matches visible rows
+[CONSOLE] no JS errors during facet selection","country facet dropdown non-interactive; selecting country has no effect on list; addresses from other countries remain visible after filter applied; 4xx/5xx on filtered GraphQL call","Clear country facet selection to restore full list; close popup without selecting address","VCST-4710; PR #129; BL-CHK-008; ECL-06.2","Reviewed"
+"CHK-112","Address Popup — State/Province Facet Appears for USA/CAN and Filters List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-008","ECL-06.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has saved US or Canadian addresses across >=2 states/provinces
+- Checkout is at the shipping step","store={{FRONT_URL}}
+targetCountry=USA
+targetState=CA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ACT] browser_click on the Country dropdown and select USA ({{targetCountry}})
+[WAIT] Wait for State/Province facet to appear
+[ASSERT] Verify the State/Province facet (data-test-id=""filter-region"" or equivalent) is now visible
+[ACT] browser_click on the State facet and select {{targetState}}
+[WAIT] Wait for address list to update
+[ASSERT] browser_snapshot to capture filtered state
+[ASSERT] Verify all displayed addresses are in {{targetState}}
+[ACT] Switch Country facet to a country without states (e.g., GBR)
+[ASSERT] Verify State/Province facet is hidden or disabled (data-driven -- no states for GBR)","[DOM] State/Province facet is visible when country=USA or CAN is selected
+[DOM] State/Province facet is hidden when a country without defined states is selected (ECL-06.2: data-driven facet)
+[DOM] Address list filtered to selected state only when state facet is active
+[STATE] regionIds argument present in GraphQL request when state is selected","[NETWORK] GraphQL regionIds argument contains selected state code; response count consistent with visible addresses
+[CONSOLE] no JS errors during country/state facet interaction","state facet absent after selecting USA (BL-CHK-008 regression); state facet still visible after switching to a country without states; state filter applied but addresses from other states still visible; 4xx/5xx on region-filtered GraphQL request","Clear all facet selections; close popup without selecting address","VCST-4710; PR #129; BL-CHK-008; ECL-06.2","Reviewed"
+"CHK-113","Address Popup — Combined Keyword Search and Country Facet (Pairwise)","Checkout > Shipping > Address Popup > Search","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has >=4 saved addresses across >=2 countries, some sharing a name/city keyword
+- Checkout is at the shipping step","store={{FRONT_URL}}
+keyword=@td(ADDRESS_SEARCH.nameNeedle)
+country=USA","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ACT] Select a country from the Country facet ({{country}})
+[WAIT] Wait for list to filter by country
+[ASSERT] Verify list shows only addresses for {{country}}
+[ACT] browser_click the search input and type {{keyword}}
+[WAIT] Wait for debounce
+[ASSERT] browser_snapshot to capture combined filter state
+[ASSERT] Verify the list now shows only addresses that match BOTH the country facet AND the keyword
+[ASSERT] Verify addresses matching keyword but in a different country are excluded
+[ASSERT] Verify addresses in the selected country but not matching keyword are excluded","[DOM] Combined filter: only addresses satisfying country=={{country}} AND name/city contains {{keyword}} are shown
+[STATE] Country facet and keyword search filters are applied simultaneously (AND logic)
+[STATE] Result count is intersection of both filters -- not union","[NETWORK] GraphQL request contains both countryCodes and keyword arguments simultaneously; response count consistent with visible rows
+[CONSOLE] no JS errors when both filters are active","keyword search clears facet selection when typed; facet selection clears keyword; combined filter returns union instead of intersection; 4xx/5xx on combined-filter GraphQL request","Clear keyword and facet; close popup without selecting address","VCST-4710; PR #129; BL-CHK-008","Reviewed"
+"CHK-114","Address Popup — Column Sort Ascending Reorders Address List","Checkout > Shipping > Address Popup > Sort","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has >=3 saved addresses with different names/values in sortable columns
+- Checkout is at the shipping step","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ASSERT] browser_snapshot to capture the default address list order
+[ACT] browser_click on the ""Name"" column header (or first sortable column)
+[WAIT] Wait for list to reorder
+[ASSERT] browser_snapshot to capture sorted state
+[ASSERT] Verify the address rows are now in ascending alphabetical order by the sorted column
+[ASSERT] Verify the clicked column header shows a visual ascending sort indicator","[DOM] Address rows reordered: first row has the alphabetically earliest value in the sorted column
+[DOM] Sort indicator (arrow icon or similar) visible on the clicked column header
+[STATE] Sort is stable -- rows with equal column values maintain consistent relative order
+[STATE] Default sort for personal account: lastName ascending (per VCST-4992 AC)","[NETWORK] GraphQL sort argument on currentCustomerAddresses / currentOrganizationAddresses reflects ascending direction; response order matches visible rows
+[CONSOLE] no JS errors during sort interaction","list order unchanged after clicking column header (VCST-4710/4992 regression); column header shows no visual sort indicator; rows reorder to descending instead of ascending on first click; 4xx/5xx on sorted GraphQL request","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008","Reviewed"
+"CHK-115","Address Popup — Column Sort Descending on Second Click","Checkout > Shipping > Address Popup > Sort","High","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Cart has at least 1 product added
+- User has >=3 saved addresses with different values in sortable columns
+- Address popup is accessible at checkout shipping step","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} -- address selection popup opens automatically
+[ACT] browser_click on a sortable column header once to sort ascending
+[ASSERT] Verify column is now sorted ascending (first row is alphabetically earliest)
+[ACT] browser_click the same column header a second time to reverse to descending
+[WAIT] Wait for list to reorder
+[ASSERT] browser_snapshot to capture descending sort state
+[ASSERT] Verify the address rows are now in descending order by the sorted column
+[ASSERT] Verify the sort indicator changes direction (arrow points down or equivalent)","[DOM] Address rows reordered: first row has the alphabetically latest value in the sorted column
+[DOM] Sort indicator reflects descending direction after second click
+[STATE] Sort direction toggles ascending -> descending on the same column header
+[STATE] Only one column has an active sort indicator at a time","[NETWORK] GraphQL sort argument direction flips from ascending to descending on second click; response order consistent with visible rows
+[CONSOLE] no JS errors on second sort click","second click has no effect (sort stuck at ascending); second click resets to no-sort instead of descending; sort indicator does not update direction; multiple column headers show active sort indicators simultaneously","Close popup without selecting address","VCST-4710; VCST-4992; PR #129; BL-CHK-008","Reviewed"

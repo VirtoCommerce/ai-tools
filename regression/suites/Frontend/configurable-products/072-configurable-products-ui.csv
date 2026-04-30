@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CFG-PDP-001","Configurable Product PDP Renders Configuration Widget Correctly","Configurable Products > PDP Rendering","Critical","BL-CAT-006; BL-PRICE-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Storefront accessible at {{FRONT_URL}}. Product Bike with options (SKU: CVQ-54616437) exists at /products-with-options/configurations/@td(CFG_BIKE.slug)","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_BIKE.slug); sku=CVQ-54616437; base_price=$350.00","[NAV] Navigate to {{FRONT_URL}}/products-with-options/configurations/@td(CFG_BIKE.slug); [WAIT] Wait for Configure text to appear; [ASSERT] Observe product name at top of page; [ASSERT] Observe base product price; [ASSERT] Observe the Configure the parameters widget; [ASSERT] Observe accordion section label Select one; [ASSERT] Observe subtitle Personalize your selection further (optional); [ASSERT] Observe accordion is open (expanded) by default; [ASSERT] Verify 5 radio options visible: Rear wheel 26 double-wall rim motorized; 200CC 250CC 4-Stroke Engine Motor; Seat; Pedals; None; [ASSERT] Verify None is selected by default; [ASSERT] Verify dedicated Add to cart button is visible (no quantity stepper for configurable products); [ASSERT] Verify no CountInCart badge shown in fresh state (no lineItemId in URL)","[DOM] Product name Bike with options visible in h1 or product title element; [DOM] Base price $350.00 displayed in price element; [DOM] Configure the parameters widget header visible; [DOM] Accordion label reads Select one with subtitle Personalize your selection further (optional); [DOM] All 5 radio options present with None selected by default; [STATE] Dedicated Add to cart button visible (not a quantity stepper — configurable products use a single action button per VCST-3902); [STATE] No CountInCart badge displayed when no lineItemId query param in URL; [DOM] In stock badge visible","[CONSOLE] No JavaScript errors on page load; [NETWORK] Product detail GraphQL query returns 200 with configurable sections in response","Quantity stepper shown instead of dedicated button; CountInCart badge visible without lineItemId; price element missing or showing wrong value; widget not rendered; fewer than 5 radio options visible; None not pre-selected","none","TP_CONFIGURABLE_PRODUCTS_001","Manual"
@@ -488,3 +488,217 @@ CFG-022 PDP accessible. DevTools available for network throttling.","url={{FRONT
 [STATE] No browser crash or hang
 [STATE] Widget renders in some state (degraded acceptable; crash is not)","[CONSOLE] No stack overflow; no infinite loop
 [NETWORK] productConfiguration query completes","Browser tab crash; JS stack overflow; page freezes; widget blank","Restore dependsOnSectionId to null via REST API","VCST-4713; PR#2225 hiddenSectionIds max-iterations guard; CFG-CA-023","Manual"
+
+"CFG-PDP-046-COND","VCST-4713: Variation Section as Parent — Dependent Section Hidden Until Variation Option Selected","Configurable Products > Conditional Sections > Variation Parent","High","BL-CFG-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with a Variation-type parent section and a dependent child section is available on storefront
+- Child section is configured with parentSectionId pointing to the Variation parent","store={{FRONT_URL}}
+productUrl=@td(CFG_CONDITIONAL_BIKE.url)","[NAV] Navigate to the configurable product PDP at {{productUrl}}
+[ASSERT] browser_snapshot to capture initial section state
+[ASSERT] Verify the Variation parent section is visible with option selector
+[ASSERT] Verify the dependent child section is NOT rendered (hidden state)
+[ACT] browser_click to select any non-None option in the Variation parent section
+[WAIT] Wait for section visibility to update
+[ASSERT] browser_snapshot to capture post-selection state
+[ASSERT] Verify the dependent child section is now visible
+[ASSERT] Verify the child section header and option inputs are rendered and interactive","[DOM] Dependent child section absent from DOM (or display:none) when Variation parent has no selection
+[DOM] Dependent child section rendered and visible after Variation parent gets a non-None value
+[STATE] Section show/hide triggered by Variation-type parent selection (not only Product-type parent)
+[STATE] Price recalculates if child section has a priced option","[NETWORK] No page reload on section reveal; no extra productConfiguration API calls
+[CONSOLE] no JS errors during Variation parent selection","child section visible on page load before parent is selected (VCST-4713 regression); child section does not appear after Variation parent selection; child section appears for Variation parent but not for Product parent (type-inconsistency)","Do not add to cart; navigate away from PDP","VCST-4713; BL-CFG-003","Reviewed"
+"CFG-PDP-047-COND","VCST-4713: Switching Parent Option Between Non-None Values Keeps Dependent Section Visible","Configurable Products > Conditional Sections > Option Switch","High","BL-CFG-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with a parent section having >= 3 options (including None) and a dependent child section
+- Parent section currently has no option selected","store={{FRONT_URL}}
+productUrl=@td(CFG_CONDITIONAL_BIKE.url)","[NAV] Navigate to the configurable product PDP at {{productUrl}}
+[ASSERT] Verify dependent child section is hidden (parent has no selection)
+[ACT] browser_click to select Option A (first non-None option) in parent
+[ASSERT] Verify dependent child section becomes visible
+[ACT] browser_click to select Option B (second non-None option) in parent
+[ASSERT] browser_snapshot to confirm child section remains visible after switching options
+[ASSERT] Verify child section content resets or persists correctly after parent option change
+[ACT] browser_click to select None in parent (if None is an available option)
+[ASSERT] Verify dependent child section hides again","[DOM] Child section stays visible when switching between any two non-None parent options
+[DOM] Child section hides when parent is reset to None
+[STATE] Child section value is cleared (or preserved, per product config) when parent option changes
+[STATE] No flicker or double-render on parent option switch","[CONSOLE] no JS errors during repeated parent option changes; no duplicate DOM nodes created","child section disappears when switching parent option from A to B (incorrectly treated as hide transition); child section retains old value after parent option change without clearing; page reload triggered by option switch","Do not add to cart; navigate away from PDP","VCST-4713; BL-CFG-003","Reviewed"
+"CFG-PDP-048-COND","VCST-4713: File Section as Parent — Dependent Section Visible Only When File Is Uploaded","Configurable Products > Conditional Sections > File Parent","High","BL-CFG-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with a File-type parent section and a dependent child section is available
+- Child section configured with parentSectionId pointing to the File section","store={{FRONT_URL}}
+productUrl=@td(CFG_FILE_DRIVEN_COND.url)
+testFile=@td(CFG_TEST_FILES.validPdf.path)","[NAV] Navigate to the configurable product PDP at {{productUrl}}
+[ASSERT] Verify File parent section is visible
+[ASSERT] Verify dependent child section is hidden (no file uploaded yet)
+[ACT] browser_file_upload to upload {{testFile}} to the File section
+[WAIT] Wait for upload to complete (file thumbnail or name visible)
+[ASSERT] Verify dependent child section is now visible
+[ACT] browser_click ""Remove"" or delete button to remove the uploaded file
+[WAIT] Wait for file removal
+[ASSERT] Verify dependent child section is hidden again after file removal","[DOM] Dependent child section hidden when File parent section has no file uploaded
+[DOM] Dependent child section revealed after file upload completes successfully
+[DOM] Dependent child section hides again when uploaded file is removed
+[STATE] File upload status drives child visibility (presence of file = has value)","[NETWORK] File upload API returns 200 before child section reveal is triggered
+[CONSOLE] no JS errors on file upload or removal; no child-section errors during visibility transitions","child section appears before file upload completes; child section fails to hide when file is removed; child section never appears even after successful file upload (VCST-4713 File parent regression); file upload spinner persists after completion","Delete uploaded test file if not removed during test; navigate away from PDP","VCST-4713; VCST-4826; BL-CFG-003","Reviewed"
+"CFG-PDP-049-COND","VCST-4713: Conditional Section Hidden at Cart Submit — configurationItems Excludes Hidden Section","Configurable Products > Conditional Sections > Cart Submission","High","BL-CFG-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Product has parent section (A) with dependent child section (B)
+- A is configured with a non-None option, making B visible; B has an option selected
+- Then A is reset to None, hiding B","store={{FRONT_URL}}
+productUrl=@td(CFG_CONDITIONAL_BIKE.url)","[NAV] Navigate to the configurable product PDP at {{productUrl}}
+[ACT] Select a non-None option in parent section A — child section B becomes visible
+[ACT] Select an option in child section B
+[ASSERT] Verify B is visible and configured
+[ACT] Reset parent section A to None — child section B hides
+[ASSERT] Verify child section B is now hidden
+[ACT] browser_click ""Add to Cart""
+[WAIT] Wait for cart to update
+[ASSERT] browser_snapshot of cart item detail
+[ASSERT] Verify configurationItems in cart does NOT include section B option","[STATE] configurationItems in cart addItem mutation excludes hidden section B values (clearHiddenSectionValues() invoked)
+[DOM] Cart item shows only section A selection (None); no section B entry in the configured options display
+[STATE] Add to Cart succeeds without section B data","[NETWORK] GraphQL addItem mutation payload does not contain configurationItems entry for section B; addItem returns 200 with no errors[]
+[CONSOLE] no JS errors; clearHiddenSectionValues() invoked before cart submission (per implementation)","hidden section B value present in cart configurationItems (VCST-4713 cart payload regression); Add to Cart fails with validation error referencing hidden section; cart shows stale option B data from before parent was reset to None","Remove product from cart after test","VCST-4713; BL-CFG-004","Reviewed"
+"CFG-PDP-050-COND","VCST-4713: Text Section as Parent — Dependent Section Appears When Custom Text Is Entered","Configurable Products > Conditional Sections > Text Parent","High","BL-CFG-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product has a Text-type parent section with a dependent child section
+- Text section is set to Custom input mode
+- Child section is configured with parentSectionId pointing to Text section","store={{FRONT_URL}}
+productUrl=@td(CFG_TEXT_DRIVEN_COND.url)
+testText=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Navigate to the configurable product PDP at {{productUrl}}
+[ASSERT] Verify Text parent section is visible with an empty input
+[ASSERT] Verify dependent child section is hidden (input is empty)
+[ACT] browser_click on the Text section input field
+[ACT] browser_type {{testText}} into the Text section input
+[WAIT] Wait for conditional visibility to update (debounce if applicable)
+[ASSERT] browser_snapshot to confirm child section became visible
+[ASSERT] Verify dependent child section is now rendered with its option inputs
+[ACT] Clear the text input (select-all and delete)
+[ASSERT] Verify dependent child section hides again when text is empty","[DOM] Dependent child section hidden when Text parent input is empty
+[DOM] Dependent child section visible after custom text is entered
+[DOM] Child section hides again when text input is cleared
+[STATE] Text entry (any non-empty value) counts as ""has value"" for conditional logic","[CONSOLE] no JS errors during text input or clear; no extra API calls triggered by typing
+[NETWORK] No page reload on text input","child section never appears even after text entry (VCST-4713 Text parent regression); child section appears immediately on page load before any text entered; clearing text does not hide child section; debounce delay makes child appear/hide erratically","Clear text input; navigate away from PDP","VCST-4713; BL-CFG-003","Reviewed"
+"CFG-CHAR-001","Character Counter Shows 0/30 When Text Section Empty (maxLength=30)","Configurable Products > Text Section > Character Counter","High","BL-CFG-007","ECL-5.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with Text section configured with maxLength=30 (e.g. @td(CFG_RING.url))","product_url: @td(CFG_RING.url)
+max_length: 30","[NAV] Navigate to @td(CFG_RING.url)
+[ASSERT] Locate the Text section input for the configurable section with maxLength=30
+[ASSERT] Verify the character counter is visible adjacent to or below the text input
+[ASSERT] Verify counter shows ""0 / 30"" when the text field is empty","[DOM] Character counter element visible
+[DOM] Counter text reads ""0 / 30"" (or localized equivalent with 0 and 30)
+[STATE] Text input is empty","[CONSOLE] No JS errors on PDP load","Counter not visible; counter shows wrong max (e.g. 255 instead of 30); counter missing when field empty","none","VCST-4928","Reviewed"
+"CFG-CHAR-002","Character Counter Updates Live as User Types (mid-range BVA at 5 and 15 chars)","Configurable Products > Text Section > Character Counter","High","BL-CFG-007","ECL-5.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with Text section configured with maxLength=30 available on storefront (e.g. @td(CFG_RING.url))
+- Text section input is empty; character counter shows 0/30","product_url: @td(CFG_RING.url)
+max_length: 30
+type_text: Hello (5 chars)","[NAV] Navigate to @td(CFG_RING.url)
+[ACT] Click into the Text section input with maxLength=30
+[ACT] Type exactly 5 characters (e.g. ""Hello"")
+[ASSERT] Verify counter updates to ""5 / 30"" with no perceptible delay (< 100ms visually)
+[ACT] Type 10 more characters (total 15 chars)
+[ASSERT] Verify counter updates to ""15 / 30""","[DOM] Counter updates to ""5 / 30"" after typing 5 chars
+[DOM] Counter updates to ""15 / 30"" after typing 15 chars total
+[STATE] Counter is reactive — updates with each keystroke (no debounce)","[CONSOLE] No JS errors while typing","Counter does not update live (requires blur/submit); counter shows stale value; counter off by one; JS error while typing","none","VCST-4928","Reviewed"
+"CFG-CHAR-003","Character Counter Shows Visual Emphasis at Exactly maxLength (cap=30 BVA boundary)","Configurable Products > Text Section > Character Counter","High","BL-CFG-007","ECL-5.1, ECL-2.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- On PDP with Text section maxLength=30","product_url: @td(CFG_RING.url)
+max_length: 30
+type_text: exactly 30 characters (e.g. ABCDEFGHIJKLMNOPQRSTUVWXYZ1234)","[NAV] Navigate to @td(CFG_RING.url)
+[ACT] Click into the Text section input
+[ACT] Type exactly 30 characters
+[ASSERT] Verify counter shows ""30 / 30""
+[ASSERT] Verify counter applies a visual emphasis class (color change to warning or danger token)
+[ACT] Attempt to type one more character (31st char)
+[ASSERT] Verify the 31st character is NOT accepted (input stays at 30 chars)
+[ASSERT] Verify counter still shows ""30 / 30"" (does not go to ""31 / 30"")","[DOM] Counter shows ""30 / 30"" at cap
+[DOM] Counter has visual emphasis (different color/class) at 30/30 vs 0/30
+[STATE] Input accepts exactly 30 characters, blocks the 31st","[CONSOLE] No JS errors at cap; aria-live announcement for character limit reached may fire","Counter shows ""31 / 30"" or goes above max; no visual emphasis at cap; extra characters accepted beyond maxLength; aria-live not fired","none","VCST-4928","Reviewed"
+"CFG-CHAR-004","Character Counter at BVA Boundary — maxLength=100: accepts 100 chars, blocks 101st","Configurable Products > Text Section > Character Counter","Medium","BL-CFG-007","ECL-2.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with optional Text section maxLength=100 accessible on storefront (@td(CFG_GIFTBOX.url))
+- Text section input is empty; counter shows ""0 / 100""","product_url: @td(CFG_GIFTBOX.url)
+max_length: 100
+type_text_100: exactly 100 characters (e.g. repeat ""A"" x100)
+type_text_extra: one additional character (""B"") for the 101st","[NAV] Navigate to @td(CFG_GIFTBOX.url)
+[ASSERT] Verify character counter shows ""0 / 100"" in the optional Text section
+[ACT] Click into the Text section input
+[ACT] Type exactly 100 characters
+[ASSERT] Verify counter shows ""100 / 100""
+[ASSERT] Verify counter applies visual emphasis class (color change to warning or danger token at cap)
+[ACT] Attempt to type one more character (101st)
+[ASSERT] Verify the 101st character is NOT accepted — input stays at 100 chars
+[ASSERT] Verify counter still shows ""100 / 100"" (does not advance to ""101 / 100"")","[DOM] Counter shows ""0 / 100"" when input is empty
+[DOM] Counter shows ""100 / 100"" at cap — BVA upper boundary confirmed
+[DOM] Counter has visual emphasis (different color/class) at 100/100 vs 0/100
+[STATE] Input accepts exactly 100 characters, blocks the 101st (BVA over-boundary = 101, must be rejected)","[CONSOLE] No TypeError or BVA boundary errors; no null reference errors","Counter shows ""101 / 100"" or accepts extra characters beyond maxLength; no visual emphasis at cap; counter missing or showing wrong max (e.g. 255 instead of 100); counter shows ""0 / 0"" or NaN","none","VCST-4928","Reviewed"
+"CFG-FILE-ST-001","File Section - Selecting None After Uploading Files Clears All Files","Configurable Products > File Section > None Clears Files","High","BL-CFG-008","ECL-5.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with optional File section exists (e.g. @td(CFG_FILE_HOODIE.url))
+- File uploads enabled","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
+test_files: 2 small valid files (e.g. .jpg or .png <= 1MB each)","[NAV] Navigate to the configurable product PDP with an optional File section
+[ASSERT] Verify None option is selected by default and file list is empty
+[ACT] Click the file upload option (not None)
+[ACT] Upload 2 files using the file picker
+[ASSERT] Verify 2 files appear in the uploaded files list
+[ACT] Click the None radio/option to switch back to None
+[ASSERT] Verify all uploaded files are cleared from the file list
+[ASSERT] Verify the file upload button/area is no longer visible or is reset","[STATE] Selecting None after file upload clears all files from the file list
+[DOM] File list empty after selecting None
+[DOM] Upload button/area hidden or reset after selecting None","[CONSOLE] No JS errors when clearing files via None selection
+[NETWORK] No file upload requests fired after None selected","Files persist after clicking None; file count badge does not reset; JS error on None selection; upload area still shows uploaded files","Remove uploaded files if test abandoned mid-way","VCST-4826","Reviewed"
+"CFG-FILE-ST-002","File Section - None/Upload State Cycle Repeatable (None clears files on each cycle)","Configurable Products > File Section > None Clears Files","High","BL-CFG-008","ECL-5.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with optional File section and None option is accessible on storefront
+- File section is in initial state: None selected, no files uploaded (start of fresh PDP visit)","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
+test_files: 1 small valid file (use different file on second upload)","[NAV] Navigate to the configurable product PDP with optional File section
+[ASSERT] Verify starting state: None selected, no files
+[ACT] Switch to file upload mode; upload 1 file
+[ASSERT] Verify 1 file in list
+[ACT] Click None again
+[ASSERT] Verify file list cleared
+[ACT] Switch to file upload mode again; upload 1 different file
+[ASSERT] Verify 1 new file in list (not the previous file)
+[ACT] Click None one final time
+[ASSERT] Verify file list cleared again (second cycle)","[STATE] File list cleared each time None is selected (repeatable, not one-time)
+[DOM] Switching back to file upload starts with empty list
+[DOM] Second None selection also clears","[CONSOLE] No JS errors across multiple None cycles","Files accumulate across None/Upload cycles; second None selection does not clear; file from first upload reappears on second switch to upload mode","Remove any test-uploaded files","VCST-4826","Reviewed"
+"CFG-FILE-ST-003","File Section - None Option Available and Clears Files for Optional File Section","Configurable Products > File Section > None Clears Files","Medium","BL-CFG-008","ECL-5.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Configurable product with an OPTIONAL File section that has a None option
+- Note: Required file sections do not have None option — skip if product has only required file sections","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
+section_type: optional file section with None option","[NAV] Navigate to configurable product PDP
+[ASSERT] Verify the File section has a None option (skip test if None is absent — required section)
+[ACT] Upload 2 or more files to the optional File section
+[ASSERT] Verify files appear in list
+[ACT] Click None
+[ASSERT] Verify files cleared
+[ASSERT] Verify Add to Cart button becomes enabled (no longer blocked by pending optional file section if any)","[STATE] Files cleared on None selection for optional section
+[DOM] Add to Cart not blocked by optional file section after None selected
+[DOM] No file-related validation error shown after None selected","[CONSOLE] No JS errors
+[NETWORK] No file reference in cart payload when None selected","None option not present on optional section; files not cleared; Add to Cart blocked; validation error persists after None selected","Remove uploaded test files","VCST-4826","Reviewed"
+"CFG-FILE-BVA-001","File Upload Button Disabled When Max Files (5) Reached (BVA at boundary)","Configurable Products > File Section > Max File Limit","High","BL-CFG-008","ECL-2.2, ECL-5.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Configurable product with File section that allows up to 5 files
+- 5 small valid test files available","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
+max_files: 5
+test_files: 5 small valid files (file1.jpg through file5.jpg)","[NAV] Navigate to configurable product PDP with File section
+[ACT] Upload files one by one: upload file1, file2, file3, file4 (4 files total)
+[ASSERT] After 4 files: verify upload button is still enabled (max not yet reached)
+[ACT] Upload the 5th file
+[ASSERT] After 5 files: verify upload button has disabled attribute
+[ASSERT] Verify upload button has CSS class vc-file-picker--disabled or equivalent disabled styling
+[ASSERT] Verify file count shows 5 / 5 or equivalent max-reached indicator","[DOM] Upload button disabled after 5th file (disabled attribute present)
+[DOM] Upload button has vc-file-picker--disabled CSS class at file count = 5
+[STATE] Upload button enabled at count 4, disabled at count 5
+[DOM] File counter reads 5 / 5 or max reached indicator","[CONSOLE] No JS errors at max file count","Upload button still enabled after 5 files; disabled state does not apply at max; disabled CSS class absent; additional file can be added above max","none","VCST-4825","Reviewed"
+"CFG-FILE-BVA-002","File Upload Button Re-Enabled After Deleting One File from Max (5 files to 4)","Configurable Products > File Section > Max File Limit","High","BL-CFG-008","ECL-2.2, ECL-5.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- Product with File section allowing up to 5 files is accessible on storefront
+- File section upload limit is configured at max=5 files","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
+max_files: 5","[NAV] Navigate to configurable product PDP with File section
+[ACT] Upload 5 files to reach the max (upload button should become disabled)
+[ASSERT] Verify upload button is disabled
+[ACT] Delete one of the uploaded files (click delete/X on any file)
+[ASSERT] Verify file count drops to 4
+[ASSERT] Verify upload button is re-enabled (disabled attribute removed)
+[ASSERT] Verify vc-file-picker--disabled CSS class removed from button","[STATE] Upload button re-enabled when file count drops from 5 to 4
+[DOM] Upload button loses disabled attribute after delete
+[DOM] vc-file-picker--disabled CSS class removed at count < 5","[CONSOLE] No JS errors on file delete
+[NETWORK] No unexpected requests after file delete","Upload button stays disabled after deleting a file; disabled state not reactively removed; CSS class remains after count drops; JS error on file delete","none","VCST-4825","Reviewed"

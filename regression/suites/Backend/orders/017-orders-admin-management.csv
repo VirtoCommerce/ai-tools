@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "ORD-001","Create new order","Orders > Order Management","Critical",,,"Admin logged in to Backend",,"1. Navigate to Orders module
 2. Click 'Add' or create new order
 3. Fill in order details (customer, store, items)
@@ -315,3 +315,65 @@ Number template configured in Settings > Orders",,"1. Add products to cart and p
 8. Compare order.subTotal with cart.subTotal
 9. Compare order.taxTotal with cart.taxTotal
 10. Compare order.total with cart.total",,,,,"Coverage Gap Analysis BL-CROSS-005",
+"ORD-091","Refund OuterId Persisted from Payment Gateway Response","Orders Admin > Refund > OuterId","High","BL-ORD-004","ECL-12.1","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order exists with a completed payment
+- Payment method supports refund flow and returns OuterId in refund response
+- Module version: vc-module-order with fix for VCST-4983 deployed","order_id: a completed paid order
+expected_outer_id: any non-empty string returned by gateway refund call","[BLADE] Navigate to Admin → Orders list
+[BLADE] Open the completed paid order blade
+[BLADE] Open the Payment section; locate the payment record
+[ACT] Initiate a refund for the payment (click Refund or Add Refund)
+[SAVE] Submit the refund form
+[BLADE] After save, re-open the Refund record blade
+[ASSERT] Verify the OuterId field is populated with the gateway-returned transaction ID","[BLADE] Refund blade shows OuterId field with non-empty value matching gateway response
+[STATE] Refund.OuterId is saved in order data (not null/empty after gateway call)","[API] GET /api/order/orders/{id} response shows refund outerId populated
+[CONSOLE] No JS errors in Admin SPA","OuterId field empty/null after refund processed; OuterId not persisted even though gateway returned it","none (refund is already processed)","VCST-4983","Reviewed"
+"ORD-092","Refund Status Preserved When Modification Fails","Orders Admin > Refund > Status Preservation","High","BL-ORD-004","ECL-12.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order with a Refund in 'Pending' status exists (gateway accepted initial refund)
+- Payment method mock/gateway configured to reject amount modification","order_id: order with pending refund at $100
+refund_modification: change amount to a value the gateway will reject","[BLADE] Navigate to Admin → Orders → open the order → open Refund blade
+[ASSERT] Verify refund Status = 'Pending'
+[ACT] Edit the refund amount to trigger a gateway rejection
+[SAVE] Save the modified refund
+[BLADE] After save, re-open the Refund blade
+[ASSERT] Verify refund Status is still 'Pending' (not 'Rejected')
+[ASSERT] Verify RejectReasonMessage is populated with the gateway error","[BLADE] Refund status remains 'Pending' after failed modification (not downgraded to 'Rejected')
+[BLADE] RejectReasonMessage/error note shows the rejection reason from gateway
+[STATE] Underlying refund state at gateway is unchanged","[API] GET /api/order/orders/{id} shows refund status = 'Pending'
+[CONSOLE] No JS errors","Status incorrectly changes to 'Rejected'; status changes to another invalid value; error message not shown","none","VCST-4983","Reviewed"
+"ORD-093","Cancel Document Button Disabled for Submitted Refund","Orders Admin > Refund > UI Guards","High","BL-ORD-004","ECL-12.3","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order with a Refund that has outerId set (submitted to gateway) or status = 'Processed'","order_id: order with a submitted (outerId populated) refund","[BLADE] Navigate to Admin → Orders → open order → open Refund blade for the submitted refund
+[ASSERT] Verify the refund has outerId populated or status = 'Processed'
+[BLADE] Check the toolbar for the 'Cancel Document' button
+[ASSERT] Verify 'Cancel Document' button is disabled or hidden for this refund
+[ACT] Attempt to interact with the Status dropdown on the refund blade
+[ASSERT] Verify the Status dropdown is read-only/disabled when refund is submitted","[BLADE] 'Cancel Document' button is disabled/hidden for submitted refund (outerId set or status = Processed)
+[BLADE] Status dropdown is read-only/disabled for submitted refund
+[STATE] No local status change possible without gateway call","[CONSOLE] No JS errors in Admin SPA","Cancel Document button is enabled for submitted refund; Status dropdown allows manual edits on submitted refund","none","VCST-4983","Reviewed"
+"ORD-094","Order Edit: Line Item Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","High","BL-ORD-003","ECL-12.4","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order in editable state exists with multiple line items
+- Some line items have custom statuses set (non-default)
+- Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)","order_id: order with >=2 line items having custom statuses","[BLADE] Navigate to Admin → Orders → open order with custom line item statuses
+[ASSERT] Record all current line item statuses before edit
+[ACT] Click 'Edit' or 'Add Product' in the order blade
+[BLADE] Search for and select a new product to add
+[SAVE] Save the order after adding the product
+[BLADE] Re-open the order blade after save
+[ASSERT] Verify all original line items retain their custom statuses
+[ASSERT] Verify the newly added line item has default status","[BLADE] All original line items show same statuses as before the add-product action
+[BLADE] Custom statuses are not reset to default after add-product
+[STATE] Order line item status data is preserved through edit operation","[API] GET /api/order/orders/{id} shows correct statuses for all original line items
+[CONSOLE] No JS errors in Admin SPA","Any original line item status resets to default after add-product; statuses change from custom value to empty/null","none","VCST-4477","Reviewed"
+"ORD-095","Order Edit: Multiple Concurrent Custom Statuses Preserved After Adding Product","Orders Admin > Order Edit > Status Preservation","Medium","BL-ORD-003","ECL-12.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order in editable state exists with >=3 line items each having different distinct custom statuses (non-default)
+- Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)","order_id: order with 3+ line items each having different custom statuses","[BLADE] Navigate to Admin → Orders → open order with >=3 line items each having distinct custom statuses
+[ASSERT] Record and note each line item's custom status before edit
+[ACT] Click 'Add Product' and add a second new product in same edit session
+[SAVE] Save the order
+[BLADE] Re-open order blade
+[ASSERT] Verify each original line item still shows its individual distinct custom status
+[ASSERT] Verify both newly added line items have default status","[BLADE] All >=3 original line items each retain their individual distinct custom status after multi-product add
+[BLADE] No cross-contamination of statuses between line items
+[STATE] Status preservation scales to multiple simultaneous edits","[API] GET /api/order/orders/{id} shows all individual statuses correctly
+[CONSOLE] No JS errors","Any original status overwritten; statuses from different line items swapped; status resets on second add-product","none","VCST-4477","Reviewed"

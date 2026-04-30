@@ -1,0 +1,459 @@
+===== VCST-4962 Verification Run =====
+2026-04-29T17:21:57Z
+BACK_URL=https://vcst-qa.govirto.com  STORE=store-acme
+
+=========== CYCLE 1 | GUID=d3847e99-5f8e-4647-881a-987d94d70288 ===========
+
+[C-3] POST /api/cms/store-acme/menu (create)
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:21:57 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.081
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TWshLRE72%2Bb85%2BkcG5SImJRKi1QwdJRbALbBZLzmFLUx7CUH2zjew0RCWlQp4Pluh2xS2C5ZuJV21L
+[C-4] GET /api/cms/store-acme/menu (verify present)
+Result: PRESENT
+
+[C-5] DELETE /api/cms/store-acme/menu?listIds=d3847e99-5f8e-4647-881a-987d94d70288
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:21:58 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.028
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=lgg3O7h2faIUi1NfQHciNe%2F5Hf4G0uXSt22e3j2F8%2BN9iD2PioOzzFd9Z0vVC21HOQCODtq%2FyzrQUvftlPQUglRMvj9aK8NTl1KJLogN8%2Fd4YqPvHnNFa8LvVH9lpwqTW6nc1WnO"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffc718c9fa280-VIE
+alt-svc: h3=":443"; ma=86400
+
+
+[C-6] GET /api/cms/store-acme/menu (verify gone)
+Result: GONE
+
+[C-7] GET /api/cms/store-acme/menu/d3847e99-5f8e-4647-881a-987d94d70288 (after delete)
+HTTP/1.1 200 OK
+Date: Wed, 29 Apr 2026 17:21:58 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 4
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.014
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=N04PQycTLd5E1Nmq7UMpG4VBBOXAcXt%2FJga9RjKFRQBgpTYhl1kMAf3QGPCHviQO8j26%2FcIZwPecpL5K9ZvohMOuS%2FCa4kvphZ0IkuP6DJXr9YVpeQgFBYP2wxjAznGEaYRMoiSF"}]}
+Server: cloudflare
+CF-RAY: 9f3ffc75eacd86a9-VIE
+alt-svc: h3=":443"; ma=86400
+
+null
+=========== CYCLE 2 | GUID=75a3cfe5-7a56-4b5f-bbfd-228ed07bdbbd ===========
+
+[C-3] POST /api/cms/store-acme/menu (create)
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:21:59 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.061
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qTkMuN6BzUUwJKty9ZGNCYElqlqx4TjL0JSOAQSWHci76p1f1%2FgL9op5zanpj0ZH4OG7kWHsbXqDUvs9zct5fF9rYEdk0z2DTcY5bE2L0zVwx7z3rlH3JQAx9GnpkxO3286Ac1pZ"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffc788cbdc1f9-VIE
+alt-svc: h3=":443"; ma=86400
+
+
+[C-4] GET /api/cms/store-acme/menu (verify present)
+Result: PRESENT
+
+[C-5] DELETE /api/cms/store-acme/menu?listIds=75a3cfe5-7a56-4b5f-bbfd-228ed07bdbbd
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:22:00 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.031
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=PdbSTQEn7K11QQYvJXMkFfaYPiPwTdfOkwp%2BvDtPdpI%2F6%2FM7s55Gl1hVfwu18gCTSvZHFA5AwevPsEJMyeSD2TzzWe8OcBFjTjU6sVqD3iCFHy1LsLfzjzeFyU33XjONTi3ltsNI"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffc7d4ef283f0-VIE
+alt-svc: h3=":443"; ma=86400
+
+
+[C-6] GET /api/cms/store-acme/menu (verify gone)
+Result: GONE
+
+[C-7] GET /api/cms/store-acme/menu/75a3cfe5-7a56-4b5f-bbfd-228ed07bdbbd (after delete)
+HTTP/1.1 200 OK
+Date: Wed, 29 Apr 2026 17:22:00 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 4
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.006
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=6XPFc5YFwkWo5H3X2CjnL2H1eAyfVZyHhmj6%2BQ1G%2FIshvS3%2B3etwGByNCDLKdIEMBj%2FGXIeYBOJz5Hx8yy1jc21KCjNDIN5%2FNJGI6z%2BWNZq4T4C2BvQUKF3B%2FiNbvvz30NkgGdvA"}]}
+Server: cloudflare
+CF-RAY: 9f3ffc81cfc75b84-VIE
+alt-svc: h3=":443"; ma=86400
+
+null
+=========== CYCLE 3 | GUID=11a2578f-bd78-4c1d-8f0d-caa3d0e8ff28 ===========
+
+[C-3] POST /api/cms/store-acme/menu (create)
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:22:01 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.040
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Gy%2B8%2F%2BuiyQ2cocfWdk9RH7exXwKWnpMGFyeSIK%2FSOSpEfULV3J39ze0YBNIPnZuo7wAr9bLcy0xVO3pyWoxUfKWtu0UoTL0oiB18YsTFtSUAlvRhTjWf2aAigsoN6h%2FwLOXlUrcT"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffc846aebc0d0-VIE
+alt-svc: h3=":443"; ma=86400
+
+
+[C-4] GET /api/cms/store-acme/menu (verify present)
+Result: PRESENT
+
+[C-5] DELETE /api/cms/store-acme/menu?listIds=11a2578f-bd78-4c1d-8f0d-caa3d0e8ff28
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:22:01 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.039
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=YNmJEjYwL7kosgjeBs05vSkXDxZmBevxwPiF2bkbQwY67DVxVRzLtUITjo0HvmHAL7tXfArE0DmvSIZVcH
+[C-6] GET /api/cms/store-acme/menu (verify gone)
+Result: GONE
+
+[C-7] GET /api/cms/store-acme/menu/11a2578f-bd78-4c1d-8f0d-caa3d0e8ff28 (after delete)
+HTTP/1.1 200 OK
+Date: Wed, 29 Apr 2026 17:22:02 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 4
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.006
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=0Ohyl%2BZ54KDg1jst6QkeEnhB2tEz49NEl3IZ7H59oukZ4B%2BgBs0UjwWdsoknMSC%2BSAKTj76MmViJOy0LlYo5Czj9Vx6F6JdtXnQ%2BAla20%2BJQNsXesiqFIvEmeWPmAUWkpnab%2FAcN"}]}
+Server: cloudflare
+CF-RAY: 9f3ffc8ddea9c5fa-VIE
+alt-svc: h3=":443"; ma=86400
+
+null===== STR cycles complete =====
+
+===== C-7 body inspection (3 cycles, recreate then GET /{id} after delete) =====
+POST=204
+Pre-delete GET /{id}:
+{"name":"QAtest-VCST4962-c7probe","storeId":"store-acme","language":"en-US","menuLinks":[],"securityScopes":null,"outerId":null,"createdDate":"0001-01-01T00:00:00Z","modifiedDate":null,"createdBy":null,"modifiedBy":null,"id":"d0568a18-17ce-4c0f-88ac-a795cab8cc41"}
+[HTTP 200, bytes=264]
+DELETE=204
+Post-delete GET /{id}:
+null
+[HTTP 200, bytes=4]
+
+===== C-8: DELETE ?ids=<guid> — should now be 400 =====
+POST=204
+DELETE ?ids=:
+HTTP/1.1 400 Bad Request
+Date: Wed, 29 Apr 2026 17:22:29 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.008
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=OF1xTmDjn4XoBYsm5DMPFJEo3Vc4Lmsfi5OOxcghuIwp0QU25tJFUj6wOgCGEJkBlFwjnaxTw1PT%2FgCSJfO%2BXik69r6jZ7i%2B7pj8XQD%2FBe9%2B6jS3DBvDNcdmtUj0jZ8zx6NLgLwH"}]}
+Server: cloudflare
+CF-RAY: 9f3ffd361aa1babc-VIE
+alt-svc: h3=":443"; ma=86400
+
+Query parameter 'listIds' is required.
+Verify list still present (should be present since delete failed):
+STILL_PRESENT (correct)
+
+===== C-9: DELETE ?ids[]=<guid> — should be 400 =====
+DELETE ?ids[]=:
+HTTP/1.1 400 Bad Request
+Date: Wed, 29 Apr 2026 17:22:30 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.004
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=aKbik%2BKpyEJcIZ%2B%2FMUWOmZZxH6OewmlJF8pugE53Nxe6aqJXvFjv94rxFIkjdoq0UWHwbghMTMc4Jtn92xMWB0bBYUAEGOF7iK7IeWoqSmldbGC2OTcwjU7aRW6IjJ8tMuSq6Pnz"}]}
+Server: cloudflare
+CF-RAY: 9f3ffd3a8be123b5-VIE
+alt-svc: h3=":443"; ma=86400
+
+Query parameter 'listIds' is required.
+===== C-10: DELETE ?ids%5B%5D=<guid> URL-encoded brackets =====
+HTTP/1.1 400 Bad Request
+Date: Wed, 29 Apr 2026 17:22:30 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.006
+cf-cache-status: DYNAMIC
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=677QzxAntC1xMHLsxQ5fkZtU7nHisSIIQoJk5ryZYVqUcfeTlir2%2BJahP5TVPSqjI6eUJ10A84PI3SxWj8RXLkD8d80fpCZwwVf2ayrrqlquYhlMO2iEpo1drooTKs7QbCsisbP1"}]}
+Server: cloudflare
+CF-RAY: 9f3ffd3c5da45aab-VIE
+alt-svc: h3=":443"; ma=86400
+
+Query parameter 'listIds' is required.
+===== 400 error body content =====
+?ids= body:
+Query parameter 'listIds' is required.
+[HTTP 400]
+?ids[]= body:
+Query parameter 'listIds' is required.
+[HTTP 400]
+
+===== C-11: DELETE ?listIds=<random non-existent guid> =====
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:23:02 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=7152b91afbcbb2afb7a7af7c1af4bbe9|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.022
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=slTmeaDHhTesSisyrwUxy4zozB4CAg3L74TEQI4W8ooVs9vap3DuaXspjKzabhNrypy0lpHvJR9b%2Fr7nZ81Uc%2BksjPpHrSQGP5jK5quAqq28k29nVGILOCDw5qjXdH%2B3yE2Lp5%2Fj"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffe01c8235b63-VIE
+alt-svc: h3=":443"; ma=86400
+
+
+===== C-12: DELETE with NO query params =====
+Query parameter 'listIds' is required.
+[HTTP 400, bytes=38]
+
+===== C-13: DELETE list with NON-EMPTY menuLinks =====
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:23:02 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.043
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2BMqfvavRq5TGVWSMcYKWi5mlZXx5ghqZrEYgLHcoySEvukjiVZ3IIRDINeLLJIbWNvjpPil4Vd3Sov3N9r%2BaWkTQvoN4e7Toq2%2Fl6BDC1ML1YIlYKofZ1Wwgcfu7XRa8MYcIijXG"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffe060de63263-VIE
+alt-svc: h3=":443"; ma=86400
+
+DELETE ?listIds=:
+HTTP/1.1 204 No Content
+Date: Wed, 29 Apr 2026 17:23:03 GMT
+Connection: keep-alive
+Set-Cookie: INGRESSCOOKIE=d0bd3584f9f9374eb001a3891f908b7f|6ef2c1989c455f6090f26663e47cc47a; Path=/; Secure; HttpOnly
+Cache-Control: no-cache
+expires: -1
+pragma: no-cache
+request-context: appId=cid-v1:7d07a5e2-1346-45b8-8b3c-2117c72a3f7b
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: ALLOW-FROM localhost:8080 vcst-qa.govirto.com
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: object-src 'none'; form-action 'self'; frame-ancestors localhost:8080 vcst-qa.govirto.com
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: unsafe-none
+cross-origin-resource-policy: cross-origin
+x-response-time: 0.038
+cf-cache-status: DYNAMIC
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=X8HCs5qXjdRxGfoWI1Sdh6BKGvMjv5OWPrceFkuZJvPXkr3VYAZzIV1EWOc4JXNMqJjIuJj0YGaX8aIT1mceMnmiv%2FUBXJuVC9lrobUHjfHIUv2vhH3zyk%2B1FeukzeuS2%2B2fM2ja"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9f3ffe081d785af7-VIE
+alt-svc: h3=":443"; ma=86400
+
+Post-delete GET:
+null
+[HTTP 200, bytes=4]
+
+===== C-15: cleanup leftover QAtest-* lists =====
+Leftovers: 2
+   8cf58dbc-32f6-4f09-ae1e-142f451be0cf QAtest-VCST4962-c8
+   39188c82-f62b-4a3a-a74a-fb58900b6ca2 QAtest-VCST4962-errbody
+cleanup 8cf58dbc-32f6-4f09-ae1e-142f451be0cf => 204
+cleanup 39188c82-f62b-4a3a-a74a-fb58900b6ca2 => 204
+
+Final state:
+[HTTP 200, bytes=0]
+Remaining QAtest-VCST4962-*: 0 (expected 0)

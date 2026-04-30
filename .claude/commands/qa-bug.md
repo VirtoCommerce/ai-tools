@@ -225,9 +225,6 @@ When moving to `fixed/`, add a Resolution block below the status:
 - Recent changes: [relevant commit SHAs or PRs, or "none found"]
 - App Insights: [exception type/message, failed request trace, or "no server-side errors"]
 
-## Impact
-[Who is affected and how severely]
-
 ## References
 - JIRA: [VCST-XXXX or "not filed"]
 ```

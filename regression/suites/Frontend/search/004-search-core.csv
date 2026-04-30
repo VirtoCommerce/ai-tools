@@ -1,4 +1,4 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "SRCH-001","Search - Basic Query","Search > Basic","High","BL-SEARCH-001","ECL-14.2","Catalog has searchable products","url={{FRONT_URL}}; query=@td(SEARCH_ELECTRONICS.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
 [ACT] fill 'Search': 'laptop'
@@ -343,3 +343,63 @@
 [DATA] Summary table: query → result_count for each of the 92 queries
 [ERRORS] No JS console errors across any query","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for every query
 [CONSOLE] no TypeError or JS errors across entire loop","Any query causing 5xx error; more than 40% of real-world queries returning 0 results; JS error on specific query; autocomplete crashing on certain input","none","Coverage Gap Analysis","Automated"
+"SRCH-NEW-052","Mobile Search Input Renders at 375px Viewport — Visual Smoke","Search > Mobile > Layout","High","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
+- Browser viewport resized to 375px width (iPhone SE)
+- Storefront accessible at {{FRONT_URL}}","viewport_width: 375
+viewport_height: 812","[NAV] Resize browser viewport to 375x812
+[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Verify search input/icon is visible in the header at 375px
+[ACT] Tap/click the search input or search icon to open search
+[ASSERT] Verify search input field is fully visible and not clipped/overflowed at 375px
+[ASSERT] Verify the search input has adequate touch target size (>=44px height)
+[ASSERT] Verify no horizontal scroll is introduced by the search component
+[ACT] Type a short query (e.g. 'ring') into the mobile search input
+[ASSERT] Verify suggestions dropdown/results appear within the viewport without overflow","[DOM] Search input visible and accessible at 375px width
+[DOM] No horizontal scroll introduced by search component
+[DOM] Touch target height >=44px
+[DOM] Search suggestions visible within viewport (no overflow clipping)
+[STATE] Mobile search state: usable","[CONSOLE] No JS errors at 375px viewport
+[NETWORK] Search query fires correctly (HTTP 200 on graphql endpoint)","Search input hidden at 375px; horizontal scroll introduced; suggestions overflow viewport; touch target too small","Restore viewport to default 1280px","VCST-2284","Reviewed"
+"SRCH-NEW-053","Mobile Search - Clear Button Visible and Functional at 375px","Search > Mobile > Clear Button","High","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
+- Browser viewport set to 375px width (mobile emulation)
+- Search input is accessible on the homepage at 375px
+- A non-empty search term has been typed into the mobile search input","viewport_width: 375
+search_query: any non-empty text (e.g. 'ring')","[NAV] Resize browser viewport to 375x812
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Open search and type a query (e.g. 'ring') into mobile search input
+[ASSERT] Verify a clear/X button appears within or adjacent to the search input
+[ASSERT] Verify clear button is visible and not hidden behind keyboard or UI elements at 375px
+[ACT] Tap/click the clear button
+[ASSERT] Verify search input text is cleared
+[ASSERT] Verify cursor/focus remains in the search input after clear","[DOM] Clear (X) button visible when search input has content at 375px
+[DOM] Clear button is within the viewport (not clipped)
+[STATE] Input text cleared after tap on clear button
+[STATE] Focus remains in search input after clear","[CONSOLE] No JS errors on clear action
+[NETWORK] No unnecessary search request fired on clear","Clear button not visible at 375px; clear button hidden behind keyboard; text not cleared on tap; focus lost after clear; JS error on clear","Restore viewport to default 1280px","VCST-2285","Reviewed"
+"SRCH-NEW-054","Mobile Search - Keyboard Shows Without Blocking Search Results","Search > Mobile > Keyboard","Medium","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
+- Browser viewport at 375px
+- Test on mobile emulation or real mobile device","viewport_width: 375
+search_query: 'ring'","[NAV] Resize to 375px viewport
+[NAV] Navigate to {{FRONT_URL}}
+[ACT] Tap the search input to open mobile keyboard
+[ASSERT] Verify search input is scrolled/adjusted into view above the keyboard
+[ACT] Type 'ring' into mobile search
+[ASSERT] Verify at least one suggestion or the search input itself remains visible above the keyboard
+[ASSERT] Verify the submit/search button (or Enter key) is accessible while keyboard is open","[DOM] Search input visible above mobile keyboard when keyboard open
+[DOM] At least one result or suggestion visible above keyboard
+[DOM] Submit affordance (Enter key or search button) accessible","[CONSOLE] No JS errors during mobile keyboard interaction","Input hidden behind keyboard; no results visible while keyboard is open; user cannot submit search without closing keyboard","Restore viewport to default 1280px","VCST-2284","Reviewed"
+"SRCH-NEW-055","Mobile Search - Results Page Layout Correct at 375px","Search > Mobile > Results","Medium","BL-CAT-001","ECL-6.1","[PRE:CLEAR_SESSION]
+- Viewport at 375px
+- Search returns at least 3 results","viewport_width: 375
+search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
+[NAV] Navigate to {{FRONT_URL}}/search?q=@td(SEARCH_QUERY.q)
+[ASSERT] Verify results page renders without horizontal scroll
+[ASSERT] Verify product cards are laid out correctly (single column or appropriate grid) at 375px
+[ASSERT] Verify facet/filter controls are accessible (e.g. filter button or collapsed panel)
+[ASSERT] Verify pagination or load-more control is visible
+[ASSERT] Verify product card images are not oversized or cropped incorrectly at 375px","[DOM] No horizontal scroll on search results page at 375px
+[DOM] Product cards single-column or appropriate grid layout
+[DOM] Filter affordance visible at 375px
+[DOM] Pagination/load-more visible
+[DOM] Product card images correctly sized","[CONSOLE] No JS errors on results page at 375px
+[NETWORK] Search query returns HTTP 200","Horizontal scroll on results page; product cards overflow viewport; filter control missing at 375px; images misaligned","Restore viewport to default 1280px","VCST-2284","Reviewed"

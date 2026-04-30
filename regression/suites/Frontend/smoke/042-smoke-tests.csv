@@ -465,3 +465,30 @@ User logged in as {{USER_EMAIL}}, all major storefront areas accessible","email=
 [DOM] all 4 pages render main content (not blank or error screens)","[CONSOLE] 0 TypeError or ReferenceError across all 4 pages
 [NETWORK] no 5xx errors across all 4 page loads
 [NETWORK] no failed resource loads (CSS/JS 404s that would break layout)","Any TypeError or ReferenceError in console on any page (BL-CROSS-011: graceful degradation failure), blank page or white screen on any of the 4 pages, 5xx errors in network tab","none","VCST-4499","Automated"
+"SMK-027","Smoke: Data-Test-ID Attribute Smoke After PR-2234 Selector Rename","Smoke > Selector Regression","High","","ECL-6.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+- vc-frontend build including PR #2234 deployed","store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Verify element with data-test-id='top-header' exists in the DOM
+[ASSERT] Verify element with data-test-id='language-selector' exists and is clickable
+[ASSERT] Verify element with data-test-id='language-selector-button' exists
+[ACT] Click language-selector-button
+[ASSERT] Verify language selector dropdown opens
+[ASSERT] Verify element with data-test-id='organizations-search' exists in account menu (if B2B org user)
+[ASSERT] Verify element with data-test-id='sign-in-error-alert' does NOT exist when no error present
+[ASSERT] Verify no elements with old-style data-test-id containing 'main-layout.top-header.' prefix exist in DOM","[DOM] data-test-id='top-header' element present
+[DOM] data-test-id='language-selector' element present and interactive
+[DOM] data-test-id='language-selector-button' element present
+[DOM] No data-test-id values starting with 'main-layout.top-header.' in DOM (deprecated prefix removed)","[CONSOLE] No JS errors after page load
+[NETWORK] No 4xx/5xx responses on page load","Old data-test-id='main-layout.top-header' still present (rename not deployed); language-selector not found; JS error on page load","none","vc-frontend PR #2234, VCST-4968","Reviewed"
+"SMK-028","Smoke: Sign-In Form Data-Test-ID and Email Input Accessible Post-PR-2234","Smoke > Selector Regression","High","BL-AUTH-001","ECL-6.2","[PRE:CLEAR_SESSION]
+- vc-frontend build including PR #2234 deployed
+- Not signed in","store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ASSERT] Verify sign-in form loads without errors
+[ASSERT] Verify email input is present (accessible via test-id-input='email-input')
+[ASSERT] Verify password input is present
+[ACT] Enter invalid email and submit to trigger error
+[ASSERT] Verify error alert appears with data-test-id='sign-in-error-alert'
+[ASSERT] Verify error alert does NOT have dynamic index suffix (old pattern: sign-in-page.sign-in-error-0-alert)","[DOM] Email input accessible (test-id-input='email-input')
+[DOM] Error alert uses data-test-id='sign-in-error-alert' (not 'sign-in-page.sign-in-error-{code}-alert')
+[STATE] Sign-in form functional after selector rename","[CONSOLE] No JS errors on sign-in page
+[NETWORK] POST /connect/token responds appropriately on failed login","Email input not found via new test-id; error alert uses old dynamic ID pattern; sign-in form broken after rename; JS error on sign-in page","none","vc-frontend PR #2234, VCST-4968","Reviewed"

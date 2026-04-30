@@ -560,4 +560,61 @@ Authenticated user; Cart contains at least one BOPIS-eligible item; System has m
 [DOM] search field is empty on reopen (no stale keyword from previous session)
 [STATE] map is centered on or near LAST_LOCATION marker on reopen (not zoomed-out default state)","[NETWORK] browser_network_requests: on modal reopen, cartPickupLocations GraphQL query response items[0].id = LAST_LOCATION id (confirmed location prepended at index 0 regardless of keyword/filter/paging)
 [API] cartPickupLocations response errors[] is empty
-[CONSOLE] no TypeError or JS errors during modal reopen or location list render","Modal opens with no radio checked (VCST-4707 regression — pre-selection lost); LAST_LOCATION not visible without scrolling on reopen (not prepended); Map zoomed out to default state on reopen; Search field contains stale keyword that filters out LAST_LOCATION; cartPickupLocations query errors[] non-empty; LAST_LOCATION appears only after full scroll (not at index 0)","Click 'X' to close modal; clear pickup selection from cart","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Draft"
+[CONSOLE] no TypeError or JS errors during modal reopen or location list render","Modal opens with no radio checked (VCST-4707 regression — pre-selection lost); LAST_LOCATION not visible without scrolling on reopen (not prepended); Map zoomed out to default state on reopen; Search field contains stale keyword that filters out LAST_LOCATION; cartPickupLocations query errors[] non-empty; LAST_LOCATION appears only after full scroll (not at index 0)","Click 'X' to close modal; clear pickup selection from cart","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Reviewed"
+"BOPIS-092","BVA — Page-1 Boundary Location (Index #50) Pre-selected Correctly on Modal Reopen","BOPIS > Location Selector > Pagination Pre-selection > BVA","Critical","BL-BOPIS-008","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart contains at least one BOPIS-eligible item; System has at least 51 pickup locations configured (so index #50 is the last item on the first loaded batch); VCST-4707 fix deployed (IncludeLocationIds available in cartPickupLocations query)","url={{FRONT_URL}};sku=@td(BOPIS.testSku)","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens; initial location list rendered
+[ASSERT] count visible locations in the list WITHOUT scrolling — record this as INITIAL_COUNT (runtime value)
+[ASSERT] INITIAL_COUNT is at least 50 (confirms first-page batch is fully loaded)
+[ACT] identify the location at visual position #50 in the initial list (0-indexed: the 50th entry, last on first page) — note its name as BOUNDARY_LOCATION
+[ACT] click on BOUNDARY_LOCATION in the list
+[WAIT] location info card opens for BOUNDARY_LOCATION
+[ACT] click 'Select' button in location info card
+[WAIT] info card closes
+[ACT] click 'Confirm' button
+[WAIT] modal closes; BOUNDARY_LOCATION name shown in cart summary
+[ASSERT] BOUNDARY_LOCATION name is displayed in cart shipping section
+[ACT] click 'Select pickup location' again (reopen modal)
+[WAIT] pickup location modal reopens
+[ASSERT] radio button next to BOUNDARY_LOCATION is in checked state
+[ASSERT] BOUNDARY_LOCATION is visible in the list WITHOUT scrolling (prepended at index 0 by IncludeLocationIds logic)
+[ASSERT] search field is empty (no stale keyword)
+[ASSERT] no filter chip applied","[DOM] radio button next to BOUNDARY_LOCATION is checked on modal reopen
+[STATE] BOUNDARY_LOCATION visible without scrolling — appears at or near the top of the list
+[STATE] no keyword filter pre-applied on reopen
+[DOM] search field is empty","[NETWORK] cartPickupLocations GraphQL query on modal reopen: response items[0].id matches BOUNDARY_LOCATION id (IncludeLocationIds prepend confirmed)
+[API] cartPickupLocations response errors[] is empty
+[CONSOLE] no TypeError or JS errors","Radio button next to BOUNDARY_LOCATION is unchecked on reopen (pre-selection lost); BOUNDARY_LOCATION not visible at top of list (not prepended — must scroll); cartPickupLocations errors[] non-empty; search field contains stale value that hides BOUNDARY_LOCATION","Click 'X' to close modal; clear pickup selection from cart","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Reviewed"
+"BOPIS-093","BVA — Page-2 Boundary Location (Index #51) Pre-selected Correctly on Modal Reopen","BOPIS > Location Selector > Pagination Pre-selection > BVA","Critical","BL-BOPIS-008","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; Cart contains at least one BOPIS-eligible item; System has at least 52 pickup locations configured (so index #51 is the first item that requires loading beyond the initial batch — crosses the page-1/page-2 boundary); VCST-4707 fix deployed","url={{FRONT_URL}};sku=@td(BOPIS.testSku)","[NAV] {{FRONT_URL}}/cart
+[ACT] select 'Pickup' delivery option
+[ACT] click 'Select pickup location'
+[WAIT] pickup location modal opens; initial location list rendered
+[ASSERT] count visible locations WITHOUT scrolling — record as INITIAL_COUNT
+[ASSERT] INITIAL_COUNT is at least 50 and does NOT include the 52nd location (confirms page boundary exists)
+[SCROLL] scroll to bottom of the initial list
+[ACT] click 'Load more' button or trigger infinite scroll load to fetch the next page of locations
+[WAIT] additional locations appear in the list
+[ASSERT] total visible locations now exceeds INITIAL_COUNT (page-2 locations loaded)
+[ACT] identify the location at position INITIAL_COUNT+1 (first entry from the second page) — note its name as PAGE2_FIRST_LOCATION
+[ACT] click on PAGE2_FIRST_LOCATION in the list
+[WAIT] location info card opens for PAGE2_FIRST_LOCATION
+[ACT] click 'Select' button in location info card
+[WAIT] info card closes
+[ACT] click 'Confirm' button
+[WAIT] modal closes; PAGE2_FIRST_LOCATION name shown in cart summary
+[ACT] click 'Select pickup location' again (reopen modal)
+[WAIT] pickup location modal reopens
+[ASSERT] radio button next to PAGE2_FIRST_LOCATION is checked
+[ASSERT] PAGE2_FIRST_LOCATION is visible in the list WITHOUT scrolling (prepended at index 0)
+[ASSERT] search field is empty; no filter chip applied
+[ASSERT] map is centered on PAGE2_FIRST_LOCATION marker","[DOM] radio button next to PAGE2_FIRST_LOCATION is checked on modal reopen
+[STATE] PAGE2_FIRST_LOCATION visible at top of list without scrolling — BL-BOPIS-008 invariant holds for cross-page boundary locations
+[STATE] no keyword filter pre-applied on reopen
+[DOM] map marker for PAGE2_FIRST_LOCATION visible and centered","[NETWORK] cartPickupLocations GraphQL query on modal reopen: response items[0].id matches PAGE2_FIRST_LOCATION id
+[API] cartPickupLocations response errors[] is empty; IncludeLocationIds field present in request
+[CONSOLE] no TypeError or JS errors","Radio button for PAGE2_FIRST_LOCATION unchecked on reopen (pre-selection lost — VCST-4707 regression active); PAGE2_FIRST_LOCATION not visible without scrolling (index 0 prepend failed); Must scroll to find PAGE2_FIRST_LOCATION (IncludeLocationIds not applied); cartPickupLocations errors[] non-empty","Click 'X' to close modal; clear pickup selection from cart","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Reviewed"
