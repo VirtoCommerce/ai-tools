@@ -1,13 +1,14 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-04-28T18:13:15.440Z
+**Validated at:** 2026-05-04T17:57:56.010Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 57 fixtures — 57 passed, 0 failed
+**Total:** 58 fixtures — 58 passed, 0 failed
 
-## ✅ Passed Fixtures (57)
+## ✅ Passed Fixtures (58)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
+| addBulkItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewBulkItemType) | 2026-04-30 | 1 noted |
 | addConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-04-27 | 1 noted |
 | addConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-04-27 | 1 noted |
 | addCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-04-24 | 1 noted |
@@ -67,6 +68,9 @@
 | wishlists | query | ORG_USER | wishlist | (none) | 2026-04-24 | 1 noted |
 
 ## Known-Issues Summary
+
+**addBulkItemsCart**:
+- input takes productSku (NOT productId — differs from addItem/addItemsCart); response shape is BulkCartType { cart, errors } not CartType directly
 
 **addConfigurationItem**:
 - (none)

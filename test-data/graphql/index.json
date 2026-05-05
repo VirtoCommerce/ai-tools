@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-04-28",
+  "lastValidated": "2026-04-30",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 57,
+  "totalFixtures": 58,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -328,6 +328,19 @@
       "requiredVars": ["STORE_ID", "USER_ID"],
       "gqlVars": { "items": "[InputNewCartItemType]!" },
       "runnerNote": "Pass cartItems via [GQL-VARS label] JSON {\"items\": [...]}"
+    },
+    "addBulkItemsCart": {
+      "path": "mutations/addBulkItemsCart.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": { "items": "[InputNewBulkItemType]!" },
+      "runnerNote": "Pass cartItems via [GQL-VARS label] JSON {\"items\": [{\"productSku\":\"1507112554\",\"quantity\":2}, ...]}. Input uses productSku (NOT productId).",
+      "usedBy": ["GQL-132"],
+      "knownIssues": [
+        "input takes productSku (not productId) — different from addItem/addItemsCart",
+        "response shape is BulkCartType { cart, errors } — different from CartType returned by addItem/addItemsCart"
+      ]
     },
     "removeCartItem": {
       "path": "mutations/removeCartItem.graphql",

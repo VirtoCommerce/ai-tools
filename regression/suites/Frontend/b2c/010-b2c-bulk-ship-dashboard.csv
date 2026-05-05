@@ -243,6 +243,30 @@ Quick Order page with a valid product SKU entered","url={{FRONT_URL}};user={{USE
 [STATE] Add to Cart or Add All to Cart blocked for rows with invalid quantities
 [STATE] Setting valid positive quantity clears error and enables add action","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Zero or negative quantity accepted without error; Add to Cart not blocked for invalid quantities","remove item from cart","Coverage Gap Analysis","Generated"
+"B2C-BULK-007","Bulk Order — Duplicate SKU Across Rows Coalesces Into Single Cart Line","B2C Features > Bulk Order","High","BL-CART-007; BL-B2C-001","ECL-2.1; ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Quick Order page (/bulk-order) accessible. Same SKU entered on 3 separate rows with quantity 2 each. SKU 1507112554 (Coca Cola Regular 6x330ml) verified buyable on B2B-store in QA 2026-04-30 (productId 8b7282ad-d318-42f4-9c19-e2d9b388e06f). Underlying mutation: addBulkItemsCart with [{productSku:""1507112554"",quantity:2}, {productSku:""1507112554"",quantity:2}, {productSku:""1507112554"",quantity:2}]. Per BL-CART-007, the cart MUST end with ONE line of quantity 6 — not three duplicate lines of 2. If SKU 1507112554 is removed or hit by PRODUCT_MIN_MAX_QTY (min-qty>1 / max-qty<6), substitute any SKU that returns isAvailable=true with min_qty<=2 and max_qty=0 from B2B-store catalog.","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku=1507112554;qty_per_row=2;rows=3;expected_total_qty=6","1. [NAV] Navigate to /bulk-order
+2. [ACT] In row 1, enter SKU '1507112554' and confirm; set quantity to 2
+3. [ASSERT] Row 1 displays product info: name (non-empty), unit price (non-empty), availability indicator visible
+3a. [CAPTURE] row1.unitPrice → UNIT_PRICE
+4. [ACT] In row 2, enter the SAME SKU '1507112554' again and confirm; set quantity to 2
+5. [ACT] In row 3, enter the SAME SKU '1507112554' a third time and confirm; set quantity to 2
+6. [ASSERT] All three rows accept the same SKU without crashing or losing previous-row data (UI may either keep 3 rows or auto-coalesce — both are acceptable as long as the cart end-state is correct)
+7. [ACT] Click 'Add All to Cart'
+8. [WAIT] Wait for success notification / cart update
+9. [NAV] Navigate to /cart
+10. [ASSERT] Cart contains EXACTLY ONE line item for SKU 1507112554
+11. [ASSERT] That line item shows quantity 6 (2+2+2 summed, NOT three separate rows of 2)
+12. [ASSERT] Cart subtotal equals {{UNIT_PRICE}} × 6 (single coalesced line, not 3 × ({{UNIT_PRICE}} × 2))","[DOM] /bulk-order page accepts the same SKU entered on multiple rows without dropping/overwriting prior rows
+[DOM] Cart page shows exactly 1 row for SKU 1507112554 (no duplicate lines)
+[DOM] Quantity column on that single line displays 6
+[DOM] Cart header counter / mini-cart reflects 1 distinct product, total quantity 6
+[DOM] Success notification on Add All to Cart (e.g. 'Items added to cart')
+[MATH] Cart subtotal = {{UNIT_PRICE}} × 6 (single coalesced line, not 3 × ({{UNIT_PRICE}} × 2))","[API] addBulkItemsCart mutation returns BulkCartType with errors[] empty
+[API] addBulkItemsCart response: cart.itemsCount = 1, cart.itemsQuantity = 6, cart.items contains exactly one entry with sku='1507112554' and quantity=6
+[API] Follow-up cart query (xAPI) returns the same single-line state — line dedupe is server-side, not just UI rendering
+[CONSOLE] no uncaught JS errors during entry, paste, or Add All to Cart
+[NETWORK] no 4xx/5xx on /xapi/graphql or /storefrontapi during bulk add","Cart shows 3 separate lines for SKU 1507112554 (BL-CART-007 violation — same SKU should coalesce); cart.itemsCount = 3 instead of 1; cart total quantity ≠ 6; addBulkItemsCart returns errors[] non-empty; UI silently drops duplicate-row entries before submit; mutation rejects duplicates as a client-side validation; bulk-order page crashes or loses prior rows when same SKU re-entered","remove item from cart","BL-CART-007; xAPI mutation addBulkItemsCart (test-data/graphql/mutations/addBulkItemsCart.graphql); GQL-132 (xCart layer counterpart in 050b1)","Generated"
 "B2C-DASH-001","Dashboard Page Loads","B2C Features > Dashboard","Medium","BL-B2C-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User signed in with valid credentials","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","1. [NAV] Sign in to storefront
 2. [NAV] Navigate to /account/dashboard

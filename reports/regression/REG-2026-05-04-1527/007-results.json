@@ -1,0 +1,74 @@
+{
+  "runId": "REG-2026-05-04-1527",
+  "suiteId": "007",
+  "suiteName": "B2C Lists & Shared",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "buildVersion": "Ver. 2.48.0-pr-2274-0307-0307f38b",
+  "user": "test-carlos.rodriguez-20260310@test-agent.com (BuildRight org, slot 3)",
+  "startedAt": "2026-05-05T07:43:00Z",
+  "completedAt": "2026-05-05T08:11:00Z",
+  "status": "completed",
+  "summary": {
+    "total": 29,
+    "pass": 16,
+    "fail": 3,
+    "blocked": 7,
+    "notTested": 1,
+    "pending": 0,
+    "bugs": 1
+  },
+  "bugs": [
+    {
+      "id": "BUG-007-001",
+      "title": "List set to 'Anyone (readonly)' cannot be reverted, renamed, or modified",
+      "severity": "High",
+      "priority": "P1",
+      "file": "reports/bugs/REG-2026-05-04-1527/BUG-007-001-list-shared-cannot-revert-or-rename.md",
+      "impact": ["B2C-LIST-007 (rename of shared list)", "B2C-LIST-011 (toggle Private/Shared)"]
+    }
+  ],
+  "results": [
+    { "id": "B2C-LIST-001", "title": "Create Wishlist/List", "priority": "Critical", "status": "PASS", "notes": "Form: Name (required, 25-char max), Description (250-char counter), Sharing options (Private default + Anyone(readonly), Organization). List 'AGENT-TEST-Sum2026' created." },
+    { "id": "B2C-LIST-002", "title": "Add Product to List from PDP", "priority": "Critical", "status": "PASS", "notes": "Heart icon labeled 'Add to list' on PDP. Modal 'Please select list' w/ checkboxes + 'Add new list' inline. Heart flips to 'In the list' --active." },
+    { "id": "B2C-LIST-003", "title": "Add Product to List from Category Page", "priority": "High", "status": "PASS", "notes": "Add to list button on each product card. URL stays on category; affected card flips to 'In the list'." },
+    { "id": "B2C-LIST-004", "title": "View List Contents", "priority": "Critical", "status": "PASS", "notes": "Table grid (Product image+name, Properties, Price per item). Per-row qty input, Update cart, X. Page-level: SAVE CHANGES, LIST SETTINGS, ADD ALL TO CART, BUY NOW. Caveats: 'In Stock' label and creation date not on detail page; only on /account/lists tile." },
+    { "id": "B2C-LIST-005", "title": "Add to Cart from List", "priority": "High", "status": "PASS", "notes": "Per-row 'Add to cart' increments cart. 'Add all to cart' opens result modal: 'Successfully added N' with SKU/name/qty table. Items remain in list after cart add." },
+    { "id": "B2C-LIST-006", "title": "Remove Product from List", "priority": "High", "status": "PASS", "notes": "Confirm Delete dialog. data-test-id='remove-item-button'. Minor i18n issue: aria-label is 'Remove from cart' on a list page (should be 'Remove from list')." },
+    { "id": "B2C-LIST-007", "title": "Rename/Edit List", "priority": "Medium", "status": "PASS", "notes": "Renamed Sum1 → Sum2026; h1 + page title updated. WARNING: shared lists block rename — see BUG-007-001." },
+    { "id": "B2C-LIST-008", "title": "Delete List", "priority": "Medium", "status": "PASS", "notes": "All 3 test lists deleted via kebab menu Delete option. Confirm Delete dialog: 'Are you sure you want to remove the [name] list?'. Catalog unaffected — products still accessible via PDP. NOTE: confirmation dialog does NOT include item count (CSV expected 'X items will be removed')." },
+    { "id": "B2C-LIST-009", "title": "Share List (Public Link)", "priority": "High", "status": "PASS", "notes": "Setting Sharing→'Anyone (readonly)' generates public URL /shared-list/{guid} in settings dialog Link textbox + copy button. Opening link renders read-only list (h1, products, order summary; NO add-to-cart/settings/buy-now). NOTE: differs from CSV — no separate 'Get Public Link' button; sharing is exposed as a privacy mode + copyable Link." },
+    { "id": "B2C-LIST-010", "title": "Share List via Email", "priority": "Medium", "status": "FAIL", "notes": "No email-share UI present. Settings dialog only exposes a copyable Link textbox; recipient email field, optional message, Send button do not exist. Functionality not implemented in storefront." },
+    { "id": "B2C-LIST-011", "title": "Mark List Private/Shared", "priority": "Medium", "status": "FAIL", "bugRef": "BUG-007-001", "notes": "Toggle Private→Anyone(readonly) works (badge changes to Shared). Reverse toggle BLOCKED — once shared, all settings fields disable (name, description, sharing combobox, Save). See BUG-007-001." },
+    { "id": "B2C-LIST-012", "title": "Product Already in List Indicator", "priority": "Medium", "status": "PASS", "notes": "Heart icon flipped to 'In the list' --active. Clicking opens dialog with 'Already in the lists' section showing list (with Shared/Private badge) + checked checkbox. Duplicate add prevented via checkbox state. NOTE: tooltip is generic 'In the list' — not list name like 'In Summer Essentials'." },
+    { "id": "B2C-LIST-013", "title": "Move Product Between Lists", "priority": "Medium", "status": "PASS", "notes": "No dedicated 'Move to...' menu, but multi-select checkboxes (uncheck source + check target + Save) achieve move. Verified Coca Cola moved Sum2026→WishB; source list shows empty state. No duplicate." },
+    { "id": "B2C-LIST-014", "title": "List - Out of Stock Product Handling", "priority": "High", "status": "BLOCKED", "notes": "Requires Admin SPA setup to mark product OOS within available test catalog. Recommend dedicated test data fixture." },
+    { "id": "B2C-LIST-015", "title": "GA4 add_to_wishlist Event", "priority": "Medium", "status": "PASS", "notes": "Verified GA4 collect call: en=add_to_wishlist, cu=USD, pr1=id<sku>~nm<name>~pr<price>~ds0~qt<qty>~ca<cat>, epn.value=<price>. Event fires on add action." },
+    { "id": "B2C-LIST-016", "title": "Create Shared List (Org)", "priority": "High", "status": "PASS", "notes": "AGENT-TEST-Team created with Sharing=Organization. Shows 'Shared' badge with people icon. NOTE: badge identical for 'Anyone (readonly)' and 'Organization' — no visual differentiation between modes (potential UX gap)." },
+    { "id": "B2C-LIST-017", "title": "Org Member Sees Shared List", "priority": "High", "status": "BLOCKED", "notes": "Requires User B in same BuildRight org. agent-user-pool slot 3 has 'same_org_pair: none'. Recommend seeding a 2nd BuildRight user." },
+    { "id": "B2C-LIST-018", "title": "Add to Shared List (User B)", "priority": "High", "status": "BLOCKED", "notes": "Requires User B in same org." },
+    { "id": "B2C-LIST-019", "title": "Private List Not Visible to Org Members", "priority": "Medium", "status": "BLOCKED", "notes": "Requires User B in same org." },
+    { "id": "B2C-LIST-020", "title": "Saved for Later - View and Move Items Back to Cart", "priority": "Medium", "status": "FAIL", "notes": "Page loads, items show with image/name/price/qty/Add to cart/X. After clicking 'Add to cart', cart count increments, but item was NOT removed from Saved for Later (move-vs-copy semantics). Button label is 'Add to cart' (not 'Move to Cart') — behavior matches label, contradicts test case expectation. Recommend renaming button or implementing move." },
+    { "id": "B2C-LIST-021", "title": "Saved for Later - Remove Item & Empty State", "priority": "Medium", "status": "PASS", "notes": "Confirm Delete dialog. Item removes immediately (no reload). When list empty: 'Your list is empty / Continue browsing' empty state shown." },
+    { "id": "B2C-LIST-022", "title": "Pagination/Load More for Large Lists", "priority": "Medium", "status": "NOT_TESTED", "notes": "Requires list with 11+ items; not seeded within suite time. Recommend dedicated test data fixture." },
+    { "id": "B2C-LIST-023", "title": "Shared List - Team Member Views Items", "priority": "High", "status": "BLOCKED", "notes": "Requires User B in same org." },
+    { "id": "B2C-LIST-024", "title": "Shared List - Edit Items Visible to Other Members", "priority": "High", "status": "BLOCKED", "notes": "Requires User B in same org." },
+    { "id": "B2C-LIST-025", "title": "Shared List - Remove Shared Access", "priority": "Medium", "status": "BLOCKED", "bugRef": "BUG-007-001", "notes": "Cross-user verification requires User B. For 'Anyone (readonly)', toggle-back is broken — see BUG-007-001." },
+    { "id": "B2C-LIST-026", "title": "Shared Indicator Displayed", "priority": "Medium", "status": "PASS", "notes": "/account/lists tiles: Shared (people icon + 'Shared') vs Private (lock icon + 'Private') — visually distinct, readable. Caveat: 'Anyone (readonly)' and 'Organization' share identical badge — no differentiation." },
+    { "id": "B2C-LIST-032", "title": "Add Entire List to Cart - All Items Added", "priority": "High", "status": "PASS", "notes": "Verified in B2C-LIST-005 with 2 items: 'Successfully added 2' modal, items remain in list, cart count matches. SKU/name/qty visible in result table." },
+    { "id": "B2C-LIST-033", "title": "Add List to Cart - Out of Stock Partial Add", "priority": "High", "status": "BLOCKED", "notes": "Requires mixed in-stock + OOS list (same blocker as B2C-LIST-014)." },
+    { "id": "B2C-LIST-034", "title": "Add List to Cart - Preserves Quantities", "priority": "Medium", "status": "PASS", "notes": "Set Coca Cola qty=3 in WishB list (Save changes confirmation); Add all to cart. Result modal: Quantity 3. Cart confirms qty=3, subtotal $51 = 3×$17. Quantities preserved." }
+  ],
+  "cleanup": {
+    "lists_deleted": ["AGENT-TEST-Sum2026", "AGENT-TEST-Team", "AGENT-TEST-WishB"],
+    "cart_cleared": true,
+    "saved_for_later_cleared": true,
+    "user_pool_account": "preserved (slot 3 reused)"
+  },
+  "evidence": [
+    "reports/regression/REG-2026-05-04-1527/007-evidence/list-detail-view.png",
+    "reports/regression/REG-2026-05-04-1527/007-evidence/list-settings-shared-disabled.png",
+    "reports/regression/REG-2026-05-04-1527/007-evidence/lists-overview-3-lists.png",
+    "reports/regression/REG-2026-05-04-1527/007-evidence/saved-for-later-page.png"
+  ]
+}

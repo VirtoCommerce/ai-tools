@@ -253,3 +253,115 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add 3+ items
 [STATE] OFF default does not override manually selected items","[API] getCart returns correct per-item selectedForCheckout values
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","per-item selection lost; all forced to unselected; Order Summary wrong","Remove items from cart; restore store setting to ON","C389920","Manual — BLOCKED: requires admin config change (selectedForCheckout = OFF). SEED verdict 2026-04-21. Restore config in Cleanup."
+"CART-071","Cart Merge - Configurable Product, Different Options Create Separate Lines","Cart > Merge","High","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:RESET_CART]
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available with at least 2 selectable Product-section options in 'Select your fav color' (e.g., Black, Green). Registered user {{USER_EMAIL}} exists with empty persisted cart. NOTE: do NOT hardcode option prices — env catalog data may change; assert structural invariants (distinct lines, distinct totals) instead.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+hat_slug=@td(CFG_HAT.slug)
+hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+optionA=color: Black
+optionB=color: Green","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated session, empty cart)
+[NAV] open Configurable Hat PDP at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+[WAIT] 'Configure the parameters' widget visible
+[ACT] in 'Select your fav color' section choose option A (e.g., Black)
+[ASSERT] PDP total reflects option A surcharge (record value as totalA)
+[ACT] click Add to cart
+[WAIT] success notification
+[ASSERT] cart badge shows 1, Add to cart changes to Update cart, the link "Create new configuration" is visible
+[ACT] Click on "Create new configuration" on Hat PDP
+[WAIT] Configure widget visible
+[ACT] in 'Select your fav color' section choose option B (e.g., Green) — different from option A
+[ASSERT] PDP total reflects option B surcharge (record value as totalB; totalB != totalA)
+[ACT] click Add to cart
+[WAIT] success notification
+[ASSERT] cart badge shows 2
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] cart shows exactly 2 line items, both pointing to Configurable Hat base product
+[ASSERT] one line displays option A configuration; the other displays option B configuration
+[ASSERT] line totals equal totalA and totalB respectively (no collapse, no qty merge)
+[ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers anonymous→user cart merge)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] cart still shows exactly 2 line items for Configurable Hat
+[ASSERT] each line retains its distinct configuration (option A on one line; option B on the other)
+[ASSERT] per-line totals unchanged from pre-merge values
+[ASSERT] cart subtotal = totalA + totalB","[STATE] 2 distinct cart line items for the same base product preserved through merge
+[DOM] line items display different configuration option labels (option A vs option B) in the configuration summary
+[STATE] BL-CART-007 exception honored: different product configurations of the same base SKU create separate lines
+[MATH] cart subtotal = sum of the two configured line totals
+[STATE] cart badge reflects 2 items after merge
+[STATE] no duplicate-line collapse; no quantity summing across distinct configurations","[API] mergeCarts mutation response errors[] is empty
+[API] getCart returns items[] of length 2 with distinct configurationItems values per line
+[CONSOLE] no JS errors during sign-in and cart merge
+[NETWORK] no 4xx/5xx on cart fetch or merge mutation","2 lines collapsed into 1 with summed qty after merge; configurationItems mismatched or swapped between lines; one configuration dropped silently; cart badge shows 1 instead of 2 after sign-in","Remove all items from cart","GAP-CART-MERGE-CFG-001","Manual"
+"CART-072","Cart Merge - Same Configurable Product Same Configuration Sums Quantity","Cart > Merge","High","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) available; user {{USER_EMAIL}} starts with empty persisted cart. The user-cart configuration and the guest-cart configuration MUST be byte-identical (same option in 'Select your fav color', same/empty Text section, no File section uploads).","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+option=color: Black","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+[NAV] open Configurable Hat PDP
+[WAIT] Configure widget visible
+[ACT] select option A (e.g., color: Black) in 'Select your fav color' section; leave other optional sections at defaults
+[ACT] click Add to cart
+[WAIT] success notification
+[ASSERT] cart badge shows 1
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[NAV] navigate to {{FRONT_URL}} as guest
+[NAV] open the same Configurable Hat PDP
+[WAIT] Configure widget visible
+[ACT] select the SAME option A (color: Black) with identical other-section state
+[ACT] click Add to cart
+[WAIT] success notification
+[NAV] Go to cart. Click on cart icon on the top header. Navigate to {{FRONT_URL}}/cart page
+[ACT] set quantity=2;
+[ASSERT] guest cart badge shows 2
+[ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] cart shows exactly 1 line item for Configurable Hat
+[ASSERT] line item quantity = 3 (1 from user cart + 2 from guest cart)
+[ASSERT] configuration shows option A only; no second line for the same option appears
+[ASSERT] line total = configured unit price × 3","[STATE] single line item for the matching configuration after merge
+[DOM] quantity = 3 (sum across both carts for identical configuration)
+[MATH] line total = configured unit price × 3
+[MATH] cart subtotal matches line total
+[STATE] BL-CART-007 honored: identical configuration of same base product is treated as duplicate — quantities sum into one line, no second line created","[API] mergeCarts mutation errors[] is empty
+[API] getCart returns items[] of length 1 with quantity=3 and matching configurationItems
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","two separate lines created for identical configuration; quantity not summed (shows 1 or 2 instead of 3); configuration option lost or replaced on merge","Remove items from cart","GAP-CART-MERGE-CFG-002","Manual"
+"CART-073","Cart Merge - Configurable Product, Different Configs Across User and Guest Carts","Cart > Merge","Medium","BL-CART-006, BL-CART-007, BL-CAT-006","ECL-7.1, ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+SEED REQUIRED: Configurable Hat product (alias CFG_HAT) with at least 2 distinct Product-section options. User {{USER_EMAIL}} starts with empty persisted cart.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+hat_url={{FRONT_URL}}/products-with-options/configurable-caps-shirts/@td(CFG_HAT.slug)
+optionA=color: Black
+optionB=color: Green","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
+[NAV] open Configurable Hat PDP
+[WAIT] Configure widget visible
+[ACT] select option A (e.g., color: Black) in 'Select your fav color' section
+[ACT] click Add to cart with qty=1
+[WAIT] success notification
+[ASSERT] user cart shows 1 line item with option A configuration
+[ACT] click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+[NAV] navigate to {{FRONT_URL}} as guest
+[NAV] open the same Configurable Hat PDP
+[WAIT] Configure widget visible
+[ACT] select option B (e.g., color: Green) — different from option A
+[ACT] click Add to cart with qty=1
+[WAIT] success notification
+[ASSERT] guest cart shows 1 line item with option B configuration
+[ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
+[NAV] navigate to {{FRONT_URL}}/cart
+[ASSERT] cart shows exactly 2 line items, both for Configurable Hat base product
+[ASSERT] one line displays option A configuration (from user cart); the other displays option B (from guest cart)
+[ASSERT] both line totals match the pre-merge per-configuration totals
+[ASSERT] cart subtotal = configured total A + configured total B","[STATE] 2 distinct line items in merged cart, one per configuration
+[DOM] line items display different option labels (option A vs option B) per BL-CART-007 exception
+[STATE] BL-CART-007 honored: different configurations of the same base product remain separate lines after cross-cart merge
+[MATH] cart subtotal = configured total A + configured total B
+[STATE] no quantity summing across distinct configurations","[API] mergeCarts mutation errors[] is empty
+[API] getCart returns items[] of length 2 with distinct configurationItems values per line
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx","2 configurations collapsed into 1 line after merge; configuration data swapped or lost between lines; one of the two lines dropped; quantities summed instead of separate lines preserved","Remove items from cart","GAP-CART-MERGE-CFG-003","Manual"

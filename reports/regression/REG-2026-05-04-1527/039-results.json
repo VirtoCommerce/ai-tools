@@ -1,0 +1,278 @@
+{
+  "runId": "REG-2026-05-04-1527",
+  "suiteId": "039",
+  "suiteName": "Payment CyberSource",
+  "browser": "playwright-chrome",
+  "agent": "qa-frontend-expert",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-05-04T13:42:53Z",
+  "completedAt": "2026-05-04T13:55:35Z",
+  "totalCases": 23,
+  "summary": {
+    "total": 23,
+    "passed": 19,
+    "failed": 2,
+    "blocked": 2,
+    "skipped": 0,
+    "passRate": "82.6%"
+  },
+  "passed": 19,
+  "failed": 2,
+  "blocked": 2,
+  "skipped": 0,
+  "passRate": "82.6%",
+  "testCases": [
+    {
+      "id": "PAY-CS-001",
+      "title": "CyberSource - Valid Form Submission",
+      "status": "PASS",
+      "duration_ms": 165000,
+      "failedAssertion": null,
+      "evidenceFiles": [
+        "reports/regression/REG-2026-05-04-1527/039-evidence/baseline-cybersource-form.png",
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-001-form-filled.png",
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-001-order-confirmation.png",
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-001-network.txt"
+      ],
+      "notes": "Order CO260504-00020 created successfully; total $299.99 (incl. tax + Fixed Rate Ground shipping)."
+    },
+    {
+      "id": "PAY-CS-002",
+      "title": "CyberSource - Special Characters in Cardholder Name",
+      "status": "PASS",
+      "duration_ms": 5000,
+      "failedAssertion": null,
+      "notes": "Mary-Jane O'Connor, Jose Garcia, Van Der Berg, Smith Jr. all accepted without stripping."
+    },
+    {
+      "id": "PAY-CS-003",
+      "title": "CyberSource - Expiry Date Format Variations",
+      "status": "PASS",
+      "duration_ms": 4000,
+      "failedAssertion": null,
+      "notes": "All three input styles (092029, 09/2029, 09 / 2029) normalize to 09 / 2029 (MM / YYYY with spaces). Minor format variation from spec MM/YYYY accepted as-is."
+    },
+    {
+      "id": "PAY-CS-004",
+      "title": "CyberSource - Invalid Card Number Rejected",
+      "status": "PASS",
+      "duration_ms": 6000,
+      "failedAssertion": null,
+      "evidenceFiles": ["reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-004-invalid-card.png"],
+      "notes": "Card number '1234567890123456' (Luhn-failing) marks #cardNumber-container with class 'flex-microform-invalid' (red border). Place Order button stays disabled. No createOrderFromCart mutation fired."
+    },
+    {
+      "id": "PAY-CS-005",
+      "title": "CyberSource - Empty Card Number Blocked",
+      "status": "PASS",
+      "duration_ms": 4000,
+      "failedAssertion": null,
+      "notes": "Cleared card number iframe -> #cardNumber-container has 'flex-microform-invalid' class. Place Order disabled."
+    },
+    {
+      "id": "PAY-CS-006",
+      "title": "CyberSource - Empty Cardholder Name Blocked",
+      "status": "PASS",
+      "duration_ms": 4000,
+      "failedAssertion": null,
+      "notes": "Empty cardholder name -> Place Order remains disabled. The 'known bug' note in the test is no longer applicable; form correctly blocks empty name."
+    },
+    {
+      "id": "PAY-CS-007",
+      "title": "CyberSource - Expired Card Rejected",
+      "status": "PASS",
+      "duration_ms": 4000,
+      "failedAssertion": null,
+      "evidenceFiles": ["reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-007-expired-card.png"],
+      "notes": "Past date '01/2020' -> red border on Expiration date input + visible inline error 'Expiration date must be in the future'. Place Order disabled."
+    },
+    {
+      "id": "PAY-CS-008",
+      "title": "CyberSource - Empty Expiry Date Blocked",
+      "status": "PASS",
+      "duration_ms": 3000,
+      "failedAssertion": null,
+      "notes": "Empty expiry -> error 'Expiration date must be in the future' shown (acts as required check). Place Order disabled. Minor: error text differs slightly from spec 'Expiry required' but is equivalent in effect."
+    },
+    {
+      "id": "PAY-CS-009",
+      "title": "CyberSource - Invalid Expiry Month Rejected",
+      "status": "PASS",
+      "duration_ms": 4000,
+      "failedAssertion": null,
+      "notes": "Months 13, 00, 99 all rejected: vc-input--error class applied; Place Order disabled. Error message generic ('This field is required') rather than month-specific, but validation works."
+    },
+    {
+      "id": "PAY-CS-010",
+      "title": "CyberSource - Invalid CVV Length Rejected",
+      "status": "PASS",
+      "duration_ms": 5000,
+      "failedAssertion": null,
+      "notes": "2-digit CVV ('12') -> Place Order disabled. 5-digit CVV ('12345') -> field auto-truncates to first 3 digits ('123') — max length enforced at input level."
+    },
+    {
+      "id": "PAY-CS-011",
+      "title": "CyberSource - Empty CVV Blocked",
+      "status": "PASS",
+      "duration_ms": 3000,
+      "failedAssertion": null,
+      "notes": "Empty CVV -> #securityCode-container gets 'flex-microform-invalid' class. Place Order disabled."
+    },
+    {
+      "id": "PAY-CS-012",
+      "title": "CyberSource - Non-numeric CVV Rejected",
+      "status": "PASS",
+      "duration_ms": 6000,
+      "failedAssertion": null,
+      "notes": "Real keystrokes (pressSequentially) of 'abc' -> field stays empty. Real keystrokes of '8a8' -> only '88' kept. Alpha input filtered at input level. NOTE: Programmatic fill('abc') bypasses the filter — only real keystrokes are blocked, which matches real-user behavior."
+    },
+    {
+      "id": "PAY-CS-013",
+      "title": "CyberSource - Card Number Auto-Formatting",
+      "status": "PASS",
+      "duration_ms": 2000,
+      "failedAssertion": null,
+      "notes": "Typing '4622943127013705' continuously -> field displays '4622 9431 2701 3705' (auto-spaces every 4 digits). Verified earlier in PAY-CS-001 setup."
+    },
+    {
+      "id": "PAY-CS-014",
+      "title": "CyberSource - Visa Card Type Detection",
+      "status": "FAIL",
+      "section": "CyberSource > Validation",
+      "priority": "Medium",
+      "businessRule": "BL-PAY-001",
+      "edgeCaseRefs": "ECL-14.6",
+      "duration_ms": 5000,
+      "failedAssertion": "[DOM] Card type icon area shows Visa icon as active/highlighted after Visa BIN entered — all four icons render with opacity:1, filter:none regardless of BIN; no active/inactive class toggling observed.",
+      "evidenceFiles": ["reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-014-visa-detection.png"],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Card type icon row (Visa/Mastercard/Mastercard/AMEX) is rendered as a static accepted-cards display. No DOM mutation, no class change, no opacity/filter change observed when typing a Visa-BIN PAN. Order placement still succeeds (PAY-CS-001 PASS) — brand classification happens server-side via tokenization. May be by-design; if so, test should be reclassified."
+    },
+    {
+      "id": "PAY-CS-015",
+      "title": "CyberSource - CVV Input Masking",
+      "status": "FAIL",
+      "section": "CyberSource > Validation",
+      "priority": "High",
+      "businessRule": "BL-PAY-001",
+      "edgeCaseRefs": "ECL-9.1",
+      "duration_ms": 7000,
+      "failedAssertion": "[FORMAT] Input type or iframe rendering prevents plaintext display of CVV — actual digits ARE displayed in plaintext during and after entry; no masking applied.",
+      "evidenceFiles": [
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-015-cvv-masking-FAIL.png",
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-015-cvv-during-entry.png",
+        "reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-015-real-typing-cvv.png"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Reproduced both via fill() (programmatic) and pressSequentially() (real keystrokes). Placeholder •••  is shown in empty state but as soon as user types, digits (838, 123) are rendered in plaintext. Tokenization still works (no raw CVV in network — PAY-SEC-003 PASS), but PCI defense-in-depth UX expectation is violated. Bug filed: BUG-039-001."
+    },
+    {
+      "id": "PAY-SEC-001",
+      "title": "CyberSource - Card Number Field in Secure Iframe",
+      "status": "PASS",
+      "duration_ms": 2000,
+      "failedAssertion": null,
+      "notes": "Card number field rendered inside <iframe title='secure payment field'> with src='https://testflex.cybersource.com/microform/bundle/v2.0.2/iframe.html?...'. Cross-origin: parent contentDocument access returns null (modern Chromium silent null rather than throw). PCI-DSS iframe isolation confirmed."
+    },
+    {
+      "id": "PAY-SEC-002",
+      "title": "CyberSource - CVV Field in Secure Iframe",
+      "status": "PASS",
+      "duration_ms": 1000,
+      "failedAssertion": null,
+      "notes": "CVV field rendered inside separate <iframe id='securityCode-container child'> also pointing at testflex.cybersource.com. Cross-origin isolation enforced — same as Card Number iframe."
+    },
+    {
+      "id": "PAY-SEC-003",
+      "title": "CyberSource - No Raw Card Data in Network Requests",
+      "status": "PASS",
+      "duration_ms": 3000,
+      "failedAssertion": null,
+      "evidenceFiles": ["reports/regression/REG-2026-05-04-1527/039-evidence/PAY-CS-001-network.txt"],
+      "notes": "After successful order placement (CO260504-00020), grep on captured network log for '4622943127013705' returned 0 matches. Tokenization works correctly — only token references in the cart/order GraphQL payloads."
+    },
+    {
+      "id": "PAY-SEC-004",
+      "title": "CyberSource - No Card Data in Browser Storage",
+      "status": "PASS",
+      "duration_ms": 2000,
+      "failedAssertion": null,
+      "notes": "Inspected localStorage (32 keys), sessionStorage (4 keys), and cookies after successful order placement. cardInLocal=false, cardInSession=false, cookies=false. CVV '838' also absent from all storage."
+    },
+    {
+      "id": "PAY-SEC-005",
+      "title": "CyberSource - All Payment Pages Served Over HTTPS",
+      "status": "PASS",
+      "duration_ms": 1000,
+      "failedAssertion": null,
+      "notes": "Cart page URL: https://vcst-qa-storefront.govirto.com/cart. Iframe src: https://testflex.cybersource.com/.... Network capture: 63 https:// requests, 0 http:// requests. No mixed-content warnings in console."
+    },
+    {
+      "id": "PAY-SEC-006",
+      "title": "CyberSource - JWT Token Authentication in Iframe",
+      "status": "PASS",
+      "duration_ms": 2000,
+      "failedAssertion": null,
+      "notes": "Both Card Number and Security Code iframe URLs carry a JWT in the URL fragment (#{...jwt:...}). JWT format verified: 3 dot-separated base64url segments (header.payload.signature). JWT data segment differs between session loads ('NWtzcV...' first session vs 'avUVm...' second session) -> dynamic per session, not reused."
+    },
+    {
+      "id": "PAY-3DS-001",
+      "title": "CyberSource 3DS - Challenge Flow Completed Successfully",
+      "status": "BLOCKED",
+      "section": "CyberSource > 3D Secure",
+      "priority": "High",
+      "businessRule": "BL-PAY-003, BL-PAY-004",
+      "edgeCaseRefs": "ECL-9.1",
+      "duration_ms": 0,
+      "failedAssertion": null,
+      "notes": "missing_test_data: .env CYBERSOURCE_3DS_FRICTIONLESS_CARD, CYBERSOURCE_3DS_CHALLENGE_CARD, CYBERSOURCE_3DS_OTP all empty. Per runbook: mark BLOCKED rather than failing. Action item: provision 3DS-enrolled CyberSource sandbox card + OTP and add to .env to unblock."
+    },
+    {
+      "id": "PAY-3DS-002",
+      "title": "CyberSource 3DS - Failed Authentication Blocked",
+      "status": "BLOCKED",
+      "section": "CyberSource > 3D Secure",
+      "priority": "High",
+      "businessRule": "BL-PAY-003, BL-PAY-004",
+      "edgeCaseRefs": "ECL-9.1",
+      "duration_ms": 0,
+      "failedAssertion": null,
+      "notes": "missing_test_data: same as PAY-3DS-001 — no 3DS test card in .env. BLOCKED per runbook directive."
+    }
+  ],
+  "errors": [],
+  "bugs": [
+    {
+      "id": "BUG-039-001",
+      "title": "CyberSource CVV input is NOT masked (plaintext displayed)",
+      "severity": "High",
+      "testCaseId": "PAY-CS-015",
+      "businessRule": "BL-PAY-001, BL-PAY-002",
+      "edgeCaseRef": "ECL-9.1",
+      "failedAssertion": "[FORMAT] iframe rendering prevents plaintext display of CVV",
+      "expected": "CVV digits rendered as masking characters (• or *) at all times during and after entry.",
+      "actual": "CVV digits rendered as plaintext (e.g. '838', '123') both during entry and after blur.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false,
+      "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-039-001-cybersource-cvv-not-masked.md"
+    },
+    {
+      "id": "BUG-039-002",
+      "title": "CyberSource: card type icons do not respond to BIN entry (no real-time card brand detection)",
+      "severity": "Medium",
+      "testCaseId": "PAY-CS-014",
+      "businessRule": "BL-PAY-001",
+      "edgeCaseRef": "ECL-14.6",
+      "failedAssertion": "[DOM] Card type icon area shows Visa icon as active/highlighted after Visa BIN entered",
+      "expected": "Visa icon highlights when Visa BIN entered; other icons dim.",
+      "actual": "All four card-type icons render with opacity:1, filter:none regardless of input. No DOM/CSS class change observed during BIN entry.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false,
+      "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-039-002-cybersource-no-card-type-detection.md"
+    }
+  ]
+}

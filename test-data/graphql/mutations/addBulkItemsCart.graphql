@@ -1,0 +1,37 @@
+# name: addBulkItemsCart
+# category: cart
+# role: ORG_USER
+# purpose: Add multiple products to the cart in a single bulk call by SKU (returns BulkCartType with cart + per-item errors)
+# required-vars: STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewBulkItemType)
+# optional-vars: cartId, cartName, currencyCode, cultureName, cartType
+# last-validated: 2026-04-30
+# known-issues: input takes productSku (NOT productId — differs from addItem/addItemsCart); response shape is BulkCartType { cart, errors } not CartType directly
+# used-by: 050b1 GQL-132 (duplicate-SKU bulk-add)
+# runner-note: Pass cartItems array via [GQL-VARS label] as JSON {"items": [{"productSku":"1507112554","quantity":2}, ...]}. Per BL-CART-007, repeating the same SKU MUST coalesce into a single line item with summed quantity, not create duplicate lines.
+
+mutation AddBulkItemsCart($items: [InputNewBulkItemType]!) {
+  addBulkItemsCart(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    cartItems: $items
+  }) {
+    cart {
+      id
+      itemsCount
+      itemsQuantity
+      items {
+        id
+        productId
+        sku
+        name
+        quantity
+      }
+    }
+    errors {
+      errorCode
+      errorMessage
+      objectId
+      objectType
+    }
+  }
+}

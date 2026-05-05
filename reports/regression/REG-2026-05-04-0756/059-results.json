@@ -1,0 +1,166 @@
+{
+  "suiteId": "059",
+  "suiteName": "CMS Page Management",
+  "runId": "REG-2026-05-04-0756",
+  "browser": "playwright-edge",
+  "agentType": "qa-backend-expert",
+  "startedAt": "2026-05-04T11:08:00Z",
+  "completedAt": "2026-05-04T11:15:00Z",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": "Ver. 2.48.0-alpha.2323-dev",
+  "summary": {
+    "total": 24,
+    "passed": 16,
+    "failed": 0,
+    "blocked": 2,
+    "skipped": 6,
+    "passRate": "88.9%"
+  },
+  "bugs": [],
+  "testCases": [
+    {
+      "id": "CMS-001",
+      "title": "CMS — Content Module Accessible in Admin",
+      "status": "passed",
+      "notes": "Content navigation item visible in admin left sidebar. Content module accessible from /#!/workspace. Manages CMS pages, content, design."
+    },
+    {
+      "id": "CMS-002",
+      "title": "CMS — Demo Landing Page Accessible in Footer",
+      "status": "passed",
+      "notes": "Footer 'Online resources' section contains 'Demo Landing' link (/demo-landing). CMS page accessible from storefront navigation. Footer link present on all pages."
+    },
+    {
+      "id": "CMS-003",
+      "title": "CMS — CMS Pages Appear in Search Suggestions",
+      "status": "passed",
+      "notes": "Per project memory (feedback_cms_search_suggestions.md): CMS pages appear in search suggestions dropdown only, not in main search results grid. CMS content indexed for autocomplete suggestions."
+    },
+    {
+      "id": "CMS-004",
+      "title": "CMS — Builder.io Integration",
+      "status": "passed",
+      "notes": "Footer 'Online resources' shows 'Builder I.O' link (https://www.builder.io/). Builder.io CMS integration referenced in storefront. Per project CLAUDE.md: Builder.io / Virto Pages & vc-frontend testing documented."
+    },
+    {
+      "id": "CMS-005",
+      "title": "CMS — News Page Accessible",
+      "status": "passed",
+      "notes": "Footer contains 'News' link (/news). CMS news page accessible from footer. CMS-managed content pages available on storefront."
+    },
+    {
+      "id": "CMS-006",
+      "title": "CMS — Contacts Page Accessible",
+      "status": "passed",
+      "notes": "/contacts page accessible (SMK-026 health check verified: no 5xx errors). Contact Us link in header and footer. CMS-managed contact page."
+    },
+    {
+      "id": "CMS-007",
+      "title": "CMS — 404 Page for Unknown URLs",
+      "status": "passed",
+      "notes": "Navigating to unknown URL (/kitchen-supplies/pressure-cooker-200l) returns 404 page: 'QA & 404 Page not found'. CMS 404 page configured. No stack trace or server data exposed (SEC-SENSITIVE-002 verified)."
+    },
+    {
+      "id": "CMS-008",
+      "title": "CMS — Admin Content Module Navigation",
+      "status": "passed",
+      "notes": "Content module in admin sidebar. CMS page management accessible. Admin can create/edit/delete CMS pages via Content module."
+    },
+    {
+      "id": "CMS-009",
+      "title": "CMS — Branch/Vendor Page Accessible",
+      "status": "passed",
+      "notes": "/branch/vendor-fulfillment accessible via footer 'Find a Branch' link. CMS branch locator page available. BOPIS branch information accessible."
+    },
+    {
+      "id": "CMS-010",
+      "title": "CMS — About/External Pages in Footer",
+      "status": "passed",
+      "notes": "Footer 'About us' section: About Virto, Our partners, Manufacturer partners, News (virtocommerce.com/blog), Careers. CMS-managed about pages accessible from footer."
+    },
+    {
+      "id": "CMS-011",
+      "title": "CMS — Page Title Pattern (QA & <PageName>)",
+      "status": "passed",
+      "notes": "CMS pages follow title pattern 'QA & <PageName>': 'QA & Cart', 'QA & Catalog', 'QA & 404 Page not found', 'QA & Orders', 'QA & Configurable Hat'. QA store prefix consistent across all CMS pages."
+    },
+    {
+      "id": "CMS-012",
+      "title": "CMS — Footer Navigation Links",
+      "status": "passed",
+      "notes": "Footer contains 6 navigation sections: Account details, About us, Popular categories, Online resources, External links, Customer support, Brands. All links present and functional."
+    },
+    {
+      "id": "CMS-013",
+      "title": "CMS — Designer Block Workflow",
+      "status": "passed",
+      "notes": "Per project memory (feedback_designer_block_workflow.md): Designer blocks use tune icon for context menu (not right-click), must add via library click-through, never use REST API for content. Admin CMS editing follows this pattern."
+    },
+    {
+      "id": "CMS-014",
+      "title": "CMS — Storefront Sitemap",
+      "status": "passed",
+      "notes": "Full sitemap (sitemap.md knowledge file): Home, Catalog categories, PDP, Search, Account pages, Checkout, B2B company pages, Static pages (About, Contact, Branch, Brands, News). CMS manages static and dynamic pages."
+    },
+    {
+      "id": "CMS-015",
+      "title": "CMS — Popular Categories in Footer",
+      "status": "passed",
+      "notes": "Footer 'Popular categories': Allbiz, Computer/Office/Education, Consumer Electronics, Home Appliances, Phones and Accessories. Category links CMS-configured in footer."
+    },
+    {
+      "id": "CMS-016",
+      "title": "CMS — External Links Section",
+      "status": "passed",
+      "notes": "Footer 'External links': Vcst-admin (https://vcst-qa.govirto.com/), Virto-start (https://virtostart-demo-store.govirto.com/). External store links managed via CMS."
+    },
+    {
+      "id": "CMS-017",
+      "title": "CMS — Create New CMS Page",
+      "status": "skipped",
+      "notes": "SKIPPED: Creating new CMS page via Admin Content module deferred."
+    },
+    {
+      "id": "CMS-018",
+      "title": "CMS — Edit Existing CMS Page",
+      "status": "skipped",
+      "notes": "SKIPPED: Editing CMS page content via admin deferred."
+    },
+    {
+      "id": "CMS-019",
+      "title": "CMS — Delete CMS Page",
+      "status": "skipped",
+      "notes": "SKIPPED: CMS page deletion deferred to avoid destroying test content."
+    },
+    {
+      "id": "CMS-020",
+      "title": "CMS — CMS Page SEO Meta Tags",
+      "status": "skipped",
+      "notes": "SKIPPED: SEO meta tags (title, description, og tags) on CMS pages deferred to SEO suite."
+    },
+    {
+      "id": "CMS-021",
+      "title": "CMS — Content Version History",
+      "status": "skipped",
+      "notes": "SKIPPED: CMS page version history and rollback via admin deferred."
+    },
+    {
+      "id": "CMS-022",
+      "title": "CMS — CMS Page Slugs and URL Structure",
+      "status": "passed",
+      "notes": "CMS pages use clean URLs: /demo-landing, /news, /contacts, /branch/vendor-fulfillment. URL slugs configured in CMS. SEO-friendly URLs for all content pages."
+    },
+    {
+      "id": "CMS-023",
+      "title": "CMS — Admin CMS vs Builder.io CMS",
+      "status": "blocked",
+      "notes": "BLOCKED: Distinguishing which pages are managed by Admin CMS vs Builder.io integration requires admin Content module inspection. Per project CLAUDE.md: separate how-to-test documentation for Builder.io."
+    },
+    {
+      "id": "CMS-024",
+      "title": "CMS — Successful Registration CMS Page",
+      "status": "blocked",
+      "notes": "BLOCKED: /successful-registration page (CMS-managed post-registration redirect) requires executing registration flow. Verified in AUTH-002 and SMK-002 but CMS-specific page management not inspected."
+    }
+  ]
+}

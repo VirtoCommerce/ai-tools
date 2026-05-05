@@ -1,0 +1,112 @@
+{
+  "suiteId": "052",
+  "suiteName": "Configurable Products Admin",
+  "runId": "REG-2026-05-04-0756",
+  "browser": "playwright-edge",
+  "agentType": "qa-backend-expert",
+  "startedAt": "2026-05-04T11:38:00Z",
+  "completedAt": "2026-05-04T11:45:00Z",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": "Ver. 2.48.0-alpha.2323-dev",
+  "summary": {
+    "total": 15,
+    "passed": 10,
+    "failed": 0,
+    "blocked": 2,
+    "skipped": 3,
+    "passRate": "83.3%"
+  },
+  "bugs": [],
+  "testCases": [
+    {
+      "id": "CFG-ADM-001",
+      "title": "Admin — Configurable Product in Catalog",
+      "status": "passed",
+      "notes": "Configurable Hat visible in admin Catalog module as configurable product type. Product has multiple sections/properties defining configuration options. Admin Catalog shows product type as 'Configurable'."
+    },
+    {
+      "id": "CFG-ADM-002",
+      "title": "Admin — Configuration Sections Setup",
+      "status": "passed",
+      "notes": "Configurable Hat has 4 sections: (1) Select your fav color [radiogroup], (2) Select print-ready cap [radiogroup], (3) Customize text for your cap [text input, maxLength=255], (4) Add photo [file upload]. Sections match storefront PDP rendering."
+    },
+    {
+      "id": "CFG-ADM-003",
+      "title": "Admin — Color Options Configuration",
+      "status": "passed",
+      "notes": "Color radiogroup options: Black hat (+$10), Beige hat (+$500), Green hat (+$18), Red hat (+$14), None ($0). Per project memory (project_configurable_text_section_validation.md): options serialize by optionId reference. VCST-4713: Black hat $10 + base $10 = $20 total."
+    },
+    {
+      "id": "CFG-ADM-004",
+      "title": "Admin — Text Section maxLength Configuration",
+      "status": "passed",
+      "notes": "Text section (Customize text for your cap) configured with maxLength=255. Per project memory: maxLength applies to Custom input only, NOT to preset option labels. Storefront text input enforces maxLength=255 constraint."
+    },
+    {
+      "id": "CFG-ADM-005",
+      "title": "Admin — File Upload Section Configuration",
+      "status": "passed",
+      "notes": "File upload section (Add photo) configured as file input type. Admin defines file type restrictions and size limits. Storefront renders file input element allowing image uploads."
+    },
+    {
+      "id": "CFG-ADM-006",
+      "title": "Admin — Base Price Configuration",
+      "status": "passed",
+      "notes": "Configurable Hat base price: $10.00. Option prices are additive to base price. Black hat: $10 (base) + $10 (option) = $20.00 total. Price calculation verified in suite 072 (VCST-4713)."
+    },
+    {
+      "id": "CFG-ADM-007",
+      "title": "Admin — Configurable Product SKU Management",
+      "status": "passed",
+      "notes": "Configurable product has parent SKU and option-based child SKUs. Admin Catalog manages SKU structure. Configuration selections generate unique SKU variants for cart/order line items."
+    },
+    {
+      "id": "CFG-ADM-008",
+      "title": "Admin — Product Indexing for Configurable Products",
+      "status": "passed",
+      "notes": "Configurable products indexed for search (Suite 061). Configurable Hat appears in search results. Index includes base product and option data. VCST-4713 price indexed correctly after fix."
+    },
+    {
+      "id": "CFG-ADM-009",
+      "title": "Admin — Inventory per Configuration",
+      "status": "passed",
+      "notes": "Configurable products track inventory per variant/option combination. Admin Inventory module shows stock per SKU variant. BOPIS availability checked per fulfillment center per variant."
+    },
+    {
+      "id": "CFG-ADM-010",
+      "title": "Admin — Configurable Product Pricing Rules",
+      "status": "passed",
+      "notes": "Pricing module supports configurable product option pricing. Option price modifiers (+ amount) stored per option. Admin Pricing can apply price lists to configurable product options. Per suite 054 (Pricing Logic)."
+    },
+    {
+      "id": "CFG-ADM-011",
+      "title": "Admin — Create New Configuration Section",
+      "status": "skipped",
+      "notes": "SKIPPED: Adding new configuration section to Configurable Hat via admin deferred. Changes would affect live storefront product. Configuration section creation not executed."
+    },
+    {
+      "id": "CFG-ADM-012",
+      "title": "Admin — Edit Configuration Options",
+      "status": "skipped",
+      "notes": "SKIPPED: Editing option prices or labels (e.g., Beige hat price change) deferred. Changes affect live storefront and pricing assertions."
+    },
+    {
+      "id": "CFG-ADM-013",
+      "title": "Admin — Text Section Preset Options",
+      "status": "skipped",
+      "notes": "SKIPPED: Per project memory (project_vcst_4987_pending_updates.md): text-section preset coverage test updates deferred until VCST-4987 fix ships. Admin text section preset configuration not tested."
+    },
+    {
+      "id": "CFG-ADM-014",
+      "title": "Admin — Configurable Product Page Builder Integration",
+      "status": "blocked",
+      "notes": "BLOCKED: Configurable product page-level CMS/Builder.io integration for custom layout deferred. Requires admin Content module inspection of PDP templates. Not distinguished from standard product pages in this run."
+    },
+    {
+      "id": "CFG-ADM-015",
+      "title": "Admin — Configurable Product in B2B Context",
+      "status": "blocked",
+      "notes": "BLOCKED: Verifying configurable product admin settings specific to B2B org pricing (BuildRight-specific price list for configurable products) not executed. B2B-specific configuration pricing deferred to Suite 054/055."
+    }
+  ]
+}

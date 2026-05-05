@@ -1,72 +1,128 @@
 {
-  "runId": "REG-2026-04-29-1438",
-  "status": "completed",
-  "verdict": "APPROVED",
-  "passRate": "66.7%",
-  "previousRun": "REG-2026-04-29-1057",
-  "previousPassRate": "50.0%",
-  "delta": "+1 PASS (GQL-094 false-negative resolved); +1 PASS (GQL-127 cross-OP demoted); GQL-130/131 cart setup unblocked, only product gaps remain",
-  "headline": "VCST-4707 IncludeLocationIds fix VERIFIED in deployed QA — PR vc-module-x-pickup#8 closeable",
-  "startedAt": "2026-04-29T12:38:45Z",
-  "completedAt": "2026-04-29T12:42:00Z",
-  "selection": "050k",
+  "runId": "REG-2026-05-04-1527",
+  "status": "running",
+  "resumedAt2": "2026-05-05T11:00:00Z",
+  "resumeReason2": "User issued 'go' — retry aborted Batch 6 suites",
+  "selection": "frontend",
+  "startedAt": "2026-05-04T15:27:00Z",
+  "resumedAt": "2026-05-04T16:11:00Z",
+  "resumeReason": "User issued 'next' — retry aborted Batch 2 (041, 042, 001)",
   "environment": "QA",
+  "frontUrl": "https://vcst-qa-storefront.govirto.com",
+  "backUrl": "https://vcst-qa.govirto.com",
   "buildState": {
-    "platform": "3.1025.0",
-    "XPickup": "3.1001.0-pr-8-3380",
-    "XCart": "3.1010.0",
-    "XCatalog": "3.1005.0",
-    "Xapi": "3.1006.0",
-    "Inventory": "3.1001.0",
-    "source": "VirtoCommerce/vc-deploy-dev@vcst-qa backend/packages.json (cached)"
+    "platform": "3.1025.0-pr-2987-eb8e-vcst-4710-eb8e622b",
+    "theme": "2.48.0-pr-2219-d1d4-d1d4b74c",
+    "stale": true
   },
-  "seed": null,
-  "teardown": false,
-  "browserPoolNote": "Single runner-native GraphQL suite — browserless (GraphQL Fast Path)",
-  "batches": [
-    {
-      "batchId": 1,
-      "suites": [
-        {
-          "id": "050k",
-          "name": "GraphQL xPickup",
-          "csv": "regression/suites/Backend/graphql/050k-graphql-xpickup.csv",
-          "agent": "Test Runner Agent",
-          "browser": "none (GraphQL Fast Path)",
-          "status": "completed",
-          "verdict": "PASS (with 2 known product gaps)",
-          "totalCases": 6,
-          "passed": 4,
-          "failed": 2,
-          "blocked": 0,
-          "passRate": "66.7%",
-          "passingCases": ["GQL-094", "GQL-127", "GQL-128", "GQL-129"],
-          "failingCases": ["GQL-130 (GAP-XPICKUP-001)", "GQL-131 (GAP-XPICKUP-002)"],
-          "results": "reports/regression/REG-2026-04-29-1438/suite-050k-results.json",
-          "triage": "reports/regression/REG-2026-04-29-1438/triage-report.md"
-        }
-      ]
-    }
+  "mode": "standard",
+  "dispatchMode": "direct (one Agent per suite)",
+  "browserPool": [
+    { "slot": 1, "server": "playwright-chrome", "status": "available", "lastSuite": "029" },
+    { "slot": 2, "server": "playwright-firefox", "status": "busy", "currentSuite": "030" },
+    { "slot": 3, "server": "playwright-edge", "status": "available", "lastSuite": "031" }
   ],
-  "consolidatedReport": "reports/regression/regression-2026-04-29-1438.md",
-  "fixValidationFinal": {
-    "BUG-050k-001": "VALIDATED — capture path corrected",
-    "BUG-050k-001-v2": "VALIDATED — addOrUpdateCartShipment shipment binding fixed",
-    "BUG-050k-001-v3 (workaround)": "VALIDATED — GQL-094 false-negative resolved",
-    "BUG-050k-002": "VALIDATED — GQL-129 alias",
-    "BUG-050k-003": "VALIDATED — GQL-127, GQL-131 cross-OP predicates demoted",
-    "BUG-050k-004": "VALIDATED — GQL-130, GQL-131 alias for deterministic cart setup",
-    "VCST-4707": "VERIFIED — IncludeLocationIds prepend confirmed in 2 assertions"
+  "currentBatch": 8,
+  "batch8StartedAt": "2026-05-05T14:30:00Z",
+  "batch7StartedAt": "2026-05-05T13:30:00Z",
+  "batch6StartedAt": "2026-05-05T02:30:00Z",
+  "batch4StartedAt": "2026-05-05T00:50:00Z",
+  "totalBatches": 14,
+  "summary": {
+    "totalSuites": 42,
+    "completed": 6,
+    "passed": 99,
+    "failed": 7,
+    "blocked": 18,
+    "timeBudget": 6,
+    "notTested": 13,
+    "ambiguous": 1,
+    "skipped": 1,
+    "totalTestsRun": 145
   },
-  "openProductGaps": {
-    "GAP-XPICKUP-001": "cartPickupLocations.term_facets unwired in PR #8. Likely out-of-scope. File as enhancement after PR description review.",
-    "GAP-XPICKUP-002": "cartPickupLocations.filter unwired in PR #8. Likely out-of-scope. File as enhancement after PR description review."
+  "completedSuites": [
+    { "id": "039", "passRate": "82.6%", "passed": 19, "failed": 2, "blocked": 2, "total": 23, "bugs": ["BUG-039-001", "BUG-039-002"] },
+    { "id": "040", "passRate": "50.0%", "passed": 14, "failed": 0, "blocked": 8, "timeBudget": 6, "total": 28, "bugs": [] },
+    { "id": "044", "passRate": "94.7% (executable)", "passed": 18, "failed": 1, "blocked": 1, "notTested": 13, "total": 33, "bugs": ["BUG-044-001", "BUG-044-002"] },
+    { "id": "041", "passRate": "85.7% (executable)", "passed": 6, "failed": 1, "blocked": 7, "total": 14, "bugs": ["BUG-041-001"], "notes": "P0 bug: double-click creates duplicate orders. 7 BLOCKED — canonical decline card no longer declines in this env." },
+    { "id": "001", "passRate": "78.9%", "passed": 15, "failed": 3, "skipped": 1, "total": 19, "bugs": ["BUG-001-001 (preliminary, confirmed:false)"], "notes": "VCST-4728 breadcrumb regression PASS. CAT-040/041/049 FAIL on systemic SEO defect (empty meta description, no canonical, no JSON-LD). CAT-037 SKIPPED — /Brands has no count badges in Coffee theme." },
+    { "id": "042", "passRate": "96.4%", "passed": 27, "ambiguous": 1, "failed": 0, "blocked": 0, "total": 28, "bugs": [], "notes": "Order CO260504-00032 placed E2E via CyberSource. SMK-015 GA4 purchase event AMBIGUOUS (network buffer reset). PR #2234 data-test-id renames verified deployed." },
+    { "id": "004", "passRate": "91.3% (executable)", "passed": 21, "failed": 2, "skipped": 4, "total": 27, "bugs": ["BUG-004-001", "BUG-004-002"], "notes": "Pagination tests N/A — storefront uses infinite_scroll mode. Test fixture PROD_DEFAULT.sku=WH-001 is stale; used live SKU BAJ-18974454 instead." },
+    { "id": "002", "passRate": "80.0%", "passed": 24, "failed": 1, "blocked": 0, "skipped": 5, "total": 30, "bugs": ["BUG-002-001"], "notes": "Critical bug: PDP shows €0.00 placeholder when no EUR price list (misleading 'free' presentation). NOTE: cat 002 confirmed virtual catalog filter still uses OLD `fc596540...` ID (returns 4,131 products) — memory `9238c387...` may be outdated, recommend verification." },
+    { "id": "005", "passRate": "63.6%", "passed": 21, "failed": 1, "partial": 5, "skipped": 2, "na": 4, "total": 33, "bugs": ["BUG-005-001", "BUG-005-002"], "notes": "Core search filters healthy. Cross-layer probe verified ($54 Vintage Colorado Hoodie matches GraphQL API). Search→cart E2E PASS. 2 bugs: 'Show in stock' default state, i18n key leak in mobile aria-label." },
+    { "id": "006", "passRate": "69.2%", "passed": 27, "failed": 1, "blocked": 11, "skipped": 1, "total": 39, "bugs": ["BUG-006-001"], "notes": "Critical org-isolation invariants verified PASS (cart, addresses, branding, search, XSS prevention). 1 FAIL: org switch from deep category doesn't reset navigation. 11 BLOCKED on test-data gaps (no contract-pricing differential, no org-scoped lists, no ≤10-org user, no default addresses, no no-default-org account)." },
+    { "id": "007", "passRate": "55.2%", "passed": 16, "failed": 3, "blocked": 7, "notTested": 1, "total": 29, "bugs": ["BUG-007-001"], "notes": "List lifecycle works. BUG-007-001 (High): 'Anyone (readonly)' sharing locks all editable fields permanently. Saved-for-later 'Add to cart' copies rather than moves. Email-share UI doesn't exist. 7 BLOCKED — slot 3 is sole BuildRight user (no paired user for cross-user shared-list tests)." },
+    { "id": "008", "passRate": "55.6%", "passed": 10, "failed": 1, "blocked": 6, "skipped": 1, "total": 18, "bugs": ["BUG-008-001"], "notes": "Core RBAC + member CRUD PASS (list, search, invite, edit-role, block/unblock). 6 BLOCKED on missing admin-SPA access + approval-workflow not configured on org. BUG-008-001: /company/members has no member count anywhere on page." },
+    { "id": "009", "passRate": "80.6%", "passed": 25, "failed": 3, "blocked": 0, "skipped": 3, "total": 31, "bugs": ["BUG-009-001", "BUG-009-002", "BUG-009-003"], "notes": "Variations + configurations both healthy. VCST-4586 (sale price primary) + VCST-4612 (no auto-scroll on radio) regressions confirmed PASS. 3 prelim bugs: mobile swatches <44×44 WCAG, no default variant on 4-axis product, variant selection not in URL." },
+    { "id": "010", "passRate": "63.4% (executable)", "passed": 26, "passWithCaveat": 7, "failed": 4, "na": 11, "total": 52, "bugs": ["BUG-010-001", "BUG-010-002", "BUG-010-003", "BUG-010-004"], "notes": "Address-management flow works (CRUD + mobile + Canadian provinces + XSS). 4 bugs: no default-address UI, weak ZIP/phone validation, duplicate-address not deduped (server-side), bulk-order qty cap bypass." },
+    { "id": "012", "passRate": "16.7% overall / 66.7% Firefox-runnable", "passed": 2, "failed": 1, "skipped": 9, "total": 12, "bugs": ["BUG-012-001"], "notes": "Email validator accepts user@domain without TLD (Low — likely intentional permissive validator). 6 cases skipped (chrome-required), 2 N/A in CSV, 1 Firefox limitation. Cross-references BUG-041-001/BUG-002-001 noted, not re-filed." },
+    { "id": "013", "passRate": "25.0%", "passed": 3, "failed": 1, "blocked": 7, "skipped": 1, "total": 12, "bugs": ["BUG-013-001"], "notes": "Real B2B order CO260505-00020 ($275.99) placed via CyberSource — math invariant BL-CHK-006 verified ($100 − $20.01 + $46 + $150 = $275.99). 1 High bug: PO Number field missing. 7 BLOCKED on Net-30/approval-workflow/contract-pricing seed gaps." },
+    { "id": "011", "passRate": "50.7% / 73.5% executable", "passed": 36, "failed": 2, "skippedNA": 33, "total": 71, "bugs": ["BUG-011-001", "BUG-011-002"], "notes": "Order CO260505-00018 ($1,800) via Authorize.Net E2E. **BUG-041-001 P0 NOT reproduced** — single order confirmed. Defect #2 (city facet→postal codes) FIXED. Defects #1,#3,#4 still present (#3+#4 newly filed)." },
+    { "id": "014", "passRate": "38.8% / 92.9% executable", "passed": 26, "failed": 2, "blocked": 32, "skipped": 7, "total": 67, "bugs": ["BUG-014-001", "BUG-014-002", "BUG-014-003"], "notes": "Order list, detail, search, pagination, status/payment display all PASS. BUG-041-001 P0 duplicate orders CO260504-00029/30 confirmed visible in /account/orders. 32 BLOCKED on absent order statuses (Shipped/Completed/Cancelled/Returned) + admin-mutation prereqs. 3 new bugs: Reorder button absent (High), SKU missing on line items (Med), i18n key 'commmon.buttons.search_orders' typo (Low)." },
+    { "id": "015", "passRate": "33.3% / 100% executable", "passed": 6, "passWithObservation": 4, "blocked": 20, "total": 30, "bugs": [], "notes": "RFQ-from-cart creation, qty edits, search, sort, status-gated action buttons all PASS. 20 BLOCKED on missing seed quotes (Received/Accepted/Rejected/Expired states + multi-round negotiation). CSV terminology stale ('Request Quote' vs current 'Add cart items to quote'). Cleanup: RFQ260505-00002 (Processing) + RFQ260505-00003 (empty draft) need admin cancel." },
+    { "id": "028", "passRate": "84.2% executable", "passed": 32, "failed": 1, "blocked": 6, "skipped": 5, "total": 44, "bugs": ["BUG-028-001"], "notes": "Revenue-critical paths PASS: add/qty/remove/persist/totals/currency. VCST-4896 coupons-sidebar PASS end-to-end (preset cap, custom code, radio replace, trash cancel, view-all _blank, i18n de). 1 Medium bug: negative qty (-1) UI desync (server clamps to 1, UI shows -1)." },
+    { "id": "029", "passRate": "100% executable / 46.9% overall", "passed": 15, "failed": 0, "blocked": 17, "skipped": 0, "total": 32, "bugs": [], "notes": "All 15 executable cases PASS. 17 BLOCKED pre-flagged in CSV (13 admin-destructive, 4 seed-required). VCST-4896 coupons-sidebar PASS (5% × $576.98 = $28.85). Cart persistence across sign-out/sign-in PASS. Guest-cart merge PASS. 3 observations (no bugs filed): invalid coupon silently removes valid one, over-stock UI accepts 9999 without auto-cap, sign-in route needs cache-buster on first visit." },
+    { "id": "031", "passRate": "75.8%", "passed": 25, "failed": 1, "blocked": 7, "skipped": 0, "total": 33, "bugs": ["BUG-031-001"], "notes": "VCST-4691 character-pattern coverage PASS (HTML/script tags rejected in name fields; & allowed in org name). Auth security posture solid (no enumeration, case-insensitive email, Unicode preserved). Same email no-TLD issue as BUG-012-001 — filed as BUG-031-001. 7 BLOCKED on admin-config + missing seeds (LOCKOUT_TEST_* env empty)." }
+  ],
+  "runningSuites": [],
+  "incompleteSuites": [
+    { "id": "003", "name": "Catalog Filters", "browser": "playwright-firefox", "status": "partial", "casesCompleted": 15, "casesTotal": 29, "passed": 12, "failed": 0, "blocked": 2, "bugs": ["BUG_003_001"], "abortReason": "quota_exceeded", "remainingCases": "CAT-025 through CAT-049 (14 cases)", "partialResult": "reports/regression/REG-2026-05-04-1527/003-results.json", "needsRedispatch": true },
+    { "id": "011", "name": "Checkout Flow", "browser": "playwright-chrome", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 71, "abortReason": "quota_exceeded — terminated at ~7 min during setup", "partialResult": "reports/regression/REG-2026-05-04-1527/011-results.json", "needsRedispatch": true },
+    { "id": "012", "name": "Checkout Guest", "browser": "playwright-firefox", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 12, "abortReason": "quota_exceeded — terminated at ~7 min during setup. Note: 6 cases per CSV require chrome not firefox", "partialResult": "reports/regression/REG-2026-05-04-1527/012-results.json", "needsRedispatch": true, "browserNote": "redispatch on chrome — CHK-014/017/018/020/067/068 need chrome per CSV" },
+    { "id": "013", "name": "Checkout B2B", "browser": "playwright-edge", "status": "completed", "casesCompleted": 12, "casesTotal": 12, "passed": 3, "failed": 1, "blocked": 7, "skipped": 1, "passRate": "25.0%", "bugs": ["BUG-013-001"], "partialResult": "reports/regression/REG-2026-05-04-1527/013-results.json", "needsRedispatch": false, "completedAt": "2026-05-05T12:46:30Z", "ordersCreated": ["CO260505-00020"] }
+  ],
+  "pendingSuites": ["002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "028", "029", "030", "031", "032", "033", "036", "037", "038", "048", "070", "071", "072", "072b", "072c", "072d", "077", "081", "043", "045", "046", "047"],
+  "bugs": [
+    { "id": "BUG-039-001", "severity": "High", "suite": "039", "title": "CyberSource CVV displayed in plaintext (no masking)" },
+    { "id": "BUG-039-002", "severity": "Medium", "suite": "039", "title": "Card-type icon does not toggle on Visa BIN" },
+    { "id": "BUG-044-001", "severity": "Medium", "suite": "044", "title": "changeComment.comment persists raw HTML/script tags" },
+    { "id": "BUG-044-002", "severity": "Medium", "suite": "044", "title": "Storefront SPA root missing security headers" },
+    { "id": "BUG-041-001", "severity": "Critical", "priority": "P0", "suite": "041", "title": "Double-click Place Order creates duplicate orders (CO260504-00029 + 00030)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-041-001-double-click-creates-duplicate-orders.md" },
+    { "id": "BUG-001-001", "severity": "Medium", "suite": "001", "title": "Systemic SEO defect — empty meta description, no canonical, no JSON-LD on PDP/category pages", "confirmed": false, "reportFile": "TBD — preliminary, awaiting qa-testing-expert / qa-lead review" },
+    { "id": "BUG-004-001", "severity": "Low", "suite": "004", "title": "Search dropdown not restored to Hints state after Clear (X) click", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-004-001-search-dropdown-not-restored-after-clear.md" },
+    { "id": "BUG-004-002", "severity": "Medium", "suite": "004", "title": "Search typo tolerance / 'Did you mean' not implemented", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-004-002-typo-tolerance-not-implemented.md" },
+    { "id": "BUG-002-001", "severity": "Critical", "suite": "002", "title": "PDP shows €0.00 placeholder for product with no price list in selected currency (misleading 'free' presentation)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-002-001-pdp-zero-price-placeholder-when-no-price-list-in-currency.md" },
+    { "id": "BUG_003_001", "severity": "High", "suite": "003", "title": "Category page has no pagination — only ~25-32 of 146 products reachable", "confirmed": false, "reportFile": "TBD — preliminary, partial 003 run" },
+    { "id": "BUG-005-001", "severity": "Medium", "suite": "005", "title": "'Show in stock' checkbox unchecked by default contradicts SRCH-NEW-012 expected state", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-005-001-show-in-stock-not-default.md" },
+    { "id": "BUG-005-002", "severity": "Low", "suite": "005", "title": "Raw i18n key `common.labels.close` exposed as aria-label on mobile search backdrop", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-005-002-i18n-key-exposed-aria-label.md" },
+    { "id": "BUG-006-001", "severity": "Medium", "suite": "006", "title": "Org switch from deep category page does not reset URL/breadcrumbs (only branding updates)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-006-001-org-switch-no-navigation-reset.md" },
+    { "id": "BUG-007-001", "severity": "High", "suite": "007", "title": "List with 'Anyone (readonly)' sharing locks all editable fields permanently — cannot rename, change description, revert sharing, or save", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-007-001-list-shared-cannot-revert-or-rename.md" },
+    { "id": "BUG-008-001", "severity": "Low", "suite": "008", "title": "/company/members page has no member count display", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-008-001-no-member-count-display.md" },
+    { "id": "BUG-009-001", "severity": "Medium", "suite": "009", "title": "Variant swatches measure 32×32px on mobile (below WCAG 44×44 touch target)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-009-001-variant-swatches-mobile-too-small.md" },
+    { "id": "BUG-009-002", "severity": "Medium", "suite": "009", "title": "4-axis variation product loads with no default variant pre-selected (Add-to-Cart disabled)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-009-002-variations-no-default-variant-on-load.md" },
+    { "id": "BUG-009-003", "severity": "Medium", "suite": "009", "title": "Variant attribute selection does not propagate to URL query params (no shareable variant URLs)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-009-003-variant-selections-no-url-params.md" },
+    { "id": "BUG-010-001", "severity": "Medium", "suite": "010", "title": "No default-address UI — `isDefault: false` on every record; checkout/header don't pre-select", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-010-001-no-default-address-ui.md" },
+    { "id": "BUG-010-002", "severity": "Medium", "suite": "010", "title": "Address ZIP `999` and phone `123` accepted and saved without validation", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-010-002-address-zip-phone-validation-missing.md" },
+    { "id": "BUG-010-003", "severity": "Medium", "suite": "010", "title": "Server inserts duplicate address instead of dedupe (PROPOSED-BL-PROFILE-001 violation)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-010-003-duplicate-address-not-deduped.md" },
+    { "id": "BUG-010-004", "severity": "Low", "suite": "010", "title": "Bulk-order qty cap (max 7) is cosmetic — line accepted at 166", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-010-004-bulk-order-quantity-cap-bypass.md" },
+    { "id": "BUG-013-001", "severity": "High", "suite": "013", "title": "PO Number field missing from B2B checkout for org user", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-013-001-no-po-number-field-b2b-checkout.md" },
+    { "id": "BUG-012-001", "severity": "Low", "suite": "012", "title": "Email validator accepts `user@domain` without TLD (likely permissive SMTP validator)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-012-001-email-validator-accepts-no-tld.md" },
+    { "id": "BUG-011-001", "severity": "Low", "suite": "011", "title": "Address popup aria-label='Search pickup locations' misleading (used for shipping addresses too)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-011-001-aria-label-search-pickup.md" },
+    { "id": "BUG-011-002", "severity": "Medium", "suite": "011", "title": "Mobile city facet clipped 27px past 375px viewport", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-011-002-mobile-city-facet-clipped.md" },
+    { "id": "BUG-014-001", "severity": "High", "suite": "014", "title": "Reorder button absent on every order detail page (blocks 11 reorder-flow cases)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-014-001-reorder-button-missing.md" },
+    { "id": "BUG-014-002", "severity": "Low", "suite": "014", "title": "Raw i18n key `commmon.buttons.search_orders` (3 m's typo) exposed on search button", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-014-002-i18n-typo-commmon.md" },
+    { "id": "BUG-014-003", "severity": "Medium", "suite": "014", "title": "Line items missing SKU display on order detail page", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-014-003-line-items-no-sku.md" },
+    { "id": "BUG-028-001", "severity": "Medium", "suite": "028", "title": "Negative qty (-1) input persists in UI/header but server clamps to 1 — UI/state desync", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-028-001-negative-qty-input-display-desync.md" },
+    { "id": "BUG-031-001", "severity": "Low", "suite": "031", "title": "Sign-up email validator accepts `missing@domain` without TLD (same root cause as BUG-012-001)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-031-001-email-validator-no-tld.md" }
+  ],
+  "addressPopupDefects": {
+    "defect_1_column_sort": "still present (CHK-094)",
+    "defect_2_city_facet_postal_codes": "FIXED (CHK-092)",
+    "defect_3_aria_label_search_pickup": "still present → BUG-011-001",
+    "defect_4_mobile_city_facet_clipped": "still present → BUG-011-002 (27px overflow)"
   },
-  "dailyTrajectory": {
-    "REG-2026-04-29-0929": "1/17 PASS on 050b1 (BUG-050b1-003 — min_qty trap discovered)",
-    "REG-2026-04-29-1015": "1/6 PASS on 050k (16.7%) — initial run after lifecycle review",
-    "REG-2026-04-29-1040": "2/6 PASS (33.3%) — capture + alias fixes",
-    "REG-2026-04-29-1057": "3/6 PASS (50.0%) — JSON_READER fix; VCST-4707 verified",
-    "REG-2026-04-29-1438": "4/6 PASS (66.7%) — final cleanup; only product gaps remain"
-  }
+  "cleanupNeeded": [
+    { "type": "order", "id": "CO260504-00029", "reason": "duplicate from BUG-041-001" },
+    { "type": "order", "id": "CO260504-00030", "reason": "duplicate from BUG-041-001" },
+    { "type": "order", "id": "CO260504-00031", "reason": "test artifact from PAY-DECLINE-001 (decline card didn't decline)" },
+    { "type": "order", "id": "CO260505-00020", "reason": "test artifact from CHK-071 (B2B order via CyberSource for org-history verification)" },
+    { "type": "order", "id": "CO260505-00018", "reason": "test artifact from suite 011 CHK-008 (Authorize.Net happy-path verification, $1,800)" },
+    { "type": "quote", "id": "RFQ260505-00002", "reason": "suite 015 test artifact (Processing state)" },
+    { "type": "quote", "id": "RFQ260505-00003", "reason": "suite 015 empty draft" }
+  ],
+  "previousAttempts": [
+    { "batch": 2, "abortedAt": "2026-05-04T16:09:00Z", "reason": "quota_exceeded", "evidenceDirsCreated": ["041-evidence/", "042-evidence/", "001-evidence/"] }
+  ],
+  "outputDir": "reports/regression/REG-2026-05-04-1527/",
+  "reportFile": "reports/regression/REG-2026-05-04-1527/regression-report.md"
 }

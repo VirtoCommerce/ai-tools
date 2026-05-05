@@ -428,3 +428,43 @@ GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCar
 [DATA label=list_carts] data.carts is non-null
 [COUNT label=list_carts] data.carts.totalCount >= 0
 [DATA label=list_carts] data.carts.items is non-null","[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount","errors[] non-empty; carts null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.carts,Automated
+GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line Item","GraphQL > xCart",High,BL-CART-007; BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-14.1,"Runner-native. ORG_USER. Submits the same SKU 1507112554 three times (quantity 2 each) in one addBulkItemsCart call to verify BL-CART-007: same-SKU repeats MUST coalesce into ONE cart line with summed quantity (6), not create 3 duplicate lines. SKU 1507112554 (Coca Cola Regular 6x330ml, productId 8b7282ad-d318-42f4-9c19-e2d9b388e06f) verified buyable on B2B-store in QA 2026-04-30. Note: addBulkItemsCart input uses productSku (not productId — differs from addItem/addItemsCart) and returns BulkCartType { cart, errors }.","SKU=1507112554 (Coca Cola Regular 6x330ml; verified live in QA 2026-04-30). Documented duplicate-SKU bulk-add example.","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC pre_clear]
+[GQL-OP bulk_add_dup]
+  mutation {
+    addBulkItemsCart(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      cartItems: [
+        { productSku: ""1507112554"" quantity: 2 }
+        { productSku: ""1507112554"" quantity: 2 }
+        { productSku: ""1507112554"" quantity: 2 }
+      ]
+    }) {
+      cart { id itemsCount itemsQuantity items { id productId sku quantity } }
+      errors { errorCode errorMessage objectId objectType }
+    }
+  }
+[GQL-EXEC bulk_add_dup]
+[GQL-OP verify_cart]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") { id itemsCount itemsQuantity items { productId sku quantity } } }
+[GQL-EXEC verify_cart]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=bulk_add_dup] errors[] empty
+[COUNT label=bulk_add_dup] data.addBulkItemsCart.errors = 0
+[COUNT label=bulk_add_dup] data.addBulkItemsCart.cart.itemsCount = 1
+[COUNT label=bulk_add_dup] data.addBulkItemsCart.cart.itemsQuantity = 6
+[DATA label=bulk_add_dup] data.addBulkItemsCart.cart.items.0.sku = 1507112554
+[COUNT label=bulk_add_dup] data.addBulkItemsCart.cart.items.0.quantity = 6
+[DATA label=bulk_add_dup] data.addBulkItemsCart.cart.items.0.id is non-null
+[ERRORS label=verify_cart] errors[] empty
+[COUNT label=verify_cart] data.cart.itemsCount = 1
+[COUNT label=verify_cart] data.cart.itemsQuantity = 6
+[COUNT label=verify_cart] data.cart.items.0.quantity = 6","[EVIDENCE] verify_cart query right after bulk_add_dup must show ONE row for sku 1507112554 with quantity 6 — never 3 separate rows of quantity 2 (BL-CART-007 line-item dedupe invariant)","errors[] non-empty; data.addBulkItemsCart.errors[] non-empty (e.g. PRODUCT_MIN_MAX_QTY — pick a different verified SKU); cart.items contains 3 separate rows for sku 1507112554 (BL-CART-007 violation); itemsCount=3 instead of 1; itemsQuantity ≠ 6; productSku rejected because mutation was called with productId (schema requires productSku for InputNewBulkItemType)",none — clearCart at end of steps,xAPI; graphql-schema.md — Mutation.addBulkItemsCart / InputAddBulkItemsType / InputNewBulkItemType; test-data/graphql/mutations/addBulkItemsCart.graphql; BL-CART-007,Automated

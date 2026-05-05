@@ -1,0 +1,285 @@
+{
+  "runId": "REG-2026-05-04-1527",
+  "suiteId": "015",
+  "suiteName": "Quotes",
+  "browser": "playwright-firefox",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "testUser": "test-emily.johnson-20260310@test-agent.com",
+  "org": "AGENT-TEST-Org-TechFlow-20260310 (TechFlow)",
+  "startedAt": "2026-05-05T13:03:50Z",
+  "completedAt": "2026-05-05T13:16:00Z",
+  "totalCases": 30,
+  "executed": 30,
+  "summary": {
+    "PASS": 6,
+    "PASS_WITH_OBSERVATION": 4,
+    "BLOCKED": 20,
+    "FAIL": 0
+  },
+  "results": [
+    {
+      "id": "QUOTE-001",
+      "title": "Create RFQ from Cart",
+      "priority": "Critical",
+      "status": "PASS_WITH_OBSERVATION",
+      "evidence": ["quote-001-rfq-form.png", "quote-001-after-submit.png", "cart-empty-after-rfq.png"],
+      "notes": "Cart loaded with 2+ items (Kingston SSD 1Tb $111.39 + Kingston SSD 512Gb $80.27, subtotal $191.66). Sidebar 'Quote request' panel showed 'Add cart items to quote' button. Click created RFQ draft (RFQ260505-00002), navigated to /account/quotes/{id}/edit. Form pre-populated with cart items + auto-included gift SHOT product. Comment field accepted text. Submit button enabled after content; click submitted successfully. Toast: 'The quote request has been successfully saved'. Redirected to /account/quotes with new RFQ in 'Processing' status. All GraphQL POSTs returned 200, no console errors.",
+      "deviations": "OBS-1: Storefront UI button label is 'Add cart items to quote' on /cart sidebar (NOT 'Request Quote' as written in CSV). 'Request Quote' label is used on /account/quotes page header. OBS-2: Cart was EMPTIED after RFQ submission (CSV asserts items remain in cart — actual semantics is move/transfer cart→quote, not copy). This appears to be by design but contradicts the CSV expectation. OBS-3: A 'gift' SHOT product was auto-included in the quote (coupon-driven free gift from cart's 'Add a gift' section). Final quote had 3 items (cart had 2)."
+    },
+    {
+      "id": "QUOTE-002",
+      "title": "View Quote in Account",
+      "priority": "High",
+      "status": "PASS_WITH_OBSERVATION",
+      "evidence": ["quotes-list-initial.png", "quote-001-after-submit.png"],
+      "notes": "/account/quotes loads via 'Quote requests' link in sidebar. Table displays Quote number, Date, Status badge, Total. Submitted RFQ260505-00002 appears at top with status 'Processing', date 5/5/2026. All Quote IDs visible, dates formatted M/D/YYYY, status badges color-coded with icons. Item count NOT shown in list view (only in detail).",
+      "deviations": "OBS: CSV asserts 'verify item count matches original cart' on the list view — list view has only 4 columns (Quote#, Date, Status, Total). Item count is shown only on the detail page. This is a CSV assertion mismatch with current UI."
+    },
+    {
+      "id": "QUOTE-003",
+      "title": "Quote Detail Page",
+      "priority": "High",
+      "status": "PASS",
+      "evidence": ["quote-detail-processing.png", "quote-detail-rfq00002.png"],
+      "notes": "Detail page (/account/quotes/{id}) loads cleanly: H1 'Quote request #RFQ260422-00004', breadcrumbs Home/Account/Quote requests/Quote request #RFQ#, Products table with Image/Name/Properties/Price per item/Quantity/Total, Quote Summary sidebar (Subtotal $534.27, Discount $0.04, Shipping $150.00, Tax $136.85, Total $821.08), Quote Data (Created 4/22/2026, Status badge Processing), Shipping Address. Comment section shows original RFQ note. Confirmed RFQ260505-00002 also displays Comment 'REG-2026-05-04-1527 Suite-015 QUOTE-001 — RFQ from cart with 2+ items. Please provide bulk pricing.' and qty=7/1/1 line items.",
+      "deviations": "OBS (RFQ260422-00004 only): Line-item subtotal in products table shows $534.23, but Quote Summary Subtotal shows $534.27 (4-cent diff). Likely a tier/discount rounding difference; not a blocker."
+    },
+    {
+      "id": "QUOTE-004",
+      "title": "Admin Response Notification",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed data. All 3 quotes for Emily Johnson are still in 'Processing' status (admin has not responded). /account/notifications shows 2 unrelated notifications (TV catalog push, welcome message) — no quote status change notifications.",
+      "deviations": "Cannot test without admin-responded quote seed."
+    },
+    {
+      "id": "QUOTE-005",
+      "title": "View Updated Quote Pricing",
+      "priority": "Critical",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed data. Quote in 'Quote Received' status with admin pricing not available."
+    },
+    {
+      "id": "QUOTE-006",
+      "title": "Accept Quote",
+      "priority": "Critical",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed data. Verified that Processing-status quotes have no Accept/Reject/Convert buttons (correct per BL-QUOTE-002), confirming acceptance flow is admin-response gated."
+    },
+    {
+      "id": "QUOTE-007",
+      "title": "Convert Quote to Order",
+      "priority": "Critical",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE}} seed data."
+    },
+    {
+      "id": "QUOTE-008",
+      "title": "Reject Quote",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed data."
+    },
+    {
+      "id": "QUOTE-009",
+      "title": "Quote Negotiation",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed AND negotiation feature config (DEFERRED per CSV)."
+    },
+    {
+      "id": "QUOTE-010",
+      "title": "Quote with Substitution",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_SUBSTITUTION}} seed AND substitution feature config (DEFERRED per CSV)."
+    },
+    {
+      "id": "QUOTE-011",
+      "title": "Quote Expiry",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{EXPIRED_QUOTE}} seed (admin-set past expiry date). No expired quotes exist for current test user."
+    },
+    {
+      "id": "QUOTE-012",
+      "title": "Quote History Filter",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": ["quote-001-after-submit.png"],
+      "notes": "BLOCKED — UI has no dedicated status filter dropdown/tabs. Only a 'Search by number or status' textbox is present (which performs filtering by typing the status name). All 3 user quotes are 'Processing' so filter cannot be meaningfully exercised across distinct statuses. Need seed data with multiple statuses (Accepted, Rejected, Expired) to test."
+    },
+    {
+      "id": "QUOTE-013",
+      "title": "Quote with Attachments",
+      "priority": "Medium",
+      "status": "PASS_WITH_OBSERVATION",
+      "evidence": ["quote-001-rfq-form.png"],
+      "notes": "RFQ form has 'Files' panel with drag-drop area + 'Browse your files' button. Hint text: 'CSV, DOCX, JPG, PDF, PNG, TXT, XLSX formats. Each file ≤10MB. Maximum 5 files'. Hidden <input type=file multiple accept='.csv,.docx,.jpg,.pdf,.png,.txt,.xlsx'> verified via DOM. UI present and matches CSV requirements.",
+      "deviations": "Did not perform actual file upload + admin download verification (would require attaching real file + admin login). Marked PASS based on UI presence + correct accept/multiple/size hints."
+    },
+    {
+      "id": "QUOTE-014",
+      "title": "Multiple Active Quotes",
+      "priority": "Medium",
+      "status": "PASS_WITH_OBSERVATION",
+      "evidence": ["quote-001-after-submit.png"],
+      "notes": "List shows 3 quotes for user. Each row: Quote#, Date, Status badge, Total. Default sort = most recent first (5/5 → 4/22 → 3/20). Clicking inner Date <button> in column header changes URL to ?sort=createdDate:asc and rows reorder oldest-first (3/20 → 4/22 → 5/5). Status header click adds ?sort=status:desc. All confirmation passes.",
+      "deviations": "OBS: Clicking the <th> wrapper outside the inner <button> does NOT trigger sort toggle — only the inner <button> works. Real-user click on the visible label (where button is) works fine, but a click on the cell padding area does not. Minor usability nit; not a defect. No item-count column on list view."
+    },
+    {
+      "id": "QUOTE-015",
+      "title": "RFQ from Saved List",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — /account/lists shows 'You have not created any lists yet' for current user. SEED REQUIRED: a saved list with 2+ products."
+    },
+    {
+      "id": "QUOTE-016",
+      "title": "RFQ Form - Buyer Modifies Item Quantities Before Submission",
+      "priority": "High",
+      "status": "PASS",
+      "evidence": ["quote-001-rfq-form.png", "quote-detail-rfq00002.png"],
+      "notes": "On RFQ form (/account/quotes/{id}/edit): Kingston SSD 1Tb qty modified from initial 1 → 7 (via Increase button + value input). SHOT and SSD 512Gb remained at qty=1. After Submit, detail page (/account/quotes/{id}) confirmed final qty=7, 1, 1 — RFQ-form qty edits persisted to submitted quote. Cart was UNAFFECTED by quote-form qty edits (cart was already cleared at the moment of submit, but qty changes only impacted the quote)."
+    },
+    {
+      "id": "QUOTE-017",
+      "title": "Quote Search by Quote ID",
+      "priority": "Medium",
+      "status": "PASS",
+      "evidence": ["quote-001-after-submit.png"],
+      "notes": "Search field with placeholder 'Search by number or status' present. Typed 'RFQ260422-00004' + Enter → table filtered to exactly 1 matching row. Cleared search + Enter → all 3 quotes restored. No JS errors, no 4xx/5xx network calls."
+    },
+    {
+      "id": "QUOTE-018",
+      "title": "Quote Negotiation - Buyer Counter-Offer",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed AND counter-offer feature config (DEFERRED per CSV)."
+    },
+    {
+      "id": "QUOTE-019",
+      "title": "Quote Negotiation - Multi-Round",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_MULTI_ROUND}} seed (quote with 2+ negotiation rounds completed)."
+    },
+    {
+      "id": "QUOTE-020",
+      "title": "Quote Negotiation - Add Items During Active Quote",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed AND add-items-to-quote feature config (DEFERRED per CSV)."
+    },
+    {
+      "id": "QUOTE-021",
+      "title": "Quote Negotiation - Item Quantity Change During Quote",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{QUOTE_WITH_ADMIN_RESPONSE}} seed AND item-edit-during-quote feature config (DEFERRED per CSV). Note: On Processing quotes, qty controls are DISABLED on detail view (verified — read-only) — only editable on /edit form."
+    },
+    {
+      "id": "QUOTE-022",
+      "title": "Quote Status - Expired Quote Cannot Be Accepted",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{EXPIRED_QUOTE}} seed."
+    },
+    {
+      "id": "QUOTE-023",
+      "title": "Quote Status - Expiry Date and Status Badge Display",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{EXPIRED_QUOTE}} + future-expiry quote + non-expiry quote seeds."
+    },
+    {
+      "id": "QUOTE-024",
+      "title": "Quote Status - Status Transitions Visible in History",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE}} or {{QUOTE_REJECTED}} with 2+ status transitions recorded. UI inspection of Processing-state detail page shows no history/timeline section is rendered for Processing-only quotes (which is consistent — no transitions yet)."
+    },
+    {
+      "id": "QUOTE-025",
+      "title": "Quote Status - Notification on Status Change",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires recent admin response on user's quote. /account/notifications page exists with 2 non-quote notifications."
+    },
+    {
+      "id": "QUOTE-026",
+      "title": "Quote to Order - Convert When Item Out of Stock",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE_OOS}} seed (accepted quote with at least 1 OOS line)."
+    },
+    {
+      "id": "QUOTE-027",
+      "title": "Quote to Order - Convert After Admin Price Change",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE}} seed."
+    },
+    {
+      "id": "QUOTE-028",
+      "title": "Quote to Order - Partial Conversion Not Supported",
+      "priority": "Medium",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE}} with 3+ line items seed."
+    },
+    {
+      "id": "QUOTE-029",
+      "title": "Quote to Order - PO Number Preserved from RFQ",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE_WITH_PO}} seed. Note: RFQ form does NOT have a visible PO Number input field (only Comment, Files, Products, Shipping/Billing addresses) — feature may require admin/store config to expose. Cross-check needed."
+    },
+    {
+      "id": "QUOTE-030",
+      "title": "Quote to Order - Conversion Updates Quote Status to Ordered",
+      "priority": "High",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "BLOCKED — requires {{ACCEPTED_QUOTE}} seed; consumed by conversion."
+    }
+  ],
+  "businessLogicVerified": [
+    "BL-QUOTE-001: RFQ creation from cart workflow exists, transitions to Processing — VERIFIED",
+    "BL-QUOTE-004: Status='Processing' on draft submission, no acceptance actions until admin responds — VERIFIED (action buttons absent on Processing quotes)"
+  ],
+  "businessLogicBlocked": [
+    "BL-QUOTE-002: Quote pricing flow — needs admin response seed",
+    "BL-QUOTE-003: Quote-to-order conversion — needs accepted-quote seed"
+  ],
+  "consoleErrors": 0,
+  "graphqlErrors": 0,
+  "networkErrorsBlocking": 0,
+  "bugsFiled": [],
+  "cleanupActions": [
+    "Submitted RFQ260505-00002 left in Processing state (test artifact, can be cancelled by admin)",
+    "Empty draft RFQ260505-00003 left at /account/quotes/cb0691fb-2662-4514-b1a3-e59504d04b91 (no products, no comment, never submitted)"
+  ],
+  "status": "completed",
+  "notes": "Suite 015 executed against TechFlow B2B user (Emily Johnson). 6 cases PASS, 4 PASS_WITH_OBSERVATION, 20 BLOCKED. Blockers all stem from missing seed data (admin-responded quotes, accepted quotes, expired quotes, quotes with substitution, multi-round negotiation, OOS items, PO numbers). The core RFQ creation, list view, search, sort, qty-modification, and quote detail flows are functional. No bugs found; observations documented for CSV/spec mismatches and minor usability nits. Storefront uses 'Add cart items to quote' (cart sidebar) and 'Request Quote' (quote list page) — semantically the latter is move-cart-to-quote (cart is emptied), not copy. Recommend updating CSV to match observed behavior, and seeding admin-responded/accepted/expired quotes for next regression run to unblock 20 BLOCKED cases."
+}
