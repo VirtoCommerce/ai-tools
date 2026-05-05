@@ -1,17 +1,46 @@
 # BUG-030-001 — Configurable product different configs may collapse to single line after cross-cart merge
 
-**Status:** Preliminary — confirmed: false
+**Status:** VERIFIED FIXED (2026-05-05 17:43:30Z, build Ver. 2.48.0)
+**Original Status:** Preliminary — confirmed: false
 **Severity:** Medium
 **Priority:** P2
 **Run:** REG-2026-05-04-1527
 **Suite:** 030 — Cart Merge
-**Test Case:** CART-073
+**Test Case:** CART-073 (re-verified PASS) + CART-071 (added to scope, PASS)
 **Browser:** playwright-firefox (Firefox)
-**Build:** Ver. 2.48.0-pr-2274-0307-0307f38b
-**Date:** 2026-05-05
+**Build:** Ver. 2.48.0-pr-2274-0307-0307f38b (original) / Ver. 2.48.0 (re-verify)
+**Date:** 2026-05-05 (original) / 2026-05-05 17:43 (re-verify)
 **Reporter:** qa-frontend-expert
 **Environment:** https://vcst-qa-storefront.govirto.com (B2B-store)
 **User:** test-emily.johnson-20260310@test-agent.com (slot 2 B2B, TechFlow org)
+
+## Verification Result (2026-05-05 17:43)
+
+**OUTCOME: FIX VERIFIED — closed.** Re-verify added explicit `radio[name][value]:checked` DOM verification AND `getCart` GraphQL inspection of `configurationItems[]` at every cart state (pre-add, post-add, pre-merge, post-merge). All checks confirm distinct configurations are preserved as separate cart lines after cross-cart merge.
+
+### Re-verify evidence
+
+- `reports/regression/REG-2026-05-04-1527/030-evidence-reverify/cart-073-merged-cart-state.json` — Post-merge cart shows itemsCount=2, 2 line items with distinct `configurationItems[]` (productId aa8116e5=Black, productId 59e78525=Green), distinct extendedPrices ($20 + $28), subTotal=$48.00.
+- `reports/regression/REG-2026-05-04-1527/030-evidence-reverify/cart-073-merged-cart-2-distinct-lines-PASS.png` — Cart UI shows 2 separate Configurable Hat rows ($28.00 + $20.00).
+- `reports/regression/REG-2026-05-04-1527/030-evidence-reverify/cart-071-merged-cart-authenticated.json` — Same pattern verified for clean-session positive case (CART-071) with Red+Green configs.
+- `reports/regression/REG-2026-05-04-1527/030-evidence-reverify/cart-071-merged-user-cart-2-lines-PASS.png` — Cart UI confirms 2 distinct lines after sign-in merge.
+
+### Why the original CART-073 may have shown collapse
+
+The original test's possible-alternative-explanation note (radio click not registering on user side) was investigated. The re-verify explicitly captures `radio.checked === true` after each click — both Black-hat (user side) and Green-hat (guest side) selections registered correctly in Ver. 2.48.0. Whether the original failure was a real product bug subsequently fixed OR a test-execution artifact (radio click not registering in older build), the **current build's behavior is correct** per BL-CART-007.
+
+### Note: PDP price for Black hat
+
+In the QA env catalog, **Black hat has a $10 surcharge** ($10 base + $10 = $20 total), not $0 as the original report assumed. This makes Black-hat-selected PDP price clearly distinguishable from None-default ($10 vs $20), enabling deterministic verification.
+
+### Minor cosmetic UI observation (NOT a regression)
+
+The cart row "Properties" column displays the same color text ("Color: Green/dark-forest") for both lines even though they hold different configurations. The underlying `configurationItems[]` data is correct (different productIds). This appears to be a display layer issue separate from BL-CART-007 — properties column shows the parent product's default property rather than the selected configuration's color. Worth flagging in a separate ticket if confirmed undesired.
+
+---
+
+## Original Report (preserved below)
+
 
 ## Business Rule
 

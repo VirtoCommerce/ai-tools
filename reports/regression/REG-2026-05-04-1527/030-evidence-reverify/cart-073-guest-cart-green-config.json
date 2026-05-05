@@ -1,0 +1,48 @@
+{
+  "userId": "ce1964d4-1ebd-41a4-b3b9-d616e00ddda4",
+  "cart": {
+    "data": {
+      "cart": {
+        "id": "3fa56112-8409-44bf-97a3-94da6ae2e62e",
+        "name": "default",
+        "itemsCount": 1,
+        "itemsQuantity": 1,
+        "total": {
+          "amount": 33.6,
+          "formattedAmount": "$33.60"
+        },
+        "subTotal": {
+          "amount": 28,
+          "formattedAmount": "$28.00"
+        },
+        "items": [
+          {
+            "id": "08e32594-bb53-41a5-80cc-a6da1bda1595",
+            "productId": "38dbe95c-3f46-48ff-bb9a-8bd96f475214",
+            "name": "Configurable Hat",
+            "sku": "Configuration-YER-80407217",
+            "quantity": 1,
+            "configurationItems": [
+              {
+                "id": "b3f15e11-629a-4e1e-8110-2bffefe55f23",
+                "productId": "59e78525-07db-43d0-bfcc-c670b7c31862",
+                "name": "Green hat",
+                "quantity": 1,
+                "type": "Product",
+                "customText": null
+              }
+            ],
+            "listPrice": {
+              "amount": 28,
+              "formattedAmount": "$28.00"
+            },
+            "extendedPrice": {
+              "amount": 28,
+              "formattedAmount": "$28.00"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "phase": "after-merge-with-kingston",
+  "badge": "3\nCart",
+  "cart": {
+    "data": {
+      "cart": {
+        "itemsCount": 3,
+        "itemsQuantity": 3,
+        "subTotal": {
+          "formattedAmount": "$148.00"
+        },
+        "items": [
+          {
+            "name": "Kingston SSD 1tb nvme m2 NVMe PCIe  Solid State Hard Disk  m.2 diy gaming computer for steam deck ps5 pc laptop desktop ssd sata",
+            "sku": "ALCOE7718",
+            "quantity": 1,
+            "extendedPrice": {
+              "formattedAmount": "$99.99"
+            },
+            "configurationItems": []
+          },
+          {
+            "name": "Configurable Hat",
+            "sku": "Configuration-YER-80407217",
+            "quantity": 1,
+            "extendedPrice": {
+              "formattedAmount": "$28.00"
+            },
+            "configurationItems": [
+              {
+                "name": "Green hat"
+              }
+            ]
+          },
+          {
+            "name": "Configurable Hat",
+            "sku": "Configuration-YER-80407217",
+            "quantity": 1,
+            "extendedPrice": {
+              "formattedAmount": "$20.00"
+            },
+            "configurationItems": [
+              {
+                "name": "Black hat"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

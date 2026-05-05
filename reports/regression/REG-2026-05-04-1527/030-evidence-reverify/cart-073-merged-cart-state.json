@@ -1,0 +1,74 @@
+{
+  "userId": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+  "badge": "2\nCart",
+  "cart": {
+    "data": {
+      "cart": {
+        "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e",
+        "name": "default",
+        "itemsCount": 2,
+        "itemsQuantity": 2,
+        "total": {
+          "amount": 57.6,
+          "formattedAmount": "$57.60"
+        },
+        "subTotal": {
+          "amount": 48,
+          "formattedAmount": "$48.00"
+        },
+        "items": [
+          {
+            "id": "751ad7c1-efcf-460d-b25c-6aebef6b825f",
+            "productId": "38dbe95c-3f46-48ff-bb9a-8bd96f475214",
+            "name": "Configurable Hat",
+            "sku": "Configuration-YER-80407217",
+            "quantity": 1,
+            "configurationItems": [
+              {
+                "id": "ea2fe806-456a-44db-9afe-c82d8a6998dd",
+                "productId": "59e78525-07db-43d0-bfcc-c670b7c31862",
+                "name": "Green hat",
+                "quantity": 1,
+                "type": "Product",
+                "customText": null
+              }
+            ],
+            "listPrice": {
+              "amount": 28,
+              "formattedAmount": "$28.00"
+            },
+            "extendedPrice": {
+              "amount": 28,
+              "formattedAmount": "$28.00"
+            }
+          },
+          {
+            "id": "5b5f28e9-d4fd-4fd0-990f-2011a0cc5ffa",
+            "productId": "38dbe95c-3f46-48ff-bb9a-8bd96f475214",
+            "name": "Configurable Hat",
+            "sku": "Configuration-YER-80407217",
+            "quantity": 1,
+            "configurationItems": [
+              {
+                "id": "2031418b-2db4-4e25-b06a-1509ad141aa6",
+                "productId": "aa8116e5-1448-447b-af51-89db83cb5c19",
+                "name": "Black hat",
+                "quantity": 1,
+                "type": "Product",
+                "customText": null
+              }
+            ],
+            "listPrice": {
+              "amount": 20,
+              "formattedAmount": "$20.00"
+            },
+            "extendedPrice": {
+              "amount": 20,
+              "formattedAmount": "$20.00"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

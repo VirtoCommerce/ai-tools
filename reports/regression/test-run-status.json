@@ -18,11 +18,15 @@
   "mode": "standard",
   "dispatchMode": "direct (one Agent per suite)",
   "browserPool": [
-    { "slot": 1, "server": "playwright-chrome", "status": "available", "lastSuite": "029" },
-    { "slot": 2, "server": "playwright-firefox", "status": "busy", "currentSuite": "030" },
-    { "slot": 3, "server": "playwright-edge", "status": "available", "lastSuite": "031" }
+    { "slot": 1, "server": "playwright-chrome", "status": "busy", "currentSuite": "071" },
+    { "slot": 2, "server": "playwright-firefox", "status": "busy", "currentSuite": "072", "note": "Firefox MCP reconnected per /mcp — should be available now" },
+    { "slot": 3, "server": "playwright-edge", "status": "busy", "currentSuite": "072b" }
   ],
-  "currentBatch": 8,
+  "currentBatch": 12,
+  "batch12StartedAt": "2026-05-05T20:30:00Z",
+  "batch11StartedAt": "2026-05-05T19:30:00Z",
+  "batch10StartedAt": "2026-05-05T18:05:00Z",
+  "batch9StartedAt": "2026-05-05T16:00:00Z",
   "batch8StartedAt": "2026-05-05T14:30:00Z",
   "batch7StartedAt": "2026-05-05T13:30:00Z",
   "batch6StartedAt": "2026-05-05T02:30:00Z",
@@ -62,7 +66,15 @@
     { "id": "015", "passRate": "33.3% / 100% executable", "passed": 6, "passWithObservation": 4, "blocked": 20, "total": 30, "bugs": [], "notes": "RFQ-from-cart creation, qty edits, search, sort, status-gated action buttons all PASS. 20 BLOCKED on missing seed quotes (Received/Accepted/Rejected/Expired states + multi-round negotiation). CSV terminology stale ('Request Quote' vs current 'Add cart items to quote'). Cleanup: RFQ260505-00002 (Processing) + RFQ260505-00003 (empty draft) need admin cancel." },
     { "id": "028", "passRate": "84.2% executable", "passed": 32, "failed": 1, "blocked": 6, "skipped": 5, "total": 44, "bugs": ["BUG-028-001"], "notes": "Revenue-critical paths PASS: add/qty/remove/persist/totals/currency. VCST-4896 coupons-sidebar PASS end-to-end (preset cap, custom code, radio replace, trash cancel, view-all _blank, i18n de). 1 Medium bug: negative qty (-1) UI desync (server clamps to 1, UI shows -1)." },
     { "id": "029", "passRate": "100% executable / 46.9% overall", "passed": 15, "failed": 0, "blocked": 17, "skipped": 0, "total": 32, "bugs": [], "notes": "All 15 executable cases PASS. 17 BLOCKED pre-flagged in CSV (13 admin-destructive, 4 seed-required). VCST-4896 coupons-sidebar PASS (5% × $576.98 = $28.85). Cart persistence across sign-out/sign-in PASS. Guest-cart merge PASS. 3 observations (no bugs filed): invalid coupon silently removes valid one, over-stock UI accepts 9999 without auto-cap, sign-in route needs cache-buster on first visit." },
-    { "id": "031", "passRate": "75.8%", "passed": 25, "failed": 1, "blocked": 7, "skipped": 0, "total": 33, "bugs": ["BUG-031-001"], "notes": "VCST-4691 character-pattern coverage PASS (HTML/script tags rejected in name fields; & allowed in org name). Auth security posture solid (no enumeration, case-insensitive email, Unicode preserved). Same email no-TLD issue as BUG-012-001 — filed as BUG-031-001. 7 BLOCKED on admin-config + missing seeds (LOCKOUT_TEST_* env empty)." }
+    { "id": "031", "passRate": "75.8%", "passed": 25, "failed": 1, "blocked": 7, "skipped": 0, "total": 33, "bugs": ["BUG-031-001"], "notes": "VCST-4691 character-pattern coverage PASS (HTML/script tags rejected in name fields; & allowed in org name). Auth security posture solid (no enumeration, case-insensitive email, Unicode preserved). Same email no-TLD issue as BUG-012-001 — filed as BUG-031-001. 7 BLOCKED on admin-config + missing seeds (LOCKOUT_TEST_* env empty)." },
+    { "id": "030", "passRate": "71.4% / 100% executable (after re-verify)", "passed": 10, "failed": 0, "blocked": 3, "skipped": 1, "total": 14, "bugs": ["BUG-030-001 (VERIFIED FIXED)"], "notes": "Re-verify 2026-05-05: BUG-030-001 VERIFIED FIXED. CART-071+CART-073 both PASS — merge preserves distinct configurations as separate lines per BL-CART-007. CART-061 unblocked + PASS. No regressions on 058/060/062. Cosmetic display-layer flag found: cart-row 'Properties' column shows same color text for both lines (data + totals correct, just display)." },
+    { "id": "032", "passRate": "28.6% / 66.7% executable", "passed": 6, "failed": 3, "blocked": 10, "skipped": 2, "total": 21, "bugs": ["BUG-032-001", "BUG-032-002"], "notes": "BUG-032-001 (High prelim): access_token NOT revoked after logout (BL-AUTH-003 — `/revoke/token` only invalidates refresh_token, may be by-design OAuth). BUG-032-002 (Med prelim): Login-on-behalf redirects to /403, cascade-blocked 9 impersonation tests. 2 SKIPPED on Remember Me vestigial UI." },
+    { "id": "033", "passRate": "92.9%", "passed": 13, "failed": 1, "total": 14, "bugs": ["BUG-033-001"], "notes": "All Company Members flows PASS (page, invite, edit role, block/unblock, filter, search). 'Addresses' link visibility (personal-only) confirmed PASS. Storefront role vocabulary differs from test-prescribed (Organization maintainer/employee, Purchasing agent vs Buyer/Admin) — wording gap, not defect. Single FAIL: mobile touch targets 40px (groups/sub-links) and 25x62px (Logout) — BUG-033-001 Medium prelim platform-wide WCAG 2.5.5 / iOS 44px gap." },
+    { "id": "036", "passRate": "61.1%", "passed": 22, "failed": 6, "blocked": 5, "skipped": 3, "total": 36, "bugs": ["BUG-036-001", "BUG-036-002", "BUG-036-003", "BUG-036-004", "BUG-036-005", "BUG-036-006"], "notes": "VCST-4518 fix HOLDS (map width stable). VCST-4707 PARTIAL REGRESSION (BUG-036-001 Critical) — pickup radio checked but IncludeLocationIds prepend NOT applied. BUG-036-002 High: list capped at 50 of 102 locations. 4 more: mobile a11y x2, no empty-state, delivery-switch preserves pickup. 5 BLOCKED on Availability/Distance/Combined filter (NOT implemented in modal)." },
+    { "id": "037", "passRate": "61.4% / 100% executable", "passed": 27, "failed": 0, "skipped": 17, "total": 44, "bugs": ["BUG-037-001 (dup of BUG-036-001)"], "notes": "BL-BOPIS-002/003/004/006 all PASS. VCST-4584 guard + VCST-4775 multi-select PASS. Zero-shipping math cross-layer verified ($29,040 = $29,616 - $5,416 + $4,840 + $0). VCST-4707 issue cross-browser confirmed via BOPIS-080 PARTIAL — `cartPickupLocations` GraphQL missing IncludeLocationIds. 17 SKIPPED on admin-only preconditions + unseeded data." },
+    { "id": "048", "passRate": "100% executable", "passed": 11, "blocked": 10, "total": 21, "bugs": [], "notes": "Firefox MCP unavailable (exit 0 install issue) — ran on Edge instead. 4 directly executed + 7 cross-linked to other suites' Chrome/Firefox/Edge runs. 10 BLOCKED: 5 Safari/WebKit (Win N/A), 3 mobile-device (BrowserStack vars empty), 1 macOS-only, 1 print-dialog. Observation: 1024×768 home swiper allows ~96px overflow (visually fits viewport, not blocking). Cross-browser coverage achieved organically across the run." },
+    { "id": "070", "passRate": "43.1%", "passed": 22, "failed": 1, "blocked": 28, "total": 51, "bugs": ["BUG-070-001", "BUG-070-002"], "notes": "Coffee theme tokens verified (--color-primary-500: #996c5a). pageContext.whiteLabelingSettings GraphQL contract intact. Mobile/responsive PASS. 28 BLOCKED: 16 named-fixture orgs not provisioned, 8 destructive admin, 4 unsupported platforms, 1 screen-reader. 2 prelim bugs: logout button no aria-label + empty favicons array on B2B-store." },
+    { "id": "038", "passRate": "60.0%", "passed": 6, "failed": 0, "blocked": 3, "skipped": 1, "total": 10, "bugs": ["BUG-038-001"], "notes": "Real BOPIS order CO260505-00032 placed. BL-CHK-006 grand-total formula PASS (subtotal − discount + tax + $0 = total). BL-PRICE-001 10% coupon stacking on $25,457.98 = $2,545.80 exact. GA4 shipping_tier=Pickup captured. 3 BLOCKED: 2 guest-checkout (createAnonymousOrderEnabled off), 1 FREESHIP coupon not seeded. BUG-038-001 (Low): order-history list missing Pickup/Shipping fulfillment indicator." }
   ],
   "runningSuites": [],
   "incompleteSuites": [
@@ -103,7 +115,25 @@
     { "id": "BUG-014-002", "severity": "Low", "suite": "014", "title": "Raw i18n key `commmon.buttons.search_orders` (3 m's typo) exposed on search button", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-014-002-i18n-typo-commmon.md" },
     { "id": "BUG-014-003", "severity": "Medium", "suite": "014", "title": "Line items missing SKU display on order detail page", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-014-003-line-items-no-sku.md" },
     { "id": "BUG-028-001", "severity": "Medium", "suite": "028", "title": "Negative qty (-1) input persists in UI/header but server clamps to 1 — UI/state desync", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-028-001-negative-qty-input-display-desync.md" },
-    { "id": "BUG-031-001", "severity": "Low", "suite": "031", "title": "Sign-up email validator accepts `missing@domain` without TLD (same root cause as BUG-012-001)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-031-001-email-validator-no-tld.md" }
+    { "id": "BUG-031-001", "severity": "Low", "suite": "031", "title": "Sign-up email validator accepts `missing@domain` without TLD (same root cause as BUG-012-001)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-031-001-email-validator-no-tld.md" },
+    { "id": "BUG-030-001", "severity": "Medium", "suite": "030", "title": "Configurable product different configs collapsed to single line after cross-cart merge (BL-CART-007 violation)", "status": "VERIFIED FIXED", "verifiedFixedAt": "2026-05-05", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-030-001-configurable-merge-collapse.md" },
+    { "id": "BUG-032-001", "severity": "High", "suite": "032", "title": "access_token not revoked after logout (BL-AUTH-003 — `/revoke/token` only invalidates refresh_token; may be by-design OAuth)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-032-001-access-token-not-revoked-after-logout.md" },
+    { "id": "BUG-032-002", "severity": "Medium", "suite": "032", "title": "Login-on-behalf redirects to /403, cascade-blocks 9 impersonation tests (may be admin-permission gap or browser cookie collision)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-032-002-impersonation-redirect-to-403.md" },
+    { "id": "BUG-033-001", "severity": "Medium", "suite": "033", "title": "Mobile touch targets 40px / 25x62px below WCAG 2.5.5 / iOS 44px minimum (platform-wide pattern in account menu)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-033-001-mobile-account-menu-touch-targets.md" },
+    { "id": "BUG-036-001", "severity": "Critical", "suite": "036", "title": "VCST-4707 partial regression: pickup radio checked on modal reopen but IncludeLocationIds prepend-to-top NOT applied (selection at index 30 stays at index 30)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-001-vcst4707-pickup-not-prepended-on-reopen.md" },
+    { "id": "BUG-036-002", "severity": "High", "suite": "036", "title": "Pickup location list capped at 50 of 102 (no Load More, no infinite scroll, 52 locations unreachable)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-002-pickup-list-capped-at-50.md" },
+    { "id": "BUG-036-003", "severity": "Medium", "suite": "036", "title": "Mobile PDP 'Check pickup locations' CTA 158×18px below 44×44 WCAG/iOS minimum", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-003-mobile-pdp-cta-touch-target.md" },
+    { "id": "BUG-036-004", "severity": "Medium", "suite": "036", "title": "Mobile cart pickup modal LIST/MAP toggle 80×38px below 44×44 WCAG/iOS minimum", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-004-mobile-cart-list-map-toggle-touch-target.md" },
+    { "id": "BUG-036-005", "severity": "Low", "suite": "036", "title": "Pickup modal — invalid search returns no empty-state message", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-005-pickup-modal-no-empty-state.md" },
+    { "id": "BUG-036-006", "severity": "Low", "suite": "036", "title": "Shipping→Pickup toggle preserves pickup location instead of clearing (may be intentional)", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-036-006-delivery-method-switch-preserves-pickup.md" },
+    { "id": "BUG-037-001", "severity": "Medium", "suite": "037", "title": "cartPickupLocations GraphQL request body does NOT include IncludeLocationIds on modal reopen — cross-browser confirmation of BUG-036-001", "duplicateOf": "BUG-036-001", "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-037-001-cartPickupLocations-no-IncludeLocationIds-on-reopen.md" },
+    { "id": "BUG-070-001", "severity": "Medium", "suite": "070", "title": "Account menu Logout icon button has no aria-label / no data-testid / no visible text (WCAG 4.1.2 violation)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-070-001-account-menu-logout-button-no-aria-label.md" },
+    { "id": "BUG-070-002", "severity": "Low", "suite": "070", "title": "pageContext.whiteLabelingSettings.favicons returns [] for B2B-store (multi-size favicons not seeded)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-070-002-empty-favicons-array-store-level.md" },
+    { "id": "BUG-038-001", "severity": "Low", "suite": "038", "title": "Order history list view lacks Pickup/Shipping fulfillment indicator (data present in API + detail page)", "confirmed": false, "reportFile": "reports/bugs/REG-2026-05-04-1527/BUG-038-001-order-history-list-no-fulfillment-indicator.md" }
+  ],
+  "fixedBugs": ["BUG-030-001"],
+  "preliminaryFlags": [
+    { "suite": "030", "title": "Cart-row 'Properties' column shows same color text for both differently-configured lines (data correct, display only)", "found": "during BUG-030-001 re-verify", "needsConfirmation": true }
   ],
   "addressPopupDefects": {
     "defect_1_column_sort": "still present (CHK-094)",
@@ -118,7 +148,8 @@
     { "type": "order", "id": "CO260505-00020", "reason": "test artifact from CHK-071 (B2B order via CyberSource for org-history verification)" },
     { "type": "order", "id": "CO260505-00018", "reason": "test artifact from suite 011 CHK-008 (Authorize.Net happy-path verification, $1,800)" },
     { "type": "quote", "id": "RFQ260505-00002", "reason": "suite 015 test artifact (Processing state)" },
-    { "type": "quote", "id": "RFQ260505-00003", "reason": "suite 015 empty draft" }
+    { "type": "quote", "id": "RFQ260505-00003", "reason": "suite 015 empty draft" },
+    { "type": "order", "id": "CO260505-00032", "reason": "suite 038 BOPIS order test artifact" }
   ],
   "previousAttempts": [
     { "batch": 2, "abortedAt": "2026-05-04T16:09:00Z", "reason": "quota_exceeded", "evidenceDirsCreated": ["041-evidence/", "042-evidence/", "001-evidence/"] }
