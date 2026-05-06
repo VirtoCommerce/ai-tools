@@ -1,0 +1,92 @@
+{
+  "ticket": "VCST-4517",
+  "title": "Use breakpoints from the UI kit throughout the entire project and mark the project-specific breakpoints as deprecated",
+  "type": "TechDebt",
+  "priority": "Medium",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-05-06",
+  "sprint": "26-09",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2201-4439-44393039",
+    "theme_verified_in": ["JS bundle source", "footer DOM (every page)"],
+    "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2201",
+    "pr_state": "open (deployed to QA)"
+  },
+  "agents_dispatched": [
+    "qa-frontend-expert (playwright-chrome)",
+    "ui-ux-expert (Chrome DevTools MCP)",
+    "qa-testing-expert (playwright-firefox)"
+  ],
+  "results_per_agent": {
+    "qa-frontend-expert": {
+      "verdict": "PASS",
+      "rows": "14/14 (BP-001..BP-012 + 2 ECL edge cases)",
+      "passed": 14,
+      "failed": 0,
+      "blocked": 0,
+      "evidence": "tests/Sprint-current/VCST-4517/evidence/frontend/ (26 screenshots + 2 logs)",
+      "report": "tests/Sprint-current/VCST-4517/test-execution-report.md"
+    },
+    "ui-ux-expert": {
+      "verdict": "PASS",
+      "rows": "5/5 (UX-001..UX-005)",
+      "passed": 5,
+      "failed": 0,
+      "blocked": 0,
+      "tailwind_breakpoints_verified": ["sm:640", "md:768", "lg:1024", "xl:1280", "2xl:1500"],
+      "lighthouse": {
+        "home_desktop": { "accessibility": 96, "best_practices": 81 },
+        "home_mobile": { "accessibility": 95, "best_practices": 81 },
+        "search_desktop": { "accessibility": 96, "best_practices": 81 },
+        "search_mobile": { "accessibility": 100, "best_practices": 81 }
+      },
+      "evidence": "tests/Sprint-current/VCST-4517/evidence/uiux/ (20 screenshots + Lighthouse JSON/HTML)",
+      "report": "tests/Sprint-current/VCST-4517/uiux-report.md"
+    },
+    "qa-testing-expert": {
+      "verdict": "PASS_WITH_NOTES",
+      "cross_browser": {
+        "browser": "Firefox 149 via playwright-firefox",
+        "rows": "4/4 PASS (CB-001..CB-004)"
+      },
+      "exploratory": {
+        "charter": "Risk charter — explore boundary conditions and integration points after BREAKPOINTS refactor",
+        "heuristic": "SFDPOT",
+        "time_minutes": 8,
+        "findings": {
+          "bugs": 0,
+          "questions": 0,
+          "observations": 4,
+          "risks": 1
+        },
+        "all_findings_attributable_to_pr": false,
+        "notes": "All 4 observations and 1 risk are pre-existing or environmental (Playwright MCP timing, Apollo stale cache, max-width clamp by design, sticky-element architecture). None caused by VCST-4517."
+      },
+      "evidence": "tests/Sprint-current/VCST-4517/evidence/exploratory/",
+      "report": "tests/Sprint-current/VCST-4517/exploratory-session.md"
+    }
+  },
+  "total_cases": 23,
+  "passed": 23,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "acceptance_criteria_status": {
+    "AC-1 (all 6 breakpoints trigger correct layouts)": "PASS",
+    "AC-2 (no console errors mentioning BREAKPOINTS / core or ui-kit constants)": "PASS",
+    "AC-3 (no module-resolution 4xx/5xx)": "PASS",
+    "AC-4 (touched components render identically across viewports)": "PASS",
+    "AC-5 (Tailwind utility classes engage at correct widths)": "PASS"
+  },
+  "business_rules_verified": [],
+  "business_rules_note": "No P0/P1 BL invariants are directly affected by a pure import-path refactor with identical breakpoint values. Implicit P2-UX 'responsive layouts engage at correct viewports' is verified.",
+  "exploratory": {
+    "charter": "Risk charter for VCST-4517 — boundary conditions after BREAKPOINTS refactor",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 0, "observations": 4, "risks": 1 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-4517/",
+  "verdict_reasoning": "All 5 acceptance criteria pass. All 6 declared breakpoints (xs:480, sm:640, md:768, lg:1024, xl:1280, 2xl:1500) engage at correct pixel thresholds, verified via tailwind utility audit on chrome and firefox. Zero console errors mentioning BREAKPOINTS / ui-kit / core/constants across full smoke flow on both browsers. Theme bundle 2.49.0-pr-2201-4439-44393039 confirmed deployed (JS bundle + footer DOM). Boundary thrash and hydration at just-past-breakpoint widths produced no flicker or race conditions. Exploratory session surfaced 4 Observations + 1 Risk, all of which are pre-existing behaviors or environmental quirks unrelated to this refactor — no bugs to file. Verdict: PASS_WITH_NOTES because exploratory captured non-blocking observations; the refactor itself is clean."
+}

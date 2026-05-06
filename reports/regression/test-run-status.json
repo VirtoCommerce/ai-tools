@@ -1,6 +1,8 @@
 {
   "runId": "REG-2026-05-04-1527",
-  "status": "running",
+  "status": "paused",
+  "pauseReason3": "Quota exhausted on Batch 12 dispatch (071/072/072b) — all 3 agents terminated immediately with 0-8 tool uses, 0 cases executed. Resets 2026-05-06 00:30 Europe/Budapest.",
+  "pausedAt3": "2026-05-05T22:30:00Z",
   "resumedAt2": "2026-05-05T11:00:00Z",
   "resumeReason2": "User issued 'go' — retry aborted Batch 6 suites",
   "selection": "frontend",
@@ -18,9 +20,9 @@
   "mode": "standard",
   "dispatchMode": "direct (one Agent per suite)",
   "browserPool": [
-    { "slot": 1, "server": "playwright-chrome", "status": "busy", "currentSuite": "071" },
-    { "slot": 2, "server": "playwright-firefox", "status": "busy", "currentSuite": "072", "note": "Firefox MCP reconnected per /mcp — should be available now" },
-    { "slot": 3, "server": "playwright-edge", "status": "busy", "currentSuite": "072b" }
+    { "slot": 1, "server": "playwright-chrome", "status": "available", "lastSuite": "071-aborted-quota" },
+    { "slot": 2, "server": "playwright-firefox", "status": "available", "lastSuite": "072-aborted-quota" },
+    { "slot": 3, "server": "playwright-edge", "status": "available", "lastSuite": "072b-aborted-quota" }
   ],
   "currentBatch": 12,
   "batch12StartedAt": "2026-05-05T20:30:00Z",
@@ -79,6 +81,9 @@
   "runningSuites": [],
   "incompleteSuites": [
     { "id": "003", "name": "Catalog Filters", "browser": "playwright-firefox", "status": "partial", "casesCompleted": 15, "casesTotal": 29, "passed": 12, "failed": 0, "blocked": 2, "bugs": ["BUG_003_001"], "abortReason": "quota_exceeded", "remainingCases": "CAT-025 through CAT-049 (14 cases)", "partialResult": "reports/regression/REG-2026-05-04-1527/003-results.json", "needsRedispatch": true },
+    { "id": "071", "name": "Whitelabeling Branding", "browser": "playwright-chrome", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 17, "abortReason": "quota_exceeded — 0 tool uses, terminated on dispatch", "needsRedispatch": true },
+    { "id": "072", "name": "Configurable Products UI", "browser": "playwright-firefox", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 78, "abortReason": "quota_exceeded — 5 tool uses, terminated on dispatch", "needsRedispatch": true },
+    { "id": "072b", "name": "Configurable Products E2E", "browser": "playwright-edge", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 57, "abortReason": "quota_exceeded — 0 tool uses, terminated on dispatch", "needsRedispatch": true },
     { "id": "011", "name": "Checkout Flow", "browser": "playwright-chrome", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 71, "abortReason": "quota_exceeded — terminated at ~7 min during setup", "partialResult": "reports/regression/REG-2026-05-04-1527/011-results.json", "needsRedispatch": true },
     { "id": "012", "name": "Checkout Guest", "browser": "playwright-firefox", "status": "aborted_no_cases", "casesCompleted": 0, "casesTotal": 12, "abortReason": "quota_exceeded — terminated at ~7 min during setup. Note: 6 cases per CSV require chrome not firefox", "partialResult": "reports/regression/REG-2026-05-04-1527/012-results.json", "needsRedispatch": true, "browserNote": "redispatch on chrome — CHK-014/017/018/020/067/068 need chrome per CSV" },
     { "id": "013", "name": "Checkout B2B", "browser": "playwright-edge", "status": "completed", "casesCompleted": 12, "casesTotal": 12, "passed": 3, "failed": 1, "blocked": 7, "skipped": 1, "passRate": "25.0%", "bugs": ["BUG-013-001"], "partialResult": "reports/regression/REG-2026-05-04-1527/013-results.json", "needsRedispatch": false, "completedAt": "2026-05-05T12:46:30Z", "ordersCreated": ["CO260505-00020"] }
