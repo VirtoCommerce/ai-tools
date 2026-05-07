@@ -1445,3 +1445,115 @@ CFG-GQL-022,unSelectCartConfigurationItems — Unmatched sectionId Is No-Op,Grap
 [ERRORS label=create_preview] errors[] empty
 [DATA label=create_preview] data.createConfiguredLineItem.id is null
 [DATA label=add_item] data.addItem.items.0.listPrice.amount = {{PREVIEW_LIST_PRICE}}","[EVIDENCE] Unmatched key silently ignored: errors[] empty, every real configurationItem still selectedForCheckout=true, listPrice equals BASE_LIST_PRICE — no reprice triggered (runner-manual)",errors[] non-empty for unmatched key (would mean strict validation breaks PROPOSED-BL-CART-CFG-003); some real item flipped (would mean wrong-target match); listPrice changed (would mean spurious reprice),cleanup_post inline,xAPI; graphql-schema.md — Mutation.unSelectCartConfigurationItems; PR #114; PROPOSED-BL-CART-CFG-003 (unmatched-key no-op); CFG-013,Automated
+CFG-GQL-033,"productConfiguration — Variation Section Exposed With Empty Options (Backend Verification, THT-36341598)",GraphQL > Configurable Products > Query,Medium,BL-GQL-001; BL-CAT-006,ECL-7.1,Runner-native. PUBLIC. Backend-only verification: storefront xAPI exposes the Variation-type configurationSection on CFG_VARIATION_CAKE (THT-36341598). Frontend rendering NOT implemented. options[] is currently empty (length=0); product.variations remain queryable via the separate product(id).variations path. Live verified 2026-05-07.,configurable_id=@td(CFG_VARIATION_CAKE.productId); expected_section_type=Variation; expected_options_count=0,"[GQL-OP get_var_config]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_VARIATION_CAKE.productId)""
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+      currencyCode: ""USD""
+    ) { configurationSections { id name type isRequired options { id text product { id name code } listPrice { amount } } } }
+  }
+[GQL-EXEC get_var_config]
+[GQL-CAPTURE get_var_config.data.productConfiguration.configurationSections[?type=Variation].id → SECTION_VARIATION_ID]","[ERRORS label=get_var_config] errors[] empty
+[DATA label=get_var_config] data.productConfiguration.configurationSections is non-null
+[DATA label=get_var_config] data.productConfiguration.configurationSections[?type=Variation].id is non-null
+[COUNT label=get_var_config] data.productConfiguration.configurationSections[?type=Variation].options.length = 0","[EVIDENCE] Variation section structurally present (sectionId non-null, type=Variation) but options[] empty — confirms backend exposes the section while frontend chooser impl is pending",Variation section missing entirely from response (xAPI regression); options.length > 0 unexpectedly (signals options wired — promote CFG-GQL-034..036 to use option product ids from this response),none — read-only,xAPI; Query.productConfiguration; CFG_VARIATION_CAKE alias,Automated
+CFG-GQL-034,"createConfiguredLineItem — Variation Section Preview With var1 (Backend Verification, THT-36341598)",GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-PRICE-001,ECL-2.1,Runner-native. PUBLIC. Backend xAPI accepts a Variation-type ConfigurationSectionInput with option.productId pointing at one of the real product.variations even though configurationSection.options[] is empty. Live verified 2026-05-07: passing var1 returns listPrice=$220 = $100 base + $120 var1. Preview is non-committable — id=null per CFG-GQL-007 contract.,configurable_id=@td(CFG_VARIATION_CAKE.productId); var1_id=@td(CFG_VARIATION_CAKE.var1Id); expected_list_price=@td(CFG_VARIATION_CAKE.expectedPreviewListPrice_var1),"[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_VARIATION_CAKE.productId)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections[?type=Variation].id → SECTION_VARIATION_ID]
+[GQL-OP create_var_preview]
+[GQL-VARS create_var_preview] {""configurationSections"": [{""sectionId"": ""{{SECTION_VARIATION_ID}}"", ""type"": ""Variation"", ""option"": {""productId"": ""@td(CFG_VARIATION_CAKE.var1Id)"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation CreateConfiguredLineItem($configurationSections: [ConfigurationSectionInput]) {
+    createConfiguredLineItem(command: {
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      configurableProductId: ""@td(CFG_VARIATION_CAKE.productId)""
+      configurationSections: $configurationSections
+    }) { id quantity listPrice { amount currency { code } } extendedPrice { amount } }
+  }
+[GQL-EXEC create_var_preview]","[ERRORS label=create_var_preview] errors[] empty
+[DATA label=create_var_preview] data.createConfiguredLineItem is non-null
+[DATA label=create_var_preview] data.createConfiguredLineItem.id is null
+[COUNT label=create_var_preview] data.createConfiguredLineItem.quantity = 1
+[DATA label=create_var_preview] data.createConfiguredLineItem.listPrice.amount = @td(CFG_VARIATION_CAKE.expectedPreviewListPrice_var1)
+[DATA label=create_var_preview] data.createConfiguredLineItem.listPrice.currency.code = USD",[EVIDENCE] Variation pricing rolls in: base $100 + var1 $120 = $220 — verifies backend uses option.productId for variation price resolution even when configurationSection.options[] is empty,errors[] non-empty (Variation type rejected); listPrice != $220 (variation price resolution wrong); preview returns id != null,none — preview only,xAPI; Mutation.createConfiguredLineItem; CFG_VARIATION_CAKE alias; backend-only,Automated
+CFG-GQL-035,"addConfigurationItem — Variation Section APPENDS When option.productId Differs (Backend Contract, THT-36341598)",GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1; ECL-7.1,"Runner-native. ORG_USER. Backend xAPI contract finding (live verified 2026-05-07): addConfigurationItem behavior diverges by section type. PRODUCT type upserts by sectionId — same section, different option.productId replaces the entry, length unchanged at 1 (CFG-GQL-008). VARIATION type APPENDS — same sectionId, different option.productId creates a NEW entry, length grows to 2. Both var1 and var2 entries coexist in the same Variation section after two addConfigurationItem calls with different option.productId values. Semantic intent: a configurable product has exactly 1 RAM (Product upsert) but can have multiple variations selected simultaneously (Variation append).",configurable_id=@td(CFG_VARIATION_CAKE.productId); var1_id=@td(CFG_VARIATION_CAKE.var1Id); var2_id=@td(CFG_VARIATION_CAKE.var2Id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id memberId } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_VARIATION_CAKE.productId)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections[?type=Variation].id → SECTION_VARIATION_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_VARIATION_ID}}"", ""type"": ""Variation"", ""option"": {""productId"": ""@td(CFG_VARIATION_CAKE.var1Id)"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId type productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP append_var]
+[GQL-VARS append_var] {""configurationSection"": {""sectionId"": ""{{SECTION_VARIATION_ID}}"", ""type"": ""Variation"", ""option"": {""productId"": ""@td(CFG_VARIATION_CAKE.var2Id)"", ""quantity"": 1, ""selectedForCheckout"": true}}}
+  mutation AddConfigurationItem($configurationSection: ConfigurationSectionInput!) {
+    addConfigurationItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection }) {
+      id items { id configurationItems { id sectionId type productId } }
+    }
+  }
+[GQL-EXEC append_var]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId type productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=append_var] errors[] empty
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.configurationItems.configurationItems.length = 2
+[DATA label=read_back] data.configurationItems.configurationItems[?productId=@td(CFG_VARIATION_CAKE.var1Id)].productId = @td(CFG_VARIATION_CAKE.var1Id)
+[DATA label=read_back] data.configurationItems.configurationItems[?productId=@td(CFG_VARIATION_CAKE.var2Id)].productId = @td(CFG_VARIATION_CAKE.var2Id)","[EVIDENCE] Variation contract documented: same sectionId + different option.productId APPENDS (length 1→2), NOT upsert-replace. Diverges from Product type (CFG-GQL-008) which upserts. Semantic intent: multiple variations can coexist in one Variation section.",read_back length != 2 (Variation behaves like Product upsert — backend regression away from append contract); either var1 or var2 missing from read_back; HTTP 500,cleanup_post inline,xAPI; Mutations.addConfigurationItem; CFG_VARIATION_CAKE alias; backend contract finding 2026-05-07,Automated
+CFG-GQL-036,"changeCartConfigurationItemSelected — Variation Section Flip With option.productId (Backend, THT-36341598)",GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010,ECL-2.1,"Runner-native. ORG_USER. Backend xAPI: PR #114 ConfigurationSectionKeyInput for Variation type INCLUDES option:{productId} — same shape as Product (NOT Text/File). The variation productId disambiguates which variation to flip. addItem with var1, capture BASE_SUB_TOTAL, then flip selectedForCheckout=false and verify (a) the flag flipped and (b) cart subTotal cascaded down (variation contribution removed). Live verified 2026-05-07: subTotal $220 → $100 (drop = $120 var1 contribution).",configurable_id=@td(CFG_VARIATION_CAKE.productId); var1_id=@td(CFG_VARIATION_CAKE.var1Id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id memberId } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_VARIATION_CAKE.productId)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections[?type=Variation].id → SECTION_VARIATION_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_VARIATION_ID}}"", ""type"": ""Variation"", ""option"": {""productId"": ""@td(CFG_VARIATION_CAKE.var1Id)"", ""quantity"": 1, ""selectedForCheckout"": true}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
+      id subTotal { amount } items { id listPrice { amount } configurationItems { sectionId type selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.subTotal.amount → BASE_SUB_TOTAL]
+[GQL-OP flip_var]
+[GQL-VARS flip_var] {""configurationSection"": {""sectionId"": ""{{SECTION_VARIATION_ID}}"", ""type"": ""Variation"", ""option"": {""productId"": ""@td(CFG_VARIATION_CAKE.var1Id)""}}, ""selectedForCheckout"": false}
+  mutation ChangeCartConfigurationItemSelected($configurationSection: ConfigurationSectionKeyInput!, $selectedForCheckout: Boolean!) {
+    changeCartConfigurationItemSelected(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection selectedForCheckout: $selectedForCheckout }) {
+      id subTotal { amount } total { amount } items { id listPrice { amount } configurationItems { sectionId type selectedForCheckout } }
+    }
+  }
+[GQL-EXEC flip_var]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=flip_var] errors[] empty
+[DATA label=flip_var] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_VARIATION_ID}}].selectedForCheckout = false
+[DATA label=flip_var] data.changeCartConfigurationItemSelected.subTotal.amount < {{BASE_SUB_TOTAL}}","[EVIDENCE] Variation deselect drops the variation contribution from listPrice; subTotal cascade fires; Variation matched by (sectionId, type, option.productId) — verifies the Product-shaped key for Variation type vs Text/File no-option discrimination",errors[] non-empty for valid Variation flip; subTotal unchanged after flip (cascade did NOT fire); selectedForCheckout did not flip,cleanup_post inline,xAPI; Mutations.changeCartConfigurationItemSelected; PROPOSED-BL-CART-CFG-001 (NCS short-circuit); CFG_VARIATION_CAKE alias,Automated

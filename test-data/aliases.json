@@ -1960,6 +1960,41 @@
     "presetOptionId": null,
     "notes": "Sprint 26-08 review — literal-value alias for configurable Text section Custom-input tests (CFG-PDP-050-COND in 072-configurable-products-ui.csv). 'customValue' is a deterministic alphanumeric+hyphen string of length 22, safely under the smallest known Text section maxLength in the registry (CFG_RING.maxLength=30) so the same value works whether the underlying product is CFG_RING (max 30), CFG_GIFTBOX (max 100), CFG_TEXT_DRIVEN_COND, or any other Text-section product. No special chars (no quotes/backslashes) so it survives JSON/CSV/GraphQL escaping without modification. 'maxLength' is an echo for tests that want to assert against the cap; populated as 30 to match the strictest registered Text section. 'presetOptionId' is null because no preset is required for the Custom-input cascade test (CFG-PDP-050-COND types into the Custom input, it does not select a preset)—populate per-product if a future preset-aware test needs it. Per project_configurable_text_section_validation.md, maxLength applies to Custom input only, so this value is sized for Custom-input scenarios. NOT a discovery alias — no API call needed; safe to consume directly via @td(CFG_TEXT_INPUTS.customValue)."
   },
+  "CFG_VARIATION_CAKE": {
+    "_inline": true,
+    "_status": "FRONTEND-NOT-IMPLEMENTED",
+    "productId": "e0472ee1-bceb-4680-b913-fe94bded5420",
+    "code": "THT-36341598",
+    "productName": "Configuration: Cake Vanilla White + Variations",
+    "slug": "products-with-options/wedding-cakes/cake-vanilla-white-variations",
+    "storefrontUrl": "https://vcst-qa-storefront.govirto.com/products-with-options/wedding-cakes/cake-vanilla-white-variations",
+    "categoryPath": "Products with Options > Wedding Cakes",
+    "variationSectionId": "66b3a9b5-5701-4146-8817-1ecc1507ed24",
+    "variationSectionName": "Variation section 1",
+    "variationSectionIsRequired": false,
+    "textSectionId": "9c3889cc-30a3-4eb9-9e06-c3ae26060a89",
+    "textSectionName": "Text section 2",
+    "textSectionIsRequired": false,
+    "productVariations": [
+      { "id": "c56a12c0-548f-492a-8a8e-05e1a67376b5", "code": "UWJ-83467294", "name": "Cake Vanilla White + Variations 1", "price": 120 },
+      { "id": "116a85f5-8023-430f-b919-58cadede3e26", "code": "VDY-39627589", "name": "Cake Vanilla White + Variations 2", "price": 200 }
+    ],
+    "var1Id": "c56a12c0-548f-492a-8a8e-05e1a67376b5",
+    "var1Code": "UWJ-83467294",
+    "var1Price": 120,
+    "var2Id": "116a85f5-8023-430f-b919-58cadede3e26",
+    "var2Code": "VDY-39627589",
+    "var2Price": 200,
+    "basePrice": 100,
+    "expectedPreviewListPrice_var1": 220,
+    "expectedPreviewListPrice_var2": 300,
+    "currency": "USD",
+    "captured_at": "2026-05-07",
+    "captured_via": "products(storeId:B2B-store, query:THT-36341598) + productConfiguration + product(id, storeId).variations + storefront PDP screenshot live on vcst-qa 2026-05-07",
+    "_featureStatus": "Variation-section rendering is NOT yet implemented on the storefront frontend (vc-frontend). Backend xAPI exposes the Variation-type configurationSection, but it returns empty options[]. The storefront PDP renders product.variations as a SEPARATE 'PRODUCT VARIATIONS' panel below the configurator (each variation is a standalone purchase line) — this is a different code path from configurable Variation sections. Do NOT write end-to-end test coverage for Variation-section selection mutations until both: (a) backend wires variation options into the configurationSection metadata, AND (b) frontend implements section rendering. Until then, only CFG-GQL-033 (xAPI structural check — section exists with type=Variation, options[] currently empty) is meaningful. CFG-GQL-034..036 (preview/upsert/flip) were drafted then removed 2026-05-07 as premature.",
+    "notes": "Reference product for future Variation-section coverage. PR #114 Variation contract (when implemented): ConfigurationSectionKeyInput uses {sectionId, type:'Variation', option:{productId}} — same shape as Product type. Once feature ships, expected option product ids will be 'c56a12c0-...' ($120) and '116a85f5-...' ($200) from productVariations[]."
+  },
+
   "CFG_REQUIRED_FILE_HOODIE": {
     "_inline": true,
     "productId": "85b6f077-d59f-4a8f-8510-9920b9d64ee1",
