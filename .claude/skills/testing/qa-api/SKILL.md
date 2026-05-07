@@ -117,7 +117,7 @@ Delegate to `qa-backend-expert` agent with scope and credentials.
 2. **Read test patterns** from `test-cases-api-graphql.md`
 3. **Delegate** to `qa-backend-expert` via Task tool:
    - Pass `BACK_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` from environment
-   - Agent uses Postman MCP or `browser_evaluate` fetch calls
+   - Agent executes via `browser_evaluate` fetch, curl, `npx tsx scripts/graphql-runner.ts` (for runner-native GraphQL CSVs), or a Postman collection authored via Postman MCP and executed with Newman/Postman CLI. The Postman MCP itself does not execute collections — see `qa-postman/execution.md`.
 4. **Output:** Pass/fail per endpoint, response codes, timings, full request/response on failure
 
 **REST API (Suite 14) coverage:**
@@ -171,10 +171,19 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 
 ## Environment Variables
 
-Always use env vars — never hardcode:
+Always use env vars — never hardcode URLs or credentials:
 - `BACK_URL` — platform backend URL
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` — admin credentials
 - `USER_EMAIL`, `USER_PASSWORD` — regular user credentials
 - `STORE_ID` — store identifier
 - `CULTURE_NAME` — default `en-US`
 - `CURRENCY_CODE` — default `USD`
+
+## Test Data — Resolve via `@td()`, Don't Hardcode
+
+Same rule applies to **entity IDs, SKUs, prices, emails, addresses, coupon codes, test cards, order numbers, and URL path segments** — resolve them at authoring time via the project's test-data library. Hardcoding rots: catalogs get re-seeded, orgs get re-created, prices change.
+
+- **Resolver:** `@td(ALIAS.field)` → looks up [`test-data/aliases.json`](../../../../test-data/aliases.json), reads the matching CSV row, returns the requested column. Examples: `@td(CYBERSOURCE_VISA.number)`, `@td(STORE_PRIMARY.id)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`.
+- **Implementation:** [`scripts/lib/test-data-resolver.ts`](../../../../scripts/lib/test-data-resolver.ts), consumed by `scripts/graphql-runner.ts` and the regression suite parsers.
+- **Validation:** `npx tsx scripts/validate-td-refs.ts` — verifies every `@td()` reference resolves.
+- **Reference:** [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) covers full conventions (catalog/address/account gotchas, fixture directory layout).

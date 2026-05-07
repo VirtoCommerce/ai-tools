@@ -27,6 +27,17 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 - **graphql-checklist.md** — GraphQL xAPI checklist with 34 items covering all xAPI modules (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote) + per-change verification template.
 - **checklist-creation-guide.md** — Methodology for creating new checklists: structure rules, quality criteria, VC-specific patterns, cross-layer verification, and examples.
 
+## Cross-Skill References (consult when items derive test cases)
+
+Checklist items are written to be testable; they assume readers will resolve test data and verify schemas via the canonical sources, not hardcode values:
+
+| File | Use when |
+|------|----------|
+| [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) + [`test-data/aliases.json`](../../../../test-data/aliases.json) | Any checklist item that mentions a specific entity (product, org, address, coupon, card, store) — resolve via `@td(ALIAS.field)` instead of inventing values |
+| [`../../../agents/knowledge/graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
+| [`../../../agents/knowledge/graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
+| [`../../../agents/knowledge/business-logic.md`](../../../agents/knowledge/business-logic.md) | Cross-link checklist items to `BL-*` invariants in the `Business_Rule` column of derived test cases |
+
 ## 62 Built-in Domain Checklists
 
 ### Storefront Domains (32) — `domain-checklists.md`

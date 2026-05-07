@@ -6,6 +6,14 @@
 
 **Scope:** `POST {BACK_URL}/graphql` — all xAPI domains. Requires `Authorization: Bearer {token}` for protected operations. Store context: `storeId`, `cultureName`, `currencyCode` on most queries.
 
+## Required Reading (before deriving test cases from this checklist)
+
+| File | Purpose |
+|------|---------|
+| [`.claude/agents/knowledge/graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) | **Authoritative** live introspection snapshot — query/mutation names, input types, return types. Verify every name and field against this before writing. |
+| [`.claude/agents/knowledge/graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) | **Authoring contract** for runner-native GraphQL test cases (`scripts/graphql-runner.ts`): full `Steps`/`Assertions`/`Cleanup` tag grammar, `getByPath` filter, capture chaining. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`. |
+| [`.claude/skills/testing/qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) | `@td(ALIAS.field)` resolver + [`test-data/aliases.json`](../../../../test-data/aliases.json) registry. Use `@td()` for entity IDs, store IDs, SKUs, coupon codes, addresses, test cards — never hardcode. `{{STORE_ID}}` etc. resolves from `.env`; entity-level fixtures resolve from `aliases.json`. |
+
 ---
 
 ## xCatalog — Products, Categories & Inventory

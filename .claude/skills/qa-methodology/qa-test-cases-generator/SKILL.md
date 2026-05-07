@@ -203,7 +203,7 @@ ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test
 
 1. **Self-review each case** against the writing guidelines in `test-case-template.md`:
    - No assertions mixed into Steps
-   - No hardcoded URLs/emails/passwords (all `{{VAR}}`)
+   - No hardcoded URLs/emails/passwords (all `{{VAR}}`); no hardcoded entity-specific values — IDs, SKUs, prices, addresses, coupons, test cards, order numbers — all resolved via `@td(ALIAS.field)` against [`test-data/aliases.json`](../../../../test-data/aliases.json) (see `../testing/qa-postman/test-data-fixtures.md`)
    - Every mutation has `errors[]` check in Cross_Layer_Checks
    - At least 2 failure signals per case
    - **Layer-correct tags**: API cases use `[HTTP]`/`[STATUS]`/`[BODY]`, not `[NAV]`/`[ACT]`
@@ -306,6 +306,9 @@ Generated test cases route to the correct executing agent by layer:
 | `/qa-plan` | Generated cases feed into test plans |
 | `agents/knowledge/sitemap.md` | Sitemap provides URLs and navigation context for steps |
 | `/qa-api ref` | xAPI reference for Cross_Layer_Checks assertions |
+| `../testing/qa-postman/test-data-fixtures.md` | `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json) registry, fixture conventions — read before populating `Test_Data` or `Preconditions` columns with any entity-specific value |
+| `agents/knowledge/graphql-test-cases-runner.md` | Runner-native CSV authoring contract — read before writing any GraphQL test case (Step 2.5 enforces this) |
+| `agents/knowledge/graphql-schema.md` | Live introspection snapshot — verify every query/mutation name and field against this (Step 2.5 enforces this) |
 
 ## Rules
 
@@ -315,7 +318,7 @@ Generated test cases route to the correct executing agent by layer:
 - **No vague assertions** — "page loads correctly" is not an assertion. Use `[DOM] product title visible` or `[NAV] URL matches /product/*`
 - **No compound steps** — one action per `[ACT]` line. Wrong: `click Add to Cart and verify badge`. Right: separate `[ACT]` and `[ASSERT]`. This rule still applies inside journey cases — each action is one `[ACT]`; the journey is built from many sequential `[ACT]`/`[ASSERT]` rounds, not from compound lines
 - **Frontend journeys are exceptions to atomicity** — for Storefront UI flows where behavior depends on cross-screen state (checkout, cart→order, login+purchase, BOPIS end-to-end, address/org switch mid-journey), write one journey case with `--- SCREEN: <name> ---` dividers in `Steps`, `[JOURNEY]` tag in `Section`, and an `[ASSERT]` at every screen boundary. Do NOT shard into atomic per-screen cases. See `agents/qa/test-management-specialist.md` → Frontend Journey Exception for full criteria
-- **Always `{{VAR}}`** — never hardcode URLs, credentials, or SKUs in steps
+- **Always resolve test data, never hardcode** — URLs and credentials use `{{VAR}}` (env-backed). Entity-specific values — IDs, SKUs, prices, emails, addresses, coupon codes, test-card numbers, order numbers, virtual-catalog roots, URL path segments — use `@td(ALIAS.field)` resolved against [`test-data/aliases.json`](../../../../test-data/aliases.json). Hardcoded fixtures rot when catalogs are reseeded or orgs are recreated. See `../testing/qa-postman/test-data-fixtures.md` for the full resolver contract and patterns. Validate with `npx tsx scripts/validate-td-refs.ts`
 - **Every mutation → `errors[]` check** — GraphQL HTTP 200 does not mean success in xAPI
 - **Minimum 2 failure signals** per case (timeout + API/console)
 - **Negative cases are mandatory** — for every happy path, generate at least one negative/error case — pick the failure mode most likely to slip through, not all possible invalid inputs

@@ -2,6 +2,8 @@
 
 Detailed review criteria for the `/qa-review-tests` skill. Each criterion has a severity, description, detection rule, and examples of good vs bad patterns.
 
+> **Cross-reference for Dimension 5 (Data Validity):** The consolidated test-data policy lives at [`.claude/rules/test-data.md`](../../../rules/test-data.md). The canonical `@td()` resolver contract is at [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md); the alias registry is [`test-data/aliases.json`](../../../../test-data/aliases.json). DV-013 / DV-014 / DV-016 / DV-017 below are the enforcement rules — when a reviewer flags one, point the author at the rule file for the rationale and the `@td()` patterns.
+
 ---
 
 ## Dimension 1: Structure

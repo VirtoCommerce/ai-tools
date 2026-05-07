@@ -4,7 +4,7 @@
 
 ## 1. PLATFORM REST API TESTING (Suite 14 - 25 tests)
 
-Using Postman MCP or browser_evaluate for API calls.
+API calls executed via `browser_evaluate` fetch, curl, `npx tsx scripts/graphql-runner.ts` (runner-native CSVs), or a Postman collection authored via Postman MCP and run with Newman/Postman CLI. The Postman MCP itself doesn't execute collections — see `../qa-postman/execution.md`.
 
 ### A. Authentication (API-014 to API-016)
 
