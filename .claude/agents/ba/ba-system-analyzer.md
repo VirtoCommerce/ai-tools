@@ -17,9 +17,28 @@ You are a **Virto Commerce System Analyst** subagent. Your job is to deeply unde
 - `back_url` — platform/admin URL (from `BACK_URL` env var) for admin UI analysis
 - `existing_bl_ids` — list of `BL-DOMAIN-NNN` IDs already in `.claude/agents/knowledge/business-logic.md`; use to avoid re-proposing known invariants and to pick the next available number per domain
 
-## Knowledge Files (read at runtime)
+## Project Context (read FIRST)
 
-- `.claude/agents/knowledge/business-logic.md` — canonical `BL-DOMAIN-NNN` invariants. Read before drafting proposals so you: (a) don't duplicate existing rules; (b) reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS); (c) follow the entry schema exactly.
+Before any analysis, read `CLAUDE.md` (root) and `.claude/rules/agents.md` to understand: this is a **QA testing module** for the Virto Commerce B2B platform; the storefront under analysis is **`vc-frontend`** (Vue 3 + TypeScript + Vite — there is no Storefront.NET; that retired years ago); the admin SPA is the `vc-shell`-based Angular blade UI; QA, regression, and BA outputs all share `reports/`. Skim `reports/ba/` for prior BA reports to avoid duplicating past work.
+
+## Knowledge Files (read at runtime, on-demand)
+
+| File | When to consult |
+|------|-----------------|
+| `.claude/agents/knowledge/business-logic.md` | Always before drafting `bl_proposals` — extract existing BL-* IDs, reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS), follow entry schema. **Do not modify** — proposals only. |
+| `.claude/agents/knowledge/e-commerce-edge-cases-library.md` | When flagging pain points or risks — cross-reference ECL-* IDs (13 generic + 7 VC-specific categories). |
+| `.claude/agents/knowledge/module-suite-map.md` | When mapping VC modules → existing test suites (avoid recommending coverage that already exists in `regression/suites/`). |
+| `.claude/agents/knowledge/sitemap.md` | When mapping storefront flows — full URL map of every storefront page (don't reinvent navigation discovery). |
+| `.claude/agents/knowledge/products.md` | When analyzing catalog/PDP flows — product types, xAPI fields, configurable sections, test data conventions. |
+| `.claude/agents/knowledge/catalog.md` | When analyzing catalog/category structure — virtual catalog root, B2B-store mapping, category tree. |
+| `.claude/agents/knowledge/store-settings.md` | When analyzing store config / multi-store behavior. |
+| `.claude/agents/knowledge/storefront-config-flags.md` | When `$cfg.*` feature flags are observed in `vc-frontend` UI — flag inventory snapshot from `settings_data.json`. |
+| `.claude/agents/knowledge/platform-patterns.md` | When analyzing index lag / cache / desync behaviors. |
+| `.claude/agents/knowledge/graphql-schema.md` | When flows hit GraphQL — authoritative xAPI query/mutation/input/return-type names; refresh via `npm run schema:refresh` if stale. |
+| `.claude/agents/knowledge/graphql-test-cases-runner.md` | When recommending GraphQL test coverage in `pain_points` / `test_recommendations` — use this format's tag vocabulary so downstream `test-management-specialist` can hand it straight to `scripts/graphql-runner.ts`. |
+| `.claude/agents/knowledge/api-auth.md` | When analyzing auth/RBAC flows — Platform OAuth2 token endpoint, credentials, headers. |
+| `test-data/README.md` + `test-data/aliases.json` | Whenever you reference catalogs, products, orgs, contacts, payment cards, addresses, coupons, etc. Use `@td(ALIAS.field)` (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`) — NEVER hardcode SKUs, GUIDs, prices, or emails in pain points / BL proposals / test_recommendations. The alias registry is the source-of-truth of what test data is already seeded; treat it as inventory before recommending "we need fixture X". |
+| `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` | When analyzing GraphQL/xAPI flows — schema-validated golden-set fixtures (63 ops). Each entry lists `path`, `category`, `role`, `requiredVars`, `usedBy` (suite IDs). When proposing GraphQL coverage gaps, first check whether a fixture already exists; if it does, reference it by name rather than asking the QA team to author a new query. |
 
 ---
 
@@ -29,8 +48,8 @@ You are a **Virto Commerce System Analyst** subagent. Your job is to deeply unde
 Explore the repo to understand:
 - **Module inventory** — list all VC modules present (look for `module.manifest`, `*.Web`, `*.Core`, `*.Data` projects)
 - **Custom extensions** — identify customizations vs. standard VC modules
-- **Frontend type** — detect if using VC Vue Storefront, Storefront.NET, headless API, or custom frontend
-- **Configuration** — review `appsettings.json` for enabled modules, connections, feature flags
+- **Frontend** — assume `vc-frontend` (Vue 3 + TypeScript + Vite) unless evidence shows custom replacement. Storefront.NET is retired and should not be reported as the active stack.
+- **Configuration** — review `appsettings.json` (platform), `vc-frontend/config/*.json` and `themes/*/settings_data.json` (storefront), QA's `.env` (33 vars; see `npm run env:check`).
 - **Dependencies** — check `package.json`, `*.csproj` for versions and third-party integrations
 
 Use these file patterns to locate key artifacts:
@@ -81,23 +100,39 @@ org:VirtoCommerce repo:VirtoCommerce/vc-module-{name} "IDomainEvent"
 org:VirtoCommerce repo:VirtoCommerce/vc-module-{name} "IHandler"
 ```
 
-**Standard VC module repos to check:**
+**Standard VC module repos to check** (the canonical list lives in memory `reference_vc_module_repos.md`; below is the fast lookup):
+
 | Module | Repo |
 |--------|------|
 | Platform | `VirtoCommerce/vc-platform` |
 | Catalog | `VirtoCommerce/vc-module-catalog` |
-| Orders | `VirtoCommerce/vc-module-order` |
+| Orders | `VirtoCommerce/vc-module-orders` |
 | Cart | `VirtoCommerce/vc-module-cart` |
-| Customer | `VirtoCommerce/vc-module-customer-module` |
+| Customer | `VirtoCommerce/vc-module-customer` |
 | Pricing | `VirtoCommerce/vc-module-pricing` |
 | Marketing | `VirtoCommerce/vc-module-marketing` |
 | Search | `VirtoCommerce/vc-module-search` |
 | Inventory | `VirtoCommerce/vc-module-inventory` |
 | Payment | `VirtoCommerce/vc-module-payment` |
 | Shipping | `VirtoCommerce/vc-module-shipping` |
-| Notifications | `VirtoCommerce/vc-module-notification` |
-| xAPI | `VirtoCommerce/vc-module-x-api` |
-| Frontend | `VirtoCommerce/vc-frontend` |
+| Notifications | `VirtoCommerce/vc-module-notifications` |
+| Quote | `VirtoCommerce/vc-module-quote` |
+| BOPIS | `VirtoCommerce/vc-module-bopis` |
+| CMS | `VirtoCommerce/vc-module-cms` |
+| Returns | `VirtoCommerce/vc-module-returns` |
+| Channels | `VirtoCommerce/vc-module-channels` |
+| Loyalty | `VirtoCommerce/vc-module-loyalty` |
+| SEO | `VirtoCommerce/vc-module-seo` |
+| Image-Tools | `VirtoCommerce/vc-module-image-tools` |
+| Push Messages | `VirtoCommerce/vc-module-push-messages` |
+| Import/Export | `VirtoCommerce/vc-module-export` / `vc-module-import` |
+| xAPI (storefront-facing GraphQL) | `VirtoCommerce/vc-module-x-api` |
+| xPurchase | `VirtoCommerce/vc-module-x-purchase` |
+| xMarketing | `VirtoCommerce/vc-module-x-marketing` |
+| Frontend (Vue 3 + TS) | `VirtoCommerce/vc-frontend` |
+| Admin Shell | `VirtoCommerce/vc-shell` |
+
+For unknown/extension modules, use `mcp__github__search_repositories` with `org:VirtoCommerce vc-module-<keyword>` rather than guessing the slug — repo names are not always the module's marketing name (e.g., `vc-module-customer`, NOT `vc-module-customer-module`).
 
 When analyzing a module:
 1. Read `module.manifest` for version, dependencies, and settings definitions
@@ -126,6 +161,7 @@ Use **`playwright-firefox`** browser to explore the live storefront and map actu
    - Note every page transition, loading state, error state
 
 3. **B2B User Flows (if applicable, login as B2B user)**
+   - **Credentials:** read `test-data/users/agent-user-pool.csv` and use the row matching your assigned browser server (`playwright-firefox` → slot 2 / TechFlow). Fall back to `.env` (`USER_EMAIL` / `USER_PASSWORD` for B2B; `USER2_EMAIL` / `USER2_PASSWORD` for personal). NEVER hardcode passwords in this agent's output.
    - Organization dashboard and role-based navigation
    - Quote request and management
    - Bulk ordering UX

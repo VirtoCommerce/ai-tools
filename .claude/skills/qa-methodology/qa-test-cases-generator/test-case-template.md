@@ -298,13 +298,13 @@ The base 15-column structure stays the same across all layers. What changes is t
 
 ### Layer: REST API
 
-Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI interaction.
+Tests executed via `browser_evaluate` (fetch), curl, or a Postman collection authored via Postman MCP and run with Newman / Postman CLI (the MCP itself doesn't execute — see `qa-postman/execution.md`). No browser UI interaction.
 
 **Step tags (Steps column):**
 
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
-| `[HTTP]` | Send HTTP request (method + endpoint + body) | Postman MCP `runCollection` or `browser_evaluate` fetch |
+| `[HTTP]` | Send HTTP request (method + endpoint + body) | `browser_evaluate` fetch, curl, or Newman/Postman CLI run of an authored collection |
 | `[AUTH]` | Authenticate and store token | POST to `/connect/token`, save Bearer token |
 | `[SETUP]` | Create prerequisite data via API | POST to create test entity |
 | `[TEARDOWN]` | Delete test data via API | DELETE to clean up |
@@ -336,6 +336,8 @@ Tests executed via Postman MCP or `browser_evaluate` (fetch). No browser UI inte
 ### Layer: GraphQL xAPI
 
 **Execution is migrating from the GraphiQL UI to a Node runner** (`scripts/graphql-runner.ts`). The runner validates every query against the introspected schema *before* sending (catches DV-006/008/009/010/011 at lint time with zero HTTP cost), executes via direct `fetch` to `/graphql`, and writes JSON evidence — no browser, no CodeMirror brittleness. Key rules stay: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**.
+
+> **Canonical authoring guide:** `.claude/agents/knowledge/graphql-test-cases-runner.md` is the source-of-truth contract for the runner-native format below — full tag grammar, predicate shapes (including arithmetic / cross-path / OR-AND composition / `[VAR]`), `getByPath()` filter syntax (`[?key=value]`, `[*?key=value]`, `[?key!=value]`, bracket indices), `@td()` resolver (CSV-backed + inline aliases), capture chaining, common failure modes, an authoring checklist, and a worked example. The summary below is correct but minimal — when in doubt, the knowledge file wins. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 
 New cases MUST use the **runner-native format** below. Existing cases with `[NAV]/[ACT]/[GQL]/[READ]` GraphiQL UI tags are **legacy** — migrate on touch.
 

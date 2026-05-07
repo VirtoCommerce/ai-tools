@@ -1,0 +1,11 @@
+Total messages: 3 (Errors: 0, Warnings: 0)
+Returning 8 messages for level "warning"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_216x216_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_348x348_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/themes/B2B-store/default/packages.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/themes/Electronics/default/packages.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/manifest.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/artifact.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/themes/version.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa-storefront.govirto.com/static/manifest.json:0

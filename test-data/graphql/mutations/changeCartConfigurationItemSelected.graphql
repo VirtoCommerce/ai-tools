@@ -1,0 +1,48 @@
+# name: changeCartConfigurationItemSelected
+# category: configurable-products
+# role: ORG_USER
+# purpose: Flip a single configuration item's selectedForCheckout flag (true or false); triggers UpdateConfiguredLineItemPrice ONLY when the flag actually changes (no-change short-circuit). Affects lineItem.listPrice because ConfiguredLineItemContainer.UpdatePrice sums only items where SelectedForCheckout=true.
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: cartName (String), cartType (String), cultureName (String), currencyCode (String)
+# last-validated: 2026-05-06
+# known-issues:
+#   - Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+# gql-vars: { "configurationSection": "ConfigurationSectionKeyInput!", "selectedForCheckout": "Boolean!" }
+# runner-note: Pass configurationSection and selectedForCheckout via [GQL-VARS label] JSON. ConfigurationSectionKeyInput uses (sectionId, type, option?) — lighter-weight than ConfigurationSectionInput; no quantity/customText/fileUrls. For Product sections include option:{productId}. For Variation sections include option:{productId} (the chosen variation). For Text and File sections OMIT option entirely (matched by sectionId+type only).
+# example-vars-product: {"configurationSection": {"sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": {"productId": "{{OPT_RAM_BASE_ID}}"}}, "selectedForCheckout": false}
+# example-vars-text:    {"configurationSection": {"sectionId": "{{SECTION_TEXT_ID}}", "type": "Text"}, "selectedForCheckout": false}
+# example-vars-file:    {"configurationSection": {"sectionId": "{{SECTION_FILE_ID}}", "type": "File"}, "selectedForCheckout": false}
+# response-rationale: items[].listPrice (parent reprice), items[].extendedPrice (qty × listPrice), cart subTotal/total (RecalculateAsync cascade) — all four levels MUST recalculate when at least one configurationItem flag flips.
+
+mutation ChangeCartConfigurationItemSelected(
+  $configurationSection: ConfigurationSectionKeyInput!,
+  $selectedForCheckout: Boolean!
+) {
+  changeCartConfigurationItemSelected(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSection: $configurationSection
+    selectedForCheckout: $selectedForCheckout
+  }) {
+    id
+    itemsCount
+    subTotal { amount currency { code } }
+    total { amount currency { code } }
+    items {
+      id
+      productId
+      quantity
+      listPrice { amount currency { code } }
+      extendedPrice { amount currency { code } }
+      configurationItems {
+        id
+        sectionId
+        type
+        productId
+        customText
+        selectedForCheckout
+      }
+    }
+  }
+}

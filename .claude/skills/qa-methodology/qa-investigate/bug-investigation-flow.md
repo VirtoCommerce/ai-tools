@@ -104,7 +104,7 @@ BUG REPORTED / SUSPECTED
 - 4xx → Client request issue (auth token, params, payload format)
 - 5xx → Server-side exception — check platform logs
 - 200 but wrong data → Business logic bug in module
-- Tool: Postman `runCollection` or `browser_evaluate` with `fetch()`
+- Tool: `browser_evaluate` with `fetch()`, curl, or a Postman collection executed via Newman / Postman CLI (the Postman MCP itself doesn't run collections — see `qa-postman/execution.md`)
 
 **3c. Module / Configuration:**
 - Feature broken after update → Module version compatibility (see Pattern P1)

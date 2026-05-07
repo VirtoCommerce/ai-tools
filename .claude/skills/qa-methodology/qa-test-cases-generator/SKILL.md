@@ -89,6 +89,8 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 
 **MANDATORY** when generating GraphQL test cases. Skipping this step produces invalid queries/mutations.
 
+> **Authoring contract:** new GraphQL test cases MUST follow the runner-native format consumed by `scripts/graphql-runner.ts`. Read **`.claude/agents/knowledge/graphql-test-cases-runner.md`** before writing any GraphQL row — it defines the canonical `Steps`/`Assertions`/`Cleanup` grammar (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` + `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`), `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, and an authoring checklist. Gold-standard examples: `regression/suites/Backend/graphql/050i-graphql-configurations.csv` (CFG-GQL-001…032).
+
 1. **Read schema reference** — read `agents/knowledge/graphql-schema.md` (introspected from live endpoint)
 2. **Check schema freshness** — if the feature involves new/changed GraphQL operations, run `npm run schema:refresh` first to update the reference from live introspection
 3. **Validate every query/mutation** in the test case against the schema:

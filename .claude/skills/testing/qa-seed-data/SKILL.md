@@ -7,13 +7,13 @@ argument-hint: "[minimal|catalog|b2b|pricing|full|teardown]"
 
 Generate a complete test environment by seeding all required entities via REST API, or tear down previously created test data.
 
-**Postman mechanics:** This skill uses Postman MCP for collection building and execution. For auth patterns, variable scoping, collection structure, common mistakes, and tool signatures — read `/qa-postman` guide (`postman-collection-guide.md`) first. This skill only covers **what** to seed and **in what order**, not how Postman MCP works.
+**Postman mechanics:** This skill uses Postman MCP for collection building. **The MCP cannot execute collections** — execution happens out-of-band via Newman or the Postman CLI (see `/qa-postman/execution.md`). For auth patterns, variable scoping, collection structure, common mistakes, and tool signatures — read `/qa-postman` first. This skill only covers **what** to seed and **in what order**, not how Postman MCP works.
 
 ## Reference
 
 Read **before** executing:
-1. `./claude/skills/testing/qa-postman/postman-collection-guide.md` — Postman MCP mechanics (§1-12)
-2. `./claude/skills/testing/qa-seed-data/test-data-generation.md` — Entity graph, API endpoints, request bodies, batch patterns, naming
+1. `.claude/skills/testing/qa-postman/SKILL.md` — Postman MCP entry point (index of all sub-guides: `mcp-tools.md`, `variables-and-environments.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md`, `common-mistakes.md`, `examples.md`)
+2. `.claude/skills/testing/qa-seed-data/test-data-generation.md` — Entity graph, API endpoints, request bodies, batch patterns, naming
 
 ## Arguments
 
@@ -38,22 +38,22 @@ Use `getCollections` to check if a seed collection already exists for the reques
 
 | Exists? | Action |
 |---------|--------|
-| **Yes** | Skip to Step 5 — `runCollection` immediately. No rebuild needed. |
-| **Yes, but outdated** | Use `putCollection` to update in-place (1 call). |
+| **Yes** | Skip to Step 5 — execute via Newman/Postman CLI immediately. No rebuild needed. |
+| **Yes, but outdated** | Use `putCollection` to update in-place (1 call; needs the **owner-qualified** `<OWNER>-<UUID>`). |
 | **No** | Continue to Step 3. |
 
 **This is the #1 speed optimization.** Building should only happen once per profile.
 
 ### Step 3 — Environment
-Reuse existing `VC QA Environment` or create one per `qa-postman` guide (§4-5). Entity IDs go in **collection variables** (not environment).
+Reuse existing `VC QA Environment` or create one per [`../qa-postman/variables-and-environments.md`](../qa-postman/variables-and-environments.md). Entity IDs go in **collection variables** (not environment).
 
 ### Step 4 — Build Collection (Single Call)
-**Use one `createCollection` call with ALL requests inline** (per `qa-postman` guide §6). Never use `createCollectionRequest` for seed collections — that's N MCP round-trips instead of 1.
+**Use one `createCollection` call with ALL requests inline** (per [`../qa-postman/collections-and-requests.md`](../qa-postman/collections-and-requests.md) §1). Never use `createCollectionRequest` for seed collections — that's N MCP round-trips instead of 1.
 
 **Seed collection folder structure** (entity order from `test-data-generation.md` §Entity Dependency Graph):
 
 ```
-00-Auth           → OAuth2 token (per qa-postman §8)
+00-Auth           → OAuth2 token (per ../qa-postman/collections-and-requests.md §3)
 01-Infrastructure → GET store, GET FFCs (verify + extract IDs)
 02-Catalog        → Physical catalog, virtual catalog, categories
 03-Products       → Products by type, variations, images
@@ -66,8 +66,21 @@ Reuse existing `VC QA Environment` or create one per `qa-postman` guide (§4-5).
 
 **Teardown collection:** same single-call approach, reverse dependency order (see `test-data-generation.md` §Teardown Collection).
 
-### Step 5 — Execute
-`runCollection(collectionId, environmentId)` — see `qa-postman` guide (§11) for ID format and result interpretation.
+### Step 5 — Execute (out-of-band)
+The Postman MCP cannot execute collections. Pick a runner — see [`qa-postman/execution.md`](../qa-postman/execution.md) for full details. Quickest path:
+
+```bash
+# Export collection + environment from Postman UI (or fetch via getCollection model=full + getEnvironment, then save)
+npx newman run <seed-collection.json> -e <env.json> --reporters cli,json --reporter-json-export results.json
+```
+
+Or for an immediate run that surfaces in the Postman UI:
+
+```bash
+postman collection run <collection-uid> --environment <environment-uid>
+```
+
+After the run, capture the seeded entity IDs from the Newman/Postman result JSON and write them back into [`test-data/`](../../../../test-data/) so downstream suites can resolve them via `@td()` — see Step 6 and [`qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md).
 
 ### Step 6 — Report
 
@@ -154,7 +167,7 @@ Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in
 
 | Agent | Role |
 |-------|------|
-| `qa-backend-expert` | Primary executor — builds and runs Postman collections |
+| `qa-backend-expert` | Primary executor — authors Postman seed collections (via MCP), then executes them via Newman or the Postman CLI; writes seeded IDs back into `test-data/` |
 | `qa-frontend-expert` | Verifies seeded data appears on storefront |
 | `test-management-specialist` | References profiles when planning test coverage |
 
@@ -164,4 +177,5 @@ Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in
 - Always use `AGENT-TEST-` prefix — enables safe teardown without affecting real data
 - After `full` seed, wait for search reindex before running storefront tests (~30-60s)
 - If seed fails mid-execution, run teardown for the partial data before retrying
-- For Postman troubleshooting (auth errors, variable resolution, ID format) — see `qa-postman` guide §12
+- For Postman troubleshooting (auth errors, variable resolution, ID format) — see [`qa-postman/common-mistakes.md`](../qa-postman/common-mistakes.md)
+- After every successful seed, write the new entity IDs back into [`test-data/`](../../../../test-data/) (CSV files referenced by `aliases.json`) so downstream regression suites resolve them via `@td()` — see [`qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) for the resolver contract

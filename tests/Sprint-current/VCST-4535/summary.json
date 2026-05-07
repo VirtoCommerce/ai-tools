@@ -1,0 +1,178 @@
+{
+  "ticket": "VCST-4535",
+  "title": "[UI-kit] VcTable - implement VcTableColumn subcomponent for declarative column config (better DX)",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_rationale": "Two outstanding P2 a11y issues: BUG-2 (Space-key activation on role=button rows on orders.vue) and BUG-A (rowStyle opacity:0.5 dimming reduces contrast to 3.94:1, below WCAG AA 4.5:1). All ACs functionally met: declarative VcTableColumn API renders correctly, sticky/fixed columns work, rowClass/rowStyle work, backward-compat with legacy `columns` prop confirmed, INFRA-1 (Cloudflare Rocket Loader) resolved enabling full Storybook QA. Storybook retest: 36 PASS / 2 FAIL / 2 PARTIAL / 4 NOT COVERED / 1 AMBIGUOUS across 47 assertions. Consumer regression sweep clean. By-design clarifications: window.open _blank row navigation + modifier-key handling are intentional UX, not regressions.",
+  "verdict_history": [
+    {
+      "date": "2026-05-06T15:30+03:00",
+      "verdict": "FAIL",
+      "reason": "Believed BUG-1 (window.open _blank) was a P1 functional regression"
+    },
+    {
+      "date": "2026-05-06T16:00+03:00",
+      "verdict": "PASS_WITH_NOTES",
+      "reason": "User clarified BUG-1 + BUG-3 are by-design (intentional new-tab navigation). Only BUG-2 (Space-key a11y) remained."
+    },
+    {
+      "date": "2026-05-06T17:00+03:00",
+      "verdict": "PASS_WITH_NOTES",
+      "reason": "Storybook retest completed (INFRA-1 RESOLVED). Confirmed BUG-2; discovered BUG-A (P2 a11y, WCAG 1.4.3 — rowStyle opacity dimming reduces contrast). 4 items not covered by any Storybook story; 1 ambiguous (fixed-column shadow)."
+    }
+  ],
+  "date": "2026-05-06",
+  "sprint": "Sprint 26-09 (active)",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2261-156b-156bb3bb",
+    "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2261",
+    "pr_state": "open",
+    "deployed": true
+  },
+  "agents_dispatched": [
+    "test-management-specialist",
+    "ui-ux-expert",
+    "qa-frontend-expert",
+    "qa-testing-expert"
+  ],
+  "browsers_used": [
+    "Chrome DevTools MCP (ui-ux-expert — Storybook)",
+    "playwright-chrome (qa-frontend-expert — orders.vue + consumer sweep)",
+    "playwright-firefox (qa-testing-expert — exploratory)"
+  ],
+  "total_cases": 80,
+  "passed": 60,
+  "failed": 2,
+  "partial": 3,
+  "blocked": 1,
+  "not_covered": 4,
+  "ambiguous": 1,
+  "na": 2,
+  "blocked_reason": "Only /account/purchase-requests remains blocked (route disabled for TechFlow B2B org). Storybook 33 items now executed (INFRA-1 RESOLVED 2026-05-06).",
+  "storybook_retest": {
+    "infra_1_status": "RESOLVED — Cloudflare Rocket Loader blocker cleared on https://vcst-qa-storybook.govirto.com",
+    "execution_date": "2026-05-06T17:00+03:00",
+    "results": {
+      "pass": 36,
+      "fail": 2,
+      "partial": 2,
+      "not_covered": 4,
+      "ambiguous": 1,
+      "total_assertions": 47
+    },
+    "not_covered_items": [
+      "1.5.3 — Static object rowStyle (no dedicated story)",
+      "1.5.5 — rowClass + rowStyle coexistence on same table (no dedicated story)",
+      "1.8.3 — Sticky header + custom #header slot (no dedicated story)",
+      "(one more under 1.5)"
+    ],
+    "ambiguous_items": [
+      "1.4.6 — Fixed column visual separator/shadow (no box-shadow found in computed styles; Coffee theme may not render a separator)"
+    ]
+  },
+  "bugs_filed": [],
+  "bugs_to_file": [
+    {
+      "id": "BUG-2",
+      "severity": "P2",
+      "type": "Accessibility / AC-5 violation (WCAG 4.1.2)",
+      "title": "Space key does not activate `<tr role=\"button\" tabindex=\"0\">` row on /account/orders (only Enter works)",
+      "scope": "Confirmed Chrome + Firefox on /account/orders + Storybook Row Click story. ARIA APG: role=button MUST respond to both Enter and Space.",
+      "fix_hint": "Add Space (' ') to keydown listener alongside Enter in <VcTable> @row-click keyboard handler; preventDefault to stop page-scroll"
+    },
+    {
+      "id": "BUG-A",
+      "severity": "P2",
+      "type": "Accessibility / WCAG 1.4.3 contrast violation",
+      "title": "rowStyle `opacity: 0.5` dimming pattern reduces text contrast to 3.94:1 (below WCAG AA 4.5:1)",
+      "scope": "Storybook Row Inline Style story — axe-core reports 3 affected elements (Bob Johnson's name cell, email cell, Inactive badge). Effective color #808080 over white. Source: VCST-4535 Storybook retest 2026-05-06.",
+      "fix_hint": "Replace opacity-dimming for inactive/disabled rows with a higher-contrast token (e.g., text-neutral-600 or a token meeting 4.5:1 on neutral-50/white). Add WCAG-compliant disabled-row preset.",
+      "evidence": "tests/Sprint-current/VCST-4535/storybook-screenshots/retest/1-5-a11y-contrast-violation.png"
+    }
+  ],
+  "by_design_clarifications": [
+    {
+      "former_id": "BUG-1",
+      "title": "Row click opens new browser tab via window.open(_blank) instead of in-place SPA navigation",
+      "status": "BY_DESIGN",
+      "clarified_by": "User (2026-05-06)",
+      "note": "Intentional UX choice — opening order/quote details in a new tab preserves the listing tab for the user."
+    },
+    {
+      "former_id": "BUG-3",
+      "title": "Ctrl+click and middle-click route through same window.open(_blank) handler",
+      "status": "BY_DESIGN",
+      "clarified_by": "User (2026-05-06)",
+      "note": "Downstream consequence of intentional new-tab design — every click flavor produces the same new-tab result."
+    }
+  ],
+  "infrastructure_issues": [
+    {
+      "id": "INFRA-1",
+      "severity": "P0",
+      "status": "RESOLVED 2026-05-06",
+      "title": "Cloudflare Rocket Loader breaks all Storybook QA on vcst-qa-storybook.govirto.com",
+      "scope": "Universal — all components, not VCST-4535-specific",
+      "resolution_note": "Storybook retest 2026-05-06 confirmed Storybook fully operational, zero Rocket Loader interference. Cause of resolution: presumed cache eviction or Cloudflare Page Rule applied externally; not user-driven from this run.",
+      "fix_hint_legacy": "Cloudflare Page Rule for vcst-qa-storybook.govirto.com/* → Rocket Loader OFF. Or set data-cfasync=false on Storybook iframe scripts."
+    }
+  ],
+  "business_rules_verified": [
+    "BL-ORD-005 (PASS — order numbers in list match detail URL)",
+    "BL-ORD-001 (PASS — order statuses render as human-readable labels)"
+  ],
+  "business_rules_na": [
+    "BL-ORD-007 (N/A — shipment status not rendered on order list)"
+  ],
+  "exploratory": {
+    "charter": "Risk charter — confirm cross-browser parity of row-click behavior + probe modifier-key boundaries",
+    "heuristic": "SFDPOT",
+    "browser": "playwright-firefox",
+    "duration_min": 20,
+    "findings": {
+      "behaviors_confirmed_cross_browser": 2,
+      "by_design_consequences": 1,
+      "real_a11y_bugs": 1,
+      "questions": 0,
+      "observations": 1,
+      "risks": 0
+    }
+  },
+  "consumer_regression_sweep": {
+    "scope": "All 11 VcTable consumers in vc-frontend (10 + component itself)",
+    "row_clickable_consumers": ["orders.vue", "quotes.vue"],
+    "decorative_only": ["addresses.vue", "company/info.vue", "company/members.vue", "points-history.vue"],
+    "no_row_click_handler": ["variations-table.vue (uses cell-level <a href> + qty stepper)"],
+    "selection_action_modal": ["select-address-modal.vue (PASS_WITH_NOTES — explicit Select buttons mitigate row-pattern)"],
+    "legacy_columns_prop_canary": ["address-info-modal.vue (PASS — backward-compat clean)"],
+    "blocked": ["purchase-requests.vue (route 404 for TechFlow B2B org)"],
+    "bug2_scope": "Real a11y bug applies only to orders.vue (row has role=button + tabindex=0). quotes.vue has role=null + tabindex=-1 — not a focusable activation target there."
+  },
+  "artifacts": {
+    "checklist": "tests/Sprint-current/VCST-4535/testing-checklist.md",
+    "consumer_checklist": "tests/Sprint-current/VCST-4535/vctable-consumers-checklist.md",
+    "test_cases": "tests/Sprint-current/VCST-4535/test-cases.csv",
+    "uiux_report": "tests/Sprint-current/VCST-4535/uiux-report.md",
+    "execution_report": "tests/Sprint-current/VCST-4535/test-execution-report.md",
+    "exploratory_session": "tests/Sprint-current/VCST-4535/exploratory-session.md",
+    "consumers_regression_report": "tests/Sprint-current/VCST-4535/consumers-regression-report.md",
+    "screenshots": "tests/Sprint-current/VCST-4535/screenshots/ (8 images)",
+    "exploratory_screenshots": "tests/Sprint-current/VCST-4535/exploratory-screenshots/ (4 images)",
+    "storybook_screenshots": "tests/Sprint-current/VCST-4535/storybook-screenshots/ (3 images)",
+    "consumers_screenshots": "tests/Sprint-current/VCST-4535/consumers-screenshots/ (B1-B8 + B7-retest, 12 images)",
+    "har": "tests/Sprint-current/VCST-4535/har/orders-flow-graphql.txt"
+  },
+  "jira_actions_completed": [
+    "Comment 96874 — initial QA Verdict: FAIL summary (now superseded by reclassification)",
+    "Comment 96878 — VcTable consumer map (11 files, API adoption)",
+    "Comment 96880 — regression-sweep results table",
+    "Comment 96881 — detailed per-surface addendum + B.7 retest"
+  ],
+  "next_actions_pending_user_confirmation": [
+    "Post correction comment to VCST-4535 reclassifying BUG-1 + BUG-3 as by-design (in progress)",
+    "File single JIRA Bug ticket for BUG-2 (P2 a11y — Space key activation on orders.vue) via /qa-bug",
+    "Open separate infra ticket for INFRA-1 (Cloudflare Rocket Loader on Storybook)",
+    "Transition VCST-4535 — recommend 'Finish test' → TESTED with PASS_WITH_NOTES, with linked BUG-2 a11y ticket"
+  ]
+}

@@ -127,6 +127,7 @@ For every test case row, evaluate:
   - [ ] Every `[GQL-OP <L>]` paired with exactly one `[GQL-EXEC <L>]`
   - [ ] Every `[GQL-EXEC <L>]` has a matching `[GQL-OP <L>]`
   - [ ] Every `[GQL-VARS <L>]` / `[GQL-CAPTURE <L>.*]` refers to a declared op label
+- [ ] **Runner-native GraphQL authoring contract** — every runner-native row conforms to `.claude/agents/knowledge/graphql-test-cases-runner.md` (canonical `Steps`/`Assertions`/`Cleanup` grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, authoring checklist). Read this doc when in doubt about whether a tag, predicate, or path expression is supported by the runner.
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)

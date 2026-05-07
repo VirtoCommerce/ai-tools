@@ -17,6 +17,9 @@ export type StepBlock =
   | ExecStep
   | CaptureStep
   | RestStep
+  | RestOpStep
+  | RestExecStep
+  | RestCaptureStep
   | UnknownStep;
 
 export interface AuthStep {
@@ -58,6 +61,30 @@ export interface RestStep {
   method: string;
   path: string;
   body?: string;
+  raw: string;
+}
+
+/** Multi-line REST request block: [REST-OP <label>] followed by free-form body */
+export interface RestOpStep {
+  kind: "REST-OP";
+  label: string;
+  body: string;
+  raw: string;
+}
+
+/** Trigger to fire the named REST-OP and store the response under <label> */
+export interface RestExecStep {
+  kind: "REST-EXEC";
+  label: string;
+  raw: string;
+}
+
+/** Capture from a stored REST response into the variable bag */
+export interface RestCaptureStep {
+  kind: "REST-CAPTURE";
+  label: string;
+  path: string;
+  variable: string;
   raw: string;
 }
 
@@ -172,8 +199,12 @@ export function parseSteps(cell: string): StepBlock[] {
       continue;
     }
 
+    // Path supports object props (foo), numeric indices (0), JSONPath-style
+    // filters (foo[?key=value]). The filter "value" chunk can include hyphens,
+    // GUIDs, spaces — anything except `]`. Use a non-greedy capture stopping
+    // at the arrow.
     const capMatch = line.match(
-      /^\[GQL-CAPTURE\s+([\w-]+)\.([\w.\d]+)\s*(?:→|->)\s*(\w+)\s*\]\s*$/i
+      /^\[GQL-CAPTURE\s+([\w-]+)\.(.+?)\s*(?:→|->)\s*(\w+)\s*\]\s*$/i
     );
     if (capMatch) {
       blocks.push({
@@ -181,6 +212,48 @@ export function parseSteps(cell: string): StepBlock[] {
         label: capMatch[1],
         path: capMatch[2],
         variable: capMatch[3],
+        raw,
+      });
+      i++;
+      continue;
+    }
+
+    const restOpMatch = line.match(/^\[REST-OP\s+([\w-]+)\s*\]\s*$/i);
+    if (restOpMatch) {
+      const label = restOpMatch[1];
+      const body: string[] = [];
+      i++;
+      while (i < lines.length) {
+        const nextLine = lines[i];
+        if (isStepTag(nextLine.trim())) break;
+        body.push(nextLine);
+        i++;
+      }
+      blocks.push({
+        kind: "REST-OP",
+        label,
+        body: body.join("\n").trim(),
+        raw,
+      });
+      continue;
+    }
+
+    const restExecMatch = line.match(/^\[REST-EXEC\s+([\w-]+)\s*\]\s*$/i);
+    if (restExecMatch) {
+      blocks.push({ kind: "REST-EXEC", label: restExecMatch[1], raw });
+      i++;
+      continue;
+    }
+
+    const restCapMatch = line.match(
+      /^\[REST-CAPTURE\s+([\w-]+)\.(.+?)\s*(?:→|->)\s*(\w+)\s*\]\s*$/i
+    );
+    if (restCapMatch) {
+      blocks.push({
+        kind: "REST-CAPTURE",
+        label: restCapMatch[1],
+        path: restCapMatch[2],
+        variable: restCapMatch[3],
         raw,
       });
       i++;
@@ -221,7 +294,7 @@ export function parseSteps(cell: string): StepBlock[] {
 }
 
 function isStepTag(line: string): boolean {
-  return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
+  return /^\[(AUTH|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST-OP|REST-EXEC|REST-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
 }
 
 /**

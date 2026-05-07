@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-04-30",
+  "lastValidated": "2026-05-06",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 58,
+  "totalFixtures": 63,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -533,6 +533,93 @@
       "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
       "gqlVars": { "qty": "Int", "configurationSections": "[ConfigurationSectionInput]" },
       "semantics": "REPLACE — atomic re-configure of quantity + sections"
+    },
+    "changeCartConfigurationItemSelected": {
+      "path": "mutations/changeCartConfigurationItemSelected.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": {
+        "configurationSection": "ConfigurationSectionKeyInput!",
+        "selectedForCheckout": "Boolean!"
+      },
+      "runnerNote": "Pass configurationSection (sectionId, type, option?) and selectedForCheckout via [GQL-VARS label] JSON. ConfigurationSectionKeyInput is a lighter-weight key-only variant — no quantity/customText/fileUrls. For Product sections include option: {productId}. For Text/File sections omit option.",
+      "exampleVars": {
+        "configurationSection": { "sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": { "productId": "{{OPT_RAM_BASE_ID}}" } },
+        "selectedForCheckout": false
+      },
+      "semantics": "Single-item selection toggle. Triggers UpdateConfiguredLineItemPrice only when flag actually flips (no-change short-circuit).",
+      "knownIssues": [
+        "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice."
+      ]
+    },
+    "selectCartConfigurationItems": {
+      "path": "mutations/selectCartConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": {
+        "configurationSections": "[ConfigurationSectionKeyInput!]!"
+      },
+      "runnerNote": "Pass configurationSections via [GQL-VARS label] JSON — array of ConfigurationSectionKeyInput. SelectedForCheckout is hardcoded true; callers do NOT pass it.",
+      "exampleVars": {
+        "configurationSections": [
+          { "sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": { "productId": "{{OPT_RAM_BASE_ID}}" } },
+          { "sectionId": "{{SECTION_STORAGE_ID}}", "type": "Product", "option": { "productId": "{{OPT_STORAGE_BASE_ID}}" } }
+        ]
+      },
+      "semantics": "Batch select (true). Triggers reprice for items whose flag actually flips.",
+      "knownIssues": [
+        "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice."
+      ]
+    },
+    "unSelectCartConfigurationItems": {
+      "path": "mutations/unSelectCartConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": {
+        "configurationSections": "[ConfigurationSectionKeyInput!]!"
+      },
+      "runnerNote": "Pass configurationSections via [GQL-VARS label] JSON — array of ConfigurationSectionKeyInput. SelectedForCheckout is hardcoded false; callers do NOT pass it.",
+      "exampleVars": {
+        "configurationSections": [
+          { "sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": { "productId": "{{OPT_RAM_BASE_ID}}" } },
+          { "sectionId": "{{SECTION_STORAGE_ID}}", "type": "Product", "option": { "productId": "{{OPT_STORAGE_BASE_ID}}" } }
+        ]
+      },
+      "semantics": "Batch unselect (false). Triggers reprice for items whose flag actually flips.",
+      "knownIssues": [
+        "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice."
+      ]
+    },
+    "selectAllCartConfigurationItems": {
+      "path": "mutations/selectAllCartConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": {},
+      "runnerNote": "No GQL variables needed. All config items on the lineItemId are set to selectedForCheckout=true. Operation is scoped strictly to lineItemId — other configured lineItems in the cart are not affected.",
+      "exampleVars": {},
+      "semantics": "Select all config items on one lineItem. Scoped to lineItemId. Triggers reprice for items whose flag actually flips.",
+      "knownIssues": [
+        "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.",
+        "Scoped to lineItemId only — other configured lineItems in cart are NOT affected."
+      ]
+    },
+    "unSelectAllCartConfigurationItems": {
+      "path": "mutations/unSelectAllCartConfigurationItems.graphql",
+      "category": "configurable-products",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "LINE_ITEM_ID"],
+      "gqlVars": {},
+      "runnerNote": "No GQL variables needed. All config items on the lineItemId are set to selectedForCheckout=false. Operation is scoped strictly to lineItemId — other configured lineItems in the cart are not affected.",
+      "exampleVars": {},
+      "semantics": "Unselect all config items on one lineItem. Scoped to lineItemId. Triggers reprice for items whose flag actually flips.",
+      "knownIssues": [
+        "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.",
+        "Scoped to lineItemId only — other configured lineItems in cart are NOT affected."
+      ]
     }
   }
 }

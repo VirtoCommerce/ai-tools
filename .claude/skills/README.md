@@ -41,8 +41,15 @@
 │   │   ├── coverage-gap-methodology.md
 │   │   └── feature-domain-map.md
 │   ├── qa-postman/
-│   │   ├── SKILL.md                 # Postman MCP collection builder
-│   │   └── postman-collection-guide.md  # Variables, auth, endpoints, chaining, examples
+│   │   ├── SKILL.md                          # Postman MCP collection builder (entry point + index)
+│   │   ├── mcp-tools.md                      # Tool inventory, workspace, ID formats
+│   │   ├── variables-and-environments.md     # Variable scoping, .env mapping, env creation
+│   │   ├── collections-and-requests.md       # Collection schema, requests, auth, chaining
+│   │   ├── graphql-authoring.md              # GraphQL bodies + xrefs to graphql-schema.md
+│   │   ├── test-data-fixtures.md             # @td() resolver, aliases.json, fixture conventions
+│   │   ├── execution.md                      # Verify checklist, Newman/Postman CLI, endpoints
+│   │   ├── common-mistakes.md                # 15-item mistake catalog
+│   │   └── examples.md                       # Auth-only, CRUD, env quick-copy examples
 │   ├── qa-seed-data/
 │   │   ├── SKILL.md                 # Test data generation via Postman MCP
 │   │   └── test-data-generation.md  # Data generation methodology and Postman collection reference
@@ -109,7 +116,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
 | `/qa-checklist` | test-management-specialist | domain-checklists.md, graphql-checklist.md, checklist-creation-guide.md |
 | `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
-| `/qa-postman` | qa-backend-expert | postman-collection-guide.md |
+| `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |

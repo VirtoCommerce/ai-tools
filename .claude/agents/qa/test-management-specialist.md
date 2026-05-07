@@ -58,6 +58,8 @@ Every feature decomposes into testable layers. Each layer has its own output for
 | Backend & Admin Checklists (29 domains, 255 items) | `.claude/skills/testing/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
 | GraphQL xAPI Checklist (34 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
 | GraphiQL Interaction Guide | `.claude/agents/knowledge/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
+| Live xAPI Schema Snapshot | `.claude/agents/knowledge/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql-runner.ts --query "<inline>"` for a live check). |
 | Test Case Template (15-col CSV) | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
 
 ### What Makes Good VC Test Cases

@@ -21,7 +21,11 @@ Execute a single suite as an Agent Teams teammate. Report via `SendMessage` to t
 
 ## Tag/Column Reference
 
-**Consult on demand only** — do NOT pre-read: `.claude/agents/knowledge/test-runner-tags.md` covers CSV columns, step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+**Consult on demand only** — do NOT pre-read:
+
+- `.claude/agents/knowledge/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+- `.claude/agents/knowledge/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: tag grammar, predicate shapes, path/filter syntax, schema validation, common failure modes. Read this when triaging "why is GQL-XXX BLOCKED?" before retrying or escalating.
+- `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema for cross-checking DV-006…DV-011 schema-mismatch errors.
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if ambiguous.
 
@@ -105,7 +109,7 @@ Log each recovery to `selfRecoveries[]` the same way the browser path does.
 
 - Skip Phase 5 browser teardown (no browser was opened).
 - Emit the Phase 6 JSON normally. GraphQL test-case entries carry `graphqlEvidence` paths instead of screenshot/console/network fields.
-- Cleanup already ran inside each `graphql-runner.ts` invocation. Cleanup failures are recorded in the per-case evidence JSON (`cleanup[].ok = false`) — they do NOT affect case verdict.
+- Cleanup ran inside each `graphql-runner.ts` invocation: the runner parsed the `Cleanup` column for `[AUTH role=…]` + `[REST METHOD path]` blocks and executed them best-effort against `{{BACKEND_URL}}`. Per-block outcomes are recorded in the per-case evidence JSON under `cleanup.blocks[]` (`ok=false` indicates a non-2xx HTTP response or a thrown exception). They do **not** affect case verdict.
 
 ### GQL-5. Final report to orchestrator
 

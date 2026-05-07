@@ -1,0 +1,103 @@
+{
+  "ticket": "VCST-4535",
+  "title": "[UI-kit] VcTable - implement VcTableColumn subcomponent for declarative column config",
+  "run": "retest2",
+  "date": "2026-05-07",
+  "sprint": "26-09",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_rationale": "Re-test of the dev-confirmed fix. BUG-A (rowStyle opacity contrast, WCAG 1.4.3) is FIXED — opacity:0.5 replaced with text-neutral-500 (#737373), contrast 4.54:1–4.74:1, axe-core 0 violations. AMBIGUOUS 1.4.6 RESOLVED — fixed-column separator added via ::after/::before pseudo-elements (2px neutral-300). BUG-2 (Space key activation on role=button rows, WCAG 4.1.2) is NOT FIXED — bundle inspection shows withKeys(handler,['enter']) only; behavioral test on both Storybook 'Row Click' story and storefront /account/orders confirms Space scrolls the page without activating the row. preventDefault is also missing on the Space path. orders.vue regression sweep clean across columns, BL-ORD-001 (status labels), BL-ORD-005 (order# = URL), mouse/Enter/Ctrl-click, empty state, console, GraphQL. 5/5 other VcTable stories pass smoke.",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2261-79f5-79f53122",
+    "theme_prior": "vc-theme-b2b-vue-2.49.0-pr-2261-156b-156bb3bb",
+    "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2261",
+    "pr_state": "open",
+    "head_sha": "79f5312201264bc26d6b2d597a16db27a220cb54",
+    "deployed": true,
+    "developer_signal": "Maya Diachkovskaia, JIRA comment 96905 (2026-05-07): 'please check updated orders table as well'"
+  },
+  "agents_dispatched": [
+    "ui-ux-expert (Storybook — Chrome DevTools MCP)",
+    "qa-frontend-expert (storefront /account/orders — playwright-chrome)"
+  ],
+  "fix_status": {
+    "BUG-A": {
+      "title": "rowStyle opacity:0.5 contrast violation (WCAG 1.4.3)",
+      "severity": "P2",
+      "result": "FIXED",
+      "evidence": {
+        "before": "opacity:0.5 → effective #808080 over white = 3.94:1; axe-core 3 violations",
+        "after": "color:var(--color-neutral-500) → #737373; contrast 4.74:1 over #FFF, 4.54:1 over #FAFAFA; axe-core 0 violations",
+        "screenshot": "tests/Sprint-current/VCST-4535/storybook-screenshots/retest2/r2-1-rowstyle-contrast-fixed.png"
+      },
+      "disposition": "CLOSE"
+    },
+    "BUG-2": {
+      "title": "Space key does not activate <tr role=button tabindex=0> row (WCAG 4.1.2)",
+      "severity": "P2",
+      "result": "NOT_FIXED",
+      "evidence": {
+        "bundle_handler": "onKeydown: C2(s2 => Q.value && V.$emit(\"rowClick\", L, F), [\"enter\"])  // C2 = withKeys; Space modifier missing",
+        "storybook_test": "Row Click story — Space press, no row-click event, defaultPrevented=false",
+        "storefront_test": "/account/orders — Space press, window.scrollY 0→686 (page scrolled), window.open NOT called, no navigation; Enter on same row works as expected",
+        "screenshots": [
+          "tests/Sprint-current/VCST-4535/storybook-screenshots/retest2/r1-1-row-click-space-fail.png",
+          "tests/Sprint-current/VCST-4535/screenshots/retest2/r1-2-orders-space-fail.png",
+          "tests/Sprint-current/VCST-4535/screenshots/retest2/r1-2-orders-html-attrs.png"
+        ]
+      },
+      "fix_required": "Change withKeys(handler, [\"enter\"]) to withKeys(handler, [\"enter\", \"space\"]) and add event.preventDefault() in the handler to suppress native page scroll on Space.",
+      "disposition": "RETURN_TO_DEV"
+    },
+    "AMBIGUOUS-1.4.6": {
+      "title": "Fixed-column visual separator on Coffee theme",
+      "severity": "Design",
+      "result": "RESOLVED",
+      "evidence": "::after/::before pseudo-elements added on --fixed--start/--fixed--end variants — width 0.125rem (2px), background-color var(--color-neutral-300), position absolute",
+      "disposition": "CLOSE"
+    }
+  },
+  "regression_sweep": {
+    "orders_vue": {
+      "columns_render": "PASS",
+      "BL-ORD-001_status_labels": "PASS",
+      "BL-ORD-005_order_number_url": "PASS",
+      "mouse_click": "PASS",
+      "ctrl_click": "PASS",
+      "middle_click": "PASS",
+      "sticky_header": "N/A — table fits viewport",
+      "empty_state": "PASS",
+      "console": "PASS — 0 Vue warnings (only pre-existing catalog image 404s)",
+      "graphql_orders_query": "PASS — 10/10 POST /graphql = 200"
+    },
+    "storybook_smoke": {
+      "stories_passed": 5,
+      "stories_total": 5,
+      "stories": ["Default", "Sticky Header Container", "Loading", "Empty", "Sticky Column"],
+      "axe_violations": 0,
+      "console_errors": 0
+    }
+  },
+  "by_design_clarifications_unchanged": [
+    "Row click via window.open(_blank) — by-design new-tab navigation (memory: project_vctable_rowclick_newtab.md)",
+    "Ctrl+click + middle-click route through same handler — by-design"
+  ],
+  "ticket_disposition": "DO_NOT_TRANSITION_TO_TESTED",
+  "recommended_path": "Return BUG-2 to dev (one-line keydown handler change) on PR #2261, re-deploy, re-test single story + storefront row. Alternative: file BUG-2 as separate JIRA ticket and transition VCST-4535 to TESTED with linked bug.",
+  "next_actions_pending_user_confirmation": [
+    "Post re-test result comment to VCST-4535 (Atlassian MCP — needs explicit user authorization)",
+    "Decide: return to dev OR file BUG-2 as separate ticket via /qa-bug",
+    "If filing separate ticket: title 'P2 a11y — Space key does not activate VcTable role=button rows on /account/orders + Storybook', WCAG 4.1.2, link to VCST-4535"
+  ],
+  "artifacts": {
+    "checklist": "tests/Sprint-current/VCST-4535/retest-checklist.md",
+    "consolidated_report": "tests/Sprint-current/VCST-4535/retest2-execution-report.md",
+    "storybook_report": "tests/Sprint-current/VCST-4535/storybook-retest2-report.md",
+    "storefront_report": "tests/Sprint-current/VCST-4535/orders-retest2-report.md",
+    "storybook_screenshots": "tests/Sprint-current/VCST-4535/storybook-screenshots/retest2/",
+    "storefront_screenshots": "tests/Sprint-current/VCST-4535/screenshots/retest2/",
+    "har": "tests/Sprint-current/VCST-4535/har/orders-retest2-network.txt",
+    "console": "tests/Sprint-current/VCST-4535/har/orders-retest2-console.log"
+  }
+}

@@ -152,7 +152,9 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 | Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
 | Figma comparison | `/qa-design` | `design-system-consistency.md` |
 | API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
-| GraphQL interaction | — | `.claude/agents/knowledge/graphiql-interaction.md` |
+| GraphQL interaction (GraphiQL UI) | — | `.claude/agents/knowledge/graphiql-interaction.md` |
+| **Runner-native GraphQL test cases** | — | **`.claude/agents/knowledge/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
+| Live xAPI schema | — | `.claude/agents/knowledge/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 
 ---

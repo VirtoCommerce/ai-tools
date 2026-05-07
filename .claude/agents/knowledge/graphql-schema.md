@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-04-23)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-06)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -17,33 +17,6 @@
 9. **Order addresses/payments**: `addresses[]` and `inPayments[]` (not `shippingAddress` or `payment`)
 10. **All cart mutations require `userId`**: `addItem`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `clearCart` — get from `me { id }`
 11. **`addOrUpdateCartShipment` requires `price`**: `CartShipmentValidator` rejects if price doesn't match available shipping rate. Query `availableShippingMethods` first.
-
----
-
-## Reusable Query/Mutation Fixtures
-
-Before writing a new query or mutation from scratch, **check the curated fixture library** at [test-data/graphql/index.json](../../../test-data/graphql/index.json). It indexes ~25 schema-validated `.graphql` files under [test-data/graphql/queries/](../../../test-data/graphql/queries/) and [test-data/graphql/mutations/](../../../test-data/graphql/mutations/).
-
-- **When to reuse**: 47 fixtures across these categories:
-  - **profile queries**: `me`, `contact`, `currentCustomerAddresses`, `currentOrganizationAddresses`, `organization`
-  - **catalog queries**: `product`, `products`, `category`, `categories`, `brand`, `brands`, `slugInfo`
-  - **configurable-products queries**: `productConfiguration`, `configurationItems`
-  - **cart queries**: `cart`, `carts`
-  - **orders queries**: `orders-list`, `order-detail`, `order-detail-full`
-  - **wishlist queries**: `wishlist`, `wishlists`
-  - **cms queries**: `pages`
-  - **marketing queries**: `promotionCoupons`
-  - **pickup queries**: `pickupLocations`, `productPickupLocations`, `cartPickupLocations`
-  - **profile mutations**: `updateContact`, `updateMemberAddresses`, `deleteMemberAddresses`, `createOrganization`
-  - **cart mutations**: `addItem`, `addItemsCart`, `removeCartItem`, `changeCartItemQuantity`, `clearCart`, `removeCart`, `addCoupon`, `removeCoupon`, `addOrUpdateCartShipment`, `addOrUpdateCartPayment`, `selectCartItems`, `unSelectCartItems`, `selectAllCartItems`, `unSelectAllCartItems`
-  - **configurable-products mutations**: `createConfiguredLineItem`, `addConfigurationItem`, `addConfigurationItems`, `updateConfigurationItem`, `updateConfigurationItems`, `removeConfigurationItem`, `removeConfigurationItems`, `changeCartConfiguredItem`
-  - **order mutations**: `createOrderFromCart`
-  - **wishlist mutations**: `createWishlist`, `removeWishlist`, `addWishlistItem`, `createCartFromWishlist`
-- **Each fixture has a header** (name, category, role, required-vars, optional-vars, last-validated, gql-vars, runner-note, example-vars). Read it before referencing the body.
-- **Variable substitution**: `{{VAR_NAME}}` placeholders are env- or alias-resolved by the runner; `gqlVars` declare typed GraphQL operation variables passed via `[GQL-VARS label]` JSON.
-- **All fixtures are validated** by `npm run graphql:fixtures:validate`. Treat them as canonical — copy the fixture path into the test case rather than re-typing the query body.
-- **Adding a new query**: drop the `.graphql` file in `queries/` (with header), register it in `index.json`, and run the validator. Then your test case can reference it like the existing GQL-* suites.
-- **Negative/edge variants**: derive from the fixture by overriding variables in test data — do not fork the body unless the field selection actually differs.
 
 ---
 
@@ -238,12 +211,17 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `initializeCartPayment` | `InputInitializeCartPaymentType` |
 | `addConfigurationItem` | `InputAddConfigurationItemType` |
 | `addConfigurationItems` | `InputAddConfigurationItemsType` |
+| `changeCartConfigurationItemSelected` | `InputChangeCartConfigurationItemSelectedType` |
 | `createCartFromWishlist` | `InputCreateCartFromWishlistType` |
 | `createConfiguredLineItem` | `InputCreateConfiguredLineItemCommand` |
 | `moveFromSavedForLater` | `InputSaveForLaterType` |
 | `moveToSavedForLater` | `InputSaveForLaterType` |
 | `removeConfigurationItem` | `InputRemoveConfigurationItemType` |
 | `removeConfigurationItems` | `InputRemoveConfigurationItemsType` |
+| `selectAllCartConfigurationItems` | `InputChangeAllCartConfigurationItemsSelectedType` |
+| `selectCartConfigurationItems` | `InputChangeCartConfigurationItemsSelectedType` |
+| `unSelectAllCartConfigurationItems` | `InputChangeAllCartConfigurationItemsSelectedType` |
+| `unSelectCartConfigurationItems` | `InputChangeCartConfigurationItemsSelectedType` |
 | `updateConfigurationItem` | `InputUpdateConfigurationItemType` |
 | `updateConfigurationItems` | `InputUpdateConfigurationItemsType` |
 | `addQuoteItems` | `AddQuoteItemsCommandType` |

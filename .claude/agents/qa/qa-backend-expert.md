@@ -128,7 +128,9 @@ Guards: can't capture non-authorized, can't refund non-captured, only full cance
 | When | Skill | Reference |
 |------|-------|-----------|
 | API reference / test cases | `/qa-api ref <module>`, `/qa-api cases <scope>` | `xapi-query-ref.md`, `api-test-case-patterns.md` |
-| Postman collections | `/qa-postman` | `postman-collection-guide.md` |
+| **Authoring runner-native GraphQL cases** | direct file reference | **`.claude/agents/knowledge/graphql-test-cases-runner.md`** — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing/migrating any GraphQL test case. |
+| Live xAPI schema | direct file reference | `.claude/agents/knowledge/graphql-schema.md` — every query/mutation MUST validate against this; or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` for a live check. |
+| Postman collections | `/qa-postman` | `SKILL.md` (index) → `mcp-tools.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md` |
 | Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
 | Test coverage checklists | `/qa-checklist` | `backend-admin-checklists.md`, `graphql-checklist.md` |
 | Bug investigation / filing | `/qa-investigate`, `/qa-defect` | `bug-investigation-flow.md`, `defect-report-templates.md` |

@@ -66,7 +66,7 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 - **Signal:** Admin-visible mismatch points at module data/logic or stale index. Admin-OK but storefront-broken points at xAPI/frontend.
 
 ### Layer 3 — GraphQL xAPI
-- **Where:** `{BACK_URL}/xapi/graphql` (GraphiQL UI) — consult `.claude/agents/knowledge/graphql-schema.md` for schema and `.claude/agents/knowledge/graphiql-interaction.md` for interaction steps
+- **Where:** `{BACK_URL}/graphql` (POST runtime) — GraphiQL UI at `{BACK_URL}/ui/graphiql`. Consult `.claude/agents/knowledge/graphql-schema.md` for schema and `.claude/agents/knowledge/graphiql-interaction.md` for interaction steps
 - **Tool:** qa-backend-expert via `playwright-edge` + GraphiQL, or Postman MCP
 - **Verify:** re-run the query/mutation the storefront executed (copy operation name + variables from Layer 1 network capture). Compare the raw response to what the UI rendered. Introspect field names/types before writing ad-hoc queries (`feedback_graphql_introspection`).
 - **Signal:** xAPI returns wrong data = xAPI resolver/aggregation bug. xAPI returns correct data but UI shows wrong = frontend rendering bug.

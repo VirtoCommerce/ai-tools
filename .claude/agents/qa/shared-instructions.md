@@ -79,6 +79,10 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Store Settings | `.claude/agents/knowledge/store-settings.md` |
 | White Labeling | `.claude/agents/knowledge/white-labeling.md` |
 | Test Data Generation | `.claude/agents/knowledge/test-data-generation.md` |
+| GraphQL xAPI Schema | `.claude/agents/knowledge/graphql-schema.md` |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` |
+
+**Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
 
 ## Virto Commerce Testing Scope
 

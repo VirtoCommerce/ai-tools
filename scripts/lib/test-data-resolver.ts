@@ -133,10 +133,12 @@ export class TestDataResolver {
   }
 
   private resolveToken(inner: string): string {
-    // Check if alias form: ALIAS_NAME.field
-    const aliasDotMatch = inner.match(/^([A-Z][A-Z0-9_]+)\.(\w+)$/);
+    // Alias form: ALIAS_NAME.field, or ALIAS_NAME.field.subfield (nested,
+    // for inline aliases with object values like UPLOAD_FIXTURES.primary.path).
+    const aliasDotMatch = inner.match(/^([A-Z][A-Z0-9_]+)((?:\.\w+)+)$/);
     if (aliasDotMatch) {
-      return this.resolveAlias(aliasDotMatch[1], aliasDotMatch[2]);
+      const fieldPath = aliasDotMatch[2].slice(1); // strip leading "."
+      return this.resolveAlias(aliasDotMatch[1], fieldPath);
     }
 
     // Direct form: file, filter, column
@@ -149,30 +151,70 @@ export class TestDataResolver {
   }
 
   private resolveAlias(aliasName: string, fieldName: string): string {
-    const alias = this.aliases[aliasName] as AliasEntry | undefined;
-    if (!alias || !alias.file) {
+    const alias = this.aliases[aliasName] as
+      | (AliasEntry & { _inline?: boolean })
+      | Record<string, unknown>
+      | undefined;
+    if (!alias) {
       throw new Error(`Unknown alias "${aliasName}"`);
     }
 
-    // Map field shortname to CSV column name
-    const csvColumn = alias.fields?.[fieldName];
-    if (!csvColumn) {
+    // Inline alias: values live directly under the alias key (no CSV file).
+    // Examples: CFG_OFFROAD_BIKE, CFG_FILE_HOODIE — see test-data/aliases.json.
+    // fieldName may be dotted ("primary.path") for nested objects.
+    if ((alias as { _inline?: boolean })._inline) {
+      const inline = alias as Record<string, unknown>;
+      const segments = fieldName.split(".");
+      let cur: unknown = inline;
+      for (const seg of segments) {
+        if (cur === null || cur === undefined || typeof cur !== "object") {
+          throw new Error(
+            `Field "${fieldName}" on inline alias "${aliasName}": traversal hit non-object before reaching "${seg}"`
+          );
+        }
+        cur = (cur as Record<string, unknown>)[seg];
+        if (cur === undefined) {
+          throw new Error(
+            `Unknown field "${fieldName}" on inline alias "${aliasName}" — missing segment "${seg}"`
+          );
+        }
+      }
+      if (cur === null) {
+        throw new Error(`Field "${fieldName}" on inline alias "${aliasName}" is null`);
+      }
+      // Inline values can be primitives, arrays, or nested objects. Stringify
+      // primitives directly; serialize arrays/objects as JSON for query bodies.
+      if (typeof cur === "string") return cur;
+      if (typeof cur === "number" || typeof cur === "boolean") return String(cur);
+      return JSON.stringify(cur);
+    }
+
+    if (!(alias as AliasEntry).file) {
       throw new Error(
-        `Unknown field "${fieldName}" on alias "${aliasName}". Available: ${Object.keys(alias.fields || {}).join(", ")}`
+        `Alias "${aliasName}" has neither _inline:true nor a .file field — cannot resolve`
       );
     }
 
-    const rows = this.loadCSV(alias.file);
-    const row = this.filterRows(rows, alias.filter);
+    // Map field shortname to CSV column name
+    const csvColumn = (alias as AliasEntry).fields?.[fieldName];
+    if (!csvColumn) {
+      throw new Error(
+        `Unknown field "${fieldName}" on alias "${aliasName}". Available: ${Object.keys((alias as AliasEntry).fields || {}).join(", ")}`
+      );
+    }
+
+    const csvAlias = alias as AliasEntry;
+    const rows = this.loadCSV(csvAlias.file);
+    const row = this.filterRows(rows, csvAlias.filter);
     if (!row) {
       throw new Error(
-        `No matching row in ${alias.file}.csv for filter ${JSON.stringify(alias.filter)}`
+        `No matching row in ${csvAlias.file}.csv for filter ${JSON.stringify(csvAlias.filter)}`
       );
     }
 
     const value = row[csvColumn];
     if (value === undefined) {
-      throw new Error(`Column "${csvColumn}" not found in ${alias.file}.csv`);
+      throw new Error(`Column "${csvColumn}" not found in ${csvAlias.file}.csv`);
     }
 
     return value;

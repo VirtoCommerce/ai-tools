@@ -41,7 +41,7 @@ Create top-down, delete bottom-up. Numbers indicate execution order.
 All endpoints require `Authorization: Bearer {{authToken}}`.
 Base: `{{baseUrl}}` = `BACK_URL` env variable.
 
-**Verify before using:** Check Swagger UI at `{{baseUrl}}/docs/index.html` for current endpoint signatures. For GraphQL verification requests (08-Verify folder), run introspection first — see `qa-postman` guide §API Discovery.
+**Verify before using:** Check Swagger UI at `{{baseUrl}}/docs/index.html` for current endpoint signatures. For GraphQL verification requests (08-Verify folder), run introspection first — see [`../qa-postman/graphql-authoring.md`](../qa-postman/graphql-authoring.md) §3 (Schema Introspection) and the canonical `.claude/agents/knowledge/graphql-schema.md`.
 
 ### Authentication
 
@@ -519,7 +519,7 @@ All test entities use a `AGENT-TEST-` prefix + date stamp for easy identificatio
 
 ## Seed Request Manifest (Full Profile)
 
-Exact requests per folder. Each request chains its output ID to subsequent requests via collection variables (see `qa-postman` guide §9 for chaining patterns).
+Exact requests per folder. Each request chains its output ID to subsequent requests via collection variables (see [`../qa-postman/collections-and-requests.md`](../qa-postman/collections-and-requests.md) §4 for chaining patterns).
 
 ### Seed — Creation Order
 
@@ -617,10 +617,10 @@ These exist in the environment — read them, don't recreate:
 ## Performance Rules
 
 ### Build Once, Run Many
-The single biggest optimization: **don't rebuild Postman collections every time.** Use `getCollections` to find existing `VC Seed — {Profile}` collections and `runCollection` immediately. Only build when the collection doesn't exist or needs structural changes.
+The single biggest optimization: **don't rebuild Postman collections every time.** Use `getCollections` to find existing `VC Seed — {Profile}` collections, then execute them via Newman (`newman run <collection.json> -e <env.json>`) or the Postman CLI (`postman collection run <uid> --environment <uid>`). The Postman MCP itself does not run collections — see [`../qa-postman/execution.md`](../qa-postman/execution.md). Only build when the collection doesn't exist or needs structural changes.
 
 ### One `createCollection` Call, Not N `createCollectionRequest` Calls
-When building a new collection, include ALL folders and requests inline in a single `createCollection` call (per `qa-postman` guide §6). This is 1 MCP round-trip instead of 20-30+. Never use `createCollectionRequest` for seed collections.
+When building a new collection, include ALL folders and requests inline in a single `createCollection` call — see [`../qa-postman/collections-and-requests.md`](../qa-postman/collections-and-requests.md). This is 1 MCP round-trip instead of 20-30+. Never use `createCollectionRequest` for seed collections.
 
 ### Use Batch APIs
 See §Batch API Patterns above. Key wins:

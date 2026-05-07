@@ -1,0 +1,23 @@
+2. [POST] https://dc.services.visualstudio.com/v2/track => [200] 
+3. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6551v897983143za200zb9234390392zd9234390392&_p=1778152933444&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&are=1&cid=790098704.1777903434&frm=0&pscdl=noapi&rcb=0&sr=1920x1080&uaa=x86&uab=64&uafvl=Not%252FA)Brand%3B99.0.0.0%7CChromium%3B148.0.7778.96&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=3&tag_exp=0~115616986~115938466~115938468~117384405~118289195~118463262~118494634&cu=USD&uid=42765f34-51cf-4994-806b-e82e65fd5c14&sid=1778152646&sct=11&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount%2Forders%2F51eb29e5-38c1-45e6-b2a2-db8dcb0fba02&dt=QA%20%26%20Order%20%23CO260505-00032&en=user_engagement&ep.debugMode=true&_et=15153&tfd=16190 => [FAILED] net::ERR_ABORTED
+4. [POST] https://vcst-qa-storefront.govirto.com/cdn-cgi/rum? => [FAILED] net::ERR_ABORTED
+5. [POST] https://dc.services.visualstudio.com/v2/track => [200] 
+6. [POST] https://vcst-qa-storefront.govirto.com/cdn-cgi/rum? => [FAILED] net::ERR_ABORTED
+7. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6551v897983143za200zb9234390392zd9234390392&_p=1778152933444&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&are=1&cid=790098704.1777903434&frm=0&pscdl=noapi&rcb=0&sr=1920x1080&uaa=x86&uab=64&uafvl=Not%252FA)Brand%3B99.0.0.0%7CChromium%3B148.0.7778.96&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=3&tag_exp=0~115616986~115938466~115938468~117384405~118289195~118463262~118494634&cu=USD&uid=42765f34-51cf-4994-806b-e82e65fd5c14&sid=1778152646&sct=11&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount%2Forders%2F51eb29e5-38c1-45e6-b2a2-db8dcb0fba02&dt=QA%20%26%20Order%20%23CO260505-00032&en=user_engagement&ep.debugMode=true&_et=15153&tfd=16190 => [FAILED] net::ERR_ABORTED
+20. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+21. [POST] https://vcst-qa-storefront.govirto.com/cdn-cgi/rum? => [204] 
+34. [GET] https://js.monitor.azure.com/scripts/b/ai.config.1.cfg.json => [200] 
+86. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+87. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+88. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+89. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+90. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+91. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+92. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+97. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+107. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6551v897983143za200zb9234390392zd9234390392&_p=1778152948942&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&are=1&cid=790098704.1777903434&frm=0&pscdl=noapi&rcb=19&sr=1920x1080&uaa=x86&uab=64&uafvl=Not%252FA)Brand%3B99.0.0.0%7CChromium%3B148.0.7778.96&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=1&tag_exp=0~115616985~115938465~115938469~117215714~118463261&cu=USD&uid=42765f34-51cf-4994-806b-e82e65fd5c14&sid=1778152646&sct=11&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount%2Forders&dt=QA%20%26%20Orders&en=page_view&_ee=1&ep.debugMode=true&tfd=5594 => [204] 
+108. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6551v897983143za200zb9234390392zd9234390392&_p=1778152948942&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&are=1&cid=790098704.1777903434&frm=0&pscdl=noapi&rcb=19&sr=1920x1080&uaa=x86&uab=64&uafvl=Not%252FA)Brand%3B99.0.0.0%7CChromium%3B148.0.7778.96&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=1&tag_exp=0~115616985~115938465~115938469~117215714~118463261&cu=USD&uid=42765f34-51cf-4994-806b-e82e65fd5c14&sid=1778152646&sct=11&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount%2Forders&dt=QA%20%26%20Orders&en=page_view&_ee=1&ep.debugMode=true&tfd=5594 => [204] 
+110. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+112. [POST] https://dc.services.visualstudio.com/v2/track => [200] 
+
+Note: 91 static requests not shown, run with "static" option to see them.

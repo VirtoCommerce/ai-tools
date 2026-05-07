@@ -44,12 +44,15 @@ import {
   parseTestData,
   validateStepBlocks,
   StepBlock,
+  RestStep,
+  RestOpStep,
 } from "./lib/graphql-case-parser.js";
 import {
   parseAssertions,
   evaluateAssertion,
   AssertionResult,
   InfoAssertion,
+  getByPath,
 } from "./lib/graphql-assertions.js";
 import { GraphQLSchema } from "graphql";
 
@@ -258,6 +261,210 @@ interface OpEvidence {
   schemaErrors: Array<{ code: string; message: string }>;
 }
 
+type CleanupResult =
+  | { kind: "AUTH"; role: string; ok: true }
+  | { kind: "REST"; method: string; path: string; status: number; ok: boolean }
+  | { kind: string; ok: false; error: string };
+
+interface RestResult {
+  status: number;
+  ok: boolean;
+}
+
+async function executeRest(
+  block: RestStep,
+  backUrl: string,
+  token: string | undefined
+): Promise<RestResult> {
+  const path = block.path;
+  const url = path.startsWith("http")
+    ? path
+    : `${backUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (block.body) headers["Content-Type"] = "application/json";
+
+  const init: RequestInit = { method: block.method, headers };
+  if (block.body && ["POST", "PUT", "PATCH", "DELETE"].includes(block.method)) {
+    init.body = block.body;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  init.signal = controller.signal;
+  try {
+    const res = await fetch(url, init);
+    return { status: res.status, ok: res.ok };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+interface RestOpResponse {
+  status: number;
+  ok: boolean;
+  body: unknown;
+  rawBody: string;
+  elapsed_ms: number;
+  errors: Array<{ message: string }>;
+}
+
+interface ParsedRestOp {
+  method: string;
+  url: string;
+  contentType?: string;
+  filePath?: string;
+  fileFieldName?: string;
+  fileMimeType?: string;
+  fileName?: string;
+  jsonBody?: string;
+}
+
+/**
+ * Parse a free-form REST-OP body into method, url, headers, and body. Supports
+ * the patterns used in 050i:
+ *   POST {{BACK_URL}}/api/files/product-configuration
+ *   Content-Type: multipart/form-data
+ *   Body: file=@<local-path> (mimeType: <type>; filename: <name>)
+ * The local-path may include @td() tokens which the caller has already resolved
+ * before parseRestOp is called.
+ */
+function parseRestOp(body: string): ParsedRestOp {
+  const lines = body.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length);
+  let method = "GET";
+  let url = "";
+  let contentType: string | undefined;
+  let filePath: string | undefined;
+  let fileFieldName: string | undefined;
+  let fileMimeType: string | undefined;
+  let fileName: string | undefined;
+  let jsonBody: string | undefined;
+
+  for (const line of lines) {
+    const requestMatch = line.match(/^(GET|POST|PUT|PATCH|DELETE)\s+(.+)$/i);
+    if (requestMatch) {
+      method = requestMatch[1].toUpperCase();
+      url = requestMatch[2].trim();
+      continue;
+    }
+    const ctMatch = line.match(/^Content-Type:\s*(.+)$/i);
+    if (ctMatch) {
+      contentType = ctMatch[1].trim();
+      continue;
+    }
+    if (/^Body:\s*/i.test(line)) {
+      const rest = line.replace(/^Body:\s*/i, "");
+      const fileMatch = rest.match(/^(\w+)=@(\S+?)(?:\s*\((.+)\))?\s*$/);
+      if (fileMatch) {
+        fileFieldName = fileMatch[1];
+        filePath = fileMatch[2];
+        const meta = fileMatch[3] || "";
+        const mimeMatch = meta.match(/mimeType:\s*([^;)\s]+)/i);
+        if (mimeMatch) fileMimeType = mimeMatch[1];
+        const nameMatch = meta.match(/filename:\s*([^;)\s]+)/i);
+        if (nameMatch) fileName = nameMatch[1];
+        continue;
+      }
+      // Otherwise treat as JSON body
+      jsonBody = rest;
+    }
+  }
+  return {
+    method,
+    url,
+    contentType,
+    filePath,
+    fileFieldName,
+    fileMimeType,
+    fileName,
+    jsonBody,
+  };
+}
+
+/**
+ * Execute a REST-OP block. Supports JSON bodies and `multipart/form-data` file
+ * uploads (single field). Returns a structured response object similar to the
+ * GraphQL response so downstream assertion paths like `label.body.[0].url`
+ * resolve correctly.
+ */
+async function executeRestOp(
+  block: RestOpStep,
+  backUrl: string,
+  token: string | undefined,
+  resolver: TestDataResolver,
+  variables: Record<string, string>
+): Promise<RestOpResponse> {
+  // Resolve {{VAR}} → variables, @td() → aliases inside the body BEFORE parsing,
+  // so file paths and URLs work.
+  const resolvedBody = resolver.resolve(
+    substituteEnv(substituteVars(block.body, variables))
+  );
+  const parsed = parseRestOp(resolvedBody);
+
+  const url = parsed.url.startsWith("http")
+    ? parsed.url
+    : `${backUrl.replace(/\/$/, "")}${parsed.url.startsWith("/") ? parsed.url : `/${parsed.url}`}`;
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let bodyInit: BodyInit | undefined;
+  if (parsed.filePath) {
+    const absPath = resolve(parsed.filePath);
+    if (!existsSync(absPath)) {
+      throw new Error(`[REST-OP ${block.label}] file not found: ${absPath}`);
+    }
+    const fileBytes = readFileSync(absPath);
+    const blob = new Blob([new Uint8Array(fileBytes)], {
+      type: parsed.fileMimeType || "application/octet-stream",
+    });
+    const form = new FormData();
+    form.append(
+      parsed.fileFieldName || "file",
+      blob,
+      parsed.fileName || basename(absPath)
+    );
+    bodyInit = form;
+    // Don't set Content-Type — fetch will populate the correct multipart boundary
+  } else if (parsed.jsonBody) {
+    headers["Content-Type"] = parsed.contentType || "application/json";
+    bodyInit = parsed.jsonBody;
+  } else if (parsed.contentType) {
+    headers["Content-Type"] = parsed.contentType;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+  const t0 = Date.now();
+  try {
+    const res = await fetch(url, {
+      method: parsed.method,
+      headers,
+      body: bodyInit,
+      signal: controller.signal,
+    });
+    const rawBody = await res.text();
+    const elapsed_ms = Date.now() - t0;
+    let body: unknown = null;
+    try {
+      body = rawBody ? JSON.parse(rawBody) : null;
+    } catch {
+      body = rawBody;
+    }
+    return {
+      status: res.status,
+      ok: res.ok,
+      body,
+      rawBody,
+      elapsed_ms,
+      errors: res.ok ? [] : [{ message: `HTTP ${res.status}: ${rawBody.slice(0, 200)}` }],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function runCase(
   args: CliArgs,
   schema: GraphQLSchema,
@@ -302,14 +509,31 @@ async function runCase(
   // 3. Execute blocks
   const operations = new Map<string, { query: string; variables: Record<string, unknown> }>();
   const responses = new Map<string, GraphQLResponse>();
+  const restOpBodies = new Map<string, string>();
+  const restResponses = new Map<string, RestOpResponse>();
   const evidenceOps: OpEvidence[] = [];
+  const nullCaptures: string[] = [];
+  const schemaRef: SchemaRef = { current: schema, refreshAttempted: false, refreshed: false };
   let currentToken: string | undefined;
 
   for (const block of blocks) {
     try {
       await executeBlock(
         block,
-        { args, backUrl, schema, tokenCache, variables, operations, responses, evidenceOps },
+        {
+          args,
+          backUrl,
+          schemaRef,
+          tokenCache,
+          variables,
+          operations,
+          responses,
+          restOpBodies,
+          restResponses,
+          resolver,
+          evidenceOps,
+          nullCaptures,
+        },
         (token) => (currentToken = token),
         () => currentToken
       );
@@ -352,19 +576,62 @@ async function runCase(
     }
   }
 
-  // 6. Cleanup — informational for MVP (user runs the admin REST call)
-  const cleanup = substituteVars(resolver.resolve(row.Cleanup), variables);
-  if (cleanup && cleanup.toLowerCase() !== "none") {
-    console.log(`\nCleanup (NOT automatically executed in MVP):`);
-    console.log(`  ${cleanup}`);
+  if (nullCaptures.length > 0) {
+    console.log(`\nNull captures (${nullCaptures.length}, downstream substitutions will be empty):`);
+    for (const c of nullCaptures) console.log(`  ⚠ ${c}`);
   }
 
-  // 7. Verdict
+  // 6. Verdict (computed BEFORE cleanup so cleanup outcome cannot mask it)
   const passed = results.filter((r) => r.passed).length;
   const failed = results.length - passed;
   const verdict = failed === 0 && results.length > 0 ? "PASS" : failed > 0 ? "FAIL" : "EMPTY";
   const summary = `\n=== Verdict: ${verdict} (${passed}/${results.length} assertions passed) ===`;
   console.log(summary);
+
+  // 7. Cleanup — best-effort runner-native [REST]/[AUTH] execution.
+  // Failures are recorded in evidence but never alter the verdict.
+  const cleanupRaw = resolver.resolve(row.Cleanup);
+  const cleanupSubstituted = substituteEnv(substituteVars(cleanupRaw, variables));
+  const cleanupBlocks =
+    cleanupSubstituted && cleanupSubstituted.trim().toLowerCase() !== "none"
+      ? parseSteps(cleanupSubstituted)
+      : [];
+  const cleanupResults: CleanupResult[] = [];
+  if (cleanupBlocks.length > 0) {
+    console.log(`\nCleanup (${cleanupBlocks.length} block(s), best-effort):`);
+    let cleanupToken: string | undefined;
+    for (const block of cleanupBlocks) {
+      try {
+        if (block.kind === "AUTH") {
+          if (!block.role) {
+            throw new Error("[AUTH] missing role");
+          }
+          cleanupToken = await tokenCache.getToken(block.role);
+          cleanupResults.push({ kind: "AUTH", role: block.role, ok: true });
+          console.log(`  • [AUTH role=${block.role}] token acquired`);
+        } else if (block.kind === "REST") {
+          const result = await executeRest(block, backUrl, cleanupToken);
+          cleanupResults.push({
+            kind: "REST",
+            method: block.method,
+            path: block.path,
+            status: result.status,
+            ok: result.ok,
+          });
+          console.log(
+            `  • [REST ${block.method} ${block.path}] → ${result.status} ${result.ok ? "OK" : "ERR"}`
+          );
+        } else {
+          // Skip GQL-* / UNKNOWN inside Cleanup — out of scope for best-effort cleanup
+          console.log(`  • (skipped non-cleanup block: [${block.kind}])`);
+        }
+      } catch (err) {
+        const message = (err as Error).message;
+        cleanupResults.push({ kind: block.kind, ok: false, error: message });
+        console.log(`  • cleanup block [${block.kind}] failed (suppressed): ${message}`);
+      }
+    }
+  }
 
   // 8. Write evidence
   const evidence = {
@@ -380,6 +647,8 @@ async function runCase(
       expiresAt: new Date(t.expiresAt).toISOString(),
     })),
     variables,
+    nullCaptures,
+    schemaRefreshed: schemaRef.refreshed,
     operations: evidenceOps,
     assertions: results,
     infoAssertions: info,
@@ -387,7 +656,10 @@ async function runCase(
       ...c,
       resolved: substituteVars(c.note, variables),
     })),
-    cleanup,
+    cleanup: {
+      raw: cleanupRaw,
+      blocks: cleanupResults,
+    },
   };
 
   if (!existsSync(args.evidenceDir)) mkdirSync(args.evidenceDir, { recursive: true });
@@ -401,17 +673,29 @@ async function runCase(
   return verdict === "PASS" ? 0 : 1;
 }
 
+interface SchemaRef {
+  current: GraphQLSchema;
+  refreshAttempted: boolean;
+  refreshed: boolean;
+}
+
+const SCHEMA_MISMATCH_CODES = new Set(["DV-006", "DV-008", "DV-009", "DV-010"]);
+
 async function executeBlock(
   block: StepBlock,
   ctx: {
     args: CliArgs;
     backUrl: string;
-    schema: GraphQLSchema;
+    schemaRef: SchemaRef;
     tokenCache: TokenCache;
     variables: Record<string, string>;
     operations: Map<string, { query: string; variables: Record<string, unknown> }>;
     responses: Map<string, GraphQLResponse>;
+    restOpBodies: Map<string, string>;
+    restResponses: Map<string, RestOpResponse>;
+    resolver: TestDataResolver;
     evidenceOps: OpEvidence[];
+    nullCaptures: string[];
   },
   setToken: (t: string) => void,
   getToken: () => string | undefined
@@ -470,8 +754,36 @@ async function executeBlock(
         );
       }
 
-      // Validate against schema before send
-      const v = validateQuery(ctx.schema, op.query);
+      // Validate against schema before send.
+      // If validation fails with schema-mismatch codes and we haven't yet
+      // tried, refresh the introspection cache and re-validate once. This
+      // catches stale-cache symptoms after a backend deploy without forcing
+      // every run to refresh.
+      let v = validateQuery(ctx.schemaRef.current, op.query);
+      if (
+        !v.valid &&
+        !ctx.schemaRef.refreshAttempted &&
+        v.errors.some((e) => SCHEMA_MISMATCH_CODES.has(e.code))
+      ) {
+        ctx.schemaRef.refreshAttempted = true;
+        console.log(
+          `  ! schema-mismatch detected (${v.errors[0].code}); refreshing introspection cache once`
+        );
+        try {
+          const intro = await introspect({ backUrl: ctx.backUrl });
+          saveSchemaCache(intro, ctx.args.schemaCache);
+          ctx.schemaRef.current = buildSchema(intro);
+          ctx.schemaRef.refreshed = true;
+          v = validateQuery(ctx.schemaRef.current, op.query);
+          if (v.valid) {
+            console.log(`  ✓ revalidated against fresh schema — proceeding`);
+          }
+        } catch (refreshErr) {
+          console.log(
+            `  ! schema refresh failed (${(refreshErr as Error).message}); using cached schema verdict`
+          );
+        }
+      }
       const schemaErrors = v.errors.map((e) => ({ code: e.code, message: e.message }));
 
       if (!v.valid) {
@@ -550,13 +862,117 @@ async function executeBlock(
           `[GQL-CAPTURE ${block.label}.${block.path}] no response recorded for label`
         );
       }
-      const value = getByPath(response, block.path) ?? getByPath({ data: response.data }, block.path);
-      const stringVal =
-        value === null || value === undefined ? "" : String(value);
+      // Substitute {{VAR}} placeholders in the path so chained captures like
+      // items[?id={{LINE_ITEM_ID_B}}].listPrice.amount resolve correctly.
+      const resolvedPath = substituteEnv(substituteVars(block.path, ctx.variables));
+      // Unified getByPath strips a leading "data." and walks from response.data.
+      // It also supports JSONPath-style filters: foo[?key=value]
+      const value = getByPath(response.data, resolvedPath);
+      const isMissing = value === null || value === undefined;
+      const stringVal = isMissing ? "" : String(value);
       ctx.variables[block.variable] = stringVal;
-      console.log(
-        `• [GQL-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${stringVal.length > 60 ? stringVal.slice(0, 57) + "..." : stringVal}`
+      if (isMissing) {
+        const reason = value === null ? "null" : "undefined";
+        ctx.nullCaptures.push(
+          `${block.label}.${block.path} → ${block.variable} (${reason})`
+        );
+        console.log(
+          `⚠ [GQL-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${reason} (stored as empty string; downstream {{${block.variable}}} substitutions will be empty)`
+        );
+      } else {
+        console.log(
+          `• [GQL-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${stringVal.length > 60 ? stringVal.slice(0, 57) + "..." : stringVal}`
+        );
+      }
+      return;
+    }
+
+    case "REST-OP": {
+      // Defer body resolution + execution until matching [REST-EXEC <label>]
+      ctx.restOpBodies.set(block.label, block.body);
+      return;
+    }
+
+    case "REST-EXEC": {
+      const body = ctx.restOpBodies.get(block.label);
+      if (body === undefined) {
+        throw new Error(
+          `[REST-EXEC ${block.label}] has no matching [REST-OP ${block.label}]`
+        );
+      }
+      console.log(`\n• [REST-EXEC ${block.label}] firing REST request`);
+      const token = getToken();
+      const restResp = await executeRestOp(
+        { kind: "REST-OP", label: block.label, body, raw: "" },
+        ctx.backUrl,
+        token,
+        ctx.resolver,
+        ctx.variables
       );
+      ctx.restResponses.set(block.label, restResp);
+      // Also expose under the GraphQL-response Map so existing assertion machinery
+      // (parseAssertions kind=ERRORS/DATA with label=<rest_label>) can read it.
+      // Shape: GraphQLResponse-compatible — `data` is unused, `errors` mirrors REST-derived errors,
+      // and authors reference `<label>.body.…` paths via getByPath against this object's data.body.
+      ctx.responses.set(block.label, {
+        status: restResp.status,
+        ok: restResp.ok,
+        data: { body: restResp.body, status: restResp.status },
+        errors: restResp.errors,
+        rawBody: restResp.rawBody,
+        elapsed_ms: restResp.elapsed_ms,
+      });
+      console.log(`  ${restResp.status} ${restResp.ok ? "OK" : "ERR"} — ${restResp.elapsed_ms}ms`);
+      return;
+    }
+
+    case "REST-CAPTURE": {
+      const restResp = ctx.restResponses.get(block.label);
+      if (!restResp) {
+        throw new Error(
+          `[REST-CAPTURE ${block.label}.${block.path}] no REST response recorded for label`
+        );
+      }
+      // Normalize the path: strip a leading "body." if present so authors can
+      // write either "body.[0].url" or "[0].url" — getByPath operates on body.
+      // Also substitute {{VAR}} placeholders so chained captures work.
+      const resolvedRestPath = substituteEnv(substituteVars(block.path, ctx.variables));
+      const stripped = resolvedRestPath.startsWith("body.") ? resolvedRestPath.slice(5) : resolvedRestPath;
+      const value = getByPath(restResp.body, stripped);
+      const isMissing = value === null || value === undefined;
+      const stringVal = isMissing ? "" : String(value);
+      ctx.variables[block.variable] = stringVal;
+      if (isMissing) {
+        const reason = value === null ? "null" : "undefined";
+        ctx.nullCaptures.push(
+          `${block.label}.${block.path} → ${block.variable} (${reason}, REST)`
+        );
+        console.log(
+          `⚠ [REST-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${reason}`
+        );
+      } else {
+        console.log(
+          `• [REST-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${stringVal.length > 60 ? stringVal.slice(0, 57) + "..." : stringVal}`
+        );
+      }
+      return;
+    }
+
+    case "REST": {
+      const path = substituteEnv(substituteVars(block.path, ctx.variables));
+      const body = block.body
+        ? substituteEnv(substituteVars(block.body, ctx.variables))
+        : undefined;
+      const resolvedBlock: RestStep = { ...block, path, body };
+      const token = getToken();
+      console.log(`\n• [REST ${block.method} ${path}]`);
+      const result = await executeRest(resolvedBlock, ctx.backUrl, token);
+      console.log(`  ${result.status} ${result.ok ? "OK" : "ERR"}`);
+      if (!result.ok) {
+        throw new Error(
+          `[REST ${block.method} ${path}] returned HTTP ${result.status}`
+        );
+      }
       return;
     }
 
@@ -564,22 +980,6 @@ async function executeBlock(
       console.log(`• (skipped unknown tag: [${block.tag}])`);
       return;
   }
-}
-
-function getByPath(obj: unknown, path: string): unknown {
-  const parts = path.split(".");
-  let cur: unknown = obj;
-  for (const p of parts) {
-    if (cur === null || cur === undefined) return undefined;
-    if (/^\d+$/.test(p) && Array.isArray(cur)) {
-      cur = cur[Number(p)];
-    } else if (typeof cur === "object" && cur !== null) {
-      cur = (cur as Record<string, unknown>)[p];
-    } else {
-      return undefined;
-    }
-  }
-  return cur;
 }
 
 // ─── Main ────────────────────────────────────────────────────────────

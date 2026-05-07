@@ -1,0 +1,37 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST4535-001,"Orders List — Row Click Navigates to Order Detail","Orders > Row Interaction","High","BL-ORD-005","ECL-1.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+User has at least one existing order. {{FRONT_URL}}/account/orders is accessible.","url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders table renders with at least one data row visible
+[ACT] click the first order row (anywhere in the row outside interactive child elements)
+[WAIT] page navigation completes","[NAV] URL matches pattern {{FRONT_URL}}/account/orders/<id> where <id> is a non-empty string
+[DOM] order detail page renders: order number or status heading visible
+[DOM] no 404 or error page shown","[CONSOLE] no Vue warn or TypeError during row click
+[NETWORK] no 4xx/5xx on navigation request","Row click produces no navigation; URL unchanged after click; blank page after navigation; 404 on detail page",none,VCST-4535,Draft
+VCST4535-002,"Orders List — Keyboard Row Activation (Enter and Space)","Orders > Keyboard Accessibility","High","BL-ORD-005","ECL-11.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+User has at least one existing order. {{FRONT_URL}}/account/orders is accessible.","url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders table renders with at least one data row visible
+[KEY] press Tab until focus lands on the first order row (verify focus ring visible)
+[ASSERT] row has visible focus indicator (focus-visible ring or outline)
+[KEY] press Enter
+[WAIT] page navigation completes
+[NAV] navigate back (browser back)
+[WAIT] orders list reloads
+[KEY] press Tab until focus lands on the first order row again
+[KEY] press Space
+[WAIT] page navigation completes","[NAV] after Enter: URL matches pattern {{FRONT_URL}}/account/orders/<id>
+[DOM] order detail page renders without blank content
+[NAV] after Space: URL matches same pattern {{FRONT_URL}}/account/orders/<id>
+[DOM] order detail page renders without blank content
+[DOM] focus ring visible on row before activation (sufficient contrast)","[CONSOLE] no accessibility-related Vue warn during keyboard interaction
+[NETWORK] no 4xx/5xx on both navigations","Tab does not reach any order row; Enter on focused row causes no navigation; Space on focused row causes no navigation; URL unchanged; focus lost after Tab navigation; no visible focus ring",none,VCST-4535,Draft
+VCST4535-003,"Orders List — Sticky Header Remains Visible on Scroll","Orders > Layout","Medium","","ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+User has enough orders that the table body is taller than the visible viewport or the table's maxHeight container (at least 10+ orders preferred). {{FRONT_URL}}/account/orders is accessible.","url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders table renders with multiple rows
+[SCROLL] scroll down past at least 3 order rows (either within the table container or the page)
+[WAIT] scroll settles","[DOM] column header row (with labels such as order number, date, status, total) is still visible in the viewport after scrolling — header has not scrolled out of view
+[DOM] no visual artifact (doubled header, misaligned header, header overlapping data row) after scroll
+[DOM] fixed left column (if present) remains pinned at the left edge during horizontal scroll","[CONSOLE] no layout or CSS errors emitted during scroll
+[NETWORK] no unexpected requests triggered by scrolling","Column headers scroll out of view immediately on any downward scroll; header text appears duplicated; fixed column jumps position during scroll; JS error on scroll event",none,VCST-4535,Draft

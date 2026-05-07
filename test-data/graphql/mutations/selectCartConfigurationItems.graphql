@@ -1,0 +1,41 @@
+# name: selectCartConfigurationItems
+# category: configurable-products
+# role: ORG_USER
+# purpose: Batch-select multiple configuration items within a single lineItem (hardcoded selectedForCheckout=true); triggers UpdateConfiguredLineItemPrice for items whose flag actually flips (no-change short-circuit). Storefront pre-fills this call when the builder restores section state.
+# required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
+# optional-vars: cartName (String), cartType (String), cultureName (String), currencyCode (String)
+# last-validated: 2026-05-06
+# known-issues:
+#   - Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+# gql-vars: { "configurationSections": "[ConfigurationSectionKeyInput!]!" }
+# runner-note: Pass configurationSections via [GQL-VARS label] JSON — array of ConfigurationSectionKeyInput (sectionId, type, option?). SelectedForCheckout is hardcoded true by the mutation; callers do NOT pass it.
+# example-vars: {"configurationSections": [{"sectionId": "{{SECTION_RAM_ID}}", "type": "Product", "option": {"productId": "{{OPT_RAM_BASE_ID}}"}}, {"sectionId": "{{SECTION_STORAGE_ID}}", "type": "Product", "option": {"productId": "{{OPT_STORAGE_BASE_ID}}"}}]}
+
+mutation SelectCartConfigurationItems($configurationSections: [ConfigurationSectionKeyInput!]!) {
+  selectCartConfigurationItems(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    lineItemId: "{{LINE_ITEM_ID}}"
+    configurationSections: $configurationSections
+  }) {
+    id
+    itemsCount
+    subTotal { amount currency { code } }
+    total { amount currency { code } }
+    items {
+      id
+      productId
+      quantity
+      listPrice { amount currency { code } }
+      extendedPrice { amount currency { code } }
+      configurationItems {
+        id
+        sectionId
+        type
+        productId
+        customText
+        selectedForCheckout
+      }
+    }
+  }
+}

@@ -189,7 +189,7 @@ Full gate definitions: `.claude/skills/qa-methodology/qa-metrics/quality-gates.m
 | `gh` CLI (Bash) | CI/CD: `gh pr checks`; complex `gh api` calls |
 | context7 MCP | VC documentation: `resolve-library-id`, `query-docs` |
 | Playwright MCP (3) | Verify fixes: `playwright-chrome`, `playwright-firefox`, `playwright-edge` |
-| Postman MCP | Review API tests: `getCollection`, `runCollection` |
+| Postman MCP | Review API tests: `getCollection({ model: "full" })`, `getCollections`. (No `runCollection` exists — to actually execute, hand off to Newman / Postman CLI; see `qa-postman/execution.md`.) |
 
 ### Judge — How to Evaluate Agent Reports
 

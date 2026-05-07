@@ -1146,8 +1146,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 12,
-      "estimatedMinutes": 14,
+      "testCount": 32,
+      "estimatedMinutes": 48,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",

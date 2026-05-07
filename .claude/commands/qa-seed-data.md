@@ -26,7 +26,7 @@ Read the skill definition and its references, then follow the workflow exactly:
 
 1. Read `.claude/skills/testing/qa-seed-data/SKILL.md`
 2. Read `.claude/skills/testing/qa-seed-data/test-data-generation.md`
-3. Read `.claude/skills/testing/qa-postman/postman-collection-guide.md`
+3. Read `.claude/skills/testing/qa-postman/SKILL.md` (index) and the relevant sub-guides — start with `mcp-tools.md`, then `collections-and-requests.md`, plus `test-data-fixtures.md` for fixture-driven values
 4. Execute the 6-step workflow from the skill (Read → Reuse check → Environment → Build → Execute → Report)
 
 ## Test Data Directory
@@ -50,5 +50,5 @@ After seeding, update the relevant CSVs in `test-data/` with new platform IDs so
 
 | Agent | Role |
 |-------|------|
-| `qa-backend-expert` | Primary — builds and runs Postman collections |
+| `qa-backend-expert` | Primary — authors Postman seed collections via MCP, then executes them via Newman / Postman CLI; writes seeded IDs back into `test-data/` |
 | `qa-frontend-expert` | Verifies seeded data on storefront |

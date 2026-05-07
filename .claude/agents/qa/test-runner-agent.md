@@ -19,7 +19,11 @@ Execute a single regression test suite against Virto Commerce. Run autonomously 
 
 ## Tag/Column Reference
 
-**Consult on demand only** — do NOT pre-read: `.claude/agents/knowledge/test-runner-tags.md` covers CSV columns, step tags, assertion tags, cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+**Consult on demand only** — do NOT pre-read:
+
+- `.claude/agents/knowledge/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+- `.claude/agents/knowledge/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` step grammar, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]` assertion grammar, `getByPath` filter syntax, schema validation, capture chaining, gold-standard examples (050i). Read this before debugging "why didn't my GraphQL case run?" or filing a "runner bug".
+- `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
@@ -50,7 +54,7 @@ For every row with a non-empty `Steps` column (the linter has already confirmed 
 npx tsx scripts/graphql-runner.ts --case {{SUITE_CSV_PATH}}:<CASE_ID> --evidence-dir reports/regression/{{RUN_ID}}/graphql-evidence
 ```
 
-The runner handles token acquisition (`[AUTH role=X]` via `TokenCache`), schema validation, `{{VAR}}` + `@td()` substitution, POST to `{{BACKEND_URL}}/graphql`, capture chaining, assertion evaluation, and best-effort `[REST]` cleanup. Per-case evidence JSON lands at `reports/regression/{{RUN_ID}}/graphql-evidence/<CASE_ID>-<ts>.json`.
+The runner handles token acquisition (`[AUTH role=X]` via `TokenCache`), schema validation, `{{VAR}}` + `@td()` substitution, POST to `{{BACKEND_URL}}/graphql`, capture chaining, assertion evaluation, and best-effort cleanup (parses the `Cleanup` column for `[AUTH]` + `[REST METHOD path]` blocks and executes them after the verdict; cleanup failures never alter the verdict). Per-case evidence JSON lands at `reports/regression/{{RUN_ID}}/graphql-evidence/<CASE_ID>-<ts>.json`.
 
 Exit codes:
 
@@ -79,7 +83,7 @@ For each case: emit the same `▶ Suite…` announce line as Phase 2 (before spa
 
 - Skip Phase 4 browser teardown (no browser was opened).
 - Emit the Phase 5 JSON normally. All GraphQL test-case entries carry `graphqlEvidence` paths instead of screenshot/console/network fields.
-- Cleanup already ran inside each `graphql-runner.ts` invocation (best-effort; a 403 or 404 is recorded in evidence but does not affect verdict).
+- Cleanup runs inside each `graphql-runner.ts` invocation (best-effort): the runner parses the `Cleanup` column, executes `[AUTH role=…]` token acquisition + `[REST <METHOD> <path>]` blocks against `{{BACKEND_URL}}`, and records each block's outcome under `cleanup.blocks[]` in the evidence JSON (`{kind, method, path, status, ok}` for REST, `{kind, role, ok}` for AUTH, `{kind, ok: false, error}` on exception). A 403/404/timeout is recorded but does **not** change the test verdict. Non-`AUTH`/`REST` blocks inside Cleanup are skipped with a log line.
 
 ### GQL-5. Failure handling
 

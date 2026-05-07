@@ -62,6 +62,8 @@ Full payment matrix: `knowledge/order-creation-matrix.md`
 | Platform Patterns | `knowledge/platform-patterns.md` — desync, cache, reindex behaviors |
 | Edge Cases Library | `knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Payment Matrix | `knowledge/order-creation-matrix.md` — 15 payment × shipping combos |
+| Live xAPI Schema | `knowledge/graphql-schema.md` — types/fields/inputs from live introspection |
+| **Runner-native GraphQL test cases** | `knowledge/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
 
 > All paths relative to `.claude/agents/`
 

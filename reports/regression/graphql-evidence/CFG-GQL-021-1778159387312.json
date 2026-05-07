@@ -1,0 +1,109 @@
+{
+  "caseId": "CFG-GQL-021",
+  "title": "changeCartConfigurationItemSelected — Empty lineItemId Is Soft No-Op",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-07T13:09:47.311Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-07T13:09:46.112Z",
+      "expiresAt": "2026-05-07T13:39:46.112Z"
+    }
+  ],
+  "variables": {
+    "empty_line_item_id": "__EMPTY__",
+    "bogus_section_id": "00000000-0000-0000-0000-000000000000",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 133
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "missing_id",
+      "query": "mutation ChangeCartConfigurationItemSelected($configurationSection: ConfigurationSectionKeyInput!, $selectedForCheckout: Boolean!) {\n    changeCartConfigurationItemSelected(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" lineItemId: \"\" configurationSection: $configurationSection selectedForCheckout: $selectedForCheckout }) {\n      id items { id }\n    }\n  }",
+      "variables": {
+        "configurationSection": {
+          "sectionId": "00000000-0000-0000-0000-000000000000",
+          "type": "Product",
+          "option": {
+            "productId": "00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "selectedForCheckout": false
+      },
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "changeCartConfigurationItemSelected": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1057
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=missing_id] errors[] empty",
+      "label": "missing_id",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=missing_id] data.changeCartConfigurationItemSelected is non-null",
+      "label": "missing_id",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.changeCartConfigurationItemSelected is non-null",
+      "actual": "data.changeCartConfigurationItemSelected = {\"id\":\"e60ab4c3-ce13-417b-a69c-a21b2d799565\",\"items\":[]}"
+    },
+    {
+      "raw": "[DATA label=missing_id] data.changeCartConfigurationItemSelected.id is non-null",
+      "label": "missing_id",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.changeCartConfigurationItemSelected.id is non-null",
+      "actual": "data.changeCartConfigurationItemSelected.id = \"e60ab4c3-ce13-417b-a69c-a21b2d799565\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] HTTP 200 (NOT 500); cart returned unchanged (no flag flip, no reprice); response time < 2s (runner-manual)",
+      "layer": "EVIDENCE",
+      "note": "HTTP 200 (NOT 500); cart returned unchanged (no flag flip, no reprice); response time < 2s (runner-manual)",
+      "resolved": "HTTP 200 (NOT 500); cart returned unchanged (no flag flip, no reprice); response time < 2s (runner-manual)"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — no state change",
+    "blocks": []
+  }
+}

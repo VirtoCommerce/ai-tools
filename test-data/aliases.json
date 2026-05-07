@@ -1960,6 +1960,126 @@
     "presetOptionId": null,
     "notes": "Sprint 26-08 review — literal-value alias for configurable Text section Custom-input tests (CFG-PDP-050-COND in 072-configurable-products-ui.csv). 'customValue' is a deterministic alphanumeric+hyphen string of length 22, safely under the smallest known Text section maxLength in the registry (CFG_RING.maxLength=30) so the same value works whether the underlying product is CFG_RING (max 30), CFG_GIFTBOX (max 100), CFG_TEXT_DRIVEN_COND, or any other Text-section product. No special chars (no quotes/backslashes) so it survives JSON/CSV/GraphQL escaping without modification. 'maxLength' is an echo for tests that want to assert against the cap; populated as 30 to match the strictest registered Text section. 'presetOptionId' is null because no preset is required for the Custom-input cascade test (CFG-PDP-050-COND types into the Custom input, it does not select a preset)—populate per-product if a future preset-aware test needs it. Per project_configurable_text_section_validation.md, maxLength applies to Custom input only, so this value is sized for Custom-input scenarios. NOT a discovery alias — no API call needed; safe to consume directly via @td(CFG_TEXT_INPUTS.customValue)."
   },
+  "CFG_REQUIRED_FILE_HOODIE": {
+    "_inline": true,
+    "productId": "85b6f077-d59f-4a8f-8510-9920b9d64ee1",
+    "code": "OSW-31158373",
+    "productName": "Hoodie Base product with only File req",
+    "slug": "products-with-options/configurable-caps-shirts/physical-1703",
+    "fileSectionId": "c356265f-2bdf-4afd-a820-105ead721465",
+    "fileSectionName": "only File req",
+    "fileSectionType": "File",
+    "fileSectionIsRequired": true,
+    "lineItemListPrice": 300,
+    "xapiListPrice": 250,
+    "xapiActualPrice": 250,
+    "currency": "USD",
+    "captured_at": "2026-05-06",
+    "captured_via": "products(query:OSW-31158373) + productConfiguration + addItem live verification on https://vcst-qa.govirto.com/graphql 2026-05-06",
+    "_priceDiscrepancyFinding": "Live verification 2026-05-06: xAPI products() returns list=250 actual=250, BUT addItem-committed lineItem.listPrice = 300 (a $50 / 20% gap). Either (a) the configured-product reprice path uses a different price source than catalog products() — potential P1 finding to investigate separately, OR (b) the BA analysis from 2026-03-24 (sale list $300 / sale $250 / -17%) is the historical state and the product's catalog price has since been raised back to $300 with no active sale. Tests should NOT assert exact sale price until the source-of-truth for configured-product listPrice is confirmed.",
+    "notes": "REQUIRED File section variant of CFG_FILE_HOODIE — single section, required=true, no None option. Use for: (a) REQUIRED-File deselect contract test (parallel to CFG-GQL-027/028 for Product/Text); (b) source-of-truth investigation for configured-product listPrice (xAPI vs lineItem reprice path). CFG_FILE_HOODIE (CFG-004) has OPTIONAL file; this product is the required-file counterpart for fuller PR #114 coverage."
+  },
+
+  "CFG_OFFROAD_BIKE": {
+    "_inline": true,
+    "productId": "958d0762-404c-4a6f-a45a-46ed4943f5f0",
+    "code": "INN-69077289",
+    "productName": "Off-Road Bike. Configurable product",
+    "slug": "products-with-options/configurations/off-road-bike",
+    "basePrice": 650,
+    "currency": "USD",
+    "configurationSections": [
+      {
+        "id": "c1eff38a-1b04-440e-8b0e-8863ed5dfcdd",
+        "name": "product",
+        "type": "Product",
+        "isRequired": false,
+        "optionsCount": 4,
+        "optionsRange": "$0 (Pedals) — $55 (Engine Motor)",
+        "notes": "Optional Product section with None-allowed semantics (isRequired=false)"
+      },
+      {
+        "id": "b7c05532-c5cc-4ebb-b208-bcd36bea4e1a",
+        "name": "Text1",
+        "type": "Text",
+        "isRequired": true,
+        "maxLength": 5,
+        "presetOptionsCount": 4,
+        "presets": ["TEST_QA", "Try add text more than 5", "New12"],
+        "notes": "REQUIRED Text section with maxLength=5 (tight boundary). Has 4 preset options PLUS Custom-input. Per project_configurable_text_section_validation.md, maxLength applies to Custom input only — preset 'Try add text more than 5' is 25 chars and is allowed because it's a preset."
+      }
+    ],
+    "captured_at": "2026-05-06",
+    "captured_via": "productConfiguration GraphQL on https://vcst-qa.govirto.com/graphql",
+    "notes": "CFG-010 — Off-Road Bike with Optional Product (None-allowed) + Required Text (maxLen=5 boundary, has presets). Use for: (a) Optional Product section selection toggle (different from CFG_LAPTOP which has only required Product); (b) Required Text deselect with tight maxLen (CFG_RING/CFG-017 has maxLen=30 — INN-69077289 stresses the lower bound at maxLen=5)."
+  },
+
+  "CFG_WEDDING_CAKE_CONDITIONS": {
+    "_inline": true,
+    "productId": "f4f27033-d688-4d22-ade7-5106f4748add",
+    "code": "YOC-85609878",
+    "productName": "Sections with conditions Wedding cake",
+    "slug": "products-with-options/wedding-cakes/sections-with-conditions-wedding-cake",
+    "basePrice": 79,
+    "currency": "USD",
+    "configurationSections": [
+      { "id": "ef19c414-1172-4ad3-a6c6-1e5dec515474", "name": "Base", "type": "Product", "isRequired": true, "dependsOnSectionId": null, "optionsCount": 2, "notes": "Required root — Top/Bottom flavor options ($9 White, $14 Chocolate)" },
+      { "id": "5f93bee5-6913-4e63-9a60-14b3718029a8", "name": "Creme", "type": "Product", "isRequired": false, "dependsOnSectionId": "ef19c414-1172-4ad3-a6c6-1e5dec515474", "optionsCount": 4, "notes": "Optional, depends on Base — Buttercreme styles ($7-$9)" },
+      { "id": "19e27d3a-77e8-4b9e-b546-860f58b1a46a", "name": "Message", "type": "Product", "isRequired": false, "dependsOnSectionId": "5f93bee5-6913-4e63-9a60-14b3718029a8", "optionsCount": 2, "notes": "Optional, depends on Creme — Message tag types ($2-$12)" },
+      { "id": "a251777f-654b-43aa-8074-5b5820f48fb4", "name": "Custom text required", "type": "Text", "isRequired": true, "maxLength": 50, "dependsOnSectionId": "19e27d3a-77e8-4b9e-b546-860f58b1a46a", "notes": "REQUIRED Text — depends on Message, no presets, customText only" },
+      { "id": "7ebe866a-4385-40f2-8e22-d8257d0c87e6", "name": "Image", "type": "File", "isRequired": false, "dependsOnSectionId": "19e27d3a-77e8-4b9e-b546-860f58b1a46a", "notes": "Optional File — depends on Message" }
+    ],
+    "captured_at": "2026-05-06",
+    "captured_via": "productConfiguration GraphQL on https://vcst-qa.govirto.com/graphql",
+    "notes": "Wedding cake with conditional 5-section graph: Base (req root) → Creme (opt) → Message (opt) → [Custom text required (req Text, maxLen=50), Image (opt File)]. The richest CFG product in QA — exercises ALL 4 section types (Product/Text/File) AND conditional dependencies AND mixed-required semantics. Use for: (a) mixed-type selection toggle in single batch; (b) conditional cascade interaction with selectedForCheckout flag; (c) parent deselect → does it cascade-disable child configurationItems? (open contract question — PR #114 doesn't specify). Distinct from CFG_WEDDING_CAKE_CONDITIONAL (CFG-023, agent-test-prefixed seed) — YOC-85609878 is the persistent QA fixture."
+  },
+
+  "UPLOAD_FIXTURES": {
+    "_inline": true,
+    "_directory": "test-data/uploads/",
+    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are <9.5MB so they pass @td(CFG_FILE_HOODIE.maxFileSizeMb) validation. Re-introspect sizeBytes after any directory edit.",
+    "primary": {
+      "path": "test-data/uploads/Logo1.png",
+      "mimeType": "image/png",
+      "sizeBytes": 208119,
+      "_purpose": "Default File-section upload fixture — small PNG, deterministic content. Used by CFG-GQL-029."
+    },
+    "smallPdf": {
+      "path": "test-data/uploads/newier.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 138420,
+      "_purpose": "PDF variant for File-section MIME-discrimination tests."
+    },
+    "smallXlsx": {
+      "path": "test-data/uploads/Test.xlsx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sizeBytes": 8868,
+      "_purpose": "Excel variant for File-section MIME variety; smallest practical document fixture."
+    },
+    "jpg": {
+      "path": "test-data/uploads/paperstraw.JPg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 115174,
+      "_purpose": "JPEG variant; case-insensitive extension stress (JPg vs jpg)."
+    },
+    "svg": {
+      "path": "test-data/uploads/starbucks-coffee-logo-svg-vector.svg",
+      "mimeType": "image/svg+xml",
+      "sizeBytes": 15173,
+      "_purpose": "SVG variant; XML-based vector format for File-section parser stress."
+    },
+    "captured_at": "2026-05-06",
+    "uploadEndpoint": {
+      "method": "POST",
+      "url": "{{BACK_URL}}/api/files/product-configuration",
+      "body": "multipart/form-data; field name=file",
+      "auth": "Bearer (ORG_USER token from /connect/token; storefront login_to=B2B-store) — endpoint also responds 200 with structured error to anonymous POST, so probe-style validation works without token",
+      "responseShape": "JSON array; consume [0]. Fields: { succeeded: bool, errorCode, errorMessage, scope (e.g. 'product-configuration'), name, contentType, size, url (relative path — feed into fileUrls), publicUrl, ownerEntityId, ownerEntityType, id }",
+      "verifiedAt": "2026-05-06",
+      "verifiedVia": "Live probe on https://vcst-qa.govirto.com/api/files/product-configuration — empty POST returned 200 + structured error shape confirming endpoint deployment and response contract."
+    },
+    "notes": "Runner upload contract: when a step references @td(UPLOAD_FIXTURES.<key>.path), the runner reads the file from disk, uploads via [REST-OP rest_upload] step (POST @td(UPLOAD_FIXTURES.uploadEndpoint.url) with multipart-form file=@<path>), and captures the returned response[0].url as {{UPLOADED_FILE_URL}}. Subsequent GraphQL steps consume {{UPLOADED_FILE_URL}} in fileUrls[]. If response[0].succeeded=false, the test is BLOCKED with the response[0].errorMessage. The endpoint is xCart-specific (scope='product-configuration'); do NOT use /api/platform/assets/upload — that's the platform-wide assets folder and does NOT register the file as a configurable-product asset."
+  },
   "SEARCH_QUERY": {
     "_inline": true,
     "q": "ring",

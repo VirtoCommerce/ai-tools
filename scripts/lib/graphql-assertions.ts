@@ -7,15 +7,17 @@
  *   [DATA   label=xss_name]   data.createOrganization is null
  *   [DATA   label=valid_name] data.createOrganization.id is non-empty GUID
  *
- * Lines outside the {ERRORS, DATA, NULL, COUNT, MATH} set are ignored
- * as commentary. Lines that belong to other layers (e.g. [ADMIN], [ROUNDTRIP])
- * are returned as InfoAssertions — runner records them to evidence but
- * does not evaluate them in the GraphQL-only layer.
+ * Verdict-affecting kinds: ERRORS, DATA, NULL, COUNT. Any other tag
+ * (e.g. [ADMIN], [ROUNDTRIP], [STOREFRONT], [EVENT], [MATH], [EVIDENCE])
+ * is captured as an InfoAssertion — runner records them to evidence but
+ * does not evaluate them in the GraphQL-only layer. [MATH] is intentionally
+ * info-only because authors use it for prose annotation; for verifiable
+ * arithmetic on response data use [DATA <path> > N] / [COUNT <path> = N].
  */
 
 import { GraphQLResponse } from "./graphql-executor.js";
 
-export type AssertionKind = "ERRORS" | "DATA" | "NULL" | "COUNT" | "MATH";
+export type AssertionKind = "ERRORS" | "DATA" | "NULL" | "COUNT" | "VAR";
 
 export interface Assertion {
   raw: string;
@@ -40,7 +42,7 @@ export interface AssertionResult {
   message?: string;
 }
 
-const GQL_KINDS = new Set<AssertionKind>(["ERRORS", "DATA", "NULL", "COUNT", "MATH"]);
+const GQL_KINDS = new Set<AssertionKind>(["ERRORS", "DATA", "NULL", "COUNT", "VAR"]);
 
 /**
  * Parse a multi-line Assertions column into Assertion + InfoAssertion arrays.
@@ -99,6 +101,13 @@ export function evaluateAssertion(
   responses: Map<string, GraphQLResponse>,
   variables: Record<string, string>
 ): AssertionResult {
+  const predicate = substituteVars(assertion.predicate, variables);
+
+  // VAR is variable-vs-literal — no response needed, no label binding to enforce.
+  if (assertion.kind === "VAR") {
+    return evaluateVarPredicate(assertion, predicate);
+  }
+
   const response = responses.get(assertion.label);
 
   if (!response) {
@@ -113,8 +122,6 @@ export function evaluateAssertion(
     };
   }
 
-  const predicate = substituteVars(assertion.predicate, variables);
-
   switch (assertion.kind) {
     case "ERRORS":
       return evaluateErrorsPredicate(assertion, response, predicate);
@@ -124,16 +131,6 @@ export function evaluateAssertion(
       return evaluateNullPredicate(assertion, response, predicate);
     case "COUNT":
       return evaluateCountPredicate(assertion, response, predicate);
-    case "MATH":
-      return {
-        raw: assertion.raw,
-        label: assertion.label,
-        kind: "MATH",
-        passed: false,
-        expected: predicate,
-        actual: "MATH evaluation not implemented in MVP",
-        message: "MATH assertions pending runner v2",
-      };
   }
 }
 
@@ -148,6 +145,21 @@ function evaluateErrorsPredicate(
   r: GraphQLResponse,
   predicate: string
 ): AssertionResult {
+  // HTTP <code> — common shorthand for assertions on REST-EXEC responses,
+  // where authors care about the HTTP status code rather than GraphQL errors[].
+  const httpMatch = /^HTTP\s+(\d{3})\s*$/i.exec(predicate);
+  if (httpMatch) {
+    const expected = Number(httpMatch[1]);
+    return {
+      raw: a.raw,
+      label: a.label,
+      kind: "ERRORS",
+      passed: r.status === expected,
+      expected: `HTTP ${expected}`,
+      actual: `HTTP ${r.status}`,
+    };
+  }
+
   const errorsLen = r.errors?.length ?? 0;
   const isEmpty = errorsLen === 0;
   const wantsEmpty = /\bempty\b/i.test(predicate) && !/non[-\s]?empty/i.test(predicate);
@@ -189,8 +201,59 @@ function evaluateErrorsPredicate(
 function evaluateDataPredicate(
   a: Assertion,
   r: GraphQLResponse,
-  predicate: string
+  predicateRaw: string
 ): AssertionResult {
+  // Strip a leading `<label>.` prefix from path tokens. Authors of REST-EXEC
+  // assertions write `rest_upload.body.[0].url = ...` for readability, but the
+  // response is stored under the label and walked from r.data — the label
+  // shouldn't be part of the path. Replace `<label>.` only when it appears at
+  // the start of a path-like token (preceded by start-of-string, whitespace,
+  // or an open paren).
+  const predicate =
+    a.label && a.label !== "_default"
+      ? predicateRaw.replace(
+          new RegExp(`(^|[\\s(])${escapeRegex(a.label)}\\.`, "g"),
+          "$1"
+        )
+      : predicateRaw;
+
+  // Composite predicate: "<sub> OR <sub> [OR <sub>]" / "<sub> AND <sub> ..."
+  // Case-sensitive uppercase OR/AND with surrounding whitespace, so "OR" inside
+  // a literal value won't trigger. Each sub-predicate is evaluated via this
+  // function recursively, except sub-predicates starting with `errors[]` which
+  // route through evaluateErrorsPredicate. Mixing OR and AND in one line is
+  // not supported (split into separate assertion lines instead).
+  if (/\s+(OR|AND)\s+/.test(predicate)) {
+    const orParts = predicate.split(/\s+OR\s+/);
+    const andParts = predicate.split(/\s+AND\s+/);
+    const isOr = orParts.length > 1 && andParts.length === 1;
+    const isAnd = andParts.length > 1 && orParts.length === 1;
+    if (isOr || isAnd) {
+      const parts = isOr ? orParts : andParts;
+      const subResults = parts.map((sub) => {
+        const trimmed = sub.trim();
+        if (/^errors\[\]/.test(trimmed)) {
+          return evaluateErrorsPredicate(a, r, trimmed);
+        }
+        return evaluateDataPredicate(a, r, trimmed);
+      });
+      const passed = isOr
+        ? subResults.some((s) => s.passed)
+        : subResults.every((s) => s.passed);
+      const op = isOr ? "OR" : "AND";
+      return {
+        raw: a.raw,
+        label: a.label,
+        kind: "DATA",
+        passed,
+        expected: predicate,
+        actual: subResults
+          .map((s, i) => `${i === 0 ? "" : ` ${op} `}[${s.passed ? "✓" : "✗"} ${s.expected}: ${s.actual}]`)
+          .join(""),
+      };
+    }
+  }
+
   // Try patterns in order of specificity:
   // 1. "data is null"
   // 2. "<path> is null" / "<path> is non-null"
@@ -298,6 +361,59 @@ function evaluateDataPredicate(
     };
   }
 
+  // Arithmetic / cross-path predicates: when the RHS (or LHS) contains
+  // arithmetic operators AND at least one `data.` path token, evaluate
+  // both sides as numeric expressions. Supports + - * /, parentheses,
+  // and exact (=) or approximate (≈ / ~=) comparison.
+  // Examples (drawn from CFG-GQL-023..028):
+  //   data.x.extendedPrice.amount = data.x.listPrice.amount * data.x.quantity
+  //   (1111 - data.x.subTotal.amount) ≈ 100
+  //   data.x.total = data.x.subtotal + data.x.tax - data.x.discount
+  const arithMatch = predicate.match(/^(.+?)\s*(=|≈|~=)\s*(.+)$/);
+  if (arithMatch) {
+    const [, lhsRaw, op, rhsRaw] = arithMatch;
+    // Strip filter-bracket bodies so hyphens in GUIDs (e.g. `[?id=37e4-…]`)
+    // and `*` in `[*?key=value]` aren't mistaken for arithmetic operators.
+    const stripBrackets = (s: string) => s.replace(/\[[^\]]*\]/g, "");
+    const lhsClean = stripBrackets(lhsRaw);
+    const rhsClean = stripBrackets(rhsRaw);
+    // Trigger arithmetic on unambiguous operators (`*`, `/`, parens) OR
+    // a whitespace-padded `+`/`-` (so `data.X = -100` and hyphenated literals
+    // still hit the simple `=` branch).
+    const combined = lhsClean + " " + rhsClean;
+    const hasArith = /[*/()]/.test(combined) || /\s[+\-]\s/.test(combined);
+    const lhsHasPath = /(?:^|[^\w])data\.\w/.test(lhsClean);
+    const rhsHasPath = /(?:^|[^\w])data\.\w/.test(rhsClean);
+    // Take the numeric/expression branch when EITHER:
+    //   (a) there's an arithmetic operator + at least one path  (a = b * c)
+    //   (b) both sides are paths (cross-path comparison, no operators: a = b)
+    //   (c) approximate operator (≈/~=) is used (always numeric intent)
+    const hasPath = lhsHasPath || rhsHasPath;
+    const isCrossPath = lhsHasPath && rhsHasPath;
+    const isApprox = op === "≈" || op === "~=";
+    const takeArithBranch = (hasArith && hasPath) || isCrossPath || isApprox;
+    if (takeArithBranch) {
+      const lv = evaluateNumericExpression(lhsRaw, r);
+      const rv = evaluateNumericExpression(rhsRaw, r);
+      const TOLERANCE = 0.011; // cents-level rounding wiggle for ≈
+      let passed = false;
+      if (typeof lv === "number" && typeof rv === "number" && Number.isFinite(lv) && Number.isFinite(rv)) {
+        passed = op === "=" ? lv === rv : Math.abs(lv - rv) <= TOLERANCE;
+      }
+      return {
+        raw: a.raw,
+        label: a.label,
+        kind: "DATA",
+        passed,
+        expected: `${lhsRaw.trim()} ${op} ${rhsRaw.trim()}`,
+        actual:
+          typeof lv === "number" && typeof rv === "number"
+            ? `lhs=${lv} rhs=${rv}`
+            : `lhs=${lv === undefined ? "?" : lv} rhs=${rv === undefined ? "?" : rv}`,
+      };
+    }
+  }
+
   const equalsMatch = predicate.match(/^(\S+)\s*=\s*(.+)$/);
   if (equalsMatch) {
     const [, path, rawExpected] = equalsMatch;
@@ -323,6 +439,52 @@ function evaluateDataPredicate(
     expected: predicate,
     actual: "unrecognized DATA predicate",
     message: `Could not parse: "${predicate}"`,
+  };
+}
+
+function evaluateVarPredicate(
+  a: Assertion,
+  predicate: string
+): AssertionResult {
+  // [VAR] <substituted-value> = <expected>
+  // Author writes `{{X}} = Text` and the runner has already substituted
+  // `{{X}}` upstream (substituteVars in evaluateAssertion). At this point
+  // the predicate is e.g. "Text = Text" or "Product = Text". A simple
+  // string equality compare on the trimmed sides covers the existing use.
+  const m = predicate.match(/^(.+?)\s*=\s*(.+)$/);
+  if (!m) {
+    return {
+      raw: a.raw,
+      label: a.label,
+      kind: "VAR",
+      passed: false,
+      expected: predicate,
+      actual: "unrecognized VAR predicate (expected `<substituted-var> = <literal>`)",
+    };
+  }
+  const [, lhs, rhs] = m;
+  const lhsClean = lhs.trim().replace(/^"(.*)"$/, "$1");
+  const rhsClean = rhs.trim().replace(/^"(.*)"$/, "$1");
+  // If the LHS still contains an unsubstituted `{{NAME}}`, the variable
+  // wasn't captured upstream — flag explicitly.
+  const unsubstituted = lhsClean.match(/\{\{(\w+)\}\}/);
+  if (unsubstituted) {
+    return {
+      raw: a.raw,
+      label: a.label,
+      kind: "VAR",
+      passed: false,
+      expected: `${lhsClean} = ${rhsClean}`,
+      actual: `variable {{${unsubstituted[1]}}} was never captured (still literal)`,
+    };
+  }
+  return {
+    raw: a.raw,
+    label: a.label,
+    kind: "VAR",
+    passed: lhsClean === rhsClean,
+    expected: `${lhsClean} = ${rhsClean}`,
+    actual: `${lhsClean} = ${rhsClean}`,
   };
 }
 
@@ -404,7 +566,7 @@ function evaluateCountPredicate(
   };
 }
 
-function getByPath(obj: unknown, path: string): unknown {
+export function getByPath(obj: unknown, path: string): unknown {
   // Accept both the natural "data.foo.bar" (author-facing) and the
   // internal shape where `obj` is already `response.data`. Strip a leading
   // "data." if present so authors don't have to remember the distinction.
@@ -423,25 +585,36 @@ function getByPath(obj: unknown, path: string): unknown {
   for (const p of parts) {
     if (cur === null || cur === undefined) return undefined;
 
-    const filterMatch = p.match(/^(\w+)?\[\?(\w+)=([^\]]+)\]$/);
+    // Filter syntax:
+    //   foo[?key=value]    → FIRST element of foo[] where item.key === value
+    //   foo[?key!=value]   → FIRST element of foo[] where item.key !== value
+    //   foo[*?key=value]   → ARRAY of ALL elements where item.key === value
+    //   foo[*?key!=value]  → ARRAY of ALL elements where item.key !== value
+    //                       (chain .0 / .1 / .length on filtered result)
+    const filterMatch = p.match(/^(\w+)?\[(\*)?\?(\w+)(!?=)([^\]]+)\]$/);
     if (filterMatch) {
-      const [, propName, key, val] = filterMatch;
+      const [, propName, allFlag, key, op, val] = filterMatch;
       let target: unknown = cur;
       if (propName) {
         if (typeof cur !== "object" || cur === null) return undefined;
         target = (cur as Record<string, unknown>)[propName];
       }
       if (!Array.isArray(target)) return undefined;
-      cur = target.find(
-        (item) =>
-          item !== null &&
-          typeof item === "object" &&
-          String((item as Record<string, unknown>)[key]) === val
-      );
+      const matches = (target as unknown[]).filter((item) => {
+        if (item === null || typeof item !== "object") return false;
+        const actual = String((item as Record<string, unknown>)[key]);
+        return op === "=" ? actual === val : actual !== val;
+      });
+      cur = allFlag ? matches : matches[0];
       continue;
     }
 
-    if (/^\d+$/.test(p) && Array.isArray(cur)) {
+    // Bracketed array index: "[0]" / "[12]" — common in REST-CAPTURE paths
+    // like rest_upload.body.[0].url. Treat the same as a bare numeric.
+    const bracketIdx = p.match(/^\[(\d+)\]$/);
+    if (bracketIdx && Array.isArray(cur)) {
+      cur = (cur as unknown[])[Number(bracketIdx[1])];
+    } else if (/^\d+$/.test(p) && Array.isArray(cur)) {
       cur = cur[Number(p)];
     } else if (typeof cur === "object" && cur !== null) {
       cur = (cur as Record<string, unknown>)[p];
@@ -450,6 +623,47 @@ function getByPath(obj: unknown, path: string): unknown {
     }
   }
   return cur;
+}
+
+/**
+ * Evaluate a numeric expression that may contain `data.x.y.z` path references,
+ * numeric literals, and the operators + - * / with parentheses. Returns
+ * undefined if any path doesn't resolve to a number or the expression contains
+ * disallowed characters (defense against test-author typos, not malicious input
+ * — these CSVs live in the same repo).
+ */
+function evaluateNumericExpression(
+  expr: string,
+  r: GraphQLResponse
+): number | undefined {
+  // Replace each `data.<path-tokens>` reference with its numeric value.
+  // A segment is either `field`, `field[<filter>]`, or `<digits>`. Filter
+  // bodies are matched permissively (anything except `]`) so GUIDs with
+  // hyphens, `*?`, `?key=value` etc. all work.
+  const PATH_RE = /data(?:\.(?:[A-Za-z_]\w*(?:\[[^\]]+\])?|\d+))+/g;
+  const replaced = expr.replace(PATH_RE, (match) => {
+    const value = getByPath(r.data, match);
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value))) {
+      return value;
+    }
+    return "NaN";
+  });
+  // Reject anything other than digits, decimals, operators, parens, whitespace.
+  // (Keep the validation tight so a stray identifier doesn't silently coerce.)
+  if (!/^[\d.+\-*/()\s]+$/.test(replaced)) return undefined;
+  if (/NaN/.test(replaced)) return undefined;
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = Function(`"use strict"; return (${replaced});`)() as unknown;
+    return typeof result === "number" && Number.isFinite(result) ? result : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function jsonSummary(v: unknown): string {
