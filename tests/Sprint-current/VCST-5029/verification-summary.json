@@ -1,0 +1,47 @@
+{
+  "ticket": "VCST-5029",
+  "verdict": "VERIFIED",
+  "date": "2026-05-07",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1025.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2283-6610-6610c4af",
+    "relevant_modules": {
+      "VirtoCommerce.XPickup": "3.1001.0",
+      "VirtoCommerce.XCart": "3.1013.0-pr-114-8518",
+      "VirtoCommerce.XCatalog": "3.1005.0",
+      "VirtoCommerce.Xapi": "3.1006.0"
+    },
+    "pr_build": "PR #2283 deployed at commit 6610c4af (latest head 6f593a46 — same blob SHA 1b2af0a for the patched file)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "user_account": "test-john.mitchell-20260310@test-agent.com (TechFlow B2B, slot 1)",
+  "str_result": "6/6 (STR-A 3/3 + STR-B 3/3)",
+  "checklist_total": 13,
+  "checklist_passed": 13,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-BOPIS scroll-into-view on selected pickup location reopen (B4 Scroll Reset sub-bug from VCST-4565)"
+  ],
+  "jira_transition": "Testing → Tested (transition id 8)",
+  "pr_status": "open (not merged) — final close-to-Done expected after PR #2283 merge",
+  "evidence": {
+    "str_a_runs": [
+      {"run": 1, "item": "Billund, Lego House", "index": 25, "offsetTop_px": 2446, "scrollTop_px": 2078, "in_viewport": true, "screenshot": "evidence/str-a-run1-reopened.png"},
+      {"run": 2, "item": "Empire State Building", "index": 39, "offsetTop_px": 3742, "scrollTop_px": 3471, "in_viewport": true, "screenshot": "evidence/str-a-run2-reopened.png"},
+      {"run": 3, "item": "Chrysler Building", "index": 31, "offsetTop_px": 2924, "scrollTop_px": 2653, "in_viewport": true, "screenshot": "evidence/str-a-run3-reopened.png"}
+    ],
+    "str_b_runs": [
+      {"run": 1, "item": "Lake Audreanneburgh", "index": 49, "offsetTop_px": 4900, "scrollTop_px": 4358, "in_viewport": true, "screenshot": "evidence/str-b-run1-reopened.png"},
+      {"run": 2, "item": "Isringhausen Imports", "index": 47, "offsetTop_px": 4664, "scrollTop_px": 4358, "in_viewport": true, "screenshot": "evidence/str-b-run2-reopened.png"},
+      {"run": 3, "item": "KYOTO AEON MALL KUMIYAMA", "index": 48, "offsetTop_px": 4782, "scrollTop_px": 4358, "in_viewport": true, "screenshot": "evidence/str-b-run3-reopened.png"}
+    ],
+    "console_errors": 0,
+    "har": "evidence/network-cart-graphql.txt"
+  },
+  "artifacts": "tests/Sprint-current/VCST-5029/"
+}

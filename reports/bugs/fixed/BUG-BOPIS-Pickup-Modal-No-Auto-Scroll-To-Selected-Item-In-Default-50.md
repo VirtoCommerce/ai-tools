@@ -1,6 +1,6 @@
 # BUG: BOPIS Pickup Modal Does Not Auto-Scroll to Selected Item When It Is Inside the Default 50
 
-## Status: READY_TO_SUBMIT (filed as VCST-5029)
+## Status: FIXED (verified 2026-05-07 via PR #2283)
 
 **Severity:** Medium (P2)
 **Component:** Storefront — Cart / BOPIS Pick Points modal (`vc-frontend`)
@@ -111,3 +111,16 @@ Add a client-side `scrollIntoView({ block: 'center', behavior: 'smooth' })` call
 - **Parent:** VCST-4565 (BOPIS show selected pickup) — Done, partial fix
 - **Sibling fix:** `reports/bugs/fixed/BUG-BOPIS-Pickup-PreSelection-Fails-Outside-Pagination-Window.md` — root-cause pagination fix
 - **Sibling fix:** `reports/bugs/fixed/BUG-BOPIS-Scroll-To-Selected-Location-After-Reopen.md` — broader state-restoration fix; this bug is a narrower follow-up exposing a remaining gap
+
+
+## Resolution
+
+- **Fixed in:** vc-frontend PR #2283 — `fix(VCST-5029): add data-address-id to pickup list item for auto-scroll`
+- **Fixed version (theme):** `vc-theme-b2b-vue-2.49.0-pr-2283-6610-6610c4af` (deployed to vcst-qa)
+- **Verification date:** 2026-05-07
+- **Verification method:** STR 3x mid-list (idx 25/31/39) + 3x end-of-list (idx 47/48/49) on `playwright-chrome` via qa-frontend-expert; `boundingBox` viewport-intersection assertion + screenshots; HAR captured
+- **Verification verdict:** VERIFIED — 13/13 PASS, 0 FAIL, 0 console errors. Pre-fix `scrollTop=0` symptom fully eliminated; selected row visible without manual scroll on every reopen
+- **Adjacent regression:** country filter, info panel + map, server-pinned outside-default-50, cart label updates, idempotent reopen — all unchanged
+- **Root-cause patch:** added `:data-address-id="address.id"` to `.select-address-map-list__item` so the existing scroll consumer in `useSelectAddressMap.ts` / `select-address-map-desktop.vue` can target the row via `[data-address-id="<selectedId>"]` and call `scrollIntoView()`
+- **Evidence:** `tests/Sprint-current/VCST-5029/`
+- **JIRA transition:** Testing → Tested (transition id 8). Final close-to-Done after PR #2283 merge.
