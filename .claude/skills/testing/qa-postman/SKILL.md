@@ -144,7 +144,7 @@ Read and output [examples.md](examples.md).
 - **NEVER hardcode URLs** — always use `{{baseUrl}}`, `{{frontUrl}}` from environment variables
 - **NEVER hardcode IDs/SKUs/emails/prices/order-numbers/paths** — resolve via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` + `aliases.json`) or seed via API
 - **NEVER put credentials in collection variables** — use environment variables with `type: secret`
-- **NEVER hardcode passwords in agent prompts** — agents read `.env` at runtime
+- **NEVER hardcode passwords in agent prompts** — agents read `process.env` at runtime (populated by `config.js` from `.env.${TEST_ENV}` + `.env.local`; default `TEST_ENV=vcst`)
 - **ALWAYS include the auth request first** — every collection starts with OAuth2 token acquisition
 - **ALWAYS validate status codes** in test scripts — don't assume 200
 - **ALWAYS verify GraphQL field names** against [`graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) before authoring

@@ -1,0 +1,46 @@
+[dotenv@17.3.1] injecting env (22) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (24) from .env.virtostart -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+
+🌱 B2B Seed — VirtoStart
+   Target: https://virtostart-demo-admin.govirto.com
+   Store:  B2B-store (group: B2B-store)
+   Date:   20260508
+
+  Authenticating...
+  Auth: OK (expires in 1799s)
+  Discovering roles...
+  Creating organizations...
+    ✓ AGENT-TEST-Org-AcmeCorp-20260508 → 8a64d782-d3f5-4f3f-835a-525b8b41b496
+    ✓ AGENT-TEST-Org-TechFlow-20260508 → a0422c9c-6238-495e-9888-e7ccfdf36f6a
+    ✓ AGENT-TEST-Org-BuildRight-20260508 → 523a2597-2823-4a60-8f65-563fd4d9f57e
+    ✓ AGENT-TEST-Org-AcmeWest-20260508 → d2aed33b-cd31-4556-9196-739393926385
+  Creating contacts...
+    ✓ John Mitchell (AcmeCorp) → 08f73abb-3a81-4531-be3b-2718259519d3
+    ✓ Sarah Chen (AcmeCorp) → 9c212ea9-f3f1-44d2-b623-fba04837dc35
+    ✓ Mike Torres (AcmeCorp) → 673d18a9-5383-466d-a5fb-ba69722950fb
+    ✓ Lisa Wang (AcmeCorp) → 1cabcaaa-cd5d-42f8-b984-58a1f9a71d68
+    ✓ Emily Johnson (TechFlow) → 12744e94-8d3d-4b15-9de4-28fb1689fe98
+    ✓ David Kim (TechFlow) → 66164f87-0c9b-4183-bc24-d8875c29eaff
+    ✓ Carlos Rodriguez (BuildRight) → 0951bbdc-6a1f-43d2-8c1c-60017d96208b
+    ✓ Angela Foster (BuildRight) → 18fb9c11-b539-429f-b4eb-4ce9f2deb789
+    ✓ Robert Lee (AcmeWest) → 08612f2f-860d-4ca1-892a-74d36b527522
+    ✓ Hans Mueller (AcmeCorp) → 24c06adf-efda-457b-807d-6c8f6df2abac
+  Creating user accounts...
+    ✓ test-john.mitchell-20260508@test-agent.com → f2f838d8-2195-4a36-8d8d-01de34ae66c3 [Organization maintainer]
+    ✓ test-sarah.chen-20260508@test-agent.com → 06bc32c7-81ff-40c6-8da5-fb9755048023 [Purchasing agent]
+    ✓ test-mike.torres-20260508@test-agent.com → 26f6281e-451d-4ea9-9312-1921fe0bf944 [Organization employee]
+    ✓ test-lisa.wang-20260508@test-agent.com → 265a95ee-4e88-4f22-b083-9f1397f1fcdc [Purchasing agent]
+    ✓ test-emily.johnson-20260508@test-agent.com → ca09bd21-f7a9-4b5d-a701-08c2e5531450 [Organization maintainer]
+    ✓ test-david.kim-20260508@test-agent.com → cd3ae458-2a2c-437a-8c6b-88b2af2ea3cb [Purchasing agent]
+    ✓ test-carlos.rodriguez-20260508@test-agent.com → c1503865-9d46-4947-a70f-c3fdbf7b5e74 [Organization maintainer]
+    ✓ test-angela.foster-20260508@test-agent.com → a8e8f3a3-1411-4537-8c39-b235975209e9 [Purchasing agent]
+    ✓ test-robert.lee-20260508@test-agent.com → da3bff53-866b-432d-b3ac-c776369362c3 [Organization maintainer]
+    ✓ test-hans.mueller-20260508@test-agent.com → a12f9a2a-73be-444e-b27a-85a21ee756b3 [Organization maintainer]
+  Triggering member index rebuild...
+    ✓ index job queued
+  
+Results JSON: C:\Users\mutyk\My Projects\vc-mcp-testing-module\test-data\b2b\_seed-results-orgs-virtostart.json
+  Report MD:    C:\Users\mutyk\My Projects\vc-mcp-testing-module\test-data\b2b\seed-report-virtostart-20260508.md
+
+✅ B2B seed complete!
+
