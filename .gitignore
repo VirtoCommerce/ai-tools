@@ -15,6 +15,7 @@ settings.json
 test-results/
 results/
 .claude/settings.local.json
+.claude/worktrees/
 .mcp.json
 scripts/.graphql-schema.cache.json
 
