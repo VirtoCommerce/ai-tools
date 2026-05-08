@@ -29,10 +29,17 @@ npm run ci:notify        # Teams notification (requires TEAMS_WEBHOOK_URL)
 
 ## Environment
 
-Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } from './config.js'`
+Layered loader, keyed by `TEST_ENV` (default `vcst`). Validate: `npm run env:check`. Access: `import { env } from './config.js'`.
 
+Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → legacy `.env` (backwards-compat fallback).
+
+- **Per-env URLs/identifiers** (committed, no secrets): `.env.vcst` (current QA), `.env.vcptcore` (second QA), `.env.virtostart` (staging)
+- **Secrets** (passwords, API tokens): `.env.local` only — gitignored
+- **Cross-env constants** (sandbox cards, builder.io): `.env.defaults`
+- Switch envs: `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`
+- Agents read variable values via `process.env.X` — they don't care which file it came from. Variable *names* are stable across envs.
 - ES modules project — always use `.js` extensions in imports
-- URLs from env vars, never hardcoded. Default environment: QA
+- URLs from env vars, never hardcoded. Default environment: vcst-qa
 - **Frontend**: `FRONT_URL` | **Backend**: `BACK_URL` | **Storybook**: `STORYBOOK_URL` / `STORYBOOK_DEV_URL`
 - Theme: Coffee | Communication: Microsoft Teams
 
@@ -52,7 +59,7 @@ Create `.env` (33 vars). Validate: `npm run env:check`. Access: `import { env } 
 ├── test-data/            # Orgs, search queries, uploads
 ```
 
-**Gitignored:** `.env`, `.mcp.json`, `settings.json`, `results/`, `ci/`, `.github/`, `.claude/settings.local.json`
+**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `settings.json`, `results/`, `ci/`, `.github/`, `.claude/settings.local.json`
 
 ## Essential Rules
 

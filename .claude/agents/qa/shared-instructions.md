@@ -146,7 +146,9 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Module mapping | `agents/knowledge/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
-## Environment Variables (from .env)
+## Environment Variables (read via process.env)
+
+Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → legacy `.env`. **Never edit a specific file by name; just use the variable.** Switch envs with `TEST_ENV=vcptcore` or `TEST_ENV=virtostart`. Secrets (passwords, tokens) live in `.env.local` (gitignored).
 
 | Resource | Variable |
 |----------|----------|
@@ -166,7 +168,7 @@ When running in parallel, each browser slot uses a **dedicated test user** to pr
 | `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` | `test-emily.johnson-...@test-agent.com` (TechFlow) |
 | `playwright-edge` | `qa-agent-slot3@virtocommerce.com` | `test-carlos.rodriguez-...@test-agent.com` (BuildRight) |
 
-**Resolution order:** agent-user-pool.csv → `.env` fallback. If pool users are not seeded (`seeded=false`), fall back to `.env` and log a warning.
+**Resolution order:** agent-user-pool.csv → `process.env` fallback (populated from `.env.${TEST_ENV}` + `.env.local`). If pool users are not seeded (`seeded=false`), fall back to `process.env` and log a warning.
 **Seeding:** `test-data/users/seed-agent-users.md` — run once to create personal users on the platform.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |

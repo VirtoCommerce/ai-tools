@@ -1,7 +1,11 @@
 import { env } from './config.js';
 
 // Mask values — never print raw secrets. Report presence + length only.
-// If you need to see a value, read .env directly.
+// If you need to see a value, read the source env file directly.
+// config.js already logs the active TEST_ENV during import.
+console.log(`Active env layer: TEST_ENV=${process.env.TEST_ENV || 'vcst'} (default)`);
+console.log('---');
+
 const report = (name) => {
     const value = env[name];
     if (value === undefined || value === null || value === '') {

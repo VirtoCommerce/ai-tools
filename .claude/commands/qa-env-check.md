@@ -20,20 +20,26 @@ Validate that the QA environment is healthy and all required configuration is in
 ## Checks Performed
 
 ### 1. Environment Variables (33 required)
-Run `npm run env:check` (uses `get_variables_env.js`) to verify all required variables are set:
+Run `npm run env:check` (uses `get_variables_env.js`) to verify all required variables are set.
+
+**Layered loader (TEST_ENV-aware):** values are merged from four files in this order — later layers override earlier ones:
+1. `.env.defaults` — cross-env constants (sandbox cards, builder.io)
+2. `.env.${TEST_ENV}` — per-env URLs/identifiers. Default `TEST_ENV=vcst`. Switch envs with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart npm run env:check`.
+3. `.env.local` — secrets (passwords, tokens). Gitignored.
+4. `.env` — legacy fallback for backwards-compat; fills gaps without overriding.
 
 | Group | Variables |
 |-------|-----------|
-| URLs | `FRONT_URL`, `BACK_URL`, `VIRTO_START_FRONT`, `VIRTO_START_BACK` |
+| URLs | `FRONT_URL`, `BACK_URL`, `STORYBOOK_URL`, `STORYBOOK_DEV_URL` (per-env file). Legacy `VIRTO_START_FRONT`/`VIRTO_START_BACK` still read by CI. |
 | Credentials | `ADMIN`, `ADMIN_PASSWORD`, `USER_EMAIL`, `USER_PASSWORD`, `USER2_*`, `USER_VIRTO`, `USER_VIRTO_PASSWORD` |
-| Store | `STORE_ID` |
+| Store | `STORE_ID` (per-env) |
 | Skyflow | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
 | CyberSource | `CYBERSOURCE_CARD`, `CYBERSOURCE_EXPIRY`, `CYBERSOURCE_CVV` |
 | Authorize.Net | `AUTHORIZNET_CARD`, `AUTHORIZNET_EXPIRY`, `AUTHORIZNET_CVV` |
 | Datatrance | `DATATRANCE_MASTERCARD`, `DATATRANCE_EXPIRY`, `DATATRANCE_CVV`, `DATATRANCE_OTP` |
 | APIs | `FIGMA_API_KEY`, `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY`, `POSTMAN_API_KEY` |
 
-Report: X/33 variables set. List any missing.
+Report: X/33 variables set, plus active `TEST_ENV`. List any missing.
 
 ### 2. Endpoint Health
 Test each endpoint with curl (no browser needed):

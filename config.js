@@ -1,7 +1,28 @@
 import { config } from 'dotenv';
 
-// Load environment variables from .env file
+// Layered env loader. Precedence (later overrides earlier):
+//   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
+//   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
+//   3. .env.local          — secrets (passwords, tokens) — gitignored
+//   4. process.env         — already wins (CI passes via -e flags)
+// The legacy single .env file is loaded last as a backwards-compat fallback —
+// it fills gaps but does NOT override the above. Remove once everyone migrates.
+const TEST_ENV = process.env.TEST_ENV || 'vcst';
+config({ path: '.env.defaults' });
+config({ path: `.env.${TEST_ENV}`, override: true });
+config({ path: '.env.local', override: true });
 config({ path: '.env' });
+
+// Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
+// is promoted to its base name. Lets `.env.local` carry per-env password
+// variants (e.g. USER_PASSWORD_VIRTOSTART) without leaking into committed files.
+const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
+for (const [key, value] of Object.entries(process.env)) {
+    if (key.endsWith(ENV_SUFFIX) && value) {
+        process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
+    }
+}
+console.log(`[config] TEST_ENV=${TEST_ENV}`);
 
 // Validate required environment variables.
 // Required = core flows (URLs, storefront/admin auth, base payment cards) that must exist for any suite to run.

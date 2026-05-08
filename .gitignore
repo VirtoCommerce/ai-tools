@@ -2,6 +2,13 @@ node_modules
 .env
 .env.backup
 .env.*.backup
+# Layered env files — secrets stay local, per-env scaffolds are committed
+.env.local
+.env.*.local
+!.env.defaults
+!.env.vcst
+!.env.vcptcore
+!.env.virtostart
 .playwright-mcp/
 .vscode/
 settings.json

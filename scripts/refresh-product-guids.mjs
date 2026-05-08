@@ -11,14 +11,19 @@
  *   npm run refresh-product-guids -- --dry-run           — print plan, don't write
  *   npm run refresh-product-guids -- --row CFG-003       — refresh a single row
  *
- * Reads BACK_URL and STORE_ID from .env.
+ * Reads BACK_URL and STORE_ID via the layered loader (TEST_ENV-aware).
+ * See config.js for precedence rules.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { config as loadDotenv } from "dotenv";
 
-loadDotenv();
+const TEST_ENV = process.env.TEST_ENV || "vcst";
+loadDotenv({ path: ".env.defaults" });
+loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
+loadDotenv({ path: ".env.local", override: true });
+loadDotenv({ path: ".env" }); // legacy fallback
 
 const ROOT = resolve(process.cwd());
 const CSV_PATH = join(ROOT, "test-data/products/configurable-products.csv");
@@ -26,7 +31,7 @@ const BACK_URL = process.env.BACK_URL;
 const STORE_ID = process.env.STORE_ID || "B2B-store";
 
 if (!BACK_URL) {
-  console.error("BACK_URL is missing from .env");
+  console.error(`BACK_URL is missing (TEST_ENV=${TEST_ENV})`);
   process.exit(1);
 }
 
