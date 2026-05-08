@@ -1,0 +1,277 @@
+{
+  "profile": "b2b",
+  "target": "https://virtostart-demo-admin.govirto.com",
+  "storeId": "B2B-store",
+  "storeGroup": "B2B-store",
+  "dateStamp": "20260508",
+  "seededAt": "2026-05-08T13:44:50.413Z",
+  "organizations": [
+    {
+      "key": "AcmeCorp",
+      "id": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "name": "AGENT-TEST-Org-AcmeCorp-20260508",
+      "parentId": null,
+      "parentKey": null,
+      "groups": [
+        "Premium Customers",
+        "B2B-store"
+      ]
+    },
+    {
+      "key": "TechFlow",
+      "id": "a0422c9c-6238-495e-9888-e7ccfdf36f6a",
+      "name": "AGENT-TEST-Org-TechFlow-20260508",
+      "parentId": null,
+      "parentKey": null,
+      "groups": [
+        "Standard Customers",
+        "B2B-store"
+      ]
+    },
+    {
+      "key": "BuildRight",
+      "id": "523a2597-2823-4a60-8f65-563fd4d9f57e",
+      "name": "AGENT-TEST-Org-BuildRight-20260508",
+      "parentId": null,
+      "parentKey": null,
+      "groups": [
+        "Standard Customers",
+        "B2B-store"
+      ]
+    },
+    {
+      "key": "AcmeWest",
+      "id": "d2aed33b-cd31-4556-9196-739393926385",
+      "name": "AGENT-TEST-Org-AcmeWest-20260508",
+      "parentId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "parentKey": "AcmeCorp",
+      "groups": [
+        "B2B-store"
+      ]
+    }
+  ],
+  "contacts": [
+    {
+      "id": "08f73abb-3a81-4531-be3b-2718259519d3",
+      "firstName": "John",
+      "lastName": "Mitchell",
+      "fullName": "John Mitchell-20260508",
+      "email": "test-john.mitchell-20260508@test-agent.com",
+      "orgKey": "AcmeCorp",
+      "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "role": "admin",
+      "timeZone": "America/New_York",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "9c212ea9-f3f1-44d2-b623-fba04837dc35",
+      "firstName": "Sarah",
+      "lastName": "Chen",
+      "fullName": "Sarah Chen-20260508",
+      "email": "test-sarah.chen-20260508@test-agent.com",
+      "orgKey": "AcmeCorp",
+      "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "role": "buyer",
+      "timeZone": "America/New_York",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "673d18a9-5383-466d-a5fb-ba69722950fb",
+      "firstName": "Mike",
+      "lastName": "Torres",
+      "fullName": "Mike Torres-20260508",
+      "email": "test-mike.torres-20260508@test-agent.com",
+      "orgKey": "AcmeCorp",
+      "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "role": "viewer",
+      "timeZone": "America/New_York",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "1cabcaaa-cd5d-42f8-b984-58a1f9a71d68",
+      "firstName": "Lisa",
+      "lastName": "Wang",
+      "fullName": "Lisa Wang-20260508",
+      "email": "test-lisa.wang-20260508@test-agent.com",
+      "orgKey": "AcmeCorp",
+      "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "role": "buyer",
+      "timeZone": "America/Chicago",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "12744e94-8d3d-4b15-9de4-28fb1689fe98",
+      "firstName": "Emily",
+      "lastName": "Johnson",
+      "fullName": "Emily Johnson-20260508",
+      "email": "test-emily.johnson-20260508@test-agent.com",
+      "orgKey": "TechFlow",
+      "orgId": "a0422c9c-6238-495e-9888-e7ccfdf36f6a",
+      "role": "admin",
+      "timeZone": "America/Los_Angeles",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "66164f87-0c9b-4183-bc24-d8875c29eaff",
+      "firstName": "David",
+      "lastName": "Kim",
+      "fullName": "David Kim-20260508",
+      "email": "test-david.kim-20260508@test-agent.com",
+      "orgKey": "TechFlow",
+      "orgId": "a0422c9c-6238-495e-9888-e7ccfdf36f6a",
+      "role": "buyer",
+      "timeZone": "America/Los_Angeles",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "0951bbdc-6a1f-43d2-8c1c-60017d96208b",
+      "firstName": "Carlos",
+      "lastName": "Rodriguez",
+      "fullName": "Carlos Rodriguez-20260508",
+      "email": "test-carlos.rodriguez-20260508@test-agent.com",
+      "orgKey": "BuildRight",
+      "orgId": "523a2597-2823-4a60-8f65-563fd4d9f57e",
+      "role": "admin",
+      "timeZone": "America/Chicago",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "18fb9c11-b539-429f-b4eb-4ce9f2deb789",
+      "firstName": "Angela",
+      "lastName": "Foster",
+      "fullName": "Angela Foster-20260508",
+      "email": "test-angela.foster-20260508@test-agent.com",
+      "orgKey": "BuildRight",
+      "orgId": "523a2597-2823-4a60-8f65-563fd4d9f57e",
+      "role": "buyer",
+      "timeZone": "America/Chicago",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "08612f2f-860d-4ca1-892a-74d36b527522",
+      "firstName": "Robert",
+      "lastName": "Lee",
+      "fullName": "Robert Lee-20260508",
+      "email": "test-robert.lee-20260508@test-agent.com",
+      "orgKey": "AcmeWest",
+      "orgId": "d2aed33b-cd31-4556-9196-739393926385",
+      "role": "admin",
+      "timeZone": "America/Los_Angeles",
+      "defaultLanguage": "en-US",
+      "currencyCode": "USD"
+    },
+    {
+      "id": "24c06adf-efda-457b-807d-6c8f6df2abac",
+      "firstName": "Hans",
+      "lastName": "Mueller",
+      "fullName": "Hans Mueller-20260508",
+      "email": "test-hans.mueller-20260508@test-agent.com",
+      "orgKey": "AcmeCorp",
+      "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+      "role": "admin",
+      "timeZone": "Europe/Berlin",
+      "defaultLanguage": "de-DE",
+      "currencyCode": "EUR"
+    }
+  ],
+  "users": [
+    {
+      "id": "f2f838d8-2195-4a36-8d8d-01de34ae66c3",
+      "userName": "test-john.mitchell-20260508@test-agent.com",
+      "email": "test-john.mitchell-20260508@test-agent.com",
+      "contactId": "08f73abb-3a81-4531-be3b-2718259519d3",
+      "role": "Organization maintainer",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "06bc32c7-81ff-40c6-8da5-fb9755048023",
+      "userName": "test-sarah.chen-20260508@test-agent.com",
+      "email": "test-sarah.chen-20260508@test-agent.com",
+      "contactId": "9c212ea9-f3f1-44d2-b623-fba04837dc35",
+      "role": "Purchasing agent",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "26f6281e-451d-4ea9-9312-1921fe0bf944",
+      "userName": "test-mike.torres-20260508@test-agent.com",
+      "email": "test-mike.torres-20260508@test-agent.com",
+      "contactId": "673d18a9-5383-466d-a5fb-ba69722950fb",
+      "role": "Organization employee",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "265a95ee-4e88-4f22-b083-9f1397f1fcdc",
+      "userName": "test-lisa.wang-20260508@test-agent.com",
+      "email": "test-lisa.wang-20260508@test-agent.com",
+      "contactId": "1cabcaaa-cd5d-42f8-b984-58a1f9a71d68",
+      "role": "Purchasing agent",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "ca09bd21-f7a9-4b5d-a701-08c2e5531450",
+      "userName": "test-emily.johnson-20260508@test-agent.com",
+      "email": "test-emily.johnson-20260508@test-agent.com",
+      "contactId": "12744e94-8d3d-4b15-9de4-28fb1689fe98",
+      "role": "Organization maintainer",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "cd3ae458-2a2c-437a-8c6b-88b2af2ea3cb",
+      "userName": "test-david.kim-20260508@test-agent.com",
+      "email": "test-david.kim-20260508@test-agent.com",
+      "contactId": "66164f87-0c9b-4183-bc24-d8875c29eaff",
+      "role": "Purchasing agent",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "c1503865-9d46-4947-a70f-c3fdbf7b5e74",
+      "userName": "test-carlos.rodriguez-20260508@test-agent.com",
+      "email": "test-carlos.rodriguez-20260508@test-agent.com",
+      "contactId": "0951bbdc-6a1f-43d2-8c1c-60017d96208b",
+      "role": "Organization maintainer",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "a8e8f3a3-1411-4537-8c39-b235975209e9",
+      "userName": "test-angela.foster-20260508@test-agent.com",
+      "email": "test-angela.foster-20260508@test-agent.com",
+      "contactId": "18fb9c11-b539-429f-b4eb-4ce9f2deb789",
+      "role": "Purchasing agent",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "da3bff53-866b-432d-b3ac-c776369362c3",
+      "userName": "test-robert.lee-20260508@test-agent.com",
+      "email": "test-robert.lee-20260508@test-agent.com",
+      "contactId": "08612f2f-860d-4ca1-892a-74d36b527522",
+      "role": "Organization maintainer",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    },
+    {
+      "id": "a12f9a2a-73be-444e-b27a-85a21ee756b3",
+      "userName": "test-hans.mueller-20260508@test-agent.com",
+      "email": "test-hans.mueller-20260508@test-agent.com",
+      "contactId": "24c06adf-efda-457b-807d-6c8f6df2abac",
+      "role": "Organization maintainer",
+      "password": "TestPass123!",
+      "storeId": "B2B-store"
+    }
+  ]
+}

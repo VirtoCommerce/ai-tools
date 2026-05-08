@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.2.0",
-    "updated": "2026-04-27"
+    "version": "1.3.0",
+    "updated": "2026-05-08",
+    "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -929,6 +930,151 @@
     "fields": {
       "name": "org_name",
       "id": "org_id"
+    }
+  },
+  "ACME_ADMIN_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-001" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id",
+      "roles": "roles"
+    }
+  },
+  "ACME_BUYER_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-002" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "roles": "roles"
+    }
+  },
+  "ACME_VIEWER_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-003" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "roles": "roles"
+    }
+  },
+  "ACME_BUYER2_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-004" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    }
+  },
+  "TECHFLOW_ADMIN_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-006" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id"
+    }
+  },
+  "TECHFLOW_BUYER_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-007" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    }
+  },
+  "BUILDRIGHT_ADMIN_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-008" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id"
+    }
+  },
+  "BUILDRIGHT_BUYER_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-009" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    }
+  },
+  "ACMEWEST_ADMIN_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-010" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id"
+    }
+  },
+  "EU_ADMIN_VIRTOSTART": {
+    "file": "b2b/users-virtostart",
+    "filter": { "user_id": "USR-011" },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id"
+    }
+  },
+  "ORG_ACME_VIRTOSTART": {
+    "file": "b2b/organizations-virtostart",
+    "filter": { "org_id": "ORG-001" },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id",
+      "id": "org_id",
+      "category": "business_category"
+    }
+  },
+  "ORG_TECHFLOW_VIRTOSTART": {
+    "file": "b2b/organizations-virtostart",
+    "filter": { "org_id": "ORG-002" },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id",
+      "id": "org_id"
+    }
+  },
+  "ORG_BUILDRIGHT_VIRTOSTART": {
+    "file": "b2b/organizations-virtostart",
+    "filter": { "org_id": "ORG-003" },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id",
+      "id": "org_id"
+    }
+  },
+  "ORG_ACMEWEST_VIRTOSTART": {
+    "file": "b2b/organizations-virtostart",
+    "filter": { "org_id": "ORG-004" },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id",
+      "id": "org_id",
+      "parent": "parent_org_id"
     }
   },
   "PROD_HEADPHONES": {
