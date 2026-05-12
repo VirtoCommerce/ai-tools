@@ -1,0 +1,103 @@
+{
+  "profile": "contract-acmecorp",
+  "target": "https://virtostart-demo-admin.govirto.com",
+  "storeId": "B2B-store",
+  "seededAt": "2026-05-11T14:50:02.513Z",
+  "dryRun": false,
+  "contract": {
+    "name": "Contract-AcmeCorp-2026",
+    "userGroup": "contract-acmecorp-2026",
+    "currency": "USD",
+    "discount": 0.1,
+    "orgId": "8a64d782-d3f5-4f3f-835a-525b8b41b496"
+  },
+  "pricelistId": "97b7f4bb-34e1-4260-8f77-1dee1daa403b",
+  "assignmentId": "0401570d-52af-48c2-9a0c-8dba60a6d4ea",
+  "org": {
+    "id": "8a64d782-d3f5-4f3f-835a-525b8b41b496",
+    "groupsBefore": [
+      "Premium Customers",
+      "contract-acmecorp-2026",
+      "B2B-store"
+    ],
+    "groupsAfter": [
+      "Premium Customers",
+      "contract-acmecorp-2026",
+      "B2B-store"
+    ]
+  },
+  "contactsTagged": [
+    {
+      "id": "8f7d1306-7e2c-4caf-b6c5-a499d7d4fd46",
+      "name": "Marcus Johns",
+      "action": "tagged"
+    },
+    {
+      "id": "24c06adf-efda-457b-807d-6c8f6df2abac",
+      "name": "Hans Mueller-20260508",
+      "action": "tagged"
+    },
+    {
+      "id": "08f73abb-3a81-4531-be3b-2718259519d3",
+      "name": "John Mitchell",
+      "action": "tagged"
+    },
+    {
+      "id": "1cabcaaa-cd5d-42f8-b984-58a1f9a71d68",
+      "name": "Lisa Wang-20260508",
+      "action": "tagged"
+    },
+    {
+      "id": "673d18a9-5383-466d-a5fb-ba69722950fb",
+      "name": "Mike Torres-20260508",
+      "action": "tagged"
+    },
+    {
+      "id": "9c212ea9-f3f1-44d2-b623-fba04837dc35",
+      "name": "Sarah Chen-20260508",
+      "action": "tagged"
+    }
+  ],
+  "skus": [
+    {
+      "sku": "AYB-04369900",
+      "name": "TOUGHBOOK 40 mk2",
+      "productId": "202d4ea3-f167-4523-9f50-289f3b6d6af6",
+      "list": 2259,
+      "sale": 2033.1,
+      "discountPct": 0.1
+    },
+    {
+      "sku": "SYU-76371555",
+      "name": "MacBook Pro 2023 Touchbar",
+      "productId": "2d3d3f11-6429-434b-a895-f1143dd2a67d",
+      "list": 1200,
+      "sale": 1080,
+      "discountPct": 0.1
+    },
+    {
+      "sku": "JPJ-30487565",
+      "name": "iPhone 16 Pro",
+      "productId": "18ce2545-b35e-4e69-920e-2090a64797c5",
+      "list": 999,
+      "sale": 899.1,
+      "discountPct": 0.1
+    },
+    {
+      "sku": "553390824",
+      "name": "LG EG9600 65\" 4K TV",
+      "productId": "8db64bd60a354c4c96e25e61d7361565",
+      "list": 600,
+      "sale": 540,
+      "discountPct": 0.1
+    },
+    {
+      "sku": "566903892",
+      "name": "Canon Imageclass MF232W",
+      "productId": "08c33cfc9f664426a52fac8882da2df0",
+      "list": 189,
+      "sale": 170.1,
+      "discountPct": 0.1
+    }
+  ]
+}

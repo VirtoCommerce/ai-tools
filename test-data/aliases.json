@@ -1,9 +1,11 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.3.0",
-    "updated": "2026-05-08",
-    "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged."
+    "version": "1.4.1",
+    "updated": "2026-05-11",
+    "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged.",
+    "changelog_1_4_0": "Added IMPERSONATE_TARGET (→ b2b/users.csv USR-003 Mike Torres, AcmeCorp viewer) and OTHER_ORG_USER (→ b2b/users.csv USR-007 David Kim, TechFlow buyer) for VCST-4905 Login-on-behalf form/silent flow cases (AUTH-027..AUTH-081 in suite 031). Both point to existing seeded platform users — no new seeding needed.",
+    "changelog_1_4_1": "VCST-4905 scenario correction: repointed IMPERSONATE_TARGET to USR-007 David Kim (was Mike Torres); added SUPPORT_AGENT → USR-001 John Mitchell (ACME admin) as the support persona who fills the Security Verification Form. Canonical happy-path: John (support, own credentials) → impersonates David (target, different org). PRECONDITION: SUPPORT_AGENT user requires StorefrontPermissions.CanImpersonate to succeed at the impersonate-step — currently not granted on vcst-qa (verified 2026-05-11: 403 on POST /connect/token grant_type=impersonate)."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -863,6 +865,48 @@
       "email": "email",
       "password": "password",
       "name": "user_name"
+    }
+  },
+  "SUPPORT_AGENT": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-001"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
+    }
+  },
+  "IMPERSONATE_TARGET": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-007"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
+    }
+  },
+  "OTHER_ORG_USER": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-007"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
     }
   },
   "ORG_ACME": {

@@ -1,0 +1,7 @@
+Total messages: 1 (Errors: 0, Warnings: 0)
+Returning 4 messages for level "error"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_348x348_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_216x216_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_216x216_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/6032b/DRH-42771013/Images/threecentsCherry-Soda-1-e1585652933596_348x348_md.png:0

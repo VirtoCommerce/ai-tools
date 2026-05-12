@@ -1,0 +1,24 @@
+<!-- VCST-5016 — DOM evidence captured 2026-05-12 -->
+<!-- Source page: https://vcst-qa-storefront.govirto.com/cart -->
+<!-- Element: a.coupons-section__link inside <section class="coupons-section"> -->
+<!-- Theme build: vc-theme-b2b-vue-2.49.0-pr-2289-e5ef-e5ef1b1f -->
+
+<!-- Run 1 (initial /cart load): -->
+<a href="/account/coupons" class="coupons-section__link" target="_blank" rel="noopener noreferrer">View all coupons &amp; promotions <span class="vc-icon coupons-section__arrow">…</span></a>
+
+<!-- Run 2 (SPA navigate away to /catalog and back to /cart): -->
+<a href="/account/coupons" class="coupons-section__link" target="_blank" rel="noopener noreferrer">View all coupons &amp; promotions <span class="vc-icon coupons-section__arrow">…</span></a>
+
+<!-- Run 3 (hard browser reload of /cart): -->
+<a href="/account/coupons" class="coupons-section__link" target="_blank" rel="noopener noreferrer">View all coupons &amp; promotions <span class="vc-icon coupons-section__arrow">…</span></a>
+
+<!--
+Attributes confirmed:
+  href   = "/account/coupons"
+  target = "_blank"
+  rel    = "noopener noreferrer"   <-- FIX
+  class  = "coupons-section__link"
+  text   = "View all coupons & promotions"
+
+3/3 STR runs consistent. Matches PR #2289 diff at client-app/shared/cart/components/coupons-section.vue:25.
+-->

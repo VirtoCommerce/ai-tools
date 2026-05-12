@@ -1,0 +1,337 @@
+{
+  "customer": "John Mitchell",
+  "customerId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+  "storeId": "B2B-store",
+  "target": "https://vcst-qa.govirto.com",
+  "orderCount": 27,
+  "skuCount": 21,
+  "skus": [
+    {
+      "sku": "ALCOE1423",
+      "name": "JIANWU Creative Cute Transparent 3 ring Mini Loose-leaf Hand Book Student Portable Notebook ring binder Kawaii School Supplies",
+      "productId": "29ab7cdb-fdd5-4aae-a25e-2efc5ff93a96",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "f75cfbd0-111e-43bc-b0a1-3f84573e853d",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 5,
+      "units": 35,
+      "orderNumbers": [
+        "CO26050800106",
+        "CO26050800110",
+        "CO26050800114",
+        "CO26050800115",
+        "CO26050800116"
+      ]
+    },
+    {
+      "sku": "ALCOE8887",
+      "name": "24/12PCS/Box Color Gel Pen Refill Set Kawaii 0.5mm Candy Colors Ballpoint Pens Student Office Writing Pens School Stationery",
+      "productId": "b11cb842-6c74-4d35-b994-9f63b0b06862",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "2c05a6ee-3048-4873-ab84-98f268170901",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 5,
+      "units": 35,
+      "orderNumbers": [
+        "CO26050800108",
+        "CO26050800110",
+        "CO26050800114",
+        "CO26050800115",
+        "CO26050800120"
+      ]
+    },
+    {
+      "sku": "ALCOE2839",
+      "name": "Teclast F7 Plus 2, 14.1 inch laptop, Windows 11, Gemini Lake N4120, 8GB RAM, 256GB ROM, UHD graphics 600 GPU, 1920x1080 IPS, Dual Band Wi-Fi, 38000mWh ",
+      "productId": "719b3432-61e2-46eb-82f8-cf184ae81b96",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "e83d9a46-4096-48a5-9d79-62e60b3d0e1f",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 5,
+      "units": 33,
+      "orderNumbers": [
+        "CO26050800103",
+        "CO26050800112",
+        "CO26050800113",
+        "CO26050800115",
+        "CO26050800119"
+      ]
+    },
+    {
+      "sku": "164W33",
+      "name": "Carriage Bolt 1\" Steel, Grade A, Plain Finish, 1/4\"-20 Dia/Thread Size, 1300 PK",
+      "productId": "5512e3a5201541769e1d81fc5217490c",
+      "catalogId": "7829d35f417e4dd98851f51322f32c23",
+      "categoryId": "4fbaca886f014767a52f3f38b9df648f",
+      "price": 17,
+      "currency": "USD",
+      "orders": 4,
+      "units": 120,
+      "orderNumbers": [
+        "CO26050800121",
+        "CO260413-00091",
+        "CO260427-00091",
+        "CO260504-00091"
+      ]
+    },
+    {
+      "sku": "ALCOE3672",
+      "name": "For iPad Air 1st iPad Air 2nd Generation 9.7 inch Case, iPad Pro 9.7 2016 iPad 5th Generation iPad 6th Generation 9.7 inch Case ",
+      "productId": "eca68548-7035-48ea-8dd5-9098589093aa",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "65790122-c889-43b2-ac46-b3ee1b8cffae",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 4,
+      "units": 19,
+      "orderNumbers": [
+        "CO26050800102",
+        "CO26050800103",
+        "CO26050800107",
+        "CO26050800111"
+      ]
+    },
+    {
+      "sku": "ALCOE0637",
+      "name": "Yoofun 94pcs/pack Vintage Material Pack Includes Stripe Stickers Film Frame Material Paper for Journaling Scrapbooking Decration",
+      "productId": "f7ab02e2-4dd7-473e-b7b1-e582b137e070",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "a7a8db82-6386-4090-b635-7aa9b6ff4343",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 3,
+      "units": 16,
+      "orderNumbers": [
+        "CO26050800103",
+        "CO26050800118",
+        "CO26050800119"
+      ]
+    },
+    {
+      "sku": "ALCOE2465",
+      "name": "A4/A5/A6 Coil Notebook Lined Dots Blank Grid Paper Journal Book For School Office Supplies Stationery",
+      "productId": "d42778f4-d611-4b65-989f-f96a0a3835aa",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "f75cfbd0-111e-43bc-b0a1-3f84573e853d",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 3,
+      "units": 14,
+      "orderNumbers": [
+        "CO26050800111",
+        "CO26050800114",
+        "CO26050800117"
+      ]
+    },
+    {
+      "sku": "8010073",
+      "name": "SHOT",
+      "productId": "5a78d778-d8cd-4f56-810a-8f06f75d3902",
+      "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+      "categoryId": "92a81290-0600-41f3-bc49-e4e8ebc6efab",
+      "price": 0,
+      "currency": "USD",
+      "orders": 3,
+      "units": 3,
+      "orderNumbers": [
+        "CO260421-00005",
+        "CO260421-00007",
+        "CO260421-00010"
+      ]
+    },
+    {
+      "sku": "ALCOE2047",
+      "name": "Bestoss Nvme M2 Ssd 1tb Notebook Ssd Nvme M2 256gb Diy Gaming Computer Internal Solid State Drives For Laptops GM32845",
+      "productId": "0416f063-36bc-4ba8-bc75-e77d9f6bdf48",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "785d15e1-59ce-47ef-88ad-1bc56de9dbde",
+      "price": 100,
+      "currency": "USD",
+      "orders": 3,
+      "units": 3,
+      "orderNumbers": [
+        "CO260421-00005",
+        "CO260421-00007",
+        "CO260421-00010"
+      ]
+    },
+    {
+      "sku": "ALCOE8132",
+      "name": "50 sheets Ins Style Sticker Book Washi Paper journal DIY Material Decoration Sticker Memo Pad Scrapbook Stationery",
+      "productId": "b0d54ccb-8f70-4445-9cb5-31a69afcb804",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "a7a8db82-6386-4090-b635-7aa9b6ff4343",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 20,
+      "orderNumbers": [
+        "CO26050800111",
+        "CO26050800116"
+      ]
+    },
+    {
+      "sku": "164W34",
+      "name": "1-1/4\" Steel Carriage Bolt, Grade A, Plain Finish, 5/16\"-18 Dia/Thread Size, 700 PK",
+      "productId": "5623d43072ad486d9ec47ee75f6813d6",
+      "catalogId": "7829d35f417e4dd98851f51322f32c23",
+      "categoryId": "4fbaca886f014767a52f3f38b9df648f",
+      "price": 43.44,
+      "currency": "USD",
+      "orders": 2,
+      "units": 20,
+      "orderNumbers": [
+        "CO26050800121",
+        "CO260427-00091"
+      ]
+    },
+    {
+      "sku": "ALCOE0482",
+      "name": "Bview Art Hot Selling Empty Watercolor Tins Palette Paint Case with 14pcs half pan",
+      "productId": "f2b79a79-90ef-4153-9437-67dc92bfbf06",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "65790122-c889-43b2-ac46-b3ee1b8cffae",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 15,
+      "orderNumbers": [
+        "CO26050800104",
+        "CO26050800105"
+      ]
+    },
+    {
+      "sku": "ALCOE8282",
+      "name": "10pcs  Paper Card Beautiful Flower Mirror Hollow Frame Decorative Stickers for Collage Scrapbooking DIY Journaling Gift",
+      "productId": "d0ee1175-fa33-493b-bf7e-803bb48fb65f",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "a7a8db82-6386-4090-b635-7aa9b6ff4343",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 14,
+      "orderNumbers": [
+        "CO26050800107",
+        "CO26050800117"
+      ]
+    },
+    {
+      "sku": "ALCOE7716",
+      "name": "ERYING DIY Gaming PC Desktops Motherboard with Onboard CPU Core Interpose Kit i9 12900HK 14C20T 24Mb DDR4 Computer Assembly Set",
+      "productId": "0d24b54c-482a-4715-ae00-0fc82da2c464",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "785d15e1-59ce-47ef-88ad-1bc56de9dbde",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 12,
+      "orderNumbers": [
+        "CO26050800107",
+        "CO26050800108"
+      ]
+    },
+    {
+      "sku": "ALCOE6923",
+      "name": "Mr.paper 100 Pcs/Set Vintage Butterfly Sticker Gift Box Aesthetic Flower Mushroom Scrapbooking Decoration Stationery Stickers",
+      "productId": "1ea9f7e0-ae41-452f-9fed-39f9d661ed13",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "a7a8db82-6386-4090-b635-7aa9b6ff4343",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 11,
+      "orderNumbers": [
+        "CO26050800102",
+        "CO26050800109"
+      ]
+    },
+    {
+      "sku": "ALCOE3675",
+      "name": "JIANQI 100 pcs Vintage material paper imitation book pages floral figures DIY Decoration hand made background material",
+      "productId": "74d21f6d-20ef-458d-a5fe-1eafbe9707c1",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "a7a8db82-6386-4090-b635-7aa9b6ff4343",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 2,
+      "units": 7,
+      "orderNumbers": [
+        "CO26050800102",
+        "CO26050800108"
+      ]
+    },
+    {
+      "sku": "164W48",
+      "name": "1/2\" Steel Carriage Bolt, Grade A, Plain Finish, 1/4\"-20 Dia/Thread Size, 1800 PK",
+      "productId": "f800babf3cf5488ba45b21cfb343c22c",
+      "catalogId": "7829d35f417e4dd98851f51322f32c23",
+      "categoryId": "4fbaca886f014767a52f3f38b9df648f",
+      "price": 102.88,
+      "currency": "USD",
+      "orders": 1,
+      "units": 10,
+      "orderNumbers": [
+        "CO26050800121"
+      ]
+    },
+    {
+      "sku": "ALCOE2124",
+      "name": "10/50Pcs Cartoon Free Country Stickers for Car Laptop Phone Stationery Decal Waterproof Sticker Toys Decor Gifts 2024",
+      "productId": "3aedd209-d780-4c68-bd1b-929eb34b9b46",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "2c05a6ee-3048-4873-ab84-98f268170901",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 1,
+      "units": 7,
+      "orderNumbers": [
+        "CO26050800101"
+      ]
+    },
+    {
+      "sku": "ZQY-49234025",
+      "name": "Kingston KC3000 PCIe 4.0 NVMe M.2 SSD 1Tb",
+      "productId": "cb39f2fe-99ff-4efc-bf53-3a4bb1445e81",
+      "catalogId": "4c052f09-866a-4bcb-9aa9-f9ef5f439622",
+      "categoryId": "ec951b9e-65cf-4025-a3c5-5d1284155ba3",
+      "price": 111.39,
+      "currency": "USD",
+      "orders": 1,
+      "units": 5,
+      "orderNumbers": [
+        "CO260421-00010"
+      ]
+    },
+    {
+      "sku": "ALCOE5866",
+      "name": "A5 Thickened Buckle Notebook PU Leather Business Office Work Meeting Minutes School Office Supplies Stationery",
+      "productId": "84e96eef-ff3d-4c06-b03b-0678ebfc1110",
+      "catalogId": "9238c387-d779-40cb-b27d-5496a670a924",
+      "categoryId": "f75cfbd0-111e-43bc-b0a1-3f84573e853d",
+      "price": 99.99,
+      "currency": "USD",
+      "orders": 1,
+      "units": 4,
+      "orderNumbers": [
+        "CO26050800117"
+      ]
+    },
+    {
+      "sku": "LIU-65067964",
+      "name": "Kingston KC3000 PCIe 4.0 NVMe M.2 SSD 512Gb",
+      "productId": "a86cf30e-9105-4144-8f7b-c7584c35ffb6",
+      "catalogId": "4c052f09-866a-4bcb-9aa9-f9ef5f439622",
+      "categoryId": "ec951b9e-65cf-4025-a3c5-5d1284155ba3",
+      "price": 80.27,
+      "currency": "USD",
+      "orders": 1,
+      "units": 2,
+      "orderNumbers": [
+        "CO260421-00010"
+      ]
+    }
+  ]
+}

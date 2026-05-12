@@ -1,0 +1,66 @@
+{
+  "ticket": "VCST-5016",
+  "summary": "[Marketing] [Cart] Coupons sidebar — \"View all\" link missing rel=\"noopener noreferrer\" on target=\"_blank\"",
+  "type": "Bug",
+  "priority": "Low",
+  "sprint": "VCST Sprint 26-09",
+  "verdict": "VERIFIED",
+  "date": "2026-05-12",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2289-e5ef-e5ef1b1f",
+    "pr_build": "PR #2289 (fix/VCST-5016-add-rel) — deploy-cloud SUCCESS 2026-05-12T07:43:41Z",
+    "platform": "not-applicable-dom-only-fix",
+    "relevant_modules": {}
+  },
+  "linked_pr": {
+    "number": 2289,
+    "repo": "VirtoCommerce/vc-frontend",
+    "title": "fix(VCST-5016): add rel attribute for link",
+    "state": "OPEN",
+    "mergeable": true,
+    "base": "dev",
+    "head": "fix/VCST-5016-add-rel"
+  },
+  "agent_used": "qa-verify-fix (inline orchestrator + playwright-chrome MCP)",
+  "browser": "playwright-chrome (Chromium)",
+  "str_result": "3/3",
+  "str_runs": [
+    { "run": 1, "method": "fresh /cart load after PDP add-to-cart", "rel_present": true },
+    { "run": 2, "method": "SPA navigate /cart -> /catalog -> /cart", "rel_present": true },
+    { "run": 3, "method": "hard browser reload of /cart", "rel_present": true }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_na": 1,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "labels_validated": ["security-hygiene", "a11y-related", "frontend"],
+  "out_of_scope_observations": [
+    "Other target=\"_blank\" links on /cart still lack rel attribute (product titles, About Virto, Our partners, Manufacturer partners, News, Careers, Builder.io, Vcst-admin, Virto-start). Candidate for a single broader hygiene ticket."
+  ],
+  "console_errors": {
+    "new_caused_by_fix": 0,
+    "pre_existing": 4,
+    "pre_existing_summary": "404 on cms-content/.../threecentsCherry-Soda-1-…png (216x216 and 348x348 variants) — unrelated"
+  },
+  "jira_transitions": [
+    { "at": "2026-05-12T10:51+0300", "from": "Ready for test", "to": "Testing", "transition": "On QA" },
+    { "at": "2026-05-12T10:55+0300", "from": "Testing", "to": "Tested", "transition": "Finish test" }
+  ],
+  "jira_final_transition_pending": "Done — left to dev/PM per user preference (PR #2289 not yet merged)",
+  "artifacts": {
+    "directory": "tests/Sprint-current/VCST-5016/",
+    "files": [
+      "verification-report.md",
+      "verification-summary.json",
+      "dom-evidence.html",
+      "console-errors.log",
+      "screenshots/run1-cart-coupons-section.png",
+      "screenshots/run3-after-reload-coupons-section.png"
+    ]
+  }
+}
