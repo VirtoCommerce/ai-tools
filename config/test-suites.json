@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 95,
+    "totalSuites": 96,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -589,8 +589,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 46,
-      "estimatedMinutes": 32,
+      "testCount": 31,
+      "estimatedMinutes": 22,
       "agent": "qa-frontend-expert",
       "tags": [
         "auth",
@@ -607,7 +607,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 21,
+      "testCount": 12,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1844,6 +1844,25 @@
         "PR-129",
         "sprint"
       ]
+    },
+    {
+      "id": "082",
+      "name": "Auth Impersonation / Login on Behalf",
+      "file": "regression/suites/Frontend/auth/082-auth-impersonation.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 38,
+      "estimatedMinutes": 40,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "auth",
+        "impersonation",
+        "login-on-behalf",
+        "security",
+        "sprint"
+      ]
     }
   ],
   "selections": {
@@ -1910,7 +1929,8 @@
       "include": [
         "031",
         "032",
-        "033"
+        "033",
+        "082"
       ]
     },
     "platform": {

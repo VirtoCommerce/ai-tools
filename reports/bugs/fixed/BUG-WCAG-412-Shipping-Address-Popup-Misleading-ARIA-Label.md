@@ -1,6 +1,6 @@
 # BUG: A11y — Shipping Address Popup Search Field Has Misleading ARIA Label "Search pickup locations"
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Bug ID:** BUG-WCAG-412-Shipping-Address-Popup-Misleading-ARIA-Label
 **Related Ticket:** VCST-4710 (PR #129 — Advanced address search + facets)
@@ -132,7 +132,31 @@ Screen readers announce: *"Search pickup locations, edit text"* when the user fo
 
 ## References
 
-- JIRA: not filed (awaiting user review of this report)
+- JIRA: **VCST-4993** ([link](https://virtocommerce.atlassian.net/browse/VCST-4993)) — Bug, Medium, verified 2026-05-12
 - Related (closed, different popup): `reports/bugs/closed/BUG-WCAG-131-BOPIS-Pickup-Modal-Search-Input-No-Label.md` (VCST-4565 — missing label on BOPIS pickup modal, fixed by adding this exact aria-label)
-- Source PR: #129 (VCST-4710 — advanced address search + facets)
+- Source PR: #129 (VCST-4710 — advanced address search + facets, where the BOPIS aria-label leaked into the address-popup context)
+- Fix PR: [vc-frontend #2287](https://github.com/VirtoCommerce/vc-frontend/pull/2287) (head `367d16a1`)
 - Test cases affected: SA-024 through SA-030 in `tests/Sprint-current/VCST-4710/test-cases/select-shipping-address-popup.csv` exercise this popup
+
+---
+
+## Resolution
+
+**Fixed in:** vc-frontend [PR #2287](https://github.com/VirtoCommerce/vc-frontend/pull/2287) — `fix(VCST-4993): change area label for select address modal`
+**Fix head SHA:** `367d16a1`
+**Build artifact:** `vc-theme-b2b-vue-2.49.0-pr-2287-367d-367d16a1` (deployed to vcst-qa via `vc-deploy-dev/vcst-qa/theme/artifact.json`)
+**JIRA:** VCST-4993 (Bug, Medium) — transitioned to **Tested** on 2026-05-12
+**Verification:** 3/3 STR passes; full report at `tests/Sprint-current/VCST-4993/verification-report.md`
+
+**What changed in the fix:**
+- `client-app/shared/checkout/composables/usePickupFilterContext.ts` — `IPickupFilterContext` now exposes `searchAriaLabelKey: string`, set per factory:
+  - `createCartFilterContext` → `pages.account.order_details.bopis.search_pickup_locations` (BOPIS — unchanged)
+  - `createAddressFilterContext` → **`shared.checkout.select_address_modal.search_addresses_aria_label`** (THE FIX)
+  - `createProductFilterContext` → `pages.account.order_details.bopis.search_pickup_locations` (unchanged)
+- `client-app/shared/checkout/components/select-address-filter.vue` — `:aria-label="$t(searchAriaLabelKey)"` instead of the hardcoded BOPIS i18n key.
+- 14 locale files (`en.json`, `de.json`, `es.json`, `fi.json`, `fr.json`, `it.json`, `ja.json`, `no.json`, `pl.json`, `pt.json`, `ru.json`, `sv.json`, `zh.json` + EN base) gained `shared.checkout.select_address_modal.search_addresses_aria_label`. English → **"Search addresses"**.
+
+The fix parameterizes the search-input aria-label rather than introducing a separate component — surgical, zero BOPIS regression risk by construction (BOPIS keys explicitly preserved in the Cart and Product filter contexts).
+
+**Out of scope of this fix (carry-over cosmetic):**
+- The `placeholder=" "` (trailing-space) artifact is NOT addressed by PR #2287. Placeholder still resolves from `common.labels.search` to `"Search "`. File a separate cosmetic ticket if desired; not blocking for WCAG verdict.

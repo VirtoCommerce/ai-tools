@@ -348,6 +348,34 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Applies to:** All test cases whose Steps say "sign out", "log out", "Click logout button", or "Navigate to /sign-out" — agents MUST execute the popup sequence and reviewers MUST reject the loose/wrong Step text in favor of the popup sequence.
 - **Agents:** qa-frontend-expert (storefront), qa-testing-expert (execution), test-management-specialist (CSV review)
 
+### BL-AUTH-008: Self-impersonation must have a defined non-circular outcome `[P1-data]`
+- **Rule:** When an operator with `CanImpersonate` navigates to `/account/impersonate/{ownUserId}` (their own platform user ID), the result must be a defined, non-circular outcome: (a) session cleared with redirect to `/sign-in`, (b) a handled error page, or (c) a redirect to home with the operator's own session intact and no impersonation banner. The system must NOT enter a circular state where the banner shows "Operator logged in as Operator" or an infinite redirect loop.
+- **Verify:** Authenticated SUPPORT_AGENT navigates to `/account/impersonate/@td(SUPPORT_AGENT.userId)` → outcome is one of the three acceptable states; no banner showing the operator as both impersonator and target; no infinite redirect loop in Network panel.
+- **Violation signal:** Banner displays "{operator name} logged in as {operator name}"; infinite redirect loop (>5 consecutive redirects between `/account/impersonate/...` and other routes); session enters a wedged state where neither operator nor target is authenticated and no error is shown.
+- **Applies to:** IMP-017 (suite 082-auth-impersonation). Any future case that exercises the self-target path of the impersonation route.
+- **Agents:** qa-frontend-expert (storefront route guard), qa-backend-expert (`/connect/token grant_type=impersonate` self-target rejection)
+
+### BL-AUTH-009: Nested impersonation forbidden — no silent path from impersonated session `[P0-security]`
+- **Rule:** An impersonated session must not be able to silently impersonate a third user. When the current authenticated session is itself an impersonation (banner visible, target identity active, operator context preserved), navigating to `/account/impersonate/{thirdUserId}` MUST require the operator's own credentials again via the Security Verification Form. The silent flow (form-skipping when `operator != null`) applies only to the original operator's authenticated session, never to a session where the operator IS being impersonated.
+- **Verify:** Authenticated session is impersonating User-A → navigate to `/account/impersonate/@td(USR-B.userId)` → Security Verification Form renders (no silent path); attempting to submit User-A's credentials fails (User-A lacks `CanImpersonate`); only the original operator's credentials succeed and return to operator → User-B impersonation.
+- **Violation signal:** Silent flow triggers from an impersonated session (form does not render); impersonated user successfully impersonates a third user without providing the operator's credentials; chained impersonation tokens are issued (privilege escalation).
+- **Applies to:** IMP-013 (suite 082-auth-impersonation). Security audits of the impersonation token chain.
+- **Agents:** qa-backend-expert (`/connect/token` chain enforcement), qa-frontend-expert (silent-flow gate condition)
+
+### BL-AUTH-010: Impersonation banner must persist across SPA navigation `[P1-ux]`
+- **Rule:** Once an impersonation session is active, the banner `[operator name] + "logged in as" + [Account menu: target name]` must remain visible on every storefront page until the operator explicitly stops the impersonation. The banner must NOT disappear on route changes, modal opens, or async data loads. This includes navigation to: home, category pages, product detail, cart, checkout, account pages, search results, and CMS pages.
+- **Verify:** Start impersonation → verify banner on home → navigate to /catalog → banner present → /cart → banner present → /checkout → banner present → /account/orders → banner present → click any internal link → banner still present. Banner DOM element survives SPA route transitions.
+- **Violation signal:** Banner disappears on any storefront route except the explicit Stop Impersonation action; banner re-renders inconsistently (flicker); banner missing on cart or checkout (revenue-critical pages); banner shows operator/target names that don't match the live session.
+- **Applies to:** IMP-011 (suite 082-auth-impersonation). Cross-cutting regression for any new storefront layout/route changes.
+- **Agents:** qa-frontend-expert (storefront layout + route persistence)
+
+### BL-AUTH-011: Stop Impersonation must restore operator session without sign-in round-trip `[P1-data]`
+- **Rule:** Clicking Stop Impersonation in the banner must restore the original operator's authenticated session in place — without redirecting to `/sign-in`, without requiring re-authentication, and without losing the operator's prior session state (cart, in-progress flows, etc.). The result: target identity is removed, operator identity is active, no auth prompt.
+- **Verify:** Operator (SUPPORT_AGENT) starts impersonating target → confirms banner → clicks Stop Impersonation → URL does NOT redirect to `/sign-in`; account menu now shows operator name (not target); operator's cart/wishlist/addresses are restored to operator-scope; no Security Verification Form rendered; no `/connect/token` call with `grant_type=password` (only the existing operator token is restored).
+- **Violation signal:** Stop Impersonation redirects to `/sign-in` (operator must re-authenticate); account menu shows "Sign in" instead of operator name (session lost); target's cart/data persists in operator's session after stop; full page reload occurs (operator session is dropped and recreated).
+- **Applies to:** IMP-012 (suite 082-auth-impersonation). Any regression that touches the impersonation token-stack restore logic.
+- **Agents:** qa-frontend-expert (storefront stop-impersonation handler), qa-backend-expert (operator token re-activation)
+
 ---
 
 ## Domain 6: B2B / Organization (BL-B2B)

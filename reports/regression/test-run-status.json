@@ -1,58 +1,104 @@
 {
-  "runId": "REG-2026-05-12-1100",
-  "selection": "Coupons (cart-sidebar smoke subset)",
-  "selectionSource": "user-curated: CPN-054..060 from Suite 077",
-  "startedAt": "2026-05-12T10:58:00+03:00",
-  "completedAt": "2026-05-12T11:17:00+03:00",
+  "runId": "REG-2026-05-12-1636",
+  "startedAt": "2026-05-12T16:36:00+03:00",
+  "completedAt": "2026-05-12T17:55:00+03:00",
+  "selection": "082",
+  "selectionSource": "user-invoked: /qa-regression 082",
+  "resolvedSuites": ["082"],
   "environment": {
     "name": "vcst-qa",
     "frontUrl": "https://vcst-qa-storefront.govirto.com",
-    "backUrl": "https://vcst-qa.govirto.com"
+    "backUrl": "https://vcst-qa.govirto.com",
+    "healthCheck": { "backend": 200, "frontend": 200 }
   },
-  "build": {
-    "theme": "vc-theme-b2b-vue-2.49.0-pr-2289-e5ef-e5ef1b1f",
-    "themeSource": "PR #2289 (fix/VCST-5016-add-rel)"
+  "priorRun": {
+    "runId": "REG-2026-05-12-1212",
+    "completedAt": "2026-05-12T10:49:00.000Z",
+    "passRate": "64.5%",
+    "passed": 20,
+    "failed": 5,
+    "blocked": 4,
+    "totalCases": 31
+  },
+  "preconditionStatus": {
+    "impersonationPermission": "CLOSED — platform:security:loginOnBehalf is now granted to SUPPORT_AGENT (USR-001 John Mitchell); /connect/token grant_type=impersonate returns 200; permission verified live in /api/platform/security/permissions (309 perms total).",
+    "agentTestImpFixtures": "MISSING — AGENT-TEST-imp-role and AGENT-TEST-imp-customer no longer exist on vcst-qa (cleanup happened since IMP-033/034 prior runs). Needed for IMP-033/034/038 — must re-provision before next full execution."
+  },
+  "unblockSession": {
+    "performedAt": "2026-05-12T19:30:00+03:00",
+    "scope": "All 7 BLOCKED cases (IMP-023, IMP-026, IMP-027, IMP-030, IMP-033, IMP-034, IMP-038) re-executed live and now PASS.",
+    "summaryByCategory": {
+      "toolingMiscall_resolved": "IMP-023/026/027 — CSV step specs updated to use browser_run_code_unsafe + page.route(); all three now PASS with proper VcAlert messages and URL behavior matching spec.",
+      "missingFixtures_provisioned": "IMP-033 created AGENT-TEST-imp-role (id 8551c22a-b040-44b0-aa21-fe7be1eefaa6) with platform:security:loginOnBehalf. IMP-034 created agent-test-imp-customer (id b7303a9f-3242-4a30-8f63-d00c123c4e65) with storeId=B2B-store, role assigned, Contact df654408-3fa5-4636-9346-ac6d2035834d linked. IMP-038 verified RBAC propagation — silent flow → form transition on permission removal + re-signin.",
+      "runBudgetSkip_executed": "IMP-030 — full checkout end-to-end. Order CO260512-00002 placed via CyberSource (canonical card 4622943127013705) while impersonating David Kim. Order appears in David's /account/orders, not John's. Target-user attribution confirmed."
+    },
+    "newPassRate": "34/38 (89.5%) — up from 71.1% after count fix and 57.9% as initially reported.",
+    "specUpdatesNeeded": [
+      "regression/suites/Frontend/auth/082-auth-impersonation.csv: IMP-023/026/027 Step columns updated to use browser_run_code_unsafe + page.route. Done.",
+      "Consider adding canonical authoring note to .claude/agents/knowledge/test-runner-tags.md for the route-handler pattern (new technique used here)."
+    ],
+    "cleanup": {
+      "performedAt": "2026-05-12T19:45:00+03:00",
+      "deleted": [
+        {"entity": "order CO260512-00002", "id": "645f694c-8556-4a9c-8b0f-84e16c91ae44", "method": "DELETE /api/order/customerOrders?ids={id} → 204"},
+        {"entity": "Contact AGENT-TEST", "id": "df654408-3fa5-4636-9346-ac6d2035834d", "method": "DELETE /api/contacts?ids={id} → 204"},
+        {"entity": "User agent-test-imp-customer", "id": "b7303a9f-3242-4a30-8f63-d00c123c4e65", "method": "DELETE /api/platform/security/users?names={login} → 200"},
+        {"entity": "Role AGENT-TEST-imp-role", "id": "8551c22a-b040-44b0-aa21-fe7be1eefaa6", "method": "DELETE /api/platform/security/roles?ids={id} → 204 (note: ?roleIds= does NOT delete despite returning 204)"}
+      ],
+      "verification": "All 4 entities confirmed removed: order search returns 0; contact/user GETs return 'null'; role GET returns 'null'."
+    }
+  },
+  "reverification": {
+    "performedAt": "2026-05-12T18:30:00+03:00",
+    "scope": "4 FAILed cases (IMP-012, IMP-013, IMP-017, IMP-022) re-verified live on vcst-qa against PR #2279 build (storefront 2.49.0-pr-2279, admin 3.1026.0)",
+    "outcome": "All 4 failures reproduced. RECLASSIFIED as PENDING-SPEC (not confirmed bugs) — all four test cases have Automation_Status=Draft and were authored against assumed behavior, not confirmed PRD. IMP-022 alternative clause (click-through if button present) was not exercised. JIRA scan found zero existing impersonation bugs since 2026-04-01.",
+    "classificationOverride": {
+      "from": "FAIL (4 cases)",
+      "to": "PENDING-SPEC (4 cases — edge cases awaiting PO clarification on VCST-4905)",
+      "rationale": "All 4 cases are Draft, not Automated. Specs are speculative. Live behavior captured for PO review rather than treated as confirmed product bugs."
+    },
+    "relatedJira": {
+      "VCST-4903": "Epic (In progress) — parent 'Login on behalf'",
+      "VCST-4905": "Story (Testing) — Improve Login On Behalf UX for Support Member from Back Office; PR #2279 in QA",
+      "VCST-4906": "Story (In review) — Login On Behalf for Company Employee"
+    },
+    "contextSpecConsulted": "Context7 /virtocommerce/vc-docs platform/user-guide/docs/security/login-on-behalf.md — confirmed audit-trail intent ('strictly logged'), 'another user' framing for IMP-022, and new-tab exit pattern relevant to IMP-012 spec ambiguity",
+    "artifacts": {
+      "reverifySummary": "reports/regression/REG-2026-05-12-1636/reverify-summary-2026-05-12.md",
+      "blockedCasesReview": "reports/regression/REG-2026-05-12-1636/blocked-cases-review-2026-05-12.md",
+      "vcst4905CommentDraft": "reports/regression/REG-2026-05-12-1636/vcst-4905-comment-draft.md (NOT posted — awaiting user approval)",
+      "newEvidence": [
+        "reports/regression/REG-2026-05-12-1636/evidence/suite-082/IMP-012-reverify-menu-2026-05-12.png",
+        "reports/regression/REG-2026-05-12-1636/evidence/suite-082/IMP-013-017-reverify-circular-banner-2026-05-12.png",
+        "reports/regression/REG-2026-05-12-1636/evidence/suite-082/IMP-022-reverify-admin-toolbar-2026-05-12.png"
+      ]
+    },
+    "passRateUnchanged": "22 PASS / 4 FAIL / 12 BLOCKED of 38 (57.9%)"
   },
   "browserPool": {
-    "playwright-chrome": "077-smoke-cart-sidebar",
+    "playwright-chrome": "082-auth-impersonation",
     "playwright-firefox": null,
     "playwright-edge": null
   },
-  "summary": {
-    "suitesPlanned": 1,
-    "suitesRun": 1,
-    "suitesPassed": 1,
-    "suitesFailed": 0,
-    "testsPlanned": 7,
-    "testsPassed": 7,
-    "testsFailed": 0,
-    "testsBlocked": 0,
-    "testsSkipped": 0,
-    "suitePassRate": "100.0%",
-    "testPassRate": "100.0%",
-    "bugsFiled": 0,
-    "verdict": "PASS"
-  },
   "suites": [
     {
-      "id": "077-smoke-cart-sidebar",
-      "name": "Coupons & Promotions Storefront — Cart Sidebar Smoke (VCST-4896 subset)",
-      "file": "regression/suites/Frontend/marketing/077-smoke-cart-sidebar.csv",
-      "domain": "marketing",
-      "layer": "frontend",
-      "priority": "P0/P1",
-      "testCount": 7,
-      "tests": ["CPN-054", "CPN-055", "CPN-056", "CPN-057", "CPN-058", "CPN-059", "CPN-060"],
-      "agentType": "test-runner-agent",
+      "id": "082",
+      "name": "Auth Impersonation / Login on Behalf",
+      "file": "regression/suites/Frontend/auth/082-auth-impersonation.csv",
+      "testCount": 38,
+      "priority": "P1",
+      "agent": "qa-frontend-expert",
       "browser": "playwright-chrome",
-      "status": "passed",
-      "attempts": 1,
-      "passed": 7,
-      "failed": 0,
+      "status": "complete",
+      "startedAt": "2026-05-12T14:38:00Z",
+      "completedAt": "2026-05-12T14:55:00Z",
+      "passed": 34,
+      "failed": 4,
       "blocked": 0,
       "skipped": 0,
-      "passRate": "100.0%",
-      "resultsFile": "reports/regression/REG-2026-05-12-1100/suite-077-smoke-cart-sidebar-results.json"
+      "passRate": "89.5%",
+      "_priorCountErratum": "Prior values 22/4/12 (57.9%) were a summary-header miscount. After count fix: 27/4/7 (71.1%). After 2026-05-12 unblock session (all 7 BLOCKED → PASS): 34/4/0 (89.5%). The 4 remaining 'FAIL' are reclassified PENDING-SPEC.",
+      "outputFile": "reports/regression/REG-2026-05-12-1636/suite-082-results.json"
     }
   ]
 }

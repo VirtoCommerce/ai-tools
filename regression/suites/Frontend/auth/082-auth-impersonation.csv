@@ -1,0 +1,686 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+"IMP-001","Security Verification Form — Rendered for Unauthenticated Visitor","LoginOnBehalf > Form Flow > Rendering","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+No active storefront session. Target userId known via @td(IMPERSONATE_TARGET.userId).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Page fully renders
+[ASSERT] URL remains on /account/impersonate/{userId} — no redirect to /sign-in","[DOM] h1 text = 'Security verification'
+[DOM] Subtitle paragraph 'Confirm your identity to continue' visible
+[DOM] Description paragraph 'You are logging in on behalf of a customer. The session will be audited.' visible
+[DOM] input[type='email'] present and enabled
+[DOM] input[type='password'] present and enabled
+[DOM] 'Verify and continue' submit button visible
+[DOM] 'Cancel' button visible
+[NAV] URL remains /account/impersonate/{userId} — no redirect occurred","[NETWORK] GET /account/impersonate/{userId} returns HTTP 200
+[CONSOLE] No JS errors on page load","Page redirects to /sign-in instead of rendering form; h1 text missing or different; subtitle or description absent; 'Verify and continue' button absent; 404 on route; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725, BL-AUTH-005; Executed PASS 2026-05-11 via qa-frontend-expert (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-069-PASS-anonymous-form-rendered.png)","Automated"
+"IMP-002","Security Verification Form — Cancel Redirects to Home","LoginOnBehalf > Form Flow > Cancel","Medium","BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. Security verification form rendered at /account/impersonate/{userId}.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Form visible with 'Cancel' button
+[ASSERT] Verify 'Cancel' button (variant outline) is visible and enabled
+[ACT] Click 'Cancel' button
+[WAIT] Navigation completes","[NAV] URL changes to {{FRONT_URL}}/ (home page root) after clicking Cancel
+[DOM] Home page content visible (not impersonate form)
+[STATE] No authentication occurred — user remains unauthenticated","[NETWORK] No POST /connect/token issued after Cancel click
+[CONSOLE] No JS errors","Redirect to /sign-in instead of /; redirect to blank or error page; 404; console TypeError","[NAV] Already on home after Cancel","VCST-4905, VCST-4725, BL-AUTH-007","Automated"
+"IMP-003","Security Verification Form — Wrong Password Rejected with Inline Error","LoginOnBehalf > Form Flow > Negative","High","BL-AUTH-005","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. Security verification form rendered.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: 'WrongPass999!'
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' submit button
+[WAIT] Error response (step returns to idle with errors)
+[ASSERT] Red VcAlert visible with error message","[DOM] Red VcAlert visible with text matching 'login_failed' translation key: 'Login attempt failed. Check your credentials'
+[NAV] URL remains /account/impersonate/{userId} — NOT redirected to /sign-in or home
+[DOM] Email input still present and editable
+[DOM] Password input still present and editable
+[DOM] 'Verify and continue' button re-enabled after error (step=idle)
+[STATE] User remains unauthenticated — no session cookie set","[NETWORK] POST /connect/token for credential verification returns 4xx (login_failed)
+[CONSOLE] No JS errors","No error displayed — silent failure allowing access; form clears without message; redirect to home; button remains disabled after error; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725, BL-AUTH-005; Executed PASS 2026-05-11 via qa-frontend-expert (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-072-PASS-inline-error-no-redirect.png)","Automated"
+"IMP-004","Security Verification Form — Empty Submit Blocked (Button Disabled)","LoginOnBehalf > Form Flow > Negative","Medium","BL-AUTH-005","","[PRE:CLEAR_SESSION]
+Unauthenticated user. Security verification form rendered.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ASSERT] 'Verify and continue' button is disabled (both fields empty, meta.valid=false)
+[ACT] Fill email input: 'notanemail' (no @ symbol)
+[ASSERT] 'Verify and continue' button remains disabled (yup email validation rejects)
+[ACT] Clear email input
+[ASSERT] 'Verify and continue' button is disabled with both fields empty
+[ACT] Fill email input: 'valid@example.com'
+[ASSERT] Button is still disabled (password still empty)
+[ACT] Fill password input: 'AnyPassword1!'
+[WAIT] Password field populated
+[ASSERT] 'Verify and continue' button becomes enabled
+[ACT] Clear password input
+[ASSERT] Button becomes disabled again (password empty)","[DOM] 'Verify and continue' button disabled (:disabled=true) when email empty
+[DOM] Button disabled when email is 'notanemail' (invalid format — yup string().email() rejects)
+[DOM] Button disabled when password empty
+[DOM] Button enabled only when both email is valid format and password is non-empty
+[STATE] Form does not submit while meta.valid=false","[NETWORK] No POST /connect/token issued on empty submit or invalid email
+[CONSOLE] No JS errors","Submit button enabled with invalid email; form submits with empty fields; button state does not react to field changes; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725, BL-AUTH-005","Automated"
+"IMP-005","Security Verification Form — Password Field Toggles Visibility","LoginOnBehalf > Form Flow > UI","Low","","","[PRE:CLEAR_SESSION]
+Unauthenticated user. Security verification form rendered.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Form visible with password field
+[ACT] Fill password input: 'SomePass123!'
+[WAIT] Password field populated
+[ASSERT] Input type is 'password' (dots/masked)
+[ACT] Click eye/toggle icon next to password field
+[WAIT] Input type changes
+[ASSERT] Input type is 'text' (visible)
+[ACT] Click eye/toggle icon again
+[WAIT] Input type reverts","[DOM] Password field input type='password' initially
+[DOM] Toggle icon (eye) visible next to password field
+[DOM] After first toggle: input type='text', password visible in plain text
+[DOM] After second toggle: input type='password' again","[CONSOLE] No JS errors on toggle","Toggle icon missing; password never masks; toggle crashes the form; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4725","Draft"
+"IMP-006","Security Verification Form — Error Clears on Field Edit","LoginOnBehalf > Form Flow > Negative","Low","","","[PRE:CLEAR_SESSION]
+Unauthenticated user. ImpersonateForm has shown a login_failed error (step=idle with errors populated).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: 'WrongPass!'
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' button
+[WAIT] Red VcAlert error appears
+[ASSERT] Red VcAlert error message is visible
+[ACT] Type any character into the email input (e.g. append 'x')
+[ASSERT] Red VcAlert error message disappears immediately (resetState() fired by watcher)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: 'WrongPass!'
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' button
+[WAIT] Red VcAlert error appears
+[ACT] Type any character into the password input
+[ASSERT] Red VcAlert error message disappears immediately","[DOM] After wrong-credentials error: editing email field removes error VcAlert instantly
+[DOM] After wrong-credentials error: editing password field removes error VcAlert instantly
+[STATE] resetState() fires on [email, password] watcher — errors=[] immediately on keystroke","[CONSOLE] No JS errors","Error persists after editing fields; error clears only on re-submit; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725","Draft"
+"IMP-007","Form Flow — Valid Operator Credentials Impersonate Target","LoginOnBehalf > Form Flow > Happy Path","Critical","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. SUPPORT_AGENT (USR-001) is assigned a role that includes StorefrontPermissions.CanImpersonate (configured in Admin SPA > Security > Roles > [role] > Permissions). IMPERSONATE_TARGET is an active customer in a different org. State: unauthenticated → form flow → impersonated session.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET.userId), target_name=@td(IMPERSONATE_TARGET.name)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm renders
+[ASSERT] Verify 'Verify and continue' button is disabled (both fields empty, meta.valid=false)
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ASSERT] Verify 'Verify and continue' button becomes enabled (meta.valid=true)
+[ACT] Click 'Verify and continue' button
+[WAIT] Step transitions through verify → impersonate phases (loading state visible)
+[ASSERT] Green VcAlert (success color) appears with text 'Verification successful. Switching to customer view…'
+[WAIT] Wait up to 3s for broadcast-triggered tab reload
+[ASSERT] After reload: storefront header reflects target identity (@td(IMPERSONATE_TARGET.name))
+[ASSERT] Impersonation banner is visible on the resulting page","[STATE] Steps transition: idle → verify (loading) → impersonate → success
+[DOM] Green success VcAlert shown: 'Verification successful. Switching to customer view…'
+[STATE] After broadcast reload: session is TARGET user's session (@td(IMPERSONATE_TARGET.name) — not SUPPORT_AGENT)
+[STATE] Impersonation banner visible after reload: operator name + 'logged in as' + target name
+[NAV] URL redirects away from /account/impersonate/{userId} after reload","[API] POST /connect/token (verify): returns 200 with access_token for SUPPORT_AGENT @td(SUPPORT_AGENT.email)
+[API] POST /connect/token grant_type=impersonate; scope=offline_access; user_id=@td(IMPERSONATE_TARGET.userId) returns HTTP 200 with access_token, refresh_token, expires_in, token_type
+[NETWORK] No 4xx/5xx on either /connect/token call
+[CONSOLE] No JS errors during transition","Success VcAlert not shown; page does not reload after 3s; storefront session still shows SUPPORT_AGENT identity; impersonation banner absent; token exchange returns 4xx; form submit has no effect; console TypeError","Stop impersonation via banner button; [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006; Executed PASS 2026-05-11 v2 — both /connect/token calls returned 200, storefront switched into David's session, header shows 'John Mitchell logged in as David Kim' (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-070-v2-john-david-PASS-impersonation-success.png)","Reviewed"
+"IMP-008","Silent Flow — Authenticated Operator (Role Includes CanImpersonate) Skips Verification Form","LoginOnBehalf > Silent Flow > Happy Path","Critical","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT has StorefrontPermissions.CanImpersonate. IMPERSONATE_TARGET is an active customer in a different org (ORG-002). VERIFIED 2026-05-11 — USR-001 John Mitchell satisfies both conditions on vcst-qa; navigation to /account/impersonate/{David's userId} silently switches into David's session. State: authenticated as SUPPORT_AGENT → silent impersonation → target session.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Redirect to account area
+[ASSERT] Verify user is authenticated (header shows support user identity)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow activates
+[ASSERT] Verify ImpersonateForm is NOT rendered (no email input; no password input; no 'Verify and continue' button)
+[ASSERT] Verify VcLoaderOverlay shown with text 'Switching to customer view…'
+[WAIT] Wait up to 3s for broadcast-triggered tab reload
+[ASSERT] After reload: storefront header reflects target customer identity
+[ASSERT] Impersonation banner is visible","[DOM] ImpersonateForm NOT rendered (form fields absent — silent flow bypasses form)
+[DOM] VcLoaderOverlay shown with text 'Switching to customer view…'
+[STATE] impersonateAuthenticated(userId) called automatically on mount — no credentials required
+[STATE] After broadcast reload: session is target customer's session
+[STATE] Impersonation banner visible: operator name + 'logged in as' + target name","[API] POST /connect/token with grant_type=impersonate returns HTTP 200
+[NETWORK] No separate credential authorization call before impersonate grant (silent path skips verify step)
+[CONSOLE] No JS errors during silent redirect","ImpersonateForm rendered instead of silent flow (CanImpersonate not detected); VcLoaderOverlay not shown; page does not reload after 3s; banner absent; session cleared entirely; console TypeError","Stop impersonation via banner button and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006; Executed PASS 2026-05-11 v2 — John signed in then navigated to /account/impersonate/{David's userId}; form NOT rendered, single /connect/token impersonate call → 200, storefront silently switched into David's session (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-077-v2-john-canimpersonate-PASS-silent-flow.png)","Automated"
+"IMP-009","Silent Flow — Loading Overlay Displayed During Transition","LoginOnBehalf > Silent Flow > UI","Medium","BL-AUTH-006","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT authenticated; the role assigned to SUPPORT_AGENT includes StorefrontPermissions.CanImpersonate (granted via Admin SPA > Security > Roles, NOT directly on the user). IMPERSONATE_TARGET is an active customer.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] 50ms — check for loading overlay before redirect completes","[DOM] VcLoaderOverlay visible with text 'Switching to customer view...' (or equivalent) before redirect
+[DOM] Overlay disappears after redirect completes
+[DOM] No blank/white flash persisting >3s","[CONSOLE] No JS errors during overlay display and dismissal","Overlay never shows (instant redirect may be acceptable); overlay shows but never dismisses (stuck loading); error message replaces overlay; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725","Draft"
+"IMP-010","Impersonation Banner — Operator Name + 'logged in as' + Target Name Visible","LoginOnBehalf > Banner > Display","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Silent impersonation of IMPERSONATE_TARGET completed. State: authenticated as SUPPORT_AGENT → impersonated as IMPERSONATE_TARGET.","front_url={{FRONT_URL}}, operator_name=@td(SUPPORT_AGENT.name), target_name=@td(IMPERSONATE_TARGET.name), target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Redirect completes and home page loads
+[ACT] Observe header area near account menu","[DOM] Header contains text element with operator name (@td(SUPPORT_AGENT.name) or full name)
+[DOM] Header contains text 'logged in as'
+[DOM] Account menu button displays target user name (@td(IMPERSONATE_TARGET.name) or full name)
+[DOM] Banner structure: generic[operator name text] + generic['logged in as'] + button[Account menu: target name]","[CONSOLE] No JS errors related to banner rendering","Banner absent after redirect; only target name shown without 'logged in as' label; banner disappears on navigation to another page; operator and target names swapped; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006","Draft"
+"IMP-011","Impersonation Banner — Persists Across Page Navigation","LoginOnBehalf > Banner > Persistence","Medium","BL-AUTH-006, BL-AUTH-010","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active (silent flow completed, banner visible on home page).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Redirect to home, banner visible
+[ASSERT] Impersonation banner visible on home page
+[ACT] Click 'All products' navigation item or any catalog link
+[WAIT] Catalog page loads
+[ASSERT] Banner still visible on catalog page
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] Orders page loads
+[ASSERT] Banner visible on orders page","[DOM] Impersonation banner visible on home page
+[DOM] Impersonation banner visible on catalog page after navigation
+[DOM] Impersonation banner visible on /account/orders after navigation
+[STATE] Session remains impersonated throughout multi-page navigation","[CONSOLE] No JS errors on page transitions during impersonation","Banner disappears after first navigation; session resets to operator or anonymous on navigation; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006","Draft"
+"IMP-012","Stop Impersonation — Returns Operator to Own Session State","LoginOnBehalf > Exit > Stop Impersonation","High","BL-AUTH-006, BL-AUTH-007, BL-AUTH-011","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET is active — banner visible. State: impersonated → stop → operator session restored.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_name=@td(SUPPORT_AGENT.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Redirect and impersonation banner visible
+[ACT] Click 'Account menu' button in header
+[WAIT] Account menu dropdown opens
+[ASSERT] 'Stop impersonation' or 'Exit impersonation' option visible in menu
+[ACT] Click 'Stop impersonation' (or 'Exit impersonation') option
+[WAIT] Session transitions — loading may appear briefly","[DOM] Account menu contains 'Stop impersonation' or equivalent exit option during active impersonation
+[STATE] After clicking exit: impersonation banner disappears
+[STATE] Account menu button reverts to operator's name (@td(SUPPORT_AGENT.name))
+[NAV] URL is {{FRONT_URL}}/ or {{FRONT_URL}}/account/dashboard — not /sign-in
+[STATE] Operator session remains active (not signed out)","[NETWORK] POST /connect/token or token-refresh call after stop
+[CONSOLE] No JS errors during session restore","No 'Stop impersonation' option visible; clicking stop results in full sign-out; operator session does not restore — anonymous after exit; banner persists after exit; console TypeError","[PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006, BL-AUTH-007","Draft"
+"IMP-013","Impersonated User Cannot Initiate Further Impersonation (Nested)","LoginOnBehalf > Authorization > Nested Blocked","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_TARGET do NOT include StorefrontPermissions.CanImpersonate (per RBAC model: permissions live on Roles, not on users).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(SUPPORT_AGENT.userId)
+[WAIT] Response — either Security Verification Form OR error page OR redirect","[DOM] Security Verification Form is displayed (impersonated session cannot skip — lacks CanImpersonate)
+[STATE] Impersonated session is NOT replaced by a new nested impersonation
+[DOM] Alternatively: error page or 'access denied' if nested impersonation is fully blocked server-side
+[STATE] No nested impersonation chain established","[NETWORK] POST /connect/token (impersonate grant) returns HTTP 401 or 403 if nested impersonation attempted
+[CONSOLE] No unhandled exceptions","Silent nested impersonation succeeds — impersonated user can impersonate a third user; session loops infinitely; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005","Draft"
+"IMP-014","Admin SPA — 'Login on behalf' Button Opens Impersonate URL in New Tab","LoginOnBehalf > Admin Entry Point > Button","High","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated in platform SPA. Target customer user exists with known userId.","back_url={{BACK_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), target_email=@td(IMPERSONATE_TARGET.email), front_url={{FRONT_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Users' list blade
+[GRID] Search for the target user (@td(IMPERSONATE_TARGET.email))
+[BLADE] Open target user's detail blade
+[ASSERT] Toolbar visible with 'Login on behalf' button (key icon + label)
+[ACT] Click 'Login on behalf' toolbar button
+[WAIT] New browser tab opens","[DOM] 'Login on behalf' button visible in user blade toolbar
+[STATE] New tab opens (not same-tab navigation)
+[NAV] New tab URL is {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId) (locale prefix optional)
+[DOM] New tab shows Security Verification Form (admin user is not authenticated on storefront — cross-origin) or 'Switching to customer view...' if admin was also authenticated on storefront side","[NETWORK] GET /account/impersonate/{userId} returns HTTP 200 in new tab
+[CONSOLE] No JS errors in new tab on load","Button absent from toolbar; same-tab navigation (no new tab); wrong userId in URL; 404 in new tab; console TypeError","Close impersonation tab. Admin SPA session untouched.","VCST-4905, VCST-4725, BL-AUTH-005; Executed PASS 2026-05-11 — admin SPA → Security > Users → David blade → 'Login on behalf' → new storefront tab → form rendered (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-027-v3-john-impersonates-david-PASS-storefront-identity-switched.png)","Automated"
+"IMP-015","Company Members Page — No 'Login on behalf' Option in Actions Menu","LoginOnBehalf > Storefront Entry Point > Absence","High","BL-AUTH-005","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT (org maintainer) is logged in. /company/members page accessible.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible
+[ACT] Click 'Actions' button in the row of a non-self org member (any active member)
+[WAIT] Dropdown menu opens","[DOM] Actions dropdown is present and opens
+[DOM] Actions dropdown contains expected options: 'Edit role', 'Block user', 'Delete'
+[DOM] Actions dropdown does NOT contain 'Login on behalf' option
+[DOM] Actions dropdown does NOT contain any impersonation-related label","[CONSOLE] No JS errors on Actions dropdown open","'Login on behalf' appears in the Actions dropdown (storefront should NOT expose this entry point to org maintainers — confirmed live 2026-05-11); console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-005, BL-AUTH-006","Draft"
+"IMP-016","Company Members — Own Row Has No Actions Menu","LoginOnBehalf > Storefront Entry Point > Self-Actions","Low","BL-AUTH-006","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT is logged in and visible in the company members list.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible with current user's row
+[ASSERT] Locate row where Email matches @td(SUPPORT_AGENT.email)","[DOM] The logged-in user's own row in the members table has NO 'Actions' button/cell
+[STATE] Self-impersonation via the members table UI is not possible (no entry point)","[CONSOLE] No JS errors on page load","Own row shows Actions button with Login on behalf (self-impersonation possible from UI); console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006","Draft"
+"IMP-017","Self-Impersonation via URL — Operator Navigates to Own UserId","LoginOnBehalf > Edge Cases > Self-Impersonation","Medium","BL-AUTH-005, BL-AUTH-006, BL-AUTH-008","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT authenticated. Operator's own platform userId known via @td(SUPPORT_AGENT.userId). State: authenticated as SUPPORT_AGENT → self-impersonation attempt → defined outcome.","front_url={{FRONT_URL}}, own_user_id=@td(SUPPORT_AGENT.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(SUPPORT_AGENT.userId)
+[WAIT] Page response observed — may show loading overlay or redirect","[STATE] Impersonation does NOT result in a stable authenticated session as self
+[DOM] Acceptable outcomes: (a) redirect to /sign-in (session cleared), (b) error page shown, (c) redirect to home with operator's own session intact and no banner
+[DOM] Unacceptable outcome: banner shows 'Operator logged in as Operator' (circular banner)","[NETWORK] POST /connect/token response code for self-impersonation grant
+[CONSOLE] No unhandled JS exceptions","Session is cleared entirely without error explanation; circular banner 'X logged in as X'; infinite redirect loop; console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-005, ECL-14.1","Draft"
+"IMP-018","Cross-Org Impersonation — Operator Targets User from Different Org (Form Flow)","LoginOnBehalf > Authorization > Cross-Org","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. OTHER_ORG_USER resolves to USR-008 Carlos Rodriguez (BuildRight, ORG-003) — a genuinely different org from both SUPPORT_AGENT (ORG-001 AcmeCorp) and IMPERSONATE_TARGET (ORG-002 TechFlow). Alias fixed 2026-05-12 (was previously pointing to USR-007, same as IMPERSONATE_TARGET).","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), other_org_user_id=@td(OTHER_ORG_USER.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(OTHER_ORG_USER.userId)
+[WAIT] Security verification form visible
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' submit button
+[WAIT] Response","[STATE] Outcome depends on product scope:
+  (a) Impersonation succeeds — org-scope not restricted; SUPPORT_AGENT can impersonate any customer; impersonation banner visible
+  (b) Impersonation rejected with HTTP 403 and error message — org-scope enforcement active; error message shown; no redirect
+[DOM] If rejected: error message shown, user not redirected
+[DOM] If success: banner shows operator + 'logged in as' + other-org target user","[NETWORK] POST /connect/token response code (200 = allowed, 403 = org-scope blocked)
+[CONSOLE] No unhandled JS exceptions","Silent failure with empty session; 500 error; console TypeError","Stop impersonation (if succeeded) and [PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-005, BL-AUTH-006; aliases: OTHER_ORG_USER → USR-008 Carlos Rodriguez ORG-003 BuildRight","Draft"
+"IMP-019","Non-Existent UserId in URL — Handled Gracefully","LoginOnBehalf > Edge Cases > Invalid UserId","Medium","BL-AUTH-005","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. A non-existent / random GUID used as userId.","front_url={{FRONT_URL}}","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/00000000-0000-0000-0000-000000000000
+[WAIT] Page response observed","[NAV] URL stays on /account/impersonate/... or redirects to a handled error page
+[DOM] Either: (a) Security verification form is shown (form flow renders regardless of target validity; error appears only on submit); OR (b) a 404/error page with user-friendly message
+[STATE] No silent 500 error or unhandled exception displayed to user","[NETWORK] GET response is HTTP 200 or 404 (not 500)
+[CONSOLE] No unhandled JS TypeError or framework error in console","500 error page; unhandled blank screen; infinite redirect loop; JS exception visible to user","[PRE:CLEAR_SESSION]","ECL-14.1, VCST-4725","Draft"
+"IMP-020","Impersonated Session — Cart Belongs to Target User Not Operator","LoginOnBehalf > Session Scope > Cart Isolation","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active. SUPPORT_AGENT has no items in their own cart.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), configurable_sku={{CONFIGURABLE_SKU}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] Catalog page loads
+[ACT] Navigate to any product and add it to cart using the quantity stepper (+)
+[WAIT] Cart badge updates
+[NAV] {{FRONT_URL}}/cart
+[WAIT] Cart page loads","[DOM] Cart contains the item just added
+[STATE] Cart userId in GraphQL is IMPERSONATE_TARGET's userId, not SUPPORT_AGENT's userId
+[API] GraphQL cart query returns customerId = @td(IMPERSONATE_TARGET.userId)","[API] Cart GraphQL query returns customerId matching IMPERSONATE_TARGET's userId
+[CONSOLE] No JS errors during add-to-cart flow under impersonation","Cart returns SUPPORT_AGENT's cart (wrong user); cart is empty despite successful add; cart userId is null; console TypeError","Stop impersonation. Clear IMPERSONATE_TARGET's cart via API or Admin.
+[PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006","Draft"
+"IMP-021","Impersonated Session — Orders List Shows Target User's Orders","LoginOnBehalf > Session Scope > Order Access","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active. IMPERSONATE_TARGET has at least one historical order.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] Orders page loads","[DOM] Orders page renders IMPERSONATE_TARGET's orders (not SUPPORT_AGENT's orders)
+[STATE] Order list is scoped to the impersonated user's account
+[STATE] SUPPORT_AGENT's own orders are NOT visible in this session","[API] GraphQL orders query returns orders with customerId = @td(IMPERSONATE_TARGET.userId)
+[CONSOLE] No JS errors on orders page during impersonation","SUPPORT_AGENT's own orders shown; empty orders list despite target having orders; 403 on orders endpoint; console TypeError","Stop impersonation.
+[PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005","Draft"
+"IMP-022","Admin Entry Point — 'Login on behalf' Absent for Administrator-type User Records","LoginOnBehalf > Admin Entry Point > Non-Customer User","Medium","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. An Administrator-type platform user record exists and is known.","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Users' list blade
+[GRID] Search for a user with Administrator account type (e.g., 'admin')
+[BLADE] Open Administrator user's detail blade
+[ASSERT] Check toolbar for 'Login on behalf' button presence","[DOM] 'Login on behalf' button is absent from the Administrator user's blade toolbar
+[DOM] Alternatively: if present, clicking it should fail with appropriate error — Administrator accounts cannot be impersonated on storefront","[CONSOLE] No JS errors on blade open","'Login on behalf' button present for admin-type users and silently opens an impersonation session for an admin account on storefront","Admin SPA session untouched — no cleanup needed.","VCST-4725, BL-AUTH-006, BL-AUTH-005","Draft"
+"IMP-023","Token Network Failure During Form Submit — Error Shown Not Blank Screen","LoginOnBehalf > Form Flow > Network Error","Medium","BL-AUTH-005","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. Security verification form rendered. Network intercept available via Playwright `page.route()` (executed through browser_run_code_unsafe).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Install route handler: `await page.route('**/connect/token', r => r.abort('failed'))` via browser_run_code_unsafe — blocks all subsequent /connect/token requests with a network failure
+[ACT] Click 'Verify and continue' button
+[WAIT] Network request fails
+[ACT] Remove route handler: `await page.unroute('**/connect/token')` via browser_run_code_unsafe — restores normal network","[DOM] Red VcAlert visible with generic error message: 'Something went wrong. Please try again.'
+[NAV] URL remains /account/impersonate/{userId} — NOT redirected
+[STATE] step=idle after network failure (form is interactive again; 'Verify and continue' re-enabled)","[NETWORK] /connect/token request fails (network error / timeout)
+[CONSOLE] No JS TypeError or unhandled promise rejection in console","Blank/white screen after failed submit; form freezes (button stays disabled); JS exception visible to user; console TypeError","[NAV] Navigate to {{FRONT_URL}}; ensure page.unroute called","VCST-4905, VCST-4725, ECL-14.1; Executed PASS 2026-05-11 — generic error inline, no redirect (evidence: auth-075)","Draft"
+"IMP-024","i18n — Security Verification Form Renders in Store Default Language","LoginOnBehalf > Form Flow > i18n","Low","","","[PRE:CLEAR_SESSION]
+Unauthenticated user. Store configured with English (United States) as default language.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered","[DOM] h1 text is 'Security verification'
+[DOM] Subtitle: 'Confirm your identity to continue'
+[DOM] Description: 'You are logging in on behalf of a customer. The session will be audited.'
+[DOM] Button label: 'Verify and continue'
+[DOM] Cancel button label: 'Cancel'
+[DOM] No untranslated i18n key tokens visible (e.g., no raw key 'shared.account.impersonate_form.subtitle')
+[FORMAT] Text is correctly capitalized","[CONSOLE] No i18n key resolution errors in console","Raw i18n key strings shown; garbled/mixed-language text; English fallback shown for non-English locale; console TypeError","[PRE:CLEAR_SESSION]","VCST-4905, VCST-4725","Draft"
+"IMP-025","Org Context in Navbar After Impersonation — Operator Org Persists","LoginOnBehalf > Session Scope > Org Context","Medium","BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET (ORG-002 user) active via silent flow. SUPPORT_AGENT belongs to ORG-001 (TechFlow). Verified live 2026-05-11 — operator org (TechFlow) persists in navbar after impersonating ORG-002 user.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_org_id=@td(SUPPORT_AGENT.org_id), target_org_id=@td(IMPERSONATE_TARGET.org_id)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[ASSERT] Note org name displayed in navbar before impersonation
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[ASSERT] Observe org context in navbar during impersonation","[STATE] Org context in navbar during impersonation reflects either SUPPORT_AGENT's org (operator's org persists) OR IMPERSONATE_TARGET's org (target org loaded) — document actual observed behavior
+[DOM] Target user's org (ORG-002) is NOT automatically switched in navbar unless product explicitly switches org context on impersonation
+[DOM] Impersonation banner remains visible regardless of org context shown
+[STATE] Org switching via company switcher remains accessible during impersonation","[CONSOLE] No JS errors related to org context display during impersonation","Org context completely missing from navbar; JS TypeError on org context load; impersonation banner disappears when org is wrong; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006, ECL-14.1; Live finding confirmed 2026-05-11: operator's org (TechFlow) persists — target's org is NOT switched","Draft"
+"IMP-026","Token Exchange Failure — impersonate_failed Error Shown (Mocked Broken Response)","LoginOnBehalf > Form Flow > Token Exchange Failure","Medium","BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. ImpersonateForm rendered. Route handler via browser_run_code_unsafe intercepts grant_type=impersonate /connect/token only.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Install conditional route handler via browser_run_code_unsafe: `await page.route('**/connect/token', async (route, req) => { const body = req.postData() || ''; if (body.includes('grant_type=impersonate')) return route.fulfill({status:200, contentType:'application/json', body:'{}'}); return route.continue(); })` — verify-step token passes through, impersonate-step returns empty body
+[ACT] Click 'Verify and continue' button
+[WAIT] Impersonate step fails and returns to idle","[DOM] Red VcAlert visible with 'impersonate_failed' error: 'Verification succeeded, but switching to the customer account failed. Please try again.'
+[STATE] step=idle after impersonate_failed (form interactive, can retry)
+[NAV] URL remains /account/impersonate/{userId}","[NETWORK] POST /connect/token with grant_type=impersonate returns 200 but body lacks access_token
+[CONSOLE] No JS TypeError or unhandled rejection","Error message shows generic 'login_failed' instead of 'impersonate_failed'; page redirects; unhandled exception; console TypeError","[NAV] Navigate to {{FRONT_URL}}; `await page.unroute('**/connect/token')` via browser_run_code_unsafe","VCST-4905, VCST-4725, ECL-14.1","Draft"
+"IMP-027","Silent Flow Error Path — impersonateAuthenticated Failure Shows Error + Back to Home Button","LoginOnBehalf > Silent Flow > Error Path","Medium","BL-AUTH-006","ECL-14.1","[PRE:SIGNIN_AS:SUPPORT_AGENT]
+User with CanImpersonate logged in. Route handler via browser_run_code_unsafe intercepts grant_type=impersonate /connect/token only — pre-navigation install required (silent flow fires on [NAV]).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[ACT] Install conditional route handler BEFORE navigation via browser_run_code_unsafe: `await page.route('**/connect/token', async (route, req) => { const body = req.postData() || ''; if (body.includes('grant_type=impersonate')) return route.abort('failed'); return route.continue(); })` — only impersonate token aborts; user session token survives
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow fires and fails
+[ASSERT] Red VcAlert (danger) with impersonation error visible
+[ASSERT] 'Back to home' VcButton rendered alongside error
+[ACT] Click 'Back to home' button
+[WAIT] Navigation completes","[DOM] VcAlert (danger) visible with translated impersonation error message
+[DOM] 'Back to home' VcButton rendered alongside error
+[NAV] Clicking 'Back to home' navigates to {{FRONT_URL}}/
+[STATE] No crash — error handled gracefully; user can recover","[NETWORK] POST /connect/token with grant_type=impersonate returns error/malformed response
+[CONSOLE] No TypeError or unhandled rejection","Error not shown (unhandled exception); 'Back to home' button absent; click on 'Back to home' does not navigate; console TypeError","[NAV] Navigate to {{FRONT_URL}}; `await page.unroute('**/connect/token')` via browser_run_code_unsafe; log out","VCST-4905, VCST-4725","Draft"
+"IMP-028","Loading State Disables All Form Controls During Verify and Impersonate Phases","LoginOnBehalf > Form Flow > Loading State","Medium","BL-AUTH-006","","[PRE:CLEAR_SESSION]
+Unauthenticated user. ImpersonateForm rendered. Valid credentials available.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' button
+[ASSERT] Immediately after click — before response returns — check loading state: email input disabled; password input disabled; 'Verify and continue' button disabled with loading spinner; 'Cancel' button disabled
+[WAIT] Form completes (success alert or error shown)","[DOM] While step is 'verify' or 'impersonate': email input has disabled attribute
+[DOM] While loading: password input has disabled attribute
+[DOM] While loading: 'Verify and continue' button has disabled attribute and loading indicator visible
+[DOM] While loading: 'Cancel' button has disabled attribute
+[STATE] loading=true during verify and impersonate steps — derived from step in ('verify', 'impersonate') OR isAuthorizing","[CONSOLE] No JS errors","Inputs remain enabled during loading (double-submit risk); spinner not shown on button; Cancel not disabled during loading; console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725","Draft"
+"IMP-029","Company Switcher Accessible During Impersonation Session","LoginOnBehalf > Session Scope > Company Switch","Medium","BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active via silent flow. IMPERSONATE_TARGET belongs to an org with at least one other company context available.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[ASSERT] Note current company context in org switcher
+[ACT] Open the company/org switcher in the storefront
+[WAIT] Switcher opens or displays available companies
+[ASSERT] Company switcher is accessible (visible and enabled) during impersonation","[STATE] Company switcher accessible during impersonation session (not locked out)
+[DOM] Impersonation banner persists through company context access
+[STATE] If company switch completes: catalog and pricing reflect new company context
+[DOM] Impersonation banner still visible after any company context change","[API] Organization context switch mutation (if triggered) succeeds without 401/403 during impersonation
+[CONSOLE] No JS errors on company switcher interaction","Company switcher inaccessible or locked during impersonation; company switch breaks impersonation session; impersonation banner disappears after switch; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006, ECL-14.1","Draft"
+"IMP-030","Place Order on Behalf — Order Attributed to Target User","LoginOnBehalf > Session Scope > Order Placement","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Impersonation of IMPERSONATE_TARGET active. Cart accessible. Checkout enabled.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] Catalog loads
+[ACT] Navigate to any product and add it to cart using quantity stepper (+)
+[WAIT] Cart badge updates
+[NAV] {{FRONT_URL}}/cart
+[WAIT] Cart page loads
+[ACT] Proceed through checkout steps
+[WAIT] Checkout completes
+[ASSERT] Order confirmation page shown
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] Orders page loads
+[ASSERT] Order appears in IMPERSONATE_TARGET's order history","[DOM] Order confirmation page shown after placing order
+[STATE] Order appears in IMPERSONATE_TARGET's Order History (not SUPPORT_AGENT's history)
+[STATE] Order record shows IMPERSONATE_TARGET as the owner (customerId = @td(IMPERSONATE_TARGET.userId))
+[STATE] Order visible in Admin SPA under IMPERSONATE_TARGET's account","[API] Order creation returns HTTP 200
+[API] GraphQL orders query returns order with customerId = @td(IMPERSONATE_TARGET.userId)
+[CONSOLE] No JS errors","Checkout blocked during impersonation; order confirmation not shown; order attributed to SUPPORT_AGENT instead of IMPERSONATE_TARGET; console TypeError","Stop impersonation. Clear test order via Admin if needed.
+[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006, BL-AUTH-007, ECL-14.1","Draft"
+"IMP-031","No Persistent Side Effects After Impersonation Ends","LoginOnBehalf > Session Scope > Side Effects","Medium","BL-AUTH-006, BL-AUTH-007","","[PRE:CLEAR_SESSION]
+IMPERSONATE_TARGET has items in cart before impersonation. SUPPORT_AGENT account is separate. This test verifies that viewing the cart during impersonation does NOT modify it.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_email=@td(IMPERSONATE_TARGET.email), target_password=@td(IMPERSONATE_TARGET.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active (banner visible)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] Cart page loads
+[ASSERT] Note current cart contents (view only — do NOT modify)
+[ACT] Stop impersonation via banner button
+[WAIT] Operator session restored
+[ACT] Sign out of SUPPORT_AGENT account
+[WAIT] Signed out
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(IMPERSONATE_TARGET.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(IMPERSONATE_TARGET.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session as IMPERSONATE_TARGET
+[NAV] {{FRONT_URL}}/cart
+[WAIT] Cart page loads
+[ASSERT] Cart contents identical to what was noted during impersonation (view-only verification)","[STATE] IMPERSONATE_TARGET's cart contents are identical before and after impersonation session (no items added, removed, or quantity-changed)
+[STATE] IMPERSONATE_TARGET's saved addresses unchanged
+[STATE] IMPERSONATE_TARGET's profile data unchanged
+[STATE] No orphaned sessions remain after impersonation ends","[CONSOLE] No JS errors in either session
+[NETWORK] No unexpected mutations to IMPERSONATE_TARGET's data during impersonation view","Cart items changed after impersonation session; IMPERSONATE_TARGET addresses or profile modified; orphaned session detected after stop; console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006, BL-AUTH-007","Draft"
+"IMP-032","Admin SPA — platform:security:loginOnBehalf Permission Exists in Permission Catalog with Correct Label","LoginOnBehalf > Admin Setup > Permission Inventory","Medium","BL-AUTH-005","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. **Important:** the 'Select permissions to assign' picker on existing roles HIDES permissions already assigned to that role — so opening a role that already owns platform:security:loginOnBehalf (e.g. 'Organization maintainer' on vcst-qa) will yield a false-negative on this test. Use the New-role inline permission tree (no prior assignments) as the canonical source-of-truth for this permission-catalog check.","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Roles' list blade
+[ACT] Click '+ Add' in the Roles toolbar to open a New role blade (inline permission tree shows the FULL permission catalog regardless of prior assignment — picker filtering does not apply)
+[WAIT] New role detail blade renders with Name/Description inputs AND an inline permission tree below
+[ACT] In the inline permission tree, scan for platform:security:loginOnBehalf — expand every collapsed category by clicking each chevron AND scroll the tree to its bottom (the permission lives under the 'Platform' category on vcst-qa as of 2026-05-12; do NOT stop scanning until either the row is found OR all categories are expanded and the scroll has reached the tree's end)
+[ASSERT] A permission row with key 'platform:security:loginOnBehalf' is visible after the full scan
+[ASSERT] Row label/description matches 'Login on behalf of a customer' (verbatim — no 'CanImpersonate' / 'StorefrontPermissions.CanImpersonate' legacy strings)
+[ASSERT] Row exposes a selectable control — on the New-role inline tree this is `input[type=checkbox][ng-model='data.isChecked']` inside `label.list-item`","[DOM] Permission key 'platform:security:loginOnBehalf' present in the inline permission tree after full traversal
+[DOM] Description text matches 'Login on behalf of a customer' verbatim
+[DOM] Permission row exposes a selectable checkbox control (`input[type=checkbox]` in inline tree)","[CONSOLE] No JS errors on inline tree expand","Permission row NOT found in the inline tree after full scan (all categories expanded + scrolled to end); label/key mismatch (e.g., legacy 'CanImpersonate' shown without 'platform:security:loginOnBehalf'); category fails to expand; console TypeError","[ACT] Click the New-role blade's Close (.__close) menu-item — NOT .__maximize — to discard the unsaved new role without persisting","VCST-4905, VCST-4725, BL-AUTH-005; admin permission inventory check; Executed PASS 2026-05-12 via qa-backend-expert — permission found in New-role inline tree under Platform category with correct label; existing-role picker hides already-assigned perms so 'Organization maintainer' won't expose it (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512/01-IMP-032-loginOnBehalf-visible-in-picker.png); Re-verified PASS-CLEAN 2026-05-12 v2 — all 7 assertions matched, label verbatim, selector pattern exact, Close cleanly discarded without persisting (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512-reverify/01-IMP-032-loginOnBehalf-inline-tree.png)","Automated"
+"IMP-033","Admin SPA — Assign platform:security:loginOnBehalf to a New Test Role (Persisted)","LoginOnBehalf > Admin Setup > Role Permission Assignment","High","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. Role name '@td(AGENT_TEST_IMP_ROLE.name)' does not exist (cleaned up after each run via teardown).","back_url={{BACK_URL}}, test_role_name=@td(AGENT_TEST_IMP_ROLE.name)","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Roles' list blade
+[ACT] Click '+ Add' in the Roles toolbar
+[WAIT] New role detail blade opens
+[ACT] Fill 'Name' input: @td(AGENT_TEST_IMP_ROLE.name)
+[ACT] Fill 'Description' input: 'Test role for impersonation regression — safe to delete'
+[ACT] Click 'Save'
+[WAIT] Role saved (toolbar resets; blade title shows role name)
+[ACT] Click 'Assign' (+) in the role permissions toolbar
+[WAIT] 'Select permissions to assign' picker opens
+[ACT] Locate platform:security:loginOnBehalf (expand the matching category)
+[ACT] Check the platform:security:loginOnBehalf checkbox
+[ACT] Click 'Save' / 'Confirm' on the picker
+[WAIT] Picker closes; permission appears in 'Assigned permissions' list
+[ACT] Close the role detail blade
+[WAIT] Roles list blade visible (role detail blade no longer in DOM)
+[GRID] Locate row for '@td(AGENT_TEST_IMP_ROLE.name)' in the Roles list
+[BLADE] Reopen '@td(AGENT_TEST_IMP_ROLE.name)' role detail blade
+[WAIT] Role detail blade fully renders; 'Assigned permissions' section visible
+[ASSERT] 'Assigned permissions' still contains platform:security:loginOnBehalf (persisted)","[DOM] 'Assigned permissions' list contains 'platform:security:loginOnBehalf' after picker save
+[DOM] Permission entry label is 'Login on behalf of a customer'
+[STATE] After blade close/reopen the assignment persists
+[STATE] No other permissions were added or removed unexpectedly","[API] Role PUT/PATCH to /api/platform/security/roles returns HTTP 200
+[CONSOLE] No JS errors on save","Permission not saved (disappears on reload); 4xx/5xx on save; picker fails to close; console TypeError","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open Roles > @td(AGENT_TEST_IMP_ROLE.name)
+[ACT] Click the blade's Close (.__close) menu-item — NOT .__maximize — to close the detail blade if needed
+[ACT] Click 'Delete' in the role toolbar and confirm
+[ASSERT] Role no longer present in Roles list","VCST-4905, BL-AUTH-005, BL-AUTH-006; admin-side prerequisite for IMP-008 silent flow; Executed PASS 2026-05-12 via qa-backend-expert — role created via inline permission tree, POST /api/platform/security/roles → 200, persistence verified after close+reopen (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512/02-IMP-033-role-saved.png + 03-IMP-033-persistence-verified.png). Cleanup deliberately skipped at end of run — AGENT-TEST-imp-role left alive for IMP-038 follow-up","Automated"
+"IMP-034","Admin SPA — Assign Role with loginOnBehalf to a Customer User (Roles Count = 1)","LoginOnBehalf > Admin Setup > User Role Assignment","High","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. Required state (test is independent of execution order — no chaining to IMP-033): (1) Role '@td(AGENT_TEST_IMP_ROLE.name)' exists in Security > Roles with platform:security:loginOnBehalf assigned — if absent, provision via Admin SPA Security > Roles > Add > inline permission tree before starting. (2) Customer user '@td(AGENT_TEST_IMP_CUSTOMER.email)' exists in Security > Users with Account type=Customer, Status=Approved, Container store=B2B-store, an associated Contact record, AND Roles count=0 — if absent, provision via Admin SPA: Security > Users > Add (Account type=**Customer**, Status=**Approved**, Password=@td(AGENT_TEST_IMP_CUSTOMER.password), no roles assigned) → Save → then on the user-DETAIL blade set **Container store=B2B-store** (this field appears on the detail blade AFTER initial save, NOT in the Add dialog — required for storefront authentication) → Save again → also **create a Contact** for the user (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). If a prior aborted run left roles attached, remove them before starting (guards against dirty-state).","back_url={{BACK_URL}}, test_role_name=@td(AGENT_TEST_IMP_ROLE.name), test_user_email=@td(AGENT_TEST_IMP_CUSTOMER.email)","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Users' list blade
+[GRID] Search for the test user: @td(AGENT_TEST_IMP_CUSTOMER.email)
+[BLADE] Open the test user detail blade
+[ASSERT] User detail shows Roles count = 0 initially
+[ACT] Click the 'Roles' card / count to open Assigned roles panel
+[ACT] Click 'Assign' (+) in the Assigned roles toolbar
+[WAIT] Role picker opens with available roles list
+[ACT] Select '@td(AGENT_TEST_IMP_ROLE.name)' from the picker
+[ACT] Click 'Save' / 'Confirm' on the picker
+[WAIT] Picker closes; role appears in Assigned roles
+[ASSERT] User detail Roles count now = 1
+[ACT] Close the user detail blade
+[WAIT] Users list blade visible (user detail blade no longer in DOM)
+[GRID] Locate row for '@td(AGENT_TEST_IMP_CUSTOMER.email)' in the Users list
+[BLADE] Reopen the test user detail blade
+[WAIT] User detail blade fully renders; 'Roles' card visible with count
+[ASSERT] Assigned roles still contains '@td(AGENT_TEST_IMP_ROLE.name)' (persisted)","[DOM] 'Assigned roles' contains '@td(AGENT_TEST_IMP_ROLE.name)' after picker save
+[DOM] Roles count badge on user detail = 1
+[STATE] After blade close/reopen the assignment persists","[API] User PUT to /api/platform/security/users returns HTTP 200
+[CONSOLE] No JS errors","Role not saved (disappears on reload); Roles count not updated; 4xx/5xx on save; console TypeError","[BLADE] Open Users > @td(AGENT_TEST_IMP_CUSTOMER.email) > Roles
+[ACT] Select @td(AGENT_TEST_IMP_ROLE.name) and click 'Remove'
+[ACT] Save user","VCST-4905, BL-AUTH-005, BL-AUTH-006; admin-side prerequisite for IMP-008 silent flow; Executed PASS 2026-05-12 via qa-backend-expert — user provisioned beforehand (didn't exist on vcst-qa, created via Add blade), role-picker opened, AGENT-TEST-imp-role selected, OK → role assigned, Roles count 0 → 1, PUT /api/platform/security/users → 200, persistence verified after close+reopen (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512/04-IMP-034-role-assigned-persisted.png). User id assigned: 10c4219b-1455-4f75-aa70-ddb5b8184bfb. Cleanup deliberately skipped — user + role assignment left alive for IMP-038 follow-up. Note: role-to-user picker button reads 'OK' (not 'Save') — distinct from role-permission picker","Automated"
+"IMP-035","Admin SPA — Permission Picker UI: Categories Expand, Multi-Select, Cancel Discards","LoginOnBehalf > Admin Setup > Permission Picker","Low","BL-AUTH-005","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
+Admin authenticated. Any role available to open in edit mode.","back_url={{BACK_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
+[BLADE] Open 'Roles' list blade
+[BLADE] Open any role detail blade
+[ACT] Capture the initial Assigned permissions count as {{INITIAL_PERM_COUNT}} (count visible rows under 'Assigned permissions' header, e.g. 9 for 'Organization maintainer')
+[ACT] Click 'Assign' (+) in the role permissions toolbar
+[WAIT] 'Select permissions to assign' panel opens
+[ASSERT] Picker shows permission categories grouped (e.g., 'ApplicationInsights', 'Cart', 'Catalog', 'Core', 'Customer')
+[ACT] Click the chevron on a collapsed category (e.g., 'Cart') — the category container is a `div.list-group` with `ng-click="openItems[$index]=!openItems[$index]"`; class becomes `list-group __opened` after expansion
+[WAIT] Category expands revealing permission rows
+[ASSERT] Permission rows under the category are visible with row-click toggle controls (each row is a `div.list-item[ng-click="data.$selected = !data.$selected"]` — NOT inline `<input type=checkbox>` — this picker is a flat `.list-item` list, NOT a `ui-grid`)
+[ACT] Check two permission rows (do NOT save) — capture the keys of both selected permissions as {{SELECTED_PERM_A}} and {{SELECTED_PERM_B}}. Note row-selection state: the `.list-item` div is itself clickable; `data.$selected` toggles true on click; visual selection state shows as a darker row background (there is NO `.first` sub-element and NO `.ui-grid-row-selected` class — that selector pattern applies to the Roles list grid in the parent blade, NOT to the assign-picker)
+[ASSERT] 'Confirm' button is present and clickable (label is `Confirm`, NOT `Save`, on platform v3.1026.0 — distinct from the role-to-user picker which uses `OK`). Note: Confirm button is already enabled at 0 selections and does NOT transition disabled→enabled on first selection — this is a deviation from earlier UX expectations. The test does not depend on the enabled-state transition; the multi-select + Cancel-discards invariants below are the substantive checks
+[ACT] Click 'Cancel' to dismiss the picker without saving
+[WAIT] Picker closes
+[ACT] Close the role detail blade
+[WAIT] Roles list blade visible
+[BLADE] Reopen the same role detail blade
+[WAIT] Role detail fully renders with 'Assigned permissions' list
+[ACT] Recount visible rows under 'Assigned permissions' as {{POST_CANCEL_PERM_COUNT}}
+[ASSERT] {{POST_CANCEL_PERM_COUNT}} equals {{INITIAL_PERM_COUNT}} (no permissions added by Cancel)
+[ASSERT] Neither {{SELECTED_PERM_A}} nor {{SELECTED_PERM_B}} appears in the Assigned permissions list (the specific keys that were checked-then-cancelled are absent)","[DOM] Picker header is 'Select permissions to assign'
+[DOM] Categories collapse/expand via chevron control
+[DOM] Permission rows are `div.list-item[ng-click="data.$selected = !data.$selected"]` (row-click toggle; no inline `<input type=checkbox>`; no `.first` sub-element; not a `ui-grid`)
+[DOM] 'Confirm' button is present and clickable (label is `Confirm` NOT `Save` on v3.1026.0; enabled state may not transition on first selection — see deviation note in Steps)
+[STATE] {{POST_CANCEL_PERM_COUNT}} === {{INITIAL_PERM_COUNT}} (numeric equality)
+[STATE] Neither {{SELECTED_PERM_A}} nor {{SELECTED_PERM_B}} present in Assigned permissions list after Cancel + reload","[CONSOLE] No JS errors on category expand or cancel","Categories don't expand; checkboxes / row-select controls don't respond to click; {{POST_CANCEL_PERM_COUNT}} > {{INITIAL_PERM_COUNT}} (Cancel persisted selections — invariant violation); either {{SELECTED_PERM_A}} or {{SELECTED_PERM_B}} appears in Assigned permissions after Cancel; console TypeError","[ACT] Confirm picker dismissed; no save performed; role permissions list unchanged from {{INITIAL_PERM_COUNT}}","VCST-4905, BL-AUTH-005; permission picker UI surface; Executed PASS 2026-05-12 via qa-backend-expert against 'Organization maintainer' role — 9 perms initial, 2 selected (cart:access + cart:create), Cancel → 9 perms persisted, neither selected key added (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512/05-IMP-035-picker-cart-expanded-2-selected.png + 06-IMP-035-after-cancel-perms-unchanged.png). Deviation flagged: Save button enabled at 0 selections on v3.1026.0 — assertion softened; Re-verified PASS-CLEAN 2026-05-12 v2 after selector/label corrections — all substantive invariants pass against v3.1026.0; button label confirmed `Confirm` (not Save); rows are `div.list-item[ng-click]` toggleable (not `<input type=checkbox>`, not `div.first[ng-click]`, not `.ui-grid-row-selected`) (evidence: reports/test-lifecycle/IMP-032-035-evidence-20260512-reverify/02-IMP-035-picker-cart-after-2-clicks.png + 03-IMP-035-post-cancel-9-perms.png)","Automated"
+"IMP-036","RBAC Negative — Operator Without loginOnBehalf: Form Flow impersonate Grant Rejected","LoginOnBehalf > Authorization > Permission Gate (Form Flow)","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
+Unauthenticated user. IMPERSONATE_TARGET (USR-007 David Kim) is assigned a viewer-tier role WITHOUT platform:security:loginOnBehalf per BL-AUTH-005/006 RBAC model (permissions live on roles, not users). OTHER_ORG_USER (USR-008 Carlos Rodriguez, ORG-003 BuildRight) is the impersonation target. State: form flow with credentials that authenticate but cannot pass the impersonate grant.","front_url={{FRONT_URL}}, no_perm_operator_email=@td(IMPERSONATE_TARGET.email), no_perm_operator_password=@td(IMPERSONATE_TARGET.password), target_user_id=@td(OTHER_ORG_USER.userId)","[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/account/impersonate/@td(OTHER_ORG_USER.userId)
+[WAIT] ImpersonateForm rendered
+[ACT] Fill email input: @td(IMPERSONATE_TARGET.email)
+[WAIT] Email field populated
+[ACT] Fill password input: @td(IMPERSONATE_TARGET.password)
+[WAIT] Password field populated
+[ACT] Click 'Verify and continue' submit button
+[WAIT] Submit button shows loading spinner / disabled state (verify step in flight)
+[WAIT] One of two observable rejection outcomes appears within 10s: (a) red VcAlert variant=danger visible in form area on /account/impersonate/{userId}; OR (b) hard route-level redirect to /403 Access denied page (h1 '403', h2 'Access denied', paragraph 'You do not have permissions to access the requested page', 'Home page' link visible) — vcst-qa storefront uses path (b) as of 2026-05-12
+[ASSERT] Whichever branch fires: the rejection reason indicates failed impersonation/permission denied — NOT a credential-validation failure (NOT 'login_failed' / 'Check your credentials'). Branch (a) check: VcAlert text matches 'impersonate_failed' OR contains 'switching to the customer account failed' OR contains 'permission denied' / 'not authorized'. Branch (b) check: page is the global /403 Access denied template (h1='403', h2='Access denied')
+[ASSERT] In BOTH branches: no impersonation banner mounts; URL is either /account/impersonate/{userId} (branch a) OR /403 (branch b) — never /home or /{target's account area}","[DOM] Either Branch (a): red VcAlert (variant=danger) visible in form area with impersonate-failed text — OR — Branch (b): /403 Access denied template (h1='403', h2='Access denied') with no inline form alert (form is unmounted)
+[NAV] URL is either /account/impersonate/{userId} (branch a) OR /403 (branch b) — NOT redirected to home, NOT redirected into a target-user session
+[STATE] Impersonation banner is NOT rendered in either branch
+[STATE] No storefront session for OTHER_ORG_USER is established — localStorage auth token's JWT 'sub' claim remains the operator's userId (NOT @td(OTHER_ORG_USER.userId)) in branch (a); auth token is cleared or unchanged in branch (b)","[API] First POST /connect/token (grant_type=password) returns HTTP 200 — credentials valid
+[API] Second POST /connect/token (grant_type=impersonate, user_id=@td(OTHER_ORG_USER.userId)) returns HTTP 401 or 403 — permission denied
+[CONSOLE] No unhandled JS TypeError (a single info-level 'Failed to load resource ... /connect/token' line from the storefront propagating the 403 is acceptable and NOT a TypeError)","Both /connect/token calls return 200 (privilege escalation — impersonation succeeds without the permission); silent failure with NEITHER branch (a) NOR branch (b) firing (no alert, no /403 redirect — page hangs in indeterminate state); redirect into target session despite missing permission (JWT sub becomes @td(OTHER_ORG_USER.userId) — security regression); console TypeError","[NAV] Navigate to {{FRONT_URL}} to clear page state","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, BL-AUTH-009; RBAC gate negative test. UX implementation verified live 2026-05-12 — vcst-qa storefront does hard /403 redirect (branch b); branch (a) inline VcAlert kept in CSV for forward-compat if storefront rewrites the rejection UX; Re-verified PASS-CLEAN 2026-05-12 v2 via qa-frontend-expert — all 7 assertions matched, JWT sub stayed USR-007 (no privilege escalation), 200→403 token sequence confirmed (evidence: reports/test-lifecycle/IMP-036-reverify-20260512.md). Path to Automated: requires runner-native JWT-decode + sub-claim inequality assertion","Reviewed"
+"IMP-037","RBAC Negative — Operator Without loginOnBehalf: Silent Flow Does NOT Fire","LoginOnBehalf > Authorization > Permission Gate (Silent Flow)","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
+Authenticated as IMPERSONATE_TARGET (USR-007), whose role lacks platform:security:loginOnBehalf. State: authenticated but lacking impersonation permission → silent flow must NOT auto-execute on impersonate route.","front_url={{FRONT_URL}}, no_perm_operator_email=@td(IMPERSONATE_TARGET.email), no_perm_operator_password=@td(IMPERSONATE_TARGET.password), target_user_id=@td(OTHER_ORG_USER.userId)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(IMPERSONATE_TARGET.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(IMPERSONATE_TARGET.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established (IMPERSONATE_TARGET identity in header)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(OTHER_ORG_USER.userId)
+[WAIT] One of two observable outcomes appears within 10s: (a) ImpersonateForm DOM mounts (h1 text='Security verification' visible) — silent path skipped; OR (b) a permission-denied alert/page is shown (red VcAlert variant=danger containing 'permission denied' / 'not authorized' / impersonation error text, OR a dedicated denial page with a 'Back to home' button)
+[ASSERT] Branch (a) condition observed: h1 'Security verification' visible AND email + password inputs present AND 'Verify and continue' button visible — OR — Branch (b) condition observed: red VcAlert (variant=danger) with denial text visible AND no banner mounted
+[ASSERT] Whichever branch fires, the impersonation banner is NOT rendered (operator-name + 'logged in as' + target-name structure absent)
+[ASSERT] VcLoaderOverlay with 'Switching to customer view…' is NOT visible (silent flow either skipped or aborted)","[DOM] Either Branch (a): ImpersonateForm rendered — selector check: h1[text='Security verification'] AND input[type='email'] AND input[type='password'] AND button[text='Verify and continue'] all present
+[DOM] Or Branch (b): permission-denied alert/page visible — selector check: VcAlert with variant=danger AND text matching impersonation denial (e.g. 'not authorized', 'permission denied', 'switching to the customer account failed') OR dedicated /403 Access denied route (h1='403', h2='Access denied') with 'Home page' link visible (verified live 2026-05-12 — vcst-qa exposes 'Home page' link, NOT 'Back to home' button)
+[DOM] In BOTH branches: VcLoaderOverlay text 'Switching to customer view…' is NOT visible after the 10s observation window
+[DOM] In BOTH branches: impersonation banner DOM element is NOT present (no node containing operator name + 'logged in as' + target name)
+[STATE] Storefront session is NOT switched to OTHER_ORG_USER (account menu still shows IMPERSONATE_TARGET identity in Branch (a), or shows IMPERSONATE_TARGET / nothing in Branch (b))
+[STATE] Neither branch results in silent privilege escalation","[NETWORK] No successful POST /connect/token with grant_type=impersonate AND access_token returned in 200 response (call either not made, or made and returned 401/403)
+[CONSOLE] No unhandled JS exceptions","Silent flow fires: VcLoaderOverlay persists past 10s OR impersonation banner mounts OR account menu switches to OTHER_ORG_USER identity; neither Branch (a) nor Branch (b) anchors visible after 10s (page hangs in indeterminate state); console TypeError","[NAV] Navigate to {{FRONT_URL}}; sign out IMPERSONATE_TARGET","VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, BL-AUTH-009; RBAC silent-flow gate negative test; Executed PASS 2026-05-12 via qa-frontend-expert — Branch (a) ImpersonateForm rendered with David Kim header, 0 /connect/token POSTs during silent-flow window, no banner, no loader, JWT sub stayed USR-007 (evidence: reports/test-lifecycle/IMP-036-037-evidence-20260512/IMP-037-branch-a-form-rendered-no-banner.png)","Reviewed"
+"IMP-038","RBAC Propagation — Removing loginOnBehalf from Role Stops Subsequent Impersonations","LoginOnBehalf > Authorization > Permission Propagation","Medium","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+Required state (independent of execution order): (1) Role '@td(AGENT_TEST_IMP_ROLE.name)' exists with platform:security:loginOnBehalf assigned. (2) Customer user '@td(AGENT_TEST_IMP_CUSTOMER.email)' has '@td(AGENT_TEST_IMP_ROLE.name)' assigned and a known storefront password. **Two-browser-context setup REQUIRED — do NOT share a single context:** STOREFRONT context = playwright-chrome (handles all `[STOREFRONT]`-prefixed steps: /sign-in + /account/impersonate). ADMIN context = playwright-edge (handles all `[ADMIN]`-prefixed steps: /workspace/security role mutations). Each context maintains its own cookies/session; an admin permission change in the ADMIN context must propagate via re-signin in the STOREFRONT context (fresh token claims) — verifying that propagation is the point of this test. State: assign permission → silent flow works → remove permission + fresh signin → silent flow no longer works.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, test_operator_email=@td(AGENT_TEST_IMP_CUSTOMER.email), test_operator_password=@td(AGENT_TEST_IMP_CUSTOMER.password), target_user_id=@td(IMPERSONATE_TARGET.userId), test_role_name=@td(AGENT_TEST_IMP_ROLE.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(AGENT_TEST_IMP_CUSTOMER.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(AGENT_TEST_IMP_CUSTOMER.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established (test operator identity)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow fires
+[ASSERT] Impersonation banner visible (test operator → IMPERSONATE_TARGET)
+[ACT] Click 'Stop impersonation' in banner / account menu
+[WAIT] Operator session restored
+[ADMIN] [ACT] Navigate to {{BACK_URL}}/#!/workspace/security > Roles > @td(AGENT_TEST_IMP_ROLE.name)
+[ADMIN] [ACT] Open the role; in 'Assigned permissions' locate platform:security:loginOnBehalf
+[ADMIN] [ACT] Select the permission row and click 'Remove'
+[ADMIN] [ACT] Click 'Save' on the role
+[ADMIN] [WAIT] Permission removed from role (Assigned permissions list no longer contains it)
+[STOREFRONT] [ACT] Sign out and sign back in as @td(AGENT_TEST_IMP_CUSTOMER.email) (forces fresh token claims — new access_token issued without the impersonation claim)
+[STOREFRONT] [WAIT] Authenticated session re-established; new token in storage (verify via DevTools Application > Local Storage if needed)
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Response observed
+[ASSERT] Silent flow does NOT fire — ImpersonateForm rendered or impersonation denied
+[ASSERT] No new impersonation banner appears","[DOM] First impersonation attempt (with permission): banner visible — silent flow worked
+[DOM] After permission removal + re-signin: ImpersonateForm IS rendered (silent path no longer engaged) OR a permission-denied page is shown
+[STATE] Storefront session is NOT switched to IMPERSONATE_TARGET on the second attempt
+[STATE] Permission removal propagated on next token issuance (no stale-claim impersonation)","[API] First /connect/token grant_type=impersonate returns HTTP 200 (with permission)
+[API] Second /connect/token grant_type=impersonate (after removal + re-signin) returns HTTP 401/403 OR is not called at all (silent path gated)
+[CONSOLE] No unhandled JS exceptions","Silent flow continues to fire despite permission removal; cached token still permits impersonation indefinitely after role change; console TypeError","[ADMIN] [ACT] Open Roles > @td(AGENT_TEST_IMP_ROLE.name) > Assign > re-add platform:security:loginOnBehalf (optional — only if downstream tests depend on it)
+[ADMIN] [ACT] Open Users > @td(AGENT_TEST_IMP_CUSTOMER.email) > Roles > Remove @td(AGENT_TEST_IMP_ROLE.name) > Save
+[ADMIN] [ACT] Open Users > @td(AGENT_TEST_IMP_CUSTOMER.email) > Delete
+[ACT] (Admin) Open Roles > @td(AGENT_TEST_IMP_ROLE.name) > Delete
+[PRE:CLEAR_SESSION]","VCST-4905, BL-AUTH-005, BL-AUTH-006; RBAC propagation / claim refresh test","Draft"

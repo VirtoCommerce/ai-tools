@@ -1,11 +1,13 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.4.1",
-    "updated": "2026-05-11",
+    "version": "1.4.3",
+    "updated": "2026-05-12",
     "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged.",
     "changelog_1_4_0": "Added IMPERSONATE_TARGET (→ b2b/users.csv USR-003 Mike Torres, AcmeCorp viewer) and OTHER_ORG_USER (→ b2b/users.csv USR-007 David Kim, TechFlow buyer) for VCST-4905 Login-on-behalf form/silent flow cases (AUTH-027..AUTH-081 in suite 031). Both point to existing seeded platform users — no new seeding needed.",
-    "changelog_1_4_1": "VCST-4905 scenario correction: repointed IMPERSONATE_TARGET to USR-007 David Kim (was Mike Torres); added SUPPORT_AGENT → USR-001 John Mitchell (ACME admin) as the support persona who fills the Security Verification Form. Canonical happy-path: John (support, own credentials) → impersonates David (target, different org). PRECONDITION: SUPPORT_AGENT user requires StorefrontPermissions.CanImpersonate to succeed at the impersonate-step — currently not granted on vcst-qa (verified 2026-05-11: 403 on POST /connect/token grant_type=impersonate)."
+    "changelog_1_4_1": "VCST-4905 scenario correction: repointed IMPERSONATE_TARGET to USR-007 David Kim (was Mike Torres); added SUPPORT_AGENT → USR-001 John Mitchell (ACME admin) as the support persona who fills the Security Verification Form. Canonical happy-path: John (support, own credentials) → impersonates David (target, different org). PRECONDITION: The role assigned to SUPPORT_AGENT must include StorefrontPermissions.CanImpersonate for the impersonate-step to succeed. Permissions live on Roles (Admin SPA > Security > Roles > [role] > Permissions), NOT directly on users. As of 2026-05-11 verification: role assigned to USR-001 does not include this permission — POST /connect/token grant_type=impersonate returns 403. Fix: add CanImpersonate to the existing role or assign a role that includes it.",
+    "changelog_1_4_2": "Fixed OTHER_ORG_USER alias data bug — was pointing to USR-007 (same user as IMPERSONATE_TARGET, both ORG-002); now points to USR-008 Carlos Rodriguez (ORG-003 BuildRight). Unblocks IMP-018 cross-org impersonation rejection test in suite 082-auth-impersonation.csv.",
+    "changelog_1_4_3": "Added inline AGENT_TEST_IMP_ROLE + AGENT_TEST_IMP_CUSTOMER aliases for IMP-033/034/038 in suite 082-auth-impersonation.csv. Inline (no CSV row) because these are ephemeral entities created+destroyed by the tests themselves — names are stable contracts, not env-resolved data."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -896,9 +898,10 @@
     }
   },
   "OTHER_ORG_USER": {
+    "_comment": "Cross-org user — USR-008 Carlos Rodriguez (BuildRight, ORG-003). Genuinely different org from both SUPPORT_AGENT (ORG-001) and IMPERSONATE_TARGET (ORG-002). Used by IMP-018 cross-org impersonation rejection test. Fixed 2026-05-12: was previously pointing to USR-007 (same as IMPERSONATE_TARGET) — see VCST-4905 alias bug.",
     "file": "b2b/users",
     "filter": {
-      "user_id": "USR-007"
+      "user_id": "USR-008"
     },
     "fields": {
       "userId": "platform_id",
@@ -2312,5 +2315,23 @@
     "verified_at": "2026-04-30",
     "verified_via": "POST {BACK_URL}/graphql products(storeId:\"B2B-store\", query:\"ring\", first:5) — totalCount=77 (well above the >=3 threshold in SRCH-NEW-055)",
     "notes": "Sprint 26-08 review — generic search term that returns multiple hits on the QA storefront, used by SRCH-NEW-055 in 004-search-core.csv (mobile results page layout at 375px). 'ring' was chosen because (a) it was already named as the in-line fallback in SRCH-NEW-055 Steps, (b) it returned totalCount=77 in live xAPI verification on 2026-04-30 (against the active B2B virtual catalog root 9238c387-d779-40cb-b27d-5496a670a924 — see feedback_graphql_products_filter.md), and (c) it is short, lowercase, ASCII-only, so it round-trips through URL/query-string/CSV without escaping concerns. expectedMinHits=77 is a snapshot of the verification count, not a runtime assertion target — tests should still assert >=3 results (per SRCH-NEW-055 precondition) so the suite stays env-resilient if the catalog churns. Per feedback_env_resilience.md, do NOT promote this alias to assert the exact count of 77."
+  },
+  "AGENT_TEST_IMP_ROLE": {
+    "_inline": true,
+    "_comment": "Ephemeral test role created and destroyed by IMP-033/034/038 in suite 082-auth-impersonation.csv. Never seeded on a persistent environment. AGENT-TEST-* naming follows the /qa-seed-data teardown convention — any orphaned instances are removed by /qa-seed-data teardown.",
+    "name": "AGENT-TEST-imp-role",
+    "description": "Test role for impersonation regression — safe to delete",
+    "permission_key": "platform:security:loginOnBehalf",
+    "permission_label": "Login on behalf of a customer"
+  },
+  "AGENT_TEST_IMP_CUSTOMER": {
+    "_inline": true,
+    "_comment": "Ephemeral test customer user created and destroyed by IMP-034/038. REQUIRED provisioning when (re)creating via Admin SPA: (1) Security > Users > Add (Account type=Customer, Status=Approved, Password=Password1!, no roles) → Save. (2) On the user-DETAIL blade (NOT Add dialog), set Container store=B2B-store → Save again (without B2B-store the user cannot authenticate against the storefront). (3) Create an associated Contact record (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). (4) Assign AGENT_TEST_IMP_ROLE. Password is the standard test password (Password1!) — see user_test_accounts memory.",
+    "email": "agent-test-imp-customer@test-agent.com",
+    "password": "Password1!",
+    "display_name": "Agent Test Impersonation Customer",
+    "account_type": "Customer",
+    "role_name": "AGENT-TEST-imp-role",
+    "store_id": "B2B-store"
   }
 }

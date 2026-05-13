@@ -1,0 +1,39 @@
+{
+  "ticket": "VCST-4993",
+  "verdict": "VERIFIED",
+  "date": "2026-05-12",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2287-367d-367d16a1",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend PR #2287 head 367d16a1 (open, deployed)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_partial": 1,
+  "checklist_blocked": 1,
+  "checklist_notes": {
+    "item_5_partial": "Search filter UI accepts input and fires GraphQL filter requests; exhaustive direction proof limited by single saved-address test dataset. UI functional.",
+    "item_8_blocked": "BOPIS sibling-context live re-test BLOCKED by test cart lacking BOPIS-eligible items. Mitigated by PR diff: BOPIS keys intentionally preserved in createCartFilterContext/createProductFilterContext.",
+    "item_9_cosmetic": "Placeholder \"Search \" (trailing space) is out of scope for PR #2287; remains for follow-up cosmetic ticket if desired."
+  },
+  "regression_issues": [],
+  "side_effects": [
+    "Placeholder trailing-space (cosmetic, pre-existing, out of PR #2287 scope)"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "WCAG 1.3.1 Info and Relationships",
+    "WCAG 4.1.2 Name, Role, Value"
+  ],
+  "linked_tickets": {
+    "blocks": ["VCST-4710 (AC-10c Accessibility — now satisfied)"]
+  },
+  "jira_transition": "Testing -> Tested (id 8 'Finish test')",
+  "artifacts": "tests/Sprint-current/VCST-4993/"
+}
