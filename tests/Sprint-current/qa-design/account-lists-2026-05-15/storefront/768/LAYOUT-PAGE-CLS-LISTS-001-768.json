@@ -1,0 +1,17 @@
+{
+  "invariant": "BL-UI-001",
+  "test-id": "LAYOUT-PAGE-CLS-LISTS-001",
+  "viewport": 768,
+  "effective-viewport-px": 768,
+  "result": "FAIL",
+  "severity": "FAIL",
+  "threshold": 0.1,
+  "measured": 0.137,
+  "shiftCount": 3,
+  "note": "CLS 0.137 exceeds 0.1 threshold. 3 layout shifts recorded during skeleton-to-content swap. Below P0 threshold of 0.25 but still a FAIL. Sidebar displayed side-by-side with content at 768px.",
+  "tokens": {
+    "--color-primary-500": "#996c5a"
+  },
+  "dom-snippet": ".account-shell .space-y-3.md:space-y-2.5 — list cards appear after network fetch, skeleton dimensions mismatch final content causing shift",
+  "screenshot": "LAYOUT-PAGE-CLS-LISTS-001-768-FAIL.png"
+}

@@ -457,3 +457,47 @@ GQL-059,"xProfile — checkDuplicateAddress Required Fields Validation","GraphQL
   }
 [GQL-EXEC check_missing]","[ERRORS label=check_missing] errors[] non-empty — InputMemberAddressType requires countryCode + line1 + postalCode (BL-GQL-001)
 [DATA label=check_missing] data is null","[EVIDENCE] Schema validator (client-side DV-010) catches missing required fields OR server rejects","errors[] empty on incomplete address (validation bypass)",none — read-only,xAPI; graphql-schema.md — InputMemberAddressType required fields,Automated
+GQL-060,"[VCST-5073] currentCustomerAddresses — id Filter Returns Single Matching Address","GraphQL > xProfile > Addresses > ID Filter",Critical,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-14.1","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses without filter first to capture an existing address id, then re-queries with that id. SCHEMA NOTE: the ""id"" arg was added by VCST-5073 (Xapi 3.1007.0+) and is NOT present in the 2026-05-06 schema snapshot — run scripts/graphql-runner.ts --refresh-schema before first execution.","—","[AUTH role=ORG_USER]
+[GQL-OP list_all]
+  query {
+    currentCustomerAddresses(first: 5) {
+      totalCount
+      items { id city countryCode line1 postalCode }
+    }
+  }
+[GQL-EXEC list_all]
+[GQL-CAPTURE list_all.data.currentCustomerAddresses.items.0.id → ADDR_ID]
+[GQL-OP filter_by_id]
+  query {
+    currentCustomerAddresses(first: 5, id: ""{{ADDR_ID}}"") {
+      totalCount
+      items { id city countryCode line1 postalCode }
+    }
+  }
+[GQL-EXEC filter_by_id]","[ERRORS label=list_all] errors[] empty
+[DATA label=list_all] data.currentCustomerAddresses.items is non-null
+[ERRORS label=filter_by_id] errors[] empty
+[COUNT label=filter_by_id] data.currentCustomerAddresses.totalCount = 1
+[DATA label=filter_by_id] data.currentCustomerAddresses.items.0.id = {{ADDR_ID}}","[ROUNDTRIP] captured ADDR_ID from list_all; filter_by_id returns exactly that record","list_all errors[] non-empty; ADDR_ID not captured (user has no addresses); filter_by_id returns 0 or >1 items; id mismatch; DV-008 on ""id"" arg (schema not yet refreshed)","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+GQL-061,"[VCST-5073] currentCustomerAddresses — Non-Existent id Returns Empty List","GraphQL > xProfile > Addresses > ID Filter",High,"BL-GQL-001","ECL-3.2; ECL-9.1","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses with an all-zeros GUID — expects totalCount=0 and items=[], no errors and no HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP no_match]
+  query {
+    currentCustomerAddresses(first: 5, id: ""00000000-0000-0000-0000-000000000000"") {
+      totalCount
+      items { id }
+    }
+  }
+[GQL-EXEC no_match]","[ERRORS label=no_match] errors[] empty
+[COUNT label=no_match] data.currentCustomerAddresses.totalCount = 0
+[DATA label=no_match] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Empty items array returned gracefully; no HTTP 500; resolver does not throw on unknown id","errors[] non-empty on valid GUID-format id; HTTP 500; totalCount > 0 (wrong record returned); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+GQL-062,"[VCST-5073] currentCustomerAddresses — No id Filter Returns Full List (Regression)","GraphQL > xProfile > Addresses > ID Filter",High,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-14.1","Runner-native. ORG_USER authenticated. Regression guard: currentCustomerAddresses WITHOUT id filter must still return all addresses (the new id arg is optional and must not affect default no-filter behavior).","—","[AUTH role=ORG_USER]
+[GQL-OP list_nofilter]
+  query {
+    currentCustomerAddresses(first: 20) {
+      totalCount
+      items { id city countryCode line1 postalCode regionId isDefault isFavorite addressType }
+    }
+  }
+[GQL-EXEC list_nofilter]","[ERRORS label=list_nofilter] errors[] empty
+[COUNT label=list_nofilter] data.currentCustomerAddresses.totalCount >= 0
+[DATA label=list_nofilter] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Response shape identical to pre-VCST-5073 baseline","errors[] non-empty on no-filter call (regression introduced by new arg); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft

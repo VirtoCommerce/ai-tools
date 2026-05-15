@@ -1,0 +1,254 @@
+{
+  "caseId": "GQL-019",
+  "title": "[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-05-15T14:52:46.061Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:52:40.050Z",
+      "expiresAt": "2026-05-15T15:22:39.050Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 151
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 569
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_1",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 704
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_2",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 688
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_3",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1257
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_4",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 826
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_5",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1155
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_back",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" currencyCode: \"USD\" cultureName: \"en-US\") { id itemsCount itemsQuantity items { id productId sku quantity } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "id": "3786fe06-205f-4438-b81e-63edc70cca25",
+            "itemsCount": 0,
+            "itemsQuantity": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 325
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 321
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_5] errors[] empty",
+      "label": "add_5",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=add_5] data.addItem.itemsCount = 1",
+      "label": "add_5",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addItem.itemsCount = 1",
+      "actual": "data.addItem.itemsCount = 1"
+    },
+    {
+      "raw": "[ERRORS label=read_back] errors[] empty",
+      "label": "read_back",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=read_back] data.cart.itemsCount = 1",
+      "label": "read_back",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.cart.itemsCount = 1",
+      "actual": "data.cart.itemsCount = 0"
+    },
+    {
+      "raw": "[DATA label=read_back] data.cart.itemsQuantity = 5",
+      "label": "read_back",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.cart.itemsQuantity = 5",
+      "actual": "data.cart.itemsQuantity = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5.",
+      "layer": "EVIDENCE",
+      "note": "BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5.",
+      "resolved": "BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5."
+    }
+  ],
+  "cleanup": {
+    "raw": "cleanup_post inline",
+    "blocks": []
+  }
+}

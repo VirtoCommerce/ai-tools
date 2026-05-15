@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-06)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-15)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -108,7 +108,7 @@ recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, max
 recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
 searchHistory(storeId: String!, maxCount: Int!)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
-currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String)
+currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
 customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 ```
@@ -128,7 +128,7 @@ checkEmailUniqueness(email: String!)
 validatePassword(password: String!)
 user(id: String, userName: String, email: String, loginProvider: String, providerKey: String)
 role(roleName: String!)
-currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String)
+currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
 ```
 
 ### Quotes

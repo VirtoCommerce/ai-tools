@@ -1,0 +1,93 @@
+{
+  "caseId": "GQL-050",
+  "title": "xCart — updateCartQuantity Non-Existent ProductId",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "EMPTY",
+  "executedAt": "2026-05-15T14:50:10.629Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:50:09.038Z",
+      "expiresAt": "2026-05-15T15:20:08.038Z"
+    }
+  ],
+  "variables": {
+    "bogus_product": "00000000-0000-0000-0000-000000000000",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 179
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1137
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "update_bogus",
+      "query": "mutation {\n    updateCartQuantity(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      items: [{ productId: \"00000000-0000-0000-0000-000000000000\" quantity: 1 }]\n    }) {\n      id itemsCount items { productId quantity }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "updateCartQuantity": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 266
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[].",
+      "layer": "EVIDENCE",
+      "note": "update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[].",
+      "resolved": "update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[]."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — nothing added if graceful",
+    "blocks": []
+  }
+}

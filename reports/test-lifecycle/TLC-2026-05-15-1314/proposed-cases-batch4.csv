@@ -1,0 +1,165 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+GQL-060,"[VCST-5073] currentCustomerAddresses — id Filter Returns Single Matching Address","GraphQL > xProfile > Addresses > ID Filter",Critical,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-14.1","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses without filter first to capture an existing address id, then re-queries with that id. SCHEMA NOTE: the ""id"" arg was added by VCST-5073 (Xapi 3.1007.0+) and is NOT present in the 2026-05-06 schema snapshot — run scripts/graphql-runner.ts --refresh-schema before first execution.","—","[AUTH role=ORG_USER]
+[GQL-OP list_all]
+  query {
+    currentCustomerAddresses(first: 5) {
+      totalCount
+      items { id city countryCode line1 postalCode }
+    }
+  }
+[GQL-EXEC list_all]
+[GQL-CAPTURE list_all.data.currentCustomerAddresses.items.0.id → ADDR_ID]
+[GQL-OP filter_by_id]
+  query {
+    currentCustomerAddresses(first: 5, id: ""{{ADDR_ID}}"") {
+      totalCount
+      items { id city countryCode line1 postalCode }
+    }
+  }
+[GQL-EXEC filter_by_id]","[ERRORS label=list_all] errors[] empty
+[DATA label=list_all] data.currentCustomerAddresses.items is non-null
+[ERRORS label=filter_by_id] errors[] empty
+[COUNT label=filter_by_id] data.currentCustomerAddresses.totalCount = 1
+[DATA label=filter_by_id] data.currentCustomerAddresses.items.0.id = {{ADDR_ID}}","[ROUNDTRIP] captured ADDR_ID from list_all; filter_by_id returns exactly that record","list_all errors[] non-empty; ADDR_ID not captured (user has no addresses); filter_by_id returns 0 or >1 items; id mismatch; DV-008 on ""id"" arg (schema not yet refreshed)","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+GQL-061,"[VCST-5073] currentCustomerAddresses — Non-Existent id Returns Empty List","GraphQL > xProfile > Addresses > ID Filter",High,"BL-GQL-001","ECL-3.2; ECL-9.1","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses with an all-zeros GUID — expects totalCount=0 and items=[], no errors and no HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP no_match]
+  query {
+    currentCustomerAddresses(first: 5, id: ""00000000-0000-0000-0000-000000000000"") {
+      totalCount
+      items { id }
+    }
+  }
+[GQL-EXEC no_match]","[ERRORS label=no_match] errors[] empty
+[COUNT label=no_match] data.currentCustomerAddresses.totalCount = 0
+[DATA label=no_match] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Empty items array returned gracefully; no HTTP 500; resolver does not throw on unknown id","errors[] non-empty on valid GUID-format id; HTTP 500; totalCount > 0 (wrong record returned); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+GQL-062,"[VCST-5073] currentCustomerAddresses — No id Filter Returns Full List (Regression)","GraphQL > xProfile > Addresses > ID Filter",High,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-14.1","Runner-native. ORG_USER authenticated. Regression guard: currentCustomerAddresses WITHOUT id filter must still return all addresses (the new id arg is optional and must not affect default no-filter behavior).","—","[AUTH role=ORG_USER]
+[GQL-OP list_nofilter]
+  query {
+    currentCustomerAddresses(first: 20) {
+      totalCount
+      items { id city countryCode line1 postalCode regionId isDefault isFavorite addressType }
+    }
+  }
+[GQL-EXEC list_nofilter]","[ERRORS label=list_nofilter] errors[] empty
+[COUNT label=list_nofilter] data.currentCustomerAddresses.totalCount >= 0
+[DATA label=list_nofilter] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Response shape identical to pre-VCST-5073 baseline","errors[] non-empty on no-filter call (regression introduced by new arg); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+GQL-127,"[VCST-4835] newsArticles — sort publishDate:desc Returns Descending Order","GraphQL > xCMS > News Articles > Sort",Critical,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role — newsArticles does not require authentication. Store must have at least 2 published news articles. Sort arg is a plain String (format ""field:direction""). SCHEMA NOTE: NewsArticleType field list not in snapshot — fields id/title/publishDate assumed present.","—","[GQL-OP desc_sort]
+  query {
+    newsArticles(
+      storeId: ""{{STORE_ID}}""
+      languageCode: ""en-US""
+      sort: ""publishDate:desc""
+      first: 5
+    ) {
+      totalCount
+      items { id title publishDate }
+    }
+  }
+[GQL-EXEC desc_sort]","[ERRORS label=desc_sort] errors[] empty
+[COUNT label=desc_sort] data.newsArticles.totalCount >= 2
+[DATA label=desc_sort] data.newsArticles.items.0.publishDate is non-null
+[DATA label=desc_sort] data.newsArticles.items.1.publishDate is non-null
+[DATA label=desc_sort] data.newsArticles.items.0.publishDate >= data.newsArticles.items.1.publishDate","[EVIDENCE] Bug VCST-4835: before fix, sort was ignored. The >= assertion on ISO-8601 dates fails if fix is regressed.","errors[] non-empty; totalCount < 2 (insufficient seeded articles); items.0.publishDate < items.1.publishDate (fix regressed); DV-008 on publishDate field","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
+GQL-128,"[VCST-4835] newsArticles — sort publishDate:asc Returns Ascending Order","GraphQL > xCMS > News Articles > Sort",High,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role. Companion to GQL-127 verifying both sort directions.","—","[GQL-OP asc_sort]
+  query {
+    newsArticles(
+      storeId: ""{{STORE_ID}}""
+      languageCode: ""en-US""
+      sort: ""publishDate:asc""
+      first: 5
+    ) {
+      totalCount
+      items { id title publishDate }
+    }
+  }
+[GQL-EXEC asc_sort]","[ERRORS label=asc_sort] errors[] empty
+[COUNT label=asc_sort] data.newsArticles.totalCount >= 2
+[DATA label=asc_sort] data.newsArticles.items.0.publishDate is non-null
+[DATA label=asc_sort] data.newsArticles.items.1.publishDate is non-null
+[DATA label=asc_sort] data.newsArticles.items.0.publishDate <= data.newsArticles.items.1.publishDate","[EVIDENCE] Ascending sort produces oldest article first; inverse of GQL-127.","errors[] non-empty; totalCount < 2; items.0.publishDate > items.1.publishDate (asc sort returning newest first); DV-008 on publishDate","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
+GQL-129,"[VCST-4835] newsArticles — No sort Arg Returns Structural Integrity","GraphQL > xCMS > News Articles > Sort",Medium,"BL-GQL-002","ECL-2.1; ECL-9.1","Runner-native. PUBLIC role. Calls newsArticles with no sort argument — verifies the query succeeds and returns structurally valid articles. Default order is implementation-defined; test asserts only structural invariants.","—","[GQL-OP nosort]
+  query {
+    newsArticles(
+      storeId: ""{{STORE_ID}}""
+      languageCode: ""en-US""
+      first: 5
+    ) {
+      totalCount
+      items { id title publishDate }
+    }
+  }
+[GQL-EXEC nosort]","[ERRORS label=nosort] errors[] empty
+[COUNT label=nosort] data.newsArticles.totalCount >= 0
+[DATA label=nosort] data.newsArticles.items is non-null","[EVIDENCE] When totalCount >= 1, items[0].id is non-null and items[0].publishDate is non-null","errors[] non-empty on call without sort; HTTP 500; items null; DV-008 on id/title/publishDate","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
+GQL-130,"[VCST-5069] xCMS pages Post-Reindex Health Check","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Verifies xCMS pages query returns a non-null, non-error result for B2B-store after a search index rebuild. Bug VCST-5069 symptom: pages erroring or returning empty after reindex.","—","[GQL-OP list_pages_health]
+  query {
+    pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 5 cultureName: ""en-US"") {
+      totalCount
+      items { id name relativeUrl permalink }
+    }
+  }
+[GQL-EXEC list_pages_health]","[ERRORS label=list_pages_health] errors[] empty
+[DATA label=list_pages_health] data.pages is non-null
+[COUNT label=list_pages_health] data.pages.totalCount >= 0
+[DATA label=list_pages_health] data.pages.items is non-null","[EVIDENCE] After search index rebuild verify same totalCount as pre-rebuild","errors[] non-empty after reindex; pages.items null or empty when CMS pages exist; HTTP 500; totalCount drops to 0 post-rebuild","none — read-only","VCST-5069; xAPI; Query.pages",Draft
+GQL-131,"[VCST-5069] xCMS page Single-Item Round-Trip Post-Reindex","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Captures pages.items[0].id then resolves full page object. Verifies that individual page nodes are resolvable after reindex.","—","[GQL-OP list_pages_seed]
+  query {
+    pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 1 cultureName: ""en-US"") {
+      items { id name }
+    }
+  }
+[GQL-EXEC list_pages_seed]
+[GQL-CAPTURE list_pages_seed.data.pages.items.0.id → CAPTURED_PAGE_ID]
+[GQL-OP one_page_post_reindex]
+  query {
+    page(storeId: ""{{STORE_ID}}"" id: ""{{CAPTURED_PAGE_ID}}"" cultureName: ""en-US"") {
+      id name relativeUrl permalink
+    }
+  }
+[GQL-EXEC one_page_post_reindex]","[ERRORS label=list_pages_seed] errors[] empty
+[DATA label=list_pages_seed] data.pages.items is non-null
+[ERRORS label=one_page_post_reindex] errors[] empty
+[DATA label=one_page_post_reindex] data.page is non-null
+[DATA label=one_page_post_reindex] data.page.id = {{CAPTURED_PAGE_ID}}
+[DATA label=one_page_post_reindex] data.page.name is non-null","[EVIDENCE] page.id and name resolve correctly after reindex","page returns null for a valid captured id; id mismatch with CAPTURED_PAGE_ID; HTTP 500 on page(id) call","none — read-only","VCST-5069; xAPI; Query.page",Draft
+GQL-132,"[VCST-5069] xCMS builderPage Smoke After Reindex","GraphQL > xCMS > Post-Reindex",High,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Queries builderPage(storeId, pageId) with a zero-GUID probe — expects graceful null or graceful errors[], never HTTP 500. Any 500 or schema error after reindex indicates Builder.io CMS GraphQL surface broken.","bogus_page_id=00000000-0000-0000-0000-000000000000","[GQL-OP builder_probe]
+  query {
+    builderPage(storeId: ""{{STORE_ID}}"" pageId: ""00000000-0000-0000-0000-000000000000"") {
+      id content
+    }
+  }
+[GQL-EXEC builder_probe]","[DATA label=builder_probe] data is non-null or errors[] is non-empty","[EVIDENCE] If env has seeded Builder.io content, replace pageId probe with a real captured id","HTTP 500; stack trace or schema error in errors[]; resolver panic on Builder.io content after reindex","none — read-only","VCST-5069; xAPI; Query.builderPage",Draft
+GQL-115,"[VCST-4173] xCatalog products term_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",Critical,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies term_facets[] is populated after VCST-4173 migrated FilteredBrowsing config from DynamicProperties to Store Settings. Uses active B2B virtual catalog root 9238c387-d779-40cb-b27d-5496a670a924 (per feedback_graphql_products_filter memory).","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_term_facets]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 1
+      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      facet: ""Brand""
+    ) {
+      totalCount
+      term_facets { name label facetType terms { term label count isSelected } }
+    }
+  }
+[GQL-EXEC products_term_facets]","[ERRORS label=products_term_facets] errors[] empty
+[DATA label=products_term_facets] data.products is non-null
+[DATA label=products_term_facets] data.products.term_facets is non-null","[EVIDENCE] Confirm same facet groups appear in Admin > Catalog > Store > FilteredBrowsing blade as before migration","term_facets[] null or empty after migration (config lost); facet count drops to 0 where it was >0 pre-migration; HTTP 500; DV-008 on facet field names","none — read-only","VCST-4173; xAPI; Query.products term_facets; FilteredBrowsing",Draft
+GQL-116,"[VCST-4173] xCatalog products range_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",High,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies range_facets[] is populated when a price.USD facet is passed, after VCST-4173 migrated FilteredBrowsing from DynamicProperties to Store Settings. Range aggregation config must survive migration.","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_range_facets]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 1
+      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      facet: ""price.USD""
+    ) {
+      totalCount
+      range_facets { name label facetType ranges { count from to fromStr toStr label isSelected } }
+    }
+  }
+[GQL-EXEC products_range_facets]","[ERRORS label=products_range_facets] errors[] empty
+[DATA label=products_range_facets] data.products is non-null
+[DATA label=products_range_facets] data.products.range_facets is non-null","[EVIDENCE] range_facets may be empty if no price range aggregation is configured — verify Admin blade first","range_facets[] null after migration (range config not written to Store Settings); facet argument rejected; HTTP 500","none — read-only","VCST-4173; xAPI; Query.products range_facets; FilteredBrowsing",Draft

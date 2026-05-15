@@ -1,0 +1,26 @@
+{
+  "caseId": "GQL-049",
+  "title": "xCart — updateCartQuantity Exceeds Available Stock",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "EMPTY",
+  "executedAt": "2026-05-15T14:51:25.239Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [],
+  "assertions": [],
+  "infoAssertions": [
+    {
+      "raw": "[MANUAL] blocked on env fixture",
+      "layer": "MANUAL",
+      "note": "blocked on env fixture"
+    }
+  ],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "manual cleanup required once seeded",
+    "blocks": []
+  }
+}

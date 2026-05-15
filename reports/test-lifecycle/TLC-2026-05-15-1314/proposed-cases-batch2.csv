@@ -1,0 +1,156 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CFG-GQL-042,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength boundary accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix: Text section customText at exactly maxLength chars MUST NOT trigger validation error. Uses CFG_TEXT_DRIVEN_COND (CFG-024). BVA: at-boundary value.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { configurationSections { id type isRequired maxLength allowCustomText } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_TEXT_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.maxLength → TEXT_MAX_LENGTH]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+      validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_at_max]
+[GQL-VARS change_at_max] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC change_at_max]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=change_at_max] errors[] empty
+[COUNT label=change_at_max] data.changeCartConfiguredItem.validationErrors.length = 0","[EVIDENCE] customText at maxLength boundary accepted — no validationErrors[] (BVA at-boundary pass). Record actual TEXT_MAX_LENGTH captured for traceability.","validationErrors[] non-empty for at-boundary input (pre-fix VCST-4987 over-trigger); addItem itemsCount=0; change_at_max returns errors despite valid length",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA (at-boundary); BL-CART-014",Draft
+CFG-GQL-043,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength+1 rejected with validationErrors","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix counterpart: Text customText EXCEEDING maxLength by 1 char MUST be rejected with validationErrors[] non-empty. BVA past-boundary negative.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { configurationSections { id type isRequired maxLength allowCustomText } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_TEXT_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.maxLength → TEXT_MAX_LENGTH]
+[GQL-OP add_item_valid]
+[GQL-VARS add_item_valid] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""ValidSeed""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC add_item_valid]
+[GQL-CAPTURE add_item_valid.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_over_max]
+[GQL-VARS change_over_max] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC change_over_max]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item_valid] errors[] empty
+[DATA label=add_item_valid] data.addItem.itemsCount = 1
+[ERRORS label=change_over_max] errors[] empty
+[COUNT label=change_over_max] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Over-limit input rejected via validationErrors[]; record errorCode and actual TEXT_MAX_LENGTH from get_def.","validationErrors[] empty for over-limit input (maxLength enforcement broken)",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA past-boundary",Draft
+CFG-GQL-045,"[VCST-4987] changeCartConfiguredItem — Empty customText on optional Text section accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-9.1","Runner-native. ORG_USER. VCST-4987 edge: empty customText on a non-required Text section MUST NOT trigger maxLength error. Uses CFG_VARIATION_CAKE (textSectionIsRequired=false).","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""@td(CFG_VARIATION_CAKE.textSectionId)"", ""type"": ""Text"", ""customText"": """"}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+      validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[DATA label=add_item] data.addItem.itemsCount = 1","[EVIDENCE] Empty customText on optional Text section accepted — maxLength validator does NOT fire for empty string on non-required section.","validationErrors[] non-empty for empty customText on optional section",cleanup_post inline,"xAPI; Mutation.addItem; VCST-4987; CFG_VARIATION_CAKE optional Text section; BL-CART-014",Draft
+GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-GQL-001","ECL-14.1","Runner-native. ORG_USER. VCST-5083 regression: pre-fix NoLockService caused lost-update under concurrent addItem. Simulates race window via 5 rapid sequential addItem calls for same productId (qty=1 each). Post-fix expectation: itemsQuantity=5, itemsCount=1 (BL-CART-001 merge rule).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_1]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_1]
+[GQL-OP add_2]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_2]
+[GQL-OP add_3]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_3]
+[GQL-OP add_4]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_4]
+[GQL-OP add_5]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_5]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount itemsQuantity items { id productId sku quantity } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_5] errors[] empty
+[DATA label=add_5] data.addItem.itemsCount = 1
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.itemsCount = 1
+[DATA label=read_back] data.cart.itemsQuantity = 5","[EVIDENCE] BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5.","itemsQuantity < 5 (lost-update — pre-fix lock bug); itemsCount > 1 (duplicate lines)",cleanup_post inline,"VCST-5083; BL-CART-001; xAPI addItem lock regression; XCart 3.1013.0 fix",Draft
+GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reaches Empty","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-CART-008","ECL-14.1; ECL-9.1","Runner-native. ORG_USER. VCST-5083 race window: addItem → removeCartItem with captured lineItemId. Post-fix: cart empty (itemsCount=0). Pre-fix: stale-read race could no-op the remove.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { id productId sku quantity } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP remove_item]
+  mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" }) { id itemsCount items { id productId quantity } } }
+[GQL-EXEC remove_item]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=remove_item] errors[] empty
+[DATA label=remove_item] data.removeCartItem.itemsCount = 0
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.itemsCount = 0","[EVIDENCE] BL-CART-008: removeCartItem fully removes the line just created. Pre-fix: remove could no-op due to stale read.","remove_item.itemsCount = 1 (remove no-op'd — pre-fix lock bug); read_back.itemsCount = 1",cleanup_post inline,"VCST-5083; BL-CART-008; xAPI removeCartItem lock regression; XCart 3.1013.0 fix",Draft

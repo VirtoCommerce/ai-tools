@@ -1,0 +1,192 @@
+{
+  "caseId": "GQL-059",
+  "title": "xCart — clearCart Empties Cart With Items",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:50:39.991Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:50:37.310Z",
+      "expiresAt": "2026-05-15T15:20:37.310Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_1": "217be9f3d9064075821f6785dca658b9",
+    "PRODUCT_2": "5834aac09b7e4e279a5b41c993c36e22"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 142
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prods",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 2 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "217be9f3d9064075821f6785dca658b9"
+              },
+              {
+                "id": "5834aac09b7e4e279a5b41c993c36e22"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 228
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 287
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_first",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"217be9f3d9064075821f6785dca658b9\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 439
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_second",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"5834aac09b7e4e279a5b41c993c36e22\" quantity: 1 }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 2
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1208
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "clear_it",
+      "query": "mutation {\n    clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) {\n      id itemsCount items { id } subTotal { amount }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0,
+            "items": [],
+            "subTotal": {
+              "amount": 0
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 367
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=clear_it] errors[] empty",
+      "label": "clear_it",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=clear_it] data.clearCart.id is non-null",
+      "label": "clear_it",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.clearCart.id is non-null",
+      "actual": "data.clearCart.id = \"e60ab4c3-ce13-417b-a69c-a21b2d799565\""
+    },
+    {
+      "raw": "[COUNT label=clear_it] data.clearCart.itemsCount = 0",
+      "label": "clear_it",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.clearCart.itemsCount = 0",
+      "actual": "data.clearCart.itemsCount = 0"
+    },
+    {
+      "raw": "[COUNT label=clear_it] data.clearCart.items.length = 0",
+      "label": "clear_it",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.clearCart.items.length = 0",
+      "actual": "data.clearCart.items.length = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] clearCart.subTotal.amount should be 0 after clear — runner-manual",
+      "layer": "EVIDENCE",
+      "note": "clearCart.subTotal.amount should be 0 after clear — runner-manual",
+      "resolved": "clearCart.subTotal.amount should be 0 after clear — runner-manual"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — already empty",
+    "blocks": []
+  }
+}

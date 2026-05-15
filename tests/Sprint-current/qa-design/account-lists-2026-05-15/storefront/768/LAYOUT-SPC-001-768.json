@@ -1,0 +1,29 @@
+{
+  "invariant": "BL-UI-002",
+  "test-id": "LAYOUT-SPC-001",
+  "viewport": 768,
+  "result": "FAIL",
+  "severity": "FAIL",
+  "threshold": "spacing must be in {0,4,8,12,16,20,24,32,40,48,56,64,80,96} px",
+  "measured": [
+    {
+      "element": ".vc-container.account-shell",
+      "prop": "paddingBottom",
+      "value": 36,
+      "note": "Same 36px off-grid violation as desktop. Not responsive-adjusted at this breakpoint."
+    },
+    {
+      "element": ".link-lists__wrapper",
+      "prop": "paddingLeft",
+      "value": 10,
+      "note": "Same 10px off-grid violation as desktop."
+    },
+    {
+      "element": "list card separator (md:space-y-2.5 still active at 768px)",
+      "prop": "marginTop on card children",
+      "value": 10,
+      "note": "Tailwind md: prefix activates at >=768px, so space-y-2.5 (10px) is applied at this exact breakpoint. Off-grid."
+    }
+  ],
+  "dom-snippet": "Same selectors as 1280px. The md: breakpoint triggers at >= 768px inclusive."
+}

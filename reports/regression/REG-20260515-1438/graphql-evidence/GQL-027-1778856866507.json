@@ -1,0 +1,33 @@
+{
+  "caseId": "GQL-027",
+  "title": "xCart — Currency Switch Updates Line Item Prices",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "EMPTY",
+  "executedAt": "2026-05-15T14:54:26.506Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [],
+  "assertions": [],
+  "infoAssertions": [
+    {
+      "raw": "[MANUAL] blocked on multi-currency fixture",
+      "layer": "MANUAL",
+      "note": "blocked on multi-currency fixture"
+    }
+  ],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Track as Draft",
+      "layer": "EVIDENCE",
+      "note": "Track as Draft",
+      "resolved": "Track as Draft"
+    }
+  ],
+  "cleanup": {
+    "raw": "Restore cart currency",
+    "blocks": []
+  }
+}

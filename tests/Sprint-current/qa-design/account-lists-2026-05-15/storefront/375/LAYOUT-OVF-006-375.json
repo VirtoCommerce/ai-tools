@@ -1,0 +1,32 @@
+{
+  "invariant": "BL-UI-004",
+  "test-id": "LAYOUT-OVF-006",
+  "viewport": 375,
+  "effective-viewport-px": 485,
+  "result": "PASS",
+  "severity": "PASS",
+  "threshold": "no horizontal scroll, no unintentional content clipping",
+  "measured": {
+    "documentScrolls": false,
+    "docScrollWidth": 485,
+    "viewportWidth": 485,
+    "horizontalScrollPresent": false
+  },
+  "clippedChildren": [
+    {
+      "element": ".vc-container__bg svg",
+      "classification": "INTENTIONAL — decorative background SVG clipped by parent overflow:hidden. Not content loss.",
+      "scrollWidth": 645,
+      "clientWidth": 485
+    },
+    {
+      "element": "div.truncate (long shared-list URL description)",
+      "classification": "INTENTIONAL — text-overflow:ellipsis with overflow:hidden on truncate container. Long URL (608px scrollWidth) correctly clipped to 405px with ellipsis. No content loss — URL is actionable via the card link.",
+      "scrollWidth": 608,
+      "clientWidth": 405,
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap"
+    }
+  ],
+  "note": "No horizontal scroll at mobile viewport. All overflow is intentional (decorative SVG background, text ellipsis truncation). BL-UI-004 PASS."
+}

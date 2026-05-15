@@ -1,0 +1,125 @@
+{
+  "caseId": "GQL-060",
+  "title": "xCart — clearCart on Already-Empty Cart is Idempotent",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:50:47.380Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:50:46.586Z",
+      "expiresAt": "2026-05-15T15:20:46.586Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 173
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "clear_first",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 332
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "clear_second",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 280
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=clear_first] errors[] empty",
+      "label": "clear_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=clear_first] data.clearCart.itemsCount = 0",
+      "label": "clear_first",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.clearCart.itemsCount = 0",
+      "actual": "data.clearCart.itemsCount = 0"
+    },
+    {
+      "raw": "[ERRORS label=clear_second] errors[] empty",
+      "label": "clear_second",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=clear_second] data.clearCart.itemsCount = 0",
+      "label": "clear_second",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.clearCart.itemsCount = 0",
+      "actual": "data.clearCart.itemsCount = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP label=clear_second] same cart.id returned across both clears (idempotent)",
+      "layer": "ROUNDTRIP",
+      "note": "same cart.id returned across both clears (idempotent)",
+      "resolved": "same cart.id returned across both clears (idempotent)"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — cart already empty",
+    "blocks": []
+  }
+}

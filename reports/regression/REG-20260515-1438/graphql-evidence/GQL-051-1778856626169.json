@@ -1,0 +1,261 @@
+{
+  "caseId": "GQL-051",
+  "title": "xCart — updateCartQuantity Totals Recalculated After Bulk Update",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:50:26.169Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:50:22.162Z",
+      "expiresAt": "2026-05-15T15:20:21.162Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_1": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_2": "5834aac09b7e4e279a5b41c993c36e22"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 149
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod2",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 2 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id minQuantity } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "217be9f3d9064075821f6785dca658b9",
+                "minQuantity": 1
+              },
+              {
+                "id": "5834aac09b7e4e279a5b41c993c36e22",
+                "minQuantity": 1
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 316
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 596
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_first",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 591
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_second",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"5834aac09b7e4e279a5b41c993c36e22\" quantity: 1 }) { id subTotal { amount } validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "subTotal": {
+              "amount": 345
+            },
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 509
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "bulk_update",
+      "query": "mutation {\n    updateCartQuantity(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      items: [\n        { productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 2 }\n        { productId: \"5834aac09b7e4e279a5b41c993c36e22\" quantity: 3 }\n      ]\n    }) {\n      id itemsCount subTotal { amount } items { productId quantity extendedPrice { amount } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "updateCartQuantity": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 2,
+            "subTotal": {
+              "amount": 935
+            },
+            "items": [
+              {
+                "productId": "5834aac09b7e4e279a5b41c993c36e22",
+                "quantity": 3,
+                "extendedPrice": {
+                  "amount": 735
+                }
+              },
+              {
+                "productId": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+                "quantity": 2,
+                "extendedPrice": {
+                  "amount": 199.98
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1550
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 284
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_first] errors[] empty",
+      "label": "add_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_first] data.addItem.validationErrors = 0",
+      "label": "add_first",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors = 0",
+      "actual": "data.addItem.validationErrors = 0"
+    },
+    {
+      "raw": "[ERRORS label=add_second] errors[] empty",
+      "label": "add_second",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_second] data.addItem.validationErrors = 0",
+      "label": "add_second",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors = 0",
+      "actual": "data.addItem.validationErrors = 0"
+    },
+    {
+      "raw": "[ERRORS label=bulk_update] errors[] empty",
+      "label": "bulk_update",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 2",
+      "label": "bulk_update",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.updateCartQuantity.itemsCount = 2",
+      "actual": "data.updateCartQuantity.itemsCount = 2"
+    },
+    {
+      "raw": "[DATA label=bulk_update] data.updateCartQuantity.subTotal is non-null",
+      "label": "bulk_update",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.updateCartQuantity.subTotal is non-null",
+      "actual": "data.updateCartQuantity.subTotal = {\"amount\":935}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Verify bulk_update.subTotal.amount > add_second.subTotal.amount (qty increased → total increased). extendedPrice[i].amount = listPrice × quantity.",
+      "layer": "EVIDENCE",
+      "note": "Verify bulk_update.subTotal.amount > add_second.subTotal.amount (qty increased → total increased). extendedPrice[i].amount = listPrice × quantity.",
+      "resolved": "Verify bulk_update.subTotal.amount > add_second.subTotal.amount (qty increased → total increased). extendedPrice[i].amount = listPrice × quantity."
+    },
+    {
+      "raw": "[EVIDENCE] If add_second validationErrors non-empty, PRODUCT_2 (items[1]) has a min-qty rule — catalog ordering may have changed; probe for another buyable-no-min-qty product.",
+      "layer": "EVIDENCE",
+      "note": "If add_second validationErrors non-empty, PRODUCT_2 (items[1]) has a min-qty rule — catalog ordering may have changed; probe for another buyable-no-min-qty product.",
+      "resolved": "If add_second validationErrors non-empty, PRODUCT_2 (items[1]) has a min-qty rule — catalog ordering may have changed; probe for another buyable-no-min-qty product."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "caseId": "GQL-048",
+  "title": "xCart — updateCartQuantity quantity=0 Removes Item",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:49:58.646Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:49:57.052Z",
+      "expiresAt": "2026-05-15T15:19:56.052Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 139
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 297
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_one",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 627
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_zero",
+      "query": "mutation {\n    updateCartQuantity(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      items: [{ productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 0 }]\n    }) {\n      id itemsCount items { productId quantity }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "updateCartQuantity": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 262
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 257
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_one] errors[] empty",
+      "label": "add_one",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_one] data.addItem.validationErrors = 0",
+      "label": "add_one",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors = 0",
+      "actual": "data.addItem.validationErrors = 0"
+    },
+    {
+      "raw": "[ERRORS label=set_zero] errors[] empty",
+      "label": "set_zero",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] set_zero: either data.updateCartQuantity.itemsCount=0 with items[] empty (qty=0 removes) OR items[].quantity=0 retained (qty=0 kept — surprising). Document observed branch.",
+      "layer": "EVIDENCE",
+      "note": "set_zero: either data.updateCartQuantity.itemsCount=0 with items[] empty (qty=0 removes) OR items[].quantity=0 retained (qty=0 kept — surprising). Document observed branch.",
+      "resolved": "set_zero: either data.updateCartQuantity.itemsCount=0 with items[] empty (qty=0 removes) OR items[].quantity=0 retained (qty=0 kept — surprising). Document observed branch."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

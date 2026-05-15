@@ -1,0 +1,221 @@
+{
+  "caseId": "GQL-024",
+  "title": "xOrder — createOrderFromCart Idempotency (Duplicate Call)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:53:37.416Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:53:31.406Z",
+      "expiresAt": "2026-05-15T15:23:31.406Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_ID": "5834aac09b7e4e279a5b41c993c36e22",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 142
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "5834aac09b7e4e279a5b41c993c36e22"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 292
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1897
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"5834aac09b7e4e279a5b41c993c36e22\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1046
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      shipment: {\n        shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150\n        deliveryAddress: { city: \"New York\" countryCode: \"US\" countryName: \"United States\" firstName: \"Test\" lastName: \"User\" line1: \"123 Test St\" postalCode: \"10001\" regionId: \"NY\" regionName: \"New York\" }\n      }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 801
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_payment",
+      "query": "mutation { addOrUpdateCartPayment(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" payment: { paymentGatewayCode: \"DefaultManualPaymentMethod\" } }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartPayment": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 553
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_first",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" }) { id number } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": {
+            "id": "f6447eaa-fad9-4eba-8761-5f970cdfc045",
+            "number": "CO260515-00005"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 823
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_second",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" }) { id number } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "The cart has validation errors",
+            "locations": [
+              {
+                "line": 1,
+                "column": 12
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ValidationError",
+              "codes": [
+                "ValidationError"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 443
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_first] errors[] empty",
+      "label": "create_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=create_first] data.createOrderFromCart.id is non-null",
+      "label": "create_first",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart.id is non-null",
+      "actual": "data.createOrderFromCart.id = \"f6447eaa-fad9-4eba-8761-5f970cdfc045\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id.",
+      "layer": "EVIDENCE",
+      "note": "create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id.",
+      "resolved": "create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id."
+    }
+  ],
+  "cleanup": {
+    "raw": "Creates real order — Admin cleanup if needed",
+    "blocks": []
+  }
+}

@@ -226,3 +226,37 @@ GQL-114,"xCatalog — ProductConnection Schema Coverage","GraphQL > xCatalog > S
 [GQL-EXEC pconn_full]","[ERRORS label=pconn_full] errors[] empty — every ProductConnection field must resolve
 [DATA label=pconn_full] data.products.pageInfo is non-null
 [DATA label=pconn_full] data.products.items is non-null",",","Any ProductConnection field renamed/removed (DV-009)",none,xAPI; graphql-schema.md — ProductConnection,Automated
+GQL-115,"[VCST-4173] xCatalog products term_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",Critical,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies term_facets[] is populated after VCST-4173 migrated FilteredBrowsing config from DynamicProperties to Store Settings. Uses active B2B virtual catalog root 9238c387-d779-40cb-b27d-5496a670a924 (per feedback_graphql_products_filter memory).","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_term_facets]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 1
+      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      facet: ""Brand""
+    ) {
+      totalCount
+      term_facets { name label facetType terms { term label count isSelected } }
+    }
+  }
+[GQL-EXEC products_term_facets]","[ERRORS label=products_term_facets] errors[] empty
+[DATA label=products_term_facets] data.products is non-null
+[DATA label=products_term_facets] data.products.term_facets is non-null","[EVIDENCE] Confirm same facet groups appear in Admin > Catalog > Store > FilteredBrowsing blade as before migration","term_facets[] null or empty after migration (config lost); facet count drops to 0 where it was >0 pre-migration; HTTP 500; DV-008 on facet field names","none — read-only","VCST-4173; xAPI; Query.products term_facets; FilteredBrowsing",Draft
+GQL-116,"[VCST-4173] xCatalog products range_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",High,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies range_facets[] is populated when a price.USD facet is passed, after VCST-4173 migrated FilteredBrowsing from DynamicProperties to Store Settings. Range aggregation config must survive migration.","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_range_facets]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 1
+      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      facet: ""price.USD""
+    ) {
+      totalCount
+      range_facets { name label facetType ranges { count from to fromStr toStr label isSelected } }
+    }
+  }
+[GQL-EXEC products_range_facets]","[ERRORS label=products_range_facets] errors[] empty
+[DATA label=products_range_facets] data.products is non-null
+[DATA label=products_range_facets] data.products.range_facets is non-null","[EVIDENCE] range_facets may be empty if no price range aggregation is configured — verify Admin blade first","range_facets[] null after migration (range config not written to Store Settings); facet argument rejected; HTTP 500","none — read-only","VCST-4173; xAPI; Query.products range_facets; FilteredBrowsing",Draft

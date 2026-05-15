@@ -1,0 +1,15 @@
+{
+  "invariant": "BL-UI-004",
+  "test-id": "LAYOUT-OVF-006",
+  "viewport": 768,
+  "result": "PASS",
+  "severity": "PASS",
+  "threshold": "no horizontal scroll, no unintentional content clipping",
+  "measured": {
+    "documentScrolls": false,
+    "docScrollWidth": 753,
+    "innerWidth": 768,
+    "horizontalScrollPresent": false
+  },
+  "note": "No horizontal scroll at 768px. Document scrollWidth (753) is less than innerWidth (768) accounting for scrollbar gutter. No unintentional content clipping detected in list grid."
+}

@@ -1,0 +1,17 @@
+{
+  "invariant": "BL-UI-001",
+  "test-id": "LAYOUT-PAGE-CLS-LISTS-001",
+  "viewport": 375,
+  "effective-viewport-px": 485,
+  "result": "FAIL",
+  "severity": "P0",
+  "threshold": 0.25,
+  "measured": 0.483,
+  "shiftCount": 4,
+  "note": "CLS 0.483 far exceeds P0 threshold of 0.25. Measured post-DOMContentLoaded (buffered:true). 4 layout shifts recorded during skeleton-to-content swap on reload. Chrome DevTools MCP resize_page sets outer window; effective viewport is 485px (single-column mobile layout active, sidebar hidden).",
+  "tokens": {
+    "--color-primary-500": "#996c5a"
+  },
+  "dom-snippet": ".account-shell { paddingLeft: 24px; paddingRight: 24px; paddingBottom: 24px } — list cards swap from skeleton to populated grid causing shift",
+  "screenshot": "LAYOUT-PAGE-CLS-LISTS-001-375-FAIL.png"
+}

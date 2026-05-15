@@ -270,3 +270,92 @@ GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > S
 [DATA label=cart_items_full] data.cart.items is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift",none — clearCart at end,xAPI; graphql-schema.md — LineItemType full coverage,Automated
 GQL-099,"Catalog — productConfiguration Query Exposes maxLength","GraphQL > Catalog > productConfiguration > Schema",High,BL-GQL-002; BL-CFG-001,ECL-2.1,"BLOCKED: Requires a configurable product with a Text section that has maxLength set. Legacy suite covers this via specific CFG-* fixtures. Mark Draft until runner has configurable-product primitives.","—","[MANUAL-BLOCKED] Needs configurable-product Text section fixture.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength field missing from productConfiguration schema",none,xAPI; BL-CFG-001,Draft
 GQL-100,"xCart — addItem Rejects CustomText Exceeding Section MaxLength","GraphQL > xCart > Configuration Validation",High,BL-GQL-001; BL-CFG-001,ECL-14.1; ECL-2.1,"BLOCKED: Needs (a) configurable product with Text section (maxLength), (b) addItem with configurationSections payload exceeding maxLength. Complex fixture + mutation shape.","—","[MANUAL-BLOCKED] Needs configurable-product Text section with maxLength.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength not enforced; oversized custom text silently accepted",none,xAPI; BL-CFG-001 validation,Draft
+GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean Rejection (VCST-4960)","GraphQL > Cart > Cross-Domain Validation",Medium,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Cross-domain validation: add a regular (non-configurable) product to cart via @td(CFG_HOODIE.id) (confirmed non-configurable alias), capture its lineItemId, then call changeCartConfiguredItem referencing that lineItemId with any configurationSections payload. Verifies the validation is not limited to configurable products — the mutation must reject cleanly (validationErrors[] non-empty) without HTTP 500 or data corruption.","plain_product_id=@td(CFG_HOODIE.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_plain]
+  mutation {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HOODIE.id)"" quantity: 1 }) {
+      id itemsCount items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_plain]
+[GQL-CAPTURE add_plain.data.addItem.items.0.id → PLAIN_LINE_ITEM_ID]
+[GQL-OP change_on_plain]
+[GQL-VARS change_on_plain] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""@td(CFG_HOODIE.id)"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PLAIN_LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC change_on_plain]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_plain] errors[] empty
+[DATA label=add_plain] data.addItem.itemsCount = 1
+[ERRORS label=change_on_plain] errors[] empty
+[COUNT label=change_on_plain] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Non-configurable lineItem has no catalog configurationSections — any sectionId will fail catalog lookup. Mutation must reject gracefully. Record actual errorCode vs the configurable-product variant (may differ). NOTE: verify CFG_HOODIE alias resolves to a non-configurable product (was originally tagged for hoodie variant tests but suitable here).","HTTP 500 on non-configurable target (unhandled null product config); errors[] non-empty at transport level (GraphQL exception escaped); configurationItems populated unexpectedly on a plain item",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; Cross-domain validation (050b4 scope)",Draft
+GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-GQL-001","ECL-14.1","Runner-native. ORG_USER. VCST-5083 regression: pre-fix NoLockService caused lost-update under concurrent addItem. Simulates race window via 5 rapid sequential addItem calls for same productId (qty=1 each). Post-fix expectation: itemsQuantity=5, itemsCount=1 (BL-CART-001 merge rule).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_1]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_1]
+[GQL-OP add_2]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_2]
+[GQL-OP add_3]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_3]
+[GQL-OP add_4]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_4]
+[GQL-OP add_5]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+[GQL-EXEC add_5]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount itemsQuantity items { id productId sku quantity } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_5] errors[] empty
+[DATA label=add_5] data.addItem.itemsCount = 1
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.itemsCount = 1
+[DATA label=read_back] data.cart.itemsQuantity = 5","[EVIDENCE] BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5.","itemsQuantity < 5 (lost-update — pre-fix lock bug); itemsCount > 1 (duplicate lines)",cleanup_post inline,"VCST-5083; BL-CART-001; xAPI addItem lock regression; XCart 3.1013.0 fix",Draft
+GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reaches Empty","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-CART-008","ECL-14.1; ECL-9.1","Runner-native. ORG_USER. VCST-5083 race window: addItem → removeCartItem with captured lineItemId. Post-fix: cart empty (itemsCount=0). Pre-fix: stale-read race could no-op the remove.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { id productId sku quantity } } }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP remove_item]
+  mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" }) { id itemsCount items { id productId quantity } } }
+[GQL-EXEC remove_item]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=remove_item] errors[] empty
+[DATA label=remove_item] data.removeCartItem.itemsCount = 0
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.itemsCount = 0","[EVIDENCE] BL-CART-008: removeCartItem fully removes the line just created. Pre-fix: remove could no-op due to stale read.","remove_item.itemsCount = 1 (remove no-op'd — pre-fix lock bug); read_back.itemsCount = 1",cleanup_post inline,"VCST-5083; BL-CART-008; xAPI removeCartItem lock regression; XCart 3.1013.0 fix",Draft

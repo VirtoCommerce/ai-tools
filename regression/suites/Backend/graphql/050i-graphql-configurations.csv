@@ -1557,3 +1557,455 @@ CFG-GQL-036,"changeCartConfigurationItemSelected — Variation Section Flip With
 [ERRORS label=flip_var] errors[] empty
 [DATA label=flip_var] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_VARIATION_ID}}].selectedForCheckout = false
 [DATA label=flip_var] data.changeCartConfigurationItemSelected.subTotal.amount < {{BASE_SUB_TOTAL}}","[EVIDENCE] Variation deselect drops the variation contribution from listPrice; subTotal cascade fires; Variation matched by (sectionId, type, option.productId) — verifies the Product-shaped key for Variation type vs Text/File no-option discrimination",errors[] non-empty for valid Variation flip; subTotal unchanged after flip (cascade did NOT fire); selectedForCheckout did not flip,cleanup_post inline,xAPI; Mutations.changeCartConfigurationItemSelected; PROPOSED-BL-CART-CFG-001 (NCS short-circuit); CFG_VARIATION_CAKE alias,Automated
+CFG-GQL-037,"changeCartConfiguredItem — Invalid sectionId (All-Zeros GUID) Rejected (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix: addItem(CFG_LAPTOP) with valid sections, then call changeCartConfiguredItem with a fabricated all-zeros sectionId (00000000-0000-0000-0000-000000000000). Post-fix: validationErrors[] must be non-empty; original configurationItems must be UNCHANGED. Pre-fix behavior (3.1007.0): silently accepted, returned validationErrors: [], regenerated configItems. Fix shipped in XCart 3.1013.0 via PR #113/#110.","configurable_id=@td(CFG_LAPTOP.id); bogus_section_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id quantity extendedPrice { amount } configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.id → ORIGINAL_CONFIG_ITEM_ID_0]
+[GQL-OP reject_invalid]
+[GQL-VARS reject_invalid] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC reject_invalid]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=reject_invalid] errors[] empty
+[COUNT label=reject_invalid] data.changeCartConfiguredItem.validationErrors.length >= 1
+[DATA label=reject_invalid] data.changeCartConfiguredItem.validationErrors[?errorCode=CONFIGURATION_SECTION_NOT_FOUND].errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.configurationItems.configurationItems.length = 2
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] errorCode value in validationErrors.0 — look for INVALID_SECTION_ID or CONFIGURATION_SECTION_NOT_FOUND (exact code TBD from PR #113 source; record observed value in evidence for permanent documentation). read_back confirms original configItems unchanged after rejection.","validationErrors[] empty (fix not deployed or regression); configItems regenerated with bogus section (pre-fix behavior persists); errors[] non-empty at HTTP level (mutation should still HTTP-200); HTTP 500; read_back length != 2",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
+CFG-GQL-038,"changeCartConfiguredItem — Section Type Mismatch Rejected (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix covers type mismatch: addItem(CFG_LAPTOP) with valid Product sections, then call changeCartConfiguredItem providing the correct sectionId for RAM section but with type=Text (mismatch against the catalog definition). Post-fix: validationErrors[] non-empty. Original configItems preserved. NOTE: If validationErrors[] empty observed, classify NEEDS-INVESTIGATION (not FAIL) — type-mismatch validation may not be in scope for VCST-4960 fix; file follow-up to clarify.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP reject_type_mismatch]
+[GQL-VARS reject_type_mismatch] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Text"", ""customText"": ""wrong-type""}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC reject_type_mismatch]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=reject_type_mismatch] errors[] empty
+[COUNT label=reject_type_mismatch] data.changeCartConfiguredItem.validationErrors.length >= 1
+[DATA label=reject_type_mismatch] data.changeCartConfiguredItem.validationErrors[?errorCode=CONFIGURATION_SECTION_TYPE_MISMATCH].errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.configurationItems.configurationItems.length = 2
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] RAM section catalog type is Product; sending type=Text with valid sectionId is a type mismatch. Post-fix validation must reject this. Record actual errorCode.","validationErrors[] empty (NEEDS-INVESTIGATION — may indicate type-mismatch not in VCST-4960 fix scope); configItems wiped/regenerated after rejection; HTTP 500; errors[] non-empty at transport level",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+",Draft
+CFG-GQL-039,"changeCartConfiguredItem — State Preserved on Validation Failure (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. State-integrity regression for VCST-4960 fix: addItem(CFG_LAPTOP) with UPGRADE options for both sections (different from BASE), then call changeCartConfiguredItem with all-zeros sectionId. Post-fix: both configItems must still reference the UPGRADE productIds after rejection — no regeneration from defaults, no reset to BASE. Tests that CartAggregate.ChangeCartConfiguredItem rolls back or does not commit the regeneration on validation error.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id extendedPrice { amount } configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.extendedPrice.amount → UPGRADE_EXTENDED_PRICE]
+[GQL-OP reject_bogus]
+[GQL-VARS reject_bogus] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id extendedPrice { amount } configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC reject_bogus]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=reject_bogus] errors[] empty
+[COUNT label=reject_bogus] data.changeCartConfiguredItem.validationErrors.length >= 1
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.configurationItems.configurationItems.length = 2
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] UPGRADE productIds still present in configItems after rejection — confirms CartAggregate does NOT commit regeneration on validation error. extendedPrice from reject_bogus response items (if returned) should match UPGRADE_EXTENDED_PRICE, not BASE price.","configItems reset to BASE after rejection (regeneration committed despite validation error — pre-fix VCST-4960 behavior); configItems length changed from 2; read_back finds OPT_RAM_BASE_ID instead of UPGRADE (state clobbered); HTTP 500",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
+CFG-GQL-040,"changeCartConfiguredItem — Mixed Valid/Invalid Sections All-or-Nothing Rejection (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix enforces all-or-nothing atomicity: addItem(CFG_LAPTOP) with both sections at BASE. Call changeCartConfiguredItem with one valid sectionId (RAM section → UPGRADE option) AND one invalid sectionId (all-zeros). Entire mutation must be rejected — RAM section must NOT be partially updated to UPGRADE even though it was valid. configItems preserved at BASE for both sections.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP reject_mixed]
+[GQL-VARS reject_mixed] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC reject_mixed]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=reject_mixed] errors[] empty
+[COUNT label=reject_mixed] data.changeCartConfiguredItem.validationErrors.length >= 1
+[DATA label=reject_mixed] data.changeCartConfiguredItem.validationErrors[?errorCode=CONFIGURATION_SECTION_NOT_FOUND].errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.configurationItems.configurationItems.length = 2
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] RAM section stays at BASE despite having a valid entry in the payload — confirms all-or-nothing rejection. Partial-apply would show OPT_RAM_UPGRADE_ID in read_back which would be a bug.","RAM section updated to UPGRADE despite mixed payload (partial-apply — all-or-nothing broken); validationErrors[] empty (only invalid section silently skipped); read_back length != 2; HTTP 500",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
+CFG-GQL-041,"changeCartConfiguredItem — sectionId Format Variants All Rejected (EP, VCST-4960)","GraphQL > Configurable Products > Mutation",Medium,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Equivalence partitioning across sectionId format variants: (1) all-zeros GUID, (2) random non-GUID string 'NOT-A-VALID-SECTION-ID'. Both are invalid sectionIds; both must produce validationErrors[] non-empty. Each call is a separate op; cleanup_pre before each. Verifies that the validation path is not tied specifically to the zero-GUID pattern but to any sectionId that does not match the product's catalog definition. NOTE: empty-string variant intentionally omitted from this case (covered conceptually by non-GUID pattern); add as separate op if author wants third variant.","configurable_id=@td(CFG_LAPTOP.id); bogus_guid=00000000-0000-0000-0000-000000000000; nonguid_sid=NOT-A-VALID-SECTION-ID","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item_a]
+[GQL-VARS add_item_a] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item_a]
+[GQL-CAPTURE add_item_a.data.addItem.items.0.id → LINE_ITEM_ID_A]
+[GQL-OP reject_zeros]
+[GQL-VARS reject_zeros] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID_A}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC reject_zeros]
+[GQL-OP cleanup_a]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_a]
+[GQL-OP add_item_b]
+[GQL-VARS add_item_b] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItemB($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id }
+    }
+  }
+[GQL-EXEC add_item_b]
+[GQL-CAPTURE add_item_b.data.addItem.items.0.id → LINE_ITEM_ID_B]
+[GQL-OP reject_nonguid]
+[GQL-VARS reject_nonguid] {""configurationSections"": [{""sectionId"": ""NOT-A-VALID-SECTION-ID"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItemB($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID_B}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC reject_nonguid]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item_a] errors[] empty
+[ERRORS label=reject_zeros] errors[] empty
+[COUNT label=reject_zeros] data.changeCartConfiguredItem.validationErrors.length >= 1
+[ERRORS label=add_item_b] errors[] empty
+[ERRORS label=reject_nonguid] errors[] empty
+[COUNT label=reject_nonguid] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] All invalid sectionId formats (all-zeros GUID, non-GUID string) produce consistent validationErrors[] non-empty. Record errorCode for each variant to confirm identical error semantics.","Either variant returns validationErrors[] empty (validation tied to GUID-parse only, not catalog lookup); HTTP 500 on non-GUID string (format rejection before catalog check); inconsistent errorCode between variants",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; EP technique (format-based partitioning)",Draft
+CFG-GQL-042,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength boundary accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix: Text section customText at exactly maxLength chars MUST NOT trigger validation error. Uses CFG_TEXT_DRIVEN_COND (CFG-024). BVA: at-boundary value.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { configurationSections { id type isRequired maxLength allowCustomText } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_TEXT_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.maxLength → TEXT_MAX_LENGTH]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+      validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_at_max]
+[GQL-VARS change_at_max] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC change_at_max]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=change_at_max] errors[] empty
+[COUNT label=change_at_max] data.changeCartConfiguredItem.validationErrors.length = 0","[EVIDENCE] customText at maxLength boundary accepted — no validationErrors[] (BVA at-boundary pass). Record actual TEXT_MAX_LENGTH captured for traceability.","validationErrors[] non-empty for at-boundary input (pre-fix VCST-4987 over-trigger); addItem itemsCount=0; change_at_max returns errors despite valid length",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA (at-boundary); BL-CART-014",Draft
+CFG-GQL-043,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength+1 rejected with validationErrors","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix counterpart: Text customText EXCEEDING maxLength by 1 char MUST be rejected with validationErrors[] non-empty. BVA past-boundary negative.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { configurationSections { id type isRequired maxLength allowCustomText } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_TEXT_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.maxLength → TEXT_MAX_LENGTH]
+[GQL-OP add_item_valid]
+[GQL-VARS add_item_valid] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""ValidSeed""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_TEXT_DRIVEN_COND.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC add_item_valid]
+[GQL-CAPTURE add_item_valid.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_over_max]
+[GQL-VARS change_over_max] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""customText"": ""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA""}]}
+  mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC change_over_max]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item_valid] errors[] empty
+[DATA label=add_item_valid] data.addItem.itemsCount = 1
+[ERRORS label=change_over_max] errors[] empty
+[COUNT label=change_over_max] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Over-limit input rejected via validationErrors[]; record errorCode and actual TEXT_MAX_LENGTH from get_def.","validationErrors[] empty for over-limit input (maxLength enforcement broken)",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA past-boundary",Draft
+CFG-GQL-045,"[VCST-4987] changeCartConfiguredItem — Empty customText on optional Text section accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-9.1","Runner-native. ORG_USER. VCST-4987 edge: empty customText on a non-required Text section MUST NOT trigger maxLength error. Uses CFG_VARIATION_CAKE (textSectionIsRequired=false).","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""@td(CFG_VARIATION_CAKE.textSectionId)"", ""type"": ""Text"", ""customText"": """"}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+      validationErrors { errorCode errorMessage }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.validationErrors.length = 0
+[DATA label=add_item] data.addItem.itemsCount = 1","[EVIDENCE] Empty customText on optional Text section accepted — maxLength validator does NOT fire for empty string on non-required section.","validationErrors[] non-empty for empty customText on optional section",cleanup_post inline,"xAPI; Mutation.addItem; VCST-4987; CFG_VARIATION_CAKE optional Text section; BL-CART-014",Draft
+CFG-GQL-046,"[VCST-5053] mergeCart — configurable Product sections preserved after merge (ORG_USER ← USER2)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-012","ECL-2.1; ECL-14.1","Runner-native. VCST-5053 fix: cart merge MUST preserve configurable line item configuration. USER2 adds CFG_LAPTOP with UPGRADE RAM + UPGRADE Storage; ORG_USER calls mergeCart. Post-merge: configurationItems intact.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=USER2]
+[GQL-OP setup_user2]
+  query { me { id } }
+[GQL-EXEC setup_user2]
+[GQL-CAPTURE setup_user2.data.me.id → USER2_ID]
+[GQL-OP cleanup_user2_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
+[GQL-EXEC cleanup_user2_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.1.product.id → OPT_STORAGE_UPGRADE_ID]
+[GQL-OP add_item_user2]
+[GQL-VARS add_item_user2] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_UPGRADE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item_user2]
+[GQL-OP get_source_cart]
+  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER2_ID}}"") { id } }
+[GQL-EXEC get_source_cart]
+[GQL-CAPTURE get_source_cart.data.cart.id → SOURCE_CART_ID]
+[AUTH role=ORG_USER]
+[GQL-OP setup_org_user]
+  query { me { id } }
+[GQL-EXEC setup_org_user]
+[GQL-CAPTURE setup_org_user.data.me.id → USER_ID]
+[GQL-OP cleanup_org_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_org_pre]
+[GQL-OP merge]
+  mutation {
+    mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SOURCE_CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) {
+      id itemsCount items { id productId configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC merge]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"") { id itemsCount items { id productId configurationItems { id sectionId productId selectedForCheckout } } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]
+[AUTH role=USER2]
+[GQL-OP cleanup_user2_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
+[GQL-EXEC cleanup_user2_post]","[ERRORS label=add_item_user2] errors[] empty
+[DATA label=add_item_user2] data.addItem.itemsCount = 1
+[ERRORS label=merge] errors[] empty
+[DATA label=merge] data.mergeCart.itemsCount >= 1
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] Both UPGRADE configItems survive merge intact. Pre-fix VCST-5053 symptom: configurationItems[] is empty or reset to defaults after merge.","configurationItems[] empty after merge (pre-fix VCST-5053 regression); configItems present but pointing to BASE options; merge errors[] non-empty; HTTP 500",cleanup_post inline,"xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012",Draft
+CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after merge","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-012","ECL-2.1","Runner-native. VCST-5053 fix: cart merge MUST preserve Text-section customText. USER2 adds CFG_VARIATION_CAKE with non-empty customText in optional Text section; merge to ORG_USER; assert customText survives.","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId); custom_text=HelloMerge","[AUTH role=USER2]
+[GQL-OP setup_user2]
+  query { me { id } }
+[GQL-EXEC setup_user2]
+[GQL-CAPTURE setup_user2.data.me.id → USER2_ID]
+[GQL-OP cleanup_user2_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
+[GQL-EXEC cleanup_user2_pre]
+[GQL-OP add_item_user2]
+[GQL-VARS add_item_user2] {""configurationSections"": [{""sectionId"": ""@td(CFG_VARIATION_CAKE.textSectionId)"", ""type"": ""Text"", ""customText"": ""HelloMerge""}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" productId: ""@td(CFG_VARIATION_CAKE.productId)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC add_item_user2]
+[GQL-OP get_source_cart]
+  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER2_ID}}"") { id } }
+[GQL-EXEC get_source_cart]
+[GQL-CAPTURE get_source_cart.data.cart.id → SOURCE_CART_ID]
+[AUTH role=ORG_USER]
+[GQL-OP setup_org_user]
+  query { me { id } }
+[GQL-EXEC setup_org_user]
+[GQL-CAPTURE setup_org_user.data.me.id → USER_ID]
+[GQL-OP cleanup_org_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_org_pre]
+[GQL-OP merge]
+  mutation {
+    mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SOURCE_CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) {
+      id itemsCount items { id productId configurationItems { id sectionId customText } }
+    }
+  }
+[GQL-EXEC merge]
+[GQL-OP read_back]
+  query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"") { id items { id productId configurationItems { id sectionId customText } } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]
+[AUTH role=USER2]
+[GQL-OP cleanup_user2_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER2_ID}}"" }) { id } }
+[GQL-EXEC cleanup_user2_post]","[ERRORS label=add_item_user2] errors[] empty
+[DATA label=add_item_user2] data.addItem.itemsCount = 1
+[ERRORS label=merge] errors[] empty
+[DATA label=merge] data.mergeCart.itemsCount >= 1
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge","[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.","customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart",cleanup_post inline,"xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012",Draft

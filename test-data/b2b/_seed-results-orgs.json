@@ -1,357 +1,74 @@
 {
-  "seedDate": "2026-03-10",
+  "seedDate": "2026-05-15",
+  "profile": "full",
+  "runId": "REG-2026-05-15-1525",
   "platform": "https://vcst-qa.govirto.com",
   "storeId": "B2B-store",
+  "seededAt": "2026-05-15T15:42:00Z",
+  "catalog": {
+    "catalogId": "c37ce9ed-7980-4470-a66e-6da522995dee",
+    "rootCategoryId": "75d0304c-c940-4b8b-9e8e-3f147d02ee37",
+    "subCategoryId": "8c3d425f-eb16-4c2c-b795-2f1ad720d65d"
+  },
+  "products": {
+    "productId1": "127d462c-f0d4-476e-8d5d-36002b714539",
+    "productId2": "fc7ca77a-4781-442f-8048-f0f98ece4b2f",
+    "configurableId": "5785efd4-8fa2-4cb4-83ee-22ea79c2c545",
+    "variationId1": "0a709c17-d9a1-4bc5-98a6-6d14f2daccd1",
+    "variationId2": "41de7b60-ccaa-4a23-8ee2-5f97b1d6207f",
+    "variationId3": "da41e2f4-dc6d-4aa5-97a7-0f3a8c40d569",
+    "oosProductId": "75601bfe-3041-4a7b-9a87-bd1279801eda"
+  },
+  "pricing": {
+    "priceListId": "673afb07-3fdf-4ca1-a2af-92dabe73e87e",
+    "priceListIdEUR": "38453bbf-1fa7-42b6-a17d-3d5174fb60ae"
+  },
+  "infrastructure": {
+    "ffcId": "ffc-acme-eur-berlin-de"
+  },
   "organizations": [
     {
-      "key": "ORG-001",
-      "name": "AGENT-TEST-Org-AcmeCorp-20260310",
-      "platformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "parentKey": null,
-      "parentPlatformId": null
-    },
-    {
-      "key": "ORG-002",
-      "name": "AGENT-TEST-Org-TechFlow-20260310",
-      "platformId": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
-      "parentKey": null,
-      "parentPlatformId": null
-    },
-    {
-      "key": "ORG-003",
-      "name": "AGENT-TEST-Org-BuildRight-20260310",
-      "platformId": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
-      "parentKey": null,
-      "parentPlatformId": null
-    },
-    {
-      "key": "ORG-004",
-      "name": "AGENT-TEST-Org-AcmeWest-20260310",
-      "platformId": "a1e98b8e-bedc-4df2-9b2d-65c05142d93f",
-      "parentKey": "ORG-001",
-      "parentPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b"
+      "key": "SEED-ORG-20260515",
+      "name": "AGENT-TEST-Org-20260515",
+      "platformId": "e9fe7b54-5295-47a8-8d5b-068864a328c3"
     }
   ],
   "contacts": [
     {
-      "key": "CON-001",
-      "name": "John Mitchell",
-      "email": "test-john.mitchell-20260310@test-agent.com",
-      "orgKey": "ORG-001",
-      "orgPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "platformId": "d0f765ba-3d2d-4f4e-a4b4-e3306e153178"
+      "key": "SEED-CON-001-20260515",
+      "name": "Regression Admin-20260515",
+      "email": "test-regression-admin-20260515@test-agent.com",
+      "platformId": "cfd40013-2329-43a9-beff-02e1f4bac033"
     },
     {
-      "key": "CON-002",
-      "name": "Sarah Chen",
-      "email": "test-sarah.chen-20260310@test-agent.com",
-      "orgKey": "ORG-001",
-      "orgPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "platformId": "5a1b9fa1-7f41-4faf-9354-ac689da770f2"
-    },
-    {
-      "key": "CON-003",
-      "name": "Mike Torres",
-      "email": "test-mike.torres-20260310@test-agent.com",
-      "orgKey": "ORG-001",
-      "orgPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "platformId": "9061a4fa-3f48-4007-9b52-71853a75adcd"
-    },
-    {
-      "key": "CON-004",
-      "name": "Lisa Wang",
-      "email": "test-lisa.wang-20260310@test-agent.com",
-      "orgKey": "ORG-001",
-      "orgPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "platformId": "0ba83a41-704c-4fd3-8a17-c21fb960bda2"
-    },
-    {
-      "key": "CON-006",
-      "name": "Emily Johnson",
-      "email": "test-emily.johnson-20260310@test-agent.com",
-      "orgKey": "ORG-002",
-      "orgPlatformId": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
-      "platformId": "4cdfe660-6cd4-4851-a2f6-18da1fad51f3"
-    },
-    {
-      "key": "CON-007",
-      "name": "David Kim",
-      "email": "test-david.kim-20260310@test-agent.com",
-      "orgKey": "ORG-002",
-      "orgPlatformId": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
-      "platformId": "af6c8e96-1d5b-4713-89ec-81ad7294f365"
-    },
-    {
-      "key": "CON-008",
-      "name": "Carlos Rodriguez",
-      "email": "test-carlos.rodriguez-20260310@test-agent.com",
-      "orgKey": "ORG-003",
-      "orgPlatformId": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
-      "platformId": "6628485f-63fe-4299-846b-bdc5353815f7"
-    },
-    {
-      "key": "CON-009",
-      "name": "Angela Foster",
-      "email": "test-angela.foster-20260310@test-agent.com",
-      "orgKey": "ORG-003",
-      "orgPlatformId": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
-      "platformId": "c452bc12-acd9-467a-9a08-eac74d052149"
-    },
-    {
-      "key": "CON-010",
-      "name": "Robert Lee",
-      "email": "test-robert.lee-20260310@test-agent.com",
-      "orgKey": "ORG-004",
-      "orgPlatformId": "a1e98b8e-bedc-4df2-9b2d-65c05142d93f",
-      "platformId": "fad9081e-9cfb-4d59-837f-a9aa4a5f0232"
-    },
-    {
-      "key": "CON-011",
-      "name": "Hans Mueller",
-      "email": "test-hans.mueller-20260310@test-agent.com",
-      "orgKey": "ORG-001",
-      "orgPlatformId": "eba8b270-046f-4f03-bc8a-34816e12a86b",
-      "platformId": "1f015ef5-94c7-43c5-bacf-71f786246024"
+      "key": "SEED-CON-002-20260515",
+      "name": "Regression Buyer-20260515",
+      "email": "test-regression-buyer-20260515@test-agent.com",
+      "platformId": "bde3eb97-f5e9-47d3-9efe-3397cdfbb064"
     }
   ],
   "users": [
     {
-      "key": "USR-001",
-      "contactKey": "CON-001",
-      "userName": "test-john.mitchell-20260310@test-agent.com",
-      "platformId": "143bc845-7ba3-4982-ae9a-a9446a399705",
-      "role": "Organization maintainer",
+      "key": "SEED-USR-001-20260515",
+      "userName": "test-regression-admin-20260515@test-agent.com",
+      "platformId": "f8d0de7a-025e-4002-ae06-a827dcf87bfc",
       "password": "TestPass123!"
     },
     {
-      "key": "USR-002",
-      "contactKey": "CON-002",
-      "userName": "test-sarah.chen-20260310@test-agent.com",
-      "platformId": "4590f5a9-add6-4d63-b698-6f691493c81e",
-      "role": "Purchasing agent",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-003",
-      "contactKey": "CON-003",
-      "userName": "test-mike.torres-20260310@test-agent.com",
-      "platformId": "94a4f116-5f10-4a55-9e01-f483b43120a2",
-      "role": "Organization employee",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-004",
-      "contactKey": "CON-004",
-      "userName": "test-lisa.wang-20260310@test-agent.com",
-      "platformId": "a99ac87e-76a3-438c-8786-41926493faf7",
-      "role": "Purchasing agent",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-006",
-      "contactKey": "CON-006",
-      "userName": "test-emily.johnson-20260310@test-agent.com",
-      "platformId": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
-      "role": "Organization maintainer",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-007",
-      "contactKey": "CON-007",
-      "userName": "test-david.kim-20260310@test-agent.com",
-      "platformId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
-      "role": "Purchasing agent",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-008",
-      "contactKey": "CON-008",
-      "userName": "test-carlos.rodriguez-20260310@test-agent.com",
-      "platformId": "3302dcbc-e2b2-41c4-a272-81411c9a083b",
-      "role": "Organization maintainer",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-009",
-      "contactKey": "CON-009",
-      "userName": "test-angela.foster-20260310@test-agent.com",
-      "platformId": "631e3b74-c15b-45f7-bac3-7d657c495817",
-      "role": "Purchasing agent",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-010",
-      "contactKey": "CON-010",
-      "userName": "test-robert.lee-20260310@test-agent.com",
-      "platformId": "17f48d14-1b9c-485b-ab34-1da255f5cc6f",
-      "role": "Organization maintainer",
-      "password": "TestPass123!"
-    },
-    {
-      "key": "USR-011",
-      "contactKey": "CON-011",
-      "userName": "test-hans.mueller-20260310@test-agent.com",
-      "platformId": "978b3edd-9409-42ea-a7bb-ea493f67447c",
-      "role": "Organization maintainer",
+      "key": "SEED-USR-002-20260515",
+      "userName": "test-regression-buyer-20260515@test-agent.com",
+      "platformId": "11bea460-d40a-4f8c-b991-fef9dff98406",
       "password": "TestPass123!"
     }
   ],
-  "availableRoles": [
+  "roles": [
     {
-      "id": "4ba77e5d-dfc1-407e-9d4c-ea9e0cc46d9e",
-      "name": "Warranty Specialist"
-    },
-    {
-      "id": "13bf151d-874e-4fdb-95fa-f446dffa5d1a",
-      "name": "VCST-3759 Role"
-    },
-    {
-      "id": "5d808955-d58a-4256-9fa4-38ff15b79503",
-      "name": "VCC"
-    },
-    {
-      "id": "e75700bb597948cca7962e0bbcfdb97c",
-      "name": "Use api"
-    },
-    {
-      "id": "955c420b-70ba-4791-8b63-1f576fd65725",
-      "name": "Theme settings changer"
-    },
-    {
-      "id": "dc6320d5-024f-4199-912c-e0393ae9a6fd",
-      "name": "Task Manager role"
-    },
-    {
-      "id": "16c0ef75-c317-4f72-aec4-d9e944f17689",
-      "name": "Task manager"
-    },
-    {
-      "id": "6ef72980-4fa4-4c04-b6fa-38e5be955b93",
-      "name": "Supplier Catalog Manager"
-    },
-    {
-      "id": "store-manager",
-      "name": "Store manager"
-    },
-    {
-      "id": "store-admin",
-      "name": "Store administrator"
-    },
-    {
-      "id": "dce68405-f62c-4349-bcf8-4d96f1f40c0e",
-      "name": "SQL queries"
-    },
-    {
-      "id": "652b5344-a37d-4646-a9ba-60cafe083747",
-      "name": "Sales Rep"
-    },
-    {
-      "id": "29593909-8959-4d16-9872-beb8736abaaf",
-      "name": "Sales Executive"
-    },
-    {
-      "id": "27a7730f-0283-4d7d-aa44-be85ff92a958",
-      "name": "Reset Cache"
-    },
-    {
-      "id": "9d66a0df-87eb-4bfc-aa48-8c63514ae485",
-      "name": "Quotes Validator"
-    },
-    {
-      "id": "1cff3c96-962f-4096-88bc-6bac5a6030e5",
-      "name": "Pushmessages manager"
-    },
-    {
-      "id": "purchasing-agent",
-      "name": "Purchasing agent"
-    },
-    {
-      "id": "c9bfb42e-85ef-42df-baea-a48171b3ff2e",
-      "name": "Preview Content Manager"
-    },
-    {
-      "id": "4b71dcfb-f9df-41cf-a91e-f7dd06f93f16",
-      "name": "pick-up location manager"
-    },
-    {
-      "id": "1ba8666c-0cb5-430f-8cb8-01665b37ed28",
-      "name": "Organization maintainer1"
-    },
-    {
-      "id": "org-maintainer",
-      "name": "Organization maintainer"
-    },
-    {
-      "id": "org-employee",
-      "name": "Organization employee"
-    },
-    {
-      "id": "c52893a0-dee9-4a90-a5b6-926e756157af",
-      "name": "Order shipment"
-    },
-    {
-      "id": "fd930367-8157-465e-9fe6-6f10423de380",
-      "name": "Order manager without return"
-    },
-    {
-      "id": "c6bd04db2f3744bb83c245c84375fc66",
-      "name": "Order manager"
-    },
-    {
-      "id": "6099bee0-9c7d-47d3-93e0-5389caafc318",
-      "name": "New role"
-    },
-    {
-      "id": "9fe3b6ea-aea1-45fa-b54b-684c99a31713",
-      "name": "Login on behalf"
-    },
-    {
-      "id": "21e43f94805e4315ad877de0a19a9263",
-      "name": "Electronic  store administrator"
-    },
-    {
-      "id": "b629f7c6-85a0-4602-93d0-e66e2891c22e",
-      "name": "CSR"
-    },
-    {
-      "id": "50a966a5040d4166852f4827cf892e83",
-      "name": "Clothing order supervisor"
-    },
-    {
-      "id": "87105cd4bcf940adad11a7b83fe2913c",
-      "name": "Clothing accessory category manager"
-    },
-    {
-      "id": "c7be5ba2-6f03-4d63-91df-e68bb88bad83",
-      "name": "Catalog manager"
-    },
-    {
-      "id": "8327240d-6453-4961-942b-f468757196f3",
-      "name": "Catalog Integration"
-    },
-    {
-      "id": "eda0e65b-41d4-4f9a-a0da-ef7dc441a88d",
-      "name": "B2B Order Manager"
-    },
-    {
-      "id": "9434c1d0-6747-4de6-aeca-2a416bef28fd",
-      "name": "B2B Marketer"
-    },
-    {
-      "id": "27d3ed72-63b4-4e7c-825a-42244bf5a203",
-      "name": "B2B Category Manager"
-    },
-    {
-      "id": "ee8fa233-31e2-4ae2-aedf-e87c29df1016",
-      "name": "AuditLog"
-    },
-    {
-      "id": "610b91ff-a40e-462f-842f-a7b9d190375e",
-      "name": "Alla Volkova"
-    },
-    {
-      "id": "10a98f10-9e33-4bb8-a21c-d00e9c58f2e6",
-      "name": "111"
+      "key": "SEED-ROLE-001-20260515",
+      "name": "AGENT-TEST-Role-ReadOnly-20260515",
+      "normalizedName": "AGENT-TEST-Role-ReadOnly-20260515"
     }
-  ]
+  ],
+  "inventorySet": true,
+  "reindexTriggered": true,
+  "notes": "Full profile seed for Sprint26-09 regression REG-2026-05-15-1525. All products have inventory at ffc-acme-eur-berlin-de."
 }

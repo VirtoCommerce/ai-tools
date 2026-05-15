@@ -1,0 +1,212 @@
+{
+  "caseId": "GQL-025",
+  "title": "xOrder — Second createOrderFromCart Returns Graceful Response",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T14:54:04.058Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T14:53:55.610Z",
+      "expiresAt": "2026-05-15T15:23:55.610Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_ID": "5de40fc944cd435f90b19869217f09bb",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 142
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "5de40fc944cd435f90b19869217f09bb"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 523
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1779
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"5de40fc944cd435f90b19869217f09bb\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1353
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      shipment: {\n        shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150\n        deliveryAddress: { city: \"New York\" countryCode: \"US\" countryName: \"United States\" firstName: \"Test\" lastName: \"User\" line1: \"123 Test St\" postalCode: \"10001\" regionId: \"NY\" regionName: \"New York\" }\n      }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1164
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_payment",
+      "query": "mutation { addOrUpdateCartPayment(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" payment: { paymentGatewayCode: \"DefaultManualPaymentMethod\" } }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartPayment": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1480
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_first",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": {
+            "id": "a5297ffd-6b0e-4457-978c-03e9766eb1fa"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 797
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_second",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "The cart has validation errors",
+            "locations": [
+              {
+                "line": 1,
+                "column": 12
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ValidationError",
+              "codes": [
+                "ValidationError"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 1195
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_first] errors[] empty",
+      "label": "create_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash.",
+      "layer": "EVIDENCE",
+      "note": "create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash.",
+      "resolved": "create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash."
+    }
+  ],
+  "cleanup": {
+    "raw": "Creates real order",
+    "blocks": []
+  }
+}
