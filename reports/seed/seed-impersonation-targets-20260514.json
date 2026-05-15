@@ -1,0 +1,306 @@
+{
+  "date": "20260514",
+  "host": "vcst-qa.govirto.com",
+  "back_url": "https://vcst-qa.govirto.com",
+  "steps": [
+    {
+      "name": "authn",
+      "ts": "2026-05-14T15:00:21.123Z",
+      "ok": true
+    },
+    {
+      "name": "AGENT-TEST-Org-BMW-Group-20260514",
+      "ts": "2026-05-14T15:00:21.257Z",
+      "org_id": "ORG-009",
+      "platform_id": "617be3f0-3772-4ae6-8ea0-a88d9357a011"
+    },
+    {
+      "name": "AGENT-TEST-Org-Bence-and-Family-20260514",
+      "ts": "2026-05-14T15:00:21.403Z",
+      "org_id": "ORG-010",
+      "platform_id": "312eed9b-3bd6-44c4-b7d8-93f349260565"
+    },
+    {
+      "name": "AGENT-TEST-Org-Brand-Specials-20260514",
+      "ts": "2026-05-14T15:00:21.543Z",
+      "org_id": "ORG-011",
+      "platform_id": "a6222de3-eb0d-4e32-a19e-4d6cf9a88bb1"
+    },
+    {
+      "name": "AGENT-TEST-Org-Cypress-Company-Kft-20260514",
+      "ts": "2026-05-14T15:00:21.687Z",
+      "org_id": "ORG-012",
+      "platform_id": "9833d5b2-0362-47e6-8bb9-3352dcef8fc0"
+    },
+    {
+      "name": "AGENT-TEST-Org-Elena-Company-20260514",
+      "ts": "2026-05-14T15:00:21.823Z",
+      "org_id": "ORG-013",
+      "platform_id": "35495e20-df8a-4129-a53e-484c5694ef61"
+    },
+    {
+      "name": "AGENT-TEST-Org-Fill-Fillips-Company-20260514",
+      "ts": "2026-05-14T15:00:21.958Z",
+      "org_id": "ORG-014",
+      "platform_id": "4ed9030b-5550-46b0-9e99-9e3f7868c808"
+    },
+    {
+      "name": "AGENT-TEST-Org-Graceland-Boots-Shoes-20260514",
+      "ts": "2026-05-14T15:00:22.092Z",
+      "org_id": "ORG-015",
+      "platform_id": "07d5c41b-d463-48bd-9863-7ef49bba5f7b"
+    },
+    {
+      "name": "AGENT-TEST-Org-Hillcrest-Holdings-20260514",
+      "ts": "2026-05-14T15:00:22.234Z",
+      "org_id": "ORG-016",
+      "platform_id": "9de4ecc3-fb7e-4cee-9390-ee204bc0bb1f"
+    },
+    {
+      "name": "AGENT-TEST-Org-Ironwood-Industries-20260514",
+      "ts": "2026-05-14T15:00:22.379Z",
+      "org_id": "ORG-017",
+      "platform_id": "21f9e7d2-3d4a-40e7-b047-527e9d85d8fc"
+    },
+    {
+      "name": "AGENT-TEST-Org-Juniper-Junction-20260514",
+      "ts": "2026-05-14T15:00:22.512Z",
+      "org_id": "ORG-018",
+      "platform_id": "ba20dc7b-9e17-4f14-b2a0-57e981e1fd04"
+    },
+    {
+      "name": "AGENT-TEST-Org-Kingsbridge-Imports-20260514",
+      "ts": "2026-05-14T15:00:22.645Z",
+      "org_id": "ORG-019",
+      "platform_id": "93bf2d51-5ac5-4952-9640-061706eb69bb"
+    },
+    {
+      "name": "reuse-contact-CON-020",
+      "ts": "2026-05-14T15:00:22.942Z",
+      "contact_id": "CON-020",
+      "platform_id": "ef8ce766-9f55-46ee-8cee-2b63bfc93cf4"
+    },
+    {
+      "name": "reuse-user-USR-020",
+      "ts": "2026-05-14T15:00:22.942Z",
+      "user_id": "USR-020",
+      "platform_id": "327dca97-411e-48aa-be79-51c1001df306"
+    },
+    {
+      "name": "assign-CON-020-to-orgs",
+      "ts": "2026-05-14T15:00:23.493Z",
+      "contact_id": "CON-020",
+      "requested": 11,
+      "observed": 11
+    },
+    {
+      "name": "reuse-contact-CON-021",
+      "ts": "2026-05-14T15:00:23.787Z",
+      "contact_id": "CON-021",
+      "platform_id": "bba54613-43ff-4ae8-9311-dd4af9d7f73b"
+    },
+    {
+      "name": "reuse-user-USR-021",
+      "ts": "2026-05-14T15:00:24.182Z",
+      "user_id": "USR-021",
+      "platform_id": "3133b984-8e81-40bd-b2b3-847346ee3f4f"
+    },
+    {
+      "name": "lock-USR-021",
+      "ts": "2026-05-14T15:00:24.343Z",
+      "ok": true
+    },
+    {
+      "name": "verify-USR-021-locked",
+      "ts": "2026-05-14T15:00:24.634Z",
+      "locked_status": "Locked",
+      "locked_by_lockoutEnd": true,
+      "locked_by_flag": true,
+      "fields": {
+        "lockoutEnabled": true,
+        "lockoutEnd": "9999-12-31T23:59:59.9999999+00:00",
+        "status": null,
+        "emailConfirmed": true
+      }
+    },
+    {
+      "name": "reuse-contact-CON-022",
+      "ts": "2026-05-14T15:00:24.937Z",
+      "contact_id": "CON-022",
+      "platform_id": "061727a2-9b5f-46ff-8b3a-80e0302c69bd"
+    },
+    {
+      "name": "reuse-user-USR-022",
+      "ts": "2026-05-14T15:00:25.103Z",
+      "user_id": "USR-022",
+      "platform_id": "fa945873-f304-4d1f-a66b-1494e697b98f"
+    },
+    {
+      "name": "send-verification-email-USR-022",
+      "ts": "2026-05-14T15:00:25.259Z",
+      "ok": true
+    },
+    {
+      "name": "verify-USR-022-invited",
+      "ts": "2026-05-14T15:00:25.404Z",
+      "invited_status": "EmailUnconfirmed",
+      "fields": {
+        "emailConfirmed": false,
+        "status": null,
+        "lockoutEnabled": true
+      }
+    }
+  ],
+  "entities": {
+    "orgs": [
+      {
+        "org_id": "ORG-009",
+        "name": "AGENT-TEST-Org-BMW-Group-20260514",
+        "platform_id": "617be3f0-3772-4ae6-8ea0-a88d9357a011"
+      },
+      {
+        "org_id": "ORG-010",
+        "name": "AGENT-TEST-Org-Bence-and-Family-20260514",
+        "platform_id": "312eed9b-3bd6-44c4-b7d8-93f349260565"
+      },
+      {
+        "org_id": "ORG-011",
+        "name": "AGENT-TEST-Org-Brand-Specials-20260514",
+        "platform_id": "a6222de3-eb0d-4e32-a19e-4d6cf9a88bb1"
+      },
+      {
+        "org_id": "ORG-012",
+        "name": "AGENT-TEST-Org-Cypress-Company-Kft-20260514",
+        "platform_id": "9833d5b2-0362-47e6-8bb9-3352dcef8fc0"
+      },
+      {
+        "org_id": "ORG-013",
+        "name": "AGENT-TEST-Org-Elena-Company-20260514",
+        "platform_id": "35495e20-df8a-4129-a53e-484c5694ef61"
+      },
+      {
+        "org_id": "ORG-014",
+        "name": "AGENT-TEST-Org-Fill-Fillips-Company-20260514",
+        "platform_id": "4ed9030b-5550-46b0-9e99-9e3f7868c808"
+      },
+      {
+        "org_id": "ORG-015",
+        "name": "AGENT-TEST-Org-Graceland-Boots-Shoes-20260514",
+        "platform_id": "07d5c41b-d463-48bd-9863-7ef49bba5f7b"
+      },
+      {
+        "org_id": "ORG-016",
+        "name": "AGENT-TEST-Org-Hillcrest-Holdings-20260514",
+        "platform_id": "9de4ecc3-fb7e-4cee-9390-ee204bc0bb1f"
+      },
+      {
+        "org_id": "ORG-017",
+        "name": "AGENT-TEST-Org-Ironwood-Industries-20260514",
+        "platform_id": "21f9e7d2-3d4a-40e7-b047-527e9d85d8fc"
+      },
+      {
+        "org_id": "ORG-018",
+        "name": "AGENT-TEST-Org-Juniper-Junction-20260514",
+        "platform_id": "ba20dc7b-9e17-4f14-b2a0-57e981e1fd04"
+      },
+      {
+        "org_id": "ORG-019",
+        "name": "AGENT-TEST-Org-Kingsbridge-Imports-20260514",
+        "platform_id": "93bf2d51-5ac5-4952-9640-061706eb69bb"
+      }
+    ],
+    "contacts": [
+      {
+        "contact_id": "CON-020",
+        "platform_id": "ef8ce766-9f55-46ee-8cee-2b63bfc93cf4",
+        "org_count": 11,
+        "organizations": [
+          "ORG-009",
+          "ORG-010",
+          "ORG-011",
+          "ORG-012",
+          "ORG-013",
+          "ORG-014",
+          "ORG-015",
+          "ORG-016",
+          "ORG-017",
+          "ORG-018",
+          "ORG-019"
+        ]
+      },
+      {
+        "contact_id": "CON-021",
+        "platform_id": "bba54613-43ff-4ae8-9311-dd4af9d7f73b",
+        "organizations": [
+          "ORG-002"
+        ]
+      },
+      {
+        "contact_id": "CON-022",
+        "platform_id": "061727a2-9b5f-46ff-8b3a-80e0302c69bd",
+        "organizations": [
+          "ORG-002"
+        ]
+      }
+    ],
+    "users": [
+      {
+        "user_id": "USR-020",
+        "platform_id": "327dca97-411e-48aa-be79-51c1001df306",
+        "contact_id": "CON-020",
+        "email": "AGENT-TEST-imp-target-many-orgs-20260514@test-agent.com",
+        "org_count": 11,
+        "organizations": [
+          "ORG-009",
+          "ORG-010",
+          "ORG-011",
+          "ORG-012",
+          "ORG-013",
+          "ORG-014",
+          "ORG-015",
+          "ORG-016",
+          "ORG-017",
+          "ORG-018",
+          "ORG-019"
+        ]
+      },
+      {
+        "user_id": "USR-021",
+        "platform_id": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+        "contact_id": "CON-021",
+        "email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+        "observed_status": "Locked",
+        "organizations": [
+          "ORG-002"
+        ]
+      },
+      {
+        "user_id": "USR-022",
+        "platform_id": "fa945873-f304-4d1f-a66b-1494e697b98f",
+        "contact_id": "CON-022",
+        "email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+        "observed_status": "EmailUnconfirmed",
+        "organizations": [
+          "ORG-002"
+        ]
+      }
+    ]
+  },
+  "observed": {
+    "locked_endpoint_response": {
+      "locked": true
+    },
+    "locked_user_fields": {
+      "lockoutEnabled": true,
+      "lockoutEnd": "9999-12-31T23:59:59.9999999+00:00",
+      "status": null,
+      "emailConfirmed": true
+    },
+    "invited_user_fields": {
+      "emailConfirmed": false,
+      "status": null,
+      "lockoutEnabled": true
+    }
+  },
+  "deviations": []
+}

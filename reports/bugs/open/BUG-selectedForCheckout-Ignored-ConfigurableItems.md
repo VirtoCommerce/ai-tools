@@ -150,8 +150,107 @@ The schema defines `selectedForCheckout` on both input and output types for conf
 - **Feature gap vs bug:** If `selectedForCheckout` is intentionally not supported on configurationItems, the API should return an error or warning rather than silently ignoring the flag. Needs clarification from product team.
 
 ## References
-- JIRA: not filed
+- JIRA: **VCST-4961** (In Progress, Sprint 26-09, assignee Dmitry Grishin)
 - VC Docs: changeCartConfiguredItem mutation (Cart/mutations/changeCartConfiguredItem.md)
 - Related: `selectedForCheckout` is a property on `LineItemEntity` in `vc-module-cart`
-- Regression: REG-2026-04-17-0900 suite-072c-results.json
+- Regression: REG-2026-04-17-0900 suite-072c-results.json (CFG-GQL-009)
 - Blocker for: CFG-EDGE-002 (currency change preserves selectedForCheckout state)
+
+---
+
+## Re-Verification — 2026-05-13
+
+**Status: STILL CONFIRMED on newer build — bug has NOT been fixed (~26 days after original report).**
+
+**Build verified live (2026-05-13):**
+- Platform: 3.1026.0 (was 3.1019.0)
+- VirtoCommerce.XCart: **3.1013.0** (was 3.1007.0-pr-105-3ec5 — moved off the pre-release PR-105 build to a released version, but the write path is still missing)
+- VirtoCommerce.Cart: 3.1003.0 (unchanged)
+- Theme: 2.49.0-pr-2279-3ce07383 (was 2.46.0-pr-2225-572f0087)
+
+**Re-repro context:** cart `506f6878-586b-4493-9fc2-1da9f69c7293`, line item `96e40238-7707-4c8e-83f3-202c730073f1` (Bike with options, $394 = $350 base + $22 × 2 Rear wheel). Note: current vcst-qa "Bike with options" exposes ONE Product-type section (`29f2514c-…`), not two as in the original report — the bug still reproduces with a single option because the failure is in the write path, not in the section count.
+
+### Issue A — REPRODUCED (still broken)
+After `changeCartConfiguredItem` with `option.selectedForCheckout: false`:
+```json
+{"data":{"changeCartConfiguredItem":{"items":[{"name":"Bike with options",
+  "selectedForCheckout":true,"salePrice":{"amount":394.00},
+  "configurationItems":[{"name":"Rear wheel...","selectedForCheckout":true,"quantity":2}]}],
+  "validationErrors":[]}}}
+```
+Flag stays `true`, price stays `$394`, no validation error — flag silently ignored.
+
+### Issue B — REPRODUCED (still broken)
+After `changeCartItemSelected` with parent `selectedForCheckout: false`:
+```json
+{"data":{"changeCartItemSelected":{"items":[{"name":"Bike with options",
+  "selectedForCheckout":false,"salePrice":{"amount":394.00},
+  "configurationItems":[{"name":"Rear wheel...","selectedForCheckout":true}]}]}}}
+```
+Parent flipped to `false`, child stays `true`, parent line price unchanged — inconsistent state (parent=false, child=true), no cascade.
+
+### Schema check (2026-05-13 introspection)
+- `ConfigurableProductOptionInput.selectedForCheckout: Boolean` — still advertised on input, still ignored by backend
+- `InputChangeCartItemSelectedType` — still only `lineItemId` + `selectedForCheckout`; no `configurationItemId` parameter added
+- Schema unchanged → the broken-by-design surface is still exposed
+
+### Evidence (live)
+- `tests/Sprint-current/VCST-4961/evidence/modules.json` — full module manifest
+- `tests/Sprint-current/VCST-4961/evidence/03-product-config.json` — current Bike sections
+- `tests/Sprint-current/VCST-4961/evidence/07-schema-introspection.json`
+- `tests/Sprint-current/VCST-4961/evidence/08-issueA-payload.json` + `08-issueA-response.json`
+- `tests/Sprint-current/VCST-4961/evidence/09-issueB-payload.json` + `09-issueB-response.json`
+- `tests/Sprint-current/VCST-4961/evidence/10-teardown-clearcart.json`
+
+**Verdict:** Bug stays in `reports/bugs/open/`. JIRA VCST-4961 remains "In Progress" — no fix has shipped in XCart 3.1013.0. Reproducible 100% via GraphQL against the current vcst-qa build.
+
+---
+
+## Reframing — 2026-05-13 (after discovering new mutation)
+
+**Status update: PARTIALLY RESOLVED — supported write path exists, schema hygiene issue remains.**
+
+XCart 3.1013.0 ships a **new mutation family** for per-config-item selection that the original report missed:
+
+- `changeCartConfigurationItemSelected` (single)
+- `selectCartConfigurationItems` / `unSelectCartConfigurationItems` (bulk)
+- `selectAllCartConfigurationItems` / `unSelectAllCartConfigurationItems` (all-at-once)
+
+**`InputChangeCartConfigurationItemSelectedType` signature:**
+```
+cartId: String
+storeId: String!
+cartName: String
+userId: String!
+currencyCode: String
+cultureName: String
+cartType: String
+lineItemId: String!
+configurationSection: ConfigurationSectionKeyInput!  # { sectionId, type, option { productId } }
+selectedForCheckout: Boolean!
+```
+
+Targeting is **indirect** — no `configurationItemId` field; the configurationItem is identified by `lineItemId` + `configurationSection.sectionId` + `configurationSection.option.productId`.
+
+### Third repro — NEW MUTATION WORKS
+Baseline cart: Bike with options + Rear wheel ×2, line `salePrice: 394`, child `selectedForCheckout: true`.
+After `changeCartConfigurationItemSelected` with `selectedForCheckout: false`:
+- Child `selectedForCheckout: false`
+- Line item **`salePrice: 350`** (Rear wheel $44 excluded — only base $350)
+- Parent `selectedForCheckout: true` (parent intentionally separate)
+- `validationErrors: []`
+
+Evidence: `tests/Sprint-current/VCST-4961/evidence/11-…` through `18-teardown.json`.
+
+### Reframed conclusions
+- **Issue A** (silent ignore on `ConfigurableProductOptionInput.selectedForCheckout`) — likely **by design**: `changeCartConfiguredItem` is meant to *replace* the option set, not toggle selection. The selection flag belongs on the new mutation.
+- **Issue B** (no parent→child cascade on `changeCartItemSelected`) — likely **by design**: parent and child selection are independent axes. The new mutation is the supported per-child toggle.
+- **Remaining real bug (schema hygiene):** `ConfigurableProductOptionInput.selectedForCheckout` and `InputChangeCartItemSelectedType` are **not marked deprecated** (mutation-level `isDeprecated: false`). The silently-ignored Boolean on the option input is still a trap — any client reading the schema will believe it's wired up. Either:
+  1. Remove `selectedForCheckout` from `ConfigurableProductOptionInput`, OR
+  2. Mark it `@deprecated(reason: "Use changeCartConfigurationItemSelected mutation")`, OR
+  3. Have `changeCartConfiguredItem` propagate the value when set (full fix).
+
+### Storefront / client action
+Switch any frontend code that currently sets `selectedForCheckout` on `ConfigurableProductOptionInput` (or expects `changeCartItemSelected` to cascade) to call `changeCartConfigurationItemSelected` instead. Update CFG-GQL-009 in `regression/suites/Frontend/configurable-products/072c-configurable-products-cross.csv` line 44 to use the new mutation as the supported path.
+
+**Verdict:** Functionality exists. Report stays in `open/` until the schema is cleaned up (advertised-but-ignored field removed or deprecated). Severity drops from High to **Low (schema hygiene)** in terms of capability — but the trap value remains.

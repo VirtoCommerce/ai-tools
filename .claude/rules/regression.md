@@ -85,6 +85,7 @@ Central configuration for regression orchestration. Defines:
 
 - **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
 - **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
+- **Critical UI scope**: `.claude/agents/knowledge/critical-ui-scope.md` defines the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`) with applicable BL-UI invariants per cell. The validator `npm run scope:validate` exits non-zero if any covered matrix cell points at a missing test ID. Covered exclusively by suite `048b-layout-stability.csv` (selection `layout-stability`).
 
 ### Selection Groups
 

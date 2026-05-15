@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 96,
+    "totalSuites": 97,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -589,8 +589,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 31,
-      "estimatedMinutes": 22,
+      "testCount": 32,
+      "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
         "auth",
@@ -912,6 +912,36 @@
       "tags": [
         "cross-browser",
         "compatibility"
+      ]
+    },
+    {
+      "id": "048b",
+      "name": "Layout Stability",
+      "file": "regression/suites/Frontend/cross-cutting/048b-layout-stability.csv",
+      "domain": "cross-cutting",
+      "layer": "frontend",
+      "concern": "non-functional",
+      "priority": "P1",
+      "testCount": 52,
+      "estimatedMinutes": 73,
+      "agent": "ui-ux-expert",
+      "preferredBrowser": "playwright-chrome",
+      "browserRequirementReason": "PerformanceObserver layout-shift entries + getBoundingClientRect measurements work most reliably in Chromium; uses scripts/lib/measure-layout.ts snippets via browser_evaluate. Selectors verified live against vcst-qa B2B-store (see .claude/agents/knowledge/storefront-selectors.md). Scope (8 components, 9 pages) enforced by .claude/agents/knowledge/critical-ui-scope.md and npm run scope:validate.",
+      "tags": [
+        "layout",
+        "cls",
+        "spacing",
+        "alignment",
+        "overflow",
+        "touch-targets",
+        "fouc",
+        "skeleton",
+        "font-swap",
+        "bopis-modal",
+        "configurable-pdp",
+        "critical-ui-scope",
+        "ui-ux",
+        "non-functional"
       ]
     },
     {
@@ -1853,8 +1883,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 38,
-      "estimatedMinutes": 40,
+      "testCount": 47,
+      "estimatedMinutes": 50,
       "agent": "qa-frontend-expert",
       "tags": [
         "auth",
@@ -1969,6 +1999,11 @@
       "where": {
         "tag": "configurable-products"
       }
+    },
+    "layout-stability": {
+      "include": [
+        "048b"
+      ]
     },
     "frontend": {
       "where": {

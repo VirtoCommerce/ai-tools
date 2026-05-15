@@ -1,0 +1,157 @@
+{
+  "ticket": "VCST-4906",
+  "title": "Login On Behalf for Company Employee",
+  "verdict": "FAIL",
+  "p0_escalation": true,
+  "date": "2026-05-14",
+  "sprint": "26-09",
+  "environment": "vcst-qa",
+  "front_url": "https://vcst-qa-storefront.govirto.com",
+  "back_url": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1026.0",
+    "theme_artifact": "vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2.zip",
+    "frontend_pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2280",
+    "head_sha": "80690ef26c55eeec8655af5de7f3dbd1e694409b",
+    "pr_state": "open",
+    "risk_classification": "high"
+  },
+  "agents_dispatched": [
+    {"agent": "qa-frontend-expert", "browser": "playwright-chrome", "cases": ["IMP-039","IMP-040","IMP-041","IMP-042","IMP-043","IMP-044","IMP-045","IMP-046","IMP-047"]},
+    {"agent": "qa-testing-expert", "browser": "playwright-firefox", "scope": "SBTM Risk charter + Firefox cross-browser smoke (6 focus areas)"},
+    {"agent": "qa-backend-expert", "browser": "playwright-edge + curl", "scope": "IMP-046 server-side re-verification (P0 disposition)"},
+    {"agent": "ui-ux-expert", "browser": "Chrome DevTools MCP", "scope": "WCAG 2.1/2.2 AA audit + design system consistency + Nielsen heuristics + responsive baselines (Coffee theme)"}
+  ],
+  "coverage": {
+    "total_cases_in_scope": 11,
+    "executed": 10,
+    "passed": 6,
+    "passed_with_notes": 3,
+    "partial": 1,
+    "failed": 1,
+    "blocked": 1,
+    "delta_retest_2026_05_14_pm": {
+      "cases": ["IMP-048", "IMP-049"],
+      "imp_048_verdict": "PASS_WITH_NOTES — 11-org switcher renders correctly; search input present at 11 orgs; BL-AUTH-006 + BL-AUTH-010 + ECL-14.1 all satisfied; 2 minor CSV-wording observations (active-org pinned at top of search results; revert button label personalized)",
+      "imp_049_verdict": "PASS_WITH_NOTES — contract locked: Locked AND Invited targets BOTH receive HTTP 200 from /connect/token grant_type=impersonate (platform has no status-based gate); storefront UI catches Locked downstream → /blocked redirect but destroys operator session; Invited fully impersonable with no friction. CSV row IMP-049 locked Draft→Active, aliases bumped 1.4.5→1.4.6 (changelog_1_4_6).",
+      "new_bugs_recommended": [
+        {"id": "IMP-049-BUG-1", "severity": "P1", "title": "Platform /connect/token grant_type=impersonate has no status-based gate — Locked + email-unconfirmed users impersonable via direct REST, bypassing storefront /blocked redirect", "bl_violated": "BL-AUTH-005, BL-AUTH-006", "filed_to_jira": false},
+        {"id": "IMP-049-BUG-2", "severity": "P1", "title": "Operator session destroyed by attempted Blocked-target impersonation (operator's own session must remain intact)", "filed_to_jira": false},
+        {"id": "IMP-049-BUG-3", "severity": "P2", "title": "Product question: should Invited (emailConfirmed=false) users be impersonable at all? Currently fully impersonable with no friction.", "filed_to_jira": false}
+      ]
+    }
+  },
+  "business_rules_verified": [
+    {"id": "BL-AUTH-005", "status": "PASS", "evidence": "JWT permission claim platform:security:loginOnBehalf surfaces the menu item (IMP-039)"},
+    {"id": "BL-AUTH-007", "status": "PASS", "evidence": "Logout reachable only via popup; no /sign-out page (exploratory FA4)"},
+    {"id": "BL-AUTH-009", "status": "NOT_EXERCISED", "evidence": "No nested-impersonation fixture; recommended for next regression"},
+    {"id": "BL-AUTH-006", "status": "PASS", "evidence": "Impersonation scoped to target's org memberships only (IMP-048 — operator confined to USR-020's 11 orgs)"},
+    {"id": "BL-AUTH-010", "status": "PASS", "evidence": "Banner persists across /company/members → / → /catalog (IMP-039, exploratory FA1) AND through org switching + /catalog + /account/orders under new org context (IMP-048)"},
+    {"id": "BL-AUTH-011", "status": "PARTIAL", "evidence": "Operator session is restored in the UI without re-auth, but the prior impersonation token is NOT revoked server-side — see IMP-046 P0"}
+  ],
+  "edge_cases_covered": [
+    {"id": "ECL-14.1", "status": "FAIL", "note": "Privilege-escalation via stale impersonation token is exploitable for the remainder of the token's ~30-minute lifetime (IMP-046 P0). ALSO: target-account-status boundary not enforced server-side — Locked and Invited customers impersonable via direct REST (IMP-049 P1)."}
+  ],
+  "issues": {
+    "P0": [
+      {
+        "ref": "IMP-046",
+        "title": "Stale impersonation token NOT revoked server-side on revert — replay attack window equals remaining token lifetime (~30 min)",
+        "ac_violated": "AC#5c — 'Previous Token should be invalidated'",
+        "root_cause": "Revert flow calls POST /connect/token with grant_type=impersonate&user_id= (empty user_id) to obtain a new operator token. It does NOT call POST /connect/revocation (RFC 7009) on the prior T_imp. The stale T_imp is only abandoned client-side (overwritten in localStorage). OpenIddict's oi_tkn_id revocation handle is present on the token but never invoked.",
+        "security_impact": "Critical — captured impersonation token can be replayed by any process that had access to it during the impersonation window (browser extensions, error reporters, logs, proxies) for the remainder of the natural token lifetime (~30 min). Target's identity, contact PII, cart, and orders are readable; mutations not tested but likely also possible since the token retains its full permission set.",
+        "scope": "Storefront authority (https://vcst-qa-storefront.govirto.com/) — affects both same-origin GraphQL and cross-origin platform GraphQL (BACK_URL).",
+        "evidence": "tests/Sprint-current/VCST-4906/test-execution-report-backend.md — see Pre-revert REST Test, Revert Mechanism, Post-revert REST tests at T+3s and T+5m30s",
+        "fix_owners": [
+          "vc-frontend useImpersonate.ts revertImpersonate — must call POST /connect/revocation with the prior T_imp before requesting the new operator token",
+          "VirtoCommerce platform / storefront OpenIddict pipeline — verify token revocation list is consulted by the resource server middleware on /graphql"
+        ],
+        "spec_correction": "IMP-046 wording 'GET {{BACK_URL}}/api/account' is invalid — that route does not exist on this platform. Update the spec to use 'POST {storefront}/graphql { me { id userName } }' with the canonical assertion of HTTP 401 (or 200 with no `me` resolution if the resource server prefers a graceful path).",
+        "filed_to_jira": false,
+        "recommended_jira_action": "File P0 bug, link to VCST-4906 and parent VCST-4903 (epic), transition VCST-4906 → REOPEN (Need fixes)"
+      }
+    ],
+    "P1": [
+      {
+        "ref": "UIUX-BUG-A",
+        "title": "Row action trigger DIV missing tabindex=\"0\" — keyboard users cannot reach 'Login on behalf'",
+        "wcag": "2.1.1, 4.1.2",
+        "surface": "MembersDropdownMenu (storefront /company/members)",
+        "fix": "Add tabindex=\"0\" to the DIV trigger; consider switching to native <button>",
+        "filed_to_jira": false
+      },
+      {
+        "ref": "UIUX-BUG-C",
+        "title": "Modal OK and Close (X) buttons have no visible focus indicator (security-critical confirm action)",
+        "wcag": "2.4.7",
+        "surface": "Security Verification modal (VcModal / VcDialog)",
+        "fix": "Add visible :focus outline matching the Cancel button pattern (3px solid)",
+        "filed_to_jira": false
+      },
+      {
+        "ref": "IMP-049-BUG-1",
+        "title": "Platform /connect/token grant_type=impersonate has no status-based gate — Locked + Invited users impersonable via direct REST",
+        "bl_violated": "BL-AUTH-005, BL-AUTH-006",
+        "evidence": "tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md + evidence/imp-049/rest-cross-check.json (both targets returned HTTP 200 with valid 30-min Bearer tokens via direct fetch from operator session)",
+        "fix_owners": ["VirtoCommerce platform / OpenIddict pipeline — add a status check on the impersonate grant handler that rejects Locked (lockoutEnd > now) and optionally Invited (emailConfirmed=false) targets"],
+        "filed_to_jira": false
+      },
+      {
+        "ref": "IMP-049-BUG-2",
+        "title": "Operator session destroyed by attempted Blocked-target impersonation — should survive denial",
+        "surface": "vc-frontend useImpersonate.ts (or downstream session handler)",
+        "evidence": "tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md Part A — after /blocked redirect, /account → /sign-in (operator localStorage auth wiped)",
+        "fix_owners": ["vc-frontend — when storefront detects target is Locked and redirects to /blocked, do NOT wipe the operator's auth state; restore operator session"],
+        "filed_to_jira": false
+      }
+    ],
+    "P2": [
+      {"ref": "UIUX-BUG-B", "title": "Modal aria-describedby not wired to body text — screen readers miss the security/audit notice", "wcag": "4.1.2"},
+      {"ref": "UIUX-BUG-D", "title": "Account popup missing role=\"menu\"; items missing role=\"menuitem\"", "wcag": "4.1.2"},
+      {"ref": "UIUX-BUG-E", "title": "'Back to John Mitchell' focus outline contrast 1.68:1 — fails non-text contrast", "wcag": "1.4.11"},
+      {"ref": "UIUX-BUG-F", "title": "No aria-live on impersonation banner — session switch not announced to AT", "wcag": "1.3.1 / 4.1.3"},
+      {"ref": "UIUX-BUG-G", "title": "Row action button 32×32 desktop / 20×20 tablet — below WCAG 2.2 SC 2.5.8 (≥24px)", "wcag": "2.5.8"},
+      {"ref": "IMP-049-BUG-3", "title": "Product question: should Invited (emailConfirmed=false) users be impersonable at all? Currently fully impersonable with no friction.", "fix_owners": ["Product owner — define expected contract; if denial intended, ties into IMP-049-BUG-1 fix"]}
+    ],
+    "P3": [
+      {"ref": "IMP-039/041", "title": "Modal Continue button labelled 'OK' instead of 'Continue' (AC#3 literal)"},
+      {"ref": "IMP-042/043", "title": "Revert action labelled 'Back to {operator name}' instead of 'Revert back to own account' (AC#5b literal; personalized form arguably better UX)"},
+      {"ref": "IMP-047", "title": "Banner connector 'logged in as' not localized in de-DE (pre-existing, not new in PR #2280)"}
+    ]
+  },
+  "blocked_cases": [
+    {
+      "ref": "IMP-040",
+      "reason": "No contact-only / no-security-account company member exists in the test org on vcst-qa",
+      "recommendation": "Seed a contact-only member via Admin SPA (test-data follow-up)"
+    }
+  ],
+  "exploratory": {
+    "charter": "Risk charter (CRISP blended with SFDPOT) — token-flow resilience, multi-tab broadcast, logout boundary, back-button during transitions",
+    "heuristic": "CRISP",
+    "browser": "playwright-firefox",
+    "verdict": "PASS (UI-layer); the IMP-046 server-side gap was not surfaced because the exploratory probe also reproduced the browser-context artifact (Apollo silent-refresh hiding the real server behaviour)",
+    "findings": {"bugs": 0, "questions": 1, "observations": 2, "risks": 1, "coverage_gaps": 1}
+  },
+  "test_data_health": [
+    "test-data/aliases.json says SUPPORT_AGENT is in ACME / IMPERSONATE_TARGET in TechFlow; live org for both on vcst-qa is Camila-incorporate (env-drift, not a code regression)"
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4906/",
+  "deliverables": {
+    "scope": "tests/Sprint-current/VCST-4906/scope-and-checklist.md",
+    "frontend_report": "tests/Sprint-current/VCST-4906/test-execution-report-frontend.md",
+    "backend_report": "tests/Sprint-current/VCST-4906/test-execution-report-backend.md",
+    "exploratory_report": "tests/Sprint-current/VCST-4906/exploratory-session.md",
+    "uiux_report": "tests/Sprint-current/VCST-4906/uiux-report.md",
+    "imp_048_report": "tests/Sprint-current/VCST-4906/test-execution-report-imp-048.md",
+    "imp_049_report": "tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md",
+    "evidence_desktop": "tests/Sprint-current/VCST-4906/evidence/ (15 screenshots)",
+    "evidence_mobile": "tests/Sprint-current/VCST-4906/evidence-mobile/ (1 screenshot)",
+    "evidence_exploratory": "tests/Sprint-current/VCST-4906/evidence/exploratory-firefox/ (15 screenshots)",
+    "evidence_imp_048": "tests/Sprint-current/VCST-4906/evidence/imp-048/ (9 screenshots)",
+    "evidence_imp_049": "tests/Sprint-current/VCST-4906/evidence/imp-049/ (8 files: screenshots + token bodies + console logs + REST cross-check)",
+    "uiux_baselines": "tests/Sprint-current/VCST-4906/uiux-baselines/ (15 baseline screenshots)",
+    "seed_report": "reports/seed/seed-report-impersonation-targets-20260514.md"
+  },
+  "recommended_jira_transition": "REOPEN (Need fixes) — block release until: (1) impersonation token revocation is wired up server-side (IMP-046 P0), (2) /connect/token grant_type=impersonate gates on target account status server-side (IMP-049-BUG-1 P1), (3) operator session survives Blocked-target impersonation denial (IMP-049-BUG-2 P1)"
+}

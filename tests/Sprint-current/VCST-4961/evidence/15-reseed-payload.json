@@ -1,0 +1,23 @@
+{
+  "query": "mutation Add($command: InputAddItemType!) { addItem(command: $command) { id itemsCount items { id name selectedForCheckout salePrice { amount } configurationItems { id name selectedForCheckout quantity product { id name } } } validationErrors { errorCode errorMessage } } }",
+  "variables": {
+    "command": {
+      "storeId": "B2B-store",
+      "userId": "42765f34-51cf-4994-806b-e82e65fd5c14",
+      "cultureName": "en-US",
+      "currencyCode": "USD",
+      "productId": "f16d3e8f-6c86-4679-bcfd-100a0b164421",
+      "quantity": 1,
+      "configurationSections": [
+        {
+          "sectionId": "29f2514c-51c6-43df-bba4-dd2db82240e4",
+          "type": "Product",
+          "option": {
+            "productId": "cabde383-4411-48bf-a577-e30a0c4fd443",
+            "quantity": 2
+          }
+        }
+      ]
+    }
+  }
+}

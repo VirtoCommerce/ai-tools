@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "description": "Direct REST POST /connect/token grant_type=impersonate cross-check, executed via fetch() in operator session console.",
+    "endpoint": "POST https://vcst-qa-storefront.govirto.com/connect/token",
+    "request_body": "grant_type=impersonate&scope=offline_access&user_id=<target>",
+    "operator": "test-john.mitchell-20260310@test-agent.com (USR-001, 143bc845-7ba3-4982-ae9a-a9446a399705)",
+    "operator_permissions_relevant": "platform:security:loginOnBehalf",
+    "captured_at": "2026-05-14T15:19:13Z",
+    "platform_version": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2"
+  },
+  "blocked": {
+    "target_user_id": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+    "target_email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+    "platform_lock_state": "lockoutEnd=9999-12-31T23:59:59.9999999+00:00, lockoutEnabled=true, /api/platform/security/users/{id}/locked=>{\"locked\":true}",
+    "status": 200,
+    "statusText": "",
+    "response_body_keys": ["access_token", "token_type", "expires_in", "refresh_token"],
+    "issued_token": {
+      "sub": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+      "name": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+      "email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+      "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+      "exp_minus_iat_sec": 1800
+    }
+  },
+  "invited": {
+    "target_user_id": "fa945873-f304-4d1f-a66b-1494e697b98f",
+    "target_email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+    "platform_invited_state": "emailConfirmed=false, sendVerificationEmail issued, never clicked; status/userState=null",
+    "status": 200,
+    "statusText": "",
+    "response_body_keys": ["access_token", "token_type", "expires_in", "refresh_token"],
+    "issued_token": {
+      "sub": "fa945873-f304-4d1f-a66b-1494e697b98f",
+      "name": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+      "email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+      "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+      "exp_minus_iat_sec": 1800
+    }
+  },
+  "conclusion": "Platform-level /connect/token grant_type=impersonate has NO status-based gate. Operator with platform:security:loginOnBehalf permission can mint a valid 30-min Bearer for any target regardless of Locked status or emailConfirmed state. Defense-in-depth is enforced only by the storefront UI (which redirects Locked sub to /blocked) — a direct API caller bypasses that protection entirely."
+}

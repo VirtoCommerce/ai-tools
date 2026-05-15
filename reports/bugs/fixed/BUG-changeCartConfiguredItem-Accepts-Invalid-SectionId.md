@@ -1,6 +1,6 @@
 # BUG: changeCartConfiguredItem accepts invalid sectionId — data corruption risk
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Severity:** High
 **Component:** Cart / GraphQL xAPI / Configurable Products
@@ -140,6 +140,16 @@ No server-side validation cross-references sectionId against the product's actua
 - **Security:** Malicious actors could inject arbitrary sectionIds to manipulate cart state.
 
 ## References
-- JIRA: not filed
+- JIRA: VCST-4960
 - VC Docs: changeCartConfiguredItem mutation (Cart/mutations/changeCartConfiguredItem.md)
+
+## Resolution
+
+- **Fixed in:** [VirtoCommerce/vc-module-x-cart#113](https://github.com/VirtoCommerce/vc-module-x-cart/pull/113) — "VCST-4987: align configuration validation between add and update paths" (merged 2026-05-01)
+- **Module version shipped:** VirtoCommerce.XCart ≥ 3.1011.0 (verified on vcst-qa running 3.1013.0)
+- **JIRA ticket:** VCST-4960 (Testing → Tested on 2026-05-14)
+- **Verification date:** 2026-05-14
+- **Verification method:** Canonical GraphQL runner (`npx tsx scripts/graphql-runner.ts`) — 5 runner-native cases, 38 assertions, STR 3/3 pass, checklist 10/10 pass
+- **Post-fix behaviour:** `changeCartConfiguredItem` and `addItem` both reject fabricated sectionIds with `validationErrors: [{ errorCode: "CONFIGURATION_SECTION_NOT_FOUND", errorMessage: "Configuration section with ID <guid> not found", objectType: "ConfigurationItem" }]`; cart state preserved on rejection; valid sectionId path unaffected
+- **Evidence:** `tests/Sprint-current/VCST-4960/`
 - Regression: REG-2026-04-17-0900 suite-072c-results.json

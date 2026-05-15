@@ -1,0 +1,35 @@
+{
+  "header": {
+    "alg": "RS256",
+    "kid": "D588DABE64A6FCCE070860E222359675C0C53481",
+    "x5t": "1YjavmSm_M4HCGDiIjWWdcDFNIE",
+    "typ": "at+jwt"
+  },
+  "payload": {
+    "iss": "https://vcst-qa-storefront.govirto.com/",
+    "exp": 1778772129,
+    "iat": 1778770329,
+    "aud": "resource_server",
+    "scope": "offline_access",
+    "jti": "f471f635-7f9d-4116-948a-d32ddeb45e0b",
+    "sub": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
+    "name": "test-david.kim-20260310@test-agent.com",
+    "email": "test-david.kim-20260310@test-agent.com",
+    "permission": [
+      "storefront:organization:view",
+      "storefront:user:view"
+    ],
+    "role": "__customer",
+    "memberId": "af6c8e96-1d5b-4713-89ec-81ad7294f365",
+    "organization_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+    "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+    "oi_au_id": "28932456-76ff-44d1-a7f4-d054d135067b",
+    "oi_tkn_id": "a6e28b9f-25ee-4339-918e-42d70b75c490"
+  },
+  "decoded_at_utc": "2026-05-14T14:54:58.786Z",
+  "exp_utc": "2026-05-14T15:22:09.000Z",
+  "iat_utc": "2026-05-14T14:52:09.000Z",
+  "seconds_until_exp": 1631,
+  "minutes_until_exp": "27.2"
+}

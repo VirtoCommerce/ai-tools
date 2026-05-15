@@ -1,0 +1,69 @@
+{
+  "runId": "TLC-2026-05-14-1957",
+  "inputType": "direct-scope",
+  "source": "suite 048b",
+  "pass": 3,
+  "priorPasses": ["TLC-2026-05-14-1622", "TLC-2026-05-14-1632"],
+  "flags": ["--skip-sync", "--skip-generate"],
+  "date": "2026-05-14",
+  "verdict": "APPROVED WITH WARNINGS",
+  "affectedSuites": ["048b"],
+  "casesAnalyzed": 158,
+  "phase5": {
+    "targetsVerified": 10,
+    "verified": 5,
+    "changed": 5,
+    "broken": 1,
+    "blocked": 0,
+    "bugCandidates": 1
+  },
+  "csvUpdatesApplied": [
+    {"id": "F1", "type": "selector-revert", "old": "[role=\"alertdialog\"]", "new": "[role=\"dialog\"].vc-modal", "occurrences": 2, "cases": ["VCCONFIRMMODAL-001", "VCCONFIRMMODAL-004"]},
+    {"id": "F2", "type": "selector-rename", "old": "vc-expansion-panel__header", "new": "facet-filter-widget__title", "occurrences": 4},
+    {"id": "F3", "type": "selector-rename", "old": "vc-expansion-panels", "new": "facet-filter-widget", "occurrences": 4},
+    {"id": "F4", "type": "selector-rename", "old": "vc-expansion-panel", "new": "facet-filter-widget", "occurrences": 2},
+    {"id": "F5", "type": "selector-rename", "old": ".product-variations__swatch", "new": "[data-test-id^=\"variations-\"][data-test-id$=\"-button\"]", "occurrences": 3, "cases": ["VCVARIANTPICKER-001", "VCVARIANTPICKER-002", "VCVARIANTPICKER-003"]},
+    {"id": "F6", "type": "url-fix", "old": "variations-of-jeans/baggy-regular-jeans-grey", "new": "variations-of-jeans/jeans", "occurrences": 4, "cases": ["VCVARIANTPICKER-001", "VCVARIANTPICKER-002", "VCVARIANTPICKER-003"]},
+    {"id": "F7", "type": "selector-rename", "old": "vc-breadcrumbs__separator", "new": "vc-breadcrumbs__slash", "occurrences": 2},
+    {"id": "F8", "type": "selector-rename", "old": "vc-pagination__item", "new": "vc-pagination__page", "occurrences": 2},
+    {"id": "F9", "type": "selector-rename", "old": "vc-alert__title|message", "new": "vc-alert__icon|content", "occurrences": 3},
+    {"id": "F10", "type": "status-annotation", "case": "VCRATING-001", "description": "Marked BLOCKED with reactivation note (no .vc-rating UI in vcst-qa build)"}
+  ],
+  "filesModified": ["regression/suites/Frontend/cross-cutting/048b-layout-stability.csv"],
+  "validatorStatus": "OK — 197 covered, 0 failures, 280 total cells",
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "WARN",
+    "G4_testability": "WARN",
+    "G5_data_validity": "PASS",
+    "G6_bl_coverage": "PASS",
+    "G7_duplication": "PASS",
+    "G8_environment": "WARN",
+    "G9_sync": "SKIP"
+  },
+  "casesNowAutomationEligible": [
+    "VCSWITCH-001", "VCSWITCH-002", "VCSWITCH-003",
+    "VCSLIDER-001", "VCSLIDER-002", "VCSLIDER-003",
+    "VCADDTOCART-001", "VCADDTOCART-002", "VCADDTOCART-003",
+    "VCBREADCRUMBS-001", "VCBREADCRUMBS-002",
+    "VCALERT-001", "VCALERT-002", "VCALERT-003", "VCALERT-004",
+    "VCCONFIRMMODAL-001", "VCCONFIRMMODAL-002", "VCCONFIRMMODAL-003", "VCCONFIRMMODAL-004",
+    "VCEXPANSION-001", "VCEXPANSION-002", "VCEXPANSION-003", "VCEXPANSION-004",
+    "VCPAGINATION-001", "VCPAGINATION-002", "VCPAGINATION-003", "VCPAGINATION-004",
+    "VCVARIANTPICKER-001", "VCVARIANTPICKER-002", "VCVARIANTPICKER-003",
+    "VCDROPDOWN-001", "VCDROPDOWN-002", "VCDROPDOWN-003", "VCDROPDOWN-004", "VCDROPDOWN-005"
+  ],
+  "casesBlocked": [
+    {"id": "VCRATING-001", "reason": "No .vc-rating UI in current vcst-qa build (verified Phase 5 Target 3c)", "reactivationCondition": "When rating feature ships to storefront"}
+  ],
+  "bugCandidates": [
+    {"id": "HERO-CLS-001", "summary": "Home hero images lack intrinsic dimensions", "evidence": "tests/Sprint-current/TLC-2026-05-14-1640/target9-hero-no-dimensions.png", "blInvariant": "BL-UI-001", "recommendedAction": "File via /qa-bug"}
+  ],
+  "remainingDeferred": [
+    {"id": "SHOULD-3", "severity": "high", "description": "VCBADGE-003 non-falsifiable assertion split"},
+    {"id": "SHOULD-4", "severity": "medium", "description": "VCEXPANSION-002 add panel-1 rectSnapshot"},
+    {"id": "SHOULD-5", "severity": "medium", "description": "Create VARIANT_PRODUCT alias in test-data/aliases.json"},
+    {"id": "SHOULD-7", "severity": "medium", "description": "VCMODAL-003/004 cross-ref preconditions verbosity"}
+  ]
+}

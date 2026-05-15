@@ -1,0 +1,13 @@
+{
+  "step": "Pre-impersonation operator state captured 2026-05-14T17:32 UTC",
+  "auth.sub": "143bc845-7ba3-4982-ae9a-a9446a399705",
+  "auth.email": "test-john.mitchell-20260310@test-agent.com",
+  "auth.iat": 1778779923,
+  "auth.exp": 1778781723,
+  "auth.ttl_seconds": 1800,
+  "auth.expires_at": "2026-05-14T18:02:04.586Z",
+  "auth.access_token_first16": "eyJhbGciOiJSUzI1",
+  "auth.vc_operator_user_id": null,
+  "operator_session_present": true,
+  "build": "vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2"
+}

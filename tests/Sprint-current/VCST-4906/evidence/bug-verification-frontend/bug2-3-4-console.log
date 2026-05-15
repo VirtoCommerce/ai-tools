@@ -1,0 +1,16 @@
+Total messages: 4 (Errors: 0, Warnings: 2)
+Returning 1 messages for level "error"
+
+ApolloError: NetworkError when attempting to fetch resource.
+    at ie (https://vcst-qa-storefront.govirto.com/assets/index-GJSfdZJE.js:1478:68604)
+    at async*setup/< (https://vcst-qa-storefront.govirto.com/assets/index-GJSfdZJE.js:1478:71408)
+    at mp/</< (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:58729)
+    at tS (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:41875)
+    at Ac (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:41948)
+    at BR/t.__weh (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:58610)
+    at xX (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:43460)
+    at ae (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:83986)
+    at mount (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:67205)
+    at y5e/t.mount (https://vcst-qa-storefront.govirto.com/assets/vendor-Cc0M2oC9.js:1:108351)
+    at ese (https://vcst-qa-storefront.govirto.com/assets/index-GJSfdZJE.js:1478:108910)
+    at async* (https://vcst-qa-storefront.govirto.com/assets/index-GJSfdZJE.js:1478:108989)

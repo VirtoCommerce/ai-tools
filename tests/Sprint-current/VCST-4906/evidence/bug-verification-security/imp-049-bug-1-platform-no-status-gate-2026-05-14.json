@@ -1,0 +1,93 @@
+{
+  "_meta": {
+    "captured_at": "2026-05-14T17:35:19.546Z",
+    "env": {
+      "back_url": "https://vcst-qa.govirto.com",
+      "front_url": "https://vcst-qa-storefront.govirto.com",
+      "platform": "3.1026.0",
+      "theme": "vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2",
+      "pr": "#2280",
+      "head": "80690ef2",
+      "module": "VirtoCommerce.OpenIdConnectModule 3.1000.0"
+    },
+    "operator": "test-john.mitchell-20260310@test-agent.com (USR-001, 143bc845-...)",
+    "method": "fetch() from authenticated operator browser session"
+  },
+  "blocked": {
+    "target_label": "Locked (USR-021 — lockoutEnd=9999-12-31..., lockoutEnabled=true)",
+    "target_user_id": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+    "connect_token_status": 200,
+    "response_keys": [
+      "access_token",
+      "token_type",
+      "expires_in",
+      "refresh_token"
+    ],
+    "claims_minted_token": {
+      "sub": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+      "name": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+      "email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+      "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+      "exp_minus_iat_sec": 1800,
+      "jti": "32eaa59b-160b-45c0-abcd-1e6b72af5ae4",
+      "oi_tkn_id": "c51c1654-f6e8-4195-9215-8d53e4803df4",
+      "scope": "offline_access",
+      "role": "__customer",
+      "organization_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+      "memberId": "bba54613-43ff-4ae8-9311-dd4af9d7f73b"
+    },
+    "xapi_graphql_me_probe": {
+      "gql_status": 200,
+      "gql_me": {
+        "id": "3133b984-8e81-40bd-b2b3-847346ee3f4f",
+        "userName": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+        "email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
+        "contact": {
+          "firstName": "Blocked",
+          "lastName": "User",
+          "organizationId": "6fb516c1-07f3-4af4-be5e-35961e3f7993"
+        }
+      }
+    }
+  },
+  "invited": {
+    "target_label": "Invited (USR-022 — emailConfirmed=false)",
+    "target_user_id": "fa945873-f304-4d1f-a66b-1494e697b98f",
+    "connect_token_status": 200,
+    "response_keys": [
+      "access_token",
+      "token_type",
+      "expires_in",
+      "refresh_token"
+    ],
+    "claims_minted_token": {
+      "sub": "fa945873-f304-4d1f-a66b-1494e697b98f",
+      "name": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+      "email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+      "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+      "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+      "exp_minus_iat_sec": 1800,
+      "jti": "c57aae37-ed0a-401e-a0b1-55a63fd6cbcf",
+      "oi_tkn_id": "9d545bf8-4bc3-4d0e-af96-0400d8839aec",
+      "scope": "offline_access",
+      "role": "__customer",
+      "organization_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+      "memberId": "061727a2-9b5f-46ff-8b3a-80e0302c69bd"
+    },
+    "xapi_graphql_me_probe": {
+      "gql_status": 200,
+      "gql_me": {
+        "id": "fa945873-f304-4d1f-a66b-1494e697b98f",
+        "userName": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+        "email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
+        "contact": {
+          "firstName": "Invited",
+          "lastName": "User",
+          "organizationId": "6fb516c1-07f3-4af4-be5e-35961e3f7993"
+        }
+      }
+    }
+  },
+  "_conclusion": "POST /connect/token grant_type=impersonate returns HTTP 200 with a valid 30-minute Bearer for both Locked and Invited targets. The minted token is also accepted by the storefront /graphql { me } resolver, which returns the target user's full identity. Confirms: (1) Platform OAuth endpoint has no LockoutEnd/EmailConfirmed gate. (2) xAPI does not re-validate user state on each request. Defense-in-depth via /blocked redirect is frontend-only and bypassed entirely by direct REST callers."
+}

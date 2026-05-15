@@ -195,30 +195,34 @@ Impersonation of IMPERSONATE_TARGET active (silent flow completed, banner visibl
 [DOM] Impersonation banner visible on catalog page after navigation
 [DOM] Impersonation banner visible on /account/orders after navigation
 [STATE] Session remains impersonated throughout multi-page navigation","[CONSOLE] No JS errors on page transitions during impersonation","Banner disappears after first navigation; session resets to operator or anonymous on navigation; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006","Draft"
-"IMP-012","Stop Impersonation — Returns Operator to Own Session State","LoginOnBehalf > Exit > Stop Impersonation","High","BL-AUTH-006, BL-AUTH-007, BL-AUTH-011","ECL-14.1","[PRE:CLEAR_SESSION]
+"IMP-012","Revert Impersonation — 'Revert back to own account' Restores Operator Session and Invalidates Target Token","LoginOnBehalf > Exit > Revert Impersonation","High","BL-AUTH-006, BL-AUTH-007, BL-AUTH-011","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
-Impersonation of IMPERSONATE_TARGET is active — banner visible. State: impersonated → stop → operator session restored.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_name=@td(SUPPORT_AGENT.name)","[NAV] {{FRONT_URL}}/sign-in
+Impersonation of IMPERSONATE_TARGET is active — banner visible. PR #2280 introduces 'Revert back to own account' UI hook in top-header (top-header.vue) and mobile-menu (main-menu.vue) replacing the old account-menu 'Stop impersonation' option. AC#6: Previous (impersonation) token MUST be invalidated after revert. State: impersonated → revert → operator session restored + previous token invalid.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_name=@td(SUPPORT_AGENT.name), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
 [WAIT] Password field populated
 [ACT] Click 'Sign In'
-[WAIT] Authenticated session established
+[WAIT] Authenticated session established (header shows operator identity @td(SUPPORT_AGENT.name))
 [NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
-[WAIT] Redirect and impersonation banner visible
-[ACT] Click 'Account menu' button in header
-[WAIT] Account menu dropdown opens
-[ASSERT] 'Stop impersonation' or 'Exit impersonation' option visible in menu
-[ACT] Click 'Stop impersonation' (or 'Exit impersonation') option
-[WAIT] Session transitions — loading may appear briefly","[DOM] Account menu contains 'Stop impersonation' or equivalent exit option during active impersonation
-[STATE] After clicking exit: impersonation banner disappears
+[WAIT] Silent flow completes — impersonation banner visible; session is target user's session
+[ASSERT] Verify impersonation is active: header account menu button shows target user name (not @td(SUPPORT_AGENT.name))
+[ACT] Observe header area — locate 'Revert back to own account' link/button in the desktop top-header (added by PR #2280 top-header.vue)
+[ASSERT] 'Revert back to own account' item is visible in header during active impersonation
+[ACT] Capture the current impersonation access_token value from localStorage or cookies (via browser DevTools) as {{IMPERSONATION_TOKEN}} for later invalidation check
+[ACT] Click 'Revert back to own account' in the header
+[WAIT] VcLoaderOverlay with revert loading text appears (slot content via vc-loader-overlay.vue PR #2280) then dismisses
+[WAIT] Session transitions — broadcast to TabsType.OTHERS triggers other tabs; current tab redirects","[DOM] 'Revert back to own account' item visible in top-header during active impersonation (PR #2280 top-header.vue hook)
+[STATE] After revert: impersonation banner disappears
 [STATE] Account menu button reverts to operator's name (@td(SUPPORT_AGENT.name))
-[NAV] URL is {{FRONT_URL}}/ or {{FRONT_URL}}/account/dashboard — not /sign-in
-[STATE] Operator session remains active (not signed out)","[NETWORK] POST /connect/token or token-refresh call after stop
-[CONSOLE] No JS errors during session restore","No 'Stop impersonation' option visible; clicking stop results in full sign-out; operator session does not restore — anonymous after exit; banner persists after exit; console TypeError","[PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-006, BL-AUTH-007","Draft"
+[NAV] URL redirects to {{FRONT_URL}}/ or {{FRONT_URL}}/account/dashboard — NOT /sign-in (operator session preserved, not signed out)
+[STATE] Operator session remains active — header confirms @td(SUPPORT_AGENT.name) identity
+[STATE] Previous impersonation token {{IMPERSONATION_TOKEN}} is invalidated — a subsequent API call using that token returns 401 (AC#6 — previous token MUST be invalidated)","[NETWORK] POST to revert/token endpoint (revertImpersonate from useImpersonate.ts) returns HTTP 200
+[NETWORK] Follow-up GET {{FRONT_URL}}/api/... or POST /connect/token using {{IMPERSONATION_TOKEN}} returns HTTP 401 (token invalidated — AC#6 verified)
+[CONSOLE] No JS errors during session restore","'Revert back to own account' item not visible in header during impersonation (PR #2280 not deployed or revert hook missing); clicking revert results in full sign-out (operator session cleared); operator session does not restore — anonymous after exit; banner persists after exit; old impersonation token still returns 200 after revert (AC#6 violation); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-006, BL-AUTH-007, BL-AUTH-011, ECL-14.1; Synced: VCST-4906 / PR #2280 (2026-05-14) — extended from old 'Stop impersonation via account menu' to 'Revert back to own account' via header hook (top-header.vue + main-menu.vue) + AC#6 previous-token-invalidation cross-layer check","synced"
 "IMP-013","Impersonated User Cannot Initiate Further Impersonation (Nested)","LoginOnBehalf > Authorization > Nested Blocked","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
-Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_TARGET do NOT include StorefrontPermissions.CanImpersonate (per RBAC model: permissions live on Roles, not on users).","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_TARGET do NOT include StorefrontPermissions.CanImpersonate (per RBAC model: permissions live on Roles, not on users). PR #2280 introduces /company/members row 'Login on behalf' action gated by CanImpersonate — the impersonated session of IMPERSONATE_TARGET (which lacks CanImpersonate) should NOT expose the 'Login on behalf' action in the /company/members dropdown either. This test covers both the URL-based nesting attempt AND the UI entry point.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -227,12 +231,19 @@ Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_
 [WAIT] Authenticated session established
 [NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
 [WAIT] Impersonation active (banner visible)
+--- UI ENTRY POINT CHECK ---
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible (target's org members)
+[ACT] Click the row-level actions button for any non-self member row
+[WAIT] Dropdown menu opens
+[ASSERT] 'Login on behalf' option is NOT present in the dropdown (IMPERSONATE_TARGET lacks CanImpersonate — PR #2280 gate)
+--- URL-BASED NESTING CHECK ---
 [NAV] {{FRONT_URL}}/account/impersonate/@td(SUPPORT_AGENT.userId)
-[WAIT] Response — either Security Verification Form OR error page OR redirect","[DOM] Security Verification Form is displayed (impersonated session cannot skip — lacks CanImpersonate)
+[WAIT] Response — either Security Verification Form OR error page OR redirect","[DOM] Actions dropdown at /company/members does NOT show 'Login on behalf' for the impersonated session (lacks CanImpersonate — PR #2280 members-dropdown-menu.vue gate)
+[DOM] URL-based nesting: Security Verification Form is displayed (impersonated session cannot skip — lacks CanImpersonate) OR error/access-denied page
 [STATE] Impersonated session is NOT replaced by a new nested impersonation
-[DOM] Alternatively: error page or 'access denied' if nested impersonation is fully blocked server-side
-[STATE] No nested impersonation chain established","[NETWORK] POST /connect/token (impersonate grant) returns HTTP 401 or 403 if nested impersonation attempted
-[CONSOLE] No unhandled exceptions","Silent nested impersonation succeeds — impersonated user can impersonate a third user; session loops infinitely; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4905, VCST-4725, BL-AUTH-005","Draft"
+[STATE] No nested impersonation chain established","[NETWORK] POST /connect/token (impersonate grant) returns HTTP 401 or 403 if URL-based nested impersonation attempted
+[CONSOLE] No unhandled exceptions","UI entry point: 'Login on behalf' visible in /company/members dropdown for impersonated session (CanImpersonate leaked into impersonated context — security regression); URL nesting: silent nested impersonation succeeds; session loops; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-009; Synced: VCST-4906 / PR #2280 (2026-05-14) — extended to cover /company/members UI entry point gating under impersonated session","synced"
 "IMP-014","Admin SPA — 'Login on behalf' Button Opens Impersonate URL in New Tab","LoginOnBehalf > Admin Entry Point > Button","High","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
 Admin authenticated in platform SPA. Target customer user exists with known userId.","back_url={{BACK_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), target_email=@td(IMPERSONATE_TARGET.email), front_url={{FRONT_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
 [BLADE] Open 'Users' list blade
@@ -245,9 +256,9 @@ Admin authenticated in platform SPA. Target customer user exists with known user
 [NAV] New tab URL is {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId) (locale prefix optional)
 [DOM] New tab shows Security Verification Form (admin user is not authenticated on storefront — cross-origin) or 'Switching to customer view...' if admin was also authenticated on storefront side","[NETWORK] GET /account/impersonate/{userId} returns HTTP 200 in new tab
 [CONSOLE] No JS errors in new tab on load","Button absent from toolbar; same-tab navigation (no new tab); wrong userId in URL; 404 in new tab; console TypeError","Close impersonation tab. Admin SPA session untouched.","VCST-4905, VCST-4725, BL-AUTH-005; Executed PASS 2026-05-11 — admin SPA → Security > Users → David blade → 'Login on behalf' → new storefront tab → form rendered (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-027-v3-john-impersonates-david-PASS-storefront-identity-switched.png)","Automated"
-"IMP-015","Company Members Page — No 'Login on behalf' Option in Actions Menu","LoginOnBehalf > Storefront Entry Point > Absence","High","BL-AUTH-005","","[PRE:CLEAR_SESSION]
+"IMP-015","Company Members Page — No 'Login on behalf' Option When Operator Lacks CanImpersonate","LoginOnBehalf > Storefront Entry Point > Absence","High","BL-AUTH-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
-SUPPORT_AGENT (org maintainer) is logged in. /company/members page accessible.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+SUPPORT_AGENT is logged in and their assigned role does NOT include StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). Negative branch — this is the absence test for PR #2280 members-dropdown-menu.vue which gates the 'Login on behalf' action by CanImpersonate. /company/members page accessible. Note: when the operator DOES have CanImpersonate, 'Login on behalf' IS visible — see IMP-039 (positive counterpart added by VCST-4906).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -256,11 +267,11 @@ SUPPORT_AGENT (org maintainer) is logged in. /company/members page accessible.",
 [WAIT] Authenticated session established
 [NAV] {{FRONT_URL}}/company/members
 [WAIT] Company members table visible
-[ACT] Click 'Actions' button in the row of a non-self org member (any active member)
+[ACT] Click the row-level actions button (three-dot menu or 'Actions') in the row of a non-self org member who has a security account (active member)
 [WAIT] Dropdown menu opens","[DOM] Actions dropdown is present and opens
-[DOM] Actions dropdown contains expected options: 'Edit role', 'Block user', 'Delete'
-[DOM] Actions dropdown does NOT contain 'Login on behalf' option
-[DOM] Actions dropdown does NOT contain any impersonation-related label","[CONSOLE] No JS errors on Actions dropdown open","'Login on behalf' appears in the Actions dropdown (storefront should NOT expose this entry point to org maintainers — confirmed live 2026-05-11); console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-005, BL-AUTH-006","Draft"
+[DOM] Actions dropdown contains expected standard options for operator without CanImpersonate (e.g., 'Edit role', 'Block user', 'Delete' — exact labels depend on operator's role)
+[DOM] Actions dropdown does NOT contain 'Login on behalf' option (absent because CanImpersonate NOT in operator's role — PR #2280 members-dropdown-menu.vue gating condition)
+[DOM] Actions dropdown does NOT contain any impersonation-related label","[CONSOLE] No JS errors on Actions dropdown open","'Login on behalf' appears in the Actions dropdown for operator without CanImpersonate (privilege escalation — security regression per BL-AUTH-005); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-005, BL-AUTH-006; Synced: VCST-4906 / PR #2280 (2026-05-14) — clarified as 'no CanImpersonate' branch; positive counterpart added as IMP-039","synced"
 "IMP-016","Company Members — Own Row Has No Actions Menu","LoginOnBehalf > Storefront Entry Point > Self-Actions","Low","BL-AUTH-006","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT is logged in and visible in the company members list.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email)","[NAV] {{FRONT_URL}}/sign-in
@@ -684,3 +695,272 @@ Required state (independent of execution order): (1) Role '@td(AGENT_TEST_IMP_RO
 [ADMIN] [ACT] Open Users > @td(AGENT_TEST_IMP_CUSTOMER.email) > Delete
 [ACT] (Admin) Open Roles > @td(AGENT_TEST_IMP_ROLE.name) > Delete
 [PRE:CLEAR_SESSION]","VCST-4905, BL-AUTH-005, BL-AUTH-006; RBAC propagation / claim refresh test","Draft"
+"IMP-039","Company Members — 'Login on behalf' Action Visible When Operator Has CanImpersonate and Target Has Security Account","LoginOnBehalf > Storefront Entry Point > Presence","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT's assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). IMPERSONATE_TARGET is an active org member with a security account (has a login). This is the positive counterpart to IMP-015 (absence case). PR #2280 members-dropdown-menu.vue gates the 'Login on behalf' action by CanImpersonate AND target having a security account.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible
+[ACT] Click the row-level actions button (three-dot menu) in the row of a member who has a security account (IMPERSONATE_TARGET or any active member with login)
+[WAIT] Actions dropdown opens","[DOM] Actions dropdown contains 'Login on behalf' option (operator has CanImpersonate AND target has security account — PR #2280 gate satisfied)
+[DOM] 'Login on behalf' label/text is visible and clickable in the dropdown
+[DOM] Other standard actions (e.g., 'Edit role', 'Block user') also present","[CONSOLE] No JS errors on Actions dropdown open","'Login on behalf' absent despite operator having CanImpersonate (PR #2280 members-dropdown-menu.vue not deployed or gate logic broken); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); positive counterpart to IMP-015; full journey with confirmation modal + impersonation in AUTH-028 (031-auth-login-register.csv)","Draft"
+"IMP-040","Company Members — 'Login on behalf' Hidden When Target Has No Security Account","LoginOnBehalf > Storefront Entry Point > No Security Account","High","BL-AUTH-005","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT has CanImpersonate in their role. A target org member who has NO linked security account (i.e., has been invited but never registered, or is a contact-only member without a platform user login) is present in the member list. PR #2280 members-dropdown-menu.vue gates 'Login on behalf' by BOTH CanImpersonate AND the target member having a security account.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible
+[ACT] Identify a member row whose account has no security account (invited/pending status or contact-only) — confirmed by Admin SPA if needed
+[ACT] Click the row-level actions button for that member
+[WAIT] Actions dropdown opens","[DOM] Actions dropdown does NOT contain 'Login on behalf' option for the member with no security account (PR #2280 second gate condition: target must have security account)
+[DOM] Standard non-impersonation actions (if any) still visible based on operator's permissions for that member type","[CONSOLE] No JS errors on Actions dropdown open","'Login on behalf' appears for a member with no security account (second gate condition broken — privilege escalation risk); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-005; Generated VCST-4906 / PR #2280 (2026-05-14); second gate condition from members-dropdown-menu.vue: target must have hasSecurityAccount=true","Draft"
+"IMP-041","Company Members — Confirmation Modal Cancel Dismisses Without Navigation or Session Change","LoginOnBehalf > Storefront Entry Point > Confirmation Modal Cancel","Medium","BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT has CanImpersonate. IMPERSONATE_TARGET has a security account. Operator is on /company/members, actions dropdown is accessible.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible
+[ACT] Click row-level actions button for IMPERSONATE_TARGET row
+[WAIT] Dropdown opens
+[ACT] Click 'Login on behalf' in the dropdown
+[WAIT] Security Verification Informer / confirmation modal opens (PR #2280 members.vue)
+[ASSERT] Confirmation modal contains 'You are logging in on behalf of' text and target identifier
+[ASSERT] 'Continue' and 'Cancel' buttons are visible
+[ACT] Click 'Cancel' button in the modal
+[WAIT] Modal closes","[DOM] Confirmation modal closes after clicking 'Cancel'
+[NAV] URL remains {{FRONT_URL}}/company/members — no navigation to /account/impersonate/{userId}
+[STATE] Operator session is preserved (header still shows @td(SUPPORT_AGENT.email) identity, not target's)
+[STATE] No impersonation banner is rendered
+[DOM] Company members table is still visible (user not redirected away)","[NETWORK] No POST /connect/token with grant_type=impersonate issued after Cancel (no impersonation attempt)
+[CONSOLE] No JS errors on modal open or Cancel click","Modal does not open after clicking 'Login on behalf'; 'Cancel' button absent from modal; Cancel navigates to /account/impersonate/{userId} (modal Cancel does not prevent navigation); impersonation banner appears after Cancel; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); confirmation modal Cancel path from members.vue +44/-6","Draft"
+"IMP-042","Header — 'Revert back to own account' Item Visible During Impersonation (Desktop)","LoginOnBehalf > Exit > Revert UI Presence","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport is desktop (≥1024px). PR #2280 top-header.vue adds a 'Revert back to own account' link/button in the header during active impersonation.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow completes — impersonation banner visible
+[ASSERT] Verify viewport is desktop (≥1024px wide — default test viewport)
+[ASSERT] Inspect header area (top-header component)","[DOM] 'Revert back to own account' link or button is visible in the desktop top-header during active impersonation (PR #2280 top-header.vue +27/-1 — new revert UI hook)
+[DOM] 'Revert back to own account' element is enabled and clickable
+[DOM] The revert item is distinct from the impersonation banner (banner shows operator + 'logged in as' + target; revert item is the action trigger)","[CONSOLE] No JS errors on header render during impersonation","'Revert back to own account' absent from header (PR #2280 top-header.vue hook not rendering); header shows only standard non-impersonation items; console TypeError","Stop impersonation via Revert; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-007, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); top-header.vue +27/-1 revert hook","Draft"
+"IMP-043","Mobile Menu — 'Revert back to own account' Item Visible During Impersonation","LoginOnBehalf > Exit > Revert UI Presence > Mobile","High","BL-AUTH-006, BL-AUTH-007","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport is mobile (375px wide). PR #2280 main-menu.vue adds a revert action in the mobile menu during active impersonation.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), viewport=375x812","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Set browser viewport to 375x812 pixels
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow completes — impersonation banner visible on mobile layout
+[ACT] Open the mobile menu (hamburger icon or equivalent in mobile viewport)
+[WAIT] Mobile menu opens (main-menu.vue)
+[ASSERT] Locate 'Revert back to own account' item in the mobile menu","[DOM] 'Revert back to own account' item visible inside the open mobile menu (PR #2280 main-menu.vue +46/-22 revert hook)
+[DOM] Revert item is enabled and tappable (minimum touch target size 44x44px)
+[DOM] Impersonation banner is visible in mobile layout alongside the menu","[CONSOLE] No JS errors on mobile menu open or revert item render","'Revert back to own account' absent from mobile menu (PR #2280 main-menu.vue hook not rendering); mobile menu does not open; impersonation banner missing on mobile; console TypeError","Stop impersonation via Revert; reset viewport; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-007; Generated VCST-4906 / PR #2280 (2026-05-14); main-menu.vue +46/-22 mobile revert hook","Draft"
+"IMP-044","VcLoaderOverlay with Slot Content Displayed During Impersonate and Revert Transitions","LoginOnBehalf > Loading States > Overlay Slot","Medium","BL-AUTH-006","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+PR #2280 vc-loader-overlay.vue +14/-2 adds slot content support so the overlay can display contextual text during impersonate and revert transitions. SUPPORT_AGENT has CanImpersonate.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+--- IMPERSONATE TRANSITION ---
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[ASSERT] VcLoaderOverlay is visible immediately after navigation (before redirect completes) with slot content text 'Switching to customer view...' (or equivalent localized text)
+[WAIT] Impersonation completes — banner visible
+--- REVERT TRANSITION ---
+[ACT] Click 'Revert back to own account' in header
+[ASSERT] VcLoaderOverlay is visible with revert loading slot content text (e.g., 'Reverting to your account...' or equivalent)
+[WAIT] Revert completes — banner gone; operator identity restored","[DOM] VcLoaderOverlay visible with non-empty slot content text during impersonate transition (PR #2280 vc-loader-overlay.vue slot support)
+[DOM] VcLoaderOverlay visible with non-empty slot content text during revert transition
+[DOM] VcLoaderOverlay dismisses after each transition completes — not stuck
+[STATE] Slot content text is contextually relevant to the current operation (impersonate vs revert)","[CONSOLE] No JS errors on overlay show/hide","Overlay appears with empty slot (no text — slot support broken); overlay not shown at all during transitions (regression); overlay gets stuck (never dismisses); incorrect or untranslated text in slot; console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725; Generated VCST-4906 / PR #2280 (2026-05-14); vc-loader-overlay.vue +14/-2 slot content addition","Draft"
+"IMP-045","Cross-Tab Broadcast — Other Open Tabs Reload on Impersonate; Current Tab Redirects","LoginOnBehalf > Session > Cross-Tab Broadcast","Medium","BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT authenticated on two tabs of the same browser. PR #2280 useImpersonate.ts changes broadcast scope from BOTH to TabsType.OTHERS — other tabs reload on impersonation, the current tab redirects.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] Open Tab 1: Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established on Tab 1
+[ACT] Open Tab 2 in same browser window (Ctrl+T or browser_tabs tool); navigate to {{FRONT_URL}}/catalog
+[WAIT] Tab 2 shows catalog page as authenticated SUPPORT_AGENT
+[ACT] Return to Tab 1
+[NAV] Tab 1: Navigate to {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow fires on Tab 1
+[ASSERT] Tab 1: VcLoaderOverlay visible then redirect completes
+[ASSERT] Tab 1: Impersonation banner visible; session is IMPERSONATE_TARGET
+[ACT] Switch to Tab 2
+[WAIT] Tab 2 automatically reloads (triggered by TabsType.OTHERS broadcast from useImpersonate.ts)
+[ASSERT] Tab 2 after reload: shows impersonation context — header reflects IMPERSONATE_TARGET identity (TabsType.OTHERS reload propagates session change)","[STATE] Tab 1 (current tab): redirects to home/account area under IMPERSONATE_TARGET session after silent flow
+[STATE] Tab 2 (other tab): automatically reloads due to TabsType.OTHERS broadcast (PR #2280 useImpersonate.ts change from BOTH to OTHERS)
+[STATE] After Tab 2 reload: both tabs show IMPERSONATE_TARGET session context","[CONSOLE] No JS errors on broadcast or reload in either tab","Tab 2 does not reload after impersonation (TabsType.OTHERS broadcast not firing); Tab 1 also reloads instead of redirecting (still broadcasting BOTH — PR #2280 regression); Tab 2 shows stale SUPPORT_AGENT session indefinitely after impersonation; console TypeError","Close Tab 2; revert impersonation on Tab 1; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); useImpersonate.ts TabsType.OTHERS broadcast scope change","Draft"
+"IMP-046","Previous Impersonation Token Invalidated After Revert (AC#6 Security)","LoginOnBehalf > Exit > Token Invalidation","Critical","BL-AUTH-007, BL-AUTH-011","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+SUPPORT_AGENT impersonates IMPERSONATE_TARGET via silent flow. The impersonation access_token is captured before revert. After revert, the captured token must be rejected (AC#6: 'Previous Token MUST be invalidated'). This test makes AC#6 falsifiable via a direct API call with the stale token.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Impersonation active — banner visible; session is IMPERSONATE_TARGET
+[ACT] Capture the current access_token from localStorage or cookie (via browser_evaluate: `window.localStorage.getItem('access_token')` or equivalent storefront token storage key) — store as {{IMPERSONATION_ACCESS_TOKEN}}
+[ASSERT] {{IMPERSONATION_ACCESS_TOKEN}} is a non-empty JWT string
+[ACT] Make a test API call using {{IMPERSONATION_ACCESS_TOKEN}} as Bearer token: GET {{BACK_URL}}/api/account — expect HTTP 200 (token is valid before revert)
+[ASSERT] API call with {{IMPERSONATION_ACCESS_TOKEN}} returns HTTP 200 (token valid pre-revert)
+[ACT] Click 'Revert back to own account' in header
+[WAIT] Revert completes — operator session restored; banner gone
+[ACT] Make the same API call again using {{IMPERSONATION_ACCESS_TOKEN}} as Bearer token: GET {{BACK_URL}}/api/account
+[WAIT] Response","[STATE] Pre-revert: GET {{BACK_URL}}/api/account with {{IMPERSONATION_ACCESS_TOKEN}} returns HTTP 200 (token valid)
+[STATE] Post-revert: GET {{BACK_URL}}/api/account with {{IMPERSONATION_ACCESS_TOKEN}} returns HTTP 401 (token invalidated — AC#6 satisfied)
+[STATE] Operator session (current tab) is NOT affected by token invalidation — operator's own token is separate and still valid","[API] GET {{BACK_URL}}/api/account with stale {{IMPERSONATION_ACCESS_TOKEN}} returns HTTP 401 post-revert
+[CONSOLE] No JS errors during revert","Post-revert API call with {{IMPERSONATION_ACCESS_TOKEN}} returns HTTP 200 (token still valid — AC#6 violation; security regression); token invalidation takes more than 5 seconds (delayed revocation window); operator's own session cleared by the invalidation call (incorrect scope of invalidation); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-007, BL-AUTH-011, ECL-14.1; Generated VCST-4906 / PR #2280 (2026-05-14); AC#6 explicit: Previous Token MUST be invalidated. PROPOSED BL: BL-AUTH-012 draft — 'Upon revert-impersonation, the impersonation access_token MUST be revoked on the server within the same request cycle; any API call using the revoked token MUST return HTTP 401.'","Draft"
+"IMP-047","i18n Smoke — Revert Action and Loader Text Localized in Non-English Locale","LoginOnBehalf > i18n > Revert Localization","Low","","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+PR #2280 adds 7 new i18n strings × 13 locales (revert action text + loader text). This test verifies the revert UI text is translated in a non-English locale. Store language switched to German (de) or Japanese (ja) for verification.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[ACT] Switch store language to German (de) via language selector or by appending `?lang=de` or navigating to {{FRONT_URL}}/de/
+[WAIT] Page reloads in German locale
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId) (or locale-prefixed equivalent)
+[WAIT] Silent flow completes — impersonation banner visible
+[ASSERT] Inspect header for 'Revert back to own account' item — verify it shows a German translation (NOT the raw i18n key string like 'shared.account.impersonate.revert_button')
+[ASSERT] If VcLoaderOverlay is visible during transition, its slot text is in German (NOT English fallback 'Switching...')
+[ASSERT] No raw i18n key tokens visible anywhere in the impersonation UI","[DOM] 'Revert back to own account' text is translated to German (or target locale) — no raw i18n key shown (e.g., key pattern 'shared.account.*' never visible to end user)
+[DOM] VcLoaderOverlay slot text (if visible during transition) is also localized
+[FORMAT] Text is correctly formatted for the locale (casing, punctuation)","[CONSOLE] No i18n key resolution errors in console (no 'Missing translation for key' errors)","Raw i18n key strings shown instead of translated text (PR #2280 i18n file incomplete); English fallback shown for de/ja locale; console reports 'Missing translation' for new revert keys; console TypeError","Switch language back to English (en); [PRE:CLEAR_SESSION]","VCST-4906, VCST-4725; Generated VCST-4906 / PR #2280 (2026-05-14); 7 new strings × 13 locales (locales/{en,de,es,fi,fr,it,ja,no,pl,pt,ru,sv,zh}.json)","Draft"
+"IMP-048","Org Switcher — Target User with >10 Organizations: Search, Scroll, and Context Switch","LoginOnBehalf > Session Scope > Many-Org Switcher > [JOURNEY]","High","BL-AUTH-006, BL-AUTH-010","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+IMPERSONATE_TARGET_MANY_ORGS (USR-020) belongs to >10 organizations (all Active status). SUPPORT_AGENT has StorefrontPermissions.CanImpersonate. State: impersonation of USR-020 is active — the storefront org switcher dropdown ('Organizations' panel in header) is reachable. NOTE: USR-020 FIXTURE SEEDING REQUIRED before first run — see alias entry in test-data/aliases.json for provisioning instructions.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET_MANY_ORGS.userId), target_name=@td(IMPERSONATE_TARGET_MANY_ORGS.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET_MANY_ORGS.userId)
+[WAIT] Silent flow completes — impersonation banner visible; session is @td(IMPERSONATE_TARGET_MANY_ORGS.name)
+[ASSERT] Impersonation banner visible: operator name + 'logged in as' + target name (@td(IMPERSONATE_TARGET_MANY_ORGS.name))
+--- SCREEN: Header Org Switcher ---
+[ACT] Locate the current-org/user chip in the header — the element showing the active org name and impersonated user name (e.g., 'BMW-Group / Mary Moll' in the evidence screenshot)
+[ACT] Click the org chip to open the 'Organizations' dropdown panel
+[WAIT] Organizations dropdown panel opens
+[ASSERT] Search input visible inside the Organizations dropdown panel
+[ASSERT] Radio-button list of organizations is visible with at least 10 rows (scrollable)
+[SCROLL] Scroll the radio list to the bottom to confirm all orgs are rendered beyond the initial viewport
+[ASSERT] Scroll reaches additional org rows beyond the initial visible set
+--- SCREEN: Search/Filter ---
+[ACT] Type a partial org name string into the search input (use first 4-5 characters of one of the known org names, e.g. first org in list)
+[WAIT] Radio list filters to show only matching organizations (debounce ~300ms)
+[ASSERT] Filtered list shows only orgs whose names contain the typed substring (case-insensitive partial match)
+[ASSERT] Org rows NOT matching the search string are no longer visible in the list
+[ACT] Clear the search input
+[WAIT] Full list restored
+[ASSERT] All orgs visible again after clearing search
+--- SCREEN: Switch Active Org ---
+[ACT] Select a different organization radio button from the list (choose an org that is NOT currently the active/selected one)
+[WAIT] Org context updates — banner or header chip reflects new org name
+[ASSERT] Header chip/banner now shows the newly selected org name
+[ACT] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Catalog page loads under the new org context
+[ASSERT] Page loads without error in new org context
+[ACT] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] Orders page loads under the new org context
+[ASSERT] Orders page renders under the new org context (no 403/500 error)
+--- SCREEN: Exit Impersonation ---
+[ACT] Click 'Revert back to own account' in the header
+[WAIT] Revert completes — operator session restored; impersonation banner gone","[DOM] Organizations dropdown panel opens when org chip clicked
+[DOM] Search input present and enabled inside the Organizations panel
+[DOM] Radio list contains >10 organization rows
+[DOM] List is scrollable — rows beyond initial viewport are reachable by scrolling
+[DOM] Search filtering: typing partial org name reduces the list to matching rows only
+[DOM] Clearing search restores the full list
+[STATE] Selecting a different org radio button changes the active org context in the header chip
+[STATE] Catalog and orders pages load without error under the new org context
+[STATE] Impersonation banner persists through org switching (BL-AUTH-010)
+[STATE] After 'Revert back to own account': operator session restored; banner gone","[API] Organization context switch call (if any) returns no 4xx/5xx during impersonation
+[CONSOLE] No JS errors during dropdown open, scroll, search, or org selection
+[NETWORK] No 4xx/5xx during catalog or orders page load under new org context","Org chip absent from header during impersonation; Organizations dropdown does not open; Search input absent (list has no search field — this field only renders when org count > threshold); Radio list renders fewer than 10 rows despite target having >10 orgs; Search filter does not reduce list (filtering broken); Clearing search does not restore full list; Org switch does not update header chip; Catalog/orders returns 403 under new org context; Impersonation banner disappears after org switch (BL-AUTH-010 violation); console TypeError","Revert impersonation if not already done.
+[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-010; Added 2026-05-14. Covers >10-org threshold (scroll + search behavior). Evidence screenshot reference: tests/Sprint-current/VCST-4906/evidence/Screenshot 2026-05-14 163709.png (Mary Moll / BMW-Group with 8+ visible orgs). FIXTURE-SEEDING NEEDED: USR-020 must be provisioned with >10 Active org memberships before first run — see IMPERSONATE_TARGET_MANY_ORGS alias.","Draft"
+"IMP-049","Impersonation — Target User Account Status: Blocked and Invited Contracts","LoginOnBehalf > Authorization > Target Account Status","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+Operator (SUPPORT_AGENT) has StorefrontPermissions.CanImpersonate. Two separate target users required:
+(a) IMPERSONATE_TARGET_BLOCKED: a customer account whose platform status is 'Locked' (user-level block, distinct from a suspended org). Platform Admin SPA shows Status=Locked on the user detail blade.
+(b) IMPERSONATE_TARGET_INVITED: a customer account that was Invited (registered-email-sent) but has never completed email verification — platform status is typically 'Invited' or 'Pending'. Neither user has completed their first storefront sign-in.
+NOTE: Both user fixtures require seeding before first run — see alias entries in test-data/aliases.json for provisioning instructions.
+LOCKED CONTRACT (observed 2026-05-14, platform 3.1026.0, theme vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2):
+(a) Blocked target: POST /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token whose sub = blocked user. The storefront frontend detects the Locked status downstream, wipes its own auth state from localStorage, and redirects to /blocked (heading 'Your account is blocked'). NET RESULT: operator session is DESTROYED (auth.access_token cleared); no impersonation banner; navigating to /account redirects to /sign-in.
+(b) Invited target: POST /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token whose sub = invited user. Impersonation succeeds silently and lands on / (Home). Header shows the operator chip 'John Mitchell logged in as Invited User' + org chip 'AGENT-TEST-Org-TechFlow-20260310'. Account-menu popup exposes 'Back to John Mitchell' button. Revert restores operator session cleanly.
+SECURITY: The platform OAuth endpoint has NO status-based gate. Direct REST callers with platform:security:loginOnBehalf can mint a usable 30-min Bearer for Blocked OR Invited targets, bypassing the storefront UI's /blocked redirect entirely. See tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md for the full security analysis.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), blocked_user_id=@td(IMPERSONATE_TARGET_BLOCKED.userId), invited_user_id=@td(IMPERSONATE_TARGET_INVITED.userId)","--- PART A: Blocked User ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET_BLOCKED.userId)
+[WAIT] Response observed — up to 10s for either silent flow completion OR a rejection signal
+[ASSERT] LOCKED CONTRACT — Outcome (a-frontend-block) is observed: POST /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token (sub=blocked_user_id, vc_operator_user_id=operator). The storefront detects the Locked status downstream, wipes auth from localStorage, and redirects to {{FRONT_URL}}/blocked (heading 'Your account is blocked'). No impersonation banner renders. The operator's own session is DESTROYED in the process — auth.access_token is cleared and /account redirects to /sign-in
+[ASSERT] [API] POST /connect/token grant_type=impersonate returns HTTP 200 (NOT 4xx — platform has no status-based gate for Locked accounts; defense-in-depth is enforced only by the storefront UI's /blocked redirect)
+[ASSERT] Final URL is /blocked (NOT /account/impersonate/{userId}, NOT /403, NOT a success redirect into target's account area)
+[ASSERT] localStorage auth.access_token is null after the redirect — both the new (Blocked) and old (operator) tokens are cleared
+[ASSERT] Operator session is NOT preserved: navigating to /account redirects to /sign-in?returnUrl=/account/dashboard. Operator must re-authenticate to continue work — this is a SIDE EFFECT of frontend-only Locked enforcement
+--- PART B: Invited User ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET_INVITED.userId)
+[WAIT] Response observed — up to 10s
+[ASSERT] LOCKED CONTRACT — Outcome (b-success) is observed: POST /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token (sub=invited_user_id, vc_operator_user_id=operator). Impersonation succeeds silently and final URL is {{FRONT_URL}}/ (Home). Storefront is fully functional under the Invited identity — catalog renders, account chrome shows the impersonated user
+[ASSERT] [API] POST /connect/token grant_type=impersonate returns HTTP 200 (NOT 4xx — platform has no email-verification gate for impersonation; emailConfirmed=false does NOT block the impersonate grant)
+[ASSERT] Header chrome shows the operator chip: 'John Mitchell logged in as Invited User' (operator-name-label span + 'logged in as' separator + target as Account menu trigger) + org chip 'AGENT-TEST-Org-TechFlow-20260310'
+[ASSERT] Account-menu popup (click target name in header) exposes a 'Back to {operator_name}' revert button alongside the standard Logout
+[ACT] Click 'Back to {operator_name}' in the account-menu popup
+[ASSERT] After revert: operator session restored; localStorage auth.access_token decodes to sub=operator_user_id with vc_operator_user_id=null (no longer impersonating); landing URL is /company/members (operator's org home) or /account/dashboard","[STATE] Part A (Blocked) — LOCKED 2026-05-14: /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token (issued for the Locked user). The storefront frontend wipes its own auth state and redirects to /blocked. NO impersonation banner. Operator session is DESTROYED as a side effect (auth.access_token cleared; navigating to /account redirects to /sign-in).
+[STATE] Part A SECURITY GAP: defense-in-depth is enforced only by the storefront UI. Direct REST callers with platform:security:loginOnBehalf permission can bypass /blocked by calling /connect/token directly and using the issued token against /graphql or /xapi — see linked P1 bug.
+[STATE] Part B (Invited) — LOCKED 2026-05-14: /connect/token grant_type=impersonate returns HTTP 200 with a valid Bearer token (issued for the Invited user). Impersonation succeeds silently and lands on /. Storefront is fully functional under the Invited identity. The operator chip + 'Back to {operator}' revert button render in the header. Revert restores the operator session cleanly.
+[STATE] Part B SECURITY POSTURE: invited users who never verified email can be transparently signed-in-as by operators. emailConfirmed=false does NOT gate the impersonate grant. This may or may not be by design depending on the desired support workflow — see linked P2 question/bug.
+[STATE] Part A side effect to flag: operator's session is NOT preserved across a denied/redirected Blocked impersonation attempt — this violates the previous expectation that 'operator's own session must remain intact (not cleared); no orphaned session left in localStorage' that was baked into the Negative_Cases column. Treat as known frontend behavior post-2026-05-14.","[API] Part A: POST /connect/token grant_type=impersonate user_id=@td(IMPERSONATE_TARGET_BLOCKED.userId) returns HTTP 200 with JSON {access_token, token_type:'Bearer', expires_in:1799, refresh_token}. Decoded access_token: sub=blocked_user_id, name=blocked_email, vc_operator_user_id=operator_user_id, vc_operator_name=operator_email. Platform issues a valid token regardless of lockoutEnd=9999-12-31 / lockoutEnabled=true. LOCKED 2026-05-14
+[API] Part B: POST /connect/token grant_type=impersonate user_id=@td(IMPERSONATE_TARGET_INVITED.userId) returns HTTP 200 with same response shape. Decoded access_token: sub=invited_user_id, name=invited_email, vc_operator_user_id=operator_user_id, vc_operator_name=operator_email. Platform issues a valid token regardless of emailConfirmed=false / pending invitation. LOCKED 2026-05-14
+[API] Cross-check: same /connect/token call made directly via fetch() from operator's authenticated session (bypassing /account/impersonate/{userId} route) returns HTTP 200 + valid token for BOTH targets. Confirms the gate is NOT at the OAuth endpoint
+[CONSOLE] No unhandled JS TypeError in either part
+[NETWORK] No silent 500 on either impersonate token request","Blank/white screen instead of /blocked redirect (Part A) or Home (Part B); JS TypeError thrown without user-facing message; Part A: impersonation banner is rendered ON /blocked (frontend should NOT show a 'logged in as blocked-user' banner on /blocked); Part B: impersonation banner is MISSING after silent success (operator must see header chip + revert button); /connect/token returns HTTP 4xx (would indicate a NEW status-based gate has been added — re-run lock-in if observed); /connect/token returns HTTP 500 (silent server error); revert ('Back to {operator}') button is missing from Part B account-menu popup; revert button does NOT restore operator session","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-005, BL-AUTH-006; Added 2026-05-14. Covers target-user status boundary: Blocked (Locked) and Invited (Pending). LOCKED 2026-05-14 by qa-testing-expert — full contract lock-in report at tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md. Observed contracts: Part A Blocked = HTTP 200 + frontend wipes auth + redirect to /blocked + operator session destroyed. Part B Invited = HTTP 200 + silent success + header chip + revert works. Security implication: platform OAuth has no status-based gate — direct REST callers bypass /blocked. FIXTURE: IMPERSONATE_TARGET_BLOCKED + IMPERSONATE_TARGET_INVITED seeded via scripts/seed-impersonation-targets.mjs. Technique: State Transition (target account status states × impersonation outcome).","Active"

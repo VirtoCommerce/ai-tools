@@ -1,0 +1,63 @@
+{
+  "captured_at": "2026-05-14T17:34:16.989Z",
+  "environment": {
+    "back_url": "https://vcst-qa.govirto.com",
+    "front_url": "https://vcst-qa-storefront.govirto.com",
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2",
+    "pr": "#2280",
+    "head": "80690ef2"
+  },
+  "T_imp_full_claims": {
+    "iss": "https://vcst-qa-storefront.govirto.com/",
+    "exp": 1778781778,
+    "iat": 1778779978,
+    "aud": "resource_server",
+    "scope": "offline_access",
+    "jti": "b80ab9e2-8575-4a41-91f1-55839cf01ba7",
+    "sub": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
+    "name": "test-david.kim-20260310@test-agent.com",
+    "email": "test-david.kim-20260310@test-agent.com",
+    "permission": [
+      "storefront:organization:view",
+      "storefront:user:view"
+    ],
+    "role": "__customer",
+    "memberId": "af6c8e96-1d5b-4713-89ec-81ad7294f365",
+    "organization_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "vc_operator_user_id": "143bc845-7ba3-4982-ae9a-a9446a399705",
+    "vc_operator_name": "test-john.mitchell-20260310@test-agent.com",
+    "oi_au_id": "ce255027-e5a2-4a9f-bab5-11f7a26a2c94",
+    "oi_tkn_id": "1195706e-5b2e-4771-baca-093eb28972dc"
+  },
+  "T_op_full_claims": {
+    "iss": "https://vcst-qa-storefront.govirto.com/",
+    "exp": 1778781805,
+    "iat": 1778780005,
+    "aud": "resource_server",
+    "scope": "offline_access",
+    "jti": "c361beb8-ebb4-4e13-89e9-acae15b7da99",
+    "sub": "143bc845-7ba3-4982-ae9a-a9446a399705",
+    "name": "test-john.mitchell-20260310@test-agent.com",
+    "email": "test-john.mitchell-20260310@test-agent.com",
+    "permission": [
+      "storefront:user:view",
+      "storefront:user:create",
+      "storefront:user:delete",
+      "storefront:organization:edit",
+      "storefront:user:edit",
+      "storefront:user:invite",
+      "storefront:user:organization:view",
+      "xapi:my_organization:edit",
+      "platform:security:loginOnBehalf"
+    ],
+    "role": "__customer",
+    "memberId": "d0f765ba-3d2d-4f4e-a4b4-e3306e153178",
+    "organization_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "oi_au_id": "8026fcdb-de6b-484b-9044-4ccdbaff6444",
+    "oi_tkn_id": "f3ba81a2-fe2c-4eb0-865f-2b421e105517"
+  },
+  "delta_seconds_since_revert": 50,
+  "final_replay_status": 200,
+  "final_replay_body": "{\"data\":{\"me\":{\"id\":\"ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b\",\"userName\":\"test-david.kim-20260310@test-agent.com\",\"email\":\"test-david.kim-20260310@test-agent.com\",\"memberId\":\"af6c8e96-1d5b-4713-89ec-81ad7294f365\",\"contact\":{\"id\":\"af6c8e96-1d5b-4713-89ec-81ad7294f365\",\"firstName\":\"David\",\"lastName\":\"Kim\",\"organizationId\":\"6fb516c1-07f3-4af4-be5e-35961e3f7993\"}}}}"
+}

@@ -1,0 +1,13 @@
+2. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je65c1v897983143za200zb9234390392zd9234390392&_p=1778780000001&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&cid=341395290.1777890663&frm=0&pscdl=noapi&rcb=1&sr=1920x1080&ul=en-US&_s=3&tag_exp=0~115616986~115938465~115938469~118128923&cu=USD&sid=1778779906&sct=16&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Fblocked&dr=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2F&dt=QA%20%26%20Blocked&en=user_engagement&ep.debugMode=true&_et=13443&tfd=14177 => [204] 
+10. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+11. [POST] https://vcst-qa-storefront.govirto.com/cdn-cgi/rum? => [204] 
+20. [GET] https://js.monitor.azure.com/scripts/b/ai.config.1.cfg.json => [200] 
+22. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je65c1v897983143za200zd897983143&_p=1778780014302&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&cid=341395290.1777890663&frm=0&pscdl=noapi&rcb=17&sr=1920x1080&ul=en-US&_s=1&tag_exp=0~115938465~115938469~118012009&cu=USD&sid=1778779906&sct=16&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount&dt=Virto%20Commerce&en=page_view&_ee=1&ep.debugMode=true&tfd=902 => [204] 
+37. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+38. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+39. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+40. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+49. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je65c1v897983143za200zd897983143&_p=1778780014302&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AEAAAAQ&ae=a&cid=341395290.1777890663&frm=0&pscdl=noapi&rcb=17&sr=1920x1080&ul=en-US&tag_exp=0~115938465~115938469~118012009&cu=USD&sid=1778779906&sct=16&seg=1&dl=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Faccount&dt=Virto%20Commerce&_s=2&tfd=5928 => [204] 
+50. [POST] https://dc.services.visualstudio.com/v2/track => [200] 
+
+Note: 39 static requests not shown, run with "static" option to see them.

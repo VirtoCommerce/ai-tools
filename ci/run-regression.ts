@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import { TestDataResolver } from "../lib/test-data-resolver.js";
+import { TestDataResolver } from "../scripts/lib/test-data-resolver.js";
 
 // --- Configuration from environment variables ---
 

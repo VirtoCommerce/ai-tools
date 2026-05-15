@@ -371,3 +371,34 @@
 [STATE] No organization created with XSS payload in name","[NETWORK] POST registration returns validation error (not 200)
 [CONSOLE] no TypeError or JS errors
 [API] No new organization exists with script tag in name","Registration succeeds with script tags in org name; XSS stored as org name; no validation error shown; org created with executable payload","none","VCST-4691 PR #130","Manual"
+"AUTH-028","Login on Behalf — Org Maintainer Clicks 'Login on behalf' at /company/members — Confirmation Modal Then Impersonate Flow","Login > Impersonation > Org Maintainer Entry Point","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_MAINTAINER]
+Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). A target org member (IMPERSONATE_TARGET) has a security account and is active in the member list. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET.userId), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[WAIT] Email field populated
+[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[WAIT] Password field populated
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established (operator identity visible in header)
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Company members table visible
+[ACT] Locate row for @td(IMPERSONATE_TARGET.name) or any active member who has a security account
+[ACT] Click the row-level actions button (three-dot menu) on that member's row
+[WAIT] Actions dropdown opens
+[ASSERT] 'Login on behalf' option is visible in the dropdown (operator has CanImpersonate AND target has a security account — PR #2280 members-dropdown-menu.vue gate)
+[ACT] Click 'Login on behalf' in the actions dropdown
+[WAIT] Security Verification Informer / confirmation modal opens (PR #2280 members.vue — opens modal before navigating)
+[ASSERT] Confirmation modal is visible with Security Verification Informer text containing 'You are logging in on behalf of' and the target's email/name
+[ASSERT] 'Continue' button visible in modal
+[ASSERT] 'Cancel' button visible in modal
+[ACT] Click 'Continue' button
+[WAIT] Navigation to {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Silent flow triggers (operator has CanImpersonate) — VcLoaderOverlay displayed then redirect
+[WAIT] Impersonation completes — banner visible on resulting page","[DOM] 'Login on behalf' option visible in /company/members row actions dropdown when operator has CanImpersonate and target has security account (PR #2280 gate)
+[DOM] Confirmation modal visible after clicking 'Login on behalf': contains 'You are logging in on behalf of {target email/name}' + 'The session will be audited.' text
+[DOM] Confirmation modal has 'Continue' and 'Cancel' buttons
+[STATE] After clicking 'Continue': navigation to /account/impersonate/{userId}
+[STATE] Silent flow fires (operator has CanImpersonate) — ImpersonateForm NOT rendered; VcLoaderOverlay briefly shown
+[STATE] After silent flow: impersonation banner visible; header shows operator name + 'logged in as' + target name","[API] POST /connect/token with grant_type=impersonate returns HTTP 200 after Continue
+[NETWORK] No /connect/token call issued if Cancel is clicked (modal dismissed without side effects)
+[CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case)","Draft"

@@ -1,0 +1,36 @@
+{
+  "capturedAt": "2026-05-14T11:55:00+03:00",
+  "branch": "vcst-qa",
+  "platform": {
+    "version": "3.1026.0",
+    "image": "ghcr.io/virtocommerce/platform:3.1026.0"
+  },
+  "modules": {
+    "VirtoCommerce.XCart": "3.1013.0",
+    "VirtoCommerce.Xapi": "3.1007.0",
+    "VirtoCommerce.Cart": "3.1003.0",
+    "VirtoCommerce.XCatalog": "3.1005.0",
+    "VirtoCommerce.Catalog": "3.1022.0",
+    "VirtoCommerce.Customer": "3.1007.0",
+    "VirtoCommerce.Orders": "3.1007.0",
+    "VirtoCommerce.XOrder": "3.1004.0",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1005.0"
+  },
+  "prContext": {
+    "repo": "VirtoCommerce/vc-module-x-cart",
+    "number": 113,
+    "title": "VCST-4987: align configuration validation between add and update paths",
+    "branch": "feature/VCST-4987",
+    "state": "closed (merged 2026-05-01)",
+    "artifact": "VirtoCommerce.XCart_3.1011.0-pr-113-b17e.zip",
+    "jira": "VCST-4987 (also fixes VCST-4960)"
+  },
+  "fixDeployed": {
+    "module": "VirtoCommerce.XCart",
+    "requiredVersion": "3.1011.0+",
+    "deployedVersion": "3.1013.0",
+    "deployed": true,
+    "verifiedBy": "version compare"
+  },
+  "consumedByRun": "VCST-4960 verify-fix"
+}

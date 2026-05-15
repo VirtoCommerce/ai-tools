@@ -1,0 +1,21 @@
+{
+  "query": "mutation ChangeConfigSel($command: InputChangeCartConfigurationItemSelectedType!) { changeCartConfigurationItemSelected(command: $command) { id items { id name selectedForCheckout salePrice { amount } configurationItems { id name selectedForCheckout quantity product { id name } } } validationErrors { errorCode errorMessage } } }",
+  "variables": {
+    "command": {
+      "cartId": "506f6878-586b-4493-9fc2-1da9f69c7293",
+      "storeId": "B2B-store",
+      "userId": "42765f34-51cf-4994-806b-e82e65fd5c14",
+      "cultureName": "en-US",
+      "currencyCode": "USD",
+      "lineItemId": "b8391650-b0c2-4b9e-8655-a69578c4c57e",
+      "configurationSection": {
+        "sectionId": "29f2514c-51c6-43df-bba4-dd2db82240e4",
+        "type": "Product",
+        "option": {
+          "productId": "cabde383-4411-48bf-a577-e30a0c4fd443"
+        }
+      },
+      "selectedForCheckout": false
+    }
+  }
+}

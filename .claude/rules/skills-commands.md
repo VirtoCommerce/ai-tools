@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (15) — `.claude/commands/`
+## Slash Commands (16) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -11,6 +11,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
+| `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
 | `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |

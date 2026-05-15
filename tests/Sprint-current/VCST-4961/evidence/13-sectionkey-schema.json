@@ -1,0 +1,1 @@
+{"data":{"__type":{"name":"ConfigurationSectionKeyInput","inputFields":[{"name":"sectionId","type":{"name":null,"kind":"NON_NULL","ofType":{"name":"String","kind":"SCALAR"}}},{"name":"type","type":{"name":null,"kind":"NON_NULL","ofType":{"name":"String","kind":"SCALAR"}}},{"name":"option","type":{"name":"ConfigurableProductOptionKeyInput","kind":"INPUT_OBJECT","ofType":null}}]}}}

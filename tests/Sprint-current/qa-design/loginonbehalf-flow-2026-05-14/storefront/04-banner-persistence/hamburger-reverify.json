@@ -1,0 +1,99 @@
+{
+  "date": "2026-05-14",
+  "viewport": "375x812",
+  "build": "2.49.0-pr-2280-8069-80690ef2",
+  "notes": "Impersonation: John Mitchell (operator) → David Kim (customer ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b). Confirmed active at 1280px before resize.",
+
+  "hamburgerItems": [
+    { "label": "Camila-incorporate", "href": null, "data-test-id": null, "role": "static-text", "isVisible": true, "rect": { "note": "org label, no explicit rect measured" } },
+    { "label": "Theme: light", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": {} },
+    { "label": "English (United States)", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": {} },
+    { "label": "Dashboard", "href": "/account/dashboard", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 88, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Catalog", "href": "/catalog", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 136, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Compare", "href": "/compare", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 184, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Bulk order", "href": "/bulk-order", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 232, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Cart (10)", "href": "/cart", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 280, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Contact us", "href": "/contacts", "data-test-id": null, "role": "a", "isVisible": true, "rect": { "top": 328, "left": 36, "width": 428, "height": 40 } },
+    {
+      "label": "John Mitchell / logged in as / David Kim",
+      "href": null,
+      "data-test-id": null,
+      "role": "static-text-group",
+      "isVisible": true,
+      "rect": { "note": "impersonation context label above the Back button" }
+    },
+    {
+      "label": "Back to John Mitchell",
+      "href": null,
+      "data-test-id": "mobile-back-to-operator-button",
+      "role": "button",
+      "isVisible": true,
+      "rect": { "top": 489, "left": 36, "width": 181, "height": 24 }
+    },
+    {
+      "label": "Logout",
+      "href": null,
+      "data-test-id": "mobile-account-menu-logout-row",
+      "role": "button",
+      "isVisible": true,
+      "rect": { "top": 489, "left": 386, "width": 78, "height": 24 }
+    },
+    { "label": "Purchasing", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": { "top": 537, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Marketing", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": { "top": 585, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Corporate", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": { "top": 633, "left": 36, "width": 428, "height": 40 } },
+    { "label": "User", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": { "top": 681, "left": 36, "width": 428, "height": 40 } },
+    { "label": "Settings", "href": null, "data-test-id": null, "role": "button", "isVisible": true, "rect": { "top": 729, "left": 36, "width": 428, "height": 40 } }
+  ],
+
+  "hamburgerItemCount": 17,
+
+  "answers": {
+    "q1_direct_stop_entry": {
+      "yes_no": "YES",
+      "evidence": "button[data-test-id='mobile-back-to-operator-button'] label='Back to John Mitchell' is present and visible in the hamburger nav panel. rect: 181×24px at top:489. This is a mobile-specific selector distinct from the desktop 'back-to-operator-row'. Clicking it successfully exited impersonation in 1 tap after the hamburger was already open."
+    },
+    "q2_account_link_to_stop": {
+      "yes_no": "N/A — stop control is directly in hamburger, no /account detour needed",
+      "evidence": "The hamburger panel itself renders 'John Mitchell / logged in as / David Kim' static text plus the 'Back to John Mitchell' button. There is no need to navigate to /account; the exit is surface-level in the hamburger panel."
+    },
+    "q3_impersonation_cue_in_hamburger": {
+      "yes_no": "YES",
+      "evidence": "Hamburger panel contains three visible impersonation cues: (1) StaticText 'John Mitchell' (operator), (2) StaticText 'logged in as', (3) StaticText 'David Kim' (customer). All rendered in the nav panel at 375px. Confirmed by a11y tree (uid=29_18, 29_19, 29_20) and textContent walker."
+    },
+    "q4_stop_control_visible_on_home_mobile": {
+      "yes_no": "NO — not present in DOM at all when hamburger is closed",
+      "evidence": "At 375px on / with hamburger closed: querySelector('[data-test-id=\"back-to-operator-row\"]') = null, querySelector('[data-test-id=\"mobile-back-to-operator-button\"]') = null. Also operator-name-label, account-button, customer-name-label all null. Impersonation state is completely invisible on the page surface. Only accessible via hamburger open → panel contents."
+    },
+    "q5_stop_control_visible_on_account_mobile": {
+      "yes_no": "NO — not present in DOM at all when hamburger is closed",
+      "evidence": "At 375px (≈500px actual) on /account/dashboard with hamburger closed: same result — all five impersonation selectors returned found:false. The page-level header does not render any impersonation UI on mobile regardless of route."
+    }
+  },
+
+  "exitPaths": [
+    {
+      "path": "B: open hamburger → 'Back to John Mitchell' button directly visible in panel → tap",
+      "succeeded": true,
+      "taps": 2,
+      "tapBreakdown": "Tap 1: 'Main menu' hamburger button. Tap 2: 'Back to John Mitchell' button (data-test-id='mobile-back-to-operator-button').",
+      "endState": "Operator session restored. Redirected to /company/members. Cart and notifications reverted to operator's own data (5 cart items, 1 notification vs David Kim's 10 / 2). No 'logged in as' in header.",
+      "note": "Path A (hamburger → /account → exit) also technically works but requires 3 taps: hamburger open + Dashboard link + back button. Path B is shorter."
+    },
+    {
+      "path": "A: open hamburger → Dashboard link → exit via account page",
+      "succeeded": "NOT_TESTED — unnecessary given Path B works directly",
+      "taps": null,
+      "endState": null
+    }
+  ],
+
+  "desktopControlComparison": {
+    "desktopSelector": "data-test-id='back-to-operator-row'",
+    "mobileSelector": "data-test-id='mobile-back-to-operator-button'",
+    "note": "Desktop renders 'back-to-operator-row' inside account-menu dropdown (opened via account-button). Mobile renders 'mobile-back-to-operator-button' directly in the hamburger nav panel — no nested dropdown required. Both are functional exit controls."
+  },
+
+  "verdict": "EXTRA_FRICTION_2_TAPS",
+
+  "revisedFindingAssessment": "F-02 'TRAP' framing requires downgrade. A functional mobile exit path exists via the hamburger panel in exactly 2 taps. The original finding correctly identified that the desktop top-header banner (operator-name-label + account-button) is not rendered at mobile viewport — this is accurate. However the hamburger panel IS a valid alternative mount point that surfaces: impersonation context labels, a direct 'Back to John Mitchell' button (mobile-back-to-operator-button), and a Logout button. The finding should be updated to: 'Mobile impersonation exit requires 2 extra taps (hamburger open + button) vs desktop 1-tap (account-menu dropdown already in header). Impersonation state is invisible until hamburger is opened — no persistent passive indicator exists on the mobile page surface. Severity: Low-Medium UX friction, not a trap.'"
+}

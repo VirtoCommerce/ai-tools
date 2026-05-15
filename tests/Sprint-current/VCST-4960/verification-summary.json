@@ -1,0 +1,47 @@
+{
+  "ticket": "VCST-4960",
+  "verdict": "VERIFIED",
+  "date": "2026-05-14",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "2.49.0-pr-2280",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1013.0",
+      "VirtoCommerce.Cart": "3.1003.0",
+      "VirtoCommerce.Xapi": "3.1007.0",
+      "VirtoCommerce.XCatalog": "3.1005.0"
+    },
+    "pr_build": "vc-module-x-cart#113 merged 2026-05-01 (artifact VirtoCommerce.XCart_3.1011.0-pr-113-b17e.zip; fix shipped in stable 3.1011.0+; vcst-qa runs 3.1013.0)"
+  },
+  "agent_used": "qa-backend-expert (runner-native GraphQL, no browser)",
+  "test_method": "npx tsx scripts/graphql-runner.ts — 5 runner-native cases, 38 verdict-affecting assertions",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "Cart contents preserved on validation rejection (no phantom regeneration of configurationItems)",
+    "sectionId rejection happens via lookup against product's configurationSections[].id (CONFIGURATION_SECTION_NOT_FOUND)",
+    "Add↔update validation parity (PR's stated invariant — addItem rejects fabricated sectionId with identical error code)"
+  ],
+  "jira_transition": "Ready for test → Testing → Tested",
+  "linked_fixes": {
+    "pr": "https://github.com/VirtoCommerce/vc-module-x-cart/pull/113",
+    "related_ticket": "VCST-4987 (same PR addresses both — alignment of add and update validation paths)"
+  },
+  "bug_report_status": "Moved from reports/bugs/open/ to reports/bugs/fixed/ with Resolution block + Status: FIXED",
+  "artifacts": "tests/Sprint-current/VCST-4960/",
+  "artifact_files": [
+    "tests/Sprint-current/VCST-4960/verification-report.md",
+    "tests/Sprint-current/VCST-4960/vcst-4960-verification.csv",
+    "tests/Sprint-current/VCST-4960/graphql-evidence/VCST-4960-STR-1.json",
+    "tests/Sprint-current/VCST-4960/graphql-evidence/VCST-4960-STR-2.json",
+    "tests/Sprint-current/VCST-4960/graphql-evidence/VCST-4960-STR-3.json",
+    "tests/Sprint-current/VCST-4960/graphql-evidence/VCST-4960-ADD-REGRESSION.json",
+    "tests/Sprint-current/VCST-4960/graphql-evidence/VCST-4960-VALID-CHANGE.json"
+  ]
+}

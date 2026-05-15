@@ -1,0 +1,218 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4960-STR-1,VCST-4960 STR Run 1 — changeCartConfiguredItem rejects fabricated sectionId,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. STR run 1/3 — Add Configurable Hat with valid sectionId then attempt changeCartConfiguredItem with fabricated sectionId 00000000-…; expects validationErrors non-empty AND cart state preserved (configItem id unchanged).",configurable_id=@td(CFG_HAT.id); fabricated_section=00000000-0000-0000-0000-000000000000,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_HAT.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type options { product { id name } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → VALID_SECTION_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → VALID_OPTION_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{VALID_SECTION_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HAT.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.id → ORIG_CONFIG_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.productId → ORIG_CONFIG_PRODUCT_ID]
+[GQL-OP change_bad]
+[GQL-VARS change_bad] {""configurationSections"": [{""sectionId"": ""{{fabricated_section}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeBad($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC change_bad]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[COUNT label=add_item] data.addItem.items.0.configurationItems >= 1
+[ERRORS label=change_bad] errors[] empty
+[COUNT label=change_bad] data.changeCartConfiguredItem.validationErrors >= 1
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorCode is non-null
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.configurationItems.configurationItems.0.id = {{ORIG_CONFIG_ITEM_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems.0.productId = {{ORIG_CONFIG_PRODUCT_ID}}","[EVIDENCE] Item-4960-STR-1: HTTP 200 (validation is data-level); cart configItem.id preserved post-rejection",validationErrors empty (regression of fix); HTTP 4xx/5xx; configItem.id changes after rejection,cleanup_post inline,VCST-4960; PR vc-module-x-cart#113,Automated
+VCST-4960-STR-2,VCST-4960 STR Run 2 — changeCartConfiguredItem rejects fabricated sectionId,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. STR run 2/3 — repeats VCST-4960-STR-1 to confirm fix is stable across consecutive sessions.",configurable_id=@td(CFG_HAT.id); fabricated_section=00000000-0000-0000-0000-000000000000,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_HAT.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type options { product { id name } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → VALID_SECTION_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → VALID_OPTION_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{VALID_SECTION_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HAT.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.id → ORIG_CONFIG_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.productId → ORIG_CONFIG_PRODUCT_ID]
+[GQL-OP change_bad]
+[GQL-VARS change_bad] {""configurationSections"": [{""sectionId"": ""{{fabricated_section}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeBad($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC change_bad]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=change_bad] errors[] empty
+[COUNT label=change_bad] data.changeCartConfiguredItem.validationErrors >= 1
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorCode is non-null
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.configurationItems.configurationItems.0.id = {{ORIG_CONFIG_ITEM_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems.0.productId = {{ORIG_CONFIG_PRODUCT_ID}}","[EVIDENCE] Item-4960-STR-2: state preserved across rejection",validationErrors empty,cleanup_post inline,VCST-4960; PR vc-module-x-cart#113,Automated
+VCST-4960-STR-3,VCST-4960 STR Run 3 — changeCartConfiguredItem rejects fabricated sectionId,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. STR run 3/3 — final consistency confirmation.",configurable_id=@td(CFG_HAT.id); fabricated_section=00000000-0000-0000-0000-000000000000,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_HAT.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type options { product { id name } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → VALID_SECTION_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → VALID_OPTION_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{VALID_SECTION_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HAT.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.id → ORIG_CONFIG_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.productId → ORIG_CONFIG_PRODUCT_ID]
+[GQL-OP change_bad]
+[GQL-VARS change_bad] {""configurationSections"": [{""sectionId"": ""{{fabricated_section}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeBad($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC change_bad]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=change_bad] errors[] empty
+[COUNT label=change_bad] data.changeCartConfiguredItem.validationErrors >= 1
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorCode is non-null
+[DATA label=change_bad] data.changeCartConfiguredItem.validationErrors.0.errorMessage is non-null
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.configurationItems.configurationItems.0.id = {{ORIG_CONFIG_ITEM_ID}}
+[DATA label=read_back] data.configurationItems.configurationItems.0.productId = {{ORIG_CONFIG_PRODUCT_ID}}","[EVIDENCE] Item-4960-STR-3: confirms determinism",validationErrors empty,cleanup_post inline,VCST-4960; PR vc-module-x-cart#113,Automated
+VCST-4960-ADD-REGRESSION,VCST-4960 Item 4 — addItem with fabricated sectionId is rejected (PR add/update symmetry),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. PR #113 title says 'align configuration validation between add and update paths'. Verifies addItem also rejects fabricated sectionId via cart validationErrors (xAPI's documented contract — addItem already collected validation errors prior to PR; this confirms symmetry).",configurable_id=@td(CFG_HAT.id); fabricated_section=00000000-0000-0000-0000-000000000000,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_HAT.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type options { product { id name } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → VALID_OPTION_ID]
+[GQL-OP add_bad]
+[GQL-VARS add_bad] {""configurationSections"": [{""sectionId"": ""{{fabricated_section}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{VALID_OPTION_ID}}"", ""quantity"": 1}}]}
+  mutation AddBad($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HAT.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_bad]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_bad] errors[] empty
+[COUNT label=add_bad] data.addItem.validationErrors >= 1
+[DATA label=add_bad] data.addItem.validationErrors.0.errorCode is non-null
+[DATA label=add_bad] data.addItem.validationErrors.0.errorMessage is non-null","[EVIDENCE] Item-4960-4: addItem path rejects fabricated sectionId, validation symmetric with changeCartConfiguredItem post-fix",addItem accepts fabricated sectionId (asymmetry — fix regression),cleanup_post inline,VCST-4960; PR vc-module-x-cart#113,Automated
+VCST-4960-VALID-CHANGE,VCST-4960 Items 5+6 — changeCartConfiguredItem with VALID sectionId succeeds (no false positive),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,"Runner-native. ORG_USER. Verifies that fix does NOT break the happy path — addItem then changeCartConfiguredItem with VALID sectionId successfully updates the option, validationErrors stays empty, configItem.productId reflects new selection.",configurable_id=@td(CFG_HAT.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_HAT.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type options { product { id name } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → VALID_SECTION_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_ALT_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{VALID_SECTION_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HAT.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.configurationItems.0.id → ORIG_CONFIG_ITEM_ID]
+[GQL-OP change_valid]
+[GQL-VARS change_valid] {""configurationSections"": [{""sectionId"": ""{{VALID_SECTION_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_ALT_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeValid($configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSections: $configurationSections }) {
+      id validationErrors { errorCode errorMessage objectId objectType }
+      items { id productId quantity configurationItems { id sectionId productId } }
+    }
+  }
+[GQL-EXEC change_valid]
+[GQL-OP read_back]
+  query { configurationItems(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" lineItemId: ""{{LINE_ITEM_ID}}"" userId: ""{{USER_ID}}"") { configurationItems { id sectionId productId } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=change_valid] errors[] empty
+[COUNT label=change_valid] data.changeCartConfiguredItem.validationErrors = 0
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{VALID_SECTION_ID}}].productId = {{OPT_ALT_ID}}","[EVIDENCE] Items 5+6: valid path still succeeds, no false positive; configItem.productId mutated to alt option",validationErrors non-empty on valid update; productId unchanged; HTTP 500,cleanup_post inline,VCST-4960; PR vc-module-x-cart#113,Automated

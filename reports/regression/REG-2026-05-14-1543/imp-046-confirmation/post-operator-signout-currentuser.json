@@ -1,0 +1,7 @@
+{
+  "phase": "POST_REVERT_AND_POST_OPERATOR_SIGNOUT",
+  "timestamp_utc": "2026-05-14T14:57:04.073Z",
+  "elapsed_ms": 423,
+  "status": 200,
+  "body": "{\"permissions\":[\"storefront:organization:view\",\"storefront:user:view\"],\"userName\":\"test-david.kim-20260310@test-agent.com\",\"isAdministrator\":false,\"passwordExpired\":false,\"daysTillPasswordExpiry\":-1,\"authenticationMethod\":null,\"isSsoAuthenticationMethod\":false,\"memberId\":\"af6c8e96-1d5b-4713-89ec-81ad7294f365\",\"id\":\"ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b\"}"
+}

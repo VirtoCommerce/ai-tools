@@ -1,0 +1,12 @@
+Operator (acme_store_maintainer_1@acme.com) access_token captured before impersonation
+Storage key: localStorage["auth"] → JSON { access_token, expires_at, token_type }
+Captured at: 2026-05-14T07:21:21Z (approx)
+expires_at: 2026-05-14T07:51:21.421Z
+token_type: Bearer
+JWT length: 1870 chars
+Decoded payload includes: "permission":[..."platform:security:loginOnBehalf"] — operator has CanImpersonate
+sub: user-acme-store-maintainer-1
+organization_id: organization-acme-store
+
+access_token (truncated):
+eyJhbGciOiJSUzI1NiIsImtpZCI6IkQ1ODhEQUJFNjRBNkZDQ0UwNzA4NjBFMjIyMzU5Njc1QzBDNTM0ODEi...

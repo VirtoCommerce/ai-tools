@@ -32,7 +32,8 @@
     "graphql:fixtures:validate": "npx tsx scripts/validate-graphql-fixtures.ts",
     "graphql:fixtures:validate:refresh": "npx tsx scripts/validate-graphql-fixtures.ts --refresh",
     "suites:sync": "npx tsx scripts/sync-test-suites.ts",
-    "suites:lint": "npx tsx scripts/sync-test-suites.ts --check"
+    "suites:lint": "npx tsx scripts/sync-test-suites.ts --check",
+    "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts"
   },
   "repository": {
     "type": "git",

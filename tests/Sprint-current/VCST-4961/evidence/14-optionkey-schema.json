@@ -1,0 +1,1 @@
+{"data":{"__type":{"name":"ConfigurableProductOptionKeyInput","inputFields":[{"name":"productId","type":{"name":null,"kind":"NON_NULL","ofType":{"name":"String","kind":"SCALAR"}}}]}}}

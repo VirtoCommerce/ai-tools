@@ -1,0 +1,31 @@
+{
+  "stop": "02-impersonate-page",
+  "url": "https://vcst-qa-storefront.govirto.com/account/impersonate/{TARGET_USER_ID}",
+  "auditor": "ui-ux-expert",
+  "date": "2026-05-14",
+  "build": "Ver. 2.49.0-pr-2280-8069-80690ef2",
+
+  "path_coverage": {
+    "silent_path": {
+      "tested": true,
+      "method": "Authenticated operator (John Mitchell) navigated directly to /account/impersonate/ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
+      "result": "Immediate redirect to / with impersonation active — no intermediate form shown",
+      "cls_on_redirect": "CLS observer installed after redirect; initial load CLS on / measured at Stop 3",
+      "layout_verdict": "N/A — no intermediate layout to audit; silent path produces zero intermediate UI"
+    },
+    "form_path": {
+      "tested": false,
+      "reason": "Navigating to impersonate URL while authenticated triggers silent path. Form path (ImpersonateForm.vue) is only rendered for unauthenticated access. Re-running a sign-out flow was out of scope for this design audit pass given the operator session was already active.",
+      "recommendation": "Form path layout audit should be done with a fresh anonymous session navigating to the impersonate URL. Expected: ImpersonateForm.vue renders with email/password fields. Audit BL-UI-001 CLS on form mount, BL-UI-002 field padding, BL-UI-006 submit button."
+    }
+  },
+
+  "BL-UI-001_CLS": { "verdict": "N/A", "note": "No intermediate page rendered on silent path" },
+  "BL-UI-002_spacing": { "verdict": "N/A", "note": "No form rendered on silent path" },
+  "BL-UI-003_state_shift": { "verdict": "N/A" },
+  "BL-UI-004_overflow": { "verdict": "N/A" },
+  "BL-UI-005_alignment": { "verdict": "N/A" },
+  "BL-UI-006_touch_targets": { "verdict": "N/A" },
+
+  "screenshots": []
+}

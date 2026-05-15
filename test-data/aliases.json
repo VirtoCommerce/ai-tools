@@ -1,13 +1,16 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.4.3",
-    "updated": "2026-05-12",
+    "version": "1.4.6",
+    "updated": "2026-05-14",
     "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged.",
     "changelog_1_4_0": "Added IMPERSONATE_TARGET (→ b2b/users.csv USR-003 Mike Torres, AcmeCorp viewer) and OTHER_ORG_USER (→ b2b/users.csv USR-007 David Kim, TechFlow buyer) for VCST-4905 Login-on-behalf form/silent flow cases (AUTH-027..AUTH-081 in suite 031). Both point to existing seeded platform users — no new seeding needed.",
     "changelog_1_4_1": "VCST-4905 scenario correction: repointed IMPERSONATE_TARGET to USR-007 David Kim (was Mike Torres); added SUPPORT_AGENT → USR-001 John Mitchell (ACME admin) as the support persona who fills the Security Verification Form. Canonical happy-path: John (support, own credentials) → impersonates David (target, different org). PRECONDITION: The role assigned to SUPPORT_AGENT must include StorefrontPermissions.CanImpersonate for the impersonate-step to succeed. Permissions live on Roles (Admin SPA > Security > Roles > [role] > Permissions), NOT directly on users. As of 2026-05-11 verification: role assigned to USR-001 does not include this permission — POST /connect/token grant_type=impersonate returns 403. Fix: add CanImpersonate to the existing role or assign a role that includes it.",
     "changelog_1_4_2": "Fixed OTHER_ORG_USER alias data bug — was pointing to USR-007 (same user as IMPERSONATE_TARGET, both ORG-002); now points to USR-008 Carlos Rodriguez (ORG-003 BuildRight). Unblocks IMP-018 cross-org impersonation rejection test in suite 082-auth-impersonation.csv.",
-    "changelog_1_4_3": "Added inline AGENT_TEST_IMP_ROLE + AGENT_TEST_IMP_CUSTOMER aliases for IMP-033/034/038 in suite 082-auth-impersonation.csv. Inline (no CSV row) because these are ephemeral entities created+destroyed by the tests themselves — names are stable contracts, not env-resolved data."
+    "changelog_1_4_3": "Added inline AGENT_TEST_IMP_ROLE + AGENT_TEST_IMP_CUSTOMER aliases for IMP-033/034/038 in suite 082-auth-impersonation.csv. Inline (no CSV row) because these are ephemeral entities created+destroyed by the tests themselves — names are stable contracts, not env-resolved data.",
+    "changelog_1_4_4": "Added IMPERSONATE_TARGET_MANY_ORGS (USR-020), IMPERSONATE_TARGET_BLOCKED (USR-021), IMPERSONATE_TARGET_INVITED (USR-022) for IMP-048 and IMP-049 in suite 082-auth-impersonation.csv. All three point to b2b/users.csv rows that do not yet exist — FIXTURE-SEEDING REQUIRED before first run. See _comment on each alias for provisioning instructions.",
+    "changelog_1_4_5": "Seeded IMPERSONATE_TARGET_MANY_ORGS (USR-020 — Password1!, 11 AGENT-TEST orgs), IMPERSONATE_TARGET_BLOCKED (USR-021 — Locked), IMPERSONATE_TARGET_INVITED (USR-022 — EmailUnconfirmed) on vcst-qa via scripts/seed-impersonation-targets.mjs. Added 11 supporting AGENT-TEST orgs (ORG-009..ORG-019) to b2b/organizations.csv; added 3 contacts (CON-020..CON-022) to b2b/contacts.csv; added org_count column to b2b/users.csv. Data-drift note: ORG-001 (AcmeCorp eba8b270-...) and ORG-004 (AcmeWest a1e98b8e-...) platform_ids in organizations.csv are STALE on vcst-qa as of 2026-05-14 — search returns 0 results; USR-001..USR-004 contacts now point to TechFlow's id (6fb516c1-...). USR-020 therefore uses 11 NEW AGENT-TEST orgs rather than mixing 4 base + 7 new. USR-021/022 are assigned to ORG-002 (TechFlow), not ORG-001. Observed Locked enum on platform: lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true + /api/platform/security/users/{id}/locked returns {locked:true}; status field remains null (the platform persists Locked state via Identity Framework lockoutEnd, not via UserState/status enum). Observed Invited enum: emailConfirmed=false + lockoutEnabled=true + status=null (the platform has no dedicated 'Invited' UserState enum — invitation is signaled purely by emailConfirmed=false + sendVerificationEmail trigger).",
+    "changelog_1_4_6": "Locked IMP-049 VERIFY assertions on first run (2026-05-14, qa-testing-expert, Firefox MCP, vcst-qa, platform 3.1026.0, theme vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2). Observed contracts — Blocked: HTTP 200 with valid Bearer token (sub=blocked, vc_operator_user_id=operator); storefront frontend wipes auth and redirects to /blocked; operator session is DESTROYED as a side effect. Invited: HTTP 200 with valid Bearer token (sub=invited, vc_operator_user_id=operator); silent success, lands on Home, operator chip + 'Back to {operator}' revert button visible in header. SECURITY GAP confirmed via REST cross-check: platform /connect/token grant_type=impersonate has NO status-based gate — direct REST callers with platform:security:loginOnBehalf permission can mint a usable 30-min Bearer for Locked OR Invited targets, bypassing the storefront UI's /blocked enforcement entirely. Full contract evidence at tests/Sprint-current/VCST-4906/evidence/imp-049/ and report at tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -2058,6 +2061,24 @@
     "captured_at": "2026-04-30",
     "notes": "VCST-4707 / Sprint 26-08 GAP-05 (BOPIS-092/093/080). PROVISIONED — no seeding required; QA already has 102 indexed pickup locations for B2B-store (well above 51 threshold). locationCount/lastPageIndex sourced from live storefront xAPI pickupLocations query. pageSize=50 verified by paging first=50 then after='50'. indexedSearchEnabled=true confirmed via GET /api/shipping/pickup-locations/indexedSearchEnabled (per VCST-4631 flag). Position-50/51 ids are stable as long as the underlying dataset and default sort don't change — re-snapshot to a NEW filename if the count or ordering shifts (do NOT mutate the 20260430 file). Existing BOPIS_DOWNTOWN/MALL/BEACH aliases reference pickup-locations.csv which is the legacy CSV-driven seed pool (BOPIS-LOC-001..050) and is NOT directly tied to this live-environment snapshot. testSku/testProductId added 2026-04-30 for BOPIS-092/093/080 'add product to cart before testing pickup pre-selection' steps — ALCOE2300 chosen because it was the first storefront-visible product with isAvailable=true and a positive price; B2B virtual catalog id at capture was 9238c387-d779-40cb-b27d-5496a670a924 (NOT the fc596540... id referenced by older memory notes — that filter returned 0 products on this date). BOPIS eligibility for this specific SKU was not directly confirmed via xAPI; treat as RUNTIME_VERIFY and swap if needed."
   },
+  "CONFIGURABLE": {
+    "_inline": true,
+    "testSku": "YOC-85609878",
+    "testSlug": "/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake",
+    "testSlug_resolvedAt": "2026-05-14T11:00Z against FRONT_URL=https://vcst-qa-storefront.govirto.com via /search?q=YOC-85609878 → first card href",
+    "source": "user-provided 2026-05-14 for layout-stability suite (048b) Configurable PDP entry in critical-ui-scope.md Pages matrix",
+    "notes": "Configurable product fixture for layout-stability tests. Must have at least one configurable section (text input, dropdown, or option chooser visible on PDP). Used by Configurable PDP page row in critical-ui-scope.md."
+  },
+  "STRESS": {
+    "_inline": true,
+    "longTitleSku": "8033482",
+    "longTitleChars": 179,
+    "longTitleSlug": "/kitchen-supplies/everything-for-kitchen/BENDING-STRAWS-PAPER-STRIPED-ASSORTED-22CM-6MM-PACK-500PCS",
+    "longTitleText": "Christmas paper straws, striped dot drink straws, decorative straws with Christmas tree, star, snowflake, gift jar pattern. Christmas party supplies, 22cm-6mm, pack of 500 pieces.",
+    "longTitleSource": "live capture 2026-05-14 on vcst-qa B2B-store (storefront-selectors.md Section 8)",
+    "longTitleSearchQuery": "Christmas paper straws",
+    "notes": "Stress-test fixtures for layout-stability suite (048b). longTitleSku resolves to a real in-stock product with a 179-char title — use to trigger BL-UI-004 (content boundary) overflow tests without DOM injection. Re-verify SKU exists if vcst catalog is reseeded."
+  },
   "IMPERSONATION_ADMIN": {
     "_inline": true,
     "userName": "agent-test-impersonation-admin",
@@ -2333,5 +2354,43 @@
     "account_type": "Customer",
     "role_name": "AGENT-TEST-imp-role",
     "store_id": "B2B-store"
+  },
+  "IMPERSONATE_TARGET_MANY_ORGS": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-020"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_count": "org_count"
+    },
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user is member of 11 AGENT-TEST Active orgs (ORG-009..ORG-019: BMW-Group, Bence-and-Family, Brand-Specials, Cypress-Company-Kft, Elena-Company, Fill-Fillips-Company, Graceland-Boots-Shoes, Hillcrest-Holdings, Ironwood-Industries, Juniper-Junction, Kingsbridge-Imports). Exercises org-switcher scroll+search behavior in IMP-048. Note: vcst-qa data drift on 2026-05-14 — original ORG-001 AcmeCorp + ORG-004 AcmeWest no longer exist in live DB, so this user uses 11 fresh AGENT-TEST orgs rather than mixing 4 base + 7 new. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent). Storefront verification: sign in with AGENT-TEST-imp-target-many-orgs-20260514@test-agent.com / Password1!, click org switcher in top header; should show 11 rows with scroll + searchable partial match."
+  },
+  "IMPERSONATE_TARGET_BLOCKED": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-021"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "name": "user_name"
+    },
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user whose platform account is Locked at the user level — distinct from ORG-006 (suspended org). Required by IMP-049 Part A. Observed platform encoding of 'Locked': lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true; GET /api/platform/security/users/{id}/locked returns {\"locked\":true}; UserState/status remains null (the platform uses ASP.NET Core Identity's lockoutEnd field, NOT a separate enum). User belongs to ORG-002 (TechFlow) — the user-level Locked status is the variable under test, not org status. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent — re-applies lock via POST /api/platform/security/users/{id}/lock). LOCKED CONTRACT 2026-05-14 (IMP-049 Part A): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). The platform OAuth endpoint has NO status-based gate — Locked accounts CAN be impersonated at the API level. The storefront frontend detects the Locked status downstream, wipes its own auth state, and redirects to /blocked (heading 'Your account is blocked'). Operator session is destroyed in the process. Direct REST callers bypass the /blocked redirect entirely. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
+  },
+  "IMPERSONATE_TARGET_INVITED": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-022"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "name": "user_name"
+    },
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user who was Invited (verification email sent) but never completed email verification. Observed platform encoding of 'Invited': emailConfirmed=false + sendVerificationEmail has been issued; the VC platform has NO dedicated 'Invited' UserState enum — invitation state is signaled purely by emailConfirmed=false. status/userState fields remain null. User belongs to ORG-002 (TechFlow). The platform_id resolves to a valid user record so /account/impersonate/{userId} receives a real target with verification pending. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent — re-issues sendVerificationEmail). The dummy password Password1! is set but the user should be treated as not having a usable password since email verification gates first sign-in. LOCKED CONTRACT 2026-05-14 (IMP-049 Part B): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). emailConfirmed=false does NOT gate the impersonate grant. Impersonation succeeds silently — storefront lands on Home, header chrome shows operator chip + 'Back to {operator}' revert button. Operator can fully act as the Invited user. May or may not be by design depending on the desired support workflow. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
   }
 }

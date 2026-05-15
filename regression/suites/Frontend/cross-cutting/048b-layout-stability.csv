@@ -1,0 +1,1300 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"LAYOUT-CLS-001","CLS on home page (post-paint)","CLS > Initial render","P2","BL-UI-001","ECL-1.2","- Storefront accessible
+- Cache disabled
+- Network throttled to Fast 3G (image load is the typical shift culprit)
+- TIMING NOTE: PerformanceObserver cannot run before first paint via MCP; this test measures post-DOMContentLoaded CLS only. Pre-paint shifts are under-counted by design (documented in scripts/lib/measure-layout.ts).","{{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ACT] Run `browser_evaluate` with LAYOUT_SNIPPETS.installClsObserver from scripts/lib/measure-layout.ts IMMEDIATELY after navigation completes (buffered:true captures DOMContentLoaded-onward entries)
+[WAIT] Wait 5s after the last network request settles
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe to surface lazy shifts
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls; capture {cls, shiftCount}","[MATH] cls <= 0.1 PASS
+[MATH] 0.1 <= cls < 0.25 FAIL
+[MATH] cls >= 0.25 P0
+[STATE] shiftCount recorded for evidence","[CONSOLE] no JS errors during initial render
+[NETWORK] no failed image requests (HTTP 4xx/5xx) for hero .slider-block images","cls >= 0.1; hero .slider-block swiper images lack width/height; webfont swap reflows .vc-typography elements; .products-block products grid shifts when 20-card grid resolves","none","business-logic.md#bl-ui-001 + storefront-selectors.md Section 1","Semi-Automated"
+"LAYOUT-CLS-002","CLS on PDP (image-load reflow)","CLS > Initial render","P2","BL-UI-001","ECL-1.2","- Long-title stress product is in catalog (`@td(STRESS.longTitleSku)` = 8033482, slug `@td(STRESS.longTitleSlug)`)
+- Cache disabled
+- TIMING NOTE: post-paint CLS only (see CLS-001)","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[NAV] Navigate to {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately after navigation
+[WAIT] Wait for `.image-gallery__img--active` to fully load (verify naturalWidth > 0 via evaluate)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] gallery images return 200; `.image-gallery .swiper-wrapper .image-gallery__thumb` requests succeed","cls >= 0.1 on PDP load; .image-gallery main image lacks intrinsic dimensions causing .product-price-block to jump; long .vc-typography H1 reflows after webfont","none","business-logic.md#bl-ui-001 + storefront-selectors.md Section 3","Semi-Automated"
+"LAYOUT-CLS-003","CLS on cart initial render","CLS > Initial render","P1","BL-UI-001","ECL-1.2","- Cart contains 3+ items with images (added in steps)
+- Cache disabled
+- TIMING NOTE: post-paint CLS only","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] Navigate to {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first product card in results to land on PDP
+[ACT] On PDP, click `.vc-quantity-stepper button[aria-label='Increase quantity']` three times (B2B-store has no separate Add to Cart button — the + IS the add-to-cart, per feedback_qty_stepper_as_add_to_cart)
+[WAIT] Confirm cart count in `header [data-test-id='desktop-main-menu-cart-link']` reflects 3 items
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] Wait for `.vc-line-item` count to equal 3 AND `[data-test-id='order-summary-widget']` to render
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS; revenue-critical surface so 0.1+ = P1, 0.25+ = P0
+[STATE] capture {cls, shiftCount}","[NETWORK] xAPI cart query returns 200; errors[] empty","cls >= 0.1; .vc-line-item rows snap from `.vc-widget-skeleton` to final height; `[data-test-id='cart-subtotal-label']` jumps after totals compute; line-item images push siblings as they load","[PRE:RESET_CART]","business-logic.md#bl-ui-001 + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-CLS-004","CLS on cart with checkout sections (shipping + payment)","CLS > Late-fetch render","P1","BL-UI-001","ECL-1.2","- Authenticated user with cart of 1+ item
+- Saved shipping address present (USER_DEFAULT has saved addresses in QA)
+- vcst-qa is single-page checkout: `/cart` IS the checkout per storefront-selectors.md Section 5","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] Navigate to {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once to add 1 item
+[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] Wait for ALL checkout sections to render: `[data-test-id='shipping-details-section']`, `[data-test-id='shipping-address-section']`, `[data-test-id='shipping-method-selector']`, `[data-test-id='payment-details-section']`, `[data-test-id='payment-method-selector']`, `[data-test-id='place-order-button']`
+[WAIT] 5s after network idle (shipping-rate fetches can be late)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS; checkout is revenue-critical so 0.1+ = P1, 0.25+ = P0
+[STATE] capture {cls, shiftCount}","[NETWORK] address resolution and shipping-method queries return 200","cls >= 0.1; `[data-test-id='shipping-method-selector']` radios widen after async fetch and push payment section down; `[data-test-id='cart-total-label']` reflows; `[data-test-id='sticked-place-order-button']` and primary CTA shift independently","[PRE:RESET_CART]","business-logic.md#bl-ui-001 + storefront-selectors.md Section 5","Semi-Automated"
+"LAYOUT-SPC-001","Spacing grid — catalog product cards","Spacing > Grid compliance","P2","BL-UI-002","ECL-1.5","- Catalog page renders with 16+ product cards (default page size)","{{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Wait for `.category-products__list .vc-product-card` to reach >= 16 elements
+[ACT] `browser_evaluate` with spacingAuditSnippet('.category-products__list .vc-product-card, .category-products__list .vc-product-card .vc-product-title, .category-products__list .vc-product-card .vc-product-price') from scripts/lib/measure-layout.ts
+[ACT] Capture result.offGrid array; classify with classifySpacing()","[STATE] result.matched > 0
+[STATE] result.offGrid.length === 0
+[MATH] Every value ∈ {0,4,8,12,16,20,24,32,40,48,56,64,80,96}","[CONSOLE] no errors","Any padding/margin/gap on .vc-product-card or its children not on 4px grid (e.g. 13px, 27px, 41px); hardcoded pixel values instead of var(--spacing-*) tokens","none","business-logic.md#bl-ui-002 + storefront-selectors.md Section 2","Semi-Automated"
+"LAYOUT-SPC-002","Spacing grid — cart line items","Spacing > Grid compliance","P2","BL-UI-002","ECL-1.5","- Cart has 2+ items","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + twice
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `.vc-line-item` count >= 1 (note: same SKU collapses to one row with qty=2; that's fine for spacing)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-line-item, .vc-line-item .vc-quantity-stepper, .vc-line-item .vc-line-item__property-price, .vc-line-item .vc-line-item__total, [data-test-id=\"order-summary-widget\"]')
+[ACT] Capture offGrid; classify with classifySpacing()","[STATE] result.offGrid.length === 0
+[MATH] All values ∈ grid set","[CONSOLE] no errors","Off-grid spacing in .vc-line-item or order-summary-widget; inconsistent gap between subtotal/discount/tax/shipping/total labels","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-SPC-003","Spacing grid — checkout sections on /cart","Spacing > Grid compliance","P2","BL-UI-002","ECL-1.5","- Cart has 1+ item; checkout sections rendered","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] All `[data-test-id$='-section']` checkout sections rendered (shipping-details, shipping-address, payment-details)
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"shipping-details-section\"], [data-test-id=\"shipping-address-section\"], [data-test-id=\"payment-details-section\"], [data-test-id=\"shipping-method-selector\"], [data-test-id=\"payment-method-selector\"]')
+[ACT] Capture offGrid","[STATE] result.offGrid.length === 0","[CONSOLE] no errors","Form fields / section headers with off-grid padding; inconsistent gap between checkout step blocks","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + storefront-selectors.md Section 5","Semi-Automated"
+"LAYOUT-ALN-001","Catalog product grid row alignment","Alignment > Row parity","P2","BL-UI-005","ECL-1.5","- Catalog renders with at least 4 cards in the first row","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.category-products__list .vc-product-card` count >= 16
+[ACT] `browser_evaluate` alignmentAuditSnippet('.category-products__list .vc-product-card:nth-child(-n+4)')
+[ACT] Classify with classifyAlignment()","[STATE] result.misaligned === false
+[MATH] centerDriftPx <= 1
+[MATH] heightDriftPx <= 1","[CONSOLE] no errors","Cards in same row differ by 2+ px height; one card with longer title or no image stretches the row, breaking grid; vertical centers don't align","none","business-logic.md#bl-ui-005 + storefront-selectors.md Section 2","Semi-Automated"
+"LAYOUT-ALN-002","Cart row — qty stepper, price, total alignment","Alignment > Row parity","P2","BL-UI-005","ECL-1.5","- Cart has 1 line item","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `.vc-line-item` count >= 1
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-line-item .vc-quantity-stepper, .vc-line-item .vc-line-item__property-price, .vc-line-item .vc-line-item__total, .vc-line-item [data-test-id=\"remove-item-button\"]')","[STATE] result.misaligned === false
+[MATH] centerDriftPx <= 1","[CONSOLE] no errors","Quantity stepper sits 2+ px lower than price; remove button vertical-centered with line, stepper isn't","[PRE:RESET_CART]","business-logic.md#bl-ui-005 + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-OVF-001","No horizontal scroll @ 375 px — home page","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Storefront accessible (anon or auth)","{{FRONT_URL}}","[ACT] Set viewport to 375×812 (iPhone standard)
+[NAV] Navigate to {{FRONT_URL}}
+[WAIT] `.slider-block` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit; capture {documentScrolls, clippedChildren}
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0 (or all listed entries are intentional scrollers like horizontal swipers/swiper-slide)","[CONSOLE] no errors","document.documentElement.scrollWidth > window.innerWidth at 375 px; `.slider-block` swiper slides clipped by viewport instead of being constrained; hero CTA overflows","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 1","Semi-Automated"
+"LAYOUT-OVF-002","No horizontal scroll @ 375 px — /catalog","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Storefront accessible","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.category-products__list .vc-product-card` count >= 4
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0","[CONSOLE] no errors","`.vc-product-card` cards push grid past viewport; filter chips overflow horizontally; product title forces grid wider than container","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 2","Semi-Automated"
+"LAYOUT-OVF-003","No horizontal scroll @ 375 px — PDP","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Stress long-title product available (`@td(STRESS.longTitleSku)`)","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.image-gallery` rendered AND `h1.vc-typography--variant--h1` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0 (gallery thumbnails strip may be intentionally horizontally scrollable — flag but do not fail if it's the only clipped child)","[CONSOLE] no errors","Gallery main image or thumbnails strip overflows; `.product-price-block` buy block widens past viewport at 375 px","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 3","Semi-Automated"
+"LAYOUT-OVF-004","No horizontal scroll @ 375 px — /cart","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Authenticated user with ≥ 1 cart item","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click `.vc-quantity-stepper button[aria-label=\"Increase quantity\"]` once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `.vc-line-item` rendered AND `[data-test-id=\"order-summary-widget\"]` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0","[CONSOLE] no errors","`.vc-line-item` content overflows; order summary widget pushes layout wider; checkout sections overflow at mobile","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-OVF-005","No horizontal scroll @ 375 px — /account/orders","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Authenticated user with ≥ 1 historical order (or empty-state)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-table tbody tr` count >= 1 OR empty-state rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0 (table mobile responsive layout — does NOT force horizontal scroll; cards collapse to mobile view)","[CONSOLE] no errors","`.vc-table` columns force horizontal scroll instead of collapsing to mobile responsive layout; sidebar overflows main column at mobile","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-OVF-006","No horizontal scroll @ 375 px — /account/lists","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Authenticated user with ≥ 1 wishlist (or empty-state)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] wishlist content OR empty-state rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0","[CONSOLE] no errors","Wishlist grid forces horizontal scroll; sidebar pushes content past viewport","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-OVF-007","No horizontal scroll @ 375 px — /company/members","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Authenticated as B2B org admin (TECHFLOW_ADMIN alias)
+- Company has ≥ 1 member","{{FRONT_URL}}","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members table OR list rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0","[CONSOLE] no errors","Members table columns overflow; invite-member modal trigger button shifts off-screen","none","business-logic.md#bl-ui-004","Semi-Automated"
+"LAYOUT-OVF-008","No horizontal scroll @ 375 px — /company/info","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Authenticated as B2B org admin (TECHFLOW_ADMIN alias)","{{FRONT_URL}}","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info form rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0","[CONSOLE] no errors","Company info form fields overflow at mobile (phone/email/address fields too wide); logo upload control widens beyond column","none","business-logic.md#bl-ui-004","Semi-Automated"
+"LAYOUT-OVF-LONGTITLE-001","Long-title PDP overflow (real 179-char title)","Overflow > Content boundary","P2","BL-UI-004","ECL-3.2","- Stress product `@td(STRESS.longTitleSku)` = 8033482 in catalog
+- Real product with 179-char title — NO DOM injection needed (compliant with feedback_real_user_interaction)
+- Renamed from LAYOUT-OVF-002 on 2026-05-14 when LAYOUT-OVF-001 was split into 8 per-page tests","{{FRONT_URL}}","[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `h1.vc-typography--variant--h1` rendered with text length >= 60 chars (verify via evaluate)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit at viewport 1920×1080
+[ACT] Verify title rect.width <= parent (`.product-price-block` or PDP main column) rect.width via getBoundingClientRect comparison
+[ACT] Resize viewport to 375×812; repeat overflowAudit + width comparison","[STATE] documentScrolls === false at every viewport
+[STATE] No clippedChildren reported for the H1 container
+[DOM] Title wraps to multiple lines or applies ellipsis — never silently cut at mid-character (visible: 'Christmas paper straws…' or wrapped over 4-6 lines on mobile)","[CONSOLE] no errors","Long title pushes neighboring buy-block elements out of frame; title overflows .product-price-block without wrap; horizontal scroll appears at 375 px","none","business-logic.md#bl-ui-004 + storefront-selectors.md Section 8 + aliases.json STRESS","Semi-Automated"
+"LAYOUT-SHIFT-001","No shift on product-card hover","State shift > Hover","P2","BL-UI-003","ECL-1.2","- Catalog renders with at least 2 product cards","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.category-products__list .vc-product-card` count >= 2
+[ACT] `browser_evaluate` rectSnapshotSnippet('.category-products__list .vc-product-card:nth-child(2)') — capture as `before`
+[ACT] `browser_hover` on `.category-products__list .vc-product-card:nth-child(1)`
+[WAIT] 500ms for hover transition
+[ACT] `browser_evaluate` rectSnapshotSnippet('.category-products__list .vc-product-card:nth-child(2)') — capture as `after`
+[ACT] Compute compareRectSnapshots(before, after); classify","[STATE] topDelta === 0 AND leftDelta === 0 (neighbor must not move)
+[STATE] Width/height of neighbor may shift only if a parent grid recalculates — that's also a FAIL","[CONSOLE] no errors","Hover applies a border that pushes adjacent card; hover uses `border` instead of `outline`; transform/scale without `transform-origin` neutral","none","business-logic.md#bl-ui-003 + storefront-selectors.md Section 2","Semi-Automated"
+"LAYOUT-SHIFT-002","No shift on cart-icon badge update","State shift > Badge update","P1","BL-UI-003","ECL-1.2","- Authenticated session; cart empty initially","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card to land on PDP
+[WAIT] `.vc-quantity-stepper` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — neighbor of cart link in header — capture as `before`
+[ACT] Click `.vc-quantity-stepper button[aria-label=\"Increase quantity\"]` once (qty 0→1)
+[WAIT] Cart count text inside `header a[href=\"/cart\"]` updates to reflect 1 item
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — capture as `after`
+[ACT] compareRectSnapshots(before, after); classify
+[ACT] Repeat: click + 9 more times to push badge to 2-digit; capture before/after again","[STATE] topDelta === 0 AND leftDelta === 0 across both transitions (0→1 and 1→10)
+[STATE] account-button absolute position must not change as cart badge appears or widens","[CONSOLE] no errors; [API] addItem / xAPI cart mutation returns 200, errors[] empty","Header layout shifts when cart badge appears; 1-digit → 2-digit badge widening pushes account-button or language-selector","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + storefront-selectors.md Section 1","Semi-Automated"
+"LAYOUT-SHIFT-003","No neighbor-input shift on inline validation error","State shift > Form validation","P1","BL-UI-003","ECL-2.1","- A storefront form with required-field validation. TENTATIVE selectors: sign-up form at /sign-up uses `.vc-input` wrapper pattern (storefront-selectors.md Section 6 — flagged as NOT live-verified; re-verify in incognito context before relying on this case)
+- For BL-UI-003 strict, this test measures whether INSERTING a validation message under field A shifts field B (a sibling input below). It does NOT measure CTA-jump distance (that is a Nielsen #1 UX concern, not BL-UI-003).","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-up (in incognito / fresh context — otherwise auth redirect to /catalog)
+[WAIT] Form rendered (multiple `.vc-input` wrappers)
+[ACT] `browser_evaluate` rectSnapshotSnippet to capture rect of the SECOND form input (sibling below first) — capture as `before`
+[ACT] Focus first input, leave it empty, blur (or submit form) to trigger validation on first input
+[WAIT] `.vc-input--error` class appears on first input wrapper AND `.vc-input-details:not(.vc-input-details--hide-empty)` message renders
+[ACT] `browser_evaluate` rectSnapshotSnippet on second input — capture as `after`
+[ACT] compareRectSnapshots(before, after); classify","[STATE] topDelta === 0 (neighbor input must not move when error message inserts above)
+[STATE] If form is designed to grow vertically: that's allowed; this test measures specifically whether ADJACENT siblings move. CTA jumps below are filed separately as Nielsen #1 (severity 2-3).","[CONSOLE] no errors","Inserting validation error pushes sibling input down; form grows non-deterministically as errors appear","none","business-logic.md#bl-ui-003 + storefront-selectors.md Section 6 (TENTATIVE)","Manual"
+"LAYOUT-SHIFT-004","No shift on skeleton → content swap","State shift > Skeleton resolve","P2","BL-UI-003","ECL-1.2","- Authenticated user with at least one wishlist (account/lists/{id}) OR at least one order (account/orders) for skeleton states to render
+- Network throttled to Slow 3G so skeletons remain visible long enough to capture
+- TIMING NOTE: skeleton selectors confirmed in compiled CSS (storefront-selectors.md Section 7); DOM presence depends on data-fetch timing","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Throttle network to Slow 3G
+[NAV] {{FRONT_URL}}/account/orders (or /account/lists if orders unavailable)
+[WAIT] `.vc-table__skeleton` (or `.wishlist-products-skeleton`) becomes visible
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — fixed reference point above the data table — capture as `before`
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-table__skeleton') (or `.wishlist-products-skeleton`) — capture skeleton dimensions
+[WAIT] Skeleton class is removed AND `.vc-table tbody tr` (or `.vc-product-card`) renders
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — capture as `after`
+[ACT] `browser_evaluate` rectSnapshotSnippet on final content selector (`.vc-table tbody tr:first-child` or first `.vc-product-card`) — capture final dimensions
+[ACT] compareRectSnapshots(before, after) for header reference
+[ACT] Compare skeleton dimensions vs final-content dimensions","[STATE] header topDelta === 0 (fixed reference must not move when content swaps in)
+[STATE] |skeleton.height - finalContent.height| <= 1 px (skeleton must reserve the right amount of space)
+[STATE] |skeleton.width - finalContent.width| <= 1 px","[CONSOLE] no errors during skeleton swap
+[NETWORK] data-fetch request completes (200)","Skeleton dimensions ≠ final content → header reference moves on swap; `.vc-table__skeleton` is shorter than the resolved table; content snaps in below fold","Restore network speed to no-throttle","business-logic.md#bl-ui-003 + storefront-selectors.md Section 7","Manual"
+"LAYOUT-TGT-001","Touch targets on PDP @ 375 px (scoped to main content)","Touch targets > Mobile","P1","BL-UI-006","ECL-11.2","- Stress product or any in-stock SKU on PDP","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.product-price-block`, `.image-gallery`, `.vc-quantity-stepper` all rendered
+[ACT] `browser_evaluate` with touchTargetAuditSnippet('main') from scripts/lib/measure-layout.ts (scoped to main content, excluding header/footer chrome to reduce false positives)
+[ACT] Capture {undersized, tooClose}; classify with classifyTouchTargets()","[STATE] undersized.length === 0 (every interactive in main >= 44×44)
+[STATE] tooClose.length === 0 (every pair >= 8 px apart)","[CONSOLE] no errors","`.vc-quantity-stepper button[aria-label=\"Increase quantity\"]` or Decrease button < 44×44; `.image-gallery__thumb` taps with < 8 px gap; `button.product-price-block__add-to-list/compare/share/print` cluster too tight","none","business-logic.md#bl-ui-006 + storefront-selectors.md Section 3","Semi-Automated"
+"LAYOUT-TGT-002","Touch targets in cart line items @ 375 px","Touch targets > Mobile","P1","BL-UI-006","ECL-11.2","- Cart with 2+ items so multi-line-item touch density is realistic","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + twice (qty 2)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"cart.products-section\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"cart.products-section\"]') — scoped to cart products section only","[STATE] undersized.length === 0
+[STATE] tooClose.length === 0","[CONSOLE] no errors","`.vc-line-item .vc-quantity-stepper` buttons < 44×44; `[data-test-id=\"remove-item-button\"]` too small; `[data-test-id=\"vc-line-item-checkbox\"]` with < 8 px gap to neighboring controls; `[data-test-id=\"save-for-later-button\"]` undersized","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-TGT-003","Touch targets in checkout sections on /cart @ 375 px","Touch targets > Mobile","P1","BL-UI-006","ECL-11.2","- Cart has 1+ item; checkout sections rendered","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"place-order-button\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"shipping-details-section\"]')
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"payment-details-section\"]')
+[ACT] Additionally measure rect of `[data-test-id=\"place-order-button\"]` and `[data-test-id=\"sticked-place-order-button\"]` directly","[STATE] undersized.length === 0 across both audits
+[STATE] tooClose.length === 0
+[MATH] place-order-button rect.height >= 44 AND rect.width >= 44","[CONSOLE] no errors","Shipping-method radio buttons < 44×44 inside selector; payment-method radios too tight; `[data-test-id=\"billing-address-equals-shipping-checkbox\"]` undersized; Place Order CTA height < 44","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + storefront-selectors.md Section 5","Semi-Automated"
+"LAYOUT-FOUC-001","Theme dark/light toggle — no layout shift","Theme > FOUC","P2","BL-UI-001","ECL-1.2","- Authenticated user on home page
+- Theme dark-mode toggle is dark/light/auto only (NOT full preset switcher; full preset switching is admin-side per memory reference_theme_presets and storefront-selectors.md Section 10)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/
+[WAIT] `button[data-test-id=\"dark-mode-toggle\"]` rendered
+[ACT] `browser_evaluate` FOUC_SNIPPET from scripts/lib/measure-layout.ts; capture initial state (fontReady, themeTokensResolved, loadingClassesPresent)
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture main content rect as `before`
+[ACT] Click `button[data-test-id=\"dark-mode-toggle\"]` to cycle theme (auto → dark)
+[WAIT] 500ms for transition
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `after`
+[ACT] `browser_evaluate` FOUC_SNIPPET again; capture post-switch state
+[ACT] compareRectSnapshots(before, after)","[STATE] before.fontReady === 'loaded' OR true
+[STATE] before.themeTokensResolved === true AND after.themeTokensResolved === true
+[STATE] before.loadingClassesPresent.length === 0 AND after.loadingClassesPresent.length === 0
+[STATE] topDelta === 0 AND leftDelta === 0 (theme swap is computed-style only, no layout change)
+[STATE] No flash of unstyled content during transition","[CONSOLE] no errors during toggle","Theme tokens fail to resolve (empty string for --color-primary etc.); loading class lingers > 1s after toggle; main content shifts > 0 px on dark/light flip","Toggle theme back to original setting","business-logic.md#bl-ui-001 + storefront-selectors.md Section 10","Semi-Automated"
+"LAYOUT-FONT-001","Font swap reflow — webfont load does not cause CLS","Font > FOIT/FOUT","P2","BL-UI-001","ECL-1.2","- Webfonts are loaded via @font-face on home page
+- Cache disabled to force webfont fetch
+- TIMING NOTE: post-paint CLS only; font-display setting affects whether FOIT or FOUT is observed","{{FRONT_URL}}","[ACT] Clear browser cache + disable cache
+[NAV] {{FRONT_URL}}/
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[ACT] `browser_evaluate` FOUC_SNIPPET; record `fontFamiliesInUse` and `fontReady` immediately
+[WAIT] Wait for `document.fonts.ready` to resolve (via evaluate: `await document.fonts.ready` then return status)
+[ACT] `browser_evaluate` FOUC_SNIPPET again; record post-load font state
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS (font swap should contribute ≈0 if font-display: optional or proper sizing)
+[STATE] post-load fontFamiliesInUse contains expected Coffee fonts (NOT serif/system fallback)
+[STATE] fontReady === 'loaded' OR true after document.fonts.ready resolves","[CONSOLE] no errors
+[NETWORK] webfont WOFF/WOFF2 requests return 200","cls >= 0.1 attributable to text reflow as webfont arrives; pre-load fontFamiliesInUse shows generic fallback (Times, Arial); font-display: block causing invisible text during FOIT","Re-enable browser cache","business-logic.md#bl-ui-001","Semi-Automated"
+"LAYOUT-VPS-001","Viewport sweep — no breakage at intermediate widths","Viewport > Sweep","P2","BL-UI-004","ECL-1.5","- Storefront home page accessible","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/
+[ACT] Resize viewport in 50 px steps from 375 → 1920
+[ACT] At each step, `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit; record any width where documentScrolls===true
+[ACT] Capture screenshots at exact breakpoint boundaries: 767, 768, 1023, 1024, 1279, 1280 (and ±1 px at each)
+[ACT] At each breakpoint, verify header `[data-test-id=\"top-header\"]` does not double-stack or overlap content","[STATE] No viewport width between 375 and 1920 produces documentScrolls===true
+[STATE] No mid-breakpoint dead zone (layout breaks at e.g. 800 px but works at 768 and 1024)
+[DOM] No text wrap-cliff within the same visual element across 1-px viewport change
+[STATE] Header maintains single-row layout (or expected mobile collapse) at every width","[CONSOLE] no errors during resize","Layout breaks between named breakpoints; sticky `[data-test-id=\"top-header\"]` double-stacks at intermediate widths; main content overflows around 1024 px","none","business-logic.md#bl-ui-004 + business-logic.md#bl-ui-005","Manual"
+"LAYOUT-COMP-VCBUTTON-001","VcButton spacing audit (header + main + product-price-block)","Components > VcButton","P2","BL-UI-002","ECL-1.5","- Storefront accessible
+- Audits VcButton spacing across header nav buttons, main content CTAs, and PDP buy-block buttons","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/
+[WAIT] `header [data-test-id=\"top-header\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('header button, main button, [data-test-id$=\"-button\"]') from scripts/lib/measure-layout.ts
+[ACT] classifySpacing()
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.product-price-block` rendered
+[ACT] spacingAuditSnippet('.product-price-block button')
+[ACT] classifySpacing()","[STATE] result.offGrid.length === 0 on both audits
+[MATH] All padding/margin/gap values ∈ {0,4,8,12,16,20,24,32,40,48,56,64,80,96}","[CONSOLE] no errors","Hardcoded button padding off-grid (13px, 27px); button gap inconsistent across header vs main; buy-block button spacing diverges from header button spacing","none","business-logic.md#bl-ui-002 + critical-ui-scope.md VcButton + storefront-selectors.md Section 9","Semi-Automated"
+"LAYOUT-COMP-VCTABLE-001","VcTable spacing audit on /account/orders","Components > VcTable","P2","BL-UI-002","ECL-1.5","- Authenticated user with ≥ 1 historical order","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-table tbody tr` count >= 1 (skeleton .vc-table__skeleton cleared)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-table, .vc-table thead, .vc-table thead th, .vc-table tbody td')
+[ACT] classifySpacing()","[STATE] result.offGrid.length === 0
+[MATH] All values ∈ grid set","[CONSOLE] no errors; [NETWORK] orders query 200","Off-grid padding on `.vc-table` cells (e.g. 13px between row gaps); inconsistent cell padding across columns; `.vc-table thead` padding diverges from tbody","none","business-logic.md#bl-ui-002 + critical-ui-scope.md VcTable + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-COMP-VCTABLE-002","VcTable row-height alignment","Components > VcTable","P2","BL-UI-005","ECL-1.5","- Authenticated user with ≥ 3 historical orders (sufficient rows to measure parity)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-table tbody tr` count >= 3
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-table tbody tr:nth-child(-n+3)')
+[ACT] classifyAlignment()","[STATE] result.misaligned === false
+[MATH] centerDriftPx <= 1
+[MATH] heightDriftPx <= 1","[CONSOLE] no errors","Rows in same table differ by 2+ px height; one row with long product name stretches and breaks parity with siblings; row with empty fields collapses","none","business-logic.md#bl-ui-005 + critical-ui-scope.md VcTable + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-COMP-VCTABLE-003","VcTable no main-page shift on column sort","Components > VcTable","P2","BL-UI-003","ECL-1.2","- Authenticated user with ≥ 3 historical orders
+- Table has a sortable column header (look for role=button or aria-sort attribute)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-table tbody tr` count >= 3 AND sortable header present in `.vc-table thead`
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `before`
+[ACT] `browser_click` on first sortable column header in `.vc-table thead` (look for `[role=\"button\"]`, `[aria-sort]`, or `.vc-table__sort-button` — verify in DOM)
+[WAIT] 500ms for sort to settle (rows rearrange)
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `after`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta <= 1 px (rows rearrange internally but main wrapper does not jump)
+[STATE] leftDelta === 0","[CONSOLE] no errors; [API] orders re-query 200 if sort triggers fetch","Page jumps when column sort applied; pagination control widens after sort; entire main wrapper moves up/down","none","business-logic.md#bl-ui-003 + critical-ui-scope.md VcTable + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-COMP-VCDIALOG-001","VcDialog modal open — main does not shift (body-scroll-lock correctness)","Components > VcDialog","P1","BL-UI-003","ECL-1.2","- Authenticated user with cart of 1+ items on /cart","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click `.vc-quantity-stepper button[aria-label=\"Increase quantity\"]` once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"select-address-button\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `before-modal-open`
+[ACT] `browser_click` on `[data-test-id=\"select-address-button\"]`
+[WAIT] modal visible (locate via `[role=\"dialog\"]`, `.vc-dialog`, or `.modal` — verify which matches in DOM)
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `after-modal-open`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 — typical regression: body-scroll-lock removes scrollbar, page widens, main shifts left","[CONSOLE] no errors; [API] address query 200, errors[] empty","Main shifts left when modal opens (scrollbar removed without `scrollbar-gutter: stable`); main shifts down (top scroll position lost); body lock applied via position:fixed loses scrollY","Close modal (Esc or close button); [PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md VcDialog + storefront-selectors.md Section 5","Semi-Automated"
+"LAYOUT-COMP-VCDIALOG-002","VcDialog touch targets at 375 px (open modal)","Components > VcDialog","P1","BL-UI-006","ECL-11.2","- Same modal-open setup as VCDIALOG-001","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"select-address-button\"]` rendered
+[ACT] `browser_click` on `[data-test-id=\"select-address-button\"]`
+[WAIT] modal visible
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[role=\"dialog\"], .vc-dialog, .modal') — scope to whichever class matches in DOM
+[ACT] classifyTouchTargets()","[STATE] undersized.length === 0 (close X, action CTAs, address card tap areas all ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Modal close (X) button 32×32 or 24×24 — chronic mobile defect; address cards in modal too tight (< 8 px gap between cards); primary action button under 44 px height","Close modal; [PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md VcDialog + storefront-selectors.md Section 5","Semi-Automated"
+"LAYOUT-COMP-POPOVER-001","Ship-to popover open — header neighbors do not shift","Components > Popover","P2","BL-UI-003","ECL-1.2","- Authenticated user on home page with saved ship-to addresses","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/
+[WAIT] `header [data-test-id=\"ship-to-selector\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — capture as `before`
+[ACT] `browser_click` on `header [data-test-id=\"ship-to-selector\"]`
+[WAIT] popover visible (locate via `[data-test-id=\"shipping-addresses-list\"]` rendered)
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') — capture as `after`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 — header neighbor (account-button) must NOT shift when popover opens
+[STATE] Popover absolute positioning correctly takes the element out of flow","[CONSOLE] no errors","account-button shifts right (popover content displaces it); header reflows because popover wasn't position:absolute or its parent grew on open","Close popover (click outside or Esc)","business-logic.md#bl-ui-003 + critical-ui-scope.md Popover + storefront-selectors.md Section 1","Semi-Automated"
+"LAYOUT-COMP-POPOVER-002","Popover spacing + mobile overflow","Components > Popover","P2","BL-UI-002","ECL-1.5","- Authenticated user on home with saved ship-to addresses","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/
+[WAIT] `header [data-test-id=\"ship-to-selector\"]` rendered
+[ACT] `browser_click` on `header [data-test-id=\"ship-to-selector\"]`
+[WAIT] `[data-test-id=\"shipping-addresses-list\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"shipping-addresses-list\"], [data-test-id=\"shipping-addresses-list\"] li, [data-test-id^=\"ship-to-favorite-icon-\"]')
+[ACT] classifySpacing()
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit (popover open at 375 px viewport)
+[ACT] classifyOverflow()","[STATE] result.offGrid.length === 0
+[STATE] documentScrolls === false (popover content stays within viewport)
+[STATE] clippedChildren.length === 0 (favorite-address rows not silently cut off)","[CONSOLE] no errors","Popover items have off-grid padding; popover extends past viewport at 375 px causing horizontal scroll; favorite-address rows clipped by overflow:hidden","Close popover","business-logic.md#bl-ui-002 + critical-ui-scope.md Popover + storefront-selectors.md Section 1","Semi-Automated"
+"LAYOUT-COMP-VCSIDEBAR-001","Account sidebar — spacing + alignment","Components > VcSidebar","P2","BL-UI-002","ECL-1.5","- Authenticated user with access to /account/dashboard
+- Sidebar selector verification: locate `aside` OR `.account-sidebar` OR page-specific nav container in DOM before measuring","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] account page rendered; sidebar visible (verify selector — fallback to `aside` if `.account-sidebar` does not match)
+[ACT] `browser_evaluate` spacingAuditSnippet('aside nav a, aside nav li, aside nav') — adjust selector if `aside` does not match
+[ACT] classifySpacing()
+[ACT] `browser_evaluate` alignmentAuditSnippet('aside nav a:nth-child(-n+5)')
+[ACT] classifyAlignment()","[STATE] spacing offGrid.length === 0
+[STATE] alignment misaligned === false
+[MATH] centerDriftPx <= 1
+[MATH] heightDriftPx <= 1","[CONSOLE] no errors","Sidebar nav items have inconsistent padding; first 5 items differ in height (one has icon, others don't, no compensation); active-item indicator pushes adjacent items","none","business-logic.md#bl-ui-002 + business-logic.md#bl-ui-005 + critical-ui-scope.md VcSidebar","Manual"
+"LAYOUT-COMP-VCLINEITEM-001","Line item stepper update — sibling line item does not shift","Components > VcLineItem","P1","BL-UI-003","ECL-1.2","- Authenticated user with cart of 2+ DISTINCT line items (sibling required to measure)","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/catalog; click a SECOND DISTINCT product card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `.vc-line-item` count >= 2
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-line-item:nth-child(2)') — capture as `before`
+[ACT] `browser_click` on `.vc-line-item:nth-child(1) .vc-quantity-stepper button[aria-label=\"Increase quantity\"]`
+[WAIT] cart totals recompute (verify `[data-test-id=\"cart-subtotal-label\"]` text changed)
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-line-item:nth-child(2)') — capture as `after`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 — sibling line item MUST NOT shift when first line's quantity updates","[CONSOLE] no errors; [API] xAPI cart mutation 200, errors[] empty","Sibling line item moves up/down when first line's qty changes; line-total widening on `:nth-child(1)` pushes `:nth-child(2)` down","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md VcLineItem + storefront-selectors.md Section 4","Semi-Automated"
+"LAYOUT-PAGE-CLS-ORDERS-001","CLS on /account/orders (post-paint)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated user with ≥ 1 historical order
+- Cache disabled
+- TIMING NOTE: post-paint CLS only (see scripts/lib/measure-layout.ts installClsObserver docstring)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Disable browser cache
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately after navigation
+[WAIT] `.vc-table tbody tr` count >= 1 (skeleton .vc-table__skeleton cleared)
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS, >= 0.1 FAIL, >= 0.25 P0
+[STATE] shiftCount recorded","[CONSOLE] no errors; [NETWORK] orders xAPI query 200","cls >= 0.1; skeleton-to-content snap (covered by SHIFT-004 but contributes to CLS); pagination control widens after table renders; row-action icons load late and push columns","none","business-logic.md#bl-ui-001 + critical-ui-scope.md Pages matrix + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-PAGE-CLS-LISTS-001","CLS on /account/lists (post-paint)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated user with ≥ 1 wishlist containing ≥ 3 products
+- Cache disabled
+- TIMING NOTE: post-paint CLS only","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Disable browser cache
+[NAV] {{FRONT_URL}}/account/lists
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] wishlist items rendered (locate via `.vc-product-card` inside list container OR `.wishlist-products-skeleton` cleared)
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS, >= 0.1 FAIL, >= 0.25 P0","[CONSOLE] no errors; [NETWORK] wishlist query 200","cls >= 0.1; .wishlist-products-skeleton has mismatched height vs final product cards; product card images load and push subsequent items","none","business-logic.md#bl-ui-001 + critical-ui-scope.md Pages matrix + storefront-selectors.md Section 7","Semi-Automated"
+"LAYOUT-PAGE-CLS-MEMBERS-001","CLS on /company/members (post-paint)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated as B2B org admin (TECHFLOW_ADMIN alias)
+- Company has ≥ 1 member
+- Cache disabled
+- TIMING NOTE: post-paint CLS only","{{FRONT_URL}}","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[ACT] Disable browser cache
+[NAV] {{FRONT_URL}}/company/members
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] members table or list rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS, >= 0.1 FAIL, >= 0.25 P0","[CONSOLE] no errors; [NETWORK] members query 200","cls >= 0.1; role dropdowns widen after data loads pushing rows; member-count badge reflows section header; avatar images load late","none","business-logic.md#bl-ui-001 + critical-ui-scope.md Pages matrix","Semi-Automated"
+"LAYOUT-PAGE-CLS-COMPANY-001","CLS on /company/info (post-paint)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated as B2B org admin (TECHFLOW_ADMIN alias)
+- Cache disabled
+- TIMING NOTE: post-paint CLS only","{{FRONT_URL}}","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[ACT] Disable browser cache
+[NAV] {{FRONT_URL}}/company/info
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] company info form rendered (locate form via `form`, `.company-info`, or page-specific container — verify in DOM)
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS, >= 0.1 FAIL, >= 0.25 P0","[CONSOLE] no errors; [NETWORK] company info query 200","cls >= 0.1; form fields populate post-paint and reflow form layout; company logo image lacks intrinsic dimensions causing form fields to jump; phone/email fields validate-on-load and insert error messages","none","business-logic.md#bl-ui-001 + critical-ui-scope.md Pages matrix","Semi-Automated"
+"LAYOUT-COMP-BOPIS-001","BOPIS modal spacing audit","Components > BOPIS Modal","P2","BL-UI-002","ECL-1.5","- Authenticated user with cart containing ≥ 1 pickup-eligible item (per memory `BOPIS.testProduct_bopis_eligibility` — modal opens when `[data-test-id=\"pickup-switcher\"]` is present on /cart)
+- If pickup-switcher is absent, mark BLOCKED with `cart lacks pickup-eligible items`","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click `.vc-quantity-stepper button[aria-label=\"Increase quantity\"]` once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"pickup-switcher\"]` rendered — if absent, BLOCKED
+[ACT] `browser_click` on `[data-test-id=\"pickup-switcher\"]`
+[WAIT] `[data-test-id=\"pickup-location-section\"]` rendered
+[ACT] `browser_click` on `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` rendered AND `[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item` count >= 10
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"pickup-locations-modal\"] .vc-dialog-header, [data-test-id=\"pickup-locations-modal\"] .select-address-map-list, [data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item')
+[ACT] classifySpacing()","[STATE] result.offGrid.length === 0
+[MATH] All padding/margin/gap values ∈ grid set","[CONSOLE] no errors","Modal header padding off-grid; inconsistent gap between location rows; search bar padding doesn't match modal chrome padding","Close modal (Esc); [PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md BOPIS Modal + storefront-selectors.md Section 11","Semi-Automated"
+"LAYOUT-COMP-BOPIS-002","BOPIS modal open — /cart background no shift","Components > BOPIS Modal","P1","BL-UI-003","ECL-1.2","- Authenticated user with cart containing ≥ 1 pickup-eligible item","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"pickup-switcher\"]` rendered
+[ACT] `browser_click` on `[data-test-id=\"pickup-switcher\"]`
+[WAIT] `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `before-modal-open`
+[ACT] `browser_click` on `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` visible
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') — capture as `after-modal-open`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 — typical regression: body-scroll-lock removes scrollbar, /cart background widens, main shifts left","[CONSOLE] no errors","Main shifts left when BOPIS modal opens (scrollbar removed without `scrollbar-gutter: stable`); /cart background reflows because modal is portal-ed but body-scroll-lock changes document layout","Close modal (Esc); [PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md BOPIS Modal + storefront-selectors.md Section 11","Semi-Automated"
+"LAYOUT-COMP-BOPIS-003","BOPIS modal — no document overflow at 375 px","Components > BOPIS Modal","P1","BL-UI-004","ECL-1.5","- Same setup as BOPIS-001/002; viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"pickup-switcher\"]` rendered
+[ACT] `browser_click` on `[data-test-id=\"pickup-switcher\"]`
+[ACT] `browser_click` on `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` visible
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false (modal content stays within viewport)
+[STATE] `.select-address-map-list` scrolls within container, not at document level (intentional internal scroll OK — flag clipped children inside `.select-address-map-list` as intentional)","[CONSOLE] no errors","Modal extends past 375 px viewport causing horizontal document scroll; map column doesn't collapse on mobile causing overflow; filter dropdowns push modal width","Close modal; [PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md BOPIS Modal + storefront-selectors.md Section 11","Semi-Automated"
+"LAYOUT-COMP-BOPIS-004","BOPIS modal — location row alignment","Components > BOPIS Modal","P2","BL-UI-005","ECL-1.5","- Setup with modal open; ≥ 5 location rows visible","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[ACT] `browser_click` on `[data-test-id=\"pickup-switcher\"]`
+[ACT] `browser_click` on `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item` count >= 5
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item:nth-child(-n+5)')
+[ACT] classifyAlignment()","[STATE] result.misaligned === false
+[MATH] heightDriftPx <= 1 (rows can have 1-line OR 2-line addresses but should pad to same height)
+[MATH] centerDriftPx <= 1","[CONSOLE] no errors","Location rows have inconsistent heights (2-line address rows are taller); availability chip placement shifts rows; radio + name + address layout collapses inconsistently","Close modal; [PRE:RESET_CART]","business-logic.md#bl-ui-005 + critical-ui-scope.md BOPIS Modal + storefront-selectors.md Section 11","Semi-Automated"
+"LAYOUT-COMP-BOPIS-005","BOPIS modal — touch targets at 375 px","Components > BOPIS Modal","P1","BL-UI-006","ECL-11.2","- Setup with modal open at viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku); click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[ACT] `browser_click` on `[data-test-id=\"pickup-switcher\"]`
+[ACT] `browser_click` on `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` visible
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"pickup-locations-modal\"]')
+[ACT] classifyTouchTargets()","[STATE] undersized.length === 0 (close X button — note no data-test-id, look for `.vc-dialog-header__close` — must be ≥ 44×44)
+[STATE] tooClose.length === 0 (filter dropdowns ≥ 8 px apart)","[CONSOLE] no errors","Close (X) button on `.vc-dialog-header__close` under 44×44 (chronic — no data-test-id known gap); search submit icon-only button under 44×44; filter-country/region/city dropdown triggers too tight together; location row radio target under 44×44","Close modal; [PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md BOPIS Modal + storefront-selectors.md Section 11","Semi-Automated"
+"LAYOUT-PAGE-CLS-CONFIG-001","CLS on Configurable PDP (post-paint)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Configurable product accessible at `@td(CONFIGURABLE.testSlug)` = `/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake`
+- Cache disabled
+- TIMING NOTE: post-paint CLS only — sections render after async config-schema fetch","{{FRONT_URL}}; @td(CONFIGURABLE.testSlug)","[ACT] Disable browser cache
+[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver immediately
+[WAIT] `.product-configuration [data-test-id=\"section\"]` count >= 1 AND `[data-test-id=\"sidebar\"] .product-price-block .price__actual` rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS, >= 0.1 FAIL, >= 0.25 P0
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors; [NETWORK] product + configuration schema queries return 200, errors[] empty","cls >= 0.1; configurable sections render late and push sidebar down; conditional sections (per `dependsOnSectionId`) load after first paint reflowing main column; dynamic price element widens after data resolves","none","business-logic.md#bl-ui-001 + critical-ui-scope.md Pages matrix + storefront-selectors.md Section 12","Semi-Automated"
+"LAYOUT-OVF-009","No horizontal scroll @ 375 px — Configurable PDP","Overflow > Document horizontal","P1","BL-UI-004","ECL-1.5","- Configurable product accessible","{{FRONT_URL}}; @td(CONFIGURABLE.testSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `.product-configuration` rendered AND `[data-test-id=\"sidebar\"] .product-price-block` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] classifyOverflow()","[STATE] documentScrolls === false
+[STATE] clippedChildren.length === 0 (preset-card horizontal scroll OK if intentional — `.product-configuration__items` row may be a swiper; flag only as intentional)","[CONSOLE] no errors","Sidebar fails to reflow below content at mobile causing horizontal scroll; preset option cards force layout wider than viewport; per-option qty inputs widen rows past container","none","business-logic.md#bl-ui-004 + critical-ui-scope.md Pages matrix + storefront-selectors.md Section 12","Semi-Automated"
+"LAYOUT-COMP-CONFIG-001","Configurable section accordion expand — sticky sidebar no shift","Components > ProductConfiguration","P2","BL-UI-003","ECL-1.2","- Configurable PDP accessible with at least 1 COLLAPSED section (`.vc-widget--collapsed`)
+- If all sections are open on load, click one to collapse first","{{FRONT_URL}}; @td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `.product-configuration [data-test-id=\"section\"]` count >= 2
+[WAIT] `.product-configuration [data-test-id=\"section\"].vc-widget--collapsed` count >= 1 — if zero, click open section's header to collapse first
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') — capture as `before` (sidebar is sticky-positioned; should NOT shift when content-column accordion expands)
+[ACT] `browser_click` on a collapsed section's accordion header: `.product-configuration [data-test-id=\"section\"].vc-widget--collapsed > button.vc-widget__header-container`
+[WAIT] 500ms for accordion animation; verify section no longer has `.vc-widget--collapsed`
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') — capture as `after`
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (sticky sidebar stays pinned at its current top position during accordion expand)
+[STATE] leftDelta === 0","[CONSOLE] no errors","Sticky sidebar shifts when accordion expands (sticky positioning broken or content-column growth pushes sidebar layout); sidebar block jumps to new position","none","business-logic.md#bl-ui-003 + critical-ui-scope.md Configurable PDP + storefront-selectors.md Section 12","Semi-Automated"
+"LAYOUT-COMP-CONFIG-002","Configurable option selection — dynamic price no sidebar reflow","Components > ProductConfiguration","P2","BL-UI-003","ECL-1.2","- Configurable PDP with ≥ 2 preset options in at least one section","{{FRONT_URL}}; @td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"product-option\"]` count >= 2 AND `[data-test-id=\"sidebar\"] .product-price-block .price__actual` rendered
+[ACT] `browser_evaluate` to capture current price text: `document.querySelector('[data-test-id=\"sidebar\"] .product-price-block .price__actual').textContent.trim()` — store as `priceBefore`
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') — capture as `before`
+[ACT] `browser_click` on an UNSELECTED option's clickable label: `[data-test-id=\"product-option\"]:not(:has(.vc-radio-button--checked)) .vc-radio-button__container` (first matching)
+[WAIT] 500ms for price recalculation
+[ACT] `browser_evaluate` to capture new price: same selector → store as `priceAfter`
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') — capture as `after`
+[ACT] compareRectSnapshots(before, after)","[STATE] priceAfter !== priceBefore (sanity: price actually changed when option selected)
+[STATE] topDelta === 0 AND leftDelta === 0 (sidebar block must NOT shift when price text updates)
+[STATE] |widthDelta| <= 5 px (price-text widening within block is OK; pushing the whole block is not)","[CONSOLE] no errors; [API] product configuration mutation/query returns 200","Selecting an option causes sidebar block to shift position; price text widening pushes In-stock chip or Add-to-cart button down; sidebar reflows because price re-fetch causes loading skeleton swap","none","business-logic.md#bl-ui-003 + critical-ui-scope.md Configurable PDP + storefront-selectors.md Section 12; deprecated 2026-05-14: superseded by LAYOUT-COMP-VCPRICE-001 (TLC-2026-05-14-1622)","deprecated"
+"LAYOUT-PAGE-TGT-CONFIG-001","Configurable PDP — touch targets at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Configurable PDP accessible; viewport 375 px","{{FRONT_URL}}; @td(CONFIGURABLE.testSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `.product-configuration` rendered AND `[data-test-id=\"sidebar\"] button[aria-label=\"Add to cart\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('main')
+[ACT] classifyTouchTargets()","[STATE] undersized.length === 0 (preset option cards, accordion headers, Add-to-cart, per-option qty steppers all ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Preset option cards (`[data-test-id=\"product-option\"]`) tap area < 44×44 at mobile; accordion header (`button.vc-widget__header-container`) height < 44; per-option qty input < 44; Add-to-cart button (no data-test-id, look for `button[aria-label=\"Add to cart\"]`) under 44 — note this is the dedicated configurable Add-to-Cart, NOT the qty-stepper-as-add-to-cart pattern","none","business-logic.md#bl-ui-006 + critical-ui-scope.md Configurable PDP + storefront-selectors.md Section 12","Semi-Automated"
+"LAYOUT-COMP-VCIMAGE-001","VcImage — width/height attrs or aspect-ratio present on all rendered images","Components > VcImage","P1","BL-UI-001","ECL-1.2","- /catalog accessible with ≥ 4 product cards rendered","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.category-products__list .vc-product-card` count ≥ 4
+[ACT] `browser_evaluate` collect every `.vc-product-card .vc-product-image img` and report {src, hasWidth, hasHeight, computedAspectRatio} per image
+[ACT] Filter for images missing both `width`+`height` attrs AND a non-`auto` CSS `aspect-ratio`","[STATE] every image satisfies (hasWidth && hasHeight) OR (computedAspectRatio !== 'auto')
+[STATE] capture violations list for evidence","[CONSOLE] no errors; [NETWORK] all `.vc-product-image img` requests return 200","Images render without intrinsic dimensions; image load causes card height swap; CLS regression upstream of LAYOUT-CLS-002","none","business-logic.md#bl-ui-001 + critical-ui-scope.md §25 VcImage","Semi-Automated"
+"LAYOUT-COMP-VCIMAGE-002","VcImage — spacing grid compliance","Components > VcImage","P2","BL-UI-002","ECL-2.1","- /catalog accessible","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.vc-product-card .vc-product-image img` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-product-card .vc-product-image img, .vc-product-card .vc-product-image')
+[ACT] classifySpacing()","[STATE] every padding/margin/gap ∈ {0,4,8,12,16,20,24,32,40,48,56,64,80,96}
+[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding (e.g. 13px/27px) on `.vc-product-image` wrapper; hardcoded margin instead of design-token var","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §25 VcImage","Semi-Automated"
+"LAYOUT-COMP-VCIMAGE-003","VcImage — broken-image placeholder swap doesn't shift card","Components > VcImage","P2","BL-UI-003","ECL-2.4","- /catalog accessible; NOTE: forced broken-image via browser_evaluate is the only path to test this fallback — explicit exception to feedback_real_user_interaction.","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.vc-product-card:nth-child(1) .vc-product-image img` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-product-card:nth-child(1)') → before
+[ACT] `browser_evaluate` to force broken src: `document.querySelector('.vc-product-card:nth-child(1) .vc-product-image img').src = 'invalid://broken'`
+[WAIT] 500ms for error placeholder to render
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-product-card:nth-child(1)') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] heightDelta === 0 (placeholder reserves same box height)
+[STATE] widthDelta === 0","[CONSOLE] image error logged but no JS exception","Card height changes when image fails to load; placeholder smaller/larger than rendered image; siblings reflow as card collapses","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §25 VcImage","Semi-Automated"
+"LAYOUT-COMP-VCINPUT-001","VcInput — spacing grid on form","Components > VcInput","P2","BL-UI-002","ECL-2.1","- /sign-in accessible from incognito context (no auth redirect — see storefront-selectors.md §6 BLOCKER)","{{FRONT_URL}}/sign-in","[NAV] {{FRONT_URL}}/sign-in (incognito context required)
+[WAIT] `form input[type=\"email\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('form .vc-input, form .vc-input__container, form .vc-input__input, form .vc-input-details')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid spacing on .vc-input wrapper; .vc-input-details min-height not on grid","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §9 VcInput + storefront-selectors.md §6","Semi-Automated"
+"LAYOUT-COMP-VCINPUT-002","VcInput — error-state insertion doesn't shift submit","Components > VcInput","P1","BL-UI-003","ECL-2.4","- /sign-in accessible from incognito context","{{FRONT_URL}}/sign-in","[NAV] {{FRONT_URL}}/sign-in (incognito context)
+[WAIT] `form button[type=\"submit\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → before
+[ACT] Fill email with 'invalid-not-an-email' and password with anything; click submit
+[WAIT] 500ms for `.vc-input--error` + `.vc-input-details` to render
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (submit must NOT shift — form must reserve `.vc-input-details` space via min-height)
+[STATE] IF controlled-shift design: assert delta equals exactly message height, never arbitrary
+[NOTE] HTML5 native validation may pre-empt server-side message — capture both states if so","[CONSOLE] no errors","Submit button jumps down on validation error insertion; uncontrolled shift across the form","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §9 VcInput + storefront-selectors.md §6","Semi-Automated"
+"LAYOUT-COMP-VCINPUT-003","VcInput — touch targets at 375 px","Components > VcInput","P1","BL-UI-006","ECL-11.2","- /sign-in accessible; viewport 375 px","{{FRONT_URL}}/sign-in","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-in (incognito context)
+[WAIT] form fields rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('form')
+[ACT] classifyTouchTargets()","[STATE] undersized.length === 0 (every input, submit button, password-toggle ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Form fields ship < 44px height on mobile; password-toggle icon under 44px tap target","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §9 VcInput","Semi-Automated"
+"LAYOUT-COMP-VCINPUT-004","VcInput — long-value overflow within input","Components > VcInput","P2","BL-UI-004","ECL-1.3","- /sign-in accessible from incognito context","{{FRONT_URL}}/sign-in","[NAV] {{FRONT_URL}}/sign-in (incognito context)
+[WAIT] email field rendered
+[ACT] Fill email with 'a-very-long-email-address-that-stresses-input-width@subdomain.example.com'
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] `browser_evaluate` to verify input.scrollWidth > input.clientWidth (value scrolls inside) AND form scrollWidth === window.innerWidth","[STATE] documentScrolls === false
+[STATE] value scrolls inside input (clipped or with internal scroll) — never pushes form chrome","[CONSOLE] no errors","Long email value pushes form layout wider than viewport; horizontal page scroll appears","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §9 VcInput","Semi-Automated"
+"LAYOUT-COMP-VCQTY-001","VcQuantityStepper — spacing + alignment on PDP","Components > VcQuantityStepper","P2","BL-UI-002","ECL-2.1","- PDP for in-stock SKU accessible","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.vc-quantity-stepper` rendered inside `.product-price-block`
+[ACT] `browser_evaluate` spacingAuditSnippet('.product-price-block .vc-quantity-stepper, .product-price-block .vc-quantity-stepper button, .product-price-block .vc-quantity-stepper input')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-quantity-stepper button[aria-label=\"Decrease quantity\"], .vc-quantity-stepper input.vc-input__input, .vc-quantity-stepper button[aria-label=\"Increase quantity\"]')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across -/+ buttons and qty input
+[STATE] alignment.heightDriftPx <= 1","[CONSOLE] no errors","Off-grid padding on stepper; - button sits 2px lower than +; qty input baseline drifts from button centers","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §10 VcQuantityStepper","Semi-Automated"
+"LAYOUT-COMP-VCQTY-002","VcQuantityStepper — touch targets at 375 px","Components > VcQuantityStepper","P1","BL-UI-006","ECL-11.2","- PDP for in-stock SKU accessible","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.vc-quantity-stepper` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.product-price-block .vc-quantity-stepper')","[STATE] undersized.length === 0 (+/- buttons AND qty input ≥ 44×44 — on B2B-store the + button IS the add-to-cart entry, so 44px is REVENUE-CRITICAL per feedback_qty_stepper_as_add_to_cart)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","+ button under 44×44 prevents reliable mobile add-to-cart (revenue regression); -/+ too close together","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §10 VcQuantityStepper + feedback_qty_stepper_as_add_to_cart","Semi-Automated"
+"LAYOUT-COMP-VCQTY-003","VcQuantityStepper — sibling shift on +/- press (revenue-critical)","Components > VcQuantityStepper","P1","BL-UI-003","ECL-2.4","- PDP for in-stock SKU accessible
+- Empty cart (use [PRE:RESET_CART])","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.product-price-block` rendered AND `.vc-quantity-stepper` visible
+[ACT] `browser_evaluate` rectSnapshotSnippet('.product-price-block') → before
+[ACT] `browser_click` on `.vc-quantity-stepper button[aria-label=\"Increase quantity\"]`
+[WAIT] 500ms (cart-add roundtrip; View Cart link may appear per feedback_qty_stepper_as_add_to_cart)
+[ACT] `browser_evaluate` rectSnapshotSnippet('.product-price-block') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (price block stays anchored even as View Cart CTA appears)
+[STATE] |heightDelta| <= 60px (View Cart link insertion acceptable but bounded)","[CONSOLE] no errors; [API] xAPI cart mutation returns 200","Price block jumps on +; View Cart insertion pushes adjacent content uncontrollably","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §10 VcQuantityStepper + feedback_qty_stepper_as_add_to_cart","Semi-Automated"
+"LAYOUT-COMP-VCADDTOCART-001","VcAddToCart — spacing on Configurable PDP","Components > VcAddToCart","P2","BL-UI-002","ECL-2.1","- Configurable PDP accessible","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on Add-to-cart button; hardcoded margin around it","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §33 VcAddToCart","Semi-Automated"
+"LAYOUT-COMP-VCADDTOCART-002","VcAddToCart — loading state doesn't shift price block","Components > VcAddToCart","P1","BL-UI-003","ECL-2.4","- Configurable PDP with all required sections satisfied so Add-to-cart is enabled","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]` rendered AND not disabled (verify required sections satisfied)
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') → before
+[ACT] `browser_click` on the Add-to-cart button
+[ACT] Within first 300ms (while loading spinner visible), `browser_evaluate` rectSnapshotSnippet of same selector → during-loading
+[ACT] compareRectSnapshots(before, during-loading)","[STATE] topDelta === 0 (spinner overlays button label without widening the row)
+[STATE] heightDelta === 0
+[STATE] |widthDelta| <= 2 px","[CONSOLE] no errors; [API] xAPI cart mutation returns 200 within 5s","Price block height changes during loading; spinner pushes adjacent elements (in-stock chip, price text); button widens with spinner","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §33 VcAddToCart","Semi-Automated"
+"LAYOUT-COMP-VCADDTOCART-003","VcAddToCart — touch target at 375 px","Components > VcAddToCart","P1","BL-UI-006","ECL-11.2","- Configurable PDP accessible; viewport 375 px","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"sidebar\"] .product-price-block')","[STATE] undersized.length === 0 (Add-to-cart ≥ 44×44 — REVENUE-CRITICAL CTA on Configurable PDP)","[CONSOLE] no errors","Add-to-cart button under 44×44 prevents reliable mobile conversion on configurable products","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §33 VcAddToCart","Semi-Automated"
+"LAYOUT-COMP-VCALERT-001","VcAlert — spacing on inline banner","Components > VcAlert","P2","BL-UI-002","ECL-2.1","- /sign-in accessible from incognito context; failed-login induced","{{FRONT_URL}}/sign-in","[NAV] {{FRONT_URL}}/sign-in (incognito)
+[ACT] Fill email + password with invalid credentials; click submit
+[WAIT] `.vc-alert` rendered (verify selector live — fall back to inline error class if needed)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-alert, .vc-alert__icon, .vc-alert__content')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on `.vc-alert` wrapper or message","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §26 VcAlert","Semi-Automated"
+"LAYOUT-COMP-VCALERT-002","VcAlert — insertion controlled shift","Components > VcAlert","P1","BL-UI-003","ECL-2.4","- /sign-in accessible from incognito context","{{FRONT_URL}}/sign-in","[NAV] {{FRONT_URL}}/sign-in (incognito)
+[WAIT] `form button[type=\"submit\"]` rendered AND no `.vc-alert` present yet
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → before
+[ACT] Fill invalid email + password; click submit
+[WAIT] 800ms for `.vc-alert` to render
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] EITHER topDelta === 0 (alert overlays without shifting form) OR topDelta equals exactly alert.outerHeight (controlled reserved-space insertion)
+[STATE] never an uncontrolled shift > 100px","[CONSOLE] no errors","Submit button jumps uncontrollably when alert inserts; alert pushes form without reserving space","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §26 VcAlert","Semi-Automated"
+"LAYOUT-COMP-VCALERT-003","VcAlert — long-message overflow at 375 px","Components > VcAlert","P2","BL-UI-004","ECL-1.3","- /sign-in accessible from incognito context; viewport 375 px","{{FRONT_URL}}/sign-in","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-in (incognito)
+[ACT] Induce a long alert (multiple invalid submissions OR force via JS) so message text > 100 chars
+[WAIT] `.vc-alert` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false (long message wraps inside banner; no document horizontal scroll)
+[STATE] no clipped text in `.vc-alert__content`","[CONSOLE] no errors","Long alert message pushes document horizontally; text clipped without ellipsis","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §26 VcAlert","Semi-Automated"
+"LAYOUT-COMP-VCALERT-004","VcAlert — close-button touch target at 375 px","Components > VcAlert","P2","BL-UI-006","ECL-11.2","- /sign-in accessible from incognito context; viewport 375 px; alert variant with close (X) button — if alert lacks dismiss, mark BLOCKED","{{FRONT_URL}}/sign-in","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-in (incognito)
+[ACT] Induce alert
+[WAIT] `.vc-alert button` (close X) rendered — if absent on the variant in use, mark BLOCKED with reason
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-alert')","[STATE] undersized.length === 0 (close button ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Alert close X under 44×44; users can't reliably dismiss on mobile","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §26 VcAlert","Semi-Automated"
+"LAYOUT-COMP-VCBADGE-001","VcBadge — spacing within header cart icon","Components > VcBadge","P2","BL-UI-002","ECL-2.1","- Authenticated user on /; cart contains ≥ 1 item so badge renders","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] `header .vc-badge` rendered (cart count > 0)
+[ACT] `browser_evaluate` spacingAuditSnippet('header .vc-badge')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on `.vc-badge`","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §27 VcBadge","Semi-Automated"
+"LAYOUT-COMP-VCBADGE-002","VcBadge — digit-count change doesn't shift neighbors (KNOWN CHRONIC)","Components > VcBadge","P1","BL-UI-003","ECL-2.4","- Authenticated user; cart can be manipulated to vary digit count (1-digit → 2-digit)","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first product card to land on PDP; click + on `.vc-quantity-stepper` until cart count = 1 (verify in `header a[href=\"/cart\"]` text)
+[NAV] {{FRONT_URL}} (return to home to read header)
+[WAIT] `header .vc-badge` shows '1'
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') → before-1digit
+[NAV] back to PDP; click + until cart count ≥ 10
+[NAV] {{FRONT_URL}} again
+[WAIT] `header .vc-badge` shows '10' (or higher)
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"account-button\"]') → after-2digit
+[ACT] compareRectSnapshots(before-1digit, after-2digit)","[STATE] leftDelta === 0 (adjacent account-button MUST NOT shift left when badge widens — cart-icon parent reserves max-digit width or badge overlays)
+[STATE] topDelta === 0","[CONSOLE] no errors; [API] cart mutations return 200","Account button shifts left as cart count grows 1 → 10; badge width is uncontrolled","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §27 VcBadge (KNOWN CHRONIC issue cited in BL-UI-003 rationale)","Semi-Automated"
+"LAYOUT-COMP-VCBADGE-003","VcBadge — baseline alignment within parent cart icon","Components > VcBadge","P2","BL-UI-005","ECL-2.1","- Authenticated user on /; cart contains ≥ 1 item so badge renders","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] `header .vc-badge` rendered
+[ACT] `browser_evaluate` alignmentAuditSnippet('header a[href=\"/cart\"] .vc-badge, header a[href=\"/cart\"] svg, header a[href=\"/cart\"] [class*=\"icon\"]')","[STATE] centerDriftPx <= 1 (badge vertical-center aligns with parent cart-icon center per design spec — relax if design intentionally offsets to a corner; in that case assert position relative to icon bounding box)","[CONSOLE] no errors","Badge sits offset from parent icon center; intended badge corner offset drifts across builds","none","business-logic.md#bl-ui-005 + critical-ui-scope.md §27 VcBadge","Semi-Automated"
+"LAYOUT-COMP-HEADER-001","Header — spacing + alignment across top nav row","Components > Header","P2","BL-UI-002","ECL-2.1","- Authenticated user on /","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] `header[data-test-id=\"top-header\"]` rendered AND `header [data-test-id=\"account-button\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('header[data-test-id=\"top-header\"], header [data-test-id=\"language-selector\"], header [data-test-id=\"currency-selector\"], header [data-test-id=\"ship-to-selector\"], header [data-test-id=\"account-button\"], header a[href=\"/cart\"]')
+[ACT] `browser_evaluate` alignmentAuditSnippet('header [data-test-id=\"language-selector-button\"], header [data-test-id=\"currency-selector-button\"], header [data-test-id=\"dark-mode-toggle\"], header [data-test-id=\"account-button\"]')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across top nav items
+[STATE] alignment.heightDriftPx <= 1","[CONSOLE] no errors","Off-grid padding on header; account-button taller than language/currency selectors","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §11 Header + storefront-selectors.md §1 + §10","Semi-Automated"
+"LAYOUT-COMP-HEADER-002","Header — mobile hamburger overflow + touch targets at 375 px","Components > Header","P1","BL-UI-004","ECL-1.3 + ECL-11.2","- Authenticated user on /; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}
+[WAIT] header rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] `browser_evaluate` touchTargetAuditSnippet('header[data-test-id=\"top-header\"]')","[STATE] documentScrolls === false (header chrome fits or re-mounts into hamburger panel per feedback_mobile_hamburger_inventory)
+[STATE] touchTargets.undersized.length === 0 (hamburger toggle, cart icon, account button ≥ 44×44)","[CONSOLE] no errors","Header pushes document horizontal scroll on mobile; hamburger toggle under 44×44; cart/account icons too close together","none","business-logic.md#bl-ui-004 + #bl-ui-006 + critical-ui-scope.md §11 Header + feedback_mobile_hamburger_inventory","Semi-Automated"
+"LAYOUT-COMP-HEADER-003","Header — sticky behavior on scroll","Components > Header","P2","BL-UI-003","ECL-2.4","- Authenticated user on /","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] header rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('header[data-test-id=\"top-header\"]') → before-scroll
+[ACT] `browser_evaluate` `window.scrollTo({ top: 800, behavior: 'instant' })`
+[WAIT] 300ms for scroll/sticky behavior to settle
+[ACT] `browser_evaluate` rectSnapshotSnippet('header[data-test-id=\"top-header\"]') → after-scroll
+[ACT] compareRectSnapshots(before-scroll, after-scroll)","[STATE] IF design is sticky-header: topDelta === 0 (header remains pinned)
+[STATE] IF design is non-sticky: header is fully out of viewport (top + height < 0), not partially shifted
+[STATE] heightDelta === 0 (header height stable across scroll)","[CONSOLE] no errors","Header partially shifts on scroll (broken sticky); header height changes mid-scroll","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §11 Header","Semi-Automated"
+"LAYOUT-PAGE-CLS-PAYMENT-001","CLS on /checkout/payment (non-CyberSource processor)","Pages > CLS","P1","BL-UI-001","ECL-1.2","- Authenticated user with cart of ≥ 1 items
+- Store payment method set to non-CyberSource (Skyflow/Authorize.Net/Datatrans) per feedback_payment_flow_learnings
+- Cache disabled
+- Network throttled Fast 3G","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] On PDP, click + on `.vc-quantity-stepper` once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"place-order-button\"]` rendered
+[ACT] Click Place Order — redirects to /checkout/payment for non-CyberSource processors
+[ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] payment iframe / hosted form rendered (host-specific selector — Skyflow vs Authorize.Net vs Datatrans differ; see feedback_payment_flow_learnings)
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[MATH] 0.1 <= cls < 0.25 FAIL (P1 on revenue path)
+[MATH] cls >= 0.25 P0
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors during payment-form load
+[NETWORK] processor iframe/script returns 200","Payment iframe loads after document ready and pushes content; hosted form has no width/height reservation; loading skeleton swap shifts page","[PRE:RESET_CART]","business-logic.md#bl-ui-001 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+"LAYOUT-PAGE-CLS-SIGNIN-001","CLS on /sign-in (incognito context)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Incognito browser context (no auth — authenticated sessions redirect away)
+- Cache disabled","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in (FRESH incognito context — see storefront-selectors.md §6 BLOCKER)
+[ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] 5s after network idle (form, header chrome, footer all settled)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[MATH] 0.1 <= cls < 0.25 FAIL
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] no 4xx/5xx on form-related assets","cls >= 0.1; form fields load after page chrome and reflow content; webfont swap reflows `.vc-typography`","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /sign-in","Semi-Automated"
+"LAYOUT-COMP-VCCHECKBOX-001","VcCheckbox — spacing + baseline alignment on cart line item","Components > VcCheckbox","P2","BL-UI-002","ECL-2.1","- Authenticated user on /cart with ≥ 1 line item","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first product card; click + on `.vc-quantity-stepper` once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"vc-line-item-checkbox\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"vc-line-items-head-checkbox\"], [data-test-id=\"vc-line-item-checkbox\"]')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-line-item [data-test-id=\"vc-line-item-checkbox\"], .vc-line-item .vc-product-title__text, .vc-line-item .vc-quantity-stepper')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across checkbox + adjacent label + stepper","[CONSOLE] no errors","Off-grid padding on checkbox; checkbox icon sits offset from adjacent label baseline","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §15 VcCheckbox","Semi-Automated"
+"LAYOUT-COMP-VCCHECKBOX-002","VcCheckbox — select-all toggle no products-section shift","Components > VcCheckbox","P1","BL-UI-003","ECL-2.4","- Authenticated user on /cart with ≥ 2 line items","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Add 2 different products to cart (navigate PDPs, click +)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"vc-line-items-head-checkbox\"]` rendered AND .vc-line-item count >= 2
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"cart.products-section\"]') → before
+[ACT] `browser_click` on `[data-test-id=\"vc-line-items-head-checkbox\"]` (select-all)
+[WAIT] 300ms for any bulk-action bar to appear
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"cart.products-section\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (products section MUST NOT shift when select-all triggers bulk-action UI)
+[STATE] |heightDelta| <= 60 px (acceptable if bulk-action bar slots into a reserved row; reject larger shifts)","[CONSOLE] no errors","Products section jumps when select-all is checked; bulk-action bar pushes line items down without reserving space","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §15 VcCheckbox","Semi-Automated"
+"LAYOUT-COMP-VCCHECKBOX-003","VcCheckbox — touch targets at 375 px","Components > VcCheckbox","P1","BL-UI-006","ECL-11.2","- Authenticated user on /cart with ≥ 1 line item; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + on stepper once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"vc-line-item-checkbox\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"cart.products-section\"]')","[STATE] undersized.length === 0 (every line-item checkbox + head checkbox ≥ 44×44 including label hit-area)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Checkboxes ship 16×16 sized inputs without label-as-target padding; mobile users can't reliably tap","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md §15 VcCheckbox","Semi-Automated"
+"LAYOUT-COMP-VCRADIO-001","VcRadioButton — spacing + baseline alignment in shipping-method selector","Components > VcRadioButton","P2","BL-UI-002","ECL-2.1","- Authenticated user on /cart with ≥ 1 line item; shipping-method options available","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + on stepper once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"shipping-method-selector\"]` rendered with ≥ 1 option
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"shipping-method-selector\"] .vc-radio-button, [data-test-id=\"payment-method-selector\"] .vc-radio-button')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"shipping-method-selector\"] .vc-radio-button:nth-child(-n+3)')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across first 3 radio options","[CONSOLE] no errors","Off-grid padding on radio rows; radio dot sits offset from adjacent label baseline","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §16 VcRadioButton","Semi-Automated"
+"LAYOUT-COMP-VCRADIO-002","VcRadioButton — shipping-method change doesn't shift payment section","Components > VcRadioButton","P1","BL-UI-003","ECL-2.4","- Authenticated user on /cart; ≥ 2 shipping-method options configured","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + on stepper once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"shipping-method-selector\"]` shows ≥ 2 radio options
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"payment-details-section\"]') → before
+[ACT] `browser_click` on a different shipping option (one not currently selected)
+[WAIT] 800ms for shipping recompute + order-summary refresh
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"payment-details-section\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (payment section below shipping must NOT shift vertically when shipping price/label widens)
+[STATE] |heightDelta| <= 5 px","[CONSOLE] no errors; [API] xAPI cart shipment mutation returns 200","Payment details section jumps when shipping method change widens the row; shipping rows have unequal heights causing re-layout","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §16 VcRadioButton","Semi-Automated"
+"LAYOUT-COMP-VCRADIO-003","VcRadioButton — touch targets at 375 px","Components > VcRadioButton","P1","BL-UI-006","ECL-11.2","- Authenticated user on /cart; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"shipping-method-selector\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"shipping-method-selector\"]')","[STATE] undersized.length === 0 (every radio row ≥ 44×44)
+[STATE] tooClose.length === 0 (≥ 8 px gap between stacked radios)","[CONSOLE] no errors","Radio rows shipping at < 44px; rows touch each other (gap < 8px) so taps register on wrong option","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md §16 VcRadioButton","Semi-Automated"
+"LAYOUT-COMP-VCMODAL-001","VcModal — wrapper spacing + backdrop","Components > VcModal","P2","BL-UI-002","ECL-2.1","- BOPIS modal can be opened (see Component §8 protocol)","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product to cart
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click `[data-test-id=\"pickup-switcher\"]`
+[ACT] Click `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]` (pencil)
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-modal, .vc-modal__backdrop, .vc-modal__panel')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on .vc-modal wrapper; backdrop has unexpected margin","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md §31 VcModal","Semi-Automated"
+"LAYOUT-COMP-VCMODAL-002","VcModal — body-scroll-lock doesn't shift main on open","Components > VcModal","P1","BL-UI-003","ECL-2.4","- BOPIS modal can be opened","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product to cart
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click `[data-test-id=\"pickup-switcher\"]`
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → before
+[ACT] Click `[data-test-id=\"pickup-location-section\"] [data-test-id=\"select-address-button\"]`
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → after
+[ACT] compareRectSnapshots(before, after)
+[ACT] `browser_evaluate` to inspect: `{bodyOverflow: document.body.style.overflow, htmlPaddingRight: document.documentElement.style.paddingRight}`","[STATE] topDelta === 0 AND leftDelta === 0 (main MUST NOT shift on modal open)
+[STATE] bodyOverflow === 'hidden' (scroll lock applied)
+[STATE] htmlPaddingRight matches scrollbar width (gutter reserved — prevents content reflow when scrollbar disappears)","[CONSOLE] no errors","Main content shifts when modal opens because body-scroll-lock removes scrollbar without reserving gutter; widening shifts content","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §31 VcModal","Semi-Automated"
+"LAYOUT-COMP-VCMODAL-003","VcModal — mobile fullscreen modifier at 375 px","Components > VcModal","P2","BL-UI-004","ECL-1.3","- BOPIS modal can be opened; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Open BOPIS modal (see VCMODAL-002 steps)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit
+[ACT] `browser_evaluate` to verify modal has `.vc-modal--mobile-fullscreen` class AND panel width equals window.innerWidth","[STATE] documentScrolls === false
+[STATE] modal panel has mobile-fullscreen modifier
+[STATE] panel width === window.innerWidth (no horizontal padding gap at 375 px)","[CONSOLE] no errors","Mobile modifier missing — panel renders as desktop dialog at 375 px with horizontal scroll; or panel narrower than viewport leaving content cramped","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md §31 VcModal","Semi-Automated"
+"LAYOUT-COMP-VCMODAL-004","VcModal — close button touch target at 375 px","Components > VcModal","P2","BL-UI-006","ECL-11.2","- BOPIS modal can be opened; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[ACT] Set viewport to 375×812
+[ACT] Open BOPIS modal (see VCMODAL-002 steps)
+[WAIT] `[data-test-id=\"pickup-locations-modal\"]` rendered AND close X button visible
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-modal')","[STATE] undersized.length === 0 (close X ≥ 44×44 — note: close button lacks data-test-id per storefront-selectors.md §11)","[CONSOLE] no errors","Modal close X under 44×44; users trapped in modal on mobile","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md §31 VcModal + storefront-selectors.md §11","Semi-Automated"
+"LAYOUT-COMP-VCCONFIRMMODAL-001","VcConfirmationModal — spacing + button-row alignment","Components > VcConfirmationModal","P2","BL-UI-002","ECL-2.1","- Authenticated user on /cart with ≥ 1 line item","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click `[data-test-id=\"clear-cart-button\"]` to trigger confirmation modal
+[WAIT] confirmation modal rendered (verify selector live — likely `.vc-confirmation-modal` or `[role=\"alertdialog\"]`)
+[ACT] `browser_evaluate` spacingAuditSnippet('[role="dialog"].vc-modal')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-confirmation-modal__actions button')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.heightDriftPx === 0 (confirm + cancel buttons equal heights)
+[STATE] alignment.centerDriftPx <= 1","[CONSOLE] no errors","Off-grid padding on confirmation modal; confirm button taller than cancel; button row misaligned","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')
+[PRE:RESET_CART]","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §32 VcConfirmationModal","Semi-Automated"
+"LAYOUT-COMP-VCCONFIRMMODAL-002","VcConfirmationModal — opens without main-content shift","Components > VcConfirmationModal","P1","BL-UI-003","ECL-2.4","- Authenticated user on /cart with ≥ 1 line item","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"clear-cart-button\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → before
+[ACT] Click `[data-test-id=\"clear-cart-button\"]`
+[WAIT] 500ms for confirmation modal to render
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 (main MUST NOT shift on confirmation modal open)","[CONSOLE] no errors","Main content shifts when confirmation modal opens (body-scroll-lock incorrectly applied at wrapper level)","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')
+[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §32 VcConfirmationModal","Semi-Automated"
+"LAYOUT-COMP-VCCONFIRMMODAL-003","VcConfirmationModal — long-message overflow at 375 px","Components > VcConfirmationModal","P2","BL-UI-004","ECL-1.3","- Authenticated user on /cart with ≥ 1 line item; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click `[data-test-id=\"clear-cart-button\"]`
+[WAIT] confirmation modal rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to the modal","[STATE] documentScrolls === false
+[STATE] message text wraps inside modal; no clipped text in `.vc-confirmation-modal__message`","[CONSOLE] no errors","Long confirmation message pushes document horizontally; text clipped without ellipsis on small screen","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')
+[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md §32 VcConfirmationModal","Semi-Automated"
+"LAYOUT-COMP-VCCONFIRMMODAL-004","VcConfirmationModal — button touch targets at 375 px","Components > VcConfirmationModal","P2","BL-UI-006","ECL-11.2","- Authenticated user on /cart with ≥ 1 line item; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click `[data-test-id=\"clear-cart-button\"]`
+[WAIT] confirmation modal rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[role="dialog"].vc-modal')","[STATE] undersized.length === 0 (confirm + cancel ≥ 44×44)
+[STATE] tooClose.length === 0 (≥ 8 px gap between buttons)","[CONSOLE] no errors","Confirm/cancel under 44×44; buttons touch each other risking accidental confirm","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')
+[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md §32 VcConfirmationModal","Semi-Automated"
+"LAYOUT-COMP-EMPTY-001","VcEmptyView — empty-cart layout boundary","Components > VcEmptyView","P2","BL-UI-002","ECL-2.1","- Authenticated user with EMPTY cart","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `.vc-empty-page` rendered (cart is empty)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-empty-page, .vc-empty-page__wrapper, .vc-empty-page__title, .vc-empty-page__breadcrumbs')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on `.vc-empty-page` wrapper; title/breadcrumbs spacing off-grid","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §14 VcEmptyView + storefront-selectors.md §4","Semi-Automated"
+"LAYOUT-COMP-EMPTY-002","VcEmptyView — no-results overflow at 375 px","Components > VcEmptyView","P2","BL-UI-004","ECL-1.3","- /search?q=zzz-no-results-test returns empty state; viewport 375 px","{{FRONT_URL}}/search?q=zzz-no-results-test","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=zzz-no-results-test
+[WAIT] empty-state container rendered (`.vc-empty-page` or `.search-empty-state` — verify live)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] empty-state illustration + text fit within viewport","[CONSOLE] no errors","Empty-state illustration too wide for 375 px; horizontal page scroll appears","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §14 VcEmptyView","Semi-Automated"
+"LAYOUT-COMP-VCVARIANTPICKER-001","VcVariantPicker — spacing + alignment + long-label wrap on PDP","Components > VcVariantPicker","P2","BL-UI-002 + BL-UI-004 + BL-UI-005","ECL-2.1 + ECL-1.3","- PDP for a variation-bearing SKU accessible (≥ 2 variations)","{{FRONT_URL}}/products-with-options/variations-of-jeans/jeans","[NAV] {{FRONT_URL}}/products-with-options/variations-of-jeans/jeans
+[WAIT] `.product-variations` rendered with ≥ 2 swatches
+[ACT] `browser_evaluate` spacingAuditSnippet('.product-variations, [data-test-id^="variations-"][data-test-id$="-button"]')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id^="variations-"][data-test-id$="-button"]:nth-child(-n+5)')
+[ACT] Set viewport to 375; `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to `.product-variations`","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across first 5 swatches
+[STATE] documentScrolls === false at 375 px","[CONSOLE] no errors","Off-grid padding on swatches; row baseline drift; long color name labels push document horizontally","none","business-logic.md#bl-ui-002 + #bl-ui-004 + #bl-ui-005 + critical-ui-scope.md §20 VcVariantPicker","Semi-Automated"
+"LAYOUT-COMP-VCVARIANTPICKER-002","VcVariantPicker — variant change doesn't shift Add-to-Cart","Components > VcVariantPicker","P1","BL-UI-003","ECL-2.4","- PDP for variation-bearing SKU","{{FRONT_URL}}/products-with-options/variations-of-jeans/jeans","[NAV] {{FRONT_URL}}/products-with-options/variations-of-jeans/jeans
+[WAIT] `.product-variations` rendered with ≥ 2 swatches; `.product-price-block` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('.product-price-block') → before
+[ACT] Click an UNSELECTED swatch (verify selector live — likely `[data-test-id^="variations-"][data-test-id$="-button"]:not([data-test-id^="variations-"][data-test-id$="-button"]--selected)` or similar)
+[WAIT] 800ms for variant re-resolve (xAPI roundtrip — price/image/inventory swap)
+[ACT] `browser_evaluate` rectSnapshotSnippet('.product-price-block') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (price block + Add-to-Cart stay anchored; only image gallery swaps content)
+[STATE] |heightDelta| <= 5 px (price text widening within block is OK; pushing the whole block is not)","[CONSOLE] no errors; [API] xAPI product re-fetch returns 200","Add-to-Cart button shifts when variant changes; price block reflows because price text widens uncontrolled","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §20 VcVariantPicker","Semi-Automated"
+"LAYOUT-COMP-VCVARIANTPICKER-003","VcVariantPicker — touch targets at 375 px","Components > VcVariantPicker","P1","BL-UI-006","ECL-11.2","- PDP for variation-bearing SKU; viewport 375 px","{{FRONT_URL}}/products-with-options/variations-of-jeans/jeans","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/products-with-options/variations-of-jeans/jeans
+[WAIT] `.product-variations` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.product-variations')","[STATE] undersized.length === 0 (each swatch ≥ 44×44)
+[STATE] tooClose.length === 0 (≥ 8 px gap between swatches)","[CONSOLE] no errors","Color/size swatches ship at 24×24 on mobile; users tap wrong variant","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §20 VcVariantPicker","Semi-Automated"
+"LAYOUT-COMP-VCCAROUSEL-001","VcCarousel — slide images have width/height attrs (CLS)","Components > VcCarousel","P1","BL-UI-001","ECL-1.2","- Home page accessible; hero slider renders","{{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[WAIT] `.slider-block` rendered with ≥ 1 swiper slide
+[ACT] `browser_evaluate` collect every `.slider-block .swiper-slide img` and report {hasWidth, hasHeight, computedAspectRatio} per image
+[ACT] Filter for images missing both width+height attrs AND non-auto aspect-ratio","[STATE] every slide image satisfies (hasWidth && hasHeight) OR (computedAspectRatio !== 'auto')
+[STATE] violations list captured for evidence","[CONSOLE] no errors; [NETWORK] all slide images return 200","Hero slide images lack intrinsic dimensions — primary CLS source on home (driver of LAYOUT-CLS-001 failures)","none","business-logic.md#bl-ui-001 + critical-ui-scope.md §28 VcCarousel + storefront-selectors.md §1","Semi-Automated"
+"LAYOUT-COMP-VCCAROUSEL-002","VcCarousel — spacing on hero","Components > VcCarousel","P2","BL-UI-002","ECL-2.1","- Home page accessible","{{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[WAIT] `.slider-block` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('.slider-block, .slider-block .swiper-pagination, .slider-block .swiper-button-next, .slider-block .swiper-button-prev')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on hero wrapper or navigation controls","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §28 VcCarousel","Semi-Automated"
+"LAYOUT-COMP-VCCAROUSEL-003","VcCarousel — slide change doesn't shift surrounding chrome","Components > VcCarousel","P2","BL-UI-003","ECL-2.4","- Home page accessible; hero slider has ≥ 2 slides","{{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[WAIT] `.slider-block` rendered AND `.slider-block .swiper-slide` count ≥ 2
+[ACT] `browser_evaluate` rectSnapshotSnippet('main > *:nth-child(2)') → before  (snapshot the element BELOW the hero)
+[ACT] `browser_evaluate` to programmatically advance Swiper: trigger via `.swiper-button-next` click OR call swiper instance .slideNext()
+[WAIT] 800ms for slide transition to complete
+[ACT] `browser_evaluate` rectSnapshotSnippet('main > *:nth-child(2)') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 (content below hero MUST NOT shift when slide changes — hero height stays constant)
+[STATE] heightDelta === 0","[CONSOLE] no errors","Hero height changes per slide (different aspect ratios); content below jumps as auto-rotate fires","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §28 VcCarousel + storefront-selectors.md §1","Semi-Automated"
+"LAYOUT-COMP-VCCAROUSEL-004","VcCarousel — mobile overflow at 375 px","Components > VcCarousel","P2","BL-UI-004","ECL-1.3","- Home page accessible; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}
+[WAIT] `.slider-block` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to `.slider-block`","[STATE] documentScrolls === false
+[STATE] slide content fits within viewport (no clipped CTAs)","[CONSOLE] no errors","Hero slide content too wide for 375 px; CTAs clipped without ellipsis","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §28 VcCarousel","Semi-Automated"
+"LAYOUT-COMP-VCCAROUSEL-005","VcCarousel — navigation touch targets at 375 px","Components > VcCarousel","P2","BL-UI-006","ECL-11.2","- Home page accessible; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}
+[WAIT] `.slider-block` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.slider-block')","[STATE] undersized.length === 0 (arrows + pagination dots ≥ 44×44 — if mobile design hides arrows, only dots are audited; document accordingly)","[CONSOLE] no errors","Pagination dots under 44×44 prevent reliable mobile slide control; arrows too small or too close to edges","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §28 VcCarousel","Semi-Automated"
+"LAYOUT-PAGE-CLS-DASHBOARD-001","CLS on /account/dashboard","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated user
+- Cache disabled
+- Network throttled Fast 3G","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] dashboard sidebar AND latest-orders widget AND monthly-spend chart rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[MATH] 0.1 <= cls < 0.25 FAIL
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] dashboard xAPI queries return 200 within 5s","cls >= 0.1; latest-orders skeleton → table swap shifts page; monthly-spend chart late-renders and pushes content; sidebar widgets settle into final layout after data arrives","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /account/dashboard","Semi-Automated"
+"LAYOUT-OVF-DASHBOARD-001","Overflow on /account/dashboard at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Authenticated user; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] dashboard content rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] no clipped elements with overflow:hidden hiding required content","[CONSOLE] no errors","Monthly-spend chart pushes document horizontally on mobile; sidebar overlays content without proper drawer pattern","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /account/dashboard","Semi-Automated"
+"LAYOUT-PAGE-CLS-ADDRESSES-001","CLS on /account/addresses","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated user (TechFlow contact for multi-address stress)
+- Cache disabled","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/addresses
+[ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] address cards rendered (count > 0) AND sidebar rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] member-addresses xAPI query returns 200","cls >= 0.1; address cards swap from skeleton to final height; favorite-icon late-renders shifting card chrome","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /account/addresses + reference_address_data_conventions","Semi-Automated"
+"LAYOUT-OVF-ADDRESSES-001","Overflow on /account/addresses at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Authenticated user; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/addresses
+[WAIT] address cards rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] long address lines wrap inside cards (no horizontal overflow on individual address-card rows)","[CONSOLE] no errors","Address cards too wide for 375 px viewport; long street/city values push document horizontal scroll","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /account/addresses","Semi-Automated"
+"LAYOUT-COMP-VCPAGINATION-001","VcPagination — spacing + row alignment","Components > VcPagination","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- Authenticated user on a paginated list (e.g., /account/orders with > page size)","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-pagination` rendered — if absent (orders count ≤ page size), mark BLOCKED with reason
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-pagination, .vc-pagination__page')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-pagination__page:nth-child(-n+5)')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across page-number row","[CONSOLE] no errors","Off-grid padding on pagination; page-number row misaligned","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §29 VcPagination","Semi-Automated"
+"LAYOUT-COMP-VCPAGINATION-002","VcPagination — page change doesn't shift pagination control","Components > VcPagination","P2","BL-UI-003","ECL-2.4","- Paginated list with ≥ 2 pages","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-pagination` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-pagination') → before
+[ACT] `browser_click` on page 2 item
+[WAIT] list repopulates
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-pagination') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (pagination control stays anchored; only the list rows above replace)
+[STATE] heightDelta === 0","[CONSOLE] no errors","Pagination control jumps when page changes (control re-renders instead of just updating active page)","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §29 VcPagination","Semi-Automated"
+"LAYOUT-COMP-VCPAGINATION-003","VcPagination — compact mode at 375 px","Components > VcPagination","P2","BL-UI-004","ECL-1.3","- Paginated list with many pages; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-pagination` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to `.vc-pagination`","[STATE] documentScrolls === false
+[STATE] pagination collapses to compact mode (ellipsis) — does not push document scroll","[CONSOLE] no errors","Many-page pagination overflows viewport on 375 px; ellipsis not applied","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §29 VcPagination","Semi-Automated"
+"LAYOUT-COMP-VCPAGINATION-004","VcPagination — touch targets at 375 px","Components > VcPagination","P2","BL-UI-006","ECL-11.2","- Paginated list; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] `.vc-pagination` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-pagination')","[STATE] undersized.length === 0 (each page button ≥ 44×44)
+[STATE] tooClose.length === 0 (≥ 8 px gap)","[CONSOLE] no errors","Page buttons under 44×44; gaps too tight","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §29 VcPagination","Semi-Automated"
+"LAYOUT-COMP-VCEXPANSION-001","VcExpansionPanels — spacing + header row alignment","Components > VcExpansionPanels","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- /catalog with filter facet groups visible","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.facet-filter-widget` rendered with ≥ 3 panels (or `.facet-filter-widget` count >= 3 — verify selector live)
+[ACT] `browser_evaluate` spacingAuditSnippet('.facet-filter-widget, .facet-filter-widget__title')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.facet-filter-widget > .facet-filter-widget:nth-child(-n+5) .facet-filter-widget__title')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1
+[STATE] alignment.heightDriftPx <= 1 (panel headers equal heights)","[CONSOLE] no errors","Off-grid padding on panel headers; header heights drift","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §30 VcExpansionPanels","Semi-Automated"
+"LAYOUT-COMP-VCEXPANSION-002","VcExpansionPanels — expand/collapse controlled shift","Components > VcExpansionPanels","P2","BL-UI-003","ECL-2.4","- /catalog with facet groups visible","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.facet-filter-widget` rendered with ≥ 2 panels
+[ACT] `browser_evaluate` rectSnapshotSnippet('.facet-filter-widget > .facet-filter-widget:nth-child(2)') → before
+[ACT] `browser_click` on `.facet-filter-widget > .facet-filter-widget:nth-child(1) .facet-filter-widget__title` (collapse/expand panel 1)
+[WAIT] 500ms for animation
+[ACT] `browser_evaluate` rectSnapshotSnippet('.facet-filter-widget > .facet-filter-widget:nth-child(2)') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta is exactly the (signed) change in panel 1's height (controlled — never arbitrary)
+[STATE] leftDelta === 0","[CONSOLE] no errors","Panel 2 shifts unpredictably; expand/collapse animation overshoots or undershoots","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §30 VcExpansionPanels","Semi-Automated"
+"LAYOUT-COMP-VCEXPANSION-003","VcExpansionPanels — long content overflow at 375 px","Components > VcExpansionPanels","P2","BL-UI-004","ECL-1.3","- /catalog with facet group having many options; viewport 375 px","{{FRONT_URL}}/catalog","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.facet-filter-widget` rendered
+[ACT] Open a panel with many facet options
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to the open panel","[STATE] documentScrolls === false
+[STATE] open panel body scrolls internally if needed; does not push document horizontal scroll","[CONSOLE] no errors","Long facet-option list pushes document horizontally; options clipped","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §30 VcExpansionPanels","Semi-Automated"
+"LAYOUT-COMP-VCEXPANSION-004","VcExpansionPanels — header touch targets at 375 px","Components > VcExpansionPanels","P2","BL-UI-006","ECL-11.2","- /catalog with facet groups visible; viewport 375 px","{{FRONT_URL}}/catalog","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.facet-filter-widget` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.facet-filter-widget')","[STATE] undersized.length === 0 (each panel header ≥ 44×44)","[CONSOLE] no errors","Panel headers under 44×44; users miss collapse/expand on mobile","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §30 VcExpansionPanels","Semi-Automated"
+"LAYOUT-COMP-VCSLIDER-001","VcSlider — spacing + alignment of price-range slider","Components > VcSlider","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- /catalog category exposing a price-range facet","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"filter-price\"] .vc-slider` rendered (if facet not present for default category, navigate to a category that does — verify live)
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"filter-price\"] .vc-slider')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"filter-price\"] .vc-slider__handle, [data-test-id=\"filter-price\"] .vc-slider__value')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 (handles + value labels baseline align)","[CONSOLE] no errors","Slider track/handle/value labels misaligned baselines","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §34 VcSlider","Semi-Automated"
+"LAYOUT-COMP-VCSLIDER-002","VcSlider — drag updates value-display without shift","Components > VcSlider","P2","BL-UI-003","ECL-2.4","- /catalog with price-range facet","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"filter-price\"] .vc-slider` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"filter-price\"] .vc-slider__value') → before
+[ACT] Simulate drag on a handle (use browser_drag or set value programmatically via Vue dev-tools API) to widen digit count (e.g., $5 → $1500)
+[WAIT] 300ms for value-display update
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"filter-price\"] .vc-slider__value') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] leftDelta === 0 (value-display container reserves max-digit width — does NOT shift horizontally as text widens)","[CONSOLE] no errors","Value display widens uncontrollably as digits grow; pushes adjacent facet panel","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §34 VcSlider","Semi-Automated"
+"LAYOUT-COMP-VCSLIDER-003","VcSlider — handle touch target at 375 px (KNOWN MOBILE PAIN POINT)","Components > VcSlider","P1","BL-UI-006","ECL-11.2","- /catalog with price-range facet; viewport 375 px","{{FRONT_URL}}/catalog","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"filter-price\"] .vc-slider` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"filter-price\"] .vc-slider')","[STATE] undersized.length === 0 (each handle ≥ 44×44)","[CONSOLE] no errors","Slider handles ship 24×24 thumbs — fails WCAG 2.5.5 / BL-UI-006 contract","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §34 VcSlider","Semi-Automated"
+"LAYOUT-COMP-VCRATING-001","VcRating — spacing + baseline alignment of stars + count","Components > VcRating","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- Product card or PDP with rating data
+- BLOCKED in current vcst-qa build (2026-05-14): no `.vc-rating` element rendered on /catalog (verified live in TLC-2026-05-14-1640 Target 3c). Reactivate when rating feature ships.","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `.vc-rating` rendered on at least one card (if absent on /catalog, search for a rated SKU and navigate to its PDP — currently absent in vcst-qa build per TLC-2026-05-14-1640)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-rating, .vc-rating__star, .vc-rating__count')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-rating .vc-rating__star, .vc-rating .vc-rating__count')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 (stars + count baseline align)","[CONSOLE] no errors","Stars + count drift baselines; off-grid padding between star icons","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §35 VcRating","Semi-Automated"
+"LAYOUT-COMP-VCBREADCRUMBS-001","VcBreadcrumbs — spacing + item baseline alignment","Components > VcBreadcrumbs","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- PDP with breadcrumbs visible","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.vc-breadcrumbs` rendered with ≥ 2 items
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-breadcrumbs, .vc-breadcrumbs__item, .vc-breadcrumbs__slash')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-breadcrumbs__item, .vc-breadcrumbs__slash')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 across items + separators","[CONSOLE] no errors","Off-grid padding on breadcrumbs row; separator baseline drifts from item baseline","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §36 VcBreadcrumbs","Semi-Automated"
+"LAYOUT-COMP-VCBREADCRUMBS-002","VcBreadcrumbs — deep-path overflow at 375 px (CHRONIC)","Components > VcBreadcrumbs","P2","BL-UI-004","ECL-1.3","- PDP with deep breadcrumb path; viewport 375 px","{{FRONT_URL}}@td(STRESS.longTitleSlug)","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}@td(STRESS.longTitleSlug)
+[WAIT] `.vc-breadcrumbs` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to `.vc-breadcrumbs`","[STATE] documentScrolls === false (breadcrumbs MUST wrap, truncate with ellipsis, or scroll inside the row — never push document horizontal scrollbar)","[CONSOLE] no errors","Deep breadcrumb path pushes document horizontally on mobile","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §36 VcBreadcrumbs","Semi-Automated"
+"LAYOUT-COMP-VCCHIP-001","VcChip — spacing on in-stock chip","Components > VcChip","P2","BL-UI-002","ECL-2.1","- Configurable PDP accessible","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"sidebar\"] .product-price-block .vc-chip` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"sidebar\"] .product-price-block .vc-chip')
+[ACT] classifySpacing()","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on in-stock chip","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §17 VcChip","Semi-Automated"
+"LAYOUT-COMP-VCCHIP-002","VcChip — long-label overflow at 375 px (BOPIS availability chips)","Components > VcChip","P2","BL-UI-004","ECL-1.3","- BOPIS modal can be opened; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Open BOPIS modal
+[WAIT] `[data-test-id=\"pickup-availability-chip\"]` count > 0
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to the modal","[STATE] documentScrolls === false
+[STATE] chip labels wrap or truncate inside their row — rows do not widen beyond list container","[CONSOLE] no errors","Long availability-chip label widens row; pushes list scroll into horizontal overflow","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md §17 VcChip + storefront-selectors.md §11","Semi-Automated"
+"LAYOUT-COMP-VCCHIP-003","VcChip — row baseline alignment in BOPIS modal","Components > VcChip","P2","BL-UI-005","ECL-2.1","- BOPIS modal can be opened","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product
+[NAV] {{FRONT_URL}}/cart
+[ACT] Open BOPIS modal
+[WAIT] `[data-test-id=\"pickup-availability-chip\"]` count >= 5
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item:nth-child(-n+5) [data-test-id=\"pickup-availability-chip\"]')","[STATE] centerDriftPx <= 1 across the first 5 rows' chips","[CONSOLE] no errors","Chips drift baselines row-to-row; visual scan of availability becomes hard","[PRE:RESET_CART]","business-logic.md#bl-ui-005 + critical-ui-scope.md §17 VcChip","Semi-Automated"
+"LAYOUT-COMP-VCSELECT-001","VcSelect — spacing of dropdown trigger + panel","Components > VcSelect","P2","BL-UI-002","ECL-2.1","- Authenticated user; address-form variant — navigate /account/addresses → click edit/add","{{FRONT_URL}}/account/addresses","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/addresses
+[ACT] Click edit on first address OR Add new address
+[WAIT] form rendered with Country .vc-select visible
+[ACT] `browser_evaluate` spacingAuditSnippet('form .vc-select, form .vc-select__trigger, form .vc-select__panel')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on .vc-select trigger or panel","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')","business-logic.md#bl-ui-002 + critical-ui-scope.md §18 VcSelect","Semi-Automated"
+"LAYOUT-COMP-VCSELECT-002","VcSelect — on-change form reflow doesn't shift submit","Components > VcSelect","P1","BL-UI-003","ECL-2.4","- Address edit form open with Country select","{{FRONT_URL}}/account/addresses","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/addresses
+[ACT] Click edit on first address (or Add new)
+[WAIT] form rendered with Country select
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → before
+[ACT] Open Country dropdown; select a different country that changes State availability (e.g., USA → GBR — UK has regionId=null per reference_address_data_conventions)
+[WAIT] 500ms for State field to repaint
+[ACT] `browser_evaluate` rectSnapshotSnippet('form button[type=\"submit\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] EITHER topDelta === 0 (form reserves State-field row even when disabled) OR delta is controlled and bounded (matches State-field vertical change exactly)","[CONSOLE] no errors","Submit button jumps uncontrollably when State field appears/disappears with country change","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')","business-logic.md#bl-ui-003 + critical-ui-scope.md §18 VcSelect + reference_address_data_conventions","Semi-Automated"
+"LAYOUT-COMP-VCSELECT-003","VcSelect — long-option overflow at 375 px","Components > VcSelect","P2","BL-UI-004","ECL-1.3","- Address edit form with Country select; viewport 375 px","{{FRONT_URL}}/account/addresses","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/addresses
+[ACT] Click edit on first address
+[WAIT] form rendered
+[ACT] Open Country dropdown (verify long country names like 'United States Minor Outlying Islands' present)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to form","[STATE] documentScrolls === false
+[STATE] long option labels wrap or truncate inside panel — never push horizontal scroll","[CONSOLE] no errors","Long country names overflow trigger / panel at 375 px","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')","business-logic.md#bl-ui-004 + critical-ui-scope.md §18 VcSelect","Semi-Automated"
+"LAYOUT-COMP-VCSELECT-004","VcSelect — touch targets at 375 px","Components > VcSelect","P1","BL-UI-006","ECL-11.2","- Address edit form open; viewport 375 px","{{FRONT_URL}}/account/addresses","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/addresses
+[ACT] Click edit on first address
+[WAIT] form rendered
+[ACT] Open Country dropdown
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-select__panel')","[STATE] undersized.length === 0 (trigger ≥ 44×44; each option row ≥ 44 px tall)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Trigger or option rows under 44px; mobile users hit wrong option","[ACT] Press Escape to dismiss modal (browser_press_key: 'Escape')","business-logic.md#bl-ui-006 + critical-ui-scope.md §18 VcSelect","Semi-Automated"
+"LAYOUT-COMP-VCDROPDOWN-001","VcDropdownMenu — spacing on header account-menu","Components > VcDropdownMenu","P2","BL-UI-002","ECL-2.1","- Authenticated user on /","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] `header [data-test-id=\"account-button\"]` rendered
+[ACT] Click account button to open dropdown
+[WAIT] `.vc-popover.vc-dropdown-menu` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-popover.vc-dropdown-menu li, .vc-popover.vc-dropdown-menu [role=\"menuitem\"]')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding in dropdown menu items","none","business-logic.md#bl-ui-002 + critical-ui-scope.md §19 VcDropdownMenu","Semi-Automated"
+"LAYOUT-COMP-VCDROPDOWN-002","VcDropdownMenu — open doesn't shift adjacent header items","Components > VcDropdownMenu","P1","BL-UI-003","ECL-2.4","- Authenticated user on /","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[WAIT] `header [data-test-id=\"account-button\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"customer-name-label\"]') → before
+[ACT] Click `header [data-test-id=\"account-button\"]`
+[WAIT] 400ms for dropdown to render
+[ACT] `browser_evaluate` rectSnapshotSnippet('header [data-test-id=\"customer-name-label\"]') → after
+[ACT] compareRectSnapshots(before, after)
+[ACT] With dropdown still open, hover the first menu item; re-snapshot a sibling menu item to verify hover does not shift siblings","[STATE] topDelta === 0 AND leftDelta === 0 (adjacent header items MUST NOT shift on dropdown open)
+[STATE] menu-item hover does NOT shift sibling items","[CONSOLE] no errors","Adjacent header items move when dropdown opens (popover triggers layout reflow instead of overlay); menu items reflow on hover","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §19 VcDropdownMenu","Semi-Automated"
+"LAYOUT-COMP-VCDROPDOWN-003","VcDropdownMenu — mobile width at 375 px","Components > VcDropdownMenu","P2","BL-UI-004","ECL-1.3","- Authenticated user on /; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}
+[ACT] Open the dropdown (account-button or hamburger version of it on mobile)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] dropdown panel fits within viewport (wraps or constrains item labels)","[CONSOLE] no errors","Dropdown panel wider than viewport on mobile; document scrolls horizontally","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §19 VcDropdownMenu","Semi-Automated"
+"LAYOUT-COMP-VCDROPDOWN-004","VcDropdownMenu — menu items align vertically","Components > VcDropdownMenu","P2","BL-UI-005","ECL-2.1","- Authenticated user on /; account-menu dropdown open","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}
+[ACT] Click `header [data-test-id=\"account-button\"]`
+[WAIT] `.vc-popover.vc-dropdown-menu [role=\"menuitem\"]` count >= 3
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-popover.vc-dropdown-menu [role=\"menuitem\"]:nth-child(-n+5)')","[STATE] centerDriftPx <= 1 across first 5 items
+[STATE] heightDriftPx <= 1 (items equal heights)","[CONSOLE] no errors","Menu items drift baselines (leading icon vs label vs trailing chevron)","none","business-logic.md#bl-ui-005 + critical-ui-scope.md §19 VcDropdownMenu","Semi-Automated"
+"LAYOUT-COMP-VCDROPDOWN-005","VcDropdownMenu — touch targets at 375 px","Components > VcDropdownMenu","P2","BL-UI-006","ECL-11.2","- Dropdown can be opened; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}
+[ACT] Open the dropdown
+[WAIT] `.vc-popover.vc-dropdown-menu` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-popover.vc-dropdown-menu')","[STATE] undersized.length === 0 (trigger + each item ≥ 44×44)","[CONSOLE] no errors","Menu items under 44×44; mobile users tap wrong item","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §19 VcDropdownMenu","Semi-Automated"
+"LAYOUT-COMP-VCTABSWITCH-001","VcTabSwitch — spacing + row alignment of view switcher","Components > VcTabSwitch","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- /catalog accessible","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"view-switcher\"]` rendered AND `[data-test-id=\"grid-view-tab\"]` AND `[data-test-id=\"list-view-tab\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"view-switcher\"], [data-test-id=\"view-switcher\"] [data-test-id=\"grid-view-tab\"], [data-test-id=\"view-switcher\"] [data-test-id=\"list-view-tab\"]')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"grid-view-tab\"], [data-test-id=\"list-view-tab\"]')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1
+[STATE] alignment.heightDriftPx <= 1","[CONSOLE] no errors","Off-grid padding on tabs; grid/list tab heights differ","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §22 VcTabSwitch","Semi-Automated"
+"LAYOUT-COMP-VCTABSWITCH-002","VcTabSwitch — tab switch doesn't jump switcher container","Components > VcTabSwitch","P2","BL-UI-003","ECL-2.4","- /catalog accessible","{{FRONT_URL}}/catalog","[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"view-switcher\"]` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"view-switcher\"]') → before
+[ACT] `browser_click` on `[data-test-id=\"list-view-tab\"]`
+[WAIT] 500ms for tab + content panel swap
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"view-switcher\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 AND leftDelta === 0 (switcher position stable; only underline indicator slides)
+[STATE] heightDelta === 0","[CONSOLE] no errors","Switcher container jumps when active tab changes; underline slide overshoots","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §22 VcTabSwitch","Semi-Automated"
+"LAYOUT-COMP-VCTABSWITCH-003","VcTabSwitch — long tab labels at 375 px","Components > VcTabSwitch","P2","BL-UI-004","ECL-1.3","- /catalog accessible; viewport 375 px","{{FRONT_URL}}/catalog","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"view-switcher\"]` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to view switcher","[STATE] documentScrolls === false (tabs fit row OR scroll horizontally inside switcher container, never document)","[CONSOLE] no errors","Tabs overflow document on mobile","none","business-logic.md#bl-ui-004 + critical-ui-scope.md §22 VcTabSwitch","Semi-Automated"
+"LAYOUT-COMP-VCTABSWITCH-004","VcTabSwitch — touch targets at 375 px","Components > VcTabSwitch","P2","BL-UI-006","ECL-11.2","- /catalog accessible; viewport 375 px","{{FRONT_URL}}/catalog","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] `[data-test-id=\"view-switcher\"]` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('[data-test-id=\"view-switcher\"]')","[STATE] undersized.length === 0 (each tab ≥ 44×44)
+[STATE] tooClose.length === 0 (≥ 8 px gap)","[CONSOLE] no errors","View tabs under 44×44 on mobile","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §22 VcTabSwitch","Semi-Automated"
+"LAYOUT-COMP-VCSWITCH-001","VcSwitch — spacing + switch-label baseline","Components > VcSwitch","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- Authenticated user on a page that hosts a VcSwitch (verify live — likely /account/profile or /account/notifications)","{{FRONT_URL}}/account/profile","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/profile
+[WAIT] `.vc-switch` rendered (if absent, navigate to /account/notifications or another preferences page — verify live; if no VcSwitch in env, mark BLOCKED)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-switch, .vc-switch__label')
+[ACT] `browser_evaluate` alignmentAuditSnippet('.vc-switch')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 (switch thumb + label baseline align)","[CONSOLE] no errors","Off-grid padding; switch + label baseline drift","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §23 VcSwitch","Semi-Automated"
+"LAYOUT-COMP-VCSWITCH-002","VcSwitch — toggle doesn't shift adjacent labels","Components > VcSwitch","P2","BL-UI-003","ECL-2.4","- Authenticated user on a page hosting VcSwitch","{{FRONT_URL}}/account/profile","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/profile
+[WAIT] `.vc-switch` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-switch + *, fieldset:has(.vc-switch) ~ *') → before
+[ACT] `browser_click` on the switch
+[WAIT] 200ms for state transition + any conditional sub-form
+[ACT] `browser_evaluate` rectSnapshotSnippet('.vc-switch + *') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] EITHER topDelta === 0 (no shift) OR controlled delta matching reserved sub-form section height
+[STATE] never arbitrary uncontrolled shift","[CONSOLE] no errors","Adjacent label/text shifts when switch toggles; dependent sub-form insertion is uncontrolled","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §23 VcSwitch","Semi-Automated"
+"LAYOUT-COMP-VCSWITCH-003","VcSwitch — touch target at 375 px","Components > VcSwitch","P2","BL-UI-006","ECL-11.2","- VcSwitch present on a page; viewport 375 px","{{FRONT_URL}}/account/profile","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/profile
+[WAIT] `.vc-switch` rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('.vc-switch')","[STATE] undersized.length === 0 (switch tap target ≥ 44×44 including label hit-area)","[CONSOLE] no errors","Switch under 44×44 on mobile","none","business-logic.md#bl-ui-006 + critical-ui-scope.md §23 VcSwitch","Semi-Automated"
+"LAYOUT-COMP-VCSCROLLBAR-001","VcScrollbar — spacing on track + thumb","Components > VcScrollbar","P2","BL-UI-002","ECL-2.1","- BOPIS modal can be opened (host the scrollbar inside location list)","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product
+[NAV] {{FRONT_URL}}/cart
+[ACT] Open BOPIS modal
+[WAIT] `[data-test-id=\"pickup-locations-modal\"] .vc-scrollbar` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"pickup-locations-modal\"] .vc-scrollbar, [data-test-id=\"pickup-locations-modal\"] .vc-scrollbar__track, [data-test-id=\"pickup-locations-modal\"] .vc-scrollbar__thumb')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on scrollbar track/thumb","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md §24 VcScrollbar","Semi-Automated"
+"LAYOUT-COMP-VCSCROLLBAR-002","VcScrollbar — appear/disappear no content shift","Components > VcScrollbar","P1","BL-UI-003","ECL-2.4","- BOPIS modal can be opened with filterable list (≤ 5 rows hides scrollbar)","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(BOPIS.testSku)
+[ACT] Add a BOPIS-eligible product
+[NAV] {{FRONT_URL}}/cart
+[ACT] Open BOPIS modal
+[WAIT] location list rendered with ≥ 10 rows (scrollbar visible)
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item:nth-child(1)') → before-with-scrollbar
+[ACT] Apply a country/region/city filter that reduces visible rows to ≤ 5 (scrollbar hides)
+[WAIT] 500ms for filter
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"pickup-locations-list\"] > .select-address-map-list__item:nth-child(1)') → after-no-scrollbar
+[ACT] compareRectSnapshots(before-with-scrollbar, after-no-scrollbar)","[STATE] leftDelta === 0 (first row MUST NOT shift horizontally when scrollbar appears/disappears — container uses `scrollbar-gutter: stable` or equivalent reservation)","[CONSOLE] no errors","Rows shift horizontally when filter collapses list and scrollbar disappears","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §24 VcScrollbar","Semi-Automated"
+"LAYOUT-COMP-VCWIDGET-001","VcWidget — spacing + header alignment across stacked widgets","Components > VcWidget","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- Authenticated user on /cart with ≥ 1 line item","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"order-summary-widget\"]` rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"order-summary-widget\"], [data-test-id=\"order-summary-widget\"] .vc-widget__title, [data-test-id=\"order-summary-widget\"] .vc-widget__slot-container')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"cart.products-section\"] .vc-widget__title, [data-test-id=\"order-summary-widget\"] .vc-widget__title')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 (widget titles baseline align across the stack)","[CONSOLE] no errors","Off-grid padding on widget wrapper; widget titles drift baselines","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §21 VcWidget","Semi-Automated"
+"LAYOUT-COMP-VCWIDGET-002","VcWidget — collapsible toggle doesn't shift sticky sidebar","Components > VcWidget","P2","BL-UI-003","ECL-2.4","- Configurable PDP with collapsible sections (`.vc-widget--collapsible`)","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `.product-configuration [data-test-id=\"section\"]` count >= 2
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') → before
+[ACT] `browser_click` on `.product-configuration [data-test-id=\"section\"]:not(.vc-widget--collapsed) > button.vc-widget__header-container` (collapse one section)
+[WAIT] 500ms for collapse animation
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (sticky sidebar stays pinned when content column reflows due to widget collapse)","[CONSOLE] no errors","Sidebar shifts when widget toggles (sticky positioning broken)","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §21 VcWidget","Semi-Automated"
+"LAYOUT-COMP-VCWIDGET-003","VcWidget — long content overflow at 375 px","Components > VcWidget","P2","BL-UI-004","ECL-1.3","- /cart with order summary widget; viewport 375 px","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[WAIT] `[data-test-id=\"order-summary-widget\"]` rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit scoped to `[data-test-id=\"order-summary-widget\"]`","[STATE] documentScrolls === false
+[STATE] long values (subtotal, discount labels) wrap or truncate inside widget","[CONSOLE] no errors","Order-summary widget content pushes document horizontally; long currency-formatted totals overflow row","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md §21 VcWidget","Semi-Automated"
+"LAYOUT-COMP-VCPRICE-001","VcPriceDisplay — dynamic update no sidebar reflow (Configurable PDP)","Components > VcPriceDisplay","P1","BL-UI-003","ECL-2.4","- Configurable PDP with ≥ 2 preset options changing price","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `[data-test-id=\"product-option\"]` count >= 2 AND `[data-test-id=\"sidebar\"] .product-price-block .price__actual` rendered
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]') → before
+[ACT] Click an unselected option that changes price: `[data-test-id=\"product-option\"]:not(:has(.vc-radio-button--checked)) .vc-radio-button__container` (first matching)
+[WAIT] 500ms for price recompute
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sidebar\"] .product-price-block button[aria-label=\"Add to cart\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (Add-to-cart MUST NOT shift when price text widens/narrows; price block reserves space for max width)
+[STATE] heightDelta === 0","[CONSOLE] no errors","Add-to-cart shifts when price text length changes; price block reflows on dynamic update","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §13 VcPriceDisplay (replaces out-of-matrix LAYOUT-COMP-CONFIG-002)","Semi-Automated"
+"LAYOUT-COMP-VCPRICE-002","VcPriceDisplay — spacing + sale/actual baseline alignment","Components > VcPriceDisplay","P2","BL-UI-002 + BL-UI-005","ECL-2.1","- Configurable PDP with both list (sale) + actual prices rendered","{{FRONT_URL}}@td(CONFIGURABLE.testSlug)","[NAV] {{FRONT_URL}}@td(CONFIGURABLE.testSlug)
+[WAIT] `.price__list` AND `.price__actual` rendered in `[data-test-id=\"sidebar\"] .product-price-block`
+[ACT] `browser_evaluate` spacingAuditSnippet('[data-test-id=\"sidebar\"] .product-price-block, [data-test-id=\"sidebar\"] .product-price-block .price__list, [data-test-id=\"sidebar\"] .product-price-block .price__actual')
+[ACT] `browser_evaluate` alignmentAuditSnippet('[data-test-id=\"sidebar\"] .product-price-block .price__list, [data-test-id=\"sidebar\"] .product-price-block .price__actual')","[STATE] spacing.offGrid.length === 0
+[STATE] alignment.centerDriftPx <= 1 (sale strikethrough + actual price baseline align)","[CONSOLE] no errors","Off-grid padding; strikethrough baseline drifts from actual price baseline","none","business-logic.md#bl-ui-002 + #bl-ui-005 + critical-ui-scope.md §13 VcPriceDisplay","Semi-Automated"
+"LAYOUT-COMP-TOAST-001","Notifications/Toast — emit doesn't shift main content","Components > Notifications","P1","BL-UI-002 + BL-UI-003","ECL-2.4","- Authenticated user on /cart with ≥ 1 line item","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Click first card; click + once
+[NAV] {{FRONT_URL}}/cart
+[WAIT] line item rendered
+[ACT] `browser_evaluate` spacingAuditSnippet('.notifications-host__wrapper, .notifications-host__wrapper > *')
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → before
+[ACT] Click `.vc-line-item:nth-child(1) [data-test-id=\"remove-item-button\"]` to trigger a toast
+[WAIT] 300ms for toast to render in `.notifications-host__wrapper:not(:empty)`
+[ACT] `browser_evaluate` rectSnapshotSnippet('main') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] spacing.offGrid.length === 0
+[STATE] topDelta === 0 AND leftDelta === 0 (main MUST NOT shift on toast emit; toast is overlay-portalled, not in document flow)","[CONSOLE] no errors","Main shifts when toast appears (toast is not portalled to overlay layer); off-grid padding on toast wrapper","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + #bl-ui-003 + critical-ui-scope.md §12 Notifications + storefront-selectors.md §6","Semi-Automated"
+"LAYOUT-COMP-TOAST-002","Notifications/Toast — stacked toasts don't displace sticky CTAs","Components > Notifications","P2","BL-UI-003","ECL-2.4","- Authenticated user on /cart","{{FRONT_URL}}/cart","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] Add 3 items to cart (3 separate add-to-cart presses)
+[NAV] {{FRONT_URL}}/cart
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sticked-place-order-button\"]') → before
+[ACT] Quickly remove 3 line items in succession to stack 3 toasts in `.notifications-host__wrapper`
+[WAIT] all 3 toasts visible (`.notifications-host__wrapper > *` count >= 3)
+[ACT] `browser_evaluate` rectSnapshotSnippet('[data-test-id=\"sticked-place-order-button\"]') → after
+[ACT] compareRectSnapshots(before, after)","[STATE] topDelta === 0 (sticky Place Order button MUST remain at its baseline position even when toast stack grows)","[CONSOLE] no errors","Stacked toasts push sticky Place Order out of viewport","[PRE:RESET_CART]","business-logic.md#bl-ui-003 + critical-ui-scope.md §12 Notifications","Semi-Automated"
+"LAYOUT-PAGE-CLS-SEARCH-001","CLS on /search results page","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Cache disabled; Fast 3G","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] product cards rendered AND filters sidebar rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] xAPI products query returns 200","cls >= 0.1; product cards swap from skeleton to final height; filters sidebar settles late","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /search","Semi-Automated"
+"LAYOUT-OVF-SEARCH-001","Overflow on /search at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[WAIT] product grid rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false","[CONSOLE] no errors","Search results push horizontal document scroll on 375 px","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /search","Semi-Automated"
+"LAYOUT-PAGE-CLS-SIGNUP-001","CLS on /sign-up (incognito context)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Incognito browser context
+- Cache disabled","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-up (FRESH incognito context — see storefront-selectors.md §6 BLOCKER)
+[ACT] IMMEDIATELY `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] 5s after network idle (form, header chrome, footer settled)
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors","cls >= 0.1; form fields with more rows than /sign-in (confirm-password, name, org) load late and reflow","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /sign-up","Semi-Automated"
+"LAYOUT-OVF-SIGNUP-001","Overflow on /sign-up at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Incognito context; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-up (incognito)
+[WAIT] form rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false","[CONSOLE] no errors","Sign-up form pushes document horizontally on 375 px","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /sign-up","Semi-Automated"
+"LAYOUT-PAGE-TGT-SIGNUP-001","Touch targets on /sign-up at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Incognito context; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-up (incognito)
+[WAIT] form rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('form')","[STATE] undersized.length === 0 (every input + submit + any checkbox/radio ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Sign-up form fields under 44×44; submit button or terms-checkbox under 44×44","none","business-logic.md#bl-ui-006 + critical-ui-scope.md /sign-up","Semi-Automated"
+"LAYOUT-PAGE-CLS-QUOTES-001","CLS on /account/quotes","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Authenticated user with ≥ 1 quote request (or empty state if none)
+- Cache disabled","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/quotes
+[ACT] IMMEDIATELY `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
+[WAIT] quotes table rendered OR empty-state rendered
+[WAIT] 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls","[MATH] cls <= 0.1 PASS
+[STATE] capture {cls, shiftCount}","[CONSOLE] no errors
+[NETWORK] xAPI quotes query returns 200","cls >= 0.1; table skeleton swap; quote rows late-load","none","business-logic.md#bl-ui-001 + critical-ui-scope.md /account/quotes","Semi-Automated"
+"LAYOUT-OVF-QUOTES-001","Overflow on /account/quotes at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Authenticated user; viewport 375 px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/account/quotes
+[WAIT] quotes table OR empty state rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] table either responsive-card variant on mobile OR scrolls internally — never pushes document scroll","[CONSOLE] no errors","Quotes table pushes document horizontally on 375 px","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /account/quotes","Semi-Automated"
+"LAYOUT-PAGE-SPC-PAYMENT-001","Spacing on /checkout/payment","Pages > Spacing","P2","BL-UI-002","ECL-2.1","- Authenticated user with cart of ≥ 1 items
+- Store payment method set to non-CyberSource (Skyflow/Authorize.Net/Datatrans)","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] On PDP, click + once
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click Place Order — redirects to /checkout/payment
+[WAIT] payment hosted form / iframe rendered (host-specific selector per feedback_payment_flow_learnings)
+[ACT] `browser_evaluate` spacingAuditSnippet('main, main > *, [data-test-id*=\"payment\"]')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on payment page wrapper; iframe container has hardcoded margin","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+"LAYOUT-OVF-PAYMENT-001","Overflow on /checkout/payment at 375 px","Pages > Overflow","P1","BL-UI-004","ECL-1.3","- Authenticated user with cart; non-CyberSource processor; viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] On PDP, click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click Place Order — redirects to /checkout/payment
+[WAIT] payment iframe / hosted form rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
+[STATE] payment iframe fits within viewport (or scrolls internally) — never pushes document horizontal scroll","[CONSOLE] no errors","Payment iframe wider than viewport; revenue-blocking horizontal scroll on /checkout/payment","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+"LAYOUT-PAGE-TGT-PAYMENT-001","Touch targets on /checkout/payment at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Authenticated user with cart; non-CyberSource processor; viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
+[ACT] On PDP, click + once
+[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/cart
+[ACT] Click Place Order
+[WAIT] payment form rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('main')","[STATE] undersized.length === 0 (all fields, submit/pay button, back link ≥ 44×44 — note hosted-iframe controls are out of scope, audit only parent storefront chrome)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Pay/back buttons under 44×44; revenue-blocking on mobile","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+"LAYOUT-OVF-SIGNIN-001","Overflow on /sign-in at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Incognito context; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-in (incognito)
+[WAIT] form rendered
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false","[CONSOLE] no errors","Sign-in form pushes horizontal document scroll on 375 px","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /sign-in","Semi-Automated"
+"LAYOUT-PAGE-TGT-SIGNIN-001","Touch targets on /sign-in at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Incognito context; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
+[NAV] {{FRONT_URL}}/sign-in (incognito)
+[WAIT] form rendered
+[ACT] `browser_evaluate` touchTargetAuditSnippet('form, main')","[STATE] undersized.length === 0 (email + password inputs, submit, forgot-password link, sign-up link ≥ 44×44)
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Sign-in form fields or links under 44×44; submit button under 44×44 — blocks mobile login","none","business-logic.md#bl-ui-006 + critical-ui-scope.md /sign-in","Semi-Automated"

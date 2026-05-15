@@ -1,0 +1,280 @@
+{
+  "caseId": "VCST-4960-ADD-REGRESSION",
+  "title": "VCST-4960 Item 4 — addItem with fabricated sectionId is rejected (PR add/update symmetry)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\tests\\Sprint-current\\VCST-4960\\vcst-4960-verification.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-14T11:50:53.270Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-14T11:50:51.469Z",
+      "expiresAt": "2026-05-14T12:20:50.469Z"
+    }
+  ],
+  "variables": {
+    "configurable_id": "38dbe95c-3f46-48ff-bb9a-8bd96f475214",
+    "fabricated_section": "00000000-0000-0000-0000-000000000000",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "VALID_OPTION_ID": "aa8116e5-1448-447b-af51-89db83cb5c19"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 133
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 304
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "get_def",
+      "query": "query { productConfiguration(configurableProductId: \"38dbe95c-3f46-48ff-bb9a-8bd96f475214\" storeId: \"B2B-store\") { configurationSections { id name type options { product { id name } } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "f8004e62-f820-4a00-8adb-774ab27c6011",
+                "name": "Select your fav color",
+                "type": "Product",
+                "options": [
+                  {
+                    "product": {
+                      "id": "aa8116e5-1448-447b-af51-89db83cb5c19",
+                      "name": "Black hat"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "3cc2ab6e-d031-488a-acad-127ee88f1858",
+                      "name": "Beige hat"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "59e78525-07db-43d0-bfcc-c670b7c31862",
+                      "name": "Green hat"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "42ec462f-4bb3-4e12-8068-6d5cdf59fbe1",
+                      "name": "Red hat"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "45ab0a4b-740f-455a-829d-9856e7baa7f7",
+                "name": "Select print-ready cap",
+                "type": "Product",
+                "options": [
+                  {
+                    "product": {
+                      "id": "87833296-ecb1-4bca-b8a9-3d7fb21f2d58",
+                      "name": "NY print"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "10477f24-5717-4b54-9aa5-ada0df1c328b",
+                      "name": "H print"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "72c8290f-a60f-4ecc-817a-1e2cf490a046",
+                      "name": "P print"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "e5bd5735-af08-43a2-a325-ea09e71839b4",
+                      "name": "Bird print"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "1ced56b0-fa0c-4c25-b932-0a06534c4407",
+                      "name": "S print"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "333e4dc4-9409-448d-9c13-593449b317d0",
+                "name": "Customize text for your cap",
+                "type": "Text",
+                "options": [
+                  {
+                    "product": null
+                  },
+                  {
+                    "product": null
+                  },
+                  {
+                    "product": null
+                  },
+                  {
+                    "product": null
+                  },
+                  {
+                    "product": null
+                  }
+                ]
+              },
+              {
+                "id": "66941bf0-8268-463e-934c-31f6a464ed8f",
+                "name": "Add photo",
+                "type": "File",
+                "options": []
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 214
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_bad",
+      "query": "mutation AddBad($configurationSections: [ConfigurationSectionInput]) {\n    addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"38dbe95c-3f46-48ff-bb9a-8bd96f475214\" quantity: 1 configurationSections: $configurationSections }) {\n      id itemsCount validationErrors { errorCode errorMessage objectId objectType }\n      items { id productId quantity configurationItems { id sectionId productId } }\n    }\n  }",
+      "variables": {
+        "configurationSections": [
+          {
+            "sectionId": "00000000-0000-0000-0000-000000000000",
+            "type": "Product",
+            "option": {
+              "productId": "aa8116e5-1448-447b-af51-89db83cb5c19",
+              "quantity": 1
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0,
+            "validationErrors": [
+              {
+                "errorCode": "CONFIGURATION_SECTION_NOT_FOUND",
+                "errorMessage": "Configuration section with ID 00000000-0000-0000-0000-000000000000 not found",
+                "objectId": null,
+                "objectType": "ConfigurationItem"
+              }
+            ],
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 437
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 702
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_bad] errors[] empty",
+      "label": "add_bad",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=add_bad] data.addItem.validationErrors >= 1",
+      "label": "add_bad",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.validationErrors >= 1",
+      "actual": "data.addItem.validationErrors = 1"
+    },
+    {
+      "raw": "[DATA label=add_bad] data.addItem.validationErrors.0.errorCode is non-null",
+      "label": "add_bad",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addItem.validationErrors.0.errorCode is non-null",
+      "actual": "data.addItem.validationErrors.0.errorCode = \"CONFIGURATION_SECTION_NOT_FOUND\""
+    },
+    {
+      "raw": "[DATA label=add_bad] data.addItem.validationErrors.0.errorMessage is non-null",
+      "label": "add_bad",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addItem.validationErrors.0.errorMessage is non-null",
+      "actual": "data.addItem.validationErrors.0.errorMessage = \"Configuration section with ID 00000000-0000-0000-0000-000000000000 not found\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Item-4960-4: addItem path rejects fabricated sectionId, validation symmetric with changeCartConfiguredItem post-fix",
+      "layer": "EVIDENCE",
+      "note": "Item-4960-4: addItem path rejects fabricated sectionId, validation symmetric with changeCartConfiguredItem post-fix",
+      "resolved": "Item-4960-4: addItem path rejects fabricated sectionId, validation symmetric with changeCartConfiguredItem post-fix"
+    }
+  ],
+  "cleanup": {
+    "raw": "cleanup_post inline",
+    "blocks": []
+  }
+}

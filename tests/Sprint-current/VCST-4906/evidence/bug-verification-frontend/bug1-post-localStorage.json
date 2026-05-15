@@ -1,0 +1,12 @@
+{
+  "step": "Post-/blocked-redirect operator state captured 2026-05-14T17:33 UTC",
+  "auth_raw": "{\"expires_at\":null,\"token_type\":\"Bearer\",\"access_token\":null,\"refresh_token\":null}",
+  "auth.access_token": null,
+  "auth.refresh_token": null,
+  "auth.expires_at": null,
+  "operator_sub_lost": true,
+  "page_url_post_redirect": "https://vcst-qa-storefront.govirto.com/blocked",
+  "account_navigation_redirect": "https://vcst-qa-storefront.govirto.com/sign-in?returnUrl=/account/dashboard",
+  "operator_session_present": false,
+  "interpretation": "Operator John Mitchell's session was completely destroyed by the /blocked redirect flow. The auth state was replaced with an empty shell (access_token=null, refresh_token=null), causing all subsequent /account/* requests to redirect to /sign-in. Per IMP-049 contract: operator's own session must remain intact (not cleared); no orphaned session left in localStorage."
+}

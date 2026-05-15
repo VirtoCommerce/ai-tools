@@ -1,0 +1,27 @@
+IMP-046 — POST-REVERT PROBE (HTTP 401 expected per AC#6; ACTUAL: HTTP 200 — AC#6 NOT MET)
+
+Status: BROKEN — SECURITY-CRITICAL
+Ticket: VCST-4906 / PR #2280 (build vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2)
+
+Sequence:
+1. Operator (acme_store_maintainer_1@acme.com) impersonates acme_store_employee_3@acme.com
+   - Impersonation token jti: 1f82005e-1421-4e44-91b6-a695d5d98f11
+   - exp: 2026-05-14T07:56:59.000Z
+   - oi_tkn_id: 2353b912-53f5-4956-9db0-6ccee98f70a4
+2. PRE-REVERT probe (GraphQL { me { id } } with impersonation token):
+   - HTTP 200
+   - {"data":{"me":{"id":"user-acme-store-employee-3","userName":"acme_store_employee_3@acme.com","email":"acme_store_employee_3@acme.com"}}}
+3. Operator clicks "Back to François O'Brien-Müller" in header dropdown
+4. UI confirms revert: page navigates to /company/members, localStorage.auth now holds operator's token (different from impersonation token)
+5. POST-REVERT probe (SAME impersonation token, NO change to header/body):
+   - HTTP 200  (EXPECTED: 401)
+   - {"data":{"me":{"id":"user-acme-store-employee-3","userName":"acme_store_employee_3@acme.com","email":"acme_store_employee_3@acme.com"}}}
+
+Conclusion:
+- The impersonation access_token is NOT invalidated server-side after the revert flow.
+- AC#6 of VCST-4906 ("Previous Token MUST be invalidated") is NOT enforced.
+- An attacker who exfiltrated the impersonation token (via XSS, log capture, etc.) before the operator clicked revert can continue acting as the impersonated user until the JWT's natural exp (~30 min in this case).
+- PROPOSED-BL-AUTH-012 is currently FALSE on vcst-qa.
+
+Recommended bug severity: P0 / Critical (security).
+Recommended action: file bug under VCST-4906 PR #2280 against the backend impersonate/revert endpoint (useImpersonate.ts → backToOperator()).

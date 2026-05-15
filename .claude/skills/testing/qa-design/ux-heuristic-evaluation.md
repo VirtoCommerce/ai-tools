@@ -1,6 +1,35 @@
 # UX Heuristic Evaluation Guide
 
-> Reference file for ui-ux-expert agent. Read when performing UX evaluations.
+> Reference file for ui-ux-expert agent. Read when performing UX evaluations. Heuristic findings should be cross-referenced against [BL-* invariants](../../../agents/knowledge/business-logic.md) and the [edge case library](../../../agents/knowledge/e-commerce-edge-cases-library.md) — many UX issues map to a concrete invariant or ECL pattern, and citing the link makes the finding filable as a bug instead of a vague complaint.
+
+## Severity rubric (Nielsen 0–4 scale)
+
+| Score | Label | Meaning | What to do |
+|-------|-------|---------|------------|
+| **0** | Not a problem | Concern surfaced but doesn't actually impede the user | Log in evaluation, don't file |
+| **1** | Cosmetic | Cosmetic flaw only; fix when convenient (low-frequency surface or trivial polish) | Log + add to next cleanup batch; do not file individually unless rolling up several `1`s |
+| **2** | Minor | Minor usability issue; fix is low priority but ought to happen | File as P3 bug; include suggested improvement |
+| **3** | Major | Major issue; users get stuck or recover at cost; fix should be prioritized | File as P1/P2 bug; reference any BL-* invariant violated |
+| **4** | Catastrophe | Imperative to fix before release; users can't complete the task, lose data, or hit hard error | File as P0 bug + escalate to qa-lead-orchestrator |
+
+**Score upgrades** — promote one level when the issue lands on a revenue-critical surface (checkout, payment, add-to-cart, registration). A `2` on a static FAQ page is a `3` on the payment page.
+
+## Heuristic → invariant / ECL cross-reference
+
+Use this table to translate a vague "UX issue" into a citable rule. If a heuristic finding maps to an invariant, file the bug with the BL-* ID — it stops being a subjective complaint and starts being an objective contract violation.
+
+| Heuristic | Maps to | Notes |
+|-----------|---------|-------|
+| #1 Visibility of system status | [BL-UI-001](../../../agents/knowledge/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux) (no layout shift hides "what changed"), [BL-CART-002](../../../agents/knowledge/business-logic.md) (stock-mid-session), [BL-ORD-*](../../../agents/knowledge/business-logic.md) (status feedback) | Missing loading state on Place Order = #1 violation AND BL-ORD risk |
+| #2 Match real world | [B2B terminology](../../../agents/knowledge/platform-patterns.md) (PO number, net terms) | VC-specific: "Quote" vs "Order", "Account" vs "Organization" |
+| #3 User control | [BL-CART-*](../../../agents/knowledge/business-logic.md) (cart edit, remove), [BL-CHK-*](../../../agents/knowledge/business-logic.md) (back/edit during checkout) | "Cannot edit shipping after picking method" = #3 + BL-CHK |
+| #4 Consistency | [BL-UI-002](../../../agents/knowledge/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux), [BL-UI-005](../../../agents/knowledge/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) | Spacing grid drift, alignment drift, color-meaning drift across pages |
+| #5 Error prevention | [BL-CART-001](../../../agents/knowledge/business-logic.md) (max qty), [BL-CHK-*](../../../agents/knowledge/business-logic.md), [ECL-2.*](../../../agents/knowledge/e-commerce-edge-cases-library.md) (input validation edges) | Accepts negative qty = #5 + BL-CART |
+| #6 Recognition over recall | ECL-3.* (state visibility) | Cart not visible during checkout |
+| #7 Flexibility | B2B power-user patterns: quick order paste, saved addresses, reorder, keyboard shortcuts. See [feedback_qty_stepper_as_add_to_cart](../../../../memory/feedback_qty_stepper_as_add_to_cart.md) — on B2B store the stepper IS the add-to-cart entry; treat that as the by-design flex pattern, not a bug |
+| #8 Aesthetic / minimal | [BL-UI-004](../../../agents/knowledge/business-logic.md#bl-ui-004-content-boundary-p2-ux) (overflow), [BL-UI-005](../../../agents/knowledge/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) (hierarchy implies alignment) | Two competing CTAs, overflowing modals |
+| #9 Error recovery | WCAG 3.3.1 (error identification), WCAG 3.3.3 (error suggestion), [ECL-2.*](../../../agents/knowledge/e-commerce-edge-cases-library.md) | "Invalid input" without specifics = #9 + WCAG 3.3.1 |
+| #10 Help / docs | None canonical — pure UX. File as P2/P3 UX improvement unless on revenue-critical surface |
 
 ## Nielsen's 10 Usability Heuristics
 
@@ -238,6 +267,8 @@ Shipping options displayed as:
 
 **Heuristic Violated:**
 Nielsen Heuristic #1: Visibility of System Status
+**Severity (Nielsen 0–4):** 3 (Major — user hesitates and abandons at this step)
+**Cross-referenced invariants:** None canonical, but adjacent to BL-CHK-* (checkout completeness)
 
 **Suggested Improvement:**
 Include delivery timeframe and estimated arrival date:
