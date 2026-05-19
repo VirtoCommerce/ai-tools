@@ -1,0 +1,186 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"B2C-MBR-001","View Company Members List","B2C Features > Members","High","BL-B2C-004",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user logged in; organization has at least 3 members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as organization admin
+2. [NAV] Navigate to /company/members or Company > Members
+3. [ASSERT] Verify members list page loads
+4. [ASSERT] Verify list shows member name and email and role and status columns","[DOM] Members list page loads without errors
+[DOM] Table/list shows: name and email and role and status for each member
+[DOM] At least 3 members visible
+[FORMAT] Role labels are readable (e.g. Admin or Purchaser or Approver)","[API] organization members query returns member data
+[CONSOLE] no uncaught JS errors","Members page returns 404; empty list when members exist; missing columns in member data","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-002","Search Members by Name or Email","B2C Features > Members","Medium","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user logged in; organization has 5+ members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Type a member name in search input
+3. [ASSERT] Verify filtered results show matching members
+4. [ACT] Clear search and type a member email
+5. [ASSERT] Verify filtered results show matching member","[DOM] Search input visible on members page
+[DOM] Results filtered by name search
+[DOM] Results filtered by email search
+[STATE] Search works for both name and email fields","[CONSOLE] no uncaught JS errors","Search not filtering results; search input missing; search only works for name but not email","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-003","Members List Pagination","B2C Features > Members","Medium","BL-B2C-004","ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; organization has >10 members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ASSERT] Verify initial page shows first batch of members
+3. [SCROLL] Scroll to bottom of list
+4. [ACT] Click Load More or pagination control
+5. [ASSERT] Verify additional members are loaded
+6. [ASSERT] Verify no duplicate members","[DOM] Pagination or load-more control visible when >10 members
+[DOM] Additional members loaded after action
+[DOM] No duplicate entries across pages
+[STATE] Total visible members matches org member count","[CONSOLE] no uncaught JS errors","Members truncated with no pagination; duplicate members after loading more; pagination control missing","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-004","Invite Member - Open Form","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user logged in","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Click Invite Member or Add Member button
+3. [ASSERT] Verify invite form opens
+4. [ASSERT] Verify form has email and first name and last name and role fields","[DOM] Invite member form or modal opens
+[DOM] Email input field visible
+[DOM] First name and last name fields visible
+[DOM] Role selector (dropdown or radio) visible","[CONSOLE] no uncaught JS errors","Invite button missing; form does not open; required fields missing from invite form","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-005","Invite Member - Submit Invitation","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; invite form open","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};invite_email=invite+{{timestamp}}@example.com","1. [NAV] Navigate to /company/members
+2. [ACT] Click Invite Member
+3. [ACT] Fill email: invite+{{timestamp}}@example.com
+4. [ACT] Fill first name: Invited
+5. [ACT] Fill last name: Member
+6. [ACT] Select role: Purchaser
+7. [ACT] Click Send Invitation or Submit
+8. [ASSERT] Verify success message displayed
+9. [ASSERT] Verify invited member appears in members list with Invited or Pending status","[DOM] Success toast or confirmation message after sending invitation
+[DOM] New member appears in list with pending/invited status
+[STATE] Invitation sent to specified email","[API] invite member mutation succeeds
+[CONSOLE] no uncaught JS errors","Invitation fails with error; no success message; invited member not appearing in list; wrong status shown","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-006","Invite Member - Email Notification Sent","B2C Features > Members","Medium","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; invitation just submitted","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Send invitation to a test email
+3. [ASSERT] Verify success confirmation
+4. [ASSERT] Check that invitation notification was triggered (via API or notification log)","[STATE] Email invitation triggered after submission
+[DOM] Success message references email being sent","[API] notification or email sending event triggered
+[CONSOLE] no uncaught JS errors","No email sent; invitation recorded but notification not triggered; email to wrong address","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-007","Invite Member - New Member Sign-In via Invitation Link","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Invitation sent; invitation link/email available","url={{FRONT_URL}};invite_email=invite+{{timestamp}}@example.com;password={{USER_PASSWORD}}","1. [NAV] Navigate to the invitation acceptance link (from email)
+2. [ASSERT] Verify registration or password setup form loads
+3. [ACT] Set password for the new account
+4. [ACT] Submit the form
+5. [ASSERT] Verify new member can sign in
+6. [NAV] Navigate to /company/members as the admin
+7. [ASSERT] Verify member status changed from Pending to Active","[DOM] Invitation link leads to password setup or registration page
+[STATE] New member can sign in after setting password
+[DOM] Member status updated in members list to Active","[API] member status updated after acceptance
+[CONSOLE] no uncaught JS errors","Invitation link expired or invalid; password setup fails; member status not updating to Active","delete test member","Coverage Gap Analysis","Generated"
+"B2C-MBR-008","Edit Member Role","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; member exists with Purchaser role","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
+2. [ACT] Click on a member to view details
+3. [ASSERT] Verify member detail view or edit form opens
+4. [ACT] Change role from Purchaser to Admin
+5. [ACT] Save changes
+6. [ASSERT] Verify success message
+7. [ASSERT] Verify role updated in members list","[DOM] Member detail view shows current role
+[DOM] Role dropdown allows changing role
+[STATE] Role change saved successfully
+[DOM] Members list reflects updated role","[API] member role update mutation succeeds
+[CONSOLE] no uncaught JS errors","Role change not saving; no edit capability for roles; wrong role shown after update","revert role change","Coverage Gap Analysis","Generated"
+"B2C-MBR-009","Admin vs Purchaser Access Differences","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Two accounts: org admin and org purchaser","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify admin sees Invite Member button and can edit roles
+4. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+5. [NAV] Log in as org purchaser
+6. [NAV] Navigate to /company/members
+7. [ASSERT] Verify purchaser does NOT see Invite Member button
+8. [ASSERT] Verify purchaser cannot edit member roles","[DOM] Admin: Invite Member button visible; role editing available
+[DOM] Purchaser: Invite Member button hidden; role editing disabled or hidden
+[STATE] Access differences enforce role-based permissions","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-010","Block Member - Member Cannot Sign In","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; active member to be blocked","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ACT] Select a member and click Block or Deactivate action
+4. [ACT] Confirm blocking action
+5. [ASSERT] Verify member status changes to Blocked or Inactive
+6. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+7. [NAV] Attempt to sign in as the blocked member
+8. [ASSERT] Verify sign-in is denied with appropriate message","[DOM] Member status updated to Blocked in members list
+[STATE] Blocked member login attempt is rejected
+[DOM] Error message shown: account blocked or deactivated","[API] member block mutation succeeds
+[CONSOLE] no uncaught JS errors","Blocked member can still sign in; no status change visible; blocking action fails silently","unblock test member","Coverage Gap Analysis","Generated"
+"B2C-MBR-011","Unblock Member - Member Can Sign In Again","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; member currently blocked","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ACT] Select the blocked member and click Unblock or Activate
+4. [ACT] Confirm unblocking
+5. [ASSERT] Verify member status changes to Active
+6. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+7. [NAV] Sign in as the unblocked member
+8. [ASSERT] Verify sign-in succeeds","[DOM] Member status updated to Active in members list
+[STATE] Unblocked member can sign in successfully
+[STATE] Member has access to their org context","[API] member unblock mutation succeeds
+[CONSOLE] no uncaught JS errors","Unblocked member still cannot sign in; status not updating; unblock action fails","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-012","Blocked Member Status Visible in List","B2C Features > Members","Medium","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin user; at least one blocked member exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify blocked member shows distinct status indicator
+4. [ASSERT] Verify status label reads Blocked or Inactive
+5. [ASSERT] Verify active members have Active status","[DOM] Blocked members have visible Blocked or Inactive status badge
+[DOM] Active members have Active status badge
+[FORMAT] Status indicators use distinct colors or styling","[CONSOLE] no uncaught JS errors","No status differentiation between active and blocked members; status column missing; same styling for all statuses","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-013","Delegated Purchasing - Purchaser Order Goes to Approval","B2C Features > Members","Critical","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Org with approval workflow enabled; purchaser account with order amount threshold","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
+2. [ACT] Add products to cart exceeding approval threshold
+3. [NAV] Proceed to checkout
+4. [ACT] Complete checkout flow
+5. [ASSERT] Verify order status shows Pending Approval (not Confirmed)
+6. [ASSERT] Verify purchaser sees order in their orders list with pending status","[STATE] Order created with Pending Approval status
+[DOM] Order status label shows Pending Approval or equivalent
+[DOM] Order visible in purchaser's orders list","[API] order query returns status PendingApproval
+[CONSOLE] no uncaught JS errors","Order auto-confirmed without approval; wrong status shown; order not visible in purchaser's list","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-014","Delegated Purchasing - Approver Sees Pending Orders","B2C Features > Members","Critical","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org approver account; at least one order pending approval","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals or orders requiring approval
+3. [ASSERT] Verify pending order(s) are listed
+4. [ASSERT] Verify order details accessible: product and amount and purchaser name","[DOM] Pending approvals page/section loads
+[DOM] Pending order(s) listed with order details
+[DOM] Purchaser name visible on pending order
+[FORMAT] Order amount displayed correctly","[API] pending approvals query returns orders
+[CONSOLE] no uncaught JS errors","No pending orders visible to approver; approvals page missing; order details incomplete","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-015","Delegated Purchasing - Approve Order","B2C Features > Members","Critical","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org approver; pending order exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals
+3. [ACT] Click Approve on a pending order
+4. [ACT] Confirm approval
+5. [ASSERT] Verify order status changes to Approved or Processing
+6. [NAV] Log in as purchaser
+7. [ASSERT] Verify order status updated in purchaser's order list","[STATE] Order status changes from Pending Approval to Approved
+[DOM] Approval success message displayed
+[DOM] Purchaser sees updated order status","[API] order approval mutation succeeds
+[CONSOLE] no uncaught JS errors","Approval action fails; order status unchanged; purchaser not notified; wrong status after approval","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-016","Delegated Purchasing - Reject Order","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org approver; pending order exists","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
+2. [NAV] Navigate to pending approvals
+3. [ACT] Click Reject on a pending order
+4. [ACT] Optionally add rejection reason
+5. [ACT] Confirm rejection
+6. [ASSERT] Verify order status changes to Rejected
+7. [NAV] Log in as purchaser
+8. [ASSERT] Verify order shows Rejected status in purchaser's orders","[STATE] Order status changes to Rejected
+[DOM] Rejection success message displayed
+[DOM] Purchaser sees Rejected status on order","[API] order rejection mutation succeeds
+[CONSOLE] no uncaught JS errors","Rejection action fails; order still shows Pending; purchaser not seeing rejection; rejection reason lost","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-017","Delegated Purchasing - Amount Threshold Triggers Approval","B2C Features > Members","High","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:RESET_CART]
+Org with approval threshold; purchaser account","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}};sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
+2. [ACT] Add products to cart totaling BELOW threshold
+3. [ACT] Complete checkout
+4. [ASSERT] Verify order is confirmed immediately (no approval needed)
+5. [ACT] Add products to cart totaling ABOVE threshold
+6. [ACT] Complete checkout
+7. [ASSERT] Verify order goes to Pending Approval","[STATE] Below-threshold order: confirmed immediately
+[STATE] Above-threshold order: requires approval
+[MATH] Threshold boundary correctly applied","[API] below-threshold order status is Confirmed; above-threshold is PendingApproval
+[CONSOLE] no uncaught JS errors","All orders go to approval regardless of amount; threshold not enforced; below-threshold order stuck in pending","none","Coverage Gap Analysis","Generated"
+"B2C-MBR-018","Company Members Count Display","B2C Features > Members","Medium","BL-B2C-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Org admin; organization has known number of members","url={{FRONT_URL}};org_user={{ORG_USER_EMAIL}};org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
+2. [NAV] Navigate to /company/members
+3. [ASSERT] Verify member count is displayed
+4. [ASSERT] Verify count matches actual visible members","[DOM] Member count shown on page (header or footer)
+[MATH] Displayed count matches number of members in list
+[FORMAT] Count formatted properly","[CONSOLE] no uncaught JS errors","Member count missing; count does not match actual members; count not updating after invite/block","none","Coverage Gap Analysis","Generated"

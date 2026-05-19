@@ -1,0 +1,23 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4205-DISCOVER-RING,"Discover live configuration of CFG_RING (Text-required, maxLength=30)",GraphQL > xCart > Discovery,High,—,—,"Discovery — confirm CFG-017 Text section still works.","ring_id=@td(CFG_RING.id)","[GQL-OP get_config]
+  query {
+    productConfiguration(
+      configurableProductId: ""{{ring_id}}""
+      storeId: ""{{STORE_ID}}""
+    ) {
+      configurationSections {
+        id
+        name
+        type
+        isRequired
+        options {
+          id
+          text
+          quantity
+        }
+      }
+    }
+  }
+[GQL-EXEC get_config]","[ERRORS label=get_config] errors[] empty
+[DATA label=get_config] data.productConfiguration is non-null
+[COUNT label=get_config] data.productConfiguration.configurationSections.length >= 1",[EVIDENCE] Discovers section shape,errors[] non-empty,—,VCST-4205,Automated

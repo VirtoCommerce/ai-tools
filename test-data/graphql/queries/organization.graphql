@@ -4,7 +4,7 @@
 # purpose: Organization detail by id
 # required-vars: ORG_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: (future) organization suites
 

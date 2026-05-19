@@ -43,9 +43,6 @@ Summary: [Page/Flow] - [Specific issue]
 **Impact:**
 [Who is affected and how severely]
 
-**Suggested Fix:**
-[Technical suggestion if obvious]
-
 **Reproduction Rate:**
 [100% / intermittent / specific conditions]
 
@@ -96,8 +93,6 @@ Description:
 **Observations:**
 [Key findings from response analysis — what works, what doesn't, likely root cause]
 
-**Impact:**
-[Severity of business impact, who is affected, does it block release]
 
 **Environment Details:**
 - Environment: [QA / Stage]
@@ -109,8 +104,6 @@ Description:
 **Workaround:**
 [Available workaround or "None"]
 
-**Suggested Fix:**
-[Technical suggestion: class, method, likely issue]
 
 Severity: [Critical / High / Medium / Low]
 Priority: [P0 / P1 / P2 / P3]

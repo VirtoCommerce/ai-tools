@@ -17,7 +17,7 @@
 
 import { GraphQLResponse } from "./graphql-executor.js";
 
-export type AssertionKind = "ERRORS" | "DATA" | "NULL" | "COUNT" | "VAR";
+export type AssertionKind = "ERRORS" | "DATA" | "NULL" | "COUNT" | "VAR" | "PERF";
 
 export interface Assertion {
   raw: string;
@@ -42,7 +42,7 @@ export interface AssertionResult {
   message?: string;
 }
 
-const GQL_KINDS = new Set<AssertionKind>(["ERRORS", "DATA", "NULL", "COUNT", "VAR"]);
+const GQL_KINDS = new Set<AssertionKind>(["ERRORS", "DATA", "NULL", "COUNT", "VAR", "PERF"]);
 
 /**
  * Parse a multi-line Assertions column into Assertion + InfoAssertion arrays.
@@ -131,7 +131,29 @@ export function evaluateAssertion(
       return evaluateNullPredicate(assertion, response, predicate);
     case "COUNT":
       return evaluateCountPredicate(assertion, response, predicate);
+    case "PERF":
+      return evaluatePerfPredicate(assertion, response, predicate);
   }
+}
+
+/**
+ * Route a path expression to the correct root within a GraphQLResponse.
+ *
+ *   data.foo.bar  → r.data (existing default)
+ *   foo.bar       → r.data (bare path = data path)
+ *   errors[0].…   → r (full response — getByPath then walks .errors[0]…)
+ *   errors.0.…    → r
+ *   extensions.…  → r
+ *
+ * Authors get to write `errors[0].extensions.code` or `errors.0.message`
+ * without thinking about whether the data lives under r.data or r.errors.
+ */
+function resolveByPath(r: GraphQLResponse, path: string): unknown {
+  const cleaned = path.trim();
+  if (/^errors\b/.test(cleaned) || /^extensions\b/.test(cleaned)) {
+    return getByPath(r as unknown, cleaned);
+  }
+  return getByPath(r.data, cleaned);
 }
 
 function substituteVars(s: string, vars: Record<string, string>): string {
@@ -276,7 +298,7 @@ function evaluateDataPredicate(
   const nullMatch = predicate.match(/^(\S+)\s+is\s+(null|non-null)\b/i);
   if (nullMatch) {
     const [, path, want] = nullMatch;
-    const value = getByPath(r.data, path);
+    const value = resolveByPath(r, path);
     const isNull = value === null || value === undefined;
     const passed = want.toLowerCase() === "null" ? isNull : !isNull;
     return {
@@ -292,7 +314,7 @@ function evaluateDataPredicate(
   const guidMatch = predicate.match(/^(\S+)\s+is\s+non-empty\s+GUID\b/i);
   if (guidMatch) {
     const [, path] = guidMatch;
-    const value = getByPath(r.data, path);
+    const value = resolveByPath(r, path);
     const str = typeof value === "string" ? value : "";
     const guidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const passed = guidRe.test(str);
@@ -309,7 +331,7 @@ function evaluateDataPredicate(
   const regexMatch = predicate.match(/^(\S+)\s+matches\s+\/(.+)\/([gimsu]*)$/);
   if (regexMatch) {
     const [, path, pattern, flags] = regexMatch;
-    const value = getByPath(r.data, path);
+    const value = resolveByPath(r, path);
     const str = typeof value === "string" ? value : String(value);
     let passed = false;
     try {
@@ -334,10 +356,72 @@ function evaluateDataPredicate(
     };
   }
 
+  // Cross-path ordering: `<lhs-path> <op> <rhs-path>` where op is >= / <= / > / <.
+  // The numericMatch below covers `<path> <op> <literal>`; the arithMatch block
+  // below covers `=` / `≈` / `~=`. This branch fills the gap for ordering
+  // comparisons across two paths — primarily for ISO-8601 date sort verification
+  // (e.g. items.0.publishDate >= items.1.publishDate), but also works for any
+  // pair of numeric paths.
+  //
+  // Comparison rules:
+  //   - If both paths resolve to numbers (or numeric strings), compare numerically.
+  //   - Otherwise compare lexicographically as strings. ISO-8601 timestamps sort
+  //     correctly under string comparison; this is also how `Array.prototype.sort`
+  //     orders strings.
+  //
+  // Guarded by BOTH sides containing a `data.` path so we don't pre-empt the
+  // single-path-vs-literal branch below (`data.X.amount >= 100`).
+  const crossOrderMatch = predicate.match(/^(.+?)\s*(>=|<=|>|<)\s*(.+)$/);
+  if (crossOrderMatch) {
+    const [, lhsRaw, op, rhsRaw] = crossOrderMatch;
+    const stripBrackets = (s: string) => s.replace(/\[[^\]]*\]/g, "");
+    const lhsHasPath = /(?:^|[^\w])data\.\w/.test(stripBrackets(lhsRaw));
+    const rhsHasPath = /(?:^|[^\w])data\.\w/.test(stripBrackets(rhsRaw));
+    if (lhsHasPath && rhsHasPath) {
+      const lvNum = evaluateNumericExpression(lhsRaw, r);
+      const rvNum = evaluateNumericExpression(rhsRaw, r);
+      let passed = false;
+      let actualText: string;
+      if (typeof lvNum === "number" && typeof rvNum === "number") {
+        switch (op) {
+          case ">": passed = lvNum > rvNum; break;
+          case ">=": passed = lvNum >= rvNum; break;
+          case "<": passed = lvNum < rvNum; break;
+          case "<=": passed = lvNum <= rvNum; break;
+        }
+        actualText = `lhs=${lvNum} rhs=${rvNum}`;
+      } else {
+        const lhsValue = resolveByPath(r, lhsRaw.trim());
+        const rhsValue = resolveByPath(r, rhsRaw.trim());
+        if (lhsValue == null || rhsValue == null) {
+          actualText = `lhs=${jsonSummary(lhsValue)} rhs=${jsonSummary(rhsValue)} (one or both paths resolved to null)`;
+        } else {
+          const lhsStr = String(lhsValue);
+          const rhsStr = String(rhsValue);
+          switch (op) {
+            case ">": passed = lhsStr > rhsStr; break;
+            case ">=": passed = lhsStr >= rhsStr; break;
+            case "<": passed = lhsStr < rhsStr; break;
+            case "<=": passed = lhsStr <= rhsStr; break;
+          }
+          actualText = `lhs="${lhsStr}" rhs="${rhsStr}"`;
+        }
+      }
+      return {
+        raw: a.raw,
+        label: a.label,
+        kind: "DATA",
+        passed,
+        expected: `${lhsRaw.trim()} ${op} ${rhsRaw.trim()}`,
+        actual: actualText,
+      };
+    }
+  }
+
   const numericMatch = predicate.match(/^(\S+)\s*(>=|<=|>|<)\s*(-?\d+(?:\.\d+)?)\s*$/);
   if (numericMatch) {
     const [, path, op, nStr] = numericMatch;
-    const value = getByPath(r.data, path);
+    const value = resolveByPath(r, path);
     const n = Number(nStr);
     const actualNum = typeof value === "number" ? value : Number(value);
     let passed = false;
@@ -418,7 +502,7 @@ function evaluateDataPredicate(
   if (equalsMatch) {
     const [, path, rawExpected] = equalsMatch;
     const expectedStr = rawExpected.trim().replace(/^"|"$/g, "");
-    const value = getByPath(r.data, path);
+    const value = resolveByPath(r, path);
     const actualStr = typeof value === "string" ? value : JSON.stringify(value);
     const passed = actualStr === expectedStr;
     return {
@@ -505,7 +589,7 @@ function evaluateNullPredicate(
     };
   }
   const path = m[1];
-  const value = getByPath(r.data, path);
+  const value = resolveByPath(r, path);
   const isNull = value === null || value === undefined;
   return {
     raw: a.raw,
@@ -534,7 +618,7 @@ function evaluateCountPredicate(
     };
   }
   const [, path, op, nStr] = m;
-  const value = getByPath(r.data, path);
+  const value = resolveByPath(r, path);
   const n = Number(nStr);
   const actual = typeof value === "number" ? value : Array.isArray(value) ? value.length : NaN;
   let passed = false;
@@ -566,6 +650,64 @@ function evaluateCountPredicate(
   };
 }
 
+/**
+ * Evaluate a `[PERF label=L] elapsed_ms <op> <N>[ms|s]` predicate.
+ *
+ *   [PERF label=q] elapsed_ms < 500
+ *   [PERF label=q] elapsed_ms < 500ms
+ *   [PERF label=q] elapsed_ms <= 1s
+ *   [PERF label=q] elapsed_ms >= 0           (always true — useful as a probe)
+ *
+ * Threshold value is interpreted as milliseconds. Optional `ms` or `s`
+ * suffix is allowed; `s` multiplies by 1000.
+ *
+ * Always-passing case: when elapsed_ms can't be read from the response,
+ * fail loudly rather than silently — the whole point of promoting [PERF]
+ * from info-only to verdict-affecting is that perf regressions can fail.
+ */
+function evaluatePerfPredicate(
+  a: Assertion,
+  r: GraphQLResponse,
+  predicate: string
+): AssertionResult {
+  const m = predicate.match(/^elapsed_ms\s*(<=|>=|<|>|=|==)\s*(\d+(?:\.\d+)?)\s*(ms|s)?\s*$/i);
+  if (!m) {
+    return {
+      raw: a.raw,
+      label: a.label,
+      kind: "PERF",
+      passed: false,
+      expected: predicate,
+      actual: "unrecognized PERF predicate — expected `elapsed_ms <op> <N>[ms|s]`",
+      message: `Could not parse PERF predicate: "${predicate}"`,
+    };
+  }
+  const [, op, nStr, unit] = m;
+  const thresholdMs = Number(nStr) * (unit && unit.toLowerCase() === "s" ? 1000 : 1);
+  const actual = typeof r.elapsed_ms === "number" ? r.elapsed_ms : NaN;
+  let passed = false;
+  if (Number.isFinite(actual)) {
+    switch (op) {
+      case "<": passed = actual < thresholdMs; break;
+      case "<=": passed = actual <= thresholdMs; break;
+      case ">": passed = actual > thresholdMs; break;
+      case ">=": passed = actual >= thresholdMs; break;
+      case "=":
+      case "==": passed = actual === thresholdMs; break;
+    }
+  }
+  return {
+    raw: a.raw,
+    label: a.label,
+    kind: "PERF",
+    passed,
+    expected: `elapsed_ms ${op} ${thresholdMs}ms`,
+    actual: Number.isFinite(actual)
+      ? `elapsed_ms = ${actual}ms`
+      : "elapsed_ms not recorded on response",
+  };
+}
+
 export function getByPath(obj: unknown, path: string): unknown {
   // Accept both the natural "data.foo.bar" (author-facing) and the
   // internal shape where `obj` is already `response.data`. Strip a leading
@@ -579,7 +721,16 @@ export function getByPath(obj: unknown, path: string): unknown {
   //     from backend response-shape ordering shifts. Variables in the value
   //     position should be substituted (via {{VAR}}) before the path
   //     reaches getByPath.
-  const normalized = path.startsWith("data.") ? path.slice(5) : path === "data" ? "" : path;
+  // Author convenience: normalize `foo[N]` → `foo.[N]` so JS-style index
+  // syntax works alongside the existing dot-prefixed `foo.[N]` and bare
+  // numeric `foo.N`. Restricted to bare-digit brackets so JSONPath filter
+  // syntax (`foo[?key=value]`, `foo[*?key=value]`) is untouched.
+  const bracketNormalized = path.replace(/([A-Za-z_]\w*)\[(\d+)\]/g, "$1.[$2]");
+  const normalized = bracketNormalized.startsWith("data.")
+    ? bracketNormalized.slice(5)
+    : bracketNormalized === "data"
+    ? ""
+    : bracketNormalized;
   const parts = normalized ? normalized.split(".") : [];
   let cur: unknown = obj;
   for (const p of parts) {
@@ -642,7 +793,7 @@ function evaluateNumericExpression(
   // hyphens, `*?`, `?key=value` etc. all work.
   const PATH_RE = /data(?:\.(?:[A-Za-z_]\w*(?:\[[^\]]+\])?|\d+))+/g;
   const replaced = expr.replace(PATH_RE, (match) => {
-    const value = getByPath(r.data, match);
+    const value = resolveByPath(r, match);
     if (typeof value === "number" && Number.isFinite(value)) return String(value);
     if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value))) {
       return value;

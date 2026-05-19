@@ -26,6 +26,7 @@ Execute a single suite as an Agent Teams teammate. Report via `SendMessage` to t
 - `.claude/agents/knowledge/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
 - `.claude/agents/knowledge/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: tag grammar, predicate shapes, path/filter syntax, schema validation, common failure modes. Read this when triaging "why is GQL-XXX BLOCKED?" before retrying or escalating.
 - `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema for cross-checking DV-006…DV-011 schema-mismatch errors.
+- `.claude/agents/knowledge/live-discovery.md` — runtime data-resolution policy: before retrying a BLOCKED case as "fixture drift", check whether a `[GQL-OP]+[GQL-CAPTURE]` discovery step (CSV) or `scripts/lib/live-discover.ts` call (interactive) would resolve the missing entity at runtime instead of re-seeding. Covers the `AGENT-TEST-` prefix from `scripts/lib/random-data.ts` for sweep-friendly unique inputs.
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if ambiguous.
 

@@ -4,7 +4,7 @@
 # purpose: Single order detail — standard field selection (id/status/items/addresses/inPayments/shipments)
 # required-vars: ORDER_NUMBER (String)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: GQL-012
 

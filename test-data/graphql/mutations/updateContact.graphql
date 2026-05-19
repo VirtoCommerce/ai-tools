@@ -4,7 +4,7 @@
 # purpose: Update contact profile fields (firstName/lastName required to preserve)
 # required-vars: CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String)
 # optional-vars: PHONES (String[] JSON encoded), EMAILS (String[] JSON encoded)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues:
 #   - BL: EnableNoHtmlTagsValidation rejects HTML in phones
 #   - BL: MaxLength(64) on phones

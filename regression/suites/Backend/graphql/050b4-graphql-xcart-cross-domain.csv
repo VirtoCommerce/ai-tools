@@ -1,19 +1,16 @@
+
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-013,"xOrder — createOrderFromCart Happy Path","GraphQL > xOrder",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-005; BL-ORD-005,ECL-14.1; ECL-2.1,"Runner-native. Full checkout → createOrderFromCart. Uses an isolated named cart (AGENT-TEST-ORDER-013) to avoid state leaks from other order-creation tests that run against the same default cart. CREATES A REAL ORDER — Admin cleanup required if needed.","—","[AUTH role=ORG_USER]
+CRX-GQL-013,"xOrder — createOrderFromCart Happy Path","GraphQL > xOrder",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-005; BL-ORD-005,ECL-10.2; ECL-2.1,"Runner-native. Full checkout → createOrderFromCart. Uses an isolated named cart (AGENT-TEST-ORDER-013) to avoid state leaks from other order-creation tests that run against the same default cart. CREATES A REAL ORDER — Admin cleanup required if needed.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
-[GQL-EXEC setup_prod]
-[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP add_item]
   mutation {
     addItem(command: {
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       cartName: ""AGENT-TEST-ORDER-013""
-      productId: ""{{PRODUCT_ID}}"" quantity: 1
+      productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1
     }) { id }
   }
 [GQL-EXEC add_item]
@@ -44,23 +41,19 @@ GQL-013,"xOrder — createOrderFromCart Happy Path","GraphQL > xOrder",Critical,
 [GQL-EXEC create_order]","[ERRORS label=create_order] errors[] empty
 [DATA label=create_order] data.createOrderFromCart.id is non-empty GUID
 [DATA label=create_order] data.createOrderFromCart.number is non-null
-[DATA label=create_order] data.createOrderFromCart.status is non-null","[EVIDENCE] order.status should be New / Processing / Payment required on happy path — document actual value","errors[] non-empty; order.id null; status empty",Creates real order — cancel via Admin API if needed,xAPI; graphql-schema.md; order-creation-matrix.md,Draft
-GQL-021,"xCart — Cart Uses Live Price After Admin Price Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"BLOCKED: Requires Admin API access to flip a product's price between two values within the test run. Runner has no admin-auth or REST PUT helper for pricelists. Mark Draft until runner gains Admin REST primitives.","—","[MANUAL-BLOCKED] Needs admin REST PUT /api/pricing/pricelists/<id>/prices. Execute via legacy GraphiQL + Postman.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after price change",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
-GQL-023,"xCart — Price Update Reflected on Re-query After Admin Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"BLOCKED: Same as GQL-021 — needs Admin REST price-change primitive.","—","[MANUAL-BLOCKED] Same as GQL-021.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after re-query",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
-GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-14.1; ECL-2.1,"Runner-native. Full checkout + createOrderFromCart + second createOrderFromCart on same cartId. Expects second call to fail gracefully (not create duplicate order). CREATES A REAL ORDER.","—","[AUTH role=ORG_USER]
+[DATA label=create_order] data.createOrderFromCart.status is non-null","[EVIDENCE] order.status should be New / Processing / Payment required on happy path — document actual value","errors[] non-empty; order.id null; status empty",Creates real order — cancel via Admin API if needed,xAPI; graphql-schema.md; order-creation-matrix.md; Pinned to stable @td(BUYABLE_NO_MIN_QTY.id) — fixes false-FAIL from product search non-determinism. See BUG-xAPI-addItem-Silent-NoOp-On-Product-Availability-Gate.md. (2026-05-16),synced
+CRX-GQL-021,"xCart — Cart Uses Live Price After Admin Price Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"BLOCKED: Requires Admin API access to flip a product's price between two values within the test run. Runner has no admin-auth or REST PUT helper for pricelists. Mark Draft until runner gains Admin REST primitives.","—","[MANUAL-BLOCKED] Needs admin REST PUT /api/pricing/pricelists/<id>/prices. Execute via legacy GraphiQL + Postman.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after price change",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
+CRX-GQL-023,"xCart — Price Update Reflected on Re-query After Admin Change","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"BLOCKED: Same as CRX-GQL-021 — needs Admin REST price-change primitive.","—","[MANUAL-BLOCKED] Same as CRX-GQL-021.","[MANUAL] blocked on Admin API","[EVIDENCE] Track as Draft","cart.placedPrice stale after re-query",Restore price + clearCart,xAPI; Coverage Gap Analysis BL-CROSS-002,Draft
+CRX-GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-10.2; ECL-2.1,"Runner-native. Full checkout + createOrderFromCart + second createOrderFromCart on same cartId. Expects second call to fail gracefully (not create duplicate order). CREATES A REAL ORDER.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
-[GQL-EXEC setup_prod]
-[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
@@ -83,21 +76,17 @@ GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","GraphQL >
 [GQL-OP create_second]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
 [GQL-EXEC create_second]","[ERRORS label=create_first] errors[] empty
-[DATA label=create_first] data.createOrderFromCart.id is non-null","[EVIDENCE] create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id.","Two orders created with different ids (duplicate inventory decrement — P0); HTTP 500; silent success",Creates real order — Admin cleanup if needed,xAPI; graphql-schema.md; BL-ORD-005 order idempotency,Automated
-GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-14.1; ECL-9.1,"Runner-native. Covered pragmatically by GQL-024 — the second createOrderFromCart assertion. This case adds explicit graceful-error verification for the second attempt on a converted cart.","—","[AUTH role=ORG_USER]
+[DATA label=create_first] data.createOrderFromCart.id is non-null","[EVIDENCE] create_second: either (a) errors[] non-empty with cart-already-converted message OR (b) returns the same order id as create_first (idempotent). Either is acceptable (BL-ORD-005). No duplicate order with different id.","Two orders created with different ids (duplicate inventory decrement — P0); HTTP 500; silent success",Creates real order — Admin cleanup if needed,xAPI; graphql-schema.md; BL-ORD-005 order idempotency; Pinned to stable @td(BUYABLE_NO_MIN_QTY.id) — fixes false-FAIL from product search non-determinism. See BUG-xAPI-addItem-Silent-NoOp-On-Product-Availability-Gate.md. (2026-05-16),synced
+CRX-GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","GraphQL > xOrder > Cross-Domain",Critical,BL-GQL-001; BL-ORD-005,ECL-10.2; ECL-10.2,"Runner-native. Covered pragmatically by CRX-GQL-024 — the second createOrderFromCart assertion. This case adds explicit graceful-error verification for the second attempt on a converted cart.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
-[GQL-EXEC setup_prod]
-[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
@@ -119,21 +108,17 @@ GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","Graph
 [GQL-EXEC create_first]
 [GQL-OP create_second]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id } }
-[GQL-EXEC create_second]","[ERRORS label=create_first] errors[] empty","[EVIDENCE] create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash.","HTTP 500; unhandled exception; stack trace in errors[]; duplicate order created",Creates real order,xAPI; BL-ORD-005 graceful handling,Automated
-GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-010,ECL-14.1; ECL-2.1,"Runner-native. Create order, then attempt to addItem to the same (now converted) cartId → expect error or no-op (no items added).","—","[AUTH role=ORG_USER]
+[GQL-EXEC create_second]","[ERRORS label=create_first] errors[] empty","[EVIDENCE] create_second: response is structured (either errors[] with cart-converted message OR same id). NO HTTP 500 or stack trace in errors[].message. No server crash.","HTTP 500; unhandled exception; stack trace in errors[]; duplicate order created",Creates real order,xAPI; BL-ORD-005 graceful handling; Pinned to stable @td(BUYABLE_NO_MIN_QTY.id) — fixes false-FAIL from product search non-determinism. See BUG-xAPI-addItem-Silent-NoOp-On-Product-Availability-Gate.md. (2026-05-16),synced
+CRX-GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart > Cross-Domain",Critical,BL-GQL-001; BL-GQL-004; BL-CROSS-010,ECL-10.2; ECL-2.1,"Runner-native. Create order, then attempt to addItem to the same (now converted) cartId → expect error or no-op (no items added).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
-[GQL-EXEC setup_prod]
-[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
@@ -158,14 +143,14 @@ GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart > Cro
     addItem(command: {
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       cartId: ""{{CART_ID}}""
-      productId: ""{{PRODUCT_ID}}"" quantity: 1
+      productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1
     }) { id itemsCount status }
   }
-[GQL-EXEC add_after_convert]","[ERRORS label=create_order] errors[] empty","[EVIDENCE] add_after_convert: data.addItem.status should reflect converted/processed state OR errors[] non-empty. The cart must NOT accept new items. NO HTTP 500.","Converted cart silently accepts new addItem (P0 — duplicate inventory decrement after order); HTTP 500",Creates real order,xAPI; BL-CROSS-010 cart lifecycle,Draft
-GQL-027,"xCart — Currency Switch Updates Line Item Prices","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Needs changeCartCurrency mutation or equivalent + a product with prices in both USD and EUR. Runner currently filters to USD-only products (price.USD filter). Complex multi-currency fixture required. Mark Draft.","—","[MANUAL-BLOCKED] Needs multi-currency product + changeCartCurrency mutation. Execute via legacy GraphiQL.","[MANUAL] blocked on multi-currency fixture","[EVIDENCE] Track as Draft","Currency switch leaves stale USD prices on items after flip to EUR",Restore cart currency,xAPI; BL-CROSS-003 currency,Draft
-GQL-028,"xCart — Shipping Rates Recalculate After Currency Switch","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Same complexity as GQL-027 — multi-currency cart setup.","—","[MANUAL-BLOCKED] Same as GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Shipping rates stale in old currency",—,xAPI; BL-CROSS-003,Draft
-GQL-029,"xCart — Product Without Currency Price Flagged","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"BLOCKED: Same complexity — needs deliberate multi-currency cart setup + product with missing-currency price.","—","[MANUAL-BLOCKED] Same as GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Product silently shows 0.00 in new currency",—,xAPI; BL-CROSS-003,Draft
-GQL-053,"xOrder — createOrderFromCart with Empty Cart","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Clears cart then attempts createOrderFromCart on empty cart. Expects errors[] non-empty with empty-cart message.","—","[AUTH role=ORG_USER]
+[GQL-EXEC add_after_convert]","[ERRORS label=create_order] errors[] empty","[EVIDENCE] add_after_convert: data.addItem.status should reflect converted/processed state OR errors[] non-empty. The cart must NOT accept new items. NO HTTP 500.","Converted cart silently accepts new addItem (P0 — duplicate inventory decrement after order); HTTP 500",Creates real order,xAPI; BL-CROSS-010 cart lifecycle; Pinned to stable @td(BUYABLE_NO_MIN_QTY.id) — fixes false-FAIL from product search non-determinism. See BUG-xAPI-addItem-Silent-NoOp-On-Product-Availability-Gate.md. (2026-05-16),synced
+CRX-GQL-027,"xCart — Currency Switch Updates Line Item Prices","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"BLOCKED: Needs changeCartCurrency mutation or equivalent + a product with prices in both USD and EUR. Runner currently filters to USD-only products (price.USD filter). Complex multi-currency fixture required. Mark Draft.","—","[MANUAL-BLOCKED] Needs multi-currency product + changeCartCurrency mutation. Execute via legacy GraphiQL.","[MANUAL] blocked on multi-currency fixture","[EVIDENCE] Track as Draft","Currency switch leaves stale USD prices on items after flip to EUR",Restore cart currency,xAPI; BL-CROSS-003 currency,Draft
+CRX-GQL-028,"xCart — Shipping Rates Recalculate After Currency Switch","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"BLOCKED: Same complexity as CRX-GQL-027 — multi-currency cart setup.","—","[MANUAL-BLOCKED] Same as CRX-GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Shipping rates stale in old currency",—,xAPI; BL-CROSS-003,Draft
+CRX-GQL-029,"xCart — Product Without Currency Price Flagged","GraphQL > xCart > Cross-Domain",High,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"BLOCKED: Same complexity — needs deliberate multi-currency cart setup + product with missing-currency price.","—","[MANUAL-BLOCKED] Same as CRX-GQL-027.","[MANUAL]","[EVIDENCE] Track as Draft","Product silently shows 0.00 in new currency",—,xAPI; BL-CROSS-003,Draft
+CRX-GQL-053,"xOrder — createOrderFromCart with Empty Cart","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-10.2,"Runner-native. Clears cart then attempts createOrderFromCart on empty cart. Expects errors[] non-empty with empty-cart message.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -177,19 +162,19 @@ GQL-053,"xOrder — createOrderFromCart with Empty Cart","GraphQL > xOrder > Neg
 [GQL-OP create_empty]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number status } }
 [GQL-EXEC create_empty]","[DATA label=create_empty] data.createOrderFromCart is null","[EVIDENCE] create_empty: either errors[] non-empty with empty-cart/validation message OR data.createOrderFromCart is null. NO HTTP 500 or server crash. Order must NOT be created.","Order created with 0 items (P0: empty order); HTTP 500; stack trace in errors[].message",none — cart already empty,xAPI; BL-ORD-005 empty-cart validation,Automated
-GQL-054,"xOrder — createOrderFromCart with Invalid cartId","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Attempts createOrderFromCart with a zero-GUID cartId. Expects graceful error.","bogus_cart=00000000-0000-0000-0000-000000000001","[AUTH role=ORG_USER]
+CRX-GQL-054,"xOrder — createOrderFromCart with Invalid cartId","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-10.2,"Runner-native. Attempts createOrderFromCart with a zero-GUID cartId. Expects graceful error.","bogus_cart=00000000-0000-0000-0000-000000000001","[AUTH role=ORG_USER]
 [GQL-OP create_bogus]
   mutation {
     createOrderFromCart(command: { cartId: ""00000000-0000-0000-0000-000000000001"" }) { id number status }
   }
 [GQL-EXEC create_bogus]","[ERRORS label=create_bogus] errors[] non-empty — cart not found (BL-GQL-001)
 [DATA label=create_bogus] data.createOrderFromCart is null","[EVIDENCE] Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path.","Order created for non-existent cart; HTTP 500; stack trace in errors[].message",none,xAPI; BL-GQL-001 error contract,Automated
-GQL-055,"xOrder — createOrderFromCart Without Auth","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. No [AUTH] block — attempts createOrderFromCart anonymously. Expects Unauthorized.","—","[GQL-OP create_noauth]
+CRX-GQL-055,"xOrder — createOrderFromCart Without Auth","GraphQL > xOrder > Negative",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. No [AUTH] block — attempts createOrderFromCart anonymously. Expects Unauthorized.","—","[GQL-OP create_noauth]
   mutation { createOrderFromCart(command: { cartId: ""00000000-0000-0000-0000-000000000002"" }) { id } }
 [GQL-EXEC create_noauth]","[ERRORS label=create_noauth] errors[] non-empty — Unauthorized (BL-GQL-004)
 [DATA label=create_noauth] data.createOrderFromCart is null","[EVIDENCE] errors[].extensions.code = Unauthorized. No sensitive info in messages.","Order created without auth (P0 security); data non-null; HTTP 500",none,xAPI; BL-GQL-004 auth,Automated
-GQL-095,"Catalog — productConfiguration Query","GraphQL > Catalog > productConfiguration",High,BL-GQL-001; BL-GQL-002,ECL-14.1; ECL-2.1,"BLOCKED: Requires a configurable product ID (from aliases.json CFG-* entries). productConfiguration query returns ConfigurationSections for a given configurable product.","—","[MANUAL-BLOCKED] Needs configurable product GUID captured at runtime. Legacy suite runs via GraphiQL.","[MANUAL] blocked on configurable product fixture","[EVIDENCE] Track as Draft","—",none — read-only,xAPI; BL-CFG-001,Draft
-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level CartType field from graphql-schema.md. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+CRX-GQL-095,"Catalog — productConfiguration Query","GraphQL > Catalog > productConfiguration",High,BL-GQL-001; BL-GQL-002,ECL-10.2; ECL-2.1,"BLOCKED: Requires a configurable product ID (from aliases.json CFG-* entries). productConfiguration query returns ConfigurationSections for a given configurable product.","—","[MANUAL-BLOCKED] Needs configurable product GUID captured at runtime. Legacy suite runs via GraphiQL.","[MANUAL] blocked on configurable product fixture","[EVIDENCE] Track as Draft","—",none — read-only,xAPI; BL-CFG-001,Draft
+CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level CartType field from graphql-schema.md. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -227,13 +212,13 @@ GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schem
 [DATA label=cart_full] data.cart.storeId is non-null
 [DATA label=cart_full] data.cart.total is non-null
 [DATA label=cart_full] data.cart.items is non-null","[ROUNDTRIP label=cart_full] re-execute — identical response structure","Any CartType field renamed/removed (DV-009); MoneyType drift (currencyCode vs currency.code)",none — read-only,xAPI; graphql-schema.md — CartType full coverage,Automated
-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Adds an item, then queries every LineItemType field. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Adds an item, then queries every LineItemType field. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
@@ -268,9 +253,9 @@ GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > S
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=cart_items_full] errors[] empty
 [DATA label=cart_items_full] data.cart.items is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift",none — clearCart at end,xAPI; graphql-schema.md — LineItemType full coverage,Automated
-GQL-099,"Catalog — productConfiguration Query Exposes maxLength","GraphQL > Catalog > productConfiguration > Schema",High,BL-GQL-002; BL-CFG-001,ECL-2.1,"BLOCKED: Requires a configurable product with a Text section that has maxLength set. Legacy suite covers this via specific CFG-* fixtures. Mark Draft until runner has configurable-product primitives.","—","[MANUAL-BLOCKED] Needs configurable-product Text section fixture.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength field missing from productConfiguration schema",none,xAPI; BL-CFG-001,Draft
-GQL-100,"xCart — addItem Rejects CustomText Exceeding Section MaxLength","GraphQL > xCart > Configuration Validation",High,BL-GQL-001; BL-CFG-001,ECL-14.1; ECL-2.1,"BLOCKED: Needs (a) configurable product with Text section (maxLength), (b) addItem with configurationSections payload exceeding maxLength. Complex fixture + mutation shape.","—","[MANUAL-BLOCKED] Needs configurable-product Text section with maxLength.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength not enforced; oversized custom text silently accepted",none,xAPI; BL-CFG-001 validation,Draft
-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean Rejection (VCST-4960)","GraphQL > Cart > Cross-Domain Validation",Medium,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Cross-domain validation: add a regular (non-configurable) product to cart via @td(CFG_HOODIE.id) (confirmed non-configurable alias), capture its lineItemId, then call changeCartConfiguredItem referencing that lineItemId with any configurationSections payload. Verifies the validation is not limited to configurable products — the mutation must reject cleanly (validationErrors[] non-empty) without HTTP 500 or data corruption.","plain_product_id=@td(CFG_HOODIE.id)","[AUTH role=ORG_USER]
+CRX-GQL-099,"Catalog — productConfiguration Query Exposes maxLength","GraphQL > Catalog > productConfiguration > Schema",High,BL-GQL-002; BL-CFG-001,ECL-2.1,"BLOCKED: Requires a configurable product with a Text section that has maxLength set. Legacy suite covers this via specific CFG-* fixtures. Mark Draft until runner has configurable-product primitives.","—","[MANUAL-BLOCKED] Needs configurable-product Text section fixture.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength field missing from productConfiguration schema",none,xAPI; BL-CFG-001,Draft
+CRX-GQL-100,"xCart — addItem Rejects CustomText Exceeding Section MaxLength","GraphQL > xCart > Configuration Validation",High,BL-GQL-001; BL-CFG-001,ECL-10.2; ECL-2.1,"BLOCKED: Needs (a) configurable product with Text section (maxLength), (b) addItem with configurationSections payload exceeding maxLength. Complex fixture + mutation shape.","—","[MANUAL-BLOCKED] Needs configurable-product Text section with maxLength.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength not enforced; oversized custom text silently accepted",none,xAPI; BL-CFG-001 validation,Draft
+CRX-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean Rejection (VCST-4960)","GraphQL > Cart > Cross-Domain Validation",Medium,"BL-GQL-001; BL-CART-001","ECL-10.2; ECL-10.2","Runner-native. ORG_USER. Cross-domain validation: add a regular (non-configurable) product to cart via @td(CFG_HOODIE.id) (confirmed non-configurable alias), capture its lineItemId, then call changeCartConfiguredItem referencing that lineItemId with any configurationSections payload. Verifies the validation is not limited to configurable products — the mutation must reject cleanly (validationErrors[] non-empty) without HTTP 500 or data corruption.","plain_product_id=@td(CFG_HOODIE.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -300,7 +285,7 @@ GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean Reje
 [DATA label=add_plain] data.addItem.itemsCount = 1
 [ERRORS label=change_on_plain] errors[] empty
 [COUNT label=change_on_plain] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Non-configurable lineItem has no catalog configurationSections — any sectionId will fail catalog lookup. Mutation must reject gracefully. Record actual errorCode vs the configurable-product variant (may differ). NOTE: verify CFG_HOODIE alias resolves to a non-configurable product (was originally tagged for hoodie variant tests but suitable here).","HTTP 500 on non-configurable target (unhandled null product config); errors[] non-empty at transport level (GraphQL exception escaped); configurationItems populated unexpectedly on a plain item",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; Cross-domain validation (050b4 scope)",Draft
-GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-GQL-001","ECL-14.1","Runner-native. ORG_USER. VCST-5083 regression: pre-fix NoLockService caused lost-update under concurrent addItem. Simulates race window via 5 rapid sequential addItem calls for same productId (qty=1 each). Post-fix expectation: itemsQuantity=5, itemsCount=1 (BL-CART-001 merge rule).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRX-GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-GQL-001","ECL-10.2","Runner-native. ORG_USER. VCST-5083 regression: pre-fix NoLockService caused lost-update under concurrent addItem. Simulates race window via 5 rapid sequential addItem calls for same productId (qty=1 each). Post-fix expectation: itemsQuantity=5, itemsCount=1 (BL-CART-001 merge rule).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -333,7 +318,7 @@ GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.itemsCount = 1
 [DATA label=read_back] data.cart.itemsQuantity = 5","[EVIDENCE] BL-CART-001: addItem accumulates quantity on same productId. itemsCount stays 1; itemsQuantity reaches 5.","itemsQuantity < 5 (lost-update — pre-fix lock bug); itemsCount > 1 (duplicate lines)",cleanup_post inline,"VCST-5083; BL-CART-001; xAPI addItem lock regression; XCart 3.1013.0 fix",Draft
-GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reaches Empty","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-CART-008","ECL-14.1; ECL-9.1","Runner-native. ORG_USER. VCST-5083 race window: addItem → removeCartItem with captured lineItemId. Post-fix: cart empty (itemsCount=0). Pre-fix: stale-read race could no-op the remove.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRX-GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reaches Empty","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-CART-008","ECL-10.2; ECL-10.2","Runner-native. ORG_USER. VCST-5083 race window: addItem → removeCartItem with captured lineItemId. Post-fix: cart empty (itemsCount=0). Pre-fix: stale-read race could no-op the remove.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]

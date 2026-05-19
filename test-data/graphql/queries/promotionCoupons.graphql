@@ -4,7 +4,7 @@
 # purpose: List active promotion coupons available to a user in a store (paginated)
 # required-vars: (none)
 # optional-vars: (all passed via GQL operation variables — see gql-vars)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues: (none)
 # gql-vars: { "cultureName": "String!", "storeId": "String!", "userId": "String!", "first": "Int", "after": "String", "sort": "String" }
 # runner-note: Pass variables via [GQL-VARS label] JSON

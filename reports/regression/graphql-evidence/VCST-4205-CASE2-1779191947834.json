@@ -1,0 +1,494 @@
+{
+  "caseId": "VCST-4205-CASE2",
+  "title": "Save-for-Later — moveFromSavedForLater restores configuration to active cart",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\tests\\Sprint-current\\VCST-4205\\evidence\\backend\\vcst-4205-cases.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-19T11:59:07.833Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-19T11:59:00.835Z",
+      "expiresAt": "2026-05-19T12:28:59.835Z"
+    }
+  ],
+  "variables": {
+    "ring_id": "750d36bd-5d1a-4261-898d-e506f89e5184",
+    "section_text_id": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+    "text_a": "AGENT-TEST-CFG-A",
+    "text_b": "AGENT-TEST-CFG-B",
+    "text_c": "AGENT-TEST-CFG-C",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "LINE_0": "32d0c519-48c9-40c3-90e7-347fba37afb4",
+    "LINE_1": "70912a0c-be2d-4e6b-81e6-01b7e97600f1",
+    "LINE_2": "8f5aecf2-d07d-4cd2-9b6e-aa5ef5d4b5a8",
+    "SAVED_0_ID": "52e5399b-29e8-4068-a38c-b9efc474c57c",
+    "SAVED_0_TEXT": "AGENT-TEST-CFG-A",
+    "SAVED_1_ID": "c20fb271-83d2-4126-afc6-c29b3de8b3c7",
+    "SAVED_1_TEXT": "AGENT-TEST-CFG-B",
+    "SAVED_2_ID": "d5dc68f3-72de-422e-be41-7532c1755c6a",
+    "SAVED_2_TEXT": "AGENT-TEST-CFG-C"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 140
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre_main",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1090
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre_saved",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"Saved for later\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "fce63f22-844c-4531-9499-5196e4d33f97",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1227
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_a",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-CFG-A\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1332
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_b",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-CFG-B\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 579
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_c",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-CFG-C\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 536
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_cart",
+      "query": "query {\n    cart(storeId: \"B2B-store\" currencyCode: \"USD\" userId: \"user-acme-store-maintainer-1\" cultureName: \"en-US\" cartName: \"default\") {\n      id\n      items { id configurationItems { customText } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": [
+              {
+                "id": "32d0c519-48c9-40c3-90e7-347fba37afb4",
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-CFG-C"
+                  }
+                ]
+              },
+              {
+                "id": "70912a0c-be2d-4e6b-81e6-01b7e97600f1",
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-CFG-B"
+                  }
+                ]
+              },
+              {
+                "id": "8f5aecf2-d07d-4cd2-9b6e-aa5ef5d4b5a8",
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-CFG-A"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 271
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "move_all_saved",
+      "query": "mutation {\n    moveToSavedForLater(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" currencyCode: \"USD\" cultureName: \"en-US\"\n      lineItemIds: [\"32d0c519-48c9-40c3-90e7-347fba37afb4\", \"70912a0c-be2d-4e6b-81e6-01b7e97600f1\", \"8f5aecf2-d07d-4cd2-9b6e-aa5ef5d4b5a8\"]\n    }) {\n      cart { id }\n      list { id items { id configurationItems { customText } } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "moveToSavedForLater": {
+            "cart": {
+              "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+            },
+            "list": {
+              "id": "74bb116f-5230-40b7-8f6e-31dcb3b4ee1e",
+              "items": [
+                {
+                  "id": "52e5399b-29e8-4068-a38c-b9efc474c57c",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-A"
+                    }
+                  ]
+                },
+                {
+                  "id": "c20fb271-83d2-4126-afc6-c29b3de8b3c7",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                },
+                {
+                  "id": "d5dc68f3-72de-422e-be41-7532c1755c6a",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-C"
+                    }
+                  ]
+                },
+                {
+                  "id": "878515d6-75f1-4aaa-b285-1cd9f29bf124",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-A"
+                    }
+                  ]
+                },
+                {
+                  "id": "d907867e-f726-4279-aa8a-d2b2d58c4411",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                },
+                {
+                  "id": "fb1ce811-acc3-4426-b310-653f9a13f1ba",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-A"
+                    }
+                  ]
+                },
+                {
+                  "id": "e3d1a89a-f38f-499b-a3ec-1c0101187deb",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-C"
+                    }
+                  ]
+                },
+                {
+                  "id": "fbbc3276-af2e-4976-ab60-35fb8cb87942",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 635
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "move_b_back",
+      "query": "mutation {\n    moveFromSavedForLater(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" currencyCode: \"USD\" cultureName: \"en-US\"\n      lineItemIds: [\"52e5399b-29e8-4068-a38c-b9efc474c57c\"]\n    }) {\n      cart {\n        id\n        itemsCount\n        items {\n          id\n          productId\n          quantity\n          configurationItems { sectionId type customText productId selectedForCheckout }\n        }\n      }\n      list {\n        id\n        itemsCount\n        items { id configurationItems { customText } }\n      }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "moveFromSavedForLater": {
+            "cart": {
+              "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+              "itemsCount": 1,
+              "items": [
+                {
+                  "id": "78eff68a-7d75-4fec-bef3-8dff7fdf2e82",
+                  "productId": "750d36bd-5d1a-4261-898d-e506f89e5184",
+                  "quantity": 1,
+                  "configurationItems": [
+                    {
+                      "sectionId": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+                      "type": "Text",
+                      "customText": "AGENT-TEST-CFG-A",
+                      "productId": null,
+                      "selectedForCheckout": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "list": {
+              "id": "74bb116f-5230-40b7-8f6e-31dcb3b4ee1e",
+              "itemsCount": 7,
+              "items": [
+                {
+                  "id": "c20fb271-83d2-4126-afc6-c29b3de8b3c7",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                },
+                {
+                  "id": "d5dc68f3-72de-422e-be41-7532c1755c6a",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-C"
+                    }
+                  ]
+                },
+                {
+                  "id": "878515d6-75f1-4aaa-b285-1cd9f29bf124",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-A"
+                    }
+                  ]
+                },
+                {
+                  "id": "d907867e-f726-4279-aa8a-d2b2d58c4411",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                },
+                {
+                  "id": "fb1ce811-acc3-4426-b310-653f9a13f1ba",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-A"
+                    }
+                  ]
+                },
+                {
+                  "id": "e3d1a89a-f38f-499b-a3ec-1c0101187deb",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-C"
+                    }
+                  ]
+                },
+                {
+                  "id": "fbbc3276-af2e-4976-ab60-35fb8cb87942",
+                  "configurationItems": [
+                    {
+                      "customText": "AGENT-TEST-CFG-B"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 661
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post_main",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 293
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post_saved",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"Saved for later\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "fce63f22-844c-4531-9499-5196e4d33f97",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 214
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=move_b_back] errors[] empty",
+      "label": "move_b_back",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=move_b_back] data.moveFromSavedForLater.cart.items.length = 1",
+      "label": "move_b_back",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.cart.items.length = 1",
+      "actual": "data.moveFromSavedForLater.cart.items.length = 1"
+    },
+    {
+      "raw": "[COUNT label=move_b_back] data.moveFromSavedForLater.list.items.length >= 2",
+      "label": "move_b_back",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.list.items.length >= 2",
+      "actual": "data.moveFromSavedForLater.list.items.length = 7"
+    },
+    {
+      "raw": "[DATA label=move_b_back] data.moveFromSavedForLater.cart.items.0.productId = {{ring_id}}",
+      "label": "move_b_back",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.cart.items.0.productId = 750d36bd-5d1a-4261-898d-e506f89e5184",
+      "actual": "data.moveFromSavedForLater.cart.items.0.productId = 750d36bd-5d1a-4261-898d-e506f89e5184"
+    },
+    {
+      "raw": "[DATA label=move_b_back] data.moveFromSavedForLater.cart.items.0.configurationItems.0.customText = {{SAVED_0_TEXT}}",
+      "label": "move_b_back",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.cart.items.0.configurationItems.0.customText = AGENT-TEST-CFG-A",
+      "actual": "data.moveFromSavedForLater.cart.items.0.configurationItems.0.customText = AGENT-TEST-CFG-A"
+    },
+    {
+      "raw": "[DATA label=move_b_back] data.moveFromSavedForLater.list.items.0.configurationItems.0.customText is non-null",
+      "label": "move_b_back",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.list.items.0.configurationItems.0.customText is non-null",
+      "actual": "data.moveFromSavedForLater.list.items.0.configurationItems.0.customText = \"AGENT-TEST-CFG-B\""
+    },
+    {
+      "raw": "[DATA label=move_b_back] data.moveFromSavedForLater.list.items.1.configurationItems.0.customText is non-null",
+      "label": "move_b_back",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.moveFromSavedForLater.list.items.1.configurationItems.0.customText is non-null",
+      "actual": "data.moveFromSavedForLater.list.items.1.configurationItems.0.customText = \"AGENT-TEST-CFG-C\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] PR #118 moveFromSavedForLater restores ConfigurationItems intact",
+      "layer": "EVIDENCE",
+      "note": "PR #118 moveFromSavedForLater restores ConfigurationItems intact",
+      "resolved": "PR #118 moveFromSavedForLater restores ConfigurationItems intact"
+    }
+  ],
+  "cleanup": {
+    "raw": "[AUTH role=ORG_USER]",
+    "blocks": [
+      {
+        "kind": "AUTH",
+        "role": "ORG_USER",
+        "ok": true
+      }
+    ]
+  }
+}

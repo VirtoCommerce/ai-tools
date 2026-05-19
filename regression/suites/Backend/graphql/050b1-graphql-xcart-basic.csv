@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-005,"xCart — Get or Create Cart via Query","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. ORG_USER authenticated. cart query auto-creates user's default cart if none exists. NOTE: userId is listed as optional in schema but resolver returns Forbidden without it — always pass userId explicitly.","—","[AUTH role=ORG_USER]
+CRB-GQL-005,"xCart — Get or Create Cart via Query","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. ORG_USER authenticated. cart query auto-creates user's default cart if none exists. NOTE: userId is listed as optional in schema but resolver returns Forbidden without it — always pass userId explicitly.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -16,7 +16,7 @@ GQL-005,"xCart — Get or Create Cart via Query","GraphQL > xCart",Critical,BL-G
 [DATA label=get_cart] data.cart is non-null
 [DATA label=get_cart] data.cart.id is non-empty GUID
 [DATA label=get_cart] data.cart.items is non-null","[ROUNDTRIP label=get_cart] re-execute same query → same cart.id returned","errors[] non-empty with Forbidden code (userId missing); cart null; id empty or malformed","none — read-only, auto-create is idempotent",xAPI; graphql-schema.md — Query.cart CartType,Automated
-GQL-006,"xCart — addItem Adds Product to Cart","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) alias to guarantee a product with minQty=1 and no max cap — avoids PRODUCT_MIN_MAX_QTY silent rejection (root cause of REG-2026-04-29-0929 BUG-050b1-001). Clears cart, adds 1 item, verifies itemsCount + productId + quantity + validationErrors empty.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-006,"xCart — addItem Adds Product to Cart","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) alias to guarantee a product with minQty=1 and no max cap — avoids PRODUCT_MIN_MAX_QTY silent rejection (root cause of REG-2026-04-29-0929 BUG-050b1-001). Clears cart, adds 1 item, verifies itemsCount + productId + quantity + validationErrors empty.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -39,13 +39,13 @@ GQL-006,"xCart — addItem Adds Product to Cart","GraphQL > xCart",Critical,BL-G
 [DATA label=add_one] data.addItem.items.0.productId = @td(BUYABLE_NO_MIN_QTY.id)
 [COUNT label=add_one] data.addItem.items.0.quantity = 1
 [DATA label=add_one] data.addItem.items.0.id is non-null","[EVIDENCE] items[0].listPrice.amount should be > 0 on a priced product — runner-manual","errors[] non-empty; validationErrors non-empty (PRODUCT_MIN_MAX_QTY — product has min-qty rule, fix: update BUYABLE_NO_MIN_QTY alias); itemsCount not incremented; quantity mismatch; listPrice missing",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addItem; aliases.json BUYABLE_NO_MIN_QTY; REG-2026-04-29-0929,Automated
-GQL-007,"xCart — changeCartItemQuantity Updates Qty","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. addItem qty=1, then changeCartItemQuantity to qty=5, verify quantity and subTotal recalc.","—","[AUTH role=ORG_USER]
+CRB-GQL-007,"xCart — changeCartItemQuantity Updates Qty","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. addItem qty=1, then changeCartItemQuantity to qty=5, verify quantity and subTotal recalc.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
@@ -68,13 +68,13 @@ GQL-007,"xCart — changeCartItemQuantity Updates Qty","GraphQL > xCart",High,BL
 [DATA label=change_qty] data.changeCartItemQuantity.items.0.id = {{LINE_ITEM_ID}}
 [COUNT label=change_qty] data.changeCartItemQuantity.items.0.quantity = 5
 [DATA label=change_qty] data.changeCartItemQuantity.subTotal is non-null","[EVIDENCE] subTotal.amount = listPrice * 5 (runner-manual verification of totals recalc)","errors[] non-empty; quantity still 1; subtotal not recalculated",none — clearCart at end,xAPI; graphql-schema.md — Mutation.changeCartItemQuantity,Automated
-GQL-008,"xCart — removeCartItem Removes Line Item","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. addItem then removeCartItem by lineItemId, verify itemsCount drops.","—","[AUTH role=ORG_USER]
+CRB-GQL-008,"xCart — removeCartItem Removes Line Item","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. addItem then removeCartItem by lineItemId, verify itemsCount drops.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
@@ -93,13 +93,13 @@ GQL-008,"xCart — removeCartItem Removes Line Item","GraphQL > xCart",High,BL-G
 [GQL-EXEC remove_item]","[ERRORS label=remove_item] errors[] empty
 [COUNT label=remove_item] data.removeCartItem.itemsCount = 0
 [COUNT label=remove_item] data.removeCartItem.items.length = 0","[ROUNDTRIP label=remove_item] cart remains valid (id still present), just emptied","errors[] non-empty; itemsCount unchanged; cart becomes null after removal",none — cart is empty after remove,xAPI; graphql-schema.md — Mutation.removeCartItem,Automated
-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1; ECL-8.1,"Runner-native. Requires cart with at least 1 item. Adds shipment with a New York deliveryAddress, then re-queries cart to verify address persisted.","addr_city=New York; addr_state=NY; addr_zip=10001; addr_country=US","[AUTH role=ORG_USER]
+CRB-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1; ECL-8.1,"Runner-native. Requires cart with at least 1 item. Adds shipment with a New York deliveryAddress, then re-queries cart to verify address persisted.","addr_city=New York; addr_state=NY; addr_zip=10001; addr_country=US","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
@@ -134,13 +134,13 @@ GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCa
 [DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.city = New York
 [DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.countryCode = US
 [DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.postalCode = 10001","[ROUNDTRIP label=set_shipment] cart query confirms shipment.deliveryAddress fields populated","errors[] non-empty; address fields null; validationErrors on shipment; countryCode or regionId wrong",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartShipment,Automated
-GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Applies a seeded valid coupon (QA10OFF via @td alias) then an invalid one to verify graceful rejection.","valid_coupon=@td(COUPON_10PCT.code); invalid_coupon=BADCODE_NOPE_99999","[AUTH role=ORG_USER]
+CRB-GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Applies a seeded valid coupon (QA10OFF via @td alias) then an invalid one to verify graceful rejection.","valid_coupon=@td(COUPON_10PCT.code); invalid_coupon=BADCODE_NOPE_99999","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
@@ -168,7 +168,7 @@ GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > xCart
 [GQL-EXEC cleanup_clear]","[ERRORS label=apply_valid] errors[] empty
 [DATA label=apply_valid] data.addCoupon.coupons is non-null","[EVIDENCE] apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true; discountTotal.amount > 0. Review evidence JSON.
 [EVIDENCE] apply_invalid: either errors[] non-empty with descriptive message OR coupons[] entry with isAppliedSuccessfully=false. No HTTP 500.","HTTP 500 on coupon apply; stack trace in errors[].message; valid coupon rejected; invalid coupon silently accepted as applied",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addCoupon,Automated
-GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native but CREATES A REAL ORDER — no easy teardown via runner. Sequence: addItem → addOrUpdateCartShipment (FixedRate w/ price) → addOrUpdateCartPayment (DefaultManualPaymentMethod) → createOrderFromCart. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee a product with minQty=1 so addItem succeeds — prevents downstream createOrderFromCart ValidationError (REG-2026-04-29-0929 BUG-050b1-002). See order-creation-matrix.md § GraphQL xAPI Checkout Flow for required price-match on shipment.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native but CREATES A REAL ORDER — no easy teardown via runner. Sequence: addItem → addOrUpdateCartShipment (FixedRate w/ price) → addOrUpdateCartPayment (DefaultManualPaymentMethod) → createOrderFromCart. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee a product with minQty=1 so addItem succeeds — prevents downstream createOrderFromCart ValidationError (REG-2026-04-29-0929 BUG-050b1-002). See order-creation-matrix.md § GraphQL xAPI Checkout Flow for required price-match on shipment.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -213,7 +213,7 @@ GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critical,BL
 [DATA label=create_order] data.createOrderFromCart.id is non-empty GUID
 [DATA label=create_order] data.createOrderFromCart.number is non-null
 [DATA label=create_order] data.createOrderFromCart.status is non-null","[EVIDENCE] End-to-end flow completes; order.status = New/Processing (runner-manual)","add_item validationErrors non-empty (PRODUCT_MIN_MAX_QTY — product has min-qty rule, fix BUYABLE_NO_MIN_QTY alias); any mutation errors[] non-empty; cart totals stale; availableShippingMethods empty; order not created",Test creates a real order — cancel via Admin API if needed (no runner-side teardown),xAPI; graphql-schema.md; order-creation-matrix.md § GraphQL xAPI Checkout Flow; aliases.json BUYABLE_NO_MIN_QTY; REG-2026-04-29-0929,Automated
-GQL-046,"xCart — updateCartQuantity Single Item Happy Path","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee addItem qty=1 succeeds (no PRODUCT_MIN_MAX_QTY), then updateCartQuantity sets qty=3 via items[{productId, quantity}]. items[] list must use productId, not lineItemId.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); new_qty=3","[AUTH role=ORG_USER]
+CRB-GQL-046,"xCart — updateCartQuantity Single Item Happy Path","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee addItem qty=1 succeeds (no PRODUCT_MIN_MAX_QTY), then updateCartQuantity sets qty=3 via items[{productId, quantity}]. items[] list must use productId, not lineItemId.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); new_qty=3","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -242,13 +242,13 @@ GQL-046,"xCart — updateCartQuantity Single Item Happy Path","GraphQL > xCart >
 [COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 1
 [DATA label=bulk_update] data.updateCartQuantity.items.0.productId = @td(BUYABLE_NO_MIN_QTY.id)
 [COUNT label=bulk_update] data.updateCartQuantity.items.0.quantity = 3","[ROUNDTRIP label=bulk_update] cart query confirms qty=3 persisted","add_one validationErrors non-empty (PRODUCT_MIN_MAX_QTY — update BUYABLE_NO_MIN_QTY alias); errors[] non-empty; quantity still 1; items[] duplicated",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity; aliases.json BUYABLE_NO_MIN_QTY,Automated
-GQL-047,"xCart — updateCartQuantity Bulk Updates Multiple Items","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) as PRODUCT_1. PRODUCT_2 is resolved via inline products query (first:2, skip items[0] which is PRODUCT_1). addItem each with qty=1, then bulk-update via updateCartQuantity to qty=2/4. NOTE: Both addItem calls include validationErrors projection — guards against silent PRODUCT_MIN_MAX_QTY rejection.","PRODUCT_1=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-047,"xCart — updateCartQuantity Bulk Updates Multiple Items","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) as PRODUCT_1. PRODUCT_2 is resolved via inline products query (first:2, skip items[0] which is PRODUCT_1). addItem each with qty=1, then bulk-update via updateCartQuantity to qty=2/4. NOTE: Both addItem calls include validationErrors projection — guards against silent PRODUCT_MIN_MAX_QTY rejection.","PRODUCT_1=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod2]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id minQuantity } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id minQuantity } } }
 [GQL-EXEC setup_prod2]
 [GQL-CAPTURE setup_prod2.data.products.items.1.id → PRODUCT_2]
 [GQL-OP pre_clear]
@@ -283,7 +283,7 @@ GQL-047,"xCart — updateCartQuantity Bulk Updates Multiple Items","GraphQL > xC
 [COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 2
 [COUNT label=bulk_update] data.updateCartQuantity.items.length = 2","[EVIDENCE] Verify both items in response have the updated quantities (2 + 4) matching inputs — runner-manual evidence check
 [EVIDENCE] If add_second validationErrors non-empty, PRODUCT_2 has a min-qty rule — try a different second product from the catalog probe","add_first/add_second validationErrors non-empty (PRODUCT_MIN_MAX_QTY — update alias or pick different second product); errors[] non-empty; itemsCount = 1 (partial); both items quantity = 1 (update ignored)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity; aliases.json BUYABLE_NO_MIN_QTY,Automated
-GQL-048,"xCart — updateCartQuantity quantity=0 Removes Item","GraphQL > xCart > Quantity",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee addItem qty=1 succeeds. Verifies setting quantity=0 via updateCartQuantity removes the item (expected per legacy spec).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-048,"xCart — updateCartQuantity quantity=0 Removes Item","GraphQL > xCart > Quantity",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee addItem qty=1 succeeds. Verifies setting quantity=0 via updateCartQuantity removes the item (expected per legacy spec).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -309,8 +309,8 @@ GQL-048,"xCart — updateCartQuantity quantity=0 Removes Item","GraphQL > xCart 
 [GQL-EXEC cleanup_clear]","[ERRORS label=add_one] errors[] empty
 [COUNT label=add_one] data.addItem.validationErrors = 0
 [ERRORS label=set_zero] errors[] empty","[EVIDENCE] set_zero: either data.updateCartQuantity.itemsCount=0 with items[] empty (qty=0 removes) OR items[].quantity=0 retained (qty=0 kept — surprising). Document observed branch.","add_one validationErrors non-empty (PRODUCT_MIN_MAX_QTY — update BUYABLE_NO_MIN_QTY alias); HTTP 500; item remains with qty=1; stack trace in errors[].message",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity; aliases.json BUYABLE_NO_MIN_QTY,Automated
-GQL-049,"xCart — updateCartQuantity Exceeds Available Stock","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-004; BL-CART-002,ECL-14.1; ECL-2.1,"BLOCKED: Requires LOW_STOCK_SKU fixture (aliases.json PROD_LOW_STOCK — template only, NOT seeded in QA). Once seeded, test addItem qty=999 against 5-unit stock → expect errors[] non-empty with stock-exceeded message OR clamp to stock-level. NOTE: setup_prod step removed — once unblocked, use @td(PROD_LOW_STOCK.id) for the product ID instead of an open-ended products query.","—","[MANUAL-BLOCKED] Needs LOW_STOCK_SKU env var + seeded product with stock=5. See aliases.json PROD_LOW_STOCK. Execute once seeded. Use @td(PROD_LOW_STOCK.id) as PRODUCT_ID — do NOT use open-ended setup_prod filter as it may return products with min_qty rules.","[MANUAL] blocked on env fixture","—","quantity=999 accepted silently (oversold risk); no validation message returned",manual cleanup required once seeded,xAPI; graphql-schema.md; aliases.json PROD_LOW_STOCK; aliases.json BUYABLE_NO_MIN_QTY,Draft
-GQL-050,"xCart — updateCartQuantity Non-Existent ProductId","GraphQL > xCart > Quantity",High,BL-GQL-001,ECL-14.1; ECL-9.1,"Runner-native. Attempts updateCartQuantity on a zero-GUID productId. Verifies structured error or graceful no-op.","bogus_product=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+CRB-GQL-049,"xCart — updateCartQuantity Exceeds Available Stock","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-004; BL-CART-002,ECL-10.2; ECL-2.1,"BLOCKED: Requires LOW_STOCK_SKU fixture (aliases.json PROD_LOW_STOCK — template only, NOT seeded in QA). Once seeded, test addItem qty=999 against 5-unit stock → expect errors[] non-empty with stock-exceeded message OR clamp to stock-level. NOTE: setup_prod step removed — once unblocked, use @td(PROD_LOW_STOCK.id) for the product ID instead of an open-ended products query.","—","[MANUAL-BLOCKED] Needs LOW_STOCK_SKU env var + seeded product with stock=5. See aliases.json PROD_LOW_STOCK. Execute once seeded. Use @td(PROD_LOW_STOCK.id) as PRODUCT_ID — do NOT use open-ended setup_prod filter as it may return products with min_qty rules.","[MANUAL] blocked on env fixture","—","quantity=999 accepted silently (oversold risk); no validation message returned",manual cleanup required once seeded,xAPI; graphql-schema.md; aliases.json PROD_LOW_STOCK; aliases.json BUYABLE_NO_MIN_QTY,Draft
+CRB-GQL-050,"xCart — updateCartQuantity Non-Existent ProductId","GraphQL > xCart > Quantity",High,BL-GQL-001,ECL-10.2; ECL-10.2,"Runner-native. Attempts updateCartQuantity on a zero-GUID productId. Verifies structured error or graceful no-op.","bogus_product=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -328,13 +328,13 @@ GQL-050,"xCart — updateCartQuantity Non-Existent ProductId","GraphQL > xCart >
     }
   }
 [GQL-EXEC update_bogus]","—","[EVIDENCE] update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[].","HTTP 500; phantom line item created for non-existent product; existing items corrupted; stack trace in errors[]",none — nothing added if graceful,xAPI; graphql-schema.md — Mutation.updateCartQuantity error contract,Automated
-GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003,ECL-14.1; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) as PRODUCT_1. PRODUCT_2 resolved via inline products query (items[1] — second item in catalog page, same filter as GQL-047). Add 2 items qty=1 each, bulk-update qty=2/3, verify subTotal recalculated.","PRODUCT_1=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) as PRODUCT_1. PRODUCT_2 resolved via inline products query (items[1] — second item in catalog page, same filter as CRB-GQL-047). Add 2 items qty=1 each, bulk-update qty=2/3, verify subTotal recalculated.","PRODUCT_1=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod2]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id minQuantity } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id minQuantity } } }
 [GQL-EXEC setup_prod2]
 [GQL-CAPTURE setup_prod2.data.products.items.1.id → PRODUCT_2]
 [GQL-OP pre_clear]
@@ -369,13 +369,13 @@ GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update","Gr
 [COUNT label=bulk_update] data.updateCartQuantity.itemsCount = 2
 [DATA label=bulk_update] data.updateCartQuantity.subTotal is non-null","[EVIDENCE] Verify bulk_update.subTotal.amount > add_second.subTotal.amount (qty increased → total increased). extendedPrice[i].amount = listPrice × quantity.
 [EVIDENCE] If add_second validationErrors non-empty, PRODUCT_2 (items[1]) has a min-qty rule — catalog ordering may have changed; probe for another buyable-no-min-qty product.","add_first/add_second validationErrors non-empty (PRODUCT_MIN_MAX_QTY); errors[] non-empty; subTotal unchanged after qty bump; subTotal decreased; extendedPrice mismatch (stale cache)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.updateCartQuantity MoneyType; aliases.json BUYABLE_NO_MIN_QTY,Automated
-GQL-059,"xCart — clearCart Empties Cart With Items","GraphQL > xCart > clearCart",Critical,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Adds 2 items, calls clearCart, verifies cart is emptied but still valid.","—","[AUTH role=ORG_USER]
+CRB-GQL-059,"xCart — clearCart Empties Cart With Items","GraphQL > xCart > clearCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Adds 2 items, calls clearCart, verifies cart is emptied but still valid.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prods]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prods]
 [GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
 [GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
@@ -398,7 +398,7 @@ GQL-059,"xCart — clearCart Empties Cart With Items","GraphQL > xCart > clearCa
 [DATA label=clear_it] data.clearCart.id is non-null
 [COUNT label=clear_it] data.clearCart.itemsCount = 0
 [COUNT label=clear_it] data.clearCart.items.length = 0","[EVIDENCE] clearCart.subTotal.amount should be 0 after clear — runner-manual","errors[] non-empty; itemsCount > 0 after clear; items[] non-empty; cart.id null (should not be deleted)",none — already empty,xAPI; graphql-schema.md — Mutation.clearCart,Automated
-GQL-060,"xCart — clearCart on Already-Empty Cart is Idempotent","GraphQL > xCart > clearCart",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-9.1,"Runner-native. Calls clearCart twice consecutively — both must succeed (idempotent, no HTTP 500).","—","[AUTH role=ORG_USER]
+CRB-GQL-060,"xCart — clearCart on Already-Empty Cart is Idempotent","GraphQL > xCart > clearCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-10.2,"Runner-native. Calls clearCart twice consecutively — both must succeed (idempotent, no HTTP 500).","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -412,7 +412,7 @@ GQL-060,"xCart — clearCart on Already-Empty Cart is Idempotent","GraphQL > xCa
 [COUNT label=clear_first] data.clearCart.itemsCount = 0
 [ERRORS label=clear_second] errors[] empty
 [COUNT label=clear_second] data.clearCart.itemsCount = 0","[ROUNDTRIP label=clear_second] same cart.id returned across both clears (idempotent)","errors[] non-empty on second clear; HTTP 500; unhandled exception",none — cart already empty,xAPI; graphql-schema.md — Mutation.clearCart idempotence,Automated
-GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCart > carts",High,BL-GQL-001; BL-GQL-004,ECL-14.1; ECL-2.1,"Runner-native. Queries user's carts with first=5. May return 0+ carts depending on history.","—","[AUTH role=ORG_USER]
+CRB-GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCart > carts",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Queries user's carts with first=5. May return 0+ carts depending on history.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -428,7 +428,7 @@ GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > xCar
 [DATA label=list_carts] data.carts is non-null
 [COUNT label=list_carts] data.carts.totalCount >= 0
 [DATA label=list_carts] data.carts.items is non-null","[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount","errors[] non-empty; carts null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.carts,Automated
-GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line Item","GraphQL > xCart",High,BL-CART-007; BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-14.1,"Runner-native. ORG_USER. Submits the same SKU 1507112554 three times (quantity 2 each) in one addBulkItemsCart call to verify BL-CART-007: same-SKU repeats MUST coalesce into ONE cart line with summed quantity (6), not create 3 duplicate lines. SKU 1507112554 (Coca Cola Regular 6x330ml, productId 8b7282ad-d318-42f4-9c19-e2d9b388e06f) verified buyable on B2B-store in QA 2026-04-30. Note: addBulkItemsCart input uses productSku (not productId — differs from addItem/addItemsCart) and returns BulkCartType { cart, errors }.","SKU=1507112554 (Coca Cola Regular 6x330ml; verified live in QA 2026-04-30). Documented duplicate-SKU bulk-add example.","[AUTH role=ORG_USER]
+CRB-GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line Item","GraphQL > xCart",High,BL-CART-007; BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. ORG_USER. Submits the same SKU 1507112554 three times (quantity 2 each) in one addBulkItemsCart call to verify BL-CART-007: same-SKU repeats MUST coalesce into ONE cart line with summed quantity (6), not create 3 duplicate lines. SKU 1507112554 (Coca Cola Regular 6x330ml, productId 8b7282ad-d318-42f4-9c19-e2d9b388e06f) verified buyable on B2B-store in QA 2026-04-30. Note: addBulkItemsCart input uses productSku (not productId — differs from addItem/addItemsCart) and returns BulkCartType { cart, errors }.","SKU=1507112554 (Coca Cola Regular 6x330ml; verified live in QA 2026-04-30). Documented duplicate-SKU bulk-add example.","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -468,7 +468,7 @@ GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line It
 [COUNT label=verify_cart] data.cart.itemsCount = 1
 [COUNT label=verify_cart] data.cart.itemsQuantity = 6
 [COUNT label=verify_cart] data.cart.items.0.quantity = 6","[EVIDENCE] verify_cart query right after bulk_add_dup must show ONE row for sku 1507112554 with quantity 6 — never 3 separate rows of quantity 2 (BL-CART-007 line-item dedupe invariant)","errors[] non-empty; data.addBulkItemsCart.errors[] non-empty (e.g. PRODUCT_MIN_MAX_QTY — pick a different verified SKU); cart.items contains 3 separate rows for sku 1507112554 (BL-CART-007 violation); itemsCount=3 instead of 1; itemsQuantity ≠ 6; productSku rejected because mutation was called with productId (schema requires productSku for InputNewBulkItemType)",none — clearCart at end of steps,xAPI; graphql-schema.md — Mutation.addBulkItemsCart / InputAddBulkItemsType / InputNewBulkItemType; test-data/graphql/mutations/addBulkItemsCart.graphql; BL-CART-007,Automated
-GQL-021,"[VCST-4936] addItem ×2 for Same SKU Accumulates Quantity to 2 (BL-CART-007)","GraphQL > xCart > Quantity Merge",High,"BL-CART-001; BL-CART-007","ECL-2.1","Runner-native. ORG_USER. VCST-4936 BL-CART-007 verification via standard addItem mutation (not the deprecated addBulkItemsCart). Two consecutive addItem calls with same productId, qty=1 each → one lineItem with quantity=2. Pre-fix Quick Order symptom: duplicate-SKU lines in bulk-add lost second-entry quantity. This case proves the cart's quantity-accumulation invariant works at the xCart layer.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+CRB-GQL-021,"[VCST-4936] addItem ×2 for Same SKU Accumulates Quantity to 2 (BL-CART-007)","GraphQL > xCart > Quantity Merge",High,"BL-CART-001; BL-CART-007","ECL-2.1","Runner-native. ORG_USER. VCST-4936 BL-CART-007 verification via standard addItem mutation (not the deprecated addBulkItemsCart). Two consecutive addItem calls with same productId, qty=1 each → one lineItem with quantity=2. Pre-fix Quick Order symptom: duplicate-SKU lines in bulk-add lost second-entry quantity. This case proves the cart's quantity-accumulation invariant works at the xCart layer.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]

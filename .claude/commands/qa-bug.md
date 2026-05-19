@@ -174,60 +174,8 @@ When moving to `fixed/`, add a Resolution block below the status:
 ```
 
 ### Report Template
-```markdown
-# BUG: [Short Title]
 
-## Status: OPEN
-
-**Severity:** Critical | High | Medium | Low
-**Component:** [Cart | Checkout | Catalog | Search | Payment | Admin | ...]
-**Browser:** [Browser + version]
-**Environment:** [URL]
-**Platform Version:** [from packages.json]
-**Theme Version:** [from artifact.json]
-**Module Versions:** [relevant modules with versions from packages.json]
-**USER_EMAIL**: .env
-**USER_PASSWORD**: .env
-**Date:** YYYY-MM-DD
-**Reported By:** QA Agent
-
-## Steps to Reproduce
-1. [Navigate to ...]
-2. [Click on ...]
-3. [Observe ...]
-
-## Expected Result
-[What should happen]
-
-## Actual Result
-[What actually happens]
-
-## Evidence
-- Screenshot: [path]
-- Console errors: [list or "none"]
-- Network errors: [list or "none"]
-- HAR file: [path or "not captured"]
-
-## Layer Validation
-
-| Layer | Result | Evidence |
-|-------|--------|----------|
-| 1. Storefront Frontend | FAIL / PASS / N/A | [screenshot + HAR path] |
-| 2. Backend Admin | FAIL / PASS / N/A | [screenshot or "not admin-visible"] |
-| 3. GraphQL xAPI | FAIL / PASS / N/A | [query + response snippet] |
-| 4. Platform REST API | FAIL / PASS / N/A | [endpoint + response snippet] |
-
-**Owning layer:** [lowest FAIL layer]
-
-## Root Cause Analysis
-- Source file: [GitHub file path + line range, or "not identified"]
-- Suspected cause: [description of the code/config issue]
-- Recent changes: [relevant commit SHAs or PRs, or "none found"]
-- App Insights: [exception type/message, failed request trace, or "no server-side errors"]
-
-## References
-- JIRA: [VCST-XXXX or "not filed"]
-```
+> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`](../skills/qa-methodology/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, and **Root Cause Analysis**; the `/qa-defect` templates carry the JIRA fields.
 
 ---
 

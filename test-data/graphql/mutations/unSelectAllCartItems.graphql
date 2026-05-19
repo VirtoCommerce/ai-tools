@@ -4,7 +4,7 @@
 # purpose: Bulk-unselect every item in the cart (selectedForCheckout=false on all)
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues: (none)
 
 mutation {

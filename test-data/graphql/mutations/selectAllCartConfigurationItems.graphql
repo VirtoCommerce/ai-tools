@@ -4,7 +4,7 @@
 # purpose: Select ALL configuration items within a single lineItem (hardcoded selectedForCheckout=true for every config item on that lineItem). Scoped strictly to the lineItemId — other configured lineItems in the same cart are untouched.
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: cartName (String), cartType (String), cultureName (String), currencyCode (String)
-# last-validated: 2026-05-06
+# last-validated: 2026-05-15
 # known-issues:
 #   - Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
 #   - Scoped to lineItemId only — other configured lineItems in cart are NOT affected.

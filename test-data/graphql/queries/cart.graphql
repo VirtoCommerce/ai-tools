@@ -4,7 +4,7 @@
 # purpose: Fetch the current cart for a store/currency
 # required-vars: STORE_ID (String), CURRENCY_CODE (String)
 # optional-vars: CART_ID (String), CART_NAME (String, default "default"), USER_ID (String)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: (future) cart suites (050b)
 

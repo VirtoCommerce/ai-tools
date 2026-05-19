@@ -1,0 +1,103 @@
+{
+  "runId": "TLC-2026-05-19-VCST4205",
+  "inputType": "change-source",
+  "source": "https://virtocommerce.atlassian.net/browse/VCST-4205",
+  "date": "2026-05-19",
+  "verdict": "APPROVED_WITH_WARNINGS",
+  "build": {
+    "platform": "3.1026.0",
+    "xCart": "3.1014.0-pr-118-1be7",
+    "theme": "2.49.0-pr-2294-6509-650937ca",
+    "relevantModules": {
+      "VirtoCommerce.XCart": "3.1014.0-pr-118-1be7",
+      "VirtoCommerce.Xapi": "3.1007.0",
+      "VirtoCommerce.Cart": "3.1003.0",
+      "VirtoCommerce.XOrder": "3.1004.0"
+    }
+  },
+  "changedModules": ["XCart", "vc-frontend (theme)"],
+  "affectedSuites": [
+    "029-cart-validation-persistence",
+    "050b3-graphql-xcart-lifecycle",
+    "072-configurable-products-ui",
+    "072b-configurable-products-e2e",
+    "072c-configurable-products-cross"
+  ],
+  "casesAnalyzed": 0,
+  "casesSynced": 9,
+  "casesGenerated": 4,
+  "casesReviewed": 0,
+  "casesVerified": 4,
+  "filesModified": [
+    "regression/suites/Frontend/cart/029-cart-validation-persistence.csv",
+    "regression/suites/Frontend/configurable-products/072-configurable-products-ui.csv",
+    "regression/suites/Frontend/configurable-products/072b-configurable-products-e2e.csv",
+    "regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv",
+    "reports/test-lifecycle/TLC-2026-05-19-VCST4205/bl-proposals.md",
+    "reports/test-lifecycle/TLC-2026-05-19-VCST4205/lifecycle-report.md",
+    "reports/test-lifecycle/TLC-2026-05-19-VCST4205/lifecycle-summary.json",
+    "reports/test-lifecycle/TLC-2026-05-19-VCST4205/phase5-verification-report.md"
+  ],
+  "newCases": [
+    {"id": "CRL-GQL-100", "suite": "050b3", "title": "Configurable Item Survives moveToSavedForLater Round-Trip", "priority": "High", "mapsTo": ["VCST-4205-CASE1", "A2", "A3"]},
+    {"id": "CRL-GQL-101", "suite": "050b3", "title": "moveFromSavedForLater Returns Configurable Item with Preserved configurationItems", "priority": "Critical", "mapsTo": ["VCST-4205-CASE2", "A4"]},
+    {"id": "CRL-GQL-102", "suite": "050b3", "title": "Edit Configurable Item by Remove+Add Preserves New Configuration", "priority": "High", "mapsTo": ["VCST-4205-CASE3"]},
+    {"id": "CRL-GQL-103", "suite": "050b3", "title": "Identical Configurable Items Added Twice Produce Distinct Line Items", "priority": "Medium", "mapsTo": ["BL-CART-007 exception", "VCST-4205-CASE6 correction"]}
+  ],
+  "phase5": {
+    "status": "DONE",
+    "browser": "playwright-firefox",
+    "buildDriftDetected": false,
+    "scenarios": [
+      {"id": "A", "name": "Case 2 move-back config preservation", "prior": "FAIL", "current": "VERIFIED-PASS", "reproduces": false, "evidence": "scenario-A/"},
+      {"id": "B", "name": "Anomaly A4 async-settle race", "prior": "FAIL", "current": "VERIFIED-PASS", "reproduces": false, "evidence": "scenario-B/"},
+      {"id": "C", "name": "Anomaly A1 cart-sidebar miniwidget price", "prior": "FAIL", "current": "VERIFIED-FAIL", "reproduces": true, "evidence": "scenario-C/"},
+      {"id": "D", "name": "Anomaly A3 single-line Save-for-later payload", "prior": "FAIL", "current": "VERIFIED-PASS", "reproduces": false, "evidence": "scenario-D/"}
+    ],
+    "rootCauseHypothesis": "A3 and A4 are state-dependent: they manifest only when SFL has pre-existing entries that collide with the moved line via the cart-projection async settle. On clean baseline (PRE:RESET_CART + clean SFL), per-line lineItemIds semantics work correctly and config preservation holds end-to-end.",
+    "recommendation": "FILE_NEW_CHILD_BUGS",
+    "newBugsToFile": [
+      {"anomaly": "A1", "severity": "Medium", "summary": "Cart-sidebar SFL miniwidget binds product.price.list ($16 master) instead of lineItem.listPrice ($33 configured)"},
+      {"anomaly": "A2", "severity": "High", "summary": "savedForLaterLineItem / wishlistLineItemFields GraphQL fragments omit configurationItems — UI falls back to master-variation properties"}
+    ],
+    "investigationTicket": {
+      "title": "Contaminated-SFL state defect class — A3/A4 reproducibility on dirty state",
+      "severity": "Medium",
+      "summary": "Backend probe needed: selectedForCheckout semantics may override lineItemIds filter when cart projection rebuilds from contaminated state. Clean-baseline PASS but state-dependent FAIL was reproduced in 2026-05-19 chrome session."
+    }
+  },
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "WARN",
+    "G4_testability": "PASS",
+    "G5_data_validity": "PASS",
+    "G6_coverage": "PARTIAL",
+    "G7_duplication": "PASS",
+    "G8_environment": "PASS",
+    "G9_sync": "PASS"
+  },
+  "blProposals": {
+    "new": [
+      {"proposedId": "PROPOSED-BL-CART-015", "severity": "Medium", "trigger": "A1", "rule": "SFL miniwidget MUST bind lineItem.listPrice, not master product.price.list", "source": "frontend-execution-report.md Case 1; Anomaly A1; Phase 5 Scenario C VERIFIED-FAIL", "promotionRecommended": true},
+      {"proposedId": "PROPOSED-BL-CART-016", "severity": "High", "trigger": "A2", "rule": "getSavedForLater GraphQL query MUST include configurationItems in LineItemType selection", "source": "frontend-execution-report.md Case 4; case4-wishlist-after-save-39.json; Phase 5 Scenario C VERIFIED-FAIL", "promotionRecommended": true},
+      {"proposedId": "PROPOSED-BL-CART-017", "severity": "High", "trigger": "A3", "rule": "moveToSavedForLater / moveFromSavedForLater MUST honor lineItemIds payload selectively (not bulk-all)", "source": "frontend-execution-report.md Anomaly A3", "promotionRecommended": "DEFER_OR_REWORD", "note": "Phase 5 Scenario D VERIFIED-PASS on clean baseline — invariant may need to be reframed as state-conditional or scoped to the contaminated-SFL bug investigation outcome"},
+      {"proposedId": "PROPOSED-BL-CART-018", "severity": "Critical", "trigger": "A4", "rule": "Cart-projection async settle MUST NOT overwrite configurationItems set by the synchronous mutation response", "source": "frontend-execution-report.md Anomaly A4", "promotionRecommended": "DEFER_OR_REWORD", "note": "Phase 5 Scenario B VERIFIED-PASS on clean baseline — invariant still valid in principle but the observed regression was state-dependent; recommend the contaminated-SFL investigation ticket inform the final wording"}
+    ],
+    "stale": [
+      {"id": "BL-CART-007", "observation": "Exception clause language ambiguous re: configurable products vs variants", "suggestedAction": "Add sub-bullet: 'Configurable products (those where addItem includes configurationSections) ALWAYS produce a new line item regardless of configuration identity.'", "source": "VCST-4205 CASE6 author-side mismatch evidence; CRL-GQL-103 codifies the observed behavior", "promotionRecommended": true}
+    ]
+  },
+  "remainingItems": {
+    "mustFix": [],
+    "shouldFix": [
+      "File new child bug for A1 (cart-sidebar miniwidget price binding)",
+      "File new child bug for A2 (SFL fragments missing configurationItems)",
+      "File investigation ticket for contaminated-SFL state-dependent defect class (covers A3/A4 in dirty state)",
+      "Author CFG-SFL-A1, CFG-SFL-A2, CFG-SFL-CONTAMINATED in 072b-configurable-products-e2e.csv",
+      "Promote PROPOSED-BL-CART-015 + 016 to business-logic.md; reword/defer 017 + 018",
+      "Run /qa-regression catalog,configurable-products,cart once new cases land"
+    ]
+  },
+  "vcst4205_disposition": "DO_NOT_REOPEN — PR #118 is working per Phase 5 clean-baseline retry. Transition VCST-4205 to Done after the 2 new child bugs are filed."
+}

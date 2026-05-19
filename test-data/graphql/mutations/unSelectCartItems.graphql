@@ -4,7 +4,7 @@
 # purpose: Mark specific line items as unselected for checkout (selectedForCheckout=false)
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues:
 #   - Invalid lineItemId should be a graceful no-op (preserve real items). HTTP 500 = bug.
 # gql-vars: { "lineItemIds": "[String!]!" }

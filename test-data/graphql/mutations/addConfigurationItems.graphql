@@ -4,7 +4,7 @@
 # purpose: Bulk-add multiple configuration sections to a cart line item in one round-trip
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues: (none)
 # gql-vars: { "configurationSections": "[ConfigurationSectionInput!]!" }
 # runner-note: Pass full list of sections via [GQL-VARS label] JSON

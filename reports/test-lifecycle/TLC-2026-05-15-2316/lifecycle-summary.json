@@ -1,0 +1,70 @@
+{
+  "runId": "TLC-2026-05-15-2316",
+  "inputType": "direct-scope",
+  "source": "suite 050b2 — review, fix authoring debt",
+  "date": "2026-05-15",
+  "verdict": "APPROVED WITH WARNINGS",
+  "warningReason": "CRI-GQL-090 still fails post-fix due to environment data gap (QA10OFF coupon inactive). Authoring is correct.",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-alpha.2342"
+  },
+  "phases": {
+    "scope": "done",
+    "sync": "skipped",
+    "generate": "skipped",
+    "reviewFix": "done",
+    "verify": "done",
+    "approve": "done"
+  },
+  "affectedSuites": ["050b2"],
+  "casesAnalyzed": 14,
+  "casesFixed": 9,
+  "casesVerified": 14,
+  "filesModified": ["regression/suites/Backend/graphql/050b2-graphql-xcart-items.csv"],
+  "fixCategories": {
+    "captureChain": {"count": 4, "cases": ["CRI-GQL-061", "CRI-GQL-062", "CRI-GQL-063", "CRI-GQL-064"], "fix": "capture LINE_ITEM_ID from unSelectAllCartItems mutation response (synchronous) instead of addItem.items[] (async-settled)"},
+    "assertionOverspecification": {"count": 3, "cases": ["CRI-GQL-061", "CRI-GQL-065", "CRI-GQL-066"], "fix": "replace itemsCount=2 with subTotal.amount arithmetic invariants or selectedForCheckout flag checks"},
+    "testDataSetup": {"count": 2, "cases": ["CRI-GQL-057", "CRI-GQL-090"], "fix": "countryCode US -> USA (ISO-3); add addItem pre-step for validateCoupon; single-line Test_Data"},
+    "missingAssertion": {"count": 1, "cases": ["CRI-GQL-067"], "fix": "add BL-CHK-001 enforcement assertion (errors non-empty when all items unselected)"}
+  },
+  "verifyResults": {
+    "preFixBaseline": {"runId": "REG-20260515-2309", "passed": 3, "failed": 8, "skipped": 3, "passRate": 21.4},
+    "postFix": {"passed": 11, "failed": 1, "skipped": 2, "passRate": 78.6},
+    "delta": {"passed": "+8", "failed": "-7", "passRate": "+57.2pp"},
+    "predictionMatch": "EXACT — Phase 4 predictions matched Phase 5 verification case-by-case with zero deviations"
+  },
+  "gateResults": {
+    "G1_Structure": "PASS",
+    "G2_Determinism": "PASS",
+    "G3_Completeness": "PASS",
+    "G4_Testability": "PASS",
+    "G5_DataValidity": "PASS",
+    "G6_BLCoverage": "PASS",
+    "G7_Duplication": "PASS",
+    "G8_Environment": "WARN",
+    "G9_Sync": "SKIPPED"
+  },
+  "residualIssue": {
+    "caseId": "CRI-GQL-090",
+    "type": "environment-data-gap",
+    "description": "QA10OFF coupon inactive on vcst-qa; authoring is correct; needs /qa-seed-data marketing fixture",
+    "resolution": "/qa-seed-data marketing then re-run CRI-GQL-090"
+  },
+  "manualItems": [
+    {"caseId": "CRI-GQL-056", "reason": "[MANUAL-BLOCKED] anonymous-session runner support needed"},
+    {"caseId": "CRI-GQL-058", "reason": "[MANUAL-BLOCKED] second-org user fixture needed"}
+  ],
+  "architecturalFindings": [
+    "addItem mutation has async cart-projection settle — items[] empty immediately after add; capture from follow-up mutation (e.g., unSelectAllCartItems) which returns synchronously",
+    "B2B-store consolidates same productId into one line item with summed quantity — itemsCount unreliable, use subTotal arithmetic",
+    "Multi-line Test_Data with @td() corrupts GQL body parsing — keep single-line",
+    "Product f1b26974... has Inventory=Disabled for ORG_USER — use @td(BUYABLE_NO_MIN_QTY.id) for reliable cart fixture"
+  ],
+  "nextSteps": [
+    "/qa-seed-data marketing — provision active QA10OFF coupon",
+    "qa-lead-orchestrator: promote modified cases synced -> Automated",
+    "Consider memory entry for addItem async-settle capture pattern",
+    "Run /qa-regression 050b2 after coupon re-seed for >=85% pass rate"
+  ]
+}

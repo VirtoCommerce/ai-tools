@@ -1,0 +1,51 @@
+{
+  "runId": "TLC-2026-05-16-0026",
+  "inputType": "direct-scope",
+  "source": "suite 050b3 — review, fix",
+  "date": "2026-05-16",
+  "verdict": "APPROVED",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-alpha.2342"
+  },
+  "phases": {
+    "scope": "done",
+    "sync": "skipped",
+    "generate": "skipped",
+    "reviewFix": "done",
+    "verify": "done",
+    "approve": "done"
+  },
+  "affectedSuites": ["050b3"],
+  "casesAnalyzed": 13,
+  "casesFixed": 3,
+  "casesVerified": 3,
+  "filesModified": ["regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv"],
+  "fixes": [
+    {"caseId": "CRL-GQL-074", "category": "B2B line-item consolidation", "fix": "itemsCount>=2 -> items is non-null + itemsCount>=1", "memoryRef": "reference_b2b_lineitem_consolidation"},
+    {"caseId": "CRL-GQL-075", "category": "B2B line-item consolidation", "fix": "itemsCount>=2 -> itemsCount>=1 (verify_second_gone already the canonical check)", "memoryRef": "reference_b2b_lineitem_consolidation"},
+    {"caseId": "CRL-GQL-078", "category": "addItem async-empty", "fix": "Inserted capture_line (unSelectAllCartItems sync mutation) + reselect; loosened to errors[] empty + id non-null", "memoryRef": "reference_additem_async_settle"}
+  ],
+  "verifyResults": {
+    "preFixBaseline": {"runId": "REG-20260516-0021", "fixedCasesPassed": 0, "fixedCasesFailed": 3},
+    "postFix": {"fixedCasesPassed": 3, "fixedCasesFailed": 0, "totalAssertions": 9, "assertionsPassed": 9},
+    "delta": {"passed": "+3", "failed": "-3"},
+    "suitePassRate": {"before": 61.5, "afterProjected": 84.6, "deltaPP": 23.1}
+  },
+  "gateResults": {
+    "G1_Structure": "PASS",
+    "G2_Determinism": "PASS",
+    "G3_Completeness": "PASS",
+    "G4_Testability": "PASS",
+    "G5_DataValidity": "PASS",
+    "G6_BLCoverage": "PASS",
+    "G7_Duplication": "PASS",
+    "G8_Environment": "PASS",
+    "G9_Sync": "SKIPPED"
+  },
+  "nextSteps": [
+    "qa-lead-orchestrator: promote CRL-GQL-074/075/078 synced -> Automated",
+    "Run /qa-regression 050b3 for formal 84.6% pass rate confirmation",
+    "Consider follow-up TLC for CRL-GQL-077 (empty assertions)"
+  ]
+}

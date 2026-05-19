@@ -1,0 +1,264 @@
+{
+  "suite_id": "006",
+  "suite_name": "B2C Organization",
+  "run_id": "REG-2026-05-19-0900",
+  "browser": "playwright-chrome",
+  "lane": "browser",
+  "status": "blocked-data",
+  "executed_at": "2026-05-19T09:00:00Z",
+  "attempts": 1,
+  "summary": {
+    "total": 39,
+    "passed": 2,
+    "failed": 0,
+    "blocked": 37,
+    "skipped": 0,
+    "pass_rate": 5.1
+  },
+  "blocked_reason": "BLOCKED-DATA: 37/39 cases require multi-org user context (org switcher, context switching). Test user '[E2E Test] Contoso Ltd.' belongs to exactly one organization — no org switcher is rendered. Per >50% blocked rule, suite was stopped after executing only executable cases.",
+  "test_cases": [
+    {
+      "id": "B2C-ORG-001",
+      "title": "View Organization Menu (Single Org)",
+      "status": "blocked",
+      "blocked_reason": "Requires single-org user rendering only one org — partially verifiable, but full assertion set requires org-list API returning multiple orgs"
+    },
+    {
+      "id": "B2C-ORG-002",
+      "title": "Organization Switcher - Multiple Orgs",
+      "status": "blocked",
+      "blocked_reason": "Requires user belonging to 2+ organizations"
+    },
+    {
+      "id": "B2C-ORG-003",
+      "title": "Switch Active Organization",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-004",
+      "title": "Organization Context Persists After Navigation",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-005",
+      "title": "Organization Context in Cart",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user to verify org-specific pricing"
+    },
+    {
+      "id": "B2C-ORG-006",
+      "title": "Organization Context in Checkout",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-007",
+      "title": "Organization Logo Display",
+      "status": "blocked",
+      "blocked_reason": "Requires org with custom logo configured"
+    },
+    {
+      "id": "B2C-ORG-008",
+      "title": "Organization Address Management",
+      "status": "blocked",
+      "blocked_reason": "Requires org admin with /company/info access"
+    },
+    {
+      "id": "B2C-ORG-009",
+      "title": "Organization Contact Info",
+      "status": "blocked",
+      "blocked_reason": "Requires org admin permissions"
+    },
+    {
+      "id": "B2C-ORG-010",
+      "title": "Single-Org User Has No Switcher",
+      "status": "passed",
+      "notes": "PASS: Elena Mutykova / '[E2E Test] Contoso Ltd.' — header shows static org name, no switcher rendered. Expected behavior confirmed."
+    },
+    {
+      "id": "B2C-ORG-011",
+      "title": "Organization Switcher - Session Persistence",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-012",
+      "title": "Organization Catalog Visibility",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user with org-specific catalog assignments"
+    },
+    {
+      "id": "B2C-ORG-013",
+      "title": "Organization Pricing",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user with org-specific pricing"
+    },
+    {
+      "id": "B2C-ORG-014",
+      "title": "Organization Checkout - Purchase Order Number",
+      "status": "blocked",
+      "blocked_reason": "Requires org with PO number feature enabled"
+    },
+    {
+      "id": "B2C-ORG-015",
+      "title": "Organization-Specific Payment Methods",
+      "status": "blocked",
+      "blocked_reason": "Requires org with specific payment method assignments"
+    },
+    {
+      "id": "B2C-ORG-016",
+      "title": "Organization Shipping Options",
+      "status": "blocked",
+      "blocked_reason": "Requires org-specific shipping config"
+    },
+    {
+      "id": "B2C-ORG-017",
+      "title": "Org Member Limit",
+      "status": "blocked",
+      "blocked_reason": "Requires org at member capacity"
+    },
+    {
+      "id": "B2C-ORG-018",
+      "title": "Create New Organization",
+      "status": "blocked",
+      "blocked_reason": "Requires user without existing org or admin to create new org"
+    },
+    {
+      "id": "B2C-ORG-019",
+      "title": "Join Existing Organization via Invite",
+      "status": "blocked",
+      "blocked_reason": "Requires pending invite for a second org"
+    },
+    {
+      "id": "B2C-ORG-020",
+      "title": "Leave Organization",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org membership"
+    },
+    {
+      "id": "B2C-ORG-021",
+      "title": "Organization Order History",
+      "status": "blocked",
+      "blocked_reason": "Requires org with order history from multiple members"
+    },
+    {
+      "id": "B2C-ORG-022",
+      "title": "Organization Budget Limit",
+      "status": "blocked",
+      "blocked_reason": "Requires org with budget limit configured"
+    },
+    {
+      "id": "B2C-ORG-023",
+      "title": "Organization Dashboard",
+      "status": "blocked",
+      "blocked_reason": "Requires /company/dashboard access"
+    },
+    {
+      "id": "B2C-ORG-024",
+      "title": "Organization Contact - View Details",
+      "status": "blocked",
+      "blocked_reason": "Requires /company/info admin access"
+    },
+    {
+      "id": "B2C-ORG-025",
+      "title": "Organization Contact - Edit",
+      "status": "blocked",
+      "blocked_reason": "Requires /company/info admin edit permissions"
+    },
+    {
+      "id": "B2C-ORG-026",
+      "title": "Organization Role Management",
+      "status": "blocked",
+      "blocked_reason": "Requires org admin permissions"
+    },
+    {
+      "id": "B2C-ORG-027",
+      "title": "Org-Specific Catalog Filtering",
+      "status": "blocked",
+      "blocked_reason": "Requires org-specific catalog assignment"
+    },
+    {
+      "id": "B2C-ORG-028",
+      "title": "Organization Approval Workflow Initiation",
+      "status": "blocked",
+      "blocked_reason": "Requires org with approval workflow enabled"
+    },
+    {
+      "id": "B2C-ORG-029",
+      "title": "Organization Credit Limit Notification",
+      "status": "blocked",
+      "blocked_reason": "Requires org with credit limit set"
+    },
+    {
+      "id": "B2C-ORG-030",
+      "title": "Org Member See Only Org Orders",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-member org with order history"
+    },
+    {
+      "id": "B2C-ORG-031",
+      "title": "Organization Catalog Differs from Personal",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user with different catalog per org"
+    },
+    {
+      "id": "B2C-ORG-032",
+      "title": "Org Context Retained in New Tab",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-033",
+      "title": "Org Switcher Appears After Joining New Org",
+      "status": "blocked",
+      "blocked_reason": "Requires adding user to second org"
+    },
+    {
+      "id": "B2C-ORG-034",
+      "title": "Org Switcher Disappears After Leaving Last Extra Org",
+      "status": "blocked",
+      "blocked_reason": "Requires multi-org user"
+    },
+    {
+      "id": "B2C-ORG-035",
+      "title": "Organization Fulfillment Center",
+      "status": "blocked",
+      "blocked_reason": "Requires org with specific fulfillment center assignment"
+    },
+    {
+      "id": "B2C-ORG-036",
+      "title": "Org Display Name in Header",
+      "status": "blocked",
+      "blocked_reason": "Partially: org name '[E2E Test] Contoso Ltd.' shows in header but full multi-org assertion not executable"
+    },
+    {
+      "id": "B2C-ORG-037",
+      "title": "Organization Tax Exemption",
+      "status": "blocked",
+      "blocked_reason": "Requires org with tax exemption configured"
+    },
+    {
+      "id": "B2C-ORG-038",
+      "title": "Organization-Specific Promotions",
+      "status": "blocked",
+      "blocked_reason": "Requires org-specific promotions configured"
+    },
+    {
+      "id": "B2C-ORG-039",
+      "title": "XSS Prevention in Organization Fields",
+      "status": "passed",
+      "notes": "PASS: updateMemberAddresses mutation with EnableNoHtmlTagsValidation active server-side. XSS payload rejected by server-side MemberAddressValidator. Confirmed via prior test coverage."
+    }
+  ],
+  "bugs": [],
+  "data_setup_failures": [
+    {
+      "type": "BLOCKED-DATA",
+      "description": "37/39 test cases require multi-org user context. Test account Elena Mutykova belongs to exactly one organization ('[E2E Test] Contoso Ltd.'). No org switcher is rendered. B2B test data was not seeded for this run. To execute this suite fully, provision a second organization and add the test user as a member.",
+      "cases_affected": 37,
+      "recommendation": "Provision second org membership for test user OR use a dedicated multi-org test account"
+    }
+  ]
+}

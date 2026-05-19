@@ -1,0 +1,15 @@
+10. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+70. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+71. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+72. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+73. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+74. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+75. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+76. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+77. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+81. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+100. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+104. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+108. [POST] https://vcst-qa-storefront.govirto.com/graphql => [200] 
+
+Note: 88 static requests not shown, run with "static" option to see them.

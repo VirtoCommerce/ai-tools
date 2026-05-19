@@ -4,7 +4,7 @@
 # purpose: Paginated product list; MUST include the B2B virtual catalog subtree filter so storefront resolvers return rows
 # required-vars: STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog)
 # optional-vars: QUERY (String), FIRST (Int, default 20)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues:
 #   - Without category.subtree filter, results are empty even though products exist (BL feedback)
 # used-by: (future) catalog suites

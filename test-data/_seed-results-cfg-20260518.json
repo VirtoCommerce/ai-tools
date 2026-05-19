@@ -1,0 +1,56 @@
+{
+  "date": "20260518",
+  "platform": "https://vcst-qa.govirto.com",
+  "storeId": "B2B-store",
+  "catalog": {
+    "id": "b682f383-3317-4767-b4f6-cc946dcf4cb2",
+    "name": "SEED-20260518-Configurables"
+  },
+  "virtualCatalogId": "fc596540864a41bf8ab78734ee7353a3",
+  "seeded": [
+    {
+      "csvId": "CFG-021",
+      "name": "AGENT-TEST-Config-Custom-Bike-20260518",
+      "parentId": "0b42a3eb-8ee8-49e5-87ac-cdef23b38e20",
+      "configurationId": "9b81e4e5-387f-43de-8ec9-20e22c8d7ba4",
+      "options": [
+        {
+          "name": "Aluminum",
+          "productId": "c54a6068-2bf1-4c35-bb9f-ac9005f56aac"
+        },
+        {
+          "name": "Carbon",
+          "productId": "7ab8a3b7-4eb8-4ae0-9c51-c01e1dbd3e57"
+        },
+        {
+          "name": "Steel",
+          "productId": "69c619b9-ac70-440c-950f-1994bf26fb48"
+        },
+        {
+          "name": "Standard",
+          "productId": "f71c56b7-c278-4d4f-935f-7df67b07d2c0"
+        },
+        {
+          "name": "Sport",
+          "productId": "a0325623-d9bb-4d80-91aa-ab8fd6dbbf86"
+        },
+        {
+          "name": "Pro",
+          "productId": "bbd6fb29-bad0-45c2-a204-6df732e745a3"
+        },
+        {
+          "name": "Basic",
+          "productId": "d89cac8d-74df-4f29-96f0-b43c1c5ee4f0"
+        },
+        {
+          "name": "Comfort",
+          "productId": "23c75f8b-ba08-45c3-848a-c8caf31e6125"
+        },
+        {
+          "name": "Racing",
+          "productId": "e7a02369-2472-4cc6-8095-87a66c6be231"
+        }
+      ]
+    }
+  ]
+}

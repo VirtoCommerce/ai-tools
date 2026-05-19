@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-015,"GraphQL Error Handling — Invalid Queries Return Structured Errors","GraphQL > Errors",High,BL-GQL-001,ECL-14.1,"Runner-native (scripts/graphql-runner.ts). Server schema introspection cached; runner validates client-side before send, so deliberately-broken queries surface schema-validation errors (DV-006/DV-009/DV-SYNTAX) in errors[] with data=null — mirrors the structured GraphQL-error contract expected from the server side.","—","[GQL-OP unknown_field]
+XCC-GQL-015,"GraphQL Error Handling — Invalid Queries Return Structured Errors","GraphQL > Errors",High,BL-GQL-001,ECL-10.2,"Runner-native (scripts/graphql-runner.ts). Server schema introspection cached; runner validates client-side before send, so deliberately-broken queries surface schema-validation errors (DV-006/DV-009/DV-SYNTAX) in errors[] with data=null — mirrors the structured GraphQL-error contract expected from the server side.","—","[GQL-OP unknown_field]
   query {
     orders(first: 1) {
       items { INVALID_FIELD }
@@ -17,12 +17,14 @@ GQL-015,"GraphQL Error Handling — Invalid Queries Return Structured Errors","G
   }
 [GQL-EXEC missing_args]","[ERRORS label=unknown_field] errors[] non-empty — unknown field on CustomerOrderType (DV-009) (BL-GQL-001)
 [DATA label=unknown_field] data is null
+[DATA label=unknown_field] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i
 [ERRORS label=unknown_root] errors[] non-empty — unknown root query field (DV-006) (BL-GQL-001)
 [DATA label=unknown_root] data is null
+[DATA label=unknown_root] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i
 [ERRORS label=missing_args] errors[] non-empty — addItem requires command argument (DV-008/DV-010) (BL-GQL-001)
-[DATA label=missing_args] data is null","[EVIDENCE] Error messages reference field names by name (INVALID_FIELD, nonExistentTopLevelField, command) — verify in evidence JSON
-[EVIDENCE] No stack traces, internal paths, connection strings, or SQL hints in error messages (BL-GQL-001)","errors[] empty on obviously invalid query; error messages expose internal details (stack traces, file paths); crash instead of structured error response",none — lint-only case,xAPI; graphql-schema.md — error contract & DV-* codes,Automated
-GQL-016,"GraphQL Authentication — Auth Gating On Protected Operations","GraphQL > Auth",Critical,BL-GQL-004,ECL-2.1; ECL-14.1,"Runner-native. Runs public categories query (STORE_ID from env), then me/orders without token (xAPI does not 401 anonymous — returns empty data), then acquires ORG_USER token and re-runs to confirm the same resolvers now return real member data. Demonstrates resolver-level auth gating (BL-GQL-004).","—","[GQL-OP public_cats]
+[DATA label=missing_args] data is null
+[DATA label=missing_args] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i","[EVIDENCE] Error messages reference field names by name (INVALID_FIELD, nonExistentTopLevelField, command) — verify in evidence JSON","errors[] empty on obviously invalid query; error messages expose internal details (stack traces, file paths); crash instead of structured error response",none — lint-only case,xAPI; graphql-schema.md — error contract & DV-* codes,Automated
+XCC-GQL-016,"GraphQL Authentication — Auth Gating On Protected Operations","GraphQL > Auth",Critical,BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. Runs public categories query (STORE_ID from env), then me/orders without token (xAPI does not 401 anonymous — returns empty data), then acquires ORG_USER token and re-runs to confirm the same resolvers now return real member data. Demonstrates resolver-level auth gating (BL-GQL-004).","—","[GQL-OP public_cats]
   query {
     categories(storeId: ""{{STORE_ID}}"", first: 1) {
       totalCount
@@ -54,15 +56,15 @@ GQL-016,"GraphQL Authentication — Auth Gating On Protected Operations","GraphQ
 [ERRORS label=noauth_me] errors[] empty — xAPI allows anonymous me() but resolver returns null member
 [DATA label=noauth_me] data.me.memberId is null — anonymous caller has no member (BL-GQL-004)
 [ERRORS label=noauth_orders] errors[] non-empty — orders() is hard-gated: returns Unauthorized extension code (BL-GQL-004)
+[DATA label=noauth_orders] errors[0].extensions.code = Unauthorized
 [ERRORS label=auth_me] errors[] empty — same query succeeds with ORG_USER Bearer token
 [DATA label=auth_me] data.me.memberId is non-null
 [DATA label=auth_me] data.me.contact is non-null
 [DATA label=auth_me] data.me.contact.id is non-null
 [ERRORS label=auth_orders] errors[] empty
 [COUNT label=auth_orders] data.orders.totalCount >= 0","[EVIDENCE] noauth_me returns memberId:null (soft gate) — not leaking internal user IDs or stack traces (BL-GQL-004)
-[EVIDENCE] noauth_orders error message extensions.code = ""Unauthorized"" (hard gate) — verify in evidence JSON
 [EVIDENCE] auth_me memberId/contact.id differ from anonymous response — resolver uses Bearer token to scope response","Anonymous me() returns real member data; anonymous orders() returns data without Unauthorized error; authenticated me() returns null; error surfaces internal details (stack traces, SQL)",none — read-only,xAPI; graphql-schema.md — Query.me Query.categories Query.orders,Automated
-GQL-018,"GraphQL Query Performance — Happy-Path Response Times","GraphQL > Performance",High,BL-GQL-002,,"Runner-native. ORG_USER authenticated. Evidence JSON captures elapsed_ms per operation — performance targets are asserted as info notes (PERF tags) for manual/CI-side threshold eval; runner MVP has no TIMING assertion kind.","—","[AUTH role=ORG_USER]
+XCC-GQL-018,"GraphQL Query Performance — Happy-Path Response Times","GraphQL > Performance",High,BL-GQL-002,,"Runner-native. ORG_USER authenticated. Evidence JSON captures elapsed_ms per operation — performance targets are asserted as info notes (PERF tags) for manual/CI-side threshold eval; runner MVP has no TIMING assertion kind.","—","[AUTH role=ORG_USER]
 [GQL-OP perf_profile]
   query {
     me { memberId contact { id firstName lastName } }
@@ -91,14 +93,14 @@ GQL-018,"GraphQL Query Performance — Happy-Path Response Times","GraphQL > Per
   }
 [GQL-EXEC perf_orders_nested]","[ERRORS label=perf_profile] errors[] empty — me resolves
 [DATA label=perf_profile] data.me is non-null
+[PERF label=perf_profile] elapsed_ms < 500
 [ERRORS label=perf_orders_list] errors[] empty — flat orders list resolves
 [COUNT label=perf_orders_list] data.orders.totalCount >= 0
+[PERF label=perf_orders_list] elapsed_ms < 500
 [ERRORS label=perf_orders_nested] errors[] empty — deep nested orders query resolves
-[DATA label=perf_orders_nested] data.orders is non-null","[PERF label=perf_profile] elapsed_ms target < 500ms (captured in evidence)
-[PERF label=perf_orders_list] elapsed_ms target < 500ms (captured in evidence)
-[PERF label=perf_orders_nested] elapsed_ms target < 1000ms (captured in evidence)
-[PERF label=perf_orders_nested] N+1 detection (runner-v2): repeat 5x and verify elapsed_ms does not grow proportionally","Any query exceeds its target threshold; response times grow linearly with repetition (N+1); errors[] non-empty on happy-path query; timeout/5xx","none — read-only",xAPI; graphql-schema.md — Query.me Query.orders CustomerOrderType,Automated
-GQL-020,"GraphQL Introspection — Schema Access Returns Valid Response","GraphQL > Security",High,BL-GQL-001,,"Runner-native. Public introspection query — no auth required. Runner's client-side validator supports introspection (validates against meta-schema). Asserts structured response + absence of sensitive type names.","—","[GQL-OP introspect]
+[DATA label=perf_orders_nested] data.orders is non-null
+[PERF label=perf_orders_nested] elapsed_ms < 1000","[EVIDENCE] N+1 detection (runner-v2): repeat perf_orders_nested 5x and verify elapsed_ms does not grow proportionally — not asserted in MVP","Any query exceeds its target threshold; response times grow linearly with repetition (N+1); errors[] non-empty on happy-path query; timeout/5xx","none — read-only",xAPI; graphql-schema.md — Query.me Query.orders CustomerOrderType,Automated
+XCC-GQL-020,"GraphQL Introspection — Schema Access Returns Valid Response","GraphQL > Security",High,BL-GQL-001,,"Runner-native. Public introspection query — no auth required. Runner's client-side validator supports introspection (validates against meta-schema). Asserts structured response + absence of sensitive type names.","—","[GQL-OP introspect]
   query {
     __schema {
       queryType { name }
@@ -108,6 +110,6 @@ GQL-020,"GraphQL Introspection — Schema Access Returns Valid Response","GraphQ
 [GQL-EXEC introspect]","[ERRORS label=introspect] errors[] empty — introspection enabled on QA env (acceptable; production should disable) (BL-GQL-001)
 [DATA label=introspect] data.__schema is non-null
 [DATA label=introspect] data.__schema.queryType is non-null
-[DATA label=introspect] data.__schema.queryType.name = Query","[EVIDENCE] Scan data.__schema.types[].name for sensitive substrings ""internal"", ""debug"", ""admin"", ""secret"", ""password"" — evidence review
-[PERF label=introspect] elapsed_ms target < 1000ms (full schema introspection is heavy)
-[PERF] Rate-limiting spec (runner-v2): 10 rapid introspection queries — expected to throttle or return uniform data; not asserted in MVP","Introspection response missing __schema block; errors[] non-empty on plain introspection; sensitive internal types exposed; 5xx on introspection",none — read-only,xAPI; graphql-schema.md — __schema introspection contract,Automated
+[DATA label=introspect] data.__schema.queryType.name = Query
+[PERF label=introspect] elapsed_ms < 1000","[EVIDENCE] Scan data.__schema.types[].name for sensitive substrings ""internal"", ""debug"", ""admin"", ""secret"", ""password"" — manual evidence review (runner path filter does not support regex; tracked as separate runner enhancement)
+[EVIDENCE] Rate-limiting spec (runner-v2): 10 rapid introspection queries — expected to throttle or return uniform data; not asserted in MVP","Introspection response missing __schema block; errors[] non-empty on plain introspection; sensitive internal types exposed; 5xx on introspection",none — read-only,xAPI; graphql-schema.md — __schema introspection contract,Automated

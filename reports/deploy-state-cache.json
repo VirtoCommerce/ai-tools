@@ -1,14 +1,14 @@
 {
-  "capturedAt": "2026-05-15T14:38:00+03:00",
+  "capturedAt": "2026-05-19T12:01:00Z",
   "branch": "vcst-qa",
   "platform": {
     "version": "3.1026.0",
     "image": "ghcr.io/virtocommerce/platform:3.1026.0"
   },
   "theme": {
-    "artifact": "vc-theme-b2b-vue-2.49.0-alpha.2342.zip",
-    "url": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.49.0-alpha.2342.zip",
-    "version": "2.49.0-alpha.2342"
+    "artifact": "vc-theme-b2b-vue-2.49.0-pr-2292-f131d346.zip",
+    "url": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.49.0-pr-2292-f131-f131d346.zip",
+    "version": "2.49.0-pr-2292-f131d346"
   },
   "modules": {
     "VirtoCommerce.XCart": "3.1013.0",
@@ -99,5 +99,5 @@
       "VirtoCommerce.ProfileExperienceApiModule": { "prior": "3.1005.0", "current": "3.1006.0" }
     }
   },
-  "consumedByRun": "REG-20260515-1438"
+  "consumedByRun": "REG-2026-05-19-1201"
 }

@@ -1,0 +1,41 @@
+# name: moveFromSavedForLater
+# category: cart
+# role: ORG_USER
+# purpose: Move one or more line items from the user's "Saved for later" cart back into the active cart
+# required-vars: STORE_ID (String), USER_ID (String), CART_ID (String)
+# optional-vars: CURRENCY_CODE (String, default "USD"), CULTURE_NAME (String, default "en-US")
+# gql-vars: { "lineItemIds": "[String!]!" }
+# runner-note: Pass SAVED line item IDs (captured from moveToSavedForLater.list.items[].id or getSavedForLater.items[].id) via [GQL-VARS label] JSON, e.g. {"lineItemIds": ["{{SAVED_0_ID}}"]}
+# last-validated: 2026-05-19
+# known-issues: configurationItems on configurable line items are restored end-to-end (PR #118 / VCST-4205)
+# used-by: VCST-4205 (Save-for-Later config preservation)
+# semantics: lineItemIds are removed from the "Saved for later" cart and inserted into the active cart. Return shape: { cart, list } where cart=active cart after the move, list=saved-for-later cart after the move.
+
+mutation MoveFromSavedForLater($lineItemIds: [String!]!) {
+  moveFromSavedForLater(command: {
+    storeId: "{{STORE_ID}}"
+    userId: "{{USER_ID}}"
+    cartId: "{{CART_ID}}"
+    currencyCode: "USD"
+    cultureName: "en-US"
+    lineItemIds: $lineItemIds
+  }) {
+    cart {
+      id itemsCount itemsQuantity
+      items {
+        id productId sku quantity
+        placedPrice { amount currency { code } }
+        configurationItems {
+          id sectionId type customText productId quantity selectedForCheckout
+        }
+      }
+    }
+    list {
+      id name itemsCount itemsQuantity type
+      items {
+        id productId quantity
+        configurationItems { id sectionId type customText productId selectedForCheckout }
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
 # purpose: Bulk-remove multiple configuration sections from a cart line item
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues: (none)
 # gql-vars: { "configurationSections": "[ConfigurationSectionInput!]!" }
 

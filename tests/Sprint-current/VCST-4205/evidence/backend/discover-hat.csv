@@ -1,0 +1,24 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4205-DISCOVER,"Discover live configuration sections of configurable hat",GraphQL > xCart > Discovery,High,—,—,"Discovery only — fetch the productConfiguration for the configurable-hat to confirm section shape (memory says 4→2 after restore).","hat_id=@td(CFG_HAT.id)","[GQL-OP get_config]
+  query {
+    productConfiguration(
+      configurableProductId: ""{{hat_id}}""
+      storeId: ""{{STORE_ID}}""
+    ) {
+      configurationSections {
+        id
+        name
+        type
+        isRequired
+        options {
+          id
+          text
+          quantity
+          product { id name }
+        }
+      }
+    }
+  }
+[GQL-EXEC get_config]","[ERRORS label=get_config] errors[] empty
+[DATA label=get_config] data.productConfiguration is non-null
+[DATA label=get_config] data.productConfiguration.configurationSections is non-null",[EVIDENCE] Captures current section shape into evidence,errors[] non-empty; sections null,—,VCST-4205,Automated

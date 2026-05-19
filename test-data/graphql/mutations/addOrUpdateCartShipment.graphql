@@ -4,7 +4,7 @@
 # purpose: Set / update the cart's shipment (method, price, delivery address). Primary checkout-flow primitive.
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: SHIPMENT_ID (String — to update existing shipment in-place; omit to add)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues:
 #   - price MUST match available shipping rate (CartShipmentValidator). Query availableShippingMethods first.
 # gql-vars: { "shipment": "InputShipmentType!" }

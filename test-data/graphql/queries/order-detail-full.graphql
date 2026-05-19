@@ -4,7 +4,7 @@
 # purpose: Full CustomerOrderType schema coverage — every scalar + nested-object field
 # required-vars: ORDER_NUMBER (String)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues:
 #   - order.coupons: resolver returns INVALID_OPERATION on some orders (server bug, not schema drift)
 #   - order.currency.name: resolver returns INVALID_OPERATION (server bug, not schema drift)

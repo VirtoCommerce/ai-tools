@@ -1,0 +1,277 @@
+{
+  "caseId": "VCST-4205-CASE3",
+  "title": "Edit-Configuration flow — replace lineItem and preserve the new config",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\tests\\Sprint-current\\VCST-4205\\evidence\\backend\\vcst-4205-cases.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-19T11:59:20.644Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-19T11:59:16.340Z",
+      "expiresAt": "2026-05-19T12:29:16.340Z"
+    }
+  ],
+  "variables": {
+    "ring_id": "750d36bd-5d1a-4261-898d-e506f89e5184",
+    "section_text_id": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+    "text_a": "AGENT-TEST-EDIT-OLD",
+    "text_b": "AGENT-TEST-EDIT-NEW",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "OLD_LINE_ID": "4969558c-c2a6-4d32-82e6-4469d242f514"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 142
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre_main",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 2130
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_initial",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-EDIT-OLD\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 432
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_after_add",
+      "query": "query {\n    cart(storeId: \"B2B-store\" currencyCode: \"USD\" userId: \"user-acme-store-maintainer-1\" cultureName: \"en-US\" cartName: \"default\") {\n      id items { id configurationItems { customText } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": [
+              {
+                "id": "4969558c-c2a6-4d32-82e6-4469d242f514",
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-EDIT-OLD"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 203
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "remove_old",
+      "query": "mutation {\n    removeCartItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartId: \"e60ab4c3-ce13-417b-a69c-a21b2d799565\" currencyCode: \"USD\" cultureName: \"en-US\"\n      lineItemId: \"4969558c-c2a6-4d32-82e6-4469d242f514\"\n    }) { id itemsCount }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "removeCartItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 275
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_replacement",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-EDIT-NEW\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 613
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_after_edit",
+      "query": "query {\n    cart(storeId: \"B2B-store\" currencyCode: \"USD\" userId: \"user-acme-store-maintainer-1\" cultureName: \"en-US\" cartName: \"default\") {\n      id\n      itemsCount\n      items {\n        id productId quantity\n        configurationItems { sectionId type customText }\n      }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "items": [
+              {
+                "id": "f3b5be3e-cdb4-4f85-9237-4abee4cd9a29",
+                "productId": "750d36bd-5d1a-4261-898d-e506f89e5184",
+                "quantity": 1,
+                "configurationItems": [
+                  {
+                    "sectionId": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+                    "type": "Text",
+                    "customText": "AGENT-TEST-EDIT-NEW"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 210
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post_main",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 0
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 277
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_initial] errors[] empty",
+      "label": "add_initial",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=remove_old] errors[] empty",
+      "label": "remove_old",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=add_replacement] errors[] empty",
+      "label": "add_replacement",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_after_edit] errors[] empty",
+      "label": "read_after_edit",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=read_after_edit] data.cart.items.length = 1",
+      "label": "read_after_edit",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cart.items.length = 1",
+      "actual": "data.cart.items.length = 1"
+    },
+    {
+      "raw": "[DATA label=read_after_edit] data.cart.items.0.configurationItems.0.customText = {{text_b}}",
+      "label": "read_after_edit",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items.0.configurationItems.0.customText = AGENT-TEST-EDIT-NEW",
+      "actual": "data.cart.items.0.configurationItems.0.customText = AGENT-TEST-EDIT-NEW"
+    },
+    {
+      "raw": "[DATA label=read_after_edit] data.cart.items.0.productId = {{ring_id}}",
+      "label": "read_after_edit",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items.0.productId = 750d36bd-5d1a-4261-898d-e506f89e5184",
+      "actual": "data.cart.items.0.productId = 750d36bd-5d1a-4261-898d-e506f89e5184"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] BL-CART-007: replace flow keeps only the new config",
+      "layer": "EVIDENCE",
+      "note": "BL-CART-007: replace flow keeps only the new config",
+      "resolved": "BL-CART-007: replace flow keeps only the new config"
+    }
+  ],
+  "cleanup": {
+    "raw": "[AUTH role=ORG_USER]",
+    "blocks": [
+      {
+        "kind": "AUTH",
+        "role": "ORG_USER",
+        "ok": true
+      }
+    ]
+  }
+}

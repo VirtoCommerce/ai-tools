@@ -1,0 +1,217 @@
+{
+  "caseId": "VCST-4205-CASE6",
+  "title": "BL-CART-007 complement — re-adding identical config increments quantity",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\tests\\Sprint-current\\VCST-4205\\evidence\\backend\\vcst-4205-cases.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-05-19T11:59:29.843Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-19T11:59:27.849Z",
+      "expiresAt": "2026-05-19T12:29:26.849Z"
+    }
+  ],
+  "variables": {
+    "ring_id": "750d36bd-5d1a-4261-898d-e506f89e5184",
+    "section_text_id": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+    "text_a": "AGENT-TEST-CONSOLIDATE",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 144
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 283
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_first",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-CONSOLIDATE\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 447
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_second_same",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"750d36bd-5d1a-4261-898d-e506f89e5184\" quantity: 1\n      currencyCode: \"USD\" cultureName: \"en-US\"\n      configurationSections: [{ sectionId: \"2cc0f57e-5654-4396-8795-66fe6e226ad1\" type: \"Text\" customText: \"AGENT-TEST-CONSOLIDATE\" }]\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 529
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_back",
+      "query": "query {\n    cart(storeId: \"B2B-store\" currencyCode: \"USD\" userId: \"user-acme-store-maintainer-1\" cultureName: \"en-US\" cartName: \"default\") {\n      id\n      itemsCount\n      items { id quantity configurationItems { customText } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 2,
+            "items": [
+              {
+                "id": "513e368a-2919-449f-9c2a-f3458de64afb",
+                "quantity": 1,
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-CONSOLIDATE"
+                  }
+                ]
+              },
+              {
+                "id": "57701c65-4dfd-4dc0-af68-cf76a9c57e79",
+                "quantity": 1,
+                "configurationItems": [
+                  {
+                    "customText": "AGENT-TEST-CONSOLIDATE"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 236
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" cartName: \"default\" cultureName: \"en-US\" currencyCode: \"USD\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 341
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_first] errors[] empty",
+      "label": "add_first",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=add_second_same] errors[] empty",
+      "label": "add_second_same",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_back] errors[] empty",
+      "label": "read_back",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=read_back] data.cart.items.length = 1",
+      "label": "read_back",
+      "kind": "COUNT",
+      "passed": false,
+      "expected": "data.cart.items.length = 1",
+      "actual": "data.cart.items.length = 2"
+    },
+    {
+      "raw": "[DATA label=read_back] data.cart.items.0.quantity = 2",
+      "label": "read_back",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.cart.items.0.quantity = 2",
+      "actual": "data.cart.items.0.quantity = 1"
+    },
+    {
+      "raw": "[DATA label=read_back] data.cart.items.0.configurationItems.0.customText = {{text_a}}",
+      "label": "read_back",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items.0.configurationItems.0.customText = AGENT-TEST-CONSOLIDATE",
+      "actual": "data.cart.items.0.configurationItems.0.customText = AGENT-TEST-CONSOLIDATE"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] BL-CART-007 same-config consolidation",
+      "layer": "EVIDENCE",
+      "note": "BL-CART-007 same-config consolidation",
+      "resolved": "BL-CART-007 same-config consolidation"
+    }
+  ],
+  "cleanup": {
+    "raw": "",
+    "blocks": []
+  }
+}

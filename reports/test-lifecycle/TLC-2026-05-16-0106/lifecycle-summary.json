@@ -1,0 +1,134 @@
+{
+  "runId": "TLC-2026-05-16-0106",
+  "inputType": "direct-scope",
+  "source": "suite 050c",
+  "operations": ["review", "fix"],
+  "date": "2026-05-16",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-alpha.2342",
+    "modules": {
+      "VirtoCommerce.XOrder": "3.1004.0",
+      "VirtoCommerce.Xapi": "3.1007.0",
+      "VirtoCommerce.Orders": "3.1008.0"
+    }
+  },
+  "schemaSnapshot": {
+    "refreshed": true,
+    "queries": 86,
+    "mutations": 134,
+    "types": 36
+  },
+  "affectedSuites": ["050c"],
+  "casesAnalyzed": 3,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 3,
+  "casesVerified": 0,
+  "filesModified": [],
+  "findings": {
+    "blocker": 0,
+    "critical": 0,
+    "high": 3,
+    "medium": 1,
+    "low": 0,
+    "informational": 1
+  },
+  "autoFixed": [],
+  "manualItems": [
+    {
+      "caseId": "ORD-GQL-011",
+      "issue": "References column lacks JIRA/REQ-* ID",
+      "dimension": "Completeness",
+      "severity": "High",
+      "code": "REQ-001"
+    },
+    {
+      "caseId": "ORD-GQL-012",
+      "issue": "References column lacks JIRA/REQ-* ID",
+      "dimension": "Completeness",
+      "severity": "High",
+      "code": "REQ-001"
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "References column lacks JIRA/REQ-* ID",
+      "dimension": "Completeness",
+      "severity": "High",
+      "code": "REQ-001"
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "Optional: split into full-coverage probe + defensive subset (Option B)",
+      "dimension": "Test design",
+      "severity": "Medium",
+      "code": "DES-002"
+    },
+    {
+      "caseId": "suite-050c",
+      "issue": "No negative case for order(number:) with bad/unauthorized number",
+      "dimension": "Coverage",
+      "severity": "Medium",
+      "code": "TC-001"
+    }
+  ],
+  "schemaValidation": {
+    "queriesChecked": 5,
+    "fieldsChecked": 92,
+    "invalidFields": [],
+    "moneyTypeDrift": false,
+    "notes": "Both CustomerOrderType.coupons and CurrencyType.name exist in the live introspected schema. DV-009 does not apply — the runtime INVALID_OPERATION errors are production resolver bugs, not test authoring defects."
+  },
+  "context7Findings": [
+    {
+      "module": "xOrder/CurrencyType",
+      "observation": "Official vc-docs CurrencyType reference lists 6 fields and omits 'name', though 'name' is present in the live introspected schema. Confirms 'name' is an undocumented/orphan field.",
+      "casesInfluenced": ["ORD-GQL-013"]
+    },
+    {
+      "module": "xOrder/CustomerOrderType.coupons",
+      "observation": "'coupons' [String] is both documented and in the live schema. Failure is a production resolver bug, not a schema/docs mismatch.",
+      "casesInfluenced": ["ORD-GQL-013"]
+    }
+  ],
+  "duplicationCrossSuite": [
+    {
+      "suite": "050g",
+      "note": "Cross-cutting performance probes overlap xOrder list queries at different depths — complementary, not duplicate"
+    }
+  ],
+  "blCoverage": {
+    "BL-GQL-002": "covered",
+    "BL-GQL-004": "covered",
+    "ECL-2.1": "covered"
+  },
+  "recommendation": "Option A — keep ORD-GQL-013 unchanged as schema-coverage canary; file JIRA bugs for the two production resolver errors (CustomerOrderType.coupons + CurrencyType.name INVALID_OPERATION). Option B (split into full + defensive subset) logged as Should-Fix optional enhancement.",
+  "productionBugsExposed": [
+    {
+      "severity": "High",
+      "module": "xOrder/xAPI",
+      "bug": "CustomerOrderType.coupons resolver throws INVALID_OPERATION on orders with no coupons",
+      "reproducer": "npx tsx scripts/graphql-runner.ts --case regression/suites/Backend/graphql/050c-graphql-xorder.csv:ORD-GQL-013",
+      "confirmedAcross": ["REG-20260515-1438", "REG-20260516-0101"]
+    },
+    {
+      "severity": "Medium",
+      "module": "xOrder/xAPI or Currency module",
+      "bug": "CurrencyType.name resolver throws INVALID_OPERATION; field also undocumented in vc-docs",
+      "reproducer": "Same as above",
+      "confirmedAcross": ["REG-20260515-1438", "REG-20260516-0101"]
+    }
+  ],
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_dataValidity": "PASS",
+    "G6_coverage": "PASS",
+    "G7_duplication": "PASS",
+    "G8_environment": "N/A",
+    "G9_sync": "N/A"
+  }
+}

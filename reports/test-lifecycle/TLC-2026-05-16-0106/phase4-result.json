@@ -1,0 +1,138 @@
+{
+  "runId": "TLC-2026-05-16-0106",
+  "phase": 4,
+  "scope": "050c",
+  "suite": "regression/suites/Backend/graphql/050c-graphql-xorder.csv",
+  "timestamp": "2026-05-16",
+  "casesReviewed": 3,
+  "findings": {
+    "blocker": 0,
+    "critical": 0,
+    "high": 3,
+    "medium": 1,
+    "low": 0,
+    "informational": 1
+  },
+  "autoFixed": [],
+  "manualItems": [
+    {
+      "caseId": "ORD-GQL-011",
+      "issue": "REQ-001: References column has no JIRA ticket or REQ-* ID; Priority=Critical requires source-of-demand traceability",
+      "dimension": "D6-BL/ECL",
+      "severity": "High",
+      "action": "Add JIRA ticket reference (sprint story or infra baseline placeholder)"
+    },
+    {
+      "caseId": "ORD-GQL-012",
+      "issue": "REQ-001: References column has no JIRA ticket or REQ-* ID; Priority=Critical requires source-of-demand traceability",
+      "dimension": "D6-BL/ECL",
+      "severity": "High",
+      "action": "Add JIRA ticket reference (sprint story or infra baseline placeholder)"
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "REQ-001: References column has no JIRA ticket or REQ-* ID; Priority=High requires source-of-demand traceability",
+      "dimension": "D6-BL/ECL",
+      "severity": "High",
+      "action": "Add JIRA ticket reference"
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "Production resolver bug: CustomerOrderType.coupons throws INVALID_OPERATION at path order.coupons (confirmed REG-20260515-1438 + REG-20260516-0101)",
+      "dimension": "D5-DataValidity",
+      "severity": "High",
+      "action": "File JIRA bug — xOrder.coupons resolver INVALID_OPERATION. Do NOT remove field from test."
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "Production resolver bug: CurrencyType.name throws INVALID_OPERATION at path order.currency.name (confirmed REG-20260515-1438 + REG-20260516-0101)",
+      "dimension": "D5-DataValidity",
+      "severity": "High",
+      "action": "File JIRA bug — CurrencyType.name resolver INVALID_OPERATION. Do NOT remove field from test."
+    },
+    {
+      "caseId": "ORD-GQL-013",
+      "issue": "BL-001: BL-GQL-001 (error contract) not listed in Business_Rule despite test directly exercising the error contract invariant via full-field resolution",
+      "dimension": "D6-BL/ECL",
+      "severity": "Medium",
+      "action": "Consider adding BL-GQL-001 to Business_Rule column"
+    },
+    {
+      "caseId": "suite-050c",
+      "issue": "TC-001: No negative case for order(number:) endpoint (invalid order number → errors[] non-empty). Cross-suite coverage in 050g XCC-GQL-016 covers auth-gate negative only.",
+      "dimension": "D9-Technique",
+      "severity": "Medium",
+      "action": "Track as future enhancement — add ORD-GQL-014: order(number: INVALID) negative case"
+    }
+  ],
+  "schemaValidation": {
+    "queriesChecked": 3,
+    "operationsChecked": ["orders (list)", "order (detail)", "order (full schema coverage)"],
+    "fieldsChecked": 68,
+    "invalidFields": [],
+    "producerBugFields": [
+      {
+        "type": "CustomerOrderType",
+        "field": "coupons",
+        "schemaStatus": "present in introspected schema",
+        "runtimeStatus": "INVALID_OPERATION resolver error",
+        "classification": "production bug — NOT a test authoring defect"
+      },
+      {
+        "type": "CurrencyType",
+        "field": "name",
+        "schemaStatus": "present in introspected schema (first field listed: name, code, symbol, exchangeRate, customFormatting, englishName, cultureName)",
+        "runtimeStatus": "INVALID_OPERATION resolver error",
+        "classification": "production bug — NOT a test authoring defect"
+      }
+    ],
+    "notes": "All fields in ORD-GQL-011/012/013 queries are present in graphql-schema.md type definitions. DV-009 does NOT apply. The two failing fields are schema-valid but have broken resolvers."
+  },
+  "duplicationCrossSuite": [
+    {
+      "type": "DUP-003",
+      "severity": "Informational",
+      "suite1": "050c ORD-GQL-011",
+      "suite2": "050g XCC-GQL-017/018",
+      "overlap": "orders() list query used in both suites",
+      "note": "050g uses shallow field selection for perf probes; 050c uses full field selection for coverage. Complementary, not duplicate."
+    },
+    {
+      "type": "DUP-003",
+      "severity": "Informational",
+      "suite1": "050c ORD-GQL-012/013",
+      "suite2": "050b4 CRX-GQL-013/024/025",
+      "overlap": "Both use order(number:…) read-back after createOrderFromCart",
+      "note": "050b4 reads back only id/number to confirm creation; 050c reads full detail and schema coverage. Different purpose, different layer of abstraction."
+    }
+  ],
+  "blCoverage": {
+    "BL-GQL-002": "covered — all 3 cases reference it; no [PERF] assertion in 050c (perf owned by 050g XCC-GQL-018)",
+    "BL-GQL-004": "covered — all 3 cases reference it; positive auth gate exercised; negative gate covered in 050g XCC-GQL-016",
+    "BL-GQL-001": "partially covered — ORD-GQL-013 implicitly exercises error contract; not listed in Business_Rule"
+  },
+  "ORD-GQL-013-decision": {
+    "optionSelected": "A",
+    "rationale": "Test design is correct. Both coupons and currency.name are present in the live introspected schema. The test legitimately probes valid schema fields. Runtime INVALID_OPERATION errors are production resolver bugs, not test defects. Schema-coverage canary tests are most valuable when they stay RED until the bug is fixed — Option B defers the bug visibility, Option C hides it entirely.",
+    "requiredFollowUp": [
+      "File JIRA bug: CustomerOrderType.coupons resolver INVALID_OPERATION",
+      "File JIRA bug: CurrencyType.name resolver INVALID_OPERATION",
+      "Do NOT remove or guard coupons/currency.name selections from ORD-GQL-013"
+    ]
+  },
+  "recommendation": "Option A — keep schema-coverage probe as-is; file two JIRA bugs for resolver failures (coupons + currency.name); add JIRA ticket refs to all three cases' References column",
+  "filesModified": [],
+  "gateAssessment": {
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "PASS",
+    "G5": "PASS",
+    "G6": "PASS",
+    "G7": "PASS",
+    "G8": "N/A",
+    "G9": "N/A"
+  },
+  "overallVerdict": "PASS WITH WARNINGS",
+  "verdictRationale": "Zero Blockers, zero Criticals, zero Lows. Three High findings are all the same REQ-001 pattern (missing JIRA ticket in References) — editorial, non-blocking for regression. No auto-fixes required (Cleanup column was already correctly populated). ORD-GQL-013 confirmed as correctly authored schema-canary; its regression failures are production bugs not test defects."
+}

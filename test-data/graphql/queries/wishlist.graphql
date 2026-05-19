@@ -4,7 +4,7 @@
 # purpose: Single wishlist detail by listId
 # required-vars: LIST_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: (future) 050h wishlist suites
 

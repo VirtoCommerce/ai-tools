@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-011,"xOrder — orders List Returns Customer Orders","GraphQL > xOrder",Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated. Account may or may not have orders — test asserts structural invariants, not row counts.","—","[AUTH role=ORG_USER]
+ORD-GQL-011,"xOrder — orders List Returns Customer Orders","GraphQL > xOrder",Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated. Account may or may not have orders — test asserts structural invariants, not row counts.","—","[AUTH role=ORG_USER]
 [GQL-OP orders_list]
   query {
     orders(first: 10, sort: ""createdDate:desc"") {
@@ -14,7 +14,7 @@ GQL-011,"xOrder — orders List Returns Customer Orders","GraphQL > xOrder",Crit
 [DATA label=orders_list] data.orders is non-null
 [COUNT label=orders_list] data.orders.totalCount >= 0
 [DATA label=orders_list] data.orders.items is non-null","[ROUNDTRIP label=orders_list] runner-manual: re-execute and confirm same totalCount","Runner DV-009 on renamed field (e.g. totalCount → count); errors[] non-empty; items is null while totalCount > 0; status enum value missing from schema","none — pure read","xAPI; graphql-schema.md — CustomerOrderType, MoneyType, CurrencyType",Automated
-GQL-012,"xOrder — order Detail Query Returns Full Order by Number","GraphQL > xOrder",Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated with at least one existing order (runner captures most recent order number from list query before issuing detail query).","—","[AUTH role=ORG_USER]
+ORD-GQL-012,"xOrder — order Detail Query Returns Full Order by Number","GraphQL > xOrder",Critical,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated with at least one existing order (runner captures most recent order number from list query before issuing detail query).","—","[AUTH role=ORG_USER]
 [GQL-OP list_first]
   query {
     orders(first: 1, sort: ""createdDate:desc"") {
@@ -46,7 +46,7 @@ GQL-012,"xOrder — order Detail Query Returns Full Order by Number","GraphQL > 
 [DATA label=order_detail] data.order.number = {{ORDER_NUMBER}}
 [DATA label=order_detail] data.order.id is non-null
 [DATA label=order_detail] data.order.items is non-null","[ROUNDTRIP label=order_detail] runner-manual: re-execute with same number → same order object","errors[] non-empty; data.order null despite valid number; items[] empty when line items exist; addresses[] empty for shipped order; MoneyType drift (currencyCode instead of currency.code)","none — pure read","xAPI; graphql-schema.md — CustomerOrderType, MoneyType, order(id,number,cultureName)",Automated
-GQL-013,"xOrder — CustomerOrderType Full-Field Schema Coverage","GraphQL > xOrder > Schema Coverage",High,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated with at least one completed order containing items, addresses, payments, shipments. Schema coverage test — selects every CustomerOrderType scalar + nested-object field defined in graphql-schema.md to detect drift.","—","[AUTH role=ORG_USER]
+ORD-GQL-013,"xOrder — CustomerOrderType Full-Field Schema Coverage","GraphQL > xOrder > Schema Coverage",High,BL-GQL-002; BL-GQL-004,ECL-2.1,"Runner-native. ORG_USER authenticated with at least one completed order containing items, addresses, payments, shipments. Schema coverage test — selects every CustomerOrderType scalar + nested-object field defined in graphql-schema.md to detect drift.","—","[AUTH role=ORG_USER]
 [GQL-OP list_first]
   query {
     orders(first: 1, sort: ""createdDate:desc"") {

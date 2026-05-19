@@ -1,0 +1,92 @@
+{
+  "ticket": "VCST-4205",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_qualifier": "Fix verified at API + Firefox; Chrome Case-2 FAIL likely contamination; 3 adjacent UI bugs found in same code area",
+  "date": "2026-05-19",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2294-6509-650937ca",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1014.0-pr-118-1be7"
+    },
+    "prs_under_test": [
+      "https://github.com/VirtoCommerce/vc-frontend/pull/2294",
+      "https://github.com/VirtoCommerce/vc-module-x-cart/pull/118"
+    ]
+  },
+  "agents_dispatched": [
+    "qa-backend-expert (canonical GraphQL runner)",
+    "qa-frontend-expert (playwright-chrome)",
+    "qa-testing-expert (playwright-firefox; folded SBTM into the same dispatch)"
+  ],
+  "cases": {
+    "case1_merge_prevention": "PASS (backend 21/21 + Chrome + Firefox all agree)",
+    "case2_move_to_cart_preserves_config": "PASS at API (backend 7/7) and Firefox qualitative; FAIL on Chrome — likely cross-agent contamination, re-test with isolated user required",
+    "case3_edit_configuration": "PASS (all 3 agents agree, incl. hard reload)",
+    "case4_price_consistency": "FAIL — saved-for-later sidebar widget shows $16 base instead of $33 configured price; separate from core fix",
+    "case5_error_probe": "NOT_EXECUTED",
+    "case6_adjacent_regression": "NOT_EXECUTED"
+  },
+  "total_cases": 6,
+  "passed": 3,
+  "failed": 1,
+  "blocked": 0,
+  "not_executed": 2,
+  "business_rules_verified": [
+    "BL-CART-007",
+    "BL-CART-010",
+    "BL-CART-014",
+    "BL-PRICE-001",
+    "BL-CART-003"
+  ],
+  "exploratory": {
+    "charter": "Risk-based exploration of integration boundaries around Save-for-Later + configurable products fix",
+    "heuristic": "SFDPOT",
+    "findings": {
+      "bugs": 3,
+      "questions": 0,
+      "observations": 4,
+      "risks": 2
+    }
+  },
+  "bugs_to_file": [
+    {
+      "title": "Save-for-Later miniwidget on /cart shows product.price.actual ($16) instead of lineItem.listPrice ($33) for configurable products",
+      "severity": "Medium",
+      "confirmed_by": ["Chrome A1", "Firefox Finding #1"],
+      "fix_hint": "SavedForLaterSidebar component should bind lineItem.salePrice / listPrice; /account/saved-for-later page already binds correctly — use as reference"
+    },
+    {
+      "title": "Saved-for-Later entries show master-variation properties instead of configurationItems[] — multiple saved configs look identical",
+      "severity": "High",
+      "confirmed_by": ["Chrome A2"],
+      "fix_hint": "GetWishlist / GetSavedForLater GraphQL fragment missing configurationItems selection on line items"
+    },
+    {
+      "title": "moveToSavedForLater / moveFromSavedForLater behave as bulk operations regardless of lineItemIds payload",
+      "severity": "High",
+      "confirmed_by": ["Chrome A3"],
+      "fix_hint": "Backend handler in vc-module-x-cart PR #118 may be using selectedForCheckout semantics instead of the passed lineItemIds array"
+    }
+  ],
+  "process_findings": [
+    {
+      "title": "Parallel QA agents shared a single storefront user — cart state contamination across browsers",
+      "severity": "High (process)",
+      "fix": "Dispatcher logic must assign per-slot users from test-data/users/agent-user-pool.csv for cart-mutating parallel runs"
+    }
+  ],
+  "recommendations": [
+    "Re-run Case 2 on Chrome with isolated user (agent-pool slot 1) before signing off VCST-4205",
+    "File NEW-BUG-1/2/3 (cart-sidebar SFL miniwidget defects)",
+    "Patch dispatch logic for per-slot user assignment on cart flows",
+    "Run error-handling probe + adjacent suites 029/072 in a follow-up",
+    "Update testing-checklist.md to reflect post-2026-05-15 Configurable Hat URL + section composition (Color + Print only)"
+  ],
+  "jira_transition": {
+    "recommendation": "HOLD — do not auto-transition until Case 2 isolated re-test runs",
+    "comment_draft": "QA Complete — Fix verified at xAPI layer (backend 35/35 asserts) and qualitatively on Firefox. Cases 1 + 3 PASS on all three agents. Case 2 reported FAIL only on Chrome under contaminated multi-agent session; recommend isolated re-test before signoff. 3 adjacent UI defects discovered in same code area (see qa-summary.md NEW-BUG-1/2/3) — to be filed separately. Artifacts: tests/Sprint-current/VCST-4205/"
+  },
+  "artifacts": "tests/Sprint-current/VCST-4205/"
+}

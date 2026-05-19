@@ -1,0 +1,132 @@
+{
+  "runId": "RESTORE-2026-05-19-suite-009",
+  "executedAt": "2026-05-19T13:30:00Z",
+  "environment": "vcst-qa",
+  "platformBackend": "https://vcst-qa.govirto.com",
+  "storefront": "https://vcst-qa-storefront.govirto.com",
+  "virtualCatalogId": "fc596540864a41bf8ab78734ee7353a3",
+  "virtualCatalogName": "B2B-mixed",
+  "physicalCatalogIds_observed": [
+    "f4510943-ca9c-4286-affb-0d2d20b9befb (Conditional Parents - reseed phase 3)",
+    "b682f383-3317-4767-b4f6-cc946dcf4cb2 (Configurable Parents - reseed phase 1+2)",
+    "6032bd3c-77dc-4035-a94f-6f60ee5abb4e (B2B Demo Catalog beverages)",
+    "Other source physicals: eccd12a8, c5f46974, 5b5da75b, c8b4988c, 7829d35f, cf877005, fc596540864a41bf8ab78734ee7353a3 (self)"
+  ],
+  "physicalCatalogId_stated_in_brief": "7f840fe0… — RETURNS 404. The brief's stated physical catalog id does NOT exist on vcst-qa as of 2026-05-19. The B2B-mixed virtual catalog now sources from at least 8 physical catalogs (likely a side effect of the 2026-05-15 restore from another env).",
+  "summary": {
+    "status": "partial",
+    "diagnosis": "Suite 009's 31 PDP 404s are NOT a catalog-link problem. Every viable test fixture is ALREADY linked into B2B-mixed and resolves on the storefront (verified HTTP 200). The 404s occur because the suite CSV references {{TEST_SKU}}, {{TEST_SKU_CONFIGURABLE}}, {{TEST_SKU_VARIANTS}} variables that are NOT defined in .env.vcst, and the existing ENV bindings (CONFIGURABLE_SKU=ZLU-45824356, LOW_STOCK_SKU=HYN-39381935) point at SKUs that died in the 2026-05-15 wipe.",
+    "actionsTaken": "Probed Admin Catalog API + storefront xAPI to inventory every B2B-mixed product. No products were linked or created. Identified the 3 missing env-var bindings + 2 dead env-var bindings that are the true blockers.",
+    "decisionRequired": "USER: rebind 5 env vars in .env.vcst, or update suite 009 CSV to use resolved @td(...) fixtures."
+  },
+  "neededProducts": [
+    { "cases": ["B2C-VAR-001","B2C-VAR-003","B2C-VAR-006","B2C-VAR-007","B2C-VAR-008","B2C-VAR-009","B2C-VAR-010","B2C-VAR-011","B2C-VAR-012"], "productType": "variation (size+color, multi-attr)", "matched": "XKC-38084072 Men's Flannel Shirts (Size_1: XS/S/M/L/XL × Color × Fabric, 5 variations)", "matchedId": "(via products query)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-VAR-002"], "productType": "variation (color)", "matched": "16785001 Beats by Dre Solo 2 (Color: Blue/Pink/Red/Silver/White, 5 variations)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-VAR-004","B2C-VAR-012"], "productType": "OOS variant", "matched": "1585405d AGENT-TEST-OOS-Fixture (qty=0, isInStock=false, isAvailable=false)", "status": "alive, linked, PDP resolves — fully OOS not variant-OOS" },
+    { "cases": ["B2C-VAR-005"], "productType": "variation with variant-specific pricing", "matched": "NONE found in B2B-mixed (would need a variation product whose price differs per variant)", "status": "missing" },
+    { "cases": ["B2C-CONFIG-001","B2C-CONFIG-002","B2C-CONFIG-008","B2C-CONFIG-018","B2C-CONFIG-019"], "productType": "Configurable, multi-section (Product type)", "matched": "dd56d770 CFG-013 Laptop (2 required Product sections: RAM 3 opts + Storage 3 opts)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-CONFIG-003"], "productType": "Configurable + optional add-ons", "matched": "5792871f CFG-020 Phone Case (3 sections: Case Style req + Accessories opt + Custom Name Text opt)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-CONFIG-004"], "productType": "Configurable + Text section (engraving)", "matched": "750d36bd CFG-017 Ring (required Text section maxLength=30)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-CONFIG-005"], "productType": "Configurable + File upload", "matched": "50529b79 Custom T-shirt has 'Upload your shirt print design' File section (required); or CFG-026 28d6bc0c Req-File-Child", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-CONFIG-006"], "productType": "Configurable + dependent options (cascade)", "matched": "b798b160 CFG-022 Conditional Bike (dependsOnSectionId cascade A→B→C with sibling D)", "status": "alive, linked, PDP resolves" },
+    { "cases": ["B2C-CONFIG-007"], "productType": "Bundle/kit builder (multi-step gift basket, min 3 max 10)", "matched": "NONE — no BillOfMaterials or multi-step bundle product in catalog", "status": "missing" },
+    { "cases": ["B2C-CONFIG-009","B2C-CONFIG-010"], "productType": "Generic configurable (save/reset behaviour)", "matched": "Any CFG-* parent (use CFG-013 Laptop)", "status": "covered" },
+    { "cases": ["B2C-CONFIG-011","B2C-CONFIG-012"], "productType": "Configurable for mobile/a11y", "matched": "CFG-013 Laptop or CFG-020 Phone Case", "status": "covered" },
+    { "cases": ["B2C-CONFIG-013","B2C-CONFIG-014","B2C-CONFIG-015"], "productType": "Configurable with discounted option (sale price < list price)", "matched": "ae791be7 CFG-014 Sale Bike (1 Handlebars section, 2 options) — but presence of discount on options requires pricelist check", "status": "alive, linked, PDP resolves; sale-price assertion may require pricing verification" },
+    { "cases": ["B2C-CONFIG-016","B2C-CONFIG-017"], "productType": "Configurable with collapsed accordion section (auto-scroll regression)", "matched": "37d2f9ae CFG-016 Checkout-Bike (1 Wheels section req)", "status": "alive, linked, PDP resolves" }
+  ],
+  "physicalProbes": [
+    { "envVar": "CONFIGURABLE_SKU", "currentValue": "ZLU-45824356", "exists": false, "verdict": "DEAD — must rebind", "recommendedBind": "agent-test-config-laptop-20260518 (CFG-013, GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72)" },
+    { "envVar": "LOW_STOCK_SKU", "currentValue": "HYN-39381935", "exists": false, "verdict": "DEAD — must rebind", "recommendedBind": "QA-LOW-001 (GUID ca405b27-efb8-453b-9561-c8efe38c10b4, qty=5, isInStock=true)" },
+    { "envVar": "OOS_SKU", "currentValue": "306018", "exists": true, "linkedToB2BMixed": false, "verdict": "ALIVE in B2B Demo Catalog (Jagermeister) — NOT linked to B2B-mixed, semantically wrong (no variants)", "recommendedBind": "QA-OOS-001 (GUID 1585405d-b4b1-4aa2-ba6d-34c22152b933, qty=0, isInStock=false)" },
+    { "envVar": "PACK_SIZE_SKU", "currentValue": "26145626", "exists": true, "linkedToB2BMixed": true, "verdict": "ALIVE and already linked to B2B-mixed (Beck's bottle 6x0.33l)", "recommendedBind": "Keep current OR repoint to QA-PACK-001 (GUID 49567c47-5d21-4303-a11a-a53210f2e5c4, qty=60)" },
+    { "envVar": "TIER_PRICED_SKU", "currentValue": "(empty)", "exists": false, "verdict": "UNBOUND", "recommendedBind": "QA-TIER-001 (GUID 9d709714-7905-429f-88e9-d5e342854425, qty=200)" },
+    { "envVar": "TEST_SKU", "currentValue": "(undefined)", "exists": false, "verdict": "UNDEFINED — suite 009 references it in 20/31 cases", "recommendedBind": "XKC-38084072 (Men's Flannel Shirts — multi-attribute variations) OR CFG-013 Laptop depending on case" },
+    { "envVar": "TEST_SKU_CONFIGURABLE", "currentValue": "(undefined)", "exists": false, "verdict": "UNDEFINED — referenced by CONFIG-018/019", "recommendedBind": "agent-test-config-laptop-20260518 (CFG-013)" },
+    { "envVar": "TEST_SKU_VARIANTS", "currentValue": "(undefined)", "exists": false, "verdict": "UNDEFINED — referenced by VAR-012", "recommendedBind": "XKC-38084072 (Men's Flannel Shirts)" }
+  ],
+  "virtualLinkProbes": [
+    { "productCode": "AAW-59914334", "name": "Custom T-shirt", "productId": "50529b79-a018-4e84-93d5-860d7969b630", "linkedToB2BMixed": true, "configurationSections": 4 },
+    { "productCode": "YER-80407217", "name": "Configurable Hat", "productId": "38dbe95c-3f46-48ff-bb9a-8bd96f475214", "linkedToB2BMixed": true, "configurationSections": 2 },
+    { "productCode": "BAJ-18974454", "name": "Vintage Colorado Hoodie", "productId": "4b1de1b0-b220-4092-9336-9ad462216719", "linkedToB2BMixed": true, "configurationSections": 0, "note": "Physical, no sections — non-configurable baseline" },
+    { "productCode": "AGENT-TEST-CFG-013-20260518", "name": "AGENT-TEST-Config-Laptop", "productId": "dd56d770-3c3b-4e09-b126-0c2bb8bd0f72", "linkedToB2BMixed": true, "configurationSections": 2 },
+    { "productCode": "AGENT-TEST-CFG-014-20260518", "name": "AGENT-TEST-Config-Sale-Bike", "productId": "ae791be7-56cf-452a-a87d-b0a3e2ffe2e6", "linkedToB2BMixed": true, "configurationSections": 1 },
+    { "productCode": "AGENT-TEST-CFG-015-20260518", "name": "AGENT-TEST-Config-OOS-Bike", "productId": "3b0052b9-a7fa-484f-9180-3fbce9597d37", "linkedToB2BMixed": true, "configurationSections": 1 },
+    { "productCode": "AGENT-TEST-CFG-016-20260518", "name": "AGENT-TEST-Config-Checkout-Bike", "productId": "37d2f9ae-c8ac-4c15-a0b7-87f33de9fb7e", "linkedToB2BMixed": true, "configurationSections": 1 },
+    { "productCode": "AGENT-TEST-CFG-017-20260518", "name": "AGENT-TEST-Ring-Txt-Cfg", "productId": "750d36bd-5d1a-4261-898d-e506f89e5184", "linkedToB2BMixed": true, "configurationSections": 1, "note": "Text section, maxLength=30" },
+    { "productCode": "AGENT-TEST-CFG-018-20260518", "name": "AGENT-TEST-Config-Custom-Jersey", "productId": "03f6007c-92be-4374-9805-117cc57561a0", "linkedToB2BMixed": true, "configurationSections": 1 },
+    { "productCode": "AGENT-TEST-CFG-019-20260518", "name": "AGENT-TEST-Config-Gift-Box", "productId": "628fddc9-c0a3-4a8f-ab00-2479be8e3e34", "linkedToB2BMixed": true, "configurationSections": 1, "note": "Optional Text section maxLength=100" },
+    { "productCode": "AGENT-TEST-CFG-020-20260518", "name": "AGENT-TEST-Config-Phone-Case", "productId": "5792871f-c91f-4970-86a4-c75aa0985819", "linkedToB2BMixed": true, "configurationSections": 3 },
+    { "productCode": "AGENT-TEST-CFG-021-20260518", "name": "AGENT-TEST-Config-Custom-Bike", "productId": "0b42a3eb-8ee8-49e5-87ac-cdef23b38e20", "linkedToB2BMixed": true, "configurationSections": 3 },
+    { "productCode": "AGENT-TEST-CFG-022-20260519", "name": "AGENT-TEST-Config-Conditional-Bike", "productId": "b798b160-5679-4456-868d-b35e9e24211d", "linkedToB2BMixed": true, "configurationSections": 4, "note": "Conditional cascade A→B→C w/ sibling D" },
+    { "productCode": "LT-001", "name": "AGENT-TEST-Gaming-Laptop", "productId": "bce99323-467e-463a-adae-9cf0b4b5adfb", "linkedToB2BMixed": true, "qty": 10 },
+    { "productCode": "QA-LOW-001", "name": "AGENT-TEST-Low-Stock-Fixture", "productId": "ca405b27-efb8-453b-9561-c8efe38c10b4", "linkedToB2BMixed": true, "qty": 5 },
+    { "productCode": "QA-OOS-001", "name": "AGENT-TEST-OOS-Fixture", "productId": "1585405d-b4b1-4aa2-ba6d-34c22152b933", "linkedToB2BMixed": true, "qty": 0, "isAvailable": false },
+    { "productCode": "QA-PACK-001", "name": "AGENT-TEST-Pack-Size-Fixture", "productId": "49567c47-5d21-4303-a11a-a53210f2e5c4", "linkedToB2BMixed": true, "qty": 60 },
+    { "productCode": "QA-TIER-001", "name": "AGENT-TEST-Tier-Priced-Fixture", "productId": "9d709714-7905-429f-88e9-d5e342854425", "linkedToB2BMixed": true, "qty": 200 },
+    { "productCode": "WH-001", "name": "AGENT-TEST-Wireless-Headphones", "productId": "ac39926b-d469-45d5-8062-9a6cb0c36688", "linkedToB2BMixed": true, "qty": 50 },
+    { "productCode": "16785001", "name": "Beats by Dre Solo 2 (color variations)", "linkedToB2BMixed": true, "hasVariations": true, "variationCount": 5 },
+    { "productCode": "XKC-38084072", "name": "Men's Flannel Shirts (size+color variations)", "linkedToB2BMixed": true, "hasVariations": true, "variationCount": 5 },
+    { "productCode": "306018", "name": "JAGERMEISTER FLES 1,00L", "linkedToB2BMixed": false, "note": "Only in B2B Demo Catalog 6032bd3c — NOT a B2B-mixed source" },
+    { "productCode": "26145626", "name": "Beck's bottle 6x0.33l", "linkedToB2BMixed": true, "note": "Linked via Beer→Alcoholic drinks→Efes Beer category" }
+  ],
+  "actionsExecuted": [],
+  "actionsExecutedNote": "No links were created. No products were modified. Every product needed by Suite 009 that physically exists is already linked into B2B-mixed. The bottleneck is env-var bindings, not catalog links. Per brief, do NOT recreate missing products — flagged in stillMissing[].",
+  "storefrontVerification": [
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/configurable-hat", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/custom-t-shirt", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/hoodie", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-laptop-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-bike-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-sale-bike-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-oos-bike-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-checkout-bike-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-ring-txt-cfg-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-gift-box-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-phone-case-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-custom-bike-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-config-custom-jersey-20260518", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-low-stock-fixture", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-oos-fixture", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-pack-size-fixture", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-tier-priced-fixture", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-gaming-laptop", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/agent-test-wireless-headphones", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/beats-by-dre-solo-2-on-ear-headphones", "http": 200, "renders": true },
+    { "pdpUrl": "https://vcst-qa-storefront.govirto.com/product/mens-flannel-shirts-lightweight-cotton-button-down-long-sleeve-shirt-casual-plaid-pocket-shirts-outdoor-work-blue-cotton-l-b2c", "http": 200, "renders": true }
+  ],
+  "stillMissing": [
+    {
+      "expected": "Variation product with variant-specific pricing (B2C-VAR-005)",
+      "evidence": "All hasVariations=true products in B2B-mixed checked (4574 products paginated): Beats Solo, Powerbeats, AirPods Pro, ALNAC tyre, Custom car cover, Dog Grooming, Dog Walking, Flannel Shirts — none demonstrate per-variant price differential without pricelist re-config. Most variants share the parent's listed price.",
+      "recommendation": "Either (a) bind to flannel shirt or beats and accept that the test asserts UI behaviour rather than actual price delta; (b) wait for the planned reseed to add a tiered-variant fixture; or (c) configure variant-level pricelist on an existing variation product via the Pricing admin."
+    },
+    {
+      "expected": "Bundle / Kit Builder product (B2C-CONFIG-007)",
+      "evidence": "Searched the active catalog with keywords 'basket', 'bundle', 'kit', 'builder'. Only result is 'build-the-bike-of-your-dream' category (no individual bundle product). No productType=BillOfMaterials or multi-step component-picker exists in B2B-mixed.",
+      "recommendation": "Mark B2C-CONFIG-007 as N/A on vcst-qa until a true bundle/kit fixture is seeded. The closest analog (multi-step composite) is the CFG-022 Conditional Bike, but it's a cascade not a 3-of-10 component picker."
+    },
+    {
+      "expected": "Variation product with intra-variant OOS state (B2C-VAR-004) — i.e. one parent where some variants are in stock, others are OOS",
+      "evidence": "Beats Solo, Flannel Shirts all variants in stock. QA-OOS-001 is a fully-OOS Physical product, not a parent-with-mixed-stock-variants.",
+      "recommendation": "Either reduce a single Beats Solo or Flannel variant's stock to 0 via Admin Inventory PATCH (per reference_inventory_admin_api.md), or wait for reseed."
+    }
+  ],
+  "envVarsAffected": [
+    "CONFIGURABLE_SKU=ZLU-45824356 — DEAD; rebind to AGENT-TEST-CFG-013-20260518 (agent-test-config-laptop-20260518)",
+    "LOW_STOCK_SKU=HYN-39381935 — DEAD; rebind to QA-LOW-001",
+    "OOS_SKU=306018 — alive in wrong catalog; rebind to QA-OOS-001",
+    "PACK_SIZE_SKU=26145626 — alive and linked; OK as-is, optionally repoint to QA-PACK-001 for consistency with other QA-* fixtures",
+    "TIER_PRICED_SKU=(empty) — bind to QA-TIER-001",
+    "TEST_SKU=(undefined) — define and bind to XKC-38084072 (Men's Flannel Shirts) for variation cases OR AGENT-TEST-CFG-013-20260518 for CFG cases (suite uses one variable for both — recommend splitting via @td() per-case)",
+    "TEST_SKU_CONFIGURABLE=(undefined) — bind to AGENT-TEST-CFG-013-20260518",
+    "TEST_SKU_VARIANTS=(undefined) — bind to XKC-38084072"
+  ],
+  "recommendedNextSteps": [
+    "1. Update .env.vcst: rebind CONFIGURABLE_SKU, LOW_STOCK_SKU, OOS_SKU, TIER_PRICED_SKU. Add TEST_SKU, TEST_SKU_CONFIGURABLE, TEST_SKU_VARIANTS.",
+    "2. Better: add per-case @td(ALIAS.code) aliases to test-data/aliases.json (e.g., CFG_LAPTOP.slug, FLANNEL_VARIATIONS.code, BEATS_COLOR_VARIATIONS.code) and refactor 009-b2c-variations-configs.csv to reference @td() rather than env vars. Aligns with `feedback_flexible_test_cases` golden rule.",
+    "3. Mark B2C-VAR-005 (variant-specific pricing), B2C-VAR-004 (intra-variant OOS), B2C-CONFIG-007 (bundle builder) as BLOCKED-FIXTURE on vcst-qa until reseed.",
+    "4. Re-run suite 009 — expected to unblock 28/31 cases (the 3 above remain BLOCKED-FIXTURE)."
+  ],
+  "suite009ExpectedUnblockCount": "28 of 31 after env-var rebinding; 3 still fixture-blocked (VAR-004 intra-variant OOS, VAR-005 variant-specific pricing, CONFIG-007 bundle builder)"
+}

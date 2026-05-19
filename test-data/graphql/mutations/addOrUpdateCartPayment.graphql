@@ -4,7 +4,7 @@
 # purpose: Set / update the cart's payment (gateway code, billing address). Required before createOrderFromCart.
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: PAYMENT_ID (String — to update existing payment in-place)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues: (none)
 # gql-vars: { "payment": "InputPaymentType!" }
 # runner-note: paymentGatewayCode "DefaultManualPaymentMethod" works without external processor; see order-creation-matrix.md

@@ -4,7 +4,7 @@
 # purpose: Fetch the configuration definition for a configurable product (sections + options + dependsOnSectionId for conditional cascades)
 # required-vars: STORE_ID (String), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID c972b4d0-25c2-4d7c-8a18-9360a8889bc3)
 # optional-vars: USER_ID (String), CULTURE_NAME (String, default "en-US"), CURRENCY_CODE (String, default "USD")
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues:
 #   - cultureName description in schema says "Currency code" — schema description bug; correct semantics are culture (e.g. "en-US")
 

@@ -56,6 +56,24 @@ export const TOUCH_TARGET_MIN_PX = 44;
 /** Minimum gap between adjacent interactive elements at mobile viewport (BL-UI-006). */
 export const TOUCH_TARGET_GAP_PX = 8;
 
+/** WCAG 1.4.3 contrast ratio thresholds (BL-UI-008). AA normal text 4.5:1, large text 3:1. */
+export const CONTRAST_RATIOS = { normal: 4.5, large: 3.0, uiComponent: 3.0 } as const;
+
+/** WCAG 2.4.7 focus-indicator minimum visible-area outline (BL-UI-009). 2 px solid is the common floor. */
+export const FOCUS_INDICATOR_MIN_PX = 2;
+
+/** BL-UI-010 image aspect-ratio tolerance — `displayed / intrinsic` must stay within ±5% to avoid visible squash/stretch. */
+export const IMAGE_ASPECT_TOLERANCE = 0.05;
+
+/** BL-UI-007 critical-alert selectors. Any decorative or interactive element overlapping these rects is a violation. */
+export const CRITICAL_ALERT_SELECTORS = [
+  '.vc-alert--danger',
+  '.vc-alert--warning',
+  '[role="alert"]',
+  '[role="alertdialog"]',
+  '[aria-live="assertive"]',
+] as const;
+
 // ---------------------------------------------------------------------------
 // Snippet result types (what each `evaluate` call returns)
 // ---------------------------------------------------------------------------
@@ -123,6 +141,66 @@ export interface RectSnapshot {
   width: number;
   height: number;
   ts: number;
+}
+
+export interface OcclusionAuditResult {
+  alertSelectors: string[];
+  alertsFound: number;
+  overlaps: Array<{
+    alertTag: string;
+    alertText: string;
+    occluderTag: string;
+    occluderRole: string | null;
+    overlapWidth: number;
+    overlapHeight: number;
+    overlapArea: number;
+    /** True when the occluder covers ≥ 25% of the alert's rect — likely to hide the message entirely. */
+    severe: boolean;
+  }>;
+}
+
+export interface ContrastAuditResult {
+  selector: string;
+  evaluated: number;
+  violations: Array<{
+    tag: string;
+    text: string;
+    color: string;
+    background: string;
+    ratio: number;
+    /** WCAG large-text rule: ≥ 18 pt (24 px) regular OR ≥ 14 pt (18.66 px) bold. */
+    isLargeText: boolean;
+    requiredRatio: number;
+  }>;
+}
+
+export interface FocusIndicatorAuditResult {
+  evaluated: number;
+  missing: Array<{
+    tag: string;
+    role: string | null;
+    text: string;
+    outlineWidth: number;
+    outlineStyle: string;
+    /** True when neither `outline` nor `box-shadow` produces a visible focus ring on `:focus-visible`. */
+    boxShadowPresent: boolean;
+  }>;
+}
+
+export interface ImageAspectAuditResult {
+  selector: string;
+  evaluated: number;
+  violations: Array<{
+    src: string;
+    intrinsicWidth: number;
+    intrinsicHeight: number;
+    displayedWidth: number;
+    displayedHeight: number;
+    intrinsicRatio: number;
+    displayedRatio: number;
+    /** Absolute relative drift: `|displayedRatio - intrinsicRatio| / intrinsicRatio`. */
+    drift: number;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -494,6 +572,289 @@ export function rectSnapshotSnippet(selector: string): string {
 `.trim();
 }
 
+/**
+ * Detect interactive controls or decorative siblings that visually occlude any
+ * critical alert / warning / `role="alert"` element. Returns OcclusionAuditResult.
+ *
+ * Defect class caught (BL-UI-007): an `overflow:visible` sibling whose rect
+ * extends into the alert's rect — same-stacking-context layout collision, not
+ * z-index reordering. F-CART-006 (save-for-later bookmark covering the "product
+ * no longer available" alert on /cart) is the reference case.
+ *
+ * Why this is distinct from `overflowAudit`: BL-UI-004 detects `overflow:hidden`
+ * silently clipping content; this snippet detects the inverse — an element with
+ * `overflow:visible` floating into a sibling's space, hiding it via paint order.
+ *
+ * Defaults to `CRITICAL_ALERT_SELECTORS` (danger/warning alerts + `role=alert`).
+ * Pass a custom list when auditing a specific alert family (e.g. cart-only alerts).
+ */
+export function occlusionAuditSnippet(
+  alertSelectors: readonly string[] = CRITICAL_ALERT_SELECTORS,
+): string {
+  return `
+(() => {
+  const ALERT_SELS = ${JSON.stringify(alertSelectors)};
+  const OCCLUDER_SEL = 'button, a, [role=button], [role=link], svg, img, [data-test-id], .vc-icon';
+  // Severe overlap threshold: occluder covers ≥ 25% of the alert's rect area.
+  const SEVERE_FRACTION = 0.25;
+  const alerts = Array.from(document.querySelectorAll(ALERT_SELS.join(', ')));
+  const overlaps = [];
+  for (const alert of alerts) {
+    const ar = alert.getBoundingClientRect();
+    if (ar.width === 0 || ar.height === 0) continue;
+    // Search occluder candidates within the alert's nearest "card" / "item" ancestor —
+    // covers same-card collisions like F-CART-006 and avoids false positives from
+    // unrelated page elements (footer icons, headers).
+    const ancestor = alert.closest('.vc-line-item, .vc-product-card, .vc-card, [data-test-id*="card"], [data-test-id*="item"]') || alert.parentElement;
+    if (!ancestor) continue;
+    const candidates = Array.from(ancestor.querySelectorAll(OCCLUDER_SEL));
+    for (const c of candidates) {
+      if (alert === c || alert.contains(c) || c.contains(alert)) continue; // skip self / parent / child
+      const cs = getComputedStyle(c);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') continue;
+      const cr = c.getBoundingClientRect();
+      if (cr.width === 0 || cr.height === 0) continue;
+      // Rect intersection
+      const overlapLeft = Math.max(ar.left, cr.left);
+      const overlapTop = Math.max(ar.top, cr.top);
+      const overlapRight = Math.min(ar.right, cr.right);
+      const overlapBottom = Math.min(ar.bottom, cr.bottom);
+      const w = overlapRight - overlapLeft;
+      const h = overlapBottom - overlapTop;
+      if (w <= 0 || h <= 0) continue;
+      const area = w * h;
+      const alertArea = ar.width * ar.height;
+      const severe = alertArea > 0 ? (area / alertArea) >= SEVERE_FRACTION : false;
+      overlaps.push({
+        alertTag: alert.tagName.toLowerCase() + (alert.className && typeof alert.className === 'string' ? '.' + alert.className.split(/\\s+/).slice(0, 2).join('.') : ''),
+        alertText: (alert.textContent || '').trim().slice(0, 60),
+        occluderTag: c.tagName.toLowerCase() + (c.getAttribute('data-test-id') ? '[data-test-id=' + c.getAttribute('data-test-id') + ']' : ''),
+        occluderRole: c.getAttribute('role'),
+        overlapWidth: Math.round(w * 10) / 10,
+        overlapHeight: Math.round(h * 10) / 10,
+        overlapArea: Math.round(area * 10) / 10,
+        severe,
+      });
+      if (overlaps.length >= 40) break;
+    }
+    if (overlaps.length >= 40) break;
+  }
+  return { alertSelectors: ALERT_SELS, alertsFound: alerts.length, overlaps };
+})()
+`.trim();
+}
+
+/**
+ * WCAG 1.4.3 (Contrast Minimum, AA) auditor. For each visible text element matching
+ * `selector` (default: `body *` filtered to text-bearing leaf nodes), compute the
+ * contrast ratio between text color and the effective background color, then check
+ * against the WCAG threshold (4.5:1 normal, 3:1 large or UI component).
+ *
+ * Caveats:
+ * - Background detection walks ancestors until a non-transparent `background-color`
+ *   is found. Background images / gradients underneath text are NOT analyzed —
+ *   those need image-pixel inspection (out of scope for a DOM-only snippet).
+ * - "Large text" per WCAG = ≥ 18 pt (~24 px) regular OR ≥ 14 pt (~18.66 px) bold.
+ *
+ * Returns ContrastAuditResult. Empty `violations[]` = PASS.
+ */
+export function contrastAuditSnippet(selector: string = 'body *'): string {
+  return `
+(() => {
+  const SEL = ${JSON.stringify(selector)};
+  // Parse a CSS color string into [r, g, b] (0-255). Returns null for unparseable.
+  function parseColor(s) {
+    if (!s) return null;
+    const m = s.match(/rgba?\\(([^)]+)\\)/i);
+    if (m) {
+      const parts = m[1].split(',').map(x => parseFloat(x.trim()));
+      if (parts.length >= 3) return [parts[0], parts[1], parts[2], parts[3] == null ? 1 : parts[3]];
+    }
+    return null;
+  }
+  // Relative luminance per WCAG 2.x.
+  function lum(rgb) {
+    const [r, g, b] = rgb.slice(0, 3).map(v => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  function ratio(a, b) {
+    const la = lum(a), lb = lum(b);
+    const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  // Find first non-transparent ancestor background.
+  function effectiveBg(el) {
+    let cur = el;
+    while (cur && cur !== document.documentElement) {
+      const cs = getComputedStyle(cur);
+      const bg = parseColor(cs.backgroundColor);
+      if (bg && bg[3] > 0) return bg;
+      cur = cur.parentElement;
+    }
+    // Fallback: html element bg or white
+    const htmlCs = getComputedStyle(document.documentElement);
+    return parseColor(htmlCs.backgroundColor) || [255, 255, 255, 1];
+  }
+  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+    // Only leaf text nodes — has direct text content but no element children with text.
+    if (!el.textContent || !el.textContent.trim()) return false;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') return false;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    // Must have own text — not just child text
+    const ownText = Array.from(el.childNodes).filter(n => n.nodeType === 3 && n.textContent.trim()).length > 0;
+    return ownText;
+  });
+  const violations = [];
+  let evaluated = 0;
+  for (const el of els) {
+    evaluated++;
+    const cs = getComputedStyle(el);
+    const fg = parseColor(cs.color);
+    const bg = effectiveBg(el);
+    if (!fg) continue;
+    const fontSizePx = parseFloat(cs.fontSize) || 16;
+    const fontWeight = parseInt(cs.fontWeight, 10) || 400;
+    const isLargeText = fontSizePx >= 24 || (fontSizePx >= 18.66 && fontWeight >= 700);
+    const required = isLargeText ? ${CONTRAST_RATIOS.large} : ${CONTRAST_RATIOS.normal};
+    const r = ratio(fg, bg);
+    if (r < required) {
+      violations.push({
+        tag: el.tagName.toLowerCase(),
+        text: el.textContent.trim().slice(0, 60),
+        color: cs.color,
+        background: 'rgba(' + bg.join(',') + ')',
+        ratio: Math.round(r * 100) / 100,
+        isLargeText,
+        requiredRatio: required,
+      });
+      if (violations.length >= 50) break;
+    }
+  }
+  return { selector: SEL, evaluated, violations };
+})()
+`.trim();
+}
+
+/**
+ * WCAG 2.4.7 (Focus Visible, AA) auditor. Programmatically focuses every interactive
+ * matching the standard interactive selector, checks whether `:focus-visible` produces
+ * a visible focus ring (outline ≥ 2 px OR a box-shadow that draws a contrasting ring),
+ * then blurs and moves on.
+ *
+ * Caveats:
+ * - Snippet does NOT cover transitions — only static focus-state computed style.
+ * - Custom `:focus-visible` styles using `::after` / `::before` pseudo elements are
+ *   NOT inspected by this snippet; pseudo-element focus rings require visual review.
+ * - Page state may change if a focusable element has a `focus` handler with side
+ *   effects (rare). Best run on idle pages.
+ *
+ * Returns FocusIndicatorAuditResult. Empty `missing[]` = PASS.
+ */
+export const focusIndicatorAudit = `
+(() => {
+  const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [role=button], [role=link], [role=checkbox], [role=radio], [role=tab], [role=menuitem]';
+  const els = Array.from(document.querySelectorAll(SEL)).filter(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
+    if (el.tabIndex < 0) return false;
+    return true;
+  });
+  // Cap to 100 to keep snippet snappy
+  const sample = els.slice(0, 100);
+  const missing = [];
+  const previouslyFocused = document.activeElement;
+  for (const el of sample) {
+    try {
+      el.focus({ preventScroll: true });
+    } catch (e) {
+      continue;
+    }
+    const cs = getComputedStyle(el);
+    const outlineWidth = parseFloat(cs.outlineWidth) || 0;
+    const outlineStyle = cs.outlineStyle;
+    const boxShadow = cs.boxShadow;
+    // No outline = check for box-shadow ring (common pattern: 0 0 0 2px theme-color).
+    const hasOutline = outlineWidth >= ${FOCUS_INDICATOR_MIN_PX} && outlineStyle !== 'none';
+    const hasBoxShadowRing = boxShadow && boxShadow !== 'none' && /(\\d+)px/.test(boxShadow);
+    if (!hasOutline && !hasBoxShadowRing) {
+      missing.push({
+        tag: el.tagName.toLowerCase(),
+        role: el.getAttribute('role'),
+        text: (el.textContent || '').trim().slice(0, 40),
+        outlineWidth,
+        outlineStyle,
+        boxShadowPresent: !!hasBoxShadowRing,
+      });
+      if (missing.length >= 30) break;
+    }
+  }
+  // Restore prior focus
+  try { if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus({ preventScroll: true }); } catch (e) {}
+  return { evaluated: sample.length, missing };
+})()
+`.trim();
+
+/**
+ * Aspect-ratio drift auditor. For each `<img>` element matching `selector` (default:
+ * all images), compares the intrinsic ratio (naturalWidth/naturalHeight from the
+ * source bitmap) against the displayed ratio (rendered width/height). Drift outside
+ * `IMAGE_ASPECT_TOLERANCE` (±5%) indicates visible squash or stretch.
+ *
+ * Caveats:
+ * - Skips images that haven't loaded yet (`naturalWidth === 0`).
+ * - Skips `object-fit: cover` / `contain` — those intentionally crop, not distort.
+ *   Distortion only happens with `object-fit: fill` or unset on `<img>` with both
+ *   `width` and `height` set independently. The snippet detects this.
+ *
+ * Returns ImageAspectAuditResult. Empty `violations[]` = PASS.
+ */
+export function imageAspectAuditSnippet(selector: string = 'img'): string {
+  return `
+(() => {
+  const SEL = ${JSON.stringify(selector)};
+  const TOLERANCE = ${IMAGE_ASPECT_TOLERANCE};
+  const imgs = Array.from(document.querySelectorAll(SEL));
+  const violations = [];
+  let evaluated = 0;
+  for (const img of imgs) {
+    if (!(img instanceof HTMLImageElement)) continue;
+    if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue;
+    const cs = getComputedStyle(img);
+    // object-fit: cover/contain crops without distorting — skip
+    if (cs.objectFit === 'cover' || cs.objectFit === 'contain' || cs.objectFit === 'scale-down') continue;
+    evaluated++;
+    const dispW = img.clientWidth || img.getBoundingClientRect().width;
+    const dispH = img.clientHeight || img.getBoundingClientRect().height;
+    if (dispW === 0 || dispH === 0) continue;
+    const intrinsicRatio = img.naturalWidth / img.naturalHeight;
+    const displayedRatio = dispW / dispH;
+    const drift = Math.abs(displayedRatio - intrinsicRatio) / intrinsicRatio;
+    if (drift > TOLERANCE) {
+      violations.push({
+        src: (img.src || '').slice(0, 120),
+        intrinsicWidth: img.naturalWidth,
+        intrinsicHeight: img.naturalHeight,
+        displayedWidth: Math.round(dispW * 10) / 10,
+        displayedHeight: Math.round(dispH * 10) / 10,
+        intrinsicRatio: Math.round(intrinsicRatio * 1000) / 1000,
+        displayedRatio: Math.round(displayedRatio * 1000) / 1000,
+        drift: Math.round(drift * 1000) / 1000,
+      });
+      if (violations.length >= 30) break;
+    }
+  }
+  return { selector: SEL, evaluated, violations };
+})()
+`.trim();
+}
+
 // ---------------------------------------------------------------------------
 // Analyzers — classify raw evaluate() results into PASS / WARN / FAIL findings
 // ---------------------------------------------------------------------------
@@ -507,7 +868,11 @@ export interface LayoutFinding {
     | "BL-UI-003"
     | "BL-UI-004"
     | "BL-UI-005"
-    | "BL-UI-006";
+    | "BL-UI-006"
+    | "BL-UI-007"
+    | "BL-UI-008"
+    | "BL-UI-009"
+    | "BL-UI-010";
   severity: Severity;
   message: string;
   evidence: unknown;
@@ -635,6 +1000,82 @@ export function classifyTouchTargets(
   };
 }
 
+export function classifyOcclusion(result: OcclusionAuditResult): LayoutFinding {
+  if (result.overlaps.length === 0) {
+    return {
+      invariant: "BL-UI-007",
+      severity: "PASS",
+      message: `No occlusion of ${result.alertsFound} critical alert(s)`,
+      evidence: result,
+    };
+  }
+  const severeCount = result.overlaps.filter((o) => o.severe).length;
+  const sample = result.overlaps[0];
+  return {
+    invariant: "BL-UI-007",
+    severity: severeCount > 0 ? "P0" : "FAIL",
+    message: `${result.overlaps.length} occlusion(s) of critical alerts${severeCount > 0 ? ` (${severeCount} severe, ≥ 25% coverage)` : ""}; first: ${sample.occluderTag} overlaps ${sample.alertTag} by ${sample.overlapWidth}×${sample.overlapHeight} px`,
+    evidence: result,
+  };
+}
+
+export function classifyContrast(result: ContrastAuditResult): LayoutFinding {
+  if (result.violations.length === 0) {
+    return {
+      invariant: "BL-UI-008",
+      severity: "PASS",
+      message: `All ${result.evaluated} text nodes meet WCAG 1.4.3 contrast`,
+      evidence: result,
+    };
+  }
+  const worst = result.violations.reduce((a, b) => (a.ratio < b.ratio ? a : b));
+  return {
+    invariant: "BL-UI-008",
+    severity: "FAIL",
+    message: `${result.violations.length} contrast violation(s); worst: ${worst.ratio}:1 (needs ${worst.requiredRatio}:1) on "${worst.text}"`,
+    evidence: result,
+  };
+}
+
+export function classifyFocusIndicator(
+  result: FocusIndicatorAuditResult,
+): LayoutFinding {
+  if (result.missing.length === 0) {
+    return {
+      invariant: "BL-UI-009",
+      severity: "PASS",
+      message: `All ${result.evaluated} interactives have a visible focus indicator`,
+      evidence: result,
+    };
+  }
+  return {
+    invariant: "BL-UI-009",
+    severity: "FAIL",
+    message: `${result.missing.length} interactive(s) without visible focus ring (≥ ${FOCUS_INDICATOR_MIN_PX} px outline OR contrasting box-shadow)`,
+    evidence: result,
+  };
+}
+
+export function classifyImageAspect(
+  result: ImageAspectAuditResult,
+): LayoutFinding {
+  if (result.violations.length === 0) {
+    return {
+      invariant: "BL-UI-010",
+      severity: "PASS",
+      message: `All ${result.evaluated} images preserve their intrinsic aspect ratio (±${IMAGE_ASPECT_TOLERANCE * 100}%)`,
+      evidence: result,
+    };
+  }
+  const worst = result.violations.reduce((a, b) => (a.drift > b.drift ? a : b));
+  return {
+    invariant: "BL-UI-010",
+    severity: "FAIL",
+    message: `${result.violations.length} distorted image(s); worst drift ${(worst.drift * 100).toFixed(1)}% on ${worst.src.split("/").pop()}`,
+    evidence: result,
+  };
+}
+
 export function compareRectSnapshots(
   before: RectSnapshot,
   after: RectSnapshot,
@@ -667,6 +1108,10 @@ export interface LayoutAuditBundle {
   overflow?: OverflowAuditResult;
   targets?: TouchTargetAuditResult;
   shifts?: Array<{ before: RectSnapshot; after: RectSnapshot }>;
+  occlusion?: OcclusionAuditResult;
+  contrast?: ContrastAuditResult;
+  focusIndicator?: FocusIndicatorAuditResult;
+  imageAspect?: ImageAspectAuditResult;
 }
 
 /**
@@ -682,6 +1127,10 @@ export function analyzeLayoutResults(
   if (bundle.alignment) findings.push(classifyAlignment(bundle.alignment));
   if (bundle.overflow) findings.push(classifyOverflow(bundle.overflow));
   if (bundle.targets) findings.push(classifyTouchTargets(bundle.targets));
+  if (bundle.occlusion) findings.push(classifyOcclusion(bundle.occlusion));
+  if (bundle.contrast) findings.push(classifyContrast(bundle.contrast));
+  if (bundle.focusIndicator) findings.push(classifyFocusIndicator(bundle.focusIndicator));
+  if (bundle.imageAspect) findings.push(classifyImageAspect(bundle.imageAspect));
   if (bundle.shifts) {
     for (const s of bundle.shifts) {
       findings.push(compareRectSnapshots(s.before, s.after));

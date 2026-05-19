@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-05-06",
+  "lastValidated": "2026-05-19",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 63,
+  "totalFixtures": 66,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -249,6 +249,30 @@
         "keyword": ""
       }
     },
+    "getSavedForLater": {
+      "path": "queries/getSavedForLater.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID"],
+      "gqlVars": {
+        "storeId": "String!",
+        "userId": "String!",
+        "organizationId": "String",
+        "currencyCode": "String",
+        "cultureName": "String"
+      },
+      "runnerNote": "storeId / userId mandatory. Returns the user's 'Saved for later' cart (named cart of type save-for-later). Backend may return a non-null empty cart even when the user has never used save-for-later.",
+      "exampleVars": {
+        "storeId": "B2B-store",
+        "userId": "{{USER_ID}}",
+        "currencyCode": "USD",
+        "cultureName": "en-US"
+      },
+      "usedBy": ["CRL-GQL-092", "VCST-4205"],
+      "knownIssues": [
+        "returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend"
+      ]
+    },
     "cartPickupLocations": {
       "path": "queries/cartPickupLocations.graphql",
       "category": "pickup",
@@ -433,6 +457,38 @@
       "category": "cart",
       "role": "ORG_USER",
       "requiredVars": ["STORE_ID", "USER_ID"]
+    },
+    "moveToSavedForLater": {
+      "path": "mutations/moveToSavedForLater.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "CART_ID"],
+      "gqlVars": { "lineItemIds": "[String!]!" },
+      "runnerNote": "Pass line item IDs via [GQL-VARS label] JSON {\"lineItemIds\": [\"{{LINE_0}}\", \"{{LINE_1}}\"]}. currencyCode/cultureName are hardcoded USD/en-US in the fixture.",
+      "exampleVars": {
+        "lineItemIds": ["{{LINE_0}}", "{{LINE_1}}", "{{LINE_2}}"]
+      },
+      "semantics": "Removes lineItemIds from active cart and inserts them into the 'Saved for later' cart. Return shape: { cart, list }.",
+      "usedBy": ["VCST-4205"],
+      "knownIssues": [
+        "configurationItems on configurable line items are preserved end-to-end (PR #118 / VCST-4205)"
+      ]
+    },
+    "moveFromSavedForLater": {
+      "path": "mutations/moveFromSavedForLater.graphql",
+      "category": "cart",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID", "USER_ID", "CART_ID"],
+      "gqlVars": { "lineItemIds": "[String!]!" },
+      "runnerNote": "Pass SAVED line item IDs (captured from moveToSavedForLater.list.items[].id or getSavedForLater.items[].id) via [GQL-VARS label] JSON. currencyCode/cultureName are hardcoded USD/en-US in the fixture.",
+      "exampleVars": {
+        "lineItemIds": ["{{SAVED_0_ID}}"]
+      },
+      "semantics": "Removes lineItemIds from the 'Saved for later' cart and inserts them into the active cart. Return shape: { cart, list }.",
+      "usedBy": ["VCST-4205"],
+      "knownIssues": [
+        "configurationItems on configurable line items are restored end-to-end (PR #118 / VCST-4205)"
+      ]
     },
     "createOrderFromCart": {
       "path": "mutations/createOrderFromCart.graphql",

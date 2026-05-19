@@ -1,0 +1,508 @@
+{
+  "info": {
+    "name": "VC xAPI — Save For Later (VCST-4205)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "ringProductId", "value": "750d36bd-5d1a-4261-898d-e506f89e5184" },
+    { "key": "sectionTextId", "value": "2cc0f57e-5654-4396-8795-66fe6e226ad1" },
+    { "key": "storeIdSf", "value": "B2B-store" },
+    { "key": "customText_A", "value": "AGENT-TEST-CFG-A" },
+    { "key": "customText_B", "value": "AGENT-TEST-CFG-B" },
+    { "key": "customText_C", "value": "AGENT-TEST-CFG-C" },
+    { "key": "cartId", "value": "" },
+    { "key": "lineId_A", "value": "" },
+    { "key": "lineId_B", "value": "" },
+    { "key": "lineId_C", "value": "" },
+    { "key": "savedLineId_A", "value": "" },
+    { "key": "savedLineId_B", "value": "" },
+    { "key": "savedLineId_C", "value": "" },
+    { "key": "savedCartIdToClear", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00-Auth",
+      "item": [
+        {
+          "name": "Storefront Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrlRest}}/connect/token",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password" },
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" },
+                { "key": "scope", "value": "offline_access" },
+                { "key": "storeId", "value": "{{storeIdSf}}" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "var d = pm.response.json();",
+                "pm.test('Token returned', () => pm.expect(d.access_token).to.be.a('string').that.is.not.empty);",
+                "pm.environment.set('authToken', d.access_token);"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "01-Setup",
+      "item": [
+        {
+          "name": "Me Query — Capture USER_ID",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query Me { me { id userName email } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "pm.test('me.id present', () => pm.expect(d.data.me.id).to.be.a('string').that.is.not.empty);",
+                "pm.environment.set('userId', d.data.me.id);"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "02-Pre-Cleanup",
+      "item": [
+        {
+          "name": "Clear Default Cart",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation ClearDefaultCart { clearCart(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" cartName: \"default\" cultureName: \"{{cultureName}}\" currencyCode: \"{{currencyCode}}\" }) { id itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "pm.test('Default cart cleared', () => pm.expect(d.data.clearCart.itemsCount).to.eql(0));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Find Saved-For-Later Cart Id",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query FindSavedForLater { getSavedForLater(storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\") { id name itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "var sfl = d.data.getSavedForLater;",
+                "pm.collectionVariables.set('savedCartIdToClear', sfl ? sfl.id : '');",
+                "console.log('Saved-for-later lookup:', sfl ? ('cart=' + sfl.name + ' id=' + sfl.id + ' itemsCount=' + sfl.itemsCount) : 'none');"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Sweep Saved-For-Later Cart If Exists",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation SweepSavedForLater { removeCart(command: { userId: \"{{userId}}\" cartId: \"{{savedCartIdToClear}}\" }) }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var savedCartIdToClear = pm.collectionVariables.get('savedCartIdToClear');",
+                "var d = pm.response.json();",
+                "if (!savedCartIdToClear) {",
+                "  pm.test('No saved-for-later cart existed — no-op cleanup passes', () => pm.expect(true).to.be.true);",
+                "} else {",
+                "  pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "  pm.test('removeCart returned true', () => pm.expect(d.data.removeCart).to.eql(true));",
+                "}"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "03-Scenario A — Move 3 Distinct Configs To Saved",
+      "item": [
+        {
+          "name": "Add Item A (Text=AGENT-TEST-CFG-A)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemA { addItem(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" productId: \"{{ringProductId}}\" quantity: 1 currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\" configurationSections: [{ sectionId: \"{{sectionTextId}}\" type: \"Text\" customText: \"{{customText_A}}\" }] }) { id itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "pm.test('addItem returned cart', () => pm.expect(d.data.addItem.id).to.be.a('string').that.is.not.empty);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Add Item B (Text=AGENT-TEST-CFG-B)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemB { addItem(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" productId: \"{{ringProductId}}\" quantity: 1 currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\" configurationSections: [{ sectionId: \"{{sectionTextId}}\" type: \"Text\" customText: \"{{customText_B}}\" }] }) { id itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Add Item C (Text=AGENT-TEST-CFG-C)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemC { addItem(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" productId: \"{{ringProductId}}\" quantity: 1 currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\" configurationSections: [{ sectionId: \"{{sectionTextId}}\" type: \"Text\" customText: \"{{customText_C}}\" }] }) { id itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Read Cart — Capture cartId + lineId_A/B/C",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ReadCart { cart(storeId: \"{{storeIdSf}}\" currencyCode: \"{{currencyCode}}\" userId: \"{{userId}}\" cultureName: \"{{cultureName}}\" cartName: \"default\") { id itemsCount items { id productId quantity configurationItems { id sectionId type customText productId selectedForCheckout } } } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "pm.test('Cart has exactly 3 line items', () => pm.expect(d.data.cart.items.length).to.eql(3));",
+                "var seenTexts = d.data.cart.items.map(it => it.configurationItems[0].customText).sort();",
+                "pm.test('All 3 customText values present and distinct', () => {",
+                "  pm.expect(seenTexts).to.eql(['AGENT-TEST-CFG-A','AGENT-TEST-CFG-B','AGENT-TEST-CFG-C']);",
+                "});",
+                "pm.environment.set('cartId', d.data.cart.id);",
+                "function findByText(text) { return d.data.cart.items.find(it => it.configurationItems[0].customText === text).id; }",
+                "pm.collectionVariables.set('lineId_A', findByText('AGENT-TEST-CFG-A'));",
+                "pm.collectionVariables.set('lineId_B', findByText('AGENT-TEST-CFG-B'));",
+                "pm.collectionVariables.set('lineId_C', findByText('AGENT-TEST-CFG-C'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Move All To Saved For Later",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation MoveToSavedForLater($lineItemIds: [String!]!) { moveToSavedForLater(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" cartId: \"{{cartId}}\" currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\" lineItemIds: $lineItemIds }) { cart { id itemsCount items { id } } list { id name itemsCount items { id productId quantity configurationItems { id sectionId type customText productId selectedForCheckout } } } } }",
+                "variables": "{\"lineItemIds\": [\"{{lineId_A}}\", \"{{lineId_B}}\", \"{{lineId_C}}\"]}"
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "var res = d.data.moveToSavedForLater;",
+                "pm.test('Active cart emptied', () => pm.expect(res.cart.items.length).to.eql(0));",
+                "pm.test('Saved list has exactly 3 items', () => pm.expect(res.list.items.length).to.eql(3));",
+                "pm.test('All saved items retain non-empty customText', () => {",
+                "  res.list.items.forEach(it => {",
+                "    pm.expect(it.configurationItems, 'configurationItems[]').to.be.an('array').that.is.not.empty;",
+                "    pm.expect(it.configurationItems[0].customText, 'customText').to.be.a('string').that.is.not.empty;",
+                "  });",
+                "});",
+                "var savedTexts = res.list.items.map(it => it.configurationItems[0].customText).sort();",
+                "pm.test('All 3 distinct customText preserved', () => pm.expect(savedTexts).to.eql(['AGENT-TEST-CFG-A','AGENT-TEST-CFG-B','AGENT-TEST-CFG-C']));",
+                "function savedIdByText(text) { return res.list.items.find(it => it.configurationItems[0].customText === text).id; }",
+                "pm.collectionVariables.set('savedLineId_A', savedIdByText('AGENT-TEST-CFG-A'));",
+                "pm.collectionVariables.set('savedLineId_B', savedIdByText('AGENT-TEST-CFG-B'));",
+                "pm.collectionVariables.set('savedLineId_C', savedIdByText('AGENT-TEST-CFG-C'));"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "04-Scenario B — Move One Back From Saved",
+      "item": [
+        {
+          "name": "Move Saved Item A Back To Active Cart",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation MoveFromSavedForLater($lineItemIds: [String!]!) { moveFromSavedForLater(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" cartId: \"{{cartId}}\" currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\" lineItemIds: $lineItemIds }) { cart { id itemsCount items { id productId quantity configurationItems { id sectionId type customText productId selectedForCheckout } } } list { id itemsCount items { id configurationItems { customText } } } } }",
+                "variables": "{\"lineItemIds\": [\"{{savedLineId_A}}\"]}"
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "var res = d.data.moveFromSavedForLater;",
+                "pm.test('Active cart now has exactly 1 line item', () => pm.expect(res.cart.items.length).to.eql(1));",
+                "pm.test('Restored line is CFG_RING with customText=A', () => {",
+                "  pm.expect(res.cart.items[0].productId).to.eql(pm.collectionVariables.get('ringProductId'));",
+                "  pm.expect(res.cart.items[0].configurationItems[0].customText).to.eql('AGENT-TEST-CFG-A');",
+                "});",
+                "pm.test('Saved list shrunk to 2 (B + C remain)', () => pm.expect(res.list.items.length).to.eql(2));",
+                "var leftTexts = res.list.items.map(it => it.configurationItems[0].customText).sort();",
+                "pm.test('Saved list retains B and C only', () => pm.expect(leftTexts).to.eql(['AGENT-TEST-CFG-B','AGENT-TEST-CFG-C']));"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "05-Scenario C — getSavedForLater Query",
+      "item": [
+        {
+          "name": "Get Saved For Later Cart",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetSavedForLater { getSavedForLater(storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\") { id name itemsCount items { id productId quantity configurationItems { sectionId type customText } } } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "var sfl = d.data.getSavedForLater;",
+                "pm.test('getSavedForLater returns non-null cart', () => pm.expect(sfl).to.not.be.null);",
+                "if (sfl) {",
+                "  pm.test('Saved cart has 2 remaining items (B + C)', () => pm.expect(sfl.items.length).to.eql(2));",
+                "  var texts = sfl.items.map(it => it.configurationItems[0].customText).sort();",
+                "  pm.test('Remaining texts are B and C', () => pm.expect(texts).to.eql(['AGENT-TEST-CFG-B','AGENT-TEST-CFG-C']));",
+                "}"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "06-Post-Cleanup",
+      "item": [
+        {
+          "name": "Clear Default Cart",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation PostClearDefault { clearCart(command: { storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" cartName: \"default\" cultureName: \"{{cultureName}}\" currencyCode: \"{{currencyCode}}\" }) { id itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "pm.test('Default cart cleared', () => pm.expect(d.data.clearCart.itemsCount).to.eql(0));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Find Saved-For-Later Cart Id",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query FindSavedForLater { getSavedForLater(storeId: \"{{storeIdSf}}\" userId: \"{{userId}}\" currencyCode: \"{{currencyCode}}\" cultureName: \"{{cultureName}}\") { id name itemsCount } }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var d = pm.response.json();",
+                "pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "var sfl = d.data.getSavedForLater;",
+                "pm.collectionVariables.set('savedCartIdToClear', sfl ? sfl.id : '');",
+                "console.log('Saved-for-later lookup:', sfl ? ('cart=' + sfl.name + ' id=' + sfl.id + ' itemsCount=' + sfl.itemsCount) : 'none');"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Sweep Saved-For-Later Cart If Exists",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrlGraphql}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation SweepSavedForLater { removeCart(command: { userId: \"{{userId}}\" cartId: \"{{savedCartIdToClear}}\" }) }",
+                "variables": ""
+              }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "var savedCartIdToClear = pm.collectionVariables.get('savedCartIdToClear');",
+                "var d = pm.response.json();",
+                "if (!savedCartIdToClear) {",
+                "  pm.test('No saved-for-later cart existed — no-op cleanup passes', () => pm.expect(true).to.be.true);",
+                "} else {",
+                "  pm.test('No GraphQL errors', () => pm.expect(d.errors).to.be.undefined);",
+                "  pm.test('removeCart returned true', () => pm.expect(d.data.removeCart).to.eql(true));",
+                "}"
+              ]
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}

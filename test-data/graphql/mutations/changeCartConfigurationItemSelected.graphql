@@ -4,7 +4,7 @@
 # purpose: Flip a single configuration item's selectedForCheckout flag (true or false); triggers UpdateConfiguredLineItemPrice ONLY when the flag actually changes (no-change short-circuit). Affects lineItem.listPrice because ConfiguredLineItemContainer.UpdatePrice sums only items where SelectedForCheckout=true.
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: cartName (String), cartType (String), cultureName (String), currencyCode (String)
-# last-validated: 2026-05-06
+# last-validated: 2026-05-15
 # known-issues:
 #   - Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
 # gql-vars: { "configurationSection": "ConfigurationSectionKeyInput!", "selectedForCheckout": "Boolean!" }

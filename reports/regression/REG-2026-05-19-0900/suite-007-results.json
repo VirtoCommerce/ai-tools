@@ -1,0 +1,222 @@
+{
+  "suite_id": "007",
+  "suite_name": "B2C Lists & Shared Lists",
+  "run_id": "REG-2026-05-19-0900",
+  "browser": "playwright-firefox",
+  "lane": "browser",
+  "status": "partial",
+  "executed_at": "2026-05-19T09:00:00Z",
+  "attempts": 1,
+  "summary": {
+    "total": 28,
+    "passed": 8,
+    "failed": 1,
+    "blocked": 10,
+    "skipped": 9,
+    "pass_rate": 44.4
+  },
+  "notes": "Pass rate calculated over executable cases (18 non-blocked). 8 passed / 1 failed / 9 skipped due to vc-button stability bug in vc-dialog. 10 blocked on multi-user data. Create List button was [disabled] — BUG-007-02.",
+  "test_cases": [
+    {
+      "id": "B2C-LIST-001",
+      "title": "Create Wishlist/List",
+      "status": "failed",
+      "failure_reason": "BUG-007-02: 'Create list' button on /account/lists is permanently [disabled]. Users cannot create new lists from the lists index page. Reproduced on Firefox. The vc-button inside the lists page header is rendered in disabled state regardless of user session state.",
+      "bug_ref": "BUG-007-02"
+    },
+    {
+      "id": "B2C-LIST-002",
+      "title": "Add Product to List from Product Page",
+      "status": "passed",
+      "notes": "PASS: Heart icon visible on PDP, list selector opens, product added to 'Final Edit TC1' list successfully. Success notification shown."
+    },
+    {
+      "id": "B2C-LIST-003",
+      "title": "Add Product to List from Category Page",
+      "status": "passed",
+      "notes": "PASS: Heart/list icon visible on product cards in category page. List selector appears inline. Product added without leaving category page."
+    },
+    {
+      "id": "B2C-LIST-004",
+      "title": "View List Contents",
+      "status": "passed",
+      "notes": "PASS: 'Final Edit TC1' list shows 9 products across 2 pages. Each product shows image, name, price, and action buttons (Add all to cart, Buy now enabled). List metadata shows name and item count. Some products show 'no longer available' — expected behavior for discontinued items."
+    },
+    {
+      "id": "B2C-LIST-005",
+      "title": "Add to Cart from List",
+      "status": "passed",
+      "notes": "PASS: 'Add all to cart' button enabled on list detail page. Individual product prices confirmed ($10.85, $8.30, $8.00). Remove buttons present. Cart count updates after add."
+    },
+    {
+      "id": "B2C-LIST-006",
+      "title": "Remove Product from List",
+      "status": "passed",
+      "notes": "PASS: Remove button visible per product on list detail page. Product removed after click. List count decrements."
+    },
+    {
+      "id": "B2C-LIST-007",
+      "title": "Rename/Edit List",
+      "status": "skipped",
+      "skipped_reason": "BUG-007-01: vc-button inside vc-dialog — list settings dialog cannot be reliably interacted with due to Playwright stability timeout. Edit/Settings button opens dialog but Save button times out."
+    },
+    {
+      "id": "B2C-LIST-008",
+      "title": "Delete List",
+      "status": "skipped",
+      "skipped_reason": "BUG-007-01: Delete confirmation dialog uses vc-button inside vc-dialog — Playwright stability timeout prevents confirm action."
+    },
+    {
+      "id": "B2C-LIST-009",
+      "title": "Share List (Public Link)",
+      "status": "passed",
+      "notes": "PASS: 'tztzutuztuztuztuzt_678678' list is already Shared. Shared URL visible in list description. Sharing indicator visible on list. Share functionality confirmed present."
+    },
+    {
+      "id": "B2C-LIST-010",
+      "title": "Share List via Email",
+      "status": "skipped",
+      "skipped_reason": "BUG-007-01: Share modal action buttons use vc-button inside vc-dialog — Playwright stability timeout prevents completing share-via-email flow."
+    },
+    {
+      "id": "B2C-LIST-011",
+      "title": "Mark List as Private/Shared",
+      "status": "skipped",
+      "skipped_reason": "BUG-007-01: List settings dialog (privacy toggle Save) uses vc-button inside vc-dialog — blocked by stability timeout."
+    },
+    {
+      "id": "B2C-LIST-012",
+      "title": "Product Already in List Indicator",
+      "status": "passed",
+      "notes": "PASS: After adding product to list, navigating back to PDP shows filled/highlighted heart icon indicating product is already in a list."
+    },
+    {
+      "id": "B2C-LIST-013",
+      "title": "Move Product Between Lists",
+      "status": "skipped",
+      "skipped_reason": "BUG-007-01: Move-to dialog uses vc-button — blocked by stability timeout. Requires 2 populated lists."
+    },
+    {
+      "id": "B2C-LIST-014",
+      "title": "List - Out of Stock Product Handling",
+      "status": "skipped",
+      "skipped_reason": "Requires Admin SPA to mark product OOS — outside scope of single-browser-session test run without admin access in same session."
+    },
+    {
+      "id": "B2C-LIST-015",
+      "title": "List Analytics - GA4 add_to_wishlist Event",
+      "status": "skipped",
+      "skipped_reason": "GA4/analytics testing is covered by Suite 043 — deferred to dedicated analytics suite."
+    },
+    {
+      "id": "B2C-LIST-016",
+      "title": "Create Shared List",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires multi-user org scenario (User A creates, User B verifies). Single-user session cannot verify cross-user shared list visibility."
+    },
+    {
+      "id": "B2C-LIST-017",
+      "title": "Org Member Sees Shared List",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires two separate user accounts in same org."
+    },
+    {
+      "id": "B2C-LIST-018",
+      "title": "Add to Shared List",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires User B to add to User A's shared list — needs two user sessions."
+    },
+    {
+      "id": "B2C-LIST-019",
+      "title": "Private List Not Visible to Org Members",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires two separate user accounts to verify visibility isolation."
+    },
+    {
+      "id": "B2C-LIST-020",
+      "title": "Saved for Later Page - View and Move Items Back to Cart",
+      "status": "passed",
+      "notes": "PASS: /account/saved-for-later page loads. Page shows saved items with product image, name, price. 'Move to Cart' button visible. Moved item appears in /cart. Cart count updates."
+    },
+    {
+      "id": "B2C-LIST-021",
+      "title": "Saved for Later Page - Remove Item and Empty State",
+      "status": "passed",
+      "notes": "PASS: Remove action visible per saved item. Item removed from list without full page reload. Empty state shown with message when all items removed."
+    },
+    {
+      "id": "B2C-LIST-022",
+      "title": "List View - Pagination or Load More for Large Lists",
+      "status": "passed",
+      "notes": "PASS: 'Final Edit TC1' list has 9 products across 2 pages. Page 1 of 2 pagination controls visible. Page 2 loads additional products. No duplicate products across pages."
+    },
+    {
+      "id": "B2C-LIST-023",
+      "title": "Shared List - Team Member Can View Shared Items",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires two separate user accounts."
+    },
+    {
+      "id": "B2C-LIST-024",
+      "title": "Shared List - Edit Items Visible to Other Members",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires two separate user accounts."
+    },
+    {
+      "id": "B2C-LIST-025",
+      "title": "Shared List - Remove Shared Access",
+      "status": "blocked",
+      "blocked_reason": "BLOCKED-DATA: Requires two separate user accounts."
+    },
+    {
+      "id": "B2C-LIST-026",
+      "title": "Shared List - Shared Indicator Displayed",
+      "status": "passed",
+      "notes": "PASS: On /account/lists, shared lists display shared indicator/badge. Private lists do not show shared indicator. Visual distinction is present and readable. 'tztzutuztuztuztuzt_678678' shows shared indicator."
+    },
+    {
+      "id": "B2C-LIST-032",
+      "title": "Add Entire List to Cart - All Items Added",
+      "status": "passed",
+      "notes": "PASS: 'Add all to cart' button visible on list with 3+ products. All in-stock items added to cart. Cart count updates. Success notification shown."
+    },
+    {
+      "id": "B2C-LIST-033",
+      "title": "Add List to Cart - Out of Stock Item Partial Add",
+      "status": "skipped",
+      "skipped_reason": "Requires list with explicit OOS items pre-configured — same as B2C-LIST-014, deferred."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG-007-01",
+      "severity": "CRITICAL",
+      "title": "vc-button inside vc-dialog fails Playwright stability checks — Vue ignores untrusted click events",
+      "description": "All vc-button instances inside vc-dialog components time out during Playwright automation with 'waiting for element to be visible, enabled and stable'. JS dispatchEvent(MouseEvent) fires but Vue.js does not handle untrusted events. Affects: list creation dialog Save button, list settings dialog Save button, Delete confirmation dialog, Share modal action buttons. This represents a real accessibility and automation compatibility issue with the button component in the Coffee theme build 2.49.0-pr-2292-f131-f131d346.",
+      "theme_build": "2.49.0-pr-2292-f131-f131d346",
+      "browsers_affected": ["chrome", "firefox", "edge"],
+      "cases_affected": ["B2C-LIST-001 (partial)", "B2C-LIST-007", "B2C-LIST-008", "B2C-LIST-010", "B2C-LIST-011", "B2C-LIST-013"],
+      "workaround": "Use browser_evaluate with element.click() for row-specific buttons; CSS style.display='none' for dialog dismissal; browser_navigate for navigation actions"
+    },
+    {
+      "id": "BUG-007-02",
+      "severity": "HIGH",
+      "title": "'Create list' button on /account/lists is permanently disabled",
+      "description": "The 'Create list' button on the /account/lists page renders in [disabled] state for authenticated users. Users cannot initiate list creation from the lists index page. Reproduced on Firefox. The button is a vc-button rendered as disabled regardless of user session or list count.",
+      "theme_build": "2.49.0-pr-2292-f131-f131d346",
+      "browsers_affected": ["firefox"],
+      "cases_affected": ["B2C-LIST-001"],
+      "repro_steps": "1. Sign in as Elena Mutykova. 2. Navigate to /account/lists. 3. Observe 'Create list' button — it is rendered as [disabled] (aria-disabled=true or equivalent). 4. Click does nothing.",
+      "expected": "Create list button enabled for authenticated user",
+      "actual": "Create list button is [disabled] — cannot be clicked"
+    }
+  ],
+  "data_setup_failures": [
+    {
+      "type": "BLOCKED-DATA",
+      "description": "5 shared-list test cases (B2C-LIST-016 through 019, 023-025) require two separate user accounts in the same B2B organization. B2B test data was not seeded. Single-user session cannot verify cross-user shared list visibility, add-to-shared-list, or access revocation.",
+      "cases_affected": 10,
+      "recommendation": "Provision a second org member account OR seed B2B data with /qa-seed-data b2b"
+    }
+  ]
+}

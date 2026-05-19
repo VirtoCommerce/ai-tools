@@ -1,0 +1,212 @@
+{
+  "caseId": "CFG-GQL-001",
+  "title": "productConfiguration — Happy Path Two Required Product Sections",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050i-graphql-configurations.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-18T17:21:26.535Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "configurable_id": "dd56d770-3c3b-4e09-b126-0c2bb8bd0f72",
+    "SECTION_RAM_ID": "5190d8cc-56f5-4675-9a34-d94c28f306f7",
+    "OPT_RAM_BASE_ID": "b147e934-6255-4a39-902c-17a816591932"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "get_config",
+      "query": "query {\n    productConfiguration(\n      configurableProductId: \"dd56d770-3c3b-4e09-b126-0c2bb8bd0f72\"\n      storeId: \"B2B-store\"\n      cultureName: \"en-US\"\n      currencyCode: \"USD\"\n    ) {\n      configurationSections { id name isRequired type maxLength dependsOnSectionId options { id text product { id name } listPrice { amount currency { code } } } }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "5190d8cc-56f5-4675-9a34-d94c28f306f7",
+                "name": "RAM",
+                "isRequired": true,
+                "type": "Product",
+                "maxLength": null,
+                "dependsOnSectionId": null,
+                "options": [
+                  {
+                    "id": "011c3078-421a-4ed5-b17f-9391c6e2b4c8",
+                    "text": null,
+                    "product": {
+                      "id": "b147e934-6255-4a39-902c-17a816591932",
+                      "name": "AGENT-TEST-CFG-013-16GB"
+                    },
+                    "listPrice": {
+                      "amount": 100,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "5479121b-fbe0-456b-be08-d9ef8c58cab6",
+                    "text": null,
+                    "product": {
+                      "id": "fb7997e5-c00d-448e-88cd-02bea0e786fe",
+                      "name": "AGENT-TEST-CFG-013-32GB"
+                    },
+                    "listPrice": {
+                      "amount": 250,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "7c2bae12-8fff-4fd7-93c9-6c3aeca39ff0",
+                    "text": null,
+                    "product": {
+                      "id": "58de484f-dbaa-4193-b319-2c5c55152e86",
+                      "name": "AGENT-TEST-CFG-013-8GB"
+                    },
+                    "listPrice": {
+                      "amount": 0,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "e5fbc712-8697-4c48-b4f4-a8943f8d3d21",
+                "name": "Storage",
+                "isRequired": true,
+                "type": "Product",
+                "maxLength": null,
+                "dependsOnSectionId": null,
+                "options": [
+                  {
+                    "id": "0d6d179e-1239-4562-9c8f-dee34c9a343d",
+                    "text": null,
+                    "product": {
+                      "id": "efda4b3d-5843-4dc1-961b-965b8f423d14",
+                      "name": "AGENT-TEST-CFG-013-256GB SSD"
+                    },
+                    "listPrice": {
+                      "amount": 0,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "1094dabf-f860-4031-83cb-e8c8f8de2e59",
+                    "text": null,
+                    "product": {
+                      "id": "7b0e3a34-1778-41fc-a743-50c0794c4e51",
+                      "name": "AGENT-TEST-CFG-013-1TB SSD"
+                    },
+                    "listPrice": {
+                      "amount": 150,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  },
+                  {
+                    "id": "eefe9442-5a6a-4e54-8bad-5a9ec23671d3",
+                    "text": null,
+                    "product": {
+                      "id": "d6f1452a-ab62-49ff-8241-85a51b542a8c",
+                      "name": "AGENT-TEST-CFG-013-512GB SSD"
+                    },
+                    "listPrice": {
+                      "amount": 75,
+                      "currency": {
+                        "code": "USD"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 478
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_config] errors[] empty",
+      "label": "get_config",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections is non-null",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections is non-null",
+      "actual": "data.productConfiguration.configurationSections = [{\"id\":\"5190d8cc-56f5-4675-9a34-d94c28f306f7\",\"name\":\"RAM\",\"isRequired\":true,\"type\":\"Product\",\"maxLength\":null,\"dependsOnSectionId\":null,\"options\":[{\"id\":\"011c3078-421a-4ed5-b17f-9391c6e2b4c8\",\"text\":…"
+    },
+    {
+      "raw": "[COUNT label=get_config] data.productConfiguration.configurationSections.length = 2",
+      "label": "get_config",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.length = 2",
+      "actual": "data.productConfiguration.configurationSections.length = 2"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.0.type = Product",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.type = Product",
+      "actual": "data.productConfiguration.configurationSections.0.type = Product"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.0.isRequired = true",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.0.isRequired = true",
+      "actual": "data.productConfiguration.configurationSections.0.isRequired = true"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.1.type = Product",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.1.type = Product",
+      "actual": "data.productConfiguration.configurationSections.1.type = Product"
+    },
+    {
+      "raw": "[DATA label=get_config] data.productConfiguration.configurationSections.1.isRequired = true",
+      "label": "get_config",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.productConfiguration.configurationSections.1.isRequired = true",
+      "actual": "data.productConfiguration.configurationSections.1.isRequired = true"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Both sections have non-empty options[] with product references and listPrice (runner-manual)",
+      "layer": "EVIDENCE",
+      "note": "Both sections have non-empty options[] with product references and listPrice (runner-manual)",
+      "resolved": "Both sections have non-empty options[] with product references and listPrice (runner-manual)"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only query",
+    "blocks": []
+  }
+}

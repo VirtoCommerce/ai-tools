@@ -4,7 +4,7 @@
 # purpose: Delete specific addresses from a member's address book
 # required-vars: MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues:
 #   - Deletion matching key is the full address object — pass exact values
 # used-by: (future) 050d deletion cases

@@ -1,0 +1,195 @@
+{
+  "caseId": "CRI-GQL-061",
+  "title": "xCart — unSelectCartItems Unselects One of Multiple Items",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T21:44:26.853Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T21:44:22.584Z",
+      "expiresAt": "2026-05-15T22:14:22.584Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "LINE_ITEM_1": "42dd3696-136c-42b5-9f93-3cf031078677"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 134
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 737
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_one",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1296
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_all",
+      "query": "mutation {\n    unSelectAllCartItems(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) {\n      id itemsCount items { id productId selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectAllCartItems": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "items": [
+              {
+                "id": "42dd3696-136c-42b5-9f93-3cf031078677",
+                "productId": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+                "selectedForCheckout": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1180
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "select_one",
+      "query": "mutation {\n    selectCartItems(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      lineItemIds: [\"42dd3696-136c-42b5-9f93-3cf031078677\"]\n    }) {\n      id itemsCount items { id selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectCartItems": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "items": [
+              {
+                "id": "42dd3696-136c-42b5-9f93-3cf031078677",
+                "selectedForCheckout": true
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 562
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 348
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=unselect_all] errors[] empty",
+      "label": "unselect_all",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=unselect_all] data.unSelectAllCartItems.items.0.selectedForCheckout = false",
+      "label": "unselect_all",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.unSelectAllCartItems.items.0.selectedForCheckout = false",
+      "actual": "data.unSelectAllCartItems.items.0.selectedForCheckout = false"
+    },
+    {
+      "raw": "[ERRORS label=select_one] errors[] empty",
+      "label": "select_one",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=select_one] data.selectCartItems.items[?id={{LINE_ITEM_1}}].selectedForCheckout = true",
+      "label": "select_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.selectCartItems.items[?id=42dd3696-136c-42b5-9f93-3cf031078677].selectedForCheckout = true",
+      "actual": "data.selectCartItems.items[?id=42dd3696-136c-42b5-9f93-3cf031078677].selectedForCheckout = true"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions.",
+      "layer": "EVIDENCE",
+      "note": "LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions.",
+      "resolved": "LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

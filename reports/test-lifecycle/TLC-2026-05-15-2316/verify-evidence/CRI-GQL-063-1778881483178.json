@@ -1,0 +1,200 @@
+{
+  "caseId": "CRI-GQL-063",
+  "title": "xCart — unSelectCartItems with Invalid lineItemId — Graceful No-Op",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T21:44:43.178Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T21:44:38.668Z",
+      "expiresAt": "2026-05-15T22:14:38.668Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1",
+    "REAL_LINE_ID": "2d6ef1b9-05e9-4875-b26d-2f30febc5327"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 129
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 521
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_one",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1645
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_to_capture",
+      "query": "mutation {\n    unSelectAllCartItems(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) {\n      id items { id selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectAllCartItems": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": [
+              {
+                "id": "2d6ef1b9-05e9-4875-b26d-2f30febc5327",
+                "selectedForCheckout": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 999
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "reselect_item",
+      "query": "mutation {\n    selectCartItems(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      lineItemIds: [\"2d6ef1b9-05e9-4875-b26d-2f30febc5327\"]\n    }) { id items { id selectedForCheckout } }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectCartItems": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": [
+              {
+                "id": "2d6ef1b9-05e9-4875-b26d-2f30febc5327",
+                "selectedForCheckout": true
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 443
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_bogus",
+      "query": "mutation {\n    unSelectCartItems(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      lineItemIds: [\"00000000-0000-0000-0000-000000000000\"]\n    }) { id items { id selectedForCheckout } }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectCartItems": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "items": [
+              {
+                "id": "2d6ef1b9-05e9-4875-b26d-2f30febc5327",
+                "selectedForCheckout": true
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 487
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 274
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=unselect_bogus] errors[] empty",
+      "label": "unselect_bogus",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=unselect_bogus] data.unSelectCartItems.items[?id={{REAL_LINE_ID}}].selectedForCheckout = true",
+      "label": "unselect_bogus",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.unSelectCartItems.items[?id=2d6ef1b9-05e9-4875-b26d-2f30febc5327].selectedForCheckout = true",
+      "actual": "data.unSelectCartItems.items[?id=2d6ef1b9-05e9-4875-b26d-2f30febc5327].selectedForCheckout = true"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Real item preserved (selectedForCheckout=true) after unselect with bogus ID. No HTTP 500 or bulk unselect.",
+      "layer": "EVIDENCE",
+      "note": "Real item preserved (selectedForCheckout=true) after unselect with bogus ID. No HTTP 500 or bulk unselect.",
+      "resolved": "Real item preserved (selectedForCheckout=true) after unselect with bogus ID. No HTTP 500 or bulk unselect."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

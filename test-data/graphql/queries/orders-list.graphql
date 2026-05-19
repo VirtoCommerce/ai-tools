@@ -4,7 +4,7 @@
 # purpose: Customer orders list, sorted createdDate desc
 # required-vars: (none)
 # optional-vars: FIRST (Int, default 10)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: GQL-011, GQL-012 (list_first to capture first order number), GQL-013
 

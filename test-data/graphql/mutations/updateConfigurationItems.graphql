@@ -4,7 +4,7 @@
 # purpose: Bulk-update multiple configuration sections on a cart line item in one round-trip
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-04-27
+# last-validated: 2026-05-15
 # known-issues:
 #   - REPLACE semantics — pass full desired list each call.
 # gql-vars: { "configurationSections": "[ConfigurationSectionInput!]!" }

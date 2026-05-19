@@ -4,7 +4,7 @@
 # purpose: Add a single product to the cart (returns updated CartType)
 # required-vars: STORE_ID (String), USER_ID (String), PRODUCT_ID (String), QUANTITY (Int — via GraphQL $qty variable)
 # optional-vars: CART_NAME (String), CURRENCY_CODE (String)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: (future) 050b cart suites
 # runner-note: QUANTITY must be passed via [GQL-VARS label] block as JSON {"qty": 3} — Int cannot be {{}}-substituted

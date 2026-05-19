@@ -1,0 +1,143 @@
+{
+  "caseId": "CRI-GQL-090",
+  "title": "xCart — validateCoupon Query Returns true for Valid Coupon",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-05-15T21:45:41.428Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T21:45:38.703Z",
+      "expiresAt": "2026-05-15T22:15:38.703Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "b3f5bd0c-45e4-46dc-8f2d-ad089718fc32",
+    "USER_ID": "user-acme-store-maintainer-1"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 129
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1153
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"b3f5bd0c-45e4-46dc-8f2d-ad089718fc32\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 999
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "validate",
+      "query": "query {\n    validateCoupon(\n      storeId: \"B2B-store\"\n      userId: \"user-acme-store-maintainer-1\"\n      currencyCode: \"USD\"\n      cultureName: \"en-US\"\n      coupon: \"QA10OFF\"\n    )\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "validateCoupon": false
+        },
+        "errors": [],
+        "elapsed_ms": 168
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 265
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=validate] errors[] empty",
+      "label": "validate",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=validate] data.validateCoupon = true",
+      "label": "validate",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.validateCoupon = true",
+      "actual": "data.validateCoupon = false"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] validateCoupon returns Boolean true with non-empty cart and valid coupon (top-level Boolean, no sub-selection — DV-010 would fire on sub-selection)",
+      "layer": "EVIDENCE",
+      "note": "validateCoupon returns Boolean true with non-empty cart and valid coupon (top-level Boolean, no sub-selection — DV-010 would fire on sub-selection)",
+      "resolved": "validateCoupon returns Boolean true with non-empty cart and valid coupon (top-level Boolean, no sub-selection — DV-010 would fire on sub-selection)"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart in Steps",
+    "blocks": []
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "caseId": "CRL-GQL-074",
+  "title": "xCart — mergeCart Happy Path",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b3-graphql-xcart-lifecycle.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-15T22:30:11.607Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-05-15T22:30:08.292Z",
+      "expiresAt": "2026-05-15T23:00:07.292Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "user-acme-store-maintainer-1",
+    "PRODUCT_1": "f1b26974b7634abaa0900e575a99476f",
+    "PRODUCT_2": "f936e5f4c6fe43aead1e76f0fbfc31c8",
+    "DEFAULT_CART_ID": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+    "SECOND_CART_ID": "3ae76b5a-cf5c-4e04-b849-10c70c20692d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "user-acme-store-maintainer-1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 132
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prods",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 2 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "f1b26974b7634abaa0900e575a99476f"
+              },
+              {
+                "id": "f936e5f4c6fe43aead1e76f0fbfc31c8"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 236
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1072
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_to_default",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" productId: \"f1b26974b7634abaa0900e575a99476f\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 311
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_to_second",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      cartName: \"AGENT-TEST-MERGE-SECOND\"\n      productId: \"f936e5f4c6fe43aead1e76f0fbfc31c8\" quantity: 1\n    }) { id name itemsCount }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "3ae76b5a-cf5c-4e04-b849-10c70c20692d",
+            "name": "AGENT-TEST-MERGE-SECOND",
+            "itemsCount": 1
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 617
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "merge",
+      "query": "mutation {\n    mergeCart(command: {\n      storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\"\n      secondCartId: \"3ae76b5a-cf5c-4e04-b849-10c70c20692d\"\n    }) { id itemsCount items { productId } }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "mergeCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565",
+            "itemsCount": 1,
+            "items": [
+              {
+                "productId": "f936e5f4c6fe43aead1e76f0fbfc31c8"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 568
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"user-acme-store-maintainer-1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "e60ab4c3-ce13-417b-a69c-a21b2d799565"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 368
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=merge] errors[] empty",
+      "label": "merge",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=merge] data.mergeCart.id is non-null",
+      "label": "merge",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.mergeCart.id is non-null",
+      "actual": "data.mergeCart.id = \"e60ab4c3-ce13-417b-a69c-a21b2d799565\""
+    },
+    {
+      "raw": "[DATA label=merge] data.mergeCart.items is non-null",
+      "label": "merge",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.mergeCart.items is non-null",
+      "actual": "data.mergeCart.items = [{\"productId\":\"f936e5f4c6fe43aead1e76f0fbfc31c8\"}]"
+    },
+    {
+      "raw": "[COUNT label=merge] data.mergeCart.itemsCount >= 1",
+      "label": "merge",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.mergeCart.itemsCount >= 1",
+      "actual": "data.mergeCart.itemsCount = 1"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence. NOTE: B2B-store consolidates identical productIds into one line — itemsCount >= 1 proves merge produced at least one line without hardcoding \"2\".",
+      "layer": "EVIDENCE",
+      "note": "mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence. NOTE: B2B-store consolidates identical productIds into one line — itemsCount >= 1 proves merge produced at least one line without hardcoding \"2\".",
+      "resolved": "mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence. NOTE: B2B-store consolidates identical productIds into one line — itemsCount >= 1 proves merge produced at least one line without hardcoding \"2\"."
+    }
+  ],
+  "cleanup": {
+    "raw": "Second cart remains unless explicitly removed — add manual cleanup if needed",
+    "blocks": []
+  }
+}

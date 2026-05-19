@@ -4,7 +4,7 @@
 # purpose: Store-level pickup locations master list — paginated, sortable, keyword-searchable. Returns PickupLocationType (no per-product availability).
 # required-vars: (none)
 # optional-vars: (all passed via GQL operation variables — see gql-vars)
-# last-validated: 2026-04-28
+# last-validated: 2026-05-15
 # known-issues: (none)
 # gql-vars: { "storeId": "String", "after": "String", "first": "Int", "keyword": "String", "sort": "String" }
 # runner-note: Pass variables via [GQL-VARS label] JSON. storeId is optional in the schema but should always be supplied for store-scoped results.

@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-052,"xFrontend — pageContext Homepage Slug Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with storeId + empty permalink. Expects store metadata populated. No auth required.","—","[GQL-OP homepage_ctx]
+XFE-GQL-052,"xFrontend — pageContext Homepage Slug Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with storeId + empty permalink. Expects store metadata populated. No auth required.","—","[GQL-OP homepage_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: """") {
       store { storeId storeName catalogId storeUrl }
@@ -11,7 +11,7 @@ GQL-052,"xFrontend — pageContext Homepage Slug Resolution","GraphQL > xFronten
 [DATA label=homepage_ctx] data.pageContext is non-null
 [DATA label=homepage_ctx] data.pageContext.store is non-null
 [DATA label=homepage_ctx] data.pageContext.store.storeId is non-null","[ROUNDTRIP label=homepage_ctx] re-execute → same store metadata returned","errors[] non-empty; store null; storeId mismatch",none — read-only,xAPI; graphql-schema.md — Query.pageContext,Automated
-GQL-053,"xFrontend — pageContext CMS Permalink Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with a sample permalink. Verifies slugInfo structure is present.","sample_permalink=/search","[GQL-OP search_ctx]
+XFE-GQL-053,"xFrontend — pageContext CMS Permalink Resolution","GraphQL > xFrontend",Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. Calls pageContext with a sample permalink. Verifies slugInfo structure is present.","sample_permalink=/search","[GQL-OP search_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: ""/search"") {
       slugInfo { entityInfo { objectType semanticUrl id } redirectUrl }
@@ -21,7 +21,7 @@ GQL-053,"xFrontend — pageContext CMS Permalink Resolution","GraphQL > xFronten
 [GQL-EXEC search_ctx]","[ERRORS label=search_ctx] errors[] empty
 [DATA label=search_ctx] data.pageContext is non-null
 [DATA label=search_ctx] data.pageContext.slugInfo is non-null","[EVIDENCE] slugInfo.entityInfo may be populated if /search resolves to a known entity, or null if permalink is a pure route. Both acceptable.","errors[] non-empty; pageContext null",none — read-only,xAPI; graphql-schema.md — SlugInfoResponseType,Automated
-GQL-054,"xFrontend — pageContext Store Settings in Response","GraphQL > xFrontend",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries pageContext and asserts store.defaultLanguage + store.defaultCurrency + store.availableLanguages/Currencies are populated.","—","[GQL-OP store_settings]
+XFE-GQL-054,"xFrontend — pageContext Store Settings in Response","GraphQL > xFrontend",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries pageContext and asserts store.defaultLanguage + store.defaultCurrency + store.availableLanguages/Currencies are populated.","—","[GQL-OP store_settings]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
       store {
@@ -37,7 +37,7 @@ GQL-054,"xFrontend — pageContext Store Settings in Response","GraphQL > xFront
 [DATA label=store_settings] data.pageContext.store is non-null
 [DATA label=store_settings] data.pageContext.store.defaultLanguage is non-null
 [DATA label=store_settings] data.pageContext.store.defaultCurrency is non-null","[EVIDENCE] defaultLanguage.cultureName and defaultCurrency.code populated; availableLanguages/Currencies are non-empty lists","Schema drift on StoreResponseType (DV-009); defaultLanguage/Currency null",none — read-only,xAPI; graphql-schema.md — StoreResponseType,Automated
-GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context","GraphQL > xFrontend",High,BL-GQL-001; BL-GQL-004,ECL-2.1,"Runner-native. Calls pageContext twice — first anonymous, then authenticated. Verifies user resolution differs.","—","[GQL-OP anon_ctx]
+XFE-GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context","GraphQL > xFrontend",High,BL-GQL-001; BL-GQL-004,ECL-2.1,"Runner-native. Calls pageContext twice — first anonymous, then authenticated. Verifies user resolution differs.","—","[GQL-OP anon_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
       user { id memberId }
@@ -55,7 +55,7 @@ GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context","Gra
 [ERRORS label=auth_ctx] errors[] empty
 [DATA label=auth_ctx] data.pageContext.user is non-null
 [DATA label=auth_ctx] data.pageContext.user.id is non-null","[EVIDENCE] auth_ctx.user.id is a real GUID matching ORG_USER. anon_ctx.user.id differs (anonymous id or null).","auth_ctx returns null user; anon_ctx leaks authenticated data",none — read-only,xAPI; graphql-schema.md — PageContextResponseType.user,Automated
-GQL-056,"xFrontend — pageContext Invalid Permalink","GraphQL > xFrontend",High,BL-GQL-001,ECL-9.1,"Runner-native. Calls pageContext with a permalink that doesn't exist. Expects slugInfo.entityInfo=null without HTTP 500.","bogus_permalink=/nonexistent-xyz-agent-test-404","[GQL-OP bogus_ctx]
+XFE-GQL-056,"xFrontend — pageContext Invalid Permalink","GraphQL > xFrontend",High,BL-GQL-001,ECL-10.2,"Runner-native. Calls pageContext with a permalink that doesn't exist. Expects slugInfo.entityInfo=null without HTTP 500.","bogus_permalink=/nonexistent-xyz-agent-test-404","[GQL-OP bogus_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: ""/nonexistent-xyz-agent-test-404"") {
       slugInfo { entityInfo { objectType semanticUrl } redirectUrl }
@@ -64,7 +64,7 @@ GQL-056,"xFrontend — pageContext Invalid Permalink","GraphQL > xFrontend",High
   }
 [GQL-EXEC bogus_ctx]","[ERRORS label=bogus_ctx] errors[] empty
 [DATA label=bogus_ctx] data.pageContext is non-null","[EVIDENCE] Invalid permalink → entityInfo null + store still populated. No HTTP 500 or stack trace.","HTTP 500; crash; stack trace in errors[]; entityInfo populated with arbitrary data",none — read-only,xAPI; graphql-schema.md — SlugInfoResponseType error behavior,Automated
-GQL-057,"xFrontend — pageContext Organization-Scoped White Labeling","GraphQL > xFrontend",High,BL-B2B-001; BL-GQL-002,ECL-2.1,"Runner-native. ORG_USER queries pageContext with their organizationId. Verifies whiteLabelingSettings schema resolves (value may be null if org has no WL config).","—","[AUTH role=ORG_USER]
+XFE-GQL-057,"xFrontend — pageContext Organization-Scoped White Labeling","GraphQL > xFrontend",High,BL-B2B-001; BL-GQL-002,ECL-2.1,"Runner-native. ORG_USER queries pageContext with their organizationId. Verifies whiteLabelingSettings schema resolves (value may be null if org has no WL config).","—","[AUTH role=ORG_USER]
 [GQL-OP me_org]
   query { me { id contact { organizationId } } }
 [GQL-EXEC me_org]

@@ -64,12 +64,12 @@ User authenticated. Store supports at least 2 currencies (e.g., USD and EUR). Co
 [CONSOLE] No JavaScript errors referencing hiddenSectionIds or dependsOnSectionId","[NETWORK] GraphQL productConfiguration query for Hat returns sections with dependsOnSectionId=null for all sections
 [API] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<hat-product-id> — confirm all sections have dependsOnSectionId=null in REST response
 [CONSOLE] No regression errors related to conditional section logic on null-dependency products","Any existing section hidden unexpectedly (regression in isSectionVisible() when dependsOnSectionId=null); widget not rendering for pre-existing products after PR deployment; JS error in hiddenSectionIds computed property for products with null dependsOnSectionId; price calculation broken for non-conditional products","none","VCST-4713","Manual"
-"CFG-GQL-010-COND","GraphQL: productConfiguration Query Returns dependsOnSectionId Field per Section","Configurable Products > GraphQL xAPI > Conditional Sections Schema","High","BL-CAT-006","ECL-7.1","User authenticated with Bearer token. Seed product CFG-022 deployed. GraphiQL accessible at {{BACK_URL}}/ui/graphiql. Backend PR vc-module-catalog#871 deployed (adds dependsOnSectionId to ConfigurationSectionType).","back_url={{BACK_URL}}; store_id={{STORE_ID}}; user={{USER_EMAIL}}; password={{USER_PASSWORD}}; product_id=2ac50978-0163-4fa1-b6e7-ce9101ba720d; sectionA_id=a3ea3283-c40e-44c1-9534-c1a3cc06da75; sectionB_id=8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2; sectionC_id=12fbadbf-b1e8-496e-9576-18b929a654a8; sectionD_id=b0b1692a-c663-4f66-ac3f-2f3307b1ff42","[NAV] Navigate to {{BACK_URL}}/ui/graphiql
+"CFG-GQL-010-COND","GraphQL: productConfiguration Query Returns dependsOnSectionId Field per Section","Configurable Products > GraphQL xAPI > Conditional Sections Schema","High","BL-CAT-006","ECL-7.1","User authenticated with Bearer token. Seed product CFG-022 deployed. GraphiQL accessible at {{BACK_URL}}/ui/graphiql. Backend PR vc-module-catalog#871 deployed (adds dependsOnSectionId to ConfigurationSectionType).","back_url={{BACK_URL}}; store_id={{STORE_ID}}; user={{USER_EMAIL}}; password={{USER_PASSWORD}}; product_id=@td(CFG_CONDITIONAL_BIKE.id); sectionA_id=@td(CFG_022_SECTIONS.A); sectionB_id=@td(CFG_022_SECTIONS.B); sectionC_id=@td(CFG_022_SECTIONS.C); sectionD_id=@td(CFG_022_SECTIONS.D)","[NAV] Navigate to {{BACK_URL}}/ui/graphiql
 [AUTH] Set Authorization header: Bearer <token obtained via POST {{BACK_URL}}/connect/token with {{USER_EMAIL}}/{{USER_PASSWORD}}>
 [ACT] Click editor; Ctrl+A; Backspace; type query:
 query GetConditionalConfig {
   productConfiguration(
-    configurableProductId: ""2ac50978-0163-4fa1-b6e7-ce9101ba720d""
+    configurableProductId: ""@td(CFG_CONDITIONAL_BIKE.id)""
     storeId: ""{{STORE_ID}}""
   ) {
     configurationSections {
@@ -83,10 +83,10 @@ query GetConditionalConfig {
 [GQL] Click Execute (or Ctrl+Enter)
 [READ] Read response panel — inspect configurationSections[] array","[ERRORS] errors[] is empty in response
 [DATA] response.data.productConfiguration.configurationSections[] contains 4 entries (sections A, B, C, D)
-[NULL] Section A (id=a3ea3283-c40e-44c1-9534-c1a3cc06da75) has dependsOnSectionId = null (no dependency)
-[DATA] Section B (id=8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2) has dependsOnSectionId = ""a3ea3283-c40e-44c1-9534-c1a3cc06da75"" (depends on A)
-[DATA] Section C (id=12fbadbf-b1e8-496e-9576-18b929a654a8) has dependsOnSectionId = ""8ad69de5-31b0-4b4b-b233-fd69b4f1a4e2"" (depends on B — transitive)
-[DATA] Section D (id=b0b1692a-c663-4f66-ac3f-2f3307b1ff42) has dependsOnSectionId = ""a3ea3283-c40e-44c1-9534-c1a3cc06da75"" (sibling of B — also depends on A)
+[NULL] Section A (id=@td(CFG_022_SECTIONS.A)) has dependsOnSectionId = null (no dependency)
+[DATA] Section B (id=@td(CFG_022_SECTIONS.B)) has dependsOnSectionId = ""@td(CFG_022_SECTIONS.A)"" (depends on A)
+[DATA] Section C (id=@td(CFG_022_SECTIONS.C)) has dependsOnSectionId = ""@td(CFG_022_SECTIONS.B)"" (depends on B — transitive)
+[DATA] Section D (id=@td(CFG_022_SECTIONS.D)) has dependsOnSectionId = ""@td(CFG_022_SECTIONS.A)"" (sibling of B — also depends on A)
 [COUNT] Exactly 4 sections returned","[ROUNDTRIP] dependsOnSectionId values in response match values set via REST POST in CFG-CA-024 — confirming GraphQL/REST round-trip
 [CONSOLE] No JS errors in GraphiQL during execution
 [ADMIN] Admin Configurations blade for CFG-022 shows Section B Depends On = Frame Type confirming schema consistency","errors[] non-empty (field not in schema — dependsOnSectionId not yet deployed); dependsOnSectionId field absent from response (null vs. missing — serializer stripping null fields); all sections returning dependsOnSectionId=null (dependency not persisted); 4xx on graphql endpoint","none","VCST-4713","Manual"

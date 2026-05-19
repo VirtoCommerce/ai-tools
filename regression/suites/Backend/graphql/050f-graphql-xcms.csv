@@ -1,10 +1,10 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-014,"xCMS — pages Happy Path","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists xCMS pages for the store with full field selection (id, name, relativeUrl, permalink). PUBLIC role — no [AUTH] required.","—","[GQL-OP list_pages]
+CMS-GQL-014,"xCMS — pages Happy Path","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists xCMS pages for the store with full field selection (id, name, relativeUrl, permalink). PUBLIC role — no [AUTH] required.","—","[GQL-OP list_pages]
   query { pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 10 cultureName: ""en-US"") { totalCount items { id name relativeUrl permalink } } }
 [GQL-EXEC list_pages]","[ERRORS label=list_pages] errors[] empty
 [DATA label=list_pages] data.pages is non-null
-[COUNT label=list_pages] data.pages.totalCount >= 0",",","pages query null; items missing id/name/relativeUrl; HTTP 500",none,"xAPI; Query.pages",Automated
-GQL-115,"xCMS — page Detail by ID (Captured)","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists pages, captures items[0].id, then resolves single page by id. Verifies the round-trip pages → page(id) is consistent.","—","[GQL-OP list_pages]
+[COUNT label=list_pages] data.pages.totalCount >= 0",,"pages query null; items missing id/name/relativeUrl; HTTP 500",none,"xAPI; Query.pages",Automated
+CMS-GQL-115,"xCMS — page Detail by ID (Captured)","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists pages, captures items[0].id, then resolves single page by id. Verifies the round-trip pages → page(id) is consistent.","—","[GQL-OP list_pages]
   query { pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 1 cultureName: ""en-US"") { items { id name } } }
 [GQL-EXEC list_pages]
 [GQL-CAPTURE list_pages.data.pages.items.0.id → PAGE_ID]
@@ -13,11 +13,11 @@ GQL-115,"xCMS — page Detail by ID (Captured)","GraphQL > xCMS",High,BL-GQL-002
 [GQL-EXEC one_page]","[ERRORS label=one_page] errors[] empty
 [DATA label=one_page] data.page is non-null
 [DATA label=one_page] data.page.id = {{PAGE_ID}}
-[DATA label=one_page] data.page.name is non-null",",","page returns null for valid id; id mismatch with captured PAGE_ID; HTTP 500",none,"xAPI; Query.page",Automated
-GQL-116,"xCMS — page Non-Existent ID Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-9.1,"Runner-native. page query with zero-GUID id — expects graceful null or graceful error, never HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP page_bogus]
-  query { page(storeId: ""{{STORE_ID}}"" id: ""00000000-0000-0000-0000-000000000000"" cultureName: ""en-US"") { id name } }
-[GQL-EXEC page_bogus]","[DATA label=page_bogus] data is non-null or errors[] is non-empty",",","HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.page error",Automated
-GQL-117,"xCMS — pages Cursor Pagination","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Requests first=2, captures endCursor, then first=2 after=cursor. Verifies pageInfo cursor advancement.","—","[GQL-OP page1]
+[DATA label=one_page] data.page.name is non-null",,"page returns null for valid id; id mismatch with captured PAGE_ID; HTTP 500",none,"xAPI; Query.page",Automated
+CMS-GQL-116,"xCMS — page Non-Existent ID Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-10.2,"Runner-native. page query with zero-GUID id — expects graceful null or graceful error, never HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP page_bogus]
+  query { page(storeId: ""{{STORE_ID}}"" id: ""{{bogus_id}}"" cultureName: ""en-US"") { id name } }
+[GQL-EXEC page_bogus]","[DATA label=page_bogus] data is non-null OR errors[] is non-empty",,"HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.page error",Automated
+CMS-GQL-117,"xCMS — pages Cursor Pagination","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Requests first=2, captures endCursor, then first=2 after=cursor. Verifies pageInfo cursor advancement.","—","[GQL-OP page1]
   query { pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 2) { totalCount pageInfo { hasNextPage endCursor } items { id } } }
 [GQL-EXEC page1]
 [GQL-CAPTURE page1.data.pages.pageInfo.endCursor → CURSOR]
@@ -26,21 +26,21 @@ GQL-117,"xCMS — pages Cursor Pagination","GraphQL > xCMS",High,BL-GQL-002,ECL-
 [GQL-EXEC page2]","[ERRORS label=page1] errors[] empty
 [ERRORS label=page2] errors[] empty
 [DATA label=page1] data.pages.pageInfo is non-null
-[DATA label=page2] data.pages is non-null",",","Cursor pagination broken; same items returned on both pages; pageInfo missing endCursor",none,"xAPI; PageInfo",Automated
-GQL-118,"xCMS — pages with cultureName Localization","GraphQL > xCMS",Medium,BL-GQL-002,ECL-2.1,"Runner-native. Passes cultureName=""de-DE"" — expects errors empty even if no localized content exists (graceful fallback).","—","[GQL-OP de_pages]
+[DATA label=page2] data.pages is non-null",,"Cursor pagination broken; same items returned on both pages; pageInfo missing endCursor",none,"xAPI; PageInfo",Automated
+CMS-GQL-118,"xCMS — pages with cultureName Localization","GraphQL > xCMS",Medium,BL-GQL-002,ECL-2.1,"Runner-native. Passes cultureName=""de-DE"" — expects errors empty even if no localized content exists (graceful fallback).","—","[GQL-OP de_pages]
   query { pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 5 cultureName: ""de-DE"") { totalCount items { id name } } }
 [GQL-EXEC de_pages]","[ERRORS label=de_pages] errors[] empty
-[DATA label=de_pages] data.pages is non-null",",","cultureName rejected; localization throws; HTTP 500",none,"xAPI; Query.pages cultureName",Automated
-GQL-119,"xCMS — pages Keyword No-Match Returns Empty","GraphQL > xCMS",Medium,BL-GQL-001,ECL-9.1,"Runner-native. pages with a deliberately-unique keyword that should not match — expects totalCount=0 and items=[] without HTTP 500.","keyword=agent-test-xcms-no-match-zzz-2026","[GQL-OP no_match]
-  query { pages(storeId: ""{{STORE_ID}}"" keyword: ""agent-test-xcms-no-match-zzz-2026"" first: 10) { totalCount items { id } } }
+[DATA label=de_pages] data.pages is non-null",,"cultureName rejected; localization throws; HTTP 500",none,"xAPI; Query.pages cultureName",Automated
+CMS-GQL-119,"xCMS — pages Keyword No-Match Returns Empty","GraphQL > xCMS",Medium,BL-GQL-001,ECL-10.2,"Runner-native. pages with a deliberately-unique keyword that should not match — expects totalCount=0 and items=[] without HTTP 500.","no_match_kw=agent-test-xcms-no-match-zzz-2026","[GQL-OP no_match]
+  query { pages(storeId: ""{{STORE_ID}}"" keyword: ""{{no_match_kw}}"" first: 10) { totalCount items { id } } }
 [GQL-EXEC no_match]","[ERRORS label=no_match] errors[] empty
 [DATA label=no_match] data.pages is non-null
-[COUNT label=no_match] data.pages.totalCount >= 0",",","HTTP 500 on no-match probe; arbitrary results returned",none,"xAPI; Query.pages empty result",Automated
-GQL-120,"xCMS — menus List","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists menus for the store. Returns list of MenuLinkListType (not a Connection — no totalCount).","—","[GQL-OP list_menus]
+[COUNT label=no_match] data.pages.totalCount >= 0",,"HTTP 500 on no-match probe; arbitrary results returned",none,"xAPI; Query.pages empty result",Automated
+CMS-GQL-120,"xCMS — menus List","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists menus for the store. Returns list of MenuLinkListType (not a Connection — no totalCount).","—","[GQL-OP list_menus]
   query { menus(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { name outerId items { title url priority } } }
 [GQL-EXEC list_menus]","[ERRORS label=list_menus] errors[] empty
-[DATA label=list_menus] data.menus is non-null",",","menus query null; items missing title/url; HTTP 500",none,"xAPI; Query.menus",Automated
-GQL-121,"xCMS — menu by Name (Captured)","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists menus, captures menus[0].name, then resolves single menu by name. Verifies menus → menu(name) round-trip.","—","[GQL-OP list_menus]
+[DATA label=list_menus] data.menus is non-null",,"menus query null; items missing title/url; HTTP 500",none,"xAPI; Query.menus",Automated
+CMS-GQL-121,"xCMS — menu by Name (Captured)","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists menus, captures menus[0].name, then resolves single menu by name. Verifies menus → menu(name) round-trip.","—","[GQL-OP list_menus]
   query { menus(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { name } }
 [GQL-EXEC list_menus]
 [GQL-CAPTURE list_menus.data.menus.0.name → MENU_NAME]
@@ -48,34 +48,34 @@ GQL-121,"xCMS — menu by Name (Captured)","GraphQL > xCMS",High,BL-GQL-002,ECL-
   query { menu(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" name: ""{{MENU_NAME}}"") { name outerId items { title url } } }
 [GQL-EXEC one_menu]","[ERRORS label=one_menu] errors[] empty
 [DATA label=one_menu] data.menu is non-null
-[DATA label=one_menu] data.menu.name = {{MENU_NAME}}",",","menu returns null for known name; name mismatch with captured MENU_NAME",none,"xAPI; Query.menu",Automated
-GQL-122,"xCMS — menu Non-Existent Name Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-9.1,"Runner-native. menu query with deliberately-unique name — expects graceful null or graceful error, never HTTP 500.","bogus_name=agent-test-menu-nonexistent-2026","[GQL-OP menu_bogus]
-  query { menu(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" name: ""agent-test-menu-nonexistent-2026"") { name outerId } }
-[GQL-EXEC menu_bogus]","[DATA label=menu_bogus] data is non-null or errors[] is non-empty",",","HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.menu error",Automated
-GQL-123,"xCMS — pageContext Homepage with userId","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. pageContext for the storefront homepage (permalink=""/"") with env-supplied domain + userId hint. Returns nested store + slugInfo + whiteLabelingSettings + user. Required env vars: STOREFRONT_DOMAIN (host portion of FRONT_URL), TEST_USER_ID (real user GUID on this env). Note: when called anonymously (no Bearer token), pageContext.user returns a fresh session-anonymous user GUID per request — the userId arg is a session hint to the resolver, NOT an authoritative ID echoed back. Assertions therefore check structural invariants (non-null, valid GUID, slugInfo.entityInfo.objectType=ContentFile for homepage) rather than user-id equality.","permalink=/","[GQL-OP ctx_home]
+[DATA label=one_menu] data.menu.name = {{MENU_NAME}}",,"menu returns null for known name; name mismatch with captured MENU_NAME",none,"xAPI; Query.menu",Automated
+CMS-GQL-122,"xCMS — menu Non-Existent Name Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-10.2,"Runner-native. menu query with deliberately-unique name — expects graceful null or graceful error, never HTTP 500.","bogus_name=agent-test-menu-nonexistent-2026","[GQL-OP menu_bogus]
+  query { menu(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" name: ""{{bogus_name}}"") { name outerId } }
+[GQL-EXEC menu_bogus]","[DATA label=menu_bogus] data is non-null OR errors[] is non-empty",,"HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.menu error",Automated
+CMS-GQL-123,"xCMS — pageContext Homepage with userId","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. pageContext for the storefront homepage (permalink=""/"") with env-supplied domain + userId hint. Returns nested store + slugInfo + whiteLabelingSettings + user. Required env vars: STOREFRONT_DOMAIN (host portion of FRONT_URL), TEST_USER_ID (real user GUID on this env). Note: when called anonymously (no Bearer token), pageContext.user returns a fresh session-anonymous user GUID per request — the userId arg is a session hint to the resolver, NOT an authoritative ID echoed back. Assertions therefore check structural invariants (non-null, valid GUID, slugInfo.entityInfo.objectType=ContentFile for homepage) rather than user-id equality.","permalink=/","[GQL-OP ctx_home]
   query { pageContext(storeId: ""{{STORE_ID}}"" domain: ""{{STOREFRONT_DOMAIN}}"" userId: ""{{TEST_USER_ID}}"" permalink: ""/"" cultureName: ""en-US"") { store { storeId storeName } slugInfo { redirectUrl entityInfo { objectType id } } user { id userName email memberId } whiteLabelingSettings { footerLinks { title } } } }
 [GQL-EXEC ctx_home]","[ERRORS label=ctx_home] errors[] empty
 [DATA label=ctx_home] data.pageContext is non-null
 [DATA label=ctx_home] data.pageContext.store.storeId is non-null
 [DATA label=ctx_home] data.pageContext.slugInfo.entityInfo.objectType = ContentFile
-[DATA label=ctx_home] data.pageContext.user.id is non-empty GUID",",","pageContext throws; HTTP 500; store.storeId null on valid storeId; slugInfo.entityInfo.objectType ≠ ContentFile (home no longer maps to ContentFile-style page); user.id missing/non-GUID; whiteLabelingSettings inaccessible",none,"xAPI; Query.pageContext homepage",Automated
-GQL-124,"xCMS — pageDocuments List","GraphQL > xCMS",Medium,BL-GQL-002,ECL-2.1,"Runner-native. Lists page documents for the store. Empty result acceptable (totalCount=0 if no documents seeded in QA).","—","[GQL-OP list_docs]
-  query { pageDocuments(storeId: ""{{STORE_ID}}"" keyword: """" first: 10 cultureName: ""en-US"") { totalCount items { id title permalink } } }
+[DATA label=ctx_home] data.pageContext.user.id is non-empty GUID",,"pageContext throws; HTTP 500; store.storeId null on valid storeId; slugInfo.entityInfo.objectType ≠ ContentFile (home no longer maps to ContentFile-style page); user.id missing/non-GUID; whiteLabelingSettings inaccessible",none,"xAPI; Query.pageContext homepage",Automated
+CMS-GQL-124,"xCMS — pageDocuments List","GraphQL > xCMS",Medium,BL-GQL-002,ECL-2.1,"Runner-native. Lists page documents for the store. Empty result acceptable (totalCount=0 if no documents seeded in QA).","—","[GQL-OP list_docs]
+  query { pageDocuments(storeId: ""{{STORE_ID}}"" keyword: """" first: 10 cultureName: ""en-US"") { totalCount items { id title source permalink content } } }
 [GQL-EXEC list_docs]","[ERRORS label=list_docs] errors[] empty
 [DATA label=list_docs] data.pageDocuments is non-null
-[COUNT label=list_docs] data.pageDocuments.totalCount >= 0",",","pageDocuments query null; HTTP 500",none,"xAPI; Query.pageDocuments",Automated
-GQL-125,"xCMS — pageDocument Zero-GUID Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-9.1,"Runner-native. pageDocument query with zero-GUID id — expects graceful null or graceful error, never HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP doc_bogus]
-  query { pageDocument(id: ""00000000-0000-0000-0000-000000000000"") { id title permalink } }
-[GQL-EXEC doc_bogus]","[DATA label=doc_bogus] data is non-null or errors[] is non-empty",",","HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.pageDocument error",Automated
-GQL-126,"xCMS — pageContext Catalog Page with userId","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. pageContext for the storefront catalog page (permalink=""/catalog"") with env-supplied domain + userId hint. Companion to GQL-123 (homepage). Verifies slugInfo resolves the /catalog permalink to a Catalog entity (semanticUrl=""catalog"") — the meaningful behavioral difference from the homepage. user resolver populates an anonymous session GUID (see GQL-123 note re: userId arg semantics). Required env vars: STOREFRONT_DOMAIN, TEST_USER_ID.","permalink=/catalog","[GQL-OP ctx_catalog]
+[COUNT label=list_docs] data.pageDocuments.totalCount >= 0",,"pageDocuments query null; HTTP 500",none,"xAPI; Query.pageDocuments",Automated
+CMS-GQL-125,"xCMS — pageDocument Zero-GUID Returns Null","GraphQL > xCMS",Medium,BL-GQL-001,ECL-10.2,"Runner-native. pageDocument query with zero-GUID id — expects graceful null or graceful error, never HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP doc_bogus]
+  query { pageDocument(id: ""{{bogus_id}}"") { id title permalink } }
+[GQL-EXEC doc_bogus]","[DATA label=doc_bogus] data is non-null OR errors[] is non-empty",,"HTTP 500; crash; stack trace in errors[]",none,"xAPI; Query.pageDocument error",Automated
+CMS-GQL-126,"xCMS — pageContext Catalog Page with userId","GraphQL > xCMS",High,BL-GQL-002,ECL-2.1,"Runner-native. pageContext for the storefront catalog page (permalink=""/catalog"") with env-supplied domain + userId hint. Companion to CMS-GQL-123 (homepage). Verifies slugInfo resolves the /catalog permalink to a Catalog entity (semanticUrl=""catalog"") — the meaningful behavioral difference from the homepage. user resolver populates an anonymous session GUID (see CMS-GQL-123 note re: userId arg semantics). Required env vars: STOREFRONT_DOMAIN, TEST_USER_ID.","permalink=/catalog","[GQL-OP ctx_catalog]
   query { pageContext(storeId: ""{{STORE_ID}}"" domain: ""{{STOREFRONT_DOMAIN}}"" userId: ""{{TEST_USER_ID}}"" permalink: ""/catalog"" cultureName: ""en-US"") { store { storeId storeName } slugInfo { redirectUrl entityInfo { objectType id semanticUrl } } user { id userName memberId } whiteLabelingSettings { footerLinks { title } } } }
 [GQL-EXEC ctx_catalog]","[ERRORS label=ctx_catalog] errors[] empty
 [DATA label=ctx_catalog] data.pageContext is non-null
 [DATA label=ctx_catalog] data.pageContext.store.storeId is non-null
 [DATA label=ctx_catalog] data.pageContext.slugInfo.entityInfo.objectType = Catalog
 [DATA label=ctx_catalog] data.pageContext.slugInfo.entityInfo.semanticUrl = catalog
-[DATA label=ctx_catalog] data.pageContext.user.id is non-empty GUID",",","pageContext throws on /catalog permalink; slugInfo.entityInfo.objectType ≠ Catalog (catalog permalink no longer resolves to Catalog entity); semanticUrl ≠ catalog; user.id missing/non-GUID; HTTP 500",none,"xAPI; Query.pageContext catalog",Automated
-GQL-127,"[VCST-4835] newsArticles — sort publishDate:desc Returns Descending Order","GraphQL > xCMS > News Articles > Sort",Critical,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role — newsArticles does not require authentication. Store must have at least 2 published news articles. Sort arg is a plain String (format ""field:direction""). SCHEMA NOTE: NewsArticleType field list not in snapshot — fields id/title/publishDate assumed present.","—","[GQL-OP desc_sort]
+[DATA label=ctx_catalog] data.pageContext.user.id is non-empty GUID",,"pageContext throws on /catalog permalink; slugInfo.entityInfo.objectType ≠ Catalog (catalog permalink no longer resolves to Catalog entity); semanticUrl ≠ catalog; user.id missing/non-GUID; HTTP 500",none,"xAPI; Query.pageContext catalog",Automated
+CMS-GQL-127,"[VCST-4835] newsArticles — sort publishDate:desc Returns Descending Order","GraphQL > xCMS > News Articles > Sort",Critical,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role — newsArticles does not require authentication. Store must have at least 2 published news articles. Sort arg is a plain String (format ""field:direction""). Return type is NewsArticleContent (verified via introspection — has id, title, publishDate, content, contentPreview, listTitle, listPreview, tags, isArchived, seoInfo, author).","—","[GQL-OP desc_sort]
   query {
     newsArticles(
       storeId: ""{{STORE_ID}}""
@@ -91,8 +91,8 @@ GQL-127,"[VCST-4835] newsArticles — sort publishDate:desc Returns Descending O
 [COUNT label=desc_sort] data.newsArticles.totalCount >= 2
 [DATA label=desc_sort] data.newsArticles.items.0.publishDate is non-null
 [DATA label=desc_sort] data.newsArticles.items.1.publishDate is non-null
-[DATA label=desc_sort] data.newsArticles.items.0.publishDate >= data.newsArticles.items.1.publishDate","[EVIDENCE] Bug VCST-4835: before fix, sort was ignored. The >= assertion on ISO-8601 dates fails if fix is regressed.","errors[] non-empty; totalCount < 2 (insufficient seeded articles); items.0.publishDate < items.1.publishDate (fix regressed); DV-008 on publishDate field","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
-GQL-128,"[VCST-4835] newsArticles — sort publishDate:asc Returns Ascending Order","GraphQL > xCMS > News Articles > Sort",High,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role. Companion to GQL-127 verifying both sort directions.","—","[GQL-OP asc_sort]
+[DATA label=desc_sort] data.newsArticles.items.0.publishDate >= data.newsArticles.items.1.publishDate","[EVIDENCE] Bug VCST-4835: before fix, sort was ignored. The >= assertion on ISO-8601 dates fails if fix is regressed.","errors[] non-empty; totalCount < 2 (insufficient seeded articles); items.0.publishDate < items.1.publishDate (fix regressed); DV-008 on publishDate field",none,"VCST-4835; xAPI; Query.newsArticles",Automated
+CMS-GQL-128,"[VCST-4835] newsArticles — sort publishDate:asc Returns Ascending Order","GraphQL > xCMS > News Articles > Sort",High,"BL-GQL-001; BL-GQL-002","ECL-2.1; ECL-10.1","Runner-native. PUBLIC role. Companion to CMS-GQL-127 verifying both sort directions.","—","[GQL-OP asc_sort]
   query {
     newsArticles(
       storeId: ""{{STORE_ID}}""
@@ -108,8 +108,8 @@ GQL-128,"[VCST-4835] newsArticles — sort publishDate:asc Returns Ascending Ord
 [COUNT label=asc_sort] data.newsArticles.totalCount >= 2
 [DATA label=asc_sort] data.newsArticles.items.0.publishDate is non-null
 [DATA label=asc_sort] data.newsArticles.items.1.publishDate is non-null
-[DATA label=asc_sort] data.newsArticles.items.0.publishDate <= data.newsArticles.items.1.publishDate","[EVIDENCE] Ascending sort produces oldest article first; inverse of GQL-127.","errors[] non-empty; totalCount < 2; items.0.publishDate > items.1.publishDate (asc sort returning newest first); DV-008 on publishDate","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
-GQL-129,"[VCST-4835] newsArticles — No sort Arg Returns Structural Integrity","GraphQL > xCMS > News Articles > Sort",Medium,"BL-GQL-002","ECL-2.1; ECL-9.1","Runner-native. PUBLIC role. Calls newsArticles with no sort argument — verifies the query succeeds and returns structurally valid articles. Default order is implementation-defined; test asserts only structural invariants.","—","[GQL-OP nosort]
+[DATA label=asc_sort] data.newsArticles.items.0.publishDate <= data.newsArticles.items.1.publishDate","[EVIDENCE] Ascending sort produces oldest article first; inverse of CMS-GQL-127.","errors[] non-empty; totalCount < 2; items.0.publishDate > items.1.publishDate (asc sort returning newest first); DV-008 on publishDate",none,"VCST-4835; xAPI; Query.newsArticles",Automated
+CMS-GQL-129,"[VCST-4835] newsArticles — No sort Arg Returns Structural Integrity","GraphQL > xCMS > News Articles > Sort",Medium,"BL-GQL-002","ECL-2.1; ECL-9.1","Runner-native. PUBLIC role. Calls newsArticles with no sort argument — verifies the query succeeds and returns structurally valid articles. Default order is implementation-defined; test asserts only structural invariants.","—","[GQL-OP nosort]
   query {
     newsArticles(
       storeId: ""{{STORE_ID}}""
@@ -122,8 +122,8 @@ GQL-129,"[VCST-4835] newsArticles — No sort Arg Returns Structural Integrity",
   }
 [GQL-EXEC nosort]","[ERRORS label=nosort] errors[] empty
 [COUNT label=nosort] data.newsArticles.totalCount >= 0
-[DATA label=nosort] data.newsArticles.items is non-null","[EVIDENCE] When totalCount >= 1, items[0].id is non-null and items[0].publishDate is non-null","errors[] non-empty on call without sort; HTTP 500; items null; DV-008 on id/title/publishDate","none — read-only","VCST-4835; xAPI; Query.newsArticles",Draft
-GQL-130,"[VCST-5069] xCMS pages Post-Reindex Health Check","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Verifies xCMS pages query returns a non-null, non-error result for B2B-store after a search index rebuild. Bug VCST-5069 symptom: pages erroring or returning empty after reindex.","—","[GQL-OP list_pages_health]
+[DATA label=nosort] data.newsArticles.items is non-null","[EVIDENCE] When totalCount >= 1, items[0].id is non-null and items[0].publishDate is non-null","errors[] non-empty on call without sort; HTTP 500; items null; DV-008 on id/title/publishDate",none,"VCST-4835; xAPI; Query.newsArticles",Automated
+CMS-GQL-130,"[VCST-5069] xCMS pages Post-Reindex Health Check","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Verifies xCMS pages query returns a non-null, non-error result for B2B-store after a search index rebuild. Bug VCST-5069 symptom: pages erroring or returning empty after reindex.","—","[GQL-OP list_pages_health]
   query {
     pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 5 cultureName: ""en-US"") {
       totalCount
@@ -133,8 +133,8 @@ GQL-130,"[VCST-5069] xCMS pages Post-Reindex Health Check","GraphQL > xCMS > Pos
 [GQL-EXEC list_pages_health]","[ERRORS label=list_pages_health] errors[] empty
 [DATA label=list_pages_health] data.pages is non-null
 [COUNT label=list_pages_health] data.pages.totalCount >= 0
-[DATA label=list_pages_health] data.pages.items is non-null","[EVIDENCE] After search index rebuild verify same totalCount as pre-rebuild","errors[] non-empty after reindex; pages.items null or empty when CMS pages exist; HTTP 500; totalCount drops to 0 post-rebuild","none — read-only","VCST-5069; xAPI; Query.pages",Draft
-GQL-131,"[VCST-5069] xCMS page Single-Item Round-Trip Post-Reindex","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Captures pages.items[0].id then resolves full page object. Verifies that individual page nodes are resolvable after reindex.","—","[GQL-OP list_pages_seed]
+[DATA label=list_pages_health] data.pages.items is non-null","[EVIDENCE] After search index rebuild verify same totalCount as pre-rebuild","errors[] non-empty after reindex; pages.items null or empty when CMS pages exist; HTTP 500; totalCount drops to 0 post-rebuild",none,"VCST-5069; xAPI; Query.pages",Automated
+CMS-GQL-131,"[VCST-5069] xCMS page Single-Item Round-Trip Post-Reindex","GraphQL > xCMS > Post-Reindex",Critical,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Captures pages.items[0].id then resolves full page object. Verifies that individual page nodes are resolvable after reindex.","—","[GQL-OP list_pages_seed]
   query {
     pages(storeId: ""{{STORE_ID}}"" keyword: """" first: 1 cultureName: ""en-US"") {
       items { id name }
@@ -153,11 +153,11 @@ GQL-131,"[VCST-5069] xCMS page Single-Item Round-Trip Post-Reindex","GraphQL > x
 [ERRORS label=one_page_post_reindex] errors[] empty
 [DATA label=one_page_post_reindex] data.page is non-null
 [DATA label=one_page_post_reindex] data.page.id = {{CAPTURED_PAGE_ID}}
-[DATA label=one_page_post_reindex] data.page.name is non-null","[EVIDENCE] page.id and name resolve correctly after reindex","page returns null for a valid captured id; id mismatch with CAPTURED_PAGE_ID; HTTP 500 on page(id) call","none — read-only","VCST-5069; xAPI; Query.page",Draft
-GQL-132,"[VCST-5069] xCMS builderPage Smoke After Reindex","GraphQL > xCMS > Post-Reindex",High,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Queries builderPage(storeId, pageId) with a zero-GUID probe — expects graceful null or graceful errors[], never HTTP 500. Any 500 or schema error after reindex indicates Builder.io CMS GraphQL surface broken.","bogus_page_id=00000000-0000-0000-0000-000000000000","[GQL-OP builder_probe]
+[DATA label=one_page_post_reindex] data.page.name is non-null","[EVIDENCE] page.id and name resolve correctly after reindex","page returns null for a valid captured id; id mismatch with CAPTURED_PAGE_ID; HTTP 500 on page(id) call",none,"VCST-5069; xAPI; Query.page",Automated
+CMS-GQL-132,"[VCST-5069] xCMS builderPage Smoke After Reindex","GraphQL > xCMS > Post-Reindex",High,"BL-GQL-002","ECL-2.1","Runner-native. PUBLIC role. Queries builderPage(storeId, pageId) with a zero-GUID probe — expects graceful null or graceful errors[], never HTTP 500. Any 500 or schema error after reindex indicates Builder.io CMS GraphQL surface broken. If env has seeded Builder.io content, replace pageId probe with a real captured id.","bogus_page_id=00000000-0000-0000-0000-000000000000","[GQL-OP builder_probe]
   query {
-    builderPage(storeId: ""{{STORE_ID}}"" pageId: ""00000000-0000-0000-0000-000000000000"") {
-      id content
+    builderPage(storeId: ""{{STORE_ID}}"" pageId: ""{{bogus_page_id}}"") {
+      permalink content
     }
   }
-[GQL-EXEC builder_probe]","[DATA label=builder_probe] data is non-null or errors[] is non-empty","[EVIDENCE] If env has seeded Builder.io content, replace pageId probe with a real captured id","HTTP 500; stack trace or schema error in errors[]; resolver panic on Builder.io content after reindex","none — read-only","VCST-5069; xAPI; Query.builderPage",Draft
+[GQL-EXEC builder_probe]","[DATA label=builder_probe] data is non-null OR errors[] is non-empty",,"HTTP 500; stack trace or schema error in errors[]; resolver panic on Builder.io content after reindex",none,"VCST-5069; xAPI; Query.builderPage",Automated

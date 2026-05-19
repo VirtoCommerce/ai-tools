@@ -1,0 +1,360 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+VCST-4205-CASE1,"Save-for-Later — three Text-configs of same configurable product stay distinct in saved bucket",GraphQL > xCart > Save For Later > Configurable,Critical,BL-CART-007; BL-GQL-001,ECL-2.1,"Runner-native. Validates PR #118 fix: addItem 3× with different Text custom values (A/B/C) on CFG_RING. clearCart pre-clean. moveToSavedForLater all 3 lines. Assert saved 'list' has 3 distinct lineItems each retaining its own customText.","ring_id=@td(CFG_RING.id); section_text_id=2cc0f57e-5654-4396-8795-66fe6e226ad1; text_a=AGENT-TEST-CFG-A; text_b=AGENT-TEST-CFG-B; text_c=AGENT-TEST-CFG-C","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+
+[GQL-OP cleanup_pre_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre_main]
+
+[GQL-OP cleanup_pre_saved]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre_saved]
+
+[GQL-OP add_a]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      productId: ""{{ring_id}}""
+      quantity: 1
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_a}}"" }]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_a]
+
+[GQL-OP add_b]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      productId: ""{{ring_id}}""
+      quantity: 1
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_b}}"" }]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_b]
+
+[GQL-OP add_c]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      productId: ""{{ring_id}}""
+      quantity: 1
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_c}}"" }]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_c]
+
+[GQL-OP read_cart_after_adds]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" cartName: ""default"") {
+      id
+      itemsCount
+      items {
+        id
+        productId
+        quantity
+        configurationItems { id sectionId type customText productId selectedForCheckout }
+      }
+    }
+  }
+[GQL-EXEC read_cart_after_adds]
+[GQL-CAPTURE read_cart_after_adds.data.cart.id → CART_ID]
+[GQL-CAPTURE read_cart_after_adds.data.cart.items.0.id → LINE_0]
+[GQL-CAPTURE read_cart_after_adds.data.cart.items.1.id → LINE_1]
+[GQL-CAPTURE read_cart_after_adds.data.cart.items.2.id → LINE_2]
+
+[GQL-OP move_all_saved]
+  mutation {
+    moveToSavedForLater(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      cartId: ""{{CART_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      lineItemIds: [""{{LINE_0}}"", ""{{LINE_1}}"", ""{{LINE_2}}""]
+    }) {
+      cart { id itemsCount items { id } }
+      list {
+        id
+        itemsCount
+        items {
+          id
+          productId
+          quantity
+          configurationItems { id sectionId type customText productId selectedForCheckout }
+        }
+      }
+    }
+  }
+[GQL-EXEC move_all_saved]
+
+[GQL-OP cleanup_post_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_post_main]
+
+[GQL-OP cleanup_post_saved]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_post_saved]","[ERRORS label=setup_me] errors[] empty
+[ERRORS label=add_a] errors[] empty
+[ERRORS label=add_b] errors[] empty
+[ERRORS label=add_c] errors[] empty
+[ERRORS label=read_cart_after_adds] errors[] empty
+[ERRORS label=move_all_saved] errors[] empty
+[COUNT label=read_cart_after_adds] data.cart.items.length = 3
+[DATA label=read_cart_after_adds] data.cart.items.0.productId = {{ring_id}}
+[DATA label=read_cart_after_adds] data.cart.items.1.productId = {{ring_id}}
+[DATA label=read_cart_after_adds] data.cart.items.2.productId = {{ring_id}}
+[DATA label=read_cart_after_adds] data.cart.items.0.configurationItems.0.customText is non-null
+[DATA label=read_cart_after_adds] data.cart.items.1.configurationItems.0.customText is non-null
+[DATA label=read_cart_after_adds] data.cart.items.2.configurationItems.0.customText is non-null
+[COUNT label=move_all_saved] data.moveToSavedForLater.cart.items.length = 0
+[COUNT label=move_all_saved] data.moveToSavedForLater.list.items.length = 3
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.0.productId = {{ring_id}}
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.1.productId = {{ring_id}}
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.2.productId = {{ring_id}}
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.0.configurationItems.0.customText is non-null
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.1.configurationItems.0.customText is non-null
+[DATA label=move_all_saved] data.moveToSavedForLater.list.items.2.configurationItems.0.customText is non-null",[EVIDENCE] BL-CART-007: distinct configurations produce distinct lineItems; PR #118 preserves config when moving to saved-for-later,"saved 'list' has fewer than 3 items; configurationItems missing or merged; customText null in saved bucket","[AUTH role=ORG_USER]",VCST-4205,Automated
+VCST-4205-CASE2,"Save-for-Later — moveFromSavedForLater restores configuration to active cart",GraphQL > xCart > Save For Later > Configurable,Critical,BL-CART-007; BL-GQL-001,ECL-2.1,"Runner-native. Seeds 3 saved configs (A/B/C) → moves only B back → asserts active cart has B's config, saved list still has A + C.","ring_id=@td(CFG_RING.id); section_text_id=2cc0f57e-5654-4396-8795-66fe6e226ad1; text_a=AGENT-TEST-CFG-A; text_b=AGENT-TEST-CFG-B; text_c=AGENT-TEST-CFG-C","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+
+[GQL-OP cleanup_pre_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre_main]
+
+[GQL-OP cleanup_pre_saved]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre_saved]
+
+[GQL-OP add_a]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_a}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_a]
+
+[GQL-OP add_b]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_b}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_b]
+
+[GQL-OP add_c]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_c}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_c]
+
+[GQL-OP read_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" cartName: ""default"") {
+      id
+      items { id configurationItems { customText } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.id → CART_ID]
+[GQL-CAPTURE read_cart.data.cart.items.0.id → LINE_0]
+[GQL-CAPTURE read_cart.data.cart.items.1.id → LINE_1]
+[GQL-CAPTURE read_cart.data.cart.items.2.id → LINE_2]
+
+[GQL-OP move_all_saved]
+  mutation {
+    moveToSavedForLater(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
+      lineItemIds: [""{{LINE_0}}"", ""{{LINE_1}}"", ""{{LINE_2}}""]
+    }) {
+      cart { id }
+      list { id items { id configurationItems { customText } } }
+    }
+  }
+[GQL-EXEC move_all_saved]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.0.id → SAVED_0_ID]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.0.configurationItems.0.customText → SAVED_0_TEXT]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.1.id → SAVED_1_ID]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.1.configurationItems.0.customText → SAVED_1_TEXT]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.2.id → SAVED_2_ID]
+[GQL-CAPTURE move_all_saved.data.moveToSavedForLater.list.items.2.configurationItems.0.customText → SAVED_2_TEXT]
+
+[GQL-OP move_b_back]
+  mutation {
+    moveFromSavedForLater(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
+      lineItemIds: [""{{SAVED_0_ID}}""]
+    }) {
+      cart {
+        id
+        itemsCount
+        items {
+          id
+          productId
+          quantity
+          configurationItems { sectionId type customText productId selectedForCheckout }
+        }
+      }
+      list {
+        id
+        itemsCount
+        items { id configurationItems { customText } }
+      }
+    }
+  }
+[GQL-EXEC move_b_back]
+
+[GQL-OP cleanup_post_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_post_main]
+
+[GQL-OP cleanup_post_saved]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_post_saved]","[ERRORS label=move_b_back] errors[] empty
+[COUNT label=move_b_back] data.moveFromSavedForLater.cart.items.length = 1
+[COUNT label=move_b_back] data.moveFromSavedForLater.list.items.length >= 2
+[DATA label=move_b_back] data.moveFromSavedForLater.cart.items.0.productId = {{ring_id}}
+[DATA label=move_b_back] data.moveFromSavedForLater.cart.items.0.configurationItems.0.customText = {{SAVED_0_TEXT}}
+[DATA label=move_b_back] data.moveFromSavedForLater.list.items.0.configurationItems.0.customText is non-null
+[DATA label=move_b_back] data.moveFromSavedForLater.list.items.1.configurationItems.0.customText is non-null",[EVIDENCE] PR #118 moveFromSavedForLater restores ConfigurationItems intact,"active cart item has empty/null configurationItems; wrong text appears in active cart; saved bucket shrunk by more than 1","[AUTH role=ORG_USER]",VCST-4205,Automated
+VCST-4205-CASE3,"Edit-Configuration flow — replace lineItem and preserve the new config",GraphQL > xCart > Configurable > Edit,High,BL-CART-007; BL-GQL-001,ECL-2.1,"Runner-native. Simulates 'Edit Configuration' by: addItem with text_a → removeCartItem → addItem with text_b. Verifies new line has text_b and old text_a no longer present.","ring_id=@td(CFG_RING.id); section_text_id=2cc0f57e-5654-4396-8795-66fe6e226ad1; text_a=AGENT-TEST-EDIT-OLD; text_b=AGENT-TEST-EDIT-NEW","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+
+[GQL-OP cleanup_pre_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_pre_main]
+
+[GQL-OP add_initial]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_a}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_initial]
+
+[GQL-OP read_after_add]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" cartName: ""default"") {
+      id items { id configurationItems { customText } }
+    }
+  }
+[GQL-EXEC read_after_add]
+[GQL-CAPTURE read_after_add.data.cart.id → CART_ID]
+[GQL-CAPTURE read_after_add.data.cart.items.0.id → OLD_LINE_ID]
+
+[GQL-OP remove_old]
+  mutation {
+    removeCartItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
+      lineItemId: ""{{OLD_LINE_ID}}""
+    }) { id itemsCount }
+  }
+[GQL-EXEC remove_old]
+
+[GQL-OP add_replacement]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_b}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_replacement]
+
+[GQL-OP read_after_edit]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" cartName: ""default"") {
+      id
+      itemsCount
+      items {
+        id productId quantity
+        configurationItems { sectionId type customText }
+      }
+    }
+  }
+[GQL-EXEC read_after_edit]
+
+[GQL-OP cleanup_post_main]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id itemsCount } }
+[GQL-EXEC cleanup_post_main]","[ERRORS label=add_initial] errors[] empty
+[ERRORS label=remove_old] errors[] empty
+[ERRORS label=add_replacement] errors[] empty
+[ERRORS label=read_after_edit] errors[] empty
+[COUNT label=read_after_edit] data.cart.items.length = 1
+[DATA label=read_after_edit] data.cart.items.0.configurationItems.0.customText = {{text_b}}
+[DATA label=read_after_edit] data.cart.items.0.productId = {{ring_id}}",[EVIDENCE] BL-CART-007: replace flow keeps only the new config,"post-edit line has old text_a; post-edit line has empty configurationItems; multiple lines persist","[AUTH role=ORG_USER]",VCST-4205,Automated
+VCST-4205-CASE6,"BL-CART-007 complement — re-adding identical config increments quantity",GraphQL > xCart > Configurable,High,BL-CART-007,ECL-2.1,"Runner-native. addItem with text_a, then addItem with same text_a. Expect single line, quantity 2.","ring_id=@td(CFG_RING.id); section_text_id=2cc0f57e-5654-4396-8795-66fe6e226ad1; text_a=AGENT-TEST-CONSOLIDATE","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id } }
+[GQL-EXEC cleanup_pre]
+
+[GQL-OP add_first]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_a}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_first]
+
+[GQL-OP add_second_same]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{ring_id}}"" quantity: 1
+      currencyCode: ""USD"" cultureName: ""en-US""
+      configurationSections: [{ sectionId: ""{{section_text_id}}"" type: ""Text"" customText: ""{{text_a}}"" }]
+    }) { id }
+  }
+[GQL-EXEC add_second_same]
+
+[GQL-OP read_back]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" cartName: ""default"") {
+      id
+      itemsCount
+      items { id quantity configurationItems { customText } }
+    }
+  }
+[GQL-EXEC read_back]
+
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" cultureName: ""en-US"" currencyCode: ""USD"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_first] errors[] empty
+[ERRORS label=add_second_same] errors[] empty
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.cart.items.length = 1
+[DATA label=read_back] data.cart.items.0.quantity = 2
+[DATA label=read_back] data.cart.items.0.configurationItems.0.customText = {{text_a}}",[EVIDENCE] BL-CART-007 same-config consolidation,"two distinct lines created; quantity != 2",,VCST-4205,Automated

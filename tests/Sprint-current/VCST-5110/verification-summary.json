@@ -1,0 +1,64 @@
+{
+  "ticket": "VCST-5110",
+  "verdict": "FIX_INCOMPLETE",
+  "verdict_note": "STR fails 3/3 at 375 px (P0); also introduces NEW REGRESSION at 1280 px (was 0.064 PASS, now 0.107 FAIL)",
+  "date": "2026-05-18",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1026.0",
+    "theme": "vc-theme-b2b-vue-2.49.0-pr-2292-f131-f131d346",
+    "relevant_modules": {},
+    "pr_build": "PR #2292 head SHA f131d346 — confirmed deployed (footer build string verified)"
+  },
+  "linked_pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2292",
+  "pr_state": "OPEN",
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "str_result": "0/3 at 375 px",
+  "cls_measurements": {
+    "375px_run1": { "cls": 0.2555, "shiftCount": 3, "budget": 0.10, "verdict": "FAIL_P0", "pre_fix": 0.483 },
+    "375px_run2": { "cls": 0.2555, "shiftCount": 3, "budget": 0.10, "verdict": "FAIL_P0", "pre_fix": 0.483 },
+    "375px_run3": { "cls": 0.2555, "shiftCount": 3, "budget": 0.10, "verdict": "FAIL_P0", "pre_fix": 0.483 },
+    "768px": { "cls": 0.1336, "shiftCount": 3, "budget": 0.10, "verdict": "FAIL", "pre_fix": 0.137 },
+    "1280px": { "cls": 0.1073, "shiftCount": 4, "budget": 0.10, "verdict": "FAIL_NEW_REGRESSION", "pre_fix": 0.064 }
+  },
+  "checklist_total": 8,
+  "checklist_passed": 3,
+  "checklist_failed": 5,
+  "regression_issues": [
+    {
+      "viewport": "1280px",
+      "metric": "CLS",
+      "pre_fix": 0.064,
+      "post_fix": 0.1073,
+      "severity": "NEW_REGRESSION",
+      "note": "Previously-passing desktop viewport now fails; PR refactor (subgrid + container queries) introduced new shifts"
+    }
+  ],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI-001"],
+  "business_rules_status": {
+    "BL-UI-001": "FAIL on /account/lists — CLS exceeds 0.10 budget at all three measured viewports"
+  },
+  "deterministic_signal": "375 px CLS identical to 16 sig figs across 3 runs (0.2555041975308642) — points at fixed-count skeleton-vs-list mismatch, not jitter",
+  "root_cause_hypothesis": "Skeleton renders 5 fixed placeholders (v-for=\"item in 5\") but test account has 9 wishlists; skeleton-to-content swap grows document by ~4 card-heights. PR addressed per-card height parity but not per-list count parity.",
+  "recommendation_for_dev": "Render skeleton with n = actual_wishlist_count placeholders (or reserve min-height proportional to count). Re-measure on an account with >=9 wishlists at all three viewports; 1280 px must return to <=0.10 before merge.",
+  "jira_transition": "None — comment-only (left at Testing per user instruction)",
+  "jira_comment_id": "97868",
+  "artifacts": "tests/Sprint-current/VCST-5110/",
+  "artifact_files": [
+    "verification-report.md",
+    "verification-summary.json",
+    "evidence/VCST-5110-375px-run1.png",
+    "evidence/VCST-5110-375px-run2.png",
+    "evidence/VCST-5110-375px-run3.png",
+    "evidence/VCST-5110-768px.png",
+    "evidence/VCST-5110-1280px.png",
+    "console-375px-run1.txt",
+    "console-375px-run2.txt",
+    "console-375px-run3.txt",
+    "console-768px.txt",
+    "console-1280px.txt"
+  ]
+}

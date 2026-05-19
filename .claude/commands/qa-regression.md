@@ -164,6 +164,14 @@ Output concise verdict to user with pass rate, bugs, and report path. Mention se
 
 Never assign two agents to the same browser. Never use WebKit on Windows.
 
+**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch from [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv):
+
+- Slot 1 (`playwright-chrome`) → `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` (B2B: John Mitchell, TechFlow)
+- Slot 2 (`playwright-firefox`) → `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` (B2B: Emily Johnson, TechFlow — same-org pair with slot 1)
+- Slot 3 (`playwright-edge`) → `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` (B2B: Carlos Rodriguez, BuildRight — different org)
+
+Agents MUST read credentials from this CSV at runtime — never hardcode in prompts.
+
 ---
 
 ## Selection Groups (from test-suites.json)

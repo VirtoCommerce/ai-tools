@@ -245,11 +245,29 @@ For most cart-state mutations (verified by 050i):
 
 `cleanup_pre` + `cleanup_post` inside Steps protect parallel runs from cart pollution. The `Cleanup` column is a SECOND, best-effort safety net — never the primary cleanup mechanism for runner-native cases.
 
+### 3.9 Discovery queries — no new tag, use `[GQL-OP] + [GQL-CAPTURE]`
+
+When a case needs "any product / the current virtual-catalog root / any active coupon" instead of a specific named entity, do **not** hardcode the ID — write a tiny discovery query, capture, and reference. The mechanism is just `[GQL-OP]` + `[GQL-EXEC]` + `[GQL-CAPTURE]` (already documented above) — no new tag.
+
+```text
+[GQL-OP findRoot]
+query($storeId: String!) {
+  categories(storeId: $storeId, first: 50) { items { id hasParent } }
+}
+[GQL-VARS findRoot] {"storeId": "{{STORE_ID}}"}
+[GQL-EXEC findRoot]
+[GQL-CAPTURE findRoot.categories.items[?hasParent=false].id → CAT_ROOT]
+```
+
+Then use `{{CAT_ROOT}}` in downstream filters. This pattern survives catalog re-seeding — when the storefront-visible root migrated on 2026-04-30 (`fc596540…` → `9238c387…`), cases that used discovery kept passing while hardcoded ones silently returned zero items.
+
+**Canonical recipes** (root discovery, first-available product, any active coupon, plus the JS equivalents for interactive agents): [`live-discovery.md`](live-discovery.md). Authoring checklist item: prefer discovery over hardcoded IDs whenever the test doesn't depend on which specific entity is used.
+
 ---
 
 ## 4. `Assertions` column — tag grammar
 
-Parsed by `parseAssertions()`. Verdict-affecting kinds: **ERRORS, DATA, NULL, COUNT, VAR**. Anything else (e.g. `[EVIDENCE]`, `[ROUNDTRIP]`, `[ADMIN]`, `[STOREFRONT]`, `[EVENT]`, `[MATH]`) is captured as an `InfoAssertion` and recorded in evidence but does NOT affect verdict. **Use info tags for prose only — never put a verdict-critical check inside `[EVIDENCE]`.**
+Parsed by `parseAssertions()`. Verdict-affecting kinds: **ERRORS, DATA, NULL, COUNT, VAR, PERF**. Anything else (e.g. `[EVIDENCE]`, `[ROUNDTRIP]`, `[ADMIN]`, `[STOREFRONT]`, `[EVENT]`, `[MATH]`) is captured as an `InfoAssertion` and recorded in evidence but does NOT affect verdict. **Use info tags for prose only — never put a verdict-critical check inside `[EVIDENCE]`.**
 
 Format:
 
@@ -282,11 +300,16 @@ The path may begin with `data.…` or be relative — the runner strips a leadin
 | `<path> > N` / `>=` / `<` / `<=` | `[DATA label=cre] data.createConfiguredLineItem.extendedPrice.amount > 0` |
 | `<path> = <literal>` | `[DATA label=q] data.me.email = ORG_USER@…` (string equality after stripping outer `"`) |
 | `<lhs> ≈ <rhs>` / `<lhs> ~= <rhs>` | approximate equal (±0.011) for cents-level rounding |
-| Arithmetic / cross-path | `data.X.extendedPrice.amount = data.X.listPrice.amount * data.X.quantity` |
+| Arithmetic / cross-path equality | `data.X.extendedPrice.amount = data.X.listPrice.amount * data.X.quantity` |
+| Cross-path ordering | `data.items.0.publishDate >= data.items.1.publishDate` (numeric or lexicographic — ISO-8601 dates work as strings) |
 | OR composition | `data.X is non-null OR errors[] non-empty` |
 | AND composition | `data.X.id is non-empty GUID AND data.X.name = Foo` |
 
-**Arithmetic detection** is conservative: takes the arithmetic branch when (a) the predicate has `*`, `/`, `(`, `)` or whitespace-padded `+`/`-` AND at least one `data.` reference, OR (b) both sides are paths (cross-path comparison), OR (c) the operator is `≈` / `~=`. Filter brackets (`[?key=value]`) are stripped before arithmetic detection so GUIDs with hyphens don't get mistaken for subtraction.
+**Arithmetic detection** is conservative: takes the arithmetic branch when (a) the predicate has `*`, `/`, `(`, `)` or whitespace-padded `+`/`-` AND at least one `data.` reference, OR (b) both sides are paths (cross-path equality, no operators: `a = b`), OR (c) the operator is `≈` / `~=`. Filter brackets (`[?key=value]`) are stripped before arithmetic detection so GUIDs with hyphens don't get mistaken for subtraction.
+
+**Cross-path ordering** (`>=` / `<=` / `>` / `<`) fires whenever both sides reference a `data.` path. When both sides resolve to numbers the comparison is numeric; otherwise it falls back to lexicographic string comparison (so ISO-8601 dates, semver strings, etc. sort correctly).
+
+**Errors and extensions access:** paths starting with `errors` or `extensions` resolve against the full GraphQL response (not `r.data`). Both `errors[0].extensions.code` and `errors.0.message` work — the JS-style bracket index is auto-normalized. Use this to assert error-shape behavior without a separate kind: `[DATA label=noauth] errors[0].extensions.code = Unauthorized`, `[COUNT label=q] errors.length = 0`.
 
 **Mixing OR and AND in one line is NOT supported** — split into separate assertion lines.
 
@@ -311,7 +334,20 @@ Compare a captured variable against a literal — no response needed. The runner
 [VAR] {{SECTION_TYPE}} = Text
 ```
 
-### 4.6 Info-only tags (NOT verdict-affecting)
+### 4.6 `[PERF label=<L>] elapsed_ms <op> <N>[ms|s]`
+
+Assert that the operation completed within a time budget. Reads `response.elapsed_ms` (always populated by the runner). Operators: `<` `<=` `>` `>=` `=` `==`. The literal is interpreted as milliseconds; suffix `ms` is explicit-ms, `s` multiplies by 1000.
+
+```text
+[PERF label=read_back]      elapsed_ms < 500
+[PERF label=heavy_query]    elapsed_ms < 1500ms
+[PERF label=introspection]  elapsed_ms < 1s
+[PERF label=any]            elapsed_ms >= 0          // probe — always true
+```
+
+**This kind is verdict-affecting** (was promoted from info-only along with the errors-path extension). Don't park aspirational targets here without intending to fail the case when the target is missed — that's the whole point. If the threshold is uncertain, write it as `>= 0` and treat the captured number as evidence-only.
+
+### 4.7 Info-only tags (NOT verdict-affecting)
 
 Use these for prose annotations the runner records but does not evaluate. Read as documentation, not as machine-checkable invariants:
 

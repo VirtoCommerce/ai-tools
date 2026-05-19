@@ -4,7 +4,7 @@
 # purpose: Fetch ContactType full profile by id (for pre-mutation field preservation)
 # required-vars: CONTACT_ID (String — memberId from me query)
 # optional-vars: (none)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: GQL-031 (fetch_contact — preserves firstName/lastName for updateContact)
 

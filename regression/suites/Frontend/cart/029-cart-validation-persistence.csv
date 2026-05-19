@@ -13,7 +13,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] cart subtotal excludes saved item
 [STATE] cart badge decremented","[API] moveItemToSaved or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","item stays in cart instead of moving; saved-for-later section not shown; subtotal not updated","Move item back to cart or remove","tests/VCST-3928-save4later-delay-fix","Automated"
+[NETWORK] no 4xx/5xx","item stays in cart instead of moving; saved-for-later section not shown; subtotal not updated","Move item back to cart or remove","tests/VCST-3928-save4later-delay-fix; Synced: VCST-4205 (2026-05-19) — VALID for non-configurable products; VCST-4205 anomalies (A1/A2/A3/A4) affect configurable SFL flows only","Automated"
 "CART-013","Save for Later - Move Back","Cart > Save Later","Medium","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Item in saved-for-later list, user on cart page","url={{FRONT_URL}}/cart
@@ -27,7 +27,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] cart subtotal includes moved item
 [STATE] cart badge incremented","[API] moveItemToCart or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","item stays in saved list; active cart not updated; subtotal unchanged; badge not incremented","Remove item from cart","tests/VCST-3928-save4later-delay-fix","Automated"
+[NETWORK] no 4xx/5xx","item stays in saved list; active cart not updated; subtotal unchanged; badge not incremented","Remove item from cart","tests/VCST-3928-save4later-delay-fix; Synced: VCST-4205 (2026-05-19) — VALID for non-configurable products; configurable SFL round-trip coverage in CRL-GQL-100/101 (050b3) and CFG-E2E-058..066 (072b)","Automated"
 "CART-014","Apply Coupon - Valid Code","Cart > Coupons","Medium","BL-CART-004","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: A valid, active coupon code must exist in QA environment. Set {{VALID_COUPON_CODE}} env var. Check test-data/promotions/coupons.csv for existing codes and verify at least one is active and eligible. User logged in, eligible items in cart.","url={{FRONT_URL}}/cart

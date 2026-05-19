@@ -1,0 +1,33 @@
+{
+  "caseId": "CRI-GQL-058",
+  "title": "createOrderFromCart — Cross-Org Cart Isolation",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "EMPTY",
+  "executedAt": "2026-05-15T21:44:15.384Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [],
+  "assertions": [],
+  "infoAssertions": [
+    {
+      "raw": "[MANUAL] blocked on user-pool aliases",
+      "layer": "MANUAL",
+      "note": "blocked on user-pool aliases"
+    }
+  ],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Track as Draft in runner",
+      "layer": "EVIDENCE",
+      "note": "Track as Draft in runner",
+      "resolved": "Track as Draft in runner"
+    }
+  ],
+  "cleanup": {
+    "raw": "Cancel via Admin API if accidental order created",
+    "blocks": []
+  }
+}

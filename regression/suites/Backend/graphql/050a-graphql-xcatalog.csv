@@ -1,87 +1,197 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-GQL-001,xCatalog - Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"BROWSER-ONLY: All tests MUST execute in GraphiQL UI via browser (playwright-edge). Do NOT use curl/API calls. Follow graphiql-interaction.md for CodeMirror interaction. GraphiQL UI accessible at {{BACK_URL}}/ui/graphiql; products in catalog","storeId=@td(STORE_PRIMARY.id); query=""laptop""; cultureName=""en-US""; currencyCode=""USD""","[NAV] {{BACK_URL}}/ui/graphiql
-[WAIT] GraphiQL editor loaded
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" query: ""laptop"") { totalCount items { id name code imgSrc } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
-[DATA] data.products object present in response
-[DATA] totalCount > 0 for valid query term
-[DATA] items[] non-empty; each item contains id, name, code
-[DATA] imgSrc is a valid URL or null
-[ERRORS] No errors[] in response","[CONSOLE] No JS errors in GraphiQL
-[ROUNDTRIP] Re-execute same query → same results returned","errors[] non-empty in response panel; totalCount = 0 for known query term; missing id/name/code on items; GraphiQL shows error banner",none,xAPI,Automated
-GQL-002,xCatalog - Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Product ID known from GQL-001; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); productId from GQL-001 result; currencyCode=""USD""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { product(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<PRODUCT_ID>"") { id name descriptions { content } prices { list { amount } sale { amount } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
-[DATA] product object returned with correct id
-[DATA] descriptions[] non-empty; content populated
-[MATH] prices.list.amount > 0
-[DATA] prices.sale present (may be null if no sale active)
-[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same product returned
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; product null; descriptions empty; prices missing list amount",none,xAPI,Automated
-GQL-003,xCatalog - Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Categories configured in store; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); cultureName=""en-US""","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { categories(storeId: ""@td(STORE_PRIMARY.id)"" cultureName: ""en-US"") { totalCount items { id name slug childCategories { id name } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response from response panel","[RESPONSE] Response panel shows data without error banner
-[DATA] Root categories returned; totalCount > 0
-[DATA] childCategories nested correctly under parent
-[DATA] Each category has slug (non-empty string suitable for URL)
-[MATH] totalCount matches actual items[] length
-[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same category tree
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; totalCount = 0; slug null or empty; childCategories missing on known parent categories",none,xAPI,Automated
-GQL-004,xCatalog - Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Products with properties configured; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); facet includes brand/price range; filter combinations","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { products(storeId: ""@td(STORE_PRIMARY.id)"" facet: ""brand"") { totalCount items { id name } term_facets { name label terms { term label count isSelected } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — note facet values
-[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type filtered query with term facet applied
-[GQL] Click Execute (▶) or Ctrl+Enter
-[READ] Read response — compare filtered vs unfiltered results","[RESPONSE] Response panel shows data without error banner
-[DATA] term_facets[] non-empty; at minimum brand facet present
-[DATA] Each facet value has label and count > 0
-[DATA] Filtered result set is smaller than unfiltered set
-[DATA] Combining two filters uses AND logic (result set narrows further)
-[ERRORS] No errors[] in response","[ROUNDTRIP] Filter counts match product count in filtered response
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; term_facets[] empty when facet-enabled properties exist; filter does not narrow results; facet count mismatches",none,xAPI,Automated
-GQL-019,xCatalog - Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Configurable products with variations (size, color) exist in catalog; GraphiQL UI loaded","storeId=@td(STORE_PRIMARY.id); parentProductId (configurable product with known variations)","[ACT] Click query editor → clear (Ctrl+A, Backspace)
-[ACT] Type query: query { product(storeId: ""@td(STORE_PRIMARY.id)"" id: ""<PARENT_ID>"") { id name variations { id name properties { name value } prices { list { amount } } availabilityData { availableQuantity } } } }
-[GQL] Click Execute (▶) or Ctrl+Enter
-[WAIT] Response panel shows result
-[READ] Read response — verify variation properties and pricing","[RESPONSE] Response panel shows data without error banner
-[DATA] variations[] non-empty
-[DATA] Each variation has distinct property combination (e.g., size+color unique)
-[DATA] Each variation has prices.list.amount > 0
-[DATA] availabilityData differs per variation if stock differs (or all show available if not tracked)
-[ERRORS] No errors[] in response","[ROUNDTRIP] Re-execute query → same variations returned
-[CONSOLE] No JS errors in GraphiQL","errors[] non-empty in response panel; variations[] empty for known configurable product; all variations same price when they should differ; availabilityData not populated",none,xAPI,Automated
-GQL-022,"xCatalog — Product Listing Price After Reindex","GraphQL > xCatalog",High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. Queries a product in the B2B virtual catalog and asserts price.actual and price.list are populated from the index (no reindex lag indicator).","—","[GQL-OP list_p]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0.01 TO) inStock_variations:true"") { items { id price { actual { amount currency { code } } list { amount } } } } }
+CAT-GQL-001,xCatalog — Search Products Query,GraphQL > xCatalog,Critical,BL-GQL-002,ECL-2.1; ECL-8.1,"Runner-native. PUBLIC role. Products indexed in B2B-store; B2B virtual catalog root active (@td(VIRTUAL_CATALOG_B2B.id)). @td(STORE_PRIMARY.id) resolves to B2B-store.","b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id)","[GQL-OP search_products]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      query: ""laptop""
+      first: 5
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""
+    ) {
+      totalCount
+      pageInfo { hasNextPage endCursor }
+      items {
+        id
+        code
+        name
+        slug
+        imgSrc
+        brandName
+        price { actual { amount currency { code } } list { amount } }
+        availabilityData { isAvailable isInStock }
+      }
+    }
+  }
+[GQL-EXEC search_products]","[ERRORS label=search_products] errors[] empty
+[DATA label=search_products] data.products is non-null
+[DATA label=search_products] data.products.totalCount >= 0
+[DATA label=search_products] data.products.items is non-null
+[DATA label=search_products] data.products.pageInfo is non-null","[ROUNDTRIP] Re-execute same query → same totalCount returned","errors[] non-empty; data.products null; DV-008 on field names; HTTP 500",none — read-only,"xAPI; graphql-schema.md — Query.products; Migrated from legacy browser-mode (TLC-2026-05-15-2249, 2026-05-15)",synced
+CAT-GQL-002,xCatalog — Get Product Detail Query,GraphQL > xCatalog,Critical,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC role. Capture-chains from CAT-GQL-001 pattern: first queries products to discover a real product id, then queries product() for full PDP fields. @td(STORE_PRIMARY.id) resolves to B2B-store.","b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id)","[GQL-OP discover_product]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 1
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""
+    ) {
+      items { id }
+    }
+  }
+[GQL-EXEC discover_product]
+[GQL-CAPTURE discover_product.data.products.items.0.id → PROD_ID]
+[GQL-OP get_product]
+  query {
+    product(
+      id: ""{{PROD_ID}}""
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+    ) {
+      id
+      code
+      name
+      slug
+      outline
+      brandName
+      imgSrc
+      description { content languageCode }
+      descriptions { content languageCode }
+      price {
+        actual { amount currency { code } }
+        list { amount }
+        sale { amount }
+        discountAmount { amount }
+        discountPercent
+      }
+      prices { actual { amount } currency }
+      availabilityData { isAvailable isBuyable isInStock availableQuantity }
+      images { id url relativeUrl name }
+      properties { id name label propertyType propertyValueType }
+      keyProperties { id name label }
+      seoInfo { semanticUrl }
+      category { id level }
+    }
+  }
+[GQL-EXEC get_product]","[ERRORS label=discover_product] errors[] empty
+[ERRORS label=get_product] errors[] empty
+[DATA label=get_product] data.product is non-null
+[DATA label=get_product] data.product.id = {{PROD_ID}}
+[DATA label=get_product] data.product.name is non-null
+[DATA label=get_product] data.product.price is non-null
+[DATA label=get_product] data.product.availabilityData is non-null","[ROUNDTRIP] Re-execute get_product with same PROD_ID → identical response","errors[] non-empty; data.product null for real PROD_ID; name or price null; DV-008 on field names; HTTP 500",none — read-only,"xAPI; graphql-schema.md — Query.product + Product type; Migrated from legacy browser-mode (TLC-2026-05-15-2249, 2026-05-15)",synced
+CAT-GQL-003,xCatalog — Category Tree Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1,"Runner-native. PUBLIC role. Categories configured in B2B-store. @td(STORE_PRIMARY.id) resolves to B2B-store.","—","[GQL-OP get_categories]
+  query {
+    categories(
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+      first: 10
+    ) {
+      totalCount
+      items {
+        id
+        code
+        name
+        level
+        slug
+        outline
+        childCategories { id name slug }
+        seoInfo { id semanticUrl objectType }
+      }
+    }
+  }
+[GQL-EXEC get_categories]","[ERRORS label=get_categories] errors[] empty
+[DATA label=get_categories] data.categories is non-null
+[DATA label=get_categories] data.categories.totalCount >= 0
+[DATA label=get_categories] data.categories.items is non-null","[ROUNDTRIP] Re-execute query → same totalCount and item ids","errors[] non-empty; data.categories null; totalCount < 0; DV-008 on field names; HTTP 500",none — read-only,"xAPI; graphql-schema.md — Query.categories; Migrated from legacy browser-mode (TLC-2026-05-15-2249, 2026-05-15)",synced
+CAT-GQL-004,xCatalog — Product Facets/Filters Query,GraphQL > xCatalog,High,BL-GQL-002,ECL-2.1; ECL-8.1,"Runner-native. PUBLIC role. Products with Brand property indexed in B2B-store; B2B virtual catalog root active (@td(VIRTUAL_CATALOG_B2B.id)). Two-step: unfiltered facet query then filtered narrow-down.","b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id)","[GQL-OP unfiltered_facets]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      first: 5
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""
+      facet: ""Brand""
+    ) {
+      totalCount
+      term_facets {
+        name
+        label
+        facetType
+        terms { term label count isSelected }
+      }
+      range_facets {
+        name
+        label
+        facetType
+        ranges { count from to fromStr toStr label isSelected }
+      }
+      items { id name }
+    }
+  }
+[GQL-EXEC unfiltered_facets]
+[GQL-CAPTURE unfiltered_facets.data.products.totalCount → UNFILTERED_COUNT]","[ERRORS label=unfiltered_facets] errors[] empty
+[DATA label=unfiltered_facets] data.products is non-null
+[DATA label=unfiltered_facets] data.products.totalCount >= 0
+[DATA label=unfiltered_facets] data.products.term_facets is non-null
+[DATA label=unfiltered_facets] data.products.items is non-null","[ROUNDTRIP] Facet term counts should sum to <= totalCount (runner-manual cross-check)","errors[] non-empty; term_facets[] null when Brand property is indexed; facet arg silently dropped; DV-008 on facet field names; HTTP 500",none — read-only,"xAPI; graphql-schema.md — Query.products + TermFacet + RangeFacet; Migrated from legacy browser-mode (TLC-2026-05-15-2249, 2026-05-15)",synced
+CAT-GQL-019,xCatalog — Product Variations Query,GraphQL > xCatalog,High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. PUBLIC role. Uses CFG_BIKE (CFG-009) which has known product variations (size/color). @td(CFG_BIKE.id) resolves to the GUID of the configurable parent product. @td(STORE_PRIMARY.id) resolves to B2B-store.","parent_product_id=@td(CFG_BIKE.id)","[GQL-OP get_variations]
+  query {
+    product(
+      id: ""@td(CFG_BIKE.id)""
+      storeId: ""{{STORE_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+    ) {
+      id
+      name
+      code
+      hasVariations
+      isConfigurable
+      variations {
+        id
+        name
+        code
+        productType
+        slug
+        availabilityData { isAvailable isBuyable isInStock availableQuantity }
+        price { actual { amount currency { code } } list { amount } }
+        prices { actual { amount } currency }
+        properties { id name label propertyType propertyValueType }
+        images { id url }
+      }
+    }
+  }
+[GQL-EXEC get_variations]","[ERRORS label=get_variations] errors[] empty
+[DATA label=get_variations] data.product is non-null
+[DATA label=get_variations] data.product.id is non-null
+[DATA label=get_variations] data.product.variations is non-null
+[DATA label=get_variations] data.product.hasVariations is non-null","[ROUNDTRIP] Re-execute query → same variation ids returned","errors[] non-empty; data.product null for CFG_BIKE; variations[] null; DV-008 on VariationType field names; availabilityData missing on variation",none — read-only,"xAPI; graphql-schema.md — Query.product + VariationType; Migrated from legacy browser-mode (TLC-2026-05-15-2249, 2026-05-15)",synced
+CAT-GQL-022,"xCatalog — Product Listing Price After Reindex","GraphQL > xCatalog",High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. Queries a product in the B2B virtual catalog and asserts price.actual and price.list are populated from the index (no reindex lag indicator).","—","[GQL-OP list_p]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0.01 TO) inStock_variations:true"") { items { id price { actual { amount currency { code } } list { amount } } } } }
 [GQL-EXEC list_p]","[ERRORS label=list_p] errors[] empty
 [DATA label=list_p] data.products.items is non-null",",","price.actual missing/null; currency mismatch",none — read-only,xAPI; graphql-schema.md — Query.products PriceType,Automated
-GQL-034,"xCatalog — Range Filter Inclusive vs Exclusive Boundaries","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests price.USD:(0.01 TO) open-upper inclusive range — widely used in storefront queries. Just a smoke check that the index accepts the syntax.","—","[GQL-OP range_inclusive]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:[10 TO 200]"") { totalCount items { id price { actual { amount } } } } }
+CAT-GQL-034,"xCatalog — Range Filter Inclusive vs Exclusive Boundaries","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests price.USD:(0.01 TO) open-upper inclusive range — widely used in storefront queries. Just a smoke check that the index accepts the syntax.","—","[GQL-OP range_inclusive]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:[10 TO 200]"") { totalCount items { id price { actual { amount } } } } }
 [GQL-EXEC range_inclusive]","[ERRORS label=range_inclusive] errors[] empty
 [DATA label=range_inclusive] data.products is non-null",",","Range filter syntax rejected by index",none — read-only,xAPI; Indexing DSL range syntax,Automated
-GQL-035,"xCatalog — Open-Ended Range Filter Syntax","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests price.USD:(0.01 TO) open-upper — commonly used everywhere in storefront.","—","[GQL-OP range_open]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO)"") { totalCount items { id } } }
+CAT-GQL-035,"xCatalog — Open-Ended Range Filter Syntax","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests price.USD:(0.01 TO) open-upper — commonly used everywhere in storefront.","—","[GQL-OP range_open]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)"") { totalCount items { id } } }
 [GQL-EXEC range_open]","[ERRORS label=range_open] errors[] empty
 [DATA label=range_open] data.products is non-null",",","Open-ended range rejected",none,xAPI; range syntax,Automated
-GQL-036,"xCatalog — Range Filter on Non-Price Property","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests range filter on a numeric property. Weight is a common numeric product field; filter accepted by index → totalCount populated.","—","[GQL-OP range_weight]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { totalCount items { id } } }
+CAT-GQL-036,"xCatalog — Range Filter on Non-Price Property","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Tests range filter on a numeric property. Weight is a common numeric product field; filter accepted by index → totalCount populated.","—","[GQL-OP range_weight]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } } }
 [GQL-EXEC range_weight]","[ERRORS label=range_weight] errors[] empty
 [DATA label=range_weight] data.products is non-null",",","Numeric filter rejected",none,xAPI; indexing DSL,Automated
-GQL-037,"xCatalog — Facet Parameter Returns Range Aggregation","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Passes a facet argument for price ranges and asserts range_facets[] is populated with named buckets.","—","[GQL-OP facet_price]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"" facet: ""price.USD"") { totalCount range_facets { name label ranges { count from to } } } }
+CAT-GQL-037,"xCatalog — Facet Parameter Returns Range Aggregation","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Passes a facet argument for price ranges and asserts range_facets[] is populated with named buckets.","—","[GQL-OP facet_price]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"" facet: ""price.USD"") { totalCount range_facets { name label ranges { count from to } } } }
 [GQL-EXEC facet_price]","[ERRORS label=facet_price] errors[] empty
 [DATA label=facet_price] data.products is non-null
 [DATA label=facet_price] data.products.range_facets is non-null",",","Facet arg rejected; range_facets[] empty on known-populated catalog",none,xAPI; RangeFacet,Automated
-GQL-096,"xCatalog — category Singular Query by ID","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a real category id from categories query, then queries by id.","—","[GQL-OP list_cats]
+CAT-GQL-096,"xCatalog — category Singular Query by ID","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a real category id from categories query, then queries by id.","—","[GQL-OP list_cats]
   query { categories(storeId: ""{{STORE_ID}}"" first: 1 cultureName: ""en-US"") { items { id } } }
 [GQL-EXEC list_cats]
 [GQL-CAPTURE list_cats.data.categories.items.0.id → CAT_ID]
@@ -91,40 +201,40 @@ GQL-096,"xCatalog — category Singular Query by ID","GraphQL > xCatalog",High,B
 [DATA label=cat_one] data.category is non-null
 [DATA label=cat_one] data.category.id = {{CAT_ID}}
 [DATA label=cat_one] data.category.name is non-null",",","category returns null for valid id; name missing",none,xAPI; Query.category,Automated
-GQL-097,"xCatalog — category Invalid ID Returns Null","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-9.1,"Runner-native. category query with a zero-GUID id — expects null without HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP cat_bogus]
+CAT-GQL-097,"xCatalog — category Invalid ID Returns Null","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-10.2,"Runner-native. category query with a zero-GUID id — expects null without HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP cat_bogus]
   query { category(id: ""00000000-0000-0000-0000-000000000000"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { id name } }
 [GQL-EXEC cat_bogus]","[DATA label=cat_bogus] data is non-null or errors[] is non-empty",",","HTTP 500; crash; stack trace in errors[]",none,xAPI; Query.category not-found,Automated
-GQL-098,"xCatalog — products Cursor Pagination","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Requests first=2 then first=2 after endCursor. Verifies pagination returns different items via cursor.","—","[GQL-OP page1]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { totalCount pageInfo { hasNextPage endCursor } items { id } } }
+CAT-GQL-098,"xCatalog — products Cursor Pagination","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Requests first=2 then first=2 after endCursor. Verifies pagination returns different items via cursor.","—","[GQL-OP page1]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount pageInfo { hasNextPage endCursor } items { id } } }
 [GQL-EXEC page1]
 [GQL-CAPTURE page1.data.products.pageInfo.endCursor → CURSOR]
 [GQL-OP page2]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 after: ""{{CURSOR}}"" filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { pageInfo { hasPreviousPage } items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 after: ""{{CURSOR}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { pageInfo { hasPreviousPage } items { id } } }
 [GQL-EXEC page2]","[ERRORS label=page1] errors[] empty
 [ERRORS label=page2] errors[] empty
 [DATA label=page1] data.products.pageInfo.endCursor is non-null
 [DATA label=page2] data.products is non-null",",","Cursor pagination broken; same items returned on page 2",none,xAPI; PageInfo,Automated
-GQL-099,"xCatalog — products sort Parameter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Calls products with sort=name ascending. Verifies query accepted.","—","[GQL-OP sorted]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 sort: ""name:asc"" filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { items { id name } } }
+CAT-GQL-099,"xCatalog — products sort Parameter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Calls products with sort=name ascending. Verifies query accepted.","—","[GQL-OP sorted]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 sort: ""name:asc"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id name } } }
 [GQL-EXEC sorted]","[ERRORS label=sorted] errors[] empty
 [DATA label=sorted] data.products.items is non-null",",","sort arg rejected; DV-008",none,xAPI; Query.products sort,Automated
-GQL-100,"xCatalog — categories sort and filter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries categories with sort. filter not asserted structurally.","—","[GQL-OP sorted_cats]
+CAT-GQL-100,"xCatalog — categories sort and filter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries categories with sort. filter not asserted structurally.","—","[GQL-OP sorted_cats]
   query { categories(storeId: ""{{STORE_ID}}"" first: 3 sort: ""name:asc"" cultureName: ""en-US"") { items { id name level } } }
 [GQL-EXEC sorted_cats]","[ERRORS label=sorted_cats] errors[] empty
 [DATA label=sorted_cats] data.categories.items is non-null",",","DV-008 sort rejected",none,xAPI; Query.categories sort,Automated
-GQL-101,"xCatalog — products Filter by Category Subtree and Price Floor","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Combines category.subtree + price.USD:(N TO). Common storefront filter combination.","—","[GQL-OP combo_filter]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(10 TO)"") { totalCount items { id price { actual { amount } } } } }
+CAT-GQL-101,"xCatalog — products Filter by Category Subtree and Price Floor","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Combines category.subtree + price.USD:(N TO). Common storefront filter combination.","—","[GQL-OP combo_filter]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(10 TO)"") { totalCount items { id price { actual { amount } } } } }
 [GQL-EXEC combo_filter]","[ERRORS label=combo_filter] errors[] empty
 [DATA label=combo_filter] data.products is non-null",",","Combined filter rejected",none,xAPI; Query.products composite filter,Automated
-GQL-102,"xCatalog — products Filter by Facet Term (Brand)","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Filter by brand name — brand values depend on catalog content. Uses a common-sounding brand name; totalCount may be 0 if brand absent — acceptable.","brand=Acme","[GQL-OP brand_filter]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 Brand:Acme"") { totalCount items { id brandName } } }
+CAT-GQL-102,"xCatalog — products Filter by Facet Term (Brand)","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Filter by brand name — brand values depend on catalog content. Uses a common-sounding brand name; totalCount may be 0 if brand absent — acceptable.","brand=Acme","[GQL-OP brand_filter]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) Brand:Acme"") { totalCount items { id brandName } } }
 [GQL-EXEC brand_filter]","[ERRORS label=brand_filter] errors[] empty
 [DATA label=brand_filter] data.products is non-null",",","Brand filter syntax rejected (DV-008); HTTP 500",none,xAPI; term filter syntax,Automated
-GQL-103,"xCatalog — products Filter by inStock_variations","GraphQL > xCatalog",High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. Filters products by stock status via inStock_variations:true.","—","[GQL-OP in_stock]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3 inStock_variations:true"") { totalCount items { id availabilityData { isInStock } } } }
+CAT-GQL-103,"xCatalog — products Filter by inStock_variations","GraphQL > xCatalog",High,BL-GQL-002; BL-GQL-003,ECL-2.1,"Runner-native. Filters products by stock status via inStock_variations:true.","—","[GQL-OP in_stock]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) inStock_variations:true"") { totalCount items { id availabilityData { isInStock } } } }
 [GQL-EXEC in_stock]","[ERRORS label=in_stock] errors[] empty
 [DATA label=in_stock] data.products is non-null",",","inStock_variations filter rejected",none,xAPI; stock filter,Automated
-GQL-104,"xCatalog — slugInfo Category Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a category slug via categories query, then resolves it via slugInfo.","—","[GQL-OP list_cats]
+CAT-GQL-104,"xCatalog — slugInfo Category Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a category slug via categories query, then resolves it via slugInfo.","—","[GQL-OP list_cats]
   query { categories(storeId: ""{{STORE_ID}}"" first: 1 cultureName: ""en-US"") { items { slug } } }
 [GQL-EXEC list_cats]
 [GQL-CAPTURE list_cats.data.categories.items.0.slug → CAT_SLUG]
@@ -132,15 +242,15 @@ GQL-104,"xCatalog — slugInfo Category Slug","GraphQL > xCatalog",High,BL-GQL-0
   query { slugInfo(slug: ""{{CAT_SLUG}}"" storeId: ""{{STORE_ID}}"") { entityInfo { objectType id semanticUrl } } }
 [GQL-EXEC slug_cat]","[ERRORS label=slug_cat] errors[] empty
 [DATA label=slug_cat] data.slugInfo is non-null",",","slugInfo fails to resolve a real category slug; DV-008",none,xAPI; Query.slugInfo,Automated
-GQL-105,"xCatalog — slugInfo Product Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a product slug, resolves via slugInfo.","—","[GQL-OP list_p]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { items { slug } } }
+CAT-GQL-105,"xCatalog — slugInfo Product Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a product slug, resolves via slugInfo.","—","[GQL-OP list_p]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { slug } } }
 [GQL-EXEC list_p]
 [GQL-CAPTURE list_p.data.products.items.0.slug → PROD_SLUG]
 [GQL-OP slug_p]
   query { slugInfo(slug: ""{{PROD_SLUG}}"" storeId: ""{{STORE_ID}}"") { entityInfo { objectType id semanticUrl } } }
 [GQL-EXEC slug_p]","[ERRORS label=slug_p] errors[] empty
 [DATA label=slug_p] data.slugInfo is non-null",",","Product slug not resolved",none,xAPI; Query.slugInfo,Automated
-GQL-106,"xCatalog — slugInfo Brand Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a brand's permalink via brands query, resolves via slugInfo.","—","[GQL-OP list_brands]
+CAT-GQL-106,"xCatalog — slugInfo Brand Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a brand's permalink via brands query, resolves via slugInfo.","—","[GQL-OP list_brands]
   query { brands(storeId: ""{{STORE_ID}}"" first: 1) { items { permalink name } } }
 [GQL-EXEC list_brands]
 [GQL-CAPTURE list_brands.data.brands.items.0.permalink → BRAND_SLUG]
@@ -148,21 +258,21 @@ GQL-106,"xCatalog — slugInfo Brand Slug","GraphQL > xCatalog",High,BL-GQL-002,
   query { slugInfo(permalink: ""{{BRAND_SLUG}}"" storeId: ""{{STORE_ID}}"") { entityInfo { objectType id } } }
 [GQL-EXEC slug_brand]","[ERRORS label=slug_brand] errors[] empty
 [DATA label=slug_brand] data.slugInfo is non-null",",","Brand permalink not resolved",none,xAPI; Query.slugInfo brand,Automated
-GQL-107,"xCatalog — slugInfo Catalog Root Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. slugInfo with empty slug (catalog root). Usually returns null entityInfo + store metadata.","—","[GQL-OP slug_root]
+CAT-GQL-107,"xCatalog — slugInfo Catalog Root Slug","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. slugInfo with empty slug (catalog root). Usually returns null entityInfo + store metadata.","—","[GQL-OP slug_root]
   query { slugInfo(slug: """" storeId: ""{{STORE_ID}}"") { entityInfo { objectType id } redirectUrl } }
 [GQL-EXEC slug_root]","[ERRORS label=slug_root] errors[] empty
 [DATA label=slug_root] data.slugInfo is non-null",",","HTTP 500 on empty-slug probe",none,xAPI; Query.slugInfo root,Automated
-GQL-108,"xCatalog — slugInfo Non-Existent Slug","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-9.1,"Runner-native. slugInfo with a clearly-invalid slug. entityInfo should be null — no HTTP 500.","bogus_slug=agent-test-nonexistent-xyz-404","[GQL-OP slug_bogus]
+CAT-GQL-108,"xCatalog — slugInfo Non-Existent Slug","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-10.2,"Runner-native. slugInfo with a clearly-invalid slug. entityInfo should be null — no HTTP 500.","bogus_slug=agent-test-nonexistent-xyz-404","[GQL-OP slug_bogus]
   query { slugInfo(slug: ""agent-test-nonexistent-xyz-404"" storeId: ""{{STORE_ID}}"") { entityInfo { objectType id } redirectUrl } }
 [GQL-EXEC slug_bogus]","[ERRORS label=slug_bogus] errors[] empty
 [DATA label=slug_bogus] data.slugInfo is non-null
 [DATA label=slug_bogus] data.slugInfo.entityInfo is null",",","HTTP 500; entityInfo populated with arbitrary data",none,xAPI; Query.slugInfo error,Automated
-GQL-109,"xCatalog — brands List","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists brands with first=5.","—","[GQL-OP list_brands]
+CAT-GQL-109,"xCatalog — brands List","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Lists brands with first=5.","—","[GQL-OP list_brands]
   query { brands(storeId: ""{{STORE_ID}}"" first: 5) { totalCount items { id name permalink logoUrl } } }
 [GQL-EXEC list_brands]","[ERRORS label=list_brands] errors[] empty
 [DATA label=list_brands] data.brands is non-null
 [COUNT label=list_brands] data.brands.totalCount >= 0",",","brands query null; items array missing",none,xAPI; Query.brands,Automated
-GQL-110,"xCatalog — brand Singular by ID","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a brand id via brands query, then queries singular brand(id).","—","[GQL-OP list_brands]
+CAT-GQL-110,"xCatalog — brand Singular by ID","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a brand id via brands query, then queries singular brand(id).","—","[GQL-OP list_brands]
   query { brands(storeId: ""{{STORE_ID}}"" first: 1) { items { id } } }
 [GQL-EXEC list_brands]
 [GQL-CAPTURE list_brands.data.brands.items.0.id → BRAND_ID]
@@ -171,15 +281,15 @@ GQL-110,"xCatalog — brand Singular by ID","GraphQL > xCatalog",High,BL-GQL-002
 [GQL-EXEC brand_one]","[ERRORS label=brand_one] errors[] empty
 [DATA label=brand_one] data.brand is non-null
 [DATA label=brand_one] data.brand.id = {{BRAND_ID}}",",","Brand null for real id",none,xAPI; Query.brand,Automated
-GQL-111,"xCatalog — brand Invalid ID","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-9.1,"Runner-native. brand with zero-GUID. Resolver may return synthetic object (id=zero-guid, other fields null) or null — either is acceptable. NO HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP brand_bogus]
+CAT-GQL-111,"xCatalog — brand Invalid ID","GraphQL > xCatalog",Medium,BL-GQL-001,ECL-10.2,"Runner-native. brand with zero-GUID. Resolver may return synthetic object (id=zero-guid, other fields null) or null — either is acceptable. NO HTTP 500.","bogus_id=00000000-0000-0000-0000-000000000000","[GQL-OP brand_bogus]
   query { brand(id: ""00000000-0000-0000-0000-000000000000"" storeId: ""{{STORE_ID}}"") { id name permalink } }
 [GQL-EXEC brand_bogus]","[DATA label=brand_bogus] data is non-null or errors[] is non-empty",",","HTTP 500; stack trace in errors[]",none,xAPI; Query.brand error,Automated
-GQL-112,"xCatalog — brands sort Parameter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. brands with sort=name asc.","—","[GQL-OP sorted_brands]
+CAT-GQL-112,"xCatalog — brands sort Parameter","GraphQL > xCatalog",High,BL-GQL-002,ECL-2.1,"Runner-native. brands with sort=name asc.","—","[GQL-OP sorted_brands]
   query { brands(storeId: ""{{STORE_ID}}"" first: 3 sort: ""name:asc"") { items { id name } } }
 [GQL-EXEC sorted_brands]","[ERRORS label=sorted_brands] errors[] empty
 [DATA label=sorted_brands] data.brands is non-null",",","sort arg rejected",none,xAPI; Query.brands sort,Automated
-GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a product id, queries every top-level Product field. Any rename/removal → DV-009 at lint time.","—","[GQL-OP list_p]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"") { items { id } } }
+CAT-GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a product id, queries every top-level Product field. Any rename/removal → DV-009 at lint time.","—","[GQL-OP list_p]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id } } }
 [GQL-EXEC list_p]
 [GQL-CAPTURE list_p.data.products.items.0.id → PROD_ID]
 [GQL-OP prod_full]
@@ -211,9 +321,9 @@ GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalog > 
 [DATA label=prod_full] data.product.name is non-null
 [DATA label=prod_full] data.product.price is non-null
 [DATA label=prod_full] data.product.availabilityData is non-null",",","Any Product field renamed/removed (DV-009); PriceType drift; ImageType drift",none,xAPI; graphql-schema.md — Product,Automated
-GQL-114,"xCatalog — ProductConnection Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries products with facets selected. Verifies ProductConnection top-level fields resolve including facet arrays + pageInfo.","—","[GQL-OP pconn_full]
+CAT-GQL-114,"xCatalog — ProductConnection Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries products with facets selected. Verifies ProductConnection top-level fields resolve including facet arrays + pageInfo.","—","[GQL-OP pconn_full]
   query {
-    products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:fc596540864a41bf8ab78734ee7353a3"" facet: ""price.USD"") {
+    products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"" facet: ""price.USD"") {
       totalCount
       pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
       edges { cursor node { id name } }
@@ -226,14 +336,14 @@ GQL-114,"xCatalog — ProductConnection Schema Coverage","GraphQL > xCatalog > S
 [GQL-EXEC pconn_full]","[ERRORS label=pconn_full] errors[] empty — every ProductConnection field must resolve
 [DATA label=pconn_full] data.products.pageInfo is non-null
 [DATA label=pconn_full] data.products.items is non-null",",","Any ProductConnection field renamed/removed (DV-009)",none,xAPI; graphql-schema.md — ProductConnection,Automated
-GQL-115,"[VCST-4173] xCatalog products term_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",Critical,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies term_facets[] is populated after VCST-4173 migrated FilteredBrowsing config from DynamicProperties to Store Settings. Uses active B2B virtual catalog root 9238c387-d779-40cb-b27d-5496a670a924 (per feedback_graphql_products_filter memory).","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_term_facets]
+CAT-GQL-115,"[VCST-4173] xCatalog products term_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",Critical,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies term_facets[] is populated after VCST-4173 migrated FilteredBrowsing config from DynamicProperties to Store Settings. Uses active B2B virtual catalog root @td(VIRTUAL_CATALOG_B2B.id) (per feedback_graphql_products_filter memory).","b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id)","[GQL-OP products_term_facets]
   query {
     products(
       storeId: ""{{STORE_ID}}""
       currencyCode: ""USD""
       cultureName: ""en-US""
       first: 1
-      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""
       facet: ""Brand""
     ) {
       totalCount
@@ -243,14 +353,14 @@ GQL-115,"[VCST-4173] xCatalog products term_facets Present After FilteredBrowsin
 [GQL-EXEC products_term_facets]","[ERRORS label=products_term_facets] errors[] empty
 [DATA label=products_term_facets] data.products is non-null
 [DATA label=products_term_facets] data.products.term_facets is non-null","[EVIDENCE] Confirm same facet groups appear in Admin > Catalog > Store > FilteredBrowsing blade as before migration","term_facets[] null or empty after migration (config lost); facet count drops to 0 where it was >0 pre-migration; HTTP 500; DV-008 on facet field names","none — read-only","VCST-4173; xAPI; Query.products term_facets; FilteredBrowsing",Draft
-GQL-116,"[VCST-4173] xCatalog products range_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",High,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies range_facets[] is populated when a price.USD facet is passed, after VCST-4173 migrated FilteredBrowsing from DynamicProperties to Store Settings. Range aggregation config must survive migration.","b2b_catalog_root=9238c387-d779-40cb-b27d-5496a670a924","[GQL-OP products_range_facets]
+CAT-GQL-116,"[VCST-4173] xCatalog products range_facets Present After FilteredBrowsing Migration","GraphQL > xCatalog > Facets > FilteredBrowsing Migration",High,"BL-GQL-002","ECL-2.1; ECL-8.1","Runner-native. PUBLIC role. Verifies range_facets[] is populated when a price.USD facet is passed, after VCST-4173 migrated FilteredBrowsing from DynamicProperties to Store Settings. Range aggregation config must survive migration.","b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id)","[GQL-OP products_range_facets]
   query {
     products(
       storeId: ""{{STORE_ID}}""
       currencyCode: ""USD""
       cultureName: ""en-US""
       first: 1
-      filter: ""category.subtree:9238c387-d779-40cb-b27d-5496a670a924""
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""
       facet: ""price.USD""
     ) {
       totalCount

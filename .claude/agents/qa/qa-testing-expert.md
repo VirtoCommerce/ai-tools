@@ -154,6 +154,7 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 | API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
 | GraphQL interaction (GraphiQL UI) | — | `.claude/agents/knowledge/graphiql-interaction.md` |
 | **Runner-native GraphQL test cases** | — | **`.claude/agents/knowledge/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
+| **Live discovery + random inputs** | — | **`.claude/agents/knowledge/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
 | Live xAPI schema | — | `.claude/agents/knowledge/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 

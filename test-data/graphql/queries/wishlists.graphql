@@ -4,7 +4,7 @@
 # purpose: List user's wishlists (paginated)
 # required-vars: (none)
 # optional-vars: STORE_ID (String), USER_ID (String), FIRST (Int, default 10)
-# last-validated: 2026-04-24
+# last-validated: 2026-05-15
 # known-issues: (none)
 # used-by: (future) 050h wishlist suites
 
