@@ -1,0 +1,139 @@
+{
+  "auditDate": "2026-05-20",
+  "target": "/account/lists",
+  "url": "https://vcst-qa-storefront.govirto.com/account/lists",
+  "matrixScope": ["LAYOUT-PAGE-CLS-LISTS-001", "LAYOUT-SPC-001", "LAYOUT-OVF-006"],
+  "auth": "mutykovaelena@gmail.com (Max-Spenser org, 11 wishlists present)",
+  "browser": "Chrome DevTools MCP",
+
+  "viewport_1280": {
+    "cls": {
+      "raw": 0.04530869951661563,
+      "shiftCount": 6,
+      "installed": true,
+      "classification": "PASS",
+      "threshold": 0.1
+    },
+    "spacing": {
+      "matched": 128,
+      "offGridDistinctTokens": [
+        { "element": "div.vc-container.account-shell", "prop": "paddingBottom", "value": "36px", "note": "off-grid: nearest grid values are 32 or 40" },
+        { "element": "div.link-lists__wrapper", "prop": "paddingLeft", "value": "10px", "note": "off-grid: nearest grid values are 8 or 12" },
+        { "element": "div.link-lists__item.vc-menu-item", "prop": "marginTop", "value": "2px", "note": "off-grid: nearest grid values are 0 or 4; repeats on 8 of 9 items (first item is 0px)" },
+        { "element": "div.lists__items", "prop": "gap / rowGap", "value": "10px", "note": "off-grid at desktop: nearest grid values are 8 or 12" }
+      ],
+      "classification": "FAIL"
+    },
+    "overflow": {
+      "documentScrolls": false,
+      "docScrollWidth": 1925,
+      "innerWidth": 1940,
+      "clippedChildren": [
+        { "tag": "div.vc-container__bg", "direction": "y-clipped", "note": "overflow:hidden on decorative background element — intentional, no content inside" }
+      ],
+      "classification": "PASS",
+      "note": "vc-container__bg is a decorative background layer, not a content container. No horizontal scroll."
+    }
+  },
+
+  "viewport_768": {
+    "cls": {
+      "raw": 0.11335990470085802,
+      "shiftCount": 3,
+      "installed": true,
+      "classification": "FAIL",
+      "threshold": 0.1,
+      "note": "Exceeds 0.1 threshold. Likely caused by ship-to address selector resolving in header + list data arriving async."
+    },
+    "spacing": {
+      "matched": 97,
+      "offGridDistinctTokens": [
+        { "element": "div.vc-container.account-shell", "prop": "paddingBottom", "value": "36px" },
+        { "element": "div.link-lists__wrapper", "prop": "paddingLeft", "value": "10px" },
+        { "element": "div.link-lists__item.vc-menu-item", "prop": "marginTop", "value": "2px" },
+        { "element": "div.wishlist-card__date", "prop": "gap / rowGap / columnGap", "value": "6px", "note": "off-grid: nearest grid values are 4 or 8; present on every wishlist card row" }
+      ],
+      "excludedFalsePositives": [
+        { "element": "div.wishlist-card__status", "prop": "marginLeft", "computedValues": "279-295px", "note": "flex auto-margin (margin-left: auto distributed by browser); not a design token violation" }
+      ],
+      "classification": "FAIL"
+    },
+    "overflow": {
+      "documentScrolls": false,
+      "docScrollWidth": 753,
+      "innerWidth": 768,
+      "clippedChildren": [
+        { "tag": "div.vc-container__bg", "direction": "y-clipped", "note": "intentional decorative background" },
+        { "tag": "a.footer-link (x4)", "direction": "x-clipped", "note": "false positive: text-overflow:ellipsis + white-space:nowrap with scrollWidth === clientWidth at integer level (111 vs 111.359px sub-pixel)" }
+      ],
+      "classification": "PASS",
+      "note": "No real horizontal overflow. Footer-link clips are intentional ellipsis truncation; actual text is not cut (scrollWidth matches clientWidth at integer precision)."
+    }
+  },
+
+  "viewport_375": {
+    "cls": {
+      "raw_fast_network": 0.04043719305636618,
+      "raw_slow3g": 0.040584740729674745,
+      "shiftCount_slow3g": 4,
+      "installed": true,
+      "classification": "PASS",
+      "threshold": 0.1
+    },
+    "skeleton_swap_test": {
+      "headerRectPreSwap": { "top": 0, "left": 0, "width": 375, "height": 90 },
+      "headerRectPostSwap": { "top": 0, "left": 0, "width": 375, "height": 90 },
+      "topDelta": 0,
+      "leftDelta": 0,
+      "headerShifted": false,
+      "note": "Header did not shift during skeleton→card content swap under Slow 3G. CLS 0.040 under throttle — PASS."
+    },
+    "spacing": {
+      "matched": 97,
+      "offGridDistinctTokens": [
+        { "element": "div.link-lists__wrapper", "prop": "paddingLeft", "value": "10px" },
+        { "element": "div.link-lists__item.vc-menu-item", "prop": "marginTop", "value": "2px" },
+        { "element": "div.wishlist-card__date", "prop": "gap / rowGap / columnGap", "value": "6px" }
+      ],
+      "note": "account-shell paddingBottom:36px not present in 375px query scope (selector did not match). Same violations as 768px.",
+      "classification": "FAIL"
+    },
+    "overflow": {
+      "documentScrolls": false,
+      "docScrollWidth": 375,
+      "innerWidth": 375,
+      "clippedChildren": [
+        { "tag": "div.vc-container__bg", "direction": "y-clipped", "note": "intentional decorative background" },
+        { "tag": "a.wishlist-card__title", "scrollWidth": 307, "clientWidth": 225, "textOverflow": "ellipsis", "whiteSpace": "nowrap", "note": "intentional truncation: text-overflow:ellipsis + white-space:nowrap. Long list name (AGENT-TEST-QA-Probe-007-02-UPDATED) is clipped with ellipsis indicator visible." }
+      ],
+      "classification": "PASS",
+      "note": "No horizontal document scroll. Content clips use proper ellipsis indicator."
+    }
+  },
+
+  "invariant_summary": {
+    "BL-UI-001_CLS": {
+      "1280": "PASS (0.045)",
+      "768": "FAIL (0.113 > 0.1, 3 shifts)",
+      "375": "PASS (0.040)",
+      "375_slow3g": "PASS (0.040)"
+    },
+    "BL-UI-002_spacing": {
+      "1280": "FAIL",
+      "768": "FAIL",
+      "375": "FAIL",
+      "offGridTokensFailing": [
+        "account-shell paddingBottom:36px (all viewports where shell renders)",
+        "link-lists__wrapper paddingLeft:10px (all viewports)",
+        "link-lists__item marginTop:2px (all viewports)",
+        "lists__items gap:10px (desktop 1280)",
+        "wishlist-card__date gap:6px (tablet/mobile 768+375)"
+      ]
+    },
+    "BL-UI-004_overflow": {
+      "1280": "PASS",
+      "768": "PASS",
+      "375": "PASS"
+    }
+  }
+}

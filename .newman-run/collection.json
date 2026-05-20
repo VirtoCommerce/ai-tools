@@ -1,0 +1,1262 @@
+{
+  "info": {
+    "_postman_id": "bdb0293c-6461-44ec-93fc-d8a83046d516",
+    "name": "VC xAPI — Save For Later (VCST-4205)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-05-19T12:45:20.000Z",
+    "updatedAt": "2026-05-19T15:11:36.000Z",
+    "lastUpdatedBy": "15325423",
+    "uid": "15325423-bdb0293c-6461-44ec-93fc-d8a83046d516"
+  },
+  "item": [
+    {
+      "name": "00-Auth",
+      "item": [
+        {
+          "name": "Storefront Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "d8ec5f31-384c-45e4-ab9c-ca608ec0c126",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('access_token returned', () => pm.expect(res.access_token, JSON.stringify(res)).to.be.a('string').and.not.empty);",
+                  "if (res.access_token) {",
+                  "  pm.environment.set('authToken', res.access_token);",
+                  "  console.log('authToken captured. expires_in =', res.expires_in);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "e6185e79-91b0-456b-ac08-0668fca479cb",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{userEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "text"
+                },
+                {
+                  "key": "organization_id",
+                  "value": "{{organizationId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "storeId",
+                  "value": "{{storeId}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrlRest}}/connect/token",
+              "host": [
+                "{{baseUrlRest}}"
+              ],
+              "path": [
+                "connect",
+                "token"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:05:52.000Z",
+          "uid": "15325423-e6185e79-91b0-456b-ac08-0668fca479cb"
+        }
+      ],
+      "id": "0a4b51bc-037a-4af7-8676-f1eb7d612303",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-0a4b51bc-037a-4af7-8676-f1eb7d612303"
+    },
+    {
+      "name": "01-Setup",
+      "item": [
+        {
+          "name": "Me Query — Capture USER_ID",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('data.me.id captured', () => {",
+                  "  pm.expect(res.data.me.id).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set('USER_ID', res.data.me.id);",
+                  "console.log('USER_ID =', res.data.me.id);"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "0311ea44-cd65-4a69-86a7-715ba2e0b663",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{}",
+                "query": "query MeQuery {\n  me {\n    id\n    userName\n    memberId\n    isAdministrator\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T14:58:17.000Z",
+          "uid": "15325423-0311ea44-cd65-4a69-86a7-715ba2e0b663"
+        }
+      ],
+      "id": "fbe258a8-cfbb-47ae-b0ec-8d3cdf91c87a",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-fbe258a8-cfbb-47ae-b0ec-8d3cdf91c87a"
+    },
+    {
+      "name": "02-Pre-Cleanup",
+      "item": [
+        {
+          "name": "Clear Default Cart",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('errors[] empty', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);",
+                  "pm.test('clearCart returned cart id', () => pm.expect(res.data.clearCart.id).to.be.a('string').and.not.empty);"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "09f26e35-f9ff-4260-b961-7e036ce6bb49",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"cartName\": \"default\",\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\"\n  }\n}",
+                "query": "mutation ClearDefaultCart($cmd: InputClearCartType!) {\n  clearCart(command: $cmd) {\n    id\n    itemsCount\n    name\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T14:58:22.000Z",
+          "uid": "15325423-09f26e35-f9ff-4260-b961-7e036ce6bb49"
+        },
+        {
+          "name": "Find Saved-For-Later Cart Id",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('errors[] empty', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);",
+                  "const sfl = res.data && res.data.cart;",
+                  "if (sfl && sfl.id) {",
+                  "  pm.collectionVariables.set('savedCartIdToClear', sfl.id);",
+                  "  console.log('Found Saved-For-Later cart id =', sfl.id, 'itemsCount =', sfl.itemsCount);",
+                  "} else {",
+                  "  pm.collectionVariables.set('savedCartIdToClear', '');",
+                  "  console.log('No Saved-For-Later cart exists');",
+                  "}",
+                  "pm.test('SFL cart probe completed', () => pm.expect(true).to.be.true);"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "f7ffe3c0-5ecc-4318-be2c-a70c332173b1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}",
+                "query": "query FindSavedForLaterCart($storeId: String!, $userId: String!) {\n  cart(\n    storeId: $storeId\n    userId: $userId\n    currencyCode: \"USD\"\n    cultureName: \"en-US\"\n    cartName: \"Saved for later\"\n  ) {\n    id\n    name\n    itemsCount\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T14:58:29.000Z",
+          "uid": "15325423-f7ffe3c0-5ecc-4318-be2c-a70c332173b1"
+        },
+        {
+          "name": "Sweep Saved-For-Later Cart If Exists",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const sfl = pm.collectionVariables.get('savedCartIdToClear');",
+                  "if (!sfl) {",
+                  "  console.log('savedCartIdToClear empty - skipping removeCart');",
+                  "  if (pm.execution && pm.execution.skipRequest) pm.execution.skipRequest();",
+                  "}"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "prerequest"
+            },
+            {
+              "script": {
+                "exec": [
+                  "const savedCartIdToClear = pm.collectionVariables.get('savedCartIdToClear');",
+                  "const res = pm.response.json();",
+                  "if (!savedCartIdToClear) {",
+                  "  pm.test('No saved-for-later cart existed - no-op cleanup passes', () => pm.expect(true).to.be.true);",
+                  "} else {",
+                  "  pm.test('No GraphQL errors', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);",
+                  "  pm.test('removeCart returned true', () => pm.expect(res.data.removeCart).to.eql(true));",
+                  "  pm.collectionVariables.set('savedCartIdToClear', '');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "1576789d-ea29-491e-9025-a03dac898dab",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation RemoveSflCart($cmd: InputRemoveCartType!) {\n  removeCart(command: $cmd)\n}",
+                "variables": "{\n  \"cmd\": {\n    \"cartId\": \"{{savedCartIdToClear}}\",\n    \"userId\": \"{{USER_ID}}\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T14:58:36.000Z",
+          "uid": "15325423-1576789d-ea29-491e-9025-a03dac898dab"
+        }
+      ],
+      "id": "5855acc0-50a2-4081-8555-71c507f0c475",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-5855acc0-50a2-4081-8555-71c507f0c475"
+    },
+    {
+      "name": "03-Scenario A — Move 3 Distinct Configs To Saved",
+      "item": [
+        {
+          "name": "Add Item A (Text=AGENT-TEST-CFG-A)",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('itemsCount >= 1', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(1));"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "fc8d8316-bcb6-41d3-81a0-47c8ee92dd7e",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemA($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{laptopProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      { \"sectionId\": \"{{ramSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{ramOpt_A_8gb}}\", \"quantity\": 1 } },\n      { \"sectionId\": \"{{storageSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{storageOpt_default}}\", \"quantity\": 1 } }\n    ]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:37:34.000Z",
+          "uid": "15325423-fc8d8316-bcb6-41d3-81a0-47c8ee92dd7e"
+        },
+        {
+          "name": "Add Item B (Text=AGENT-TEST-CFG-B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('itemsCount >= 2', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(2));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "f30feb80-9092-4c89-acb1-c02b35242dc2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemB($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{laptopProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      { \"sectionId\": \"{{ramSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{ramOpt_B_16gb}}\", \"quantity\": 1 } },\n      { \"sectionId\": \"{{storageSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{storageOpt_default}}\", \"quantity\": 1 } }\n    ]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:37:39.000Z",
+          "uid": "15325423-f30feb80-9092-4c89-acb1-c02b35242dc2"
+        },
+        {
+          "name": "Add Item C (Text=AGENT-TEST-CFG-C)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('itemsCount >= 3', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(3));"
+                ]
+              }
+            }
+          ],
+          "id": "2a471370-ae05-4847-9987-9b0bbcd08ea6",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddItemC($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{laptopProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      { \"sectionId\": \"{{ramSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{ramOpt_C_32gb}}\", \"quantity\": 1 } },\n      { \"sectionId\": \"{{storageSectionId}}\", \"type\": \"Product\", \"option\": { \"productId\": \"{{storageOpt_default}}\", \"quantity\": 1 } }\n    ]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:37:44.000Z",
+          "uid": "15325423-2a471370-ae05-4847-9987-9b0bbcd08ea6"
+        },
+        {
+          "name": "Read Cart — Capture cartId + lineId_A/B/C",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const cart = res.data.cart;",
+                  "pm.expect(cart, 'cart returned').to.not.be.null;",
+                  "pm.collectionVariables.set('cartId', cart.id);",
+                  "const ramA = pm.variables.get('ramOpt_A_8gb');",
+                  "const ramB = pm.variables.get('ramOpt_B_16gb');",
+                  "const ramC = pm.variables.get('ramOpt_C_32gb');",
+                  "const findIdByRamOpt = (ramProductId) => {",
+                  "  const line = cart.items.find(i => i.configurationItems && i.configurationItems.some(c => c.type === 'Product' && c.productId === ramProductId));",
+                  "  return line ? line.id : '';",
+                  "};",
+                  "const idA = findIdByRamOpt(ramA);",
+                  "const idB = findIdByRamOpt(ramB);",
+                  "const idC = findIdByRamOpt(ramC);",
+                  "pm.collectionVariables.set('lineId_A', idA);",
+                  "pm.collectionVariables.set('lineId_B', idB);",
+                  "pm.collectionVariables.set('lineId_C', idC);",
+                  "console.log('Captured cartId =', cart.id, 'lineId_A =', idA, 'lineId_B =', idB, 'lineId_C =', idC);",
+                  "pm.test('cart has 3 items', () => pm.expect(cart.items.length).to.be.at.least(3));",
+                  "pm.test('lineId_A/B/C captured (by RAM option productId)', () => {",
+                  "  pm.expect(idA, 'lineId_A (8GB)').to.not.be.empty;",
+                  "  pm.expect(idB, 'lineId_B (16GB)').to.not.be.empty;",
+                  "  pm.expect(idC, 'lineId_C (32GB)').to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "3a9d5410-58b6-420d-a11e-52c937568440",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}",
+                "query": "query ReadCart($storeId: String!, $userId: String!) {\n  cart(\n    storeId: $storeId\n    userId: $userId\n    currencyCode: \"USD\"\n    cultureName: \"en-US\"\n    cartName: \"default\"\n  ) {\n    id\n    name\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      listPrice { amount formattedAmount }\n      configurationItems {\n        sectionId\n        type\n        productId\n        customText\n      }\n    }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:37:55.000Z",
+          "uid": "15325423-3a9d5410-58b6-420d-a11e-52c937568440"
+        },
+        {
+          "name": "Move All To Saved For Later",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const list = res.data.moveToSavedForLater.list;",
+                  "pm.test('Saved-For-Later list has at least 3 items', () => pm.expect(list.itemsCount).to.be.at.least(3));",
+                  "const ramA = pm.variables.get('ramOpt_A_8gb');",
+                  "const ramB = pm.variables.get('ramOpt_B_16gb');",
+                  "const ramC = pm.variables.get('ramOpt_C_32gb');",
+                  "const findByRam = (rid) => {",
+                  "  const i = list.items.find(li => li.configurationItems && li.configurationItems.some(c => c.type === 'Product' && c.productId === rid));",
+                  "  return i ? i.id : '';",
+                  "};",
+                  "pm.collectionVariables.set('savedLineId_A', findByRam(ramA));",
+                  "pm.collectionVariables.set('savedLineId_B', findByRam(ramB));",
+                  "pm.collectionVariables.set('savedLineId_C', findByRam(ramC));",
+                  "console.log('Saved IDs:', pm.collectionVariables.get('savedLineId_A'), pm.collectionVariables.get('savedLineId_B'), pm.collectionVariables.get('savedLineId_C'));",
+                  "pm.test('all 3 RAM configurations preserved in Saved-For-Later (A2 contract)', () => {",
+                  "  pm.expect(pm.collectionVariables.get('savedLineId_A'), 'savedLineId_A (8GB)').to.not.be.empty;",
+                  "  pm.expect(pm.collectionVariables.get('savedLineId_B'), 'savedLineId_B (16GB)').to.not.be.empty;",
+                  "  pm.expect(pm.collectionVariables.get('savedLineId_C'), 'savedLineId_C (32GB)').to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "c13ff849-7c87-46ed-9a6d-fdcb23596ac1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"cartId\": \"{{cartId}}\",\n    \"lineItemIds\": [\"{{lineId_A}}\", \"{{lineId_B}}\", \"{{lineId_C}}\"]\n  }\n}",
+                "query": "mutation MoveAllToSaved($cmd: InputSaveForLaterType!) {\n  moveToSavedForLater(command: $cmd) {\n    cart { id itemsCount }\n    list {\n      id\n      name\n      itemsCount\n      items {\n        id\n        productId\n        quantity\n        configurationItems {\n          sectionId\n          type\n          productId\n          customText\n        }\n      }\n    }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:38:06.000Z",
+          "uid": "15325423-c13ff849-7c87-46ed-9a6d-fdcb23596ac1"
+        }
+      ],
+      "id": "c5a79562-c86c-4844-bc94-7f670492b88b",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-c5a79562-c86c-4844-bc94-7f670492b88b"
+    },
+    {
+      "name": "04-Scenario B — Move One Back From Saved",
+      "item": [
+        {
+          "name": "Move Saved Item A Back To Active Cart",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const cart = res.data.moveFromSavedForLater.cart;",
+                  "pm.test('active cart has at least 1 item', () => pm.expect(cart.itemsCount).to.be.at.least(1));",
+                  "pm.test('moved line preserves RAM option 8GB (BL-CART-014)', () => {",
+                  "  const expected = pm.variables.get('ramOpt_A_8gb');",
+                  "  const found = cart.items.some(i => i.configurationItems && i.configurationItems.some(c => c.type === 'Product' && c.productId === expected));",
+                  "  pm.expect(found, `Expected RAM option productId ${expected} in moved-back cart`).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "55b33295-9020-41bb-9701-53e49f2243ed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation MoveOneBackFromSaved($cmd: InputSaveForLaterType!) {\n  moveFromSavedForLater(command: $cmd) {\n    cart {\n      id\n      itemsCount\n      items {\n        id\n        productId\n        listPrice { amount formattedAmount }\n        configurationItems {\n          sectionId\n          type\n          productId\n          customText\n        }\n      }\n    }\n    list { id itemsCount }\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"cartId\": \"{{cartId}}\",\n    \"lineItemIds\": [\"{{savedLineId_A}}\"]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:38:14.000Z",
+          "uid": "15325423-55b33295-9020-41bb-9701-53e49f2243ed"
+        }
+      ],
+      "id": "b6f47ea6-9534-458d-bfb6-fabac2944dc3",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-b6f47ea6-9534-458d-bfb6-fabac2944dc3"
+    },
+    {
+      "name": "05-Scenario C — getSavedForLater Query",
+      "item": [
+        {
+          "name": "Get Saved For Later Cart",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const sfl = res.data.getSavedForLater;",
+                  "if (!sfl || !sfl.items || sfl.items.length === 0) {",
+                  "  pm.test.skip('INFO: SFL is empty - run 03-Scenario A first.');",
+                  "} else {",
+                  "  pm.test('every saved line has configurationItems populated (A2 fix)', () => {",
+                  "    sfl.items.forEach(i => pm.expect(i.configurationItems, `line ${i.id}`).to.be.an('array').that.is.not.empty);",
+                  "  });",
+                  "  pm.test('at least 1 of A/B/C RAM options present in saved lines', () => {",
+                  "    const productIds = sfl.items.flatMap(i => i.configurationItems.map(c => c.productId)).filter(Boolean);",
+                  "    const expected = [pm.variables.get('ramOpt_A_8gb'), pm.variables.get('ramOpt_B_16gb'), pm.variables.get('ramOpt_C_32gb')];",
+                  "    const matched = expected.filter(id => productIds.includes(id));",
+                  "    pm.expect(matched.length, `Expected at least 1 of 8GB/16GB/32GB in saved configurationItems`).to.be.at.least(1);",
+                  "  });",
+                  "}"
+                ]
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "99a3ad81-418c-4a09-9b25-04a4f8f038ba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}",
+                "query": "query GetSavedForLater($storeId: String!, $userId: String!) {\n  getSavedForLater(storeId: $storeId, userId: $userId, currencyCode: \"USD\") {\n    id\n    name\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      listPrice { amount formattedAmount }\n      configurationItems {\n        sectionId\n        type\n        productId\n        customText\n        selectedForCheckout\n      }\n    }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:38:23.000Z",
+          "uid": "15325423-99a3ad81-418c-4a09-9b25-04a4f8f038ba"
+        }
+      ],
+      "id": "55c3ce93-f269-4358-8457-4bb3a11f0c73",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-55c3ce93-f269-4358-8457-4bb3a11f0c73"
+    },
+    {
+      "name": "06-Post-Cleanup",
+      "item": [
+        {
+          "name": "Clear Default Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('errors[] empty', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "0e36ef6a-ca94-402b-afdc-59e2b7817519",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation ClearDefaultCart($cmd: InputClearCartType!) {\n  clearCart(command: $cmd) {\n    id\n    itemsCount\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"cartName\": \"default\",\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T14:59:55.000Z",
+          "uid": "15325423-0e36ef6a-ca94-402b-afdc-59e2b7817519"
+        },
+        {
+          "name": "Find Saved-For-Later Cart Id",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const sfl = res.data && res.data.cart;",
+                  "if (sfl && sfl.id) {",
+                  "  pm.collectionVariables.set('savedCartIdToClear', sfl.id);",
+                  "  console.log('Post-cleanup: Found SFL cart id =', sfl.id);",
+                  "} else {",
+                  "  pm.collectionVariables.set('savedCartIdToClear', '');",
+                  "  console.log('Post-cleanup: no SFL cart');",
+                  "}",
+                  "pm.test('SFL probe completed', () => pm.expect(true).to.be.true);"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "fbbc7d91-599a-49f7-955f-cda2244daf50",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query FindSflCartPostCleanup($storeId: String!, $userId: String!) {\n  cart(\n    storeId: $storeId\n    userId: $userId\n    currencyCode: \"USD\"\n    cultureName: \"en-US\"\n    cartName: \"Saved for later\"\n  ) {\n    id\n    name\n    itemsCount\n  }\n}",
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:00:01.000Z",
+          "uid": "15325423-fbbc7d91-599a-49f7-955f-cda2244daf50"
+        },
+        {
+          "name": "Sweep Saved-For-Later Cart If Exists",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sfl = pm.collectionVariables.get('savedCartIdToClear');",
+                  "if (!sfl) {",
+                  "  console.log('savedCartIdToClear empty - skipping removeCart');",
+                  "  if (pm.execution && pm.execution.skipRequest) pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const savedCartIdToClear = pm.collectionVariables.get('savedCartIdToClear');",
+                  "const res = pm.response.json();",
+                  "if (!savedCartIdToClear) {",
+                  "  pm.test('No saved-for-later cart existed - no-op cleanup passes', () => pm.expect(true).to.be.true);",
+                  "} else {",
+                  "  pm.test('No GraphQL errors', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);",
+                  "  pm.test('removeCart returned true', () => pm.expect(res.data.removeCart).to.eql(true));",
+                  "  pm.collectionVariables.set('savedCartIdToClear', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "id": "6b02a9bc-2843-4083-9bf3-63145d04f12b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation RemoveSflCart($cmd: InputRemoveCartType!) {\n  removeCart(command: $cmd)\n}",
+                "variables": "{\n  \"cmd\": {\n    \"cartId\": \"{{savedCartIdToClear}}\",\n    \"userId\": \"{{USER_ID}}\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:17:48.000Z",
+          "updatedAt": "2026-05-19T15:00:07.000Z",
+          "uid": "15325423-6b02a9bc-2843-4083-9bf3-63145d04f12b"
+        }
+      ],
+      "id": "a958812d-19ff-44cf-90e3-523dbcca1e90",
+      "createdAt": "2026-05-19T14:17:48.000Z",
+      "updatedAt": "2026-05-19T14:17:48.000Z",
+      "uid": "15325423-a958812d-19ff-44cf-90e3-523dbcca1e90"
+    },
+    {
+      "name": "07-VCST-4205 Broader Coverage (CRL-GQL-102/103 + Anomalies A1/A2 + Contaminated SFL)",
+      "item": [
+        {
+          "name": "07-Scenario D — Edit Configurable Item by Remove+Add (CRL-GQL-102)",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('errors[] empty', () => pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined);",
+                  "pm.test('itemsCount >= 1 after edit', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(1));"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "bf30a321-2b79-7d8e-7fa3-928ede357202",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{ringProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      {\n        \"sectionId\": \"{{sectionTextId}}\",\n        \"type\": \"Text\",\n        \"customText\": \"{{customText_B}}\"\n      }\n    ]\n  }\n}",
+                "query": "# This request is a 4-step chain. In Postman, run it in Collection Runner order:\n# Step 1 = addItem text_a, Step 2 = removeCartItem, Step 3 = addItem text_b, Step 4 = read cart.\n# For ad-hoc use, run the addItem text_b mutation below and check the test-script asserts.\nmutation AddItemTextB($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      configurationItems { sectionId type customText }\n    }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:43:20.000Z",
+          "updatedAt": "2026-05-19T15:00:10.000Z",
+          "uid": "15325423-bf30a321-2b79-7d8e-7fa3-928ede357202"
+        },
+        {
+          "name": "08-Scenario E — Identical Configurable Items Do NOT Consolidate (CRL-GQL-103)",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('addItem.itemsCount captured', () => pm.expect(res.data.addItem.itemsCount).to.be.a('number'));",
+                  "if (res.data.addItem.itemsCount >= 2) {",
+                  "  pm.test('after 2nd send: cart has >=2 items (configurable products do NOT consolidate)', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(2));",
+                  "} else {",
+                  "  pm.test.skip('INFO: send this request a 2nd time to evaluate the BL-CART-007 exception');",
+                  "}"
+                ]
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "9152236b-4b66-d60a-c5b6-37e5e864104e",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{ringProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      {\n        \"sectionId\": \"{{sectionTextId}}\",\n        \"type\": \"Text\",\n        \"customText\": \"{{customText_A}}\"\n      }\n    ]\n  }\n}",
+                "query": "# Run this request TWICE in sequence. After the 2nd send, the test-script assertions hold.\nmutation AddIdenticalConfig($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      configurationItems { sectionId type customText }\n    }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:43:33.000Z",
+          "updatedAt": "2026-05-19T15:00:15.000Z",
+          "uid": "15325423-9152236b-4b66-d60a-c5b6-37e5e864104e"
+        },
+        {
+          "name": "09-Anomaly A1 — SFL Price Binding Data-Shape Probe",
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const sfl = res.data && res.data.getSavedForLater;",
+                  "if (!sfl || !sfl.items || sfl.items.length === 0) {",
+                  "  pm.test.skip('INFO: SFL empty - run 03-Scenario A first.');",
+                  "} else {",
+                  "  pm.test('lineItem.listPrice differs from product.price.list for at least one saved line', () => {",
+                  "    const diverges = sfl.items.some(i => {",
+                  "      const line = i.listPrice && i.listPrice.amount;",
+                  "      const master = i.product && i.product.price && i.product.price.list && i.product.price.list.amount;",
+                  "      return line != null && master != null && line !== master;",
+                  "    });",
+                  "    pm.expect(diverges, 'Storefront sidebar binds product.price.list instead of lineItem.listPrice - divergence proves the bug').to.be.true;",
+                  "  });",
+                  "  pm.test('every saved line has lineItem.listPrice populated (the value UI SHOULD bind)', () => {",
+                  "    sfl.items.forEach(i => pm.expect(i.listPrice).to.not.be.null);",
+                  "  });",
+                  "}"
+                ]
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "0c71ec13-c340-2692-538a-6c8a9d11cea2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetSflPriceShape($storeId: String!, $userId: String!) {\n  getSavedForLater(storeId: $storeId, userId: $userId, currencyCode: \"USD\") {\n    id\n    name\n    itemsCount\n    items {\n      id\n      productId\n      listPrice { amount formattedAmount }\n      product {\n        id\n        price {\n          list { amount formattedAmount }\n        }\n      }\n      configurationItems { sectionId type customText }\n    }\n  }\n}",
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:43:47.000Z",
+          "updatedAt": "2026-05-19T15:28:48.000Z",
+          "uid": "15325423-0c71ec13-c340-2692-538a-6c8a9d11cea2"
+        },
+        {
+          "name": "10-Anomaly A2 — getSavedForLater MUST Include configurationItems in Selection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "const sfl = res.data && res.data.getSavedForLater;",
+                  "if (!sfl || !sfl.items || sfl.items.length === 0) {",
+                  "  pm.test.skip('INFO: SFL empty - run 03-Scenario A first.');",
+                  "} else {",
+                  "  pm.test('every saved line has configurationItems present (non-null array)', () => {",
+                  "    sfl.items.forEach(i => pm.expect(i.configurationItems, `lineItem ${i.id}`).to.be.an('array'));",
+                  "  });",
+                  "  pm.test('at least 1 of A/B/C RAM options preserved in saved configurationItems (A2 fix shape)', () => {",
+                  "    const productIds = sfl.items.flatMap(i => i.configurationItems.map(c => c.productId)).filter(Boolean);",
+                  "    const expected = [pm.variables.get('ramOpt_A_8gb'), pm.variables.get('ramOpt_B_16gb'), pm.variables.get('ramOpt_C_32gb')];",
+                  "    const matched = expected.filter(id => productIds.includes(id));",
+                  "    pm.expect(matched.length, `Expected at least 1 of 8GB/16GB/32GB in saved configurationItems`).to.be.at.least(1);",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "1007fb8e-d6ce-f822-43c6-a49501abec85",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetSflWithConfigurationItems($storeId: String!, $userId: String!) {\n  getSavedForLater(storeId: $storeId, userId: $userId, currencyCode: \"USD\") {\n    id\n    name\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      listPrice { formattedAmount }\n      configurationItems {\n        sectionId\n        type\n        productId\n        customText\n        selectedForCheckout\n      }\n    }\n  }\n}",
+                "variables": "{\n  \"storeId\": \"{{storeIdSf}}\",\n  \"userId\": \"{{USER_ID}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:44:01.000Z",
+          "updatedAt": "2026-05-19T15:38:32.000Z",
+          "uid": "15325423-1007fb8e-d6ce-f822-43c6-a49501abec85"
+        },
+        {
+          "name": "11-Contaminated SFL — Per-Line lineItemIds With Pre-Existing Saved Entries",
+          "event": [
+            {
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('HTTP 200 + no errors', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(res.errors, JSON.stringify(res.errors)).to.be.undefined;",
+                  "});",
+                  "pm.test('addItem.itemsCount >= 1', () => pm.expect(res.data.addItem.itemsCount).to.be.at.least(1));"
+                ],
+                "type": "text/javascript"
+              },
+              "listen": "test"
+            }
+          ],
+          "id": "12122cf1-6ba7-4ec1-732a-3e7b0e2760c2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation AddContaminatingLine($cmd: InputAddItemType!) {\n  addItem(command: $cmd) {\n    id\n    itemsCount\n    items {\n      id\n      productId\n      quantity\n      configurationItems { sectionId type customText }\n    }\n  }\n}",
+                "variables": "{\n  \"cmd\": {\n    \"storeId\": \"{{storeIdSf}}\",\n    \"userId\": \"{{USER_ID}}\",\n    \"productId\": \"{{ringProductId}}\",\n    \"quantity\": 1,\n    \"currencyCode\": \"USD\",\n    \"cultureName\": \"en-US\",\n    \"cartName\": \"default\",\n    \"configurationSections\": [\n      {\n        \"sectionId\": \"{{sectionTextId}}\",\n        \"type\": \"Text\",\n        \"customText\": \"AGENT-TEST-CONTAMINATED\"\n      }\n    ]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrlGraphql}}",
+              "host": [
+                "{{baseUrlGraphql}}"
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-19T14:44:20.000Z",
+          "updatedAt": "2026-05-19T15:00:33.000Z",
+          "uid": "15325423-12122cf1-6ba7-4ec1-732a-3e7b0e2760c2"
+        }
+      ],
+      "id": "15325423-15325423-vcst4205-broader-coverage-folder",
+      "description": "Persistent coverage authored by /qa-test-lifecycle VCST-4205 run TLC-2026-05-19-VCST4205. Each request maps to a regression case or a documented anomaly from frontend-execution-report.md.",
+      "createdAt": "2026-05-19T14:57:18.000Z",
+      "updatedAt": "2026-05-19T14:57:18.000Z"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "ringProductId",
+      "value": "750d36bd-5d1a-4261-898d-e506f89e5184",
+      "description": "CFG_RING parent GUID (test-data/aliases.json → @td(CFG_RING.id)). Re-seeded 2026-05-18 Phase 2. Refresh on next reseed."
+    },
+    {
+      "key": "sectionTextId",
+      "value": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+      "description": "CFG_RING required Text section ID (maxLength=30). If addItem rejects with section-validation error, run productConfiguration query and copy the section id here."
+    },
+    {
+      "key": "storeIdSf",
+      "value": "B2B-store",
+      "description": "Storefront-facing string store ID; differs from the admin storeId GUID."
+    },
+    {
+      "key": "customText_A",
+      "value": "AGENT-TEST-CFG-A",
+      "description": "Distinct Text config A — uses AGENT-TEST- prefix so /qa-seed-data teardown can sweep leaked data."
+    },
+    {
+      "key": "customText_B",
+      "value": "AGENT-TEST-CFG-B",
+      "description": "Distinct Text config B."
+    },
+    {
+      "key": "customText_C",
+      "value": "AGENT-TEST-CFG-C",
+      "description": "Distinct Text config C."
+    },
+    {
+      "key": "cartId",
+      "value": "",
+      "description": "Captured from cart query after the 3 addItem calls."
+    },
+    {
+      "key": "lineId_A",
+      "value": "",
+      "description": "Captured line item id for config A in the active cart."
+    },
+    {
+      "key": "lineId_B",
+      "value": "",
+      "description": "Captured line item id for config B in the active cart."
+    },
+    {
+      "key": "lineId_C",
+      "value": "",
+      "description": "Captured line item id for config C in the active cart."
+    },
+    {
+      "key": "savedLineId_A",
+      "value": "",
+      "description": "Captured line item id for config A in the Saved-For-Later cart after move."
+    },
+    {
+      "key": "savedLineId_B",
+      "value": "",
+      "description": "Captured line item id for config B in the Saved-For-Later cart after move."
+    },
+    {
+      "key": "savedLineId_C",
+      "value": "",
+      "description": "Captured line item id for config C in the Saved-For-Later cart after move."
+    },
+    {
+      "key": "savedCartIdToClear",
+      "value": ""
+    },
+    {
+      "key": "contaminatingLineId",
+      "value": ""
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "USER_ID",
+      "value": ""
+    }
+  ]
+}

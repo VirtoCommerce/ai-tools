@@ -1,0 +1,20 @@
+{
+  "id": "vcst4205-sfl-env",
+  "name": "vcst-qa (VCST-4205 SFL — CFG_LAPTOP)",
+  "values": [
+    {"key": "baseUrlRest", "value": "https://vcst-qa.govirto.com", "type": "default", "enabled": true},
+    {"key": "baseUrlGraphql", "value": "https://vcst-qa.govirto.com/graphql", "type": "default", "enabled": true},
+    {"key": "userEmail", "value": "mutykovaelena@gmail.com", "type": "default", "enabled": true},
+    {"key": "userPassword", "value": "Password1!", "type": "secret", "enabled": true},
+    {"key": "organizationId", "value": "37644943-0a80-4070-b948-14491e47fe20", "type": "default", "enabled": true},
+    {"key": "storeId", "value": "B2B-store", "type": "default", "enabled": true},
+    {"key": "laptopProductId", "value": "dd56d770-3c3b-4e09-b126-0c2bb8bd0f72", "type": "default", "enabled": true},
+    {"key": "ramSectionId", "value": "5190d8cc-56f5-4675-9a34-d94c28f306f7", "type": "default", "enabled": true},
+    {"key": "storageSectionId", "value": "e5fbc712-8697-4c48-b4f4-a8943f8d3d21", "type": "default", "enabled": true},
+    {"key": "ramOpt_A_8gb", "value": "58de484f-dbaa-4193-b319-2c5c55152e86", "type": "default", "enabled": true},
+    {"key": "ramOpt_B_16gb", "value": "b147e934-6255-4a39-902c-17a816591932", "type": "default", "enabled": true},
+    {"key": "ramOpt_C_32gb", "value": "fb7997e5-c00d-448e-88cd-02bea0e786fe", "type": "default", "enabled": true},
+    {"key": "storageOpt_default", "value": "efda4b3d-5843-4dc1-961b-965b8f423d14", "type": "default", "enabled": true}
+  ],
+  "_postman_variable_scope": "environment"
+}

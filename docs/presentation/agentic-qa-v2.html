@@ -288,14 +288,14 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
 
 <!-- ========== SLIDE 1: TITLE ========== -->
 <div class="slide title-slide active" id="s1">
-  <div class="slide-num">1 / 18</div>
+  <div class="slide-num">1 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Virto Commerce · QA Engineering · 2026</div>
     <h1>Agentic QA<br><span class="hero-accent">AI-Driven Testing</span></h1>
-    <div class="sub">Natural language replaces brittle scripts.<br>14 specialized agents. 1,546 test cases. Zero code required.</div>
+    <div class="sub">Natural language replaces brittle scripts.<br>14 specialized agents. ~3,000 test cases. Zero code required.</div>
     <div class="title-tagline">
       <span class="title-tag">🤖 14 AI Agents</span>
-      <span class="title-tag">🧪 36 Test Suites</span>
+      <span class="title-tag">🧪 97 Test Suites</span>
       <span class="title-tag">⚡ 3 Parallel Browsers</span>
       <span class="title-tag">🔄 CI/CD (Planned)</span>
       <span class="title-tag">🛡️ Self-Healing</span>
@@ -311,7 +311,7 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
       </div>
       <div>
         <div style="font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.1em;">Date</div>
-        <div style="color:rgba(255,255,255,0.85); font-size:15px; margin-top:3px;">March 2026</div>
+        <div style="color:rgba(255,255,255,0.85); font-size:15px; margin-top:3px;">May 2026</div>
       </div>
     </div>
   </div>
@@ -319,7 +319,7 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
 
 <!-- ========== SLIDE 2: THE PROBLEM / BEFORE-AFTER ========== -->
 <div class="slide" id="s2">
-  <div class="slide-num">2 / 18</div>
+  <div class="slide-num">2 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">The Problem We Solve</div>
     <h2>Traditional Automation vs. Agentic QA</h2>
@@ -369,7 +369,7 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 3: PROJECT OVERVIEW ========== -->
 <div class="slide" id="s3">
-  <div class="slide-num">3 / 18</div>
+  <div class="slide-num">3 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Project Overview</div>
     <h2>What Is the Agentic QA System?</h2>
@@ -384,7 +384,7 @@ cart icon shows correct item count."</pre>
       <div class="card blue">
         <div style="font-size:22px; margin-bottom:8px;">🏗️</div>
         <h3>Modular Architecture</h3>
-        <p style="font-size:13.5px; color:var(--text-2);">14 specialized agents, 36 CSV test suites, 18 methodology skills, and 12 shared knowledge files — all coordinated by an orchestrator.</p>
+        <p style="font-size:13.5px; color:var(--text-2);">14 specialized agents, 97 CSV test suites, 20 methodology skills, and 23 shared knowledge files — all coordinated by an orchestrator.</p>
       </div>
       <div class="card" style="border-color:rgba(197,96,62,0.2); background:rgba(197,96,62,0.04);">
         <div style="font-size:22px; margin-bottom:8px;">⚙️</div>
@@ -411,8 +411,8 @@ cart icon shows correct item count."</pre>
             </div>
           </div>
           <div style="text-align:center;">
-            <div style="font-size:36px; font-weight:800; color:var(--accent); line-height:1;">~1,546</div>
-            <div style="font-size:13px; color:var(--text-2); margin-top:4px;">test cases across<br>36 suites</div>
+            <div style="font-size:36px; font-weight:800; color:var(--accent); line-height:1;">~3,000</div>
+            <div style="font-size:13px; color:var(--text-2); margin-top:4px;">test cases across<br>97 suites</div>
           </div>
         </div>
       </div>
@@ -422,7 +422,7 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 4: ARCHITECTURE ========== -->
 <div class="slide" id="s4">
-  <div class="slide-num">4 / 18</div>
+  <div class="slide-num">4 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Architecture</div>
     <h2>Three Testing Modes, One Foundation</h2>
@@ -436,7 +436,7 @@ cart icon shows correct item count."</pre>
           <div class="flow-arrow" style="text-align:center;">↓</div>
           <div class="flow-step" style="font-size:12.5px;">14 Specialized Agents</div>
           <div class="flow-arrow" style="text-align:center;">↓</div>
-          <div class="flow-step" style="font-size:12.5px;">9 MCP Servers</div>
+          <div class="flow-step" style="font-size:12.5px;">10 MCP Servers</div>
           <div class="flow-arrow" style="text-align:center;">↓</div>
           <div class="flow-step" style="font-size:12.5px;">3 Real Browsers</div>
         </div>
@@ -472,11 +472,11 @@ cart icon shows correct item count."</pre>
     <div class="card mt16" style="padding:14px 20px;">
       <div style="font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Shared Foundation — used by all three modes</div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <span class="badge badge-gray">config/test-suites.json (36 suites)</span>
+        <span class="badge badge-gray">config/test-suites.json (97 suites)</span>
         <span class="badge badge-gray">regression/suites/ (CSV test cases)</span>
         <span class="badge badge-gray">.claude/agents/ (agent definitions)</span>
-        <span class="badge badge-gray">agents/knowledge/ (12 knowledge files)</span>
-        <span class="badge badge-gray">.claude/skills/ (18 methodology skills)</span>
+        <span class="badge badge-gray">agents/knowledge/ (23 knowledge files)</span>
+        <span class="badge badge-gray">.claude/skills/ (20 methodology skills)</span>
       </div>
     </div>
   </div>
@@ -484,7 +484,7 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 5: BY THE NUMBERS ========== -->
 <div class="slide" id="s5">
-  <div class="slide-num">5 / 18</div>
+  <div class="slide-num">5 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">System Scale</div>
     <h2>Agentic QA at a Glance</h2>
@@ -495,15 +495,15 @@ cart icon shows correct item count."</pre>
         <div class="stat-label">Specialized AI Agents<br>(10 QA + 4 BA)</div>
       </div>
       <div class="stat">
-        <div class="stat-num">36</div>
-        <div class="stat-label">Test Suites<br>(15 frontend + 21 backend)</div>
+        <div class="stat-num">97</div>
+        <div class="stat-label">Test Suites<br>(45 frontend + 52 backend)</div>
       </div>
       <div class="stat">
-        <div class="stat-num">1,546</div>
-        <div class="stat-label">Test Cases<br>(643 frontend + 903 backend)</div>
+        <div class="stat-num">~3,000</div>
+        <div class="stat-label">Test Cases<br>(~1,500 frontend + ~1,500 backend)</div>
       </div>
       <div class="stat">
-        <div class="stat-num">9</div>
+        <div class="stat-num">10</div>
         <div class="stat-label">MCP Server Integrations<br>(browsers + Figma + Azure + …)</div>
       </div>
     </div>
@@ -511,11 +511,11 @@ cart icon shows correct item count."</pre>
     <div class="cols-2 mt24" style="gap:16px;">
       <div class="card green" style="padding:16px 20px;">
         <div style="font-size:13px; color:var(--green); font-weight:600; margin-bottom:8px;">🧠 Intelligence Layer</div>
-        <div style="font-size:14px; color:var(--text-2);">18 methodology skills (ISTQB · WCAG · SBTM) · 12 shared knowledge files · BL-* business rules enforcement</div>
+        <div style="font-size:14px; color:var(--text-2);">20 methodology skills (ISTQB · WCAG · SBTM) · 23 shared knowledge files · BL-* business rules enforcement</div>
       </div>
       <div class="card blue" style="padding:16px 20px;">
         <div style="font-size:13px; color:var(--blue); font-weight:600; margin-bottom:8px;">🔄 Coverage Selection</div>
-        <div style="font-size:14px; color:var(--text-2);"><span class="badge badge-accent">smoke</span> 12 tests &nbsp;<span class="badge badge-blue">critical</span> ~120 tests &nbsp;<span class="badge badge-green">sprint</span> ~800 tests &nbsp;<span class="badge badge-gray">full</span> ~1,546 tests</div>
+        <div style="font-size:14px; color:var(--text-2);"><span class="badge badge-accent">smoke</span> ~140 tests &nbsp;<span class="badge badge-blue">critical</span> ~230 tests &nbsp;<span class="badge badge-green">sprint</span> plan-driven (~2,700) &nbsp;<span class="badge badge-gray">full</span> ~3,000 tests</div>
       </div>
     </div>
   </div>
@@ -523,7 +523,7 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 6: AGENT TEAMS ========== -->
 <div class="slide" id="s6">
-  <div class="slide-num">6 / 18</div>
+  <div class="slide-num">6 / 22</div>
   <div class="slide-inner" style="padding:28px 36px 20px;">
     <div class="eyebrow">Agent Teams</div>
     <h2 style="margin-bottom:16px;">14 Specialized Agents — Four-Layer Architecture</h2>
@@ -538,7 +538,7 @@ cart icon shows correct item count."</pre>
         </div>
         <div class="card" style="padding:14px 16px; border-left:3px solid #6B7BB8;">
           <div style="font-size:14px; font-weight:700; color:#3D4B8A; margin-bottom:4px;">regression-orchestrator</div>
-          <div style="font-size:13px; color:var(--text-2);">36-suite parallel runs · browser pool · retry & fallback</div>
+          <div style="font-size:13px; color:var(--text-2);">97-suite parallel runs · browser pool · retry & fallback</div>
         </div>
         <div class="card" style="padding:14px 16px; border-left:3px solid #6B7BB8;">
           <div style="font-size:14px; font-weight:700; color:#3D4B8A; margin-bottom:4px;">autonomous-orchestrator</div>
@@ -583,10 +583,10 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 7: COMMANDS ========== -->
 <div class="slide" id="s7">
-  <div class="slide-num">7 / 18</div>
+  <div class="slide-num">7 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">One-Command Interface</div>
-    <h2>10 Slash Commands — Full QA Lifecycle from the IDE</h2>
+    <h2>16 Slash Commands — Full QA Lifecycle from the IDE</h2>
     <div class="sub" style="margin-bottom:18px;">Type a command in VS Code or Cursor — the system does the rest. No scripts, no dashboards, no context switching.</div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
@@ -602,7 +602,7 @@ cart icon shows correct item count."</pre>
       </div>
       <div class="card" style="padding:18px 20px;">
         <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px;">/qa-regression sprint</div>
-        <div style="font-size:14px; color:var(--text-2);">26 suites · ~800 tests · 3 browsers in parallel</div>
+        <div style="font-size:14px; color:var(--text-2);">Plan-driven (~88 suites · ~2,700 tests) · 3 browsers in parallel</div>
         <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Also: smoke · critical · full · custom IDs</div>
       </div>
     </div>
@@ -626,12 +626,44 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 8: POWER FEATURE 1 — MCP ========== -->
+<!-- ========== SLIDE 8: PIPELINE & QUALITY COMMANDS ========== -->
 <div class="slide" id="s8">
-  <div class="slide-num">8 / 18</div>
+  <div class="slide-num">8 / 22</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Pipeline & Quality Commands</div>
+    <h2>Test Lifecycle, Design Audit, Fix Verification</h2>
+    <div class="sub" style="margin-bottom:18px;">Three commands that round out the QA cycle — keeping suites in sync with code, catching design bugs in both Storybook and the live storefront, and closing the loop on every bug fix.</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+      <div class="card accent" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--accent); margin-bottom:6px;">/qa-test-lifecycle</div>
+        <div style="font-size:14px; color:var(--text-2);">Unified pipeline for a suite, domain, ticket, PR, module, or diff</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">scope → sync stale → analyze gaps → generate → review → fix → verify → approve</div>
+      </div>
+      <div class="card blue" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--blue); margin-bottom:6px;">/qa-design</div>
+        <div style="font-size:14px; color:var(--text-2);">Dual Storybook + Storefront BL-UI audit</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Catches isolation-only vs integration-only bugs · matrix-driven scope with heuristic fallback</div>
+      </div>
+      <div class="card green" style="padding:18px 20px;">
+        <div style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--green); margin-bottom:6px;">/qa-verify-fix VCST-XXXX</div>
+        <div style="font-size:14px; color:var(--text-2);">Verify a bug fix end-to-end</div>
+        <div style="font-size:13px; color:var(--text-3); margin-top:6px;">Fetch ticket → reproduce STR → confirm fix → regression checks → transition JIRA</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px 20px; margin-top:18px;">
+      <div style="font-size:13.5px; color:var(--text-2);"><strong>Why these matter:</strong> <code>/qa-test-lifecycle</code> keeps the test suite in sync with code changes — no more stale Steps or Assertions after a PR merges. <code>/qa-design</code> spots bugs that hide either in component isolation or only at integration. <code>/qa-verify-fix</code> closes the feedback loop with developers and JIRA — verified fixes ship, regressions stay caught.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 9: POWER FEATURE 1 — MCP ========== -->
+<div class="slide" id="s9">
+  <div class="slide-num">9 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #1</div>
-    <h2>9 MCP Servers — Claude's Eyes, Hands & Memory</h2>
+    <h2>10 MCP Servers — Claude's Eyes, Hands & Memory</h2>
     <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; margin-bottom:16px; padding:14px 18px; background:var(--code-bg); border:1px solid var(--border); border-radius:10px;">
       <div style="text-align:center; flex-shrink:0; padding:0 4px;">
         <div style="font-size:20px;">👨‍💻</div>
@@ -647,7 +679,7 @@ cart icon shows correct item count."</pre>
       </div>
       <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">↔</div>
       <div style="background:var(--blue-soft); border:1.5px solid rgba(41,89,168,0.25); border-radius:10px; padding:10px 14px; text-align:center; flex:1; min-width:0;">
-        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.04em;">9 MCP SERVERS</div>
+        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.04em;">10 MCP SERVERS</div>
         <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center;">
           <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">playwright ×3</span>
           <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">DevTools</span>
@@ -656,6 +688,7 @@ cart icon shows correct item count."</pre>
           <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">postman</span>
           <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">context7</span>
           <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">azure</span>
+          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">atlassian</span>
         </div>
         <div style="font-size:10px; color:var(--text-3); margin-top:6px;">Claude's eyes, hands &amp; memory</div>
       </div>
@@ -699,9 +732,9 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 9: POWER FEATURE 2 — SELF-HEALING ========== -->
-<div class="slide" id="s9">
-  <div class="slide-num">9 / 18</div>
+<!-- ========== SLIDE 10: POWER FEATURE 2 — BUSINESS RULES ========== -->
+<div class="slide" id="s10">
+  <div class="slide-num">10 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #2</div>
     <h2>Business Rules & Edge Case Libraries</h2>
@@ -756,9 +789,9 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 10: POWER FEATURE 3 — PARALLEL REGRESSION ========== -->
-<div class="slide" id="s10">
-  <div class="slide-num">10 / 18</div>
+<!-- ========== SLIDE 11: POWER FEATURE 3 — PARALLEL REGRESSION ========== -->
+<div class="slide" id="s11">
+  <div class="slide-num">11 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #3</div>
     <h2>Parallel Regression with Automated Quality Gates</h2>
@@ -797,19 +830,19 @@ cart icon shows correct item count."</pre>
           <tr><th>Selection</th><th>Suites</th><th>Tests</th><th>Use Case</th></tr>
           <tr>
             <td><span class="badge badge-accent">smoke</span></td>
-            <td>1</td><td>~12</td><td>Daily pre-deploy</td>
+            <td>2</td><td>~140</td><td>Daily pre-deploy</td>
           </tr>
           <tr>
             <td><span class="badge badge-blue">critical</span></td>
-            <td>4 (P0)</td><td>~120</td><td>Pre-release P0 gate</td>
+            <td>5 (P0)</td><td>~230</td><td>Pre-release P0 gate</td>
           </tr>
           <tr>
             <td><span class="badge badge-green">sprint</span></td>
-            <td>26</td><td>~800</td><td>Sprint release gate</td>
+            <td>~88 (plan-driven)</td><td>~2,700</td><td>Sprint release gate</td>
           </tr>
           <tr>
             <td><span class="badge badge-gray">full</span></td>
-            <td>36</td><td>~1,546</td><td>Production release</td>
+            <td>97</td><td>~3,000</td><td>Production release</td>
           </tr>
         </table>
       </div>
@@ -837,9 +870,9 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 11: POWER FEATURE 4 — CI/CD ========== -->
-<div class="slide" id="s11">
-  <div class="slide-num">11 / 18</div>
+<!-- ========== SLIDE 12: POWER FEATURE 4 — CI/CD ========== -->
+<div class="slide" id="s12">
+  <div class="slide-num">12 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">CI/CD Pipeline · Planned</div>
     <h2>Full CI/CD Automation Pipeline</h2>
@@ -871,11 +904,11 @@ Teams Adaptive Card notification → QA channel</pre>
         <div class="cols-2" style="gap:12px;">
           <div class="card" style="padding:12px 14px;">
             <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Daily Smoke</div>
-            <div style="font-size:13px;">Mon–Fri 6:00 AM UTC<br>Suite 01 · $5 budget</div>
+            <div style="font-size:13px;">Mon–Fri 6:00 AM UTC<br>Suite 042 · $5 budget</div>
           </div>
           <div class="card" style="padding:12px 14px;">
             <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Weekly Full</div>
-            <div style="font-size:13px;">Sunday 2:00 AM UTC<br>All 36 suites · $80</div>
+            <div style="font-size:13px;">Sunday 2:00 AM UTC<br>All 97 suites · $80</div>
           </div>
         </div>
       </div>
@@ -903,16 +936,16 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 12: KNOWLEDGE + SKILLS — POWER FEATURE #5 ========== -->
-<div class="slide" id="s12">
-  <div class="slide-num">12 / 18</div>
+<!-- ========== SLIDE 13: KNOWLEDGE + SKILLS — POWER FEATURE #5 ========== -->
+<div class="slide" id="s13">
+  <div class="slide-num">13 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #5</div>
-    <h2>Shared Knowledge + 18 Methodology Skills</h2>
+    <h2>Shared Knowledge + 20 Methodology Skills</h2>
 
     <div class="cols-2 mt16">
       <div>
-        <h3 style="margin-bottom:14px;">12 Shared Knowledge Files</h3>
+        <h3 style="margin-bottom:14px;">23 Shared Knowledge Files</h3>
         <p style="font-size:14px; color:var(--text-2); margin-bottom:16px;">All QA agents consult these files simultaneously. Update once — all agents benefit.</p>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <div class="card" style="padding:12px 14px;">
@@ -939,10 +972,10 @@ docker run --env-file .env \
       </div>
 
       <div>
-        <h3 style="margin-bottom:14px;">18 Skills — Encoded Methodology</h3>
+        <h3 style="margin-bottom:14px;">20 Skills — Encoded Methodology</h3>
         <div class="card accent" style="padding:14px 16px; margin-bottom:10px;">
-          <div style="font-size:13px; font-weight:600; margin-bottom:6px;">🧪 Testing Skills (8)</div>
-          <div style="font-size:13px; color:var(--text-2);">Storybook · Accessibility (WCAG) · Design review · Test plans · Checklists · API testing · Coverage gap · Seed data</div>
+          <div style="font-size:13px; font-weight:600; margin-bottom:6px;">🧪 Testing Skills (10)</div>
+          <div style="font-size:13px; color:var(--text-2);">Storybook · Accessibility (WCAG) · Design review · Test plans · Checklists · API testing · Postman authoring · Coverage gap · Seed data · Test-case review</div>
         </div>
         <div class="card blue" style="padding:14px 16px; margin-bottom:10px;">
           <div style="font-size:13px; font-weight:600; color:var(--blue); margin-bottom:6px;">📐 QA Methodology Skills (9)</div>
@@ -957,9 +990,203 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 13: TEST CASE GENERATION ========== -->
-<div class="slide" id="s13">
-  <div class="slide-num">13 / 18</div>
+<!-- ========== SLIDE 14: GRAPHQL SCHEMA + RUNNER-NATIVE TESTS ========== -->
+<div class="slide" id="s14">
+  <div class="slide-num">14 / 22</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Knowledge File · Runner Contract</div>
+    <h2>GraphQL xAPI — Schema Truth + Runner-Native Tests</h2>
+    <div class="sub" style="margin-bottom:18px;">Two knowledge files plus a canonical runner turn the xAPI GraphQL surface into deterministic, schema-validated CSV test cases — no custom JS scripts needed.</div>
+
+    <div class="cols-2 mt16" style="gap:18px;">
+      <div>
+        <div class="card blue" style="padding:14px 16px; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:6px;">📐 knowledge/graphql-schema.md</div>
+          <div style="font-size:13px; color:var(--text-2);">Live introspection snapshot of the xAPI GraphQL schema — queries, mutations, input types, return types. <strong>Every agent that writes or reviews a GraphQL query consults this first</strong> to avoid invented field names.</div>
+        </div>
+        <div class="card accent" style="padding:14px 16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:6px;">📋 knowledge/graphql-test-cases-runner.md</div>
+          <div style="font-size:13px; color:var(--text-2);">Canonical authoring contract for runner-native GraphQL CSV cases. Full tag grammar, predicate shapes, capture chaining, common failure modes, authoring checklist + worked example.</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:10px;">Tag Grammar (consumed by the runner)</h3>
+        <div class="card" style="padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--text-2);">
+          <div><span style="color:var(--accent); font-weight:700;">Steps:</span> [AUTH] · [GQL-OP] · [GQL-VARS]</div>
+          <div style="padding-left:50px;">[GQL-EXEC] · [GQL-CAPTURE]</div>
+          <div style="padding-left:50px;">[REST-OP] · [REST-EXEC] · [REST-CAPTURE]</div>
+          <div style="margin-top:6px;"><span style="color:var(--blue); font-weight:700;">Assertions:</span> [ERRORS] · [DATA] · [NULL]</div>
+          <div style="padding-left:96px;">[COUNT] · [VAR]</div>
+          <div style="margin-top:6px;"><span style="color:var(--green); font-weight:700;">Filters:</span> getByPath syntax · arithmetic</div>
+          <div style="padding-left:60px;">cross-path · OR-AND predicates</div>
+        </div>
+
+        <div class="card green" style="padding:12px 14px; margin-top:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--green); margin-bottom:4px;">🛠 scripts/graphql-runner.ts</div>
+          <div style="font-size:12.5px; color:var(--text-2);">Canonical runner — does schema validation, var substitution, @td() resolution, evidence capture. <strong>Never write custom JS to execute GraphQL CSV cases.</strong></div>
+          <pre style="margin-top:6px; padding:6px 8px; font-size:11px;">npx tsx scripts/graphql-runner.ts --case &lt;csv&gt;:&lt;ID&gt;</pre>
+        </div>
+
+        <div class="card" style="padding:10px 14px; margin-top:10px; background:rgba(46,125,90,0.06); border-color:rgba(46,125,90,0.2);">
+          <div style="font-size:12px; color:var(--green);"><strong>Gold-standard reference:</strong> <code>050i-graphql-configurations.csv</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 15: LIVE TEST-DATA DISCOVERY ========== -->
+<div class="slide" id="s15">
+  <div class="slide-num">15 / 22</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Knowledge File · Runtime Helpers</div>
+    <h2>Live Test-Data Discovery — No Hardcoded IDs</h2>
+    <div class="sub" style="margin-bottom:18px;">Catalogs get reseeded. B2B orgs get re-created. Virtual-catalog roots migrate. Hardcoded IDs and SKUs rot fast. Live discovery resolves entities at runtime against the actual env.</div>
+
+    <div class="cols-2 mt16" style="gap:18px;">
+      <div>
+        <div class="card accent" style="padding:14px 16px; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:6px;">📖 knowledge/live-discovery.md</div>
+          <div style="font-size:13px; color:var(--text-2);">Decision tree + recipes: when to pick <code>{{VAR}}</code> vs <code>@td()</code> vs <code>live-discover</code> vs <code>random-data</code>. Covers parallel-run isolation against the agent user pool and AGENT-TEST-* cleanup conventions.</div>
+        </div>
+
+        <h3 style="margin-bottom:10px;">Four Data Layers</h3>
+        <table style="font-size:12px;">
+          <tr><th>Layer</th><th>Source</th><th>Use for</th></tr>
+          <tr><td><code>{{VAR}}</code></td><td><code>.env</code> (33 vars)</td><td>URLs, creds, env context</td></tr>
+          <tr><td><code>@td()</code></td><td><code>aliases.json</code> + CSV</td><td>Named entities you assert by name</td></tr>
+          <tr><td><code>live-discover</code></td><td>xAPI at runtime</td><td>"First available product" — shape, not value</td></tr>
+          <tr><td><code>random-data</code></td><td>Zero-dep generators</td><td>Unique inputs (emails, comments, qtys)</td></tr>
+        </table>
+      </div>
+
+      <div>
+        <div class="card blue" style="padding:14px 16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:6px;">🛠 scripts/lib/live-discover.ts</div>
+          <div style="font-size:13px; color:var(--text-2);">Typed xAPI primitives — catalog root, products by filter, addresses, cart state, active coupons. Returns a real entity from the current environment, never a hardcoded ID.</div>
+        </div>
+
+        <div class="card green" style="padding:14px 16px; margin-top:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--green); margin-bottom:6px;">🎲 scripts/lib/random-data.ts</div>
+          <div style="font-size:13px; color:var(--text-2);">Zero-dep generators: emails, org names, SKUs, quantities, comments. Defaults to the <code>AGENT-TEST-{date}</code> prefix so <code>/qa-seed-data teardown</code> sweeps them safely.</div>
+        </div>
+
+        <div class="card" style="padding:12px 14px; margin-top:12px; background:rgba(176,58,58,0.05); border-color:rgba(176,58,58,0.2);">
+          <div style="font-size:12px; color:#8B3A3A;"><strong>Anti-pattern:</strong> hardcoding a product GUID or SKU in <code>Test_Data</code>. A literal that isn't <code>{{VAR}}</code> or <code>@td()</code> is a review failure (Dimension 6 — Data Validity).</div>
+        </div>
+
+        <div class="card" style="padding:10px 14px; margin-top:10px;">
+          <pre style="margin:0; font-size:11px;"># CSV-runner recipe — discover then capture
+[GQL-OP] products(filter: "category.subtree:@td(...)")
+[GQL-CAPTURE] $firstProduct = data.products.items[0].id</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 16: TEST RUNNER TAGS + @td() RESOLVER ========== -->
+<div class="slide" id="s16">
+  <div class="slide-num">16 / 22</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Knowledge File · Resolver</div>
+    <h2>Test Runner Tags + <code>@td()</code> Resolver</h2>
+    <div class="sub" style="margin-bottom:18px;">Two knowledge files plus a resolver and validator turn CSV rows into deterministic, executable test cases — interpretable by both the standard and autonomous test runners.</div>
+
+    <div class="cols-2 mt16" style="gap:18px;">
+      <div>
+        <div class="card accent" style="padding:14px 16px; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:6px;">🏷️ knowledge/test-runner-tags.md</div>
+          <div style="font-size:13px; color:var(--text-2);">Shared CSV column / step / assertion / cross-layer tag reference for browser-mode tests. Consumed by <code>test-runner-agent</code> and <code>autonomous-test-runner</code> alike.</div>
+        </div>
+
+        <h3 style="margin-bottom:10px;">Tag Categories</h3>
+        <div class="card" style="padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--text-2);">
+          <div><span style="color:var(--accent); font-weight:700;">Step tags:</span></div>
+          <div style="padding-left:14px;">[NAV] · [ACT] · [WAIT] · [LOGIN] · [SETUP]</div>
+          <div style="margin-top:6px;"><span style="color:var(--blue); font-weight:700;">Assertion tags:</span></div>
+          <div style="padding-left:14px;">[DOM] · [STATE] · [MATH] · [API] · [CONSOLE]</div>
+          <div style="margin-top:6px;"><span style="color:var(--green); font-weight:700;">Cross-layer:</span></div>
+          <div style="padding-left:14px;">[HAR] · [SCREEN] · [PERF]</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card blue" style="padding:14px 16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:6px;">🔗 <code>@td(ALIAS.field)</code> resolver</div>
+          <div style="font-size:13px; color:var(--text-2);">Test data is resolved at runtime, never hardcoded. The resolver reads from <code>test-data/aliases.json</code> → CSV rows in <code>test-data/</code>. Catalogs reseed, IDs change — the alias stays stable; one CSV update propagates to every consumer.</div>
+        </div>
+
+        <div class="card" style="padding:12px 14px; margin-top:12px;">
+          <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:6px;">Implementation</div>
+          <pre style="margin:0; font-size:11px;">scripts/lib/test-data-resolver.ts   (resolver)
+test-data/aliases.json              (registry, _meta.version)
+test-data/*.csv                     (entity rows)</pre>
+        </div>
+
+        <div class="card green" style="padding:12px 14px; margin-top:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--green); margin-bottom:4px;">✅ Validation</div>
+          <div style="font-size:12.5px; color:var(--text-2);">Every <code>@td()</code> reference is verified before a run.</div>
+          <pre style="margin-top:6px; padding:6px 8px; font-size:11px;">npx tsx scripts/validate-td-refs.ts</pre>
+          <div style="font-size:12px; color:var(--text-2); margin-top:6px;">The <code>graphql-runner.ts</code> rejects unresolved tokens at lint time.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 17: CRITICAL UI SCOPE — LAYOUT STABILITY ========== -->
+<div class="slide" id="s17">
+  <div class="slide-num">17 / 22</div>
+  <div class="slide-inner">
+    <div class="eyebrow">Knowledge File · Layout Helpers</div>
+    <h2>Critical UI Scope — Regression-Enforced Component Checklist</h2>
+    <div class="sub" style="margin-bottom:18px;">A 7×8 matrix that pins down exactly which BL-UI invariants apply to which component on which page. A validator and a layout-measurement helper keep the matrix from drifting silently.</div>
+
+    <div class="cols-65-35 mt16" style="gap:18px;">
+      <div>
+        <div class="card accent" style="padding:14px 16px; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:6px;">🎯 knowledge/critical-ui-scope.md</div>
+          <div style="font-size:13px; color:var(--text-2);">Regression-enforced checklist of <strong>7 components × 8 pages</strong> with applicable <code>BL-UI-*</code> invariants per cell.</div>
+        </div>
+
+        <table style="font-size:12px;">
+          <tr><th>Components (7)</th><th>Pages (8)</th></tr>
+          <tr>
+            <td style="vertical-align:top;">VcButton · VcProductCard<br>VcLineItem · VcTable<br>VcDialog · Popover<br>VcSidebar</td>
+            <td style="vertical-align:top;"><code>/</code> · <code>/catalog</code> · PDP<br><code>/cart</code> · <code>/account/orders</code><br><code>/account/lists</code><br><code>/company/members</code><br><code>/company/info</code></td>
+          </tr>
+        </table>
+
+        <div class="card blue" style="padding:12px 14px; margin-top:12px;">
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:4px;">BL-UI-001..010 invariants</div>
+          <div style="font-size:12.5px; color:var(--text-2);">Focus-ring visibility · hover state · disabled state · loading skeleton · layout stability under data · empty state · error state · keyboard nav.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card green" style="padding:14px 16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--green); margin-bottom:6px;">🛠 scripts/lib/measure-layout.ts</div>
+          <div style="font-size:13px; color:var(--text-2);">Layout-measurement helper used by BL-UI tests. Measures dimensions, position deltas, CLS contributions per component.</div>
+        </div>
+
+        <div class="card" style="padding:14px 16px; margin-top:12px;">
+          <div style="font-size:13px; font-weight:700; margin-bottom:6px;">Coverage suite</div>
+          <div style="font-size:13px; color:var(--text-2);"><code>048b-layout-stability.csv</code><br><span style="font-size:12px; color:var(--text-3);">selection: <code>layout-stability</code></span></div>
+        </div>
+
+        <div class="card" style="padding:12px 14px; margin-top:12px; background:rgba(176,58,58,0.05); border-color:rgba(176,58,58,0.2);">
+          <div style="font-size:12px; color:#8B3A3A;"><strong>Enforcement:</strong> <code>npm run scope:validate</code> exits non-zero if any covered matrix cell points at a missing test ID.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 18: TEST CASE GENERATION ========== -->
+<div class="slide" id="s18">
+  <div class="slide-num">18 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">AI-Generated Test Cases</div>
     <h2>/qa-test-cases-generator — From Ticket to Test Suite Automatically</h2>
@@ -1000,9 +1227,9 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 14: TEST DATA GENERATION ========== -->
-<div class="slide" id="s14">
-  <div class="slide-num">14 / 18</div>
+<!-- ========== SLIDE 19: TEST DATA GENERATION ========== -->
+<div class="slide" id="s19">
+  <div class="slide-num">19 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Test Infrastructure</div>
     <h2>/qa-seed-data — Full Test Environment in One Command</h2>
@@ -1056,9 +1283,9 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 15: LIVE FLOW — QA-TEST ========== -->
-<div class="slide" id="s15">
-  <div class="slide-num">15 / 18</div>
+<!-- ========== SLIDE 20: LIVE FLOW — QA-TEST ========== -->
+<div class="slide" id="s20">
+  <div class="slide-num">20 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">End-to-End Flow</div>
     <h2>/qa-test VCST-XXXX — From Ticket to Verdict</h2>
@@ -1104,9 +1331,9 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 16: BENEFITS & IMPACT ========== -->
-<div class="slide" id="s16">
-  <div class="slide-num">16 / 18</div>
+<!-- ========== SLIDE 21: BENEFITS & IMPACT ========== -->
+<div class="slide" id="s21">
+  <div class="slide-num">21 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Value Delivered</div>
     <h2>Strong Sides of AI-Driven Testing</h2>
@@ -1120,7 +1347,7 @@ docker run --env-file .env \
       <div class="card accent" style="padding:16px 18px;">
         <div style="font-size:20px; margin-bottom:8px;">⚡</div>
         <h3>Speed at Scale</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">3 browsers run in parallel. A full sprint regression of ~800 tests runs automatically — no manual coordination.</p>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">3 browsers run in parallel. A full sprint regression of ~2,700 tests runs automatically — no manual coordination.</p>
       </div>
       <div class="card blue" style="padding:16px 18px;">
         <div style="font-size:20px; margin-bottom:8px;">🧠</div>
@@ -1140,7 +1367,7 @@ docker run --env-file .env \
       <div class="card" style="padding:16px 18px;">
         <div style="font-size:20px; margin-bottom:8px;">📐</div>
         <h3>Methodology Built-in</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">18 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD. Best practices are the default, not optional.</p>
+        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">20 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD. Best practices are the default, not optional.</p>
       </div>
     </div>
 
@@ -1163,9 +1390,9 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 17: ROADMAP ========== -->
-<div class="slide" id="s17">
-  <div class="slide-num">17 / 18</div>
+<!-- ========== SLIDE 22: ROADMAP ========== -->
+<div class="slide" id="s22">
+  <div class="slide-num">22 / 22</div>
   <div class="slide-inner">
     <div class="eyebrow">Future Development</div>
     <h2>Roadmap — What's Next for Agentic QA</h2>
@@ -1259,125 +1486,12 @@ docker run --env-file .env \
   </div>
 </div>
 
-<!-- ========== SLIDE 18: RAG + VECTOR SEARCH (PLANNED) ========== -->
-<div class="slide" id="s18">
-  <div class="slide-num">18 / 18</div>
-  <div class="slide-inner">
-    <div class="eyebrow">Future Architecture · Planned</div>
-    <h2>RAG + Vector Search — Scalable Agent Memory</h2>
-    <div class="sub" style="margin-bottom:18px;">Replace static knowledge file loading with semantic retrieval — agents query a vector store and receive only what's relevant, cutting token waste and enabling test intelligence at scale.</div>
-
-    <div class="cols-2">
-      <div>
-        <h3 style="margin-bottom:12px;">The Problem: Static Context Loading</h3>
-        <div class="compare-col old" style="margin-bottom:16px; padding:14px 16px;">
-          <ul class="checklist" style="gap:5px;">
-            <li class="bad" style="font-size:13px;">12 knowledge files injected into every agent — ~100 KB per call</li>
-            <li class="bad" style="font-size:13px;">BL-* pricing rules loaded even when testing auth flows</li>
-            <li class="bad" style="font-size:13px;">1,546 test cases in CSV — no semantic search across them</li>
-            <li class="bad" style="font-size:13px;">Bug deduplication is manual — agents can't check past reports</li>
-            <li class="bad" style="font-size:13px;">Knowledge grows → context bloat → higher cost, slower reasoning</li>
-          </ul>
-        </div>
-
-        <div class="card blue" style="padding:10px 14px; margin-top:0;">
-          <div style="font-size:12.5px; color:var(--blue);"><strong>Context7 is already RAG</strong> — <code>/vc-docs</code> does semantic retrieval over live VC documentation. The full RAG layer extends this pattern to all internal knowledge.</div>
-        </div>
-      </div>
-
-      <div>
-        <h3 style="margin-bottom:12px;">Value Delivered</h3>
-        <div class="timeline">
-          <div class="tl-item">
-            <div class="tl-dot blue"></div>
-            <div class="tl-content">
-              <h4>Focused context → lower token cost</h4>
-              <p>Agent receives 3–5 relevant BL-* rules instead of 80+. Less noise, sharper reasoning. Token budget goes further per run.</p>
-            </div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-dot"></div>
-            <div class="tl-content">
-              <h4>Test case deduplication</h4>
-              <p><code>/qa-test-cases-generator</code> queries the vector store before writing — surfaces semantically similar existing cases, prevents duplicate coverage.</p>
-            </div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-dot"></div>
-            <div class="tl-content">
-              <h4>Bug similarity search</h4>
-              <p>Before filing a JIRA ticket, agent checks embeddings of past bug reports — eliminates duplicates and auto-links related issues.</p>
-            </div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-dot green"></div>
-            <div class="tl-content">
-              <h4>Smart test impact analysis</h4>
-              <p>Embed git diff → semantic match against test cases → auto-select the right regression scope. No manual suite mapping needed.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="padding:14px 16px; margin-top:12px;">
-          <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.06em;">Static Loading vs RAG — Context Efficiency</div>
-          <!-- Context size bar -->
-          <div style="margin-bottom:10px;">
-            <div style="font-size:11px; color:var(--text-3); margin-bottom:5px;">Context size per agent call</div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-              <div style="width:44px; font-size:10px; color:#B03A3A; text-align:right; flex-shrink:0; font-weight:600;">Static</div>
-              <div style="flex:1; height:18px; background:rgba(176,58,58,0.12); border-radius:4px; position:relative; overflow:visible;">
-                <div style="width:100%; height:100%; background:rgba(176,58,58,0.35); border-radius:4px;"></div>
-                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:10px; color:#B03A3A; font-weight:700; white-space:nowrap;">~100 KB always</span>
-              </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <div style="width:44px; font-size:10px; color:var(--green); text-align:right; flex-shrink:0; font-weight:600;">RAG</div>
-              <div style="flex:1; height:18px; background:var(--green-soft); border-radius:4px; position:relative;">
-                <div style="width:5%; height:100%; background:rgba(46,125,90,0.4); border-radius:4px;"></div>
-                <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--green); font-weight:700;">~5 KB relevant</span>
-              </div>
-            </div>
-          </div>
-          <!-- BL-* rules bar -->
-          <div style="margin-bottom:10px;">
-            <div style="font-size:11px; color:var(--text-3); margin-bottom:5px;">BL-* rules loaded per agent</div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-              <div style="width:44px; font-size:10px; color:#B03A3A; text-align:right; flex-shrink:0; font-weight:600;">Static</div>
-              <div style="flex:1; height:18px; background:rgba(176,58,58,0.12); border-radius:4px; position:relative; overflow:visible;">
-                <div style="width:100%; height:100%; background:rgba(176,58,58,0.35); border-radius:4px;"></div>
-                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:10px; color:#B03A3A; font-weight:700;">80+ rules (all domains)</span>
-              </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <div style="width:44px; font-size:10px; color:var(--green); text-align:right; flex-shrink:0; font-weight:600;">RAG</div>
-              <div style="flex:1; height:18px; background:var(--green-soft); border-radius:4px; position:relative;">
-                <div style="width:6%; height:100%; background:rgba(46,125,90,0.4); border-radius:4px;"></div>
-                <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--green); font-weight:700;">3–5 relevant rules</span>
-              </div>
-            </div>
-          </div>
-          <!-- Dedup row -->
-          <div style="display:flex; gap:6px; align-items:stretch;">
-            <div style="flex:1; padding:6px 10px; background:rgba(176,58,58,0.06); border:1px solid rgba(176,58,58,0.2); border-radius:6px; font-size:11px; text-align:center; color:#B03A3A;">Duplicate tests<br>manual check</div>
-            <div style="display:flex; align-items:center; color:var(--accent); font-size:18px;">→</div>
-            <div style="flex:1; padding:6px 10px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; font-size:11px; text-align:center; color:var(--green);">Auto-detected by<br>vector similarity</div>
-            <div style="display:flex; align-items:center; color:var(--text-3); font-size:14px; padding:0 4px;">·</div>
-            <div style="flex:1; padding:6px 10px; background:rgba(176,58,58,0.06); border:1px solid rgba(176,58,58,0.2); border-radius:6px; font-size:11px; text-align:center; color:#B03A3A;">Duplicate bugs<br>engineer effort</div>
-            <div style="display:flex; align-items:center; color:var(--accent); font-size:18px;">→</div>
-            <div style="flex:1; padding:6px 10px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:6px; font-size:11px; text-align:center; color:var(--green);">Zero — embedding<br>auto-links issues</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 </div><!-- /.deck -->
 
 <!-- ===== Navigation ===== -->
 <div class="nav">
   <button onclick="go(-1)" title="Previous (←)">‹</button>
-  <span id="counter">1 / 18</span>
+  <span id="counter">1 / 22</span>
 
   <button onclick="go(1)" title="Next (→)">›</button>
 </div>

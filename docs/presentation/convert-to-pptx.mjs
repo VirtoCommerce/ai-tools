@@ -62,12 +62,12 @@ function addEyebrow(slide, text, opts = {}) {
     { text: "AI-Driven Testing", options: { fontSize: 44, bold: true, color: COLORS.accent, fontFace: "Segoe UI" } },
   ], { x: 0.7, y: 1.5, w: 10, h: 2.0 });
 
-  slide.addText("Natural language replaces brittle scripts.\n14 specialized agents. 1,546 test cases. Zero code required.", {
+  slide.addText("Natural language replaces brittle scripts.\n14 specialized agents. ~3,000 test cases. Zero code required.", {
     x: 0.7, y: 3.4, w: 8, h: 0.8,
     fontSize: 16, color: "AAAAAA", fontFace: "Segoe UI",
   });
 
-  const tags = ["🤖 14 AI Agents", "🧪 36 Test Suites", "⚡ 3 Parallel Browsers", "🔄 CI/CD (Planned)", "🛡️ Self-Healing"];
+  const tags = ["🤖 14 AI Agents", "🧪 97 Test Suites", "⚡ 3 Parallel Browsers", "🔄 CI/CD (Planned)", "🛡️ Self-Healing"];
   tags.forEach((tag, i) => {
     slide.addText(tag, {
       x: 0.7 + i * 2.3, y: 4.5, w: 2.1, h: 0.45,
@@ -81,7 +81,7 @@ function addEyebrow(slide, text, opts = {}) {
   const info = [
     { label: "PLATFORM", value: "Virto Commerce B2B" },
     { label: "PRESENTATION", value: "~15 minutes" },
-    { label: "DATE", value: "March 2026" },
+    { label: "DATE", value: "May 2026" },
   ];
   slide.addShape(pptx.ShapeType.line, { x: 0.7, y: 5.3, w: 10, h: 0, line: { color: "444444", width: 1 } });
   info.forEach((item, i) => {
@@ -100,7 +100,7 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 2, 18);
+  addSlideNumber(slide, 2, 22);
   addEyebrow(slide, "THE PROBLEM WE SOLVE");
 
   slide.addText("Traditional Automation vs. Agentic QA", {
@@ -182,7 +182,7 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 3, 18);
+  addSlideNumber(slide, 3, 22);
   addEyebrow(slide, "PROJECT OVERVIEW");
 
   slide.addText("What Is the Agentic QA System?", {
@@ -197,7 +197,7 @@ function addEyebrow(slide, text, opts = {}) {
   // Three cards
   const cards = [
     { icon: "🧠", title: "AI-Native", desc: "Tests are plain English prompts executed by Claude through MCP browser tools. The LLM reasons about what to click, what to verify, and what constitutes a bug.", color: COLORS.accentSoft, border: COLORS.accent },
-    { icon: "🏗️", title: "Modular Architecture", desc: "14 specialized agents, 36 CSV test suites, 18 methodology skills, and 12 shared knowledge files — all coordinated by an orchestrator.", color: COLORS.blueSoft, border: COLORS.blue },
+    { icon: "🏗️", title: "Modular Architecture", desc: "14 specialized agents, 97 CSV test suites, 20 methodology skills, and 23 shared knowledge files — all coordinated by an orchestrator.", color: COLORS.blueSoft, border: COLORS.blue },
     { icon: "⚙️", title: "CI Pipeline (Planned)", desc: "GitHub Actions triggers daily smoke tests and weekly full regression. Docker container + Claude Agent SDK run suites headlessly with Teams notifications.", color: COLORS.accentSoft, border: COLORS.accent },
   ];
   cards.forEach((c, i) => {
@@ -234,11 +234,11 @@ function addEyebrow(slide, text, opts = {}) {
     });
   });
 
-  slide.addText("~1,546", {
+  slide.addText("~3,000", {
     x: 10.5, y: 5.1, w: 2, h: 0.6,
     fontSize: 32, bold: true, color: COLORS.accent, fontFace: "Segoe UI", align: "center",
   });
-  slide.addText("test cases across\n36 suites", {
+  slide.addText("test cases across\n97 suites", {
     x: 10.5, y: 5.7, w: 2, h: 0.5,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", align: "center",
   });
@@ -248,7 +248,7 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 4, 18);
+  addSlideNumber(slide, 4, 22);
   addEyebrow(slide, "ARCHITECTURE");
 
   slide.addText("Three Testing Modes, One Foundation", {
@@ -257,7 +257,7 @@ function addEyebrow(slide, text, opts = {}) {
   });
 
   const modes = [
-    { badge: "Interactive", title: "Engineer in IDE", steps: ["Claude Code CLI", "14 Specialized Agents", "9 MCP Servers", "3 Real Browsers"], color: COLORS.accent, bg: COLORS.accentSoft },
+    { badge: "Interactive", title: "Engineer in IDE", steps: ["Claude Code CLI", "14 Specialized Agents", "10 MCP Servers", "3 Real Browsers"], color: COLORS.accent, bg: COLORS.accentSoft },
     { badge: "Agent Teams", title: "Autonomous Regression", steps: ["autonomous-orchestrator", "TeamCreate API", "Token bucket (3+1 slots)", "Exponential backoff"], color: COLORS.blue, bg: COLORS.blueSoft },
     { badge: "CI Pipeline · Planned", title: "GitHub Actions", steps: ["Docker Container", "Claude Agent SDK", "Headless Chromium", "Teams notification"], color: COLORS.accent, bg: COLORS.accentSoft },
   ];
@@ -303,7 +303,7 @@ function addEyebrow(slide, text, opts = {}) {
     x: 0.9, y: 5.6, w: 8, h: 0.3,
     fontSize: 10, bold: true, color: COLORS.text2, fontFace: "Segoe UI", charSpacing: 2,
   });
-  const foundation = ["test-suites.json (36 suites)", "regression/suites/ (CSV)", ".claude/agents/ (definitions)", "knowledge/ (12 files)", ".claude/skills/ (18 skills)"];
+  const foundation = ["test-suites.json (97 suites)", "regression/suites/ (CSV)", ".claude/agents/ (definitions)", "knowledge/ (23 files)", ".claude/skills/ (20 skills)"];
   foundation.forEach((f, i) => {
     slide.addText(f, {
       x: 0.9 + i * 2.35, y: 6.0, w: 2.2, h: 0.3,
@@ -318,7 +318,7 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 5, 18);
+  addSlideNumber(slide, 5, 22);
   addEyebrow(slide, "SYSTEM SCALE");
 
   slide.addText("Agentic QA at a Glance", {
@@ -328,9 +328,9 @@ function addEyebrow(slide, text, opts = {}) {
 
   const stats = [
     { num: "14", label: "Specialized AI Agents\n(10 QA + 4 BA)" },
-    { num: "36", label: "Test Suites\n(15 frontend + 21 backend)" },
-    { num: "1,546", label: "Test Cases\n(643 frontend + 903 backend)" },
-    { num: "9", label: "MCP Server Integrations\n(browsers + Figma + Azure + …)" },
+    { num: "97", label: "Test Suites\n(45 frontend + 52 backend)" },
+    { num: "~3,000", label: "Test Cases\n(~1,500 frontend + ~1,500 backend)" },
+    { num: "10", label: "MCP Server Integrations\n(browsers + Figma + Azure + …)" },
   ];
   stats.forEach((s, i) => {
     const x = 0.7 + i * 3.1;
@@ -357,7 +357,7 @@ function addEyebrow(slide, text, opts = {}) {
     x: 0.9, y: 3.7, w: 5.6, h: 0.3,
     fontSize: 11, bold: true, color: COLORS.green, fontFace: "Segoe UI",
   });
-  slide.addText("18 methodology skills (ISTQB · WCAG · SBTM) · 12 shared knowledge files · BL-* business rules enforcement", {
+  slide.addText("20 methodology skills (ISTQB · WCAG · SBTM) · 23 shared knowledge files · BL-* business rules enforcement", {
     x: 0.9, y: 4.05, w: 5.6, h: 0.6,
     fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
@@ -371,7 +371,7 @@ function addEyebrow(slide, text, opts = {}) {
     x: 7.2, y: 3.7, w: 5.2, h: 0.3,
     fontSize: 11, bold: true, color: COLORS.blue, fontFace: "Segoe UI",
   });
-  slide.addText("smoke: 12 tests  |  critical: ~120 tests  |  sprint: ~800 tests  |  full: ~1,546 tests", {
+  slide.addText("smoke: ~140 tests  |  critical: ~230 tests  |  sprint: plan-driven (~2,700)  |  full: ~3,000 tests", {
     x: 7.2, y: 4.05, w: 5.2, h: 0.6,
     fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
@@ -381,7 +381,7 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 6, 18);
+  addSlideNumber(slide, 6, 22);
   addEyebrow(slide, "AGENT TEAMS");
 
   slide.addText("14 Specialized Agents — Four-Layer Architecture", {
@@ -465,10 +465,10 @@ function addEyebrow(slide, text, opts = {}) {
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 7, 18);
+  addSlideNumber(slide, 7, 22);
   addEyebrow(slide, "ONE-COMMAND INTERFACE");
 
-  slide.addText("10 Slash Commands — Full QA Lifecycle from the IDE", {
+  slide.addText("16 Slash Commands — Full QA Lifecycle from the IDE", {
     x: 0.7, y: 0.85, w: 11, h: 0.5,
     fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
   });
@@ -480,7 +480,7 @@ function addEyebrow(slide, text, opts = {}) {
   const commands = [
     { cmd: "/qa-smoke", desc: "12 P0 tests in 2 parallel tracks", extra: "→ GO / NO-GO in ~15 min", bg: COLORS.accentSoft, cmdColor: COLORS.accent, extraColor: COLORS.green },
     { cmd: "/qa-test VCST-XXXX", desc: "Read JIRA ticket → dispatch agents → file bugs", extra: "Closes the ticket automatically", bg: COLORS.codeBg, cmdColor: COLORS.text },
-    { cmd: "/qa-regression sprint", desc: "26 suites · ~800 tests · 3 browsers in parallel", extra: "Also: smoke · critical · full · custom IDs", bg: COLORS.codeBg, cmdColor: COLORS.text },
+    { cmd: "/qa-regression sprint", desc: "Plan-driven (~88 suites · ~2,700 tests) · 3 browsers in parallel", extra: "Also: smoke · critical · full · custom IDs", bg: COLORS.codeBg, cmdColor: COLORS.text },
     { cmd: "/qa-bug [description]", desc: "Reproduce · HAR + screenshots · file JIRA", extra: "P0–P3 severity + root cause analysis", bg: COLORS.codeBg, cmdColor: COLORS.text },
     { cmd: "/qa-status  auto", desc: "Live dashboard: runs · JIRA queue · env health", extra: "No browser required · read-only", bg: COLORS.blueSoft, cmdColor: COLORS.blue },
     { cmd: "/qa-env-check  auto", desc: "Validate 33 env vars · endpoints · MCP servers", extra: "Run before every presentation", bg: COLORS.greenSoft, cmdColor: COLORS.green },
@@ -510,14 +510,85 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 8: MCP SERVERS ====================
+// ==================== SLIDE 8: PIPELINE & QUALITY COMMANDS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 8, 18);
+  addSlideNumber(slide, 8, 22);
+  addEyebrow(slide, "PIPELINE & QUALITY COMMANDS");
+
+  slide.addText("Test Lifecycle, Design Audit, Fix Verification", {
+    x: 0.7, y: 0.85, w: 11, h: 0.5,
+    fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Three commands that round out the QA cycle — keeping suites in sync with code, catching design bugs in both Storybook and the live storefront, and closing the loop on every bug fix.", {
+    x: 0.7, y: 1.4, w: 11, h: 0.5,
+    fontSize: 14, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  const lifecycleCommands = [
+    {
+      cmd: "/qa-test-lifecycle",
+      desc: "Unified pipeline for a suite, domain, ticket, PR, module, or diff",
+      extra: "scope → sync → analyze → generate → review → fix → verify → approve",
+      bg: COLORS.accentSoft, cmdColor: COLORS.accent,
+    },
+    {
+      cmd: "/qa-design",
+      desc: "Dual Storybook + Storefront BL-UI audit",
+      extra: "Catches isolation-only vs integration-only bugs · matrix-driven scope",
+      bg: COLORS.blueSoft, cmdColor: COLORS.blue,
+    },
+    {
+      cmd: "/qa-verify-fix VCST-XXXX",
+      desc: "Verify a bug fix end-to-end",
+      extra: "Fetch ticket → reproduce STR → confirm fix → regression checks → transition JIRA",
+      bg: COLORS.greenSoft, cmdColor: COLORS.green,
+    },
+  ];
+  lifecycleCommands.forEach((c, i) => {
+    const x = 0.7 + i * 4.0;
+    const y = 2.1;
+    slide.addShape(pptx.ShapeType.roundRect, {
+      x, y, w: 3.7, h: 2.5,
+      fill: { color: c.bg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+    });
+    slide.addText(c.cmd, {
+      x: x + 0.15, y: y + 0.15, w: 3.4, h: 0.35,
+      fontSize: 13, bold: true, color: c.cmdColor, fontFace: "Consolas",
+    });
+    slide.addText(c.desc, {
+      x: x + 0.15, y: y + 0.6, w: 3.4, h: 0.6,
+      fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
+    });
+    slide.addText(c.extra, {
+      x: x + 0.15, y: y + 1.3, w: 3.4, h: 1.0,
+      fontSize: 11, color: COLORS.text3, fontFace: "Segoe UI",
+    });
+  });
+
+  // Bottom rationale bar
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 5.0, w: 11.9, h: 1.4,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText([
+    { text: "Why these matter: ", options: { bold: true, color: COLORS.text } },
+    { text: "/qa-test-lifecycle keeps the test suite in sync with code changes — no more stale Steps or Assertions after a PR merges. /qa-design spots bugs that hide either in component isolation or only at integration. /qa-verify-fix closes the feedback loop with developers and JIRA — verified fixes ship, regressions stay caught.", options: { color: COLORS.text2 } },
+  ], {
+    x: 0.9, y: 5.15, w: 11.5, h: 1.1,
+    fontSize: 12, fontFace: "Segoe UI",
+  });
+}
+
+// ==================== SLIDE 9: MCP SERVERS ====================
+{
+  const slide = pptx.addSlide();
+  slide.background = { fill: COLORS.slideBg };
+  addSlideNumber(slide, 9, 22);
   addEyebrow(slide, "POWER FEATURE #1");
 
-  slide.addText("9 MCP Servers — Claude's Eyes, Hands & Memory", {
+  slide.addText("10 MCP Servers — Claude's Eyes, Hands & Memory", {
     x: 0.7, y: 0.85, w: 11, h: 0.5,
     fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
   });
@@ -528,7 +599,7 @@ function addEyebrow(slide, text, opts = {}) {
     { text: "→", x: 2.3, w: 0.3, bg: null },
     { text: "🧠\nClaude\nReasons · Plans\nExecutes · Judges", x: 2.7, w: 2.0, bg: COLORS.accentSoft },
     { text: "↔", x: 4.8, w: 0.3, bg: null },
-    { text: "9 MCP SERVERS\nplaywright ×3 · DevTools\nfigma · github · postman\ncontext7 · azure", x: 5.2, w: 3.0, bg: COLORS.blueSoft },
+    { text: "10 MCP SERVERS\nplaywright ×3 · DevTools\nfigma · github · postman\ncontext7 · azure · atlassian", x: 5.2, w: 3.0, bg: COLORS.blueSoft },
     { text: "→", x: 8.3, w: 0.3, bg: null },
     { text: "🌐 Chrome\n🦊 Firefox\n⚡ Edge", x: 8.7, w: 1.5, bg: COLORS.codeBg },
     { text: "→", x: 10.3, w: 0.3, bg: null },
@@ -576,11 +647,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 9: BUSINESS RULES ====================
+// ==================== SLIDE 10: BUSINESS RULES ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 9, 18);
+  addSlideNumber(slide, 10, 22);
   addEyebrow(slide, "POWER FEATURE #2");
 
   slide.addText("Business Rules & Edge Case Libraries", {
@@ -675,11 +746,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 10: PARALLEL REGRESSION ====================
+// ==================== SLIDE 11: PARALLEL REGRESSION ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 10, 18);
+  addSlideNumber(slide, 11, 22);
   addEyebrow(slide, "POWER FEATURE #3");
 
   slide.addText("Parallel Regression with Automated Quality Gates", {
@@ -728,10 +799,10 @@ function addEyebrow(slide, text, opts = {}) {
       { text: "Tests", options: { fontSize: 10, bold: true, color: COLORS.text2, fill: { color: COLORS.codeBg } } },
       { text: "Use Case", options: { fontSize: 10, bold: true, color: COLORS.text2, fill: { color: COLORS.codeBg } } },
     ],
-    [{ text: "smoke" }, { text: "1" }, { text: "~12" }, { text: "Daily pre-deploy" }],
-    [{ text: "critical" }, { text: "4 (P0)" }, { text: "~120" }, { text: "Pre-release P0 gate" }],
-    [{ text: "sprint" }, { text: "26" }, { text: "~800" }, { text: "Sprint release gate" }],
-    [{ text: "full" }, { text: "36" }, { text: "~1,546" }, { text: "Production release" }],
+    [{ text: "smoke" }, { text: "2" }, { text: "~140" }, { text: "Daily pre-deploy" }],
+    [{ text: "critical" }, { text: "5 (P0)" }, { text: "~230" }, { text: "Pre-release P0 gate" }],
+    [{ text: "sprint" }, { text: "~88 (plan)" }, { text: "~2,700" }, { text: "Sprint release gate" }],
+    [{ text: "full" }, { text: "97" }, { text: "~3,000" }, { text: "Production release" }],
   ];
   slide.addTable(selRows, {
     x: 0.7, y: 3.7, w: 8.0, colW: [1.5, 1.0, 1.0, 4.5],
@@ -775,11 +846,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 11: CI/CD ====================
+// ==================== SLIDE 12: CI/CD ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 11, 18);
+  addSlideNumber(slide, 12, 22);
   addEyebrow(slide, "CI/CD PIPELINE · PLANNED");
 
   slide.addText("Full CI/CD Automation Pipeline", {
@@ -814,7 +885,7 @@ function addEyebrow(slide, text, opts = {}) {
     x: 4.5, y: 6.0, w: 3.5, h: 0.9,
     fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
   });
-  slide.addText("Weekly Full\nSunday 2:00 AM UTC · All 36 suites · $80", {
+  slide.addText("Weekly Full\nSunday 2:00 AM UTC · All 97 suites · $80", {
     x: 4.7, y: 6.05, w: 3.1, h: 0.8,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
   });
@@ -849,11 +920,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 12: KNOWLEDGE + SKILLS ====================
+// ==================== SLIDE 13: KNOWLEDGE + SKILLS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 12, 18);
+  addSlideNumber(slide, 13, 22);
   addEyebrow(slide, "POWER FEATURE #5");
 
   slide.addText("Shared Knowledge + 18 Methodology Skills", {
@@ -897,7 +968,7 @@ function addEyebrow(slide, text, opts = {}) {
   });
 
   // Right: Skills
-  slide.addText("18 Skills — Encoded Methodology", {
+  slide.addText("20 Skills — Encoded Methodology", {
     x: 7.0, y: 1.55, w: 6, h: 0.35,
     fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
   });
@@ -924,11 +995,331 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 13: TEST CASE GENERATION ====================
+// ==================== SLIDE 14: GRAPHQL SCHEMA + RUNNER-NATIVE TESTS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 13, 18);
+  addSlideNumber(slide, 14, 22);
+  addEyebrow(slide, "KNOWLEDGE FILE · RUNNER CONTRACT");
+
+  slide.addText("GraphQL xAPI — Schema Truth + Runner-Native Tests", {
+    x: 0.7, y: 0.85, w: 11, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Two knowledge files plus a canonical runner turn the xAPI GraphQL surface into deterministic, schema-validated CSV test cases — no custom JS scripts needed.", {
+    x: 0.7, y: 1.4, w: 11, h: 0.5,
+    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Left column — knowledge files
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 2.1, w: 6.0, h: 1.5,
+    fill: { color: COLORS.blueSoft }, line: { color: "A0B0D0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("📐 knowledge/graphql-schema.md", {
+    x: 0.9, y: 2.2, w: 5.6, h: 0.3, fontSize: 12, bold: true, color: COLORS.blue, fontFace: "Segoe UI",
+  });
+  slide.addText("Live introspection snapshot of the xAPI GraphQL schema. Every agent that writes or reviews a GraphQL query consults this first.", {
+    x: 0.9, y: 2.55, w: 5.6, h: 1.0, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 3.75, w: 6.0, h: 1.6,
+    fill: { color: COLORS.accentSoft }, line: { color: "D4A88E", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("📋 knowledge/graphql-test-cases-runner.md", {
+    x: 0.9, y: 3.85, w: 5.6, h: 0.3, fontSize: 12, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Canonical authoring contract for runner-native GraphQL CSV cases. Full tag grammar, predicate shapes, capture chaining, common failure modes + worked example.", {
+    x: 0.9, y: 4.2, w: 5.6, h: 1.1, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Right column — tag grammar + runner
+  slide.addText("Tag Grammar", {
+    x: 7.0, y: 2.1, w: 6, h: 0.3, fontSize: 13, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+  });
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 2.45, w: 5.6, h: 1.8,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText([
+    { text: "Steps: ", options: { bold: true, color: COLORS.accent } },
+    { text: "[AUTH] · [GQL-OP] · [GQL-VARS]\n[GQL-EXEC] · [GQL-CAPTURE]\n[REST-OP] · [REST-EXEC] · [REST-CAPTURE]\n\n", options: { color: COLORS.text2 } },
+    { text: "Assertions: ", options: { bold: true, color: COLORS.blue } },
+    { text: "[ERRORS] · [DATA] · [NULL] · [COUNT] · [VAR]", options: { color: COLORS.text2 } },
+  ], {
+    x: 7.2, y: 2.55, w: 5.2, h: 1.6,
+    fontSize: 10, fontFace: "Consolas", lineSpacingMultiple: 1.4,
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 4.35, w: 5.6, h: 1.4,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🛠 scripts/graphql-runner.ts", {
+    x: 7.2, y: 4.45, w: 5.2, h: 0.3, fontSize: 12, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("Canonical runner — schema validation, var substitution, @td() resolution, evidence capture. Never write custom JS.", {
+    x: 7.2, y: 4.78, w: 5.2, h: 0.55, fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+  slide.addText("npx tsx scripts/graphql-runner.ts --case <csv>:<ID>", {
+    x: 7.2, y: 5.35, w: 5.2, h: 0.3, fontSize: 9, color: COLORS.green, fontFace: "Consolas",
+  });
+
+  slide.addText("Gold-standard reference suite: 050i-graphql-configurations.csv", {
+    x: 0.7, y: 5.55, w: 11.9, h: 0.4, fontSize: 11, italic: true, color: COLORS.text3, fontFace: "Segoe UI", align: "center",
+  });
+}
+
+// ==================== SLIDE 15: LIVE TEST-DATA DISCOVERY ====================
+{
+  const slide = pptx.addSlide();
+  slide.background = { fill: COLORS.slideBg };
+  addSlideNumber(slide, 15, 22);
+  addEyebrow(slide, "KNOWLEDGE FILE · RUNTIME HELPERS");
+
+  slide.addText("Live Test-Data Discovery — No Hardcoded IDs", {
+    x: 0.7, y: 0.85, w: 11, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Catalogs get reseeded. B2B orgs get re-created. Virtual-catalog roots migrate. Hardcoded IDs rot. Live discovery resolves entities at runtime against the actual env.", {
+    x: 0.7, y: 1.4, w: 11, h: 0.5,
+    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Left — knowledge file + data layers
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 2.1, w: 6.0, h: 1.3,
+    fill: { color: COLORS.accentSoft }, line: { color: "D4A88E", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("📖 knowledge/live-discovery.md", {
+    x: 0.9, y: 2.2, w: 5.6, h: 0.3, fontSize: 12, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Decision tree + recipes: when to pick {{VAR}} vs @td() vs live-discover vs random-data. Parallel-run isolation, AGENT-TEST-* cleanup.", {
+    x: 0.9, y: 2.55, w: 5.6, h: 0.75, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addText("Four Data Layers", {
+    x: 0.7, y: 3.55, w: 6, h: 0.3, fontSize: 13, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+  });
+  const layerRows = [
+    [{ text: "Layer", options: { bold: true, fill: { color: COLORS.codeBg } } }, { text: "Source", options: { bold: true, fill: { color: COLORS.codeBg } } }, { text: "Use for", options: { bold: true, fill: { color: COLORS.codeBg } } }],
+    [{ text: "{{VAR}}" }, { text: ".env" }, { text: "URLs, creds, env context" }],
+    [{ text: "@td()" }, { text: "aliases.json + CSV" }, { text: "Named entities" }],
+    [{ text: "live-discover" }, { text: "xAPI at runtime" }, { text: "Shape, not value" }],
+    [{ text: "random-data" }, { text: "Zero-dep generators" }, { text: "Unique inputs" }],
+  ];
+  slide.addTable(layerRows, {
+    x: 0.7, y: 3.9, w: 6.0, colW: [1.6, 2.0, 2.4],
+    border: { type: "solid", pt: 0.5, color: "E0DDD8" },
+    fontFace: "Consolas", fontSize: 10,
+  });
+
+  // Right — scripts
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 2.1, w: 5.6, h: 1.4,
+    fill: { color: COLORS.blueSoft }, line: { color: "A0B0D0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🛠 scripts/lib/live-discover.ts", {
+    x: 7.2, y: 2.2, w: 5.2, h: 0.3, fontSize: 12, bold: true, color: COLORS.blue, fontFace: "Segoe UI",
+  });
+  slide.addText("Typed xAPI primitives — catalog root, products by filter, addresses, cart state, active coupons. Real entities from the current env.", {
+    x: 7.2, y: 2.55, w: 5.2, h: 0.85, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 3.6, w: 5.6, h: 1.4,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🎲 scripts/lib/random-data.ts", {
+    x: 7.2, y: 3.7, w: 5.2, h: 0.3, fontSize: 12, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("Zero-dep generators: emails, org names, SKUs, quantities, comments. Defaults to AGENT-TEST-{date} prefix for safe teardown.", {
+    x: 7.2, y: 4.05, w: 5.2, h: 0.85, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 5.1, w: 5.6, h: 0.8,
+    fill: { color: COLORS.redSoft }, line: { color: "D4A0A0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("Anti-pattern: hardcoded GUIDs/SKUs in Test_Data — review failure (Dim 6: Data Validity).", {
+    x: 7.2, y: 5.2, w: 5.2, h: 0.6, fontSize: 10, italic: true, color: COLORS.red, fontFace: "Segoe UI",
+  });
+}
+
+// ==================== SLIDE 16: TEST RUNNER TAGS + @td() RESOLVER ====================
+{
+  const slide = pptx.addSlide();
+  slide.background = { fill: COLORS.slideBg };
+  addSlideNumber(slide, 16, 22);
+  addEyebrow(slide, "KNOWLEDGE FILE · RESOLVER");
+
+  slide.addText("Test Runner Tags + @td() Resolver", {
+    x: 0.7, y: 0.85, w: 11, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Two knowledge files plus a resolver and validator turn CSV rows into deterministic, executable test cases — interpretable by both runners.", {
+    x: 0.7, y: 1.4, w: 11, h: 0.5,
+    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Left — tags
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 2.1, w: 6.0, h: 1.3,
+    fill: { color: COLORS.accentSoft }, line: { color: "D4A88E", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🏷️ knowledge/test-runner-tags.md", {
+    x: 0.9, y: 2.2, w: 5.6, h: 0.3, fontSize: 12, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Shared CSV column / step / assertion / cross-layer tag reference. Used by test-runner-agent + autonomous-test-runner.", {
+    x: 0.9, y: 2.55, w: 5.6, h: 0.75, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 3.55, w: 6.0, h: 2.3,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText([
+    { text: "Step tags:\n", options: { bold: true, color: COLORS.accent } },
+    { text: "[NAV] · [ACT] · [WAIT] · [LOGIN] · [SETUP]\n\n", options: { color: COLORS.text2 } },
+    { text: "Assertion tags:\n", options: { bold: true, color: COLORS.blue } },
+    { text: "[DOM] · [STATE] · [MATH] · [API] · [CONSOLE]\n\n", options: { color: COLORS.text2 } },
+    { text: "Cross-layer:\n", options: { bold: true, color: COLORS.green } },
+    { text: "[HAR] · [SCREEN] · [PERF]", options: { color: COLORS.text2 } },
+  ], {
+    x: 0.9, y: 3.65, w: 5.6, h: 2.15,
+    fontSize: 10, fontFace: "Consolas", lineSpacingMultiple: 1.3,
+  });
+
+  // Right — resolver + validation
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 2.1, w: 5.6, h: 1.6,
+    fill: { color: COLORS.blueSoft }, line: { color: "A0B0D0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🔗 @td(ALIAS.field) resolver", {
+    x: 7.2, y: 2.2, w: 5.2, h: 0.3, fontSize: 12, bold: true, color: COLORS.blue, fontFace: "Segoe UI",
+  });
+  slide.addText("Test data resolved at runtime, never hardcoded. Reads aliases.json → CSV rows. Catalogs reseed, IDs change — alias stays stable. One CSV update propagates everywhere.", {
+    x: 7.2, y: 2.55, w: 5.2, h: 1.05, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 3.85, w: 5.6, h: 1.0,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText([
+    { text: "scripts/lib/test-data-resolver.ts\n", options: { color: COLORS.text2 } },
+    { text: "test-data/aliases.json\n", options: { color: COLORS.text2 } },
+    { text: "test-data/*.csv", options: { color: COLORS.text2 } },
+  ], {
+    x: 7.2, y: 3.95, w: 5.2, h: 0.85,
+    fontSize: 10, fontFace: "Consolas", lineSpacingMultiple: 1.3,
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 7.0, y: 5.0, w: 5.6, h: 0.85,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("✅ Validation", {
+    x: 7.2, y: 5.05, w: 5.2, h: 0.3, fontSize: 12, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("npx tsx scripts/validate-td-refs.ts", {
+    x: 7.2, y: 5.4, w: 5.2, h: 0.3, fontSize: 10, color: COLORS.green, fontFace: "Consolas",
+  });
+}
+
+// ==================== SLIDE 17: CRITICAL UI SCOPE — LAYOUT STABILITY ====================
+{
+  const slide = pptx.addSlide();
+  slide.background = { fill: COLORS.slideBg };
+  addSlideNumber(slide, 17, 22);
+  addEyebrow(slide, "KNOWLEDGE FILE · LAYOUT HELPERS");
+
+  slide.addText("Critical UI Scope — Regression-Enforced Checklist", {
+    x: 0.7, y: 0.85, w: 11, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("A 7×8 matrix that pins down which BL-UI invariants apply to which component on which page. A validator and a layout-measurement helper keep the matrix from drifting.", {
+    x: 0.7, y: 1.4, w: 11, h: 0.5,
+    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Left — scope file + matrix
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 2.1, w: 7.5, h: 1.0,
+    fill: { color: COLORS.accentSoft }, line: { color: "D4A88E", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🎯 knowledge/critical-ui-scope.md", {
+    x: 0.9, y: 2.2, w: 7.1, h: 0.3, fontSize: 12, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  });
+  slide.addText("Regression-enforced checklist of 7 components × 8 pages, with applicable BL-UI-* invariants per cell.", {
+    x: 0.9, y: 2.55, w: 7.1, h: 0.5, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  const matrixRows = [
+    [{ text: "Components (7)", options: { bold: true, fill: { color: COLORS.codeBg } } }, { text: "Pages (8)", options: { bold: true, fill: { color: COLORS.codeBg } } }],
+    [{ text: "VcButton · VcProductCard\nVcLineItem · VcTable\nVcDialog · Popover\nVcSidebar" }, { text: "/ · /catalog · PDP\n/cart · /account/orders\n/account/lists\n/company/members\n/company/info" }],
+  ];
+  slide.addTable(matrixRows, {
+    x: 0.7, y: 3.2, w: 7.5, colW: [3.5, 4.0],
+    border: { type: "solid", pt: 0.5, color: "E0DDD8" },
+    fontFace: "Consolas", fontSize: 10,
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.7, y: 5.3, w: 7.5, h: 1.0,
+    fill: { color: COLORS.blueSoft }, line: { color: "A0B0D0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("BL-UI-001..010 invariants", {
+    x: 0.9, y: 5.4, w: 7.1, h: 0.3, fontSize: 12, bold: true, color: COLORS.blue, fontFace: "Segoe UI",
+  });
+  slide.addText("Focus-ring · hover · disabled · loading skeleton · layout stability · empty state · error state · keyboard nav.", {
+    x: 0.9, y: 5.7, w: 7.1, h: 0.55, fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  // Right — script + suite
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 8.5, y: 2.1, w: 4.1, h: 1.4,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("🛠 scripts/lib/measure-layout.ts", {
+    x: 8.7, y: 2.2, w: 3.7, h: 0.3, fontSize: 11, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("Layout-measurement helper — dimensions, position deltas, CLS contributions per component.", {
+    x: 8.7, y: 2.55, w: 3.7, h: 0.85, fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 8.5, y: 3.6, w: 4.1, h: 1.3,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("Coverage suite", {
+    x: 8.7, y: 3.7, w: 3.7, h: 0.3, fontSize: 11, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+  });
+  slide.addText("048b-layout-stability.csv", {
+    x: 8.7, y: 4.0, w: 3.7, h: 0.3, fontSize: 11, color: COLORS.accent, fontFace: "Consolas",
+  });
+  slide.addText("selection: layout-stability", {
+    x: 8.7, y: 4.3, w: 3.7, h: 0.3, fontSize: 9, color: COLORS.text3, fontFace: "Consolas",
+  });
+
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 8.5, y: 5.0, w: 4.1, h: 1.3,
+    fill: { color: COLORS.redSoft }, line: { color: "D4A0A0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("Enforcement", {
+    x: 8.7, y: 5.1, w: 3.7, h: 0.3, fontSize: 11, bold: true, color: COLORS.red, fontFace: "Segoe UI",
+  });
+  slide.addText("npm run scope:validate exits non-zero if any matrix cell points at a missing test ID.", {
+    x: 8.7, y: 5.4, w: 3.7, h: 0.85, fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+}
+
+// ==================== SLIDE 18: TEST CASE GENERATION ====================
+{
+  const slide = pptx.addSlide();
+  slide.background = { fill: COLORS.slideBg };
+  addSlideNumber(slide, 18, 22);
   addEyebrow(slide, "AI-GENERATED TEST CASES");
 
   slide.addText("/qa-test-cases-generator — From Ticket to Test Suite", {
@@ -1000,11 +1391,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 14: TEST DATA GENERATION ====================
+// ==================== SLIDE 19: TEST DATA GENERATION ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 14, 18);
+  addSlideNumber(slide, 19, 22);
   addEyebrow(slide, "TEST INFRASTRUCTURE");
 
   slide.addText("/qa-seed-data — Full Test Environment in One Command", {
@@ -1063,11 +1454,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 15: QA-TEST FLOW ====================
+// ==================== SLIDE 20: QA-TEST FLOW ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 15, 18);
+  addSlideNumber(slide, 20, 22);
   addEyebrow(slide, "END-TO-END FLOW");
 
   slide.addText("/qa-test VCST-XXXX — From Ticket to Verdict", {
@@ -1111,11 +1502,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 16: BENEFITS ====================
+// ==================== SLIDE 21: BENEFITS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 16, 18);
+  addSlideNumber(slide, 21, 22);
   addEyebrow(slide, "VALUE DELIVERED");
 
   slide.addText("Strong Sides of AI-Driven Testing", {
@@ -1125,11 +1516,11 @@ function addEyebrow(slide, text, opts = {}) {
 
   const benefits = [
     { icon: "🔧", title: "Zero Maintenance", desc: "UI changes don't break tests. Agents adapt through contextual reasoning, not brittle selectors.", bg: COLORS.greenSoft, titleColor: COLORS.green },
-    { icon: "⚡", title: "Speed at Scale", desc: "3 browsers run in parallel. A full sprint regression of ~800 tests runs automatically.", bg: COLORS.accentSoft, titleColor: COLORS.accent },
+    { icon: "⚡", title: "Speed at Scale", desc: "3 browsers run in parallel. A full sprint regression of ~2,700 tests runs automatically.", bg: COLORS.accentSoft, titleColor: COLORS.accent },
     { icon: "🧠", title: "Business Awareness", desc: "Agents don't just detect failures — they reason about why in business terms.", bg: COLORS.blueSoft, titleColor: COLORS.blue },
     { icon: "📋", title: "No Coding Required", desc: "QA engineers write prompts, not Playwright scripts. Adding a test = adding a CSV row.", bg: COLORS.codeBg, titleColor: COLORS.text },
     { icon: "🔗", title: "Full JIRA Loop", desc: "Agents read tickets, execute tests, file bugs with evidence, and transition statuses.", bg: COLORS.codeBg, titleColor: COLORS.text },
-    { icon: "📐", title: "Methodology Built-in", desc: "18 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD.", bg: COLORS.codeBg, titleColor: COLORS.text },
+    { icon: "📐", title: "Methodology Built-in", desc: "20 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD.", bg: COLORS.codeBg, titleColor: COLORS.text },
   ];
   benefits.forEach((b, i) => {
     const col = i % 3;
@@ -1168,11 +1559,11 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
-// ==================== SLIDE 17: ROADMAP ====================
+// ==================== SLIDE 22: ROADMAP ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 17, 18);
+  addSlideNumber(slide, 22, 22);
   addEyebrow(slide, "FUTURE DEVELOPMENT");
 
   slide.addText("Roadmap — What's Next for Agentic QA", {
@@ -1258,116 +1649,6 @@ function addEyebrow(slide, text, opts = {}) {
   slide.addText("🚀  Vision: A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases, and provides real-time quality signals — with zero manual scripting.", {
     x: 0.9, y: 6.85, w: 11.5, h: 0.5,
     fontSize: 11, color: COLORS.text, fontFace: "Segoe UI", valign: "middle",
-  });
-}
-
-// ==================== SLIDE 18: RAG + VECTOR SEARCH ====================
-{
-  const slide = pptx.addSlide();
-  slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 18, 18);
-  addEyebrow(slide, "FUTURE ARCHITECTURE · PLANNED");
-
-  slide.addText("RAG + Vector Search — Scalable Agent Memory", {
-    x: 0.7, y: 0.85, w: 11, h: 0.5,
-    fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
-  });
-  slide.addText("Replace static knowledge file loading with semantic retrieval — agents query a vector store and receive only what's relevant.", {
-    x: 0.7, y: 1.4, w: 11, h: 0.4,
-    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
-  });
-
-  // Left: The Problem
-  slide.addText("The Problem: Static Context Loading", {
-    x: 0.7, y: 2.0, w: 6, h: 0.35,
-    fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
-  });
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 2.4, w: 6, h: 2.2,
-    fill: { color: COLORS.redSoft }, line: { color: "D4A0A0", width: 1 }, rectRadius: 0.1,
-  });
-  const problems = [
-    "✗  12 knowledge files injected into every agent — ~100 KB per call",
-    "✗  BL-* pricing rules loaded even when testing auth flows",
-    "✗  1,546 test cases in CSV — no semantic search across them",
-    "✗  Bug deduplication is manual — agents can't check past reports",
-    "✗  Knowledge grows → context bloat → higher cost, slower reasoning",
-  ];
-  slide.addText(problems.join("\n"), {
-    x: 0.9, y: 2.5, w: 5.6, h: 2.0,
-    fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.4,
-  });
-
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 4.8, w: 6, h: 0.6,
-    fill: { color: COLORS.blueSoft }, line: { color: "A0B0D0", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("Context7 is already RAG — /vc-docs does semantic retrieval over live VC documentation. The full RAG layer extends this pattern.", {
-    x: 0.9, y: 4.85, w: 5.6, h: 0.5,
-    fontSize: 10, color: COLORS.blue, fontFace: "Segoe UI",
-  });
-
-  // Right: Value Delivered
-  slide.addText("Value Delivered", {
-    x: 7.0, y: 2.0, w: 6, h: 0.35,
-    fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
-  });
-
-  const values = [
-    { title: "Focused context → lower token cost", desc: "Agent receives 3–5 relevant BL-* rules instead of 80+. Token budget goes further per run.", color: COLORS.blue },
-    { title: "Test case deduplication", desc: "Queries vector store before writing — surfaces semantically similar existing cases.", color: COLORS.accent },
-    { title: "Bug similarity search", desc: "Before filing JIRA, checks embeddings of past bug reports — eliminates duplicates.", color: COLORS.accent },
-    { title: "Smart test impact analysis", desc: "Embed git diff → semantic match against test cases → auto-select regression scope.", color: COLORS.green },
-  ];
-  values.forEach((v, i) => {
-    const y = 2.45 + i * 0.8;
-    slide.addShape(pptx.ShapeType.ellipse, {
-      x: 7.2, y: y + 0.08, w: 0.15, h: 0.15,
-      fill: { color: v.color },
-    });
-    slide.addText(v.title, {
-      x: 7.55, y: y - 0.05, w: 5.0, h: 0.3,
-      fontSize: 11, bold: true, color: COLORS.text, fontFace: "Segoe UI",
-    });
-    slide.addText(v.desc, {
-      x: 7.55, y: y + 0.25, w: 5.0, h: 0.45,
-      fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
-    });
-  });
-
-  // Comparison bars
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 7.0, y: 5.7, w: 5.6, h: 1.7,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("STATIC LOADING VS RAG — CONTEXT EFFICIENCY", {
-    x: 7.2, y: 5.75, w: 5.2, h: 0.25,
-    fontSize: 8, bold: true, color: COLORS.text2, fontFace: "Segoe UI", charSpacing: 2,
-  });
-
-  // Context size bars
-  slide.addText("Static:", { x: 7.2, y: 6.1, w: 0.7, h: 0.25, fontSize: 9, bold: true, color: COLORS.red, fontFace: "Segoe UI", align: "right" });
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 8.0, y: 6.1, w: 4.4, h: 0.25,
-    fill: { color: "E8BBBB" }, rectRadius: 0.05,
-  });
-  slide.addText("~100 KB always", { x: 8.0, y: 6.1, w: 4.4, h: 0.25, fontSize: 8, bold: true, color: COLORS.red, fontFace: "Segoe UI", align: "right", margin: [0, 10, 0, 0] });
-
-  slide.addText("RAG:", { x: 7.2, y: 6.4, w: 0.7, h: 0.25, fontSize: 9, bold: true, color: COLORS.green, fontFace: "Segoe UI", align: "right" });
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 8.0, y: 6.4, w: 0.3, h: 0.25,
-    fill: { color: "A0D4B8" }, rectRadius: 0.05,
-  });
-  slide.addText("~5 KB relevant", { x: 8.4, y: 6.4, w: 2, h: 0.25, fontSize: 8, bold: true, color: COLORS.green, fontFace: "Segoe UI" });
-
-  // Dedup row
-  slide.addText("Duplicate tests: manual check  →  Auto-detected by vector similarity", {
-    x: 7.2, y: 6.85, w: 5.2, h: 0.25,
-    fontSize: 9, color: COLORS.text2, fontFace: "Segoe UI",
-  });
-  slide.addText("Duplicate bugs: engineer effort  →  Zero — embedding auto-links issues", {
-    x: 7.2, y: 7.1, w: 5.2, h: 0.25,
-    fontSize: 9, color: COLORS.text2, fontFace: "Segoe UI",
   });
 }
 

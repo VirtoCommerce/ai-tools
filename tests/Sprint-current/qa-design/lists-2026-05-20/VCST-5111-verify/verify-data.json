@@ -1,0 +1,81 @@
+{
+  "verificationDate": "2026-05-20",
+  "tester": "ui-ux-expert (Chrome DevTools MCP)",
+  "build": "2.49.0-pr-2292-bcfc-bcfcf0cc",
+  "prHeadSha": "bcfcf0cc96ffd4bf8b09101af48e09e42a91c6c1",
+  "prState": "open (not merged)",
+  "prUrl": "https://github.com/VirtoCommerce/vc-frontend/pull/2292",
+  "deployedArtifact": "vc-theme-b2b-vue-2.49.0-pr-2292-bcfc-bcfcf0cc.zip",
+  "buildHashMatch": true,
+  "viewportTested": 1280,
+
+  "bundleCheck": {
+    "oldMdSpaceY25Present": false,
+    "newListsClassPresent": true,
+    "newListsContainerPresent": true,
+    "newListsItemsPresent": true,
+    "newWishlistCardBEMPresent": true,
+    "wishlistCardCount": 9,
+    "conclusion": "PR code IS deployed. New BEM structure (.lists, .lists__items, .wishlist-card) is live. Old md:space-y-2.5 is gone."
+  },
+
+  "token1_accountShell_paddingBottom": {
+    "element": ".vc-container.account-shell",
+    "prTouched": false,
+    "prChangedFile": null,
+    "prNote": "PR #2292 does not modify account-shell.vue, vc-container.vue, or any layout wrapper. The pb-9 source is vc-container component default: .vc-container { --pb: var(--vc-container-pb, 2.25rem); } — 2.25rem = 36px. The account-shell element has no override of --vc-container-pb.",
+    "cssSource": ".vc-container { --pb: var(--vc-container-pb, 2.25rem); } — default fallback 2.25rem = 36px",
+    "className_actual": "vc-container account-shell",
+    "hasPb9Class": false,
+    "paddingBottom_1280": "36px",
+    "paddingBottom_768": "36px (same rule — not media-query dependent)",
+    "expected_if_fixed": "32px (pb-8) or 40px (pb-10)",
+    "onGrid": false,
+    "result": "FAIL — 36px is off-grid (nearest: 32 or 40). Source is outside PR scope. PR does NOT fix this token."
+  },
+
+  "token2_linkListsWrapper_paddingLeft": {
+    "element": ".link-lists__wrapper",
+    "prTouched": false,
+    "prChangedFile": null,
+    "prNote": "PR #2292 does not modify link-lists.vue. The pl-2.5 source is the compiled SCSS rule: .link-lists__wrapper { padding: 0.5rem 0.5rem 0.5rem 0.625rem; } — 0.625rem = 10px.",
+    "cssSource": ".link-lists__wrapper { padding: 0.5rem 0.5rem 0.5rem 0.625rem; }",
+    "className_actual": "link-lists__wrapper",
+    "hasPl25Class": false,
+    "paddingLeft_1280": "10px",
+    "paddingLeft_768": "10px (same rule — not breakpoint dependent)",
+    "expected_if_fixed": "8px (pl-2) or 12px (pl-3)",
+    "onGrid": false,
+    "result": "FAIL — 10px is off-grid (nearest: 8 or 12). Source is outside PR scope. PR does NOT fix this token."
+  },
+
+  "token3_listsItems_gap": {
+    "element": ".lists__items",
+    "prTouched": true,
+    "prChangedFile": "client-app/pages/account/lists.vue",
+    "prNote": "PR removed the old div with class 'space-y-3 md:space-y-2.5'. The new .lists__items uses @apply space-y-3 (12px) as default, but adds @container (min-width: 36rem) { @apply grid ... gap-y-2.5 space-y-0; }. At viewport 1280px the .lists__container is 941px wide, which exceeds 36rem (576px), so the container query IS active and row-gap: 0.625rem (10px) applies.",
+    "cssSource": "@container (min-width: 36rem) { .lists__items { row-gap: 0.625rem; } }",
+    "containerQueryCondition": "(min-width: 36rem)",
+    "containerWidth_at_1280": "941px",
+    "containerQueryActive": true,
+    "className_actual": "lists__items",
+    "rowGap_1280": "10px",
+    "rowGap_768_estimate": "10px (container still > 36rem at 768px viewport, as the content area minus sidebar is > 576px)",
+    "expected_if_fixed": "8px (gap-y-2) or 12px (gap-y-3)",
+    "onGrid": false,
+    "result": "FAIL — Old md:space-y-2.5 (10px) was replaced by @container gap-y-2.5 (also 10px). The value changed from a viewport media query to a container query, but the numeric result is identical: still 10px, still off-grid. Structurally equivalent violation."
+  },
+
+  "additional_finding_outside_ticket_scope": {
+    "element": ".wishlist-card__date",
+    "prTouched": true,
+    "prChangedFile": "client-app/shared/wishlists/components/wishlist-card.vue",
+    "cssSource": ".wishlist-card__date { @apply flex items-center gap-1.5; } — gap: 1.5 = 0.375rem = 6px",
+    "gap_computed": "6px",
+    "onGrid": false,
+    "result": "FAIL — 6px is off-grid (nearest: 4 or 8). Introduced by PR #2292 in wishlist-card.vue. Outside VCST-5111 ticket scope but part of same PR diff. Note for dev: change gap-1.5 to gap-1 (4px) or gap-2 (8px)."
+  },
+
+  "overall_verdict": "FIX_INCOMPLETE",
+  "verdict_rationale": "PR #2292 is confirmed deployed (build hash bcfcf0cc matches, new BEM structure is live). Token 1 (account-shell paddingBottom 36px) and Token 2 (link-lists__wrapper paddingLeft 10px) are NOT addressed by this PR — their source files (vc-container, link-lists.vue) are untouched. Token 3 (lists__items gap 10px) was refactored from md:space-y-2.5 to @container gap-y-2.5 but the computed value is still 10px — the off-grid violation persists. All three ticket tokens remain FAIL on build bcfcf0cc."
+}
