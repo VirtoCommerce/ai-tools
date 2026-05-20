@@ -133,6 +133,18 @@
     },
     "_notes": "CFG-023 Wedding Cake section IDs (re-seeded 2026-05-19 Phase 3). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
   },
+  "CFG_023_OPTIONS": {
+    "_inline": true,
+    "Base_Default": "362c8bba-3ea2-4bc2-871b-246b4b8a9755",
+    "Creme_Default": "962c3142-f6bf-4fd5-a730-cd709999b4bb",
+    "Message_Default": "447633ca-c700-4d8a-abae-8affca19da3c",
+    "fields": {
+      "Base_Default": "Base_Default",
+      "Creme_Default": "Creme_Default",
+      "Message_Default": "Message_Default"
+    },
+    "_notes": "CFG-023 default option-product IDs for the 3 Product sections (verified live via productConfiguration 2026-05-20). Base_Default=Top White Bottom White, Creme_Default=Buttercreme Vanilla, Message_Default=Standard Message Tag. Use @td(CFG_023_OPTIONS.Base_Default) etc. in `option: { productId: ... }` slots of ConfigurationSectionInput. Companion to CFG_023_SECTIONS (which holds the section UUIDs)."
+  },
   "CFG_017_SECTIONS": {
     "_inline": true,
     "Text": "2cc0f57e-5654-4396-8795-66fe6e226ad1",

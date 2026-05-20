@@ -339,17 +339,57 @@ CRL-GQL-092,"xCart — getSavedForLater Query — Full Field Selection Including
         salePrice { amount formattedAmount }
         configurationItems {
           sectionId
-          sectionName
           type
           quantity
           customText
-          selectedItem { productId quantity }
+          product { id }
         }
       }
     }
   }
 [GQL-EXEC get_sfl]","[ERRORS label=get_sfl] errors[] empty","[EVIDENCE] data.getSavedForLater is non-null (returns a cart even if empty) OR null if user has never used save-for-later — both acceptable. KEY: configurationItems field in query MUST be accepted without GraphQL schema error. A schema error on configurationItems proves A2 fix (VCST-4205) is incomplete — the SFL fragment does not expose this field.","HTTP 500; unhandled exception; stack trace leaks; GraphQL error on configurationItems field selection (A2 fix not complete); configurationItems field absent from response schema",none — read-only,"xAPI; graphql-schema.md — Query.getSavedForLater; Synced: VCST-4205 (2026-05-19) — updated field selection to include configurationItems (Anomaly A2 root-cause fix verification); technique: Error Guessing",synced
-CRL-GQL-094,"xCart — configurationItems Query","GraphQL > xCart > configurationItems",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"BLOCKED: Requires a configurable product (CFG-001 etc. from aliases.json) added to cart via createConfiguredLineItem before configurationItems query can be exercised. Configurable-product add flow is complex (section IDs, dependency chains) — see test-data/products/configurable-products.csv.","—","[MANUAL-BLOCKED] Needs configurable-product setup. Execute via legacy GraphiQL suite 050b CRL-GQL-094.","[MANUAL] blocked on configurable-product setup","[EVIDENCE] Track as Draft","—",none — read-only once executed,xAPI; legacy 050b CRL-GQL-094,Draft
+CRL-GQL-094,"xCart — configurationItems Field on Cart Line Item (Runner-Native)","GraphQL > xCart > configurationItems",High,BL-GQL-001; BL-GQL-004; BL-CART-014,ECL-10.2; ECL-2.1,"Runner-native. Adds a configurable Text-section item (CFG_RING) to default cart, then queries cart and asserts items[0].configurationItems[] is populated with the expected sectionId, type, and customText. Unblocked 2026-05-20 by leveraging existing CFG_RING + CFG_017_SECTIONS.Text aliases — no further fixture work required.","ring_id=@td(CFG_RING.id); cfg_text=AGENT-TEST-RING-CFGITEMS","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_cfg]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default""
+      productId: ""{{ring_id}}""
+      quantity: 1
+      configurationSections: [{
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
+        type: ""Text""
+        customText: ""{{cfg_text}}""
+      }]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_cfg]
+[GQL-OP read_cfg]
+  mutation {
+    unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) {
+      id itemsCount
+      items {
+        id productId quantity
+        configurationItems { sectionId type quantity customText product { id } }
+      }
+    }
+  }
+[GQL-EXEC read_cfg]
+[GQL-OP cleanup]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup]","[ERRORS label=add_cfg] errors[] empty
+[ERRORS label=read_cfg] errors[] empty
+[COUNT label=read_cfg] data.unSelectAllCartItems.itemsCount = 1
+[DATA label=read_cfg] data.unSelectAllCartItems.items.0.configurationItems is non-null
+[DATA label=read_cfg] data.unSelectAllCartItems.items.0.configurationItems.0.sectionId = @td(CFG_017_SECTIONS.Text)
+[DATA label=read_cfg] data.unSelectAllCartItems.items.0.configurationItems.0.type = Text
+[DATA label=read_cfg] data.unSelectAllCartItems.items.0.configurationItems.0.customText = AGENT-TEST-RING-CFGITEMS","[EVIDENCE] configurationItems array populated with the section payload sent on addItem; sectionId and customText round-trip correctly through the GraphQL layer","HTTP 500; configurationItems null or empty after add; sectionId/customText mismatch; addItem rejected","clearCart on default cart at end of run","xAPI; CFG_RING + CFG_017_SECTIONS.Text fixtures; technique: State Transition (add → read configurationItems); Synced: 2026-05-20 (MANUAL-BLOCKED → runner-native)",Automated
 CRL-GQL-098,"xCart — Shipment Address Update Preserves Key (No DB Duplication)","GraphQL > xCart > Address",Critical,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"Runner-native. Sets shipment address, captures address.id/key, updates the address (same key), verifies address is UPDATED in place (not duplicated in cart.addresses[]).","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -408,6 +448,7 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
 [GQL-OP pre_clear_default]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
 [GQL-EXEC pre_clear_default]
+[GQL-CAPTURE pre_clear_default.data.clearCart.id → CART_ID]
 [GQL-OP pre_clear_sfl]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
 [GQL-EXEC pre_clear_sfl]
@@ -421,7 +462,6 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -443,8 +483,9 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
   mutation {
     moveToSavedForLater(command: {
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartId: ""{{CART_ID}}""
       lineItemIds: [""{{LINE_ID_0}}""]
-    }) { id itemsCount }
+    }) { cart { id itemsCount } list { id itemsCount } }
   }
 [GQL-EXEC move_to_sfl]
 [GQL-OP read_sfl]
@@ -453,7 +494,7 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
       id name itemsCount
       items {
         id productId quantity
-        configurationItems { sectionId sectionName type quantity customText selectedItem { productId quantity } }
+        configurationItems { sectionId type quantity customText product { id } }
       }
     }
   }
@@ -464,7 +505,7 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
 [GQL-OP cleanup_sfl]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
 [GQL-EXEC cleanup_sfl]","[ERRORS label=move_to_sfl] errors[] empty
-[DATA label=move_to_sfl] data.moveToSavedForLater.id is non-null
+[DATA label=move_to_sfl] data.moveToSavedForLater.list.id is non-null
 [ERRORS label=read_sfl] errors[] empty
 [DATA label=read_sfl] data.getSavedForLater is non-null
 [COUNT label=read_sfl] data.getSavedForLater.itemsCount >= 1
@@ -478,9 +519,11 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
 [GQL-OP pre_clear_default]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
 [GQL-EXEC pre_clear_default]
+[GQL-CAPTURE pre_clear_default.data.clearCart.id → CART_ID]
 [GQL-OP pre_clear_sfl]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
 [GQL-EXEC pre_clear_sfl]
+[GQL-CAPTURE pre_clear_sfl.data.clearCart.id → SFL_CART_ID]
 [GQL-OP add_cfg_item]
   mutation {
     addItem(command: {
@@ -491,7 +534,6 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_val}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -513,8 +555,9 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
   mutation {
     moveToSavedForLater(command: {
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartId: ""{{CART_ID}}""
       lineItemIds: [""{{LINE_ID_0}}""]
-    }) { id itemsCount }
+    }) { cart { id itemsCount } list { id itemsCount } }
   }
 [GQL-EXEC move_to_sfl]
 [GQL-OP read_sfl_before]
@@ -531,13 +574,17 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
   mutation {
     moveFromSavedForLater(command: {
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cartId: ""{{SFL_CART_ID}}""
       lineItemIds: [""{{SAVED_0_ID}}""]
     }) {
-      id itemsCount
-      items {
-        id quantity
-        configurationItems { sectionId sectionName type quantity customText selectedItem { productId quantity } }
+      cart {
+        id itemsCount
+        items {
+          id quantity
+          configurationItems { sectionId type quantity customText product { id } }
+        }
       }
+      list { id itemsCount }
     }
   }
 [GQL-EXEC move_from_sfl]
@@ -557,10 +604,10 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
 [DATA label=read_sfl_before] data.getSavedForLater.items.0.id is non-null
 [DATA label=read_sfl_before] data.getSavedForLater.items.0.configurationItems.0.customText is non-null
 [ERRORS label=move_from_sfl] errors[] empty
-[DATA label=move_from_sfl] data.moveFromSavedForLater.id is non-null
-[COUNT label=move_from_sfl] data.moveFromSavedForLater.itemsCount >= 1
-[DATA label=move_from_sfl] data.moveFromSavedForLater.items.0.configurationItems is non-null
-[VAR label=move_from_sfl] data.moveFromSavedForLater.items.0.configurationItems.0.customText = {{SAVED_0_TEXT}}
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.id is non-null
+[COUNT label=move_from_sfl] data.moveFromSavedForLater.cart.itemsCount >= 1
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems is non-null
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems.0.customText = {{SAVED_0_TEXT}}
 [COUNT label=read_sfl_after] data.getSavedForLater.itemsCount >= 0","[ROUNDTRIP label=move_from_sfl] Cross-variable roundtrip: configurationItems.0.customText on the returned cart item MUST equal SAVED_0_TEXT captured from SFL before the move. This proves configurationItems survive both directions of the SFL round-trip at the GraphQL layer. NOTE: read_sfl_after.itemsCount >= 0 (may be 0 if single item; A3 bulk behavior means all items may have moved — assertion relaxed from strict count).","errors[] non-empty on move_from_sfl; returned cart item has null configurationItems (A4 not fixed — async settle overwrote payload); configurationItems.0.customText does not match SAVED_0_TEXT (round-trip data corruption); HTTP 500 on any operation","clearCart on both default and Saved for later carts at end of run","xAPI; VCST-4205 CASE2 (sprint CSV promoted); Anomaly A4 (async-settle configurationItems overwrite — this case will FAIL if A4 not fixed); BL-CART-014; BL-CART-018; technique: State Transition (SFL round-trip with cross-variable capture); Synced: VCST-4205 (2026-05-19)",Draft
 CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Configuration","GraphQL > xCart > SavedForLater > Configurable > Edit","High","BL-CART-014; BL-GQL-001",ECL-10.2; ECL-7.1,"Runner-native. VCST-4205 CASE3 promoted to regression. Simulates the edit-configuration flow at the GraphQL layer: adds configurable Text-section item (text_a), captures line item ID, removes it via removeCartItem, adds new item (text_b), reads cart and asserts only the new item's customText appears (no stale text_a). Tests that the cart correctly reflects the edited configuration after remove+re-add.","ring_id=@td(CFG_RING.id); text_a=AGENT-TEST-RING-EDIT-OLD; text_b=AGENT-TEST-RING-EDIT-NEW","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
@@ -580,7 +627,6 @@ CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Config
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -616,7 +662,6 @@ CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Config
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_b}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -627,7 +672,7 @@ CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Config
       id itemsCount
       items {
         id quantity
-        configurationItems { sectionId type quantity customText selectedItem { productId quantity } }
+        configurationItems { sectionId type quantity customText product { id } }
       }
     }
   }
@@ -657,7 +702,6 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -672,7 +716,6 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
         sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
-        quantity: 1
       }]
     }) { id itemsCount }
   }
@@ -683,7 +726,7 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
       id itemsCount
       items {
         id quantity
-        configurationItems { sectionId type quantity customText selectedItem { productId quantity } }
+        configurationItems { sectionId type quantity customText product { id } }
       }
     }
   }
@@ -695,3 +738,195 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
 [COUNT label=read_back] data.unSelectAllCartItems.itemsCount = 2
 [COUNT label=read_back] data.unSelectAllCartItems.items.0.quantity = 1
 [COUNT label=read_back] data.unSelectAllCartItems.items.1.quantity = 1","[EVIDENCE] Two distinct line items, each with quantity=1 and identical configurationItems.0.customText. itemsCount=2 proves NO consolidation of configurable items even with identical configuration payload. This IS the correct behavior per BL-CART-007 exception (configurable products create separate lines). NOTE: Sprint-CSV CASE6 originally asserted itemsCount=1/qty=2 — that was an authoring error; this case restates the correct contract.","errors[] non-empty; itemsCount=1 with quantity=2 (incorrect consolidation — configurable items MUST NOT consolidate); items.length != 2; items[0] or items[1] missing configurationItems; HTTP 500",clearCart on default cart at end of run,"xAPI; VCST-4205 CASE6 restated (sprint CSV had wrong assertion — consolidated expected vs actual distinct lines); BL-CART-007 (exception clause: configurable products always produce separate lines); technique: Error Guessing (consolidation assumption); Synced: VCST-4205 (2026-05-19)",Draft
+CRL-GQL-124,"xCart — Bulk moveToSavedForLater (2 Items in One Call)","GraphQL > xCart > SavedForLater > Bulk",High,"BL-CART-014; BL-CART-018; BL-GQL-001",ECL-10.2; ECL-7.2,"Runner-native. Verifies that moveToSavedForLater accepts MULTIPLE lineItemIds in a single call and BOTH items appear in SFL after the move. Uses 2 Ring (CFG_RING) line items with distinct customText values to ensure both round-tripped without collision. Bulk semantics are otherwise untested at the GraphQL layer.","ring_id=@td(CFG_RING.id); text_a=AGENT-TEST-BULK-A; text_b=AGENT-TEST-BULK-B","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC pre_clear_default]
+[GQL-CAPTURE pre_clear_default.data.clearCart.id → CART_ID]
+[GQL-OP pre_clear_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC pre_clear_sfl]
+[GQL-OP add_first]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" productId: ""{{ring_id}}"" quantity: 1 configurationSections: [{ sectionId: ""@td(CFG_017_SECTIONS.Text)"" type: ""Text"" customText: ""{{text_a}}"" }] }) { id itemsCount } }
+[GQL-EXEC add_first]
+[GQL-OP add_second]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" productId: ""{{ring_id}}"" quantity: 1 configurationSections: [{ sectionId: ""@td(CFG_017_SECTIONS.Text)"" type: ""Text"" customText: ""{{text_b}}"" }] }) { id itemsCount } }
+[GQL-EXEC add_second]
+[GQL-OP capture_lines]
+  mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id itemsCount items { id } } }
+[GQL-EXEC capture_lines]
+[GQL-CAPTURE capture_lines.data.unSelectAllCartItems.items.0.id → LINE_ID_0]
+[GQL-CAPTURE capture_lines.data.unSelectAllCartItems.items.1.id → LINE_ID_1]
+[GQL-OP reselect]
+  mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC reselect]
+[GQL-OP bulk_move]
+  mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" lineItemIds: [""{{LINE_ID_0}}"" ""{{LINE_ID_1}}""] }) { cart { id itemsCount } list { id itemsCount } } }
+[GQL-EXEC bulk_move]
+[GQL-OP read_sfl]
+  query { getSavedForLater(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { id itemsCount items { id productId configurationItems { sectionId customText } } } }
+[GQL-EXEC read_sfl]
+[GQL-OP cleanup_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_default]
+[GQL-OP cleanup_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC cleanup_sfl]","[ERRORS label=bulk_move] errors[] empty
+[DATA label=bulk_move] data.moveToSavedForLater.list.id is non-null
+[COUNT label=bulk_move] data.moveToSavedForLater.list.itemsCount >= 2
+[ERRORS label=read_sfl] errors[] empty
+[COUNT label=read_sfl] data.getSavedForLater.itemsCount >= 2
+[DATA label=read_sfl] data.getSavedForLater.items.0.configurationItems is non-null
+[DATA label=read_sfl] data.getSavedForLater.items.1.configurationItems is non-null","[EVIDENCE] Both line IDs moved in a single mutation call; SFL contains both items with their respective customText values; cart is empty (or itemsCount decreased by 2)","errors[] non-empty on bulk_move; only one item moved (silent partial success); list.itemsCount < 2; configurationItems missing on either item","clearCart on both default and Saved for later carts at end of run","xAPI; bulk SFL coverage gap (BL-CART-014, BL-CART-018); technique: BVA (lineItemIds count > 1); Added: 2026-05-20",Automated
+CRL-GQL-125,"xCart — Multi-Section Configurable (Product+Product+Product+Text+File) Survives SFL Round-Trip","GraphQL > xCart > SavedForLater > Configurable > Multi-Section",Critical,"BL-CART-014; BL-CART-018; BL-GQL-001",ECL-10.2; ECL-7.1; ECL-7.3,"Runner-native. Uses CFG-023 Wedding Cake — the only fixture covering ALL three ConfigurationSectionInput section types in one product: 3 Product sections (Base required + Creme + Message), 1 REQUIRED Text section, 1 optional File section. Adds the full chain, captures the line, moves it to SFL via moveToSavedForLater, reads SFL, moves it BACK via moveFromSavedForLater, and asserts all 5 sections survive both directions with their sectionId/type/customText/product mapping preserved.","cake_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); cake_text=AGENT-TEST-CAKE-MULTI; cake_file=https://example.com/agent-test-cake.jpg","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC pre_clear_default]
+[GQL-CAPTURE pre_clear_default.data.clearCart.id → CART_ID]
+[GQL-OP pre_clear_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC pre_clear_sfl]
+[GQL-CAPTURE pre_clear_sfl.data.clearCart.id → SFL_CART_ID]
+[GQL-OP add_multi]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default""
+      productId: ""{{cake_id}}""
+      quantity: 1
+      configurationSections: [
+        { sectionId: ""@td(CFG_023_SECTIONS.Base)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Base_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Creme)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Creme_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Message)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Message_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Text)"" type: ""Text"" customText: ""{{cake_text}}"" }
+        { sectionId: ""@td(CFG_023_SECTIONS.Image)"" type: ""File"" fileUrls: ""{{cake_file}}"" }
+      ]
+    }) { id itemsCount items { id configurationItems { sectionId type customText product { id } } } }
+  }
+[GQL-EXEC add_multi]
+[GQL-OP capture_line]
+  mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id items { id } } }
+[GQL-EXEC capture_line]
+[GQL-CAPTURE capture_line.data.unSelectAllCartItems.items.0.id → LINE_ID_0]
+[GQL-OP reselect]
+  mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC reselect]
+[GQL-OP move_to_sfl]
+  mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" lineItemIds: [""{{LINE_ID_0}}""] }) { cart { id itemsCount } list { id itemsCount items { id configurationItems { sectionId type customText product { id } } } } } }
+[GQL-EXEC move_to_sfl]
+[GQL-OP read_sfl_before]
+  query { getSavedForLater(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { id itemsCount items { id configurationItems { sectionId type customText product { id } } } } }
+[GQL-EXEC read_sfl_before]
+[GQL-CAPTURE read_sfl_before.data.getSavedForLater.items.0.id → SAVED_0_ID]
+[GQL-OP move_from_sfl]
+  mutation { moveFromSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{SFL_CART_ID}}"" lineItemIds: [""{{SAVED_0_ID}}""] }) { cart { id itemsCount items { id configurationItems { sectionId type customText product { id } } } } } }
+[GQL-EXEC move_from_sfl]
+[GQL-OP cleanup_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_default]
+[GQL-OP cleanup_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC cleanup_sfl]","[ERRORS label=add_multi] errors[] empty
+[COUNT label=add_multi] data.addItem.itemsCount = 1
+[COUNT label=add_multi] data.addItem.items.0.configurationItems.length = 5
+[ERRORS label=move_to_sfl] errors[] empty
+[DATA label=move_to_sfl] data.moveToSavedForLater.list.id is non-null
+[COUNT label=move_to_sfl] data.moveToSavedForLater.list.itemsCount >= 1
+[ERRORS label=read_sfl_before] errors[] empty
+[COUNT label=read_sfl_before] data.getSavedForLater.items.0.configurationItems.length = 5
+[ERRORS label=move_from_sfl] errors[] empty
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems is non-null
+[COUNT label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems.length = 5
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems[?type=Text].customText = AGENT-TEST-CAKE-MULTI","[EVIDENCE] addItem accepted all 5 sections; configurationItems[].length = 5 throughout the SFL round-trip (cart → SFL → cart); customText on the Text section (index 3, dep Message) preserved; Product-type sections retain their option product IDs","add_multi rejected (required section missing OR schema mismatch); configurationItems.length < 5 at any stage (section dropped during async settle); customText null after round-trip (Anomaly A4 unfixed for multi-section); HTTP 500","clearCart on both default and Saved for later carts at end of run","xAPI; Multi-section configurable SFL coverage gap (BL-CART-014, BL-CART-018); CFG-023 Wedding Cake fixture (5 sections P+P+P+T+F); technique: State Transition (multi-section SFL round-trip); Added: 2026-05-20",Automated
+CRL-GQL-126,"xCart — Required Section Omission Rejected (Negative)","GraphQL > xCart > Configurable > Required Validation",High,"BL-CART-014; BL-GQL-001",ECL-10.2; ECL-7.4,"Runner-native. NEGATIVE test. Submits CFG-023 with ONLY the Text section — omits the required Base (root, Product) section. Expects either (a) errors[] non-empty with a validation message, OR (b) addItem returns with itemsCount=0 / null items. This is the canonical missing-required-section guard at the GraphQL layer.","cake_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); cake_text=AGENT-TEST-REQ-OMIT","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC pre_clear]
+[GQL-OP add_missing_base]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default""
+      productId: ""{{cake_id}}""
+      quantity: 1
+      configurationSections: [
+        { sectionId: ""@td(CFG_023_SECTIONS.Text)"" type: ""Text"" customText: ""{{cake_text}}"" }
+      ]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_missing_base]
+[GQL-OP read_cart]
+  mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id itemsCount } }
+[GQL-EXEC read_cart]
+[GQL-OP cleanup]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup]","[DATA label=read_cart] data.unSelectAllCartItems is non-null
+[COUNT label=read_cart] data.unSelectAllCartItems.itemsCount = 0","[EVIDENCE] After submitting an addItem that omits the required Base section, the cart MUST remain empty (itemsCount=0). Either the server returned errors[] OR silently dropped the invalid line item — both protect cart integrity. NOTE: the assertion intentionally tolerates either outcome (errors-or-empty-cart) because the contract may evolve; the invariant is cart-must-stay-empty.","unSelectAllCartItems.itemsCount > 0 (invalid configuration accepted); cart contains a CFG-023 line item without the required Base section; HTTP 500","clearCart on default cart at end of run","xAPI; required-section validation coverage gap (BL-CART-014); CFG-023 Base section; technique: Negative testing (Error Guessing); Added: 2026-05-20",Automated
+CRL-GQL-127,"xCart — Bulk SFL with Mixed CFG Items (Ring + Wedding Cake)","GraphQL > xCart > SavedForLater > Bulk > Mixed",High,"BL-CART-014; BL-CART-018; BL-GQL-001",ECL-10.2; ECL-7.2; ECL-7.5,"Runner-native. Combines bulk + multi-section. Adds 2 different configurable products (Ring with Text section + Wedding Cake with all 5 sections), moves BOTH to SFL in a single bulk call. Verifies both line items appear in SFL with their respective configurationItems counts (1 for Ring, 5 for Cake) and their type identities preserved.","ring_id=@td(CFG_RING.id); cake_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); ring_text=AGENT-TEST-MIXED-RING; cake_text=AGENT-TEST-MIXED-CAKE; cake_file=https://example.com/agent-test-mixed.jpg","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP pre_clear_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC pre_clear_default]
+[GQL-CAPTURE pre_clear_default.data.clearCart.id → CART_ID]
+[GQL-OP pre_clear_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC pre_clear_sfl]
+[GQL-OP add_ring]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" productId: ""{{ring_id}}"" quantity: 1 configurationSections: [{ sectionId: ""@td(CFG_017_SECTIONS.Text)"" type: ""Text"" customText: ""{{ring_text}}"" }] }) { id itemsCount } }
+[GQL-EXEC add_ring]
+[GQL-OP add_cake]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default""
+      productId: ""{{cake_id}}""
+      quantity: 1
+      configurationSections: [
+        { sectionId: ""@td(CFG_023_SECTIONS.Base)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Base_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Creme)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Creme_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Message)"" type: ""Product"" option: { productId: ""@td(CFG_023_OPTIONS.Message_Default)"" quantity: 1 } }
+        { sectionId: ""@td(CFG_023_SECTIONS.Text)"" type: ""Text"" customText: ""{{cake_text}}"" }
+        { sectionId: ""@td(CFG_023_SECTIONS.Image)"" type: ""File"" fileUrls: ""{{cake_file}}"" }
+      ]
+    }) { id itemsCount }
+  }
+[GQL-EXEC add_cake]
+[GQL-OP capture_lines]
+  mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id itemsCount items { id } } }
+[GQL-EXEC capture_lines]
+[GQL-CAPTURE capture_lines.data.unSelectAllCartItems.items.0.id → LINE_ID_0]
+[GQL-CAPTURE capture_lines.data.unSelectAllCartItems.items.1.id → LINE_ID_1]
+[GQL-OP reselect]
+  mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC reselect]
+[GQL-OP bulk_move]
+  mutation { moveToSavedForLater(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartId: ""{{CART_ID}}"" lineItemIds: [""{{LINE_ID_0}}"" ""{{LINE_ID_1}}""] }) { cart { id itemsCount } list { id itemsCount } } }
+[GQL-EXEC bulk_move]
+[GQL-OP read_sfl]
+  query { getSavedForLater(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { id itemsCount items { id productId configurationItems { sectionId type } } } }
+[GQL-EXEC read_sfl]
+[GQL-OP cleanup_default]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_default]
+[GQL-OP cleanup_sfl]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""Saved for later"" }) { id } }
+[GQL-EXEC cleanup_sfl]","[ERRORS label=add_ring] errors[] empty
+[ERRORS label=add_cake] errors[] empty
+[ERRORS label=bulk_move] errors[] empty
+[COUNT label=bulk_move] data.moveToSavedForLater.list.itemsCount >= 2
+[ERRORS label=read_sfl] errors[] empty
+[COUNT label=read_sfl] data.getSavedForLater.itemsCount >= 2
+[DATA label=read_sfl] data.getSavedForLater.items.0.configurationItems is non-null
+[DATA label=read_sfl] data.getSavedForLater.items.1.configurationItems is non-null","[EVIDENCE] Both items move in a single bulk call; SFL contains 2 items with mixed configurationItems shapes (1 section for Ring, 5 sections for Cake); no cross-contamination between the two items' configs","errors[] non-empty on bulk_move; one item missing in SFL (silent partial success); configurationItems.length wrong for either item (collision/swap); HTTP 500","clearCart on both default and Saved for later carts at end of run","xAPI; bulk + multi-section SFL coverage gap (BL-CART-014, BL-CART-018); technique: Combinatorial (bulk × multi-section); Added: 2026-05-20",Automated

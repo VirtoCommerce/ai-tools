@@ -1,24 +1,38 @@
 {
-  "runId": "REG-2026-05-20-1248",
-  "selection": "050a",
+  "runId": "REG-2026-05-20-1800",
+  "selection": "050b3",
   "resolvedFrom": "explicit suite ID",
   "mode": "standard",
   "lane": "graphql-runner",
   "seedProfile": null,
   "teardown": false,
   "environment": "vcst-qa",
-  "startedAt": "2026-05-20T12:48:00Z",
-  "completedAt": "2026-05-20T14:24:00Z",
+  "startedAt": "2026-05-20T18:00:00Z",
+  "completedAt": "2026-05-20T18:17:00Z",
   "status": "completed",
+  "outcome": {
+    "pass": 16,
+    "fail": 0,
+    "empty": 1,
+    "passRateEvaluable": "16/16 = 100%",
+    "assertionsTotal": 63,
+    "assertionsPassed": 63,
+    "deltaVsPreviousRun": "Suite pass rate 65% → 94% (+29pp) — schema-drift sync from earlier this session validated"
+  },
   "totalSuites": 1,
   "byPriority": { "P0": 0, "P1": 1, "P2": 0 },
-  "estimatedTestCases": 31,
+  "estimatedTestCases": 17,
+  "previousRun": {
+    "runId": "REG-2026-05-20-1700",
+    "verdict": "MIXED (11 PASS / 5 FAIL — schema drift)",
+    "remediation": "Schema drift synced earlier this session — all 5 failing cases (CRL-GQL-092/100/101/102/103) and CRL-GQL-094 (MANUAL-BLOCKED) refactored to current XCart 3.1015.0-pr-119 schema"
+  },
   "deployState": {
     "capturedAt": "2026-05-20T12:55:00Z",
-    "source": "reports/deploy-state-cache.json (refreshed live during this run)",
+    "source": "reports/deploy-state-cache.json (reused from REG-2026-05-20-1248 — same env, same day)",
     "platform": "3.1028.0",
     "theme": "vc-theme-b2b-vue-2.49.0 (GA)",
-    "modulesNotable": "Xapi 3.1008.0 (↑ from 3.1007.0 — owner of SeoInfo regression), XCatalog 3.1005.0, Catalog 3.1022.0, XCart 3.1015.0-pr-119-6a09 (preview)"
+    "modulesNotable": "XCart 3.1015.0-pr-119-6a09 (preview — PR #119, target of this re-run)"
   },
   "browserPool": {
     "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
@@ -28,47 +42,19 @@
   },
   "suites": [
     {
-      "id": "050a",
-      "name": "GraphQL xCatalog",
+      "id": "050b3",
+      "name": "GraphQL xCart — Shipment, Payment, Merge, Remove",
+      "file": "regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv",
       "priority": "P1",
-      "agent": "qa-backend-expert",
-      "lane": "graphql-runner",
+      "agent": "qa-backend-expert (runner-fast-path)",
+      "browserSlot": null,
       "status": "completed",
-      "attempt": 2,
-      "totalCases": 31,
-      "passed": 31,
-      "failed": 0,
-      "blocked": 0,
-      "skipped": 0,
-      "passRate": "100.0%",
-      "resultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results-rerun.json",
-      "priorResultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results.json",
-      "priorPassRate": "96.8% (30/31)",
-      "priorFailure": "CAT-GQL-113 — resolved by test hardening (pinned to @td(PROD_FULL_FIELD_COVERAGE.id)), NOT by code fix; underlying xAPI regression still open"
+      "completedAt": "2026-05-20T18:17:00Z",
+      "verdict": "GREEN (16 PASS / 0 FAIL / 1 EMPTY)",
+      "testCount": 17,
+      "manifestTestCount": 17,
+      "manifestStale": false,
+      "startedAt": "2026-05-20T18:00:00Z"
     }
-  ],
-  "retryLog": [],
-  "aggregates": {
-    "totalCases": 31,
-    "passed": 31,
-    "failed": 0,
-    "blocked": 0,
-    "skipped": 0,
-    "passRate": "100.0%",
-    "passRateExcludingBlocked": "100.0%"
-  },
-  "openBugs": [
-    {
-      "id": "BUG-xAPI-SeoInfo-NonNull-Resolver-NoData",
-      "report": "reports/bugs/open/BUG-xAPI-SeoInfo-NonNull-Resolver-NoData.md",
-      "title": "xAPI Product.seoInfo.{id,objectId,objectType} returns INVALID_OPERATION when product has no CatalogSeoInfo record — collapses data.product to null",
-      "severity": "High",
-      "module": "VirtoCommerce.Xapi 3.1008.0 (bumped from 3.1007.0 today)",
-      "confirmed": true,
-      "status": "OPEN — still active in code. Surfaced by initial CAT-GQL-113 run (now hardened to known-with-SEO product). Will resurface for any client querying seoInfo.{id,objectId,objectType} on a no-SEO product.",
-      "triagedBy": "Per-field probe + REST cross-check + with/without CatalogSeoInfo cross-check"
-    }
-  ],
-  "report": "reports/regression/REG-2026-05-20-1248/regression-2026-05-20.md",
-  "lastUpdated": "2026-05-20T14:24:00Z"
+  ]
 }
