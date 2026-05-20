@@ -3,17 +3,54 @@
 # role: PUBLIC or ORG_USER
 # purpose: Paginated product list; MUST include the B2B virtual catalog subtree filter so storefront resolvers return rows
 # required-vars: STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog)
-# optional-vars: QUERY (String), FIRST (Int, default 20)
+# optional-vars: QUERY (String), FIRST (Int, default 20), AFTER (String cursor), SORT (String),
+#                USER_ID (String), CULTURE_NAME (String), CURRENCY_CODE (String),
+#                WITH_FACETS (Boolean), WITH_IMAGES (Boolean), SELECTED_ADDRESS_ID (String),
+#                PRESERVE_USER_QUERY (Boolean), PREVIOUS_OUTLINE (String)
 # last-validated: 2026-05-20
 # known-issues:
 #   - Without category.subtree filter, results are empty even though products exist (BL feedback)
 # used-by: (future) catalog suites
+#
+# example-variables:
+# {
+#   "storeId": "B2B-store",
+#   "userId": "2afc394a-c1e2-41ad-bd3a-c0e27705a12d",
+#   "cultureName": "en-US",
+#   "currencyCode": "USD",
+#   "sort": "",
+#   "withFacets": true,
+#   "withImages": true,
+#   "filter": "category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) \"price\":[500 TO 1000] \"Color\":\"Gray\" inStock_variations:true",
+#   "first": 16,
+#   "after": "0",
+#   "selectedAddressId": "address-acme-organization-3",
+#   "preserveUserQuery": false,
+#   "previousOutline": ""
+# }
+#
+# filter-syntax examples (space-separated tokens combined with AND):
+#   category.subtree:{{CATALOG_SUBTREE_ID}}        — MUST be present for B2B virtual catalog
+#   price.USD:(0 TO)                                — open-ended price floor
+#   "price":[500 TO 1000]                          — inclusive price range (quoted facet name)
+#   "Color":"Gray"                                  — property facet equality
+#   inStock_variations:true                         — only products with in-stock variations
 
 query {
   products(
     storeId: "{{STORE_ID}}"
-    first: 20
-    filter: "category.subtree:{{CATALOG_SUBTREE_ID}}"
+    userId: "{{USER_ID}}"
+    cultureName: "{{CULTURE_NAME}}"
+    currencyCode: "{{CURRENCY_CODE}}"
+    first: 16
+    after: "0"
+    sort: ""
+    withFacets: true
+    withImages: true
+    filter: "category.subtree:{{CATALOG_SUBTREE_ID}} price.USD:(0 TO) \"price\":[500 TO 1000] \"Color\":\"Gray\" inStock_variations:true"
+    selectedAddressId: "{{SELECTED_ADDRESS_ID}}"
+    preserveUserQuery: false
+    previousOutline: ""
   ) {
     totalCount
     items {

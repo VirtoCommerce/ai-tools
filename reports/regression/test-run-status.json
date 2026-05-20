@@ -8,7 +8,7 @@
   "teardown": false,
   "environment": "vcst-qa",
   "startedAt": "2026-05-20T12:48:00Z",
-  "completedAt": "2026-05-20T12:52:00Z",
+  "completedAt": "2026-05-20T14:24:00Z",
   "status": "completed",
   "totalSuites": 1,
   "byPriority": { "P0": 0, "P1": 1, "P2": 0 },
@@ -18,7 +18,7 @@
     "source": "reports/deploy-state-cache.json (refreshed live during this run)",
     "platform": "3.1028.0",
     "theme": "vc-theme-b2b-vue-2.49.0 (GA)",
-    "modulesNotable": "Xapi 3.1008.0 (↑ from 3.1007.0 — likely owner of SeoInfo regression), XCatalog 3.1005.0, Catalog 3.1022.0, XCart 3.1015.0-pr-119-6a09 (preview)"
+    "modulesNotable": "Xapi 3.1008.0 (↑ from 3.1007.0 — owner of SeoInfo regression), XCatalog 3.1005.0, Catalog 3.1022.0, XCart 3.1015.0-pr-119-6a09 (preview)"
   },
   "browserPool": {
     "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
@@ -34,37 +34,41 @@
       "agent": "qa-backend-expert",
       "lane": "graphql-runner",
       "status": "completed",
-      "attempt": 1,
+      "attempt": 2,
       "totalCases": 31,
-      "passed": 30,
-      "failed": 1,
+      "passed": 31,
+      "failed": 0,
       "blocked": 0,
       "skipped": 0,
-      "passRate": "96.8%",
-      "resultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results.json"
+      "passRate": "100.0%",
+      "resultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results-rerun.json",
+      "priorResultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results.json",
+      "priorPassRate": "96.8% (30/31)",
+      "priorFailure": "CAT-GQL-113 — resolved by test hardening (pinned to @td(PROD_FULL_FIELD_COVERAGE.id)), NOT by code fix; underlying xAPI regression still open"
     }
   ],
   "retryLog": [],
   "aggregates": {
     "totalCases": 31,
-    "passed": 30,
-    "failed": 1,
+    "passed": 31,
+    "failed": 0,
     "blocked": 0,
     "skipped": 0,
-    "passRate": "96.8%",
-    "passRateExcludingBlocked": "96.8%"
+    "passRate": "100.0%",
+    "passRateExcludingBlocked": "100.0%"
   },
-  "bugs": [
+  "openBugs": [
     {
-      "id": "BUG_050a_001",
-      "testCaseId": "CAT-GQL-113",
-      "title": "xAPI product() returns null when seoInfo { id } or seoInfo { objectType } is selected — INVALID_OPERATION (schema contract violation)",
+      "id": "BUG-xAPI-SeoInfo-NonNull-Resolver-NoData",
+      "report": "reports/bugs/open/BUG-xAPI-SeoInfo-NonNull-Resolver-NoData.md",
+      "title": "xAPI Product.seoInfo.{id,objectId,objectType} returns INVALID_OPERATION when product has no CatalogSeoInfo record — collapses data.product to null",
       "severity": "High",
-      "module": "VirtoCommerce.Xapi 3.1008.0 (suspect — bumped from 3.1007.0 today)",
+      "module": "VirtoCommerce.Xapi 3.1008.0 (bumped from 3.1007.0 today)",
       "confirmed": true,
-      "triagedBy": "graphql-runner --refresh-schema; fresh introspection confirms fields still declared String!"
+      "status": "OPEN — still active in code. Surfaced by initial CAT-GQL-113 run (now hardened to known-with-SEO product). Will resurface for any client querying seoInfo.{id,objectId,objectType} on a no-SEO product.",
+      "triagedBy": "Per-field probe + REST cross-check + with/without CatalogSeoInfo cross-check"
     }
   ],
   "report": "reports/regression/REG-2026-05-20-1248/regression-2026-05-20.md",
-  "lastUpdated": "2026-05-20T12:58:00Z"
+  "lastUpdated": "2026-05-20T14:24:00Z"
 }

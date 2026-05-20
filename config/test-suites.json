@@ -970,14 +970,15 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 31,
-      "estimatedMinutes": 26,
+      "testCount": 38,
+      "estimatedMinutes": 32,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
         "xapi",
         "xcatalog",
         "range-facets",
+        "price-filter-bva",
         "sprint"
       ]
     },
