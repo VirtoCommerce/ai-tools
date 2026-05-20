@@ -4,7 +4,7 @@
 # purpose: List xCMS published pages for a store, optionally filtered by keyword
 # required-vars: STORE_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # gql-vars: { "keyword": "String!", "first": "Int", "after": "String" }
 # runner-note: Pass paging/keyword via [GQL-VARS label] JSON, e.g. {"first": 10, "keyword": ""}

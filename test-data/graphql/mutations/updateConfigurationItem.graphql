@@ -4,7 +4,7 @@
 # purpose: Update a single configuration section on a cart line item (e.g. swap option, change customText, replace files)
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - REPLACE semantics — pass full desired ConfigurationSectionInput each call.
 # gql-vars: { "configurationSection": "ConfigurationSectionInput!" }

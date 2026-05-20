@@ -1,0 +1,395 @@
+{
+  "caseId": "CAT-GQL-003",
+  "title": "xCatalog — Category Tree Query",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:27.121Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "get_categories",
+      "query": "query {\n    categories(\n      storeId: \"B2B-store\"\n      cultureName: \"en-US\"\n      first: 10\n    ) {\n      totalCount\n      items {\n        id\n        code\n        name\n        level\n        slug\n        outline\n        childCategories { id name slug }\n        seoInfo { id semanticUrl objectType }\n      }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "categories": {
+            "totalCount": 440,
+            "items": [
+              {
+                "id": "4de1031b-f4ca-4bd5-8066-0d798fb98470",
+                "code": "be58c",
+                "name": "Tea",
+                "level": 2,
+                "slug": "coffee-and-tea/tea",
+                "outline": "50a72bde-3bdc-4d27-ad49-a154796b3d47/4de1031b-f4ca-4bd5-8066-0d798fb98470",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "2d33a4e1-b4df-4af4-b2ee-e9822920c845",
+                  "semanticUrl": "tea",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "1bd3ef57-1e48-421f-844a-2b419912791c",
+                "code": "152ee",
+                "name": "Cocoa bins",
+                "level": 2,
+                "slug": "coffee-and-tea/cocoa-bins",
+                "outline": "50a72bde-3bdc-4d27-ad49-a154796b3d47/1bd3ef57-1e48-421f-844a-2b419912791c",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "0ad077dd-98eb-4672-baae-94ec3d49ac75",
+                  "semanticUrl": "cocoa-bins",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "813d66e7-a084-40fb-84d9-056299d2f35f",
+                "code": "4c12f",
+                "name": "[en-US] TV",
+                "level": 1,
+                "slug": "tv",
+                "outline": "813d66e7-a084-40fb-84d9-056299d2f35f",
+                "childCategories": [
+                  {
+                    "id": "9f97e70d-6c04-449b-9692-e5fefe3edb4b",
+                    "name": "Samsung",
+                    "slug": "tv/samsung"
+                  },
+                  {
+                    "id": "2971842b-54f4-41d8-a0bf-0f7697ea0a09",
+                    "name": "Vizio",
+                    "slug": "tv/vizio"
+                  },
+                  {
+                    "id": "2a276c4d-fd10-420c-8d99-79631947606d",
+                    "name": "Lg",
+                    "slug": "tv/lg"
+                  },
+                  {
+                    "id": "9a2594c0-de41-44f4-966c-a85824b91421",
+                    "name": "Xiaomi",
+                    "slug": "tv/xiaomi"
+                  },
+                  {
+                    "id": "730329cb-5439-4102-b364-3bcd5a67daf9",
+                    "name": "Empty category",
+                    "slug": "tv/empty-category"
+                  },
+                  {
+                    "id": "d42422c3-2138-4f04-b528-dff1447eefad",
+                    "name": "Portable mini TV",
+                    "slug": "tv/portable-mini-tv"
+                  }
+                ],
+                "seoInfo": {
+                  "id": "3421183b-ef18-4859-b290-a2fe2df222ea",
+                  "semanticUrl": "tv",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "9f97e70d-6c04-449b-9692-e5fefe3edb4b",
+                "code": "e5755",
+                "name": "Samsung",
+                "level": 2,
+                "slug": "tv/samsung",
+                "outline": "813d66e7-a084-40fb-84d9-056299d2f35f/9f97e70d-6c04-449b-9692-e5fefe3edb4b",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "f3d006a4-938b-44b8-83d2-ea978c917d33",
+                  "semanticUrl": "samsung",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "2971842b-54f4-41d8-a0bf-0f7697ea0a09",
+                "code": "2ad10",
+                "name": "Vizio",
+                "level": 2,
+                "slug": "tv/vizio",
+                "outline": "813d66e7-a084-40fb-84d9-056299d2f35f/2971842b-54f4-41d8-a0bf-0f7697ea0a09",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "97881157-dc50-47e5-87d2-afa3e7b92617",
+                  "semanticUrl": "vizio",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "2a276c4d-fd10-420c-8d99-79631947606d",
+                "code": "de121",
+                "name": "Lg",
+                "level": 2,
+                "slug": "tv/lg",
+                "outline": "813d66e7-a084-40fb-84d9-056299d2f35f/2a276c4d-fd10-420c-8d99-79631947606d",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "c58723d4-9cd7-426b-81f1-089bbd7a00ab",
+                  "semanticUrl": "lg",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "9a2594c0-de41-44f4-966c-a85824b91421",
+                "code": "33e60",
+                "name": "Xiaomi",
+                "level": 2,
+                "slug": "tv/xiaomi",
+                "outline": "813d66e7-a084-40fb-84d9-056299d2f35f/9a2594c0-de41-44f4-966c-a85824b91421",
+                "childCategories": [],
+                "seoInfo": {
+                  "id": "6e9037db-8596-4a55-b3b7-9ee334f7b2b6",
+                  "semanticUrl": "xiaomi",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "188a59d6-0445-4d84-87e4-d4ec9eda4a15",
+                "code": "1e0b8",
+                "name": "Courses and audio books",
+                "level": 1,
+                "slug": "online-courses",
+                "outline": "188a59d6-0445-4d84-87e4-d4ec9eda4a15",
+                "childCategories": [
+                  {
+                    "id": "de57c441-3bc1-461d-ae43-5be35841fd49",
+                    "name": "Software testing courses",
+                    "slug": "online-courses/software-testing-courses"
+                  },
+                  {
+                    "id": "4a964783-9aa4-4550-bdc3-914909f4098a",
+                    "name": "Programming courses",
+                    "slug": "online-courses/programming-courses"
+                  },
+                  {
+                    "id": "e1011506-97fb-425c-8fa9-9b2cd1aab4f6",
+                    "name": "UX/UI Design courses",
+                    "slug": "online-courses/uxui-design-courses"
+                  },
+                  {
+                    "id": "5be10a64-9999-4927-a54d-f548e6c411c9",
+                    "name": "Gifts",
+                    "slug": "online-courses/gifts"
+                  }
+                ],
+                "seoInfo": {
+                  "id": "1bd7b93d-5c39-4401-bdd0-1d630402cb1c",
+                  "semanticUrl": "online-courses",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "97891531-e65d-409c-a45a-c05207978aa4",
+                "code": "d52e2",
+                "name": "Generatation-en",
+                "level": 1,
+                "slug": "new-catalog-item",
+                "outline": "97891531-e65d-409c-a45a-c05207978aa4",
+                "childCategories": [
+                  {
+                    "id": "79654f96-5330-4aa3-b1ad-748a5ca28df3",
+                    "name": "multi-tasking",
+                    "slug": "new-catalog-item/multi-tasking"
+                  },
+                  {
+                    "id": "4eff9c0c-332a-43a6-82cc-f42e5e39dcca",
+                    "name": "Soft",
+                    "slug": "new-catalog-item/soft"
+                  },
+                  {
+                    "id": "c812bec4-e191-4f63-af0f-0b624b035bdf",
+                    "name": "engineer",
+                    "slug": "new-catalog-item/engineer"
+                  },
+                  {
+                    "id": "aa546e89-f667-4183-9f9f-73b7d2776f0d",
+                    "name": "Computer",
+                    "slug": "new-catalog-item/computer"
+                  },
+                  {
+                    "id": "d67b6650-bbca-40e8-984f-f4658f0bfdbd",
+                    "name": "Croatian",
+                    "slug": "new-catalog-item/croatian"
+                  },
+                  {
+                    "id": "48f570cf-9c9f-450f-8875-2b6026b566eb",
+                    "name": "Nuevo",
+                    "slug": "new-catalog-item/nuevo"
+                  },
+                  {
+                    "id": "3ec55512-375d-4464-b8af-1fe2796c94d0",
+                    "name": "Program",
+                    "slug": "new-catalog-item/program"
+                  },
+                  {
+                    "id": "cfa328ba-3378-491e-8288-2aa4894729a3",
+                    "name": "JSON",
+                    "slug": "new-catalog-item/json"
+                  },
+                  {
+                    "id": "cd808d85-f749-4af0-a812-6cc8653047c8",
+                    "name": "PNG",
+                    "slug": "new-catalog-item/png"
+                  },
+                  {
+                    "id": "c7fc21a7-b137-4951-9b3a-f2127b2ce4b8",
+                    "name": "Drami-q%intangibleMalaysia_5728 Cody Cove",
+                    "slug": "new-catalog-item/drami-qintangiblemalaysia5728-cody-cove"
+                  },
+                  {
+                    "id": "7f467adf-42e5-41c5-832f-97043eec7761",
+                    "name": "panel",
+                    "slug": "new-catalog-item/panel"
+                  },
+                  {
+                    "id": "0d078028-948f-44da-9f72-810ed04dff9e",
+                    "name": "state2-9%ComputersData_2168 Tremblay Forks",
+                    "slug": "new-catalog-item/state2-9computersdata2168-tremblay-forks"
+                  },
+                  {
+                    "id": "c1ceae7d-b237-4a2a-9d4d-760eb686893a",
+                    "name": "Manager",
+                    "slug": "new-catalog-item/manager"
+                  },
+                  {
+                    "id": "60b38c17-0514-437c-953e-8cb1caf56954",
+                    "name": "projectiong-x%ProducerHome_5694 Rempel Fall",
+                    "slug": "new-catalog-item/projectiong-xproducerhome5694-rempel-fall"
+                  },
+                  {
+                    "id": "e46e3843-354b-4ed1-8b7c-ae824d932412",
+                    "name": "Grenada5-4%FrozenClothing_4538 Orn Turnpike",
+                    "slug": "new-catalog-item/grenada5-4frozenclothing4538-orn-turnpike"
+                  },
+                  {
+                    "id": "482d166d-a996-44b9-a423-0415e2667202",
+                    "name": "Business-focused",
+                    "slug": "new-catalog-item/business-focused"
+                  },
+                  {
+                    "id": "202c8125-3186-4d1a-bb00-004f9ab40ba1",
+                    "name": "Profit-focused",
+                    "slug": "new-catalog-item/profit-focused"
+                  },
+                  {
+                    "id": "951e8cfe-ffaa-4021-8aca-b4068446a352",
+                    "name": "web-readiness",
+                    "slug": "new-catalog-item/web-readiness"
+                  },
+                  {
+                    "id": "20dc72ac-0375-4b7a-8755-5c393b6152d0",
+                    "name": "functionalities",
+                    "slug": "new-catalog-item/functionalities"
+                  },
+                  {
+                    "id": "484f3c5f-1548-4c08-9d32-e562105e783e",
+                    "name": "Wooden",
+                    "slug": "new-catalog-item/wooden"
+                  },
+                  {
+                    "id": "a36498c5-4973-458b-bfe8-3b2e2c51585e",
+                    "name": "quantifying",
+                    "slug": "new-catalog-item/quantifying"
+                  }
+                ],
+                "seoInfo": {
+                  "id": "5450997e-18fb-43fc-91f2-540f9cad58b0",
+                  "semanticUrl": "new-catalog-item",
+                  "objectType": "Category"
+                }
+              },
+              {
+                "id": "8c518c03-e4b8-410e-bb81-11d04573d9ca",
+                "code": "2833d",
+                "name": "Jewelry and Gems",
+                "level": 1,
+                "slug": "jewelry-and-gems",
+                "outline": "8c518c03-e4b8-410e-bb81-11d04573d9ca",
+                "childCategories": [
+                  {
+                    "id": "f0b3fd79-86d8-4f6b-8713-21417eafef71",
+                    "name": "Earrings",
+                    "slug": "jewelry-and-gems/earrings1"
+                  },
+                  {
+                    "id": "1b056942-7246-477f-b5ed-92261bfb3c8c",
+                    "name": "Necklaces",
+                    "slug": "jewelry-and-gems/necklaces"
+                  },
+                  {
+                    "id": "03941efd-53e9-4cf7-b36b-e00ff80d6628",
+                    "name": "Rings",
+                    "slug": "jewelry-and-gems/rings"
+                  }
+                ],
+                "seoInfo": {
+                  "id": "44e6afd1-db6f-448c-b1b9-8c885015dbdd",
+                  "semanticUrl": "jewelry-and-gems",
+                  "objectType": "Category"
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 616
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=get_categories] errors[] empty",
+      "label": "get_categories",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=get_categories] data.categories is non-null",
+      "label": "get_categories",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.categories is non-null",
+      "actual": "data.categories = {\"totalCount\":440,\"items\":[{\"id\":\"4de1031b-f4ca-4bd5-8066-0d798fb98470\",\"code\":\"be58c\",\"name\":\"Tea\",\"level\":2,\"slug\":\"coffee-and-tea/tea\",\"outline\":\"50a72bde-3bdc-4d27-ad49-a154796b3d47/4de1031b-f4ca-…"
+    },
+    {
+      "raw": "[DATA label=get_categories] data.categories.totalCount >= 0",
+      "label": "get_categories",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.categories.totalCount >= 0",
+      "actual": "data.categories.totalCount = 440"
+    },
+    {
+      "raw": "[DATA label=get_categories] data.categories.items is non-null",
+      "label": "get_categories",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.categories.items is non-null",
+      "actual": "data.categories.items = [{\"id\":\"4de1031b-f4ca-4bd5-8066-0d798fb98470\",\"code\":\"be58c\",\"name\":\"Tea\",\"level\":2,\"slug\":\"coffee-and-tea/tea\",\"outline\":\"50a72bde-3bdc-4d27-ad49-a154796b3d47/4de1031b-f4ca-4bd5-8066-0d798fb98470\",\"c…"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP] Re-execute query → same totalCount and item ids",
+      "layer": "ROUNDTRIP",
+      "note": "Re-execute query → same totalCount and item ids",
+      "resolved": "Re-execute query → same totalCount and item ids"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only",
+    "blocks": []
+  }
+}

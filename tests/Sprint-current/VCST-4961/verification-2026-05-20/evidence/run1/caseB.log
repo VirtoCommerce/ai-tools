@@ -1,0 +1,106 @@
+◇ injected env (65) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-VCST4961-B ===
+Title:  changeCartConfiguredItem — selectedForCheckout=FALSE preserved across Edit-Configuration re-edit (VCST-4961, primary fix path)
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = dd56d770-3c3b-4e09-b126-0c2bb8bd0f72
+
+Steps parsed: 31 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (784ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 149ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 1873ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 293ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 5190d8cc-56f5-4675-9a34-d94c28f306f7
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = b147e934-6255-4a39-902c-17a816591932
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID] = fb7997e5-c00d-448e-88cd-02bea0e786fe
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = e5fbc712-8697-4c48-b4f4-a8943f8d3d21
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = efda4b3d-5843-4dc1-961b-965b8f423d14
+
+• [GQL-EXEC add_item] POST /graphql
+  200 OK — 804ms — 0 errors
+• [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID] = 2fdb253f-8635-46f4-bc24-f0a562ae6e8a
+• [GQL-CAPTURE add_item.data.addItem.items.0.listPrice.amount → BASE_LIST_PRICE] = 1099
+
+• [GQL-EXEC flip_off_ram] POST /graphql
+  200 OK — 594ms — 0 errors
+• [GQL-CAPTURE flip_off_ram.data.changeCartConfigurationItemSelected.items.0.listPrice.amount → LISTPRICE_AFTER_DESELECT] = 999
+
+• [GQL-EXEC reedit_swap_ram] POST /graphql
+  200 OK — 627ms — 0 errors
+• [GQL-CAPTURE reedit_swap_ram.data.changeCartConfiguredItem.items.0.listPrice.amount → LISTPRICE_AFTER_REEDIT] = 999
+
+• [GQL-EXEC nochange_short] POST /graphql
+  200 OK — 572ms — 0 errors
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 1205ms — 0 errors
+
+Assertions (16):
+  ✅ [ERRORS label=add_item]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=add_item]
+       expected: data.addItem.itemsCount = 1
+       actual:   data.addItem.itemsCount = 1
+  ✅ [DATA label=add_item]
+       expected: data.addItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = true
+       actual:   data.addItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = true
+  ✅ [ERRORS label=flip_off_ram]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=flip_off_ram]
+       expected: data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+       actual:   data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+  ✅ [DATA label=flip_off_ram]
+       expected: data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+       actual:   data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+  ✅ [DATA label=flip_off_ram]
+       expected: data.changeCartConfigurationItemSelected.items.0.listPrice.amount < 1099
+       actual:   data.changeCartConfigurationItemSelected.items.0.listPrice.amount = 999
+  ✅ [ERRORS label=reedit_swap_ram]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=reedit_swap_ram]
+       expected: data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+       actual:   data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+  ✅ [DATA label=reedit_swap_ram]
+       expected: data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+       actual:   data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+  ✅ [DATA label=reedit_swap_ram]
+       expected: data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].productId = fb7997e5-c00d-448e-88cd-02bea0e786fe
+       actual:   data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].productId = fb7997e5-c00d-448e-88cd-02bea0e786fe
+  ✅ [DATA label=reedit_swap_ram]
+       expected: data.changeCartConfiguredItem.items.0.listPrice.amount = 999
+       actual:   data.changeCartConfiguredItem.items.0.listPrice.amount = 999
+  ✅ [ERRORS label=nochange_short]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=nochange_short]
+       expected: data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+       actual:   data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+  ✅ [DATA label=nochange_short]
+       expected: data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+       actual:   data.changeCartConfiguredItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+  ✅ [DATA label=nochange_short]
+       expected: data.changeCartConfiguredItem.items.0.listPrice.amount = 999
+       actual:   data.changeCartConfiguredItem.items.0.listPrice.amount = 999
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] Pre-fix VCST-4961 contract violation: deselect-then-edit silently re-enables the section; BUG impact: user explicit deselect lost on any subsequent edit; user-perceived as wrong total at checkout. Post-fix listPrice should equal LISTPRICE_AFTER_DESELECT because deselected RAM contributes $0 regardless of which RAM option is chosen.
+
+=== Verdict: PASS (16/16 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-VCST4961-B-1779278147634.json

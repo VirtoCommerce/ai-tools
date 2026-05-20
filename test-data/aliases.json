@@ -1,8 +1,11 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.3",
-    "updated": "2026-05-18",
+    "version": "1.5.6",
+    "updated": "2026-05-20",
+    "changelog_1_5_6": "Added PROD_FULL_FIELD_COVERAGE inline alias (id=0b6297e8-d100-4419-ac54-8bf240777271 / SKU ALCE0128 / Animal Crossing). Pins CAT-GQL-113 (regression/suites/Backend/graphql/050a-graphql-xcatalog.csv) to a known-good product with populated CatalogSeoInfo row, dropping the non-deterministic list_p first-product capture. Reason: storefront default product order shifts between runs, so items[0] could be a product without CatalogSeoInfo row → CAT-GQL-113 would flake into FAIL via the xAPI 3.1008.0 SeoInfo regression (tracked separately by BUG-xAPI-SeoInfo-NonNull-Resolver-NoData). The no-SeoInfo branch is now covered by the bug report; CAT-GQL-113 is now a clean schema-coverage gate.",
+    "changelog_1_5_5": "Added CFG_017_SECTIONS inline alias (Text section 2cc0f57e-5654-4396-8795-66fe6e226ad1, config b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d — verified live via productConfiguration on vcst-qa 2026-05-20). Refactored 6 references in regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv from @td(CFG_RING.section_text_id) (unresolvable — CSV-backed CFG_RING never had that field) to @td(CFG_017_SECTIONS.Text). Matches the established CFG_022_SECTIONS / CFG_023_SECTIONS pattern. 050b3 validator now [OK] 19/19 resolved (was 13/19).",
+    "changelog_1_5_4": "Repointed BUYABLE_NO_MIN_QTY (test-data/products/standard.csv STD-001) from SKU ALCOE9535 / id 06b6bc60-5553-4eca-b505-be679dda4013 to SKU ALCE0128 / id 0b6297e8-d100-4419-ac54-8bf240777271 (Animal Crossing New Horizons, $200, brand=Nintendo, category=Game Deals). Verified live on vcst-qa 2026-05-20: minQuantity=1, maxQuantity=0, packSize=1, isBuyable=true, availableQuantity=568, hasVariations=false. BUYABLE_NO_MIN_QTY contract preserved (addItem qty=1 succeeds without PRODUCT_MIN_MAX_QTY rejection). Slug now stored as the full xAPI slug 'accessories/aliexpress/consumer-electronics/game-deals/animal-crossing-new-orizons-nintendo-ALCE0128'.",
     "changelog_1_5_3": "Phase 2 CFG reseed: CFG-013 Laptop (parent dd56d770, 2-section P!P!), CFG-017 Ring (parent 750d36bd, 1-section T! maxLength=30), CFG-019 Giftbox (parent 628fddc9, 1-section T? maxLength=100), CFG-020 Phone Case (parent 5792871f, 3-section P!P?T?), CFG-021 Custom Bike (parent 0b42a3eb, 3-section P!P!P?). Total 5 new parents + 14 new child option products. Configurations verified via productConfiguration xAPI. Storefront-visible. CFG_LAPTOP/CFG_RING/CFG_GIFTBOX aliases flipped from needs-reseed to reseeded-20260518-phase2. Phase 3 (conditional cascades CFG-022..029 with dependsOnSectionId chains) still pending — script needs dependsOnSectionId wiring + child product references. Phase 1+2 reseed total: 10 of 24 missing CFGs now alive.",
     "changelog_1_5_1": "Added VIRTUAL_CATALOG_B2B inline alias (id=fc596540864a41bf8ab78734ee7353a3) — single source of truth for storefront B2B virtual catalog root. Updated BOPIS testProductCatalogId from stale 9238c387… to fc596540864a41bf8ab78734ee7353a3. Refactored regression/suites/Backend/graphql/050a-graphql-xcatalog.csv: 10 hardcoded 9238c387… occurrences → @td(VIRTUAL_CATALOG_B2B.id). 35 occurrences of fc596540… in other Backend/graphql/050* suites still hardcoded but functionally correct — will be refactored to @td() in a follow-up PR.",
     "changelog_1_3_0": "Added 14 *_VIRTOSTART aliases for B2B entities seeded on virtostart-demo-admin (4 orgs / 10 users) — backed by b2b/organizations-virtostart.csv and b2b/users-virtostart.csv. vcst-qa aliases unchanged.",
@@ -129,6 +132,28 @@
       "config_id": "config_id"
     },
     "_notes": "CFG-023 Wedding Cake section IDs (re-seeded 2026-05-19 Phase 3). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
+  },
+  "CFG_017_SECTIONS": {
+    "_inline": true,
+    "Text": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
+    "config_id": "b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d",
+    "fields": {
+      "Text": "Text",
+      "config_id": "config_id"
+    },
+    "_notes": "CFG-017 Ring section IDs (verified live via productConfiguration 2026-05-20). Single REQUIRED Text section 'Engraving Text', maxLength=30. Parent product GUID 750d36bd-5d1a-4261-898d-e506f89e5184 (resolves as @td(CFG_RING.id)). Use @td(CFG_017_SECTIONS.Text) for the section UUID instead of hardcoding."
+  },
+  "PROD_FULL_FIELD_COVERAGE": {
+    "_inline": true,
+    "id": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "code": "ALCE0128",
+    "name": "Animal Crossing New Horizons Nintendo Switch Game Deals",
+    "fields": {
+      "id": "id",
+      "code": "code",
+      "name": "name"
+    },
+    "_notes": "Schema-coverage fixture for CAT-GQL-113 (xCatalog — Product Full-Field Schema Coverage). MUST be a product with a populated CatalogSeoInfo row so that seoInfo.{id,objectId,objectType} resolve. Animal Crossing (ALCE0128 / 0b6297e8-…) was verified 2026-05-20 to have SeoInfo row 49c1b977-6cc6-413f-9022-1ffae7328cc5 → semanticUrl 'animal-crossing-new-orizons-nintendo-ALCE0128'. Previously CAT-GQL-113 picked products.items.0 which was non-deterministic (storefront default order shifts; first product often had no SeoInfo → bug BUG-xAPI-SeoInfo-NonNull-Resolver-NoData surfaced). Pinning here makes the test a deterministic schema-coverage gate; the no-SeoInfo regression is now covered by the dedicated bug report, not this test."
   },
   "CYBERSOURCE_VISA": {
     "file": "payment/test-cards",
@@ -1953,7 +1978,7 @@
       "min_qty": "min_quantity",
       "max_qty": "max_quantity"
     },
-    "notes": "B2B parent product buyable at qty=1, no max cap (max_qty=0 means unlimited). Verified 2026-04-29: addItem(qty:1) returns itemsCount=1, validationErrors=[]. Canvas Pencil Case GUID b3f5bd0c-45e4-46dc-8f2d-ad089718fc32. For GraphQL xCart suites (050b1, 050k) that need addItem(qty:1) to succeed without PRODUCT_MIN_MAX_QTY rejection. Root cause: original setup_prod filter returned parent 8e0eaa82 with min_qty=10, causing silent rejection (REG-2026-04-29-0929 / BUG-050b1-001)."
+    "notes": "B2B parent product buyable at qty=1, no max cap (max_qty=0 means unlimited). Verified 2026-05-20: SKU ALCE0128 Animal Crossing New Horizons / GUID 0b6297e8-d100-4419-ac54-8bf240777271. minQuantity=1, maxQuantity=0, packSize=1, hasVariations=false, isBuyable=true, availableQuantity=568. For GraphQL xCart suites (050b1, 050k) that need addItem(qty:1) to succeed without PRODUCT_MIN_MAX_QTY rejection. Predecessors: Canvas Pencil Case ALCOE9535 (06b6bc60 / b3f5bd0c, replaced 2026-05-20 by user request); original setup_prod filter that returned parent 8e0eaa82 with min_qty=10 caused silent rejection (REG-2026-04-29-0929 / BUG-050b1-001)."
   },
   "USER_MULTI_ORG": {
     "file": "b2b/users",
@@ -2374,6 +2399,8 @@
     "lineItemListPrice": 300,
     "xapiListPrice": 250,
     "xapiActualPrice": 250,
+    "listPrice": 300,
+    "salePrice": 250,
     "currency": "USD",
     "captured_at": "2026-05-06",
     "captured_via": "products(query:OSW-31158373) + productConfiguration + addItem live verification on https://vcst-qa.govirto.com/graphql 2026-05-06",

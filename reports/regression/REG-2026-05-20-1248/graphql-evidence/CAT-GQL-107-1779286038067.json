@@ -1,0 +1,57 @@
+{
+  "caseId": "CAT-GQL-107",
+  "title": "xCatalog — slugInfo Catalog Root Slug",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:18.067Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "slug_root",
+      "query": "query { slugInfo(slug: \"\" storeId: \"B2B-store\") { entityInfo { objectType id } redirectUrl } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "slugInfo": {
+            "entityInfo": null,
+            "redirectUrl": null
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 198
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=slug_root] errors[] empty",
+      "label": "slug_root",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=slug_root] data.slugInfo is non-null",
+      "label": "slug_root",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.slugInfo is non-null",
+      "actual": "data.slugInfo = {\"entityInfo\":null,\"redirectUrl\":null}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

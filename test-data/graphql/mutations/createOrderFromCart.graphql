@@ -4,7 +4,7 @@
 # purpose: Convert a finalized cart into a customer order — terminal step of GraphQL checkout flow
 # required-vars: CART_ID (String — capture from earlier cart query/mutation)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - Creates a real order in the system; no easy teardown via runner — use sparingly or against disposable accounts.
 # used-by: 050b3, 050c, 050b4 (full-checkout flow tests)

@@ -4,7 +4,7 @@
 # purpose: Mark specific line items as selected for checkout (selectedForCheckout=true)
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - Idempotent on already-selected items (does NOT error).
 # gql-vars: { "lineItemIds": "[String!]!" }

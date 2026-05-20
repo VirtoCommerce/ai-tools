@@ -1,0 +1,65 @@
+{
+  "caseId": "CAT-GQL-037",
+  "title": "xCatalog — Facet Parameter Returns Range Aggregation",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:48.240Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "facet_price",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\" facet: \"price.USD\") { totalCount range_facets { name label ranges { count from to } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 4573,
+            "range_facets": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 216
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=facet_price] errors[] empty",
+      "label": "facet_price",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=facet_price] data.products is non-null",
+      "label": "facet_price",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"totalCount\":4573,\"range_facets\":[]}"
+    },
+    {
+      "raw": "[DATA label=facet_price] data.products.range_facets is non-null",
+      "label": "facet_price",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.range_facets is non-null",
+      "actual": "data.products.range_facets = []"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

@@ -4,7 +4,7 @@
 # purpose: Delete a wishlist by listId (cleanup pair for createWishlist)
 # required-vars: LIST_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: (future) 050h wishlist cleanup
 

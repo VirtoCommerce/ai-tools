@@ -315,7 +315,7 @@
 [DOM] Sort dropdown on page 2 reflects the same sort as page 1
 [NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
 [CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
-"SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries=@td(search-queries/top-50-amazon); url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-50-amazon.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-50-amazon.csv:
   [ACT] Click search input → clear → type the search_query value
   [WAIT] Wait for autocomplete dropdown (max 3s)
@@ -329,7 +329,7 @@
 [DATA] Summary table: query → result_count for each of the 51 queries
 [ERRORS] No JS console errors across any query","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for every query
 [CONSOLE] no TypeError or JS errors across entire loop","Any query causing 5xx error; more than 20% of real-world queries returning 0 results; JS error on specific query; autocomplete crashing on certain input","none","Coverage Gap Analysis","Automated"
-"SRCH-NEW-051","Search - Data-Driven Bulk Query Validation (Top AliExpress)","Search > Data-Driven","Low","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries=@td(search-queries/top-100-aliexpress); url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-051","Search - Data-Driven Bulk Query Validation (Top AliExpress)","Search > Data-Driven","Low","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-100-aliexpress.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-100-aliexpress.csv:
   [ACT] Click search input → clear → type the search_query value
   [WAIT] Wait for autocomplete dropdown (max 3s)

@@ -189,7 +189,7 @@ At least 2 items in cart, user logged in as {{USER_EMAIL}}","front_url={{FRONT_U
 [NETWORK] no 4xx/5xx on removeCartItem","Item remains visible after remove (silent mutation failure), subtotal not recalculating, errors[] non-empty on removeCartItem, other items' prices changed after removal","Ensure at least 1 item remains in cart for subsequent tests","VCST-4499","Automated"
 "SMK-012","Checkout — Delivery Address and Shipping Method","Smoke > Checkout","Critical","BL-CHK-001, BL-CHK-005, BL-CHK-006","ECL-1.2, ECL-6.2, ECL-6.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Items in cart, user logged in as {{USER_EMAIL}}, cart has at least 1 item","front_url={{FRONT_URL}}, addr=@td(ADDR_NY)","[NAV] {{FRONT_URL}}/cart
+Items in cart, user logged in as {{USER_EMAIL}}, cart has at least 1 item","front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with items visible
 [ACT] select 'Delivery' shipping option (not Pickup)
 [WAIT] shipping address section visible
@@ -265,7 +265,7 @@ Checkout ready (cart with items, address selected), test card details available 
 [GQL] order detail returns items[] non-empty matching placed items
 [CONSOLE] no errors on order history or order detail page
 [NETWORK] no 4xx on order queries","Order absent from history (BL-CROSS-005), order number mismatch, totals differ from confirmation (BL-ORD-005), order detail page returns 404, order status shows unexpected error state","none","VCST-4499","Automated"
-"SMK-017","Account — Address Management (VCST-4802 Regression)","Smoke > Addresses","Critical","BL-CHK-003, BL-AUTH-004","ECL-6.3","Personal account user logged in as {{USER_EMAIL}} (not org user — Addresses link only shown for personal accounts per ECL-14.3). Known bug: VCST-4802 (address add/edit broken).","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, addr=@td(ADDR_NY)","[NAV] {{FRONT_URL}}/account/dashboard
+"SMK-017","Account — Address Management (VCST-4802 Regression)","Smoke > Addresses","Critical","BL-CHK-003, BL-AUTH-004","ECL-6.3","Personal account user logged in as {{USER_EMAIL}} (not org user — Addresses link only shown for personal accounts per ECL-14.3). Known bug: VCST-4802 (address add/edit broken).","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] dashboard sidebar visible
 [ASSERT] 'Addresses' link visible in sidebar (personal account only — ECL-14.3)
 [ACT] click 'Addresses' in sidebar

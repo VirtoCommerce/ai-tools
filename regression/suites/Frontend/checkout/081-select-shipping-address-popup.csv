@@ -239,7 +239,7 @@ FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
 org_id: @td(TECHFLOW_ORG_ADDRESSES.org_id)
 FRONT_URL: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart; open popup
 [ASSERT] Note all address entries and their associated org/description
-[ACT] Verify no addresses from other orgs are listed (spot-check addresses not in @td(TECHFLOW_ORG_ADDRESSES) set)","[DOM] All displayed addresses belong to @td(ORG_TECHFLOW.org_name) org
+[ACT] Verify no addresses from other orgs are listed (spot-check addresses not in @td(TECHFLOW_ORG_ADDRESSES.org_name) set)","[DOM] All displayed addresses belong to @td(ORG_TECHFLOW.name) org
 [MATH] Total row count matches expected count for TechFlow org addresses (≥2, from seeded data)
 [DOM] No addresses from other orgs visible","[API] Address list query includes org_id scoping parameter
 [NETWORK] Request to address list endpoint carries correct org context header/param","1. Addresses from other orgs appear in the list

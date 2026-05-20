@@ -1,0 +1,91 @@
+{
+  "caseId": "CAT-GQL-110",
+  "title": "xCatalog — brand Singular by ID",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:22.176Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "BRAND_ID": "111"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "list_brands",
+      "query": "query { brands(storeId: \"B2B-store\" first: 1) { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "brands": {
+            "items": [
+              {
+                "id": "111"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 690
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "brand_one",
+      "query": "query { brand(id: \"111\" storeId: \"B2B-store\") { id name permalink featured } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "brand": {
+            "id": "111",
+            "name": "111",
+            "permalink": "brands/111",
+            "featured": false
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 182
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=brand_one] errors[] empty",
+      "label": "brand_one",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=brand_one] data.brand is non-null",
+      "label": "brand_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.brand is non-null",
+      "actual": "data.brand = {\"id\":\"111\",\"name\":\"111\",\"permalink\":\"brands/111\",\"featured\":false}"
+    },
+    {
+      "raw": "[DATA label=brand_one] data.brand.id = {{BRAND_ID}}",
+      "label": "brand_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.brand.id = 111",
+      "actual": "data.brand.id = 111"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

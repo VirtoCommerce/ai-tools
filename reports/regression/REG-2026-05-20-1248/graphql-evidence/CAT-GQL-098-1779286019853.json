@@ -1,0 +1,114 @@
+{
+  "caseId": "CAT-GQL-098",
+  "title": "xCatalog — products Cursor Pagination",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:59.853Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "CURSOR": "2"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "page1",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 2 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\") { totalCount pageInfo { hasNextPage endCursor } items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 4573,
+            "pageInfo": {
+              "hasNextPage": true,
+              "endCursor": "2"
+            },
+            "items": [
+              {
+                "id": "35e12fdb-91cd-4e27-bf23-620f820c3cc9"
+              },
+              {
+                "id": "8e9584b0-8f91-4852-aad1-bb6f51aab9d1"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 229
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "page2",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 2 after: \"2\" filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\") { pageInfo { hasPreviousPage } items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "pageInfo": {
+              "hasPreviousPage": true
+            },
+            "items": [
+              {
+                "id": "991e2bdc-4e8e-4af2-aea3-ad082982fb79"
+              },
+              {
+                "id": "e615377f-93d2-45d9-a231-31255d5508f5"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 168
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=page1] errors[] empty",
+      "label": "page1",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=page2] errors[] empty",
+      "label": "page2",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=page1] data.products.pageInfo.endCursor is non-null",
+      "label": "page1",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.pageInfo.endCursor is non-null",
+      "actual": "data.products.pageInfo.endCursor = \"2\""
+    },
+    {
+      "raw": "[DATA label=page2] data.products is non-null",
+      "label": "page2",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"pageInfo\":{\"hasPreviousPage\":true},\"items\":[{\"id\":\"991e2bdc-4e8e-4af2-aea3-ad082982fb79\"},{\"id\":\"e615377f-93d2-45d9-a231-31255d5508f5\"}]}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

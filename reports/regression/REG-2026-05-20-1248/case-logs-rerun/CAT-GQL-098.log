@@ -1,0 +1,36 @@
+◇ injected env (65) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-098 ===
+Title:  xCatalog — products Cursor Pagination
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: Automated
+
+Variables (initial 0):
+
+Steps parsed: 5 blocks
+
+• [GQL-EXEC page1] POST /graphql
+  200 OK — 229ms — 0 errors
+• [GQL-CAPTURE page1.data.products.pageInfo.endCursor → CURSOR] = 2
+
+• [GQL-EXEC page2] POST /graphql
+  200 OK — 168ms — 0 errors
+
+Assertions (4):
+  ✅ [ERRORS label=page1]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=page2]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=page1]
+       expected: data.products.pageInfo.endCursor is non-null
+       actual:   data.products.pageInfo.endCursor = "2"
+  ✅ [DATA label=page2]
+       expected: data.products is non-null
+       actual:   data.products = {"pageInfo":{"hasPreviousPage":true},"items":[{"id":"991e2bdc-4e8e-4af2-aea3-ad082982fb79"},{"id":"e615377f-93d2-45d9-a231-31255d5508f5"}]}
+
+=== Verdict: PASS (4/4 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-098-1779286019853.json

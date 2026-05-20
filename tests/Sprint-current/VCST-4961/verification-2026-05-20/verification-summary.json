@@ -1,0 +1,58 @@
+{
+  "ticket": "VCST-4961",
+  "verdict": "VERIFIED",
+  "date": "2026-05-20",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1028.0",
+    "theme": "2.49.0",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1015.0-pr-119-6a09",
+      "VirtoCommerce.Cart": "3.1003.0"
+    },
+    "pr_build": "VirtoCommerce.XCart_3.1015.0-pr-119-6a09.zip (PR #119 head SHA 6a09301, approved by @OlegoO 2026-05-20)"
+  },
+  "agent_used": "qa-backend-expert (canonical scripts/graphql-runner.ts)",
+  "str_result": "3/3",
+  "method": "GraphQL CASE A + CASE B + CASE C (Issue A) via runner-native CSV cases",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "test_cases_authored": [
+    "CFG-GQL-VCST4961-A (13 assertions/run)",
+    "CFG-GQL-VCST4961-B (16 assertions/run)",
+    "CFG-GQL-VCST4961-C (4 assertions/run)"
+  ],
+  "behavioral_fingerprint_case_b": {
+    "step_1_addItem": "$1099 (BASE,BASE) — both selected=true",
+    "step_2_flip_off_ram": "$999 — RAM selected=false, BL-CART-010 reprice down by -$100",
+    "step_3_reedit_swap_ram_base_to_upgrade": "$999 — RAM still selected=false (PRESERVED across rebuild — the fix)",
+    "step_4_nochange_short_circuit": "$999 — identical (BL-CART-013 honored)",
+    "pre_fix_expected_at_step_3": "$1249 with RAM silently re-enabled to selected=true"
+  },
+  "graphql_errors_observed": "None — 84 operations across 9 runs, 0 errors each",
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-CART-010 (configuration-item selection reprices parent listPrice)",
+    "BL-CART-013 (no-change short-circuit)",
+    "BL-CART-014 (sectionId + type for Product sections)"
+  ],
+  "jira_transition_proposed": "Testing → Tested → Done",
+  "artifacts": "tests/Sprint-current/VCST-4961/verification-2026-05-20/",
+  "artifacts_index": [
+    "verification-checklist.md",
+    "verification-report.md",
+    "verification-summary.json",
+    "evidence/run1/",
+    "evidence/run2/",
+    "evidence/run3/",
+    "regression/suites/Backend/graphql/050i-graphql-configurations.csv (3 new rows appended)",
+    "reports/regression/graphql-evidence/CFG-GQL-VCST4961-*.json (10 canonical evidence files)"
+  ],
+  "notes": [
+    "Bug report at reports/bugs/open/BUG-selectedForCheckout-Ignored-ConfigurableItems.md needs Resolution block + move to reports/bugs/fixed/",
+    "Three new runner-native CSV rows are now part of suite 050i and will run automatically in future regression."
+  ]
+}

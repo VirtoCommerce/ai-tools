@@ -4,7 +4,7 @@
 # purpose: Update quantity of an existing cart line item
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - Quantity must be >= 1; zero/negative should return validation error
 # used-by: (future) 050b cart quantity suites

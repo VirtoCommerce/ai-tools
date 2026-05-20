@@ -4,7 +4,7 @@
 # purpose: List storefront category tree with child relations and slugs
 # required-vars: STORE_ID (String)
 # optional-vars: CULTURE_NAME (String, default "en-US")
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # gql-vars: { "first": "Int", "sort": "String", "filter": "String" }
 # runner-note: Pass paging/sort via [GQL-VARS label] JSON, e.g. {"first": 10, "sort": "name:asc"}

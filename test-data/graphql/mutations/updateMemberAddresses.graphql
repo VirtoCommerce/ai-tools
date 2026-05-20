@@ -4,7 +4,7 @@
 # purpose: Replace a member's address book (full-list semantics)
 # required-vars: MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String)
 # optional-vars: FIRST_NAME, LAST_NAME, REGION_ID, PHONE, EMAIL, ADDRESS_TYPE (Int)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - BL: EnableNoHtmlTagsValidation applies to city/line1/line2 (XSS rejected)
 #   - Semantics are REPLACE (pass full desired list each call)

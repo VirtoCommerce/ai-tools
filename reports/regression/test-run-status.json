@@ -1,68 +1,70 @@
 {
-  "runId": "REG-2026-05-19-1400",
-  "selection": "009",
-  "resolvedFrom": "explicit suite ID (post-rebind verification)",
-  "envRebindReference": "test-data/b2b/_seed-results-suite-009-restore.json",
+  "runId": "REG-2026-05-20-1248",
+  "selection": "050a",
+  "resolvedFrom": "explicit suite ID",
   "mode": "standard",
+  "lane": "graphql-runner",
   "seedProfile": null,
   "teardown": false,
   "environment": "vcst-qa",
-  "startedAt": "2026-05-19T14:00:00Z",
-  "completedAt": "2026-05-19T14:05:00Z",
+  "startedAt": "2026-05-20T12:48:00Z",
+  "completedAt": "2026-05-20T12:52:00Z",
   "status": "completed",
   "totalSuites": 1,
   "byPriority": { "P0": 0, "P1": 1, "P2": 0 },
   "estimatedTestCases": 31,
   "deployState": {
-    "capturedAt": "2026-05-19T12:01:00Z",
-    "source": "reports/deploy-state-cache.json (reused — within 4h window)",
-    "platform": "3.1026.0",
-    "theme": "vc-theme-b2b-vue-2.49.0-pr-2292-f131d346",
-    "modulesNotable": "XCart 3.1013.0, Xapi 3.1007.0, Cart 3.1003.0, Customer 3.1007.0, Orders 3.1008.0, XCatalog 3.1005.0",
-    "unchanged_from": "REG-2026-05-19-0900"
+    "capturedAt": "2026-05-20T12:55:00Z",
+    "source": "reports/deploy-state-cache.json (refreshed live during this run)",
+    "platform": "3.1028.0",
+    "theme": "vc-theme-b2b-vue-2.49.0 (GA)",
+    "modulesNotable": "Xapi 3.1008.0 (↑ from 3.1007.0 — likely owner of SeoInfo regression), XCatalog 3.1005.0, Catalog 3.1022.0, XCart 3.1015.0-pr-119-6a09 (preview)"
   },
   "browserPool": {
-    "slot1": { "server": "playwright-chrome", "status": "error", "error": "browser context closed", "currentSuite": null },
-    "slot2": { "server": "playwright-firefox", "status": "error", "error": "browser context closed", "currentSuite": null },
-    "slot3": { "server": "playwright-edge", "status": "error", "error": "browser context closed", "currentSuite": null }
+    "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
+    "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
+    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null },
+    "note": "GraphQL Runner Fast Path — browser pool not consumed"
   },
   "suites": [
     {
-      "id": "009",
-      "name": "B2C Variations & Configs",
+      "id": "050a",
+      "name": "GraphQL xCatalog",
       "priority": "P1",
-      "agent": "qa-frontend-expert",
-      "lane": "browser",
-      "browser": "playwright-chrome → firefox → edge (all failed)",
+      "agent": "qa-backend-expert",
+      "lane": "graphql-runner",
       "status": "completed",
-      "attempt": 3,
+      "attempt": 1,
       "totalCases": 31,
-      "passed": 0,
-      "failed": 0,
-      "blocked": 31,
-      "blocked_fixture": 3,
-      "blocked_mcp": 28,
+      "passed": 30,
+      "failed": 1,
+      "blocked": 0,
       "skipped": 0,
-      "passRate": "0.0%",
-      "resultFile": "reports/regression/REG-2026-05-19-1400/suite-009-results.json"
+      "passRate": "96.8%",
+      "resultFile": "reports/regression/REG-2026-05-20-1248/suite-050a-results.json"
     }
   ],
-  "retryLog": [
-    { "suite": "009", "attempt": 1, "browser": "playwright-chrome", "outcome": "browser_context_closed", "error": "Target page, context or browser has been closed", "delay": "0s" },
-    { "suite": "009", "attempt": 2, "browser": "playwright-firefox", "outcome": "browser_context_closed", "error": "Target page, context or browser has been closed", "delay": "30s" },
-    { "suite": "009", "attempt": 3, "browser": "playwright-edge", "outcome": "browser_context_closed", "error": "Target page, context or browser has been closed", "delay": "30s" }
-  ],
+  "retryLog": [],
   "aggregates": {
     "totalCases": 31,
-    "passed": 0,
-    "failed": 0,
-    "blocked": 31,
-    "blocked_fixture": 3,
-    "blocked_mcp_infra": 28,
+    "passed": 30,
+    "failed": 1,
+    "blocked": 0,
     "skipped": 0,
-    "passRate": "0.0%",
-    "passRateExcludingBlocked": "N/A"
+    "passRate": "96.8%",
+    "passRateExcludingBlocked": "96.8%"
   },
-  "infraNote": "All 3 Playwright MCP browser contexts closed at suite start. vcst-qa application is UP (confirmed via env:check). This is MCP process state, not application failure. Remedy: restart Playwright MCP server processes or close any open Chrome/Firefox/Edge windows and re-run.",
-  "lastUpdated": "2026-05-19T14:05:00Z"
+  "bugs": [
+    {
+      "id": "BUG_050a_001",
+      "testCaseId": "CAT-GQL-113",
+      "title": "xAPI product() returns null when seoInfo { id } or seoInfo { objectType } is selected — INVALID_OPERATION (schema contract violation)",
+      "severity": "High",
+      "module": "VirtoCommerce.Xapi 3.1008.0 (suspect — bumped from 3.1007.0 today)",
+      "confirmed": true,
+      "triagedBy": "graphql-runner --refresh-schema; fresh introspection confirms fields still declared String!"
+    }
+  ],
+  "report": "reports/regression/REG-2026-05-20-1248/regression-2026-05-20.md",
+  "lastUpdated": "2026-05-20T12:58:00Z"
 }

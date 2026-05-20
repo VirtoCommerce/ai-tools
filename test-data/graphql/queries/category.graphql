@@ -4,7 +4,7 @@
 # purpose: Single category by id with name, slug, level, code
 # required-vars: STORE_ID (String), CATEGORY_ID (String)
 # optional-vars: CULTURE_NAME (String, default "en-US")
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 
 query {

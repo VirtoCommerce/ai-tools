@@ -1,0 +1,84 @@
+{
+  "caseId": "CAT-GQL-105",
+  "title": "xCatalog — slugInfo Product Slug",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:08.380Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "PROD_SLUG": "accessories/aliexpress/computer-office-education/gaming-laptops/asus-rog-stix-0051131830271"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "list_p",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\") { items { slug } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "slug": "accessories/aliexpress/computer-office-education/gaming-laptops/asus-rog-stix-0051131830271"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 221
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "slug_p",
+      "query": "query { slugInfo(slug: \"accessories/aliexpress/computer-office-education/gaming-laptops/asus-rog-stix-0051131830271\" storeId: \"B2B-store\") { entityInfo { objectType id semanticUrl } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "slugInfo": {
+            "entityInfo": {
+              "objectType": "CatalogProduct",
+              "id": "c3b1d2c7-30ac-4db6-ae31-447bbea48101",
+              "semanticUrl": "asus-rog-stix-0051131830271"
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 178
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=slug_p] errors[] empty",
+      "label": "slug_p",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=slug_p] data.slugInfo is non-null",
+      "label": "slug_p",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.slugInfo is non-null",
+      "actual": "data.slugInfo = {\"entityInfo\":{\"objectType\":\"CatalogProduct\",\"id\":\"c3b1d2c7-30ac-4db6-ae31-447bbea48101\",\"semanticUrl\":\"asus-rog-stix-0051131830271\"}}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

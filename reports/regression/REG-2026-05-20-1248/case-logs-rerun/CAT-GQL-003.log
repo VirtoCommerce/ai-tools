@@ -1,0 +1,35 @@
+◇ injected env (65) from .env // tip: ⌘ suppress logs { quiet: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-003 ===
+Title:  xCatalog — Category Tree Query
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: synced
+
+Variables (initial 0):
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC get_categories] POST /graphql
+  200 OK — 616ms — 0 errors
+
+Assertions (4):
+  ✅ [ERRORS label=get_categories]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=get_categories]
+       expected: data.categories is non-null
+       actual:   data.categories = {"totalCount":440,"items":[{"id":"4de1031b-f4ca-4bd5-8066-0d798fb98470","code":"be58c","name":"Tea","level":2,"slug":"coffee-and-tea/tea","outline":"50a72bde-3bdc-4d27-ad49-a154796b3d47/4de1031b-f4ca-…
+  ✅ [DATA label=get_categories]
+       expected: data.categories.totalCount >= 0
+       actual:   data.categories.totalCount = 440
+  ✅ [DATA label=get_categories]
+       expected: data.categories.items is non-null
+       actual:   data.categories.items = [{"id":"4de1031b-f4ca-4bd5-8066-0d798fb98470","code":"be58c","name":"Tea","level":2,"slug":"coffee-and-tea/tea","outline":"50a72bde-3bdc-4d27-ad49-a154796b3d47/4de1031b-f4ca-4bd5-8066-0d798fb98470","c…
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] Re-execute query → same totalCount and item ids
+
+=== Verdict: PASS (4/4 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-003-1779285987122.json

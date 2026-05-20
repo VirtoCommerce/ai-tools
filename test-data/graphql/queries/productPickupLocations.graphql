@@ -4,7 +4,7 @@
 # purpose: Pickup locations available for a specific product (BOPIS) with per-location availability, ETA, and on-hand quantity.
 # required-vars: PRODUCT_ID (String), STORE_ID (String)
 # optional-vars: (paging/keyword/sort via GQL operation variables — see gql-vars)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - availabilityType enum: Today | Transfer | GlobalTransfer (Today = stocked at this location)
 

@@ -288,13 +288,9 @@ CAT-GQL-112,"xCatalog — brands sort Parameter","GraphQL > xCatalog",High,BL-GQ
   query { brands(storeId: ""{{STORE_ID}}"" first: 3 sort: ""name:asc"") { items { id name } } }
 [GQL-EXEC sorted_brands]","[ERRORS label=sorted_brands] errors[] empty
 [DATA label=sorted_brands] data.brands is non-null",",","sort arg rejected",none,xAPI; Query.brands sort,Automated
-CAT-GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Captures a product id, queries every top-level Product field. Any rename/removal → DV-009 at lint time.","—","[GQL-OP list_p]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id } } }
-[GQL-EXEC list_p]
-[GQL-CAPTURE list_p.data.products.items.0.id → PROD_ID]
-[GQL-OP prod_full]
+CAT-GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level Product field on a known-good product with populated CatalogSeoInfo row (PROD_FULL_FIELD_COVERAGE → Animal Crossing ALCE0128). Any rename/removal → DV-009 at lint time. Deterministic (pinned via @td) — the no-SeoInfo branch of the xAPI 3.1008.0 SeoInfo regression is tracked separately by BUG-xAPI-SeoInfo-NonNull-Resolver-NoData.","—","[GQL-OP prod_full]
   query {
-    product(id: ""{{PROD_ID}}"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") {
+    product(id: ""@td(PROD_FULL_FIELD_COVERAGE.id)"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") {
       id code catalogId productType name slug outline outerId
       minQuantity maxQuantity packSize isConfigurable hasVariations
       imgSrc brandName gtin manufacturerPartNumber
@@ -317,10 +313,10 @@ CAT-GQL-113,"xCatalog — Product Full-Field Schema Coverage","GraphQL > xCatalo
   }
 [GQL-EXEC prod_full]","[ERRORS label=prod_full] errors[] empty — every Product field must resolve
 [DATA label=prod_full] data.product is non-null
-[DATA label=prod_full] data.product.id = {{PROD_ID}}
+[DATA label=prod_full] data.product.id = @td(PROD_FULL_FIELD_COVERAGE.id)
 [DATA label=prod_full] data.product.name is non-null
 [DATA label=prod_full] data.product.price is non-null
-[DATA label=prod_full] data.product.availabilityData is non-null",",","Any Product field renamed/removed (DV-009); PriceType drift; ImageType drift",none,xAPI; graphql-schema.md — Product,Automated
+[DATA label=prod_full] data.product.availabilityData is non-null",",","Any Product field renamed/removed (DV-009); PriceType drift; ImageType drift",none,xAPI; graphql-schema.md — Product; BUG-xAPI-SeoInfo-NonNull-Resolver-NoData (separate gate for the no-SeoInfo regression),Automated
 CAT-GQL-114,"xCatalog — ProductConnection Schema Coverage","GraphQL > xCatalog > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries products with facets selected. Verifies ProductConnection top-level fields resolve including facet arrays + pageInfo.","—","[GQL-OP pconn_full]
   query {
     products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 3 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"" facet: ""price.USD"") {

@@ -4,7 +4,7 @@
 # purpose: List user's carts (paginated)
 # required-vars: (none)
 # optional-vars: STORE_ID (String), FIRST (Int, default 10)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: (future) cart-list suites
 

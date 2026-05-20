@@ -4,7 +4,7 @@
 # purpose: Remove a single configuration section from a cart line item (clears that section's selection)
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - The required `configurationSection` input identifies WHICH section to remove (by sectionId/type); option/customText/fileUrls fields are ignored.
 # gql-vars: { "configurationSection": "ConfigurationSectionInput!" }

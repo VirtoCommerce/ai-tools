@@ -1,0 +1,210 @@
+{
+  "caseId": "CAT-GQL-001",
+  "title": "xCatalog — Search Products Query",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:10.801Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "b2b_catalog_root": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "search_products",
+      "query": "query {\n    products(\n      storeId: \"B2B-store\"\n      currencyCode: \"USD\"\n      cultureName: \"en-US\"\n      query: \"laptop\"\n      first: 5\n      filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\"\n    ) {\n      totalCount\n      pageInfo { hasNextPage endCursor }\n      items {\n        id\n        code\n        name\n        slug\n        imgSrc\n        brandName\n        price { actual { amount currency { code } } list { amount } }\n        availabilityData { isAvailable isInStock }\n      }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 152,
+            "pageInfo": {
+              "hasNextPage": true,
+              "endCursor": "5"
+            },
+            "items": [
+              {
+                "id": "2d3d3f11-6429-434b-a895-f1143dd2a67d",
+                "code": "SYU-76371555",
+                "name": "MacBook Pro 2023 Touchbar",
+                "slug": "accessories/aliexpress/computer-office-education/Desktops/macbook-pro-2023-touchbar",
+                "imgSrc": "https://vcst-qa.govirto.com/cms-content/assets/catalog/72c0b/SYU-76371555/0_1.jpg",
+                "brandName": "Apple",
+                "price": {
+                  "actual": {
+                    "amount": 1200,
+                    "currency": {
+                      "code": "USD"
+                    }
+                  },
+                  "list": {
+                    "amount": 1200
+                  }
+                },
+                "availabilityData": {
+                  "isAvailable": true,
+                  "isInStock": true
+                }
+              },
+              {
+                "id": "98f71acf-d801-46c1-a432-e13b9597b63b",
+                "code": "SEED-20260518-DELL-LAT-001",
+                "name": "SEED-20260518-Dell Latitude 5540 Business Laptop",
+                "slug": "seed-electronics/seed-computers-laptops/seed-laptops/seed-dell-latitude-5540",
+                "imgSrc": null,
+                "brandName": "Dell",
+                "price": {
+                  "actual": {
+                    "amount": 1499.99,
+                    "currency": {
+                      "code": "USD"
+                    }
+                  },
+                  "list": {
+                    "amount": 1499.99
+                  }
+                },
+                "availabilityData": {
+                  "isAvailable": true,
+                  "isInStock": true
+                }
+              },
+              {
+                "id": "6ee23bd045a549d785d9abc7e2a61b02",
+                "code": "552223579",
+                "name": "HP LaserJet Pro MFP M127fn Multifunction Laser Printer, Copy/Fax/Print/Scan",
+                "slug": "printers/multifunction-printers/laser-monochrome/hp-laserjet-pro-mfp-m127fn-multifunction-laser-printer-copyfaxprintscan-color-black",
+                "imgSrc": "https://virtostart-main.govirto.com/cms-content/assets/catalog/5aa50/HPU-25589234/m127fn-1.jpg",
+                "brandName": "HP",
+                "price": {
+                  "actual": {
+                    "amount": 315,
+                    "currency": {
+                      "code": "USD"
+                    }
+                  },
+                  "list": {
+                    "amount": 315
+                  }
+                },
+                "availabilityData": {
+                  "isAvailable": true,
+                  "isInStock": true
+                }
+              },
+              {
+                "id": "4531614d-89d6-4894-bf8d-3a4e1afb33df",
+                "code": "ALCOE1931",
+                "name": "Acer Laptop ETBook Gaming Intel Laptop Core i5-12450H Notebook 512GB SSD 16GB RAM Computer 14\" 2K IPS WiFi6 Windows 11 laptops",
+                "slug": null,
+                "imgSrc": "https://ae01.alicdn.com/kf/S78e17dcb0f3b4bc8b6ec19e03ab0252bu/Acer-Laptop-ETBook-Gaming-Intel-Laptop-Core-i5-12450H-Notebook-512GB-SSD-16GB-RAM-Computer-14.png_470x470.png_.webp",
+                "brandName": "Acer",
+                "price": {
+                  "actual": {
+                    "amount": 22,
+                    "currency": {
+                      "code": "USD"
+                    }
+                  },
+                  "list": {
+                    "amount": 22
+                  }
+                },
+                "availabilityData": {
+                  "isAvailable": true,
+                  "isInStock": true
+                }
+              },
+              {
+                "id": "7f715221-ba0e-4dfe-a60e-a39d87f40c1b",
+                "code": "ALCOE2497",
+                "name": "2024 New styles Gaming Laptop Windows 11 20GB RAM 1TB SSD Intel CORE i7 Laptop 14.1\" 1920*1080 Resolution Office Study Computer",
+                "slug": null,
+                "imgSrc": "https://ae01.alicdn.com/kf/Sdbd481c521de4a05a6cc3a64fbb0a4cbL/2024-New-styles-Gaming-Laptop-Windows-11-20GB-RAM-1TB-SSD-Intel-CORE-i7-Laptop-14.jpg_470x470.jpg_.webp",
+                "brandName": "Ninkear",
+                "price": {
+                  "actual": {
+                    "amount": 160,
+                    "currency": {
+                      "code": "USD"
+                    }
+                  },
+                  "list": {
+                    "amount": 160
+                  }
+                },
+                "availabilityData": {
+                  "isAvailable": true,
+                  "isInStock": true
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 4267
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=search_products] errors[] empty",
+      "label": "search_products",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=search_products] data.products is non-null",
+      "label": "search_products",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"totalCount\":152,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"5\"},\"items\":[{\"id\":\"2d3d3f11-6429-434b-a895-f1143dd2a67d\",\"code\":\"SYU-76371555\",\"name\":\"MacBook Pro 2023 Touchbar\",\"slug\":\"accessories/ali…"
+    },
+    {
+      "raw": "[DATA label=search_products] data.products.totalCount >= 0",
+      "label": "search_products",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.totalCount >= 0",
+      "actual": "data.products.totalCount = 152"
+    },
+    {
+      "raw": "[DATA label=search_products] data.products.items is non-null",
+      "label": "search_products",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.items is non-null",
+      "actual": "data.products.items = [{\"id\":\"2d3d3f11-6429-434b-a895-f1143dd2a67d\",\"code\":\"SYU-76371555\",\"name\":\"MacBook Pro 2023 Touchbar\",\"slug\":\"accessories/aliexpress/computer-office-education/Desktops/macbook-pro-2023-touchbar\",\"img…"
+    },
+    {
+      "raw": "[DATA label=search_products] data.products.pageInfo is non-null",
+      "label": "search_products",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.pageInfo is non-null",
+      "actual": "data.products.pageInfo = {\"hasNextPage\":true,\"endCursor\":\"5\"}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP] Re-execute same query → same totalCount returned",
+      "layer": "ROUNDTRIP",
+      "note": "Re-execute same query → same totalCount returned",
+      "resolved": "Re-execute same query → same totalCount returned"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only",
+    "blocks": []
+  }
+}

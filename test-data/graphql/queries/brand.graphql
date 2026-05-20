@@ -4,7 +4,7 @@
 # purpose: Single brand by id with permalink and featured flag
 # required-vars: STORE_ID (String), BRAND_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - Resolver may return synthetic object (id=zero-guid, other fields null) for invalid ID — test cases must accept either null or synthetic.
 

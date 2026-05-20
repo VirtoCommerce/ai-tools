@@ -1,0 +1,29 @@
+◇ injected env (65) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-037 ===
+Title:  xCatalog — Facet Parameter Returns Range Aggregation
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: Automated
+
+Variables (initial 0):
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC facet_price] POST /graphql
+  200 OK — 216ms — 0 errors
+
+Assertions (3):
+  ✅ [ERRORS label=facet_price]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=facet_price]
+       expected: data.products is non-null
+       actual:   data.products = {"totalCount":4573,"range_facets":[]}
+  ✅ [DATA label=facet_price]
+       expected: data.products.range_facets is non-null
+       actual:   data.products.range_facets = []
+
+=== Verdict: PASS (3/3 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-037-1779286008240.json

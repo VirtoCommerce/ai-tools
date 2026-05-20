@@ -4,7 +4,7 @@
 # purpose: Atomic re-configure of a cart line item — change quantity AND replace full configuration in one mutation
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - REPLACE semantics for both quantity and configurationSections; pass desired final state.
 # gql-vars: { "qty": "Int", "configurationSections": "[ConfigurationSectionInput]" }

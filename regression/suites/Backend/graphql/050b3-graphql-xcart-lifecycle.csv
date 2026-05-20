@@ -418,7 +418,7 @@ CRL-GQL-100,"xCart — Configurable Item Survives moveToSavedForLater Round-Trip
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
         quantity: 1
@@ -488,7 +488,7 @@ CRL-GQL-101,"xCart — moveFromSavedForLater Returns Configurable Item with Pres
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_val}}""
         quantity: 1
@@ -577,7 +577,7 @@ CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Config
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
         quantity: 1
@@ -613,7 +613,7 @@ CRL-GQL-102,"xCart — Edit Configurable Item by Remove+Add Preserves New Config
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_b}}""
         quantity: 1
@@ -654,7 +654,7 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
         quantity: 1
@@ -669,7 +669,7 @@ CRL-GQL-103,"xCart — Identical Configurable Items Added Twice Produce Distinct
       productId: ""{{ring_id}}""
       quantity: 1
       configurationSections: [{
-        sectionId: ""@td(CFG_RING.section_text_id)""
+        sectionId: ""@td(CFG_017_SECTIONS.Text)""
         type: ""Text""
         customText: ""{{text_a}}""
         quantity: 1

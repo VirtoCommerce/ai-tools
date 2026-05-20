@@ -4,7 +4,7 @@
 # purpose: Remove a line item from the cart by lineItemId
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: (future) 050b cart remove suites
 

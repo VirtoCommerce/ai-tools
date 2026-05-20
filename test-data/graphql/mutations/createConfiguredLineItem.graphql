@@ -4,7 +4,7 @@
 # purpose: Build a (preview) configured line item for a configurable product — used to validate selections + price math BEFORE adding to cart
 # required-vars: STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String)
 # optional-vars: CURRENCY_CODE (String, default "USD"), CULTURE_NAME (String, default "en-US")
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - Returns a ConfigurationLineItemType (preview) — does NOT mutate the cart. Use addItem or addConfigurationItem to persist.
 # gql-vars: { "configurationSections": "[ConfigurationSectionInput]" }

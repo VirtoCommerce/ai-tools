@@ -4,7 +4,7 @@
 # purpose: Create a new organization; returns id of the created org
 # required-vars: ORG_NAME (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: GQL-030 (creates org for downstream tests; requires cleanup via REST DELETE /api/members?ids=<ORG_ID>)
 # cleanup-required: YES — always pair with [REST DELETE /api/members?ids={{VALID_ORG_ID}}]

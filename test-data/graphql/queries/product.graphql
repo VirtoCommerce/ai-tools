@@ -4,7 +4,7 @@
 # purpose: Single product detail by id
 # required-vars: PRODUCT_ID (String), STORE_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: (future) product-detail suites
 

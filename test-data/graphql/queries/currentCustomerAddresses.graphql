@@ -4,7 +4,7 @@
 # purpose: Current user's saved addresses with facets (paginated)
 # required-vars: (none)
 # optional-vars: FIRST (Int, default 20)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: GQL-048
 

@@ -1,0 +1,26 @@
+◇ injected env (65) from .env // tip: ⌘ override existing { override: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-036 ===
+Title:  xCatalog — Range Filter on Non-Price Property
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: Automated
+
+Variables (initial 0):
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC range_weight] POST /graphql
+  200 OK — 207ms — 0 errors
+
+Assertions (2):
+  ✅ [ERRORS label=range_weight]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=range_weight]
+       expected: data.products is non-null
+       actual:   data.products = {"totalCount":4573,"items":[{"id":"35e12fdb-91cd-4e27-bf23-620f820c3cc9"},{"id":"8e9584b0-8f91-4852-aad1-bb6f51aab9d1"},{"id":"991e2bdc-4e8e-4af2-aea3-ad082982fb79"}]}
+
+=== Verdict: PASS (2/2 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-036-1779286007158.json

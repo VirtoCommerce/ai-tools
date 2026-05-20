@@ -1,0 +1,40 @@
+◇ injected env (65) from .env // tip: ⌘ enable debugging { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-004 ===
+Title:  xCatalog — Product Facets/Filters Query
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: synced
+
+Variables (initial 1):
+  b2b_catalog_root = fc596540864a41bf8ab78734ee7353a3
+
+Steps parsed: 3 blocks
+
+• [GQL-EXEC unfiltered_facets] POST /graphql
+  200 OK — 1147ms — 0 errors
+• [GQL-CAPTURE unfiltered_facets.data.products.totalCount → UNFILTERED_COUNT] = 4573
+
+Assertions (5):
+  ✅ [ERRORS label=unfiltered_facets]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=unfiltered_facets]
+       expected: data.products is non-null
+       actual:   data.products = {"totalCount":4573,"term_facets":[{"name":"BRAND","label":"Brand","facetType":"TERMS","terms":[{"term":"111","label":"111","count":1,"isSelected":false},{"term":"3DR","label":"3DR","count":91,"isSelec…
+  ✅ [DATA label=unfiltered_facets]
+       expected: data.products.totalCount >= 0
+       actual:   data.products.totalCount = 4573
+  ✅ [DATA label=unfiltered_facets]
+       expected: data.products.term_facets is non-null
+       actual:   data.products.term_facets = [{"name":"BRAND","label":"Brand","facetType":"TERMS","terms":[{"term":"111","label":"111","count":1,"isSelected":false},{"term":"3DR","label":"3DR","count":91,"isSelected":false},{"term":"3M","label":…
+  ✅ [DATA label=unfiltered_facets]
+       expected: data.products.items is non-null
+       actual:   data.products.items = [{"id":"35e12fdb-91cd-4e27-bf23-620f820c3cc9","name":"ASUS ROG Strix G15 Laptop da gioco AMD Ryzen 9 5900HX 16G RAM 512GB SSD RX6800M-8GB 300Hz schermo Computer"},{"id":"8e9584b0-8f91-4852-aad1-bb6f51…
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] Facet term counts should sum to <= totalCount (runner-manual cross-check)
+
+=== Verdict: PASS (5/5 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-004-1779285994913.json

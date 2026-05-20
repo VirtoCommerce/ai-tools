@@ -1,0 +1,82 @@
+{
+  "caseId": "CAT-GQL-034",
+  "title": "xCatalog — Range Filter Inclusive vs Exclusive Boundaries",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:44.996Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "range_inclusive",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 3 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:[10 TO 200]\") { totalCount items { id price { actual { amount } } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 2854,
+            "items": [
+              {
+                "id": "8e9584b0-8f91-4852-aad1-bb6f51aab9d1",
+                "price": {
+                  "actual": {
+                    "amount": 25
+                  }
+                }
+              },
+              {
+                "id": "e615377f-93d2-45d9-a231-31255d5508f5",
+                "price": {
+                  "actual": {
+                    "amount": 29.95
+                  }
+                }
+              },
+              {
+                "id": "cdf0bc03-bcb0-4cad-91ee-35b96d8e0187",
+                "price": {
+                  "actual": {
+                    "amount": 99.95
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 321
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=range_inclusive] errors[] empty",
+      "label": "range_inclusive",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=range_inclusive] data.products is non-null",
+      "label": "range_inclusive",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"totalCount\":2854,\"items\":[{\"id\":\"8e9584b0-8f91-4852-aad1-bb6f51aab9d1\",\"price\":{\"actual\":{\"amount\":25}}},{\"id\":\"e615377f-93d2-45d9-a231-31255d5508f5\",\"price\":{\"actual\":{\"amount\":29.95}}},{\"id\":\"cdf0…"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none — read-only",
+    "blocks": []
+  }
+}

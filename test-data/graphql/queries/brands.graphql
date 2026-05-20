@@ -4,7 +4,7 @@
 # purpose: List brands available in a store (paginated, sortable)
 # required-vars: STORE_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - The brands query uses "keyword" arg (not "query" like products)
 # gql-vars: { "first": "Int", "sort": "String", "keyword": "String" }

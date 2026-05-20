@@ -1,0 +1,100 @@
+{
+  "caseId": "CAT-GQL-096",
+  "title": "xCatalog — category Singular Query by ID",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:57.528Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "CAT_ID": "4de1031b-f4ca-4bd5-8066-0d798fb98470"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "list_cats",
+      "query": "query { categories(storeId: \"B2B-store\" first: 1 cultureName: \"en-US\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "categories": {
+            "items": [
+              {
+                "id": "4de1031b-f4ca-4bd5-8066-0d798fb98470"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 414
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cat_one",
+      "query": "query { category(id: \"4de1031b-f4ca-4bd5-8066-0d798fb98470\" storeId: \"B2B-store\" cultureName: \"en-US\") { id code name level slug } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "category": {
+            "id": "4de1031b-f4ca-4bd5-8066-0d798fb98470",
+            "code": "be58c",
+            "name": "Tea",
+            "level": 2,
+            "slug": "coffee-and-tea/tea"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 173
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=cat_one] errors[] empty",
+      "label": "cat_one",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=cat_one] data.category is non-null",
+      "label": "cat_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.category is non-null",
+      "actual": "data.category = {\"id\":\"4de1031b-f4ca-4bd5-8066-0d798fb98470\",\"code\":\"be58c\",\"name\":\"Tea\",\"level\":2,\"slug\":\"coffee-and-tea/tea\"}"
+    },
+    {
+      "raw": "[DATA label=cat_one] data.category.id = {{CAT_ID}}",
+      "label": "cat_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.category.id = 4de1031b-f4ca-4bd5-8066-0d798fb98470",
+      "actual": "data.category.id = 4de1031b-f4ca-4bd5-8066-0d798fb98470"
+    },
+    {
+      "raw": "[DATA label=cat_one] data.category.name is non-null",
+      "label": "cat_one",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.category.name is non-null",
+      "actual": "data.category.name = \"Tea\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

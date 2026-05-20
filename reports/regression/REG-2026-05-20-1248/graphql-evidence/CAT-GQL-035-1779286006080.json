@@ -1,0 +1,67 @@
+{
+  "caseId": "CAT-GQL-035",
+  "title": "xCatalog — Open-Ended Range Filter Syntax",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:06:46.079Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "range_open",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 3 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO)\") { totalCount items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 3604,
+            "items": [
+              {
+                "id": "35e12fdb-91cd-4e27-bf23-620f820c3cc9"
+              },
+              {
+                "id": "8e9584b0-8f91-4852-aad1-bb6f51aab9d1"
+              },
+              {
+                "id": "991e2bdc-4e8e-4af2-aea3-ad082982fb79"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 223
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=range_open] errors[] empty",
+      "label": "range_open",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=range_open] data.products is non-null",
+      "label": "range_open",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"totalCount\":3604,\"items\":[{\"id\":\"35e12fdb-91cd-4e27-bf23-620f820c3cc9\"},{\"id\":\"8e9584b0-8f91-4852-aad1-bb6f51aab9d1\"},{\"id\":\"991e2bdc-4e8e-4af2-aea3-ad082982fb79\"}]}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

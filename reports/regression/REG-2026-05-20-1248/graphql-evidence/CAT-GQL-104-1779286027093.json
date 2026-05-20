@@ -1,0 +1,84 @@
+{
+  "caseId": "CAT-GQL-104",
+  "title": "xCatalog — slugInfo Category Slug",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:07.092Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "CAT_SLUG": "coffee-and-tea/tea"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "list_cats",
+      "query": "query { categories(storeId: \"B2B-store\" first: 1 cultureName: \"en-US\") { items { slug } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "categories": {
+            "items": [
+              {
+                "slug": "coffee-and-tea/tea"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 205
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "slug_cat",
+      "query": "query { slugInfo(slug: \"coffee-and-tea/tea\" storeId: \"B2B-store\") { entityInfo { objectType id semanticUrl } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "slugInfo": {
+            "entityInfo": {
+              "objectType": "Category",
+              "id": "2d33a4e1-b4df-4af4-b2ee-e9822920c845",
+              "semanticUrl": "tea"
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 445
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=slug_cat] errors[] empty",
+      "label": "slug_cat",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=slug_cat] data.slugInfo is non-null",
+      "label": "slug_cat",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.slugInfo is non-null",
+      "actual": "data.slugInfo = {\"entityInfo\":{\"objectType\":\"Category\",\"id\":\"2d33a4e1-b4df-4af4-b2ee-e9822920c845\",\"semanticUrl\":\"tea\"}}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

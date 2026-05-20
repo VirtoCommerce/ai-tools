@@ -1,0 +1,69 @@
+{
+  "caseId": "CAT-GQL-099",
+  "title": "xCatalog — products sort Parameter",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:00.999Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "sorted",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 3 sort: \"name:asc\" filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3\") { items { id name } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "ec242fa2-9ce6-464a-8315-79e9e018e29c",
+                "name": "0.6L Electric Drip Coffee Maker 600W Household Coffee Machine 5 Cup Tea Coffee Pot Milk Coffee Maker for Gift 220V"
+              },
+              {
+                "id": "ce4fcacb-9261-404d-bc08-43f381b3cf26",
+                "name": "1 Book Retro Spiral Coil Kraft Paper Notebook Sketchbook Painting Diary Drawing Painting Graffiti Office School Stationery"
+              },
+              {
+                "id": "9c0d0092-f218-45b3-9da7-4d91982575ce",
+                "name": "1 Hopes Rise, Frankston South, VIC 3199"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 298
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=sorted] errors[] empty",
+      "label": "sorted",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=sorted] data.products.items is non-null",
+      "label": "sorted",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products.items is non-null",
+      "actual": "data.products.items = [{\"id\":\"ec242fa2-9ce6-464a-8315-79e9e018e29c\",\"name\":\"0.6L Electric Drip Coffee Maker 600W Household Coffee Machine 5 Cup Tea Coffee Pot Milk Coffee Maker for Gift 220V\"},{\"id\":\"ce4fcacb-9261-404d-bc0…"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

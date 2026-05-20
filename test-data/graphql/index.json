@@ -1,6 +1,6 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-05-19",
+  "lastValidated": "2026-05-20",
   "backUrl": "https://vcst-qa.govirto.com",
   "totalFixtures": 66,
   "queries": {

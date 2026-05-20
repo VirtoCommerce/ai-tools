@@ -2009,3 +2009,161 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [DATA label=merge] data.mergeCart.itemsCount >= 1
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge","[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.","customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart",cleanup_post inline,"xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012",Draft
+"CFG-GQL-VCST4961-A","changeCartConfiguredItem — selectedForCheckout=TRUE preserved across Edit-Configuration re-edit (VCST-4961)","GraphQL > Configurable Products > Mutation","Critical","BL-GQL-001; BL-CART-001; BL-PRICE-001","ECL-2.1; ECL-14.1","Runner-native. ORG_USER. VCST-4961 fix verification: addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE) — both configurationItems default selectedForCheckout=true. Then changeCartConfiguredItem with RAM swapped to UPGRADE option (Storage unchanged) — simulates user Edit-Configuration → Update Cart flow. PR #119 adds PreserveSelectedForCheckoutFromOldConfiguration in ChangeCartConfiguredLineItemCommandHandler. Expected post-fix: both configurationItems still have selectedForCheckout=true (preserved) AND listPrice reflects the new RAM option pricing (> BASE_LIST_PRICE). Final nochange_short re-issues identical sections → BL-CART-013 no-change short-circuit, listPrice unchanged from reedit.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId quantity listPrice { amount } extendedPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.listPrice.amount → BASE_LIST_PRICE]
+[GQL-OP reedit_swap_ram]
+[GQL-VARS reedit_swap_ram] {""qty"": 1, ""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: $qty configurationSections: $configurationSections }) {
+      id items { id quantity listPrice { amount } extendedPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC reedit_swap_ram]
+[GQL-CAPTURE reedit_swap_ram.data.changeCartConfiguredItem.items.0.listPrice.amount → LISTPRICE_AFTER_REEDIT]
+[GQL-OP nochange_short]
+[GQL-VARS nochange_short] {""qty"": 1, ""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem2($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: $qty configurationSections: $configurationSections }) {
+      id items { id quantity listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC nochange_short]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[DATA label=add_item] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
+[DATA label=add_item] data.addItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[ERRORS label=reedit_swap_ram] errors[] empty
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.listPrice.amount > {{BASE_LIST_PRICE}}
+[ERRORS label=nochange_short] errors[] empty
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}","[EVIDENCE] Pre-fix VCST-4961 symptom: after Edit-Configuration re-submission, selectedForCheckout silently reset to true even when previously set; new fix preserves prior flag value via PreserveSelectedForCheckoutFromOldConfiguration. This case asserts the trivial direction (both flags were true and remain true) + the reprice math (RAM upgrade contributes higher listPrice).","reedit_swap_ram returns selectedForCheckout=false on RAM (silent reset to false); listPrice unchanged after RAM swap (regen path skipped); errors[] non-empty; nochange_short listPrice differs from reedit listPrice (no-change short-circuit broken)","cleanup_post inline","xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961","Automated"
+"CFG-GQL-VCST4961-B","changeCartConfiguredItem — selectedForCheckout=FALSE preserved across Edit-Configuration re-edit (VCST-4961, primary fix path)","GraphQL > Configurable Products > Mutation","Critical","BL-GQL-001; BL-CART-001; BL-CART-010; BL-CART-013; BL-PRICE-001","ECL-2.1; ECL-9.1; ECL-14.1","Runner-native. ORG_USER. PRIMARY VCST-4961 fix path. addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE). Use changeCartConfigurationItemSelected to flip RAM selectedForCheckout=false (capture LISTPRICE_AFTER_DESELECT — BL-CART-010 reprice down). Then changeCartConfiguredItem with RAM swapped to UPGRADE option — pre-fix would silently re-enable RAM (selectedForCheckout=true after rebuild); post-fix PreserveSelectedForCheckoutFromOldConfiguration retains the false flag. Expected: RAM selectedForCheckout STILL false, Storage still true, listPrice equals LISTPRICE_AFTER_DESELECT exactly (RAM deselected — UPGRADE option does NOT contribute to price). Final nochange_short = same sections again → BL-CART-013 short-circuit, listPrice unchanged.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.1.product.id → OPT_RAM_UPGRADE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId quantity listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.listPrice.amount → BASE_LIST_PRICE]
+[GQL-OP flip_off_ram]
+[GQL-VARS flip_off_ram] {""configurationSection"": {""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}""}}, ""selectedForCheckout"": false}
+  mutation ChangeCartConfigurationItemSelected($configurationSection: ConfigurationSectionKeyInput!, $selectedForCheckout: Boolean!) {
+    changeCartConfigurationItemSelected(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" configurationSection: $configurationSection selectedForCheckout: $selectedForCheckout }) {
+      id items { id listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC flip_off_ram]
+[GQL-CAPTURE flip_off_ram.data.changeCartConfigurationItemSelected.items.0.listPrice.amount → LISTPRICE_AFTER_DESELECT]
+[GQL-OP reedit_swap_ram]
+[GQL-VARS reedit_swap_ram] {""qty"": 1, ""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: $qty configurationSections: $configurationSections }) {
+      id items { id quantity listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC reedit_swap_ram]
+[GQL-CAPTURE reedit_swap_ram.data.changeCartConfiguredItem.items.0.listPrice.amount → LISTPRICE_AFTER_REEDIT]
+[GQL-OP nochange_short]
+[GQL-VARS nochange_short] {""qty"": 1, ""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_UPGRADE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation ChangeCartConfiguredItem2($qty: Int, $configurationSections: [ConfigurationSectionInput]) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: $qty configurationSections: $configurationSections }) {
+      id items { id quantity listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC nochange_short]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[DATA label=add_item] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
+[ERRORS label=flip_off_ram] errors[] empty
+[DATA label=flip_off_ram] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
+[DATA label=flip_off_ram] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[DATA label=flip_off_ram] data.changeCartConfigurationItemSelected.items.0.listPrice.amount < {{BASE_LIST_PRICE}}
+[ERRORS label=reedit_swap_ram] errors[] empty
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
+[DATA label=reedit_swap_ram] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_DESELECT}}
+[ERRORS label=nochange_short] errors[] empty
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}","[EVIDENCE] Pre-fix VCST-4961 contract violation: deselect-then-edit silently re-enables the section; BUG impact: user explicit deselect lost on any subsequent edit; user-perceived as wrong total at checkout. Post-fix listPrice should equal LISTPRICE_AFTER_DESELECT because deselected RAM contributes $0 regardless of which RAM option is chosen.","reedit_swap_ram RAM selectedForCheckout=true (FIX_INCOMPLETE — silently re-enabled); reedit_swap_ram listPrice > LISTPRICE_AFTER_DESELECT (re-enable + reprice up — confirms pre-fix behavior still present); errors[] non-empty; nochange_short listPrice not equal to reedit listPrice (no-change short-circuit broken)","cleanup_post inline","xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961 primary fix path","Automated"
+"CFG-GQL-VCST4961-C","addItem — option.selectedForCheckout=false honored at first add (Issue-A new-section path, VCST-4961)","GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-001","ECL-2.1","Runner-native. ORG_USER. Issue-A regression: PR #119 also touches CreateConfiguredLineItemHandler → AddProductSectionLineItem(selectedForCheckout: …) so the input selectedForCheckout on a section the cart never had before is no longer silently ignored. addItem(CFG_LAPTOP) passing RAM section with option.selectedForCheckout=false on the FIRST add (cart had no prior config item for this section). Storage section uses default. Expected: RAM configurationItem.selectedForCheckout=false; Storage configurationItem.selectedForCheckout=true (default).","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item_with_false]
+[GQL-VARS add_item_with_false] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1, ""selectedForCheckout"": false}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId quantity listPrice { amount } configurationItems { id sectionId productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item_with_false]
+[GQL-CAPTURE add_item_with_false.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item_with_false] errors[] empty
+[DATA label=add_item_with_false] data.addItem.itemsCount = 1
+[DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
+[DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true","[EVIDENCE] Pre-fix Issue-A: option.selectedForCheckout on input was ignored at addItem time; section always defaulted to true. Post-fix honors the input flag. Distinct code path from CASE A/B (which exercise changeCartConfiguredItem re-edit handler).","add_item_with_false RAM selectedForCheckout=true (Issue-A regression — input ignored); errors[] non-empty; configurationItems missing the RAM entry entirely","cleanup_post inline","xAPI; Mutation.addItem; ConfigurableProductOptionInput.selectedForCheckout; PR #119 CreateConfiguredLineItemHandler; VCST-4961","Automated"

@@ -1,0 +1,33 @@
+◇ injected env (65) from .env // tip: ⌘ suppress logs { quiet: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-115 ===
+Title:  [VCST-4173] xCatalog products term_facets Present After FilteredBrowsing Migration
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: Draft
+
+Variables (initial 1):
+  b2b_catalog_root = fc596540864a41bf8ab78734ee7353a3
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC products_term_facets] POST /graphql
+  200 OK — 534ms — 0 errors
+
+Assertions (3):
+  ✅ [ERRORS label=products_term_facets]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=products_term_facets]
+       expected: data.products is non-null
+       actual:   data.products = {"totalCount":4573,"term_facets":[{"name":"BRAND","label":"Brand","facetType":"TERMS","terms":[{"term":"111","label":"111","count":1,"isSelected":false},{"term":"3DR","label":"3DR","count":91,"isSelec…
+  ✅ [DATA label=products_term_facets]
+       expected: data.products.term_facets is non-null
+       actual:   data.products.term_facets = [{"name":"BRAND","label":"Brand","facetType":"TERMS","terms":[{"term":"111","label":"111","count":1,"isSelected":false},{"term":"3DR","label":"3DR","count":91,"isSelected":false},{"term":"3M","label":…
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] Confirm same facet groups appear in Admin > Catalog > Store > FilteredBrowsing blade as before migration
+
+=== Verdict: PASS (3/3 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-115-1779286062938.json

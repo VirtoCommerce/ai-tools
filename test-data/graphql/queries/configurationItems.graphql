@@ -4,7 +4,7 @@
 # purpose: Read back the configuration items currently attached to a cart line item
 # required-vars: STORE_ID (String), CURRENCY_CODE (String, e.g. "USD"), LINE_ITEM_ID (String — capture from cart line item)
 # optional-vars: CART_ID (String), CART_NAME (String), CART_TYPE (String), USER_ID (String), CULTURE_NAME (String)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 
 query {

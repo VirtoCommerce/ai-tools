@@ -4,7 +4,7 @@
 # purpose: Pickup locations capable of fulfilling the entire current cart (BOPIS) — per-location availability + facets/filter for narrowing the list.
 # required-vars: CART_ID (String), STORE_ID (String)
 # optional-vars: (paging/keyword/sort/facet/filter via GQL operation variables — see gql-vars)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues:
 #   - availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock
 #   - facet arg accepts comma-separated facet field names; filter arg uses the standard xAPI filter syntax (e.g. "address.countryCode:USA")

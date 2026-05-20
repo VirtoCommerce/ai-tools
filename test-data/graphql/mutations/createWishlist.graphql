@@ -4,7 +4,7 @@
 # purpose: Create a new wishlist for the current user
 # required-vars: STORE_ID (String), USER_ID (String), LIST_NAME (String)
 # optional-vars: DESCRIPTION (String), SCOPE (String — "Private" | "Public" | "Organization")
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # used-by: (future) 050h wishlist create suite
 # cleanup-required: YES — always pair with removeWishlist using the returned id

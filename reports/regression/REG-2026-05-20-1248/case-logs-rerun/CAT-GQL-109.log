@@ -1,0 +1,29 @@
+◇ injected env (65) from .env // tip: ⌘ enable debugging { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-109 ===
+Title:  xCatalog — brands List
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: Automated
+
+Variables (initial 0):
+
+Steps parsed: 2 blocks
+
+• [GQL-EXEC list_brands] POST /graphql
+  200 OK — 227ms — 0 errors
+
+Assertions (3):
+  ✅ [ERRORS label=list_brands]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=list_brands]
+       expected: data.brands is non-null
+       actual:   data.brands = {"totalCount":798,"items":[{"id":"111","name":"111","permalink":"brands/111","logoUrl":null},{"id":"3DR","name":"3DR","permalink":"brands/3DR","logoUrl":null},{"id":"3e549f18-f8f8-4b9b-81f4-d30c059125…
+  ✅ [COUNT label=list_brands]
+       expected: data.brands.totalCount >= 0
+       actual:   data.brands.totalCount = 798
+
+=== Verdict: PASS (3/3 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-109-1779286040430.json

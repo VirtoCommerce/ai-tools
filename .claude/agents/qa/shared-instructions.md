@@ -81,8 +81,49 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Test Data Generation | `.claude/agents/knowledge/test-data-generation.md` |
 | GraphQL xAPI Schema | `.claude/agents/knowledge/graphql-schema.md` |
 | **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` |
+| **Live Test-Data Discovery** | `.claude/agents/knowledge/live-discovery.md` |
 
 **Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
+
+## Live-Verification Policy
+
+Test data, schema, and design intent are verified against **live state**, not against assumptions or stale references. Apply these checks in order before authoring, executing, or filing a bug.
+
+### 1. Resolve test data at runtime — never hardcode
+
+Pick the right layer for each data role:
+
+| Layer | Use for | Source |
+|---|---|---|
+| `{{VAR}}` | Per-env URLs, credentials, store/culture/currency | `.env` (loaded by `config.js`) |
+| `@td(ALIAS.field)` | Specific entities you **assert against by name** (CFG_LAPTOP, ORG_TECHFLOW, COUPON_10OFF) | `test-data/aliases.json` → CSV in `test-data/` |
+| `live-discover` | **Any** entity, or one whose ID drifts (virtual-catalog root, first product, first address, any active coupon) | `scripts/lib/live-discover.ts` (JS) or `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) |
+| `random-data` | **Unique inputs** you never assert exact values on (emails, org names, BVA quantities, comments) | `scripts/lib/random-data.ts` (defaults use `AGENT-TEST-` prefix) |
+
+**Cardinal rule:** random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants (`isNumber`, `> 0`, currency-formatted).
+
+Full decision tree, JS recipes, and CSV-runner recipes: `.claude/agents/knowledge/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
+
+### 2. Validate GraphQL against the live schema
+
+Before authoring or reviewing any query/mutation:
+- Consult `.claude/agents/knowledge/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
+- For ad-hoc inline checks: `npx tsx scripts/graphql-runner.ts --query "<inline>"`.
+- Schema is refreshed via `npm run schema:refresh`; fixtures are bumped/renamed via `npm run graphql:fixtures:update`; CI gate is `npm run graphql:fixtures:validate`.
+- The canonical runner is `scripts/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
+
+### 3. Verify selectors & state against the live UI
+
+Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `.claude/agents/knowledge/test-execution-preflight.md` and `.claude/agents/knowledge/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
+
+### 4. Verify source data and design intent before filing a bug
+
+For any "wrong field mapping" / "missing UI control" / "disabled element" / "readonly field" symptom:
+1. **Source first** — find the binding in the upstream source (vc-frontend repo for storefront, module repo for admin) BEFORE dispatching a browser session. A disabled state often reflects a config flag, role gate, or business rule, not a defect.
+2. **Verify the underlying record** — for field-mapping bugs, confirm the entity's field value via the platform REST API or `getByPath` capture, not just from rendered text.
+3. **Check feature flags & roles** — `$cfg.*` flags (`storefront-config-flags.md`), permission grants on Roles (not users), org-vs-personal account differences.
+
+Codified in memory: `feedback_verify_source_data_before_bug`, `feedback_verify_design_intent_before_bug`. Embedded in the `/qa-bug` skill — when invoked standalone, agents must still run these checks.
 
 ## Virto Commerce Testing Scope
 

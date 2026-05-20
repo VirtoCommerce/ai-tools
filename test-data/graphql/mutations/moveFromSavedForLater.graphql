@@ -6,7 +6,7 @@
 # optional-vars: CURRENCY_CODE (String, default "USD"), CULTURE_NAME (String, default "en-US")
 # gql-vars: { "lineItemIds": "[String!]!" }
 # runner-note: Pass SAVED line item IDs (captured from moveToSavedForLater.list.items[].id or getSavedForLater.items[].id) via [GQL-VARS label] JSON, e.g. {"lineItemIds": ["{{SAVED_0_ID}}"]}
-# last-validated: 2026-05-19
+# last-validated: 2026-05-20
 # known-issues: configurationItems on configurable line items are restored end-to-end (PR #118 / VCST-4205)
 # used-by: VCST-4205 (Save-for-Later config preservation)
 # semantics: lineItemIds are removed from the "Saved for later" cart and inserted into the active cart. Return shape: { cart, list } where cart=active cart after the move, list=saved-for-later cart after the move.

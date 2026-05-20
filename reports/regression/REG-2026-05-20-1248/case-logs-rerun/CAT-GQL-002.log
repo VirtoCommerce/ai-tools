@@ -1,0 +1,49 @@
+◇ injected env (65) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CAT-GQL-002 ===
+Title:  xCatalog — Get Product Detail Query
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050a-graphql-xcatalog.csv
+Status: synced
+
+Variables (initial 1):
+  b2b_catalog_root = fc596540864a41bf8ab78734ee7353a3
+
+Steps parsed: 5 blocks
+
+• [GQL-EXEC discover_product] POST /graphql
+  200 OK — 2116ms — 0 errors
+• [GQL-CAPTURE discover_product.data.products.items.0.id → PROD_ID] = 35e12fdb-91cd-4e27-bf23-620f820c3cc9
+
+• [GQL-EXEC get_product] POST /graphql
+  200 OK — 881ms — 0 errors
+
+Assertions (7):
+  ✅ [ERRORS label=discover_product]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [ERRORS label=get_product]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=get_product]
+       expected: data.product is non-null
+       actual:   data.product = {"id":"35e12fdb-91cd-4e27-bf23-620f820c3cc9","code":"51131830271","name":"ASUS ROG Strix G15 Laptop da gioco AMD Ryzen 9 5900HX 16G RAM 512GB SSD RX6800M-8GB 300Hz schermo Computer","slug":"accessorie…
+  ✅ [DATA label=get_product]
+       expected: data.product.id = 35e12fdb-91cd-4e27-bf23-620f820c3cc9
+       actual:   data.product.id = 35e12fdb-91cd-4e27-bf23-620f820c3cc9
+  ✅ [DATA label=get_product]
+       expected: data.product.name is non-null
+       actual:   data.product.name = "ASUS ROG Strix G15 Laptop da gioco AMD Ryzen 9 5900HX 16G RAM 512GB SSD RX6800M-8GB 300Hz schermo Computer"
+  ✅ [DATA label=get_product]
+       expected: data.product.price is non-null
+       actual:   data.product.price = {"actual":{"amount":233,"currency":{"code":"USD"}},"list":{"amount":233},"sale":{"amount":233},"discountAmount":{"amount":0},"discountPercent":0}
+  ✅ [DATA label=get_product]
+       expected: data.product.availabilityData is non-null
+       actual:   data.product.availabilityData = {"isAvailable":true,"isBuyable":true,"isInStock":true,"availableQuantity":114}
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [ROUNDTRIP] Re-execute get_product with same PROD_ID → identical response
+
+=== Verdict: PASS (7/7 assertions passed) ===
+
+Evidence: reports\regression\REG-2026-05-20-1248\graphql-evidence\CAT-GQL-002-1779285980182.json

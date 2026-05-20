@@ -1,0 +1,57 @@
+◇ injected env (65) from .env // tip: ⌘ enable debugging { debug: true }
+Using cached schema: C:\Users\mutyk\My Projects\vc-mcp-testing-module\scripts\.graphql-schema.cache.json
+
+=== Case: CFG-GQL-VCST4961-C ===
+Title:  addItem — option.selectedForCheckout=false honored at first add (Issue-A new-section path, VCST-4961)
+Source: C:\Users\mutyk\My Projects\vc-mcp-testing-module\regression\suites\Backend\graphql\050i-graphql-configurations.csv
+Status: Automated
+
+Variables (initial 1):
+  configurable_id = dd56d770-3c3b-4e09-b126-0c2bb8bd0f72
+
+Steps parsed: 18 blocks
+
+• [AUTH role=ORG_USER] acquiring token...
+  token acquired (685ms)
+
+• [GQL-EXEC setup_me] POST /graphql
+  200 OK — 139ms — 0 errors
+• [GQL-CAPTURE setup_me.data.me.id → USER_ID] = user-acme-store-maintainer-1
+
+• [GQL-EXEC cleanup_pre] POST /graphql
+  200 OK — 1245ms — 0 errors
+
+• [GQL-EXEC get_def] POST /graphql
+  200 OK — 235ms — 0 errors
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID] = 5190d8cc-56f5-4675-9a34-d94c28f306f7
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID] = b147e934-6255-4a39-902c-17a816591932
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID] = e5fbc712-8697-4c48-b4f4-a8943f8d3d21
+• [GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID] = efda4b3d-5843-4dc1-961b-965b8f423d14
+
+• [GQL-EXEC add_item_with_false] POST /graphql
+  200 OK — 1262ms — 0 errors
+• [GQL-CAPTURE add_item_with_false.data.addItem.items.0.id → LINE_ITEM_ID] = 36a40303-7f8e-4eda-9207-04c84f8df008
+
+• [GQL-EXEC cleanup_post] POST /graphql
+  200 OK — 337ms — 0 errors
+
+Assertions (4):
+  ✅ [ERRORS label=add_item_with_false]
+       expected: errors[] empty
+       actual:   errors[] empty
+  ✅ [DATA label=add_item_with_false]
+       expected: data.addItem.itemsCount = 1
+       actual:   data.addItem.itemsCount = 1
+  ✅ [DATA label=add_item_with_false]
+       expected: data.addItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+       actual:   data.addItem.items.0.configurationItems[?sectionId=5190d8cc-56f5-4675-9a34-d94c28f306f7].selectedForCheckout = false
+  ✅ [DATA label=add_item_with_false]
+       expected: data.addItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+       actual:   data.addItem.items.0.configurationItems[?sectionId=e5fbc712-8697-4c48-b4f4-a8943f8d3d21].selectedForCheckout = true
+
+Cross_Layer_Checks (1, runner-manual for now):
+  · [EVIDENCE] Pre-fix Issue-A: option.selectedForCheckout on input was ignored at addItem time; section always defaulted to true. Post-fix honors the input flag. Distinct code path from CASE A/B (which exercise changeCartConfiguredItem re-edit handler).
+
+=== Verdict: PASS (4/4 assertions passed) ===
+
+Evidence: C:\Users\mutyk\My Projects\vc-mcp-testing-module\reports\regression\graphql-evidence\CFG-GQL-VCST4961-C-1779278216472.json

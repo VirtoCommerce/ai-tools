@@ -1,0 +1,59 @@
+{
+  "caseId": "CAT-GQL-102",
+  "title": "xCatalog — products Filter by Facet Term (Brand)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:04.389Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "brand": "Acme"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "brand_filter",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 3 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 Brand:Acme\") { totalCount items { id brandName } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "totalCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 213
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=brand_filter] errors[] empty",
+      "label": "brand_filter",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=brand_filter] data.products is non-null",
+      "label": "brand_filter",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.products is non-null",
+      "actual": "data.products = {\"totalCount\":0,\"items\":[]}"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

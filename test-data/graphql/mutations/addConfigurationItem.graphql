@@ -4,7 +4,7 @@
 # purpose: Add a single configuration section selection to an existing cart line item (Product / Text / File section)
 # required-vars: STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String)
 # optional-vars: (none)
-# last-validated: 2026-05-15
+# last-validated: 2026-05-20
 # known-issues: (none)
 # gql-vars: { "configurationSection": "ConfigurationSectionInput!" }
 # runner-note: Pass section via [GQL-VARS label] JSON. Product section: option={productId, quantity, selectedForCheckout}. Text section: customText. File section: fileUrls=[].

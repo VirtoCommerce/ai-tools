@@ -1,0 +1,67 @@
+{
+  "caseId": "CAT-GQL-108",
+  "title": "xCatalog — slugInfo Non-Existent Slug",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050a-graphql-xcatalog.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-05-20T14:07:19.330Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {
+    "bogus_slug": "agent-test-nonexistent-xyz-404"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "slug_bogus",
+      "query": "query { slugInfo(slug: \"agent-test-nonexistent-xyz-404\" storeId: \"B2B-store\") { entityInfo { objectType id } redirectUrl } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "slugInfo": {
+            "entityInfo": null,
+            "redirectUrl": null
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 378
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=slug_bogus] errors[] empty",
+      "label": "slug_bogus",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=slug_bogus] data.slugInfo is non-null",
+      "label": "slug_bogus",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.slugInfo is non-null",
+      "actual": "data.slugInfo = {\"entityInfo\":null,\"redirectUrl\":null}"
+    },
+    {
+      "raw": "[DATA label=slug_bogus] data.slugInfo.entityInfo is null",
+      "label": "slug_bogus",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.slugInfo.entityInfo is null",
+      "actual": "data.slugInfo.entityInfo is null"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

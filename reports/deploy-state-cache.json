@@ -1,25 +1,25 @@
 {
-  "capturedAt": "2026-05-19T12:01:00Z",
+  "capturedAt": "2026-05-20T12:55:00Z",
   "branch": "vcst-qa",
   "platform": {
-    "version": "3.1026.0",
-    "image": "ghcr.io/virtocommerce/platform:3.1026.0"
+    "version": "3.1028.0",
+    "image": "ghcr.io/virtocommerce/platform:3.1028.0"
   },
   "theme": {
-    "artifact": "vc-theme-b2b-vue-2.49.0-pr-2292-f131d346.zip",
-    "url": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.49.0-pr-2292-f131-f131d346.zip",
-    "version": "2.49.0-pr-2292-f131d346"
+    "artifact": "vc-theme-b2b-vue-2.49.0.zip",
+    "url": "https://github.com/VirtoCommerce/vc-frontend/releases/download/2.49.0/vc-theme-b2b-vue-2.49.0.zip",
+    "version": "2.49.0"
   },
   "modules": {
-    "VirtoCommerce.XCart": "3.1013.0",
-    "VirtoCommerce.Xapi": "3.1007.0",
+    "VirtoCommerce.XCart": "3.1015.0-pr-119-6a09",
+    "VirtoCommerce.Xapi": "3.1008.0",
     "VirtoCommerce.Cart": "3.1003.0",
     "VirtoCommerce.XCatalog": "3.1005.0",
     "VirtoCommerce.Catalog": "3.1022.0",
     "VirtoCommerce.Customer": "3.1007.0",
     "VirtoCommerce.Orders": "3.1008.0",
     "VirtoCommerce.XOrder": "3.1004.0",
-    "VirtoCommerce.ProfileExperienceApiModule": "3.1006.0",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1007.0",
     "VirtoCommerce.Marketing": "3.1003.0",
     "VirtoCommerce.MarketingExperienceApi": "3.1001.0",
     "VirtoCommerce.XCMS": "3.1001.0",
@@ -33,7 +33,7 @@
     "VirtoCommerce.WhiteLabeling": "3.1001.0",
     "VirtoCommerce.Inventory": "3.1001.0",
     "VirtoCommerce.Pricing": "3.1001.0",
-    "VirtoCommerce.Notifications": "3.1005.0",
+    "VirtoCommerce.Notifications": "3.1006.0",
     "VirtoCommerce.Store": "3.1002.0",
     "VirtoCommerce.Shipping": "3.1003.0",
     "VirtoCommerce.Search": "3.1001.0",
@@ -58,7 +58,7 @@
     "VirtoCommerce.Sanity": "3.1002.0",
     "VirtoCommerce.SqlQueries": "3.1002.0",
     "VirtoCommerce.Assets": "3.1002.0",
-    "VirtoCommerce.AzureBlobAssets": "3.1002.0",
+    "VirtoCommerce.AzureBlobAssets": "3.1003.0",
     "VirtoCommerce.ImageTools": "3.1001.0",
     "VirtoCommerce.Tax": "3.1001.0",
     "VirtoCommerce.Seo": "3.1002.0",
@@ -92,12 +92,17 @@
     "VirtoCommerce.Contentful": "3.1001.0",
     "VirtoCommerce.XFrontend": "3.1000.0"
   },
-  "vsCodeDeltaFromPrior": {
-    "note": "Captured fresh 2026-05-15. Prior cache 2026-05-14T11:55. Module version changes since prior snapshot",
+  "deltaFromPrior": {
+    "note": "Captured 2026-05-20. Prior cache 2026-05-19T12:01.",
     "changed": {
-      "VirtoCommerce.Orders": { "prior": "3.1007.0", "current": "3.1008.0" },
-      "VirtoCommerce.ProfileExperienceApiModule": { "prior": "3.1005.0", "current": "3.1006.0" }
+      "platform": { "prior": "3.1026.0", "current": "3.1028.0" },
+      "theme": { "prior": "2.49.0-pr-2292-f131d346", "current": "2.49.0 (GA)" },
+      "VirtoCommerce.XCart": { "prior": "3.1013.0", "current": "3.1015.0-pr-119-6a09 (preview)" },
+      "VirtoCommerce.Xapi": { "prior": "3.1007.0", "current": "3.1008.0" },
+      "VirtoCommerce.ProfileExperienceApiModule": { "prior": "3.1006.0", "current": "3.1007.0" },
+      "VirtoCommerce.Notifications": { "prior": "3.1005.0", "current": "3.1006.0" },
+      "VirtoCommerce.AzureBlobAssets": { "prior": "3.1002.0", "current": "3.1003.0" }
     }
   },
-  "consumedByRun": "REG-2026-05-19-1201"
+  "consumedByRun": "REG-2026-05-20-1248"
 }

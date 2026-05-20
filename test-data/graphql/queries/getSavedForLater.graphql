@@ -4,7 +4,7 @@
 # purpose: Fetch the user's "Saved for later" cart (named cart of type save-for-later)
 # required-vars: STORE_ID (String), USER_ID (String)
 # optional-vars: ORGANIZATION_ID (String), CURRENCY_CODE (String, default "USD"), CULTURE_NAME (String, default "en-US")
-# last-validated: 2026-05-19
+# last-validated: 2026-05-20
 # known-issues: returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend
 # used-by: VCST-4205 (Save-for-Later config preservation), CRL-GQL-092 (050b3-graphql-xcart-lifecycle)
 
