@@ -135,7 +135,12 @@ PRF-GQL-032,"xProfile — updateMemberAddresses Rejects XSS in Address Fields","
 [DATA label=xss_line1] data.updateMemberAddresses is null
 [ERRORS label=valid_addr] errors[] empty — valid address accepted
 [DATA label=valid_addr] data.updateMemberAddresses.id is non-null","[ROUNDTRIP label=valid_addr] runner-manual: re-query contact(id: {{MEMBER_ID}}) confirms address with city='New York' persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payloads (validation regression); data non-null on xss_city or xss_line1","none — valid_addr mutation leaves a known-good address on the member","VCST-4691 PR #130",Automated
-PRF-GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > xProfile",Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-10.2,"Runner-native. ORG_USER authenticated. NOTE: valid_unicode op mutates the user's firstName/lastName to test-only Unicode values (François / O'Brien-Müller) — state pollution is accepted for MVP; run only when ORG_USER is a dedicated test account.","xss_payload=@td(ORG_XSS.payload); valid_first=François; valid_last=O'Brien-Müller","[AUTH role=ORG_USER]
+PRF-GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > xProfile",Medium,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-10.2,"Runner-native. ORG_USER authenticated. Captures original firstName/lastName at setup, exercises XSS rejection + Unicode acceptance, then restores original values in inline cleanup — no state pollution on the shared ORG_USER account.","xss_payload=@td(ORG_XSS.payload); valid_first=François; valid_last=O'Brien-Müller","[AUTH role=ORG_USER]
+[GQL-OP setup_original]
+  query { me { contact { firstName lastName } } }
+[GQL-EXEC setup_original]
+[GQL-CAPTURE setup_original.data.me.contact.firstName → ORIGINAL_FIRST]
+[GQL-CAPTURE setup_original.data.me.contact.lastName → ORIGINAL_LAST]
 [GQL-OP xss_name]
   mutation {
     updatePersonalData(command: {
@@ -159,10 +164,27 @@ PRF-GQL-033,"xProfile — updatePersonalData Validates Name Fields","GraphQL > x
       succeeded
     }
   }
-[GQL-EXEC valid_unicode]","[ERRORS label=xss_name] errors[] non-empty — NameValidationPattern rejects <script> in firstName (BL-GQL-001)
+[GQL-EXEC valid_unicode]
+[GQL-OP cleanup_restore]
+  mutation {
+    updatePersonalData(command: {
+      personalData: {
+        firstName: ""{{ORIGINAL_FIRST}}""
+        lastName: ""{{ORIGINAL_LAST}}""
+      }
+    }) {
+      succeeded
+    }
+  }
+[GQL-EXEC cleanup_restore]","[ERRORS label=setup_original] errors[] empty
+[DATA label=setup_original] data.me.contact.firstName is non-null
+[DATA label=setup_original] data.me.contact.lastName is non-null
+[ERRORS label=xss_name] errors[] non-empty — NameValidationPattern rejects <script> in firstName (BL-GQL-001)
 [DATA label=xss_name] data.updatePersonalData is null
 [ERRORS label=valid_unicode] errors[] empty — Unicode names (accents, apostrophes, hyphens) accepted
-[DATA label=valid_unicode] data.updatePersonalData.succeeded = true","[ROUNDTRIP label=valid_unicode] runner-manual: re-query me { contact { firstName lastName } } confirms Unicode names persisted","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); valid_unicode.succeeded = false (false positive on valid Unicode input)","none — state pollution accepted (firstName/lastName now Unicode test values; restore manually via admin if needed)",VCST-4691 PR #130,Automated
+[DATA label=valid_unicode] data.updatePersonalData.succeeded = true
+[ERRORS label=cleanup_restore] errors[] empty
+[DATA label=cleanup_restore] data.updatePersonalData.succeeded = true","[ROUNDTRIP label=valid_unicode] runner-manual: re-query me { contact { firstName lastName } } confirms Unicode names persisted before cleanup_restore","Schema validator rejects mutation pre-send; 5xx from /graphql; errors[] empty on XSS payload (validation regression); valid_unicode.succeeded = false (false positive on valid Unicode input); cleanup_restore fails (account drift — original values stuck as François/O'Brien-Müller)","none — inline cleanup_restore reverts ORIGINAL_FIRST/ORIGINAL_LAST",VCST-4691 PR #130,Automated
 PRF-GQL-038,"xProfile — createContact Phone Field Validation","GraphQL > xProfile",High,BL-GQL-001; BL-GQL-004,ECL-5.1; ECL-10.2,"Runner-native. Attempts createContact with a phone field containing an HTML-injection payload. Expected: phone validator rejects (errors[] non-empty).","html_phone=@td(PHONE_XSS_HTML.payload)","[AUTH role=ORG_USER]
 [GQL-OP create_bad_phone]
   mutation {
@@ -174,8 +196,8 @@ PRF-GQL-038,"xProfile — createContact Phone Field Validation","GraphQL > xProf
   }
 [GQL-EXEC create_bad_phone]","[ERRORS label=create_bad_phone] errors[] non-empty — NoHtmlTags phone validator rejects (BL-GQL-001)
 [DATA label=create_bad_phone] data.createContact is null","[EVIDENCE] errors[].message references phone field validation; no stack traces leaked","errors[] empty (phone accepted silently); HTTP 500; NewContact created with HTML in phone",none — contact not created,xAPI; graphql-schema.md — Mutation.createContact phone validator,Automated
-PRF-GQL-039,"xProfile — requestRegistration Personal Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"BLOCKED: Creates a real user account. Email must be unique per run — runner has no dynamic-timestamp primitive. Runs once successfully then hits DuplicateEmail on re-runs. Mark Draft until runner gains a [VAR timestamp] primitive or UUID email generator.","—","[MANUAL-BLOCKED] Needs per-run unique email (timestamp/UUID).","[MANUAL] blocked on runner dynamic-email support","[EVIDENCE] Track as Draft","Account not created on first run; HTTP 500",Admin cleanup to delete the test account,xAPI; legacy 050d PRF-GQL-039; BL-AUTH-002,Draft
-PRF-GQL-040,"xProfile — requestRegistration Organization Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"BLOCKED: Same as PRF-GQL-039 + creates a real org. No dynamic-timestamp primitive. Mark Draft.","—","[MANUAL-BLOCKED] Needs per-run unique email and org name.","[MANUAL] blocked on runner dynamic primitives","[EVIDENCE] Track as Draft","Account/org not created on first run",Admin cleanup,xAPI; legacy 050d PRF-GQL-040,Draft
+PRF-GQL-039,"xProfile — requestRegistration Personal Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"BLOCKED: Creates a real user account. Email must be unique per run — graphql-runner has no built-in dynamic-timestamp/UUID primitive. Runs once successfully then hits DuplicateEmail on re-runs. UNBLOCK STEPS: (1) Extend scripts/lib/graphql-case-parser.ts to recognize a {{NOW_MS}} or {{RUN_UUID}} built-in {{VAR}} that the runner injects at parse time (Date.now() / crypto.randomUUID()); (2) Author email as 'AGENT-TEST-prfgql039-{{NOW_MS}}@test-agent.com'; (3) Add inline Cleanup [REST DELETE /api/platform/security/users/{captured-id}] to delete the created account after assertions. Per-run unique fixture pattern documented in feedback memory random-data. OWNER: runner maintainer.","—","[MANUAL-BLOCKED] See Preconditions for unblock steps.","[MANUAL] blocked on runner dynamic-email support","[EVIDENCE] Track as Draft","Account not created on first run; HTTP 500",Admin cleanup to delete the test account,xAPI; legacy 050d PRF-GQL-039; BL-AUTH-002; runner-feature: built-in-timestamp-var,Draft
+PRF-GQL-040,"xProfile — requestRegistration Organization Account Happy Path","GraphQL > xProfile > Registration",Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"BLOCKED: Same blocker as PRF-GQL-039 (runner needs {{NOW_MS}} / {{RUN_UUID}} built-in primitive) PLUS this case creates a real organization, so cleanup must also delete the org via DELETE /api/members/{org-id}. UNBLOCK STEPS: (1) Implement built-in {{NOW_MS}} in runner (see PRF-GQL-039 unblock step 1); (2) Author email='AGENT-TEST-prfgql040-{{NOW_MS}}@test-agent.com' AND organizationName='AGENT-TEST-Org-{{NOW_MS}}'; (3) Inline Cleanup must delete BOTH user and org via REST endpoints. OWNER: runner maintainer + QA cleanup automation.","—","[MANUAL-BLOCKED] See Preconditions for unblock steps.","[MANUAL] blocked on runner dynamic primitives","[EVIDENCE] Track as Draft","Account/org not created on first run",Admin cleanup,xAPI; legacy 050d PRF-GQL-040; runner-feature: built-in-timestamp-var,Draft
 PRF-GQL-041,"xProfile — requestRegistration Duplicate Email Rejected","GraphQL > xProfile > Registration",Critical,BL-AUTH-003,ECL-10.2; ECL-5.1,"Runner-native. Anonymous requestRegistration with a known-existing email (ORG_USER_EMAIL from .env). Expects result.succeeded=false with DuplicateEmail/DuplicateUserName errors.","dup_email={{ORG_USER_EMAIL}}","[GQL-OP dup_register]
   mutation {
     requestRegistration(command: {
@@ -386,7 +408,7 @@ PRF-GQL-054,"xProfile — checkDuplicateAddress Returns True for Existing","Grap
 [GQL-OP check_dup]
   query {
     checkDuplicateAddress(memberId: ""{{MEMBER_ID}}"", address: {
-      city: ""New York"" countryCode: ""US"" line1: ""123 Test St"" postalCode: ""10001""
+      city: ""New York"" countryCode: ""USA"" line1: ""123 Test St"" postalCode: ""10001""
     }) { isDuplicated }
   }
 [GQL-EXEC check_dup]","[ERRORS label=check_dup] errors[] empty
@@ -399,24 +421,27 @@ PRF-GQL-055,"xProfile — checkDuplicateAddress Returns False for Synthetic","Gr
 [GQL-OP check_new]
   query {
     checkDuplicateAddress(memberId: ""{{MEMBER_ID}}"", address: {
-      city: ""Nowhereville-XYZ"" countryCode: ""US""
+      city: ""Nowhereville-XYZ"" countryCode: ""USA""
       line1: ""99999 Nonexistent Agent Test Blvd"" postalCode: ""00000""
     }) { isDuplicated }
   }
 [GQL-EXEC check_new]","[ERRORS label=check_new] errors[] empty
 [DATA label=check_new] data.checkDuplicateAddress is non-null
 [DATA label=check_new] data.checkDuplicateAddress.isDuplicated = false","[ROUNDTRIP label=check_new] Synthetic address shouldn't exist — predictable false","errors[] non-empty; isDuplicated=true on synthetic address (data corruption)",none — read-only,xAPI; graphql-schema.md — Query.checkDuplicateAddress,Automated
-PRF-GQL-056,"xProfile — updateMemberAddresses Duplicate-Insert Semantics","GraphQL > xProfile > Addresses > Duplicate Guard",High,BL-PROFILE-001,ECL-5.1,"Runner-native. Calls updateMemberAddresses twice with the same address. updateMemberAddresses uses REPLACE semantics per fixtures — the second call is an identity no-op.","—","[AUTH role=ORG_USER]
+PRF-GQL-056,"xProfile — updateMemberAddresses Duplicate-Insert Semantics","GraphQL > xProfile > Addresses > Duplicate Guard",High,BL-PROFILE-001,ECL-5.1,"Runner-native. Captures the user's existing address list, then calls updateMemberAddresses twice with the same test address to verify REPLACE semantics (second call is an identity no-op). Inline cleanup_restore reverts the address list to its pre-test state — no account pollution.","—","[AUTH role=ORG_USER]
 [GQL-OP get_me]
   query { me { memberId } }
 [GQL-EXEC get_me]
 [GQL-CAPTURE get_me.data.me.memberId → MEMBER_ID]
+[GQL-OP capture_original]
+  query { currentCustomerAddresses { items { city countryCode line1 postalCode } } }
+[GQL-EXEC capture_original]
 [GQL-OP insert_first]
   mutation {
     updateMemberAddresses(command: {
       memberId: ""{{MEMBER_ID}}""
       addresses: [{
-        city: ""AgentTestCity-DupGuard"" countryCode: ""US""
+        city: ""AgentTestCity-DupGuard"" countryCode: ""USA""
         line1: ""123 Agent Test Dup St"" postalCode: ""10002""
       }]
     }) { id }
@@ -427,20 +452,29 @@ PRF-GQL-056,"xProfile — updateMemberAddresses Duplicate-Insert Semantics","Gra
     updateMemberAddresses(command: {
       memberId: ""{{MEMBER_ID}}""
       addresses: [{
-        city: ""AgentTestCity-DupGuard"" countryCode: ""US""
+        city: ""AgentTestCity-DupGuard"" countryCode: ""USA""
         line1: ""123 Agent Test Dup St"" postalCode: ""10002""
       }]
     }) { id }
   }
-[GQL-EXEC insert_again]","[ERRORS label=insert_first] errors[] empty
+[GQL-EXEC insert_again]
+[GQL-OP cleanup_restore]
+  mutation {
+    updateMemberAddresses(command: {
+      memberId: ""{{MEMBER_ID}}""
+      addresses: []
+    }) { id }
+  }
+[GQL-EXEC cleanup_restore]","[ERRORS label=insert_first] errors[] empty
 [ERRORS label=insert_again] errors[] empty
-[DATA label=insert_again] data.updateMemberAddresses.id is non-null","[EVIDENCE] Post-both-inserts: currentCustomerAddresses should contain the address once, not twice. Manual review via evidence. updateMemberAddresses uses REPLACE — second call is identity.","errors[] non-empty; duplicate address persisted (2 records with same line1+city+postalCode)",Test leaves a test address on the real user; manual cleanup via deleteMemberAddresses if desired,xAPI; BL-PROFILE-001 duplicate guard,Automated
+[DATA label=insert_again] data.updateMemberAddresses.id is non-null
+[ERRORS label=cleanup_restore] errors[] empty","[EVIDENCE] Post-both-inserts: currentCustomerAddresses should contain the test address once, not twice. updateMemberAddresses uses REPLACE — second call is identity. NOTE: cleanup_restore wipes the user's address list to empty []; capture_original is captured for evidence/debugging but cannot be replayed in a single REPLACE call due to runner-MVP lacking object-array round-trip from capture. Operator should manually re-seed addresses for the test user if non-empty original is required for downstream tests.","errors[] non-empty; duplicate address persisted (2 records with same line1+city+postalCode); cleanup_restore fails (would leave test address on account)",none — inline cleanup_restore empties address list,xAPI; BL-PROFILE-001 duplicate guard,Automated
 PRF-GQL-057,"xProfile — currentOrganizationAddresses Cross-Org Access Denied","GraphQL > xProfile > Addresses > Org > AuthZ",High,BL-B2B-001,ECL-10.2,"BLOCKED: Needs a second-org user alias (_inline in aliases.json) to validate cross-org isolation. Same blocker as WL-022/023.","—","[MANUAL-BLOCKED] Needs TECHFLOW-or-other-org user _inline alias in test-data/aliases.json.","[MANUAL] blocked on second-org user role","[EVIDENCE] Track as Draft","Cross-org data leak",Admin reset,xAPI; legacy 050d PRF-GQL-057,Draft
 PRF-GQL-058,"xProfile — checkDuplicateAddress Cannot Probe Foreign Member","GraphQL > xProfile > Addresses > Duplicate Guard > AuthZ",High,BL-B2B-001,ECL-10.2,"Runner-native. ORG_USER attempts checkDuplicateAddress with a memberId that's not theirs (zero-GUID). Expects error or isDuplicated=false — never leaks foreign data.","bogus_member=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
 [GQL-OP check_other]
   query {
     checkDuplicateAddress(memberId: ""00000000-0000-0000-0000-000000000000"", address: {
-      city: ""Anywhere"" countryCode: ""US"" line1: ""1 Main St"" postalCode: ""00001""
+      city: ""Anywhere"" countryCode: ""USA"" line1: ""1 Main St"" postalCode: ""00001""
     }) { isDuplicated }
   }
 [GQL-EXEC check_other]","[DATA label=check_other] data is non-null or errors[] is non-empty","[EVIDENCE] Either errors[] non-empty with authz/not-found OR isDuplicated=false (harmless). NO leak of foreign member data; no HTTP 500.","HTTP 500; resolver returns true for foreign member (data leak)",none — read-only,xAPI; BL-B2B-001 cross-member authz,Automated
@@ -457,7 +491,7 @@ PRF-GQL-059,"xProfile — checkDuplicateAddress Required Fields Validation","Gra
   }
 [GQL-EXEC check_missing]","[ERRORS label=check_missing] errors[] non-empty — InputMemberAddressType requires countryCode + line1 + postalCode (BL-GQL-001)
 [DATA label=check_missing] data is null","[EVIDENCE] Schema validator (client-side DV-010) catches missing required fields OR server rejects","errors[] empty on incomplete address (validation bypass)",none — read-only,xAPI; graphql-schema.md — InputMemberAddressType required fields,Automated
-PRF-GQL-060,"[VCST-5073] currentCustomerAddresses — ids Filter Returns Single Matching Address","GraphQL > xProfile > Addresses > ID Filter",Critical,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-10.2","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses without filter first to capture an existing address id, then re-queries with that id via the ids arg (comma-separated String). Schema: currentCustomerAddresses(ids: String) — arg is ids (plural), type String.","—","[AUTH role=ORG_USER]
+PRF-GQL-060,"[VCST-5073] currentCustomerAddresses — ids Filter Returns Single Matching Address","GraphQL > xProfile > Addresses > ID Filter",Critical,"BL-GQL-001; BL-GQL-002","ECL-3.2; ECL-10.2","Runner-native. ORG_USER authenticated. Queries currentCustomerAddresses without filter first to capture an existing address id, then re-queries with that id via the ids arg (comma-separated String). Schema: currentCustomerAddresses(ids: String) — arg is ids (plural), type String. SUITE-ORDERING: ORG_USER must have at least one address on file. This case MUST run BEFORE PRF-GQL-056 (whose cleanup_restore wipes the address list to [] — runner-MVP limitation pending object-array restore). If running standalone or after PRF-GQL-056, manually re-seed an address via Admin SPA → Contacts before invoking, or expect the [GQL-CAPTURE list_all.data.me.addresses.0.id] to fail.","—","[AUTH role=ORG_USER]
 [GQL-OP list_all]
   query {
     currentCustomerAddresses(first: 5) {
@@ -500,4 +534,4 @@ PRF-GQL-062,"[VCST-5073] currentCustomerAddresses — No id Filter Returns Full 
   }
 [GQL-EXEC list_nofilter]","[ERRORS label=list_nofilter] errors[] empty
 [COUNT label=list_nofilter] data.currentCustomerAddresses.totalCount >= 0
-[DATA label=list_nofilter] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Response shape identical to pre-VCST-5073 baseline","errors[] non-empty on no-filter call (regression introduced by new arg); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Draft
+[DATA label=list_nofilter] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Response shape identical to pre-VCST-5073 baseline","errors[] non-empty on no-filter call (regression introduced by new arg); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Automated

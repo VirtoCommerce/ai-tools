@@ -36,7 +36,13 @@ XFE-GQL-054,"xFrontend — pageContext Store Settings in Response","GraphQL > xF
 [GQL-EXEC store_settings]","[ERRORS label=store_settings] errors[] empty
 [DATA label=store_settings] data.pageContext.store is non-null
 [DATA label=store_settings] data.pageContext.store.defaultLanguage is non-null
-[DATA label=store_settings] data.pageContext.store.defaultCurrency is non-null","[EVIDENCE] defaultLanguage.cultureName and defaultCurrency.code populated; availableLanguages/Currencies are non-empty lists","Schema drift on StoreResponseType (DV-009); defaultLanguage/Currency null",none — read-only,xAPI; graphql-schema.md — StoreResponseType,Automated
+[DATA label=store_settings] data.pageContext.store.defaultLanguage.cultureName is non-null
+[DATA label=store_settings] data.pageContext.store.defaultCurrency is non-null
+[DATA label=store_settings] data.pageContext.store.defaultCurrency.code is non-null
+[DATA label=store_settings] data.pageContext.store.availableLanguages is non-null
+[COUNT label=store_settings] data.pageContext.store.availableLanguages.length >= 1
+[DATA label=store_settings] data.pageContext.store.availableCurrencies is non-null
+[COUNT label=store_settings] data.pageContext.store.availableCurrencies.length >= 1","[EVIDENCE] defaultLanguage.cultureName and defaultCurrency.code populated; availableLanguages/Currencies are non-empty lists","Schema drift on StoreResponseType (DV-009); defaultLanguage/Currency null; availableLanguages/Currencies null or empty (resolver regression)",none — read-only,xAPI; graphql-schema.md — StoreResponseType,Automated
 XFE-GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context","GraphQL > xFrontend",High,BL-GQL-001; BL-GQL-004,ECL-2.1,"Runner-native. Calls pageContext twice — first anonymous, then authenticated. Verifies user resolution differs.","—","[GQL-OP anon_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") {
@@ -52,9 +58,13 @@ XFE-GQL-055,"xFrontend — pageContext Authenticated vs Anonymous User Context",
     }
   }
 [GQL-EXEC auth_ctx]","[ERRORS label=anon_ctx] errors[] empty
+[DATA label=anon_ctx] data.pageContext.user is non-null
+[DATA label=anon_ctx] data.pageContext.user.memberId is null
 [ERRORS label=auth_ctx] errors[] empty
 [DATA label=auth_ctx] data.pageContext.user is non-null
-[DATA label=auth_ctx] data.pageContext.user.id is non-null","[EVIDENCE] auth_ctx.user.id is a real GUID matching ORG_USER. anon_ctx.user.id differs (anonymous id or null).","auth_ctx returns null user; anon_ctx leaks authenticated data",none — read-only,xAPI; graphql-schema.md — PageContextResponseType.user,Automated
+[DATA label=auth_ctx] data.pageContext.user.id is non-null
+[DATA label=auth_ctx] data.pageContext.user.memberId is non-null
+[DATA label=auth_ctx] data.pageContext.user.contact.id is non-null","[EVIDENCE] auth_ctx.user.id is a real GUID matching ORG_USER and contact.id is bound. anon_ctx.user.id may be a session-bound id (non-null is acceptable for anon session), but memberId AND contact MUST be null — this is the anonymous-vs-authenticated boundary. Verified live 2026-05-21: anon returns user with non-null id (session) + null memberId + null contact; auth returns user with real id + memberId + contact binding.","anon_ctx.user.memberId is non-null (session leak — P0 security regression: anonymous request bound to a member account); anon_ctx.user.contact non-null (same session-leak signal); auth_ctx.user.memberId is null (auth context lost — P1 regression)",none — read-only,xAPI; graphql-schema.md — PageContextResponseType.user; anon-vs-auth boundary is memberId/contact (not user.id),Automated
 XFE-GQL-056,"xFrontend — pageContext Invalid Permalink","GraphQL > xFrontend",High,BL-GQL-001,ECL-10.2,"Runner-native. Calls pageContext with a permalink that doesn't exist. Expects slugInfo.entityInfo=null without HTTP 500.","bogus_permalink=/nonexistent-xyz-agent-test-404","[GQL-OP bogus_ctx]
   query {
     pageContext(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"", permalink: ""/nonexistent-xyz-agent-test-404"") {

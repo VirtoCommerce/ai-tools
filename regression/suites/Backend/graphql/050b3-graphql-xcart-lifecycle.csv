@@ -21,7 +21,7 @@ CRL-GQL-070,"xCart — removeShipment Happy Path","GraphQL > xCart > removeShipm
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
         deliveryAddress: {
-          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          city: ""New York"" countryCode: ""USA"" countryName: ""United States""
           firstName: ""Test"" lastName: ""User"" line1: ""123 Test St""
           postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
         }
@@ -55,7 +55,9 @@ CRL-GQL-071,"xCart — removeShipment with Invalid shipmentId","GraphQL > xCart 
       shipmentId: ""00000000-0000-0000-0000-000000000000""
     }) { id shipments { id } }
   }
-[GQL-EXEC remove_bogus]","[DATA label=remove_bogus] data.removeShipment.id is non-null","[EVIDENCE] Either errors[] non-empty with not-found OR silent no-op (shipments[] unchanged). NO HTTP 500 or stack traces.","HTTP 500; unhandled exception; real shipments removed by invalid ID",none — nothing added,xAPI; graphql-schema.md — Mutation.removeShipment error contract,Automated
+[GQL-EXEC remove_bogus]","[ERRORS label=remove_bogus] errors[] empty
+[DATA label=remove_bogus] data.removeShipment.id is non-null
+[COUNT label=remove_bogus] data.removeShipment.shipments.length == 0","[EVIDENCE] Silent no-op contract: errors[] empty, cart still has zero shipments (the zero-GUID shipmentId was never present). NO HTTP 500 or stack traces.","HTTP 500; unhandled exception; real shipments removed by invalid ID; shipments[] non-empty (would mean unrelated shipment was removed)",none — nothing added,xAPI; graphql-schema.md — Mutation.removeShipment error contract,Automated
 CRL-GQL-072,"xCart — addOrUpdateCartPayment Sets DefaultManualPaymentMethod","GraphQL > xCart > addOrUpdateCartPayment",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Adds item, then sets payment method DefaultManualPaymentMethod. Verifies payments[] populated.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -118,8 +120,11 @@ CRL-GQL-073,"xCart — addOrUpdateCartPayment Changes Method","GraphQL > xCart >
 [GQL-OP cleanup_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=set_payment_first] errors[] empty
+[DATA label=set_payment_first] data.addOrUpdateCartPayment.id is non-null
+[COUNT label=set_payment_first] data.addOrUpdateCartPayment.payments.length == 1
 [ERRORS label=set_payment_again] errors[] empty
-[DATA label=set_payment_again] data.addOrUpdateCartPayment.payments is non-null","[EVIDENCE] payments.length stays ≤ 1 after second call (idempotent, no duplicate entry). Both calls use same gateway.","errors[] non-empty; payments[] has 2 duplicate entries after second call (non-idempotent)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartPayment idempotence,Automated
+[DATA label=set_payment_again] data.addOrUpdateCartPayment.payments is non-null
+[COUNT label=set_payment_again] data.addOrUpdateCartPayment.payments.length == 1","[EVIDENCE] Idempotency contract: second call with same gateway does NOT append a duplicate payments[] entry (length stays at 1). Both calls return the same cart id.","errors[] non-empty; payments[] has 2 duplicate entries after second call (non-idempotent regression)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartPayment idempotence,Automated
 CRL-GQL-074,"xCart — mergeCart Happy Path","GraphQL > xCart > mergeCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Creates a named second cart (addItem with cartName) and merges it into the default. Verifies default cart absorbs items.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -155,12 +160,15 @@ CRL-GQL-074,"xCart — mergeCart Happy Path","GraphQL > xCart > mergeCart",Criti
     }) { id itemsCount items { productId } }
   }
 [GQL-EXEC merge]
+[GQL-OP cleanup_remove_second]
+  mutation { removeCart(command: { cartId: ""{{SECOND_CART_ID}}"" userId: ""{{USER_ID}}"" }) }
+[GQL-EXEC cleanup_remove_second]
 [GQL-OP cleanup_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=merge] errors[] empty
 [DATA label=merge] data.mergeCart.id is non-null
 [DATA label=merge] data.mergeCart.items is non-null
-[COUNT label=merge] data.mergeCart.itemsCount >= 1","[EVIDENCE] mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence. NOTE: B2B-store consolidates identical productIds into one line — itemsCount >= 1 proves merge produced at least one line without hardcoding ""2"".","errors[] non-empty; itemsCount = 0 (no items after merge); items[] is null or empty",Second cart remains unless explicitly removed — add manual cleanup if needed,"xAPI; graphql-schema.md — Mutation.mergeCart; Fixed authoring debt (TLC-2026-05-16-0026, 2026-05-16)",synced
+[COUNT label=merge] data.mergeCart.itemsCount >= 1","[EVIDENCE] mergeCart.items[] contains both PRODUCT_1 and PRODUCT_2 (from second cart). Review evidence. NOTE: B2B-store consolidates identical productIds into one line — itemsCount >= 1 proves merge produced at least one line without hardcoding ""2"".","errors[] non-empty; itemsCount = 0 (no items after merge); items[] is null or empty",none — inline cleanup_remove_second removes AGENT-TEST-MERGE-SECOND cart even if mergeCart did not auto-delete it; cleanup_clear empties default cart,"xAPI; graphql-schema.md — Mutation.mergeCart; Fixed authoring debt (TLC-2026-05-16-0026, 2026-05-16)",synced
 CRL-GQL-075,"xCart — mergeCart with deleteAfterMerge=true","GraphQL > xCart > mergeCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Merges a named second cart into default with deleteAfterMerge=true. Verifies second cart is deleted post-merge.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -296,7 +304,7 @@ CRL-GQL-079,"xCart — addOrUpdateCartShipment Updates Method","GraphQL > xCart 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
-        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+        deliveryAddress: { city: ""New York"" countryCode: ""USA"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
       }
     }) { id shipments { id shipmentMethodCode shipmentMethodOption } }
   }
@@ -309,7 +317,7 @@ CRL-GQL-079,"xCart — addOrUpdateCartShipment Updates Method","GraphQL > xCart 
       shipment: {
         id: ""{{SHIPMENT_ID}}""
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Air"" price: 250
-        deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
+        deliveryAddress: { city: ""New York"" countryCode: ""USA"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" regionId: ""NY"" regionName: ""New York"" }
       }
     }) { id shipments { id shipmentMethodCode shipmentMethodOption } }
   }
@@ -411,7 +419,7 @@ CRL-GQL-098,"xCart — Shipment Address Update Preserves Key (No DB Duplication)
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       shipment: {
         deliveryAddress: {
-          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          city: ""New York"" countryCode: ""USA"" countryName: ""United States""
           firstName: ""Test"" lastName: ""User"" line1: ""123 Test St""
           postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
         }
@@ -427,7 +435,7 @@ CRL-GQL-098,"xCart — Shipment Address Update Preserves Key (No DB Duplication)
       shipment: {
         id: ""{{SHIPMENT_ID}}""
         deliveryAddress: {
-          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          city: ""New York"" countryCode: ""USA"" countryName: ""United States""
           firstName: ""Updated"" lastName: ""User"" line1: ""456 Updated Blvd""
           postalCode: ""10001"" regionId: ""NY"" regionName: ""New York""
         }

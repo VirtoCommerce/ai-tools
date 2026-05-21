@@ -1,202 +1,295 @@
 ---
-description: "Orchestrated test coverage generation — delegates gap analysis and test case generation across domains in parallel using sub-agents. Supports CI scheduling."
-argument-hint: "[p0|p1|full|domain <name>|ci-dry-run]"
+description: "[Testing] Orchestrated multi-agent test coverage generation — runs a single centralized gap analysis, then delegates layer-aware test-case generation to parallel sub-agents grouped by manifest domain. CI-friendly (dry-run + PR creation)."
+argument-hint: "[p0|p1|full|domain <name>|sprint|ci-dry-run]"
 disable-model-invocation: true
 ---
 
 # /qa-coverage-generation — Orchestrated Coverage Generation
 
-You are the **Coverage Generation Orchestrator** for Virto Commerce. When invoked, you analyze coverage gaps across all domains, then delegate test case generation to parallel sub-agents — each responsible for a domain batch. This is the orchestrated, multi-agent counterpart to the single-agent `/qa-coverage-gap` skill.
+You are the **Coverage Generation Orchestrator** for Virto Commerce. You run one centralized gap analysis, then delegate layer-aware test-case generation to parallel sub-agents (one per manifest-domain batch). Single-agent counterpart: `/qa-coverage-gap`.
+
+This command is **side-effecting** (modifies suite CSVs) — `disable-model-invocation: true` is intentional. Always run from explicit user invocation.
 
 ## Usage
 
 ```
-/qa-coverage-generation                  # Default: P0 domains only (revenue-critical)
-/qa-coverage-generation p0               # P0 domains: CART, CHECKOUT, PAYMENT, ORDERS, SECURITY, API-REST
-/qa-coverage-generation p1               # P0 + P1 domains: adds AUTH, CATALOG, B2B, BOPIS, LISTS, CONFIG, etc.
-/qa-coverage-generation full             # All domains including P2 (GA4, L10N, PERF, BROWSER)
-/qa-coverage-generation domain checkout  # Single domain — no parallelism, uses /qa-coverage-gap skill directly
-/qa-coverage-generation ci-dry-run       # Analyze + generate without validation or commit (CI mode)
+/qa-coverage-generation                  # Default: p0 — revenue-critical scope
+/qa-coverage-generation p0               # Gaps with priorityScore >= 8.0
+/qa-coverage-generation p1               # Gaps with priorityScore >= 5.0  (P0 + P1)
+/qa-coverage-generation full             # All gaps
+/qa-coverage-generation domain <name>    # Single manifest domain — delegates directly to /qa-coverage-gap (no batching, no orchestration overhead)
+/qa-coverage-generation sprint           # Gaps surfaced by current sprint plan (`docs/Sprint plans/sprint-*-summary.json`)
+/qa-coverage-generation ci-dry-run       # Analyze + generate only — no browser validation, no commit (CI)
 ```
+
+`<name>` for `domain` accepts any manifest domain: `purchase-flow`, `catalog-search`, `auth-security`, `marketing`, `content-cms`, `customer-b2b`, `platform-config`, `communication`, `branding`, `cross-cutting`.
 
 ### Execution Modes
 
-- **Interactive (default):** Parallel sub-agents with browser validation for P0 cases. Full 4-cycle pipeline per batch.
-- **CI mode (`ci-dry-run`):** Analysis + generation only (Cycles 1-2). No browser validation. Outputs diff-friendly report for PR review. Designed for `npm run ci:coverage`.
+| Mode | Browser validation | Commits CSV | Steps run |
+|------|-------------------|-------------|-----------|
+| Interactive (default) | P0 cases via 3 parallel browser slots | No (user reviews diff) | 1–8 |
+| `ci-dry-run` | None | No | 1, 2, 4 (no validation), 5, 7, 8 |
+| `domain <name>` | Per `/qa-coverage-gap` (single agent) | No | Delegates entirely |
+
+---
+
+## Pre-Flight (run before Step 1)
+
+Per `.claude/templates/agent-dispatch.md` § Pre-Flight Checklist:
+
+1. **Duplicate-run guard** — read `reports/coverage/` for runs in the last 7 days matching the requested scope. If a match exists, warn the user and ask before continuing.
+2. **Environment health** — `curl -sk {BACK_URL}/health` (CI may skip; record verdict).
+3. **Manifest sanity** — confirm `config/test-suites.json` loads, `_meta.version >= 3.0`, and selection rule for the requested scope resolves (use `npm run suites:sync --dry-run` if available).
+4. **Budget guard (CI mode)** — fail-fast if `MAX_BUDGET_USD` is unset or `< 5.0`. Default cap: $10 for `p0`, $25 for `p1`, $50 for `full`.
+5. **Sprint-plan resolution (`sprint` scope only)** — read the latest `docs/Sprint plans/sprint-*-summary.json` and extract `domainsAffected[]` and `suitesActivated[]`. Treat those as the gap-analysis scope filter.
+
+If any check fails, surface the failure to the user with a one-line summary and ask whether to proceed.
 
 ---
 
 ## Execution Pipeline
 
-### Step 1 — Gap Analysis (centralized)
+### Step 1 — Centralized Gap Analysis (NEVER delegate)
 
-Run gap analysis once, centrally (do NOT delegate this):
+Gap analysis runs once in the orchestrator. Sub-agents consume the inventory; they do **not** re-read suites.
 
-1. Read all suite CSVs referenced in `config/test-suites.json` (paths in `file` field). Suites are organized by `domain`, `layer`, and `concern` fields for routing.
-2. Read **original TestRail exports** from `test-suites ( export from Test-rail )/` as baseline reference:
-   - `Frontend/Frontend26-02.csv.csv` — latest frontend test cases (Sprint 26-02)
-   - `Frontend/frontend-26-01.csv` — previous frontend baseline (Sprint 26-01)
-   - `Frontend/suites/` — categorized frontend suites (auth, catalog, cart, checkout, BOPIS, orders, lists, B2B, analytics, UI/UX, l10n)
-   - `Backend (admin site)/` — backend module exports (Catalog, Store, Pricing, Orders, Customer, Inventory, Marketing, etc.)
-   - `E2E/` — end-to-end test imports (configurable products)
-   These exports represent the **original test inventory from TestRail** — use them to identify test cases that exist in TestRail but are missing or incomplete in the current regression suites, and to preserve original test intent during gap generation.
-3. Read feature inventory from:
-   - `.claude/agents/knowledge/business-logic.md`
-   - `.claude/agents/knowledge/e-commerce-edge-cases-library.md`
-   - `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`
+**Sources (read in this order):**
+
+1. **Current regression coverage** — every suite CSV referenced in `config/test-suites.json` (`suites[*].file`). Routing fields: `domain`, `layer`, `concern`, `priority`.
+2. **Baseline TestRail exports** — `test-suites ( export from Test-rail )/` (Frontend26-02, frontend-26-01, suites/, Backend (admin site)/, E2E/) — flag `MIGRATION_GAP` / `SHALLOW_MIGRATION` per `coverage-gap-methodology.md` §1b.
+3. **Feature inventory** — all of:
+   - `.claude/agents/knowledge/business-logic.md` (`BL-*` invariants)
+   - `.claude/agents/knowledge/e-commerce-edge-cases-library.md` (`ECL-*`)
    - `.claude/agents/knowledge/sitemap.md`
-   - `.claude/skills/testing/qa-api/xapi-query-ref.md`
    - `.claude/agents/knowledge/module-suite-map.md`
-   - `.claude/skills/testing/qa-checklist/domain-checklists.md`
+   - `.claude/agents/knowledge/graphql-schema.md`
+   - `.claude/agents/knowledge/products.md`, `catalog.md`, `store-settings.md`
+   - `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` (105 E2E scenarios)
+   - `.claude/skills/testing/qa-checklist/domain-checklists.md` (UI/UX)
+   - `.claude/skills/testing/qa-checklist/backend-admin-checklists.md`
+   - `.claude/skills/testing/qa-checklist/graphql-checklist.md`
+   - `.claude/skills/testing/qa-api/xapi-query-ref.md`
    - `.claude/skills/testing/qa-api/test-cases-api-graphql.md`
    - `.claude/skills/testing/qa-coverage-gap/feature-domain-map.md`
-   - `.claude/skills/qa-methodology/qa-test-design/SKILL.md`
-   - `.claude/skills/qa-methodology/qa-test-cases-generator/SKILL.md`
-4. **Query Virto Commerce documentation via Context7** for each domain in scope:
-   - Use `mcp__context7__resolve-library-id` with `libraryName: "virtocommerce"` to get the library ID (`/virtocommerce/vc-docs`)
-   - For each domain (CART, CHECKOUT, CATALOG, etc.), query `mcp__context7__query-docs` with domain-relevant topics (e.g., "cart mutations xAPI", "order processing workflow", "catalog search indexing") and `tokens: 8000`
-   - Extract module-specific behavior, API contracts, configuration options, and edge cases not captured in local knowledge files
-   - Use documentation findings to enrich the gap inventory — flag features documented in VC docs but not covered by existing test cases
-5. Produce a gap inventory: list of `{domain, feature, gapCategory, priorityScore, applicableLayers[], targetSuites[]}` entries
-   - For each gap, determine applicable layers: does the feature have REST endpoints? → `api`. GraphQL ops? → `graphql`. Admin UI? → `admin`. Storefront? → `storefront`. Spans ≥2? → `e2e`
-6. Write `reports/coverage/gap-inventory-YYYY-MM-DD.json`
+4. **Live VC documentation (Context7)** — for each manifest domain in scope:
+   - `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`
+   - `mcp__context7__query-docs { libraryId, query, tokens: 8000 }` — see `agent-dispatch.md` § "Sample Queries by Domain" for query stems
+   - Flag features documented in VC docs but absent from current regression coverage.
 
-### Step 2 — Domain Batching & Layer Assignment
+**Output (Definition of Done for Step 1):**
 
-Group gaps into 3 parallel batches by manifest domain affinity. Each batch generates **layer-specific test cases** using `--layer`:
+- `reports/coverage/{RUN_ID}/gap-inventory.json` — one record per gap:
+  ```json
+  {
+    "gapId": "GAP-001",
+    "manifestDomain": "purchase-flow",
+    "feature": "Cart line-item quantity stepper",
+    "gapCategory": "SHALLOW_HAPPY|MISSING_NEGATIVE|MIGRATION_GAP|...",
+    "priorityScore": 8.4,
+    "priority": "P0|P1|P2",
+    "applicableLayers": ["storefront","graphql","e2e"],
+    "targetSuites": ["028","029","050b1"],
+    "businessRules": ["BL-CART-003"],
+    "edgeCases": ["ECL-PAY-002"],
+    "context7Findings": "…",
+    "source": "live-coverage|testrail-export|knowledge-file|vc-docs"
+  }
+  ```
+- A short markdown digest at `reports/coverage/{RUN_ID}/gap-analysis.md` (top 20 gaps, totals per priority, per manifest domain, per gap category).
 
-| Batch | Agent | Manifest Domains | Suites | Layers Generated |
-|-------|-------|-----------------|--------|-----------------|
-| **Batch A** (Revenue & Storefront) | `qa-frontend-expert` | `purchase-flow`, `marketing` | 04a-06, 19-20, 22, 30, 37, 41-42 (frontend); 05 (BOPIS) | `storefront` + `graphql` + `e2e` |
-| **Batch B** (Identity, B2B & Comms) | `qa-backend-expert` | `auth-security`, `customer-b2b`, `communication` | 02, 08, 13-14, 17, 21, 24, 33, 38-39 | `api` + `graphql` + `admin` + `e2e` |
-| **Batch C** (Platform & Content) | `qa-testing-expert` | `catalog-search`, `platform-config`, `content-cms`, `branding`, `cross-cutting` | 01, 03, 07, 09-12, 15-16, 18, 25-29, 31-32, 34-36, 40 | `api` + `graphql` + `admin` |
+### Step 2 — Batch Routing (manifest-domain affinity)
 
-### Manifest Domain → Batch Routing
+Group gaps into 3 parallel batches by manifest domain. Each batch's sub-agent generates **only the layers applicable to each gap** using `/qa-test-cases-generator --layer <csv-list>`.
 
-| Manifest Domain | Batch | Feature Areas |
-|----------------|-------|---------------|
-| `purchase-flow` | A | Cart, Checkout, Payment, Orders, BOPIS, Pricing, Inventory, Shipping, Returns |
-| `marketing` | A | Promotions, Coupons, xMarketing |
-| `auth-security` | B | Authentication, Security, Platform API, Platform Core |
-| `customer-b2b` | B | B2C Features, Customer Admin, Contracts, Loyalty |
-| `communication` | B | Notifications, Push Messages |
-| `catalog-search` | C | Catalog, Search, CSV Import/Export, Configurable Products |
-| `platform-config` | C | GraphQL xAPI, Store Admin, Core Settings, Channels & Data Quality |
-| `content-cms` | C | CMS & Page Builder, Assets, Image Tools |
-| `branding` | C | SEO, White Labeling (frontend + backend) |
-| `cross-cutting` | C | Smoke, GA4, Accessibility, Localization, Performance, Browser Compat |
+| Batch | Agent | Browser slot | Manifest domains | Typical layers emitted |
+|-------|-------|--------------|------------------|------------------------|
+| **A — Revenue & Storefront** | `qa-frontend-expert` | `playwright-chrome` | `purchase-flow`, `marketing` | `storefront`, `graphql`, `e2e` |
+| **B — Identity, B2B & Comms** | `qa-backend-expert` | `playwright-edge` | `auth-security`, `customer-b2b`, `communication` | `api`, `graphql`, `admin`, `e2e` |
+| **C — Platform, Content & Cross-cutting** | `qa-testing-expert` | `playwright-firefox` | `catalog-search`, `platform-config`, `content-cms`, `branding`, `cross-cutting` | `api`, `graphql`, `admin`, `storefront`, `e2e` |
 
-**Layer coverage rules per batch:**
-- Each gap is analyzed for applicable layers (REST API, GraphQL, Admin UI, Storefront, E2E)
-- Sub-agents use `/qa-test-cases-generator <domain> --layer <layers>` to generate layer-specific cases
-- Layer-appropriate tags are enforced: API→`[HTTP]`/`[STATUS]`, GraphQL→`[GQL]`/`[ERRORS]`, Admin→`[BLADE]`/`[GRID]`, E2E→`--- LAYER ---` markers
-- Cases route to correct suites by layer: API→Suite 14+, GraphQL→Suite 15, Admin→Suite 16-34, Storefront→Suite 01-13, E2E→Suite 00
+Browser slot assignments match `.claude/templates/agent-dispatch.md` § Default Assignments and `.claude/rules/agents.md` § Parallel Execution. Fallback chain follows `defaults.fallbackChain` from `config/test-suites.json`.
 
-Filter batches based on the requested scope:
-- `p0`: Only gaps with priorityScore >= 8.0
-- `p1`: Only gaps with priorityScore >= 5.0
-- `full`: All gaps
-- `domain <name>`: Skip batching, delegate to single agent with `--layer all`
+**Scope filtering** (applied before batching):
 
-### Step 3 — Generate Run ID
+| Scope | Filter |
+|-------|--------|
+| `p0` | `gap.priorityScore >= 8.0` |
+| `p1` | `gap.priorityScore >= 5.0` |
+| `full` | all gaps |
+| `sprint` | `gap.manifestDomain ∈ sprint plan's domainsAffected[]` |
+| `domain <name>` | `gap.manifestDomain === <name>` → skip batching; delegate to `/qa-coverage-gap domain <name>` |
 
-Create `COV-YYYY-MM-DD-HHMM` and output directory `reports/coverage/{RUN_ID}/`.
+**Target-suite resolution** — never hardcode suite IDs. For each gap, resolve target suites by querying the manifest:
 
-### Step 4 — Dispatch Sub-Agents in Parallel
+```text
+targetSuites = suites where
+  suite.domain === gap.manifestDomain
+  AND suite.layer matches the layer being generated (frontend|backend)
+  AND suite.concern is appropriate for the layer:
+      api     → concern: "api"
+      graphql → concern: "api"   (Backend/graphql/*)
+      admin   → concern: "admin"
+      storefront → concern: "functional" and layer: "frontend"
+      e2e     → concern: "functional" (cross-domain) — flag for manual suite assignment
+```
 
-For each active batch:
+If no existing suite matches, mark the gap `blocked:needs-suite` (do not auto-create suite files).
 
-1. Create a sub-agent (Agent tool) with:
-   - The batch's assigned agent type
-   - The filtered gap inventory for that batch's domains
-   - Instructions to generate test cases following `coverage-gap-methodology.md` rules
-   - Format contract: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` (layer-specific tags)
-   - Target suite CSV paths from `config/test-suites.json`
-   - Context7 documentation findings for the batch's domains (from Step 1.4)
-   - Instruction to query Context7 (`/virtocommerce/vc-docs`) for domain-specific details when generating test cases (e.g., API field validation rules, GraphQL mutation signatures, module-specific config options)
-   - Output path: `reports/coverage/{RUN_ID}/batch-{A|B|C}-results.json`
+### Step 3 — Run ID & Output Layout
 
-2. Each sub-agent executes:
-   - For each gap: determine applicable layers, then generate test cases per layer using enriched CSV format with layer-specific tags
-   - Route cases to correct suite CSVs using `domain` and `layer` fields from `config/test-suites.json`. Fallback layer heuristics: API→`concern:api` suites (14, 15), Admin→`concern:admin` suites (16-34, 37-42), Storefront→`concern:functional` frontend suites (01-13, 35-36, 41), E2E→Suite 00
-   - If interactive mode: validate P0 cases via browser (sub-agent uses its own browser slot)
-   - Write per-batch results JSON: `{domain, layer, casesGenerated, casesValidated, suitesModified}`
+Create `RUN_ID = COV-YYYY-MM-DD-HHMM`. Output root: `reports/coverage/{RUN_ID}/`.
 
-3. Browser assignment (interactive mode only):
+```
+reports/coverage/{RUN_ID}/
+├── gap-inventory.json           # Step 1
+├── gap-analysis.md              # Step 1 digest
+├── batch-A-results.json         # Step 4
+├── batch-B-results.json
+├── batch-C-results.json
+├── diff-preview.md              # Step 7 (always written)
+├── coverage-generation-report.md # Step 7
+├── summary.json                 # Step 8 (CI consumption)
+└── validation-failures.md       # Step 4 — only if interactive
+```
 
-| Batch | Browser Slot |
-|-------|-------------|
-| A (Revenue) | playwright-chrome |
-| B (Identity) | playwright-edge |
-| C (Platform) | playwright-firefox |
+### Step 4 — Dispatch Sub-Agents (parallel)
 
-CI mode skips browser validation entirely.
+**Launch all active batches in a single message** with one `Agent` call per batch (per CLAUDE.md guidance: independent work goes in one message).
 
-### Step 5 — Collect & Merge Results
+Each dispatch follows `.claude/templates/agent-dispatch.md` § Agent Prompt Structure and includes:
 
-Wait for all batches to complete. For each:
-- Read batch results JSON
-- Aggregate: total gaps found, cases generated, cases validated, suites modified
-- **Cross-batch deduplication:** compare case Titles and Steps across all batches. If Batch A and Batch C generated cases for the same scenario (e.g., both touch Suite 15 GraphQL), merge or flag as review items. Prefer the case with richer assertions.
-- Detect conflicts: if two batches modified the same suite CSV, merge IDs sequentially
+- `subagent_type`: `qa-frontend-expert | qa-backend-expert | qa-testing-expert`
+- Filtered gap inventory for that batch's manifest domains
+- Target-suite mapping resolved from manifest (Step 2)
+- Format contract: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md`
+- **For Backend/graphql/ suites (050a–050k):** authoring contract is `.claude/agents/knowledge/graphql-test-cases-runner.md` (runner-native tags: `[AUTH]`, `[GQL-OP]`, `[GQL-VARS]`, `[GQL-EXEC]`, `[GQL-CAPTURE]`, `[REST-OP/EXEC/CAPTURE]`, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are **not** valid in these suites.
+- **Test-data contract** (mandatory, per `.claude/rules/test-data.md`): generated cases MUST resolve test data via `{{VAR}}`, `@td()`, `live-discover`, or `random-data`. Literal IDs/SKUs/emails/prices/order-numbers/paths are review failures.
+- Context7 findings from Step 1.4 for the batch's domains
+- Output file path: `reports/coverage/{RUN_ID}/batch-{A|B|C}-results.json`
 
-### Step 6 — Update Manifest
+**Per-batch sub-agent execution:**
 
-Update `config/test-suites.json` with new `testCount` per modified suite.
+1. For each gap: invoke `/qa-test-cases-generator --layer <csv-list>` once per applicable layer.
+2. Before appending, the sub-agent reads the target suite CSV and skips cases that semantically duplicate existing rows (matching `Title + Section` OR `Steps + Assertions` covering the same scenario).
+3. **Interactive mode only** — validate each new P0 case via the assigned browser slot. Mark `Automation_Status = validated | needs-review`.
+4. Cleanup created test data using the `AGENT-TEST-` prefix convention (see `.claude/agents/knowledge/live-discovery.md` § Cleanup) — `/qa-seed-data teardown` reclaims it post-run.
+5. Write `batch-{X}-results.json`:
+   ```json
+   {
+     "batch": "A",
+     "agent": "qa-frontend-expert",
+     "manifestDomains": ["purchase-flow","marketing"],
+     "gaps": { "consumed": 42, "skipped": { "duplicate": 5, "blocked": 2 } },
+     "cases": { "generated": 71, "validated": 38, "needsReview": 4 },
+     "suitesModified": ["028","029","050b1","077"],
+     "byLayer": { "storefront": 30, "graphql": 28, "e2e": 13 },
+     "durationMinutes": 24
+   }
+   ```
 
-### Step 7 — Generate Report
+**CI mode (`ci-dry-run`):** skip step 3 (validation) and step 4 (cleanup). All cases land as `Automation_Status = pending`.
 
-Write `reports/coverage/{RUN_ID}/coverage-generation-report.md`:
+### Step 5 — Cross-Batch Deduplication & Conflict Resolution
+
+After all batches return:
+
+1. **Cross-batch dedup** — compare `Title + Steps` across all three results. If two batches generated the same scenario (e.g., both Batch A and Batch C touched a Backend/graphql/* suite), keep the case with richer assertions and flag the duplicate in `coverage-generation-report.md`.
+2. **Suite-write conflicts** — if two batches modified the same CSV, merge IDs sequentially and re-sort by domain prefix.
+3. **Cross-batch test-data sanity** — run `npx tsx scripts/validate-td-refs.ts` against modified files; any unresolved `@td()` reference is a blocker (Definition of Done).
+
+### Step 6 — Manifest & Scope Maintenance
+
+Interactive mode only:
+
+1. Recalculate `testCount` per modified suite; update `config/test-suites.json` (or invoke `npm run suites:sync` if available).
+2. If any modified suite is in critical-UI scope, run `npm run scope:validate` — non-zero exit blocks the run.
+3. Never auto-create new suite files. Gaps marked `blocked:needs-suite` surface in the final report for human decision.
+
+CI mode: skip — manifest changes belong to the PR review step.
+
+### Step 7 — Diff & Run Report
+
+Always write:
+
+- **`diff-preview.md`** — per modified CSV, show added rows with surrounding context (5-line window). Format suitable for PR review.
+- **`coverage-generation-report.md`** — see template below.
 
 ```markdown
 # Coverage Generation Report — {RUN_ID}
 
 ## Summary
-- **Run date:** YYYY-MM-DD HH:MM
-- **Scope:** p0 | p1 | full | domain X
-- **Gaps analyzed:** N
-- **Test cases generated:** N (P0: X, P1: Y, P2: Z)
-- **Test cases validated:** N / M (pass rate)
-- **Suites modified:** [list]
-- **New suite coverage:** before% -> after%
+- Run date: YYYY-MM-DD HH:MM
+- Scope: {p0|p1|full|sprint|domain <name>|ci-dry-run}
+- Mode: {interactive|ci-dry-run}
+- Build under test: Platform {version} · Theme {version}
+- Gaps analyzed: N (P0: X / P1: Y / P2: Z)
+- Cases generated: N
+- Cases validated: N / M (XX% pass rate)
+- Cases needs-review: N
+- Suites modified: [list]
+- Coverage delta: before% → after%
+- Quality gate: {PASS|FAIL} — see § Quality Gate
 
 ## Layer Coverage Matrix
-| Layer | Cases Generated | Target Suites | Tags Used |
-|-------|----------------|---------------|-----------|
-| REST API | N | 14, ... | [HTTP]/[STATUS]/[BODY] |
-| GraphQL xAPI | N | 15 | [GQL]/[ERRORS]/[DATA] |
-| Admin UI | N | 16-34 | [BLADE]/[GRID]/[SAVE] |
-| Storefront UI | N | 01-13 | [NAV]/[ACT]/[DOM] |
-| E2E Cross-Layer | N | 00 | --- LAYER --- markers |
+| Layer | Cases generated | Target suites | Tag dialect |
+|-------|-----------------|---------------|-------------|
+| REST API | N | concern:api, layer:backend | [HTTP]/[STATUS]/[BODY] |
+| GraphQL xAPI (runner-native) | N | Backend/graphql/050a-k | [AUTH]/[GQL-OP]/[GQL-EXEC]/[GQL-CAPTURE]/[ERRORS]/[DATA]/… |
+| Admin UI | N | concern:admin | [BLADE]/[GRID]/[SAVE] |
+| Storefront UI | N | concern:functional, layer:frontend | [NAV]/[ACT]/[DOM] |
+| E2E cross-layer | N | flagged for manual routing | `--- LAYER ---` markers |
+
+## Manifest-Domain Coverage
+| Manifest Domain | Existing cases | New cases | Δ% | Notable gaps |
+|-----------------|---------------|----------|------|--------------|
 
 ## Batch Results
-| Batch | Agent | Manifest Domains | Layers | Gaps | Cases | Validated | Duration |
-|-------|-------|-----------------|--------|------|-------|-----------|----------|
-| A | qa-frontend-expert | purchase-flow, marketing | storefront, graphql, e2e | N | N | N/M | Xm |
-| B | qa-backend-expert | auth-security, customer-b2b, communication | api, graphql, admin, e2e | N | N | N/M | Xm |
-| C | qa-testing-expert | catalog-search, platform-config, content-cms, branding, cross-cutting | api, graphql, admin | N | N | N/M | Xm |
+| Batch | Agent | Domains | Layers | Gaps consumed | Cases | Validated | Duration |
+|-------|-------|---------|--------|---------------|-------|-----------|----------|
 
-## Context7 Documentation Findings
-| Domain | VC Docs Topic Queried | Gaps Discovered from Docs | New Cases Influenced |
-|--------|----------------------|--------------------------|---------------------|
-[Per-domain: which VC doc queries were made, what undocumented-in-tests behavior was found, which generated cases were informed by docs]
+## TestRail Migration Reconciliation
+| Category | Count | Sample |
+|----------|-------|--------|
+| MIGRATION_GAP | N | … |
+| SHALLOW_MIGRATION | N | … |
 
-## Generated Test Cases by Domain × Layer
-[Per-domain breakdown: domain → layers → case IDs → target suites]
+## Context7 Findings → Cases
+| Domain | Query | Behavior surfaced | Cases influenced |
+|--------|-------|-------------------|------------------|
 
-## Validation Failures
-[Any P0 cases that failed validation — needs-review items]
+## Cross-Batch Duplicates Resolved
+| Case Title | Batches | Winner | Reason |
+|-----------|---------|--------|--------|
+
+## Validation Failures (interactive only)
+| Case ID | Suite | Failure signal | Triage |
+|---------|-------|----------------|--------|
+
+## Quality Gate
+- All generated cases conform to `test-case-template.md` columns: {YES|NO}
+- All `@td()` references resolve (`validate-td-refs`): {YES|NO}
+- Critical-UI scope validator (`scope:validate`): {PASS|N/A}
+- Validation pass rate (P0 cases, interactive only) ≥ 80%: {PASS|FAIL|N/A}
+- No unresolved cross-batch duplicates: {YES|NO}
 
 ## Remaining Gaps
-[Gaps not addressed in this run — blocked:test-data, requires new suite, etc.]
+| Gap ID | Domain | Reason | Owner |
+|--------|--------|--------|-------|
 ```
 
-### Step 8 — CI Output (ci-dry-run mode only)
+### Step 8 — CI Outputs
 
-For CI integration, additionally produce:
-- `reports/coverage/{RUN_ID}/summary.json` — machine-readable summary for pipeline consumption
-- `reports/coverage/{RUN_ID}/diff-preview.md` — shows exactly which CSV lines would be added (for PR review)
-- Exit with status: `0` if all generation succeeded, `1` if any batch failed
+`ci-dry-run` adds:
+
+- **`summary.json`** — machine-readable: `{ runId, scope, gapsAnalyzed, casesGenerated, suitesModified, qualityGate, budgetUsedUsd }`
+- **Exit code semantics:**
+  - `0` — all batches succeeded and quality gate PASS
+  - `1` — at least one batch failed
+  - `2` — generation succeeded but quality gate FAIL (review required)
+  - `3` — pre-flight failure (env, manifest, budget)
+
+If not dry-run and `--commit` is requested in a future enhancement: open a PR on a `coverage/{RUN_ID}` branch; never push to `main`. Teams notification carries the run summary card.
 
 ---
 
@@ -204,19 +297,18 @@ For CI integration, additionally produce:
 
 ### npm script
 
-Add to `package.json`:
 ```json
 "ci:coverage": "npx tsx ci/run-coverage.ts"
 ```
 
-### Scheduled Pipeline (GitHub Actions)
+### Scheduled pipeline (GitHub Actions)
 
 ```yaml
 # .github/workflows/coverage-generation.yml
 name: Coverage Generation
 on:
   schedule:
-    - cron: '0 4 * * 0'  # Weekly Sunday at 4:00 AM UTC
+    - cron: '0 4 * * 0'  # Weekly Sunday 04:00 UTC
   workflow_dispatch:
     inputs:
       scope:
@@ -224,64 +316,95 @@ on:
         required: false
         default: 'p1'
         type: choice
-        options: [p0, p1, full]
+        options: [p0, p1, full, sprint]
       dry_run:
-        description: 'Dry run (no commit)'
+        description: 'Dry run (no commit, no validation)'
         required: false
         default: true
         type: boolean
+      max_budget_usd:
+        description: 'Budget cap (USD)'
+        required: false
+        default: '25'
 ```
 
-### CI Flow
+### CI flow
 
-1. `ci/run-coverage.ts` loads gap inventory from feature-domain-map
-2. Runs Cycles 1-2 (analysis + generation) in headless mode
-3. Produces `summary.json` + `diff-preview.md`
-4. If not dry-run: commits changes to a `coverage/YYYY-MM-DD` branch, opens PR
-5. Teams notification with coverage delta
-
----
-
-## Domain Priority Groups
-
-| Group | Domains | Priority Score |
-|-------|---------|---------------|
-| **P0 (Revenue)** | CART, CHECKOUT, PAYMENT, ORDERS, SECURITY, API-REST | >= 8.0 |
-| **P1 (Core)** | AUTH, CATALOG, SEARCH, BOPIS, B2B-ORG, B2B-MEMBERS, QUOTES, LISTS, CONFIG, VARIATIONS, BROWSER, A11Y, CMS, API-GQL | >= 5.0 |
-| **P2 (Extended)** | GA4, L10N, PERF, WL, DASHBOARD, NOTIFICATIONS, COMPARE, ADMIN-IMPERSONATION | < 5.0 |
+1. `ci/run-coverage.ts` loads gap inventory via Step 1 (headless, no browsers).
+2. Runs Steps 4–5 (no validation) and Steps 7–8.
+3. Produces `summary.json` + `diff-preview.md`.
+4. If `dry_run=false`: commits to `coverage/{RUN_ID}` branch, opens PR with `coverage-generation-report.md` as body.
+5. Teams notification (`TEAMS_WEBHOOK_URL`) with coverage delta and quality-gate verdict.
 
 ---
 
-## Relationship to /qa-coverage-gap Skill
+## Priority Scoring (consumed from `coverage-gap-methodology.md`)
 
-| Aspect | `/qa-coverage-gap` (skill) | `/qa-coverage-generation` (command) |
-|--------|---------------------------|-------------------------------------|
+| Factor | Weight | Scoring |
+|--------|--------|---------|
+| Revenue impact | 40% | P0=10, P1=6, P2=3 |
+| User frequency | 25% | Daily=10, Weekly=6, Monthly=3, Rare=1 |
+| Failure severity | 20% | Data loss=10, Functional=7, UX=4, Cosmetic=1 |
+| Existing coverage | 15% | Zero=10, 1–2 cases=7, 3–5=4, 6+=1 |
+
+| Score range | Priority | Inclusion |
+|-------------|----------|-----------|
+| 8.0–10.0 | P0 | `p0`, `p1`, `full` |
+| 5.0–7.9 | P1 | `p1`, `full` |
+| 2.0–4.9 | P2 | `full` only |
+| < 2.0 | P3 | excluded from generation runs |
+
+Risk-tie-breakers (5×5 matrix) — when two gaps score within ±0.5, defer to `/qa-risk` likelihood × impact ordering.
+
+---
+
+## Relationship to `/qa-coverage-gap` Skill
+
+| Aspect | `/qa-coverage-gap` (skill) | `/qa-coverage-generation` (this command) |
+|--------|---------------------------|------------------------------------------|
 | Execution | Single agent, sequential | 3 parallel sub-agents |
-| Scope | One domain or full (slow) | Batched by domain affinity |
+| Scope | One domain or full (slow) | Manifest-domain batches |
 | CI support | No | Yes (`ci-dry-run`, PR creation) |
 | Validation | P0 via single browser | P0 via 3 browser slots |
 | Best for | Quick single-domain pass | Sprint/release-level coverage improvement |
+| Test-data contract | Same (`.claude/rules/test-data.md`) | Same — orchestrator additionally runs `validate-td-refs` |
 
-When a single domain is requested (`domain <name>`), this command delegates directly to `/qa-coverage-gap` skill — no sub-agent overhead.
+When `domain <name>` is requested, this command delegates directly to `/qa-coverage-gap domain <name>` — no sub-agent overhead, no batching.
 
 ---
 
 ## Rules
 
-- Follow `.claude/skills/qa-methodology/qa-evidence/output-paths.md` for artifact output paths and naming conventions
-- Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
-- Never modify suite CSVs directly — always delegate to sub-agents
-- Never create new suite files without explicit user approval
-- Preserve existing test case IDs — new cases get next sequential ID
-- Gap analysis (Step 1) runs centrally, never in sub-agents (avoids redundant reads)
-- Each sub-agent gets an isolated browser slot — never share browsers
-- CI mode never opens browsers — Cycles 1-2 only
-- All generated test cases must use layer-specific tags from `test-case-template.md` (Layer-Specific Formats section)
-- Sub-agents must use `/qa-test-cases-generator --layer` to produce correctly tagged cases per layer
-- If a batch fails, retry once with a different browser from fallback chain
-- Write all outputs to `reports/coverage/{RUN_ID}/`, never to root
-- Update `config/test-suites.json` test counts after generation
-- For `ci-dry-run`: never commit, never modify CSVs, only produce reports
-- Always query Context7 (`/virtocommerce/vc-docs`) during gap analysis to enrich coverage with up-to-date VC module behavior — do not rely solely on local knowledge files
-- Sub-agents should query Context7 for domain-specific details when generating test cases (API contracts, field validations, module config options)
-- **Deduplication:** Before generating new cases, sub-agents must read the current target suite CSV and check for semantic duplicates — cases with matching Title+Section or Steps that cover the same scenario. Skip generation for already-covered gaps. In Step 5, the orchestrator must also cross-check merged results across batches for cross-batch duplicates before writing final CSVs
+**Architecture:**
+- Gap analysis (Step 1) runs centrally — never in sub-agents (avoids redundant reads, ensures deduplicated inventory).
+- Dispatch sub-agents in a single message to run truly in parallel.
+- Each sub-agent gets an isolated browser slot — never share browsers.
+- Max 3 concurrent browser agents (QA + BA combined; see `.claude/rules/agents.md`).
+
+**Format & data:**
+- All generated cases follow `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` (15-column enriched CSV).
+- Backend/graphql/* cases follow the **runner-native** authoring contract in `.claude/agents/knowledge/graphql-test-cases-runner.md`. Never use browser-mode `[GQL]` tags inside those suites.
+- Test data is **never** hardcoded — use `{{VAR}}` / `@td()` / `live-discover` / `random-data` per `.claude/rules/test-data.md`. Sub-agents that emit literal IDs/SKUs/prices fail review.
+- `validate-td-refs` MUST pass before Step 7 completes.
+- Use `AGENT-TEST-` prefix for any new test data so `/qa-seed-data teardown` reclaims it.
+
+**Suite handling:**
+- Never modify suite CSVs from the orchestrator — only sub-agents append, and only via `/qa-test-cases-generator`.
+- Never create new suite files — flag `blocked:needs-suite` and surface in the report.
+- Preserve existing IDs — new cases get the next sequential ID in their domain prefix.
+- Resolve target suites by querying the manifest (`domain` + `layer` + `concern`); never hardcode IDs in this command.
+
+**CI & safety:**
+- CI mode never opens browsers, never commits CSVs, never updates the manifest.
+- Pre-flight failure surfaces with exit code 3.
+- Quality-gate failure surfaces with exit code 2 — review required, but generation is preserved.
+- Always write outputs under `reports/coverage/{RUN_ID}/`, never to repo root.
+- Honor budget cap; fail-fast if exceeded.
+
+**Knowledge sources:**
+- Always query Context7 (`/virtocommerce/vc-docs`) during Step 1 — never rely solely on local knowledge files.
+- Sub-agents may re-query Context7 for domain-specific field validations / module config options when generating cases.
+
+**Deduplication:**
+- Sub-agents skip generation for cases that semantically duplicate existing CSV rows (Title+Section or Steps+Assertions equivalence).
+- Orchestrator runs cross-batch dedup before writing the diff preview — duplicates are not blockers but are surfaced in the report.

@@ -93,7 +93,7 @@ CRB-GQL-008,"xCart — removeCartItem Removes Line Item","GraphQL > xCart",High,
 [GQL-EXEC remove_item]","[ERRORS label=remove_item] errors[] empty
 [COUNT label=remove_item] data.removeCartItem.itemsCount = 0
 [COUNT label=remove_item] data.removeCartItem.items.length = 0","[ROUNDTRIP label=remove_item] cart remains valid (id still present), just emptied","errors[] non-empty; itemsCount unchanged; cart becomes null after removal",none — cart is empty after remove,xAPI; graphql-schema.md — Mutation.removeCartItem,Automated
-CRB-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1; ECL-8.1,"Runner-native. Requires cart with at least 1 item. Adds shipment with a New York deliveryAddress, then re-queries cart to verify address persisted.","addr_city=New York; addr_state=NY; addr_zip=10001; addr_country=US","[AUTH role=ORG_USER]
+CRB-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1; ECL-8.1,"Runner-native. Requires cart with at least 1 item. Adds shipment with a New York deliveryAddress, then re-queries cart to verify address persisted.","addr_city=New York; addr_state=NY; addr_zip=10001; addr_country=USA","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -115,7 +115,7 @@ CRB-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL >
       userId: ""{{USER_ID}}""
       shipment: {
         deliveryAddress: {
-          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          city: ""New York"" countryCode: ""USA"" countryName: ""United States""
           firstName: ""Test"" lastName: ""User""
           line1: ""123 Test St"" postalCode: ""10001""
           regionId: ""NY"" regionName: ""New York""
@@ -132,7 +132,7 @@ CRB-GQL-009,"xCart — addOrUpdateCartShipment Sets Shipping Address","GraphQL >
 [GQL-EXEC cleanup_clear]","[ERRORS label=set_shipment] errors[] empty
 [DATA label=set_shipment] data.addOrUpdateCartShipment.id is non-null
 [DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.city = New York
-[DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.countryCode = US
+[DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.countryCode = USA
 [DATA label=set_shipment] data.addOrUpdateCartShipment.shipments.0.deliveryAddress.postalCode = 10001","[ROUNDTRIP label=set_shipment] cart query confirms shipment.deliveryAddress fields populated","errors[] non-empty; address fields null; validationErrors on shipment; countryCode or regionId wrong",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addOrUpdateCartShipment,Automated
 CRB-GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > xCart",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Applies a seeded valid coupon (QA10OFF via @td alias) then an invalid one to verify graceful rejection.","valid_coupon=@td(COUPON_10PCT.code); invalid_coupon=BADCODE_NOPE_99999","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
@@ -166,8 +166,12 @@ CRB-GQL-010,"xCart — addCoupon Applies Valid and Rejects Invalid","GraphQL > x
 [GQL-OP cleanup_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=apply_valid] errors[] empty
-[DATA label=apply_valid] data.addCoupon.coupons is non-null","[EVIDENCE] apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true; discountTotal.amount > 0. Review evidence JSON.
-[EVIDENCE] apply_invalid: either errors[] non-empty with descriptive message OR coupons[] entry with isAppliedSuccessfully=false. No HTTP 500.","HTTP 500 on coupon apply; stack trace in errors[].message; valid coupon rejected; invalid coupon silently accepted as applied",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addCoupon,Automated
+[DATA label=apply_valid] data.addCoupon.coupons is non-null
+[COUNT label=apply_valid] data.addCoupon.coupons.length >= 1
+[DATA label=apply_valid] data.addCoupon.discountTotal.amount > 0
+[ERRORS label=apply_invalid] errors[] empty
+[DATA label=apply_invalid] data.addCoupon.coupons is non-null","[EVIDENCE] apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true (verify exact code matches alias); discountTotal.amount > 0 means coupon produced a real discount.
+[EVIDENCE] apply_invalid: xAPI contract — invalid codes ARE returned in coupons[] with isAppliedSuccessfully=false rather than via top-level errors[] (see CRI-GQL-091 pattern). Silent no-op via empty errors[] is acceptable here; assertion verifies the response shape is structured.","HTTP 500 on coupon apply; stack trace in errors[].message; valid coupon rejected (discountTotal=0); invalid coupon silently accepted as applied (would inflate discountTotal)",none — clearCart at end,xAPI; graphql-schema.md — Mutation.addCoupon,Automated
 CRB-GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critical,BL-GQL-001; BL-GQL-002; BL-GQL-003; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native but CREATES A REAL ORDER — no easy teardown via runner. Sequence: addItem → addOrUpdateCartShipment (FixedRate w/ price) → addOrUpdateCartPayment (DefaultManualPaymentMethod) → createOrderFromCart. Uses @td(BUYABLE_NO_MIN_QTY.id) to guarantee a product with minQty=1 so addItem succeeds — prevents downstream createOrderFromCart ValidationError (REG-2026-04-29-0929 BUG-050b1-002). See order-creation-matrix.md § GraphQL xAPI Checkout Flow for required price-match on shipment.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -187,7 +191,7 @@ CRB-GQL-017,"xCart — Full Checkout Flow via GraphQL","GraphQL > xCart",Critica
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
         deliveryAddress: {
-          city: ""New York"" countryCode: ""US"" countryName: ""United States""
+          city: ""New York"" countryCode: ""USA"" countryName: ""United States""
           firstName: ""Test"" lastName: ""User""
           line1: ""123 Test St"" postalCode: ""10001""
           regionId: ""NY"" regionName: ""New York""
@@ -327,7 +331,10 @@ CRB-GQL-050,"xCart — updateCartQuantity Non-Existent ProductId","GraphQL > xCa
       id itemsCount items { productId quantity }
     }
   }
-[GQL-EXEC update_bogus]","—","[EVIDENCE] update_bogus: either errors[] non-empty with product-not-found message OR itemsCount=0 (silent no-op). NO HTTP 500 or stack trace in errors[].","HTTP 500; phantom line item created for non-existent product; existing items corrupted; stack trace in errors[]",none — nothing added if graceful,xAPI; graphql-schema.md — Mutation.updateCartQuantity error contract,Automated
+[GQL-EXEC update_bogus]","[ERRORS label=update_bogus] errors[] empty
+[DATA label=update_bogus] data.updateCartQuantity.id is non-null
+[COUNT label=update_bogus] data.updateCartQuantity.itemsCount == 0
+[COUNT label=update_bogus] data.updateCartQuantity.items.length == 0","[EVIDENCE] Silent no-op contract: errors[] empty, cart remains empty (itemsCount=0, items[] empty). The zero-GUID productId is not resolved → no phantom line item. NO HTTP 500 or stack trace.","HTTP 500; phantom line item created for non-existent product (P0); existing items corrupted; stack trace in errors[]; itemsCount > 0 (would mean cart was modified)",none — nothing added if graceful,xAPI; graphql-schema.md — Mutation.updateCartQuantity error contract,Automated
 CRB-GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update","GraphQL > xCart > Quantity",Critical,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"Runner-native. Uses @td(BUYABLE_NO_MIN_QTY.id) as PRODUCT_1. PRODUCT_2 resolved via inline products query (items[1] — second item in catalog page, same filter as CRB-GQL-047). Add 2 items qty=1 each, bulk-update qty=2/3, verify subTotal recalculated.","PRODUCT_1=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

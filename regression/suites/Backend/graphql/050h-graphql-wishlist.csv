@@ -83,13 +83,13 @@ WL-003,"changeWishlist — Rename List","GraphQL > Wishlist > Management",High,B
 [ERRORS label=verify] errors[] empty
 [DATA label=verify] data.wishlist.name = AGENT-TEST-WL-003-RENAMED
 [ERRORS label=cleanup_remove] errors[] empty","[ROUNDTRIP label=verify] confirms rename persisted across mutation boundary","errors[] non-empty; name not updated; changeWishlist returns old name; verify query shows stale data",none — inline cleanup,xAPI; graphql-schema.md — Mutation.changeWishlist,Automated
-WL-004,"cloneWishlist — Verify Items Copied","GraphQL > Wishlist > Management",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Captures real product GUID, creates source wishlist with 1 item, then clones it. KNOWN BUG (verified 2026-03-30): cloneWishlist injects phantom product 5a78d778 into every clone, itemsCount=2 instead of 1. This test asserts source preservation + source product in clone; logs clone itemsCount for bug tracking.","—","[AUTH role=ORG_USER]
+WL-004,"cloneWishlist — Verify Items Copied","GraphQL > Wishlist > Management",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Captures real product GUID, creates source wishlist with 1 item, then clones it. KNOWN BUG (verified 2026-03-30, RE-VERIFIED 2026-05-21): cloneWishlist injects phantom product 5a78d778-XXXX into every clone, itemsCount=2 instead of 1. Test contract is intentionally relaxed: asserts source preservation + source product in clone; logs clone itemsCount for tracking. TODO-JIRA: No JIRA ticket exists for this bug as of 2026-05-21 — file as P2/P3 when reproduced on regression (xAPI cloneWishlist phantom-product injection). Once filed, replace this note with the VCST-XXXX id and remove relaxed-assertion comments.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_src]
@@ -130,7 +130,7 @@ WL-004,"cloneWishlist — Verify Items Copied","GraphQL > Wishlist > Management"
 [COUNT label=clone] data.cloneWishlist.itemsCount >= 1
 [ERRORS label=verify_src] errors[] empty
 [COUNT label=verify_src] data.wishlist.itemsCount = 1","[EVIDENCE] data.cloneWishlist.itemsCount: expected 1, KNOWN BUG yields 2 (phantom product 5a78d778 'MAMMOET SHOT GLASS BOSTON SHOT 2.5CL BOX'). Review evidence JSON.
-[ROUNDTRIP label=verify_src] source list unchanged after clone","errors[] non-empty; source list destroyed by clone; clone has 0 items; source product missing from clone",none — inline cleanup,xAPI; graphql-schema.md — Mutation.cloneWishlist,Automated
+[ROUNDTRIP label=verify_src] source list unchanged after clone","errors[] non-empty; source list destroyed by clone; clone has 0 items; source product missing from clone",none — inline cleanup,"xAPI; graphql-schema.md — Mutation.cloneWishlist; KNOWN BUG: phantom-product 5a78d778-XXXX injection (no JIRA ticket as of 2026-05-21 — file when seen on regression); demoted to Semi-Automated to prevent false-green until JIRA filed",Semi-Automated
 WL-005,"removeWishlist — Verify Deleted","GraphQL > Wishlist > Management",Critical,BL-GQL-001; BL-GQL-004,ECL-10.2,"Runner-native. Creates wishlist, removes it, verifies subsequent query returns null.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -161,7 +161,7 @@ WL-007,"wishlist Query — Get by listId","GraphQL > Wishlist > Queries",Critica
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_list]
@@ -211,7 +211,7 @@ WL-010,"addWishlistItem — Single Item","GraphQL > Wishlist > Items",Critical,B
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
   query {
-    products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") {
+    products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") {
       items { id }
     }
   }
@@ -243,7 +243,7 @@ WL-011,"addWishlistItems — Multiple Items in One Call","GraphQL > Wishlist > I
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prods]
-  query { products(storeId: ""{{STORE_ID}}"" first: 2 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prods]
 [GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
 [GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
@@ -275,7 +275,7 @@ WL-012,"updateWishListItems — Change Item Quantity","GraphQL > Wishlist > Item
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_list]
@@ -308,7 +308,7 @@ WL-013,"removeWishlistItem — Single Item","GraphQL > Wishlist > Items",High,BL
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_list]
@@ -337,7 +337,7 @@ WL-014,"removeWishlistItems — Bulk Remove","GraphQL > Wishlist > Items",High,B
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prods]
-  query { products(storeId: ""{{STORE_ID}}"" first: 2 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 2 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prods]
 [GQL-CAPTURE setup_prods.data.products.items.0.id → PRODUCT_1]
 [GQL-CAPTURE setup_prods.data.products.items.1.id → PRODUCT_2]
@@ -377,7 +377,7 @@ WL-015,"moveWishlistItem — Between Two Lists","GraphQL > Wishlist > Items",Hig
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id code minQuantity maxQuantity } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id code minQuantity maxQuantity } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_src]
@@ -413,7 +413,7 @@ WL-015,"moveWishlistItem — Between Two Lists","GraphQL > Wishlist > Items",Hig
 [GQL-OP cleanup_src]
   mutation { removeWishlist(command: { listId: ""{{SRC_LIST_ID}}"" }) }
 [GQL-EXEC cleanup_src]","[ERRORS label=setup_prod] errors[] empty — Canvas Pencil Case must resolve (BUYABLE_NO_MIN_QTY guarantee)
-[DATA label=setup_prod] data.products.items.0.code = ALCOE9535
+[DATA label=setup_prod] data.products.items.0.code = @td(BUYABLE_NO_MIN_QTY.code)
 [DATA label=setup_prod] data.products.items.0.minQuantity = 1
 [ERRORS label=add_item] errors[] empty
 [COUNT label=add_item] data.addWishlistItem.itemsCount = 1
@@ -423,7 +423,7 @@ WL-015,"moveWishlistItem — Between Two Lists","GraphQL > Wishlist > Items",Hig
 [ERRORS label=verify_dest] errors[] empty
 [COUNT label=verify_dest] data.wishlist.itemsCount = 1
 [DATA label=verify_dest] data.wishlist.items.0.productId is non-null
-[DATA label=verify_dest] data.wishlist.items.0.sku = ALCOE9535
+[DATA label=verify_dest] data.wishlist.items.0.sku = @td(BUYABLE_NO_MIN_QTY.sku)
 [ERRORS label=verify_src] errors[] empty
 [COUNT label=verify_src] data.wishlist.itemsCount = 0","[ROUNDTRIP label=move] moveWishlistItem returns the DESTINATION wishlist state (itemsCount=1 after move). verify_dest also confirms destination=1, verify_src confirms source emptied.
 [EVIDENCE] items[].validationErrors projection added for future-proofing — VCST-5112 schema gap means destination-aggregate rejections (PRODUCT_MIN_MAX_QTY etc.) cannot surface through wishlist projections today. WishlistType lacks the aggregate-level validationErrors field that CartType has.","errors[] non-empty; item remains in source; missing from destination; duplicated in both; data.wishlist.items.0.validationErrors non-empty (would indicate destination silently accepted a rejected item)",none — inline cleanup,xAPI; graphql-schema.md — Mutation.moveWishlistItem; VCST-5112,Automated
@@ -433,7 +433,7 @@ WL-016,"moveWishlistItem — Non-Existent Destination","GraphQL > Wishlist > Ite
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_src]
@@ -467,7 +467,7 @@ WL-017,"createCartFromWishlist — Cart Populated","GraphQL > Wishlist > Cross-D
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_list]
@@ -505,7 +505,10 @@ WL-018,"createCartFromWishlist — Empty Wishlist Behavior","GraphQL > Wishlist 
 [GQL-EXEC cart_empty]
 [GQL-OP cleanup_remove]
   mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
-[GQL-EXEC cleanup_remove]","[ERRORS label=cleanup_remove] errors[] empty","[EVIDENCE] Either: errors[] non-empty with descriptive message on empty input OR data.createCartFromWishlist returns a cart with itemsCount=0. Document which branch observed.","HTTP 500; stack trace in errors[]; server crash; silent null cart creation",none — inline cleanup,xAPI; graphql-schema.md — Mutation.createCartFromWishlist error contract,Automated
+[GQL-EXEC cleanup_remove]","[ERRORS label=cart_empty] errors[] empty
+[DATA label=cart_empty] data.createCartFromWishlist.id is non-null
+[COUNT label=cart_empty] data.createCartFromWishlist.itemsCount == 0
+[ERRORS label=cleanup_remove] errors[] empty","[EVIDENCE] Empty-wishlist contract: errors[] empty, server returns a structured cart object with itemsCount=0 (rather than null). NO HTTP 500.","HTTP 500; stack trace in errors[]; server crash; silent null cart creation (data.createCartFromWishlist is null instead of {id, itemsCount=0}); itemsCount > 0 (would mean phantom items leaked from elsewhere)",none — inline cleanup,xAPI; graphql-schema.md — Mutation.createCartFromWishlist error contract,Automated
 WL-019,"addWishlistItem — Without Authentication","GraphQL > Wishlist > Auth",Critical,BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. No [AUTH] block — attempts addWishlistItem anonymously. Expects authentication error or silent null.","zero_guid=00000000-0000-0000-0000-000000000000","[GQL-OP add_noauth]
   mutation {
     addWishlistItem(command: {
@@ -514,7 +517,8 @@ WL-019,"addWishlistItem — Without Authentication","GraphQL > Wishlist > Auth",
       quantity: 1
     }) { id itemsCount }
   }
-[GQL-EXEC add_noauth]","[DATA label=add_noauth] data.addWishlistItem is null","[EVIDENCE] Either errors[] non-empty with auth/authorization message OR data.addWishlistItem null. No internal IDs, stack traces, or SQL hints in errors[].","Mutation succeeds without auth (data returned); HTTP 500; unhandled exception; stack trace leaks in errors[]",none — no wishlist created,xAPI; graphql-schema.md — Mutation.addWishlistItem BL-GQL-004,Automated
+[GQL-EXEC add_noauth]","[ERRORS label=add_noauth] errors[] non-empty
+[DATA label=add_noauth] data.addWishlistItem is null","[EVIDENCE] Auth-required contract: anonymous request returns errors[] non-empty AND data.addWishlistItem null. NO mutation succeeds, NO internal IDs/stack traces/SQL hints leaked in errors[].","Mutation succeeds without auth (data returned with non-null); errors[] empty (would mean silent auth bypass — P0); HTTP 500; unhandled exception; stack trace leaks in errors[]",none — no wishlist created,xAPI; graphql-schema.md — Mutation.addWishlistItem BL-GQL-004,Automated
 WL-020,"wishlist Query — Cross-User Access Denial","GraphQL > Wishlist > Auth",High,BL-GQL-004,ECL-2.1; ECL-10.2,"Two-user scenario — requires a second role alias (USER2 — personal account in aliases.json). ORG_USER creates the list then USER2 attempts to read it.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -533,10 +537,10 @@ WL-020,"wishlist Query — Cross-User Access Denial","GraphQL > Wishlist > Auth"
   mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
 [GQL-EXEC cleanup_remove]","[DATA label=cross_read] data.wishlist is null — private list not exposed to other users
 [ERRORS label=cleanup_remove] errors[] empty","[EVIDENCE] Either: errors[] non-empty with access-denied message OR data.wishlist is null. Both acceptable (hard-gate or silent-null). No private list data leaked.","USER2 receives private list data (privacy violation); HTTP 500; stack trace",none — inline cleanup,xAPI; graphql-schema.md — Query.wishlist BL-GQL-004,Draft
-WL-021,"createWishlist with scope=Organization — Same-Org Member Access","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-10.2; ECL-2.1,"Requires two users in the SAME B2B org (TechFlow). Currently no matching _inline aliases exist (TECHFLOW_ADMIN/BUYER in aliases.json are file-based, not env-based). Mark Draft until user-pool roles are added to aliases.json as _inline entries.","—","[MANUAL-BLOCKED] Needs TECHFLOW_EMILY and TECHFLOW_JOHN _inline aliases in test-data/aliases.json mapped to env vars (e.g. TECHFLOW_EMILY_EMAIL/PASSWORD). Execute via legacy GraphiQL suite 050h WL-021 until runner role-wiring is extended.","[MANUAL] Legacy suite 050h WL-021 assertions","[EVIDENCE] Track as Draft in runner","same-org member denied access to Organization-scope wishlist; add-item blocked",Manual execution only — cleanup via legacy flow,xAPI; legacy 050h WL-021,Draft
-WL-022,"createWishlist with scope=Organization — Cross-Org Denial","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-2.1; ECL-10.2,"Requires two users in DIFFERENT B2B orgs. Not runner-automatable until user-pool roles are added to aliases.json with _inline env-var mappings.","—","[MANUAL-BLOCKED] Needs ORG_USER (AcmeCorp) + second-org user (e.g. TECHFLOW_EMILY) as _inline aliases. Execute via legacy GraphiQL suite 050h WL-022.","[MANUAL] Legacy suite 050h WL-022 assertions","[EVIDENCE] Track as Draft in runner","cross-org data leak: foreign-org user sees Organization-scope list",Manual execution only,xAPI; legacy 050h WL-022,Draft
-WL-023,"wishlists Query with scope=Organization — Org Isolation","GraphQL > Wishlist > B2B",High,BL-B2B-001,ECL-2.1; ECL-10.2,"Requires a second-org user with _inline alias mapped to env vars. Not runner-automatable in current state.","—","[MANUAL-BLOCKED] Needs TECHFLOW_EMILY (or similar second-org user) as _inline alias. Execute via legacy suite 050h WL-023.","[MANUAL] Legacy suite 050h WL-023 assertions","[EVIDENCE] Track as Draft in runner","foreign-org lists appear in user's org scope",Manual execution only,xAPI; legacy 050h WL-023,Draft
-WL-024,"Private Wishlist — Cross-User Access Denial (B2B)","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-2.1; ECL-10.2,"Covered pragmatically by WL-020 (Cross-User Access Denial using USER2 personal account). True cross-org B2B variant needs second-org _inline alias in aliases.json.","—","[MANUAL-BLOCKED] See WL-020 for runner-automatable equivalent. Full B2B variant requires additional user aliases.","[MANUAL] Legacy suite 050h WL-024 assertions","[EVIDENCE] Track as Draft in runner; WL-020 provides coverage","private list exposed to any other user",Manual execution only,xAPI; legacy 050h WL-024,Draft
+WL-021,"createWishlist with scope=Organization — Same-Org Member Access","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-10.2; ECL-2.1,"BLOCKED: Requires two users in the SAME B2B org (TechFlow). Currently no matching _inline aliases exist (TECHFLOW_ADMIN/BUYER in aliases.json are file-based, not env-based with credentials). UNBLOCK STEPS: (1) Provision TECHFLOW_EMILY_EMAIL/PASSWORD AND TECHFLOW_JOHN_EMAIL/PASSWORD in .env.vcst (both users in TechFlow org, suggested per b2b/users.csv); (2) Add inline aliases TECHFLOW_EMILY and TECHFLOW_JOHN in test-data/aliases.json with email_env/password_env mappings; (3) Update Steps to [AUTH role=TECHFLOW_EMILY] for create, then [AUTH role=TECHFLOW_JOHN] for the same-org read. OWNER: QA env owner + runner maintainer. Same blocker as CRI-GQL-058 (cross-org variant) + WL-022/023/024 (B2B suite).","—","[MANUAL-BLOCKED] See Preconditions for unblock steps. Execute via legacy GraphiQL suite 050h WL-021 until runner role-wiring is extended.","[MANUAL] Legacy suite 050h WL-021 assertions","[EVIDENCE] Track as Draft in runner","same-org member denied access to Organization-scope wishlist; add-item blocked",Manual execution only — cleanup via legacy flow,xAPI; legacy 050h WL-021; runner-feature: multi-org-auth,Draft
+WL-022,"createWishlist with scope=Organization — Cross-Org Denial","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-2.1; ECL-10.2,"BLOCKED: Requires two users in DIFFERENT B2B orgs. UNBLOCK STEPS: Same as WL-021 + CRI-GQL-058 (provision ORG_USER_2 env vars pointing at a BuildRight/TechFlow buyer; add inline alias). Test then [AUTH role=ORG_USER] creates Organization-scope list; [AUTH role=ORG_USER_2] (different org) attempts read — expects errors[]/Forbidden. OWNER: QA env owner + runner maintainer.","—","[MANUAL-BLOCKED] See Preconditions for unblock steps. Execute via legacy GraphiQL suite 050h WL-022.","[MANUAL] Legacy suite 050h WL-022 assertions","[EVIDENCE] Track as Draft in runner","cross-org data leak: foreign-org user sees Organization-scope list",Manual execution only,xAPI; legacy 050h WL-022; runner-feature: multi-org-auth,Draft
+WL-023,"wishlists Query with scope=Organization — Org Isolation","GraphQL > Wishlist > B2B",High,BL-B2B-001,ECL-2.1; ECL-10.2,"BLOCKED: Requires a second-org user with _inline alias mapped to env vars (see WL-021/WL-022 unblock steps). Same blocker family as CRI-GQL-058. OWNER: QA env owner + runner maintainer.","—","[MANUAL-BLOCKED] See WL-021 Preconditions for unblock steps. Execute via legacy suite 050h WL-023.","[MANUAL] Legacy suite 050h WL-023 assertions","[EVIDENCE] Track as Draft in runner","foreign-org lists appear in user's org scope",Manual execution only,xAPI; legacy 050h WL-023; runner-feature: multi-org-auth,Draft
+WL-024,"Private Wishlist — Cross-User Access Denial (B2B)","GraphQL > Wishlist > B2B",Critical,BL-B2B-001,ECL-2.1; ECL-10.2,"PARTIALLY COVERED + BLOCKED for full B2B variant: WL-020 (Cross-User Access Denial using USER2 personal account) provides runner-automatable cross-USER isolation. True cross-ORG B2B variant needs second-org _inline alias (see WL-021/WL-022 unblock steps). For now, the cross-user invariant is verified; the cross-org-WITHIN-B2B-scope invariant remains Draft. OWNER: QA env owner + runner maintainer for the B2B variant.","—","[MANUAL-BLOCKED] See WL-020 for runner-automatable equivalent. Full B2B variant requires additional user aliases.","[MANUAL] Legacy suite 050h WL-024 assertions","[EVIDENCE] Track as Draft in runner; WL-020 provides cross-user coverage","private list exposed to any other user",Manual execution only,xAPI; legacy 050h WL-024; runner-feature: multi-org-auth,Draft
 WL-025,"Personal Account — Private Wishlist OK But Cannot See Org Lists","GraphQL > Wishlist > B2B",High,BL-AUTH-004,ECL-2.1; ECL-10.2,"Runner-native. USER2 is a personal account (no org membership). Creates a private wishlist, then attempts to read an ORG_USER's org-scope list — should be denied.","—","[AUTH role=ORG_USER]
 [GQL-OP org_me]
   query { me { id } }
@@ -618,7 +622,7 @@ WL-027,"addWishlistBulkItem — Add To Single List (Bulk-Mutation Shape)","Graph
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:ALCOE9535"") { items { id } } }
+  query { products(storeId: ""{{STORE_ID}}"" first: 1 filter: ""code:@td(BUYABLE_NO_MIN_QTY.code)"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP create_list]

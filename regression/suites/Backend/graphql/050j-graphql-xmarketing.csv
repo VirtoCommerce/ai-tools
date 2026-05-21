@@ -134,7 +134,7 @@ MKT-GQL-009,"promotionCoupons — Cross-Layer: Admin Deactivate Removes Promotio
 [GQL-CAPTURE baseline.data.promotionCoupons.totalCount → BASELINE_TOTAL]
 [GQL-CAPTURE baseline.data.promotionCoupons.items.0.id → DEACTIVATED_ID]
 [GQL-CAPTURE baseline.data.promotionCoupons.items.0.systemName → DEACTIVATED_NAME]
-[MANUAL] Operator: Admin → Marketing → Promotions → search by name ""{{DEACTIVATED_NAME}}"" (or filter to promotion whose id = {{DEACTIVATED_ID}}) → open detail blade → toggle Active=false → Save.
+[SETUP] MANUAL OPERATOR STEP REQUIRED before runner continues: Admin → Marketing → Promotions → search by name ""{{DEACTIVATED_NAME}}"" (or filter to promotion whose id = {{DEACTIVATED_ID}}) → open detail blade → toggle Active=false → Save. If running unattended, this case is expected to FAIL the after_deactivate assertion (totalCount unchanged) — that failure is the signal that operator intervention is required, not a regression.
 [GQL-OP after_deactivate]
   query {
     promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
@@ -181,12 +181,16 @@ MKT-GQL-010,"promotionCoupons — E2E: Apply Returned CouponCode in Cart","Graph
       subTotal { amount }
     }
   }
-[GQL-EXEC apply_coupon]","[ERRORS label=setup_coupons] errors[] empty
+[GQL-EXEC apply_coupon]
+[GQL-OP cleanup_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_clear]","[ERRORS label=setup_coupons] errors[] empty
 [ERRORS label=apply_coupon] errors[] empty — coupon applied without server error
 [DATA label=apply_coupon] data.addCoupon.coupons is non-null
-[COUNT label=apply_coupon] data.addCoupon.coupons.length >= 1","[EVIDENCE] data.addCoupon.coupons[] contains an entry with code = {{COUPON_CODE}} AND isAppliedSuccessfully = true (BL-CART-003)
+[COUNT label=apply_coupon] data.addCoupon.coupons.length >= 1
+[DATA label=apply_coupon] data.addCoupon.discountTotal.amount > 0","[EVIDENCE] data.addCoupon.coupons[] contains an entry with code = {{COUPON_CODE}} AND isAppliedSuccessfully = true (BL-CART-003)
 [EVIDENCE] data.addCoupon.discountTotal.amount > 0 — coupon produced a real discount (BL-PRICE-001)
-[EVIDENCE] data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency","errors[] non-empty on addCoupon (mutation rejected); isAppliedSuccessfully=false despite the code coming directly from promotionCoupons (contract mismatch); discountTotal=0 after apply","[GQL-OP cleanup_clear] mutation { clearCart(command: { storeId: \""{{STORE_ID}}\"" userId: \""{{USER_ID}}\"" }) { id } } [GQL-EXEC cleanup_clear]",xAPI; graphql-schema.md — Query.promotionCoupons Mutation.addCoupon; VCST-4590,Automated
+[EVIDENCE] data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency","errors[] non-empty on addCoupon (mutation rejected); isAppliedSuccessfully=false despite the code coming directly from promotionCoupons (contract mismatch); discountTotal=0 after apply","none — inline cleanup_clear",xAPI; graphql-schema.md — Query.promotionCoupons Mutation.addCoupon; VCST-4590,Automated
 MKT-GQL-011,"promotionCoupons — Error Schema: No Internal Data Leak","GraphQL > Marketing > Security",Critical,BL-GQL-001; BL-AUTH-005,ECL-10.2,"Runner-native. ORG_USER authenticated. Two probes: (a) unknown field on items[] (DV-009 client validation), (b) very large `first` value to surface any timeout / capping behavior. Asserts errors[] is structured and contains no stack traces, file paths, or SQL fragments.","—","[AUTH role=ORG_USER]
 [GQL-OP unknown_field]
   query {

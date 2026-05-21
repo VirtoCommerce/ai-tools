@@ -26,16 +26,39 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 
 | Feature Domain(s) | Manifest Domain | Selection Group | Suites |
 |-------------------|----------------|-----------------|--------|
-| AUTH, SESSION, RBAC | auth-security | `auth` | 031-033, 044, 049 |
-| CATALOG, SEARCH, FILTERS, COMPARE | catalog-search | `catalog`, `search`, `configurable-products` | 001-005, 051-053, 061, 072/b/c/d |
-| CART, CHECKOUT, PAYMENT, ORDERS, BOPIS, PRICING, INVENTORY, SHIPPING, RETURNS | purchase-flow | `purchase-flow`, `payment`, `bopis`, `orders` | 011-015, 017-019, 028-030, 036-041, 054-056, 065, 073 |
-| B2B-ORG, B2B-MEMBERS, LISTS, DASHBOARD, CONTRACTS, LOYALTY | customer-b2b | `b2c` | 006-010, 026-027, 074-075 |
-| PROMOTIONS, COUPONS, CONTENT | marketing | `marketing` | 023-025, 077, 079 |
+| AUTH, SESSION, RBAC | auth-security | `auth` | 031-033, 044, 049, 050d, 082 |
+| CATALOG, SEARCH, FILTERS, COMPARE, CONFIGURABLE | catalog-search | `catalog`, `search`, `configurable-products` | 001-005, 050a, 050i, 051-053, 061, 072, 072b/c/d |
+| CART, CHECKOUT, PAYMENT, ORDERS, BOPIS, PRICING, INVENTORY, SHIPPING, RETURNS | purchase-flow | `purchase-flow`, `payment`, `bopis`, `orders` | 011-015, 017-019, 028-030, 036-041, 050b1/b2/b3/b4, 050c, 050k, 054-056, 065, 073 |
+| B2B-ORG, B2B-MEMBERS, LISTS, DASHBOARD, WISHLIST, CONTRACTS, LOYALTY | customer-b2b | `b2c` | 006-010, 026-027, 050h, 074-075 |
+| PROMOTIONS, COUPONS, CONTENT | marketing | `marketing` | 023-025, 050j, 077, 079 |
 | NOTIFICATIONS, PUSH MESSAGES | communication | — | 057-058, 068 |
-| CMS, ASSETS, IMAGE TOOLS | content-cms | — | 059-060, 062, 069 |
-| USERS, STORE CONFIG, DYNAMIC PROPERTIES, CHANNELS, IMPORT/EXPORT, GRAPHQL | platform-config | `platform` | 020-021, 034-035, 050, 063-064, 076 |
+| CMS, ASSETS, IMAGE TOOLS | content-cms | — | 050f, 059-060, 062, 069 |
+| USERS, STORE CONFIG, DYNAMIC PROPERTIES, CHANNELS, IMPORT/EXPORT, PAGE CONTEXT | platform-config | `platform` | 020-021, 034-035, 050e, 063-064, 076 |
 | WHITE LABELING, SEO | branding | `whitelabeling` | 066-067, 070-071 |
-| SMOKE, GA4, SECURITY, A11Y, I18N, PERFORMANCE, BROWSER COMPAT | cross-cutting | `smoke`, `critical` | 042-048, 078, 080 |
+| SMOKE, GA4, SECURITY, A11Y, I18N, PERFORMANCE, BROWSER COMPAT, GQL CROSS-CUTTING | cross-cutting | `smoke`, `critical` | 042-048, 048b, 050g, 078, 080 |
+
+> **Layer routing:** `/qa-test-cases-generator --layer <name>` and the orchestrated `/qa-coverage-generation` map gaps to suites by combining `manifestDomain` + `layer` + `concern`. Backend GraphQL suites (`050a`–`050k`) follow the **runner-native** authoring contract in [`graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) — they are not browser-mode suites. See [`SKILL.md`](SKILL.md) § "Manifest-Domain Routing" for the target-suite resolution rule.
+
+### Backend/graphql/* Sub-Suite Breakdown (runner-native)
+
+The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL gap generation to the matching sub-suite by feature area, not to `050` as a whole:
+
+| Suite | Coverage | Manifest Domain |
+|-------|----------|-----------------|
+| `050a` | xCatalog (products, categories, range facets, price-filter BVA) | catalog-search |
+| `050b1` | xCart — basic CRUD & quantity | purchase-flow |
+| `050b2` | xCart — item selection & coupons | purchase-flow |
+| `050b3` | xCart — shipment, payment, merge, remove | purchase-flow |
+| `050b4` | xCart — cross-domain & schema coverage | purchase-flow |
+| `050c` | xOrder | purchase-flow |
+| `050d` | xProfile (registration, account) | auth-security |
+| `050e` | xFrontend (pageContext) | platform-config |
+| `050f` | xCMS | content-cms |
+| `050g` | GraphQL cross-cutting | cross-cutting |
+| `050h` | Wishlist (xList) | customer-b2b |
+| `050i` | Configurable products | catalog-search |
+| `050j` | xMarketing (promotionCoupons) | marketing |
+| `050k` | xPickup (BOPIS) | purchase-flow |
 
 ## Coverage Thresholds
 
@@ -272,7 +295,7 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 | Image tools | 069 | Covered |
 
 ### PLATFORM & CONFIGURATION
-**Domain:** `platform-config` | **Selection:** `platform` | **Suites:** 020, 021, 034, 035, 050, 063, 064, 076
+**Domain:** `platform-config` | **Selection:** `platform` | **Suites:** 020, 021, 034, 035, 050e, 063, 064, 076
 
 | Feature | Suites | Status |
 |---------|--------|--------|
@@ -281,7 +304,7 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 | Core platform settings | 063 | Covered |
 | Store management | 034 | Covered |
 | Store rounding & email | 035 | Covered |
-| GraphQL xAPI | 050 | Covered |
+| GraphQL xAPI — page context (xFrontend) | 050e | Covered (runner-native) |
 | Channels | 076 | Covered |
 | CSV import/export | 064 | Covered |
 

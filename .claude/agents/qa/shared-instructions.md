@@ -76,6 +76,8 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
 | Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
 | Catalog Reference | `.claude/agents/knowledge/catalog.md` |
+| Products (types, xAPI fields, configurable sections) | `.claude/agents/knowledge/products.md` |
+| Storefront Sitemap (URLs, nav, categories, account pages) | `.claude/agents/knowledge/sitemap.md` |
 | Store Settings | `.claude/agents/knowledge/store-settings.md` |
 | White Labeling | `.claude/agents/knowledge/white-labeling.md` |
 | Test Data Generation | `.claude/agents/knowledge/test-data-generation.md` |
