@@ -492,3 +492,71 @@ User logged in as {{USER_EMAIL}}, all major storefront areas accessible","email=
 [DOM] Error alert uses data-test-id='sign-in-error-alert' (not 'sign-in-page.sign-in-error-{code}-alert')
 [STATE] Sign-in form functional after selector rename","[CONSOLE] No JS errors on sign-in page
 [NETWORK] POST /connect/token responds appropriately on failed login","Email input not found via new test-id; error alert uses old dynamic ID pattern; sign-in form broken after rename; JS error on sign-in page","none","vc-frontend PR #2234, VCST-4968","Reviewed"
+"SMK-029","Ship-To — Header Selector Opens and Applies Address","Smoke > Ship-To","Critical","BL-SHIP-001","ECL-6.2, ECL-7.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in as {{USER_EMAIL}}; at least 1 saved shipping address available (see @td(ADDR_NY))","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}
+[WAIT] homepage fully loaded with top header bar visible
+[ASSERT] 'Ship to' control visible in top header bar (between currency selector and theme toggle, per sitemap §11)
+[ACT] note the current 'Ship to' label value (city or address summary)
+[ACT] click 'Ship to' control in header
+[WAIT] address picker / popover opens with selectable address list OR address entry form
+[ASSERT] picker shows at least 1 selectable address OR an address entry field
+[ACT] select or enter a different address — use @td(ADDR_NY.city), @td(ADDR_NY.zip), @td(ADDR_NY.country)
+[ACT] confirm / apply selection
+[WAIT] picker closes and header 'Ship to' label updates
+[ASSERT] header 'Ship to' label reflects the newly selected address (city or ZIP visible)
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] cart ship-to context matches the address chosen from the header","[DOM] 'Ship to' control rendered in top header bar (BL-SHIP-001 entry point)
+[DOM] picker opens on click without 404/blank state
+[DOM] header label updates immediately after applying a new address (no full reload required)
+[STATE] selected address persists across navigation (homepage → cart)
+[DOM] no stale previous 'Ship to' label after the change","[GQL] me query (or address lookup) returns 200 with addresses[] populated
+[GQL] cart query reflects updated shipping context after header change (errors[] empty)
+[CONSOLE] no TypeError or ReferenceError opening or applying Ship-to
+[NETWORK] no 4xx/5xx on Ship-to selector open or address-apply request","'Ship to' control absent from header (storefront config drift), picker fails to open or shows blank, header label unchanged after applying address, cart ship-to context out of sync with header, 4xx/5xx on address-apply, console TypeError on selector open.","Reset 'Ship to' to the original address noted at start of test","BL-SHIP-001, sitemap §11","Manual"
+"SMK-030","BOPIS — End-to-End Pickup Order Placement and Confirmation","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-BOPIS-006, BL-CHK-002, BL-CHK-006, BL-ORD-005","ECL-2.1, ECL-6.2, ECL-7.3, ECL-11.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in as {{USER_EMAIL}}; at least 1 active pickup location configured; cart empty; product {{TEST_SKU}} in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, sku={{TEST_SKU}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
+[WAIT] PDP loaded, 'Add to Cart' or quantity stepper visible
+[ACT] click 'Increase quantity' then 'Add to Cart' (or +1 if B2B-store flag)
+[WAIT] cart badge increments to 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with item visible
+[ASSERT] note cart subtotal (call it pre_subtotal)
+[ACT] select 'Pickup' radio in delivery options
+[WAIT] 'Select pickup location' button visible
+[ACT] click 'Select pickup location'
+[WAIT] pickup-location modal opens with at least 1 location
+[ACT] select first available location, click 'Confirm'
+[WAIT] modal closes; pickup location name + address visible in cart summary
+[ASSERT] shipping cost line = $0.00 in cart totals (BL-BOPIS-002)
+[ASSERT] cart total = pre_subtotal + tax (no shipping added — BL-CHK-006)
+[ACT] fill billing address if prompted (required per BOPIS-074): @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
+[ACT] complete payment per processor (CyberSource: form on cart page — ECL-14.6; others: click 'Place Order' → /checkout/payment) — single click only (BL-CHK-002)
+[WAIT] order confirmation page or redirect to /checkout/payment then confirmation
+[ASSERT] order number visible in 'CO[digits]' format (BL-ORD-005)
+[ASSERT] confirmation page shows the pickup location name + address (not a shipping address)
+[ASSERT] confirmation totals: shipping = $0.00, total matches cart total noted above
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order history loads
+[ASSERT] newly placed order is at top of list with same order number
+[ACT] click the order row
+[WAIT] order detail loads
+[ASSERT] order detail shows pickup location (FFC name + address), shipping = $0.00","[DOM] 'Pickup' radio selectable in cart
+[DOM] pickup-location modal opens and lists ≥1 location (BL-BOPIS-001)
+[DOM] selected pickup location name + address shown in cart summary after Confirm
+[DOM] shipping line shows $0.00 in cart totals (BL-BOPIS-002)
+[DOM] order confirmation page renders with order number in CO[digits] format (BL-ORD-005)
+[DOM] confirmation shows pickup location, NOT a shipping address (BL-BOPIS-001: single pickup shipment, no delivery address)
+[DOM] order in /account/orders shows pickup FFC on detail page
+[MATH] order total = subtotal + tax (no shipping component — BL-CHK-006, BL-BOPIS-002)
+[STATE] cart badge = 0 after order placed (cart cleared — BL-CROSS-005)","[GQL] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
+[GQL] cart.shipments[0].fulfillmentCenter populated; cart.shipments[0].deliveryAddress is null (single pickup shipment — BL-BOPIS-001)
+[GQL] createOrderFromCart returns 200, errors[] empty, orderId non-null
+[GQL] orders query — top order shows fulfillmentCenter on shipment, shippingTotal = 0 (BOPIS-075)
+[ADMIN] order in admin panel shows pickup FFC + 'New' status
+[CONSOLE] no TypeError or JS errors during pickup selection, payment, or confirmation
+[NETWORK] no 4xx/5xx on addOrUpdateCartShipment, createOrderFromCart, or order-history queries","Pickup option absent from cart (BOPIS not configured / feature flag off — BOPIS-037), location modal empty (no FFCs — BOPIS-043), shipping cost > $0 for pickup (BL-BOPIS-002 violation), createOrderFromCart errors[] non-empty, order confirmation missing pickup FFC name, order detail shows a shipping address instead of pickup location, shipping total > 0 on completed order (BOPIS-075 cross-layer fail), cart not cleared after order (BL-CROSS-005), duplicate order from single click (BL-CHK-002)","Note created order ID; cart is cleared by system — no manual cleanup needed","BOPIS-026, BOPIS-075, BOPIS-088, BOPIS-089, BOPIS-090, VCST-4499","Manual"

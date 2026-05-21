@@ -13,6 +13,7 @@
 | **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint |
 | **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
 | **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
+| **Smoke test runs** (`/qa-smoke` Track A + Track B) | `reports/regression/SMOKE-YYYY-MM-DD-HHMM/` | `smoke-report.md`, `suite-01-trackA-results.json`, `suite-01-trackB-results.json`, `trackA-evidence/`, `trackB-evidence/` |
 | **Performance reports** | `reports/performance/` | `lists-page-performance-report-2026-02-11.md` |
 | **Exploratory session reports** (SBTM) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
 | **Checklists** (domain test checklists, verification checklists) | `reports/checklists/` | `checkout-checklist-2026-03-06.md`, `b2c-variations-checklist.md` |
@@ -32,6 +33,7 @@
 - **Test execution reports:** `test-execution-report.md` (one per ticket folder)
 - **Regression reports:** `{suite-name}-report.md` or `{area}-regression-report-YYYY-MM-DD.md`
 - **Full regression run directories:** `REG-YYYY-MM-DD-HHMM/` (e.g., `REG-2026-04-20-1000/`)
+- **Smoke run directories:** `SMOKE-YYYY-MM-DD-HHMM/` (e.g., `SMOKE-2026-05-21-1035/`) — Track A/B screenshots go under `trackA-evidence/` and `trackB-evidence/` inside the run folder, not at repo root
 - **Test lifecycle run directories:** `TLC-YYYY-MM-DD-HHMM/`
 - **Test sync run directories:** `SYNC-YYYY-MM-DD-HHMM/`
 - **Coverage generation run directories:** `COV-YYYY-MM-DD-HHMM/`
