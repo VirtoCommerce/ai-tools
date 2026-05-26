@@ -34,7 +34,7 @@ Read `CLAUDE.md` and `.claude/rules/agents.md` before generating documentation. 
 | `test-data/README.md` + `test-data/aliases.json` | When example values are needed in dev/admin docs — use `@td(ALIAS.field)` placeholders or pull canonical values from the alias registry instead of hardcoding GUIDs/SKUs/emails. |
 | `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` | When generating GraphQL examples in the API Quick Start — pull example queries/mutations + `exampleVars` from the schema-validated fixtures library (63 ops) rather than authoring fresh ones. Each `index.json` entry includes `path`, `category`, `role`, `requiredVars`, `exampleVars`. |
 
-**Use Context7 MCP** (`/virtocommerce/vc-docs`) to cross-check end-user / admin terminology against published Virto Commerce documentation before inventing your own — keep voice consistent with `https://docs.virtocommerce.org`.
+**Use VirtoOZ MCP** (primary — `PlatformUserGuide` for admin/back-office terminology, `StorefrontUserGuide` for end-user terminology, `MarketplaceUserGuide` for marketplace, `DeploymentGuide` for infra) to cross-check terminology against published Virto Commerce documentation before inventing your own. **Context7 MCP** (`/virtocommerce/vc-docs`) is the fallback. Keep voice consistent with `https://docs.virtocommerce.org`.
 
 **Capture real screenshots** with the browser MCP when documenting flows — do NOT leave bracketed `[screenshot placeholders]`. The `playwright-firefox` (storefront) and `playwright-edge` (admin) MCP servers are available.
 

@@ -1,562 +1,528 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"SMK-001","Homepage — Load and Hero Navigation","Smoke > Homepage","Critical","BL-CROSS-011","ECL-10.1","Fresh browser session, {{FRONT_URL}} accessible","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}
-[WAIT] homepage fully loaded (hero banner visible)
-[ASSERT] page title contains 'QA' or 'Main'
-[ACT] click hero banner primary CTA (e.g., link inside banner heading)
-[WAIT] target page loads
+"SMK-001","Homepage — Load and Hero Navigation","Smoke > Homepage","Critical","BL-CROSS-011","ECL-10.1","Fresh browser session; {{FRONT_URL}} accessible","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[WAIT] hero banner visible above the fold
+[ASSERT] page title contains site name
+[ACT] click hero banner primary CTA
+[WAIT] target page loads without 404
 [ACT] click browser back
 [WAIT] homepage reloads","[DOM] hero banner section visible above the fold
-[DOM] 'Popular categories' section visible with at least 1 category tile
+[DOM] 'Popular categories' section visible with ≥1 category tile
 [DOM] navigation bar visible with 'All products' dropdown button
 [DOM] language selector visible in top header
 [DOM] cart icon accessible in main nav icon bar
-[NAV] CTA link navigates to a category or catalog page (not 404)","[CONSOLE] no JS errors or uncaught exceptions on homepage load
-[NETWORK] no 4xx/5xx on initial page load API calls
-[NETWORK] no failed GraphQL requests on homepage render","Homepage blank or spinner stuck >10s (BL-CROSS-011), hero banner absent, JS TypeError on load, 4xx on homepage GraphQL queries","none","VCST-4499","Automated"
-"SMK-002","Registration — Personal Account","Smoke > Registration","Critical","BL-AUTH-002, BL-AUTH-003","ECL-4.1, ECL-4.4","Fresh browser, {{FRONT_URL}} accessible","front_url={{FRONT_URL}}, reg_email=smoke-smk002-{current_unix_ms}@test-agent.com (generated at runtime)","[SETUP] generate unique registration email: smoke-smk002-{current_unix_ms}@test-agent.com — store as reg_email for this session
+[NAV] hero CTA navigates to a category or catalog page (not 404)","[CONSOLE] no JS errors on homepage load
+[NETWORK] no 4xx/5xx on initial page load
+[NETWORK] no failed GraphQL requests on homepage render","Homepage blank or spinner stuck >10s (BL-CROSS-011); hero banner absent; JS TypeError on load; 4xx on homepage GraphQL queries","none","VCST-4499","Automated"
+"SMK-002","Registration — Personal Account","Smoke > Registration","Critical","BL-AUTH-002, BL-AUTH-003","ECL-4.1, ECL-4.4","Fresh browser; {{FRONT_URL}} accessible","front_url={{FRONT_URL}}, reg_email=random (AGENT-TEST- prefix, generated at runtime)","[SETUP] generate unique email: AGENT-TEST-smk002-{unix_ms}@test.com — store as reg_email
 [NAV] {{FRONT_URL}}/sign-up
 [WAIT] account type selector visible
 [ACT] select 'Personal' account type
-[ACT] fill 'First Name': 'Test'
-[ACT] fill 'Last Name': 'User'
-[ACT] fill 'Email': reg_email
-[ACT] fill 'Password': valid password
+[ACT] fill 'First Name': 'Test', 'Last Name': 'User', 'Email': reg_email, 'Password': {{USER_PASSWORD}}
 [ACT] check 'I agree to the Terms and Conditions'
 [ACT] click 'Create Account'
-[WAIT] redirect to homepage OR confirmation message","[DOM] confirmation message shown OR user redirected to authenticated homepage
+[WAIT] redirect to homepage or confirmation message","[DOM] confirmation message shown or user redirected to authenticated homepage
 [DOM] user name visible in header after redirect
-[STATE] login with new credentials succeeds on retry","[API] POST to /connect/token returns 200 with access_token
+[STATE] login with new credentials succeeds on retry","[API] POST /connect/token returns 200 with access_token after registration
 [ADMIN] user visible under Customers in admin panel
 [CONSOLE] no TypeError or JS errors during form submit
-[NETWORK] no 4xx/5xx on account creation request","Validation error on valid email format, form stays on same page with no feedback, 400/500 on account create API, spinner stuck >5s","Delete test account via admin if environment requires cleanup","regression-qa-theme-26.csv","Automated"
-"SMK-003","Registration — Organization Account","Smoke > Registration","Critical","BL-B2B-005, BL-AUTH-002","ECL-4.1, ECL-4.4","Fresh browser, {{FRONT_URL}} accessible","front_url={{FRONT_URL}}, reg_email=smoke-smk003-{current_unix_ms}@test-agent.com (generated at runtime), company_name=SmokeOrg-{current_unix_ms} (generated at runtime)","[SETUP] generate unique registration email: smoke-smk003-{current_unix_ms}@test-agent.com — store as reg_email for this session
-[SETUP] generate unique company name: SmokeOrg-{current_unix_ms} — store as company_name for this session
+[NETWORK] no 4xx/5xx on account creation request","Validation error on valid email format; form stays on same page with no feedback; 400/500 on account create API; spinner stuck >5s","Delete test account via admin after test (AGENT-TEST- prefix identifies it)","VCST-4499","Automated"
+"SMK-003","Registration — Organization Account","Smoke > Registration","Critical","BL-B2B-005, BL-AUTH-002","ECL-4.1, ECL-4.4","Fresh browser; {{FRONT_URL}} accessible","front_url={{FRONT_URL}}, reg_email=random (AGENT-TEST- prefix), company_name=random (AGENT-TEST- prefix)","[SETUP] generate unique email: AGENT-TEST-smk003-{unix_ms}@test.com — store as reg_email
+[SETUP] generate unique company name: AGENT-TEST-Org-{unix_ms} — store as company_name
 [NAV] {{FRONT_URL}}/sign-up
 [WAIT] account type selector visible
 [ACT] select 'Organization' account type
 [WAIT] 'Company Name' field appears
-[ACT] fill 'Company Name': company_name
-[ACT] fill 'First Name': 'Test', 'Last Name': 'User', 'Email': reg_email, 'Password': valid password
+[ACT] fill 'Company Name': company_name; fill 'First Name': 'Test', 'Last Name': 'User', 'Email': reg_email, 'Password': {{USER_PASSWORD}}
 [ACT] check 'Terms and Conditions'
 [ACT] click 'Create Account'
-[WAIT] redirect to homepage OR confirmation","[DOM] success message OR authenticated homepage
+[WAIT] redirect to homepage or confirmation","[DOM] success message or authenticated homepage visible
 [DOM] organization name visible in account context area
 [STATE] user has B2B navigation items accessible (Quotes, Company Members)","[API] POST account creation returns 200
 [ADMIN] organization appears in Organizations list
 [ADMIN] user assigned as organization admin role
 [CONSOLE] no errors during submission
-[NETWORK] no 4xx/5xx","Organization account type option missing from selector, company name field not shown after selecting org type, org not created in admin, B2B nav absent","Delete test org via admin if needed","regression-qa-theme-26.csv","Automated"
-"SMK-004","Authentication — Sign In Personal Account","Smoke > Auth","Critical","BL-AUTH-001, BL-AUTH-003","ECL-4.2","Valid personal account credentials available: {{USER_EMAIL}} / {{USER_PASSWORD}}, fresh browser","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[NETWORK] no 4xx/5xx","Organization account type option missing from selector; company name field absent after selecting org type; org not created in admin; B2B nav absent","Delete test org and user via admin after test (AGENT-TEST- prefix)","VCST-4499","Automated"
+"SMK-004","Authentication — Sign In Personal Account","Smoke > Auth","Critical","BL-AUTH-001, BL-AUTH-003","ECL-4.2","Valid personal account credentials available; fresh browser","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in form visible with Email and Password fields
-[ACT] fill 'Email': {{USER_EMAIL}}
-[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Email': {{USER_EMAIL}}; fill 'Password': {{USER_PASSWORD}}
 [ACT] click 'Sign In'
 [WAIT] redirect away from /sign-in
-[ASSERT] 'OrgName / UserName' button visible in top-right header","[DOM] 'OrgName / UserName' header button visible after sign-in
+[ASSERT] 'OrgName / UserName' button visible in top-right header
+[NAV] {{FRONT_URL}}/account/dashboard
+[ASSERT] dashboard loads without redirect to /sign-in","[DOM] 'OrgName / UserName' header button visible after sign-in
 [DOM] 'Dashboard' link visible in top header
 [DOM] cart icon accessible in nav icon bar
-[STATE] navigating to {{FRONT_URL}}/account/dashboard does not redirect to /sign-in
-[STATE] user is authenticated (no re-prompt on protected page)","[API] POST /connect/token returns 200 with access_token
+[STATE] navigating to /account/dashboard does not redirect to /sign-in","[API] POST /connect/token returns 200 with access_token
 [GQL] me query returns non-null userId and email matching {{USER_EMAIL}}
 [CONSOLE] no 401 or authentication errors in console
-[NETWORK] no 4xx on page load API calls after sign-in","Invalid credentials error on valid credentials (BL-AUTH-003), redirect loop on /sign-in, spinner >5s, 'OrgName / UserName' button absent after redirect, Dashboard link missing","none","VCST-4499","Automated"
-"SMK-005","Authentication — Sign In B2B Organization User","Smoke > Auth","Critical","BL-AUTH-001, BL-B2B-001, BL-B2B-005","ECL-4.2, ECL-14.3","Valid org user credentials available: {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}, fresh browser","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[NETWORK] no 4xx on page load API calls after sign-in","Invalid credentials error on valid credentials (BL-AUTH-003); redirect loop on /sign-in; spinner >5s; 'OrgName / UserName' button absent after redirect","none","VCST-4499","Automated"
+"SMK-005","Authentication — Sign In B2B Organization User","Smoke > Auth","Critical","BL-AUTH-001, BL-B2B-001, BL-B2B-005","ECL-4.2, ECL-14.3","Valid org user credentials available; fresh browser","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in form visible
-[ACT] fill 'Email': {{ORG_USER_EMAIL}}
-[ACT] fill 'Password': {{ORG_USER_PASSWORD}}
+[ACT] fill 'Email': {{ORG_USER_EMAIL}}; fill 'Password': {{ORG_USER_PASSWORD}}
 [ACT] click 'Sign In'
 [WAIT] redirect to homepage
-[ASSERT] 'OrgName / UserName' button shows org name
+[ASSERT] 'OrgName / UserName' header button shows org name
 [NAV] {{FRONT_URL}}/company/members
-[WAIT] Company Members page loads
+[ASSERT] page loads without 403 or error
 [NAV] {{FRONT_URL}}/account/quotes
-[WAIT] Quote Requests page loads","[DOM] org name visible in 'OrgName / UserName' header button (not just user name)
+[ASSERT] page loads without 403 or error","[DOM] org name visible in 'OrgName / UserName' header button
 [DOM] /company/members page loads without 403 or error
 [DOM] /account/quotes page loads without 403 or error
-[STATE] me.organization populated — org context active (may require page refresh per ECL-14.3)
-[DOM] 'Addresses' link NOT visible in account sidebar (org user — ECL-14.3)","[GQL] me query returns organization field with non-null orgId
+[STATE] me.organization populated with non-null orgId
+[DOM] 'Addresses' link NOT visible in account sidebar (org user — ECL-14.3)","[GQL] me query returns organization.id non-null
 [CONSOLE] no 403 or permission errors
-[NETWORK] no 4xx on B2B page loads","Login succeeds but org name absent in header (ECL-14.3: org context null), /company/members returns 403, Addresses link visible for org user (should be hidden — ECL-14.3)","none","VCST-4499","Automated"
-"SMK-006","Search — Query Returns Relevant Results","Smoke > Search","Critical","BL-SRCH-001, BL-SRCH-004","ECL-3.1, ECL-3.2, ECL-14.2","User logged in as {{USER_EMAIL}}, search index healthy, products exist in catalog","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, search_term=@td(SEARCH_KITCHEN.query)","[NAV] {{FRONT_URL}}
+[NETWORK] no 4xx on B2B page loads","Login succeeds but org name absent in header; /company/members returns 403; 'Addresses' link visible for org user (should be hidden — ECL-14.3)","none","VCST-4499","Automated"
+"SMK-006","Search — Query Returns Relevant Results","Smoke > Search","Critical","BL-SRCH-001, BL-SRCH-004","ECL-3.1, ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Search index healthy; products exist in catalog","front_url={{FRONT_URL}}, search_term=@td(SEARCH_KITCHEN.query)","[NAV] {{FRONT_URL}}
 [WAIT] homepage loaded
-[ACT] click search bar in header
-[ACT] type @td(SEARCH_KITCHEN.query)
+[ACT] click search bar in header; type @td(SEARCH_KITCHEN.query)
 [KEY] Enter
-[WAIT] search results page loads at /search?q={search_term}
-[ASSERT] at least 1 product result visible","[NAV] URL contains /search?q= with resolved search term
-[DOM] page heading or result label contains the search term or result count
+[WAIT] search results page loads at /search?q=…
+[ASSERT] at least 1 product result visible with name and price","[NAV] URL contains /search?q= with resolved search term
 [DOM] at least 1 product card visible with name and price
 [DOM] filter/facet panel available on results page
-[FORMAT] all visible prices display with exactly 2 decimal places (BL-PRICE-003)","[GQL] products query with filter @td(SEARCH_KITCHEN.query) returns items array non-empty, HTTP 200
+[FORMAT] all visible prices display with exactly 2 decimal places (BL-PRICE-003)","[GQL] products query with search term filter returns items[] non-empty, HTTP 200
 [CONSOLE] no search-related errors
-[NETWORK] no 4xx on search GraphQL request","Zero results for known-existing term (search index down — ECL-14.2), filter panel absent, result count 0 while products visible, URL missing /search?q=, console errors on search","none","VCST-4499","Automated"
+[NETWORK] no 4xx on search GraphQL request","Zero results for known-existing term (search index down — ECL-3.1); filter panel absent; result count 0 while products visible; URL missing /search?q=","none","VCST-4499","Automated"
 "SMK-007","Catalog — Category Browse to PDP","Smoke > Catalog","Critical","BL-CAT-004, BL-CAT-005, BL-PRICE-003","ECL-3.2, ECL-3.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}, catalog accessible with at least 1 category containing products","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
-[WAIT] catalog page loads with at least 1 category tile visible
-[ACT] click first category tile
-[WAIT] product listing loads in selected category
-[ASSERT] at least 1 product visible in grid
-[ACT] click first product name or image to open PDP
-[WAIT] product detail page loads
-[ASSERT] product name visible as page heading
-[ASSERT] price visible with 2 decimal places
-[ASSERT] 'Add to Cart' button or quantity stepper visible","[DOM] catalog page loads with at least 1 category tile
-[DOM] category listing shows at least 1 item with name, price, image
-[DOM] PDP title matches the product clicked from listing
-[DOM] price on PDP displays with exactly 2 decimal places (BL-PRICE-003)
-[DOM] 'Add to Cart' button or quantity increment control visible and enabled
-[DOM] breadcrumb trail visible on PDP (e.g., Home > [Category] > [product])","[GQL] products query returns non-empty items array for selected category
-[GQL] product query for clicked PDP returns price non-null
-[CONSOLE] no errors during catalog → category → PDP navigation
-[NETWORK] no 4xx on catalog or product queries","Catalog page loads with 0 category tiles, category loads with 0 products, PDP blank or 404, price missing or 0 decimal places (BL-PRICE-003), 'Add to Cart' button absent, breadcrumb missing","none","VCST-4499","Automated"
-"SMK-008","Add to Cart — Single Product from PDP","Smoke > Cart","Critical","BL-CART-001, BL-CART-007","ECL-2.1, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}, product {{TEST_SKU}} in stock, cart empty","email={{USER_EMAIL}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
-[WAIT] PDP loaded, 'Add to Cart' button visible and enabled
-[ASSERT] spinbutton shows '0' initially; 'Decrease quantity' button disabled
-[ACT] click 'Increase quantity' button
-[WAIT] spinbutton shows '1'
-[ACT] click 'Add to Cart'
-[WAIT] success notification visible OR cart badge increments","[DOM] success toast/notification contains 'added' or 'cart' text
-[DOM] cart icon badge increments by 1
-[DOM] 'Decrease quantity' button was disabled at qty=0 (BL-CART-001)
-[STATE] product appears in cart (navigate to /cart to confirm)
-[FORMAT] price on PDP has exactly 2 decimal places","[API] POST /graphql (addItem mutation) returns HTTP 200
-[GQL] addItem response errors[] is empty (HTTP 200 ≠ success — ECL-14.1)
-[GQL] cart.items contains item with sku={{TEST_SKU}}
-[CONSOLE] no TypeError or JS errors during add action
-[NETWORK] no 4xx/5xx on addItem request","Spinner >5s after click, errors[] non-empty in addItem response (ECL-14.1), cart badge unchanged after 3s, 4xx/5xx on addItem, 'Decrease quantity' clickable at qty=0","Remove {{TEST_SKU}} from cart after test","VCST-4499","Automated"
-"SMK-009","Quantity Stepper — PDP Increment and Cart Sync","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-003","ECL-2.1, ECL-7.3, ECL-5.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}, in-stock product available with stock > 3","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
-[WAIT] catalog page loads with at least 1 category tile visible
+Catalog accessible with at least 1 category containing products","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
+[WAIT] catalog page loads with ≥1 category tile visible
 [ACT] click first category tile
 [WAIT] product listing loads
-[ACT] click first product card to open PDP
-[WAIT] PDP loads and 'Product quantity' spinbutton visible
-[ASSERT] spinbutton shows '0' and 'Decrease quantity' button is disabled (mid-flow gate — BL-CART-007)
-[ACT] click 'Increase quantity' button
-[WAIT] spinbutton shows '1', 'in Cart' indicator shows '1'
-[ACT] click 'Increase quantity' button again
-[WAIT] spinbutton shows '2'
-[ACT] click 'Decrease quantity' button
-[WAIT] spinbutton shows '1'
+[ASSERT] at least 1 product visible in grid
+[ACT] click first product name or image
+[WAIT] PDP loads
+[ASSERT] product name visible as page heading
+[ASSERT] price visible with 2 decimal places (BL-PRICE-003)
+[ASSERT] quantity stepper ('Increase quantity' + button) visible — B2B-store has no separate 'Add to Cart' button","[DOM] catalog page loads with ≥1 category tile
+[DOM] category listing shows ≥1 item with name, price, image
+[DOM] PDP title matches the product clicked
+[DOM] price shows exactly 2 decimal places (BL-PRICE-003)
+[DOM] quantity stepper visible and enabled (B2B-store add-to-cart entry point)
+[DOM] breadcrumb visible on PDP","[GQL] products query returns non-empty items[] for selected category
+[GQL] product query for clicked PDP returns price non-null
+[CONSOLE] no errors during catalog → category → PDP navigation
+[NETWORK] no 4xx on catalog or product queries","Catalog page loads with 0 category tiles; category loads with 0 products; PDP blank or 404; price missing or wrong decimal places (BL-PRICE-003); quantity stepper absent; breadcrumb missing","none","VCST-4499","Automated"
+"SMK-008","Add to Cart — Single Product from PDP (B2B Stepper)","Smoke > Cart","Critical","BL-CART-001, BL-CART-007","ECL-2.1, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Product @td(BUYABLE_NO_MIN_QTY.slug) in stock","email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+[WAIT] PDP loaded; 'Increase quantity' (+) stepper visible (B2B-store: stepper IS the add-to-cart entry point)
+[ASSERT] spinbutton shows '0'; 'Decrease quantity' button disabled (BL-CART-001)
+[ACT] click 'Increase quantity' (+) once
+[WAIT] spinbutton shows '1'; cart badge = 1
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads
-[ACT] click '+' on cart page to increase qty to 2
-[WAIT] line total updates","[DOM] 'Decrease quantity' disabled at qty=0 (not clickable)
+[ASSERT] product visible in cart","[DOM] cart badge = 1 after stepper increment
+[DOM] 'Decrease quantity' disabled at qty=0 (BL-CART-001)
+[DOM] product appears in cart
+[FORMAT] price on PDP has exactly 2 decimal places","[API] POST /graphql (addItem) returns HTTP 200
+[GQL] addItem response errors[] empty (ECL-7.3)
+[GQL] cart.items contains the product
+[CONSOLE] no TypeError or JS errors during add
+[NETWORK] no 4xx/5xx on addItem","Spinner >5s after stepper click; errors[] non-empty in addItem response (ECL-7.3); cart badge unchanged; 4xx/5xx on addItem; 'Decrease quantity' clickable at qty=0 (BL-CART-001)","Remove product from cart after test","VCST-4499","Automated"
+"SMK-009","Quantity Stepper — PDP Increment and Cart Sync","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-003","ECL-2.1, ECL-7.3, ECL-5.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+In-stock product available at @td(BUYABLE_NO_MIN_QTY.slug) with stock > 3","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+[WAIT] PDP loads; 'Increase quantity' spinbutton visible
+[ASSERT] spinbutton shows '0'; 'Decrease quantity' disabled (BL-CART-007)
+[ACT] click 'Increase quantity' once
+[WAIT] spinbutton = '1'; cart badge = 1
+[ACT] click 'Increase quantity' again
+[WAIT] spinbutton = '2'
+[ACT] click 'Decrease quantity'
+[WAIT] spinbutton = '1'
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads
+[ACT] click '+' on cart line to increase qty to 2
+[WAIT] line total updates
+[ASSERT] line total = unit price × 2 (BL-PRICE-003)","[DOM] 'Decrease quantity' disabled at qty=0 (BL-CART-007)
 [DOM] spinbutton increments and decrements correctly
-[DOM] 'in Cart' indicator on PDP reflects current quantity
 [DOM] cart badge equals spinbutton value after each change
-[DOM] no duplicate line items for same product in cart (BL-CART-007)
-[MATH] cart line total = qty × unit price (2 decimal places)","[GQL] each +/- triggers addItem or changeCartItemQuantity mutation, errors[] empty
+[DOM] no duplicate line items for same product (BL-CART-007)
+[MATH] cart line total = qty × unit price (2 decimal places)","[GQL] each +/- triggers addItem or changeCartItemQuantity, errors[] empty
 [GQL] cart.items shows correct quantity after each change
 [CONSOLE] no errors on rapid +/- clicks
-[NETWORK] no 4xx/5xx on cart mutations","'Decrease quantity' clickable at qty=0, cart badge not syncing with PDP stepper, duplicate line items appearing (BL-CART-007), line total not recalculating, negative quantity accepted (ECL-5.3)","Remove product from cart after test","QS-PDP-001","Manual"
+[NETWORK] no 4xx/5xx on cart mutations","'Decrease quantity' clickable at qty=0 (BL-CART-007); cart badge not syncing with PDP stepper; duplicate line items appearing; line total not recalculating; negative quantity accepted (ECL-5.3)","Remove product from cart after test","VCST-4499","Manual"
 "SMK-010","Cart — View Items and Update Quantity","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-001, BL-PRICE-003, BL-PRICE-008","ECL-2.3, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-At least 1 item in cart, user logged in as {{USER_EMAIL}}","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart page loads with at least 1 item visible
+At least 1 item in cart","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with ≥1 item visible
 [ASSERT] item shows name, image, unit price, quantity, line total
 [ACT] click '+' (increase quantity) on first item
-[WAIT] quantity increments, line total recalculates
-[ASSERT] new line total = unit price × new quantity
-[ACT] click '-' (decrease quantity) on the same item
-[WAIT] quantity decrements, line total recalculates","[DOM] item displays name, image, price, quantity controls, line total before changes
-[DOM] line total updates immediately after quantity change
+[WAIT] quantity increments; line total recalculates
+[ASSERT] new line total = unit price × new quantity (BL-PRICE-003)
+[ACT] click '-' (decrease quantity) on same item
+[WAIT] quantity decrements; line total recalculates","[DOM] item displays name, image, price, quantity controls, line total
+[DOM] line total updates after quantity change
 [MATH] line total = unit price × updated quantity (2 decimal places — BL-PRICE-003)
-[MATH] cart subtotal = sum of all line totals (BL-PRICE-008: no floating-point drift)
-[FORMAT] all monetary amounts show exactly 2 decimal places","[GQL] changeCartItemQuantity mutation returns 200, errors[] empty
+[MATH] cart subtotal = sum of all line totals (BL-PRICE-008)
+[FORMAT] all monetary amounts show exactly 2 decimal places","[GQL] changeCartItemQuantity returns 200, errors[] empty
 [GQL] cart.total in response matches displayed grand total
 [CONSOLE] no errors during quantity changes
-[NETWORK] no 4xx/5xx on cart update mutations","Quantity change not reflected in line total, subtotal doesn't recalculate, errors[] non-empty on mutation, $0.01 discrepancy in subtotal math (BL-PRICE-008), line total has wrong decimal places","Restore cart to at least 1 item if decrement removed the last","VCST-4499","Automated"
+[NETWORK] no 4xx/5xx on cart update mutations","Quantity change not reflected in line total; subtotal not recalculating; errors[] non-empty on mutation; $0.01 discrepancy in subtotal (BL-PRICE-008); wrong decimal places","Restore cart to at least 1 item if decrement removed the last","VCST-4499","Automated"
 "SMK-011","Cart — Remove Item and Verify Total","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-008","ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-At least 2 items in cart, user logged in as {{USER_EMAIL}}","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
-[WAIT] cart page loads with at least 2 items
-[ASSERT] note the cart subtotal before removal
+At least 2 items in cart","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with ≥2 items
+[ASSERT] note cart subtotal before removal
 [ACT] click 'Remove' (or trash icon) on the second item
-[WAIT] item removed from list, subtotal recalculates
-[ASSERT] removed item no longer appears in cart
-[ASSERT] cart subtotal updated (equals previous subtotal minus removed item's line total)","[DOM] removed item absent from cart item list
-[DOM] cart subtotal updates after removal (not stale)
-[DOM] remaining items unaffected (names, prices, quantities unchanged)
+[WAIT] item removed; subtotal recalculates
+[ASSERT] removed item no longer in cart
+[ASSERT] new subtotal = old subtotal − removed item line total (BL-PRICE-008)","[DOM] removed item absent from cart item list
+[DOM] cart subtotal updates after removal
+[DOM] remaining items unaffected
 [MATH] new subtotal = old subtotal − removed item line total (BL-PRICE-008)
-[DOM] if cart is now empty: empty cart message visible","[GQL] removeCartItem mutation returns 200, errors[] empty
-[GQL] cart.items no longer contains removed SKU
+[DOM] empty cart message visible if cart now empty","[GQL] removeCartItem returns 200, errors[] empty
+[GQL] cart.items no longer contains removed product
 [CONSOLE] no errors during remove
-[NETWORK] no 4xx/5xx on removeCartItem","Item remains visible after remove (silent mutation failure), subtotal not recalculating, errors[] non-empty on removeCartItem, other items' prices changed after removal","Ensure at least 1 item remains in cart for subsequent tests","VCST-4499","Automated"
+[NETWORK] no 4xx/5xx on removeCartItem","Item remains visible after remove; subtotal not recalculating; errors[] non-empty on removeCartItem; other items' prices changed after removal","Ensure at least 1 item remains in cart for subsequent tests","VCST-4499","Automated"
 "SMK-012","Checkout — Delivery Address and Shipping Method","Smoke > Checkout","Critical","BL-CHK-001, BL-CHK-005, BL-CHK-006","ECL-1.2, ECL-6.2, ECL-6.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Items in cart, user logged in as {{USER_EMAIL}}, cart has at least 1 item","front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/cart
+Cart has at least 1 item","front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with items visible
-[ACT] select 'Delivery' shipping option (not Pickup)
+[ACT] select 'Delivery' shipping option
 [WAIT] shipping address section visible
-[ACT] select existing address OR enter new valid US address (First Name: @td(ADDR_NY.first_name), Last Name: @td(ADDR_NY.last_name), Street: @td(ADDR_NY.street), City: @td(ADDR_NY.city), State: @td(ADDR_NY.state), ZIP: @td(ADDR_NY.zip), Country: @td(ADDR_NY.country))
+[ACT] enter new US address: @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
 [ACT] select first available shipping method (e.g., 'Ground')
-[WAIT] shipping cost appears in order summary","[DOM] 'Delivery' option selectable and selected
-[DOM] address form/selector visible after choosing Delivery
-[DOM] shipping method list loads with at least 1 method
-[DOM] shipping cost shown as non-zero amount in order summary
+[WAIT] shipping cost appears in order summary
+[ASSERT] total = subtotal + shipping + tax (BL-CHK-006)","[DOM] 'Delivery' option selectable and selected
+[DOM] address form visible after choosing Delivery
+[DOM] shipping method list loads with ≥1 method
+[DOM] shipping cost non-zero in order summary
 [MATH] displayed total = subtotal + shipping + tax − discounts (BL-CHK-006)
-[DOM] 'Place Order' or payment section accessible after selecting shipping method","[GQL] addOrUpdateCartShipment mutation returns 200, errors[] empty
-[GQL] cart.shipments[0].deliveryAddress populated correctly
-[GQL] cart.shipments[0].shipmentMethodCode non-null after selection
+[DOM] 'Place Order' or payment section accessible after selecting shipping method","[GQL] addOrUpdateCartShipment returns 200, errors[] empty
+[GQL] cart.shipments[0].deliveryAddress populated
+[GQL] cart.shipments[0].shipmentMethodCode non-null
 [CONSOLE] no errors during shipping selection
-[NETWORK] no 4xx/5xx on shipping mutations","Shipping methods not loading (blank list), address validation error on valid US address (ECL-6.3), shipping cost $0 for Ground method, total math mismatch (BL-CHK-006), 'Place Order' locked after valid address + method","Leave checkout in ready-to-pay state for SMK-013","VCST-4499","Automated"
-"SMK-013","Checkout — Place Order and Confirm","Smoke > Checkout","Critical","BL-CHK-002, BL-CHK-006, BL-ORD-001, BL-ORD-005, BL-CROSS-005","ECL-1.1, ECL-7.3, ECL-11.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx/5xx on shipping mutations","Shipping methods not loading; address validation error on valid US address (ECL-6.3); shipping cost $0 for Ground method; total math mismatch (BL-CHK-006); 'Place Order' locked after valid address + method","State required for SMK-013: cart at /cart with item, Delivery selected, address and shipping method set, payment section visible","VCST-4499","Automated"
+"SMK-013","Checkout — Place Order and Confirm","Smoke > Checkout","Critical","BL-CHK-002, BL-CHK-006, BL-ORD-001, BL-ORD-005, BL-CROSS-005","ECL-1.1, ECL-7.3, ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Cart with items, delivery address and shipping method already selected (follow-on from SMK-012)","front_url={{FRONT_URL}}","[WAIT] cart page with payment section visible
-[WAIT] payment method section loaded (CyberSource: form visible on cart page — ECL-14.6; others: 'Place Order' button visible)
-[ASSERT] 'Place Order' button (or payment submit) is enabled
-[ACT] complete payment (use test card if prompted) or click 'Place Order' (single click — BL-CHK-002)
-[WAIT] order confirmation page or redirect to /checkout/payment
-[WAIT] page settles after order placement","[DOM] 'Place Order' button disabled immediately after first click (double-submit prevention — BL-CHK-002)
-[DOM] order confirmation page shows order number in 'CO[digits]' format (BL-ORD-005)
-[DOM] ordered products listed on confirmation page with names
-[DOM] cart badge = 0 after order (cart cleared — BL-CROSS-005)
+State: cart at {{FRONT_URL}}/cart with ≥1 item; Delivery selected; valid address entered (ADDR_NY fixture); shipping method selected; payment section visible","front_url={{FRONT_URL}}","[WAIT] cart page with payment section visible
+[WAIT] payment form loaded (CyberSource: form on cart page; others: 'Place Order' button visible)
+[ASSERT] 'Place Order' button (or payment submit) enabled
+[ACT] complete payment or click 'Place Order' — single click only (BL-CHK-002)
+[WAIT] order confirmation page renders
+[ASSERT] order number visible in 'CO[digits]' format (BL-ORD-005)
+[ASSERT] cart badge = 0 (BL-CROSS-005)","[DOM] 'Place Order' button disabled immediately after first click (BL-CHK-002)
+[DOM] order confirmation shows order number in 'CO[digits]' format (BL-ORD-005)
+[DOM] ordered products listed on confirmation
+[DOM] cart badge = 0 after order (BL-CROSS-005)
 [NAV] URL contains /order/ or confirmation path
-[DOM] order confirmation totals match cart totals from SMK-012 (BL-CHK-006)","[GQL] createOrderFromCart mutation returns 200, errors[] empty, orderId non-null
-[ADMIN] order appears in admin panel under Orders with status 'New'
+[DOM] confirmation totals match cart totals (BL-CHK-006)","[GQL] createOrderFromCart returns 200, errors[] empty, orderId non-null
+[ADMIN] order appears in admin Orders with status 'New'
 [CONSOLE] no errors on confirmation page
-[NETWORK] GA4 'purchase' event fired (visible in network tab to google-analytics or gtag endpoint)
-[NETWORK] no 4xx/5xx during order placement","'Place Order' remains clickable during processing (BL-CHK-002 violation), createOrderFromCart errors[] non-empty, order number absent on confirmation, cart not cleared (BL-CROSS-005), total mismatch vs cart (BL-CHK-006), duplicate order from single click","Note created order ID; cart is cleared by system — no manual cleanup needed","VCST-4499","Automated"
-"SMK-014","Payment — Credit Card Authorization","Smoke > Payment","Critical","BL-CHK-002, BL-ORD-006","ECL-1.1, ECL-1.2, ECL-7.3, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] GA4 'purchase' event fired to gtag endpoint","'Place Order' remains clickable during processing (BL-CHK-002); createOrderFromCart errors[] non-empty; order number absent; cart not cleared (BL-CROSS-005); total mismatch vs cart (BL-CHK-006); duplicate order from single click","Note created order ID; cart cleared by system","VCST-4499","Automated"
+"SMK-014","Payment — Credit Card Authorization","Smoke > Payment","Critical","BL-CHK-002, BL-ORD-006","ECL-1.1, ECL-1.2, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Checkout ready (cart with items, address selected), test card details available from .env","card_number={{TEST_CARD_NUMBER}}, card_exp={{TEST_CARD_EXP}}, card_cvv={{TEST_CARD_CVV}}, front_url={{FRONT_URL}}","[WAIT] at payment step (CyberSource: form on cart page — ECL-14.6; others: after clicking 'Place Order' → /checkout/payment)
-[WAIT] payment form loaded with card input fields visible
-[ACT] fill card number: {{TEST_CARD_NUMBER}}
-[ACT] fill expiry: {{TEST_CARD_EXP}}
-[ACT] fill CVV: {{TEST_CARD_CVV}}
-[ACT] submit payment (single click only — BL-CHK-002)
-[WAIT] authorization result (success OR expected test-mode response)","[DOM] payment form visible with card number, expiry, CVV fields
-[DOM] card fields accept test card input without masking errors
-[DOM] after submit: 'Place Order' button disabled immediately (BL-CHK-002: double-submit prevention)
-[DOM] after submit: success message OR order confirmation visible
-[STATE] order status = 'New' or 'Payment authorized' (not 'Payment failed')","[API] payment processor webhook received (verify via admin order payment status)
+State: cart at {{FRONT_URL}}/cart with ≥1 item; delivery address and shipping method selected. Test card details available via processor-specific env vars: CyberSource → @td(CYBERSOURCE_VISA.number)/@td(CYBERSOURCE_VISA.expiry)/@td(CYBERSOURCE_VISA.cvv); Skyflow → SKYFLOW_MASTERCARD/SKYFLOW_EXPIRY/SKYFLOW_CVV; Authorize.Net → AUTHORIZENET_CARD/AUTHORIZENET_EXPIRY/AUTHORIZENET_CVV","card_number={{TEST_CARD_NUMBER}}, card_exp={{TEST_CARD_EXP}}, card_cvv={{TEST_CARD_CVV}}, front_url={{FRONT_URL}}","[WAIT] at payment step (CyberSource: form on cart page; others: after 'Place Order' → /checkout/payment)
+[WAIT] payment form loaded with card input fields
+[ACT] fill card number, expiry, CVV from processor-specific env vars
+[ACT] submit payment — single click only (BL-CHK-002)
+[WAIT] authorization result","[DOM] payment form visible with card number, expiry, CVV fields
+[DOM] card fields accept test card input
+[DOM] 'Place Order' button disabled after submit (BL-CHK-002)
+[DOM] success message or order confirmation visible
+[STATE] order status = 'New' or 'Payment authorized'","[API] payment processor webhook received (verify via admin order payment status)
 [ADMIN] order payment status = Authorized or Paid
-[CONSOLE] no payment script errors (note: ad-blockers may block iframe — ECL-14.6)
-[NETWORK] no CORS errors on payment form requests","Payment form blank after page load (iframe blocked by ad-blocker — ECL-14.6), card fields reject valid test card, payment hangs >30s, 3DS challenge appears in test mode, button remains active after first click (BL-CHK-002)","none","VCST-3387","Manual"
-"SMK-015","Order Confirmation — GA4 Purchase Event Fired","Smoke > GA4","Critical","BL-CROSS-005","ECL-11.1","On order confirmation page after successful order (follow-on from SMK-013), GA4 tracking enabled","front_url={{FRONT_URL}}","[WAIT] on order confirmation page (after SMK-013 order)
-[ACT] evaluate window.dataLayer: window.dataLayer.filter(e => e[1] === 'purchase')
-[ASSERT] purchase event found with correct transaction_id
-[ACT] evaluate for duplicates: window.dataLayer.filter(e => e[1] === 'purchase').length === 1
+[CONSOLE] no payment script errors
+[NETWORK] no CORS errors on payment form requests","Payment form blank after page load (ad-blocker may block iframe); card fields reject valid test card; payment hangs >30s; button remains active after first click (BL-CHK-002)","none","VCST-3387","Manual"
+"SMK-015","Order Confirmation — GA4 Purchase Event Fired","Smoke > GA4","Critical","BL-CROSS-005","ECL-11.1","State: on order confirmation page immediately after successful order placement; order number visible; GA4 tracking enabled in storefront config. Reach this state via SMK-013.","front_url={{FRONT_URL}}","[WAIT] on order confirmation page after successful order
+[ACT] evaluate window.dataLayer.filter(e => e[1] === 'purchase') — assert ≥1 entry
+[ASSERT] purchase event transaction_id matches displayed order number
+[ACT] evaluate window.dataLayer.filter(e => e[1] === 'purchase').length === 1 — assert exactly 1 event
 [ACT] refresh the confirmation page
 [WAIT] page reloads
-[ACT] evaluate window.dataLayer again: window.dataLayer.filter(e => e[1] === 'purchase').length","[STATE] window.dataLayer contains exactly 1 'purchase' event before page refresh (BL-CROSS-005)
-[STATE] purchase event transaction_id matches order number displayed on confirmation page
-[STATE] purchase event value is a positive number (not 0 or negative)
-[STATE] purchase event items[] is non-empty with product names
-[STATE] page refresh does NOT fire a second purchase event (ECL-11.1: idempotent confirmation)","[CONSOLE] no GA4 script errors or blocked resource warnings
-[NETWORK] GA4 /collect or gtag/js request fired with transaction_id matching order number
-[NETWORK] single purchase event in network tab (no duplicates on page load)","dataLayer missing 'purchase' event entirely (BL-CROSS-005), transaction_id mismatch vs order number, event.ecommerce.value = 0 or negative, duplicate events fired on refresh (ECL-11.1)","none","VCST-4499","Automated"
-"SMK-016","Order History — New Order Appears in Account","Smoke > Orders","Critical","BL-ORD-005, BL-CROSS-005","ECL-11.1","Order just placed (from SMK-013), user logged in as {{USER_EMAIL}}","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/orders
+[ASSERT] window.dataLayer.filter(e => e[1] === 'purchase').length still 1 (no duplicate on refresh)","[STATE] window.dataLayer contains exactly 1 'purchase' event before page refresh (BL-CROSS-005)
+[STATE] purchase event transaction_id matches order number on page
+[STATE] purchase event value is positive
+[STATE] purchase event items[] non-empty
+[STATE] page refresh does NOT fire a second purchase event (ECL-11.1)","[CONSOLE] no GA4 script errors
+[NETWORK] GA4 /collect or gtag/js request fired with matching transaction_id
+[NETWORK] single purchase event in network tab (no duplicates)","dataLayer missing 'purchase' event (BL-CROSS-005); transaction_id mismatch; event value = 0 or negative; duplicate events on refresh (ECL-11.1)","none","VCST-4499","Automated"
+"SMK-016","Order History — New Order Appears in Account","Smoke > Orders","Critical","BL-ORD-005, BL-CROSS-005","ECL-11.1","State: at least one order placed in current session; order number known; user authenticated as {{USER_EMAIL}}. Reach this state via SMK-013.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/orders
 [WAIT] order history page loads
-[ASSERT] most recent order visible at top of list
-[ASSERT] order number matches the one from SMK-013 confirmation
-[ACT] click the order row to open order detail
+[ASSERT] most recent order visible at top of list with correct order number
+[ACT] click the order row
 [WAIT] order detail page loads
 [ASSERT] order items, subtotal, shipping, and total visible and match confirmation page values","[DOM] order history page loads without errors
-[DOM] most recent order in list matches order number from SMK-013 (BL-CROSS-005)
+[DOM] most recent order matches order number from confirmation (BL-CROSS-005)
 [DOM] order detail shows all purchased items with names and prices
-[DOM] order total on detail page matches confirmation page total (BL-ORD-005)
+[DOM] order total matches confirmation page total (BL-ORD-005)
 [DOM] order status shows 'New' or equivalent initial status","[GQL] orders query returns most recent order with matching orderId
-[GQL] order detail returns items[] non-empty matching placed items
-[CONSOLE] no errors on order history or order detail page
-[NETWORK] no 4xx on order queries","Order absent from history (BL-CROSS-005), order number mismatch, totals differ from confirmation (BL-ORD-005), order detail page returns 404, order status shows unexpected error state","none","VCST-4499","Automated"
-"SMK-017","Account — Address Management (VCST-4802 Regression)","Smoke > Addresses","Critical","BL-CHK-003, BL-AUTH-004","ECL-6.3","Personal account user logged in as {{USER_EMAIL}} (not org user — Addresses link only shown for personal accounts per ECL-14.3). Known bug: VCST-4802 (address add/edit broken).","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/account/dashboard
+[GQL] order detail returns items[] non-empty
+[CONSOLE] no errors on order history or detail page
+[NETWORK] no 4xx on order queries","Order absent from history (BL-CROSS-005); order number mismatch; totals differ from confirmation (BL-ORD-005); order detail 404; order status shows error state","none","VCST-4499","Automated"
+"SMK-017","Account — Address Management (VCST-4802 Regression)","Smoke > Addresses","Critical","BL-CHK-003, BL-AUTH-004","ECL-6.3","Personal account user logged in as {{USER_EMAIL}} (not org user — 'Addresses' link only shown for personal accounts). Regression check: VCST-4802 (address add/edit was broken).","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] dashboard sidebar visible
-[ASSERT] 'Addresses' link visible in sidebar (personal account only — ECL-14.3)
-[ACT] click 'Addresses' in sidebar
+[ASSERT] 'Addresses' link visible in sidebar (personal account only)
+[ACT] click 'Addresses'
 [WAIT] addresses list page loads
-[ACT] click 'Add address' or '+ New address' button
-[WAIT] address form opens (VCST-4802: form must open without blank page or error)
-[ACT] fill 'First Name': '@td(ADDR_NY.first_name)', 'Last Name': '@td(ADDR_NY.last_name)', 'Street Address': '@td(ADDR_NY.street)', 'City': '@td(ADDR_NY.city)', 'State': '@td(ADDR_NY.state)', 'ZIP': '@td(ADDR_NY.zip)', 'Country': '@td(ADDR_NY.country)'
+[ACT] click 'Add address' or '+ New address'
+[WAIT] address form opens (regression: form must open without blank page or error — VCST-4802)
+[ACT] fill address fields: @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
 [ACT] click 'Save' or 'Add address'
-[WAIT] success toast OR address appears in list","[DOM] 'Addresses' link visible in dashboard sidebar for personal account
-[DOM] address list page loads without blank screen or JS error (VCST-4802 regression check)
+[WAIT] success toast or address appears in list","[DOM] 'Addresses' link visible in dashboard sidebar
+[DOM] address list page loads without blank screen or JS error (VCST-4802)
 [DOM] 'Add address' button visible and clickable
-[DOM] address form opens with all standard fields (VCST-4802: form not blank)
-[DOM] success toast shown after save (VCST-4802: save must succeed)
-[DOM] new address '@td(ADDR_NY.first_name) @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.zip)' visible in list","[GQL] updateContact mutation (or addAddress mutation) returns 200, errors[] empty
+[DOM] address form opens with all standard fields (VCST-4802)
+[DOM] success toast shown after save (VCST-4802)
+[DOM] new address visible in list","[GQL] updateContact or addAddress mutation returns 200, errors[] empty
 [GQL] me query after add shows new address in addresses[]
-[CONSOLE] no XSS-related console errors (VCST-4803 regression: updateContact XSS)
-[NETWORK] no 4xx/5xx on address save request","'Addresses' link absent for personal user (not org user — ECL-14.3), address form blank/broken (VCST-4802 regression failure), save returns 4xx/5xx, address not in list after save, XSS in address fields (VCST-4803)","Delete test address '@td(ADDR_NY.street)' from addresses list after test","VCST-4802, VCST-4803, VCST-4499","Automated"
-"SMK-018","Configurable Product — Required Section Blocks Add to Cart","Smoke > Configurable Products","Critical","BL-CAT-006, BL-CAT-001","ECL-8.2, ECL-7.2, ECL-14.5","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] no XSS-related console errors (VCST-4803 regression)
+[NETWORK] no 4xx/5xx on address save","'Addresses' link absent for personal user; address form blank/broken (VCST-4802); save returns 4xx/5xx; address not in list after save; XSS in address fields (VCST-4803)","Delete test address from addresses list after test","VCST-4802, VCST-4803, VCST-4499","Automated"
+"SMK-018","Configurable Product — Required Section Blocks Add to Cart","Smoke > Configurable Products","Critical","BL-CAT-006, BL-CAT-001","ECL-8.2, ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in. Configurable product CFG-002 (Custom T-shirt) with REQUIRED Product section exists in catalog. Add to Cart disabled until required section filled. {{FRONT_URL}} accessible.","front_url={{FRONT_URL}}, variation_url=@td(CFG_TSHIRT.url)","[SETUP] resolve configurable PDP URL: @td(CFG_TSHIRT.url) → store as variation_url
-[NAV] {{FRONT_URL}}{variation_url}
-[WAIT] configurable product PDP loads with section widget visible
-[ASSERT] 'Add to Cart' button is disabled before required section filled (BL-CAT-006)
-[ACT] click first option in the required 'Choose basic T-short' section (e.g., 'Red Men T-shirt')
-[WAIT] option shows selected state
-[ASSERT] price updates to reflect selected option price (no page reload)
-[ASSERT] 'Add to Cart' button is now enabled
+Configurable product @td(CFG_TSHIRT.url) with REQUIRED section exists in catalog; 'Add to Cart' disabled until required section filled","front_url={{FRONT_URL}}, variation_url=@td(CFG_TSHIRT.url)","[NAV] {{FRONT_URL}}@td(CFG_TSHIRT.url)
+[WAIT] configurable PDP loads with section widget visible
+[ASSERT] 'Add to Cart' button disabled before required section filled (BL-CAT-006)
+[ACT] click first option in the first required section
+[WAIT] option shows selected state; price updates
+[ASSERT] 'Add to Cart' now enabled
 [ACT] click 'Add to Cart'
-[WAIT] success notification appears
+[WAIT] success notification
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads
-[ASSERT] cart line item shows configured option detail (not just base product name)","[DOM] configurable section widget visible on PDP
-[DOM] 'Add to Cart' disabled before required section filled (BL-CAT-006, ECL-14.5)
+[ASSERT] cart line item shows configured option detail","[DOM] section widget visible on PDP
+[DOM] 'Add to Cart' disabled before required section filled (BL-CAT-006)
 [DOM] selected option shows selected visual state
 [DOM] price updates immediately after option selection (no reload)
 [DOM] 'Add to Cart' enabled after required section filled
-[DOM] cart line item reflects configured option, not base product only","[GQL] productConfiguration response shows required section with isRequired=true
-[GQL] addItem mutation includes configuration items, errors[] empty
-[GQL] cart.items[].selectedConfiguration is non-null
+[DOM] cart line item reflects configured option","[GQL] productConfiguration returns required section with isRequired=true
+[GQL] addItem includes configuration items, errors[] empty
+[GQL] cart.items[].selectedConfiguration non-null
 [CONSOLE] no errors during section selection or add to cart
-[NETWORK] no 4xx/5xx","'Add to Cart' enabled before required section filled (BL-CAT-006, ECL-14.5), price not updating on option selection, cart shows base product without configuration detail, addItem errors[] non-empty (ECL-14.1)","Remove configurable product from cart","B2C-VAR-001 B2C-VAR-002 C411037 C411052 C411051","Manual"
-"SMK-019","Configurable Product — Price Updates on Option Selection","Smoke > Configurable Products","Critical","BL-PRICE-001, BL-PRICE-003, BL-CAT-001","ECL-2.3, ECL-8.2, ECL-14.5","User logged in. Configurable product CFG-002 (Custom T-shirt) with options at different price points exists. Base price $12; options add to price. {{FRONT_URL}} accessible.","front_url={{FRONT_URL}}, variation_url=@td(CFG_TSHIRT.url)","[SETUP] resolve configurable PDP URL: @td(CFG_TSHIRT.url) → store as variation_url
-[NAV] {{FRONT_URL}}{variation_url}
-[WAIT] base price displayed before any section selection
-[ACT] click 'Red Men T-shirt' in the required 'Choose basic T-short' section
-[WAIT] price updates to reflect first option price (Red Men = base $12 + $10 = $22 or as displayed)
+[NETWORK] no 4xx/5xx","'Add to Cart' enabled before required section filled (BL-CAT-006); price not updating on option selection; cart shows base product without configuration; addItem errors[] non-empty","Remove configurable product from cart","VCST-4499","Manual"
+"SMK-019","Configurable Product — Price Updates on Option Selection","Smoke > Configurable Products","Critical","BL-PRICE-001, BL-PRICE-003, BL-CAT-001","ECL-2.3, ECL-8.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Configurable product @td(CFG_TSHIRT.url) with options at different price points","front_url={{FRONT_URL}}, variation_url=@td(CFG_TSHIRT.url)","[NAV] {{FRONT_URL}}@td(CFG_TSHIRT.url)
+[WAIT] base price displayed before any selection
+[ACT] click first option in the first required section
+[WAIT] price updates; note new price P1
 [ASSERT] price shows exactly 2 decimal places (BL-PRICE-003)
-[ACT] click a different option in the same section (e.g., 'Black Women') with a different price
-[WAIT] price updates again
-[ASSERT] price updated to second option's price
-[ASSERT] displayed total price has exactly 2 decimal places","[DOM] base price visible on PDP before selection
-[DOM] price updates immediately after first option selected (no reload)
-[DOM] price changes again after switching to second option in same section (no reload)
-[FORMAT] price always 2 decimal places (e.g., '$22.00' not '$22')
-[DOM] price displayed in section widget reflects selected option contribution","[GQL] productConfiguration response includes option prices per section item
+[ACT] click a different option in the same section (must have different price)
+[WAIT] price updates again to P2
+[ASSERT] P2 ≠ P1 and shows exactly 2 decimal places","[DOM] base price visible before selection
+[DOM] price updates after first option selected (no reload)
+[DOM] price changes again after switching to second option
+[FORMAT] price always 2 decimal places (BL-PRICE-003)","[GQL] productConfiguration response includes option prices per section item
 [GQL] configured price in cart matches selected option price from PDP
 [CONSOLE] no errors during option switching
-[NETWORK] no 4xx/5xx during option selection","Price unchanged after switching options (stale cache — ECL-14.4), price displays without 2 decimal places (BL-PRICE-003), price not updating on option selection (no DOM change)","none","B2C-VAR-006 B2C-VAR-007 C411052","Manual"
+[NETWORK] no 4xx/5xx during option selection","Price unchanged after switching options (stale cache); price missing 2 decimal places (BL-PRICE-003); no DOM change on option selection","none","VCST-4499","Manual"
 "SMK-020","B2B — Organization Switcher and Cart Isolation","Smoke > B2B","Critical","BL-B2B-001, BL-CROSS-008","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{ORG_USER_EMAIL}} who belongs to at least 2 organizations, 1 item in cart under first org","email={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, sku={{TEST_SKU}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (ensure logged in as {{ORG_USER_EMAIL}})
-[WAIT] authenticated homepage with org name in 'OrgName / UserName' header button
-[ASSERT] note current org name shown in header
-[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
-[ACT] click 'Add to Cart'
+User logged in as {{MULTI_ORG_USER_EMAIL}} — must belong to ≥2 organizations (use {{MULTI_ORG_USER_EMAIL}}, not {{ORG_USER_EMAIL}} which is single-org); 1 item in cart under first org","email={{MULTI_ORG_USER_EMAIL}}, password={{MULTI_ORG_USER_PASSWORD}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (logged in as {{MULTI_ORG_USER_EMAIL}})
+[WAIT] authenticated homepage with org name in header
+[ASSERT] note current org name shown in 'OrgName / UserName' button
+[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+[ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
 [WAIT] cart badge > 0
 [ACT] click 'OrgName / UserName' button in top-right header
 [WAIT] account dropdown opens with 'Organizations' section
-[ASSERT] organizations list with radio buttons visible
-[ACT] click the radio button for a DIFFERENT organization in the list
-[WAIT] page refreshes or context updates (org name in header changes)
-[ASSERT] cart badge = 0 (cart isolated per org — BL-B2B-001)
-[ASSERT] org name in header shows newly selected org","[DOM] account dropdown shows 'Organizations' section with search box and radio button list
-[DOM] clicking different org radio button updates 'OrgName / UserName' header button text
-[DOM] cart badge = 0 after org switch (BL-B2B-001, BL-CROSS-008: cart isolation)
-[STATE] new org's cart is empty — Org A items do NOT carry over
-[STATE] org name in header reflects newly selected org (not previous org)","[GQL] cart query under new org context returns empty items[] (BL-CART-005)
+[ACT] click radio button for a DIFFERENT organization
+[WAIT] header org name updates to new org
+[ASSERT] cart badge = 0 (cart isolated per org — BL-B2B-001)","[DOM] account dropdown shows 'Organizations' section with radio button list
+[DOM] header 'OrgName / UserName' button text changes to new org
+[DOM] cart badge = 0 after org switch (BL-B2B-001, BL-CROSS-008)
+[STATE] Org A items do NOT carry over to Org B
+[STATE] org name in header reflects newly selected org","[GQL] cart query under new org context returns empty items[]
 [GQL] me query returns new org in organization.id after switch
 [CONSOLE] no errors during org switch
-[NETWORK] no 4xx/5xx on org switch API call","Org A cart items visible after switching to Org B (BL-B2B-001 critical violation), cart badge not clearing, org name in header unchanged after switch, Organizations section absent from dropdown, ECL-14.3: org context null after switch","Switch back to original org; remove {{TEST_SKU}} from Org A cart","VCST-4499","Automated"
-"SMK-021","B2B — Company Members Page Accessible","Smoke > B2B","Critical","BL-B2B-005","ECL-14.3","User logged in as {{ORG_USER_EMAIL}} with org admin or member role, organization account active","email={{ORG_USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/members
+[NETWORK] no 4xx/5xx on org switch","Org A cart items visible after switching to Org B (BL-B2B-001 critical); cart badge not clearing; org name unchanged after switch; Organizations section absent from dropdown","Switch back to original org; remove test item from Org A cart","VCST-4499","Automated"
+"SMK-021","B2B — Company Members Page Accessible","Smoke > B2B","Critical","BL-B2B-005","ECL-14.3","User logged in as {{ORG_USER_EMAIL}} with org admin or member role; organization account active","email={{ORG_USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/members
 [WAIT] Company Members page loads
-[ASSERT] page heading or title references 'Members' or 'Company'
-[ASSERT] at least 1 member visible in the list (or empty state shown — not 403)
+[ASSERT] page heading references 'Members' or 'Company'
+[ASSERT] ≥1 member visible in list or empty state shown (not 403)
 [NAV] {{FRONT_URL}}/company/info
 [WAIT] Company Info page loads
-[ASSERT] company name or organization info visible","[DOM] /company/members page loads without 403, 404, or error page
+[ASSERT] company name or organization info visible","[DOM] /company/members loads without 403, 404, or error
 [DOM] page heading references 'Members' or 'Company' (BL-B2B-005)
-[DOM] member list visible with at least 1 row or empty-state message
-[DOM] /company/info page loads without error
-[DOM] organization name or company info shown on /company/info","[GQL] organization query returns name and members[] non-empty
-[CONSOLE] no permission or auth errors on company pages
-[NETWORK] no 4xx on /company/members or /company/info page load API calls","403 on /company/members (BL-B2B-005: role visibility), page loads but shows blank content, org user redirected to personal account pages, me.organization null (ECL-14.3)","none","VCST-4499","Automated"
-"SMK-022","B2B — Bulk Order Page and CSV Import Entry Point","Smoke > B2B","Critical","BL-B2B-005, BL-CART-001","ECL-14.3","User logged in as {{ORG_USER_EMAIL}}, /bulk-order accessible for org users","email={{ORG_USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/bulk-order
+[DOM] member list visible with ≥1 row or empty-state message
+[DOM] /company/info loads without error
+[DOM] organization name shown on /company/info","[GQL] organization query returns name and members[] non-empty
+[CONSOLE] no permission or auth errors
+[NETWORK] no 4xx on company page loads","403 on /company/members (BL-B2B-005); blank content on load; org user redirected to personal account pages; me.organization null (ECL-14.3)","none","VCST-4499","Automated"
+"SMK-022","B2B — Bulk Order Page and SKU Entry","Smoke > B2B","Critical","BL-B2B-005, BL-CART-001","ECL-14.3","User logged in as {{ORG_USER_EMAIL}}; /bulk-order accessible for org users","email={{ORG_USER_EMAIL}}, front_url={{FRONT_URL}}, sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/bulk-order
 [WAIT] Bulk Order page loads
 [ASSERT] page heading references 'Bulk Order'
 [ASSERT] SKU/barcode entry field visible
 [ACT] fill SKU entry field with {{TEST_SKU}}
 [WAIT] product lookup resolves
-[ASSERT] product name and price shown for the entered SKU","[DOM] Bulk Order page loads without error (BL-B2B-005)
+[ASSERT] product name and price shown for entered SKU","[DOM] Bulk Order page loads without error (BL-B2B-005)
 [DOM] SKU or barcode input field visible and interactive
-[DOM] entering {{TEST_SKU}} resolves to a product name and price
-[DOM] quantity field visible alongside the resolved product
+[DOM] {{TEST_SKU}} resolves to a product name and price
+[DOM] quantity field visible alongside resolved product
 [DOM] 'Add to Order' or equivalent button visible after SKU resolves","[GQL] product query for {{TEST_SKU}} returns name and price non-null
 [CONSOLE] no errors on bulk order page load
-[NETWORK] no 4xx on product lookup request from bulk order","Bulk Order page returns 404 or 403 for org user (BL-B2B-005), SKU lookup returns no result for valid {{TEST_SKU}}, page blank or spinner stuck >5s","none","VCST-4499","Automated"
-"SMK-023","Search to Cart — Full E2E Flow","Smoke > Search","Critical","BL-SRCH-001, BL-CART-001, BL-PRICE-001, BL-PRICE-003","ECL-3.3, ECL-2.1, ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] no 4xx on product lookup","Bulk Order page returns 404 or 403 for org user (BL-B2B-005); SKU lookup returns no result for valid {{TEST_SKU}}; page blank or spinner stuck >5s","none","VCST-4499","Automated"
+"SMK-023","Search to Cart — Full E2E Flow","Smoke > Search","Critical","BL-SRCH-001, BL-CART-001, BL-PRICE-001, BL-PRICE-003","ECL-3.3, ECL-2.1, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}, cart empty, catalog indexed with products","email={{USER_EMAIL}}, front_url={{FRONT_URL}}, sku={{TEST_SKU}}, search_term=@td(SEARCH_KITCHEN.query)","[NAV] {{FRONT_URL}}
-[ACT] click search bar
-[ACT] type @td(SEARCH_KITCHEN.query)
+Cart empty; catalog indexed with products","front_url={{FRONT_URL}}, search_term=@td(SEARCH_KITCHEN.query)","[NAV] {{FRONT_URL}}
+[ACT] click search bar; type @td(SEARCH_KITCHEN.query)
 [KEY] Enter
-[WAIT] search results page loads at /search?q={search_term}
-[ASSERT] at least 1 product result visible
-[ACT] click first product card name to open PDP
+[WAIT] search results page loads at /search?q=…
+[ASSERT] ≥1 product result visible
+[ACT] click first product card to open PDP
 [WAIT] PDP loads
-[ASSERT] price visible with 2 decimal places
-[ACT] click 'Add to Cart' (or 'Increase quantity' then 'Add to Cart')
+[ASSERT] price visible with 2 decimal places (BL-PRICE-003)
+[ACT] click 'Increase quantity' (+) once — B2B-store add-to-cart entry point
 [WAIT] cart badge increments
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
-[ASSERT] product appears in cart with name and correct price","[DOM] search returns at least 1 product for resolved search term (ECL-14.2: index must be up)
-[DOM] PDP loads for clicked product with correct title
+[ASSERT] product in cart with name and correct price","[DOM] search returns ≥1 product for resolved term
+[DOM] PDP loads with correct title
 [FORMAT] PDP price has exactly 2 decimal places (BL-PRICE-003)
 [DOM] cart badge increments after add
 [DOM] cart shows product with matching name and price from PDP
-[MATH] cart line total = unit price × qty (BL-PRICE-003)","[GQL] products search query returns non-empty items[]
-[GQL] addItem mutation returns 200, errors[] empty
-[GQL] cart.items contains correct SKU with matching price
-[CONSOLE] no errors during full search-to-cart flow
-[NETWORK] no 4xx during search, PDP load, or addItem","Zero search results (ECL-14.2: index down), PDP 404, addItem errors[] non-empty (ECL-14.1: must check errors[]), price mismatch between search listing and cart, cart badge not updating","Remove product from cart after test","VCST-4499","Automated"
-"SMK-024","BOPIS — Pickup Option Available in Cart","Smoke > BOPIS","Critical","BL-SHIP-002, BL-CHK-006","ECL-2.1, ECL-6.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[MATH] cart line total = unit price × qty","[GQL] products search query returns non-empty items[]
+[GQL] addItem returns 200, errors[] empty (ECL-7.3)
+[GQL] cart.items contains correct product with matching price
+[CONSOLE] no errors during full flow
+[NETWORK] no 4xx during search, PDP load, or addItem","Zero search results (search index down — ECL-3.3); PDP 404; addItem errors[] non-empty (ECL-7.3); price mismatch between listing and cart; cart badge not updating","Remove product from cart after test","VCST-4499","Automated"
+"SMK-024","BOPIS — Pickup Option Available in Cart","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-CHK-006","ECL-2.1, ECL-6.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Items in cart, user logged in as {{USER_EMAIL}}, at least 1 pickup location configured in system","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+Items in cart; ≥1 pickup location configured in system","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with items and shipping options visible
-[ASSERT] both 'Delivery' and 'Pickup' shipping options visible
-[ACT] select 'Pickup' option
+[ASSERT] both 'Delivery' and 'Pickup' options visible
+[ACT] select 'Pickup'
 [WAIT] 'Select pickup location' button or section visible
 [ACT] click 'Select pickup location'
 [WAIT] pickup location modal or dropdown opens
-[ASSERT] at least 1 pickup location listed
+[ASSERT] ≥1 pickup location listed
 [ACT] select first pickup location
-[WAIT] selection confirmed, checkout updates
-[ASSERT] shipping cost = $0.00 for pickup (BL-SHIP-002)","[DOM] 'Pickup' option available alongside 'Delivery' in shipping section
-[DOM] pickup location selection UI (modal/dropdown) opens on click
-[DOM] at least 1 pickup location selectable
-[DOM] selected location name shown in checkout after selection
-[DOM] shipping cost = $0.00 for pickup (BL-SHIP-002: store pickup is free)","[GQL] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
-[GQL] cart.shipments[0].fulfillmentCenter populated with selected location name
+[WAIT] selection confirmed; checkout updates
+[ASSERT] shipping cost = $0.00 (BL-BOPIS-002)","[DOM] 'Pickup' option available alongside 'Delivery'
+[DOM] pickup location selection UI opens on click
+[DOM] ≥1 pickup location selectable
+[DOM] selected location name shown after selection
+[DOM] shipping cost = $0.00 for pickup (BL-BOPIS-002)","[GQL] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
+[GQL] cart.shipments[0].fulfillmentCenter populated with location name
 [CONSOLE] no errors during pickup selection
-[NETWORK] no 4xx/5xx on BOPIS shipment mutation","Pickup option absent from cart (BOPIS not configured), location modal empty, shipping cost non-zero for pickup (BL-SHIP-002 violation), location selection not reflected in shipment API response","Restore cart to Delivery option if testing continues","VCST-4499","Automated"
-"SMK-025","XSS Regression — Shipment Address and Contact Update (VCST-4803, VCST-4804)","Smoke > Security","Critical","BL-AUTH-005","ECL-4.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-User logged in as {{USER_EMAIL}} (personal account). Known bugs: VCST-4803 (updateContact XSS in profile), VCST-4804 (shipment address XSS). These are regression checks to confirm the fixes hold.","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/profile
+[NETWORK] no 4xx/5xx on BOPIS shipment mutation","Pickup option absent from cart (BOPIS not configured); location modal empty (no FFCs); shipping cost non-zero for pickup (BL-BOPIS-002); location not reflected in shipment API response","Restore cart to Delivery option if testing continues","VCST-4499","Automated"
+"SMK-025","XSS Regression — Profile and Shipment Address (VCST-4803, VCST-4804)","Smoke > Security","Critical","BL-AUTH-005","ECL-4.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+Personal account user logged in as {{USER_EMAIL}}. Regression checks: VCST-4803 (updateContact XSS), VCST-4804 (shipment address XSS)","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/profile
 [WAIT] profile page loads
-[ASSERT] First Name and Last Name fields visible
-[ACT] fill 'First Name' with test value: 'SmokeTest'
-[ACT] fill 'Last Name' with test value: 'Runner'
-[ACT] click 'Save' or 'Update'
-[WAIT] success toast OR page updates
-[ASSERT] saved values shown in profile form (no XSS execution)
+[ACT] fill 'First Name': 'SmokeTest', 'Last Name': 'Runner'
+[ACT] click 'Save'
+[WAIT] success toast or page updates
+[ASSERT] saved values show 'SmokeTest Runner' in profile (no XSS execution — VCST-4803)
 [NAV] {{FRONT_URL}}/cart
-[WAIT] cart page loaded
-[ACT] select 'Delivery' and proceed to address entry
-[ACT] fill address 'First Name' with test value: 'SmokeTest'
-[ACT] fill address 'Street Address' with value: '123 Test St'
-[ACT] click 'Save' or proceed to next step
-[WAIT] address saved or checkout proceeds","[DOM] profile save completes without JS alert, console error, or unexpected redirect (VCST-4803 regression)
-[DOM] saved name 'SmokeTest Runner' displays in profile — no script tags rendered as text or executed
-[DOM] shipment address save completes without JS error or alert (VCST-4804 regression)
-[DOM] no unexpected alert() dialogs triggered during save operations
-[STATE] no XSS payloads visible as unescaped HTML in page source","[CONSOLE] no unexpected alert() calls or eval() executions in console
-[CONSOLE] no XSS-related JavaScript errors (VCST-4803, VCST-4804)
+[WAIT] cart loaded
+[ACT] select 'Delivery'; proceed to address entry
+[ACT] fill address 'First Name': 'SmokeTest', 'Street Address': '123 Test St'
+[ACT] click 'Save' or proceed
+[WAIT] address saved or checkout proceeds
+[ASSERT] no JS alert or unexpected redirect during save (VCST-4804)","[DOM] profile save completes without JS alert or unexpected redirect (VCST-4803)
+[DOM] saved name 'SmokeTest Runner' displays — no script tags executed
+[DOM] shipment address save completes without JS error or alert (VCST-4804)
+[DOM] no unexpected alert() dialogs during save
+[STATE] no XSS payloads visible as unescaped HTML","[CONSOLE] no unexpected alert() or eval() executions
+[CONSOLE] no XSS-related JS errors (VCST-4803, VCST-4804)
 [NETWORK] updateContact mutation returns 200, errors[] empty
-[NETWORK] no 4xx/5xx on profile or address save requests","alert() or confirm() dialog appears during form save (XSS active — VCST-4803/4804 regression failure), script content rendered in DOM, profile save returns 5xx, unexpected page redirect during save","Restore profile name to original values if changed","VCST-4803, VCST-4804, VCST-4499","Automated"
+[NETWORK] no 4xx/5xx on profile or address save","alert() dialog appears during save (XSS active — VCST-4803/4804 regression failure); script content rendered in DOM; profile save returns 5xx","Restore profile name to original values","VCST-4803, VCST-4804, VCST-4499","Automated"
 "SMK-026","Storefront Health — No Critical Console Errors Across Key Pages","Smoke > Health","Critical","BL-CROSS-011","ECL-10.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}, all major storefront areas accessible","email={{USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/dashboard
+All major storefront areas accessible","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/account/dashboard
 [WAIT] dashboard loads
-[ACT] evaluate console errors: any TypeError, ReferenceError, or unhandled rejection
-[ASSERT] no critical JS errors
+[ASSERT] no TypeError or ReferenceError in console
 [NAV] {{FRONT_URL}}/account/orders
 [WAIT] orders page loads
-[ACT] evaluate console errors
 [ASSERT] no critical JS errors
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] catalog page loads
-[ACT] evaluate console errors
 [ASSERT] no critical JS errors
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
-[ACT] evaluate console errors
-[ASSERT] no critical JS errors","[STATE] {{FRONT_URL}}/account/dashboard loads without TypeError or ReferenceError in console
-[STATE] {{FRONT_URL}}/account/orders loads without critical console errors
-[STATE] {{FRONT_URL}}/catalog loads without critical console errors
-[STATE] {{FRONT_URL}}/cart loads without critical console errors
-[DOM] all 4 pages render main content (not blank or error screens)","[CONSOLE] 0 TypeError or ReferenceError across all 4 pages
-[NETWORK] no 5xx errors across all 4 page loads
-[NETWORK] no failed resource loads (CSS/JS 404s that would break layout)","Any TypeError or ReferenceError in console on any page (BL-CROSS-011: graceful degradation failure), blank page or white screen on any of the 4 pages, 5xx errors in network tab","none","VCST-4499","Automated"
-"SMK-027","Smoke: Data-Test-ID Attribute Smoke After PR-2234 Selector Rename","Smoke > Selector Regression","High","","ECL-6.2","[PRE:CLEAR_SESSION]
+[ASSERT] no critical JS errors","[STATE] /account/dashboard loads without TypeError or ReferenceError
+[STATE] /account/orders loads without critical console errors
+[STATE] /catalog loads without critical console errors
+[STATE] /cart loads without critical console errors
+[DOM] all 4 pages render main content (not blank)","[CONSOLE] 0 TypeError or ReferenceError across all 4 pages
+[NETWORK] no 5xx across all 4 page loads
+[NETWORK] no CSS/JS 404s breaking layout","Any TypeError or ReferenceError on any page (BL-CROSS-011); blank page on any of the 4 pages; 5xx in network tab","none","VCST-4499","Automated"
+"SMK-027","Smoke: Data-Test-ID Attribute Smoke After PR-2234 Selector Rename","Smoke > Selector Regression","High","BL-CROSS-011","ECL-10.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-- vc-frontend build including PR #2234 deployed","store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
-[ASSERT] Verify element with data-test-id='top-header' exists in the DOM
-[ASSERT] Verify element with data-test-id='language-selector' exists and is clickable
-[ASSERT] Verify element with data-test-id='language-selector-button' exists
-[ACT] Click language-selector-button
-[ASSERT] Verify language selector dropdown opens
-[ASSERT] Verify element with data-test-id='organizations-search' exists in account menu (if B2B org user)
-[ASSERT] Verify element with data-test-id='sign-in-error-alert' does NOT exist when no error present
-[ASSERT] Verify no elements with old-style data-test-id containing 'main-layout.top-header.' prefix exist in DOM","[DOM] data-test-id='top-header' element present
-[DOM] data-test-id='language-selector' element present and interactive
-[DOM] data-test-id='language-selector-button' element present
-[DOM] No data-test-id values starting with 'main-layout.top-header.' in DOM (deprecated prefix removed)","[CONSOLE] No JS errors after page load
-[NETWORK] No 4xx/5xx responses on page load","Old data-test-id='main-layout.top-header' still present (rename not deployed); language-selector not found; JS error on page load","none","vc-frontend PR #2234, VCST-4968","Reviewed"
-"SMK-028","Smoke: Sign-In Form Data-Test-ID and Email Input Accessible Post-PR-2234","Smoke > Selector Regression","High","BL-AUTH-001","ECL-6.2","[PRE:CLEAR_SESSION]
-- vc-frontend build including PR #2234 deployed
-- Not signed in","store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
-[ASSERT] Verify sign-in form loads without errors
-[ASSERT] Verify email input is present (accessible via test-id-input='email-input')
-[ASSERT] Verify password input is present
-[ACT] Enter invalid email and submit to trigger error
-[ASSERT] Verify error alert appears with data-test-id='sign-in-error-alert'
-[ASSERT] Verify error alert does NOT have dynamic index suffix (old pattern: sign-in-page.sign-in-error-0-alert)","[DOM] Email input accessible (test-id-input='email-input')
-[DOM] Error alert uses data-test-id='sign-in-error-alert' (not 'sign-in-page.sign-in-error-{code}-alert')
-[STATE] Sign-in form functional after selector rename","[CONSOLE] No JS errors on sign-in page
-[NETWORK] POST /connect/token responds appropriately on failed login","Email input not found via new test-id; error alert uses old dynamic ID pattern; sign-in form broken after rename; JS error on sign-in page","none","vc-frontend PR #2234, VCST-4968","Reviewed"
-"SMK-029","Ship-To — Header Selector Opens and Applies Address","Smoke > Ship-To","Critical","BL-SHIP-001","ECL-6.2, ECL-7.1","[PRE:CLEAR_SESSION]
+vc-frontend build including PR #2234 deployed","store_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}
+[ASSERT] element with data-test-id='top-header' exists in DOM
+[ASSERT] element with data-test-id='language-selector' exists and is clickable
+[ASSERT] element with data-test-id='language-selector-button' exists
+[ACT] click language-selector-button
+[ASSERT] language selector dropdown opens
+[ASSERT] element with data-test-id='organizations-search' exists in account menu (B2B org user)
+[ASSERT] element with data-test-id='sign-in-error-alert' does NOT exist when no error present
+[ASSERT] no elements with old-style data-test-id containing 'main-layout.top-header.' prefix exist in DOM","[DOM] data-test-id='top-header' present
+[DOM] data-test-id='language-selector' present and interactive
+[DOM] data-test-id='language-selector-button' present
+[DOM] no data-test-id values starting with 'main-layout.top-header.' (deprecated prefix removed)","[CONSOLE] no JS errors after page load
+[NETWORK] no 4xx/5xx on page load","Old data-test-id='main-layout.top-header' still present (rename not deployed); language-selector not found; JS error on page load","none","vc-frontend PR #2234, VCST-4968","Reviewed"
+"SMK-028","Smoke: Sign-In Form Data-Test-ID and Email Input Accessible Post-PR-2234","Smoke > Selector Regression","High","BL-AUTH-001","ECL-10.2","[PRE:CLEAR_SESSION]
+vc-frontend build including PR #2234 deployed; not signed in","store_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[ASSERT] sign-in form loads without errors
+[ASSERT] email input present (test-id-input='email-input')
+[ASSERT] password input present
+[ACT] enter invalid email and submit to trigger error
+[ASSERT] error alert visible with data-test-id='sign-in-error-alert'
+[ASSERT] error alert does NOT have dynamic index suffix (old pattern: sign-in-page.sign-in-error-0-alert)","[DOM] email input accessible (test-id-input='email-input')
+[DOM] error alert uses data-test-id='sign-in-error-alert' (not 'sign-in-page.sign-in-error-{code}-alert')
+[STATE] sign-in form functional after selector rename","[CONSOLE] no JS errors on sign-in page
+[NETWORK] POST /connect/token responds on failed login","Email input not found via new test-id; error alert uses old dynamic ID pattern; sign-in form broken; JS error on sign-in page","none","vc-frontend PR #2234, VCST-4968","Reviewed"
+"SMK-029","Ship-To — Header Selector Opens and Applies Address","Smoke > Ship-To","Critical","BL-SHIP-001","ECL-10.2, ECL-7.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}; at least 1 saved shipping address available (see @td(ADDR_NY))","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}
-[WAIT] homepage fully loaded with top header bar visible
-[ASSERT] 'Ship to' control visible in top header bar (between currency selector and theme toggle, per sitemap §11)
-[ACT] note the current 'Ship to' label value (city or address summary)
-[ACT] click 'Ship to' control in header
-[WAIT] address picker / popover opens with selectable address list OR address entry form
-[ASSERT] picker shows at least 1 selectable address OR an address entry field
-[ACT] select or enter a different address — use @td(ADDR_NY.city), @td(ADDR_NY.zip), @td(ADDR_NY.country)
+User logged in as {{USER_EMAIL}}; ≥1 saved shipping address available","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}
+[WAIT] homepage loaded with top header bar visible
+[ASSERT] 'Ship to' control visible in top header bar
+[ACT] note current 'Ship to' label value
+[ACT] click 'Ship to' control
+[WAIT] address picker opens with selectable address list or entry form
+[ASSERT] ≥1 selectable address or address entry field visible
+[ACT] select existing address OR enter new: @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
 [ACT] confirm / apply selection
-[WAIT] picker closes and header 'Ship to' label updates
-[ASSERT] header 'Ship to' label reflects the newly selected address (city or ZIP visible)
+[WAIT] picker closes; header 'Ship to' label updates
+[ASSERT] header label reflects newly selected address (city or ZIP)
 [NAV] {{FRONT_URL}}/cart
-[WAIT] cart page loads
-[ASSERT] cart ship-to context matches the address chosen from the header","[DOM] 'Ship to' control rendered in top header bar (BL-SHIP-001 entry point)
-[DOM] picker opens on click without 404/blank state
-[DOM] header label updates immediately after applying a new address (no full reload required)
+[WAIT] cart loads
+[ASSERT] cart ship-to context matches chosen address","[DOM] 'Ship to' control rendered in top header bar (BL-SHIP-001)
+[DOM] picker opens on click without 404/blank
+[DOM] header label updates after applying new address
 [STATE] selected address persists across navigation (homepage → cart)
-[DOM] no stale previous 'Ship to' label after the change","[GQL] me query (or address lookup) returns 200 with addresses[] populated
-[GQL] cart query reflects updated shipping context after header change (errors[] empty)
-[CONSOLE] no TypeError or ReferenceError opening or applying Ship-to
-[NETWORK] no 4xx/5xx on Ship-to selector open or address-apply request","'Ship to' control absent from header (storefront config drift), picker fails to open or shows blank, header label unchanged after applying address, cart ship-to context out of sync with header, 4xx/5xx on address-apply, console TypeError on selector open.","Reset 'Ship to' to the original address noted at start of test","BL-SHIP-001, sitemap §11","Manual"
-"SMK-030","BOPIS — End-to-End Pickup Order Placement and Confirmation","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-BOPIS-006, BL-CHK-002, BL-CHK-006, BL-ORD-005","ECL-2.1, ECL-6.2, ECL-7.3, ECL-11.1","[PRE:CLEAR_SESSION]
+[DOM] no stale previous label after change","[GQL] me or address lookup returns 200, addresses[] populated
+[GQL] cart query reflects updated shipping context, errors[] empty
+[CONSOLE] no TypeError or ReferenceError on Ship-to open or apply
+[NETWORK] no 4xx/5xx on address-apply","'Ship to' control absent from header; picker blank; header label unchanged after applying; cart ship-to out of sync; 4xx/5xx on address-apply","Reset 'Ship to' to original address noted at start","VCST-4499","Manual"
+"SMK-030","BOPIS — End-to-End Pickup Order Placement and Confirmation","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-BOPIS-006, BL-CHK-002, BL-CHK-006, BL-ORD-005, BL-CROSS-005","ECL-2.1, ECL-6.2, ECL-7.3, ECL-11.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}; at least 1 active pickup location configured; cart empty; product {{TEST_SKU}} in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, sku={{TEST_SKU}}, addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/product/{{TEST_SKU}}
-[WAIT] PDP loaded, 'Add to Cart' or quantity stepper visible
-[ACT] click 'Increase quantity' then 'Add to Cart' (or +1 if B2B-store flag)
-[WAIT] cart badge increments to 1
+User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; product @td(BUYABLE_NO_MIN_QTY.slug) in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+[WAIT] PDP loaded; quantity stepper visible
+[ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
+[WAIT] cart badge = 1
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with item visible
-[ASSERT] note cart subtotal (call it pre_subtotal)
-[ACT] select 'Pickup' radio in delivery options
-[WAIT] 'Select pickup location' button visible
+[ASSERT] capture cart subtotal as pre_subtotal
+[ACT] select 'Pickup' in delivery options
 [ACT] click 'Select pickup location'
-[WAIT] pickup-location modal opens with at least 1 location
-[ACT] select first available location, click 'Confirm'
-[WAIT] modal closes; pickup location name + address visible in cart summary
-[ASSERT] shipping cost line = $0.00 in cart totals (BL-BOPIS-002)
-[ASSERT] cart total = pre_subtotal + tax (no shipping added — BL-CHK-006)
-[ACT] fill billing address if prompted (required per BOPIS-074): @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
-[ACT] complete payment per processor (CyberSource: form on cart page — ECL-14.6; others: click 'Place Order' → /checkout/payment) — single click only (BL-CHK-002)
-[WAIT] order confirmation page or redirect to /checkout/payment then confirmation
-[ASSERT] order number visible in 'CO[digits]' format (BL-ORD-005)
-[ASSERT] confirmation page shows the pickup location name + address (not a shipping address)
-[ASSERT] confirmation totals: shipping = $0.00, total matches cart total noted above
+[WAIT] pickup-location modal opens with ≥1 location
+[ACT] select first location → click 'Confirm'
+[WAIT] location name + address visible in cart summary
+[ASSERT] shipping line = $0.00 in cart totals (BL-BOPIS-002)
+[ACT] fill billing address if prompted (BL-BOPIS-006): @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
+[ACT] complete payment — single click only (CyberSource: form on cart page; others: 'Place Order' → /checkout/payment) (BL-CHK-002)
+[WAIT] order confirmation page renders
 [NAV] {{FRONT_URL}}/account/orders
 [WAIT] order history loads
-[ASSERT] newly placed order is at top of list with same order number
-[ACT] click the order row
-[WAIT] order detail loads
-[ASSERT] order detail shows pickup location (FFC name + address), shipping = $0.00","[DOM] 'Pickup' radio selectable in cart
-[DOM] pickup-location modal opens and lists ≥1 location (BL-BOPIS-001)
-[DOM] selected pickup location name + address shown in cart summary after Confirm
-[DOM] shipping line shows $0.00 in cart totals (BL-BOPIS-002)
-[DOM] order confirmation page renders with order number in CO[digits] format (BL-ORD-005)
-[DOM] confirmation shows pickup location, NOT a shipping address (BL-BOPIS-001: single pickup shipment, no delivery address)
-[DOM] order in /account/orders shows pickup FFC on detail page
-[MATH] order total = subtotal + tax (no shipping component — BL-CHK-006, BL-BOPIS-002)
-[STATE] cart badge = 0 after order placed (cart cleared — BL-CROSS-005)","[GQL] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
-[GQL] cart.shipments[0].fulfillmentCenter populated; cart.shipments[0].deliveryAddress is null (single pickup shipment — BL-BOPIS-001)
+[ACT] click the new order row
+[WAIT] order detail loads","[DOM] 'Pickup' option selectable in cart
+[DOM] pickup-location modal lists ≥1 FFC (BL-BOPIS-001)
+[DOM] selected FFC name + address shown in cart summary after Confirm
+[DOM] shipping line = $0.00 in cart totals (BL-BOPIS-002)
+[DOM] confirmation shows order number in 'CO[digits]' format (BL-ORD-005)
+[DOM] confirmation shows pickup FFC, NOT a delivery address (BL-BOPIS-001)
+[DOM] new order at top of /account/orders with same order number
+[DOM] order detail shows pickup FFC + shipping = $0.00
+[MATH] confirmation total = pre_subtotal + tax (no shipping — BL-CHK-006, BL-BOPIS-002)
+[STATE] cart badge = 0 after order (BL-CROSS-005)","[GQL] addOrUpdateCartShipment with fulfillmentCenterId returns 200, errors[] empty
+[GQL] cart.shipments[0].fulfillmentCenter populated; deliveryAddress null (BL-BOPIS-001)
 [GQL] createOrderFromCart returns 200, errors[] empty, orderId non-null
-[GQL] orders query — top order shows fulfillmentCenter on shipment, shippingTotal = 0 (BOPIS-075)
-[ADMIN] order in admin panel shows pickup FFC + 'New' status
-[CONSOLE] no TypeError or JS errors during pickup selection, payment, or confirmation
-[NETWORK] no 4xx/5xx on addOrUpdateCartShipment, createOrderFromCart, or order-history queries","Pickup option absent from cart (BOPIS not configured / feature flag off — BOPIS-037), location modal empty (no FFCs — BOPIS-043), shipping cost > $0 for pickup (BL-BOPIS-002 violation), createOrderFromCart errors[] non-empty, order confirmation missing pickup FFC name, order detail shows a shipping address instead of pickup location, shipping total > 0 on completed order (BOPIS-075 cross-layer fail), cart not cleared after order (BL-CROSS-005), duplicate order from single click (BL-CHK-002)","Note created order ID; cart is cleared by system — no manual cleanup needed","BOPIS-026, BOPIS-075, BOPIS-088, BOPIS-089, BOPIS-090, VCST-4499","Manual"
+[GQL] orders query — top order has fulfillmentCenter, shippingTotal = 0
+[ADMIN] order shows pickup FFC + 'New' status
+[CONSOLE] no TypeError or JS errors
+[NETWORK] no 4xx/5xx on addOrUpdateCartShipment, createOrderFromCart, or orders queries","Pickup option absent (BOPIS flag off); location modal empty; shipping > $0 for pickup (BL-BOPIS-002); createOrderFromCart errors[] non-empty; confirmation missing FFC; order detail shows delivery address instead of FFC; shippingTotal > 0; cart not cleared (BL-CROSS-005); duplicate order from single click (BL-CHK-002)","Note created order ID; cart cleared by system","VCST-4499, BOPIS-026, BOPIS-075, BOPIS-088","Manual"

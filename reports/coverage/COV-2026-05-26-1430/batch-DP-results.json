@@ -1,0 +1,77 @@
+{
+  "batch": "DP",
+  "agent": "test-management-specialist",
+  "source": "date-picker-exploration.md",
+  "gaps": {
+    "consumed": 17,
+    "skipped_duplicate": 2,
+    "skipped_blocked": 0
+  },
+  "cases": {
+    "generated": 18,
+    "validated": 0,
+    "needsReview": 0
+  },
+  "suitesModified": ["014"],
+  "newCaseIds": [
+    "ORD-062",
+    "ORD-063",
+    "ORD-064",
+    "ORD-065",
+    "ORD-066",
+    "ORD-067",
+    "ORD-068",
+    "ORD-069",
+    "ORD-070",
+    "ORD-071",
+    "ORD-072",
+    "ORD-073",
+    "ORD-074",
+    "ORD-075",
+    "ORD-076",
+    "ORD-077",
+    "ORD-078",
+    "ORD-079"
+  ],
+  "dpToCaseMap": {
+    "DP-01": "ORD-062",
+    "DP-02": "ORD-063",
+    "DP-03": "ORD-064",
+    "DP-04": "ORD-065",
+    "DP-05": "ORD-066",
+    "DP-06": "ORD-067",
+    "DP-07": "ORD-068",
+    "DP-08": "ORD-069",
+    "DP-09": "ORD-070",
+    "DP-10": "ORD-071",
+    "DP-11": "ORD-072",
+    "DP-12": "ORD-073",
+    "DP-13": "ORD-074",
+    "DP-14": "ORD-075",
+    "DP-15": "ORD-076",
+    "DP-16": "ORD-077",
+    "DP-17": "ORD-078",
+    "DP-18": "ORD-079"
+  },
+  "skippedDuplicateDetail": [
+    {
+      "specRow": 3,
+      "specTheme": "Same-day boundary (Start = End = D)",
+      "reason": "ORD-055 already authors this exact scenario (single-day inclusive boundary, Start=D AND End=D, monotonic-count assertion). Adding a new case would be semantic duplication. Gap consumed without generating a case."
+    },
+    {
+      "specRow": 4,
+      "specTheme": "Inverted range (Start > End) — defensive behavior",
+      "reason": "ORD-054 authors this scenario in full: deliberately inverted range, [COND:] branches for validation-error vs auto-swap, no-crash assertion, network inspection. Adding a new case would be semantic duplication. Gap consumed without generating a case."
+    }
+  ],
+  "knownFailing": [
+    "ORD-062",
+    "ORD-069"
+  ],
+  "knownFailingReason": "A1 anomaly: Custom Date End boundary is silently dropped from the GraphQL GetOrders filter on Apply. ORD-062 asserts the GQL filter contains both bounds — it will FAIL until A1 is fixed. ORD-069 asserts the End input is populated on panel reopen — it will FAIL due to A1/A2 (End dropped at apply-time). ORD-076 and ORD-077 test a11y anomalies A6 and A5 respectively; those are likely to fail but are classified 'Generated' (not 'knownFailing') because the behavior may have changed since exploration.",
+  "tdRefsValidator": "PASS",
+  "proposedBLFollowUp": "A dedicated invariant BL-ORD-010 ('Order list query behavior: filtering, sorting, pagination, and scope isolation produce results consistent with the applied parameters') should be proposed to the business-logic custodian before the next sprint planning. DO NOT add this ID to any CSV row until formally approved. Current interim citation across this batch is BL-ORD-001.",
+  "durationMinutes": 28,
+  "notes": "All 18 cases use live-discover patterns (no hardcoded order numbers, dates, or counts). Preset cases ORD-063–066 cite ECL-3.2 (filter persistence semantics). The four preset cases and ORD-062 are the highest-value outputs of this batch — they directly probe the A1 bug by asserting the GQL filter string shape. ORD-076/077 test a11y anomalies A5 and A6 from the exploration; observed failures in those cases should be filed as separate low-severity bugs."
+}

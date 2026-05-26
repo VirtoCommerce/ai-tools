@@ -13,6 +13,19 @@ You create test strategies, write layer-specific test cases, organize suites, ma
 
 ---
 
+## MENTAL MODEL — Lead with these four questions, in order
+
+Before reaching for any technique (BVA, error guessing, pairwise…) or any data tactic (`{{VAR}}`, `@td()`, `live-discover`, `random-data`), answer:
+
+1. **For which feature or user journey am I writing this suite/case?** — scope first; if you can't name the journey, you can't bound the suite
+2. **What are we testing and how?** — testable behavior, layers it touches (REST / GraphQL / Admin / Storefront / E2E), observable signals (DOM state, response shape, persisted record, search index)
+3. **How do we write the most effective tests to break the system and identify defects?** — adversarial intent, not confirmation bias. A passing happy-path case is the floor, not the goal
+4. **What haven't the PO and developer considered? Where might the interface falter or break?** — gap-hunting: seams between screens/layers, unstated assumptions, edge states, concurrency, mid-flow toggles, data drift, error paths the spec doesn't mention
+
+Techniques and data tactics are the **toolbox you reach into after** answering #1–4. Reversing the order (starting from "let me apply BVA") produces tests that confirm the system; starting from these four produces tests that find bugs. Cross-reference: project memory `feedback_test_design_mental_model.md`.
+
+---
+
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
 > **Reference:** `.claude/agents/knowledge/business-logic.md` — 13 domains, 76 rules.
@@ -187,7 +200,7 @@ BLOCKED ❌ → escalate to qa-lead
 1. **Look up docs** — Context7 (`/virtocommerce/vc-docs`), JIRA ticket ACs, Figma, scope/dependencies
 2. **Decompose into layers** — Which layers apply? (API, GraphQL, Admin, Storefront, E2E). Record in test plan
 3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to surface unknown unknowns before writing test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations (see UI Exploration Protocol above). Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
-4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. This step identifies factors, selects techniques (pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles), and produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
+4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. **The techniques serve the four Mental Model questions — they don't replace them.** Use them to operationalize "how do we break this?" and "what wasn't considered?": pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles, **error guessing for "what if X breaks?" gaps the spec missed**, BVA for numeric edges. Produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
 5. **Create test plan** — Save to `tests/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
    ```
    | Layer | Applicable? | # Cases | Assigned Agent | Target Suite |

@@ -1,0 +1,35 @@
+# Evidence — GetPageContext request body when VirtoCommerce.WhiteLabeling is ABSENT from manifest
+# Captured: 2026-05-21 (live recheck after Elena's request)
+# URL: https://vcst-qa-storefront.govirto.com/contact (permalink: "contact")
+# Manifest state: 82 modules, NO VirtoCommerce.WhiteLabeling, NO VirtoCommerce.WhiteLabeling.WhiteLabelingEnabled flag
+# HTTP status: 200
+# Observed: whiteLabelingSettings selection AND whiteLabelingFields fragment definition are BOTH stripped by apply-gates-link
+# Compare with earlier (2026-05-21 morning) evidence-fe1-initializeApplication-response.json where WhiteLabeling v3.1001.0 WAS present and the fragment WAS sent
+
+# Variables: {"domain":"vcst-qa-storefront.govirto.com","userId":"16c84249-c462-4fc2-8f82-e52d90be472d","permalink":"contact"}
+
+query GetPageContext($userId: String, $organizationId: String, $domain: String, $storeId: String, $permalink: String, $cultureName: String) {
+  pageContext(
+    userId: $userId
+    organizationId: $organizationId
+    domain: $domain
+    storeId: $storeId
+    permalink: $permalink
+    cultureName: $cultureName
+  ) {
+    user      { ...userTypeFields __typename }
+    store     { ...storeResponseTypeFields __typename }
+    slugInfo  { ...slugInfoResponseTypeFields __typename }
+    # NOTE: no `whiteLabelingSettings { ... }` selection here — stripped by @needsModule gate
+    __typename
+  }
+}
+
+# Fragments present in payload:
+# - organizationFields
+# - allLanguageFields
+# - allCurrencyFields
+# - userTypeFields
+# - storeResponseTypeFields
+# - slugInfoResponseTypeFields
+# NOT present: whiteLabelingFields fragment definition

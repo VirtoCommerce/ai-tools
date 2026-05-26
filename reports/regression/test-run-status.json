@@ -1,60 +1,60 @@
 {
-  "runId": "REG-2026-05-20-1800",
-  "selection": "050b3",
-  "resolvedFrom": "explicit suite ID",
+  "runId": "REG-2026-05-26-1530",
+  "selection": "014:new-cases-subset",
+  "resolvedFrom": "user request — only new cases ORD-052..ORD-079 from this session's coverage-generation run COV-2026-05-26-1430",
   "mode": "standard",
-  "lane": "graphql-runner",
   "seedProfile": null,
   "teardown": false,
   "environment": "vcst-qa",
-  "startedAt": "2026-05-20T18:00:00Z",
-  "completedAt": "2026-05-20T18:17:00Z",
+  "startedAt": "2026-05-26T11:38:43.000Z",
+  "completedAt": "2026-05-26T12:06:48.000Z",
   "status": "completed",
-  "outcome": {
-    "pass": 16,
-    "fail": 0,
-    "empty": 1,
-    "passRateEvaluable": "16/16 = 100%",
-    "assertionsTotal": 63,
-    "assertionsPassed": 63,
-    "deltaVsPreviousRun": "Suite pass rate 65% → 94% (+29pp) — schema-drift sync from earlier this session validated"
-  },
+  "durationMinutes": 28,
   "totalSuites": 1,
-  "byPriority": { "P0": 0, "P1": 1, "P2": 0 },
-  "estimatedTestCases": 17,
-  "previousRun": {
-    "runId": "REG-2026-05-20-1700",
-    "verdict": "MIXED (11 PASS / 5 FAIL — schema drift)",
-    "remediation": "Schema drift synced earlier this session — all 5 failing cases (CRL-GQL-092/100/101/102/103) and CRL-GQL-094 (MANUAL-BLOCKED) refactored to current XCart 3.1015.0-pr-119 schema"
+  "totalTestCases": 28,
+  "verdict": { "passed": 23, "failed": 4, "skipped": 1, "blocked": 0 },
+  "passRate": "23/28 (82.1%)",
+  "qualityGate": "PASS — no Critical bugs; 1 new P1 surfaced (ORD-054) for review",
+  "newBugs": [
+    { "title": "Inverted date range silently accepted; End dropped from GQL", "severity": "P1", "case": "ORD-054", "status": "awaiting second-source repro before filing per feedback_verify_payload_bugs_second_source" }
+  ],
+  "report": "reports/regression/REG-2026-05-26-1530/regression-report.md",
+  "byPriority": { "Critical": 5, "High": 9, "Medium": 14 },
+  "browserPool": {
+    "slot1": { "server": "playwright-chrome", "status": "busy", "currentSuite": "014:subset" },
+    "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
+    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null }
   },
-  "deployState": {
-    "capturedAt": "2026-05-20T12:55:00Z",
-    "source": "reports/deploy-state-cache.json (reused from REG-2026-05-20-1248 — same env, same day)",
-    "platform": "3.1028.0",
-    "theme": "vc-theme-b2b-vue-2.49.0 (GA)",
-    "modulesNotable": "XCart 3.1015.0-pr-119-6a09 (preview — PR #119, target of this re-run)"
-  },
+  "preDispatchFixes": [
+    "ORD-052..ORD-061 Steps columns rewritten on 2026-05-26 to use explicit Filters-popover flow (Open → Check → click Apply). Original vague 'apply status filter' verbs would have caused agents to skip the Apply button.",
+    "Memory entry feedback_filter_ui_explicit_apply.md saved with authoring rule."
+  ],
+  "knownConsiderations": [
+    "ORD-052 already validated as PASS on 2026-05-26 manual repro — re-validating on Chrome for cross-browser confirmation",
+    "ORD-062 and ORD-069 Automation_Status updated from 'currently FAILS' to 'verified PASS' after manual repro refuted the A1 bug — re-validating",
+    "ORD-060 requires B2B org with 2+ buyers each having placed ≥1 order — marked SEED REQUIRED; may skip if seed unavailable",
+    "ORD-057 requires >page-size orders in a single status — marked SEED REQUIRED; may skip"
+  ],
+  "suites": [
+    {
+      "id": "014:subset",
+      "name": "Orders Frontend — new cases ORD-052..ORD-079 (filter + date picker)",
+      "file": "regression/suites/Frontend/orders/014-orders-frontend.csv",
+      "resolvedCsv": "reports/regression/REG-2026-05-26-1530/suite-014-new-cases-subset.csv",
+      "priority": "P1",
+      "lane": "browser",
+      "agent": "qa-frontend-expert",
+      "browser": "playwright-chrome",
+      "status": "completed",
+      "attempts": 1,
+      "startedAt": "2026-05-26T11:38:43.000Z",
+      "completedAt": "2026-05-26T12:06:48.000Z",
+      "outputFile": "reports/regression/REG-2026-05-26-1530/suite-014-subset-results.json"
+    }
+  ],
   "browserPool": {
     "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
     "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
-    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null },
-    "note": "GraphQL Runner Fast Path — browser pool not consumed"
-  },
-  "suites": [
-    {
-      "id": "050b3",
-      "name": "GraphQL xCart — Shipment, Payment, Merge, Remove",
-      "file": "regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv",
-      "priority": "P1",
-      "agent": "qa-backend-expert (runner-fast-path)",
-      "browserSlot": null,
-      "status": "completed",
-      "completedAt": "2026-05-20T18:17:00Z",
-      "verdict": "GREEN (16 PASS / 0 FAIL / 1 EMPTY)",
-      "testCount": 17,
-      "manifestTestCount": 17,
-      "manifestStale": false,
-      "startedAt": "2026-05-20T18:00:00Z"
-    }
-  ]
+    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null }
+  }
 }

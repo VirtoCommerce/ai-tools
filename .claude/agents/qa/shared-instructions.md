@@ -185,7 +185,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
-| VC documentation | `/vc-docs` | Context7 MCP |
+| VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
 | Module mapping | `agents/knowledge/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
@@ -243,14 +243,7 @@ For full sign-off tables: `.claude/skills/qa-methodology/qa-evidence/sign-off-te
 
 ## File Output Policy
 
-Only create report files for these categories — everything else stays in-memory or is returned via SendMessage:
-
-1. **Bug reports** → `reports/bugs/` (structured markdown with inline evidence)
-2. **Test cases** → `regression/suites/` (enriched CSV format)
-3. **BA reports** → `reports/ba/` (analysis deliverables)
-4. **Regression summary** → one consolidated report per run
-
-**Do NOT create files for:** per-suite intermediate results, coverage gap working files, standalone screenshot dumps, progress/status markdown, debug logs, or any other intermediate artifacts. Return these to the orchestrator via SendMessage instead. Evidence screenshots belong inline in bug reports, not as separate files.
+See [`.claude/rules/reports.md`](../../rules/reports.md) — the single source of truth for: allowed report categories (4), hard size caps per type, required sections, bloat patterns to cut, screenshot/console/network/HAR rules, and naming conventions. Do not restate the policy here; update only `reports.md`.
 
 ## Browser Interaction — Mandatory Real-User Behavior
 

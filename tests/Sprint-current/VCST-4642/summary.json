@@ -1,0 +1,115 @@
+{
+  "ticket": "VCST-4642",
+  "title": "[E2E] Frontend Application Initialization via XAPI",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-05-21",
+  "environment": "vcst-qa",
+  "urls": {
+    "frontend": "https://vcst-qa-storefront.govirto.com",
+    "backend": "https://vcst-qa.govirto.com"
+  },
+  "build": {
+    "platform": "3.1028.0",
+    "theme": "2.50.0-pr-2293-55fc-55fc80c2",
+    "relevant_modules": {
+      "VirtoCommerce.Xapi": "3.1009.0-pr-66-020b",
+      "VirtoCommerce.WhiteLabeling": "3.1001.0",
+      "VirtoCommerce.Marketing": "3.1003.0",
+      "VirtoCommerce.Catalog": "3.1022.0"
+    }
+  },
+  "linked_prs": [
+    "VirtoCommerce/vc-module-x-api#66",
+    "VirtoCommerce/vc-frontend#2293",
+    "VirtoCommerce/vc-deploy-dev#5810"
+  ],
+  "agents_dispatched": ["qa-backend-expert", "qa-frontend-expert"],
+  "inline_executed": ["BE-1 schema introspection", "BE-2 live query", "BE-3 empty-settings count", "BE-6 non-null contract", "BE-8 invalid-domain error contract"],
+  "total_cases": 18,
+  "passed": 16,
+  "failed": 0,
+  "pass_with_note": 2,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-GQL-001",
+    "BL-GQL-003",
+    "BL-GQL-004",
+    "BL-CROSS-006"
+  ],
+  "acceptance_criteria": {
+    "AC1_schema_version_nonnull": "PASS",
+    "AC2_modules_without_settings_listed": "PASS",
+    "AC3_versions_match_packages_json": "PASS",
+    "AC4_admin_setting_exists_default_on": "PASS",
+    "AC5_toggle_off_empties_versions_drops_count": "PASS",
+    "AC6_localization_en_de": "PASS",
+    "AC7_initializeApplication_fires_on_boot": "PASS",
+    "AC8_whiteLabeling_fragment_when_installed": "PASS",
+    "AC9_needsModule_strips_when_absent": "PASS",
+    "AC10_no_runtime_errors": "PASS_WITH_NOTE",
+    "AC11_manifest_cached_per_session": "PASS"
+  },
+  "ac10_note": "Module-gated queries produce zero console errors. One adjacent pre-existing query (GetPromotionCoupons) lacks @needsModule directive and produces HTTP 400 on /cart — surfaced by the new gating system but not introduced by it. Logged as F1 finding for dev follow-up; not blocking sign-off.",
+  "real_flag_test": {
+    "flag": "WhiteLabeling.WhiteLabelingEnabled (per-store, B2B-store)",
+    "method": "PUT /api/stores (Platform REST, Admin SPA UI bypassed)",
+    "manifest_reflects_toggle": true,
+    "graphql_reflects_immediately": true,
+    "storefront_reacts_visually": false,
+    "fragment_stripped_when_off": false,
+    "cache_invalidation": "manual (localStorage purge + reload required)",
+    "flag_restored_at_end": true,
+    "verdict": "Backend half of the feature-flag capability ships correctly; frontend half is not wired — per-store flag has no consumer in vc-frontend"
+  },
+  "exploratory": {
+    "charter": "Explore application initialization + @needsModule gating boundary",
+    "heuristic": "SFDPOT",
+    "time_box_minutes": 20,
+    "findings": {
+      "bugs": 1,
+      "risks": 1,
+      "observations": 4,
+      "questions": 1
+    },
+    "items": [
+      {"id": "F1", "type": "BUG", "severity": "P2", "summary": "GetPromotionCoupons.graphql missing @needsModule(name:VirtoCommerce.XMarketing) — fires unconditionally and returns HTTP 400 when xMarketing not installed"},
+      {"id": "F2", "type": "RISK", "summary": "Manifest cache is domain-scoped, not user/org-scoped; no invalidation on sign-in/out/org-switch"},
+      {"id": "F3", "type": "OBSERVATION", "summary": "Empty modules:[] is non-fatal — app degrades gracefully"},
+      {"id": "F4", "type": "OBSERVATION", "summary": "Module versions are NOT surfaced in storefront UI (only theme version visible in footer)"},
+      {"id": "F5", "type": "OBSERVATION", "summary": "initializeApplication confirmed single-fire across 6 navigations"},
+      {"id": "F6", "type": "QUESTION", "summary": "localStorage cache key includes :v1: suffix — no documented migration path for future schema bumps"},
+      {"id": "F7", "type": "OBSERVATION", "summary": "PDP qty stepper acts as Add-to-Cart on B2B (pre-existing per feedback_qty_stepper_as_add_to_cart) — not a regression"},
+      {"id": "F8", "type": "BUG", "severity": "P2", "summary": "Per-store feature flag WhiteLabeling.WhiteLabelingEnabled exposed in PR-66 capability manifest but not consumed by vc-frontend PR-2293; toggling it OFF leaves storefront visually unchanged and the whiteLabelingSettings fragment still gets requested. Backend ships; frontend wiring missing. Recommend either a @needsFlag client directive or gating useWhiteLabeling() / useThemeContext() on the flag."}
+    ]
+  },
+  "jira_action": {
+    "transition": null,
+    "comment_added": true,
+    "comment_summary": "Test summary + F1 noted for dev follow-up; status left as Testing per QA agreement"
+  },
+  "artifacts_dir": "tests/Sprint-current/VCST-4642/",
+  "key_artifacts": [
+    "testing-checklist.md",
+    "backend-execution-report.md",
+    "frontend-execution-report.md",
+    "exploratory-session.md",
+    "flag-toggle-report.md",
+    "evidence-be2-store-modules-on.json",
+    "evidence-be5-toggle-off-response.json",
+    "evidence-be5-toggle-on-restored.json",
+    "evidence-fe1-initializeApplication-response.json",
+    "evidence-flag-A-baseline-on.png",
+    "evidence-flag-A-graphql-on.json",
+    "evidence-flag-A-pagecontext-on.json",
+    "evidence-flag-C-storefront-off.png",
+    "evidence-flag-C-graphql-off.json",
+    "evidence-flag-C-pagecontext-off.json",
+    "evidence-flag-C-localStorage-off.json",
+    "evidence-flag-D-graphql-restored.json",
+    "VCST-4642-be4-setting-en.png",
+    "VCST-4642-be7-setting-de.png",
+    "evidence-fe4-gating-contact-404.png",
+    "evidence-fe6-cart-smoke.png"
+  ]
+}

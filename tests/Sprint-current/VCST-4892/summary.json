@@ -1,0 +1,160 @@
+{
+  "ticket": "VCST-4892",
+  "title": "[UI Kit] Date Picker component",
+  "type": "Story",
+  "priority": "Medium",
+  "jira_status_at_test": "Reopen",
+  "date": "2026-05-22",
+  "augmented": "2026-05-26",
+  "environment": {
+    "front": "https://vcst-qa-storefront.govirto.com",
+    "storybook": "https://vcst-qa-storybook.govirto.com",
+    "back": "https://vcst-qa.govirto.com"
+  },
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.50.0-pr-2291-fed4-fed4fe16",
+    "platform": "(not relevant — UI-Kit only)",
+    "pr": "VirtoCommerce/vc-frontend#2291",
+    "pr_state": "open",
+    "pr_head_sha": "fed4fe16034f1603cc69a42b7893a17401587f0a"
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_reason": "Original blocking bug (typing 0 clears native input) is FIXED. New components render and function correctly across primary surfaces. 6 open defects (3 from 2026-05-22 + 3 from 2026-05-26 augmentation; NEW-4 withdrawn 2026-05-26 after source-verification — see WITHDRAWN entry below): 4 P1 (NEW-1, NEW-2, NEW-3, BUG-1 Escape) and 2 Medium (BUG-2 reversed range, BUG-3 back-nav). Coverage improved from ~50 untested items to ~4; the false-BLOCKED Storybook session was resolved by switching from Chrome DevTools MCP to playwright-firefox.",
+  "consolidated_verdict_doc": "tests/Sprint-current/VCST-4892/verdict-consolidated-2026-05-26.md",
+  "agents_dispatched": [
+    "test-management-specialist (checklist) — 2026-05-22",
+    "qa-frontend-expert (Section D) — 2026-05-22",
+    "ui-ux-expert (first attempt — false BLOCKED) — 2026-05-22",
+    "ui-ux-expert (retry — same false BLOCKED, ignored) — 2026-05-22",
+    "orchestrator (manual P0 pass in playwright-edge) — 2026-05-22",
+    "ui-ux-expert on playwright-firefox (gap coverage retest, success) — 2026-05-26"
+  ],
+  "checklist_totals_consolidated": {
+    "total_items": 64,
+    "p0_items": 14,
+    "p0_pass": 11,
+    "p0_fail": 1,
+    "p0_partial": 1,
+    "p0_untested_or_n_a": 1,
+    "p1_items": 40,
+    "p1_pass": 21,
+    "p1_fail": 6,
+    "p1_partial": 3,
+    "p1_untested_or_n_a": 10,
+    "p2_items": 10,
+    "p2_pass": 4,
+    "p2_partial": 1,
+    "p2_untested_or_n_a": 5
+  },
+  "business_rules_verified": [
+    "BL-UI-001 (no CLS on popover open — confirmed via snapshot)",
+    "BL-UI-003 (state shift — popover open/close behavior consistent)",
+    "BL-UI-004 (overflow — sizes xs/sm/md render without overflow)",
+    "BL-UI-006 (touch targets — FAIL on /account/orders mobile date inputs at 36px; pre-existing)"
+  ],
+  "ac_coverage": {
+    "AC-1_on_change_payload": "Partial — payload structure verified indirectly via C-9 updateOn=enter commit timing; A-8 explicit inspection not executed (time budget).",
+    "AC-2_typing_zero_does_not_clear": "PASS — verified manually (A-5 in VcDateInput default story).",
+    "AC-3_no_eager_request_per_keystroke": "PASS — verified at two layers: (a) Storybook updateOn=blur holds value until blur; (b) /account/orders shows 0 fetches across 20 keystrokes, then 1 fetch on Apply."
+  },
+  "defects": [
+    {
+      "id": "BUG-VCST-4892-1",
+      "severity": "P1",
+      "title": "VcDatePicker popover does not close on Escape key",
+      "wcag": "WCAG 2.1.2 — No Keyboard Trap (also fails 2.1.1)",
+      "session": "2026-05-22",
+      "status": "still present (not re-tested 2026-05-26; build unchanged)",
+      "repro": "Storybook iframe.html?id=components-organisms-vcdatepicker--default → click Open calendar → press Escape → popover remains open",
+      "evidence": "tests/Sprint-current/VCST-4892/screenshots/storybook/PROOF-vcdatepicker-default-popover-open.png"
+    },
+    {
+      "id": "BUG-VCST-4892-2",
+      "severity": "Medium",
+      "title": "Reversed date range fires malformed Lucene GraphQL filter (End term dropped)",
+      "session": "2026-05-22",
+      "cross_browser_confirmed": "2026-05-26 — Chrome (REG-2026-05-26-1530 / ORD-054) and Firefox (manual second-source) both produce byte-identical createddate:[\"...Z\" TO] payload",
+      "status": "OPEN — local bug report written, JIRA comment 98675 already posted to VCST-4892 with full RCA",
+      "rca": "useUserOrders.ts:80-93 getFilterExpression() — toEndDateFilterValue(filterData.endDate) likely returns undefined when End < Start; the conditional `if (endDateFilterValue)` then skips the upper bound entirely. Apply button is dirty-state-gated, not validity-gated.",
+      "evidence": "tests/Sprint-current/VCST-4892/screenshots/account-orders/D-6-reversed-range-error.png; reports/regression/REG-2026-05-26-1530/screenshots/ORD-054-*.png; reports/bugs/open/BUG-Order-History-Date-Picker-Inverted-Range-End-Dropped.md"
+    },
+    {
+      "id": "BUG-VCST-4892-3",
+      "severity": "Medium",
+      "title": "Date filter state lost on browser-back navigation",
+      "session": "2026-05-22",
+      "status": "still present (not re-tested 2026-05-26; build unchanged)",
+      "repro": "/account/orders → apply date range → click an order → browser back → date filter state cleared",
+      "evidence": "tests/Sprint-current/VCST-4892/screenshots/account-orders/D-8-FAIL-back-nav-filter-lost.png"
+    },
+    {
+      "id": "NEW-1",
+      "severity": "P1",
+      "title": "VcCalendar: Home/End keys non-functional in calendar grid",
+      "wcag": "WCAG 2.1.1 Keyboard",
+      "session": "2026-05-26",
+      "status": "NEW",
+      "repro": "Storybook iframe.html?id=components-molecules-vccalendar--default → tab into calendar → focus a day → press Home → focus does not move to first day of week. Same for End.",
+      "evidence": "tests/Sprint-current/VCST-4892/storybook-retest-2026-05-26.md item B-8"
+    },
+    {
+      "id": "NEW-2",
+      "severity": "P1",
+      "title": "VcCalendar: PgUp/PgDn/Ctrl+PgUp non-functional",
+      "wcag": "WCAG 2.1.1 Keyboard",
+      "session": "2026-05-26",
+      "status": "NEW",
+      "repro": "Same story → focus a day → press PgUp/PgDn/Ctrl+PgUp/Ctrl+PgDn → no month/year change",
+      "evidence": "tests/Sprint-current/VCST-4892/storybook-retest-2026-05-26.md item B-9"
+    },
+    {
+      "id": "NEW-3",
+      "severity": "P1",
+      "title": "VcDateInput: aria-expanded disallowed on <input type=\"text\">",
+      "wcag": "WCAG 4.1.2 Name, Role, Value (axe-core critical, aria-allowed-attr)",
+      "session": "2026-05-26",
+      "status": "NEW",
+      "fix_direction": "Add role=\"combobox\" to the input (permits aria-expanded) OR move aria-expanded to the trigger button",
+      "evidence": "tests/Sprint-current/VCST-4892/storybook-retest-2026-05-26.md item E-10 (axe-core 4.9.1 scan on vcdatepicker--default)"
+    },
+    {
+      "id": "NEW-4",
+      "severity": "WITHDRAWN — false finding",
+      "title": "VcDateSelector: deprecation console.warn does not fire on mount",
+      "session": "2026-05-26",
+      "status": "WITHDRAWN 2026-05-26 — source at PR head fed4fe16 (vc-date-selector.vue ~lines 88-90) DOES contain the component-level console.warn per DEPRECATION.md step 4; the warn is gated by import.meta.env.DEV which is false in Storybook's production build. Warn fires correctly in a real `npm run dev` session. Storybook is not the right surface to test dev-only warns.",
+      "retraction_comment": "VCST-4892 (Atlassian MCP follow-up after comment 98678)",
+      "memory": "feedback_storybook_is_production_build"
+    }
+  ],
+  "additional_observations": [
+    "i18n Section G claim about ru/sv/zh missing is OVERSTATED — calendar renders Cyrillic month/weekday names correctly via browser Intl (verified G-4 PASS on 2026-05-26). Only 'Previous year/month' nav button accessible names remain in English in non-en locales.",
+    "Maya's original Reka UI plan was NOT followed — implementation is hand-rolled (use-calendar-base.ts + vc-calendar.vue, 575 lines combined). The hand-rolled accessibility shows in the C-2 Escape bug and NEW-1/NEW-2 keyboard navigation gaps.",
+    "Default theme has known a11y gaps (selected-day contrast 2.11:1, transparent focus ring) — these are pre-existing per `feedback_a11y_coffee_only` memory; Coffee is QA standard.",
+    "False-BLOCKED storybook-execution-report from 2026-05-22 was due to Chrome DevTools MCP tooling, NOT VCST-4892 components. Resolved by re-dispatching ui-ux-expert on playwright-firefox in the 2026-05-26 augmentation session."
+  ],
+  "untested_carried_forward": {
+    "items_skipped": 4,
+    "notable_gaps": [
+      "A-2 de/fi locale parsing — no Storybook story exists",
+      "A-8 @change payload structure explicit inspection — covered indirectly by C-9",
+      "C-10 updateOn=submit — no Storybook story; verify in production form context",
+      "F-3 deprecation warn fires once — N/A until F-2 resolved"
+    ],
+    "recommendation": "Cover A-2 by adding de/fi locale stories. A-8 covered by unit tests. C-10 will surface in real form usage. F-3 blocked on F-2."
+  },
+  "artifacts": {
+    "testing_checklist": "tests/Sprint-current/VCST-4892/testing-checklist.md",
+    "story_id_inventory": "tests/Sprint-current/VCST-4892/storybook-story-ids.md",
+    "account_orders_report": "tests/Sprint-current/VCST-4892/account-orders-execution-report.md",
+    "storybook_report_FALSE_BLOCKER": "tests/Sprint-current/VCST-4892/storybook-execution-report.md (agent report — verdict overridden by orchestrator)",
+    "storybook_retest_2026_05_26": "tests/Sprint-current/VCST-4892/storybook-retest-2026-05-26.md",
+    "consolidated_verdict": "tests/Sprint-current/VCST-4892/verdict-consolidated-2026-05-26.md",
+    "screenshots_storybook": "tests/Sprint-current/VCST-4892/screenshots/storybook/",
+    "screenshots_account_orders": "tests/Sprint-current/VCST-4892/screenshots/account-orders/",
+    "screenshots_storybook_retest": "tests/Sprint-current/VCST-4892/screenshots/storybook-retest/",
+    "regression_report_2026_05_26": "reports/regression/REG-2026-05-26-1530/regression-report.md",
+    "bug_report_reversed_range": "reports/bugs/open/BUG-Order-History-Date-Picker-Inverted-Range-End-Dropped.md",
+    "jira_comment_pushed": "VCST-4892 comment ID 98675 (reversed-range STR posted 2026-05-26)"
+  }
+}

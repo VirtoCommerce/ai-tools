@@ -30,6 +30,8 @@ Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `docs/Sprint pl
 - `test-data/aliases.json` + `test-data/README.md` — `@td(ALIAS.field)` resolver registry. Use these aliases (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`) in ACs and test scenarios instead of hardcoding GUIDs/SKUs/emails/prices/coupon codes.
 - `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — golden-set xAPI fixtures (63 ops). When a story touches a GraphQL operation that already has a fixture (`me`, `currentOrganizationAddresses`, `addItem`, `createOrderFromCart`, etc.), reference the fixture name in Technical Notes so QA reuses it rather than authoring a new one. If the story introduces a new mutation/query, call out in Technical Notes that the QA team will need to add `test-data/graphql/{queries|mutations}/<opName>.graphql` and an `index.json` entry.
 
+**Documentation source** — for platform/feature/B2B background, query **VirtoOZ MCP** first (`B2BExperts` for B2B stories, `PlatformUserGuide` / `StorefrontUserGuide` for shopper/admin flows, `PlatformDeveloperGuide` for technical-notes accuracy). Context7 MCP is the fallback. Full tool list: `.claude/skills/vc-knowledge/vc-docs/SKILL.md`. Always cite an authoritative doc source in Technical Notes when a story references platform behavior — do not paraphrase from memory.
+
 ---
 
 ## User Story Anatomy

@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-05-20",
+  "lastValidated": "2026-05-21",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 66,
+  "totalFixtures": 67,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -303,6 +303,30 @@
       },
       "knownIssues": [
         "availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock"
+      ]
+    },
+    "initializeApplication": {
+      "path": "queries/initializeApplication.graphql",
+      "category": "store",
+      "role": "PUBLIC",
+      "requiredVars": [],
+      "gqlVars": {
+        "domain": "String",
+        "storeId": "String",
+        "cultureName": "String"
+      },
+      "runnerNote": "Operation name MUST stay `initializeApplication` — vc-frontend filters Network by this name (PR #2293). vc-frontend resolves the store by `domain` (storefront hostname), NOT `storeId` — pass `{\"domain\": \"<storefront-host>\"}` to replay the real client payload. Backend accepts either. When `XAPI.Security.ReturnModuleVersion` is OFF, `settings.modules[].version` returns \"\" (empty string, not null) and modules without public settings drop out of the list.",
+      "exampleVars": {
+        "domain": "vcst-qa-storefront.govirto.com"
+      },
+      "exampleVarsAlt": {
+        "storeId": "B2B-store",
+        "cultureName": "en-US"
+      },
+      "usedBy": ["VCST-4642"],
+      "knownIssues": [
+        "anonymous-readable when `XAPI.Security.ReturnModuleVersion` is ON (default) — version disclosure is by-design; operators may toggle OFF in prod",
+        "on vcst-qa, resolving by `domain` returns ~18 modules with empty `version`; resolving by `storeId` returns ~79 modules with populated `version` — anonymous/storefront context likely narrows the response"
       ]
     }
   },

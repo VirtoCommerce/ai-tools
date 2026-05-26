@@ -72,9 +72,18 @@ Gap analysis runs once in the orchestrator. Sub-agents consume the inventory; th
    - `.claude/skills/testing/qa-api/xapi-query-ref.md`
    - `.claude/skills/testing/qa-api/test-cases-api-graphql.md`
    - `.claude/skills/testing/qa-coverage-gap/feature-domain-map.md`
-4. **Live VC documentation (Context7)** — for each manifest domain in scope:
-   - `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`
-   - `mcp__context7__query-docs { libraryId, query, tokens: 8000 }` — see `agent-dispatch.md` § "Sample Queries by Domain" for query stems
+4. **Live VC documentation (VirtoOZ MCP — primary)** — for each manifest domain in scope, pick the narrowest topic-scoped tool:
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__PlatformUserGuide` — admin/back-office flows (catalog, marketing, customer, order management)
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__PlatformDeveloperGuide` — REST/GraphQL APIs, modules, extensibility, CLI, VC Cloud
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__StorefrontUserGuide` — shopper-facing flows (browse, search, cart, checkout, account)
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__StorefrontDeveloperGuide` — vc-frontend (Vue 3 / TS / Tailwind / GraphQL) implementation
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__B2BExperts` — B2B-specific guidance (orgs, approval workflows, quotes, quick-order)
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__MarketplaceUserGuide` / `…__MarketplaceDeveloperGuide` — marketplace ops/dev
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__DeploymentGuide` — deployment, infra, Azure, Docker, Kubernetes
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__PlatformBackendSourceCode` / `…__PlatformFrontendSourceCode` / `…__FrontendSourceCode` — source-code lookup
+   - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__VirtoCommerce` — general fallback (product/architecture/case-study questions)
+   - All tools accept `{ query, top_k: 3-5 }`. See `agent-dispatch.md` § "Sample Queries by Domain" for query stems and full routing rules in `.claude/skills/vc-knowledge/vc-docs/SKILL.md`.
+   - **Context7 fallback** — if VirtoOZ returns thin/off-topic chunks: `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`, then `mcp__context7__query-docs { libraryId, query, tokens: 8000 }`.
    - Flag features documented in VC docs but absent from current regression coverage.
 
 **Output (Definition of Done for Step 1):**
@@ -100,15 +109,15 @@ Gap analysis runs once in the orchestrator. Sub-agents consume the inventory; th
 
 ### Step 2 — Batch Routing (manifest-domain affinity)
 
-Group gaps into 3 parallel batches by manifest domain. Each batch's sub-agent generates **only the layers applicable to each gap** using `/qa-test-cases-generator --layer <csv-list>`.
+Group gaps into 3 parallel batches by manifest domain. **Test-case generation is owned exclusively by `test-management-specialist`** — all three batches dispatch to that agent. The browser-capable QA experts are reserved for the optional validation pass in Step 4b (interactive mode only) and never author cases.
 
-| Batch | Agent | Browser slot | Manifest domains | Typical layers emitted |
-|-------|-------|--------------|------------------|------------------------|
-| **A — Revenue & Storefront** | `qa-frontend-expert` | `playwright-chrome` | `purchase-flow`, `marketing` | `storefront`, `graphql`, `e2e` |
-| **B — Identity, B2B & Comms** | `qa-backend-expert` | `playwright-edge` | `auth-security`, `customer-b2b`, `communication` | `api`, `graphql`, `admin`, `e2e` |
-| **C — Platform, Content & Cross-cutting** | `qa-testing-expert` | `playwright-firefox` | `catalog-search`, `platform-config`, `content-cms`, `branding`, `cross-cutting` | `api`, `graphql`, `admin`, `storefront`, `e2e` |
+| Batch | Generator agent | Validation agent (Step 4b) | Validation browser slot | Manifest domains | Typical layers emitted |
+|-------|-----------------|---------------------------|-------------------------|------------------|------------------------|
+| **A — Revenue & Storefront** | `test-management-specialist` | `qa-frontend-expert` | `playwright-chrome` | `purchase-flow`, `marketing` | `storefront`, `graphql`, `e2e` |
+| **B — Identity, B2B & Comms** | `test-management-specialist` | `qa-backend-expert` | `playwright-edge` | `auth-security`, `customer-b2b`, `communication` | `api`, `graphql`, `admin`, `e2e` |
+| **C — Platform, Content & Cross-cutting** | `test-management-specialist` | `qa-testing-expert` | `playwright-firefox` | `catalog-search`, `platform-config`, `content-cms`, `branding`, `cross-cutting` | `api`, `graphql`, `admin`, `storefront`, `e2e` |
 
-Browser slot assignments match `.claude/templates/agent-dispatch.md` § Default Assignments and `.claude/rules/agents.md` § Parallel Execution. Fallback chain follows `defaults.fallbackChain` from `config/test-suites.json`.
+Validation browser slots match `.claude/templates/agent-dispatch.md` § Default Assignments and `.claude/rules/agents.md` § Parallel Execution. Fallback chain follows `defaults.fallbackChain` from `config/test-suites.json`.
 
 **Scope filtering** (applied before batching):
 
@@ -153,13 +162,13 @@ reports/coverage/{RUN_ID}/
 └── validation-failures.md       # Step 4 — only if interactive
 ```
 
-### Step 4 — Dispatch Sub-Agents (parallel)
+### Step 4 — Dispatch Generator Sub-Agents (parallel)
 
-**Launch all active batches in a single message** with one `Agent` call per batch (per CLAUDE.md guidance: independent work goes in one message).
+**Launch all active batches in a single message** with one `Agent` call per batch (per CLAUDE.md guidance: independent work goes in one message). **All three batches dispatch to `test-management-specialist`** — that agent owns test-case authoring across every layer (api, graphql, admin, storefront, e2e). The browser-capable QA experts do NOT generate cases; they only validate (Step 4b).
 
 Each dispatch follows `.claude/templates/agent-dispatch.md` § Agent Prompt Structure and includes:
 
-- `subagent_type`: `qa-frontend-expert | qa-backend-expert | qa-testing-expert`
+- `subagent_type`: `test-management-specialist` (always — for all three batches)
 - Filtered gap inventory for that batch's manifest domains
 - Target-suite mapping resolved from manifest (Step 2)
 - Format contract: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md`
@@ -168,27 +177,40 @@ Each dispatch follows `.claude/templates/agent-dispatch.md` § Agent Prompt Stru
 - Context7 findings from Step 1.4 for the batch's domains
 - Output file path: `reports/coverage/{RUN_ID}/batch-{A|B|C}-results.json`
 
-**Per-batch sub-agent execution:**
+**Per-batch generator execution (`test-management-specialist`):**
 
 1. For each gap: invoke `/qa-test-cases-generator --layer <csv-list>` once per applicable layer.
-2. Before appending, the sub-agent reads the target suite CSV and skips cases that semantically duplicate existing rows (matching `Title + Section` OR `Steps + Assertions` covering the same scenario).
-3. **Interactive mode only** — validate each new P0 case via the assigned browser slot. Mark `Automation_Status = validated | needs-review`.
-4. Cleanup created test data using the `AGENT-TEST-` prefix convention (see `.claude/agents/knowledge/live-discovery.md` § Cleanup) — `/qa-seed-data teardown` reclaims it post-run.
-5. Write `batch-{X}-results.json`:
+2. Before appending, the agent reads the target suite CSV and skips cases that semantically duplicate existing rows (matching `Title + Section` OR `Steps + Assertions` covering the same scenario).
+3. All new P0 cases land as `Automation_Status = needs-review` — generator does NOT touch a browser. Validation is performed in Step 4b by the assigned expert.
+4. Write `batch-{X}-results.json`:
    ```json
    {
      "batch": "A",
-     "agent": "qa-frontend-expert",
+     "agent": "test-management-specialist",
+     "validationAgent": "qa-frontend-expert",
      "manifestDomains": ["purchase-flow","marketing"],
      "gaps": { "consumed": 42, "skipped": { "duplicate": 5, "blocked": 2 } },
-     "cases": { "generated": 71, "validated": 38, "needsReview": 4 },
+     "cases": { "generated": 71, "needsReview": 71 },
      "suitesModified": ["028","029","050b1","077"],
      "byLayer": { "storefront": 30, "graphql": 28, "e2e": 13 },
      "durationMinutes": 24
    }
    ```
 
-**CI mode (`ci-dry-run`):** skip step 3 (validation) and step 4 (cleanup). All cases land as `Automation_Status = pending`.
+### Step 4b — Validation Pass (interactive mode only, parallel)
+
+After all generator batches return, launch one validation agent per batch **in a single message** using the validation-agent mapping from Step 2's table. Each validation agent:
+
+1. Reads the new `needs-review` cases from its batch's `suitesModified` set.
+2. Executes the P0 cases (or P0 + P1 if budget allows) via its assigned browser slot.
+3. Updates `Automation_Status` in the CSV: `validated` (pass), `needs-review` (inconclusive), or flags the case for revision (fail signals authoring defect — return to `test-management-specialist`).
+4. Cleans up created test data using the `AGENT-TEST-` prefix convention (see `.claude/agents/knowledge/live-discovery.md` § Cleanup) — `/qa-seed-data teardown` reclaims it post-run.
+5. Appends a `validation` block to `batch-{X}-results.json`:
+   ```json
+   "validation": { "agent": "qa-frontend-expert", "validated": 38, "needsReview": 4, "revisionRequested": 2, "durationMinutes": 18 }
+   ```
+
+**CI mode (`ci-dry-run`):** skip Step 4b entirely. All cases remain `Automation_Status = pending`.
 
 ### Step 5 — Cross-Batch Deduplication & Conflict Resolution
 
@@ -245,8 +267,8 @@ Always write:
 |-----------------|---------------|----------|------|--------------|
 
 ## Batch Results
-| Batch | Agent | Domains | Layers | Gaps consumed | Cases | Validated | Duration |
-|-------|-------|---------|--------|---------------|-------|-----------|----------|
+| Batch | Generator | Validator | Domains | Layers | Gaps consumed | Cases | Validated | Duration |
+|-------|-----------|-----------|---------|--------|---------------|-------|-----------|----------|
 
 ## TestRail Migration Reconciliation
 | Category | Count | Sample |
@@ -362,10 +384,10 @@ Risk-tie-breakers (5×5 matrix) — when two gaps score within ±0.5, defer to `
 
 | Aspect | `/qa-coverage-gap` (skill) | `/qa-coverage-generation` (this command) |
 |--------|---------------------------|------------------------------------------|
-| Execution | Single agent, sequential | 3 parallel sub-agents |
+| Execution | Single agent, sequential | 3 parallel `test-management-specialist` generators + 3 parallel expert validators |
 | Scope | One domain or full (slow) | Manifest-domain batches |
 | CI support | No | Yes (`ci-dry-run`, PR creation) |
-| Validation | P0 via single browser | P0 via 3 browser slots |
+| Validation | P0 via single browser | P0 via 3 browser slots (validation-only, generation is browser-free) |
 | Best for | Quick single-domain pass | Sprint/release-level coverage improvement |
 | Test-data contract | Same (`.claude/rules/test-data.md`) | Same — orchestrator additionally runs `validate-td-refs` |
 
@@ -377,8 +399,9 @@ When `domain <name>` is requested, this command delegates directly to `/qa-cover
 
 **Architecture:**
 - Gap analysis (Step 1) runs centrally — never in sub-agents (avoids redundant reads, ensures deduplicated inventory).
-- Dispatch sub-agents in a single message to run truly in parallel.
-- Each sub-agent gets an isolated browser slot — never share browsers.
+- **Test-case generation is owned exclusively by `test-management-specialist`.** Never dispatch `qa-frontend-expert`, `qa-backend-expert`, or `qa-testing-expert` to author cases — they are validators only.
+- Dispatch sub-agents in a single message to run truly in parallel (one message for Step 4 generators, one for Step 4b validators).
+- Generators run browser-free; only Step 4b validators consume browser slots — each validator gets an isolated browser slot, never shared.
 - Max 3 concurrent browser agents (QA + BA combined; see `.claude/rules/agents.md`).
 
 **Format & data:**
@@ -389,7 +412,7 @@ When `domain <name>` is requested, this command delegates directly to `/qa-cover
 - Use `AGENT-TEST-` prefix for any new test data so `/qa-seed-data teardown` reclaims it.
 
 **Suite handling:**
-- Never modify suite CSVs from the orchestrator — only sub-agents append, and only via `/qa-test-cases-generator`.
+- Never modify suite CSVs from the orchestrator — only `test-management-specialist` appends new cases, and only via `/qa-test-cases-generator`. Validators may update `Automation_Status` on rows they verified, nothing else.
 - Never create new suite files — flag `blocked:needs-suite` and surface in the report.
 - Preserve existing IDs — new cases get the next sequential ID in their domain prefix.
 - Resolve target suites by querying the manifest (`domain` + `layer` + `concern`); never hardcode IDs in this command.
@@ -406,5 +429,5 @@ When `domain <name>` is requested, this command delegates directly to `/qa-cover
 - Sub-agents may re-query Context7 for domain-specific field validations / module config options when generating cases.
 
 **Deduplication:**
-- Sub-agents skip generation for cases that semantically duplicate existing CSV rows (Title+Section or Steps+Assertions equivalence).
+- The `test-management-specialist` generators skip generation for cases that semantically duplicate existing CSV rows (Title+Section or Steps+Assertions equivalence).
 - Orchestrator runs cross-batch dedup before writing the diff preview — duplicates are not blockers but are surfaced in the report.

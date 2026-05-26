@@ -1,0 +1,57 @@
+{
+  "runId": "TLC-2026-05-22-1530",
+  "inputType": "direct-scope",
+  "source": "004,005",
+  "date": "2026-05-22",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1028.0",
+    "theme": "2.50.0-pr-2291",
+    "relevantModules": {
+      "VirtoCommerce.XCatalog": "3.1005.0",
+      "VirtoCommerce.XFrontend": "3.1000.0",
+      "VirtoCommerce.Search": "3.1001.0",
+      "VirtoCommerce.ElasticSearch": "3.806.0",
+      "VirtoCommerce.ElasticSearch8": "3.1003.0",
+      "VirtoCommerce.Catalog": "3.1022.0"
+    }
+  },
+  "affectedSuites": ["004", "005"],
+  "casesAnalyzed": 60,
+  "casesSynced": 0,
+  "casesGenerated": 2,
+  "casesReviewed": 62,
+  "casesVerified": 6,
+  "casesAutoFixed": 5,
+  "filesModified": [
+    "regression/suites/Frontend/search/004-search-core.csv",
+    "regression/suites/Frontend/search/005-search-filters-advanced.csv"
+  ],
+  "gateResults": {
+    "G1_Structure": "PASS",
+    "G2_Determinism": "PASS",
+    "G3_Completeness": "PASS",
+    "G4_Testability": "PASS",
+    "G5_DataValidity": "PASS",
+    "G6_BLCoverage": "WARN",
+    "G7_Duplication": "WARN",
+    "G8_Environment": "PASS",
+    "G9_Sync": "SKIP"
+  },
+  "manualItemsRemaining": 6,
+  "newCases": [
+    { "id": "SRCH-NEW-056", "suite": "004", "priority": "Medium", "bl": "BL-SRCH-002" },
+    { "id": "SRCH-NEW-103", "suite": "005", "priority": "High", "bl": "BL-SRCH-001" }
+  ],
+  "renamedCases": {
+    "SRCH-NEW-044": "SRCH-NEW-100",
+    "SRCH-NEW-045": "SRCH-NEW-101",
+    "SRCH-NEW-046": "SRCH-NEW-102"
+  },
+  "envVerified": {
+    "VERIFIED": 6,
+    "CHANGED": 0,
+    "BROKEN": 0,
+    "BLOCKED": 0
+  }
+}

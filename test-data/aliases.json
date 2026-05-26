@@ -1989,6 +1989,7 @@
       "id": "product_id_guid",
       "code": "product_code",
       "sku": "product_code",
+      "slug": "product_slug",
       "min_qty": "min_quantity",
       "max_qty": "max_quantity"
     },

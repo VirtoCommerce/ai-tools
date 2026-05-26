@@ -1,0 +1,54 @@
+{
+  "status": 200,
+  "errors": null,
+  "totalModules": 18,
+  "versionDistribution": {
+    "<empty>": 18
+  },
+  "withSettings": 18,
+  "withoutSettings": 0,
+  "nullVersionCount": 0,
+  "sampleModules": [
+    {
+      "moduleId": "VirtoCommerce.ApplicationInsights",
+      "version": "",
+      "settingsCount": 2
+    },
+    {
+      "moduleId": "VirtoCommerce.Catalog",
+      "version": "",
+      "settingsCount": 1
+    },
+    {
+      "moduleId": "VirtoCommerce.GoogleEcommerceAnalytics",
+      "version": "",
+      "settingsCount": 3
+    },
+    {
+      "moduleId": "VirtoCommerce.Shipping",
+      "version": "",
+      "settingsCount": 2
+    },
+    {
+      "moduleId": "VirtoCommerce.Pages",
+      "version": "",
+      "settingsCount": 1
+    },
+    {
+      "moduleId": "VirtoCommerce.Xapi",
+      "version": "",
+      "settingsCount": 7
+    },
+    {
+      "moduleId": "VirtoCommerce.BuilderIO",
+      "version": "",
+      "settingsCount": 2
+    },
+    {
+      "moduleId": "VirtoCommerce.News",
+      "version": "",
+      "settingsCount": 3
+    }
+  ],
+  "nonEmptyVersionSamples": []
+}

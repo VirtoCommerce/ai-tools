@@ -1,0 +1,37 @@
+{
+  "ticket": "VCST-4839",
+  "pr": "vc-frontend#2217",
+  "verdict": "PASS",
+  "date": "2026-05-22",
+  "environment": "https://vcst-qa-storybook.govirto.com",
+  "build": {
+    "platform": "3.1028.0",
+    "theme_on_vcst_qa": "2.50.0-pr-2293",
+    "theme_under_test": "2.50.0-pr-2217-af85",
+    "scope_note": "Storybook-only feature; storefront theme version on vcst-qa is unrelated. Tested directly on vcst-qa-storybook where the dark-mode toolbar controls are already live."
+  },
+  "agents_dispatched": ["ui-ux-expert"],
+  "total_cases": 19,
+  "passed": 18,
+  "info": 1,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI-001", "BL-UI-003"],
+  "exploratory": {
+    "charter": "Risk charter for VCST-4839 storybook dark mode toggle",
+    "heuristic": "SFDPOT",
+    "findings": {
+      "bugs": 0,
+      "questions": 0,
+      "observations": 4,
+      "risks": 0
+    }
+  },
+  "notes": [
+    "WCAG 2.1 AA contrast: VcButton primary amber (#d4a562) on white = 2.8:1 — below 4.5:1 threshold. Pre-existing design token value, NOT introduced by this PR. Out of scope for VCST-4839; should be tracked separately if not already.",
+    "Banner DOM-order check (C9) is marked INFO — no preset without a dark variant exists today, so the missing-preset banner cannot be triggered live. Code path verified by review.",
+    "darkMode:'system' is supported in code but intentionally not exposed in the UI dropdown — works via URL globals (verified EC1)."
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4839/"
+}

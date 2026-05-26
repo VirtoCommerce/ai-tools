@@ -1,5 +1,5 @@
 ﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001",,"[PRE:CLEAR_SESSION]
+"CAT-021","Reset Filters - Search Results Preserve Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SRCH-001",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE.query)","[NAV] Navigate to {{FRONT_URL}} and search for 'printer'
 [WAIT] Wait for search results page
@@ -14,7 +14,7 @@ Search executed with term 'printer'","url={{FRONT_URL}}; query=@td(SEARCH_OFFICE
 [MATH] Full search result count restored (not redirected to homepage or /catalog)
 [DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Search term cleared from input after reset; redirect away from search results; filter params remain in URL; console TypeError","none","tests/Sprint26-03/VCST-4122-reset-filters-button","Manual"
-"SRCH-003","Search - No Results","Search > Edge Cases","Medium","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-003","Search - No Results","Search > Edge Cases","Medium","BL-SRCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 No preconditions — nonsense query","url={{FRONT_URL}}; query=xyzabc123","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'xyzabc123'
 [KEY] press [Enter]
@@ -23,7 +23,7 @@ No preconditions — nonsense query","url={{FRONT_URL}}; query=xyzabc123","[NAV]
 [DOM] Suggestions or alternatives shown if available
 [STATE] No JavaScript errors or crashes","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set","none","regression-qa-theme-26.csv","Automated"
-"SRCH-004","Search - Special Characters","Search > Edge Cases","Medium","BL-SEARCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-004","Search - Special Characters","Search > Edge Cases","Medium","BL-SRCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 No preconditions","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'test & test'; [KEY] press [Enter]; [WAIT]
 [ASSERT] Verify no errors; results or empty state shown
@@ -34,7 +34,7 @@ No preconditions","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [STATE] Results page or no-results state shown for each query
 [DOM] No error page or stack trace displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for each query
 [CONSOLE] no TypeError or JS errors","Any query causing 5xx or JS crash; console TypeError; error page shown instead of results/no-results","none","regression-qa-theme-26.csv","Automated"
-"SRCH-006","Search - Filters on Results","Search > Filters","High","BL-SEARCH-001, BL-CAT-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-006","Search - Filters on Results","Search > Filters","High","BL-SRCH-001, BL-CAT-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search query that returns 5+ products
 [WAIT] Wait for results page
 [ACT] Apply a facet filter from the sidebar
@@ -46,7 +46,7 @@ Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT
 [MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] fill organization name search field with a known org name
 [KEY] press [Enter]
@@ -57,7 +57,7 @@ Multiple organizations exist; user has org search access","url={{FRONT_URL}}; em
 [NAV] Clicking on org result navigates to org detail page
 [DOM] Org detail page loads without error","[NETWORK] search request returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Org search returning no results for known org; org detail page returning 4xx; console TypeError","none","tests/VCST-4357-org-search","Automated"
-"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-010","Organization Search - Filters","Search > Organization","Medium","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Organizations with different attributes exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] Search organizations (generic query or browse)
 [WAIT] Wait for results
@@ -97,7 +97,7 @@ User authenticated with prior purchases; navigate to /search?q=hoodie","url={{FR
 [STATE] Checking adds chip and filters to previously purchased products
 [STATE] Unchecking removes chip and restores all results","[NETWORK] no 4xx/5xx on checkbox toggle
 [CONSOLE] no TypeError or JS errors","'Purchased before' not available for authenticated user; chip not appearing on check; results not filtered to prior purchases; console TypeError","none",,"Manual"
-"SRCH-NEW-014","Search Results - Sidebar Facet Filter","Search > Filters > Sidebar","High","BL-CAT-002, BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-014","Search Results - Sidebar Facet Filter","Search > Filters > Sidebar","High","BL-CAT-002, BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Navigate to /search?q=hoodie; sidebar shows Color facet","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results and sidebar
 [ACT] Expand 'Color' facet group in sidebar
@@ -113,7 +113,7 @@ Navigate to /search?q=hoodie; sidebar shows Color facet","url={{FRONT_URL}}/sear
 [STATE] Closing chip removes filter and restores original count","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with facet filter
 [NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Sidebar facets not expandable; chip not appearing after facet selection; product count not changing; chip close not restoring results; console TypeError","none","SRCH-006","Manual"
-"SRCH-NEW-015","Search Results - Reset Filters Preserves Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-015","Search Results - Reset Filters Preserves Search Term","Search > Filters > Reset","High","BL-CAT-004, BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [ACT] Apply a sidebar facet filter
 [WAIT] Wait for chip and filter param in URL
@@ -127,7 +127,7 @@ Navigate to /search?q=hoodie; apply sidebar facet filter","url={{FRONT_URL}}/sea
 [MATH] Full search result count restored after reset
 [DOM] No filter chips in chip bar","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Search term cleared after reset; redirect to homepage or /catalog; filter params remain in URL; console TypeError","none","CAT-021","Manual"
-"SRCH-NEW-016","Search - No Results State UI Validation","Search > No Results","Critical","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-016","Search - No Results State UI Validation","Search > No Results","Critical","BL-SRCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront is accessible","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
 [WAIT] Wait for no-results page to load
 [ASSERT] Verify heading shows sorry message with query term bold
@@ -139,14 +139,14 @@ Storefront is accessible","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] N
 [DOM] 'Reset search' button present
 [STATE] No product cards or sidebar filter panel shown","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
 [CONSOLE] no TypeError or JS errors","Error page instead of no-results UI; product cards appearing for nonsense query; Reset search button absent; console TypeError","none","E2E-SEARCH-004, SRCH-003","Manual"
-"SRCH-NEW-017","Search - Reset Search Button Clears Query","Search > No Results","High","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-017","Search - Reset Search Button Clears Query","Search > No Results","High","BL-SRCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 On no-results page /search?q=xyzqwerty9876543","url={{FRONT_URL}}/search?q=xyzqwerty9876543","[NAV] Navigate to {{FRONT_URL}}/search?q=xyzqwerty9876543
 [WAIT] Wait for no-results page
 [ASSERT] Verify no-results state is shown
 [ACT] Click 'Reset search' button
 [WAIT] Wait for action to complete","[STATE] Search input cleared after clicking Reset search
 [NAV] User redirected away from no-results page (to homepage or /catalog)","[CONSOLE] no TypeError or JS errors","'Reset search' button not clickable; input not cleared after reset; still on no-results page after reset; console TypeError","none",,"Manual"
-"SRCH-NEW-018","Search - Whitespace-Only Query Handling","Search > Edge Cases","High","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-018","Search - Whitespace-Only Query Handling","Search > Edge Cases","High","BL-SRCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': '   ' (3 spaces)
@@ -154,7 +154,7 @@ Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}
 [WAIT] Wait for result","[STATE] Submission is blocked (nothing happens) OR user lands on no-results/catalog page
 [STATE] No JavaScript crash or error page","[NETWORK] no 5xx response triggered by whitespace query
 [CONSOLE] no TypeError or JS errors","JS crash on whitespace submit; 5xx server error; redirect to error page; console TypeError","none",,"Manual"
-"SRCH-NEW-019","Search - Very Long Query (200+ Characters)","Search > Edge Cases","Medium","BL-SEARCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-019","Search - Very Long Query (200+ Characters)","Search > Edge Cases","Medium","BL-SRCH-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] Type 200 repeated 'a' characters in the search input
@@ -163,7 +163,7 @@ Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}
 [STATE] No JS or server error
 [STATE] URL is properly URL-encoded","[NETWORK] no 5xx response for long query
 [CONSOLE] no TypeError or JS errors","JS error on long input; 5xx server error; URL encoding failing; console TypeError","none",,"Manual"
-"SRCH-NEW-020","Search - XSS Script Injection in Input","Search > Security","Critical","BL-SEARCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-020","Search - XSS Script Injection in Input","Search > Security","Critical","BL-SRCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': '<script>alert(''xss'')</script>'
@@ -176,7 +176,7 @@ Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [DOM] Heading displays query as literal escaped text (not rendered HTML)","[NETWORK] no 5xx responses triggered by XSS payload
 [CONSOLE] no script execution errors
 [CONSOLE] no TypeError or JS errors","Alert dialog appearing (script executed); heading rendering HTML instead of escaping it; 5xx from server; console TypeError","none","E2E-SEC-002","Manual"
-"SRCH-NEW-021","Search - SQL Injection Attempt","Search > Security","High","BL-SEARCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-021","Search - SQL Injection Attempt","Search > Security","High","BL-SRCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': ''' OR ''1''=''1'
@@ -187,7 +187,7 @@ Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [NETWORK] no 5xx responses
 [CONSOLE] no script execution errors
 [CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError","none","E2E-SEC-002","Manual"
-"SRCH-NEW-022","Search - Special Characters Are URL-Encoded Correctly","Search > Edge Cases","High","BL-SEARCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-022","Search - Special Characters Are URL-Encoded Correctly","Search > Edge Cases","High","BL-SRCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'hoodie & jeans'; [KEY] press [Enter]; [WAIT]
 [ASSERT] Verify URL encodes '&' correctly; page loads without error
@@ -200,7 +200,7 @@ Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}
 [DOM] All searches load without errors — results or no-results state
 [DOM] Heading shows decoded query text (human-readable)","[NETWORK] no 4xx/5xx for any special-char query
 [CONSOLE] no TypeError or JS errors","Any special-char query causing error page; URL malformed (unencoded chars breaking URL); heading showing raw URL-encoded text; console TypeError","none","SRCH-004","Manual"
-"SRCH-NEW-025","Search Bar - Keyboard-Only Navigation","Search > Accessibility","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-025","Search Bar - Keyboard-Only Navigation","Search > Accessibility","High","BL-SRCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open; keyboard-only operation (no mouse)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [KEY] press [Tab] repeatedly until search input is focused
 [ASSERT] Verify visible focus indicator on search input
@@ -215,7 +215,7 @@ Storefront open; keyboard-only operation (no mouse)","url={{FRONT_URL}}","[NAV] 
 [STATE] Enter key on hint item executes the search
 [STATE] Escape closes dropdown without navigating
 [STATE] No keyboard trap — Tab out of dropdown works","[CONSOLE] no TypeError or JS errors","Search input not reachable via Tab; no visible focus indicator; Arrow keys not working in dropdown; Escape not closing dropdown; keyboard trap present; console TypeError","none","WCAG 2.1 AA 2.1.1, 2.4.3","Manual"
-"SRCH-NEW-026","Search Bar - ARIA Roles and Labels","Search > Accessibility","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-026","Search Bar - ARIA Roles and Labels","Search > Accessibility","High","BL-SRCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open; DevTools Accessibility panel available","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input and open DevTools Accessibility panel
 [ASSERT] Inspect search input role and accessible name
@@ -226,7 +226,7 @@ Storefront open; DevTools Accessibility panel available","url={{FRONT_URL}}","[N
 [DOM] Clear (X) button has an accessible name (e.g., 'Clear search')
 [DOM] Dropdown uses role=listbox or equivalent ARIA pattern
 [DOM] All interactive elements have non-empty accessible names","[CONSOLE] no TypeError or JS errors","Input missing role=searchbox; any interactive element lacking accessible name; dropdown missing ARIA role; console TypeError","none","WCAG 2.1 AA 4.1.2","Manual"
-"SRCH-NEW-027","Search - Autocomplete Response Time Under 2 Seconds","Search > Performance","Medium","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-027","Search - Autocomplete Response Time Under 2 Seconds","Search > Performance","Medium","BL-SRCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 DevTools Network tab open","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Open DevTools Network tab
 [ACT] fill 'Search': 'hoodie'
@@ -236,7 +236,7 @@ DevTools Network tab open","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [STATE] GraphQL searchProducts request duration under 1500ms
 [STATE] No loading spinner visible for more than 2 seconds","[NETWORK] measure request duration via DevTools — searchProducts call under 1500ms
 [CONSOLE] no TypeError or JS errors","Autocomplete taking >2 seconds; GraphQL call >1500ms; spinner persisting >2s; console TypeError","none",,"Manual"
-"SRCH-NEW-028","Search - Results Page Load Time Under 3 Seconds","Search > Performance","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-028","Search - Results Page Load Time Under 3 Seconds","Search > Performance","Medium","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 DevTools Network tab open; no throttling applied","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open DevTools Network tab; navigate to {{FRONT_URL}}/search?q=hoodie (fresh load, no cache)
 [WAIT] Wait for full page render
 [ASSERT] Measure total page render time
@@ -245,7 +245,7 @@ DevTools Network tab open; no throttling applied","url={{FRONT_URL}}/search?q=ho
 [STATE] No major Cumulative Layout Shift (CLS)
 [NETWORK] All page requests return HTTP 200","[NETWORK] measure request duration via DevTools — page load under 3s
 [CONSOLE] no TypeError or JS errors","Full render exceeding 3 seconds; heading not visible within 2s; major layout shift; any request returning 4xx/5xx; console TypeError","none",,"Manual"
-"SRCH-NEW-029","Search Bar - Firefox Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-029","Search Bar - Firefox Compatibility","Search > Cross-Browser","Medium","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Firefox browser via playwright-firefox","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Firefox (playwright-firefox)
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
@@ -253,14 +253,14 @@ Firefox browser via playwright-firefox","url={{FRONT_URL}}","[NAV] Open {{FRONT_
 [ASSERT] Verify autocomplete worked before submission
 [ASSERT] Verify results page identical to Chrome behavior","[STATE] Search behavior identical to Chromium baseline
 [DOM] No Firefox-specific layout breaks or rendering differences","[CONSOLE] no TypeError or JS errors in Firefox console","Any Firefox-specific JS error; layout broken in Firefox; autocomplete not working in Firefox; console TypeError","none",,"Manual"
-"SRCH-NEW-030","Search Bar - Edge Compatibility","Search > Cross-Browser","Medium","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-030","Search Bar - Edge Compatibility","Search > Cross-Browser","Medium","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Edge browser via playwright-edge","url={{FRONT_URL}}","[NAV] Open {{FRONT_URL}} in Edge (playwright-edge)
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
 [WAIT] Wait for results page
 [ASSERT] Verify behavior identical to Chrome baseline","[STATE] Search behavior identical to Chromium baseline
 [DOM] No Edge-specific layout or functionality issues","[CONSOLE] no TypeError or JS errors in Edge console","Any Edge-specific JS error; layout broken in Edge; search not submitting; console TypeError","none",,"Manual"
-"SRCH-NEW-031","Search Bar - Mobile Viewport 375px","Search > Mobile","High","BL-SEARCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-031","Search Bar - Mobile Viewport 375px","Search > Mobile","High","BL-SRCH-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Set viewport to 375px wide; navigate to {{FRONT_URL}}
 [ASSERT] Verify search input is visible at 375px
 [ACT] Tap/click search input
@@ -272,7 +272,7 @@ Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Se
 [DOM] Autocomplete dropdown fits within viewport width
 [DOM] Product names in dropdown readable at mobile size
 [NAV] Tapping a product navigates to PDP correctly","[CONSOLE] no TypeError or JS errors","Search input invisible or inaccessible at 375px; dropdown overflowing viewport; product names truncated unreadably; navigation to PDP failing; console TypeError","none",,"Manual"
-"SRCH-NEW-032","Search - Mobile Results Page Layout 375px","Search > Mobile","High","BL-SEARCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-032","Search - Mobile Results Page Layout 375px","Search > Mobile","High","BL-SRCH-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 375px viewport; navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Set viewport to 375px; navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
 [ASSERT] Verify heading is readable at 375px
@@ -283,7 +283,7 @@ Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Se
 [DOM] Grid adapts to 1-2 column layout (not 3+ columns squished)
 [DOM] Sort dropdown and filter controls accessible without horizontal scrolling
 [DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError","none",,"Manual"
-"SRCH-NEW-033","Search - GA4 search Event Fires on Query Submission","Search > Analytics","Medium","BL-SEARCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-033","Search - GA4 search Event Fires on Query Submission","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Open DevTools Console tab
 [ASSERT] Run window.dataLayer in console to confirm dataLayer exists
@@ -294,31 +294,63 @@ DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}",
 [STATE] A 'search' event entry found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'search' and search_term: 'hoodie'
 [CONSOLE] no GA4 or GTM errors
 [CONSOLE] no TypeError or JS errors","No dataLayer push on search submission; search event missing search_term; GTM error in console; console TypeError","none","E2E-GA-004","Manual"
-"SRCH-NEW-034","Search - GA4 view_search_results Event on Results Page","Search > Analytics","Medium","BL-SEARCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-034","Search - GA4 view_search_results Event on Results Page","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 DevTools Console open; GA4 configured on storefront","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page to fully load
 [ASSERT] Open DevTools Console
 [ASSERT] Check dataLayer for view_search_results event","[STATE] A 'view_search_results' event found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'view_search_results' and search_term: 'hoodie'
 [CONSOLE] no GA4 or GTM errors
 [CONSOLE] no TypeError or JS errors","No view_search_results event in dataLayer; event missing search_term param; GTM error; console TypeError","none","E2E-GA-004","Manual"
-"SRCH-NEW-035","Search to Cart - Full End-to-End Flow","Search > E2E","Critical","BL-SEARCH-001, BL-CAT-006",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"SRCH-NEW-035","Buyer Journey - Autocomplete to PDP to Cart (Real-World Buy Flow)","Search > Buyer Journey > Search-to-Cart","Critical","BL-SRCH-001, BL-SRCH-002, BL-CAT-006",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-User authenticated; cart at a known state (empty or tracked)","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query=@td(SEARCH_CLOTHING.query)","[NAV] Log in and navigate to {{FRONT_URL}}
-[ACT] fill 'Search': 'hoodie'
-[KEY] press [Enter]
-[WAIT] Wait for search results page
-[ASSERT] Locate 'Vintage Colorado Hoodie' ($54.00) in results
-[ACT] Click '+' or 'Add to cart' button on the product card
-[WAIT] Wait for cart badge to increment
-[ASSERT] Verify cart badge count increments
-[NAV] Navigate to cart page
+User authenticated; cart at a known starting count (capture the live value before the add for defensive math); product-preview-in-dropdown is ENABLED (mini-run verified 2026-05-22; Did-you-mean OFF is fine — this case uses product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv with query_type=broad-noun rows that return >=1 result","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Log in and navigate to {{FRONT_URL}}
+[SETUP] read the cart badge count → {cart_count_initial}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun, pick a random row → {picked_query}; record its query_id → {picked_query_id}
+[LOG] write {cart_count_initial, picked_query, picked_query_id} to evidence
+[ACT] Click the search input
+[ACT] fill 'Search': {picked_query}
+[WAIT] Wait up to 1500ms for the autocomplete dropdown 'Products' section to render
+[ASSERT] Verify the dropdown 'Products' section is visible with >=1 product entry
+[SETUP] browser_snapshot the dropdown 'Products' section; capture the first product entry's visible name → {picked_pdp_name}; capture its displayed price string → {picked_price_str}; parse numeric → {picked_price_num}; capture its href → {picked_pdp_url}
+[LOG] append {picked_pdp_name, picked_price_str, picked_price_num, picked_pdp_url} to evidence
+[ACT] Click the first product entry in the dropdown (autocomplete-click path — skip the results page entirely; mirrors how ~half of real buyers reach a PDP)
+[WAIT] Wait for PDP to load
+[ASSERT] Verify the PDP heading contains {picked_pdp_name}
+[ASSERT] Verify the PDP displays a price (numeric, > 0); capture as {pdp_price_num}
+[SETUP] inspect the PDP to determine the product type → {product_type}: classify as 'simple' (Add-to-Cart immediately enabled, no options to pick), 'variations-parent' (PDP shows variant options like Size/Color/Storage that must be selected before Add-to-Cart enables), or 'configurable' (PDP shows configuration sections — Text/Product/File — that must be filled in)
+[LOG] append {product_type} to evidence
+[ACT] BRANCH BY {product_type}:
+  - If 'simple': proceed directly to the next Add-to-Cart step (no option-picking needed)
+  - If 'variations-parent': browser_snapshot the variant-option controls (dropdowns, swatches, radio buttons, or pill buttons); for each REQUIRED option group, pick the first AVAILABLE (in-stock, not disabled) variant value → capture as {picked_variants} (e.g. {Size: 'M', Color: 'Black'}); models a buyer selecting their needed variant — DO NOT skip this branch
+  - If 'configurable': browser_snapshot the configuration sections; for each REQUIRED section, pick the first available option (Product sections) OR fill the minimum valid value (Text sections — use a short safe string like 'AGENT-TEST'; File sections — skip if the case can't upload, otherwise classify as BLOCKED and log) → capture per-section choices as {picked_config}; [LOG] append {picked_config} to evidence
+[WAIT] After variant/config selection, wait for the Add-to-Cart control to become ENABLED (it may stay disabled if a required option was not pickable — if Add-to-Cart never enables within 5s, classify the case as BLOCKED and log {picked_variants}/{picked_config} for triage)
+[ASSERT] Verify the Add-to-Cart control is now enabled (not disabled, not hidden)
+[ACT] On the PDP, click the 'Add to Cart' control (NOT a quantity stepper on a listing card — this case validates the PDP-driven add path, the most common real-world flow)
+[WAIT] Wait for cart badge to increment OR for an in-page confirmation
+[ASSERT] Verify cart badge count = {cart_count_initial} + 1
+[NAV] Navigate to /cart
 [WAIT] Wait for cart to load
-[ASSERT] Verify 'Vintage Colorado Hoodie' in cart at $54.00 with quantity 1","[NAV] Search finds product on results page
-[DOM] 'Vintage Colorado Hoodie' visible at $54.00
-[MATH] Cart badge increments by 1 after add-to-cart
-[DOM] Cart page shows correct product name, price ($54.00), and quantity (1)","[NETWORK] POST add-to-cart returns HTTP 200
-[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Search not finding product; Add to cart fails; cart badge not incrementing; cart showing wrong price; cart empty after add; console TypeError","Remove 'Vintage Colorado Hoodie' from cart after test","E2E-SEARCH-001, BL-CART","Manual"
+[SETUP] browser_snapshot the cart; locate the line-item row whose visible name equals {picked_pdp_name}; capture that row's DOM scope (e.g. data-test-id, line-item id, or row index) → {target_line_scope}
+[LOG] append {target_line_scope, pdp_price_num} to evidence
+[ASSERT] Verify {target_line_scope}'s name CONTAINS {picked_pdp_name} (variations-parent / configurable products may append variant attributes or configuration summary to the line name — e.g. 'Vintage Colorado Hoodie - Size M, Color Red'; the parent name must still be a substring)
+[ASSERT] Verify {target_line_scope}'s displayed price equals {pdp_price_num} (cart matches what the buyer saw on the PDP — no in-flight repricing; for variations products, this is the variant's price as shown on the PDP after option selection, NOT the parent product's listing price)
+[ASSERT] Verify {target_line_scope}'s quantity equals 1","[DOM] Autocomplete 'Products' section renders for the picked buyer query
+[STATE] First dropdown entry has a non-empty name and a price > 0 formatted with 2 decimals
+[NAV] Autocomplete-click navigates to {picked_pdp_url} (NOT to /search?q=…)
+[DOM] PDP heading contains the captured dropdown product name
+[STATE] If product_type is variations-parent or configurable, Add-to-Cart starts DISABLED and only becomes enabled after required options are selected (BL contract)
+[MATH] Cart badge transitions from {cart_count_initial} to {cart_count_initial} + 1 after PDP Add-to-Cart
+[DOM] Cart line row name CONTAINS the captured PDP name (variant attributes may be appended for variations / configurable products)
+[MATH] Cart line price equals PDP price after variant/config selection (no rounding drift across PDP → cart transition)
+[DOM] Cart line row quantity equals 1","[NETWORK] POST add-to-cart returns HTTP 200
+[NETWORK] POST /graphql (searchProducts) fires when typing the query; returns HTTP 200
+[NETWORK] GET PDP returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Autocomplete 'Products' section never renders for {picked_query} (search index gap on a buyer-realistic term); autocomplete-click lands on /search?q=… instead of PDP; PDP heading missing captured name; for variations-parent / configurable: Add-to-Cart never enables after selecting first available variant/config option (variant selection contract broken); PDP Add-to-Cart fails; cart badge off by != 1; cart line name does NOT contain the captured PDP name; cart line price differs from PDP price after variant/config selection (in-flight repricing); console TypeError","[ACT] On the cart page, locate the remove control SCOPED TO {target_line_scope} ONLY (e.g. the row's own data-test-id=\"line-item-{id}-remove\" button, NOT a global 'Remove' / aria-label match that selects all rows)
+[ACT] Click that scoped remove control
+[WAIT] Wait for cart to update
+[ASSERT] Verify {target_line_scope} is no longer present in the cart
+[ASSERT] Verify cart badge count returns to {cart_count_initial} (NOT 0 unless {cart_count_initial} was 0) — confirming only the added line was removed, no collateral cleanup of pre-existing items
+[FAIL-FAST] If cart count drops below {cart_count_initial}, the cleanup over-removed — mark the run as having a cleanup-pollution side effect and surface in the report","E2E-SEARCH-001, BL-CART; live-discovery.md Recipe 1+2; rewrite 2026-05-22: was atomic search→results→listing-card-add, now journey autocomplete→PDP→PDP-add (most common real buyer flow); query randomized per run from b2b-buyer-queries.csv; variant-pickup branch added 2026-05-22 from REG-2026-05-22-MINI2 BLOCKED case (T-shirt apparel parent) — real buyers select variants, not avoid them","Manual"
 "SRCH-NEW-039","Facet Count Accuracy - Badge Count Matches Product Count","Search > Facets","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Category page with faceted filters showing product counts in parentheses","url={{FRONT_URL}}","[NAV] Navigate to a category page with facet filters on {{FRONT_URL}}
 [WAIT] Wait for facet panel to load
@@ -333,21 +365,22 @@ Category page with faceted filters showing product counts in parentheses","url={
 [STATE] No mismatch between facet badge count, header result count, and actual visible products","[NETWORK] POST /graphql returns consistent totalCount matching facet aggregation
 [CONSOLE] no TypeError or JS errors","Facet count showing 12 but only 8 products displayed; header count differing from facet count; facet counts not updating after filter application; console TypeError","none","ECL-3.2, GAP-CS-08","Generated"
 "SRCH-NEW-040","Cross-Layer Search Consistency - Storefront Matches API Data","Search > Cross-Layer","High","BL-SRCH-003","ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Product exists in catalog with known name and price; API access available","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
-[WAIT] Wait for search results page to load
-[ASSERT] Locate 'Vintage Colorado Hoodie' in search results
-[ASSERT] Note the displayed price on the product card
-[ASSERT] Note the displayed product name exactly as shown
-[ACT] Open browser DevTools Network tab
-[ACT] Inspect the GraphQL searchProducts response payload
-[ASSERT] Verify the product name in the API response matches what is displayed on the storefront
-[ASSERT] Verify the price in the API response matches what is displayed on the storefront","[DOM] Product name on storefront card matches API response name field exactly
-[MATH] Product price on storefront matches API response price.actual.amount
-[STATE] No data transformation errors between API and UI rendering
-[DOM] Product image on card is loaded (not broken placeholder)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[API] Response payload product.name matches DOM product name
-[API] Response payload product.price.actual.amount matches DOM displayed price
-[CONSOLE] no TypeError or JS errors","Product name on UI differs from API response; price on UI differs from API response (rounding or currency mismatch); API returning stale data; console TypeError","none","BL-SRCH-003, ECL-14.2, GAP-CS-09","Generated"
+At least 1 product matches @td(SEARCH_CLOTHING.query) in the active store/catalog; DevTools Network tab can be opened","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[ACT] Open browser DevTools Network tab and start recording before navigation
+[NAV] Navigate to {{FRONT_URL}}/search?q=@td(SEARCH_CLOTHING.query)
+[WAIT] Wait for search results page to load and POST /graphql (searchProducts) to settle
+[ASSERT] Verify at least 1 product card rendered in results grid
+[SETUP] browser_snapshot the first product card; capture displayed name → {dom_name}; capture displayed price string → {dom_price_str}
+[SETUP] inspect the most-recent POST /graphql (searchProducts) response; capture items[0].name → {api_name}; capture items[0].price.actual.amount → {api_price_num}; capture items[0].price.actual.formattedAmount (or equivalent) → {api_price_str}
+[LOG] write {dom_name, dom_price_str, api_name, api_price_num, api_price_str} to evidence
+[ASSERT] Verify {dom_name} equals {api_name}
+[ASSERT] Verify the numeric value parsed from {dom_price_str} equals {api_price_num} (no rounding drift)","[DOM] First product card name equals API items[0].name exactly
+[MATH] Numeric parse of {dom_price_str} equals {api_price_num}
+[STATE] No data transformation errors between API response and UI rendering
+[DOM] Product image on card is loaded (not broken placeholder)
+[STATE] {api_price_num} > 0 and is formatted with 2 decimals in {dom_price_str}","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
+[API] Response items[0].name equals DOM card name for the same index
+[API] Response items[0].price.actual.amount equals DOM displayed numeric price
+[CONSOLE] no TypeError or JS errors","DOM name differs from API items[0].name; DOM price differs from API items[0].price.actual.amount (rounding or currency mismatch); API returning stale data; no searchProducts call recorded; console TypeError","none","BL-SRCH-003, ECL-14.2, GAP-CS-09; live-discovery.md Recipe 2","Generated"
 "SRCH-NEW-041","Sort Plus Filter Interaction - Sort Persists After Facet Application","Search > Sort + Filter","Medium","BL-CAT-005","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Category page with products and sortable/filterable options","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
 [ACT] Open sort dropdown and select 'Price: High to Low'
@@ -365,25 +398,29 @@ Category page with products and sortable/filterable options","url={{FRONT_URL}}"
 [STATE] Sort dropdown value unchanged after filter apply and remove
 [MATH] After filter removal, full product set is still sorted by price descending","[NETWORK] no 4xx/5xx on sort + filter combination requests
 [CONSOLE] no TypeError or JS errors","Sort resetting to default after applying filter; products not in correct order after filter; sort dropdown value changing unexpectedly; console TypeError","none","BL-CAT-005, ECL-3.2, GAP-CS-10","Generated"
-"SRCH-NEW-042","Price Range Boundary Precision - Exact Boundary Value Filtering","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Category page with products at known price points; products exist at exact boundary values","url={{FRONT_URL}}","[NAV] Navigate to a category page with price filter on {{FRONT_URL}}
-[WAIT] Wait for page and price filter to load
-[ASSERT] Locate the price range filter (slider or min/max inputs)
-[ACT] Set minimum price to a known product's exact price (e.g., $54.00 for Vintage Colorado Hoodie)
-[ACT] Set maximum price to the same value ($54.00)
-[ACT] Apply the price filter
-[WAIT] Wait for filtered results
-[ASSERT] Verify products priced at exactly $54.00 appear in results
-[ACT] Set minimum price to $54.01 (one cent above)
-[ACT] Apply the updated filter
-[WAIT] Wait for results to update
-[ASSERT] Verify products at $54.00 are now excluded from results","[MATH] Products at exactly the boundary price ($54.00) are included when min=$54.00 and max=$54.00
-[MATH] Products at $54.00 are excluded when min=$54.01
-[DOM] Price filter correctly handles exact boundary values
-[STATE] No off-by-one errors in price range filtering","[NETWORK] POST /graphql returns correct filtered results for boundary values
-[CONSOLE] no TypeError or JS errors","Products at exact boundary excluded when they should be included; products outside range appearing in results; off-by-one cent errors; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11","Generated"
+"SRCH-NEW-042","Price Range Boundary Precision - Integer-Step Slider Inclusion/Exclusion","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Catalog has at least 1 product on a page that exposes the price-range slider (vcst-qa: /catalog). Storefront slider has integer step=1 and the end value is clamped to start+1 minimum — boundary tests use [N TO N+1] inclusion and [N+1 TO max] exclusion rather than literal min=max.","url={{FRONT_URL}}","[NAV] Navigate to /catalog (or any category page that renders the sidebar price-range slider) on {{FRONT_URL}}
+[WAIT] Wait for the product grid and price-range slider to load
+[ASSERT] Locate the price range slider in the sidebar
+[SETUP] browser_snapshot the first product card under main; capture its displayed name → {picked_pdp_name}; parse its displayed price as numeric → {picked_price_num}; compute integer floor → {boundary_lo} = floor({picked_price_num}); {boundary_hi} = {boundary_lo} + 1
+[LOG] write {picked_pdp_name, picked_price_num, boundary_lo, boundary_hi} to evidence before any filter application
+[ACT] Set slider minimum = {boundary_lo}; set slider maximum = {boundary_hi} (the smallest valid window containing {picked_price_num} given step=1)
+[WAIT] Wait for filtered results to render (URL updates to facets=\"price\":[{boundary_lo} TO {boundary_hi}])
+[ASSERT] Verify a product card with name = {picked_pdp_name} is present in the filtered results
+[ASSERT] Verify every visible product card's numeric price is within [{boundary_lo}, {boundary_hi}] inclusive
+[ACT] Adjust slider minimum = {boundary_hi}; raise slider maximum to a value > {boundary_hi} (e.g. {boundary_hi} + 100)
+[WAIT] Wait for results to update (URL updates to facets=\"price\":[{boundary_hi} TO …])
+[ASSERT] Verify no product card with name = {picked_pdp_name} is visible (the captured product is excluded because its price < {boundary_hi})
+[ASSERT] Verify every visible product card's numeric price is >= {boundary_hi}","[MATH] Inclusion window [{boundary_lo} TO {boundary_hi}] contains the captured product {picked_pdp_name}
+[MATH] Every product visible under inclusion window has price within [{boundary_lo}, {boundary_hi}] inclusive
+[MATH] Exclusion window [{boundary_hi} TO …] excludes the captured product
+[MATH] Every product visible under exclusion window has price >= {boundary_hi}
+[NAV] URL reflects facets=\"price\":[N TO M] notation for both states
+[STATE] No off-by-one errors at the integer boundary","[NETWORK] POST /graphql with the price filter returns HTTP 200 for both windows
+[NETWORK] no 4xx/5xx during slider adjustments
+[CONSOLE] no TypeError or JS errors","Captured product missing from inclusion window; products outside the configured range visible in either window; captured product still visible in exclusion window; URL not reflecting facet price syntax; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11; live-discovery.md Recipe 2; rewrite from REG-2026-05-22-MINI RUNNER-GAP (slider step=1 + end>start constraint)","Generated"
 "SRCH-NEW-043","Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly","Search > Facets","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Category page with multiple facet groups (e.g."," Brand and Color) with overlapping product sets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
+Category page with multiple facet groups (e.g. Brand and Color) with overlapping product sets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
 [WAIT] Wait for facet panel to load
 [ACT] Select a value from the first facet group (e.g., a specific Brand)
 [WAIT] Wait for filtered results; note the result count as Count_A
@@ -399,8 +436,8 @@ Category page with multiple facet groups (e.g."," Brand and Color) with overlapp
 [STATE] Removing one cross-facet filter restores the single-facet result count
 [MATH] No products appear that match only one of the two criteria
 [DOM] Chip bar shows chips for both active facets","[NETWORK] POST /graphql returns filtered results with correct AND combination
-[CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-12"
-"SRCH-NEW-044","Facet Terms Ordered by Dictionary Item Priority (not alphabetically)","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
+[CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-12","Manual"
+"SRCH-NEW-100","Facet Terms Ordered by Dictionary Item Priority (not alphabetically)","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
 - At least one dictionary-type facet property configured with explicit priority ordering on dictionary items (e.g. TerrainConditions or Weather facet)
 - Products indexed with those property values","facet_property: dictionary-type property with known priority order
 expected_order: e.g. [Sand, Turf/Grass, Mud, Stoney Ground, Pavement, Synthetic] (by priority)","[NAV] Navigate to {{FRONT_URL}} catalog/category page that has dictionary-type facets
@@ -410,16 +447,16 @@ expected_order: e.g. [Sand, Turf/Grass, Mud, Stoney Ground, Pavement, Synthetic]
 [DOM] Term order matches priority assigned in Admin for that property
 [DOM] Order is NOT alphabetical when priority-based order differs from alphabetical","[NETWORK] POST /graphql (searchProducts or products query) returns facet terms in priority order
 [CONSOLE] No JS errors loading facets","Terms appear alphabetically instead of by priority; terms appear by match count (count-descending) instead; facet terms order changes on page reload","none","VCST-4729","Reviewed"
-"SRCH-NEW-045","Facet Term Order Stable Across Page Reloads","Search Filters > Facet Sort Order","Medium","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
-- At least one dictionary-type facet property configured with explicit priority ordering (same catalog page as SRCH-NEW-044)
-- Products indexed with those property values","facet_property: same dictionary-type property used in SRCH-NEW-044 (do NOT depend on SRCH-NEW-044 having run first — verify the facet exists independently before proceeding)","[NAV] Navigate to the same catalog page as verified in SRCH-NEW-044
+"SRCH-NEW-101","Facet Term Order Stable Across Page Reloads","Search Filters > Facet Sort Order","Medium","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
+- At least one dictionary-type facet property configured with explicit priority ordering (same catalog page as SRCH-NEW-100)
+- Products indexed with those property values","facet_property: same dictionary-type property used in SRCH-NEW-100 (do NOT depend on SRCH-NEW-100 having run first — verify the facet exists independently before proceeding)","[NAV] Navigate to the same catalog page as verified in SRCH-NEW-100
 [ASSERT] Record facet term order for the dictionary-type facet
 [ACT] Reload the page (F5 / browser refresh)
 [ASSERT] Record facet term order again after reload
 [ASSERT] Compare pre-reload and post-reload orders","[DOM] Facet term order is identical before and after reload
 [DOM] Priority-based order is preserved on reload (not randomly re-sorted)","[NETWORK] Both requests return identical facet term arrays
 [CONSOLE] No JS errors","Facet order changes between reloads; terms revert to alphabetical or count-based on reload","none","VCST-4729","Reviewed"
-"SRCH-NEW-046","Facet Terms Without Priority Default to Consistent Fallback Order","Search Filters > Facet Sort Order","Low","BL-CAT-002","","[PRE:CLEAR_SESSION]
+"SRCH-NEW-102","Facet Terms Without Priority Default to Consistent Fallback Order","Search Filters > Facet Sort Order","Low","BL-CAT-002","","[PRE:CLEAR_SESSION]
 - Catalog page with a facet property whose dictionary items have no explicit priority set (all priority = 0 or null)","facet_property: non-prioritized dictionary facet","[NAV] Navigate to catalog page with a non-prioritized dictionary facet
 [ASSERT] Record displayed facet term order
 [ASSERT] Verify the order is consistent (e.g. alphabetical or count-descending) and documented
@@ -427,3 +464,133 @@ expected_order: e.g. [Sand, Turf/Grass, Mud, Stoney Ground, Pavement, Synthetic]
 [ASSERT] Verify same fallback order after reload","[DOM] Facet terms appear in a consistent deterministic order (alphabetical or count-descending, not random)
 [DOM] Same order on reload","[NETWORK] API returns consistent term ordering
 [CONSOLE] No JS errors","Terms in random order; order differs on reload; no fallback order defined causing inconsistent display","none","VCST-4729","Reviewed"
+"SRCH-NEW-103","Facet Count Accuracy on Search Results Page Matches Displayed Product Count","Search > Facets","High","BL-SRCH-001","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Navigate to /search?q=hoodie (search results page — not a category page); sidebar facets visible with count values","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for search results page to fully render with sidebar facets
+[ASSERT] Locate a facet group (e.g. Brand or Color) showing count values in parentheses next to terms
+[ASSERT] Note the count shown next to a specific facet term (e.g. 'HP (8)')
+[ACT] Click that facet term to apply the filter
+[WAIT] Wait for the filtered result set to load
+[ASSERT] Count the product cards visible on the current page
+[ASSERT] Read the result count in the page heading (e.g. '8 results for hoodie')
+[ASSERT] Verify the page heading count matches the facet count recorded before filtering
+[ASSERT] Verify visible product card count is consistent with the heading count (allowing for pagination)","[MATH] Facet count shown in parentheses before filtering equals the result count shown in the page heading after filtering
+[MATH] Page heading result count matches the number of visible product cards (or the per-page subset thereof when paginated)
+[DOM] Facet terms in sidebar show non-zero counts in parentheses for available facet values
+[STATE] No mismatch between facet badge count, heading result count, and visible product set","[NETWORK] POST /graphql (searchProducts) returns consistent totalCount and facet aggregation values
+[CONSOLE] no TypeError or JS errors","Facet badge shows 8 but heading says 5 products; page heading count does not match actual product card count; facet counts not appearing on search results page (only on category pages); console TypeError","none","GAP-S-01; ECL-3.2","Draft"
+"SRCH-JRNY-005","Buyer Journey - Browse-Only Path (No Search Bar)","Search > Buyer Journey > Browse","Critical","BL-CAT-001, BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; B2B virtual catalog is populated (root = @td(VIRTUAL_CATALOG_B2B.id)); homepage exposes a top navigation / mega-menu / header menu with category entries OR a category-tile section linking to top-level category pages. Note for runner: on vcst-qa, /catalog is the GLOBAL product grid, NOT a category-list landing — do NOT enter the journey via /catalog. Enter via the homepage's category navigation (mega-menu, header menu, or homepage category tile/link) instead.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (homepage — do NOT use the search bar in this case)
+[WAIT] Wait for the homepage to fully render
+[SETUP] browser_snapshot the homepage; locate a non-search category-entry mechanism — examples in order of preference: (a) top navigation bar / header menu / mega-menu category links, (b) homepage category-tile section, (c) a header sub-nav that lists categories. Capture the list of visible top-level categories → {top_categories}; pick a random category that has a clear link target → {picked_category}; capture its href → {picked_category_url}
+[LOG] write {top_categories, picked_category, picked_category_url, navigation_mechanism} to evidence before any click
+[ACT] Activate the navigation to reach {picked_category} (click the menu link OR hover-then-click for mega-menu OR click the homepage tile — whichever mechanism the storefront exposes); do NOT type into the search bar
+[WAIT] Wait for the category page to load
+[ASSERT] Verify the URL or breadcrumb reflects {picked_category}
+[ASSERT] Verify >=1 product card is visible on the category page
+[SETUP] browser_snapshot the category page; if a sub-category sidebar widget is present and has >=1 child category with count > 0, OPTIONALLY pick one → {picked_subcategory}; [LOG] append {picked_subcategory} to evidence. If a sub-category was picked, [ACT] click it and [WAIT] for the sub-category page to load — vcst-qa observation: most facets (Brand, Color, Origin, etc.) only appear on sub-category pages, not top-level category pages, so this drilldown often unlocks a richer facet set
+[SETUP] browser_snapshot the facet sidebar; pick a random facet group with >=2 values where the first value has count > 0 → {picked_facet_group}; pick its first value → {picked_facet_value}. Note: vcst-qa facet widgets render with `data-test-id=\"filter-<GROUP_NAME>\"`; many widgets are collapsed by default — expand if needed before reading values
+[LOG] append {picked_facet_group, picked_facet_value} to evidence
+[ACT] Click {picked_facet_value} in {picked_facet_group}
+[WAIT] Wait for the filtered results to render
+[ASSERT] Verify a filter chip for {picked_facet_value} appears in the chip bar
+[ASSERT] Verify the result count decreases (filter applied — AND logic on top of category)
+[SETUP] capture the first visible product card's name → {picked_pdp_name}
+[LOG] append {picked_pdp_name} to evidence
+[ACT] Click the first product card
+[WAIT] Wait for the PDP to load
+[ASSERT] Verify the PDP heading contains {picked_pdp_name}","[NAV] Buyer reaches a PDP via Homepage navigation → Category (→ optional Sub-category) → Facet → Click WITHOUT ever using the search bar
+[DOM] Homepage exposes a non-search category navigation mechanism (mega-menu / header menu / category tiles)
+[DOM] Category page renders product grid + facet sidebar (sub-category drilldown unlocks richer facets when applicable)
+[STATE] Applying a facet reduces (or holds) the result count — never increases
+[DOM] PDP heading contains the captured card name
+[STATE] No 4xx/5xx during any navigation step","[NETWORK] No 4xx/5xx on category navigation or facet application
+[NETWORK] POST /graphql or category page returns HTTP 200 at each step
+[CONSOLE] no TypeError or JS errors","Homepage has no non-search category navigation (forces users into search bar — UX regression); clicking a category leads to empty grid; facet sidebar absent on category AND sub-category pages; facet chip not appearing; result count INCREASES after facet (AND-logic broken); PDP heading missing captured name; console TypeError","none","Buyer-journey extension 2026-05-22; live-discovery.md Recipe 2; entry-point fix REG-2026-05-22-MINI2 (was /catalog, now homepage navigation); covers the pure-browse path that no other suite test exercises","Manual"
+"SRCH-JRNY-006","Buyer Journey - Refine After Too-Many Results (Search + Facet + Sort)","Search > Buyer Journey > Refine","Critical","BL-SRCH-001, BL-CAT-002, BL-CAT-005","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; B2B buyer-query pool seeded; query selected returns 5+ results so refinement has signal","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun AND expected_min_results>=2, pick a random row → {picked_query}
+[LOG] write {picked_query} to evidence
+[ACT] Click the search input
+[ACT] fill 'Search': {picked_query}
+[KEY] press [Enter]
+[WAIT] Wait for /search?q=… results page
+[SETUP] capture the initial result count (from heading) → {count_broad}
+[ASSERT] Verify {count_broad} >= 2 (broad search returned multiple results to refine)
+[LOG] append {count_broad} to evidence
+[SETUP] browser_snapshot the facet sidebar; pick a random facet group with >=2 values and where the first value has count >0 → {picked_facet_group, picked_facet_value}
+[ACT] Click {picked_facet_value} in {picked_facet_group}
+[WAIT] Wait for filtered results
+[SETUP] capture the filtered result count → {count_after_facet}
+[LOG] append {picked_facet_group, picked_facet_value, count_after_facet} to evidence
+[ASSERT] Verify {count_after_facet} <= {count_broad} (facet narrowed or held)
+[ASSERT] Verify a filter chip for {picked_facet_value} is present in the chip bar
+[ACT] Open the sort dropdown; select 'Price: Low to High'
+[WAIT] Wait for products to reorder
+[SETUP] capture the first 3 visible product card prices as numerics → {p1, p2, p3}
+[LOG] append {p1, p2, p3} to evidence
+[ASSERT] Verify p1 <= p2 <= p3 (ascending price ordering held under combined search + facet + sort)
+[SETUP] capture the first card's name → {picked_pdp_name}
+[ACT] Click the first product card
+[WAIT] Wait for PDP to load
+[ASSERT] Verify the PDP heading contains {picked_pdp_name}","[DOM] Broad search returns >=2 results
+[MATH] Facet application: count_after_facet <= count_broad
+[DOM] Filter chip appears for applied facet value
+[MATH] Sort Price: Low to High: p1 <= p2 <= p3 across first 3 visible cards
+[DOM] Composite (search + facet + sort) holds — sort not reset by facet, facet not lost on sort
+[NAV] PDP loads with the captured first-card name in the heading","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 at each composite step
+[CONSOLE] no TypeError or JS errors","Broad search returns <2 results (pool entry mis-tagged — log and pick another query); facet INCREASES the count (AND-logic broken); sort dropdown resets to default after facet; first 3 cards not in ascending price order after sort selection; PDP heading missing captured name; console TypeError","none","Buyer-journey extension 2026-05-22; composite search + facet + sort that no prior case exercises end-to-end","Manual"
+"SRCH-JRNY-007","Buyer Journey - Multi-Value Within Single Facet Group (OR Within Group)","Search > Buyer Journey > Multi-Value Facet","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; /catalog or any results page exposes a facet group with >=2 values, each with count >0 (typically Color, Brand, or Size)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Wait for catalog page + facet sidebar to load
+[SETUP] browser_snapshot the facet sidebar; pick a facet group with >=2 values each with count >0 → {picked_facet_group}; capture the first two values as {val_A, val_B} with counts {count_A, count_B}
+[LOG] write {picked_facet_group, val_A, count_A, val_B, count_B} to evidence
+[SETUP] capture the initial result count (no filters applied) → {count_all}
+[ACT] Click {val_A} in {picked_facet_group}
+[WAIT] Wait for filtered results
+[SETUP] capture filtered count → {count_only_A}
+[ASSERT] Verify a chip for {val_A} appears; result count = {count_only_A} <= {count_all}
+[ACT] Click {val_B} in the same {picked_facet_group} (DO NOT remove {val_A}; both should be active)
+[WAIT] Wait for re-filtered results
+[SETUP] capture re-filtered count → {count_A_or_B}
+[LOG] append {count_only_A, count_A_or_B} to evidence
+[ASSERT] Verify chips for BOTH {val_A} and {val_B} are present in the chip bar
+[ASSERT] Verify {count_A_or_B} >= {count_only_A} (OR-within-group: adding a second value within the same group widens the result set; never narrows it)
+[ASSERT] Verify {count_A_or_B} <= {count_all} (still constrained by the facet group)
+[SETUP] sample 3 visible product cards' relevant attribute (e.g. Color if Color facet selected); count how many match {val_A}, how many match {val_B}, how many match neither → {n_A, n_B, n_neither}
+[ASSERT] Verify {n_neither} == 0 (every visible product matches at least one of the selected values)","[STATE] OR-logic within a single facet group: selecting two values widens the visible set
+[MATH] {count_only_A} <= {count_A_or_B} <= {count_all}
+[DOM] Chip bar shows both {val_A} and {val_B} as active filters
+[STATE] No visible product violates the OR constraint (every card matches val_A OR val_B)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for both single and multi-value facet applications
+[CONSOLE] no TypeError or JS errors","Selecting val_B narrows or replaces val_A (AND-within-group bug instead of OR); chip for val_A disappears when val_B is selected; visible products contain values matching neither A nor B; count_A_or_B < count_only_A (impossible under OR logic); console TypeError","none","Buyer-journey extension 2026-05-22; tests within-group OR-logic — a behavior no prior case covers explicitly","Manual"
+"SRCH-JRNY-008","Buyer Journey - Chip-by-Chip Removal vs Reset All (Two Restore Paths)","Search > Buyer Journey > Filter Removal","High","BL-CAT-004","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; catalog page exposes >=2 distinct facet groups (e.g. Brand and Color), each with >=1 value with count >0; chip bar + 'Reset filters' button both present in storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Wait for catalog + facet sidebar
+[SETUP] capture initial result count → {count_initial}
+[SETUP] pick a value from facet group 1 → {fg1_value}; pick a value from facet group 2 → {fg2_value}
+[LOG] write {count_initial, fg1_value, fg2_value} to evidence
+[ACT] Apply {fg1_value}
+[WAIT] Wait for filtered results
+[SETUP] capture count → {count_fg1_only}
+[ACT] Apply {fg2_value}
+[WAIT] Wait for results
+[SETUP] capture count → {count_both}
+[LOG] append {count_fg1_only, count_both} to evidence
+[ASSERT] Verify chip bar shows both chips; result count = {count_both} <= {count_fg1_only} <= {count_initial}
+[ACT] Path A — Chip-by-chip removal: click the close (×) on the {fg2_value} chip
+[WAIT] Wait for results
+[SETUP] capture count → {count_after_chip_removal}
+[ASSERT] Verify the {fg2_value} chip is removed; {fg1_value} chip is still present; {count_after_chip_removal} equals {count_fg1_only} (restoring to single-facet state)
+[ACT] Re-apply {fg2_value} to restore the two-chip state
+[WAIT] Wait for results
+[ASSERT] Verify count = {count_both} again
+[ACT] Path B — Reset filters: click the 'Reset filters' button
+[WAIT] Wait for results
+[SETUP] capture count → {count_after_reset}
+[ASSERT] Verify all chips removed from the chip bar
+[ASSERT] Verify {count_after_reset} == {count_initial} (back to baseline)","[STATE] Chip-by-chip removal restores incrementally (one filter at a time)
+[STATE] Reset filters restores fully in one action
+[MATH] count_after_chip_removal == count_fg1_only (chip removal is precise, not full reset)
+[MATH] count_after_reset == count_initial (full reset matches baseline)
+[DOM] Chip bar reflects the active filter set accurately at each step","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 at each step
+[CONSOLE] no TypeError or JS errors","Removing a chip clears ALL filters (chip removal behaves like Reset — bug); Reset filters does not return to initial count (residual filter or URL state); chip bar still shows removed chips; result count after reset != initial; console TypeError","none","Buyer-journey extension 2026-05-22; tests two narrowing-then-restoring paths buyers naturally use","Manual"

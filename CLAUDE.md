@@ -86,9 +86,11 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 
 ## Detailed References
 
+- `.claude/architecture/TIER.md` — Tier classification (A/B/C/D) for multi-project expansion; canonical map of what's methodology vs capability vs storefront-domain vs missing. Read before any change aimed at standardization or cross-product reuse.
 - `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
 - `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
 - `.claude/rules/skills-commands.md` — 14 commands + 20 skills with arguments
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - `.claude/rules/test-data.md` — `@td()` resolver + `{{VAR}}` policy: never hardcode IDs/SKUs/prices/cards/etc.; canonical sources, validation script, where the rule is enforced
-- Virto Commerce docs: Context7 library `/virtocommerce/vc-docs` (resolve-library-id → query-docs)
+- `.claude/rules/reports.md` — Report file policy + brevity rule: 4 allowed categories, hard size caps per type (bug <150 lines, clean regression <30, BA <250), bloat patterns to cut, reference-don't-inline
+- Virto Commerce docs: **VirtoOZ MCP** (primary — 12 topic-scoped tools: `PlatformUserGuide`, `PlatformDeveloperGuide`, `StorefrontUserGuide`, `StorefrontDeveloperGuide`, `*SourceCode`, `MarketplaceUserGuide`, `MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `VirtoCommerce`) accessed via the `/vc-docs` skill. Context7 library `/virtocommerce/vc-docs` is a fallback.

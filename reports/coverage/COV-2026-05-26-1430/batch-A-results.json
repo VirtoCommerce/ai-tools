@@ -1,0 +1,99 @@
+{
+  "batch": "A",
+  "agent": "qa-frontend-expert",
+  "manifestDomains": ["purchase-flow"],
+  "gaps": {
+    "consumed": 10,
+    "skipped": { "duplicate": 0, "blocked": 0 }
+  },
+  "cases": {
+    "generated": 10,
+    "validated": 1,
+    "needsReview": 0
+  },
+  "suitesModified": ["014"],
+  "byLayer": { "storefront": 10 },
+  "newCaseIds": [
+    "ORD-052",
+    "ORD-053",
+    "ORD-054",
+    "ORD-055",
+    "ORD-056",
+    "ORD-057",
+    "ORD-058",
+    "ORD-059",
+    "ORD-060",
+    "ORD-061"
+  ],
+  "gapToCaseMapping": {
+    "GAP-OHF-002": "ORD-052",
+    "GAP-OHF-001": "ORD-053",
+    "GAP-OHF-003": "ORD-054",
+    "GAP-OHF-004": "ORD-055",
+    "GAP-OHF-005": "ORD-056",
+    "GAP-OHF-006": "ORD-057",
+    "GAP-OHF-007": "ORD-058",
+    "GAP-OHF-008": "ORD-059",
+    "GAP-OHF-009": "ORD-060",
+    "GAP-OHF-010": "ORD-061"
+  },
+  "validation": {
+    "case": "ORD-052",
+    "gap": "GAP-OHF-002",
+    "priority": "Critical",
+    "result": "PASS",
+    "evidence": [
+      "reports/coverage/COV-2026-05-26-1430/screenshots/ORD-052-step1-baseline-orders-list.png",
+      "reports/coverage/COV-2026-05-26-1430/screenshots/ORD-052-step2-filter-applied-processing.png",
+      "reports/coverage/COV-2026-05-26-1430/screenshots/ORD-052-step3-filter-plus-sort-desc-validated.png"
+    ],
+    "observations": {
+      "baselineRowCount": 22,
+      "baselineSidebarBadges": { "Payment required": 10, "Processing": 10, "New": 2 },
+      "defaultSort": "Date descending",
+      "afterStatusFilter": {
+        "rowCount": 10,
+        "uniqueStatuses": ["Processing"],
+        "datesDesc": ["3/9/2026", "3/9/2026", "3/9/2026", "2/23/2026", "2/13/2026", "2/12/2026", "2/3/2026", "2/3/2026", "1/27/2026", "12/29/2025"]
+      },
+      "afterSortAscending": {
+        "rowCount": 10,
+        "uniqueStatuses": ["Processing"],
+        "ariaSortOnDate": "ascending",
+        "dates": ["12/29/2025", "1/27/2026", "2/3/2026", "2/3/2026", "2/12/2026", "2/13/2026", "2/23/2026", "3/9/2026", "3/9/2026", "3/9/2026"]
+      },
+      "afterSortDescending": {
+        "rowCount": 10,
+        "uniqueStatuses": ["Processing"],
+        "ariaSortOnDate": "descending",
+        "dates": ["3/9/2026", "3/9/2026", "3/9/2026", "2/23/2026", "2/13/2026", "2/12/2026", "2/3/2026", "2/3/2026", "1/27/2026", "12/29/2025"]
+      },
+      "consoleErrors": 0,
+      "graphqlFailures4xx5xx": 0,
+      "graphqlSuccesses": "All filter+sort GraphQL POSTs returned 200"
+    },
+    "verdict": "Filter persisted across both sort toggles; row count stable at 10; status remained 'Processing' on every row; sort direction switched correctly each toggle. BL-ORD-003 invariant upheld."
+  },
+  "validationEvidence": "reports/coverage/COV-2026-05-26-1430/screenshots/ORD-052-step3-filter-plus-sort-desc-validated.png",
+  "environment": {
+    "browser": "playwright-chrome",
+    "frontUrl": "https://vcst-qa-storefront.govirto.com",
+    "user": "mutykovaelena@gmail.com (BMW-Group org)",
+    "storefrontBuild": "2.50.0-pr-2291-fed4-fed4fe16"
+  },
+  "tdValidation": {
+    "tool": "scripts/validate-td-refs.ts",
+    "totalRefsInRepo": 1848,
+    "failures": 0,
+    "result": "PASS",
+    "suite014Note": "Suite 014 uses {{VAR}} env tokens only — no @td() refs added or needed for storefront-UI filter cases (env-resolved URLs + credentials)"
+  },
+  "blockers": [],
+  "notes": [
+    "GAP-OHF-009 (B2B org-scoped filter) used ORG_USER_EMAIL + ORG_USER_PASSWORD env vars; no new B2B alias needed",
+    "Suite 014 highest existing ID before this batch was ORD-051; new IDs assigned ORD-052..ORD-061 sequentially",
+    "Append-only: existing rows untouched",
+    "P0 validation (ORD-052 / GAP-OHF-002) PASS on first run on vcst-qa @ 2026-05-26"
+  ],
+  "durationMinutes": 14
+}

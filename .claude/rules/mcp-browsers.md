@@ -16,8 +16,10 @@ Additional MCP servers (configured at user level or in IDE settings, not in `.mc
 - **Azure MCP** - Azure Application Insights, resource health, monitoring, and diagnostics
 - **Atlassian MCP** - JIRA integration for test case management and bug reporting
 - **Figma MCP** (`figma-remote-mcp`) - Visual comparison testing against design specs, design-to-code workflow
+- **Microsoft Learn MCP** - Microsoft/Azure docs search, code samples, and full-page fetch
+- **VirtoOZ MCP** (`claude_ai_VirtoOZ_for_virtocommerce_com_docs`) - **Primary Virto Commerce documentation source.** 12 topic-scoped retrieval tools: `VirtoCommerce` (general), `PlatformUserGuide`, `PlatformDeveloperGuide`, `PlatformBackendSourceCode`, `PlatformFrontendSourceCode`, `StorefrontUserGuide`, `StorefrontDeveloperGuide`, `FrontendSourceCode`, `MarketplaceUserGuide`, `MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`. **All agents should use this via the `/vc-docs` skill** for VC architecture, module, API, deployment, and B2B questions — prefer it over Context7 for any Virto-specific topic.
 
-All 6 servers in the table above are configured in `.mcp.json` (project-level). The 4 additional servers above are typically configured at the user/IDE level.
+All 6 servers in the table above are configured in `.mcp.json` (project-level). The 6 additional servers above are typically configured at the user/IDE level.
 
 ## Browser Automation Rules
 

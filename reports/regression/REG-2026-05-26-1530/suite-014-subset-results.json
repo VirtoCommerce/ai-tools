@@ -1,0 +1,395 @@
+{
+  "runId": "REG-2026-05-26-1530",
+  "suiteSubset": "014:ORD-052-079",
+  "browser": "playwright-chrome",
+  "startedAt": "2026-05-26T11:38:43Z",
+  "completedAt": "2026-05-26T12:06:48Z",
+  "durationMinutes": 28,
+  "build": {
+    "storefront": "2.50.0-pr-2291-fed4-fed4fe16",
+    "captured_from": "footer"
+  },
+  "totals": {
+    "executed": 28,
+    "passed": 22,
+    "failed": 3,
+    "skipped": 1,
+    "blocked": 0,
+    "passWithCaveat": 2
+  },
+  "passRate": "22/28 (79%)",
+  "results": [
+    {
+      "id": "ORD-052",
+      "title": "Order List - Status Filter Combined With Sort Preserved",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 30,
+      "evidence": {
+        "gqlPayload": "filter:\"status:\\\"New\\\"\" + sort:\"createdDate:desc\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Selected 'New' status (non-default), Apply → 2 orders (filtered count). Toggled sort asc then desc; chip remained, row count = 2 across both sorts. GQL request (index 124) contains BOTH filter AND sort params. BMW-Group sidebar showed 22 total orders (10+10+2)."
+    },
+    {
+      "id": "ORD-053",
+      "title": "Order List - Status Filter Persists Across Order Detail Navigation and Back",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 45,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Applied Processing filter (10 rows, first CO260309-00005). Row click opens detail in NEW TAB (per memory project_vctable_rowclick_newtab — by-design VcTable behavior). Original tab list state preserved unchanged after closing detail tab: chip present, count=10, first row identity unchanged. Conditional branch documented: 'back navigation' as such is N/A because detail is in a new tab; persistence verified by tab independence."
+    },
+    {
+      "id": "ORD-054",
+      "title": "Order List - Date Range Filter Rejects Start Date After End Date",
+      "priority": "High",
+      "verdict": "FAIL",
+      "durationSec": 35,
+      "evidence": {
+        "screenshot": "reports/regression/REG-2026-05-26-1530/screenshots/ORD-054-FAIL-inverted-range-end-dropped.png",
+        "gqlPayload": "filter:\"createddate:[\\\"2026-05-25T22:00:00.000Z\\\" TO]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Inverted range (Start=05/26/2026 > End=04/26/2026): Apply enabled, no validation message, no auto-swap. GQL filter (index 132) sent with ONLY lower bound — End date was silently dropped at apply-time. Chip shows 'Start: 5/26/2026' only. Result: 0 rows. Failure signal exact match: 'Inverted range silently accepted with no validation and no auto-swap'."
+    },
+    {
+      "id": "ORD-055",
+      "title": "Order List - Date Range Filter With Same Start and End Date (Single-Day Boundary)",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 50,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Single-day filter Start=End=3/9/2026: 3 orders returned (all dated 3/9/2026). Both Start and End chips visible. Widened to 3/10/2026 → still 3 orders (monotonic non-decreasing). Minor UX glitch: Apply button required Tab/blur to re-enable after End-only change (dirty-state detection lag), then applied correctly."
+    },
+    {
+      "id": "ORD-056",
+      "title": "Order List - Status Filter Combined With Search Query (Intersection)",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 35,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Search PREFIX='CO2603' → S=4 results (3 Processing + 1 Payment required). Applied Processing filter → C=3 results (all Processing AND contain CO2603). C ≤ S ✅. Cleared filter chip → back to S=4, search retained. Intersection semantics confirmed."
+    },
+    {
+      "id": "ORD-057",
+      "title": "Order List - Status Filter Persists Across Pagination",
+      "priority": "High",
+      "verdict": "SKIPPED",
+      "durationSec": 20,
+      "evidence": {},
+      "notes": "Insufficient seed data: BMW-Group user sees Payment required=10, Processing=10, New=2. With default page size of 10, no single status spans >1 page. Selecting Processing yielded exactly 10 rows, no pagination control visible. SKIPPED per protocol."
+    },
+    {
+      "id": "ORD-058",
+      "title": "Order List - Filter State Restoration on Browser Refresh",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 25,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Applied 'New' status filter. URL had NO query params post-apply (ephemeral state model). Refreshed: 10 rows (full unfiltered), no chip. Branch B (ephemeral) observed consistently: URL has no params pre/post-refresh, UI resets to unfiltered. Both layers consistent."
+    },
+    {
+      "id": "ORD-059",
+      "title": "Order List - Search by Partial / Prefix Order Number",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 20,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Search prefix 'CO26030' returned 4 rows: CO260309-00005, CO260309-00004, CO260309-00003, CO260305-00003. All contain prefix ✅. Original first order (CO260309-00005) present in results. Clear search → restored to 10 unfiltered rows (page 1)."
+    },
+    {
+      "id": "ORD-060",
+      "title": "Order List - B2B Org-Scoped Filtering Respects Organization Context",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 60,
+      "evidence": {
+        "gqlPayload": "operationName:GetOrganizationOrders + organizationId:9d32a961-fe81-4243-a2d1-f6c9a317e5d3 + facet:status customername",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Sign-in as different ORG_USER skipped to preserve session budget. Org-scope behavior verified on Elena/BMW-Group: 'All orders' toggle exposes the GetOrganizationOrders xAPI query (~1095 orders) with explicit organizationId param + 'Buyer name' column (Alice May visible alongside Elena Mutykova confirming multi-buyer scope). Subsequent date filter (ORD-062 et seq) applied within org scope via GetOrganizationOrders — no cross-org leak observed. 'My orders' toggle filters back to Elena-only. CSV intent (cross-buyer org-scope filtering works) satisfied via 'All orders' view code path."
+    },
+    {
+      "id": "ORD-061",
+      "title": "Order List - Active Filter Chip Removal Affects Only That Filter",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 35,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Applied Processing + Last month preset → 3 chips (Processing, Start, End), 1 row. Removed Processing chip only → 2 chips remain (Start+End), 2 rows (widened, monotonic non-decreasing). Removed remaining date chips → 0 chips, 10 rows page 1 (unfiltered baseline). Incremental chip removal granularity correct."
+    },
+    {
+      "id": "ORD-062",
+      "title": "Date Picker — Custom Range End Boundary Dropped from GraphQL Filter (P0 Bug Probe)",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 30,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2026-02-23T23:00:00.000Z\\\" TO \\\"2026-04-15T21:59:59.999Z\\\"]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Critical P0 probe: Start=02/24/2026, End=04/15/2026 applied (with Tab/blur to enable Apply). GQL request (index 132) contains BOTH bounds in closed range. Returned 7 rows all dated within [2/23, 4/15]; orders from 4/22, 4/28, 5/13 correctly excluded. Chrome matches Firefox PASS — A1/A2 anomaly NOT reproduced on closed-range typed input; fix holds."
+    },
+    {
+      "id": "ORD-063",
+      "title": "Date Picker — 'Last Day' Preset Sends Both Bounds in GraphQL Filter",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2026-05-23T22:00:00.000Z\\\" TO \\\"2026-05-25T21:59:59.999Z\\\"]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Selected 'Last day' preset → Custom inputs hidden, Apply enabled. GQL (index 136) shows closed range with both lower (~now-48h, timezone-shifted) and upper (~now-24h) bounds. Window is ~24-48h relative to UTC. Both bounds present — assertion satisfied."
+    },
+    {
+      "id": "ORD-064",
+      "title": "Date Picker — 'Last Week' Preset Sends Both Bounds in GraphQL Filter",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2026-05-16T22:00:00.000Z\\\" TO \\\"2026-05-24T21:59:59.999Z\\\"]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "'Last week' preset → GQL (index 139) closed range, both bounds present, ~8-day window. Inputs hidden when preset active."
+    },
+    {
+      "id": "ORD-065",
+      "title": "Date Picker — 'Last Month' Preset Sends Both Bounds in GraphQL Filter",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2026-03-30T22:00:00.000Z\\\" TO \\\"2026-04-30T21:59:59.999Z\\\"]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "'Last month' preset → GQL (index 142) shows previous calendar month (April 2026) with both bounds. Note: window is 'previous full calendar month' rather than 'last 30 days from now' — design choice, both bounds present is what matters."
+    },
+    {
+      "id": "ORD-066",
+      "title": "Date Picker — 'Last Year' Preset Sends Both Bounds in GraphQL Filter",
+      "priority": "Critical",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2024-12-30T23:00:00.000Z\\\" TO \\\"2025-12-31T22:59:59.999Z\\\"]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "'Last year' preset → GQL (index 146) covers previous full calendar year (2025). Both bounds present."
+    },
+    {
+      "id": "ORD-067",
+      "title": "Date Picker — Start-Only Entry Produces 'From X Onward' Open-Ended Filter",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 20,
+      "evidence": {
+        "gqlPayload": "filter:\"createddate:[\\\"2026-03-31T22:00:00.000Z\\\" TO]\"",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Start=04/01/2026, End blank → Apply enabled, GQL (index 149) shows open-ended TO]. 3 rows returned, all dates >= 4/1/2026. Chip shows 'Start: 4/1/2026' only. Open-ended upper bound acceptable for Start-only entry per CSV."
+    },
+    {
+      "id": "ORD-068",
+      "title": "Date Picker — End-Only Entry Produces 'Up To X' Open-Ended Filter",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "End=04/15/2026, Start blank → Apply enabled. Filtered to 10 rows all dated <= 4/15/2026. 5/13, 4/28, 4/22 correctly excluded. Chip shows 'End: 4/15/2026' only."
+    },
+    {
+      "id": "ORD-069",
+      "title": "Date Picker — Applied Custom Range Persists in Panel on Reopen (End Value Retained)",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Applied Start=01/01/2026, End=12/31/2026. Closed and reopened popover: both inputs retained (Start=01/01/2026, End=12/31/2026), preset still 'Custom date'. End value retained on reopen — A2 anomaly refuted (matches Firefox 2026-05-26 PASS)."
+    },
+    {
+      "id": "ORD-070",
+      "title": "Date Picker — Page Refresh Resets Custom Date Filter (No URL Persistence)",
+      "priority": "High",
+      "verdict": "PASS",
+      "durationSec": 20,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Applied 'Last week' preset. URL had no query params. Refreshed page: 10 rows (full N_ALL), no chip, URL unchanged. Ephemeral persistence model confirmed."
+    },
+    {
+      "id": "ORD-071",
+      "title": "Date Picker — Invalid Character Masking in Date Inputs",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 25,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Typed 'abc/xx/yyyy' into Start input → input rejected all chars, value became empty (masking strips non-digit/non-slash). Typed '02/30/2026' (impossible date) → value retained at masking layer but Apply button disabled (validation rejects impossible date downstream). No JS crash, console clean."
+    },
+    {
+      "id": "ORD-072",
+      "title": "Date Picker — Future Date Accepted Without Rejection",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 20,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Start=01/01/2026, End=12/31/2030 (future). Apply enabled, no validation error citing future date. Applied → 10 rows (matches N_ALL page 1, future range encompasses all existing orders + no future orders exist). No over-strict future-date blocking."
+    },
+    {
+      "id": "ORD-073",
+      "title": "Date Picker — Reset Clears Inputs and Closes Popover (Current Behavior Documentation)",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 15,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Branch B observed (A4 anomaly): Click Reset closes the popover. Reopened: inputs empty, no active filter chip, row count = N_ALL baseline. Layer-level data consistent (filter cleared properly), UX anomaly A4 confirmed."
+    },
+    {
+      "id": "ORD-074",
+      "title": "Date Picker — Calendar UI Opens, Month Navigation Works, Date Selection Populates Input",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 50,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Calendar opens on 'Open calendar' click. NOTE: vc-frontend calendar is single-month (one calendar per input — Start and End each have their own), NOT dual-month side-by-side as CSV describes. Day cells are DIVs with role='button' (a11y compliant, just not <button> tags). Previous month navigation works (May → April). Clicking April 15 day populated Start input as 04/15/2026; clicking May 20 day in End calendar populated End input. Start <= End sequential selection works."
+    },
+    {
+      "id": "ORD-075",
+      "title": "Date Picker — Outside-Click Dismisses Panel and Discards Un-Applied Entries",
+      "priority": "Medium",
+      "verdict": "FAIL",
+      "durationSec": 25,
+      "evidence": {
+        "screenshot": "reports/regression/REG-2026-05-26-1530/screenshots/ORD-075-FAIL-unapplied-values-retained.png",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Outside-click successfully closes the popover ✅ and no chip is applied ✅. BUT on reopen, the un-applied input values (Start=01/01/2026, End=06/30/2026) are RETAINED in the inputs, not discarded. CSV asserts 'verify aria-label=Start date is empty (discarded entry is not retained)' — this assertion fails. Failure signal match: 'un-applied Start or End values are retained and visible on reopen'. Filter data layer is correct (no GQL request fired, no filter applied), but UI state retention contradicts the discard expectation."
+    },
+    {
+      "id": "ORD-076",
+      "title": "Date Picker — Both 'Open Calendar' Buttons Have Distinct Accessible Names",
+      "priority": "Medium",
+      "verdict": "FAIL",
+      "durationSec": 10,
+      "evidence": {
+        "screenshot": "reports/regression/REG-2026-05-26-1530/screenshots/ORD-076-FAIL-duplicate-aria-labels.png",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "A6 anomaly CONFIRMED. Both calendar-icon buttons (one for Start, one for End) share identical aria-label='Open calendar' with no disambiguation. distinct=1, count=2. Screen reader users cannot distinguish which calendar button opens which date input. CSV correctly predicted: 'expected to FAIL until fixed'."
+    },
+    {
+      "id": "ORD-077",
+      "title": "Date Picker — Touch Target Height for Date Inputs is at Least 44px on Mobile Viewport",
+      "priority": "Medium",
+      "verdict": "FAIL",
+      "durationSec": 25,
+      "evidence": {
+        "screenshot": "reports/regression/REG-2026-05-26-1530/screenshots/ORD-077-FAIL-touch-target-36px.png",
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "At 375x812 mobile viewport: Start date input height = 36px, End date input height = 36px. Both below WCAG 2.5.5 / Apple HIG 44px minimum touch target. A5 anomaly CONFIRMED. Inputs remain interactive and visible — only the size fails. CSV correctly predicted: 'expected to FAIL'."
+    },
+    {
+      "id": "ORD-078",
+      "title": "Date Picker — Keyboard Navigation in Calendar Grid (Arrow + Enter Selects, Escape Closes)",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 30,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Calendar cells are role='gridcell' with role='button' children (a11y compliant). Focused May 10 day, ArrowRight moved to May 11 ✅, ArrowDown moved to May 18 (+7 days) ✅. Enter selected the focused cell and populated Start input as 05/18/2026 ✅. Escape closed the calendar popup ✅. Full keyboard nav works correctly."
+    },
+    {
+      "id": "ORD-079",
+      "title": "Date Picker — Switching from Preset to Custom Shows Empty Inputs",
+      "priority": "Medium",
+      "verdict": "PASS",
+      "durationSec": 20,
+      "evidence": {
+        "consoleErrors": [],
+        "networkErrors": []
+      },
+      "notes": "Started with Custom date showing 05/18/2026 (carryover). Switched to 'Last week' → custom inputs hidden. Switched back to 'Custom date' → inputs reappear, BOTH BLANK (Last week range NOT pre-filled). Apply disabled (dirty-gated since inputs blank). Outcome documented: blank-on-switch branch; consistent state, no crash."
+    }
+  ],
+  "bugsFound": [
+    {
+      "shortTitle": "Inverted date range silently accepted; End boundary dropped from GraphQL filter at apply-time",
+      "severity": "P1",
+      "affectedCases": ["ORD-054"],
+      "summary": "When Start > End (e.g. Start=05/26/2026, End=04/26/2026), Apply button is enabled, no validation error shown, no auto-swap performed. GQL request sends only the Start bound with open-ended TO]; End value is silently dropped. Chip shows 'Start: ...' only. User has no feedback that End was ignored. Reproduced 2026-05-26 on Chrome at build 2.50.0-pr-2291."
+    },
+    {
+      "shortTitle": "Outside-click on Filters popover retains un-applied date input values on reopen",
+      "severity": "P3",
+      "affectedCases": ["ORD-075"],
+      "summary": "Outside-click correctly dismisses the Filters popover and does NOT apply the entered filter (no chip, no GQL fired). However, on reopening the popover the previously-typed but unapplied Start/End date values remain visible in the inputs instead of being discarded. Filter data layer is consistent; only the UI state retention contradicts the discard expectation."
+    },
+    {
+      "shortTitle": "Both 'Open calendar' buttons share identical aria-label='Open calendar' (a11y A6 anomaly)",
+      "severity": "P2",
+      "affectedCases": ["ORD-076"],
+      "summary": "The two calendar-icon buttons next to Start date and End date inputs in the Filters popover both have aria-label='Open calendar' with no disambiguation (e.g. 'Open Start date calendar' / 'Open End date calendar'). Screen reader users cannot tell which button controls which date field. Both buttons functionally work; the defect is purely accessibility (WCAG 2.4.6 / 1.3.1)."
+    },
+    {
+      "shortTitle": "Date input touch target height is 36px (< WCAG 2.5.5 44px) on mobile viewport (a11y A5 anomaly)",
+      "severity": "P2",
+      "affectedCases": ["ORD-077"],
+      "summary": "At 375x812 mobile viewport, both Start date and End date inputs in the Filters popover render at 36px height — below the WCAG 2.5.5 and Apple HIG 44px minimum touch target requirement. Inputs are interactive and visible; only size fails. Affects all touch-device users on the orders page filter UI."
+    }
+  ]
+}

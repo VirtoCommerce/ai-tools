@@ -178,9 +178,14 @@ Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared
 
 ---
 
+## Documentation Sources (all agents)
+
+For any Virto Commerce platform / module / API / storefront / deployment / B2B question, **all agents must query VirtoOZ MCP first** via the `/vc-docs` skill. VirtoOZ exposes 12 topic-scoped retrieval tools — pick the narrowest one (e.g. `PlatformDeveloperGuide` for backend API questions, `StorefrontDeveloperGuide` for vc-frontend, `B2BExperts` for B2B-specific guidance, `*SourceCode` tools for code-level questions). Context7 (`/virtocommerce/vc-docs`) is the fallback when VirtoOZ returns thin results or for non-VC libraries. Full tool list and routing rules in `.claude/skills/vc-knowledge/vc-docs/SKILL.md` and `.claude/rules/mcp-browsers.md`.
+
 ## Requirements
 
 - Claude Code with subagent/Task tool support
 - Agent Teams mode enabled in `.claude/settings.json`
 - MCP servers configured in `.mcp.json` (Playwright chrome/firefox/edge)
+- User/IDE-level MCPs configured: Chrome DevTools, Azure, Atlassian, Figma, Microsoft Learn, **VirtoOZ**
 - `.env` with environment URLs and credentials (run `npm run env:check`)

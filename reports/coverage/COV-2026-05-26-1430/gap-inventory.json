@@ -1,0 +1,156 @@
+{
+  "runId": "COV-2026-05-26-1430",
+  "scope": "custom:order-history-filter",
+  "layersRequested": ["storefront"],
+  "targetSuite": "014",
+  "targetSuiteFile": "regression/suites/Frontend/orders/014-orders-frontend.csv",
+  "manifestDomain": "purchase-flow",
+  "existingCases": [
+    "ORD-006 (Filter by Shipped)",
+    "ORD-015 (Search by order number)",
+    "ORD-016 (Pagination)",
+    "ORD-017 (Date range filter)",
+    "ORD-019 (Multi-status filter)",
+    "ORD-020 (Sort by date asc/desc)",
+    "ORD-021 (Sort by total)",
+    "ORD-022 (Clear/reset filters)",
+    "ORD-023 (Sort by status column)",
+    "ORD-024 (Empty state - filter no match)",
+    "ORD-025 (Empty state - search no results)",
+    "ORD-027 (Mobile collapsed filters)"
+  ],
+  "gaps": [
+    {
+      "gapId": "GAP-OHF-001",
+      "feature": "Filter persistence across navigation (back from order detail)",
+      "gapCategory": "MISSING_NEGATIVE",
+      "priorityScore": 7.5,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2 (Filter persists incorrectly)"],
+      "rationale": "ECL-3.2 calls out 'Filter persists incorrectly' as observed defect. No existing case verifies filter remains applied after navigating to order detail and using browser back."
+    },
+    {
+      "gapId": "GAP-OHF-002",
+      "feature": "Filter + sort combination — filter is preserved when sort is changed",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 8.0,
+      "priority": "P0",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2 (Sort order resets on filter)"],
+      "rationale": "ECL-3.2 explicitly names 'Sort order resets on filter' as anti-pattern. ORD-019, ORD-020, ORD-021 each test filter OR sort in isolation, never together."
+    },
+    {
+      "gapId": "GAP-OHF-003",
+      "feature": "Date range — invalid range (start > end) validation",
+      "gapCategory": "MISSING_NEGATIVE",
+      "priorityScore": 6.5,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "ORD-017 only covers valid date range. No negative case for start > end (should validate or auto-swap)."
+    },
+    {
+      "gapId": "GAP-OHF-004",
+      "feature": "Date range BVA — same start and end date (single-day boundary)",
+      "gapCategory": "MISSING_NEGATIVE",
+      "priorityScore": 6.0,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "Boundary value: start = end should return orders placed on that exact date (inclusive). Not covered."
+    },
+    {
+      "gapId": "GAP-OHF-005",
+      "feature": "Filter + search combination — both narrow results jointly",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 6.5,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "ORD-015 (search) and ORD-019 (status filter) tested in isolation. No verification that they compose correctly (intersection)."
+    },
+    {
+      "gapId": "GAP-OHF-006",
+      "feature": "Pagination + filter combination — filter preserved across page navigation",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 6.5,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "ORD-016 tests pagination on unfiltered list. Filter that yields >1 page of results, then click page 2 — filter must remain applied. Not covered."
+    },
+    {
+      "gapId": "GAP-OHF-007",
+      "feature": "URL query-param deep link / browser refresh restores filter state",
+      "gapCategory": "MISSING_NEGATIVE",
+      "priorityScore": 5.5,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "If filter state is in URL (status, date, page), reload should preserve. If not in URL, the deep link is broken — either behavior should be explicitly verified."
+    },
+    {
+      "gapId": "GAP-OHF-008",
+      "feature": "Search by partial order number (prefix / substring)",
+      "gapCategory": "MISSING_NEGATIVE",
+      "priorityScore": 6.0,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001"],
+      "edgeCases": ["ECL-3.1"],
+      "rationale": "ORD-015 tests exact order-number match only. Partial / prefix search behavior is undocumented and untested — common buyer use case."
+    },
+    {
+      "gapId": "GAP-OHF-009",
+      "feature": "B2B org-scoped order list — filter applied to org-wide orders, not buyer-only",
+      "gapCategory": "MIGRATION_GAP",
+      "priorityScore": 7.0,
+      "priority": "P1",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-ORD-001", "BL-AUTH-005"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "B2B-store buyers (with company role) see their org's orders, not just their own. Filter behavior in this multi-buyer context not covered by existing cases (all assume single USER_DEFAULT scope)."
+    },
+    {
+      "gapId": "GAP-OHF-010",
+      "feature": "Active filter indicators — chip-style display of applied filters, individual removal",
+      "gapCategory": "SHALLOW_HAPPY",
+      "priorityScore": 4.5,
+      "priority": "P2",
+      "applicableLayers": ["storefront"],
+      "targetSuites": ["014"],
+      "businessRules": ["BL-UI-006"],
+      "edgeCases": ["ECL-3.2"],
+      "rationale": "ORD-022 covers global Clear/Reset. Individual filter-chip removal (X on each chip) is a separate interaction not currently covered."
+    }
+  ],
+  "totals": {
+    "gapsAnalyzed": 10,
+    "byPriority": { "P0": 1, "P1": 8, "P2": 1 },
+    "byCategory": {
+      "SHALLOW_HAPPY": 4,
+      "MISSING_NEGATIVE": 5,
+      "MIGRATION_GAP": 1
+    }
+  },
+  "outOfScopeFindings": [
+    "BL ref hygiene: many existing ORD-* cases reference BL-ORD-003 (partial fulfillment) for filter/search behaviors — BL-ORD-003 is semantically about shipments, not filtering. Consider adding a dedicated BL-ORD-* entry for orders-list query behavior, or re-pointing these to a more appropriate invariant. Documented for follow-up; NOT addressed in this run."
+  ]
+}

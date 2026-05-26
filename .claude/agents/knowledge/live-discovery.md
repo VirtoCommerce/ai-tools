@@ -81,6 +81,59 @@ const { first, last } = randomPersonName(); // { first: "Alex", last: "Lane" }
 
 ---
 
+## UI recipes — random pick from a rendered listing (browser agents)
+
+For interactive browser agents (Playwright-MCP, Chrome-DevTools-MCP) running test cases against the storefront. Use when the test exercises the **UI search/browse path** and just needs *any* matching product — not a specific known fixture. Hardcoded `@td(BUYABLE_NO_MIN_QTY.slug)` PDP URLs hide UI listing bugs ("stuck at product #1", coupling on alphabetical first position).
+
+### Recipe 1 — random search keyword
+
+`test-data/search-queries/top-50-amazon.csv` is the curated keyword pool (50 terms across electronics, kitchen, fitness, household, books, etc.). Existing aliases (`SEARCH_KITCHEN`, `SEARCH_FITNESS`) pin one row; for randomization, the agent picks any row at runtime:
+
+```
+[SETUP] read test-data/search-queries/top-50-amazon.csv, pick a random row → store as search_term
+[NAV] {{FRONT_URL}}
+[ACT] click [data-test-id="global-search-query-input"]
+[ACT] type {search_term}, press Enter
+[WAIT] /search?q=… loads
+[ASSERT] heading contains the resolved search_term
+[LOG] picked search_term to evidence
+```
+
+Don't assert exact result count or specific products in the results — assert ≥ 0 results, results are renderable (no JS error), and the keyword echoes in the heading.
+
+### Recipe 2 — random product from a rendered grid
+
+After `browser_snapshot` on `/catalog` or `/search?q=…`, the agent counts product-card `link` nodes under `main`, picks a random index, and follows that card's `/url`:
+
+```
+[NAV] {{FRONT_URL}}/catalog  (or /search?q={search_term})
+[WAIT] product grid loaded
+[ACT] browser_snapshot → count link nodes whose href matches /product/ or /<category>/<slug>
+[ACT] pick random index i in [0, N) → store card[i].url as pdp_url, card[i].text as pdp_name
+[NAV] {{FRONT_URL}}{pdp_url}
+[WAIT] PDP loaded
+[ASSERT] page heading contains pdp_name
+[LOG] picked pdp_url + pdp_name to evidence
+```
+
+For the storefront, "product card" candidates are `link` elements with `/url` matching `^/(product|[\w-]+/[\w-/]+)$` and a non-empty `img` child — exclude header/footer/nav links by scoping to `main` in the snapshot.
+
+### What to assert on a randomly-picked product
+
+| ✅ Safe | ❌ Brittle |
+|---|---|
+| Price > 0 and formatted with exactly 2 decimal places | Exact price (`$233.00`) |
+| Has at least one image | Specific image filename |
+| `Add to cart` / quantity stepper enabled (stock > 0) | Specific stock count |
+| PDP title matches the listing card name | Exact product name from a fixture |
+| Add-to-cart succeeds and cart line appears with that SKU | Specific SKU |
+
+### Mandatory: log the chosen entity to evidence
+
+Random picks make failures non-reproducible without a record of what was picked. Every test using these recipes MUST write `picked_search_term` / `picked_pdp_url` / `picked_pdp_name` to the per-case evidence JSON before the first non-trivial assertion. Without it, a reviewer can't tell whether a failure is a UI bug or a data quirk on the one product the test happened to pick.
+
+---
+
 ## CSV runner recipes — for runner-native GraphQL test cases
 
 Use when you're authoring a row under `regression/suites/Backend/graphql/`. The runner already supports discovery via `[GQL-OP]` + `[GQL-CAPTURE]` — no new tags are needed. See [`graphql-test-cases-runner.md`](graphql-test-cases-runner.md) for the full tag grammar.
@@ -193,6 +246,8 @@ Gold-standard reference for chained capture syntax: `regression/suites/Backend/g
 | Discover a product and then assert it equals a specific SKU | Either use `@td(PRODUCT_X.sku)` for the assertion, or assert shape only |
 | Throw when `discoverFirstAddress` returns `null` | Treat `null` as a normal outcome — log it, fall back to seeding, or skip |
 | Use `random-data` for an email you'll log into later | Random emails have no password in `.env`; use `@td(USER_*.email)` for accounts you authenticate as |
+| Random-pick a product from the listing but assert exact name/price/SKU | Assert shape: price > 0, 2-dp formatted, stock > 0, PDP title matches the captured listing card text |
+| Random-pick a product or keyword and not record what was picked | Log `picked_pdp_url` / `picked_search_term` to evidence JSON before the first assertion — random failures are unreproducible without it |
 
 ---
 

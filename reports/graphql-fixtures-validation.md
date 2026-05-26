@@ -1,10 +1,29 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-05-20T13:23:55.839Z
+**Validated at:** 2026-05-21T10:58:30.050Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 66 fixtures — 66 passed, 0 failed
+**Total:** 67 fixtures — 65 passed, 2 failed
 
-## ✅ Passed Fixtures (66)
+## ❌ Failed Fixtures (2)
+
+### products (query)
+
+- **Path:** `test-data/graphql/queries/products.graphql`
+- **Role:** PUBLIC or ORG_USER
+- **Purpose:** Paginated product list; MUST include the B2B virtual catalog subtree filter so storefront resolvers return rows
+- **Errors:**
+  - `DV-008`: Unknown argument "withFacets" on field "Query.products". Did you mean "facet"?
+  - `DV-008`: Unknown argument "withImages" on field "Query.products".
+
+### promotionCoupons (query)
+
+- **Path:** `test-data/graphql/queries/promotionCoupons.graphql`
+- **Role:** ORG_USER
+- **Purpose:** List active promotion coupons available to a user in a store (paginated)
+- **Errors:**
+  - `DV-006`: Cannot query field "promotionCoupons" on type "Query".
+
+## ✅ Passed Fixtures (65)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -39,6 +58,7 @@
 | currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-05-20 | 1 noted |
 | deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-05-20 | 1 noted |
 | getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-05-21 | 1 noted |
 | me | query | ORG_USER | profile | (none) | 2026-05-20 | 1 noted |
 | moveFromSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-05-20 | 1 noted |
 | moveToSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-05-20 | 1 noted |
@@ -51,8 +71,6 @@
 | product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
 | productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID c972b4d0-25c2-4d7c-8a18-9360a8889bc3) | 2026-05-20 | 1 noted |
 | productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
-| products | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATALOG_SUBTREE_ID (String — typically "fc596540-..." root of B2B virtual catalog) | 2026-05-20 | 1 noted |
-| promotionCoupons | query | ORG_USER | marketing | (none) | 2026-05-20 | 1 noted |
 | removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-05-20 | 1 noted |
 | removeCartItem | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
 | removeConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
@@ -170,6 +188,9 @@
 
 **getSavedForLater**:
 - returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend
+
+**initializeApplication**:
+- (none)
 
 **me**:
 - (none)

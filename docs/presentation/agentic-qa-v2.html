@@ -278,6 +278,43 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
   border-left: 3px solid var(--accent); padding-left: 18px;
   margin: 16px 0; font-style: italic; color: var(--text-2); font-size: 16px;
 }
+
+/* ===== Speaker notes panel ===== */
+.notes-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(26,23,20,0.97); color: #fff;
+  padding: 12px 24px 16px; max-height: 38vh; overflow-y: auto;
+  border-top: 2px solid var(--accent);
+  display: none; z-index: 200;
+  font-family: var(--font); font-size: 14px; line-height: 1.55;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
+}
+body.show-notes .notes-panel { display: block; }
+body.show-notes .nav { bottom: calc(38vh + 16px); }
+.notes-header {
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 8px; font-size: 11px;
+  padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.notes-title {
+  font-weight: 700; color: var(--accent); letter-spacing: 0.08em;
+  text-transform: uppercase; font-size: 11px;
+}
+.notes-lang {
+  background: none; border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.65); padding: 3px 12px;
+  border-radius: 4px; cursor: pointer; font-size: 11px;
+  font-family: var(--font); font-weight: 600;
+}
+.notes-lang:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+.notes-lang.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.notes-hint { color: rgba(255,255,255,0.4); margin-left: auto; font-size: 11px; }
+.notes-hint kbd {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px; padding: 1px 5px; font-family: var(--mono); font-size: 10px;
+}
+.notes-body { color: rgba(255,255,255,0.9); }
+.notes-body p { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -288,7 +325,8 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
 
 <!-- ========== SLIDE 1: TITLE ========== -->
 <div class="slide title-slide active" id="s1">
-  <div class="slide-num">1 / 22</div>
+  <div class="slide-num">1 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Welcome. Agentic QA replaces traditional Playwright scripts with natural-language tests executed by AI agents through real browsers. 14 specialized agents, ~3,000 test cases across 97 suites, full storefront + admin + REST + GraphQL coverage. Today: ~15 minutes, 19 slides. Press S to toggle these speaker notes, L to switch language.", "ru": "Добро пожаловать. Agentic QA заменяет традиционные Playwright-скрипты тестами на естественном языке, которые ИИ-агенты выполняют через реальные браузеры. 14 специализированных агентов, ~3 000 кейсов в 97 наборах, полное покрытие витрины, админки, REST и GraphQL. Сегодня: ~15 минут, 19 слайдов. Клавиша S — показать/скрыть заметки, L — переключить язык."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Virto Commerce · QA Engineering · 2026</div>
     <h1>Agentic QA<br><span class="hero-accent">AI-Driven Testing</span></h1>
@@ -317,59 +355,10 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); }
   </div>
 </div>
 
-<!-- ========== SLIDE 2: THE PROBLEM / BEFORE-AFTER ========== -->
-<div class="slide" id="s2">
-  <div class="slide-num">2 / 22</div>
-  <div class="slide-inner">
-    <div class="eyebrow">The Problem We Solve</div>
-    <h2>Traditional Automation vs. Agentic QA</h2>
-
-    <div class="compare mt16">
-      <div class="compare-col old">
-        <h3>❌ Traditional Test Automation</h3>
-        <ul class="checklist">
-          <li class="bad">Requires Playwright/Selenium engineering skills</li>
-          <li class="bad">Breaks on every CSS class / selector change</li>
-          <li class="bad">High maintenance cost — devs, not QA, fix tests</li>
-          <li class="bad">Adding a test suite = writing hundreds of lines of code</li>
-          <li class="bad">Can't reason about business logic violations</li>
-          <li class="bad">No contextual understanding — only matches patterns</li>
-        </ul>
-      </div>
-      <div class="compare-col new-col">
-        <h3>✅ Agentic QA</h3>
-        <ul class="checklist">
-          <li>Plain English prompts — no coding required</li>
-          <li>Self-healing — agents find elements by context, not selectors</li>
-          <li>Low maintenance — update the prompt, not the test code</li>
-          <li>Adding a test suite = adding a CSV file</li>
-          <li>Agents apply business invariants (BL-* rules) to every test</li>
-          <li>Contextual reasoning: "this price is wrong because…"</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="mt20">
-      <div class="compare">
-        <pre style="margin:0; font-size:12px;">// Traditional Playwright script (140 lines)
-await page.goto('/login');
-await page.fill('[data-id="email"]', user);
-await page.fill('[data-id="pass"]', pass);
-await page.click('.submit-btn-v2'); // breaks when renamed
-await expect(page).toHaveURL('/dashboard');
-// ... 135 more lines of fragile code</pre>
-        <pre style="margin:0; font-size:12px; border-color:rgba(46,125,90,0.3);">// Agentic test instruction (3 lines)
-"Sign in to the storefront using the QA test
-account. Verify the dashboard loads and the
-cart icon shows correct item count."</pre>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== SLIDE 3: PROJECT OVERVIEW ========== -->
+<!-- ========== SLIDE 2: PROJECT OVERVIEW ========== -->
 <div class="slide" id="s3">
-  <div class="slide-num">3 / 22</div>
+  <div class="slide-num">2 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "LLM-powered platform. AI agents reason about what to click and what counts as a bug — not just match selectors. 14 agents, 97 CSV suites, 20 methodology skills, 23 knowledge files. Scope is the entire VC B2B platform — storefront, admin SPA, REST, GraphQL xAPI, checkout, B2B multi-org, GA4 tracking, WCAG 2.1 AA accessibility, 55 Storybook components.", "ru": "LLM-платформа. ИИ-агенты рассуждают, что кликать и что считать багом — не просто матчат селекторы. 14 агентов, 97 CSV-наборов, 20 методологических навыков, 23 файла знаний. Покрытие — вся B2B-платформа VC: витрина, админка, REST, GraphQL xAPI, чекаут, multi-org, GA4-трекинг, WCAG 2.1 AA accessibility, 55 компонентов Storybook."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Project Overview</div>
     <h2>What Is the Agentic QA System?</h2>
@@ -422,7 +411,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 4: ARCHITECTURE ========== -->
 <div class="slide" id="s4">
-  <div class="slide-num">4 / 22</div>
+  <div class="slide-num">3 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Three modes, one foundation. Interactive mode runs from the IDE for everyday work — engineer types a command, agents drive real browsers. Agent Teams mode is the autonomous regression engine with TeamCreate API, token bucket, exponential backoff. CI Pipeline (planned) will trigger from GitHub Actions on schedule. All three read the same CSV suites and knowledge files — update once, every mode benefits.", "ru": "Три режима — одна основа. Интерактивный режим — повседневная работа из IDE: инженер вводит команду, агенты управляют реальными браузерами. Agent Teams — автономный движок регрессии через TeamCreate, token bucket, exponential backoff. CI Pipeline (план) — расписания в GitHub Actions. Все три режима читают одни и те же CSV-наборы и знания — обновили один раз, выигрывают все."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Architecture</div>
     <h2>Three Testing Modes, One Foundation</h2>
@@ -484,7 +474,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 5: BY THE NUMBERS ========== -->
 <div class="slide" id="s5">
-  <div class="slide-num">5 / 22</div>
+  <div class="slide-num">4 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Scale at a glance. 14 specialized agents (10 QA + 4 BA), 97 test suites (45 frontend + 52 backend), ~3,000 cases, 10 MCP server integrations. Intelligence layer adds 20 methodology skills (ISTQB lifecycle, WCAG 2.1 AA, SBTM, BDD, risk-based) and 23 shared knowledge files. Selection groups span smoke (140 tests), critical (230), sprint (plan-driven ~2,700), and full (~3,000).", "ru": "Масштаб одним взглядом. 14 специализированных агентов (10 QA + 4 BA), 97 наборов (45 frontend + 52 backend), ~3 000 кейсов, 10 интеграций MCP. Слой знаний — 20 методологических навыков (ISTQB, WCAG 2.1 AA, SBTM, BDD, risk-based) и 23 общих файла знаний. Выборки: smoke (140), critical (230), sprint (~2 700 по плану), full (~3 000)."}</script>
   <div class="slide-inner">
     <div class="eyebrow">System Scale</div>
     <h2>Agentic QA at a Glance</h2>
@@ -523,7 +514,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 6: AGENT TEAMS ========== -->
 <div class="slide" id="s6">
-  <div class="slide-num">6 / 22</div>
+  <div class="slide-num">5 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Fourteen agents in two teams — QA and BA. Three orchestrators coordinate the work. Four execution specialists each have their own browser to avoid interference: qa-frontend-expert on Chrome, qa-backend-expert on Edge, qa-testing-expert on Firefox, ui-ux-expert on Chrome DevTools. Four-layer prompt architecture — business logic, domain knowledge, skill set, design constraints. BA team uses GitHub MCP for vc-module-* repos.", "ru": "Четырнадцать агентов в двух командах — QA и BA. Три оркестратора координируют работу. У каждого из четырёх исполнительных специалистов свой браузер для изоляции: qa-frontend-expert — Chrome, qa-backend-expert — Edge, qa-testing-expert — Firefox, ui-ux-expert — Chrome DevTools. Четырёхслойная архитектура промптов: бизнес-логика, домен, навыки, ограничения. BA-команда использует GitHub MCP для репозиториев vc-module-*."}</script>
   <div class="slide-inner" style="padding:28px 36px 20px;">
     <div class="eyebrow">Agent Teams</div>
     <h2 style="margin-bottom:16px;">14 Specialized Agents — Four-Layer Architecture</h2>
@@ -583,7 +575,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 7: COMMANDS ========== -->
 <div class="slide" id="s7">
-  <div class="slide-num">7 / 22</div>
+  <div class="slide-num">6 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Six main commands cover the daily QA cycle. /qa-smoke delivers a GO/NO-GO in 15 minutes. /qa-test reads a JIRA ticket and runs every AC. /qa-regression sprint is plan-driven from sprint summary JSON. /qa-bug reproduces and files bugs with HAR + screenshots. /qa-status and /qa-env-check are read-only auto-invocable — no browser needed.", "ru": "Шесть основных команд покрывают повседневный QA-цикл. /qa-smoke — GO/NO-GO за 15 минут. /qa-test читает тикет JIRA и выполняет каждый AC. /qa-regression sprint — план-зависимая, из sprint summary JSON. /qa-bug воспроизводит и заводит баги с HAR + скриншотами. /qa-status и /qa-env-check — read-only auto-invocable, без браузера."}</script>
   <div class="slide-inner">
     <div class="eyebrow">One-Command Interface</div>
     <h2>16 Slash Commands — Full QA Lifecycle from the IDE</h2>
@@ -628,7 +621,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 8: PIPELINE & QUALITY COMMANDS ========== -->
 <div class="slide" id="s8">
-  <div class="slide-num">8 / 22</div>
+  <div class="slide-num">7 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Three commands round out the QA cycle. /qa-test-lifecycle keeps suites in sync with code — feed it a PR or git diff, get updated Steps and Assertions. /qa-design runs a dual Storybook + storefront BL-UI audit to catch isolation-only or integration-only bugs. /qa-verify-fix closes the feedback loop end-to-end on every bug fix — reproduces the original STR, confirms the fix, transitions JIRA.", "ru": "Три команды завершают цикл QA. /qa-test-lifecycle синхронизирует наборы с кодом — подаём PR или git diff, получаем обновлённые Steps и Assertions. /qa-design — двойной аудит Storybook + витрина, ловит баги, спрятанные либо в изоляции компонента, либо только в интеграции. /qa-verify-fix замыкает обратную связь end-to-end по каждому фиксу — воспроизводит STR, подтверждает фикс, переводит JIRA."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Pipeline & Quality Commands</div>
     <h2>Test Lifecycle, Design Audit, Fix Verification</h2>
@@ -658,83 +652,72 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 9: POWER FEATURE 1 — MCP ========== -->
+<!-- ========== SLIDE 8: POWER FEATURE 1 — MCP ========== -->
 <div class="slide" id="s9">
-  <div class="slide-num">9 / 22</div>
+  <div class="slide-num">8 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "MCP servers are Claude tools. Top 5 — Playwright (3 browsers) gives the eyes and hands. VirtoOZ is the primary VC docs source: 12 topic-scoped tools — PlatformUserGuide, StorefrontDeveloperGuide, BackendSourceCode, B2BExperts, DeploymentGuide — accessed via the /vc-docs skill. Atlassian closes the JIRA ticket loop. GitHub searches vc-module-* source. Postman drives APIs and seed data. Plus DevTools, Figma, Azure, Context7, Microsoft Learn.", "ru": "MCP-серверы — инструменты Claude. Топ-5: Playwright (3 браузера) — глаза и руки. VirtoOZ — основной источник документации VC: 12 тематических инструментов — PlatformUserGuide, StorefrontDeveloperGuide, BackendSourceCode, B2BExperts, DeploymentGuide — через скилл /vc-docs. Atlassian замыкает цикл тикетов. GitHub ищет в исходниках vc-module-*. Postman управляет API и seed-данными. Плюс DevTools, Figma, Azure, Context7, Microsoft Learn."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #1</div>
-    <h2>10 MCP Servers — Claude's Eyes, Hands & Memory</h2>
-    <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; margin-bottom:16px; padding:14px 18px; background:var(--code-bg); border:1px solid var(--border); border-radius:10px;">
-      <div style="text-align:center; flex-shrink:0; padding:0 4px;">
-        <div style="font-size:20px;">👨‍💻</div>
-        <div style="font-size:10px; color:var(--text-3); margin-top:2px; font-weight:600;">Engineer</div>
-        <div style="font-size:10px; color:var(--text-3);">types command</div>
+    <h2>Top 5 MCP Servers — Claude's Eyes, Hands &amp; Memory</h2>
+    <div class="sub" style="margin-bottom:16px;">MCP (Model Context Protocol) servers are tools Claude calls during a test. They give the agent the ability to drive browsers, read live documentation, manage tickets, and reach across the platform — without leaving the conversation.</div>
+
+    <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+      <div class="card accent" style="padding:14px 14px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:6px;">🌐</div>
+        <div style="font-weight:800; color:var(--accent); font-size:14px;">Playwright ×3</div>
+        <div style="font-size:11px; color:var(--text-3); margin:2px 0 6px;">Chrome · Firefox · Edge</div>
+        <div style="font-size:12px; color:var(--text-2);">Real browsers, isolated contexts, HAR capture, screenshots, parallel execution</div>
+        <div class="badge badge-accent" style="margin-top:8px;">#1 — Eyes &amp; Hands</div>
       </div>
-      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
-      <div style="background:var(--accent-soft); border:2px solid var(--accent-mid); border-radius:10px; padding:10px 16px; text-align:center; flex-shrink:0;">
-        <div style="font-size:22px;">🧠</div>
-        <div style="font-size:12px; font-weight:800; color:var(--accent); margin-top:2px;">Claude</div>
-        <div style="font-size:10px; color:var(--text-2);">Reasons · Plans</div>
-        <div style="font-size:10px; color:var(--text-2);">Executes · Judges</div>
+      <div class="card" style="padding:14px 12px; text-align:center; border-color:rgba(46,125,90,0.3); background:var(--green-soft);">
+        <div style="font-size:26px; margin-bottom:6px;">📚</div>
+        <div style="font-weight:800; color:var(--green); font-size:14px;">VirtoOZ</div>
+        <div style="font-size:11px; color:var(--text-3); margin:2px 0 6px;">12 topic-scoped tools</div>
+        <div style="font-size:12px; color:var(--text-2);"><strong>Primary VC docs source.</strong> Platform / Storefront / Marketplace user &amp; developer guides + source code search</div>
+        <div class="badge badge-green" style="margin-top:8px;">#2 — VC Brain</div>
       </div>
-      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">↔</div>
-      <div style="background:var(--blue-soft); border:1.5px solid rgba(41,89,168,0.25); border-radius:10px; padding:10px 14px; text-align:center; flex:1; min-width:0;">
-        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.04em;">10 MCP SERVERS</div>
-        <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center;">
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">playwright ×3</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">DevTools</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">figma</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">github</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">postman</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">context7</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">azure</span>
-          <span style="font-size:10px; background:rgba(255,255,255,0.8); border:1px solid var(--border); border-radius:4px; padding:2px 6px;">atlassian</span>
-        </div>
-        <div style="font-size:10px; color:var(--text-3); margin-top:6px;">Claude's eyes, hands &amp; memory</div>
+      <div class="card blue" style="padding:14px 12px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:6px;">🎫</div>
+        <div style="font-weight:800; color:var(--blue); font-size:14px;">Atlassian</div>
+        <div style="font-size:11px; color:var(--text-3); margin:2px 0 6px;">JIRA + Confluence</div>
+        <div style="font-size:12px; color:var(--text-2);">Read tickets · file bugs with evidence · transition statuses · close the QA loop</div>
+        <div class="badge badge-blue" style="margin-top:8px;">#3 — Ticket Loop</div>
       </div>
-      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
-      <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
-        <span style="font-size:11px; background:var(--accent-soft); border:1px solid var(--accent-mid); border-radius:5px; padding:3px 9px; color:var(--accent); font-weight:600;">🌐 Chrome</span>
-        <span style="font-size:11px; background:var(--blue-soft); border:1px solid rgba(41,89,168,0.25); border-radius:5px; padding:3px 9px; color:var(--blue); font-weight:600;">🦊 Firefox</span>
-        <span style="font-size:11px; background:var(--green-soft); border:1px solid rgba(46,125,90,0.25); border-radius:5px; padding:3px 9px; color:var(--green); font-weight:600;">⚡ Edge</span>
+      <div class="card" style="padding:14px 12px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:6px;">🐙</div>
+        <div style="font-weight:800; font-size:14px;">GitHub</div>
+        <div style="font-size:11px; color:var(--text-3); margin:2px 0 6px;">vc-module-* repos</div>
+        <div style="font-size:12px; color:var(--text-2);">Search module source code · review PRs · pull file contents · cross-reference behavior</div>
+        <div class="badge badge-gray" style="margin-top:8px;">#4 — Source</div>
       </div>
-      <div style="color:var(--text-3); font-size:18px; flex-shrink:0; padding:0 4px;">→</div>
-      <div style="background:var(--green-soft); border:1.5px solid rgba(46,125,90,0.25); border-radius:10px; padding:10px 12px; text-align:center; flex-shrink:0;">
-        <div style="font-size:20px;">📋</div>
-        <div style="font-size:11px; font-weight:700; color:var(--green); margin-top:2px;">Reports</div>
-        <div style="font-size:10px; color:var(--text-2);">Screenshots</div>
-        <div style="font-size:10px; color:var(--text-2);">HAR · JIRA</div>
+      <div class="card" style="padding:14px 12px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:6px;">📮</div>
+        <div style="font-weight:800; font-size:14px;">Postman</div>
+        <div style="font-size:11px; color:var(--text-3); margin:2px 0 6px;">REST + GraphQL</div>
+        <div style="font-size:12px; color:var(--text-2);">Author collections · seed test data · generate APIs · drive <code>/qa-seed-data</code></div>
+        <div class="badge badge-gray" style="margin-top:8px;">#5 — API</div>
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px; margin-top:8px;">
-      <div class="card" style="padding:16px; text-align:center;">
-        <div style="font-size:26px; margin-bottom:8px;">🌐</div>
-        <div style="font-weight:700; margin-bottom:6px;">Browser Automation</div>
-        <div style="font-size:12.5px; color:var(--text-2);">Chrome · Firefox · Edge run in parallel with full HAR capture and screenshot evidence</div>
-      </div>
-      <div class="card blue" style="padding:16px; text-align:center;">
-        <div style="font-size:26px; margin-bottom:8px;">🎨</div>
-        <div style="font-weight:700; margin-bottom:6px;">Design Comparison</div>
-        <div style="font-size:12.5px; color:var(--text-2);">Figma MCP compares live UI screenshots pixel-by-pixel against design specs</div>
-      </div>
-      <div class="card" style="padding:16px; text-align:center;">
-        <div style="font-size:26px; margin-bottom:8px;">🔗</div>
-        <div style="font-weight:700; margin-bottom:6px;">API & Code</div>
-        <div style="font-size:12.5px; color:var(--text-2);">Postman runs API collections · GitHub searches code and reviews PRs automatically</div>
-      </div>
-      <div class="card green" style="padding:16px; text-align:center;">
-        <div style="font-size:26px; margin-bottom:8px;">☁️</div>
-        <div style="font-weight:700; margin-bottom:6px;">Cloud & Docs</div>
-        <div style="font-size:12.5px; color:var(--text-2);">Azure App Insights for error logs · Context7 for live VC documentation lookup</div>
-      </div>
+    <div class="card" style="padding:12px 18px; display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-2); letter-spacing:0.08em; text-transform:uppercase;">Supporting Servers</div>
+      <span class="badge badge-gray">Chrome DevTools — console · network · HAR · perf</span>
+      <span class="badge badge-gray">Figma — pixel-diff vs design</span>
+      <span class="badge badge-gray">Azure — App Insights logs</span>
+      <span class="badge badge-gray">Context7 — third-party lib docs (fallback)</span>
+      <span class="badge badge-gray">Microsoft Learn — Azure docs</span>
+    </div>
+
+    <div class="card green mt16" style="padding:12px 18px;">
+      <div style="font-size:13px; color:var(--green);"><strong>Why VirtoOZ matters:</strong> agents stop guessing about Virto Commerce internals. They consult <strong>live, topic-scoped documentation</strong> (Platform UserGuide, StorefrontDeveloperGuide, BackendSourceCode, B2BExperts, DeploymentGuide…) before writing a test, filing a bug, or proposing a fix. Accessed via the <code>/vc-docs</code> skill.</div>
     </div>
   </div>
 </div>
 
 <!-- ========== SLIDE 10: POWER FEATURE 2 — BUSINESS RULES ========== -->
 <div class="slide" id="s10">
-  <div class="slide-num">10 / 22</div>
+  <div class="slide-num">9 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Shared business-logic.md defines testable invariants — BL-PRICE-001 (no >100% discount stacking), BL-CART-004 (no purchasing out-of-stock), BL-B2B-003 (org data isolation), and dozens more across 15+ domains. Violations are flagged as bugs with the BL-ID cited. The ECL library adds 13 generic plus 7 VC-specific edge case patterns. Update once, all 14 agents benefit.", "ru": "Общий business-logic.md описывает тестируемые инварианты — BL-PRICE-001 (не более 100% стека скидок), BL-CART-004 (нельзя купить OOS), BL-B2B-003 (изоляция данных организаций) и десятки других в 15+ доменах. Нарушения помечаются как баги со ссылкой на BL-ID. Библиотека ECL добавляет 13 общих и 7 VC-специфичных edge-паттернов. Обновили один раз — выигрывают все 14 агентов."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #2</div>
     <h2>Business Rules & Edge Case Libraries</h2>
@@ -791,7 +774,8 @@ cart icon shows correct item count."</pre>
 
 <!-- ========== SLIDE 11: POWER FEATURE 3 — PARALLEL REGRESSION ========== -->
 <div class="slide" id="s11">
-  <div class="slide-num">11 / 22</div>
+  <div class="slide-num">10 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "3 browsers run suites simultaneously — chrome, firefox, edge. Suite selections from smoke (140 tests) up to full (~3,000). Quality Gate verdicts: APPROVED (≥95% pass and no P0), CONDITIONAL (only P2/P3 — deploy with tracked follow-ups), BLOCKED (any P0/P1 — no deployment). Retry logic uses browser fallback chain: chrome → firefox → edge, max 2 retries per suite.", "ru": "3 браузера запускают наборы одновременно — chrome, firefox, edge. Выборки от smoke (140 тестов) до full (~3 000). Вердикты Quality Gate: APPROVED (≥95% pass и нет P0), CONDITIONAL (только P2/P3 — деплой с трекингом), BLOCKED (любой P0/P1 — не деплоить). Повтор по цепочке fallback: chrome → firefox → edge, максимум 2 ретрая на набор."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Power Feature #3</div>
     <h2>Parallel Regression with Automated Quality Gates</h2>
@@ -870,166 +854,127 @@ cart icon shows correct item count."</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 12: POWER FEATURE 4 — CI/CD ========== -->
-<div class="slide" id="s12">
-  <div class="slide-num">12 / 22</div>
-  <div class="slide-inner">
-    <div class="eyebrow">CI/CD Pipeline · Planned</div>
-    <h2>Full CI/CD Automation Pipeline</h2>
-
-    <div class="cols-65-35 mt16">
-      <div>
-        <div class="card" style="padding:16px 20px; margin-bottom:16px;">
-          <pre style="background:none; border:none; padding:0; font-size:12.5px;">GitHub Actions (schedule / manual trigger)
-      │
-      ▼
-Docker Container (Playwright + Node.js 18+)
-      │
-      ▼
-Claude Agent SDK — run-regression.ts
-      │
-      ├─── Budget tracking ($5 smoke / $80 full)
-      ├─── Suite batching (max 3 parallel)
-      │
-      ▼
-Headless Chromium — execute CSV test suites
-      │
-      ▼
-reports/regression/ci-YYYY-MM-DD/
-      │
-      ▼
-Teams Adaptive Card notification → QA channel</pre>
-        </div>
-
-        <div class="cols-2" style="gap:12px;">
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Daily Smoke</div>
-            <div style="font-size:13px;">Mon–Fri 6:00 AM UTC<br>Suite 042 · $5 budget</div>
-          </div>
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:12px; color:var(--text-2); font-weight:600; margin-bottom:4px;">Weekly Full</div>
-            <div style="font-size:13px;">Sunday 2:00 AM UTC<br>All 97 suites · $80</div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 style="margin-bottom:12px;">CI Key Features</h3>
-        <ul class="checklist" style="gap:8px;">
-          <li style="font-size:13.5px;">Budget-controlled per-suite allocation</li>
-          <li style="font-size:13.5px;">90-day rolling regression history</li>
-          <li style="font-size:13.5px;">Artifacts with 30-day retention</li>
-          <li style="font-size:13.5px;">Manual trigger: any selection, any env</li>
-          <li style="font-size:13.5px;">Teams webhook Adaptive Card</li>
-          <li style="font-size:13.5px;">Suite-by-suite breakdown in report</li>
-        </ul>
-
-        <div class="card accent mt16" style="padding:14px 16px;">
-          <pre style="background:none; border:none; padding:0; font-size:11.5px; color:var(--accent);"># One command to run any scope
-docker run --env-file .env \
-  -e SUITE_SELECTION=critical \
-  -e TEST_ENVIRONMENT=qa \
-  vc-regression</pre>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== SLIDE 13: KNOWLEDGE + SKILLS — POWER FEATURE #5 ========== -->
+<!-- ========== SLIDE 11: KNOWLEDGE + SKILLS — POWER FEATURE #4 ========== -->
 <div class="slide" id="s13">
-  <div class="slide-num">13 / 22</div>
+  <div class="slide-num">11 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Top 4 knowledge files drive most agent decisions. business-logic.md holds BL-* invariants. graphql-schema.md plus the runner doc define the xAPI surface and CSV authoring contract. live-discovery.md tells the agent when to use {{VAR}} vs @td() vs live-discover vs random-data. test-runner-tags.md defines the CSV tag grammar. Plus VirtoOZ MCP via /vc-docs — primary live Virto Commerce documentation source.", "ru": "4 ключевых файла знаний управляют большинством решений агентов. business-logic.md содержит BL-* инварианты. graphql-schema.md + runner doc описывают поверхность xAPI и контракт авторства CSV. live-discovery.md говорит агенту, когда использовать {{VAR}} vs @td() vs live-discover vs random-data. test-runner-tags.md определяет грамматику тегов CSV. Плюс VirtoOZ MCP через /vc-docs — основной живой источник документации Virto Commerce."}</script>
   <div class="slide-inner">
-    <div class="eyebrow">Power Feature #5</div>
-    <h2>Shared Knowledge + 20 Methodology Skills</h2>
+    <div class="eyebrow">Power Feature #4</div>
+    <h2>Top 4 Knowledge Files + VirtoOZ — Shared Brain</h2>
+    <div class="sub" style="margin-bottom:18px;">All 14 agents consult the same knowledge base. Update once — every agent benefits. Below are the four files that drive the largest share of agent decisions, plus VirtoOZ MCP for live Virto Commerce reference.</div>
 
-    <div class="cols-2 mt16">
-      <div>
-        <h3 style="margin-bottom:14px;">23 Shared Knowledge Files</h3>
-        <p style="font-size:14px; color:var(--text-2); margin-bottom:16px;">All QA agents consult these files simultaneously. Update once — all agents benefit.</p>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:18px; margin-bottom:4px;">📋</div>
-            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Business Rules</div>
-            <div style="font-size:12px; color:var(--text-2);">Testable BL-* invariants enforced on every test</div>
-          </div>
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:18px; margin-bottom:4px;">🎯</div>
-            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Edge Case Library</div>
-            <div style="font-size:12px; color:var(--text-2);">13 generic + 7 VC-specific ECL-* patterns</div>
-          </div>
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:18px; margin-bottom:4px;">🗺️</div>
-            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Platform Patterns</div>
-            <div style="font-size:12px; color:var(--text-2);">Storefront sitemap · admin flows · browser quirks</div>
-          </div>
-          <div class="card" style="padding:12px 14px;">
-            <div style="font-size:18px; margin-bottom:4px;">⚡</div>
-            <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Performance Thresholds</div>
-            <div style="font-size:12px; color:var(--text-2);">LCP · CLS · API latency · debug signals</div>
-          </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div class="card accent" style="padding:14px 18px;">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+          <div style="font-size:22px;">📋</div>
+          <div style="font-size:14px; font-weight:800; color:var(--accent);">business-logic.md</div>
         </div>
+        <div style="font-size:13px; color:var(--text-2);">Testable platform invariants (<code>BL-*</code> IDs) across 15+ domains — pricing, cart, checkout, orders, auth, B2B, catalog, UI. Violations are flagged as bugs automatically, with the BL-ID cited.</div>
+        <div style="font-size:11px; color:var(--text-3); margin-top:6px;">Consumed by: every QA agent on every test</div>
       </div>
 
-      <div>
-        <h3 style="margin-bottom:14px;">20 Skills — Encoded Methodology</h3>
-        <div class="card accent" style="padding:14px 16px; margin-bottom:10px;">
-          <div style="font-size:13px; font-weight:600; margin-bottom:6px;">🧪 Testing Skills (10)</div>
-          <div style="font-size:13px; color:var(--text-2);">Storybook · Accessibility (WCAG) · Design review · Test plans · Checklists · API testing · Postman authoring · Coverage gap · Seed data · Test-case review</div>
+      <div class="card blue" style="padding:14px 18px;">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+          <div style="font-size:22px;">📐</div>
+          <div style="font-size:14px; font-weight:800; color:var(--blue);">graphql-schema.md + runner doc</div>
         </div>
-        <div class="card blue" style="padding:14px 16px; margin-bottom:10px;">
-          <div style="font-size:13px; font-weight:600; color:var(--blue); margin-bottom:6px;">📐 QA Methodology Skills (9)</div>
-          <div style="font-size:13px; color:var(--text-2);">ISTQB lifecycle · Bug investigation · Evidence capture · Defect workflow · Test design · AI test generation · Risk matrix · Metrics · SBTM</div>
+        <div style="font-size:13px; color:var(--text-2);">Live introspection snapshot of xAPI GraphQL schema + canonical authoring contract for runner-native CSV cases. Every GraphQL query consults schema FIRST to avoid invented field names.</div>
+        <div style="font-size:11px; color:var(--text-3); margin-top:6px;">Consumed by: backend-expert, test-management-specialist, test-runner-agent</div>
+      </div>
+
+      <div class="card" style="padding:14px 18px; border-color:rgba(197,96,62,0.25);">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+          <div style="font-size:22px;">🎯</div>
+          <div style="font-size:14px; font-weight:800;">live-discovery.md</div>
         </div>
-        <div class="card green" style="padding:14px 16px;">
-          <div style="font-size:13px; font-weight:600; color:var(--green); margin-bottom:4px;">📚 /vc-docs — auto-invocable</div>
-          <div style="font-size:13px; color:var(--text-2);">Semantic search over live Virto Commerce documentation via Context7</div>
+        <div style="font-size:13px; color:var(--text-2);">Decision tree + recipes for runtime test-data resolution. When to use <code>{{VAR}}</code> vs <code>@td()</code> vs <code>live-discover</code> vs <code>random-data</code>. Stops hardcoded IDs from rotting between catalog reseeds.</div>
+        <div style="font-size:11px; color:var(--text-3); margin-top:6px;">Consumed by: any agent that writes Steps / Test_Data columns</div>
+      </div>
+
+      <div class="card" style="padding:14px 18px; border-color:rgba(46,125,90,0.25);">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+          <div style="font-size:22px;">🏷️</div>
+          <div style="font-size:14px; font-weight:800; color:var(--green);">test-runner-tags.md</div>
+        </div>
+        <div style="font-size:13px; color:var(--text-2);">Canonical tag grammar consumed by both browser-mode runners: step tags (<code>[NAV]</code>·<code>[ACT]</code>·<code>[WAIT]</code>), assertion tags (<code>[DOM]</code>·<code>[STATE]</code>·<code>[MATH]</code>·<code>[API]</code>), cross-layer (<code>[HAR]</code>·<code>[SCREEN]</code>).</div>
+        <div style="font-size:11px; color:var(--text-3); margin-top:6px;">Consumed by: test-runner-agent + autonomous-test-runner</div>
+      </div>
+    </div>
+
+    <div class="card green mt16" style="padding:14px 20px;">
+      <div style="display:flex; gap:14px; align-items:flex-start;">
+        <div style="font-size:30px; flex-shrink:0;">📚</div>
+        <div>
+          <div style="font-size:14px; font-weight:800; color:var(--green); margin-bottom:4px;">VirtoOZ MCP — <code>/vc-docs</code> skill</div>
+          <div style="font-size:13px; color:var(--text-2);">Primary Virto Commerce documentation source. <strong>12 topic-scoped retrieval tools</strong> — PlatformUserGuide, PlatformDeveloperGuide, StorefrontUserGuide, StorefrontDeveloperGuide, BackendSourceCode, FrontendSourceCode, MarketplaceUserGuide, MarketplaceDeveloperGuide, DeploymentGuide, B2BExperts. Every agent that needs Virto-specific architecture, module behavior, API contract, or deployment knowledge calls VirtoOZ before falling back to Context7 or web search.</div>
         </div>
       </div>
+    </div>
+
+    <div class="card mt16" style="padding:10px 18px;">
+      <div style="font-size:12px; color:var(--text-3);"><strong>23 knowledge files total</strong> — beyond the top 4: <code>e-commerce-edge-cases-library.md</code> (ECL-*) · <code>platform-patterns.md</code> · <code>sitemap.md</code> · <code>products.md</code> · <code>graphiql-interaction.md</code> · <code>order-creation-matrix.md</code> · <code>critical-ui-scope.md</code> · <code>module-suite-map.md</code> · <code>browser-quirks.md</code> · <code>performance-thresholds.md</code> · …</div>
     </div>
   </div>
 </div>
 
-<!-- ========== SLIDE 14: GRAPHQL SCHEMA + RUNNER-NATIVE TESTS ========== -->
+<!-- ========== SLIDE 12: GRAPHQL SCHEMA + RUNNER-NATIVE TESTS ========== -->
 <div class="slide" id="s14">
-  <div class="slide-num">14 / 22</div>
+  <div class="slide-num">12 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "GraphQL test cases live directly in CSV with typed tags. graphql-schema.md is a live introspection snapshot — when xAPI evolves we re-run introspection, regenerate the file, and CI fails any test referencing a dropped field. Steps use [GQL-OP], [GQL-VARS], [GQL-EXEC], [GQL-CAPTURE]. Assertions use [ERRORS], [DATA], [NULL], [COUNT], [VAR]. Always run scripts/graphql-runner.ts — never write custom JS to execute GraphQL CSV cases.", "ru": "GraphQL-кейсы живут прямо в CSV с типизированными тегами. graphql-schema.md — снимок интроспекции; при изменениях xAPI перезапускаем интроспекцию, перегенерируем файл, и CI падает на любых тестах, ссылающихся на удалённое поле. Шаги: [GQL-OP], [GQL-VARS], [GQL-EXEC], [GQL-CAPTURE]. Assertions: [ERRORS], [DATA], [NULL], [COUNT], [VAR]. Запускаем только scripts/graphql-runner.ts — никогда не пишем custom JS для GraphQL CSV-кейсов."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Knowledge File · Runner Contract</div>
     <h2>GraphQL xAPI — Schema Truth + Runner-Native Tests</h2>
-    <div class="sub" style="margin-bottom:18px;">Two knowledge files plus a canonical runner turn the xAPI GraphQL surface into deterministic, schema-validated CSV test cases — no custom JS scripts needed.</div>
+    <div class="sub" style="margin-bottom:14px;">Two knowledge files plus a canonical runner turn the xAPI GraphQL surface into deterministic, schema-validated CSV test cases — no custom JS scripts needed.</div>
 
     <div class="cols-2 mt16" style="gap:18px;">
       <div>
-        <div class="card blue" style="padding:14px 16px; margin-bottom:12px;">
-          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:6px;">📐 knowledge/graphql-schema.md</div>
-          <div style="font-size:13px; color:var(--text-2);">Live introspection snapshot of the xAPI GraphQL schema — queries, mutations, input types, return types. <strong>Every agent that writes or reviews a GraphQL query consults this first</strong> to avoid invented field names.</div>
+        <div class="card blue" style="padding:12px 14px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:4px;">📐 knowledge/graphql-schema.md</div>
+          <div style="font-size:12.5px; color:var(--text-2);">Live introspection snapshot of the xAPI GraphQL schema — queries, mutations, input types, return types. <strong>Every agent consults this first</strong> to avoid invented field names.</div>
+          <div style="font-size:11.5px; color:var(--text-3); margin-top:6px;"><strong>Schema-update workflow:</strong> re-run introspection against <code>{BACK_URL}/graphql</code> when xAPI changes → regenerate <code>graphql-schema.md</code> → CI fails any test referencing dropped fields.</div>
         </div>
-        <div class="card accent" style="padding:14px 16px;">
-          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:6px;">📋 knowledge/graphql-test-cases-runner.md</div>
-          <div style="font-size:13px; color:var(--text-2);">Canonical authoring contract for runner-native GraphQL CSV cases. Full tag grammar, predicate shapes, capture chaining, common failure modes, authoring checklist + worked example.</div>
+        <div class="card accent" style="padding:12px 14px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:4px;">📋 knowledge/graphql-test-cases-runner.md</div>
+          <div style="font-size:12.5px; color:var(--text-2);">Canonical authoring contract: tag grammar, predicate shapes, capture chaining, common failure modes, checklist + worked example.</div>
+        </div>
+
+        <h3 style="margin-bottom:8px; font-size:14px;">Tag Grammar (Steps · Assertions · Filters)</h3>
+        <div class="card" style="padding:10px 12px; font-family:var(--mono); font-size:11px; line-height:1.6; color:var(--text-2);">
+          <div><span style="color:var(--accent); font-weight:700;">Steps:</span> [AUTH] · [GQL-OP] · [GQL-VARS] · [GQL-EXEC] · [GQL-CAPTURE]</div>
+          <div style="padding-left:38px;">[REST-OP] · [REST-EXEC] · [REST-CAPTURE]</div>
+          <div style="margin-top:4px;"><span style="color:var(--blue); font-weight:700;">Assertions:</span> [ERRORS] · [DATA] · [NULL] · [COUNT] · [VAR]</div>
+          <div style="margin-top:4px;"><span style="color:var(--green); font-weight:700;">Filters:</span> getByPath syntax · arithmetic · cross-path · OR-AND predicates</div>
         </div>
       </div>
 
       <div>
-        <h3 style="margin-bottom:10px;">Tag Grammar (consumed by the runner)</h3>
-        <div class="card" style="padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--text-2);">
-          <div><span style="color:var(--accent); font-weight:700;">Steps:</span> [AUTH] · [GQL-OP] · [GQL-VARS]</div>
-          <div style="padding-left:50px;">[GQL-EXEC] · [GQL-CAPTURE]</div>
-          <div style="padding-left:50px;">[REST-OP] · [REST-EXEC] · [REST-CAPTURE]</div>
-          <div style="margin-top:6px;"><span style="color:var(--blue); font-weight:700;">Assertions:</span> [ERRORS] · [DATA] · [NULL]</div>
-          <div style="padding-left:96px;">[COUNT] · [VAR]</div>
-          <div style="margin-top:6px;"><span style="color:var(--green); font-weight:700;">Filters:</span> getByPath syntax · arithmetic</div>
-          <div style="padding-left:60px;">cross-path · OR-AND predicates</div>
+        <h3 style="margin-bottom:8px; font-size:14px;">Concrete CSV Example — assertions in action</h3>
+        <div class="card" style="padding:10px 12px; margin-bottom:10px;">
+          <pre style="margin:0; font-size:10.5px; line-height:1.55;"><span style="color:var(--accent);">Steps:</span>
+[AUTH] storefront token for @td(SUPPORT_AGENT)
+[GQL-OP] products
+[GQL-VARS] filter: "category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"
+          first: 5
+[GQL-EXEC]
+[GQL-CAPTURE] $first = data.products.items[0]
+
+<span style="color:var(--blue);">Assertions:</span>
+[ERRORS] none
+[NULL] data.products is not null
+[COUNT] data.products.items >= 1
+[DATA] $first.name matches /.+/
+[DATA] $first.prices[0].actual.amount > 0
+[VAR] $first.id resolves to @td(PRODUCT_LAPTOP.id)</pre>
         </div>
 
-        <div class="card green" style="padding:12px 14px; margin-top:12px;">
-          <div style="font-size:13px; font-weight:700; color:var(--green); margin-bottom:4px;">🛠 scripts/graphql-runner.ts</div>
-          <div style="font-size:12.5px; color:var(--text-2);">Canonical runner — does schema validation, var substitution, @td() resolution, evidence capture. <strong>Never write custom JS to execute GraphQL CSV cases.</strong></div>
-          <pre style="margin-top:6px; padding:6px 8px; font-size:11px;">npx tsx scripts/graphql-runner.ts --case &lt;csv&gt;:&lt;ID&gt;</pre>
+        <div class="card green" style="padding:10px 14px; margin-bottom:8px;">
+          <div style="font-size:12.5px; font-weight:700; color:var(--green); margin-bottom:2px;">🛠 scripts/graphql-runner.ts</div>
+          <div style="font-size:11.5px; color:var(--text-2);">Canonical runner — schema validation, var substitution, <code>@td()</code> resolution, evidence capture. <strong>Never write custom JS</strong> to execute GraphQL CSV cases.</div>
+          <pre style="margin-top:4px; padding:5px 8px; font-size:10.5px;">npx tsx scripts/graphql-runner.ts --case &lt;csv&gt;:&lt;ID&gt;</pre>
         </div>
 
-        <div class="card" style="padding:10px 14px; margin-top:10px; background:rgba(46,125,90,0.06); border-color:rgba(46,125,90,0.2);">
-          <div style="font-size:12px; color:var(--green);"><strong>Gold-standard reference:</strong> <code>050i-graphql-configurations.csv</code></div>
+        <div class="card" style="padding:8px 12px; background:rgba(46,125,90,0.06); border-color:rgba(46,125,90,0.2);">
+          <div style="font-size:11.5px; color:var(--green);"><strong>Gold-standard suite:</strong> <code>050i-graphql-configurations.csv</code> — full tag/predicate coverage, ready for new authors to copy</div>
         </div>
       </div>
     </div>
@@ -1038,7 +983,8 @@ docker run --env-file .env \
 
 <!-- ========== SLIDE 15: LIVE TEST-DATA DISCOVERY ========== -->
 <div class="slide" id="s15">
-  <div class="slide-num">15 / 22</div>
+  <div class="slide-num">13 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Hardcoded IDs rot fast — catalogs reseed, B2B orgs get re-created, virtual-catalog roots migrate. Four data layers solve it. {{VAR}} for env config (33 vars). @td(ALIAS.field) for named entities resolved from aliases.json + CSV rows. live-discover for shape-not-value queries like first available product. random-data for unique inputs with AGENT-TEST-* prefix that teardown sweeps safely.", "ru": "Хардкод ID быстро гниёт — каталоги пересеиваются, B2B-организации пересоздаются, virtual-catalog roots мигрируют. Четыре слоя решают это. {{VAR}} — env-конфиг (33 переменные). @td(ALIAS.field) — именованные сущности через aliases.json + строки CSV. live-discover — запросы по форме (первый доступный продукт). random-data — уникальные входы с префиксом AGENT-TEST-*, которые teardown безопасно сметает."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Knowledge File · Runtime Helpers</div>
     <h2>Live Test-Data Discovery — No Hardcoded IDs</h2>
@@ -1088,7 +1034,8 @@ docker run --env-file .env \
 
 <!-- ========== SLIDE 16: TEST RUNNER TAGS + @td() RESOLVER ========== -->
 <div class="slide" id="s16">
-  <div class="slide-num">16 / 22</div>
+  <div class="slide-num">14 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "All browser-mode CSV tests share the same grammar. Step tags: [NAV], [ACT], [WAIT], [LOGIN], [SETUP]. Assertion tags: [DOM], [STATE], [MATH], [API], [CONSOLE]. Cross-layer: [HAR], [SCREEN], [PERF]. The @td() resolver reads aliases.json then CSV rows in test-data/. Validation runs before every test execution; graphql-runner rejects unresolved tokens at lint time. A literal value in Test_Data that is not {{VAR}} or @td() is a review failure.", "ru": "Все browser-mode CSV-кейсы используют общую грамматику. Шаги: [NAV], [ACT], [WAIT], [LOGIN], [SETUP]. Assertions: [DOM], [STATE], [MATH], [API], [CONSOLE]. Cross-layer: [HAR], [SCREEN], [PERF]. @td()-резолвер читает aliases.json и строки CSV в test-data/. Валидация перед каждым запуском; graphql-runner отвергает нерезолвленные токены на lint-стадии. Литерал в Test_Data, не являющийся {{VAR}} или @td(), — review failure."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Knowledge File · Resolver</div>
     <h2>Test Runner Tags + <code>@td()</code> Resolver</h2>
@@ -1138,7 +1085,8 @@ test-data/*.csv                     (entity rows)</pre>
 
 <!-- ========== SLIDE 17: CRITICAL UI SCOPE — LAYOUT STABILITY ========== -->
 <div class="slide" id="s17">
-  <div class="slide-num">17 / 22</div>
+  <div class="slide-num">15 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "7 components × 8 pages matrix pins applicable BL-UI invariants per cell — focus ring, hover, disabled, loading skeleton, layout stability under data, empty state, error state, keyboard navigation. measure-layout.ts is the helper. Covered by single suite 048b-layout-stability.csv. npm run scope:validate exits non-zero if any covered matrix cell points at a missing test ID.", "ru": "Матрица 7 компонентов × 8 страниц закрепляет применимые BL-UI инварианты — focus ring, hover, disabled, скелетон загрузки, стабильность layout под данными, empty state, error state, клавиатурная навигация. Хелпер — measure-layout.ts. Покрыто одним набором 048b-layout-stability.csv. npm run scope:validate возвращает ненулевой код, если ячейка матрицы указывает на отсутствующий test ID."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Knowledge File · Layout Helpers</div>
     <h2>Critical UI Scope — Regression-Enforced Component Checklist</h2>
@@ -1184,52 +1132,67 @@ test-data/*.csv                     (entity rows)</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 18: TEST CASE GENERATION ========== -->
+<!-- ========== SLIDE 16: /qa-test-lifecycle ========== -->
 <div class="slide" id="s18">
-  <div class="slide-num">18 / 22</div>
+  <div class="slide-num">16 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Unified pipeline replaces 5 separate commands. Scope can be a suite, domain, JIRA ticket, PR, module, or git diff. Covers 8 phases — scope, sync stale, analyze gaps, generate, 7-dimension review, fix, verify, approve. Delegates to test-management-specialist (authoring + review) and qa-testing-expert (live verification). Replaces the deprecated /qa-sync-tests command which now redirects here.", "ru": "Единый пайплайн заменяет 5 отдельных команд. Скоупом может быть набор, домен, тикет JIRA, PR, модуль или git diff. Покрывает 8 фаз: scope, sync устаревших, анализ gap, генерация, review (7 измерений), fix, verify, approve. Делегирует test-management-specialist (авторство + review) и qa-testing-expert (живая проверка). Заменяет /qa-sync-tests, который теперь редиректит сюда."}</script>
   <div class="slide-inner">
-    <div class="eyebrow">AI-Generated Test Cases</div>
-    <h2>/qa-test-cases-generator — From Ticket to Test Suite Automatically</h2>
-    <div class="sub" style="margin-bottom:18px;">One skill derives structured, agent-executable test cases from a JIRA ticket, BDD scenario, domain checklist, or legacy suite — in the enriched 15-column CSV format.</div>
+    <div class="eyebrow">Unified Test-Case Pipeline</div>
+    <h2><code>/qa-test-lifecycle</code> — Keep Tests in Sync with Code, Always</h2>
+    <div class="sub" style="margin-bottom:18px;">One command for the entire test-case lifecycle. Run it against a suite, domain, ticket, PR, module, or git diff — and the system carries it all the way from change detection to approved coverage.</div>
 
-    <div class="flow" style="margin-bottom:20px; font-size:13.5px;">
-      <div class="flow-step">JIRA Ticket<br><span style="font-size:11px; color:var(--text-3);">VCST-XXXX</span></div>
+    <div class="flow" style="margin-bottom:20px; font-size:12.5px; gap:6px;">
+      <div class="flow-step">scope</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-step" style="background:var(--accent-soft); border-color:var(--accent-mid);">Parse ACs<br><span style="font-size:11px; color:var(--text-3);">+ detect layers</span></div>
+      <div class="flow-step" style="background:var(--accent-soft); border-color:var(--accent-mid);">sync stale</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">Generate Cases<br><span style="font-size:11px; color:var(--text-3);">BL-* + ECL-* refs</span></div>
+      <div class="flow-step" style="background:var(--accent-soft); border-color:var(--accent-mid);">analyze gaps</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.25);">Route to Agent<br><span style="font-size:11px; color:var(--text-3);">by layer type</span></div>
+      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">generate</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">review (7-dim)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--blue-soft); border-color:rgba(41,89,168,0.25);">fix</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.25);">verify</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:var(--green-soft); border-color:rgba(46,125,90,0.25);">approve</div>
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
       <div>
-        <h3 style="margin-bottom:12px;">Works with any input</h3>
+        <h3 style="margin-bottom:12px;">Accepts any scope</h3>
         <ul class="checklist">
-          <li><code>VCST-XXXX</code> — JIRA ticket → parse acceptance criteria</li>
-          <li><code>domain</code> — checklist → 1–3 cases per item</li>
-          <li><code>suite NN</code> — existing CSV → find gaps → fill them</li>
-          <li><code>from-checklist cart</code> — happy path + negative per item</li>
-          <li><code>from-bdd "Given…"</code> — BDD scenario → structured test case</li>
+          <li><code>suite &lt;ID&gt;</code> — direct quality review of an existing CSV</li>
+          <li><code>domain &lt;name&gt;</code> — coverage audit per business domain</li>
+          <li><code>VCST-XXXX</code> — derive cases from a JIRA ticket's ACs</li>
+          <li><code>PR #NNN</code> — change-driven sync against a pull request</li>
+          <li><code>module &lt;name&gt;</code> — vc-module-* repo coverage</li>
+          <li><code>diff</code> · <code>changelog &lt;ver&gt;</code> — git-driven gap analysis</li>
         </ul>
       </div>
       <div>
-        <h3 style="margin-bottom:12px;">What every generated case includes</h3>
+        <h3 style="margin-bottom:12px;">What it produces</h3>
         <ul class="checklist">
-          <li><strong style="color:var(--accent);">BL-* rule reference</strong> — business invariant enforced</li>
-          <li><strong style="color:var(--blue);">ECL-* edge case pattern</strong> — known failure scenario</li>
-          <li>Typed step tags: <code>[NAV]</code> <code>[ACT]</code> <code>[WAIT]</code></li>
-          <li>Typed assertions: <code>[DOM]</code> <code>[STATE]</code> <code>[MATH]</code></li>
-          <li>At least 2 failure signals — ready for agent execution</li>
+          <li><strong style="color:var(--accent);">Updated Steps / Assertions</strong> for stale cases</li>
+          <li><strong style="color:var(--blue);">New cases</strong> with BL-* + ECL-* citations</li>
+          <li>Typed step + assertion tags (<code>[NAV]</code>·<code>[ACT]</code>·<code>[DOM]</code>·<code>[MATH]</code>)</li>
+          <li>7-dimension quality review report (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication)</li>
+          <li>Live verification + approval gate before merge</li>
         </ul>
       </div>
+    </div>
+
+    <div class="card mt16" style="padding:14px 20px;">
+      <div style="font-size:13.5px; color:var(--text-2);"><strong>Why it matters:</strong> tests stop rotting after PRs land. Delegates to <strong>test-management-specialist</strong> (authoring + review) and <strong>qa-testing-expert</strong> (live verification). Replaces the old <code>/qa-sync-tests</code> command, which now redirects here.</div>
     </div>
   </div>
 </div>
 
 <!-- ========== SLIDE 19: TEST DATA GENERATION ========== -->
 <div class="slide" id="s19">
-  <div class="slide-num">19 / 22</div>
+  <div class="slide-num">17 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Generates the full test environment via Postman MCP. Five profiles — minimal (1 catalog/product), catalog (3-level tree), b2b (org + 3 users), pricing (USD+EUR price lists), full (all combined). Everything created with AGENT-TEST-* prefix for safe teardown. teardown removes entities in reverse dependency order. Run before regression, sweep after.", "ru": "Генерирует полное тестовое окружение через Postman MCP. Пять профилей: minimal (1 каталог/продукт), catalog (3 уровня дерева), b2b (организация + 3 пользователя), pricing (USD+EUR прайс-листы), full (всё вместе). Всё с префиксом AGENT-TEST-* для безопасного teardown. teardown удаляет сущности в обратном порядке зависимостей. Запускать до регрессии, сметать после."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Test Infrastructure</div>
     <h2>/qa-seed-data — Full Test Environment in One Command</h2>
@@ -1285,7 +1248,8 @@ test-data/*.csv                     (entity rows)</pre>
 
 <!-- ========== SLIDE 20: LIVE FLOW — QA-TEST ========== -->
 <div class="slide" id="s20">
-  <div class="slide-num">20 / 22</div>
+  <div class="slide-num">18 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "End-to-end demo of /qa-test VCST-XXXX. Step 1 reads the JIRA ticket via Atlassian MCP. Step 2 dispatches qa-frontend-expert on Chrome and qa-backend-expert on Edge in parallel. Step 3 executes each AC in a real browser, capturing HAR plus screenshots. Step 4 files bugs with P0–P3 severity and BL-* references. Step 5 transitions JIRA status. Full QA lifecycle from one command.", "ru": "End-to-end демо /qa-test VCST-XXXX. Шаг 1 — читает тикет JIRA через Atlassian MCP. Шаг 2 — параллельно запускает qa-frontend-expert на Chrome и qa-backend-expert на Edge. Шаг 3 — выполняет каждый AC в реальном браузере, захватывая HAR и скриншоты. Шаг 4 — файлит баги с severity P0–P3 и ссылками BL-*. Шаг 5 — переводит статус JIRA. Полный QA-цикл одной командой."}</script>
   <div class="slide-inner">
     <div class="eyebrow">End-to-End Flow</div>
     <h2>/qa-test VCST-XXXX — From Ticket to Verdict</h2>
@@ -1331,68 +1295,10 @@ test-data/*.csv                     (entity rows)</pre>
   </div>
 </div>
 
-<!-- ========== SLIDE 21: BENEFITS & IMPACT ========== -->
-<div class="slide" id="s21">
-  <div class="slide-num">21 / 22</div>
-  <div class="slide-inner">
-    <div class="eyebrow">Value Delivered</div>
-    <h2>Strong Sides of AI-Driven Testing</h2>
-
-    <div class="cols-3 mt16">
-      <div class="card green" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">🔧</div>
-        <h3 style="color:var(--green);">Zero Maintenance</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">UI changes don't break tests. Agents adapt through contextual reasoning, not brittle selectors. Self-healing by design.</p>
-      </div>
-      <div class="card accent" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">⚡</div>
-        <h3>Speed at Scale</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">3 browsers run in parallel. A full sprint regression of ~2,700 tests runs automatically — no manual coordination.</p>
-      </div>
-      <div class="card blue" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">🧠</div>
-        <h3 style="color:var(--blue);">Business Awareness</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">Agents don't just detect failures — they reason about why in business terms. BL-* invariants are enforced automatically.</p>
-      </div>
-      <div class="card" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">📋</div>
-        <h3>No Coding Required</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">QA engineers write prompts, not Playwright scripts. Adding a test = adding a CSV row. No developer involvement needed.</p>
-      </div>
-      <div class="card" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">🔗</div>
-        <h3>Full JIRA Loop</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">Agents read tickets, execute tests, file bugs with evidence, and transition statuses — the full QA lifecycle without leaving the IDE.</p>
-      </div>
-      <div class="card" style="padding:16px 18px;">
-        <div style="font-size:20px; margin-bottom:8px;">📐</div>
-        <h3>Methodology Built-in</h3>
-        <p style="font-size:13.5px; color:var(--text-2); margin-top:6px;">20 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD. Best practices are the default, not optional.</p>
-      </div>
-    </div>
-
-    <div class="card" style="padding:14px 20px; margin-top:16px;">
-      <div class="cols-3" style="gap:0;">
-        <div style="text-align:center; border-right:1px solid var(--border); padding:4px 0;">
-          <div style="font-size:24px; font-weight:800; color:var(--accent);">~0</div>
-          <div style="font-size:12px; color:var(--text-2);">Selector maintenance<br>incidents per sprint</div>
-        </div>
-        <div style="text-align:center; border-right:1px solid var(--border); padding:4px 0;">
-          <div style="font-size:24px; font-weight:800; color:var(--green);">15 min</div>
-          <div style="font-size:12px; color:var(--text-2);">From command to<br>GO/NO-GO verdict</div>
-        </div>
-        <div style="text-align:center; padding:4px 0;">
-          <div style="font-size:24px; font-weight:800; color:var(--blue);">1 CSV row</div>
-          <div style="font-size:12px; color:var(--text-2);">Cost of adding<br>a new test case</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== SLIDE 22: ROADMAP ========== -->
+<!-- ========== SLIDE 19: ROADMAP ========== -->
 <div class="slide" id="s22">
-  <div class="slide-num">22 / 22</div>
+  <div class="slide-num">19 / 19</div>
+  <script class="slide-notes" type="application/json">{"en": "Shipped: /qa-test-lifecycle, runner-native GraphQL (scripts/graphql-runner.ts), Agent Teams autonomous regression. Q2 2026: CI/CD in GitHub Actions, GraphQL Runner v2 with schema-diff alerts and custom predicate plugins, multi-browser CI plus visual diff baselines. Q3: AI root-cause analyzer, mobile real-device testing via BrowserStack, self-updating suites that propose PRs. Future: continuous production QA, test impact and cost optimizer, multi-tenant white-label testing.", "ru": "Готово: /qa-test-lifecycle, runner-native GraphQL (scripts/graphql-runner.ts), автономная регрессия Agent Teams. Q2 2026: CI/CD в GitHub Actions, GraphQL Runner v2 со schema-diff alerts и custom predicate plugins, multi-browser CI плюс визуальный diff. Q3: ИИ-анализатор root-cause, мобильное тестирование на реальных устройствах через BrowserStack, self-updating наборы, открывающие PR. Будущее: непрерывный production QA, оптимизатор test impact и cost, multi-tenant white-label тестирование."}</script>
   <div class="slide-inner">
     <div class="eyebrow">Future Development</div>
     <h2>Roadmap — What's Next for Agentic QA</h2>
@@ -1403,36 +1309,43 @@ test-data/*.csv                     (entity rows)</pre>
           <div class="tl-item">
             <div class="tl-dot green"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> AI Test Case Generator</h4>
-              <p><code>/qa-test-cases-generator</code> — derives enriched CSV test cases from JIRA tickets, user stories, checklists, or legacy suites automatically</p>
+              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> Unified Test-Case Lifecycle</h4>
+              <p><code>/qa-test-lifecycle</code> — scope → sync → analyze → generate → review → fix → verify → approve, driven by PRs / diffs / modules / tickets</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot green"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> Agent Teams Mode</h4>
-              <p>Autonomous regression with TeamCreate API, token bucket management, exponential backoff, and JIRA integration</p>
+              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> Runner-Native GraphQL Suite</h4>
+              <p>Schema-validated CSV cases via <code>scripts/graphql-runner.ts</code>; full tag grammar (<code>[GQL-OP]</code>·<code>[GQL-CAPTURE]</code>·<code>[ERRORS]</code>·<code>[DATA]</code>) + <code>@td()</code> resolver</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot green"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-green" style="margin-right:6px;">Shipped ✓</span> Agent Teams Autonomous Regression</h4>
+              <p>TeamCreate API · 3+1 token bucket · exponential backoff · failure recovery · JIRA ticket integration</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot blue"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Multi-Browser CI</h4>
-              <p>Expand CI from single headless Chromium to full 3-browser pool (Chrome + Firefox + Edge) for cross-browser regression in GitHub Actions</p>
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> CI/CD GitHub Actions</h4>
+              <p>Daily smoke + weekly full regression, headless Chromium, Teams notifications, budget-controlled runs, 90-day rolling history</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot blue"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Visual Regression Baselines</h4>
-              <p>Persistent Storybook component snapshots per version. Automated pixel-diff comparison with Figma design specs for all 55 components</p>
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> GraphQL Runner v2</h4>
+              <p>Schema-diff alerts when xAPI evolves · custom predicate plugins · cross-case <code>[GQL-CAPTURE]</code> chaining · auto-cleanup of <code>AGENT-TEST-*</code> entities</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot blue"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Sprint Coverage Reports</h4>
-              <p>Automated mapping: which code changes (PRs) affect which test suites. Auto-select regression scope based on git diff analysis</p>
+              <h4><span class="badge badge-blue" style="margin-right:6px;">Q2 2026</span> Multi-Browser CI &amp; Visual Diff</h4>
+              <p>Full 3-browser pool in CI (Chrome + Firefox + Edge) · Figma + Storybook pixel-diff baselines for all 55 components</p>
             </div>
           </div>
         </div>
@@ -1443,36 +1356,43 @@ test-data/*.csv                     (entity rows)</pre>
           <div class="tl-item">
             <div class="tl-dot" style="background:var(--accent);"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> Mobile Testing</h4>
-              <p>BrowserStack integration for real device testing — iOS Safari (iPhone 15 Pro), Android Chrome (Samsung Galaxy S24). Critical for B2C checkout flows</p>
+              <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> AI Root-Cause Analyzer</h4>
+              <p>Cross-references HAR + console + Azure App Insights + git blame to pre-classify each bug with severity, module, and a likely root-cause hypothesis</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--accent);"></div>
+            <div class="tl-content">
+              <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> Mobile &amp; Real Device Testing</h4>
+              <p>BrowserStack integration — iOS Safari (iPhone 15 Pro), Android Chrome (Galaxy S24). Critical for B2C checkout, BOPIS, and configurable products</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot" style="background:var(--accent);"></div>
             <div class="tl-content">
               <h4><span class="badge badge-accent" style="margin-right:6px;">Q3 2026</span> Self-Updating Suites</h4>
-              <p>Regression suites that evolve automatically — agent analyzes code changes, identifies gaps, and proposes new test cases to the QA team for review</p>
+              <p>Agents observe failures + code churn, propose Steps/Assertions updates, and open a PR against <code>regression/suites/</code> for QA review</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot gray"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Performance Regression</h4>
-              <p>Automated Core Web Vitals tracking: LCP, CLS, FID baselines per release. Alert when performance degrades beyond threshold</p>
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Continuous Production QA</h4>
+              <p>Read-only agents shadow production traffic via App Insights, detect anomalies, and propose synthetic regression cases that reproduce them</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot gray"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Test Impact Analysis</h4>
-              <p>ML-based prediction of which test suites are most likely to fail given a specific code change — prioritize testing effort intelligently</p>
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Test Impact &amp; Cost Optimizer</h4>
+              <p>ML model predicts which suites are most likely to fail for a given PR, plus cost-per-suite estimates so the orchestrator picks the cheapest sufficient scope</p>
             </div>
           </div>
           <div class="tl-item">
             <div class="tl-dot gray"></div>
             <div class="tl-content">
-              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Multi-Tenant Testing</h4>
-              <p>Parallel testing across multiple VC storefronts / white-label brands with shared test logic and brand-specific assertion rules</p>
+              <h4><span class="badge badge-gray" style="margin-right:6px;">Future</span> Multi-Tenant / White-Label Testing</h4>
+              <p>Parallel regression across multiple VC storefronts and white-label brands with shared logic + brand-specific assertion overrides</p>
             </div>
           </div>
         </div>
@@ -1481,43 +1401,100 @@ test-data/*.csv                     (entity rows)</pre>
 
     <div class="card accent" style="padding:12px 20px; margin-top:16px; display:flex; align-items:center; gap:16px;">
       <div style="font-size:20px;">🚀</div>
-      <div style="font-size:14px;"><strong>Vision:</strong> A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases, and provides real-time quality signals — with zero manual scripting.</div>
+      <div style="font-size:14px;"><strong>Vision:</strong> A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases against real production signals, and provides real-time quality + cost signals — with zero manual scripting.</div>
     </div>
   </div>
 </div>
 
 </div><!-- /.deck -->
 
+<!-- ===== Speaker Notes Panel ===== -->
+<div class="notes-panel" id="notesPanel">
+  <div class="notes-header">
+    <span class="notes-title">Speaker Notes</span>
+    <button class="notes-lang active" data-lang="en" onclick="setNotesLang('en')">EN</button>
+    <button class="notes-lang" data-lang="ru" onclick="setNotesLang('ru')">RU</button>
+    <span class="notes-hint"><kbd>S</kbd> hide · <kbd>L</kbd> switch language</span>
+  </div>
+  <div class="notes-body" id="notesBody">—</div>
+</div>
+
 <!-- ===== Navigation ===== -->
 <div class="nav">
   <button onclick="go(-1)" title="Previous (←)">‹</button>
-  <span id="counter">1 / 22</span>
+  <span id="counter">1 / 19</span>
 
   <button onclick="go(1)" title="Next (→)">›</button>
 </div>
 
 <script>
 let cur = 0;
+let notesLang = 'en';
 const slides = document.querySelectorAll('.slide');
 const counter = document.getElementById('counter');
+const notesBody = document.getElementById('notesBody');
 const total = slides.length;
+
+const SPEAKER_NOTES = {
+  s1: { en: "Welcome. This deck covers our Agentic QA system — an AI-driven testing platform built on Claude and MCP servers. Total runtime is roughly 15 minutes.\nThe core thesis: replace brittle Playwright scripts with natural-language test cases executed by AI agents that reason about business rules, not selectors.", ru: "Добро пожаловать. Презентация — про систему Agentic QA: AI-управляемое тестирование на базе Claude и MCP. Длительность ~15 минут.\nГлавная идея — заменить хрупкие Playwright-скрипты на тест-кейсы на естественном языке, выполняемые AI-агентами, которые рассуждают в терминах бизнес-правил, а не CSS-селекторов." },
+  s3: { en: "Three pillars: AI-native (the LLM reasons about what to click and verify), modular architecture (14 agents + CSV suites + skills + knowledge), and a planned CI pipeline.\nScope covers the full B2B platform — storefront, admin SPA, REST and GraphQL APIs, B2B multi-org, GA4, accessibility, and 55 Storybook components.", ru: "Три опоры: AI-нативность (LLM сам решает, что кликать и проверять), модульная архитектура (14 агентов + CSV + скиллы + знания) и планируемый CI.\nОхват — вся B2B-платформа: сторфронт, админка, REST и GraphQL API, мульти-орг, GA4, accessibility и 55 компонентов Storybook." },
+  s4: { en: "Three testing modes share one foundation: interactive IDE mode, Agent Teams autonomous regression, and a planned GitHub Actions CI.\nAll three modes consume the same suites, agents, and knowledge files — nothing forks.", ru: "Три режима на общем фундаменте: интерактивный в IDE, автономный Agent Teams и планируемый GitHub Actions CI.\nВсе три используют одни и те же сьюты, агенты и файлы знаний — ничего не дублируется." },
+  s5: { en: "Scale at a glance: 14 specialized agents, ~79 CSV suites, ~2,400 test cases, 10 MCP integrations.\nCoverage selectors range from smoke (~140 tests) to full regression. The 'sprint' selector is plan-driven — it reads the active sprint plan from JIRA.", ru: "Масштаб: 14 агентов, ~79 CSV-сьютов с ~2,400 кейсами, 10 MCP-интеграций.\nСелекторы — от smoke (~140 тестов) до full regression. 'Sprint' управляется планом из JIRA." },
+  s6: { en: "14 agents in two teams. Three orchestrators coordinate. Four execution specialists each own a dedicated browser — Chrome / Edge / Firefox / DevTools — so they never collide.\nPlus four BA agents and a test-management specialist.", ru: "14 агентов в двух командах. Три оркестратора. Четыре исполнителя имеют выделенный браузер каждый — Chrome / Edge / Firefox / DevTools — чтобы не пересекаться.\nПлюс 4 BA-агента и test-management-specialist." },
+  s7: { en: "16 slash commands cover the full QA lifecycle: smoke, ticket testing, regression, bug filing, status, env health.\nRead-only commands like /qa-status and /qa-env-check are auto-invocable. Risky ones require explicit invocation.", ru: "16 slash-команд покрывают полный QA-цикл: smoke, тесты тикетов, регресс, баги, статус, env-health.\nRead-only команды (/qa-status, /qa-env-check) — авто-инвокабельны. Рискованные — только явно." },
+  s8: { en: "Three commands that close the QA cycle. /qa-test-lifecycle keeps tests in sync with code — no more stale Steps after a PR merges.\n/qa-design tests Storybook AND the live storefront together — catches bugs that hide in one layer. /qa-verify-fix closes the JIRA bug-fix loop end-to-end.", ru: "Три команды, замыкающие QA-цикл. /qa-test-lifecycle синхронизирует тесты с кодом.\n/qa-design тестирует Storybook И живой сторфронт вместе — ловит баги, спрятанные в одном из слоёв. /qa-verify-fix закрывает цикл фикса в JIRA." },
+  s9: { en: "MCP = Model Context Protocol. Top 5: 1) Playwright x3 — Claude's eyes and hands on the UI. 2) VirtoOZ — primary source for VC docs with 12 topic-scoped tools. 3) Atlassian — closes the JIRA loop. 4) GitHub — search module source, review PRs. 5) Postman — author API collections and seed test data.\nFive more (DevTools, Figma, Azure, Context7, Microsoft Learn) play supporting roles.", ru: "MCP = Model Context Protocol. Топ-5: 1) Playwright x3 — глаза и руки в UI. 2) VirtoOZ — главный источник документации VC, 12 тематических инструментов. 3) Atlassian — закрывает JIRA-цикл. 4) GitHub — модули и PR. 5) Postman — API-коллекции и сидинг.\nЕщё 5 (DevTools, Figma, Azure, Context7, Microsoft Learn) — вспомогательные." },
+  s10: { en: "Every QA agent shares one file — business-logic.md — with testable BL-* invariants. When a test fails, the agent cites the BL- rule that was violated in plain business terms.\nEdge cases get their own ECL-* IDs. Update once, every agent benefits.", ru: "Все QA-агенты делят business-logic.md с BL-* инвариантами. При падении агент цитирует, какое BL-правило нарушено, на языке бизнес-логики.\nEdge-кейсы — отдельные ECL-*. Обновили один раз — польза всем." },
+  s11: { en: "Three browser slots run simultaneously — chrome, firefox, edge. Quality gate verdicts: APPROVED (>=95% pass, no P0), CONDITIONAL (P2/P3 only), or BLOCKED (any P0/P1).\nRetry chain falls back across browsers — Chrome to Firefox to Edge.", ru: "Три слота-браузера параллельно — chrome, firefox, edge. Quality gate: APPROVED (>=95%, нет P0), CONDITIONAL (только P2/P3), BLOCKED (любой P0/P1).\nРетраи переходят между браузерами: Chrome -> Firefox -> Edge." },
+  s13: { en: "Top 4 knowledge files: business-logic.md (BL-invariants), graphql-schema.md + runner doc (xAPI truth), live-discovery.md (no hardcoded IDs), test-runner-tags.md (CSV grammar).\nFifth pillar is VirtoOZ MCP — accessed via /vc-docs — for live VC reference.", ru: "Четыре главных файла: business-logic.md (BL), graphql-schema.md + runner doc (источник истины xAPI), live-discovery.md (без захардкоженных ID), test-runner-tags.md (CSV-грамматика).\nПятая опора — VirtoOZ MCP через /vc-docs для живой документации VC." },
+  s14: { en: "Two knowledge files plus scripts/graphql-runner.ts turn xAPI testing into deterministic CSV cases.\nSchema-update workflow: re-run introspection against the live endpoint, regenerate graphql-schema.md, CI fails any test referencing dropped fields.\nThe CSV example on screen shows assertion tags: [ERRORS], [NULL], [COUNT], [DATA], [VAR].", ru: "Два knowledge-файла + scripts/graphql-runner.ts превращают xAPI-тестирование в детерминированные CSV-кейсы.\nWorkflow обновления схемы: перегенерация через интроспекцию, CI падает на старых полях.\nПример CSV показывает ассерты: [ERRORS], [NULL], [COUNT], [DATA], [VAR]." },
+  s15: { en: "Catalogs get reseeded, B2B orgs re-created, virtual-catalog roots migrate — hardcoded IDs rot fast.\nFour data layers: {{VAR}} for env config, @td() for named entities, live-discover for 'first available', random-data for unique inputs with AGENT-TEST-* prefix.", ru: "Каталоги пересиживаются, B2B-орги пересоздаются, корни виртуальных каталогов мигрируют — захардкоженные ID протухают.\nЧетыре слоя: {{VAR}} для env, @td() для именованных сущностей, live-discover для 'first available', random-data для уникальных входов с префиксом AGENT-TEST-*." },
+  s16: { en: "test-runner-tags.md defines the browser-mode CSV grammar — step tags, assertion tags, cross-layer tags — shared by both test runners.\nThe @td() resolver reads aliases.json plus CSV rows from test-data/. Validator verifies every @td() reference before a run.", ru: "test-runner-tags.md задаёт CSV-грамматику для браузерных тестов — теги шагов, ассертов, кросс-слойные.\nРезолвер @td() читает aliases.json + CSV-строки из test-data/. Валидатор проверяет все ссылки @td() перед запуском." },
+  s17: { en: "A 7x8 matrix pins down which BL-UI rule applies to which component on which page. The validator (npm run scope:validate) fails if any covered cell lacks a test ID.\nCovered exclusively by the 048b-layout-stability suite.", ru: "Матрица 7x8 фиксирует, какое BL-UI правило применяется к компоненту на странице. Валидатор (npm run scope:validate) падает, если у покрытой ячейки нет test ID.\nПокрывается только сьютом 048b-layout-stability." },
+  s18: { en: "One command from change detection to approved coverage. /qa-test-lifecycle accepts a suite, domain, JIRA ticket, PR, module, or git diff.\nPipeline: scope -> sync stale -> analyze gaps -> generate -> 7-dim review -> fix -> verify -> approve. Replaces deprecated /qa-sync-tests.", ru: "Одна команда — от обнаружения изменений до approved coverage. Принимает сьют, домен, JIRA-тикет, PR, модуль или git diff.\nПайплайн: scope -> sync -> analyze -> generate -> 7-dim review -> fix -> verify -> approve. Заменяет /qa-sync-tests." },
+  s19: { en: "Postman MCP builds and runs a collection to seed a complete test environment — catalogs, products, pricing, B2B orgs, users — in one command.\nAll entities prefixed AGENT-TEST-* so teardown sweeps cleanly. Profiles: minimal, catalog, b2b, pricing, full, teardown.", ru: "Postman MCP собирает и запускает коллекцию для сидинга полного окружения — каталоги, продукты, цены, B2B-орги, пользователи — одной командой.\nВсе сущности с префиксом AGENT-TEST-*, teardown подчищает чисто. Профили: minimal, catalog, b2b, pricing, full, teardown." },
+  s20: { en: "End-to-end demo for /qa-test VCST-XXXX: read ticket via Atlassian MCP, dispatch specialists in parallel, execute through real browsers, file bugs with HAR + screenshots, transition the JIRA ticket.\nNo manual coordination.", ru: "End-to-end демо /qa-test VCST-XXXX: чтение тикета через Atlassian MCP, параллельная отправка специалистам, выполнение в реальных браузерах, баги с HAR + скриншотами, перевод JIRA-тикета.\nБез ручной координации." },
+  s22: { en: "Roadmap. Shipped: /qa-test-lifecycle, runner-native GraphQL, Agent Teams autonomous regression.\nQ2 2026: CI/CD GitHub Actions, GraphQL Runner v2 with schema-diff alerts, multi-browser CI + visual diff.\nQ3 2026: AI root-cause analyzer, mobile testing via BrowserStack, self-updating suites.\nLong term: continuous production QA, test impact + cost optimizer, multi-tenant white-label testing.", ru: "Roadmap. Поставлено: /qa-test-lifecycle, runner-native GraphQL, автономный регресс Agent Teams.\nQ2 2026: CI/CD GitHub Actions, GraphQL Runner v2 со schema-diff alerts, мульти-браузерный CI + visual diff.\nQ3 2026: AI root-cause, мобильное тестирование через BrowserStack, self-updating сьюты.\nДолгосрочно: continuous production QA, test impact + cost optimizer, мульти-тенантное white-label." }
+};
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderNotes() {
+  const id = slides[cur].id;
+  const notes = SPEAKER_NOTES[id] || { en: '—', ru: '—' };
+  const text = notes[notesLang] || '—';
+  notesBody.innerHTML = text.split('\n').map(p => `<p>${escapeHtml(p)}</p>`).join('');
+}
+
+function setNotesLang(lang) {
+  notesLang = lang;
+  document.querySelectorAll('.notes-lang').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  renderNotes();
+}
 
 function show(n) {
   slides[cur].classList.remove('active');
   cur = (n + total) % total;
   slides[cur].classList.add('active');
   counter.textContent = `${cur + 1} / ${total}`;
-  // Reset scroll position
   slides[cur].querySelector('.slide-inner').scrollTop = 0;
+  renderNotes();
 }
 
 function go(d) { show(cur + d); }
 
 document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(-1); }
   if (e.key === 'Home') { e.preventDefault(); show(0); }
   if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+  if (e.key === 's' || e.key === 'S') { e.preventDefault(); document.body.classList.toggle('show-notes'); }
+  if (e.key === 'l' || e.key === 'L') { e.preventDefault(); setNotesLang(notesLang === 'en' ? 'ru' : 'en'); }
 });
 
 // Touch swipe support
@@ -1527,6 +1504,8 @@ document.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchX;
   if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
 }, { passive: true });
+
+renderNotes();
 </script>
 </body>
 </html>

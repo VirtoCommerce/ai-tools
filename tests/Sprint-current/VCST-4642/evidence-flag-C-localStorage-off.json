@@ -1,0 +1,18 @@
+{
+  "timestamp": 1779364986437,
+  "storeUrl": "https://vcst-qa-storefront.govirto.com",
+  "whiteLabelingModule": {
+    "moduleId": "VirtoCommerce.WhiteLabeling",
+    "version": "3.1001.0",
+    "settings": [
+      {
+        "name": "WhiteLabeling.WhiteLabelingEnabled",
+        "value": false,
+        "__typename": "ModuleSettingType"
+      }
+    ],
+    "__typename": "ModuleSettingsType"
+  },
+  "xapiVersion": "3.1009.0-pr-66-020b",
+  "totalModules": 79
+}

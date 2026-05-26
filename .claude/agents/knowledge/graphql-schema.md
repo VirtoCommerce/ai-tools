@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-20)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-21)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -26,7 +26,6 @@
 
 ```
 cartPickupLocations(after: String, first: Int, keyword: String, sort: String, cartId: String!, storeId: String!, cultureName: String!, facet: String, filter: String)
-promotionCoupons(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, currencyCode: String, cultureName: String)
 validateCoupon(cartId: String, storeId: String!, currencyCode: String!, userId: String!, cultureName: String, cartName: String, cartType: String, coupon: String!)
 cart(cartId: String, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
 pricesSum(cartId: String!, storeId: String!, currencyCode: String!, cultureName: String, userId: String, lineItemIds: ?!)
@@ -95,18 +94,12 @@ newsArticleAuthor(authorId: String!)
 newsArticle(id: String!, storeId: String!, languageCode: String!)
 newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: String)
 newsArticleTags(languageCode: String!)
-fcmSettings()
-pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
 skyflowCards(storeId: String)
-evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: String, userGroups: String)
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: String, isActive: Boolean)
 configurationItems(cartId: String, lineItemId: String!, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
-recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, maxProducts: Int)
-recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
-searchHistory(storeId: String!, maxCount: Int!)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
@@ -129,14 +122,6 @@ validatePassword(password: String!)
 user(id: String, userName: String, email: String, loginProvider: String, providerKey: String)
 role(roleName: String!)
 currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
-```
-
-### Quotes
-
-```
-quoteAttachmentOptions()
-quote(id: String, storeId: String, userId: String, currencyCode: String, cultureName: String)
-quotes(after: String, first: Int, keyword: String, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, filter: String)
 ```
 
 ### WhiteLabeling
@@ -224,11 +209,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `unSelectCartConfigurationItems` | `InputChangeCartConfigurationItemsSelectedType` |
 | `updateConfigurationItem` | `InputUpdateConfigurationItemType` |
 | `updateConfigurationItems` | `InputUpdateConfigurationItemsType` |
-| `addQuoteItems` | `AddQuoteItemsCommandType` |
-| `changeQuoteComment` | `ChangeQuoteCommentCommandType` |
-| `changeQuoteItemQuantity` | `ChangeQuoteItemQuantityCommandType` |
-| `createQuoteFromCart` | `CreateQuoteFromCartCommandType` |
-| `removeQuoteItem` | `RemoveQuoteItemCommandType` |
 | `initializePayment` | `InputInitializePaymentType` |
 | `authorizePayment` | `InputAuthorizePaymentType` |
 
@@ -242,16 +222,8 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 | Mutation | Command Type |
 |----------|-------------|
-| `addFcmToken` | `InputAddFcmTokenType` |
-| `clearAllPushMessages` | `none` |
-| `deleteFcmToken` | `InputDeleteFcmTokenType` |
-| `markAllPushMessagesRead` | `none` |
-| `markAllPushMessagesUnread` | `none` |
-| `markPushMessageRead` | `InputMarkPushMessageReadType` |
-| `markPushMessageUnread` | `InputMarkPushMessageUnreadType` |
 | `confirmTask` | `ConfirmTaskCommandType` |
 | `rejectTask` | `RejectTaskCommandType` |
-| `pushHistoricalEvent` | `InputPushHistoricalEventType` |
 
 ### Orders
 
@@ -272,7 +244,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 |----------|-------------|
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
-| `saveSearchQuery` | `InputSaveSearchQueryType` |
 | `registerByInvitation` | `InputRegisterByInvitationType` |
 
 ### Payment
@@ -312,21 +283,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `addAddressToFavorites` | `AddAddressToFavoritesCommandType` |
 | `removeAddressFromFavorites` | `RemoveAddressFromFavoritesCommandType` |
 | `sendPasswordResetEmail` | `SendPasswordResetEmailCommandType` |
-
-### Quotes
-
-| Mutation | Command Type |
-|----------|-------------|
-| `addQuoteAttachments` | `AddQuoteAttachmentsCommandType` |
-| `approveQuoteRequest` | `ApproveQuoteCommandType` |
-| `cancelQuoteRequest` | `CancelQuoteCommandType` |
-| `createQuote` | `CreateQuoteCommandType` |
-| `declineQuoteRequest` | `DeclineQuoteCommandType` |
-| `deleteQuoteAttachments` | `DeleteQuoteAttachmentsCommandType` |
-| `submitQuoteRequest` | `SubmitQuoteCommandType` |
-| `updateQuoteAddresses` | `UpdateQuoteAddressesCommandType` |
-| `updateQuoteAttachments` | `UpdateQuoteAttachmentsCommandType` |
-| `updateQuoteDynamicProperties` | `UpdateQuoteDynamicPropertiesCommandType` |
 
 ### Reviews
 

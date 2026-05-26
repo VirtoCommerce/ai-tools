@@ -1,0 +1,75 @@
+# name: initializeApplication
+# category: store
+# role: PUBLIC
+# purpose: Storefront app-boot bootstrap query — resolves store, languages, currencies, store settings, and installed-module capability manifest (moduleId + version + settings). Used by vc-frontend to drive client-side @needsModule gating.
+# required-vars: (none — pass one of `domain` or `storeId` via gql-vars to resolve the store)
+# optional-vars: CULTURE_NAME (String, defaults to en-US client-side)
+# last-validated: 2026-05-21
+# known-issues: resolving by `domain` returns `modules[]` list versus resolving by `storeId` (~79 entries with populated `version`). Anonymous/storefront context likely narrows the response — verify against the env you're testing.
+# gql-vars: { "domain": "String", "storeId": "String", "cultureName": "String" }
+# runner-note: Operation name MUST be `initializeApplication` — frontend filters Network panel by this name (see VCST-4642 / vc-frontend#2293). vc-frontend resolves the store by `domain` (storefront hostname), NOT `storeId` — pass `{"domain": "<storefront-host>"}` to replay the real client payload. Backend accepts either. When `XAPI.Security.ReturnModuleVersion` is OFF, settings.modules[].version returns "" (empty string, not null — preserves String! contract) and modules without public settings drop out of the list.
+# example-vars: {"domain": "vcst-qa-storefront.govirto.com"}
+# example-vars-alt: {"storeId": "B2B-store", "cultureName": "en-US"}
+# used-by: VCST-4642, FE-1, FE-2, FE-3, BE-1, BE-2, BE-3, BE-5, BE-6
+
+query initializeApplication($domain: String, $storeId: String, $cultureName: String) {
+  store(domain: $domain, storeId: $storeId, cultureName: $cultureName) {
+    storeId
+    storeName
+    catalogId
+    storeUrl
+    defaultLanguage {
+      cultureName
+      nativeName
+      twoLetterLanguageName
+      threeLetterLanguageName
+    }
+    availableLanguages {
+      cultureName
+      nativeName
+      twoLetterLanguageName
+      threeLetterLanguageName
+    }
+    defaultCurrency {
+      code
+      symbol
+      englishName
+      cultureName
+      exchangeRate
+      customFormatting
+    }
+    availableCurrencies {
+      code
+      symbol
+      englishName
+      cultureName
+      exchangeRate
+      customFormatting
+    }
+    settings {
+      taxCalculationEnabled
+      anonymousUsersAllowed
+      emailVerificationEnabled
+      emailVerificationRequired
+      seoLinkType
+      environmentName
+      authenticationTypes
+      passwordRequirements {
+        requiredLength
+        requiredUniqueChars
+        requireNonAlphanumeric
+        requireLowercase
+        requireUppercase
+        requireDigit
+      }
+      modules {
+        moduleId
+        version
+        settings {
+          name
+          value
+        }
+      }
+    }
+  }
+}

@@ -15,7 +15,9 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 | Tag | Meaning | Test Priority |
 |-----|---------|---------------|
 | `[P0-revenue]` | Directly impacts revenue, orders, or payments | Must pass before any deployment |
-| `[P1-data]` | Data integrity, state correctness, security | Must pass before sprint release |
+| `[P0-security]` | Security boundary (auth, authz, privilege escalation, data leakage) | Must pass before any deployment |
+| `[P1-data]` | Data integrity, state correctness | Must pass before sprint release |
+| `[P1-ux]` | UX rule with stakeholder or legal weight (e.g., golden-rule UI sequence, WCAG-overlapping) | Must pass before sprint release |
 | `[P2-ux]` | User experience, display, non-blocking | Should pass; acceptable to defer with ticket |
 
 ---
@@ -849,21 +851,25 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 
 ## Invariant Coverage Summary
 
-| Domain | ID Range | Total | Expanded | Severity Breakdown |
-|--------|----------|-------|----------|-------------------|
-| Pricing & Discounts | BL-PRICE-001–008 | 8 | 8 | 5× P0, 2× P1, 1× P0 |
-| Cart | BL-CART-001–008 | 8 | 8 | 3× P0, 5× P1 |
-| Checkout | BL-CHK-001–008 | 8 | 8 | 4× P0, 3× P1, 1× P0 |
-| Orders & Fulfillment | BL-ORD-001–009 | 9 | 9 | 3× P0, 6× P1 |
-| Users & Auth | BL-AUTH-001–006 | 6 | 6 | 1× P0, 4× P1, 1× P2 |
-| B2B / Organization | BL-B2B-001–006 | 6 | 6 | 2× P0, 4× P1 |
-| Catalog & Inventory | BL-CAT-001–007 | 7 | 7 | 2× P0, 4× P1, 1× P2 |
-| Cross-Domain | BL-CROSS-001–012 | 12 | 12 | 7× P0, 5× P1 |
-| Search | BL-SRCH-001–005 | 5 | 5 | 0× P0, 3× P1, 2× P2 |
-| Shipping & BOPIS | BL-SHIP-001–004 | 4 | 4 | 2× P0, 2× P1 |
-| Notifications | BL-NOTIF-001–003 | 3 | 3 | 1× P0, 2× P1 |
-| Import / Export | BL-IMPEX-001–004 | 4 | 4 | 0× P0, 4× P1 |
-| SEO & URLs | BL-SEO-001–004 | 4 | 4 | 0× P0, 2× P1, 2× P2 |
-| BOPIS-Specific | BL-BOPIS-001–007 | 7 | 7 | 1× P0, 5× P1, 1× P2 |
-| Profile & Member Data | BL-PROFILE-001 | 1 | 1 | 0× P0, 1× P1, 0× P2 |
-| **Total** | | **90** | **90** | **31× P0, 52× P1, 7× P2** |
+P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.
+
+| Domain | ID Range | Total | P0 | P1 | P2 |
+|--------|----------|-------|----|----|----|
+| Pricing & Discounts | BL-PRICE-001–008 | 8 | 7 | 1 | 0 |
+| Cart | BL-CART-001–014 | 14 | 5 | 9 | 0 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 |
+| Orders & Fulfillment | BL-ORD-001–009 | 9 | 3 | 6 | 0 |
+| Users & Auth | BL-AUTH-001–011 | 11 | 2 | 8 | 1 |
+| B2B / Organization | BL-B2B-001–006 | 6 | 3 | 3 | 0 |
+| Catalog & Inventory | BL-CAT-001–007 | 7 | 2 | 3 | 2 |
+| Cross-Domain | BL-CROSS-001–012 | 12 | 7 | 5 | 0 |
+| Search | BL-SRCH-001–005 | 5 | 0 | 3 | 2 |
+| Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 |
+| BOPIS-Specific | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 |
+| Notifications | BL-NOTIF-001–003 | 3 | 1 | 2 | 0 |
+| Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 |
+| SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 |
+| Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 |
+| UI Display & Layout Stability | BL-UI-001–006 | 6 | 0 | 1 | 5 |
+| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 |
+| **Total** | | **114** | **39** | **61** | **14** |

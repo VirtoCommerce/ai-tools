@@ -49,11 +49,16 @@ function addEyebrow(slide, text, opts = {}) {
   });
 }
 
+// Helper for bilingual speaker notes (EN + RU)
+function addBilingualNotes(slide, en, ru) {
+  slide.addNotes(`[EN]\n${en}\n\n[RU]\n${ru}`);
+}
+
 // ==================== SLIDE 1: TITLE ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.dark };
-  addSlideNumber(slide, 1, 18, "666666");
+  addSlideNumber(slide, 1, 19, "666666");
 
   addEyebrow(slide, "VIRTO COMMERCE  ·  QA ENGINEERING  ·  2026", { y: 1.0, color: COLORS.accent });
 
@@ -94,95 +99,17 @@ function addEyebrow(slide, text, opts = {}) {
       fontSize: 13, color: "DDDDDD", fontFace: "Segoe UI",
     });
   });
-}
-
-// ==================== SLIDE 2: PROBLEM / BEFORE-AFTER ====================
-{
-  const slide = pptx.addSlide();
-  slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 2, 22);
-  addEyebrow(slide, "THE PROBLEM WE SOLVE");
-
-  slide.addText("Traditional Automation vs. Agentic QA", {
-    x: 0.7, y: 0.85, w: 10, h: 0.5,
-    fontSize: 28, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
-  });
-
-  // Traditional column
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 1.6, w: 5.7, h: 3.2,
-    fill: { color: COLORS.redSoft }, line: { color: "D4A0A0", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("❌ Traditional Test Automation", {
-    x: 0.9, y: 1.7, w: 5.3, h: 0.35,
-    fontSize: 13, bold: true, color: COLORS.red, fontFace: "Segoe UI",
-  });
-  const tradItems = [
-    "✗  Requires Playwright/Selenium engineering skills",
-    "✗  Breaks on every CSS class / selector change",
-    "✗  High maintenance cost — devs, not QA, fix tests",
-    "✗  Adding a test suite = writing hundreds of lines of code",
-    "✗  Can't reason about business logic violations",
-    "✗  No contextual understanding — only matches patterns",
-  ];
-  slide.addText(tradItems.join("\n"), {
-    x: 0.9, y: 2.1, w: 5.3, h: 2.5,
-    fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.5,
-  });
-
-  // Agentic column
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 6.8, y: 1.6, w: 5.7, h: 3.2,
-    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("✅ Agentic QA", {
-    x: 7.0, y: 1.7, w: 5.3, h: 0.35,
-    fontSize: 13, bold: true, color: COLORS.green, fontFace: "Segoe UI",
-  });
-  const agentItems = [
-    "✓  Plain English prompts — no coding required",
-    "✓  Self-healing — agents find elements by context",
-    "✓  Low maintenance — update the prompt, not the code",
-    "✓  Adding a test suite = adding a CSV file",
-    "✓  Agents apply business invariants (BL-* rules)",
-    "✓  Contextual reasoning: \"this price is wrong because…\"",
-  ];
-  slide.addText(agentItems.join("\n"), {
-    x: 7.0, y: 2.1, w: 5.3, h: 2.5,
-    fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.5,
-  });
-
-  // Code comparison
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 5.0, w: 5.7, h: 2.0,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText(
-    "// Traditional Playwright script (140 lines)\nawait page.goto('/login');\nawait page.fill('[data-id=\"email\"]', user);\nawait page.fill('[data-id=\"pass\"]', pass);\nawait page.click('.submit-btn-v2'); // breaks when renamed\nawait expect(page).toHaveURL('/dashboard');\n// ... 135 more lines of fragile code",
-    {
-      x: 0.9, y: 5.1, w: 5.3, h: 1.8,
-      fontSize: 10, color: COLORS.text2, fontFace: "Consolas",
-    }
-  );
-
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 6.8, y: 5.0, w: 5.7, h: 2.0,
-    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText(
-    '// Agentic test instruction (3 lines)\n"Sign in to the storefront using the QA test\naccount. Verify the dashboard loads and the\ncart icon shows correct item count."',
-    {
-      x: 7.0, y: 5.1, w: 5.3, h: 1.8,
-      fontSize: 10, color: COLORS.text2, fontFace: "Consolas",
-    }
+  addBilingualNotes(slide,
+    "Welcome. This deck covers our Agentic QA system — an AI-driven testing platform built on Claude and MCP servers. Total runtime is roughly 15 minutes. The core thesis: replace brittle Playwright scripts with natural-language test cases executed by AI agents that reason about business rules, not selectors.",
+    "Добро пожаловать. Презентация посвящена нашей системе Agentic QA — AI-управляемой платформе тестирования на базе Claude и MCP-серверов. Длительность примерно 15 минут. Основная идея — заменить хрупкие Playwright-скрипты на тест-кейсы на естественном языке, которые выполняются AI-агентами, рассуждающими в терминах бизнес-правил, а не селекторов."
   );
 }
 
-// ==================== SLIDE 3: PROJECT OVERVIEW ====================
+// ==================== SLIDE 2: PROJECT OVERVIEW ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 3, 22);
+  addSlideNumber(slide, 2, 19);
   addEyebrow(slide, "PROJECT OVERVIEW");
 
   slide.addText("What Is the Agentic QA System?", {
@@ -242,13 +169,17 @@ function addEyebrow(slide, text, opts = {}) {
     x: 10.5, y: 5.7, w: 2, h: 0.5,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", align: "center",
   });
+  addBilingualNotes(slide,
+    "Three pillars: AI-native — the LLM reasons about what to click and what to verify, not a hardcoded selector path. Modular architecture — 14 agents, ~79 CSV suites, 20 skills, 23 shared knowledge files. CI pipeline is on the near-term roadmap. Scope is the full Virto Commerce B2B platform: storefront, admin SPA, REST + GraphQL APIs, checkout, B2B multi-org, GA4, WCAG, Storybook.",
+    "Три опоры: AI-нативность — LLM сам решает, что кликать и что проверять, без захардкоженного селектора. Модульная архитектура — 14 агентов, ~79 CSV-сьютов, 20 скиллов, 23 общих файла знаний. CI-пайплайн — в ближайшем роадмапе. Охват — вся B2B-платформа Virto Commerce: сторфронт, админка, REST + GraphQL API, чекаут, мульти-орг B2B, GA4, WCAG, Storybook."
+  );
 }
 
 // ==================== SLIDE 4: ARCHITECTURE ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 4, 22);
+  addSlideNumber(slide, 3, 19);
   addEyebrow(slide, "ARCHITECTURE");
 
   slide.addText("Three Testing Modes, One Foundation", {
@@ -312,13 +243,17 @@ function addEyebrow(slide, text, opts = {}) {
       align: "center", valign: "middle",
     });
   });
+  addBilingualNotes(slide,
+    "Three testing modes share one foundation. Interactive mode is for engineers working in their IDE — Cursor, Windsurf, or VS Code with the Claude Code extension. Agent Teams mode runs autonomous regression with isolated browsers per agent. CI pipeline is the GitHub Actions track — daily smoke and weekly full. All three modes read the same test-suites.json, same CSV cases, same agents, same knowledge files.",
+    "Три режима тестирования живут на общем фундаменте. Интерактивный — для инженера в IDE (Cursor, Windsurf или VS Code с расширением Claude Code). Agent Teams — автономный регресс с изолированным браузером на каждого агента. CI — GitHub Actions: ежедневный smoke и еженедельный full. Все три читают один и тот же test-suites.json, те же CSV-кейсы, тех же агентов и те же файлы знаний."
+  );
 }
 
 // ==================== SLIDE 5: BY THE NUMBERS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 5, 22);
+  addSlideNumber(slide, 4, 19);
   addEyebrow(slide, "SYSTEM SCALE");
 
   slide.addText("Agentic QA at a Glance", {
@@ -375,13 +310,17 @@ function addEyebrow(slide, text, opts = {}) {
     x: 7.2, y: 4.05, w: 5.2, h: 0.6,
     fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "Scale at a glance: 14 specialized agents, ~79 CSV suites with ~2,400 cases total, 10 MCP integrations covering browsers, design tools, ticketing, and clouds. Coverage selectors range from smoke (~140 tests for daily pre-deploy) to critical (P0 gate), sprint (plan-driven from JIRA), and full (everything before a major release). The 'sprint' selection auto-reads docs/Sprint plans/sprint-*-summary.json.",
+    "Масштаб: 14 специализированных агентов, ~79 CSV-сьютов с ~2,400 кейсами, 10 MCP-интеграций — браузеры, дизайн-инструменты, тикеты, облака. Селекторы покрытия — от smoke (~140 тестов перед деплоем) до critical (P0-гейт), sprint (по плану из JIRA) и full (всё перед мажорным релизом). 'Sprint' читает docs/Sprint plans/sprint-*-summary.json автоматически."
+  );
 }
 
 // ==================== SLIDE 6: AGENT TEAMS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 6, 22);
+  addSlideNumber(slide, 5, 19);
   addEyebrow(slide, "AGENT TEAMS");
 
   slide.addText("14 Specialized Agents — Four-Layer Architecture", {
@@ -459,13 +398,17 @@ function addEyebrow(slide, text, opts = {}) {
     x: 0.9, y: 5.8, w: 11.5, h: 0.5,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "14 agents across two teams. Three orchestrators coordinate: qa-lead handles JIRA workflow and go/no-go decisions; regression-orchestrator and autonomous-orchestrator manage parallel suite execution. Four execution specialists each own a dedicated browser — frontend on Chrome, backend on Edge, testing-expert on Firefox, ui-ux on DevTools — so they never collide on parallel runs. Plus four BA agents for analysis and a test-management specialist for plans and coverage matrices.",
+    "14 агентов в двух командах. Три оркестратора координируют: qa-lead — JIRA-воркфлоу и go/no-go; regression-orchestrator и autonomous-orchestrator — параллельное выполнение сьютов. Четыре исполнителя имеют выделенный браузер каждый: frontend — Chrome, backend — Edge, testing-expert — Firefox, ui-ux — DevTools. Это исключает конфликты при параллельном запуске. Плюс 4 BA-агента и test-management-specialist для планов и матриц покрытия."
+  );
 }
 
 // ==================== SLIDE 7: COMMANDS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 7, 22);
+  addSlideNumber(slide, 6, 19);
   addEyebrow(slide, "ONE-COMMAND INTERFACE");
 
   slide.addText("16 Slash Commands — Full QA Lifecycle from the IDE", {
@@ -508,13 +451,17 @@ function addEyebrow(slide, text, opts = {}) {
       fontSize: 11, color: c.extraColor || COLORS.text3, fontFace: "Segoe UI",
     });
   });
+  addBilingualNotes(slide,
+    "16 slash commands cover the entire QA lifecycle from the IDE. /qa-smoke is a daily 12-test pre-deploy gate. /qa-test runs everything tied to a JIRA ticket. /qa-regression executes selected suites in parallel. /qa-bug reproduces, captures evidence, and files the ticket. /qa-status and /qa-env-check are read-only and auto-invocable — agents can call them without explicit user permission.",
+    "16 slash-команд покрывают весь QA-цикл прямо из IDE. /qa-smoke — ежедневный гейт из 12 тестов перед деплоем. /qa-test — все ACs из JIRA-тикета. /qa-regression — параллельное выполнение выбранных сьютов. /qa-bug — воспроизводит, собирает evidence, заводит тикет. /qa-status и /qa-env-check — read-only и авто-инвокабельны, агент может звать их без явного разрешения."
+  );
 }
 
 // ==================== SLIDE 8: PIPELINE & QUALITY COMMANDS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 8, 22);
+  addSlideNumber(slide, 7, 19);
   addEyebrow(slide, "PIPELINE & QUALITY COMMANDS");
 
   slide.addText("Test Lifecycle, Design Audit, Fix Verification", {
@@ -579,79 +526,99 @@ function addEyebrow(slide, text, opts = {}) {
     x: 0.9, y: 5.15, w: 11.5, h: 1.1,
     fontSize: 12, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "Three commands that round out the QA cycle. /qa-test-lifecycle keeps the suite in sync with code — no more stale Steps after a PR. /qa-design is unique: a dual Storybook + storefront audit catching bugs that only show in one of the two contexts. /qa-verify-fix closes the JIRA loop — fetches the ticket, reproduces the original STR, confirms the fix, runs regression checks, transitions JIRA.",
+    "Три команды, замыкающие QA-цикл. /qa-test-lifecycle держит сьют в синхронизации с кодом — после PR не остаётся протухших Steps. /qa-design — уникальный двойной аудит Storybook + сторфронта, ловит баги, видимые только в одном из контекстов. /qa-verify-fix закрывает цикл JIRA — читает тикет, воспроизводит STR, подтверждает фикс, прогоняет регресс-проверки и переводит тикет."
+  );
 }
 
-// ==================== SLIDE 9: MCP SERVERS ====================
+// ==================== SLIDE 8: MCP TOP 5 + VIRTOOZ ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 9, 22);
+  addSlideNumber(slide, 8, 19);
   addEyebrow(slide, "POWER FEATURE #1");
 
-  slide.addText("10 MCP Servers — Claude's Eyes, Hands & Memory", {
-    x: 0.7, y: 0.85, w: 11, h: 0.5,
-    fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  slide.addText("Top 5 MCP Servers — Claude's Eyes, Hands & Memory", {
+    x: 0.7, y: 0.85, w: 12, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
   });
 
-  // Flow diagram
-  const flowItems = [
-    { text: "👨‍💻\nEngineer\ntypes command", x: 0.7, w: 1.5, bg: COLORS.codeBg },
-    { text: "→", x: 2.3, w: 0.3, bg: null },
-    { text: "🧠\nClaude\nReasons · Plans\nExecutes · Judges", x: 2.7, w: 2.0, bg: COLORS.accentSoft },
-    { text: "↔", x: 4.8, w: 0.3, bg: null },
-    { text: "10 MCP SERVERS\nplaywright ×3 · DevTools\nfigma · github · postman\ncontext7 · azure · atlassian", x: 5.2, w: 3.0, bg: COLORS.blueSoft },
-    { text: "→", x: 8.3, w: 0.3, bg: null },
-    { text: "🌐 Chrome\n🦊 Firefox\n⚡ Edge", x: 8.7, w: 1.5, bg: COLORS.codeBg },
-    { text: "→", x: 10.3, w: 0.3, bg: null },
-    { text: "📋\nReports\nScreenshots\nHAR · JIRA", x: 10.7, w: 1.8, bg: COLORS.greenSoft },
-  ];
-  flowItems.forEach((item) => {
-    if (item.bg) {
-      slide.addShape(pptx.ShapeType.roundRect, {
-        x: item.x, y: 1.6, w: item.w, h: 1.6,
-        fill: { color: item.bg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-      });
-    }
-    slide.addText(item.text, {
-      x: item.x, y: 1.6, w: item.w, h: 1.6,
-      fontSize: item.bg ? 10 : 16, color: item.bg ? COLORS.text : COLORS.text3,
-      fontFace: "Segoe UI", align: "center", valign: "middle",
-    });
+  slide.addText("MCP servers are tools Claude calls during a test. They give the agent the ability to drive browsers, read live documentation, manage tickets, and reach across the platform — without leaving the conversation.", {
+    x: 0.7, y: 1.35, w: 12, h: 0.5,
+    fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
 
-  // Four capability cards
-  const caps = [
-    { icon: "🌐", title: "Browser Automation", desc: "Chrome · Firefox · Edge run in parallel with full HAR capture and screenshot evidence" },
-    { icon: "🎨", title: "Design Comparison", desc: "Figma MCP compares live UI screenshots pixel-by-pixel against design specs", bg: COLORS.blueSoft },
-    { icon: "🔗", title: "API & Code", desc: "Postman runs API collections · GitHub searches code and reviews PRs automatically" },
-    { icon: "☁️", title: "Cloud & Docs", desc: "Azure App Insights for error logs · Context7 for live VC documentation lookup", bg: COLORS.greenSoft },
+  // Top 5 cards
+  const top5 = [
+    { icon: "🌐", title: "Playwright ×3", sub: "Chrome · Firefox · Edge", desc: "Real browsers, isolated contexts, HAR capture, screenshots, parallel execution", badge: "#1 Eyes & Hands", bg: COLORS.accentSoft, titleColor: COLORS.accent },
+    { icon: "📚", title: "VirtoOZ", sub: "12 topic-scoped tools", desc: "Primary VC docs source. Platform / Storefront / Marketplace user & developer guides + source code search", badge: "#2 VC Brain", bg: COLORS.greenSoft, titleColor: COLORS.green },
+    { icon: "🎫", title: "Atlassian", sub: "JIRA + Confluence", desc: "Read tickets · file bugs with evidence · transition statuses · close the QA loop", badge: "#3 Ticket Loop", bg: COLORS.blueSoft, titleColor: COLORS.blue },
+    { icon: "🐙", title: "GitHub", sub: "vc-module-* repos", desc: "Search module source code · review PRs · pull file contents · cross-reference behavior", badge: "#4 Source", bg: COLORS.codeBg, titleColor: COLORS.text },
+    { icon: "📮", title: "Postman", sub: "REST + GraphQL", desc: "Author collections · seed test data · generate APIs · drive /qa-seed-data", badge: "#5 API", bg: COLORS.codeBg, titleColor: COLORS.text },
   ];
-  caps.forEach((c, i) => {
-    const x = 0.7 + i * 3.1;
+  top5.forEach((c, i) => {
+    const x = 0.4 + i * 2.55;
     slide.addShape(pptx.ShapeType.roundRect, {
-      x, y: 3.6, w: 2.8, h: 2.2,
-      fill: { color: c.bg || COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+      x, y: 2.0, w: 2.45, h: 3.3,
+      fill: { color: c.bg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
     });
     slide.addText(c.icon, {
-      x, y: 3.7, w: 2.8, h: 0.5,
-      fontSize: 22, fontFace: "Segoe UI Emoji", align: "center",
+      x, y: 2.1, w: 2.45, h: 0.5,
+      fontSize: 24, fontFace: "Segoe UI Emoji", align: "center",
     });
     slide.addText(c.title, {
-      x: x + 0.1, y: 4.2, w: 2.6, h: 0.3,
-      fontSize: 12, bold: true, color: COLORS.text, fontFace: "Segoe UI", align: "center",
+      x: x + 0.1, y: 2.65, w: 2.25, h: 0.35,
+      fontSize: 14, bold: true, color: c.titleColor, fontFace: "Segoe UI", align: "center",
+    });
+    slide.addText(c.sub, {
+      x: x + 0.1, y: 3.0, w: 2.25, h: 0.3,
+      fontSize: 9, color: COLORS.text3, fontFace: "Segoe UI", align: "center",
     });
     slide.addText(c.desc, {
-      x: x + 0.1, y: 4.55, w: 2.6, h: 1.1,
+      x: x + 0.15, y: 3.35, w: 2.15, h: 1.4,
       fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI", align: "center",
     });
+    slide.addText(c.badge, {
+      x: x + 0.3, y: 4.85, w: 1.85, h: 0.3,
+      fontSize: 9, bold: true, color: c.titleColor, fontFace: "Segoe UI", align: "center",
+    });
   });
+
+  // Supporting servers bar
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.4, y: 5.55, w: 12.5, h: 0.6,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("SUPPORTING:   Chrome DevTools (console · network · HAR) · Figma (pixel-diff) · Azure (App Insights) · Context7 (third-party libs) · Microsoft Learn", {
+    x: 0.6, y: 5.55, w: 12.1, h: 0.6,
+    fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI", valign: "middle",
+  });
+
+  // VirtoOZ callout
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.4, y: 6.3, w: 12.5, h: 1.0,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("Why VirtoOZ matters", {
+    x: 0.6, y: 6.35, w: 12.1, h: 0.3,
+    fontSize: 11, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("Agents stop guessing about Virto Commerce internals. They consult live, topic-scoped documentation — PlatformUserGuide, StorefrontDeveloperGuide, BackendSourceCode, B2BExperts, DeploymentGuide — before writing a test, filing a bug, or proposing a fix. Accessed via the /vc-docs skill.", {
+    x: 0.6, y: 6.65, w: 12.1, h: 0.6,
+    fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+  });
+  addBilingualNotes(slide,
+    "MCP — Model Context Protocol — is the standard for Claude to invoke external tools. Top 5: Playwright trio (×3 real browsers), VirtoOZ (primary Virto Commerce documentation source, 12 topic-scoped tools), Atlassian (JIRA + Confluence loop), GitHub (vc-module-* source search), Postman (REST + GraphQL + seed data). VirtoOZ is the headline change — agents no longer guess about VC internals. They consult live, topic-scoped docs via /vc-docs. Supporting servers: Chrome DevTools (HAR, perf), Figma (pixel-diff), Azure (App Insights), Context7 (third-party libs), Microsoft Learn.",
+    "MCP — Model Context Protocol — стандарт, по которому Claude вызывает внешние инструменты. Топ-5: трио Playwright (3 настоящих браузера), VirtoOZ (главный источник документации Virto Commerce, 12 узкоспециализированных инструментов), Atlassian (JIRA + Confluence), GitHub (поиск по vc-module-*), Postman (REST + GraphQL + сидинг данных). VirtoOZ — главное обновление: агенты больше не угадывают, как устроен VC. Они читают живую тематическую документацию через /vc-docs. Вспомогательные: Chrome DevTools (HAR, перф), Figma (pixel-diff), Azure (App Insights), Context7 (сторонние библиотеки), Microsoft Learn."
+  );
 }
 
 // ==================== SLIDE 10: BUSINESS RULES ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 10, 22);
+  addSlideNumber(slide, 9, 19);
   addEyebrow(slide, "POWER FEATURE #2");
 
   slide.addText("Business Rules & Edge Case Libraries", {
@@ -744,13 +711,17 @@ function addEyebrow(slide, text, opts = {}) {
     x: 7.4, y: 5.65, w: 4.9, h: 0.8,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "All agents share one central business-logic.md with testable BL-* invariants. When a test fails, the agent doesn't say 'failed' — it cites which BL- rule was violated. Update one rule once, and every agent enforces it on every future test. Edge cases get their own ECL-* identifiers — 13 generic e-commerce categories plus 7 VC-specific patterns, cross-referenced to BL- invariants. Every generated test case cites both.",
+    "Все агенты используют общий business-logic.md с тестируемыми BL-инвариантами. При падении агент не пишет 'failed', а цитирует, какое BL-правило нарушено. Поправил правило один раз — каждый агент применяет его во всех будущих тестах. Edge-кейсы — отдельные ECL-* идентификаторы: 13 общих e-commerce категорий + 7 специфичных для VC, с перекрёстными ссылками на BL. Каждый сгенерированный тест-кейс цитирует оба."
+  );
 }
 
 // ==================== SLIDE 11: PARALLEL REGRESSION ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 11, 22);
+  addSlideNumber(slide, 10, 19);
   addEyebrow(slide, "POWER FEATURE #3");
 
   slide.addText("Parallel Regression with Automated Quality Gates", {
@@ -844,162 +815,89 @@ function addEyebrow(slide, text, opts = {}) {
     x: 9.45, y: 5.15, w: 3.2, h: 0.6,
     fontSize: 10, color: COLORS.blue, fontFace: "Segoe UI",
   });
-}
-
-// ==================== SLIDE 12: CI/CD ====================
-{
-  const slide = pptx.addSlide();
-  slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 12, 22);
-  addEyebrow(slide, "CI/CD PIPELINE · PLANNED");
-
-  slide.addText("Full CI/CD Automation Pipeline", {
-    x: 0.7, y: 0.85, w: 10, h: 0.5,
-    fontSize: 28, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
-  });
-
-  // Pipeline diagram
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 1.6, w: 7.5, h: 4.2,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText(
-    "GitHub Actions (schedule / manual trigger)\n      │\n      ▼\nDocker Container (Playwright + Node.js 18+)\n      │\n      ▼\nClaude Agent SDK — run-regression.ts\n      │\n      ├─── Budget tracking ($5 smoke / $80 full)\n      ├─── Suite batching (max 3 parallel)\n      │\n      ▼\nHeadless Chromium — execute CSV test suites\n      │\n      ▼\nreports/regression/ci-YYYY-MM-DD/\n      │\n      ▼\nTeams Adaptive Card notification → QA channel",
-    {
-      x: 0.9, y: 1.7, w: 7.1, h: 4.0,
-      fontSize: 11, color: COLORS.text, fontFace: "Consolas",
-    }
+  addBilingualNotes(slide,
+    "Three browser slots run simultaneously — Chrome, Firefox, Edge. Orchestrator queues remaining suites; each agent gets an isolated context with HAR capture. Quality gate verdicts are non-negotiable. APPROVED needs ≥95% pass + zero P0 bugs. CONDITIONAL allows deploy with tracked P2/P3 follow-ups. BLOCKED means a P0/P1 hit — no deploy regardless of schedule. Retry chain falls back across browsers up to twice.",
+    "Три слота-браузера работают параллельно — Chrome, Firefox, Edge. Оркестратор ставит остальные сьюты в очередь; каждый агент получает изолированный контекст с HAR-записью. Вердикты quality gate неизменяемы. APPROVED — ≥95% pass + ноль P0-багов. CONDITIONAL — деплой возможен с зафиксированными P2/P3. BLOCKED — есть P0/P1, деплой запрещён вне зависимости от расписания. Ретраи проходят по цепочке браузеров до двух раз."
   );
-
-  // Schedule cards
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 6.0, w: 3.5, h: 0.9,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("Daily Smoke\nMon–Fri 6:00 AM UTC · Suite 01 · $5 budget", {
-    x: 0.9, y: 6.05, w: 3.1, h: 0.8,
-    fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
-  });
-
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 4.5, y: 6.0, w: 3.5, h: 0.9,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("Weekly Full\nSunday 2:00 AM UTC · All 97 suites · $80", {
-    x: 4.7, y: 6.05, w: 3.1, h: 0.8,
-    fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
-  });
-
-  // CI Key Features
-  slide.addText("CI Key Features", {
-    x: 8.8, y: 1.6, w: 4, h: 0.35,
-    fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
-  });
-
-  const ciFeatures = [
-    "✓  Budget-controlled per-suite allocation",
-    "✓  90-day rolling regression history",
-    "✓  Artifacts with 30-day retention",
-    "✓  Manual trigger: any selection, any env",
-    "✓  Teams webhook Adaptive Card",
-    "✓  Suite-by-suite breakdown in report",
-  ];
-  slide.addText(ciFeatures.join("\n"), {
-    x: 8.8, y: 2.1, w: 4, h: 2.5,
-    fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.5,
-  });
-
-  // Docker command
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 8.8, y: 4.9, w: 4, h: 1.2,
-    fill: { color: COLORS.accentSoft }, line: { color: COLORS.accent, width: 1 }, rectRadius: 0.1,
-  });
-  slide.addText("# One command to run any scope\ndocker run --env-file .env \\\n  -e SUITE_SELECTION=critical \\\n  -e TEST_ENVIRONMENT=qa \\\n  vc-regression", {
-    x: 9.0, y: 5.0, w: 3.6, h: 1.0,
-    fontSize: 9, color: COLORS.accent, fontFace: "Consolas",
-  });
 }
 
-// ==================== SLIDE 13: KNOWLEDGE + SKILLS ====================
+// ==================== SLIDE 11: TOP 4 KNOWLEDGE FILES + VIRTOOZ ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 13, 22);
-  addEyebrow(slide, "POWER FEATURE #5");
+  addSlideNumber(slide, 11, 19);
+  addEyebrow(slide, "POWER FEATURE #4");
 
-  slide.addText("Shared Knowledge + 18 Methodology Skills", {
-    x: 0.7, y: 0.85, w: 11, h: 0.5,
-    fontSize: 26, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  slide.addText("Top 4 Knowledge Files + VirtoOZ — Shared Brain", {
+    x: 0.7, y: 0.85, w: 12, h: 0.5,
+    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
   });
 
-  // Left: Knowledge files
-  slide.addText("12 Shared Knowledge Files", {
-    x: 0.7, y: 1.55, w: 6, h: 0.35,
-    fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
-  });
-  slide.addText("All QA agents consult these files simultaneously. Update once — all agents benefit.", {
-    x: 0.7, y: 1.95, w: 6, h: 0.35,
+  slide.addText("All 14 agents consult the same knowledge base. Update once — every agent benefits. Below are the four files that drive the largest share of agent decisions, plus VirtoOZ MCP for live Virto Commerce reference.", {
+    x: 0.7, y: 1.4, w: 12, h: 0.5,
     fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
 
-  const knowledgeFiles = [
-    { icon: "📋", title: "Business Rules", desc: "Testable BL-* invariants enforced on every test" },
-    { icon: "🎯", title: "Edge Case Library", desc: "13 generic + 7 VC-specific ECL-* patterns" },
-    { icon: "🗺️", title: "Platform Patterns", desc: "Storefront sitemap · admin flows · browser quirks" },
-    { icon: "⚡", title: "Performance Thresholds", desc: "LCP · CLS · API latency · debug signals" },
+  // 4 top knowledge files (2x2 grid)
+  const top4 = [
+    { icon: "📋", title: "business-logic.md", desc: "Testable platform invariants (BL-* IDs) across 15+ domains — pricing, cart, checkout, orders, auth, B2B, catalog, UI. Violations are flagged as bugs automatically, with the BL-ID cited.", consumer: "Consumed by: every QA agent on every test", bg: COLORS.accentSoft, color: COLORS.accent },
+    { icon: "📐", title: "graphql-schema.md + runner doc", desc: "Live introspection snapshot of xAPI GraphQL schema + canonical authoring contract for runner-native CSV cases. Every GraphQL query consults schema FIRST to avoid invented field names.", consumer: "Consumed by: backend-expert, test-management-specialist, test-runner-agent", bg: COLORS.blueSoft, color: COLORS.blue },
+    { icon: "🎯", title: "live-discovery.md", desc: "Decision tree + recipes for runtime test-data resolution. When to use {{VAR}} vs @td() vs live-discover vs random-data. Stops hardcoded IDs from rotting between catalog reseeds.", consumer: "Consumed by: any agent that writes Steps / Test_Data columns", bg: COLORS.codeBg, color: COLORS.accent },
+    { icon: "🏷️", title: "test-runner-tags.md", desc: "Canonical tag grammar for both browser-mode runners: step tags ([NAV]·[ACT]·[WAIT]), assertion tags ([DOM]·[STATE]·[MATH]·[API]), cross-layer ([HAR]·[SCREEN]).", consumer: "Consumed by: test-runner-agent + autonomous-test-runner", bg: COLORS.codeBg, color: COLORS.green },
   ];
-  knowledgeFiles.forEach((k, i) => {
+  top4.forEach((k, i) => {
     const col = i % 2;
     const row = Math.floor(i / 2);
-    const x = 0.7 + col * 3.1;
-    const y = 2.5 + row * 1.5;
+    const x = 0.4 + col * 6.4;
+    const y = 2.05 + row * 1.85;
     slide.addShape(pptx.ShapeType.roundRect, {
-      x, y, w: 2.8, h: 1.3,
-      fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+      x, y, w: 6.2, h: 1.7,
+      fill: { color: k.bg }, line: { color: k.color, width: 1 }, rectRadius: 0.1,
     });
-    slide.addText(k.icon + " " + k.title, {
-      x: x + 0.1, y: y + 0.1, w: 2.6, h: 0.3,
-      fontSize: 11, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+    slide.addText(k.icon + "  " + k.title, {
+      x: x + 0.15, y: y + 0.1, w: 5.9, h: 0.3,
+      fontSize: 12, bold: true, color: k.color, fontFace: "Segoe UI",
     });
     slide.addText(k.desc, {
-      x: x + 0.1, y: y + 0.5, w: 2.6, h: 0.7,
+      x: x + 0.15, y: y + 0.45, w: 5.9, h: 0.9,
       fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
     });
+    slide.addText(k.consumer, {
+      x: x + 0.15, y: y + 1.35, w: 5.9, h: 0.3,
+      fontSize: 9, color: COLORS.text3, fontFace: "Segoe UI",
+    });
   });
 
-  // Right: Skills
-  slide.addText("20 Skills — Encoded Methodology", {
-    x: 7.0, y: 1.55, w: 6, h: 0.35,
-    fontSize: 14, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+  // VirtoOZ callout
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.4, y: 5.85, w: 12.5, h: 1.1,
+    fill: { color: COLORS.greenSoft }, line: { color: "A0C4B0", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("📚  VirtoOZ MCP — /vc-docs skill", {
+    x: 0.6, y: 5.9, w: 12.1, h: 0.3,
+    fontSize: 12, bold: true, color: COLORS.green, fontFace: "Segoe UI",
+  });
+  slide.addText("Primary Virto Commerce documentation source. 12 topic-scoped retrieval tools — PlatformUserGuide, PlatformDeveloperGuide, StorefrontUserGuide, StorefrontDeveloperGuide, BackendSourceCode, FrontendSourceCode, MarketplaceUserGuide, MarketplaceDeveloperGuide, DeploymentGuide, B2BExperts. Every agent that needs Virto-specific architecture, module behavior, API contract, or deployment knowledge calls VirtoOZ first.", {
+    x: 0.6, y: 6.2, w: 12.1, h: 0.7,
+    fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
   });
 
-  const skillGroups = [
-    { title: "🧪 Testing Skills (8)", desc: "Storybook · Accessibility (WCAG) · Design review · Test plans · Checklists · API testing · Coverage gap · Seed data", bg: COLORS.accentSoft, color: COLORS.accent },
-    { title: "📐 QA Methodology Skills (9)", desc: "ISTQB lifecycle · Bug investigation · Evidence capture · Defect workflow · Test design · AI test generation · Risk matrix · Metrics · SBTM", bg: COLORS.blueSoft, color: COLORS.blue },
-    { title: "📚 /vc-docs — auto-invocable", desc: "Semantic search over live Virto Commerce documentation via Context7", bg: COLORS.greenSoft, color: COLORS.green },
-  ];
-  skillGroups.forEach((s, i) => {
-    const y = 2.1 + i * 1.5;
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x: 7.0, y, w: 5.6, h: 1.3,
-      fill: { color: s.bg }, line: { color: s.color, width: 1 }, rectRadius: 0.1,
-    });
-    slide.addText(s.title, {
-      x: 7.15, y: y + 0.1, w: 5.3, h: 0.3,
-      fontSize: 11, bold: true, color: s.color, fontFace: "Segoe UI",
-    });
-    slide.addText(s.desc, {
-      x: 7.15, y: y + 0.45, w: 5.3, h: 0.7,
-      fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
-    });
+  // Footer mentioning other knowledge files
+  slide.addText("23 knowledge files total — beyond the top 4: e-commerce-edge-cases-library (ECL-*), platform-patterns, sitemap, products, graphiql-interaction, order-creation-matrix, critical-ui-scope, module-suite-map, browser-quirks, performance-thresholds, …", {
+    x: 0.4, y: 7.05, w: 12.5, h: 0.4,
+    fontSize: 9, color: COLORS.text3, fontFace: "Segoe UI", italic: true,
   });
+  addBilingualNotes(slide,
+    "All 14 agents consult the same knowledge base. Update once — everyone benefits. Top 4 files drive most decisions: business-logic.md (BL- invariants), graphql-schema.md plus the runner doc (xAPI truth), live-discovery.md (no hardcoded IDs), test-runner-tags.md (CSV grammar). VirtoOZ MCP is the fifth pillar — primary Virto Commerce documentation source via the /vc-docs skill. 12 topic-scoped tools cover Platform/Storefront/Marketplace user and developer guides plus source code search.",
+    "Все 14 агентов используют одну базу знаний. Обновил — польза всем. Топ-4 файла, на которые опирается большинство решений: business-logic.md (BL-инварианты), graphql-schema.md + runner doc (источник истины xAPI), live-discovery.md (никаких захардкоженных ID), test-runner-tags.md (грамматика CSV). Пятый столп — VirtoOZ MCP, главный источник документации Virto Commerce через скилл /vc-docs. 12 узкоспециализированных инструментов: Platform/Storefront/Marketplace user/developer guides + поиск по исходникам."
+  );
 }
 
 // ==================== SLIDE 14: GRAPHQL SCHEMA + RUNNER-NATIVE TESTS ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 14, 22);
+  addSlideNumber(slide, 12, 19);
   addEyebrow(slide, "KNOWLEDGE FILE · RUNNER CONTRACT");
 
   slide.addText("GraphQL xAPI — Schema Truth + Runner-Native Tests", {
@@ -1069,13 +967,17 @@ function addEyebrow(slide, text, opts = {}) {
   slide.addText("Gold-standard reference suite: 050i-graphql-configurations.csv", {
     x: 0.7, y: 5.55, w: 11.9, h: 0.4, fontSize: 11, italic: true, color: COLORS.text3, fontFace: "Segoe UI", align: "center",
   });
+  addBilingualNotes(slide,
+    "Two knowledge files plus scripts/graphql-runner.ts turn xAPI testing into deterministic, schema-validated CSV cases. Never write custom JS to execute GraphQL cases — the canonical runner handles schema validation, var substitution, @td() resolution, and evidence capture. Schema-update workflow: when the xAPI evolves, re-run introspection against the backend, regenerate graphql-schema.md, and CI catches any test referencing dropped fields. The CSV example shows the full grammar: [AUTH], [GQL-OP], [GQL-VARS], [GQL-CAPTURE] in Steps; [ERRORS], [NULL], [COUNT], [DATA], [VAR] in Assertions.",
+    "Два knowledge-файла + scripts/graphql-runner.ts превращают xAPI-тестирование в детерминированные CSV-кейсы со schema-валидацией. Никаких кастомных JS — канонический runner делает schema validation, подстановку переменных, разрешение @td() и сбор evidence. Обновление схемы: при изменении xAPI перезапускаем интроспекцию, перегенерируем graphql-schema.md, и CI ловит тесты с удалёнными полями. Пример CSV: [AUTH], [GQL-OP], [GQL-VARS], [GQL-CAPTURE] в Steps; [ERRORS], [NULL], [COUNT], [DATA], [VAR] в Assertions."
+  );
 }
 
 // ==================== SLIDE 15: LIVE TEST-DATA DISCOVERY ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 15, 22);
+  addSlideNumber(slide, 13, 19);
   addEyebrow(slide, "KNOWLEDGE FILE · RUNTIME HELPERS");
 
   slide.addText("Live Test-Data Discovery — No Hardcoded IDs", {
@@ -1145,13 +1047,17 @@ function addEyebrow(slide, text, opts = {}) {
   slide.addText("Anti-pattern: hardcoded GUIDs/SKUs in Test_Data — review failure (Dim 6: Data Validity).", {
     x: 7.2, y: 5.2, w: 5.2, h: 0.6, fontSize: 10, italic: true, color: COLORS.red, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "Catalogs get reseeded. B2B orgs get re-created. Virtual-catalog roots migrate between environments. Hardcoded IDs rot fast — within a sprint or two. Live discovery resolves entities at runtime against the actual environment. Four data layers: {{VAR}} for env config (URLs, creds, store IDs), @td() for named entities you assert by name, live-discover for 'first available' shape assertions, random-data for unique inputs with the AGENT-TEST-* prefix that /qa-seed-data teardown sweeps cleanly.",
+    "Каталоги пересиживаются. B2B-организации пересоздаются. Virtual-catalog roots мигрируют между средами. Захардкоженные ID протухают за спринт-два. Live-discovery вытаскивает сущности в рантайме из реальной среды. Четыре слоя данных: {{VAR}} — для env-конфига (URL, креды, store IDs), @td() — именованные сущности с ассерт-by-name, live-discover — 'first available' со структурными ассертами, random-data — уникальные входы с префиксом AGENT-TEST-* для чистого teardown."
+  );
 }
 
 // ==================== SLIDE 16: TEST RUNNER TAGS + @td() RESOLVER ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 16, 22);
+  addSlideNumber(slide, 14, 19);
   addEyebrow(slide, "KNOWLEDGE FILE · RESOLVER");
 
   slide.addText("Test Runner Tags + @td() Resolver", {
@@ -1226,13 +1132,17 @@ function addEyebrow(slide, text, opts = {}) {
   slide.addText("npx tsx scripts/validate-td-refs.ts", {
     x: 7.2, y: 5.4, w: 5.2, h: 0.3, fontSize: 10, color: COLORS.green, fontFace: "Consolas",
   });
+  addBilingualNotes(slide,
+    "test-runner-tags.md defines the browser-mode CSV grammar — typed step tags ([NAV], [ACT], [WAIT], [LOGIN], [SETUP]), assertion tags ([DOM], [STATE], [MATH], [API], [CONSOLE]), and cross-layer tags ([HAR], [SCREEN], [PERF]). Both standard and autonomous test runners speak the same grammar. The @td() resolver reads test-data/aliases.json plus CSV rows in test-data/. validate-td-refs.ts verifies every @td() reference before a run; graphql-runner rejects unresolved tokens at lint time. One CSV update propagates to every consumer.",
+    "test-runner-tags.md задаёт CSV-грамматику для браузерных тестов — типизированные теги шагов ([NAV], [ACT], [WAIT], [LOGIN], [SETUP]), ассертов ([DOM], [STATE], [MATH], [API], [CONSOLE]) и кросс-слойные ([HAR], [SCREEN], [PERF]). Стандартный и автономный runner говорят на одной грамматике. Резолвер @td() читает test-data/aliases.json + CSV-строки в test-data/. validate-td-refs.ts проверяет все @td()-ссылки перед запуском; graphql-runner отказывает по неразрешённым токенам на lint-стадии. Один CSV-апдейт прорастает во все потребители."
+  );
 }
 
 // ==================== SLIDE 17: CRITICAL UI SCOPE — LAYOUT STABILITY ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 17, 22);
+  addSlideNumber(slide, 15, 19);
   addEyebrow(slide, "KNOWLEDGE FILE · LAYOUT HELPERS");
 
   slide.addText("Critical UI Scope — Regression-Enforced Checklist", {
@@ -1313,89 +1223,112 @@ function addEyebrow(slide, text, opts = {}) {
   slide.addText("npm run scope:validate exits non-zero if any matrix cell points at a missing test ID.", {
     x: 8.7, y: 5.4, w: 3.7, h: 0.85, fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
   });
+  addBilingualNotes(slide,
+    "A 7×8 matrix pins down exactly which BL-UI invariant applies to which component on which page. 7 components — VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar. 8 pages — home, catalog, PDP, cart, orders, lists, members, company info. Validator script npm run scope:validate exits non-zero if any covered matrix cell points at a missing test ID. Covered exclusively by suite 048b-layout-stability.csv with the layout-stability selection.",
+    "Матрица 7×8 фиксирует, какое BL-UI правило применяется к какому компоненту на какой странице. 7 компонентов — VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar. 8 страниц — home, catalog, PDP, cart, orders, lists, members, company info. Валидатор npm run scope:validate падает, если какая-то покрытая ячейка матрицы указывает на отсутствующий test ID. Покрытие — только сьют 048b-layout-stability.csv через selection layout-stability."
+  );
 }
 
-// ==================== SLIDE 18: TEST CASE GENERATION ====================
+// ==================== SLIDE 16: /qa-test-lifecycle ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 18, 22);
-  addEyebrow(slide, "AI-GENERATED TEST CASES");
+  addSlideNumber(slide, 16, 19);
+  addEyebrow(slide, "UNIFIED TEST-CASE PIPELINE");
 
-  slide.addText("/qa-test-cases-generator — From Ticket to Test Suite", {
-    x: 0.7, y: 0.85, w: 11, h: 0.5,
-    fontSize: 24, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
+  slide.addText("/qa-test-lifecycle — Keep Tests in Sync with Code, Always", {
+    x: 0.7, y: 0.85, w: 12, h: 0.5,
+    fontSize: 22, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
   });
-  slide.addText("One skill derives structured, agent-executable test cases from a JIRA ticket, BDD scenario, domain checklist, or legacy suite.", {
-    x: 0.7, y: 1.4, w: 11, h: 0.4,
-    fontSize: 13, color: COLORS.text2, fontFace: "Segoe UI",
+  slide.addText("One command for the entire test-case lifecycle. Run it against a suite, domain, ticket, PR, module, or git diff — and the system carries it all the way from change detection to approved coverage.", {
+    x: 0.7, y: 1.4, w: 12, h: 0.55,
+    fontSize: 12, color: COLORS.text2, fontFace: "Segoe UI",
   });
 
-  // Flow
-  const genFlow = [
-    { text: "JIRA Ticket\nVCST-XXXX", bg: COLORS.codeBg },
-    { text: "Parse ACs\n+ detect layers", bg: COLORS.accentSoft },
-    { text: "Generate Cases\nBL-* + ECL-* refs", bg: COLORS.blueSoft },
-    { text: "Route to Agent\nby layer type", bg: COLORS.greenSoft },
+  // 8-step pipeline flow
+  const lcFlow = [
+    { text: "scope", bg: COLORS.codeBg },
+    { text: "sync stale", bg: COLORS.accentSoft },
+    { text: "analyze gaps", bg: COLORS.accentSoft },
+    { text: "generate", bg: COLORS.blueSoft },
+    { text: "review\n(7-dim)", bg: COLORS.blueSoft },
+    { text: "fix", bg: COLORS.blueSoft },
+    { text: "verify", bg: COLORS.greenSoft },
+    { text: "approve", bg: COLORS.greenSoft },
   ];
-  genFlow.forEach((f, i) => {
-    const x = 0.7 + i * 3.0;
+  lcFlow.forEach((f, i) => {
+    const x = 0.4 + i * 1.6;
     slide.addShape(pptx.ShapeType.roundRect, {
-      x, y: 2.0, w: 2.4, h: 0.9,
+      x, y: 2.15, w: 1.4, h: 0.8,
       fill: { color: f.bg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
     });
     slide.addText(f.text, {
-      x, y: 2.0, w: 2.4, h: 0.9,
+      x, y: 2.15, w: 1.4, h: 0.8,
       fontSize: 11, color: COLORS.text, fontFace: "Segoe UI", align: "center", valign: "middle",
     });
-    if (i < genFlow.length - 1) {
+    if (i < lcFlow.length - 1) {
       slide.addText("→", {
-        x: x + 2.4, y: 2.0, w: 0.6, h: 0.9,
-        fontSize: 18, color: COLORS.accent, fontFace: "Segoe UI", align: "center", valign: "middle",
+        x: x + 1.4, y: 2.15, w: 0.2, h: 0.8,
+        fontSize: 14, color: COLORS.accent, fontFace: "Segoe UI", align: "center", valign: "middle",
       });
     }
   });
 
-  // Left: Works with any input
-  slide.addText("Works with any input", {
-    x: 0.7, y: 3.3, w: 6, h: 0.35,
+  // Left: Accepts any scope
+  slide.addText("Accepts any scope", {
+    x: 0.7, y: 3.35, w: 6, h: 0.35,
     fontSize: 13, bold: true, color: COLORS.text, fontFace: "Segoe UI",
   });
-  const inputs = [
-    "✓  VCST-XXXX — JIRA ticket → parse acceptance criteria",
-    "✓  domain — checklist → 1–3 cases per item",
-    "✓  suite NN — existing CSV → find gaps → fill them",
-    "✓  from-checklist cart — happy path + negative per item",
-    "✓  from-bdd \"Given…\" — BDD scenario → structured test case",
+  const scopes = [
+    "✓  suite <ID> — direct quality review of an existing CSV",
+    "✓  domain <name> — coverage audit per business domain",
+    "✓  VCST-XXXX — derive cases from a JIRA ticket's ACs",
+    "✓  PR #NNN — change-driven sync against a pull request",
+    "✓  module <name> — vc-module-* repo coverage",
+    "✓  diff · changelog <ver> — git-driven gap analysis",
   ];
-  slide.addText(inputs.join("\n"), {
-    x: 0.7, y: 3.7, w: 6, h: 2.2,
+  slide.addText(scopes.join("\n"), {
+    x: 0.7, y: 3.75, w: 6, h: 2.6,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.5,
   });
 
-  // Right: What every generated case includes
-  slide.addText("What every generated case includes", {
-    x: 7.0, y: 3.3, w: 6, h: 0.35,
+  // Right: What it produces
+  slide.addText("What it produces", {
+    x: 7.0, y: 3.35, w: 6, h: 0.35,
     fontSize: 13, bold: true, color: COLORS.text, fontFace: "Segoe UI",
   });
-  const includes = [
-    "✓  BL-* rule reference — business invariant enforced",
-    "✓  ECL-* edge case pattern — known failure scenario",
-    "✓  Typed step tags: [NAV] [ACT] [WAIT]",
-    "✓  Typed assertions: [DOM] [STATE] [MATH]",
-    "✓  At least 2 failure signals — ready for agent execution",
+  const outputs = [
+    "✓  Updated Steps / Assertions for stale cases",
+    "✓  New cases with BL-* + ECL-* citations",
+    "✓  Typed step + assertion tags ([NAV]·[ACT]·[DOM]·[MATH])",
+    "✓  7-dimension quality review report",
+    "✓  Live verification + approval gate before merge",
   ];
-  slide.addText(includes.join("\n"), {
-    x: 7.0, y: 3.7, w: 5.6, h: 2.2,
+  slide.addText(outputs.join("\n"), {
+    x: 7.0, y: 3.75, w: 5.6, h: 2.6,
     fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", lineSpacingMultiple: 1.5,
   });
+
+  // Bottom rationale
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.4, y: 6.4, w: 12.5, h: 0.8,
+    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
+  });
+  slide.addText("Why it matters: tests stop rotting after PRs land. Delegates to test-management-specialist (authoring + review) and qa-testing-expert (live verification). Replaces the deprecated /qa-sync-tests command.", {
+    x: 0.6, y: 6.4, w: 12.1, h: 0.8,
+    fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI", valign: "middle",
+  });
+  addBilingualNotes(slide,
+    "One command for the entire test-case lifecycle. Run it against a suite, domain, JIRA ticket, PR, module, or git diff — it carries you all the way from change detection to approved coverage. Pipeline: scope → sync stale → analyze gaps → generate → 7-dimension review → fix → live verify → approve. Replaces the deprecated /qa-sync-tests. Delegates to test-management-specialist for authoring and review, and qa-testing-expert for live verification before merge.",
+    "Одна команда на весь цикл работы с тест-кейсами. Принимает сьют, домен, JIRA-тикет, PR, модуль или git diff — ведёт от обнаружения изменения до одобренного покрытия. Пайплайн: scope → sync stale → analyze gaps → generate → 7-dimension review → fix → live verify → approve. Заменяет устаревший /qa-sync-tests. Делегирует test-management-specialist на авторинг и ревью и qa-testing-expert на live-верификацию перед мерджем."
+  );
 }
 
 // ==================== SLIDE 19: TEST DATA GENERATION ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 19, 22);
+  addSlideNumber(slide, 17, 19);
   addEyebrow(slide, "TEST INFRASTRUCTURE");
 
   slide.addText("/qa-seed-data — Full Test Environment in One Command", {
@@ -1452,13 +1385,17 @@ function addEyebrow(slide, text, opts = {}) {
     border: { type: "solid", pt: 0.5, color: "E0DDD8" },
     fontFace: "Segoe UI", fontSize: 11,
   });
+  addBilingualNotes(slide,
+    "Postman MCP builds and runs a collection to seed a complete test environment — catalogs, products, pricing, B2B organizations, users with roles. Five profiles: minimal (smoke), catalog (search/browse), b2b (RBAC), pricing (multi-currency), full (everything combined). Every seeded entity carries the AGENT-TEST-* prefix so /qa-seed-data teardown sweeps cleanly without touching real data. Safe to run on any QA environment.",
+    "Postman MCP собирает и выполняет коллекцию для сидинга полного тестового окружения — каталоги, продукты, цены, B2B-организации, пользователи с ролями. Пять профилей: minimal (smoke), catalog (поиск/каталог), b2b (RBAC), pricing (мультивалюта), full (всё вместе). Каждая сущность с префиксом AGENT-TEST-*, поэтому teardown через /qa-seed-data подчищает чисто, не затрагивая реальные данные. Безопасно для любой QA-среды."
+  );
 }
 
 // ==================== SLIDE 20: QA-TEST FLOW ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 20, 22);
+  addSlideNumber(slide, 18, 19);
   addEyebrow(slide, "END-TO-END FLOW");
 
   slide.addText("/qa-test VCST-XXXX — From Ticket to Verdict", {
@@ -1500,70 +1437,17 @@ function addEyebrow(slide, text, opts = {}) {
       fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI",
     });
   });
+  addBilingualNotes(slide,
+    "End-to-end demo for /qa-test VCST-XXXX. Step 1: Atlassian MCP fetches the ticket — title, description, acceptance criteria. Step 2: orchestrator dispatches specialists in parallel — frontend on Chrome for storefront ACs, backend on Edge for API + admin ACs. Step 3: each agent navigates real browsers, captures screenshots plus HAR, watches console for errors. Step 4: failed ACs become JIRA bugs with P0–P3 severity, BL- references, and full evidence. Step 5: all ACs pass — transition the ticket to Testing Complete, link evidence, notify the team.",
+    "Демо end-to-end для /qa-test VCST-XXXX. Шаг 1: Atlassian MCP читает тикет — заголовок, описание, acceptance criteria. Шаг 2: оркестратор параллельно отправляет специалистов — frontend на Chrome для сторфронт-ACs, backend на Edge для API + админка. Шаг 3: каждый агент работает с реальным браузером, снимает скриншоты + HAR, следит за консолью. Шаг 4: упавшие AC становятся JIRA-багами с P0–P3, BL-ссылками и полным evidence. Шаг 5: все AC проходят — тикет переводится в Testing Complete, evidence линкуется, команда оповещается."
+  );
 }
 
-// ==================== SLIDE 21: BENEFITS ====================
+// ==================== SLIDE 19: ROADMAP ====================
 {
   const slide = pptx.addSlide();
   slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 21, 22);
-  addEyebrow(slide, "VALUE DELIVERED");
-
-  slide.addText("Strong Sides of AI-Driven Testing", {
-    x: 0.7, y: 0.85, w: 10, h: 0.5,
-    fontSize: 28, bold: true, color: COLORS.accent, fontFace: "Segoe UI",
-  });
-
-  const benefits = [
-    { icon: "🔧", title: "Zero Maintenance", desc: "UI changes don't break tests. Agents adapt through contextual reasoning, not brittle selectors.", bg: COLORS.greenSoft, titleColor: COLORS.green },
-    { icon: "⚡", title: "Speed at Scale", desc: "3 browsers run in parallel. A full sprint regression of ~2,700 tests runs automatically.", bg: COLORS.accentSoft, titleColor: COLORS.accent },
-    { icon: "🧠", title: "Business Awareness", desc: "Agents don't just detect failures — they reason about why in business terms.", bg: COLORS.blueSoft, titleColor: COLORS.blue },
-    { icon: "📋", title: "No Coding Required", desc: "QA engineers write prompts, not Playwright scripts. Adding a test = adding a CSV row.", bg: COLORS.codeBg, titleColor: COLORS.text },
-    { icon: "🔗", title: "Full JIRA Loop", desc: "Agents read tickets, execute tests, file bugs with evidence, and transition statuses.", bg: COLORS.codeBg, titleColor: COLORS.text },
-    { icon: "📐", title: "Methodology Built-in", desc: "20 skills encode ISTQB, SBTM, WCAG 2.1 AA, risk-based testing, and BDD.", bg: COLORS.codeBg, titleColor: COLORS.text },
-  ];
-  benefits.forEach((b, i) => {
-    const col = i % 3;
-    const row = Math.floor(i / 3);
-    const x = 0.7 + col * 4.0;
-    const y = 1.6 + row * 2.2;
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x, y, w: 3.7, h: 1.9,
-      fill: { color: b.bg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-    });
-    slide.addText(b.icon, { x, y: y + 0.1, w: 3.7, h: 0.35, fontSize: 18, fontFace: "Segoe UI Emoji", margin: [0, 0, 0, 15] });
-    slide.addText(b.title, { x: x + 0.15, y: y + 0.45, w: 3.4, h: 0.3, fontSize: 13, bold: true, color: b.titleColor, fontFace: "Segoe UI" });
-    slide.addText(b.desc, { x: x + 0.15, y: y + 0.8, w: 3.4, h: 1.0, fontSize: 11, color: COLORS.text2, fontFace: "Segoe UI" });
-  });
-
-  // Bottom stats bar
-  slide.addShape(pptx.ShapeType.roundRect, {
-    x: 0.7, y: 6.1, w: 11.9, h: 0.9,
-    fill: { color: COLORS.codeBg }, line: { color: "E0DDD8", width: 1 }, rectRadius: 0.1,
-  });
-  const bottomStats = [
-    { num: "~0", label: "Selector maintenance\nincidents per sprint", color: COLORS.accent },
-    { num: "15 min", label: "From command to\nGO/NO-GO verdict", color: COLORS.green },
-    { num: "1 CSV row", label: "Cost of adding\na new test case", color: COLORS.blue },
-  ];
-  bottomStats.forEach((s, i) => {
-    const x = 1.0 + i * 4.0;
-    slide.addText(s.num, {
-      x, y: 6.1, w: 3.5, h: 0.4,
-      fontSize: 20, bold: true, color: s.color, fontFace: "Segoe UI", align: "center",
-    });
-    slide.addText(s.label, {
-      x, y: 6.5, w: 3.5, h: 0.5,
-      fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI", align: "center",
-    });
-  });
-}
-
-// ==================== SLIDE 22: ROADMAP ====================
-{
-  const slide = pptx.addSlide();
-  slide.background = { fill: COLORS.slideBg };
-  addSlideNumber(slide, 22, 22);
+  addSlideNumber(slide, 19, 19);
   addEyebrow(slide, "FUTURE DEVELOPMENT");
 
   slide.addText("Roadmap — What's Next for Agentic QA", {
@@ -1572,21 +1456,22 @@ function addEyebrow(slide, text, opts = {}) {
   });
 
   const leftItems = [
-    { badge: "Shipped ✓", badgeColor: COLORS.green, badgeBg: COLORS.greenSoft, title: "AI Test Case Generator", desc: "/qa-test-cases-generator — derives enriched CSV test cases from JIRA tickets automatically", dotColor: COLORS.green },
-    { badge: "Shipped ✓", badgeColor: COLORS.green, badgeBg: COLORS.greenSoft, title: "Agent Teams Mode", desc: "Autonomous regression with TeamCreate API, token bucket, exponential backoff, JIRA integration", dotColor: COLORS.green },
-    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "Multi-Browser CI", desc: "Expand CI from single headless Chromium to full 3-browser pool in GitHub Actions", dotColor: COLORS.blue },
-    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "Visual Regression Baselines", desc: "Persistent Storybook component snapshots with automated pixel-diff comparison", dotColor: COLORS.blue },
-    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "Sprint Coverage Reports", desc: "Auto-select regression scope based on git diff analysis", dotColor: COLORS.blue },
+    { badge: "Shipped ✓", badgeColor: COLORS.green, badgeBg: COLORS.greenSoft, title: "Unified Test-Case Lifecycle", desc: "/qa-test-lifecycle — scope → sync → analyze → generate → review → fix → verify → approve, driven by PRs / diffs / modules / tickets", dotColor: COLORS.green },
+    { badge: "Shipped ✓", badgeColor: COLORS.green, badgeBg: COLORS.greenSoft, title: "Runner-Native GraphQL Suite", desc: "Schema-validated CSV cases via scripts/graphql-runner.ts; full tag grammar ([GQL-OP], [GQL-CAPTURE], [ERRORS], [DATA]) + @td() resolver", dotColor: COLORS.green },
+    { badge: "Shipped ✓", badgeColor: COLORS.green, badgeBg: COLORS.greenSoft, title: "Agent Teams Autonomous Regression", desc: "TeamCreate API · 3+1 token bucket · exponential backoff · failure recovery · JIRA integration", dotColor: COLORS.green },
+    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "CI/CD GitHub Actions", desc: "Daily smoke + weekly full regression, headless Chromium, Teams notifications, 90-day rolling history", dotColor: COLORS.blue },
+    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "GraphQL Runner v2", desc: "Schema-diff alerts · custom predicate plugins · cross-case [GQL-CAPTURE] chaining · auto-cleanup of AGENT-TEST-* entities", dotColor: COLORS.blue },
+    { badge: "Q2 2026", badgeColor: COLORS.blue, badgeBg: COLORS.blueSoft, title: "Multi-Browser CI & Visual Diff", desc: "Full 3-browser pool in CI (Chrome + Firefox + Edge) · Figma + Storybook pixel-diff baselines for all 55 components", dotColor: COLORS.blue },
   ];
   leftItems.forEach((item, i) => {
-    const y = 1.55 + i * 1.05;
+    const y = 1.55 + i * 0.85;
     slide.addShape(pptx.ShapeType.ellipse, {
       x: 0.9, y: y + 0.12, w: 0.15, h: 0.15,
       fill: { color: item.dotColor },
     });
     if (i < leftItems.length - 1) {
       slide.addShape(pptx.ShapeType.line, {
-        x: 0.975, y: y + 0.27, w: 0, h: 0.78,
+        x: 0.975, y: y + 0.27, w: 0, h: 0.58,
         line: { color: "E0DDD8", width: 1 },
       });
     }
@@ -1598,30 +1483,31 @@ function addEyebrow(slide, text, opts = {}) {
     });
     slide.addText(item.title, {
       x: 2.3, y: y - 0.05, w: 4.0, h: 0.3,
-      fontSize: 12, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+      fontSize: 11, bold: true, color: COLORS.text, fontFace: "Segoe UI",
     });
     slide.addText(item.desc, {
-      x: 1.2, y: y + 0.3, w: 5.3, h: 0.6,
-      fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+      x: 1.2, y: y + 0.27, w: 5.3, h: 0.55,
+      fontSize: 9, color: COLORS.text2, fontFace: "Segoe UI",
     });
   });
 
   const rightItems = [
-    { badge: "Q3 2026", badgeColor: COLORS.accent, badgeBg: COLORS.accentSoft, title: "Mobile Testing", desc: "BrowserStack integration for real device testing — iOS Safari, Android Chrome", dotColor: COLORS.accent },
-    { badge: "Q3 2026", badgeColor: COLORS.accent, badgeBg: COLORS.accentSoft, title: "Self-Updating Suites", desc: "Regression suites that evolve automatically — agent analyzes code changes, proposes new tests", dotColor: COLORS.accent },
-    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Performance Regression", desc: "Automated Core Web Vitals tracking: LCP, CLS, FID baselines per release", dotColor: COLORS.text3 },
-    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Test Impact Analysis", desc: "ML-based prediction of which test suites are most likely to fail given a code change", dotColor: COLORS.text3 },
-    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Multi-Tenant Testing", desc: "Parallel testing across multiple storefronts / white-label brands", dotColor: COLORS.text3 },
+    { badge: "Q3 2026", badgeColor: COLORS.accent, badgeBg: COLORS.accentSoft, title: "AI Root-Cause Analyzer", desc: "Cross-references HAR + console + Azure App Insights + git blame to pre-classify each bug with severity, module, and a likely root-cause hypothesis", dotColor: COLORS.accent },
+    { badge: "Q3 2026", badgeColor: COLORS.accent, badgeBg: COLORS.accentSoft, title: "Mobile & Real Device Testing", desc: "BrowserStack integration — iOS Safari (iPhone 15 Pro), Android Chrome (Galaxy S24). Critical for B2C checkout, BOPIS, configurable products", dotColor: COLORS.accent },
+    { badge: "Q3 2026", badgeColor: COLORS.accent, badgeBg: COLORS.accentSoft, title: "Self-Updating Suites", desc: "Agents observe failures + code churn, propose Steps/Assertions updates, open a PR against regression/suites/ for QA review", dotColor: COLORS.accent },
+    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Continuous Production QA", desc: "Read-only agents shadow production traffic via App Insights, detect anomalies, propose synthetic regression cases", dotColor: COLORS.text3 },
+    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Test Impact & Cost Optimizer", desc: "ML predicts which suites are most likely to fail per PR + cost-per-suite — orchestrator picks the cheapest sufficient scope", dotColor: COLORS.text3 },
+    { badge: "Future", badgeColor: COLORS.text3, badgeBg: COLORS.codeBg, title: "Multi-Tenant / White-Label Testing", desc: "Parallel regression across multiple VC storefronts and white-label brands with shared logic + brand-specific overrides", dotColor: COLORS.text3 },
   ];
   rightItems.forEach((item, i) => {
-    const y = 1.55 + i * 1.05;
+    const y = 1.55 + i * 0.85;
     slide.addShape(pptx.ShapeType.ellipse, {
       x: 7.2, y: y + 0.12, w: 0.15, h: 0.15,
       fill: { color: item.dotColor },
     });
     if (i < rightItems.length - 1) {
       slide.addShape(pptx.ShapeType.line, {
-        x: 7.275, y: y + 0.27, w: 0, h: 0.78,
+        x: 7.275, y: y + 0.27, w: 0, h: 0.58,
         line: { color: "E0DDD8", width: 1 },
       });
     }
@@ -1633,11 +1519,11 @@ function addEyebrow(slide, text, opts = {}) {
     });
     slide.addText(item.title, {
       x: 8.6, y: y - 0.05, w: 4.0, h: 0.3,
-      fontSize: 12, bold: true, color: COLORS.text, fontFace: "Segoe UI",
+      fontSize: 11, bold: true, color: COLORS.text, fontFace: "Segoe UI",
     });
     slide.addText(item.desc, {
-      x: 7.5, y: y + 0.3, w: 5.3, h: 0.6,
-      fontSize: 10, color: COLORS.text2, fontFace: "Segoe UI",
+      x: 7.5, y: y + 0.27, w: 5.3, h: 0.55,
+      fontSize: 9, color: COLORS.text2, fontFace: "Segoe UI",
     });
   });
 
@@ -1646,10 +1532,14 @@ function addEyebrow(slide, text, opts = {}) {
     x: 0.7, y: 6.85, w: 11.9, h: 0.5,
     fill: { color: COLORS.accentSoft }, line: { color: COLORS.accent, width: 1 }, rectRadius: 0.1,
   });
-  slide.addText("🚀  Vision: A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases, and provides real-time quality signals — with zero manual scripting.", {
+  slide.addText("🚀  Vision: A fully autonomous QA system that continuously tests, learns from failures, updates its own test cases against real production signals, and provides real-time quality + cost signals — with zero manual scripting.", {
     x: 0.9, y: 6.85, w: 11.5, h: 0.5,
     fontSize: 11, color: COLORS.text, fontFace: "Segoe UI", valign: "middle",
   });
+  addBilingualNotes(slide,
+    "Shipped: unified /qa-test-lifecycle, runner-native GraphQL with schema validation, Agent Teams autonomous regression. Q2 2026: CI/CD pipeline (daily smoke, weekly full, Teams notifications), GraphQL Runner v2 with schema-diff alerts and capture chaining, multi-browser CI plus pixel-diff visual baselines. Q3 2026: AI root-cause analyzer cross-referencing HAR + console + App Insights + git blame, mobile testing via BrowserStack, self-updating suites that propose Steps/Assertions updates as PRs. Long term: continuous production QA shadowing real traffic, ML-based test impact + cost optimizer, multi-tenant white-label testing.",
+    "Поставлено: единый /qa-test-lifecycle, runner-native GraphQL со schema-валидацией, Agent Teams автономный регресс. Q2 2026: CI/CD пайплайн (ежедневный smoke, еженедельный full, нотификации в Teams), GraphQL Runner v2 со schema-diff алертами и chaining-захватом, мульти-браузерный CI + pixel-diff визуальные baseline. Q3 2026: AI root-cause аналитик, сопоставляющий HAR + консоль + App Insights + git blame, мобильное тестирование через BrowserStack, self-updating сьюты, предлагающие апдейты Steps/Assertions в виде PR. Долгосрочно: continuous production QA, ML test impact + cost optimizer, мульти-тенантное white-label тестирование."
+  );
 }
 
 // Write file

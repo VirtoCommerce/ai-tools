@@ -245,7 +245,7 @@ Look for these anti-patterns — from **both** code analysis AND live UI explora
 - Missing error handling in API calls
 
 ### 7. VC Docs Cross-Reference
-Use **Context7 MCP** (`resolve-library-id` → `query-docs` for `/virtocommerce/vc-docs`) and fetch relevant sections from `https://docs.virtocommerce.org` to:
+Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fall back to **Context7 MCP** (`resolve-library-id` → `query-docs` for `/virtocommerce/vc-docs`) when VirtoOZ returns thin results. Fetch relevant sections from `https://docs.virtocommerce.org` to:
 - Verify the project is using best practices for detected modules
 - Identify features available in the platform that aren't being used
 - Flag deprecated APIs or patterns

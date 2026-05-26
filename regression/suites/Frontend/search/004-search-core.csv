@@ -1,5 +1,5 @@
 ﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"SRCH-001","Search - Basic Query","Search > Basic","High","BL-SEARCH-001","ECL-14.2","Catalog has searchable products","url={{FRONT_URL}}; query=@td(SEARCH_ELECTRONICS.query)","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-001","Search - Basic Query","Search > Basic","High","BL-SRCH-001","ECL-14.2","Catalog has searchable products","url={{FRONT_URL}}; query=@td(SEARCH_ELECTRONICS.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
 [ACT] fill 'Search': 'laptop'
 [KEY] press [Enter]
@@ -9,7 +9,7 @@
 [DOM] Result count visible
 [STATE] Search input retains 'laptop'","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Spinner >5s; 0 products returned unexpectedly; results page not loading; 4xx on searchProducts; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-002","Search - Suggestions Dropdown","Search > Suggestions","Medium","BL-SEARCH-002","ECL-14.2","Search configured with suggestions enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-002","Search - Suggestions Dropdown","Search > Suggestions","Medium","BL-SRCH-002","ECL-14.2","Search configured with suggestions enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
 [ACT] fill 'Search': 'lap' (partial query)
 [WAIT] Wait for suggestions dropdown
@@ -17,7 +17,7 @@
 [DOM] Suggestion items match partial query 'lap'
 [STATE] Clicking a suggestion populates input and executes search","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for suggestion query
 [CONSOLE] no TypeError or JS errors","Suggestions dropdown not appearing; suggestions unrelated to query; clicking suggestion not executing search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-005","Search - Within Category","Search > Scoped","Medium","BL-SEARCH-001","","Inside a specific category page","url={{FRONT_URL}}","[NAV] Navigate to a specific category page on {{FRONT_URL}}
+"SRCH-005","Search - Within Category","Search > Scoped","Medium","BL-SRCH-001","","Inside a specific category page","url={{FRONT_URL}}","[NAV] Navigate to a specific category page on {{FRONT_URL}}
 [ACT] Use the search bar while on the category page
 [ACT] fill 'Search': 'product'; [KEY] press [Enter]
 [WAIT] Wait for scoped results
@@ -25,7 +25,7 @@
 [DOM] Clear indication of search scope (e.g., within category label)
 [STATE] Products from outside the category not in results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with category scope
 [CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-007","Search - Sorting Results","Search > Sorting","Medium","BL-CAT-005, BL-SEARCH-001","","Search returns multiple products with varying prices","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
+"SRCH-007","Search - Sorting Results","Search > Sorting","Medium","BL-CAT-005, BL-SRCH-001","","Search returns multiple products with varying prices","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
 [WAIT] Wait for results page
 [ACT] select 'Price: Low to High' from sort dropdown
 [WAIT] Wait for reorder
@@ -37,7 +37,7 @@
 [MATH] 'Price: Low to High' — first product price <= last product price
 [DOM] 'Relevance' sort option available","[NETWORK] no 4xx/5xx on sort change
 [CONSOLE] no TypeError or JS errors","Sort dropdown absent on search results; products not reordering; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-008","Search - History","Search > History","Low","BL-SEARCH-002","","Previous searches performed in this session","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches exist in session)
+"SRCH-008","Search - History","Search > History","Low","BL-SRCH-002","","Previous searches performed in this session","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches exist in session)
 [ACT] Click search bar
 [ASSERT] Verify recent search history is displayed
 [ACT] Click on a history item
@@ -46,7 +46,7 @@
 [STATE] Clicking a history item executes the search
 [STATE] History can be cleared on request","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 on history item click
 [CONSOLE] no TypeError or JS errors","History not showing prior searches; history item click not executing search; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-NEW-001","Search Bar - Click Opens Dropdown Empty State","Search > Dropdown","Critical","BL-SEARCH-002","","Storefront open at homepage; search input has no text","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-001","Search Bar - Click Opens Dropdown Empty State","Search > Dropdown","Critical","BL-SRCH-002","","Storefront open at homepage; search input has no text","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ASSERT] Locate the search input labeled 'Search' in main navigation
 [ACT] Click the search input
 [WAIT] Wait for dropdown to appear","[DOM] Dropdown opens below the search input
@@ -56,7 +56,7 @@
 [DOM] 'Check all products' link visible pointing to /catalog
 [STATE] No product results in dropdown yet (empty query)","[NETWORK] no failed API calls triggered on input focus
 [CONSOLE] no TypeError or JS errors","Dropdown not opening on click; Hints section absent; 'Check all products' link missing; console TypeError on focus","none","E2E-SEARCH-005","Manual"
-"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","BL-SEARCH-002","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-002","Search Bar - Autocomplete Shows Product Previews While Typing","Search > Autocomplete","Critical","BL-SRCH-002","ECL-14.2","Storefront open; products matching 'hoodie' exist in catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie' (type one character at a time)
 [WAIT] Wait for dropdown to update after each character
@@ -66,7 +66,7 @@
 [DOM] 'Hints' section remains visible above Products section
 [DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'
 [CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; fewer than expected products shown; Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Manual"
-"SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","BL-SEARCH-002","","At least 2 prior searches exist in session history (e.g."," 'laptop' and 'hoodie' visible as hints)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
+"SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","BL-SRCH-002","","At least 2 prior searches exist in session history (e.g. 'laptop' and 'hoodie' visible as hints)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches 'laptop' and 'hoodie' in session)
 [ACT] Click the search input
 [ASSERT] Observe 'Hints' section label and hint items
 [ASSERT] Verify each hint is a button with search icon and query text
@@ -75,8 +75,8 @@
 [DOM] Each hint is a button with a search icon and query text
 [NAV] Clicking 'laptop' hint populates input with 'laptop' and navigates to /search?q=laptop
 [DOM] Search results for 'laptop' displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for 'laptop'
-[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008"
-"SRCH-NEW-004","Search Bar - Clear Button Resets Input to Empty","Search > Input Controls","High","BL-SEARCH-002","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008","Manual"
+"SRCH-NEW-004","Search Bar - Clear Button Resets Input to Empty","Search > Input Controls","High","BL-SRCH-002","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie'
 [WAIT] Wait for clear (X) button to appear
@@ -88,16 +88,19 @@
 [STATE] Dropdown returns to 'Hints' state (prior searches) after clearing
 [DOM] Clear button disappears when input is empty
 [STATE] User stays on same page (no navigation)","[CONSOLE] no TypeError or JS errors","Clear button not appearing after typing; clear button not emptying input; dropdown not reverting to Hints state; navigation triggered by clear; console TypeError","none","","Manual"
-"SRCH-NEW-005","Search Bar - Clicking Autocomplete Product Navigates to PDP","Search > Autocomplete","Critical","BL-SEARCH-002","","Storefront open at homepage; 'Vintage Colorado Hoodie' exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-005","Search Bar - Clicking Autocomplete Product Navigates to PDP","Search > Autocomplete","Critical","BL-SRCH-002","","Storefront open at homepage; at least 1 product matches @td(SEARCH_CLOTHING.query) in the active store/catalog","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
-[ACT] fill 'Search': 'hoodie'
+[ACT] fill 'Search': @td(SEARCH_CLOTHING.query)
 [WAIT] Wait for autocomplete product results in dropdown
-[ASSERT] Verify product results visible
-[ACT] Click 'Vintage Colorado Hoodie' in the dropdown
-[WAIT] Wait for PDP to load","[NAV] Browser navigates to PDP for Vintage Colorado Hoodie
-[DOM] PDP loads with correct product name
-[STATE] Search dropdown closes after product click","[NETWORK] GET product PDP returns HTTP 200
-[CONSOLE] no TypeError or JS errors","PDP not loading after clicking autocomplete result; wrong product PDP opened; dropdown not closing; console TypeError","none","E2E-SEARCH-005","Manual"
+[ASSERT] Verify at least 1 product entry visible in dropdown 'Products' section
+[SETUP] browser_snapshot the dropdown 'Products' section; capture first product entry's name → {picked_pdp_name}; capture its href → {picked_pdp_url}
+[LOG] write {picked_pdp_name, picked_pdp_url} to evidence
+[ACT] Click the first product entry in the dropdown
+[WAIT] Wait for PDP to load","[NAV] Browser navigates to {picked_pdp_url}
+[DOM] PDP page heading text contains {picked_pdp_name}
+[STATE] Search dropdown closes after product click
+[DOM] PDP renders product image, price, and primary action (qty stepper or Add-to-Cart) — no broken placeholders","[NETWORK] GET product PDP returns HTTP 200
+[CONSOLE] no TypeError or JS errors","PDP not loading after clicking autocomplete result; PDP heading does not contain captured name; dropdown not closing; console TypeError","none","E2E-SEARCH-005; live-discovery.md Recipe 2","Manual"
 "SRCH-NEW-006","Search Bar - Check All Products Link Goes to Catalog","Search > Dropdown","Low","BL-CAT-001","","Storefront open at homepage","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input (do not type anything)
 [WAIT] Wait for dropdown to open
@@ -107,7 +110,7 @@
 [DOM] Full product catalog page loads
 [STATE] Search dropdown closes after link click","[NETWORK] GET /catalog returns HTTP 200
 [CONSOLE] no TypeError or JS errors","'Check all products' link absent from dropdown; link navigating to wrong page; catalog page returning 4xx; console TypeError","none","","Manual"
-"SRCH-NEW-007","Search - Submit via Enter Key","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-007","Search - Submit via Enter Key","Search > Submission","Critical","BL-SRCH-001, BL-SRCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
@@ -117,7 +120,7 @@
 [STATE] Search input retains 'hoodie' on results page
 [DOM] Products displayed in grid view by default","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Results page not loading on Enter; wrong URL (not /search?q=hoodie); heading not showing result count; products not in grid view; console TypeError","none","E2E-SEARCH-001, SRCH-001","Manual"
-"SRCH-NEW-008","Search - Submit via Search Button (Magnifier Icon)","Search > Submission","Critical","BL-SEARCH-001, BL-SEARCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-008","Search - Submit via Search Button (Magnifier Icon)","Search > Submission","Critical","BL-SRCH-001, BL-SRCH-005","","Storefront open at any page","url={{FRONT_URL}}; query=@td(SEARCH_CLOTHING.query)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': 'hoodie'
 [ACT] Click the 'Search' button (magnifier icon)
@@ -125,7 +128,7 @@
 [ASSERT] Verify results page identical to Enter key submission","[NAV] Browser navigates to /search?q=hoodie
 [DOM] Results page loads with same products and count as SRCH-NEW-007","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Magnifier button not clickable; different results from Enter key; console TypeError","none","","Manual"
-"SRCH-NEW-009","Search Results - Result Count in Heading Is Accurate","Search > Results Page","High","BL-SEARCH-001","","Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-009","Search Results - Result Count in Heading Is Accurate","Search > Results Page","High","BL-SRCH-001","","Navigate to /search?q=hoodie","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page to fully render
 [ASSERT] Read the h1 page heading
 [ASSERT] Count the product cards rendered in the grid","[DOM] h1 heading shows a result count number
@@ -143,7 +146,7 @@
 [DOM] List view: single-column format with products stacked
 [DOM] Grid view: multi-column layout
 [MATH] Product count consistent across view switches","[CONSOLE] no TypeError or JS errors during switching","Products lost on view switch; count changing between views; JS error on toggle; console TypeError","none","","Manual"
-"SRCH-NEW-011","Search Results - Sort Options Change Product Order","Search > Sorting","High","BL-CAT-005, BL-SEARCH-001","","Navigate to /search?q=hoodie; multiple results with varying prices","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-011","Search Results - Sort Options Change Product Order","Search > Sorting","High","BL-CAT-005, BL-SRCH-001","","Navigate to /search?q=hoodie; multiple results with varying prices","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
 [ASSERT] Note current sort dropdown value (default: 'Featured')
 [ACT] select 'Price: Low to High' from sort dropdown
@@ -159,7 +162,7 @@
 [MATH] Product count unchanged after each sort
 [STATE] URL updates to reflect current sort selection","[NETWORK] no 4xx/5xx on sort change
 [CONSOLE] no TypeError or JS errors","Product order unchanged after sort selection; count changing after sort; URL not updating; console TypeError","none","SRCH-007","Manual"
-"SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SEARCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new tab and navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit)
+"SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SRCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new tab and navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit)
 [WAIT] Wait for results page to load
 [ASSERT] Verify results page loaded correctly
 [ASSERT] Verify search input is pre-populated with 'hoodie'
@@ -168,12 +171,12 @@
 [DOM] Correct products and count displayed
 [DOM] Filters and sort controls functional","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Page not loading from direct URL; search input not pre-populated; products not showing; console TypeError","none","E2E-SEARCH-001","Manual"
-"SRCH-NEW-024","Search - Empty Query Parameter Loads Catalog","Search > URL Navigation","Medium","BL-SEARCH-003","","Storefront is accessible","url={{FRONT_URL}}/search?q=","[NAV] Navigate to {{FRONT_URL}}/search?q= (empty q parameter)
+"SRCH-NEW-024","Search - Empty Query Parameter Loads Catalog","Search > URL Navigation","Medium","BL-SRCH-003","","Storefront is accessible","url={{FRONT_URL}}/search?q=","[NAV] Navigate to {{FRONT_URL}}/search?q= (empty q parameter)
 [WAIT] Wait for page to load","[NAV] Page loads without JavaScript or server error
 [DOM] Products displayed (catalog-style browse or empty search state)
 [STATE] Search input is empty","[NETWORK] page returns HTTP 200 (not 4xx/5xx)
 [CONSOLE] no TypeError or JS errors","Page returning 4xx/5xx for empty q param; JS error on empty query; console TypeError","none","","Manual"
-"SRCH-NEW-036","Search - Browser Back Returns to Results Page","Search > Navigation","High","BL-SEARCH-001","","User navigated from search results to a PDP","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+"SRCH-NEW-036","Search - Browser Back Returns to Results Page","Search > Navigation","High","BL-SRCH-001","","User navigated from search results to a PDP","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results page
 [ACT] Click a product card to open its PDP
 [WAIT] Wait for PDP to load
@@ -183,22 +186,7 @@
 [STATE] Search input still shows 'hoodie'
 [DOM] Product cards visible","[NETWORK] no 4xx/5xx on back navigation
 [CONSOLE] no TypeError or JS errors","Browser Back going to homepage instead of search results; search input cleared; products not re-rendering; console TypeError","none","E2E-SEARCH-001","Manual"
-"SRCH-NEW-037","Search Typo Tolerance - Misspelled Query Returns Results","Search > Fuzzy Matching","High","BL-SRCH-002","ECL-3.1","Catalog has products matching 'laptop' and 'hoodie'","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
-[ACT] Click search input
-[ACT] fill 'Search': 'laptp'
-[KEY] press [Enter]
-[WAIT] Wait for results page
-[ASSERT] Verify results page shows products related to 'laptop' OR a 'Did you mean' suggestion
-[NAV] Navigate back to {{FRONT_URL}}
-[ACT] Click search input
-[ACT] fill 'Search': 'hoddie'
-[KEY] press [Enter]
-[WAIT] Wait for results page
-[ASSERT] Verify results page shows products related to 'hoodie' OR a 'Did you mean' suggestion","[STATE] Misspelled 'laptp' returns laptop-related products or shows a correction suggestion
-[STATE] Misspelled 'hoddie' returns hoodie-related products or shows a correction suggestion
-[DOM] Results page does not show a blank error page for typos
-[DOM] If 'Did you mean' is shown, the suggestion is clickable and navigates to corrected results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for both typo queries
-[CONSOLE] no TypeError or JS errors","Both typo queries returning 0 results with no suggestion; error page for misspelled queries; 'Did you mean' link not functional; console TypeError","none","E2E-SEARCH-004, GAP-CS-07","Generated"
+"SRCH-NEW-037","Search Typo Tolerance - Misspelled Query Returns Fuzzy-Matched Products","Search > Fuzzy Matching","High","BL-SRCH-002","ECL-3.1","DEPRECATED 2026-05-22: vcst-qa search engine does NOT perform fuzzy/typo matching. Verified via mini-run: 'laptp' and 'hoddie' return 0 results, no Did-you-mean prompt. The zero-result behavior is already covered by SRCH-NEW-016 (No Results State UI). Reactivate this case (flip Automation_Status to Generated) only if fuzzy matching is enabled in the search engine configuration. Until then the test cannot produce useful signal.","url={{FRONT_URL}}","[DEPRECATED] Steps preserved for re-activation. Original flow: type 'laptp' → assert >=1 laptop-related result; repeat with 'hoddie'.","[DEPRECATED] Original assertions preserved for re-activation.","[DEPRECATED]","[DEPRECATED]","none","E2E-SEARCH-004, GAP-CS-07; deprecated when fuzzy-match OFF confirmed on vcst-qa 2026-05-22 (mini-run REG-2026-05-22-MINI follow-up)","Deprecated"
 "SRCH-NEW-038","Search Partial Word Match - Short Query Returns Relevant Products","Search > Fuzzy Matching","High","BL-SRCH-002","ECL-3.1","Catalog has products with 'hoodie' in their name","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
 [ACT] fill 'Search': 'hoo'
@@ -212,7 +200,7 @@
 [MATH] Result count > 0 for partial query
 [STATE] Products in results contain 'hoo' in name or are relevance-matched","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with results
 [CONSOLE] no TypeError or JS errors","Partial query 'hoo' returning 0 results; autocomplete not showing matches; results page empty for valid partial match; console TypeError","none","E2E-SEARCH-004, GAP-CS-07","Generated"
-"SRCH-NEW-044","Search Results Pagination - Controls Visible and Functional for Large Result Sets","Search > Pagination","High","BL-SEARCH-001","","Search query returns 100+ products across multiple pages; pagination enabled in storefront config","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products
+"SRCH-NEW-044","Search Results Pagination - Controls Visible and Functional for Large Result Sets","Search > Pagination","High","BL-SRCH-001","","Search query returns 100+ products across multiple pages; pagination enabled in storefront config","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products
 [KEY] press [Enter]
 [WAIT] Wait for search results page to load
 [ASSERT] Verify a result count is displayed (e.g., 'Showing 1-24 of 124 results')
@@ -232,7 +220,7 @@
 [STATE] First page products restored after clicking 'Previous'","[NETWORK] POST /graphql (searchProducts) fires with updated skip or page param on pagination click
 [NETWORK] no 4xx/5xx on pagination requests
 [CONSOLE] no TypeError or JS errors","Pagination controls absent for 100+ result query; page 2 showing same products as page 1; URL not reflecting page change; 'Previous' not navigating back; console TypeError","none","Coverage Gap Analysis; GAP-CS-18","Generated"
-"SRCH-NEW-045","Search Results Pagination Preserves Search Term and Active Filters","Search > Pagination","High","BL-SEARCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ pages","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search that returns 2+ pages of results
+"SRCH-NEW-045","Search Results Pagination Preserves Search Term and Active Filters","Search > Pagination","High","BL-SRCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ pages","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search that returns 2+ pages of results
 [KEY] press [Enter]
 [WAIT] Wait for search results page
 [ASSERT] Verify results are shown with pagination
@@ -250,22 +238,22 @@
 [NAV] URL contains both search query param and filter param on page 2
 [STATE] Products on page 2 are consistent with the active search and filter combination","[NETWORK] POST /graphql (searchProducts) on page 2 includes both keyword and filter parameters
 [CONSOLE] no TypeError or JS errors","Search term cleared when navigating to page 2; filter chips removed on pagination; URL losing filter params; page 2 showing unfiltered results; console TypeError","none","Coverage Gap Analysis; GAP-CS-18","Generated"
-"SRCH-NEW-046","Search by Exact SKU Returns Correct Product","Search > SKU Search","High","BL-SEARCH-001","ECL-14.2","Product with known SKU exists in catalog; SKU known from test data (e.g., ZER-64605169)","url={{FRONT_URL}}; sku=@td(PROD_DEFAULT.sku)","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-046","Search by Exact SKU Returns Correct Product","Search > SKU Search","High","BL-SRCH-001","ECL-14.2","Product with known SKU exists in catalog; SKU resolved from @td(PROD_DEFAULT.sku)","url={{FRONT_URL}}; sku=@td(PROD_DEFAULT.sku); product_name=@td(PROD_DEFAULT.name)","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
-[ACT] fill 'Search': the exact SKU value (e.g., 'ZER-64605169')
+[ACT] fill 'Search': @td(PROD_DEFAULT.sku)
 [KEY] press [Enter]
 [WAIT] Wait for search results page to load
 [ASSERT] Verify at least 1 product appears in results
-[ASSERT] Verify the product matching the searched SKU is in the results
-[ASSERT] Verify the product name displayed matches the expected product for that SKU
-[ACT] Click the product to open its PDP
+[ASSERT] Verify a product card matching @td(PROD_DEFAULT.name) is in the results
+[ASSERT] Verify the product name displayed equals @td(PROD_DEFAULT.name)
+[ACT] Click the product card to open its PDP
 [WAIT] Wait for PDP to load
-[ASSERT] Verify PDP shows the correct SKU identifier matching the searched value","[DOM] Search results contain the product with the searched SKU
-[DOM] Product name in results matches the expected product for that SKU
+[ASSERT] Verify PDP shows an SKU identifier equal to @td(PROD_DEFAULT.sku)","[DOM] Search results contain a product card whose name equals @td(PROD_DEFAULT.name)
+[DOM] Product name in results equals @td(PROD_DEFAULT.name)
 [NAV] PDP for the SKU-matched product loads correctly
 [STATE] SKU identifier visible on the PDP matches the searched SKU","[NETWORK] POST /graphql (searchProducts) with SKU query returns HTTP 200 with product data
 [CONSOLE] no TypeError or JS errors","SKU search returning 0 results for a valid in-catalog SKU; wrong product returned for SKU search; PDP not loading after clicking SKU search result; console TypeError","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Generated"
-"SRCH-NEW-047","Partial Numeric Search Returns Relevant Products or Graceful Empty State","Search > SKU Search","High","BL-SEARCH-001","ECL-14.2","Products with numeric characters in their name or SKU exist in catalog; at least one product has a numeric SKU segment","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-047","Partial Numeric Search Returns Relevant Products or Graceful Empty State","Search > SKU Search","High","BL-SRCH-001","ECL-14.2","Products with numeric characters in their name or SKU exist in catalog; at least one product has a numeric SKU segment","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [ACT] fill 'Search': a 4-6 digit numeric string that is a substring of a known product SKU (e.g., '6460')
 [WAIT] Wait for autocomplete dropdown to appear
@@ -279,7 +267,7 @@
 [STATE] Numeric-only query handled gracefully by the search engine","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for numeric query
 [NETWORK] no 5xx server errors for numeric-only search
 [CONSOLE] no TypeError or JS errors","Numeric query causing 500 error; autocomplete crashing on numeric input; search results page blank for numeric query; console TypeError on numeric input","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Generated"
-"SRCH-NEW-048","Search Results Next and Previous Page Navigation Controls Work Correctly","Search > Pagination","High","BL-SEARCH-001, BL-CAT-005","","Search returns 2+ pages of results; pagination enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning 2+ pages
+"SRCH-NEW-048","Search Results Next and Previous Page Navigation Controls Work Correctly","Search > Pagination","High","BL-SRCH-001, BL-CAT-005","","Search returns 2+ pages of results; pagination enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning 2+ pages
 [KEY] press [Enter]
 [WAIT] Wait for search results page
 [ASSERT] Verify result count exceeds 1 page worth of results
@@ -298,7 +286,7 @@
 [DOM] 'Next' button visible and enabled when more pages exist","[NETWORK] POST /graphql (searchProducts) fires with updated offset or page on each navigation
 [NETWORK] no 4xx/5xx on pagination requests
 [CONSOLE] no TypeError or JS errors","'Previous' active on first page; 'Next' absent even when results span multiple pages; page indicator not updating; same products on both pages; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
-"SRCH-NEW-049","Sort Persists Across Search Pagination Pages","Search > Pagination","High","BL-SEARCH-001, BL-CAT-005","","Search returns 2+ pages of results; sort options available on search results page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning 2+ pages
+"SRCH-NEW-049","Sort Persists Across Search Pagination Pages","Search > Pagination","High","BL-SRCH-001, BL-CAT-005","","Search returns 2+ pages of results; sort options available on search results page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning 2+ pages
 [KEY] press [Enter]
 [WAIT] Wait for search results page
 [ASSERT] Verify sort dropdown is present
@@ -315,7 +303,7 @@
 [DOM] Sort dropdown on page 2 reflects the same sort as page 1
 [NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
 [CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
-"SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-50-amazon.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SRCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-50-amazon.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-50-amazon.csv:
   [ACT] Click search input → clear → type the search_query value
   [WAIT] Wait for autocomplete dropdown (max 3s)
@@ -329,7 +317,7 @@
 [DATA] Summary table: query → result_count for each of the 51 queries
 [ERRORS] No JS console errors across any query","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for every query
 [CONSOLE] no TypeError or JS errors across entire loop","Any query causing 5xx error; more than 20% of real-world queries returning 0 results; JS error on specific query; autocomplete crashing on certain input","none","Coverage Gap Analysis","Automated"
-"SRCH-NEW-051","Search - Data-Driven Bulk Query Validation (Top AliExpress)","Search > Data-Driven","Low","BL-SEARCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-100-aliexpress.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+"SRCH-NEW-051","Search - Data-Driven Bulk Query Validation (Top AliExpress)","Search > Data-Driven","Low","BL-SRCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-100-aliexpress.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-100-aliexpress.csv:
   [ACT] Click search input → clear → type the search_query value
   [WAIT] Wait for autocomplete dropdown (max 3s)
@@ -403,3 +391,76 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 [DOM] Pagination/load-more visible
 [DOM] Product card images correctly sized","[CONSOLE] No JS errors on results page at 375px
 [NETWORK] Search query returns HTTP 200","Horizontal scroll on results page; product cards overflow viewport; filter control missing at 375px; images misaligned","Restore viewport to default 1280px","VCST-2284","Reviewed"
+"SRCH-NEW-056","No-Results Suggestion Link Is Clickable and Navigates to Corrected Results","Search > No Results > Suggestions","Medium","BL-SRCH-002","ECL-3.1","DEPRECATED 2026-05-22: Did-you-mean / typo-correction suggestions are switched OFF on vcst-qa. This test depends on a UI element that the configured feature flag never renders. Reactivate this case (flip Automation_Status back to Draft) only when the typo-correction feature is enabled in the target environment. Until then the test cannot meaningfully PASS or FAIL — it would always be BLOCKED.","url={{FRONT_URL}}","[DEPRECATED] Steps preserved for re-activation. Original flow: type 'laptp' → assert 'Did you mean' link present → click it → assert corrected results.","[DEPRECATED] Original assertions preserved for re-activation.","[DEPRECATED]","[DEPRECATED]","none","GAP-S-03; ECL-3.1; BL-SRCH-002; deprecated when Did-you-mean OFF confirmed on vcst-qa 2026-05-22","Deprecated"
+"SRCH-JRNY-001","Buyer Journey - Progressive Autocomplete to PDP via Product Preview","Search > Buyer Journey > Autocomplete","Critical","BL-SRCH-002","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; product-preview-in-dropdown feature is ENABLED (Did-you-mean OFF is fine — this case asserts on product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun, pick a random row → {picked_query}; record its query_id → {picked_query_id}
+[LOG] write {picked_query, picked_query_id} to evidence before any input
+[ACT] Click the search input
+[ACT] Type the first 1 character of {picked_query} (e.g. if picked_query='laptop', type 'l')
+[WAIT] Wait up to 1500ms for the dropdown to render
+[ASSERT] Observe whether the dropdown's 'Products' section is visible after 1 character (it may not be — typical threshold is 2-3 chars)
+[ACT] Continue typing the next characters one at a time until the full {picked_query} is in the input
+[WAIT] After each character, wait briefly (max 500ms) for dropdown to update
+[ASSERT] By the time the full {picked_query} is typed, the dropdown 'Products' section MUST be visible with at least 1 product entry
+[SETUP] browser_snapshot the dropdown 'Products' section; capture the first product entry's visible name → {picked_pdp_name}; capture its href → {picked_pdp_url}
+[LOG] write {picked_pdp_name, picked_pdp_url} to evidence
+[ACT] Click the first product entry in the dropdown (NOT press Enter — this case validates the autocomplete-click path, skipping the results page)
+[WAIT] Wait for PDP to load","[STATE] Dropdown updates progressively as characters are typed
+[DOM] By full-word typed, 'Products' section has >=1 entry with thumbnail + name + price
+[NAV] Browser navigates to {picked_pdp_url} (NOT to /search?q=…)
+[DOM] PDP heading contains {picked_pdp_name}
+[DOM] PDP renders product image and price > 0","[NETWORK] POST /graphql (searchProducts) fires with the typed query; returns HTTP 200
+[NETWORK] GET product PDP returns HTTP 200
+[CONSOLE] no TypeError or JS errors","Dropdown 'Products' section never renders for {picked_query} (search index gap); PDP heading does not contain captured name; navigation lands on /search?q=… instead of PDP (autocomplete-click path broken); console TypeError","none","Buyer-journey extension 2026-05-22; live-discovery.md Recipe 1 + 2; query pool b2b-buyer-queries.csv","Manual"
+"SRCH-JRNY-002","Buyer Journey - Brand-in-Query Returns Brand-Dominated Results","Search > Buyer Journey > Brand Query","High","BL-SRCH-001","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; B2B buyer-query pool seeded with brand-in-query rows (ASUS laptop, Nintendo game, Animal Crossing)","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=brand-in-query, pick a random row → {picked_query}; extract the brand token (first word) → {brand_token}; extract the noun token (remaining words) → {noun_token}
+[LOG] write {picked_query, brand_token, noun_token} to evidence
+[ACT] Click the search input
+[ACT] fill 'Search': {picked_query}
+[KEY] press [Enter]
+[WAIT] Wait for /search?q=… results page to load
+[SETUP] browser_snapshot the results grid; capture the first product card's visible name → {first_card_name}; count how many of the top 5 cards' names contain {brand_token} (case-insensitive) → {brand_hit_count}
+[LOG] append {first_card_name, brand_hit_count} to evidence
+[ASSERT] Verify at least 1 product card is rendered
+[ASSERT] Verify {first_card_name} contains either {brand_token} OR {noun_token} (a brand-only or noun-only hit is acceptable; a card with neither indicates the search engine ignored both tokens)
+[ASSERT] Verify {brand_hit_count} >= 1 in the top 5 (the brand token is ranked into the top results, not buried)","[DOM] Results page renders >=1 product card
+[DOM] Top-ranked card name contains the brand token, the noun token, or both
+[MATH] At least 1 of the top 5 cards' names contains the brand token (case-insensitive)
+[STATE] Results are not silently dominated by unrelated products (brand token has semantic weight)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with the query={picked_query}
+[CONSOLE] no TypeError or JS errors","Top 5 results contain 0 instances of the brand token (search engine ignored brand semantics); 0 results returned for a valid brand-noun query; console TypeError","none","Buyer-journey extension 2026-05-22; b2b-buyer-queries.csv brand-in-query subset","Manual"
+"SRCH-JRNY-003","Buyer Journey - Color-in-Query Returns Color-Relevant Results","Search > Buyer Journey > Attribute Query","High","BL-SRCH-001","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; B2B buyer-query pool seeded with color-in-query rows (e.g. 'black hoodie')","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=color-in-query, pick a random row → {picked_query}; extract the color token (first word) → {color_token}; extract the noun token (remaining words) → {noun_token}
+[LOG] write {picked_query, color_token, noun_token} to evidence
+[ACT] Click the search input
+[ACT] fill 'Search': {picked_query}
+[KEY] press [Enter]
+[WAIT] Wait for /search?q=… results page to load
+[SETUP] browser_snapshot the results grid; capture the first card's name → {first_card_name}; if a Color facet is present in the sidebar, capture whether {color_token} appears as a facet value → {color_in_facet}
+[LOG] append {first_card_name, color_in_facet} to evidence
+[ASSERT] Verify at least 1 product card is rendered (NOT zero — color+noun should not return empty)
+[ASSERT] Verify {first_card_name} contains {noun_token} (the product-type semantics carried through)
+[ASSERT] Verify either: {first_card_name} contains {color_token} (color is in the product name) OR the Color facet shows {color_token} as a value (color matched via attribute) — pick whichever the storefront supports","[DOM] Results page renders >=1 card for the color+noun query
+[DOM] First card's name contains the noun token
+[STATE] Either the first card's name contains the color token OR Color facet exposes the color value — confirming the storefront handled color either in name-match or attribute-match
+[STATE] Results are not silently degraded to 'just the noun token' (color was respected)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with {picked_query}
+[CONSOLE] no TypeError or JS errors","0 results for a valid color+noun query; first card's name lacks both color and noun tokens; Color facet absent AND name does not contain color (color semantically dropped); console TypeError","none","Buyer-journey extension 2026-05-22; b2b-buyer-queries.csv color-in-query subset","Manual"
+"SRCH-JRNY-004","Buyer Journey - Compound Descriptive Query (Multi-Token Match)","Search > Buyer Journey > Compound Query","High","BL-SRCH-001","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Storefront accessible; B2B buyer-query pool seeded with compound-descriptive rows (e.g. 'wireless headphones', 'gaming laptop', 'vintage hoodie')","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
+[SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=compound-descriptive, pick a random row → {picked_query}; split into tokens → {token_1, token_2, ...} (typically 2 tokens)
+[LOG] write {picked_query, token_1, token_2} to evidence
+[ACT] Click the search input
+[ACT] fill 'Search': {picked_query}
+[KEY] press [Enter]
+[WAIT] Wait for /search?q=… results page to load
+[SETUP] browser_snapshot the results grid; capture the top 3 product cards' names → {top_3_names}; for each name count which tokens appear (case-insensitive)
+[LOG] append {top_3_names, per_card_token_hits} to evidence
+[ASSERT] Verify at least 1 product card is rendered
+[ASSERT] Verify at least 1 of the top 3 cards' names contains BOTH tokens (full match) OR at least 1 contains the rarer/more-specific token (token_1 = descriptor) — confirming the descriptor was not silently dropped
+[ASSERT] Verify the result count (visible in heading) > 0","[DOM] Results page renders >=1 card for the compound query
+[MATH] Among top 3 cards: at least 1 name contains both tokens, OR at least 1 contains the descriptor token (token_1)
+[STATE] Compound query does not degrade silently to single-noun search (descriptor token has weight)
+[DOM] Result count in heading > 0","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with {picked_query}
+[CONSOLE] no TypeError or JS errors","0 results for a valid compound query; top 3 cards have only the noun token (descriptor was dropped); console TypeError","none","Buyer-journey extension 2026-05-22; b2b-buyer-queries.csv compound-descriptive subset","Manual"

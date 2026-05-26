@@ -1,0 +1,17 @@
+query_id,query,persona,query_type,expected_min_results,notes
+BQ-001,headphones,IT-AV,broad-noun,1,Matches WH-001 (Wireless Headphones); core procurement noun
+BQ-002,laptop,Compute,broad-noun,2,Matches ASUS ROG Strix + CFG-013 Laptop
+BQ-003,hoodie,Apparel,broad-noun,2,Matches Vintage Colorado + Black California Pullover
+BQ-004,ring,Apparel,broad-noun,1,Matches CFG-017 (Text-section ring)
+BQ-005,hat,Apparel,broad-noun,1,Matches CFG hat product
+BQ-006,bike,Sports,broad-noun,1,Matches CFG-022 conditional bike
+BQ-007,T-shirt,Apparel,broad-noun,1,Matches CFG T-shirt product
+BQ-008,game,Gaming,broad-noun,1,Matches Animal Crossing Nintendo Switch
+BQ-009,ASUS laptop,Compute,brand-in-query,1,Brand+noun pattern; ASUS ROG Strix G15
+BQ-010,Nintendo game,Gaming,brand-in-query,1,Brand+noun matches Animal Crossing line
+BQ-011,wireless headphones,IT-AV,compound-descriptive,1,Multi-word descriptive; WH-001 + variations
+BQ-012,gaming laptop,Compute,compound-descriptive,1,Use-case + noun; matches ROG Strix
+BQ-013,vintage hoodie,Apparel,compound-descriptive,1,Descriptor + noun; matches Vintage Colorado Hoodie
+BQ-014,black hoodie,Apparel,color-in-query,1,Color + noun; should match Black California Pullover Hoodie via name or Color facet
+BQ-015,configurable laptop,Compute,compound-descriptive,1,Type-prefix + noun; matches CFG-013
+BQ-016,Animal Crossing,Gaming,brand-in-query,1,Franchise name as query

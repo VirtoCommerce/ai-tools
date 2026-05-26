@@ -1,5 +1,5 @@
 product_id,sku,product_name,category,price,currency,in_stock,stock_qty,description,test_purpose,notes
-PROD-001,WH-001,Wireless Headphones,Electronics > Audio,99.99,USD,Yes,50,Bluetooth wireless headphones with noise cancellation,Standard product for checkout,Most commonly used test product
+PROD-001,WH-001,AGENT-TEST-Wireless-Headphones,Electronics > Audio,99.99,USD,Yes,50,Bluetooth wireless headphones with noise cancellation,Standard product for checkout,"Most commonly used test product. Name carries AGENT-TEST- prefix from 2026-05-19 reseed (seed-20260519-std-cat slug). Verified live on vcst-qa 2026-05-22 via SRCH-NEW-046 mini-run."
 PROD-002,LT-001,Gaming Laptop,Electronics > Computers,1299.99,USD,Yes,10,15-inch gaming laptop with RTX graphics,High-value item testing,Tests expensive products
 PROD-003,SH-001,Running Shoes,Clothing > Footwear,79.99,USD,Yes,100,Athletic running shoes size 10,Clothing category,Has size variants
 PROD-004,CF-001,Coffee Maker,Home > Kitchen,49.99,USD,Yes,25,12-cup programmable coffee maker,Standard home goods,Mid-range price

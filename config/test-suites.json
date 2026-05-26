@@ -130,7 +130,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 27,
+      "testCount": 32,
       "estimatedMinutes": 19,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -148,7 +148,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 33,
+      "testCount": 38,
       "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -311,8 +311,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 67,
-      "estimatedMinutes": 47,
+      "testCount": 95,
+      "estimatedMinutes": 65,
       "agent": "qa-frontend-expert",
       "tags": [
         "orders",
