@@ -49,9 +49,18 @@
 
 * Use **Controls** to expose all important props; hide noisy/internal ones.
 * Each distinct state is its own **Story**. Avoid “kitchen sink” stories.
-* Add **`play`** functions to encode interaction flows (used by Test Runner).
-* Addons to enable: **A11y**, **Viewport**, **Backgrounds**, **Outline**, **Measure**, **Interactions**, **Design tokens** (if you have them).
-* Keep stories **deterministic**: mock dates, random, timers, network.
+* Add **`play`** functions (import from `storybook/test` — SB 9 dropped the `@` prefix) to encode interaction flows. See `play-function-patterns.md` for canonical examples.
+* CI runner: **`@storybook/addon-vitest`** is the default in Storybook 9 — runs stories under Vitest browser mode + Playwright Chromium. The older `@storybook/test-runner` (Jest+Playwright) is still maintained but no longer the default. See `tooling-stack.md`.
+* Addons to enable: **A11y** (`@storybook/addon-a11y`), **Vitest** (`@storybook/addon-vitest`), **MSW** (`msw-storybook-addon` — network stubs), **Viewport**, **Backgrounds**, **Outline**, **Measure**, **Interactions**, **Design tokens** (if you have them).
+* Keep stories **deterministic** — without these, baselines flicker and CI flakes:
+  * Await `document.fonts.ready` in a preview decorator (fonts).
+  * `parameters.chromatic.pauseAnimationAtEnd: true` per story, or disable CSS transitions in the test preview.
+  * Mock `Date.now()`, `Math.random()`, timers.
+  * Stub network with MSW — never let stories hit a real backend.
+
+# Hosted Storybook vs `npm run dev`
+
+Hosted Storybook is a **production build** (`vite build`), so `import.meta.env.DEV === false`. DEV-only `console.warn` / debug-log gates are **dead code** there. Verify deprecation warnings via local `npm run dev` or a Vitest unit test that stubs `import.meta.env`, never via the hosted instance. (Project lesson: VCST-4892 NEW-4 was retracted over this.)
 
 
 # Accessibility checklist (per story)

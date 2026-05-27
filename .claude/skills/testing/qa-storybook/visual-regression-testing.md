@@ -57,9 +57,21 @@ Using playwright MCP for visual testing:
    - Likely cause: CSS refactor changed padding
    - Affects: All ProductCard instances
 
-Visual Regression Tools (use via playwright):
-- Percy (cloud visual testing)
-- Chromatic (Storybook visual testing)
-- Playwright visual comparison (built-in)
-- BackstopJS
+Visual Regression Tools (in order of preference):
+- **Chromatic** (default) — first-party Storybook integration, deterministic browser pool, TurboSnap skips unchanged stories, baseline review UI per PR.
+- **Playwright `toHaveScreenshot()`** (self-hosted fallback) — drive with `test-storybook --index-json` if Chromatic cost is prohibitive. Pin a single Linux Chromium image; fonts and AA rendering differ across OS and will break baselines.
+- Percy — viable alternative to Chromatic; pick whichever has the cheaper plan for the team size.
+- *Avoid:* BackstopJS (not actively recommended against SB 9), HTML/DOM snapshot tests as a primary signal.
 ```
+
+## Determinism — required for stable baselines
+
+Without these, you'll fight flake instead of finding regressions:
+
+- **Font loading** — preview decorator that awaits `document.fonts.ready` before rendering. Otherwise Arial-fallback ↔ real-font swaps cause diffs.
+- **Animations/transitions** — set `parameters.chromatic.pauseAnimationAtEnd: true` per story, or inject CSS to disable transitions in the test preview.
+- **Time/random** — mock `Date.now()`, `Math.random()`, timers (`vi.useFakeTimers()` in setup).
+- **Network** — MSW addon (`msw-storybook-addon`). Stories must not call live backends.
+- **Theme scope** — Coffee is the only A11y-compliant theme (memory: `feedback_a11y_coffee_only`); capture all themes for visual diff, but assert a11y only on Coffee.
+
+See `tooling-stack.md` for the full package map and CI gating rules.

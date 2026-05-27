@@ -18,8 +18,11 @@ Test Storybook components for visual regression, responsive behavior, and state 
 
 ## Supporting Files
 
-- **visual-regression-testing.md** — Test case template for visual regression: capture baselines, compare states (default/hover/focus/error/loading), pixel diff workflow
-- **responsive-component-testing.md** — Responsive testing at 5 breakpoints (375px, 768px, 1024px, 1280px, 1920px): layout adaptation, touch targets, text reflow, image scaling
+- **tooling-stack.md** — SB 9 package map (`storybook/test`, `@storybook/addon-vitest`, a11y addon, Chromatic), determinism rules, CI gating, hosted-vs-dev caveat, boundary with `/qa-accessibility`. **Read first.**
+- **play-function-patterns.md** — Canonical interaction-test patterns using `storybook/test` (`expect`, `userEvent`, `fn`, `step`); when `play` is the wrong tool.
+- **how-to-test-storybook.md** — What to test per component (rendering, a11y, interactions, visual, composition, i18n, error boundaries); negative/edge scenarios.
+- **visual-regression-testing.md** — Test case template for visual regression: baselines, state matrix, tool selection (Chromatic default, Playwright fallback), determinism rules.
+- **responsive-component-testing.md** — Responsive testing at 5 breakpoints (375px, 768px, 1024px, 1280px, 1920px): layout adaptation, touch targets, text reflow, image scaling.
 
 ## Execution
 
@@ -51,3 +54,10 @@ Test Storybook components for visual regression, responsive behavior, and state 
 - Use naming convention: `{story-name}-{viewport}.png`
 - Baselines are captured on-demand — no persistent `storybook/` directory needed
 - If no baseline exists, the first capture becomes the baseline
+- Hosted Storybook is a **production build** — `import.meta.env.DEV === false`. Don't verify DEV-only warnings here (see `tooling-stack.md`).
+- A11y assertions: only on the **Coffee** theme (other themes aren't WCAG-compliant); visual diff still covers all themes.
+
+## Boundary with `/qa-accessibility`
+- `/qa-storybook` — a11y addon **inside stories** (component-isolated, axe rules per component).
+- `/qa-accessibility` — full-page audits on storefront/admin (keyboard journeys, landmarks, page-level contrast).
+- If a finding reproduces in a story, it belongs here. If it only appears once composed into a page, it belongs to `/qa-accessibility`.
