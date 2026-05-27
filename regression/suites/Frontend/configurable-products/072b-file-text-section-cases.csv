@@ -379,36 +379,6 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [NETWORK] Successful addItem (18-char) returns 200 with no validationErrors
 [I18N] Switching locale to fr — error becomes ""Le texte ne doit pas dépasser 30 caractères"" (locales/fr.json max_length_exceeded)
 [API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","synced"
-"CFG-TEXT-010","Text Section — Null Backend maxLength: Counter Hidden or Shows '0 / 255'; No Console Errors (PR #2263 Null Behavior)","Configurable Products > Text Section > Null Handling","Medium","BL-CAT-006","ECL-7.1; ECL-14.5","[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product MHI-55960404 (""Bed with Additional Options Configurable bed"", GUID c7205a92-94c2-49f9-9049-ed3cfcb3a70b) has Text section ""Fabric and materials"" with maxLength=null in admin (left blank by content editor — intentional null). PR #2235 deployed with fallback `MAX_LENGTH = computed(() => props.section.maxLength ?? 255)`. PR #2263 deployed: counter component rendered; when maxLength is null, counter EITHER is hidden OR shows '0 / 255' (255 fallback). PR #107 deployed (backend tolerates null).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_code=MHI-55960404; section_name=""Fabric and materials""; boundary_text_255=255-char string; over_text_300=300-char string","[NAV] {{FRONT_URL}} — search and navigate to product MHI-55960404
-[WAIT] Configuration widget visible
-[SCROLL] Scroll to ""Fabric and materials"" Text section
-[ASSERT] Text input visible; DOM attribute maxlength=""255"" (NOT null/empty/0 — proves PR #2235 fallback applied)
-[ASSERT] Counter behavior for null maxLength: EITHER counter element is absent/hidden from DOM OR counter shows '0 / 255' (consistent with ?? 255 fallback)
-[ASSERT] No console errors related to counter rendering (null maxLength must not cause TypeError or Vue warning)
-[ACT] Type 255 characters into text field
-[WAIT] Counter updates (if visible) or no counter shown
-[ASSERT] All 255 characters accepted; input value length = 255; if counter visible it shows '255 / 255' or hides
-[ACT] Attempt to paste 300-character text
-[ASSERT] Pasted text truncated to exactly 255 characters by HTML maxlength cap
-[ACT] Open browser DevTools → Network — record auth/storefront GraphQL traffic
-[NAV] {{BACK_URL}}/ui/graphiql
-[ACT] Run query: query { productConfiguration(configurableProductId: ""c7205a92-94c2-49f9-9049-ed3cfcb3a70b"" storeId: ""@td(STORE_PRIMARY.id)"" userId: ""<USER_ID>"" cultureName: ""en-US"" currencyCode: ""USD"") { configurationSections { id name type maxLength } } }
-[GQL] Click Execute (▶)
-[READ] Inspect response — verify ""Fabric and materials"" section returns maxLength: null
-[ACT] Return to PDP; clear text; type valid 18-char text 'Cotton Premium Set'
-[ACT] Set quantity 1; click 'Add to Cart'
-[WAIT] Success notification","[STATE] Storefront input maxlength=255 (default fallback applied — not 0, null, or omitted)
-[STATE] 255-char boundary accepted; 300-char paste truncated to 255
-[STATE] Add-to-cart succeeds with valid text (no length-related validation error fires)
-[DATA] GraphQL productConfiguration returns maxLength: null for the Text section (NOT 0, NOT 255 — true null preserved through API)
-[STATE] Backend addItem accepts text up to 255 chars without CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 skips validation when section.MaxLength.HasValue is false)
-[DOM] Counter element: EITHER absent/hidden (counter prop not passed when null) OR shows 'N / 255' format — either outcome is acceptable; what is NOT acceptable is showing '0 / 0', 'N / null', or an error state
-[DOM] No aria-describedby pointing to broken/empty counter element when counter is hidden","[ADMIN] Admin → Catalog → Products → MHI-55960404 → Configuration tab — Max Length spinbutton field for ""Fabric and materials"" section is empty (blank value, not 0)
-[CONSOLE] No JS errors during input, counter rendering, or validation — especially no TypeError from null maxLength in counter logic
-[NETWORK] addItem mutation returns 200; validationErrors[] empty
-[I18N] No max_length_exceeded error message rendered (irrelevant when null — error path only fires when section.maxLength is set AND exceeded)","Storefront cap other than 255 (e.g. 0 = nothing accepted, or unbounded if HTML maxlength missing); GraphQL returns maxLength=0 instead of null; backend rejects valid 255-char text with CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED; counter shows 'N / null' or 'N / 0' (null not caught by ?? 255 fallback); console TypeError from counter rendering null maxLength; admin field shows 255 as actual stored value instead of empty","Remove item from cart after test","VCST-4806; VCST-4928; PR #107 (vc-module-x-cart — null-tolerant validator); PR #2235 (vc-frontend ?? 255 fallback); PR #2263 (counter null behavior); Investigation: REG-2026-04-13-1133 follow-up (MHI-55960404); Synced: VCST-4928 / PR #2263 (2026-04-20)","synced"
 "CFG-TEXT-019-COND-TOAST","Text Section (Conditional Required) — Toast Save with Empty Required Text Field Must Not Persist to Cart","Configurable Products > Text Section > Toast Validation","Critical","BL-CAT-006","ECL-14.1; ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Storefront accessible. User authenticated. Wedding cake product deployed: {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected. PDP in edit mode (Update cart button visible). Message option selected — Custom text required section (type=Text, isRequired=true, dependsOn=Message section) is visible and empty. Toast ""The product configuration has been changed"" is visible with a Save button. Note: this test specifically exercises the conditional Text section path (Custom text required appears only when Message has a value).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); section_custom_text_id=@td(CFG_023_SECTIONS.Text); section_message_id=@td(CFG_023_SECTIONS.Message); expected_behavior=toast Save blocked or server rejects; invalid_cart_signal=Required sections are missing","--- STOREFRONT ---
@@ -541,26 +511,6 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [STATE] Visual emphasis boundary is exactly at maxLength (30), not before or after
 [STATE] Conditional ARIA (role=status + aria-live) transitions correctly: absent below cap, present at cap, absent again when count drops","[CONSOLE] No JS errors during at-cap transition or conditional role/aria-live addition/removal
 [NETWORK] No API calls triggered by cap event (purely client-side feedback)","vc-input-details__counter--limit absent at 30/30; Tailwind classes text-warning or text-danger present instead of BEM modifier (implementation drift); class applied at 29/30 or earlier; class persisting after clear to 28/30; role=status/aria-live not applied at cap; role=status/aria-live persisting below cap; format '0/30' without spaces; console TypeError at at-cap boundary","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (vc-input-details.vue vc-input-details__counter--limit BEM + conditional role=status + aria-live=polite); Technique: Boundary Value Analysis (29, 30 boundary); A11y: WCAG 2.1 AA 4.1.3 Status Messages","Manual"
-"CFG-TEXT-COUNTER-004","Text Counter — Null maxLength: Counter Hidden or Shows '0 / 255'; No Console Errors (S4)","Configurable Products > Text Section > Character Counter > Null maxLength Behavior","Medium","BL-CAT-006","ECL-7.1; ECL-14.5","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with Text section where section.maxLength is null required. If MHI-55960404 has null maxLength: use it. If not available, this test requires product seeding — flag in manual items. PR #2263 must be deployed. PR #2235 fallback (??255) must be deployed. Null maxLength means counter prop may not be passed from section-text-fieldset.vue, so counter may be absent.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_code=MHI-55960404; section_name=Fabric and materials; note=If product unavailable, seed a new product with null maxLength Text section via admin","--- STOREFRONT ---
-[NAV] {{FRONT_URL}} — search and navigate to product MHI-55960404
-[WAIT] Configuration widget visible
-[SCROLL] Scroll to Text section (""Fabric and materials"")
-[ASSERT] Text input visible with maxlength attribute equal to 255 (HTML DOM check)
-[ASSERT] Counter behavior for null maxLength — check DOM for counter element:
-  SCENARIO A: counter element absent/hidden — PASS (counter not shown when maxLength null, acceptable behavior)
-  SCENARIO B: counter element present and shows '0 / 255' — PASS (counter using ?? 255 fallback)
-  SCENARIO C: counter present but shows '0 / null', '0 / 0', or '0 / undefined' — FAIL
-[ACT] browser_evaluate: check console for Vue warnings or TypeErrors related to counter props
-[ASSERT] No console errors or Vue warnings related to counter rendering (null maxLength must not cause runtime error)
-[ACT] Type 10 characters into the field
-[WAIT] 300ms
-[ASSERT] If counter visible: shows '10 / 255' (or is hidden — consistent with initial state)
-[ASSERT] Field accepts the input without error","[DOM] Counter element: absent/hidden OR shows 'N / 255' format — both are acceptable for null maxLength
-[DOM] Counter does NOT show 'N / null', 'N / 0', 'N / undefined', or error state
-[STATE] Text input accepts characters normally; maxlength=255 enforced
-[STATE] No at-cap styling artifact at 0/0 or false positive","[CONSOLE] No TypeError, Vue warning, or console.error related to counter rendering with null maxLength — absence of errors is a primary assertion
-[NETWORK] No failed requests on page load","Counter showing 'N / null' or 'N / 0' (null not handled by ?? 255 in counter prop path); console TypeError thrown when counter receives null maxLength; counter showing error state visually; field rejecting input due to counter null issue; at-cap styling incorrectly applied at count 0 with null max","Remove any added item from cart if test proceeded to add-to-cart; otherwise navigate away","VCST-4928; VCST-4806; PR #2263 (counter null handling in section-text-fieldset.vue); PR #2235 (??255 fallback); Technique: Equivalence Partitioning (null maxLength partition); Note: requires product with null maxLength — seed if MHI-55960404 unavailable","Manual"
 "CFG-TEXT-COUNTER-005","Text Counter — i18n: Counter Digit-Only Format Renders Correctly Under fr/de/ja Locale Switch","Configurable Products > Text Section > Character Counter > i18n","Medium","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327. Storefront supports locale switching (fr, de, ja). PR #2263 adds no new i18n keys — counter is digit-only 'N / M'. Any adjacent labels in shared.catalog.product_details.product_configuration.* must be translated. Test verifies counter digits render correctly under non-en locale and no i18n key breakage.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; locales_to_test=fr,de,ja","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327

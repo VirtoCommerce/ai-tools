@@ -364,3 +364,73 @@
 [HTTP] GET response: 5 sections; Level A dependsOnSectionId=null; Level B dependsOnSectionId=Level A id; chain continues through E
 [DATA] Chain integrity: each level depends only on direct predecessor
 [STATE] REST API persists the 4-level chain correctly (regression for depth-4 computation)","[API] GET returns HTTP 200 with correct chain; [STOREFRONT] After reindex: CFG-PDP-036-COND passes (deep chain visibility correct)","REST API returns fewer than 5 sections; any dependsOnSectionId null when it should point to predecessor; admin UI does not allow selecting Depends On for deeper levels; chain broken in API response","none","VCST-4713","Manual"
+"CFG-CA-027","Admin UI — Default Checkbox Appears and Toggles in Product-Type Section Options (VCST-4715)","Configurable Products > Admin > Default Option UI","Critical","BL-CAT-006","ECL-14.1","Admin authenticated at {{BACK_URL}} with catalog edit permissions. A configurable product with a Product-type section exists in catalog. Admin blade for the product is accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[NAV] Navigate to {{BACK_URL}} and log in as {{ADMIN_EMAIL}}
+[BLADE] Open Catalog module; locate a configurable product; open Configurable Sections blade
+[BLADE] Open a Product-type section's options list
+[ASSERT] Verify a Default column / Default checkbox is visible for each option in the options list
+[ACT] Click the Default checkbox on one option (Option A) to mark it as default
+[ASSERT] Checkbox on Option A shows checked state
+[ASSERT] Verify all other options in the same section now have Default checkbox UNCHECKED (single-default clearing)
+[ACT] Click the Default checkbox on a DIFFERENT option (Option B) in the same section
+[ASSERT] Option B Default checkbox now checked
+[ASSERT] Option A Default checkbox now unchecked (UI cleared the previous default)
+[SAVE] Click Save on the product/blade
+[WAIT] Success toast
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id>
+[ASSERT] Option B has isDefault=true in API response; Option A has isDefault=false","[BLADE] Default checkbox column visible in Product-type section option list
+[STATE] Checking one option as default automatically unchecks all other options in the same section (UI enforcement)
+[TOAST] Success notification after Save
+[STATUS] GET returns HTTP 200
+[BODY] GET response: Option B has isDefault=true; Option A has isDefault=false; no other option has isDefault=true","[API] GET response confirms single-default invariant: exactly one option has isDefault=true; [ADMIN] Admin blade reflects current default state after re-opening blade","Default checkbox not visible in Product-type section options; checking one option does not uncheck others; Save fails; GET after Save shows multiple options with isDefault=true; GET shows all options isDefault=false (save not persisting)","Restore product to original state (clear default or delete test configuration)","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+"CFG-CA-028","Admin UI — Default Checkbox Works for Text-Type Section Options (VCST-4715)","Configurable Products > Admin > Default Option UI — Text","High","BL-CAT-006","ECL-14.1","Admin authenticated at {{BACK_URL}}. A configurable product with a Text-type section that has predefined dictionary options exists. Admin blade accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[NAV] Log in at {{BACK_URL}}; open Catalog module; locate product with Text section; open Configurable Sections blade
+[BLADE] Open the Text-type section's options list
+[ASSERT] Verify Default checkbox visible for each Text-type option (same UI component as Product section)
+[ACT] Click Default checkbox on Text Option A
+[ASSERT] Text Option A Default checked; all others unchecked (single-default)
+[SAVE] Save the product
+[WAIT] Success toast
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] Text Option A has isDefault=true in API response","[BLADE] Default checkbox column visible in Text-type section option list
+[STATE] Single-default clearing applies to Text sections too (same as Product sections)
+[TOAST] Success notification after Save
+[BODY] GET response: Text Option A isDefault=true; all others false","[API] GET confirms isDefault=true on Text Option A; [STOREFRONT] After reindex: Text section shows Text Option A pre-selected on PDP (CFG-PDP-040 pattern applied to Text section)","Default checkbox not visible for Text section; checking Text option does not clear others; isDefault not persisted for Text section type","Restore product to original state","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+"CFG-CA-029","REST API — POST Configurations Persists isDefault=true and Enforces Single-Default Normalization (VCST-4715)","Configurable Products > Admin > REST API IsDefault","Critical","BL-CAT-006","ECL-14.1","Admin authenticated with Bearer token. Use a THROWAWAY configurable product created for this test — do NOT use seeded CFG-030 (@td(CFG_WITH_DEFAULT.id)) or CFG-031 (@td(CFG_WITH_DEFAULT_COND.id)) as re-POSTing would overwrite the default options that other VCST-4715 cases (CFG-PDP-040..043, CFG-E2E-070) depend on. POST /api/catalog/products/configurations endpoint accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <id>; isActive: true; sections: [{ name: Frame Material; type: Product; isRequired: true; options: [{ productId: <opt-A-id>; isDefault: true }; { productId: <opt-B-id>; isDefault: false }; { productId: <opt-C-id>; isDefault: false }] }] }
+[ASSERT] POST returns 200 or 201
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] GET shows option A isDefault=true; options B and C isDefault=false
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with SAME product, now TWO options both isDefault=true: options A and B both isDefault=true
+[ASSERT] POST returns 200 (no validation error — normalization is server-side)
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] GET response: only FIRST option (A) has isDefault=true; option B has isDefault=false (normalization rule — service preserves first, clears rest)","[STATUS] First POST: 200 or 201; [BODY] GET after first POST: option A isDefault=true; B and C isDefault=false
+[STATUS] Second POST (two defaults): 200 (no 422 — normalization not a validation error)
+[BODY] GET after second POST: exactly ONE option has isDefault=true (option A — first submitted); option B isDefault=false
+[SCHEMA] isDefault field present on each option in GET response as boolean","[ROUNDTRIP] REST normalization enforced by ProductConfigurationService: only first default preserved when multiple submitted; [STOREFRONT] After reindex (~60s): storefront PDP pre-selects option A","POST with two isDefault=true returning 422 validation error (should be 200 + normalization); both options showing isDefault=true in GET (normalization not applied); isDefault field absent from GET response; first POST with single default not persisting (isDefault=false in GET response)","Delete test configuration after test","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+"CFG-CA-030","REST API — GET Configurations Returns isDefault=false for All Options When No Default Set (VCST-4715)","Configurable Products > Admin > REST API IsDefault","High","BL-CAT-006","ECL-14.1","Admin authenticated with Bearer token. An existing configurable product with options where NO option has been set as default. Or: a product where all options are posted with isDefault=false.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with all options having isDefault=false (or omitting the isDefault field entirely)
+[ASSERT] POST returns 200 or 201
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] GET response: all options[].isDefault = false; no option has isDefault=true
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with isDefault field OMITTED from option payload (backward-compat test)
+[ASSERT] POST returns 200
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] GET response: options with omitted isDefault field serialize as isDefault=false (EF Core default false; not null)","[STATUS] POST returns 200 or 201
+[BODY] All GET options[].isDefault = false; no nulls; no true
+[STATUS] POST with omitted isDefault: 200
+[BODY] GET after omitted-field POST: isDefault=false on all options (not null — EF Core default)
+[SCHEMA] isDefault field always present in GET response regardless of whether it was sent in POST body","[ROUNDTRIP] Omitting isDefault in POST body = isDefault=false in GET (EF default); [STOREFRONT] Storefront shows no pre-selected option for this product (CFG-PDP-041 backward-compat case)","POST with omitted isDefault field returning 400 (backward compat break); GET returning isDefault=null instead of false; GET missing isDefault field; any option returning isDefault=true when none was set","Delete test configuration after test","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+"CFG-CA-031","Admin UI — Remove Default Setting by Unchecking and Saving (VCST-4715)","Configurable Products > Admin > Default Option UI — Remove","Medium","BL-CAT-006","ECL-14.1","Admin authenticated at {{BACK_URL}}. A configurable product exists with one option already marked isDefault=true (set up from CFG-CA-027 or pre-configured). Admin blade accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[NAV] Log in at {{BACK_URL}}; navigate to Catalog; open the configurable product with a default option set
+[BLADE] Open Configurable Sections blade; open the section with the default option
+[ASSERT] Confirm one option shows Default checkbox checked (isDefault=true state)
+[ACT] Click the checked Default checkbox to uncheck it (clear the default)
+[ASSERT] Default checkbox now unchecked for that option; no option has Default checked
+[SAVE] Save the product
+[WAIT] Success toast
+[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[ASSERT] All options have isDefault=false in API response
+[WAIT] 60s for search index reindex
+[NAV] Navigate to the product PDP on {{FRONT_URL}}
+[ASSERT] No option is pre-selected (None state — default removed)","[TOAST] Success notification after Save
+[BODY] GET response: all options isDefault=false (default successfully removed)
+[STATE] Storefront PDP: no option pre-selected after default is cleared (None state)
+[STATE] User must manually select an option — no auto-selection","[API] GET confirms all options isDefault=false after unchecking; [STOREFRONT] After reindex: PDP shows None selected (backward-compat state restored)","Unchecking Default does not persist (GET still returns isDefault=true); Save fails after unchecking; storefront still pre-selects option after default cleared; another option randomly gains default after clear","Restore product to a clean state","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"

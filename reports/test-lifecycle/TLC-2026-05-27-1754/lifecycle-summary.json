@@ -1,0 +1,60 @@
+{
+  "runId": "TLC-2026-05-27-1754",
+  "inputType": "change-source",
+  "source": "VCST-4715",
+  "date": "2026-05-27",
+  "verdict": "NEEDS FIXES",
+  "build": {
+    "platform": "3.1030.0",
+    "theme": "2.50.0-pr-2278",
+    "catalog": "3.1025.0-pr-880",
+    "xcart": "3.1016.0-pr-115"
+  },
+  "changedModules": ["Catalog", "XCart", "Storefront"],
+  "changedLayers": ["backend", "graphql", "storefront"],
+  "affectedSuites": ["052", "072", "072b", "072c"],
+  "casesInScope": 61,
+  "casesSynced": 1,
+  "casesGenerated": 11,
+  "casesReviewed": 72,
+  "casesVerified": 3,
+  "casesBlocked": 1,
+  "casesBroken": 0,
+  "filesModified": [
+    "regression/suites/Backend/configurable-products/052-configurable-products-admin.csv",
+    "regression/suites/Frontend/configurable-products/072-configurable-products-ui.csv",
+    "regression/suites/Frontend/configurable-products/072b-configurable-products-e2e.csv",
+    "test-data/aliases.json",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "PASS",
+    "G5": "FAIL",
+    "G6": "WARN",
+    "G7": "PASS",
+    "G8": "PASS",
+    "G9": "PASS"
+  },
+  "mustFix": [
+    "Seed CFG_WITH_DEFAULT (CFG-030) and bind placeholder IDs; re-run validate-td-refs (25 unresolved @td(CFG_WITH_DEFAULT.*))"
+  ],
+  "shouldFix": [
+    "Submit PROPOSED-BL-CAT-006a to qa-lead for BL promotion",
+    "Fix stale CFG_BIKE alias storefront_url/slug (404 on /configurations/ path; GUID correct)",
+    "Confirm CFG-CA-029 first-default-preserved against ProductConfigurationService source post-seed"
+  ],
+  "blProposals": {
+    "new": [
+      {
+        "proposedId": "PROPOSED-BL-CAT-006a",
+        "severity": "P2-ux",
+        "rule": "Each configuration section may have at most one option with IsDefault=true; the storefront MUST pre-select that option on PDP load (including in dependent sections).",
+        "source": "VCST-4715 AC + PR #880 (ProductConfigurationService single-default normalization)"
+      }
+    ],
+    "stale": []
+  }
+}

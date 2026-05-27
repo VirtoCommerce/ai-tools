@@ -1357,17 +1357,17 @@
   "CFG_BIKE": {
     "file": "products/configurable-products",
     "filter": {
-      "product_id": "CFG-009"
+      "product_id": "CFG-032"
     },
     "fields": {
       "name": "product_name",
       "slug": "product_slug",
       "url": "storefront_url",
       "price": "base_price",
-      "id": "product_id_guid"
+      "id": "product_id_guid",
+      "configuration_id": "configuration_id"
     },
-    "_status": "shape-drift-20260518",
-    "_status_note": "GUID survived (f16d3e8f…) but section shape changed from [T?V?P!] to [P?P!F?P!]. Tests asserting Variation-section behavior break."
+    "_notes": "Repointed 2026-05-27 from CFG-009 (live 'Bike with options' f16d3e8f…, which drifted to [P?P!F?P!] after the 2026-05-15 restore and lost the test option set) to the freshly seeded flat bike CFG-032 (78daa2db…). One OPTIONAL Product section 'Select one' with 4 options: Seat $15 / Rear wheel ×2 ext $176 / Engine $225 / Pedals $14 (+ implicit None) — matches 072 CFG-PDP-001/002 prices exactly. Seeded via scripts/seed-bike-flat-cfg.mjs. Navigate via @td(CFG_BIKE.url) (full SEO path /seed-20260527-def-parents/…); the old /products-with-options/configurations/ prefix does NOT resolve this product. Product code = AGENT-TEST-CFG-032-20260527 (the original SKU CVQ-54616437 no longer applies)."
   },
   "CFG_CONDITIONAL": {
     "file": "products/configurable-products",
@@ -2678,5 +2678,47 @@
       "name": "name"
     },
     "_notes": "Active B2B virtual catalog root for storefront product queries. Verified 2026-05-18 via store(storeId:\"B2B-store\") { catalogId }. The 2026-04-30 migration to 9238c387-d779-40cb-b27d-5496a670a924 was rolled back by the 2026-05-15 catalog restore. Use @td(VIRTUAL_CATALOG_B2B.id) inside GraphQL filter strings: filter: \"category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)\". If B2B-store rebinds again, only this one value needs updating."
+  },
+  "CFG_WITH_DEFAULT": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-030"
+    },
+    "fields": {
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "id": "product_id_guid",
+      "configuration_id": "configuration_id",
+      "default_section_id": "default_section_id",
+      "default_option_id": "default_option_id",
+      "default_option_name": "default_option_name",
+      "default_option_price": "default_option_price"
+    },
+    "_notes": "VCST-4715 flat default-option. Seeded 2026-05-27 via scripts/seed-default-option-cfg.mjs. One required Product section 'Frame Material' with 3 options; exactly one isDefault=true (Carbon, $200). configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI (configurableProductId arg). default_section_id = Frame Material; default_option_id = Carbon REST option id."
+  },
+  "CFG_WITH_DEFAULT_COND": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-031"
+    },
+    "fields": {
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "id": "product_id_guid",
+      "configuration_id": "configuration_id",
+      "default_section_id": "default_section_id",
+      "default_option_id": "default_option_id",
+      "default_option_name": "default_option_name",
+      "default_option_price": "default_option_price",
+      "parent_section_id": "parent_section_id",
+      "parent_default_option_id": "parent_default_option_id",
+      "dependent_section_id": "dependent_section_id",
+      "dependent_default_option_id": "dependent_default_option_id"
+    },
+    "_notes": "VCST-4715 conditional default-option (CFG-PDP-043). Seeded 2026-05-27 via scripts/seed-default-option-cfg.mjs. Two Product sections: parent 'Base Choice' (REQUIRED, default=Standard $0) and dependent 'Add-on' (dependsOn=parent, default=Warranty $25). Parent default reveals the dependent section on PDP load; the dependent section ITSELF has a preselected default. dependsOn wired via POST upsert (PUT 404s on this build). default_section_id/default_option_id mirror the parent (Standard); parent_* and dependent_* hold both sides explicitly. configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI."
   }
 }

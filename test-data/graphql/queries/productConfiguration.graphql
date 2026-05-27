@@ -2,11 +2,17 @@
 # category: configurable-products
 # role: PUBLIC or ORG_USER
 # purpose: Fetch the configuration definition for a configurable product (sections + options + dependsOnSectionId for conditional cascades)
-# required-vars: STORE_ID (String), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID c972b4d0-25c2-4d7c-8a18-9360a8889bc3)
+# required-vars: STORE_ID (String, e.g. "B2B-store"), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72)
 # optional-vars: USER_ID (String), CULTURE_NAME (String, default "en-US"), CURRENCY_CODE (String, default "USD")
-# last-validated: 2026-05-20
+# return-type: ConfigurationQueryResponseType → configurationSections: [ConfigurationSectionType]
+#   section.options: [ConfigurationLineItemType]   (NOT ConfigurationOptionType — that type does not exist)
+# last-validated: 2026-05-27 (live introspection + live query against vcst-qa B2B-store / CFG-013 dd56d770-…)
 # known-issues:
-#   - cultureName description in schema says "Currency code" — schema description bug; correct semantics are culture (e.g. "en-US")
+#   - Argument descriptions in the live schema are swapped:
+#       cultureName.description = "Currency code (\"USD\")"
+#       currencyCode.description = "Culture name (\"en-US\")"
+#     Actual semantics are correct (cultureName = "en-US", currencyCode = "USD"); descriptions are a platform bug.
+#   - Section.allowTextOptions defaults to `true` even on Product-type sections (where it has no effect) — do not assert it false for Product sections.
 
 query {
   productConfiguration(
@@ -30,10 +36,13 @@ query {
         id
         text
         quantity
+        isDefault
         product { id name slug code }
+        currency { code }
         listPrice { amount currency { code } }
         salePrice { amount currency { code } }
         extendedPrice { amount currency { code } }
+        discountAmount { amount currency { code } }
       }
     }
   }

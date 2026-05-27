@@ -1,0 +1,15 @@
+{
+  "runId": "REG-2026-05-27-1834",
+  "selection": "configurable-products",
+  "status": "running",
+  "startedAt": "2026-05-27T18:34:00Z",
+  "environment": "vcst-qa",
+  "frontUrl": "https://vcst-qa-storefront.govirto.com",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "prioritySignal": "VCST-4715",
+  "suites": [
+    { "id": "052", "name": "Configurable Products Admin", "lane": "browser", "browser": "playwright-edge", "agent": "qa-backend-expert", "status": "running" },
+    { "id": "072", "name": "Configurable Products UI", "lane": "browser", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "status": "running" },
+    { "id": "072b", "name": "Configurable Products E2E", "lane": "browser", "browser": "playwright-firefox", "agent": "qa-frontend-expert", "status": "running" }
+  ]
+}
