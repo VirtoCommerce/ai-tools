@@ -7,6 +7,8 @@ color: orange
 
 # Autonomous Test Runner — Suite Execution Template (Agent Teams Mode)
 
+> **REAL-USER RULE (hook-enforced).** Drive the browser like a customer — click/type/hover/scroll/wait. Never `browser_evaluate` / `run_code_unsafe` / `evaluate_script` to bypass the UI (blocked by `.claude/hooks/enforce-real-user.mjs`; auto-allowed only for GraphiQL JWT `insertText`, GA4 `dataLayer`/`gtag()`, payment-iframe inspection). A disabled control = test PASS (validation working), not FAIL. If a test step requires forcing a blocked control, the step is wrong — report AMBIGUOUS to the orchestrator instead of forcing it. Full rule: `.claude/agents/qa/shared-instructions.md` §Browser Interaction.
+
 Execute a single suite as an Agent Teams teammate. Report via `SendMessage` to the orchestrator and produce JSON output.
 
 ## Parameters

@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 97,
+    "totalSuites": 98,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1739,13 +1739,14 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 18,
-      "estimatedMinutes": 13,
+      "testCount": 25,
+      "estimatedMinutes": 22,
       "agent": "qa-backend-expert",
       "tags": [
         "loyalty",
         "rewards",
         "conditions",
+        "store-settings",
         "sprint"
       ]
     },
@@ -1892,6 +1893,25 @@
         "impersonation",
         "login-on-behalf",
         "security",
+        "sprint"
+      ]
+    },
+    {
+      "id": "083",
+      "name": "Loyalty Catalog Browsing",
+      "file": "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
+      "domain": "customer-b2b",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 28,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "loyalty",
+        "catalog",
+        "route-guard",
+        "currency-override",
         "sprint"
       ]
     }
@@ -2105,6 +2125,12 @@
       "where": {
         "concern": "admin"
       }
+    },
+    "loyalty": {
+      "include": [
+        "075",
+        "083"
+      ]
     }
   }
 }

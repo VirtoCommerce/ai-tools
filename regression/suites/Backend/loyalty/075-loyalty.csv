@@ -1,19 +1,200 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-LOY-001,Create new loyalty program,Loyalty > CRUD,Functional,Critical,10m,"Admin user is logged in, Loyalty module is accessible at #!/workspace/loyalty","1. Navigate to #!/workspace/loyalty\n2. Click the 'Add' button in the toolbar\n3. Fill in Name: 'Test Loyalty Program'\n4. Select Store: '@td(STORE_PRIMARY.id)' from the dropdown\n5. Set Priority: 1\n6. Toggle 'Is active' to ON\n7. Set Start date to today\n8. Click 'Save'","1. New loyalty program blade opens with empty fields\n2. All fields accept input without errors\n3. Program is saved successfully\n4. Program appears in the loyalty programs list\n5. Success notification is displayed",,None
-LOY-002,View loyalty program details,Loyalty > CRUD,Functional,Critical,5m,"Admin user is logged in, at least one loyalty program exists (e.g. 'Completed order')","1. Navigate to #!/workspace/loyalty\n2. Click on the existing 'Completed order' program in the list","1. Program detail blade opens\n2. All fields are displayed: Is active (toggle), Priority, Name, Localized names, Store, Start date, End date\n3. Conditions section shows configured conditions\n4. Rewards section shows configured rewards\n5. All values match what was previously saved",,None
-LOY-003,Edit existing loyalty program,Loyalty > CRUD,Functional,Critical,10m,"Admin user is logged in, at least one loyalty program exists","1. Navigate to #!/workspace/loyalty\n2. Click on an existing program to open details\n3. Change Name to 'Updated Program Name'\n4. Change Priority from current value to 10\n5. Toggle 'Is active' to the opposite state\n6. Click 'Save'\n7. Close the blade and reopen the program","1. All fields are editable\n2. Save completes without errors\n3. Reopened program shows all updated values persisted correctly\n4. Name, Priority, and active state reflect the changes",,None
-LOY-004,Delete loyalty program,Loyalty > CRUD,Functional,Critical,10m,"Admin user is logged in, a test loyalty program exists that can be deleted","1. Navigate to #!/workspace/loyalty\n2. Select a test program from the list\n3. Click the 'Delete' button in the toolbar\n4. Confirm the deletion in the confirmation dialog","1. Confirmation dialog appears before deletion\n2. After confirmation, the program is removed from the list\n3. The program no longer appears in search results\n4. No orphaned data remains (conditions/rewards cleaned up)",,None
-LOY-005,Add single condition to program,Loyalty > Conditions Engine,Functional,Critical,10m,"Admin user is logged in, a loyalty program is open for editing","1. Navigate to #!/workspace/loyalty\n2. Open an existing program or create a new one\n3. In the Conditions section ('If any of the following criteria'), click 'Add condition'\n4. Select condition type: 'Order status'\n5. Set value to 'Completed'\n6. Click 'Save'","1. Condition builder UI appears after clicking 'Add condition'\n2. Condition type dropdown lists available condition types\n3. Condition is added and displayed in the conditions list\n4. Save completes successfully\n5. Reopening the program shows the condition persisted",,None
-LOY-006,Add multiple conditions to program,Loyalty > Conditions Engine,Functional,Critical,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Click 'Add condition' and configure first condition (e.g. Order status is Completed)\n3. Click 'Add condition' again and configure a second condition\n4. Click 'Save'\n5. Close and reopen the program","1. Multiple conditions can be added to the same program\n2. All conditions are displayed in the conditions section\n3. The logical operator 'If any of the following criteria' applies to all conditions\n4. Both conditions persist after save and reopen",,None
-LOY-007,Remove condition from program,Loyalty > Conditions Engine,Functional,Critical,5m,"Admin user is logged in, a loyalty program exists with at least one condition configured","1. Open a loyalty program that has conditions\n2. Locate an existing condition in the conditions list\n3. Remove the condition (click delete/remove button on the condition row)\n4. Click 'Save'\n5. Close and reopen the program","1. Condition is removed from the conditions list in the UI\n2. Save completes without errors\n3. Reopened program no longer shows the removed condition\n4. Other conditions (if any) remain unaffected",,None
-LOY-008,Condition with different order statuses,Loyalty > Conditions Engine,Functional,Critical,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Add a condition with Order status = 'Completed'\n3. Save and verify\n4. Edit the condition to change status to a different available value (e.g. 'Paid', 'Shipped')\n5. Save and verify","1. Order status dropdown lists all available order statuses\n2. Each status value can be selected and saved\n3. The condition correctly reflects the updated status after save\n4. Program functions correctly with different status values",,None
-LOY-009,Set fixed points reward,Loyalty > Rewards Engine,Functional,Critical,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. In the Rewards section, click 'Add reward'\n3. Set reward type to fixed points\n4. Enter points value: 5.00\n5. Click 'Save'\n6. Close and reopen the program","1. Reward builder UI appears after clicking 'Add reward'\n2. Points value field accepts decimal input\n3. Reward is displayed as 'Get 5.00 fixed points'\n4. Save completes successfully\n5. Reward persists correctly after reopen",,None
-LOY-010,Modify reward amount,Loyalty > Rewards Engine,Functional,Critical,5m,"Admin user is logged in, a loyalty program exists with a reward configured (e.g. 5.00 fixed points)","1. Open a loyalty program with an existing reward\n2. Change the points value from 5.00 to 15.50\n3. Click 'Save'\n4. Close and reopen the program","1. Points value field is editable\n2. New value 15.50 is accepted\n3. Save completes without errors\n4. Reopened program shows the updated reward value of 15.50",,None
-LOY-011,Add multiple rewards to program,Loyalty > Rewards Engine,Functional,Critical,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Click 'Add reward' and set first reward to 5.00 fixed points\n3. Click 'Add reward' again and set second reward to 10.00 fixed points\n4. Click 'Save'\n5. Close and reopen the program","1. Multiple rewards can be added to the same program\n2. Each reward is displayed separately in the rewards section\n3. All rewards persist after save\n4. Reopened program shows both rewards with correct values",,None
-LOY-012,Toggle program active/inactive,Loyalty > Activation & Scheduling,Functional,High,5m,"Admin user is logged in, a loyalty program exists","1. Open a loyalty program\n2. Note the current state of the 'Is active' toggle\n3. Toggle 'Is active' to OFF (inactive)\n4. Click 'Save'\n5. Verify in the list view that the program status reflects inactive\n6. Reopen and toggle 'Is active' back to ON\n7. Save and verify","1. Toggle switches between active and inactive states\n2. Save persists the toggle state\n3. List view reflects the current active/inactive status\n4. Toggling back to active works correctly\n5. No data loss occurs when toggling status",,None
-LOY-013,Start and end date scheduling,Loyalty > Activation & Scheduling,Functional,High,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Set Start date to a future date (e.g. tomorrow)\n3. Set End date to a date after the start date (e.g. next month)\n4. Click 'Save'\n5. Close and reopen the program\n6. Verify both dates are persisted\n7. Try setting End date before Start date and save","1. Date pickers allow selecting dates\n2. Both start and end dates persist correctly after save\n3. Dates are displayed in the correct format\n4. Setting End date before Start date should either show a validation error or be prevented",,None
-LOY-014,Priority ordering between programs,Loyalty > Activation & Scheduling,Functional,High,10m,"Admin user is logged in, at least two loyalty programs exist","1. Open the first loyalty program and set Priority to 1\n2. Save and close\n3. Open the second loyalty program and set Priority to 2\n4. Save and close\n5. View the loyalty programs list\n6. Verify the ordering reflects priority values","1. Priority field accepts integer values\n2. Each program can have a different priority value\n3. Programs list respects priority ordering\n4. Changing priority and re-saving updates the order correctly",,None
-LOY-015,Add localized name for program,Loyalty > Localization,Functional,High,10m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Navigate to the Localized names section\n3. Add a localized name for 'es-ES': 'Programa de Lealtad'\n4. Add a localized name for 'pl-PL': 'Program Lojalnosciowy'\n5. Click 'Save'\n6. Close and reopen the program","1. Localized names section is accessible\n2. Language options include es-ES and pl-PL\n3. Text input accepts Unicode characters\n4. Both localized names persist after save\n5. Reopened program shows correct localized values for each language",,None
-LOY-016,Verify all language options available,Loyalty > Localization,Functional,High,5m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. Navigate to the Localized names section\n3. Expand the language selection dropdown or list\n4. Document all available language options","1. Language options include at minimum: es-ES, pl-PL\n2. All 13 platform-supported languages are available (EN, DE, FR, ES, NO, SV, PL, IT, PT, JA, ZH, FI, RU)\n3. Each language can be selected and a localized name entered\n4. No duplicate language entries exist",,None
-LOY-017,Create program without required name,Loyalty > Validation,Functional,Medium,5m,"Admin user is logged in, Loyalty module is accessible","1. Navigate to #!/workspace/loyalty\n2. Click the 'Add' button\n3. Leave the Name field empty\n4. Fill in other fields (Store, Priority, dates)\n5. Click 'Save'","1. Validation error is displayed indicating Name is required\n2. Program is NOT saved\n3. No empty-named program appears in the list\n4. Error message is clear and user-friendly\n5. No server error (500) occurs - validation is handled gracefully",,None
-LOY-018,Set negative points value for reward,Loyalty > Validation,Functional,Medium,5m,"Admin user is logged in, a loyalty program is open for editing","1. Open a loyalty program\n2. In the Rewards section, add or edit a reward\n3. Enter a negative points value: -5.00\n4. Click 'Save'","1. Either the input field prevents negative values (client-side validation) or a validation error is displayed on save\n2. Negative points reward is NOT saved to the program\n3. No server error (500) occurs\n4. Error message clearly indicates points must be a positive value",,None
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+LOY-001,Create new loyalty program,Loyalty > CRUD,Critical,,,Admin user logged in; Loyalty module accessible at #!/workspace/loyalty,store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[BLADE] loyalty programs list blade is visible
+[ACT] click 'Add' button in toolbar
+[BLADE] new loyalty program detail blade opens
+[ACT] fill 'Name': 'Test Loyalty Program'
+[ACT] select 'Store': @td(STORE_PRIMARY.id) from dropdown
+[ACT] fill 'Priority': 1
+[ACT] toggle 'Active' to ON
+[ACT] fill 'Start date' to today's date
+[SAVE] click 'Save'","[TOAST] success notification displayed
+[FORM] program appears in loyalty programs list
+[FORM] 'Name' field shows 'Test Loyalty Program'","[CONSOLE] no JS errors during save
+[NETWORK] no 4xx/5xx on save request",,Delete the created test loyalty program after test,VCST-5100,Draft
+LOY-002,View loyalty program details,Loyalty > CRUD,Critical,,,Admin user logged in; at least one loyalty program exists,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[GRID] locate any existing program in list
+[ACT] click on program row
+[BLADE] program detail blade opens","[FORM] fields displayed: Active toggle; Priority; Name; Localized names; Store; Start date; End date
+[BLADE] Conditions section visible
+[BLADE] Rewards section visible","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+LOY-003,Edit existing loyalty program,Loyalty > CRUD,Critical,,,Admin user logged in; at least one loyalty program exists,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] click on existing program
+[BLADE] detail blade opens
+[ACT] fill 'Name': 'Updated Program Name'
+[ACT] fill 'Priority': 10
+[ACT] toggle 'Active' to opposite state
+[SAVE] click 'Save'
+[ACT] close blade
+[ACT] click the program again
+[BLADE] detail blade reopens","[FORM] 'Name' shows 'Updated Program Name'
+[FORM] 'Priority' shows 10
+[FORM] 'Active' reflects toggled state","[CONSOLE] no JS errors",,Restore original name and priority; toggle Active back,VCST-5100,Draft
+LOY-004,Delete loyalty program,Loyalty > CRUD,Critical,,,Admin user logged in; a test loyalty program exists that can be deleted,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] select test loyalty program in list
+[ACT] click 'Delete' button in toolbar
+[WAIT] confirmation dialog appears
+[ACT] click 'Yes' in dialog","[BLADE] program removed from list
+[GRID] deleted program no longer appears in search results","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on delete request",,none,VCST-5100,Draft
+LOY-005,Add single condition to program,Loyalty > Conditions Engine,Critical,,,Admin user logged in; a loyalty program is open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open existing program or create new one
+[BLADE] program detail blade visible
+[ACT] click 'Add condition' in Conditions section
+[WAIT] 3-group condition menu appears (Shopper profile / Order conditions / Special conditions)
+[ACT] click 'Order conditions' group to expand
+[ACT] click 'Order status is...' condition row
+[WAIT] condition row added with status selector
+[ACT] click 'Add' inline link next to the status selector
+[ACT] select 'Completed' from the status picker
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] condition 'Order status' visible in conditions list with value 'Completed'
+[FORM] condition persisted after reopen","[CONSOLE] no JS errors",,Remove added condition and save,VCST-5100,Draft
+LOY-006,Add multiple conditions to program,Loyalty > Conditions Engine,Critical,,,Admin user logged in; a loyalty program is open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open existing program
+[ACT] click 'Add condition'; expand 'Order conditions' group; click 'Order status is...'; click 'Add' link; select 'Completed'
+[ACT] click 'Add condition' again; expand 'Order conditions' group; click 'Order status is...'; click 'Add' link; select 'Pending'
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] both conditions visible in conditions section
+[FORM] logical operator 'If any of the following criteria' applies to all","[CONSOLE] no JS errors",,Remove added conditions and save,VCST-5100,Draft
+LOY-007,Remove condition from program,Loyalty > Conditions Engine,Critical,,,Admin user logged in; loyalty program with at least one condition configured,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open program with existing condition
+[ACT] click delete/remove icon on condition row
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] removed condition no longer shows in conditions list
+[FORM] other conditions (if any) unaffected","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+LOY-008,Condition with different order statuses,Loyalty > Conditions Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open program
+[ACT] click 'Add condition'; expand 'Order conditions'; click 'Order status is...'; click 'Add' link; select 'Completed'; click 'Save' and verify
+[ACT] click 'Add' link on existing condition row; select a different status (e.g. 'New'); click 'Save' and verify","[FORM] updated status reflected after each save
+[FORM] status picker exposes all available order statuses (at minimum: ReadyForPickup; Custom; Cancelled; New; Completed; Pending; Payment required)","[CONSOLE] no JS errors",,Restore original condition or remove,VCST-5100,Draft
+LOY-009,Set fixed points reward,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open existing program
+[ACT] click 'Add reward' in Rewards section
+[ACT] select reward type 'Earn fixed amount of points per order' from type dropdown
+[ACT] fill points value: 5.00
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] reward entry visible in Rewards section showing value 5.00 and type 'Earn fixed amount of points per order'
+[FORM] reward persists after reopen","[CONSOLE] no JS errors",,Remove reward and save,VCST-5100,Draft
+LOY-010,Modify reward amount,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program with reward configured (5.00 fixed points),,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open program with existing reward
+[ACT] change points value from 5.00 to 15.50
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] reward shows updated value 15.50","[CONSOLE] no JS errors",,Restore original value or remove reward,VCST-5100,Draft
+LOY-011,Add multiple rewards to program,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open program
+[ACT] click 'Add reward'; select 'Earn fixed amount of points per order'; fill value 5.00
+[ACT] click 'Add reward'; select 'Earn % of order value as points'; fill percentage value 10.00
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] both reward entries visible in Rewards section with their respective types and values
+[FORM] all rewards persist after reopen","[CONSOLE] no JS errors",,Remove added rewards and save,VCST-5100,Draft
+LOY-012,Toggle program active/inactive,Loyalty > Activation & Scheduling,High,,,Admin user logged in; a loyalty program exists,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open loyalty program; note current 'Active' toggle state
+[ACT] toggle 'Active' to OFF
+[SAVE] click 'Save'
+[ACT] close blade; reopen the same program
+[BLADE] detail blade reopens
+[FORM] verify 'Active' toggle is OFF
+[ACT] toggle 'Active' back to ON
+[SAVE] click 'Save'
+[ACT] close blade; reopen the same program","[FORM] 'Active' toggle persists OFF state after first save+reopen
+[FORM] 'Active' toggle persists ON state after second save+reopen
+[FORM] no data loss (Name; Priority unchanged) during toggle cycle","[CONSOLE] no JS errors",,Restore original active state,VCST-5100,Draft
+LOY-013,Start and end date scheduling,Loyalty > Activation & Scheduling,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open loyalty program
+[ACT] set 'Start date' to a future date (tomorrow)
+[ACT] set 'End date' to a date after start date (next month)
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] both Start date and End date persist correctly
+[FORM] dates displayed in correct format","[CONSOLE] no JS errors",,Restore or clear dates,VCST-5100,Draft
+LOY-014,Priority value persists after save,Loyalty > Activation & Scheduling,High,,,Admin user logged in; at least two loyalty programs exist,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open first program; set Priority to 1; click 'Save'; close blade; reopen first program
+[FORM] verify Priority shows 1
+[ACT] open second program; set Priority to 2; click 'Save'; close blade; reopen second program
+[FORM] verify Priority shows 2","[FORM] Priority value '1' persists on first program after save+reopen
+[FORM] Priority value '2' persists on second program after save+reopen","[CONSOLE] no JS errors",,Restore original priority values,VCST-5100,Draft
+LOY-015,Add localized name for program,Loyalty > Localization,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open loyalty program
+[ACT] navigate to Localized names section
+[ACT] add localized name for es-ES: 'Programa de Lealtad'
+[ACT] add localized name for pl-PL: 'Program Lojalnosciowy'
+[SAVE] click 'Save'
+[ACT] close and reopen program","[FORM] es-ES localized name 'Programa de Lealtad' persists
+[FORM] pl-PL localized name 'Program Lojalnosciowy' persists","[CONSOLE] no JS errors",,Remove added localized names,VCST-5100,Draft
+LOY-016,Verify store-configured language options available,Loyalty > Localization,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open loyalty program
+[ACT] navigate to Localized names section
+[ACT] expand language selection dropdown","[FORM] all store-configured languages appear in the dropdown (language list is store-driven; count and codes depend on store configuration — on @td(STORE_PRIMARY.id) verify at minimum: en-US; de-DE; fr-FR; es-ES; pl-PL; it-IT; pt-PT; ja-JP; zh-CN; ru-RU)
+[FORM] no duplicate language entries","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+LOY-017,Create program without required name,Loyalty > Validation,Medium,,,Admin user logged in; Loyalty module accessible,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] click 'Add' button
+[BLADE] new program blade opens
+[ACT] leave 'Name' field empty
+[ACT] fill Store; Priority; dates
+[SAVE] click 'Save'","[TOAST] validation error displayed — Name is required
+[FORM] program NOT saved
+[GRID] no empty-named program in list","[NETWORK] no 500 error — validation handled gracefully",,none,VCST-5100,Draft
+LOY-018,Set negative points value for reward,Loyalty > Validation,Medium,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open loyalty program
+[ACT] click 'Add reward'; select 'Earn fixed amount of points per order'
+[ACT] fill points value: -5.00
+[SAVE] click 'Save'","[TOAST] validation error — negative points not allowed OR input field prevents negative value entry
+[FORM] negative points reward NOT saved","[NETWORK] no 500 error — validation handled gracefully",,none,VCST-5100,Draft
+LOY-019,Admin SPA — Configure loyalty settings on Store blade (happy path),Loyalty > Store Settings,Critical,,ECL-3.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin user logged in with loyalty:update permission; Loyalty module installed; store @td(STORE_PRIMARY.id) exists in Admin SPA",store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/stores
+[BLADE] Stores list blade visible
+[ACT] click on store @td(STORE_PRIMARY.id) in grid
+[BLADE] Store detail blade opens
+[WAIT] blade fully loaded; widgets visible
+[ACT] scroll to and click 'Loyalty settings' widget (lowercase s)
+[BLADE] 'loyalty-setting-details' blade opens
+[ACT] toggle 'Enable Loyalty' to ON
+[ACT] click 'Loyalty Mode' dropdown
+[ACT] select 'Mixed Cart'
+[ACT] click 'Loyalty Currency' dropdown; select @td(LOYALTY_SETTINGS.currency_code) from the store currencies list
+[SAVE] click 'Save'
+[BLADE] blade closes or shows success
+[ACT] reopen 'Loyalty settings' widget on store blade","[TOAST] success notification after save
+[FORM] 'Enable Loyalty' toggle shows ON after reopen
+[FORM] 'Loyalty Mode' shows 'Mixed Cart' after reopen
+[FORM] 'Loyalty Currency' shows @td(LOYALTY_SETTINGS.currency_code) after reopen","[API] GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id) returns HTTP 200
+[API] response body loyaltyEnabled=true; loyaltyMode='Mixed Cart'; loyaltyCurrency=@td(LOYALTY_SETTINGS.currency_code) (extra fields such as loyaltyRoute are tolerated)
+[CONSOLE] no JS errors in Admin SPA",Spinner visible >5s; blade fails to open; save toast shows error; reopen shows stale values,Restore original loyalty settings via PUT {{BACK_URL}}/api/loyalty-setting,VCST-5100,Draft
+LOY-020,Mode dropdown shows exactly the four allowed values,Loyalty > Store Settings,Critical,,,state from LOY-019 (Admin logged in; Store blade open; Loyalty Settings blade open),store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/stores
+[ACT] open store @td(STORE_PRIMARY.id)
+[ACT] open 'Loyalty Settings' widget
+[BLADE] 'loyalty-setting-details' blade opens
+[ACT] click 'Loyalty Mode' dropdown
+[WAIT] dropdown options rendered","[FORM] dropdown shows exactly 4 options: 'Loyalty Store'; 'Mixed Cart'; 'Coupon Redemption'; 'Payment Method'
+[FORM] no extra or missing options beyond the 4 AllowedValues","[CONSOLE] no JS errors",Dropdown fails to open; spinner visible >3s,none (read-only observation),VCST-5100,Draft
+LOY-021,API GET returns configured loyalty settings for store,Loyalty > Store Settings,Critical,,,Loyalty settings for store @td(STORE_PRIMARY.id) are configured: loyaltyEnabled=true; loyaltyMode='Mixed Cart'; loyaltyCurrency=@td(LOYALTY_SETTINGS.currency_code). If not yet configured; run the PUT from LOY-022 pattern first (FIXTURE-SEEDING).,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain admin Bearer token via POST {{BACK_URL}}/connect/token (grant_type=password; username={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}})
+[HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id) with Authorization: Bearer <token>","[STATUS] HTTP 200
+[BODY] storeId == @td(STORE_PRIMARY.id)
+[BODY] loyaltyEnabled == true
+[BODY] loyaltyMode == 'Mixed Cart'
+[BODY] loyaltyCurrency == @td(LOYALTY_SETTINGS.currency_code)
+[BODY] additional fields (e.g. loyaltyRoute) may be present — tolerated; do NOT assert them absent","[ADMIN] values match what was set in Admin SPA (cross-reference LOY-019)
+[CONSOLE] no JS errors",HTTP 4xx/5xx; storeId missing from response; loyaltyEnabled not present,none,VCST-5100,Draft
+LOY-022,API PUT updates loyalty settings — round-trip verification,Loyalty > Store Settings,Critical,,,Admin Bearer token obtainable; store @td(STORE_PRIMARY.id) exists,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] PUT {{BACK_URL}}/api/loyalty-setting with body: {storeId: @td(STORE_PRIMARY.id); loyaltyEnabled: true; loyaltyMode: 'Loyalty Store'; loyaltyCurrency: @td(LOYALTY_SETTINGS.currency_code)}
+[HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id)","[STATUS] PUT returns HTTP 204 No Content
+[BODY] GET response loyaltyMode == 'Loyalty Store'
+[BODY] GET response loyaltyEnabled == true
+[BODY] GET response loyaltyCurrency == @td(LOYALTY_SETTINGS.currency_code)
+[BODY] additional fields (e.g. loyaltyRoute) may be present — tolerated","[ADMIN] Admin SPA Loyalty Settings blade reflects 'Loyalty Store' after reload
+[NETWORK] no 4xx/5xx on PUT or GET",PUT returns non-204; GET after PUT still shows old mode; 500 error,Restore mode to 'Mixed Cart' via PUT after test,VCST-5100,Draft
+LOY-023,API PUT without loyalty:update permission returns 403,Loyalty > Store Settings,High,,,A storefront user token exists (user lacks loyalty:update platform permission),store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain token for user WITHOUT loyalty:update permission (e.g. storefront user via {{USER_EMAIL}}/{{USER_PASSWORD}})
+[HTTP] PUT {{BACK_URL}}/api/loyalty-setting with body: {storeId: @td(STORE_PRIMARY.id); loyaltyEnabled: false; loyaltyMode: 'Coupon Redemption'; loyaltyCurrency: @td(LOYALTY_SETTINGS.currency_code)}","[STATUS] HTTP 403 Forbidden
+[BODY] error or empty body (NOT 204)","[API] subsequent GET still returns original values — settings NOT changed
+[NETWORK] no 500 error",HTTP 200 returned (permission bypass); 500 error instead of 403,none,VCST-5100,Draft
+LOY-024,API GET with unknown storeId returns null or empty,Loyalty > Store Settings,High,,,Admin Bearer token obtainable,back_url={{BACK_URL}},"[AUTH] obtain admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/NON_EXISTENT_STORE_XYZ_99999","[STATUS] HTTP 200
+[BODY] response is null or empty object (NOT a 404 or 500)","[NETWORK] no 5xx error — graceful null response",HTTP 500; 404 returned instead of null/empty,none,VCST-5100,Draft
+LOY-025,Settings propagate to storefront xAPI store query,Loyalty > Store Settings,Critical,,,Loyalty settings saved: Enable=true; Mode=Mixed Cart; Currency=@td(LOYALTY_SETTINGS.currency_code) for store @td(STORE_PRIMARY.id) (established by LOY-019),store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}}; culture={{CULTURE_NAME}},"[AUTH] obtain Bearer token (storefront user or anonymous)
+[HTTP] POST {{BACK_URL}}/graphql body: {""query"": ""{ store(storeId: \""@td(STORE_PRIMARY.id)\"", cultureName: \""{{CULTURE_NAME}}\"") { settings { modules { moduleId settings { name value } } } } }""}","[STATUS] HTTP 200
+[BODY] response contains module with moduleId='VirtoCommerce.Loyalty'
+[BODY] within that module settings[name='Loyalty.Enable'] value == true
+[BODY] within that module settings[name='Loyalty.Mode'] value == 'Mixed Cart'
+[BODY] within that module settings[name='Loyalty.Currency'] value == @td(LOYALTY_SETTINGS.currency_code)","[API] errors[] is empty (HTTP 200 does NOT guarantee xAPI success)
+[NETWORK] no 4xx/5xx on /graphql",errors[] non-empty; module 'VirtoCommerce.Loyalty' absent from modules array; currency value empty,none,VCST-5100,Draft

@@ -7,6 +7,8 @@ color: orange
 
 # Test Runner Agent — Suite Execution Template
 
+> **REAL-USER RULE (hook-enforced).** Drive the browser like a customer — click/type/hover/scroll/wait. Never `browser_evaluate` / `run_code_unsafe` / `evaluate_script` to bypass the UI (blocked by `.claude/hooks/enforce-real-user.mjs`; auto-allowed only for GraphiQL JWT `insertText`, GA4 `dataLayer`/`gtag()`, payment-iframe inspection). A disabled control = test PASS (validation working), not FAIL. If a test step requires forcing a blocked control, the step is wrong — report AMBIGUOUS, not FAIL. Full rule: `.claude/agents/qa/shared-instructions.md` §Browser Interaction.
+
 Execute a single regression test suite against Virto Commerce. Run autonomously through setup → execute → teardown → JSON results.
 
 ## Parameters

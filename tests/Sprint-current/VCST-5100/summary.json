@@ -1,0 +1,39 @@
+{
+  "ticket": "VCST-5100",
+  "title": "[Loyalty] [Mixed Cart] [E2E] Loyalty Catalog Browsing",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-05-27",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1030.0",
+    "theme": "vc-theme-b2b-vue-2.50.0-pr-2296",
+    "relevant_modules": { "VirtoCommerce.Loyalty": "3.1002.0-pr-9-9fc4" }
+  },
+  "linked_prs": ["vc-module-loyalty#9", "vc-frontend#2296"],
+  "agents_dispatched": ["qa-backend-expert", "qa-frontend-expert"],
+  "total_cases": 42,
+  "passed": 40,
+  "failed": 0,
+  "blocked": 0,
+  "known_bug_reconfirmations": 2,
+  "bugs_filed_new": [],
+  "preexisting_bugs": [
+    "BUG-loyalty-program-empty-name-500-VCST-5100 (LOY-017 — behavior CHANGED: now HTTP 200 + persists empty-name program; was 500)",
+    "BUG-loyalty-reward-negative-points-accepted-VCST-5100 (LOY-018 — still present, -5 accepted, HTTP 200)"
+  ],
+  "edge_cases_verified": ["ECL-3.1", "ECL-7.1", "ECL-7.3", "ECL-11.1"],
+  "acceptance_criteria": {
+    "browse_loyalty_catalog_in_PTS": "MET — grid renders 50 PTS-priced products; searchProducts currencyCode=PTS",
+    "route_guard_mixed_cart_only": "MET — only Mixed Cart / Loyalty Store open catalog; others 404",
+    "open_product_in_PTS": "NOT FULLY MET — PDP GetProduct uses USD; PDP shows USD (PR #2296 currency-threading not wired)",
+    "revert_to_standard_catalog": "MET — /catalog shows USD, no PTS leakage on nav/back/refresh",
+    "stock_from_real_service": "MET — real stock counts + in-stock badges on loyalty grid"
+  },
+  "open_question": "Currency continuity is listing-scope only; PDP, cart (add-to-cart lands at USD), and global search revert to USD. Confirm with dev whether end-to-end PTS continuity is in-scope for VCST-5100 or a follow-up story.",
+  "exploratory": {
+    "charter": "SFDPOT — /loyalty-catalog <-> /catalog boundary + currency continuity",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 1, "observations": 1, "risks": 2 }
+  },
+  "artifacts": "tests/Sprint-current/VCST-5100/"
+}

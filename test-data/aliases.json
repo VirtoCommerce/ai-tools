@@ -1,8 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.6",
-    "updated": "2026-05-20",
+    "version": "1.5.7",
+    "updated": "2026-05-27",
     "changelog_1_5_6": "Added PROD_FULL_FIELD_COVERAGE inline alias (id=0b6297e8-d100-4419-ac54-8bf240777271 / SKU ALCE0128 / Animal Crossing). Pins CAT-GQL-113 (regression/suites/Backend/graphql/050a-graphql-xcatalog.csv) to a known-good product with populated CatalogSeoInfo row, dropping the non-deterministic list_p first-product capture. Reason: storefront default product order shifts between runs, so items[0] could be a product without CatalogSeoInfo row → CAT-GQL-113 would flake into FAIL via the xAPI 3.1008.0 SeoInfo regression (tracked separately by BUG-xAPI-SeoInfo-NonNull-Resolver-NoData). The no-SeoInfo branch is now covered by the bug report; CAT-GQL-113 is now a clean schema-coverage gate.",
     "changelog_1_5_5": "Added CFG_017_SECTIONS inline alias (Text section 2cc0f57e-5654-4396-8795-66fe6e226ad1, config b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d — verified live via productConfiguration on vcst-qa 2026-05-20). Refactored 6 references in regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv from @td(CFG_RING.section_text_id) (unresolvable — CSV-backed CFG_RING never had that field) to @td(CFG_017_SECTIONS.Text). Matches the established CFG_022_SECTIONS / CFG_023_SECTIONS pattern. 050b3 validator now [OK] 19/19 resolved (was 13/19).",
     "changelog_1_5_4": "Repointed BUYABLE_NO_MIN_QTY (test-data/products/standard.csv STD-001) from SKU ALCOE9535 / id 06b6bc60-5553-4eca-b505-be679dda4013 to SKU ALCE0128 / id 0b6297e8-d100-4419-ac54-8bf240777271 (Animal Crossing New Horizons, $200, brand=Nintendo, category=Game Deals). Verified live on vcst-qa 2026-05-20: minQuantity=1, maxQuantity=0, packSize=1, isBuyable=true, availableQuantity=568, hasVariations=false. BUYABLE_NO_MIN_QTY contract preserved (addItem qty=1 succeeds without PRODUCT_MIN_MAX_QTY rejection). Slug now stored as the full xAPI slug 'accessories/aliexpress/consumer-electronics/game-deals/animal-crossing-new-orizons-nintendo-ALCE0128'.",
@@ -685,6 +685,18 @@
       "id": "coupon_id",
       "gql_id": "gql_id"
     }
+  },
+  "LOYALTY_SETTINGS": {
+    "_inline": true,
+    "currency_code": "PTS",
+    "enabled": true,
+    "mode": "Mixed Cart",
+    "fields": {
+      "currency_code": "currency_code",
+      "enabled": "enabled",
+      "mode": "mode"
+    },
+    "_notes": "VCST-5100 Sprint 26-10 — Loyalty store settings for vcst-qa B2B-store. currency_code='PTS' is the configured test loyalty currency; update this single field if reseeded. enabled/mode reflect happy-path values used by LOY-019..025 and LOYF-001..017. These are values under test — not hardcoded catalog data. FIXTURE-SEEDING REQUIRED before first suite run: PUT {{BACK_URL}}/api/loyalty-setting body={storeId:'B2B-store',loyaltyEnabled:true,loyaltyMode:'Mixed Cart',loyaltyCurrency:'PTS'}."
   },
   "STORE_PRIMARY": {
     "file": "stores/stores",

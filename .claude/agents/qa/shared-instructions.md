@@ -247,19 +247,29 @@ See [`.claude/rules/reports.md`](../../rules/reports.md) — the single source o
 
 ## Browser Interaction — Mandatory Real-User Behavior
 
-All agents MUST interact with the browser like a real user. This means:
-- **Click** buttons, links, and UI elements using click tools — never navigate by injecting URLs unless testing direct navigation
-- **Type** into fields character by character using fill/type tools — never set values via JavaScript
+**Hook-enforced.** A `PreToolUse` hook (`.claude/hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection). Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
+
+You MUST drive the browser like a real customer:
+
+- **Click** buttons, links, and UI elements — never navigate by injecting URLs unless the test specifically targets direct navigation
+- **Type** into fields with fill/type tools — never set values via JavaScript
 - **Wait** for elements to appear before interacting — never assume instant rendering
-- **Scroll** to elements that are off-screen before clicking
-- **Hover** over menus and dropdowns to trigger them, just as a user would
-- Use **keyboard shortcuts** (Enter to submit, Tab to move focus, Escape to close) where a real user would
-- Never bypass UI flows by calling APIs or running scripts unless the test specifically targets API behavior
-- If a button must be clicked to proceed, click it — do not skip steps by navigating directly to the result page
+- **Scroll** to off-screen elements before clicking; on mobile (≤500 px) **open the hamburger** before claiming a control is missing (see `feedback_mobile_hamburger_inventory`)
+- **Hover** over menus and dropdowns to trigger them
+- Use **keyboard shortcuts** (Enter / Tab / Escape) where a real user would
+- Never skip steps by navigating directly to the result page
 
-**Do NOT use Evaluate JavaScript** (`browser_evaluate`, `evaluate_script`, or similar MCP tools) unless absolutely necessary. Examples of acceptable use: extracting a value not exposed in the DOM, working around a known MCP tool limitation, or verifying a JS-only side effect (e.g., `dataLayer` for GA4). If you can accomplish the action with click/fill/type/hover/scroll — use those instead. Every `evaluate` call must include a brief comment explaining why a real-user action was insufficient.
+### Hard rules — do NOT do these
 
-This is **mandatory** for all QA agents without exception.
+1. **Never force a disabled or blocked control.** Disabled Save = validation working, NOT a bug. Do not programmatically click, dispatch events, remove `__disabled`/`pointer-events`, or keyboard-force a submit. If the UI blocks the action, the real-user verdict is "blocked by validation," full stop.
+2. **Never conflate an API-only repro with a UI-layer defect.** A direct REST/GraphQL call that returns 500 proves the API layer only — it never proves the SPA "has no validation." In the 4-layer table, an API-only finding is Layer-4 FAIL with Layer-2 (Admin SPA) marked PASS/N/A. Label such bugs "API-only (UI blocks this)" in the title.
+3. **Never use `browser_evaluate` to read screen content.** Use `browser_snapshot`. The exceptions are extracting a value genuinely not exposed in the DOM tree, the documented GraphiQL JWT paste, GA4 `dataLayer` inspection, or payment-iframe console capture — and each must include an inline comment explaining why a real-user action was insufficient.
+
+### Anti-example — VCST-5100 (do not repeat)
+
+qa-backend-expert posted a direct `POST /api/loyalty-programs` with `name:null`, got a 500 + DB-name leak, and filed it as "no client validation, silent failure" on the Admin SPA. The Save button is **disabled** when Name is empty (`ng-invalid-required`, `menu-item __disabled`). The 500 is a real API-hardening bug, but the UI claim was false and wasted a review cycle. Real-user repro first; only then file an API-only ticket separately if the API behavior is independently wrong.
+
+This rule applies to **all** agents — QA, BA, orchestrators, and the parameterized test runners — without exception. See memories `feedback_real_user_interaction`, `feedback_no_force_disabled_controls`.
 
 ## Platform Constraints
 

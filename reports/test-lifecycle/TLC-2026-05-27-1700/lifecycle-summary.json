@@ -1,0 +1,37 @@
+{
+  "runId": "TLC-2026-05-27-1700",
+  "inputType": "change-source",
+  "source": "PR #2296 (vc-frontend, feat(VCST-5100): loyalty catalog)",
+  "date": "2026-05-27",
+  "verdict": "APPROVED_WITH_WARNINGS",
+  "build": {
+    "platform": "3.1030.0",
+    "theme": "vc-theme-b2b-vue-2.50.0-pr-2296-d7bf",
+    "loyalty": "3.1002.0-pr-9-9fc4"
+  },
+  "changedAreas": ["loyalty-catalog.vue", "useLoyaltyCatalogCurrency", "getProduct/getCategory/searchProducts/searchRelatedProducts/searchRecommendedProducts", "router(constants/main/useCategoriesRoutes)", "useCatalogBasePath", "useBreadcrumbs", "product-card.vue", "top-header.vue"],
+  "affectedSuites": ["083"],
+  "casesAnalyzed": 18,
+  "casesSynced": 0,
+  "casesGenerated": 5,
+  "generatedCases": ["LOYF-019", "LOYF-020", "LOYF-021", "LOYF-022", "LOYF-023"],
+  "casesReviewed": 23,
+  "casesVerified": 5,
+  "filesModified": [
+    "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS",
+    "G6": "WARN", "G7": "PASS", "G8": "PASS", "G9": "PASS"
+  },
+  "phase5": {
+    "LOYF-019": "API_VERIFIED_DOM_NEEDS_TEST_DATA",
+    "LOYF-020": "API_VERIFIED_DOM_NEEDS_TEST_DATA_module_active",
+    "LOYF-021": "VERIFIED_entry_point_in_main_nav_not_top_header",
+    "LOYF-022": "VERIFIED",
+    "LOYF-023": "CHANGED_corrected_root_crumb_only"
+  },
+  "outOfScope": ["loyalty cart pricing (separate story)", "search in loyalty-catalog (TBD separate)"],
+  "blProposals": null
+}

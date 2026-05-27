@@ -18,13 +18,12 @@ Pick up a READY FOR TEST bug ticket, verify the fix on the live environment, and
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
-2. **Duplicate check** — scan `tests/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
-3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
+1. **Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
+2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
+3. **Duplicate check** — scan `tests/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
+4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
 
 ## Step 1 — Fetch Ticket & Understand the Bug
-
-**Resolve current sprint** — check if `tests/Sprint-current` exists → use it. Otherwise list `tests/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths.
 
 **Fetch the ticket** via Atlassian MCP (`getJiraIssue`). If Atlassian MCP is not configured, ask the user to paste:
 - Summary, Severity, Priority, Component, Affected Domain
@@ -39,7 +38,10 @@ Pick up a READY FOR TEST bug ticket, verify the fix on the live environment, and
 
 **Extract key information:**
 - Original STR (numbered steps)
-- Affected domain(s) — map to domain checklists (#1-22 in `domain-checklists.md`)
+- Affected domain(s) — map to the right checklist file by layer (per `feedback_checklist_layer_separation`):
+  - Storefront UI / UX → `domain-checklists.md` (#1-33 + `BF`)
+  - Admin SPA / modules / REST API → `backend-admin-checklists.md`
+  - GraphQL xAPI → `graphql-checklist.md`
 - Linked PR: run `gh pr view <number>` and `gh pr diff <number> --name-only` to see what changed
 - Root cause (from dev comment or PR description)
 
@@ -78,8 +80,8 @@ If Atlassian MCP is unavailable, skip the transition and note it in the final re
 
 Before testing, verify the fix is actually deployed per `agent-dispatch.md § Build Verification`:
 
-1. **Fetch deployed versions** — use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
-2. **Verify PR build is deployed** — PRs are deployed to QA while still open (not merged). Check:
+1. **Fetch deployed versions** — use **GitHub MCP** (for file reads in the deploy repo) to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev`. Branch defaults to `vcst-qa`; switch to the branch matching `TEST_ENV` (`vcptcore`, `virtostart`, …) when running against another env.
+2. **Verify PR build is deployed** — PRs are deployed to QA while still open (not merged). Use the **`gh` CLI** (for PR metadata against the source repo, e.g. `vc-frontend` / `vc-module-*`):
    - `gh pr view <number> --json title,state,headRefName` to get PR details and expected build artifact version
    - Cross-reference: the module/theme version in the deploy repo should match the PR's build artifact (e.g., alpha version like `2.44.0-alpha.2262`)
 3. If the fix touches frontend: navigate to the affected page and check for expected UI changes
@@ -99,10 +101,14 @@ If the fix is NOT deployed, warn user and ask whether to wait. Do NOT proceed wi
 
 **Build a 6-10 item verification checklist** combining:
 1. **BF checklist** (from `domain-checklists.md` § BF) — always include all 10 items
-2. **Affected domain checklist** (from `domain-checklists.md` § #1-22) — pick 2-3 adjacent items most relevant to the bug
-3. **Business rules** — any `BL-*` invariants that could be affected by the fix
+2. **Affected domain checklist** — pick 2-3 adjacent items most relevant to the bug from the right layer file:
+   - Storefront UI/UX → `domain-checklists.md` § #1-33
+   - Admin SPA / modules / REST API → `backend-admin-checklists.md`
+   - GraphQL xAPI → `graphql-checklist.md`
+3. **Business rules** — any `BL-*` invariants that could be affected by the fix (`BL-UI-*` for layout/visual fixes)
 
-Output the checklist before executing:
+Output the checklist before executing. The Cross-Layer section depends on the dispatched agent:
+
 ```
 Verification Checklist for VCST-XXXX:
 Fix Confirmation:
@@ -113,9 +119,14 @@ Regression:
   [ ] 4. [Adjacent feature A] still works
   [ ] 5. [Adjacent feature B] still works
   [ ] 6. No new console errors
-Cross-Layer:
-  [ ] 7. Storefront reflects corrected behavior
-  [ ] 8. API returns expected response
+Cross-Layer (pick the row matching the dispatched agent):
+  - qa-frontend-expert / qa-backend-expert / qa-testing-expert:
+    [ ] 7. Storefront reflects corrected behavior
+    [ ] 8. API returns expected response
+  - ui-ux-expert:
+    [ ] 7. Storybook isolation: component renders correctly across stories/viewports
+    [ ] 8. Storefront integration: same component behaves correctly in the live page
+        (catches the isolation-only vs integration-only bug class — see /qa-design)
 Edge Cases:
   [ ] 9. [Boundary condition from original bug]
   [ ] 10. BL-XXX-NNN: [business rule text]
@@ -132,25 +143,31 @@ Edge Cases:
 | Storefront UI, checkout, cart, search | `qa-frontend-expert` | `playwright-chrome` |
 | Admin SPA, APIs, modules, GraphQL | `qa-backend-expert` | `playwright-edge` |
 | Cross-browser or debugging needed | `qa-testing-expert` | `playwright-firefox` |
+| Storybook components, design system, WCAG a11y, visual regression | `ui-ux-expert` | `Chrome DevTools MCP` |
 | Both frontend + backend | Two agents in parallel | Respective browsers |
 
 **Agent prompt must include:**
 - The ticket ID and bug summary
 - The complete verification checklist from Step 4
 - Original STR — must pass **3 consecutive times**
-- Environment URLs (from `config.js`: `FRONT_URL`, `BACK_URL`)
+- Environment URLs (from `config.js` / `.env`), scoped to the dispatched agent:
+  - `qa-frontend-expert` / `qa-testing-expert` → `FRONT_URL`
+  - `qa-backend-expert` → `BACK_URL` (+ `FRONT_URL` if the fix has a storefront-visible side)
+  - `ui-ux-expert` → `STORYBOOK_URL` / `STORYBOOK_DEV_URL` for Storybook work; `FRONT_URL` for storefront integration parity
 - Browser server assignment
 - Output path: `tests/{SPRINT}/VCST-XXXX/`
-- Evidence requirements: screenshot at previously-failing step, console log, network errors, HAR file
+- Evidence requirements, scoped to the dispatched agent:
+  - `qa-frontend-expert` / `qa-backend-expert` / `qa-testing-expert` → screenshot at previously-failing step, console log, network errors, HAR file
+  - `ui-ux-expert` → snapshots per story/viewport, Lighthouse audit (a11y fixes), computed styles / contrast ratios, screenshots of before/after states
 - Instruction to follow `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`
 
 **Agent prompt structure:**
 ```
-Verify bug fix for VCST-XXXX on the [backend/frontend].
+Verify bug fix for VCST-XXXX on the [backend / frontend / ui-design].
 
 Bug: [summary]
 Fix: [what the dev changed]
-Environment: {FRONT_URL} / {BACK_URL}
+Environment: {FRONT_URL} / {BACK_URL} / {STORYBOOK_URL}  (use those that apply)
 Browser: {BROWSER_SERVER}
 Output: tests/{SPRINT}/VCST-XXXX/
 
@@ -179,18 +196,20 @@ Write results to tests/{SPRINT}/VCST-XXXX/verification-report.md
 
 After the agent returns, evaluate results against the decision matrix:
 
-| STR Result | Regression | Side Effects | Decision | JIRA Transition |
+JIRA transition names below come from `defect-lifecycle-workflow.md` § 2 (Bug Workflow). Each row may be one or two transitions:
+
+| STR Result | Regression | Side Effects | Decision | JIRA Transition(s) |
 |-----------|-----------|-------------|----------|----------------|
-| Pass 3/3 | All pass | None | **VERIFIED** | TESTING → TESTED → DONE |
-| Pass 3/3 | All pass | Minor (P3) | **VERIFIED WITH NOTES** | TESTING → TESTED (note in comment) |
-| Pass 3/3 | 1+ fail | — | **FIX OK, NEW REGRESSION** | TESTING → TESTED + file new bug via `/qa-bug` |
-| Fail any | — | — | **FIX INCOMPLETE** | TESTING → REOPEN |
-| Pass 2/3 | — | — | **INTERMITTENT** | TESTING → REOPEN (note intermittent) |
+| Pass 3/3 | All pass | None | **VERIFIED** | TESTING → TESTED (`Finish test`) → DONE (`Move to Done`) |
+| Pass 3/3 | All pass | Minor (P3) | **VERIFIED WITH NOTES** | TESTING → TESTED (`Finish test`) — add note in comment |
+| Pass 3/3 | 1+ fail | — | **FIX OK, NEW REGRESSION** | TESTING → TESTED (`Finish test`) + file new bug via `/qa-bug` |
+| Fail any | — | — | **FIX INCOMPLETE** | TESTING → REOPEN (`Need fixes`) |
+| Pass 2/3 | — | — | **INTERMITTENT** | TESTING → REOPEN (`Need fixes`, note intermittent) |
 | Blocked | — | — | **BLOCKED** | No transition, comment with blocker |
 
 **Ask the user before transitioning JIRA.** Skip if Atlassian MCP is not configured.
 
-**JIRA comment for VERIFIED (TESTED → DONE):**
+**JIRA comment for VERIFIED (TESTING > TESTED):**
 ```
 QA PASSED — Fix verified.
 STR: Passed 3/3 runs
@@ -237,17 +256,22 @@ Write `tests/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "side_effects": [],
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
-  "jira_transition": "TESTED → DONE",
+  "jira_transition": "TESTED",
   "artifacts": "tests/{SPRINT}/VCST-XXXX/"
 }
 ```
 
 Output to the user: verdict, STR result, checklist score, regressions found, JIRA transition, and artifact paths.
 
-**Bug report lifecycle:** If verdict is VERIFIED or VERIFIED_WITH_NOTES, check `reports/bugs/open/` for a matching bug report (by ticket ID or title keywords). If found:
-1. Add a `## Resolution` block to the report with fixed version, JIRA ticket, verification date, and method
-2. Update the status line to `## Status: FIXED`
-3. Move the file from `reports/bugs/open/` to `reports/bugs/fixed/`
+**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/` (by ticket ID or title keywords), then route by verdict:
+
+| Verdict | Action on the local bug report |
+|---------|-------------------------------|
+| VERIFIED / VERIFIED_WITH_NOTES | Add `## Resolution` block (fixed version, JIRA ticket, verification date, method) → set `## Status: FIXED` → move `open/` → `fixed/` |
+| FIX_INCOMPLETE / NEW_REGRESSION / INTERMITTENT | Append a `## Verification YYYY-MM-DD` block (verdict + STR result + linked evidence) → leave file in `open/` |
+| BLOCKED | Append a `## Blocked YYYY-MM-DD` note (blocker description) → leave file in `open/` |
+
+`reports/bugs/closed/` and `reports/bugs/rejected/` are managed manually (closed by QA lead, rejected during triage) — this command does not move files into them.
 
 ---
 
