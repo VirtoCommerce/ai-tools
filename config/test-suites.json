@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-04-27",
-    "totalSuites": 98,
+    "totalSuites": 99,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1784,6 +1784,25 @@
         "promotions",
         "storefront",
         "sprint"
+      ]
+    },
+    {
+      "id": "077b",
+      "name": "Coupons & Promotions — Cart Sidebar (VCST-4896)",
+      "file": "regression/suites/Frontend/marketing/077-smoke-cart-sidebar.csv",
+      "domain": "marketing",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 50,
+      "estimatedMinutes": 25,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "marketing",
+        "coupons",
+        "cart-sidebar",
+        "storefront",
+        "VCST-4896"
       ]
     },
     {

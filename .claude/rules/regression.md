@@ -36,13 +36,13 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 79 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Suite definitions**: 99 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
 - **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-79 suites in `regression/suites/` organized by module under `Frontend/` (40 suites) and `Backend/` (38 suites) + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~2,400 test cases**.
+99 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~5,951 test cases**.
 
 ### Frontend Suites (40 suites, user-facing features & flows)
 
@@ -106,7 +106,7 @@ Central configuration for regression orchestration. Defines:
 | `backend` | All Backend/ suites (38) | Backend-only regression |
 | `sprint` | **Plan-driven** — `/qa-regression sprint` reads `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan in `docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 79 suites | Before production release |
+| `full` | All 99 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -128,7 +128,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 79 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 99 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.

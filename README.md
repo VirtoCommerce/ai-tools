@@ -488,7 +488,7 @@ vc-mcp-testing-module/
 ├── config/                  # Playwright browser configs + test-suites.json manifest
 ├── ci/                      # CI regression + full-cycle pipeline (gitignored)
 ├── docs/prompts/            # LLM prompt templates
-├── regression/suites/       # 97 CSV suites (~2,400 test cases)
+├── regression/suites/       # 99 CSV suites (~5,951 test cases)
 │   ├── Frontend/            # 45 CSVs in 14 module dirs (auth, catalog, cart, …)
 │   ├── Backend/             # 52 CSVs in 27 module dirs (platform, api, graphql, …)
 │   └── _release/            # Master release suite (080)
@@ -508,7 +508,7 @@ vc-mcp-testing-module/
 
 ## Regression Test Suites
 
-97 suites with **~2,400 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 97`).
+99 suites with **~5,951 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 99`).
 
 Suites are organized under `Frontend/<module>/` and `Backend/<module>/` directories, with IDs like `001-catalog-navigation.csv`, `050a-graphql-xcatalog.csv`, `080-full-regression-release.csv`.
 
