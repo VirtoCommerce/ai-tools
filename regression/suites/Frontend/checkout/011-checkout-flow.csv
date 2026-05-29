@@ -3,17 +3,17 @@
 [PRE:RESET_CART]
 Products in cart","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
 [ASSERT] Verify shipping options section visible
-[ACT] select 'Delivery' option
+[ACT] click 'Shipping' delivery-option button
 [WAIT] Wait for address form to render
 [ASSERT] Verify shipping address form appears
-[ASSERT] Verify shipping method list visible","[DOM] Delivery radio/button is selected state
+[ASSERT] Verify shipping method list visible","[DOM] 'Shipping' delivery-option button shows active/selected state
 [DOM] Shipping address form fields rendered (Street City State ZIP Country)
 [DOM] At least one shipping method option listed","[API] GET /storefronts/shipping-methods returns non-empty array
 [CONSOLE] No errors on delivery option selection","Delivery option not selectable; address form does not appear after selection","none","VCST-4499","Automated"
 "CHK-002","Checkout - Enter Shipping Address","Checkout > Shipping","High","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Delivery selected at checkout, user has no saved addresses","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
-[ACT] select 'Delivery' option
+[ACT] click 'Shipping' delivery-option button
 [ACT] Fill 'Street' field with valid street address
 [ACT] Fill 'City' field with valid city
 [ACT] Fill 'State' field with valid state
@@ -28,7 +28,7 @@ Delivery selected at checkout, user has no saved addresses","url={{FRONT_URL}}, 
 "CHK-003","Checkout - Select Saved Address","Checkout > Shipping","High","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with at least one saved address, products in cart","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
-[ACT] select 'Delivery' option
+[ACT] click 'Shipping' delivery-option button
 [WAIT] Wait for address section to render
 [ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
 [WAIT] Wait for address popup to appear
@@ -39,7 +39,7 @@ User logged in with at least one saved address, products in cart","url={{FRONT_U
 [ASSERT] Verify popup closes and Shipping Details section updated with the selected address","[DOM] Popup visible with search input, magnifying-glass button, 3 facet dropdowns (country/region/city), and address table
 [STATE] Selecting an address row and clicking OK closes the popup
 [DOM] Shipping Details section populated with the selected address after popup closes","[API] currentCustomerAddresses query returns 200 and data.currentCustomerAddresses.errors is null/absent (no legacy errors[] field — use standard GraphQL top-level errors)
-[CONSOLE] No errors when loading saved addresses","Saved addresses not shown in popup; selecting address does not close popup or update Shipping Details; facet dropdowns or search input absent in popup","none","VCST-4499, Synced: VCST-4710 (2026-04-23) — diff in TLC-2026-04-23-1230","synced"
+[CONSOLE] No errors when loading saved addresses","Saved addresses not shown in popup; selecting address does not close popup or update Shipping Details; facet dropdowns or search input absent in popup","none","VCST-4499, Synced: VCST-4710 (2026-04-23) — diff in TLC-2026-04-23-1230","Reviewed"
 "CHK-004","Checkout - Address Validation","Checkout > Shipping","High","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User at checkout shipping address step, address form open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout shipping step
@@ -197,7 +197,7 @@ User at checkout shipping address step, cart has at least one item","url={{FRONT
 [STATE] Clean data accepted and checkout proceeds after correcting fields
 NOTE: No inline client-side validation error is expected for HTML tags — form may accept input and rely on server-side sanitization; this is acceptable behavior. Inline error NOT required.","[CONSOLE] No XSS alert dialogs; no uncaught JS errors from injected payload
 [API] addOrUpdateCartShipment mutation data does not contain unsanitized executable script
-[NETWORK] No 5xx errors on shipment update","Alert dialog fires from injected script; HTML renders and executes in name field on confirmation; server returns 500 from unsanitized input","none","VCST-4803 coverage gap — checkout address XSS","Generated — Rewritten 2026-04-21: removed incorrect assertion [DOM] Error messages shown inline for fields containing HTML tags. Observed behavior: no inline error; server strips/escapes HTML. Assertions updated to structural security invariants (no script execution, server sanitization)."
+[NETWORK] No 5xx errors on shipment update","Alert dialog fires from injected script; HTML renders and executes in name field on confirmation; server returns 500 from unsanitized input","none","VCST-4803 coverage gap — checkout address XSS","Manual"
 "CHK-030","Checkout Validation - Fix Errors and Proceed","Checkout > Validation","Critical","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
@@ -252,7 +252,7 @@ User in checkout: shipping address and shipping method must be FULLY selected be
 [STATE] Form does not advance with billing errors
 [STATE] Errors clear when valid billing data entered
 [NAV] Form advances after valid billing address","[CONSOLE] No JS exceptions during billing validation
-[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address","none","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added dependency on shipping step completion (billing form only appears after shipping method selected). BLOCKED in last run due to step ordering."
+[API] No submission call made with invalid billing address","Billing form validation uses shipping form errors; billing form accepts empty required fields; form advances without valid billing address","none","Coverage Gap Analysis","Manual"
 "CHK-046","Default Billing Same as Shipping","Checkout > Billing","Medium","BL-CHK-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User at checkout billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method configured
@@ -280,7 +280,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete all chec
 [STATE] user lands on a single order confirmation page (not two)
 [DOM] spinner or loading indicator visible during submission","[API] createOrder or changeCartComment mutation called exactly once (check network tab)
 [CONSOLE] no JS errors during double-click scenario
-[NETWORK] only one POST to order creation endpoint; no duplicate requests","button remains active after first click allowing double submission; two confirmation pages displayed; two orders created in backend","Remove duplicate order if created; verify order history shows one entry","Coverage Gap Analysis","Generated"
+[NETWORK] only one POST to order creation endpoint; no duplicate requests","button remains active after first click allowing double submission; two confirmation pages displayed; two orders created in backend","Remove duplicate order if created; verify order history shows one entry","Coverage Gap Analysis","Manual"
 "CHK-051","Double Submit Prevention - Single Order in Order History","Checkout > Submission > Idempotency","Critical","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; CHK-050 executed (order placed via rapid double-click); user on confirmation page","url={{FRONT_URL}}
@@ -294,7 +294,7 @@ password={{USER_PASSWORD}}","[NAV] after CHK-050 completes, note order number fr
 [STATE] no duplicate orders with identical items and placement time
 [STATE] order count incremented by exactly 1 from pre-test baseline","[API] GET /orders returns array with exactly one new order entry (not two)
 [CONSOLE] no JS errors on order history page
-[NETWORK] no 4xx/5xx on order list request","two identical orders in order history; duplicate order numbers; order history count incremented by 2","Remove test order(s) from system if possible; restore cart","Coverage Gap Analysis","Generated"
+[NETWORK] no 4xx/5xx on order list request","two identical orders in order history; duplicate order numbers; order history count incremented by 2","Remove test order(s) from system if possible; restore cart","Coverage Gap Analysis","Manual"
 "CHK-052","Payment Retry After Decline - Retry With Different Card Succeeds","Checkout > Payment > Retry","High","BL-CHK-004","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; all checkout steps complete up to payment; test decline card number available (e.g., Authorize.Net test decline card)","url={{FRONT_URL}}
@@ -314,7 +314,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [STATE] user can re-enter card details without refreshing the page
 [DOM] order confirmation page shown after successful retry with valid card","[API] first order attempt returns payment error (not 500); second attempt returns success
 [CONSOLE] no unhandled JS exceptions on decline or retry
-[NETWORK] no ghost order created on first (declined) attempt — verify via order history","page crashes on decline; user redirected to unrecoverable error page; no decline message shown; retry button absent after decline","Remove test order; clear cart if needed","Coverage Gap Analysis","Generated"
+[NETWORK] no ghost order created on first (declined) attempt — verify via order history","page crashes on decline; user redirected to unrecoverable error page; no decline message shown; retry button absent after decline","Remove test order; clear cart if needed","Coverage Gap Analysis","Manual"
 "CHK-053","Payment Retry After Decline - Checkout State Preserved","Checkout > Payment > Retry","High","BL-CHK-004","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; shipping address and method selected at checkout; at payment step with declined card message shown (run CHK-052 setup steps)","url={{FRONT_URL}}
@@ -329,7 +329,7 @@ password={{USER_PASSWORD}}","[NAV] proceed to checkout payment step and trigger 
 [STATE] cart line items and quantities identical to pre-decline state
 [DOM] no 'Order Placed' or order number shown (no ghost order)","[API] GET /orders does not show a new order entry after decline
 [CONSOLE] no JS errors related to state loss
-[NETWORK] no 4xx/5xx on state reload","address reset to empty after decline; shipping method reset; cart items changed; ghost order created and visible in order history","Clear test cart; remove any ghost orders","Coverage Gap Analysis","Generated"
+[NETWORK] no 4xx/5xx on state reload","address reset to empty after decline; shipping method reset; cart items changed; ghost order created and visible in order history","Clear test cart; remove any ghost orders","Coverage Gap Analysis","Manual"
 "CHK-054","Minimum Order Amount - Checkout Blocked When Below Minimum","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > General > MinOrderTotal (e.g., $50.00). QA environment does not have this configured by default. Admin step: navigate to Stores > [Store Name] > edit > set MinOrderTotal = 50.00 and save. Then verify {{TEST_SKU}} price is below $50 (e.g., single item < $5).","url={{FRONT_URL}}
@@ -346,7 +346,7 @@ min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item
 [DOM] message references shortfall amount (amount needed to reach minimum)
 [STATE] user cannot advance past cart or checkout steps while below minimum","[API] getCart or checkout mutation returns minimum order violation error
 [CONSOLE] no JS errors when minimum order block is triggered
-[NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-055","Minimum Order Amount - Checkout Unblocked After Adding Items","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Same as CHK-054 — MinOrderTotal must be set to $50.00 in Admin > Stores. Run CHK-054 setup steps first. DEPENDENCY: CHK-054 must be run or equivalent setup performed.","url={{FRONT_URL}}
@@ -365,7 +365,7 @@ min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} with cart total below mi
 [STATE] user successfully navigates to checkout shipping step
 [MATH] cart total >= configured minimum order amount","[API] getCart returns no minimum order violation once threshold met
 [CONSOLE] no JS errors during cart update
-[NETWORK] no 4xx/5xx on cart recalculation","checkout still blocked after meeting minimum; button stays disabled; cart total exceeds minimum but validation message persists","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx on cart recalculation","checkout still blocked after meeting minimum; button stays disabled; cart total exceeds minimum but validation message persists","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-056","Saved Credit Card - Checkout Completes Without Re-entering Details","Checkout > Payment > Saved Cards","High",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: User account ({{USER_EMAIL}}) must have at least one saved tokenized credit card from a prior completed order using a tokenizing payment processor (CyberSource/Skyflow). QA environment test accounts do not have saved cards by default. Run a prior successful payment first, or seed via admin payment method record.","url={{FRONT_URL}}
@@ -383,7 +383,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] last 4 digits of saved card visible in card selector
 [DOM] order confirmation page shown after paying with saved card","[API] order creation request references saved payment token (not raw card data)
 [CONSOLE] no JS errors during saved card selection or order placement
-[NETWORK] no 4xx/5xx on order submission with saved card","saved cards section absent at payment; selecting saved card still requires full card re-entry; payment fails with saved card token; no confirmation after order placement","Remove test order; saved card remains for future tests","Coverage Gap Analysis","Manual — BLOCKED pending seed: saved tokenized credit card for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx on order submission with saved card","saved cards section absent at payment; selecting saved card still requires full card re-entry; payment fails with saved card token; no confirmation after order placement","Remove test order; saved card remains for future tests","Coverage Gap Analysis","Manual"
 "CHK-057","Saved Credit Card - Delete Saved Card From Checkout","Checkout > Payment > Saved Cards","High",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Same as CHK-056 — user account must have a saved tokenized credit card. DEPENDENCY: CHK-056 must run first (or equivalent seed). NOTE: CHK-057 consumes the saved card (deletion is irreversible); run after CHK-056 to avoid leaving no cards for CHK-056.","url={{FRONT_URL}}
@@ -400,13 +400,13 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] no ghost entry of deleted card remaining
 [STATE] user can proceed to enter a new card for payment","[API] DELETE /payment-methods/{id} or equivalent returns 200/204
 [CONSOLE] no JS errors on card deletion
-[NETWORK] no 4xx/5xx on delete request","deleted card still visible after removal; delete button has no effect; page error on delete; confirmation dialog not dismissible","Verify card removal; complete checkout with new card if needed","Coverage Gap Analysis","Manual — BLOCKED pending seed: saved tokenized credit card for {{USER_EMAIL}}. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx on delete request","deleted card still visible after removal; delete button has no effect; page error on delete; confirmation dialog not dismissible","Verify card removal; complete checkout with new card if needed","Coverage Gap Analysis","Manual"
 "CHK-058","Ship-To Address - Default or Favorite Address Pre-Selected at Checkout","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; user has at least one saved address marked as default or favorite; cart has items","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout
-[ACT] select 'Delivery' option if not auto-selected
+[ACT] click 'Shipping' delivery-option button if not auto-selected
 [WAIT] wait for address section to render
 [ASSERT] verify default or favorite address is pre-selected (highlighted or shown as selected)
 [ASSERT] verify selected address displays street, city, state, ZIP, and country
@@ -416,10 +416,10 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [DOM] Continue/Next step button is active with pre-selected address","[API] getCart or checkout query returns pre-selected default address in deliveryAddress field
 [API] currentCustomerAddresses query called on popup open with default sort. Personal account: default sort lastName:asc; pre-selected address = first item unless a different isDefault exists. Org account: default sort isFavorite:desc; pre-selected address = first isFavorite or first item. If isFavorite field is absent/null (not populated by Platform seed), fallback is isDefault=true or first-by-sort. Standard GraphQL errors empty.
 [CONSOLE] no JS errors on checkout address load
-[NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — new pre-selection behavior via composable default sort","synced"
+[NETWORK] no 4xx/5xx on address section render","no address pre-selected (user must manually pick every time); wrong address pre-selected (not the default/favorite); address form shown blank instead of pre-filled","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — new pre-selection behavior via composable default sort","Reviewed"
 "CHK-059","Ship-To Address - Search and Select Different Address Updates Shipping Methods","Checkout > Shipping > Address Selector","High","BL-CHK-005","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TechFlow org (id 6fb516c1-07f3-4af4-be5e-35961e3f7993) has 22 addresses across 3 countries / 13 US+CA regions / 20 cities seeded per test-data/addresses/techflow-org-addresses-state-20260423.json. Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+TechFlow org (id @td(TECHFLOW_ORG_ADDRESSES.org_id)) has 22 addresses across 3 countries / 13 US+CA regions / 20 cities seeded per test-data/addresses/techflow-org-addresses-state-20260423.json. Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
 user={{ORG_USER_EMAIL}}
 password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ASSERT] verify current address and shipping methods displayed
@@ -440,10 +440,10 @@ password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to ch
 [STATE] previously selected shipping method may reset (valid behavior if incompatible with new address)
 [MATH] shipping cost reflects new address zone pricing","[API] getShippingMethods called with new address params; returns updated methods
 [CONSOLE] no JS errors on address switch and shipping recalculation
-[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change; popup missing search or facet controls","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","synced"
+[NETWORK] no 4xx/5xx on address change or shipping methods refresh","shipping methods not refreshed after address change; old address shown in summary despite selecting new one; shipping cost unchanged after address zone change; popup missing search or facet controls","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23)","Reviewed"
 "CHK-060","Ship-To Address - Show More Addresses Pagination","Checkout > Shipping > Address Selector","Medium","BL-CHK-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TechFlow org (id 6fb516c1-07f3-4af4-be5e-35961e3f7993) has 22 addresses seeded per test-data/addresses/techflow-org-addresses-state-20260423.json — 22 rows unblocks pagination (default 8 per page, 3 pages total). Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
+TechFlow org (id @td(TECHFLOW_ORG_ADDRESSES.org_id)) has 22 addresses seeded per test-data/addresses/techflow-org-addresses-state-20260423.json — 22 rows unblocks pagination (default 8 per page, 3 pages total). Log in as a TechFlow org member. Cart has items.","url={{FRONT_URL}}
 user={{ORG_USER_EMAIL}}
 password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checkout shipping address step
 [ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
@@ -459,7 +459,7 @@ password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to ch
 [DOM] newly loaded addresses selectable via click
 [STATE] no duplicate addresses across pages","[API] currentCustomerAddresses called with after cursor on pagination action; second call returns new non-overlapping items; totalCount unchanged across calls. Standard GraphQL errors empty.
 [CONSOLE] no JS errors on show more / pagination click
-[NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — pagination now server-side via cursor","synced"
+[NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — pagination now server-side via cursor","Reviewed"
 "CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 TOOL-LIMITATION: Natural session timeout in QA environment is too long for automated testing. Use cookie-clearing approach: MCP browser_evaluate to delete access_token and refresh_token cookies, then proceed. This simulates session expiry without waiting for timeout. NOTE: Real-user-interaction rule applies — use browser_evaluate only for cookie manipulation (not for UI interactions).","url={{FRONT_URL}}
@@ -478,7 +478,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart
 [STATE] user can proceed through checkout after re-authentication
 [DOM] no 'internal server error' or blank page on session expiry","[API] requests with expired token return 401 (not 500)
 [CONSOLE] no unhandled exceptions on session timeout; 401 handled gracefully
-[NETWORK] 401 response on expired session; 200 on successful re-auth","500 error on session expiry; cart emptied after re-login; user redirected to homepage with no message; checkout state lost entirely","Clear test cart items; re-login if needed","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: natural timeout too long; use cookie-clearing to simulate. TOOL-LIMITATION verdict."
+[NETWORK] 401 response on expired session; 200 on successful re-auth","500 error on session expiry; cart emptied after re-login; user redirected to homepage with no message; checkout state lost entirely","Clear test cart items; re-login if needed","Coverage Gap Analysis","Manual"
 "CHK-062","Browser Back Button After Payment - No Duplicate Order Created","Checkout > Submission > Navigation","High","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; order successfully placed; user is on order confirmation page","url={{FRONT_URL}}
@@ -495,7 +495,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and complete a full c
 [DOM] appropriate page shown on back navigation (cart, homepage, or informational message)
 [STATE] order history shows exactly one new order from the session","[API] GET /orders shows only one entry for this test session (no duplicate)
 [CONSOLE] no JS errors on back navigation after payment
-[NETWORK] no second POST to order creation endpoint after back button press","second order created after browser back; duplicate order number in order history; blank or error page on back navigation","Remove any duplicate test orders from system","Coverage Gap Analysis","Generated"
+[NETWORK] no second POST to order creation endpoint after back button press","second order created after browser back; duplicate order number in order history; blank or error page on back navigation","Remove any duplicate test orders from system","Coverage Gap Analysis","Manual"
 "CHK-063","Billing Address Validation - Individual Field Errors Shown","Checkout > Billing > Validation","Medium","BL-CHK-003","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 DEPENDENCY: Shipping address and shipping method must be fully selected first (billing section is only visible after). Uncheck 'Same as shipping address' to reveal billing form. See CHK-043 for shipping setup steps.","url={{FRONT_URL}}
@@ -519,7 +519,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to checko
 [STATE] form submission blocked while any required field is invalid
 [STATE] correcting a field clears that field's error without clearing other fields","[API] no order or billing payload sent while validation errors are present
 [CONSOLE] no JS errors during field-level validation
-[NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added shipping setup dependency (billing form requires shipping complete). BLOCKED in last run due to step ordering."
+[NETWORK] no outbound POST on failed validation","single generic error shown for entire form instead of field-level errors; form submits despite invalid fields; fixing one field clears all others' errors; no validation triggered on submit","Clear test cart; no order placed","Coverage Gap Analysis","Manual"
 "CHK-074","Billing Address Persists Through Payment Retry","Checkout > Address > Billing Persistence","High","BL-CHK-003, BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 DEPENDENCY: Requires a payment processor that shows a payment form allowing a failed/declined payment attempt (Skyflow, Authorize.Net, or Datatrance — NOT CyberSource which uses cross-origin iframe). Use Manual payment method if available as fallback to test the form state without actual card decline. NOTE: CyberSource iframe is inaccessible to MCP browsers.","url={{FRONT_URL}}
@@ -537,7 +537,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to checkout with items in cart
 [STATE] shipping address preserved through retry
 [DOM] both address forms retain entered values","[API] payment retry sends same billing/shipping addresses
 [CONSOLE] no JS errors during payment retry
-[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added payment processor dependency (not CyberSource). Use Manual payment or non-iframe processor."
+[NETWORK] no 5xx on retry","billing address cleared after decline; shipping address lost; user forced to re-enter addresses; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
 "CHK-075","Order Confirmation Shows Both Shipping and Billing Addresses","Checkout > Confirmation > Addresses","Medium","BL-CHK-003","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Order placed with different shipping and billing addresses","url={{FRONT_URL}}
@@ -551,7 +551,7 @@ password={{USER_PASSWORD}}","[NAV] complete checkout with separate shipping and 
 [ASSERT] verify both addresses shown in order detail view","[DOM] distinct shipping address section on confirmation
 [DOM] distinct billing address section on confirmation
 [STATE] addresses match what was entered at checkout","[CONSOLE] no JS errors on confirmation page
-[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added dependency on separate billing address entry. Requires completing CHK-043 setup first."
+[NETWORK] no 4xx/5xx","only one address shown; billing shows shipping address; addresses section missing; addresses swapped","Cancel test order via admin","Coverage Gap Analysis","Manual"
 "CHK-076","Checkout Field Validation - US Address Requires ZIP and State","Checkout > Validation > Address","High","BL-CHK-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User at checkout address step; country selector available","url={{FRONT_URL}}
@@ -662,7 +662,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [DOM] checkout button disabled or not clickable
 [STATE] checkout flow blocked for below-minimum cart","[API] cart validation returns minimum order error
 [CONSOLE] no JS errors
-[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21. See CHK-054 for duplicate scope."
+[NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-085","Minimum Order Amount - Adding Items to Exceed Minimum Unblocks","Checkout > Minimum Order","Medium","BL-CHK-007","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: MinOrderTotal must be set in Admin > Stores. DEPENDENCY: Run CHK-084 first to establish below-minimum state. Duplicate of CHK-055 scope.","url={{FRONT_URL}}
@@ -678,7 +678,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-min
 [DOM] checkout button enabled
 [STATE] checkout unblocked when total >= minimum","[API] cart validation passes after exceeding minimum
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual — BLOCKED: requires admin config (MinOrderTotal) not set in QA. SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","warning persists after exceeding minimum; checkout still blocked; page refresh required to clear warning","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-086","Checkout - Edit Shipping Address Does Not Create Duplicate (VCST-4830)","Checkout > Shipping > Address Update","Critical","BL-CHK-001, BL-CHK-005","ECL-8.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with items in cart; shipping address already set during checkout (complete steps up to shipping method selection). Bug: VCST-4830 — editing a shipping address from cart/checkout created a new CartAddress record in DB every time instead of updating the existing one.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart with items
@@ -711,7 +711,7 @@ User logged in with items in cart; shipping address already set during checkout 
 [GQL] After each edit, query cart → shipments count = 1 (not growing with each edit)
 [GQL] cart.shipments[0].deliveryAddress reflects latest values
 [NETWORK] No duplicate addOrUpdateCartShipment calls per single edit action
-[CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Manual — Rewritten 2026-04-21: GQL cross-layer check added (cart.shipments count must = 1 after each edit). BLOCKED in REG-2026-04-20 run due to VCST-4830 fix verification pending; verify fix is deployed before running."
+[CONSOLE] No JS errors during address editing","Shipping address summary still shows old address after edit; address form not pre-populated on re-edit; shipping methods don't recalculate after address change; multiple addOrUpdateCartShipment calls per edit (potential duplicate); checkout breaks after editing address multiple times","none","VCST-4830; Synced: VCST-4830 + PR #106 (2026-03-31)","Manual"
 "CHK-087","Address Popup Opens From Cart Shipping Details — Happy Path","Checkout > Shipping > Address Popup","Critical","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} with at least 1 saved address; cart has at least 1 item","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -724,7 +724,7 @@ User logged in as {{USER_EMAIL}} with at least 1 saved address; cart has at leas
 [DOM] address list renders at least one address row
 [DOM] popup has 4 columns: Address / Description / Country / Active","[API] currentCustomerAddresses query called; response errors[] is empty
 [CONSOLE] no JS errors on popup open
-[NETWORK] no 4xx/5xx on /graphql","popup does not open; popup opens blank; spinner persists >5s; JS TypeError in console","Close popup without selecting address (press Esc or click X)","Promoted from VCST-4710-SF-001 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx on /graphql","popup does not open; popup opens blank; spinner persists >5s; JS TypeError in console","Close popup without selecting address (press Esc or click X)","Promoted from VCST-4710-SF-001 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-088","Address Popup — Keyword Search Returns Filtered Results","Checkout > Shipping > Address Popup > Search","Critical","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -740,7 +740,7 @@ User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open","u
 [DOM] matching address row is visible
 [DOM] non-matching addresses are absent","[API] currentCustomerAddresses query called with keyword arg; errors[] is empty
 [CONSOLE] no JS errors during search
-[NETWORK] no 4xx/5xx on /graphql search request","list unchanged after typing keyword; spinner visible >5s; all addresses disappear (over-filter); console TypeError","Close popup without selection","Promoted from VCST-4710-SF-002 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx on /graphql search request","list unchanged after typing keyword; spinner visible >5s; all addresses disappear (over-filter); console TypeError","Close popup without selection","Promoted from VCST-4710-SF-002 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-089","Address Popup — Keyword Search Clear Restores Full List","Checkout > Shipping > Address Popup > Search","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open with active keyword filter","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -754,7 +754,7 @@ User logged in as {{USER_EMAIL}} with 3+ saved addresses; address popup open wit
 [COUNT] address count returns to the original count before filtering
 [DOM] search input is empty","[API] currentCustomerAddresses called with empty/absent keyword; errors[] is empty
 [CONSOLE] no JS errors on clear
-[NETWORK] no 4xx/5xx","list stays filtered after clearing input; full list not restored; extra network call fails; empty state shown despite addresses existing","Close popup without selection","Promoted from VCST-4710-SF-003 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","list stays filtered after clearing input; full list not restored; extra network call fails; empty state shown despite addresses existing","Close popup without selection","Promoted from VCST-4710-SF-003 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-090","Address Popup — Country Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","Critical","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Test org/user has addresses in 2+ countries; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
@@ -769,7 +769,7 @@ Test org/user has addresses in 2+ countries; address popup open. Seed data: test
 [DOM] Country facet shows checked/selected state for chosen option
 [COUNT] result count matches the badge count for selected country","[API] currentCustomerAddresses called with countryCodes arg; errors[] is empty
 [CONSOLE] no JS errors on facet selection
-[NETWORK] no 4xx/5xx","no filtering applied; count badge mismatched; facet checkbox has no visual selected state; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-004 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","no filtering applied; count badge mismatched; facet checkbox has no visual selected state; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-004 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-091","Address Popup — State/Province Facet Filters Address List","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Test org has addresses in 2+ US states; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses across 13 US+CA regions).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
@@ -783,7 +783,7 @@ Test org has addresses in 2+ US states; address popup open. Seed data: test-data
 [DOM] state facet option label shows state name with count (e.g. 'New York (1)') — NOT a postal code or region ID
 [DOM] selected state shows checked indicator","[API] currentCustomerAddresses called with regionIds arg; errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","facet shows region ID instead of name; no filtering applied; state facet empty despite addresses having state data","Close popup without selection","Promoted from VCST-4710-SF-005 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","facet shows region ID instead of name; no filtering applied; state facet empty despite addresses having state data","Close popup without selection","Promoted from VCST-4710-SF-005 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-092","Address Popup — City Facet Shows City Name NOT Postal Code (Defect #2 Verification)","Checkout > Shipping > Address Popup > Facets","Critical",,"ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Defect #2 must be fixed before PASS is achievable. Seed data available: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses with proper City/PostalCode separation). OQ-2: confirm defect #2 fix is in scope before running. VCST-4995 cancelled — seed data resolves dependency.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
@@ -795,7 +795,7 @@ Defect #2 must be fixed before PASS is achievable. Seed data available: test-dat
 [DOM] each city option shows count badge with positive integer
 [COUNT] city option count matches number of addresses with that city","[API] currentCustomerAddresses called; term_facets[].terms[].label contains city name string; errors[] is empty
 [API] term_facets[].terms[].term contains the city identifier (separate from label)
-[CONSOLE] no JS errors","city facet shows numeric postal codes instead of city names (Defect #2 regression); facet empty; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-006 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #2; VCST-4995 cancelled","ready"
+[CONSOLE] no JS errors","city facet shows numeric postal codes instead of city names (Defect #2 regression); facet empty; spinner >5s","Close popup without selection","Promoted from VCST-4710-SF-006 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #2; VCST-4995 cancelled","Reviewed"
 "CHK-093","Address Popup — Combined Facets (Country + State + City) Narrow Results","Checkout > Shipping > Address Popup > Facets","High","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Addresses in multiple countries/states/cities available; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses, 3 countries, 13 regions, 20 cities).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
@@ -812,7 +812,7 @@ Addresses in multiple countries/states/cities available; address popup open. See
 [DOM] all 3 facets show their selected values
 [DOM] results contain only addresses matching all 3 criteria","[API] currentCustomerAddresses called with all 3 args (countryCodes, regionIds, cities); errors[] is empty
 [CONSOLE] no JS errors on combined filter
-[NETWORK] no 4xx/5xx","applying second facet clears first; combined filter returns zero results despite matches; API called without all 3 args","Close popup without selection","Promoted from VCST-4710-SF-007 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","applying second facet clears first; combined filter returns zero results despite matches; API called without all 3 args","Close popup without selection","Promoted from VCST-4710-SF-007 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-094","Address Popup — Column Sort NOT Wired (Defect #1 Bug Verification)","Checkout > Shipping > Address Popup > Sort","Critical",,"ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Build deployed to QA before Defect #1 fix. Verify column header is NOT interactive (cursor: auto). After fix is deployed this test becomes a PASS verification for sort functionality.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -824,7 +824,7 @@ Build deployed to QA before Defect #1 fix. Verify column header is NOT interacti
 [DOM] column header has cursor: auto style (NOT cursor: pointer) — sort is NOT wired
 [STATE] address list order does NOT change after clicking column header
 [DOM] no sort indicator arrows appear","[CONSOLE] no click handler fires on column header click; no JS error from unhandled sort
-[NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; BLOCKED by VCST-4992 (column sort not wired, P0)","blocked-by-VCST-4992"
+[NETWORK] no additional /graphql request on column header click","column sort fires and reorders list (would mean Defect #1 is fixed — update test); TypeError on column click","Close popup without selection","Promoted from VCST-4710-SF-008 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #1; BLOCKED by VCST-4992 (column sort not wired, P0)","Manual"
 "CHK-095","Address Popup — Empty State When No Addresses Saved","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with NO saved addresses in account; cart has at least 1 item. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json available for seeded account flows.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as user with no saved addresses
@@ -835,7 +835,7 @@ User logged in with NO saved addresses in account; cart has at least 1 item. See
 [DOM] 'Add New' button or link visible inside popup (to add first address)
 [STATE] popup does not show a loading spinner indefinitely","[API] currentCustomerAddresses called; returns totalCount=0 and items=[]; errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","popup shows error instead of empty state; spinner never resolves; 'Add New' missing; popup crashes with TypeError","Close popup","Promoted from VCST-4710-SF-009 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","popup shows error instead of empty state; spinner never resolves; 'Add New' missing; popup crashes with TypeError","Close popup","Promoted from VCST-4710-SF-009 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-096","Address Popup — Empty State When Filters Return No Results","Checkout > Shipping > Address Popup > Empty States","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User has 3+ saved addresses; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -849,7 +849,7 @@ User has 3+ saved addresses; address popup open. Seed data: test-data/addresses/
 [DOM] search input retains the typed keyword
 [DOM] clear/reset control visible","[API] currentCustomerAddresses called with non-matching keyword; returns totalCount=0; errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","spinner never resolves; previous results still shown; 500 error displayed; JS TypeError","Clear search; close popup","Promoted from VCST-4710-SF-010 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","spinner never resolves; previous results still shown; 500 error displayed; JS TypeError","Clear search; close popup","Promoted from VCST-4710-SF-010 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-097","Address Popup — Select Address Updates Checkout Shipping Address","Checkout > Shipping > Address Popup > Selection","Critical","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} with 1+ saved addresses; cart has items","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -862,7 +862,7 @@ User logged in as {{USER_EMAIL}} with 1+ saved addresses; cart has items","url={
 [STATE] checkout can proceed with the selected address
 [DOM] address details (street, city, country) shown in Shipping Details match the selected row","[API] checkout shipping address update call returns 200; errors[] is empty
 [CONSOLE] no JS errors on address selection
-[NETWORK] no 4xx/5xx","popup stays open after selection; wrong address shown in Shipping Details; Shipping Details unchanged; spinner >5s","No cleanup (address selection persists for session)","Promoted from VCST-4710-SF-011 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","popup stays open after selection; wrong address shown in Shipping Details; Shipping Details unchanged; spinner >5s","No cleanup (address selection persists for session)","Promoted from VCST-4710-SF-011 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-098","Address Popup — Pagination Loads Next Page of Addresses","Checkout > Shipping > Address Popup > Pagination","High","BL-CHK-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Test org has 20+ saved addresses to trigger pagination; address popup open. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json (22 addresses).","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}}
@@ -876,7 +876,7 @@ Test org has 20+ saved addresses to trigger pagination; address popup open. Seed
 [COUNT] total visible addresses increases (or second page shows new rows)
 [STATE] addresses from first page remain accessible (cursor-based pagination)","[API] currentCustomerAddresses called with after cursor; second call returns new items; errors[] is empty
 [CONSOLE] no JS errors on pagination
-[NETWORK] no 4xx/5xx","pagination control absent for 20+ addresses; second page request fails; addresses duplicated; cursor not used in request","Close popup","Promoted from VCST-4710-SF-012 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","pagination control absent for 20+ addresses; second page request fails; addresses duplicated; cursor not used in request","Close popup","Promoted from VCST-4710-SF-012 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-099","Address Popup — Aria-Label on Search Input Should Be Address Context (Defect #3)","Checkout > Shipping > Address Popup > A11y","High",,"ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with addresses; address popup open. Defect #3 must be fixed before PASS is achievable.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -885,7 +885,7 @@ User logged in with addresses; address popup open. Defect #3 must be fixed befor
 [WAIT] popup renders
 [ACT] inspect aria-label attribute on the search input (data-test-id=""search-keyword-input"") via accessibility tree or DOM","[DOM] search input aria-label does NOT contain 'pickup locations' (BOPIS copy-paste artifact)
 [DOM] search input aria-label references shipping address context (e.g. 'Search addresses' or similar)","[CONSOLE] no accessibility audit errors on input
-[NETWORK] no additional requests","aria-label still reads 'Search pickup locations' (Defect #3 regression); aria-label missing entirely","Close popup","Promoted from VCST-4710-SF-013 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #3; BLOCKED by VCST-4993 (aria-label Search pickup locations)","blocked-by-VCST-4993"
+[NETWORK] no additional requests","aria-label still reads 'Search pickup locations' (Defect #3 regression); aria-label missing entirely","Close popup","Promoted from VCST-4710-SF-013 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #3; BLOCKED by VCST-4993 (aria-label Search pickup locations)","Manual"
 "CHK-100","Address Popup — Mobile 375px City Facet Accessible Without Horizontal Scroll (Defect #4)","Checkout > Shipping > Address Popup > Mobile","High",,"ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Defect #4 fix deployed. Viewport set to 375px width. User logged in with addresses.","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart at 375px viewport width
@@ -897,7 +897,7 @@ Defect #4 fix deployed. Viewport set to 375px width. User logged in with address
 [DOM] no horizontal scrollbar present
 [DOM] City filter button fully rendered (not clipped at right edge)
 [DOM] clicking City filter opens options","[CONSOLE] no layout errors
-[NETWORK] no 4xx/5xx","City filter button clipped at 375px (Defect #4 regression); horizontal scroll required; filter button not tappable without scrolling","Return to desktop viewport","Promoted from VCST-4710-SF-014 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #4; BLOCKED by VCST-4994 (mobile 375px CITY clip)","blocked-by-VCST-4994"
+[NETWORK] no 4xx/5xx","City filter button clipped at 375px (Defect #4 regression); horizontal scroll required; filter button not tappable without scrolling","Return to desktop viewport","Promoted from VCST-4710-SF-014 / TLC-2026-04-23-1230 / BA report 2026-04-23; Defect #4; BLOCKED by VCST-4994 (mobile 375px CITY clip)","Manual"
 "CHK-101","Address Popup — Personal Account Shows Only Personal Addresses","Checkout > Shipping > Address Popup > Scope","High","BL-B2B-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as personal account (no org membership) with personal addresses saved","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as personal account user {{USER_EMAIL}}
@@ -907,7 +907,7 @@ User logged in as personal account (no org membership) with personal addresses s
 [DOM] no org addresses visible (correct: personal accounts have no org)
 [STATE] popup does not show addresses belonging to any organization","[API] currentCustomerAddresses query used (not currentOrganizationAddresses); errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","org addresses leaked into personal account popup; popup empty despite saved personal addresses","Close popup","Promoted from VCST-4710-SF-015 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","org addresses leaked into personal account popup; popup empty despite saved personal addresses","Close popup","Promoted from VCST-4710-SF-015 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-102","Address Popup — B2B Org Account Shows Org Addresses","Checkout > Shipping > Address Popup > Scope","High","BL-B2B-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as B2B org user with org addresses configured. Seed data: test-data/addresses/techflow-org-addresses-state-20260423.json.","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart logged in as {{ORG_USER_EMAIL}} (org user)
@@ -917,7 +917,7 @@ User logged in as B2B org user with org addresses configured. Seed data: test-da
 [DOM] addresses show org-specific entries (not just personal addresses)
 [STATE] addresses sorted by isFavorite:Descending (org default sort)","[API] currentOrganizationAddresses query used for org context; errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","personal addresses shown instead of org addresses; org and personal addresses mixed without scoping; wrong sort applied","Close popup","Promoted from VCST-4710-SF-016 / TLC-2026-04-23-1230 / BA report 2026-04-23","ready"
+[NETWORK] no 4xx/5xx","personal addresses shown instead of org addresses; org and personal addresses mixed without scoping; wrong sort applied","Close popup","Promoted from VCST-4710-SF-016 / TLC-2026-04-23-1230 / BA report 2026-04-23","Reviewed"
 "CHK-103","Address Popup — Account Addresses Page Still Functional (COMPAT-001 / Backward Compat AC-12)","Checkout > Shipping > Backward Compat","High","BL-AUTH-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER_EMAIL}} on personal account with at least 1 saved address","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/addresses
@@ -933,7 +933,7 @@ User logged in as {{USER_EMAIL}} on personal account with at least 1 saved addre
 [STATE] editing an address updates the displayed value
 [DOM] no deprecation errors or console warnings referencing useUserAddresses","[API] address save call returns 200; errors[] is empty
 [CONSOLE] no JS errors; no errors referencing removed composables
-[NETWORK] no 4xx/5xx on address save or load","page returns 404 or blank; address form missing; save action fails silently; console errors from deprecated composables breaking the page","Delete test address added in this case","Promoted from VCST-4710-SF-017 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","ready"
+[NETWORK] no 4xx/5xx on address save or load","page returns 404 or blank; address form missing; save action fails silently; console errors from deprecated composables breaking the page","Delete test address added in this case","Promoted from VCST-4710-SF-017 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","Reviewed"
 "CHK-104","Address Popup — Company Info Page Address Widget Still Functional (COMPAT-002 / Backward Compat AC-12)","Checkout > Shipping > Backward Compat","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as org admin ({{ORG_USER_EMAIL}}); company/info page accessible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/company/info
@@ -943,7 +943,7 @@ User logged in as org admin ({{ORG_USER_EMAIL}}); company/info page accessible",
 [DOM] org addresses section visible
 [DOM] addresses displayed with correct fields (street, city, country)
 [STATE] page functional after PR #2219 composable migration","[CONSOLE] no JS errors; no errors from useOrganizationAddresses deprecated composable breaking the page
-[NETWORK] no 4xx/5xx on page load","page blank or 404; org addresses section missing; console errors from deprecated composable","None","Promoted from VCST-4710-SF-018 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","ready"
+[NETWORK] no 4xx/5xx on page load","page blank or 404; org addresses section missing; console errors from deprecated composable","None","Promoted from VCST-4710-SF-018 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","Reviewed"
 "CHK-105","Address Popup — Search Case-Insensitive Matching","Checkout > Shipping > Address Popup > Search","High","BL-CHK-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User has address with known city name (e.g. 'New York'); address popup open","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -959,7 +959,7 @@ User has address with known city name (e.g. 'New York'); address popup open","ur
 [DOM] result count identical for upper and lowercase variants
 [STATE] search is case-insensitive as documented in AC-2","[API] both keyword variants return same totalCount in currentCustomerAddresses; errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","uppercase returns 0 results while lowercase returns matches; case-sensitive search filtering applied; inconsistent results","Clear search; close popup","Promoted from VCST-4710-SF-019 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-2","ready"
+[NETWORK] no 4xx/5xx","uppercase returns 0 results while lowercase returns matches; case-sensitive search filtering applied; inconsistent results","Clear search; close popup","Promoted from VCST-4710-SF-019 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-2","Reviewed"
 "CHK-106","Address Popup — Duplicate Address Guard Shows Warning (AC-13)","Checkout > Shipping > Address Popup > Duplicate Guard","High",,"ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 SEED: existing address known; user on Add New address form inside popup; OQ-8 resolved to confirm duplicate-check UI is in scope","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
@@ -973,7 +973,7 @@ SEED: existing address known; user on Add New address form inside popup; OQ-8 re
 [DOM] warning message references the duplicate address (not a generic error)
 [STATE] duplicate address is NOT saved silently — user is informed","[API] checkDuplicateAddress query called before save; isDuplicated = true; errors[] is empty
 [CONSOLE] no JS errors on duplicate check
-[NETWORK] no 4xx/5xx","duplicate address saved without any warning; checkDuplicateAddress not called; generic error shown instead of duplicate-specific message; OQ-8 blocks this case","Close popup or discard duplicate address","Promoted from VCST-4710-SF-020 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-13","ready"
+[NETWORK] no 4xx/5xx","duplicate address saved without any warning; checkDuplicateAddress not called; generic error shown instead of duplicate-specific message; OQ-8 blocks this case","Close popup or discard duplicate address","Promoted from VCST-4710-SF-020 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-13","Reviewed"
 "CHK-107","Journey: Create 6 Addresses via Self-Service + Verify in Cart Popup","Checkout > Shipping > Journey > Address Self-Service","Critical","BL-PROFILE-001, BL-B2B-001","ECL-5.1, ECL-3.1, ECL-3.2, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in as {{USER2_EMAIL}} (personal non-org account). Note address count N at test start — all count assertions use N+6 not literal 6. If existing addresses cannot be cleared prior to run, precondition still holds. Cart has at least 1 item (added during the test). {{TEST_SKU}} available and in stock.","url={{FRONT_URL}}, user2_email={{USER2_EMAIL}}, user2_password={{USER2_PASSWORD}}, sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}
