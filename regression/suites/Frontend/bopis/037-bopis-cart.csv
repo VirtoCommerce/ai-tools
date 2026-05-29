@@ -275,7 +275,7 @@ Product has pack size or MOQ configured; Pickup mode active","url={{FRONT_URL}};
 "BOPIS-056","Same SKU Added Again Aggregates Quantity","BOPIS > Cart > Revalidation","Medium","BL-CART-001","ECL-2.1,ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product already in cart with pickup confirmed; Same product available on PDP","url={{FRONT_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}} navigate to PDP of product already in cart with pickup
-[ACT] click 'Add to cart' again on the same product
+[ACT] click the Increase Quantity (+) stepper on the same product PDP to add one more unit (B2B store: no standalone Add-to-Cart button on regular PDP; the + stepper is the add-to-cart entry point per project convention)
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads
 [ASSERT] no duplicate line item — existing line quantity incremented
@@ -638,7 +638,7 @@ Authenticated user; Cart contains at least one BOPIS-eligible item (added via ca
 [WAIT] additional locations appear; total count now exceeds initial batch size
 [ACT] select a location from the second-page batch (any location that was NOT visible in the initial load) — note its name as CART_PAGE2_LOCATION
 [ACT] click 'Select' in the info card for CART_PAGE2_LOCATION
-[ACT] click 'Confirm' button
+[ACT] click 'Pick up here' button
 [WAIT] modal closes; CART_PAGE2_LOCATION displayed in cart summary row
 [ASSERT] CART_PAGE2_LOCATION name appears in cart shipping summary
 [ACT] click 'Select pickup location' on cart page (reopen modal)
@@ -646,11 +646,11 @@ Authenticated user; Cart contains at least one BOPIS-eligible item (added via ca
 [ASSERT] radio button next to CART_PAGE2_LOCATION is checked (pre-selected)
 [ASSERT] CART_PAGE2_LOCATION is visible in the list without any scrolling (prepended to top by IncludeLocationIds)
 [ASSERT] search field is empty; no filter chips applied
-[ACT] click 'Confirm' again without changing selection
+[ACT] click 'Pick up here' again without changing selection
 [WAIT] modal closes
 [ASSERT] cart summary still shows CART_PAGE2_LOCATION unchanged","[STATE] CART_PAGE2_LOCATION pre-selected (radio checked) on reopen from cart page
 [STATE] CART_PAGE2_LOCATION visible at top of list without scrolling — BL-BOPIS-008 confirmed via cart-page entry point
 [DOM] cart summary shows CART_PAGE2_LOCATION name before and after re-confirmation
 [STATE] no stale filter or keyword applied on modal reopen","[NETWORK] cartPickupLocations GraphQL query on modal reopen from cart: response items[0].id = CART_PAGE2_LOCATION id; request includes IncludeLocationIds parameter
 [API] cartPickupLocations errors[] is empty
-[CONSOLE] no JS errors during cart-page pickup interactions","Radio button unchecked on reopen (VCST-4707 regression for cart-page entry point); CART_PAGE2_LOCATION not visible at top — requires scrolling (IncludeLocationIds not applied for cart path); Cart summary loses location name after re-confirmation; Modal errors on reopen from cart page","Clear pickup selection from cart; navigate away","VCST-4707; PR vc-module-x-pickup#8; BL-BOPIS-008-PROPOSED","Reviewed"
+[CONSOLE] no JS errors during cart-page pickup interactions","Radio button unchecked on reopen (VCST-4707 regression for cart-page entry point); CART_PAGE2_LOCATION not visible at top — requires scrolling (IncludeLocationIds not applied for cart path); Cart summary loses location name after re-confirmation; Modal errors on reopen from cart page","Clear pickup selection from cart; navigate away","VCST-4707; PR vc-module-x-pickup#8","Reviewed"
