@@ -1,0 +1,48 @@
+{
+  "ticket": "VCST-4715",
+  "title": "[Catalog][Product][Configuration] Add default option support",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-05-27",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1030.0",
+    "theme": "2.50.0-pr-2278",
+    "relevant_modules": {
+      "VirtoCommerce.Catalog": "3.1025.0-pr-880",
+      "VirtoCommerce.XCatalog": "3.1005.0",
+      "VirtoCommerce.XCart": "3.1016.0-pr-115"
+    }
+  },
+  "agents_dispatched": ["qa-backend-expert", "qa-frontend-expert", "qa-testing-expert"],
+  "total_cases": 12,
+  "passed": 12,
+  "failed": 0,
+  "blocked": 0,
+  "cases": {
+    "CFG-CA-027": "PASS", "CFG-CA-028": "PASS", "CFG-CA-029": "PASS",
+    "CFG-CA-030": "PASS", "CFG-CA-031": "PASS",
+    "CFG-VAR-013": "PASS", "CFG-VAR-019": "PASS",
+    "CFG-PDP-040": "PASS", "CFG-PDP-041": "PASS", "CFG-PDP-042": "PASS",
+    "CFG-PDP-043": "PASS", "CFG-E2E-070": "PASS"
+  },
+  "acceptance_criteria": {
+    "AC1_manager_can_set_default": "PASS",
+    "AC2_default_preselected_on_frontend": "PASS"
+  },
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CAT-006"],
+  "exploratory": {
+    "charter": "Feature charter — default-option preselection at integration boundaries",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 1, "observations": 7, "risks": 2 }
+  },
+  "notes": [
+    "CFG-030 Aluminum/Carbon divergence during the run was a transient concurrent-restore race (backend agent restored Carbon mid-run); post-run authoritative read confirms Carbon isDefault=true at BOTH REST and storefront xAPI. No platform defect; frontend Defect 1 retracted.",
+    "Tooling follow-up: seed-default-option-cfg.mjs cannot reliably land a default on a non-first-stored option (server normalizes to first-stored on re-POST). Recommend the seeder create option products in desired-default-first order. Required a manual Admin-UI Save to set Carbon.",
+    "Test-asset correction: CFG-CA-029 expected-result wording 'option A (first submitted) wins' is inaccurate; normalization is 'first STORED option wins' (by stored option order). Invariant (one default, HTTP 200, no 422) holds.",
+    "PROPOSED-BL-CAT-006a (one default per section; storefront preselects it) pending qa-lead promotion.",
+    "Pre-existing CFG_BIKE alias storefront URL/slug 404 on /configurations/ path (GUID correct) — unrelated to VCST-4715.",
+    "Risk: config radio <input> is visually hidden; worth a keyboard/a11y check on the radiogroup (real users unaffected)."
+  ],
+  "artifacts": "tests/Sprint-current/VCST-4715/"
+}
