@@ -411,3 +411,45 @@ CAT-GQL-123,"xCatalog Price Filter — Full Storefront Chain `(0 TO) + [100 TO 2
 [GQL-EXEC price_full_chain]","[ERRORS label=price_full_chain] errors[] empty
 [COUNT label=price_full_chain] data.products.totalCount > 0
 [COUNT label=price_full_chain] data.products.range_facets.length >= 1","[EVIDENCE] Compare totalCount with CAT-GQL-116 — the in-stock clause should narrow it further (or equal it if all are in-stock)","totalCount > CAT-GQL-116 (in-stock not honored); range_facets[] empty","none — read-only","xAPI; Query.products; storefront integration",Automated
+CAT-GQL-124,"xCatalog — loyaltyPoints field present on product query with PTS currencyCode (VCST-5023)","GraphQL > xCatalog > Loyalty > Field Coverage",High,BL-GQL-002,ECL-2.1; ECL-7.1,"Runner-native. AUTH as ORG_USER (B2B user in loyalty-eligible customer group). Loyalty must be enabled on {{STORE_ID}} with Mode=Mixed Cart and Currency=@td(LOYALTY_SETTINGS.currency_code). A loyalty program with a per-product factor reward must be active for store @td(STORE_PRIMARY.id). SCHEMA PREREQUISITE: the `loyaltyPoints` field on ProductType was introduced by VCST-5023 / vc-module-loyalty PR #8; run `npm run schema:refresh` and verify `loyaltyPoints` appears on ProductType before executing this case. If field absent from live schema, mark BLOCKED (data prerequisite — schema not yet deployed). [2026-05-29: schema re-refresh confirmed loyaltyPoints NOW present on ProductType (vc-module-loyalty PR #8 deployed) → unblocked to Draft. To EXECUTE, an active loyalty program with a per-product factor reward must be configured for the store.]","product_id=@td(BUYABLE_NO_MIN_QTY.id); store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","[AUTH role=ORG_USER]
+[GQL-OP get_me]
+  query { me { id } }
+[GQL-EXEC get_me]
+[GQL-CAPTURE get_me.data.me.id → USER_ID]
+[GQL-OP get_product_loyalty]
+  query GetProductWithLoyalty($productId: String! $storeId: String! $userId: String $currencyCode: String) {
+    product(id: $productId storeId: $storeId userId: $userId currencyCode: $currencyCode cultureName: ""en-US"") {
+      id
+      code
+      name
+      price {
+        listPrice { amount currency { code } }
+        salePrice { amount currency { code } }
+        actualPrice { amount currency { code } }
+      }
+      loyaltyPoints { amount formattedAmount currency { code } }
+    }
+  }
+[GQL-VARS get_product_loyalty] {""productId"": ""@td(BUYABLE_NO_MIN_QTY.id)"", ""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""currencyCode"": ""@td(LOYALTY_SETTINGS.currency_code)""}
+[GQL-EXEC get_product_loyalty]","[ERRORS label=get_product_loyalty] errors[] empty
+[DATA label=get_product_loyalty] data.product.id is non-null
+[DATA label=get_product_loyalty] data.product.loyaltyPoints is present (loyaltyPoints is MoneyType — requires subselection); WHEN a per-product factor is configured for this product: data.product.loyaltyPoints.amount >= 0 and data.product.loyaltyPoints.currency.code = @td(LOYALTY_SETTINGS.currency_code); WHEN no factor row exists: loyaltyPoints may be null (acceptable)
+[DATA label=get_product_loyalty] data.product.price.actualPrice.amount > 0
+[EVIDENCE] loyaltyPoints.amount should equal actualPrice.amount * factor; configure factor via REST POST /api/loyalty-program-product-factors {loyaltyProgramId, productId, factor} (Loyalty 3.1003.0 — NOTE: per-product only, NO customer-group dimension; LOY-029 per-group premise not yet satisfiable)","[ROUNDTRIP] Confirm Admin loyalty program has an active per-product or per-order-value reward assigned to the store — if no program is active, loyaltyPoints may legitimately be 0","errors[] non-empty; data.product is null; loyaltyPoints field absent (schema not yet deployed); 500 on product query with PTS currencyCode","none — read-only",VCST-5023,Draft
+CAT-GQL-125,"xCatalog — loyaltyPoints is 0 or absent for product queried with USD currencyCode (VCST-5023)","GraphQL > xCatalog > Loyalty > Boundary",Medium,BL-GQL-002,ECL-7.1; ECL-7.3,"Runner-native. PUBLIC (no auth). Asserts that querying a product with default store currencyCode (USD, not PTS) does NOT surface loyalty points — loyalty pricing is PTS listing-scope only (project_loyalty_catalog_currency_scope). Bug hypothesis: loyaltyPoints leaks into USD-currency product queries, polluting default catalog prices. SCHEMA PREREQUISITE: same as CAT-GQL-124 — run `npm run schema:refresh` first; mark BLOCKED if loyaltyPoints absent from schema. [2026-05-29: re-refresh confirmed loyaltyPoints NOW present (PR #8 deployed) → unblocked to Draft.]","product_id=@td(BUYABLE_NO_MIN_QTY.id); store_id={{STORE_ID}}","[GQL-OP get_product_usd]
+  query GetProductUSD($productId: String! $storeId: String!) {
+    product(id: $productId storeId: $storeId currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") {
+      id
+      code
+      price {
+        listPrice { amount currency { code } }
+        actualPrice { amount currency { code } }
+      }
+      loyaltyPoints { amount formattedAmount currency { code } }
+    }
+  }
+[GQL-VARS get_product_usd] {""productId"": ""@td(BUYABLE_NO_MIN_QTY.id)"", ""storeId"": ""{{STORE_ID}}""}
+[GQL-EXEC get_product_usd]","[ERRORS label=get_product_usd] errors[] empty
+[DATA label=get_product_usd] data.product.id is non-null
+[DATA label=get_product_usd] data.product.price.actualPrice.currency.code = {{CURRENCY_CODE}}
+[EVIDENCE] loyaltyPoints (MoneyType) for USD query: if loyaltyPoints.amount is non-null and > 0, document the value — behavior under observation (per-design or a data leak); if loyaltyPoints resolves null, that confirms PTS-scope isolation","[EVIDENCE] USD price.actualPrice.currency.code must equal {{CURRENCY_CODE}} — confirms no PTS price leaked into the USD response","errors[] non-empty; actualPrice.currency.code = PTS instead of {{CURRENCY_CODE}} (loyalty currency leaking into USD query); 500 on product query","none — read-only","VCST-5023; xAPI; Query.product; loyalty currency scope",Draft

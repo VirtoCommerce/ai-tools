@@ -58,17 +58,17 @@ Loyalty settings valid; loyalty catalog page loaded with product grid.",front_ur
 [ACT] click first product card
 [WAIT] PDP loads","[NAV] product card href is namespaced under /loyalty-catalog (e.g. /loyalty-catalog/product/{id}); NOT a generic /product/{id} link
 [DOM] PDP renders product name and price
-[DOM] PDP price shows loyalty currency (@td(LOYALTY_SETTINGS.currency_code)); NOT default store currency ({{CURRENCY_CODE}})","[CONSOLE] no JS errors
+[DOM] PDP price shows LOYALTY currency (@td(LOYALTY_SETTINGS.currency_code) / PTS) — verified live 2026-05-29 on theme 2.50.0-pr-2296: PR #2296 PDP-currency wiring HAS shipped, so PDP retains PTS (it does NOT revert to USD). Listing AND PDP are PTS; only cart/checkout revert to store USD (see LOYF-025). Supersedes the earlier project_loyalty_catalog_currency_scope 'PDP reverts to USD' note.","[CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on product detail request",Product card has no href; click produces 404; PDP does not render,Navigate back to {{FRONT_URL}}/loyalty-catalog,VCST-5100,Draft
 LOYF-012,PDP reached from loyalty catalog — currency continuity check,Loyalty > Catalog Browsing,High,,,"[PRE:CLEAR_SESSION]
 Loyalty settings valid (Mode=Mixed Cart; Currency=@td(LOYALTY_SETTINGS.currency_code)).",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
 [WAIT] product grid loaded
 [ACT] click first product card
 [WAIT] PDP loads","[DOM] PDP renders product name and a numeric price value
-[DOM] PDP price shows loyalty currency (@td(LOYALTY_SETTINGS.currency_code)); NOT default store currency ({{CURRENCY_CODE}})
-[DOM] product name visible and non-empty","[API] GetProduct GraphQL query carries currencyCode=@td(LOYALTY_SETTINGS.currency_code) (PTS)
+[DOM] PDP price shows LOYALTY currency (@td(LOYALTY_SETTINGS.currency_code) / PTS) — verified live 2026-05-29 on theme 2.50.0-pr-2296: PR #2296 PDP-currency wiring shipped, PDP retains PTS (does NOT revert to USD). Cart still reverts to USD (LOYF-025).
+[DOM] product name visible and non-empty","[API] GetProduct GraphQL query for PDP carries currencyCode=@td(LOYALTY_SETTINGS.currency_code) (PTS) — verified live 2026-05-29 (GetProduct variables.currencyCode='PTS' on both in-SPA click and deep-link)
 [API] product query errors[] is empty
-[CONSOLE] no JS errors",PDP returns 404; product name missing; PDP price shows default store currency ({{CURRENCY_CODE}}) instead of loyalty currency,Navigate back to {{FRONT_URL}}/loyalty-catalog,VCST-5100,Draft
+[CONSOLE] no JS errors",PDP returns 404; product name missing; PDP price reverts to store USD (would indicate PR #2296 PDP-currency wiring was rolled back — re-baseline this case + LOYF-024),Navigate back to {{FRONT_URL}}/loyalty-catalog,VCST-5100,Draft
 LOYF-013,Navigating to /catalog shows default store currency (not loyalty currency),Loyalty > Catalog Browsing,High,,,"[PRE:CLEAR_SESSION]
 Loyalty settings valid. Default store currency is {{CURRENCY_CODE}} (different from loyalty currency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/catalog
 [WAIT] standard catalog product grid loads with at least 1 product card","[DOM] price on product cards shows default store currency ({{CURRENCY_CODE}}); NOT loyalty currency (@td(LOYALTY_SETTINGS.currency_code))
@@ -164,3 +164,36 @@ Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.
 [DOM] the returned page renders the loyalty catalog product grid with loyalty currency prices","[API] products query after breadcrumb navigation carries currencyCode=@td(LOYALTY_SETTINGS.currency_code)
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on breadcrumb navigation","'Loyalty catalog' root crumb links to /catalog instead of /loyalty-catalog; clicking it exits loyalty context; currency reverts to default store currency ({{CURRENCY_CODE}}) after breadcrumb nav",none,VCST-5100,Draft
+LOYF-024,"PDP reached from loyalty catalog — price shows LOYALTY currency (PTS), not USD (PR #2296 PDP-currency wiring shipped)","Loyalty > Catalog Browsing > PDP",High,BL-B2B-005,ECL-7.3,"[PRE:CLEAR_SESSION]
+Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). Default store currency is {{CURRENCY_CODE}} (USD). NOTE: verified live 2026-05-29 on theme 2.50.0-pr-2296 — PR #2296 PDP-currency wiring HAS shipped, so the loyalty PDP shows PTS (it does NOT revert to USD). Listing AND PDP are PTS; only cart/checkout revert to store USD (LOYF-025). This supersedes the earlier project_loyalty_catalog_currency_scope 'PDP reverts to USD' assumption.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card
+[ACT] click first product card
+[WAIT] PDP loads
+[ACT] snapshot PDP price area (main price display)","[DOM] PDP renders a numeric price value — product is purchasable (price not zero/absent)
+[DOM] PDP price currency shows @td(LOYALTY_SETTINGS.currency_code) (PTS) — NOT default store {{CURRENCY_CODE}} (USD)
+[NOTE] PTS on PDP is current live behavior in theme 2.50.0-pr-2296 (PR #2296 PDP-currency wiring shipped); do NOT file a bug for PTS on PDP","[API] GetProduct GraphQL query fires with currencyCode=@td(LOYALTY_SETTINGS.currency_code) (PTS) and the product price response formattedAmount is in PTS — verified live 2026-05-29
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 4xx/5xx on product detail request","PDP shows no price at all (price missing); PDP 404; JS error on PDP load; PDP price reverts to store USD (would indicate PR #2296 wiring rolled back — re-baseline)",Navigate back to {{FRONT_URL}}/loyalty-catalog,VCST-5100,Draft
+LOYF-025,"Cart shows default store currency (USD) after adding a loyalty catalog product — by-design","Loyalty > Catalog Browsing > Cart",High,BL-B2B-005,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[PRE:RESET_CART]
+Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). Default store currency {{CURRENCY_CODE}} (USD). NOTE: cart reverts to USD per project_loyalty_catalog_currency_scope caveat — by-design. A product in the loyalty catalog must be purchasable (in-stock, has USD price).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card
+[ACT] click first product card
+[WAIT] PDP loads; price visible
+[ACT] click '+' (increase quantity / Add to Cart) to add the product to cart
+[WAIT] cart icon badge increments OR toast notification appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 1 item","[DOM] cart line item price displays in {{CURRENCY_CODE}} (USD) — NOT loyalty currency (@td(LOYALTY_SETTINGS.currency_code) / PTS)
+[DOM] cart subtotal and totals display in {{CURRENCY_CODE}} (USD)
+[STATE] product appears in cart (line item visible with product name and USD price)
+[NOTE] USD in cart is by-design in theme 2.50.0-pr-2296 — do NOT file a bug for USD in cart","[API] cart query on /graphql returns items with extendedPrice.currency.code={{CURRENCY_CODE}} (USD)
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 4xx/5xx on addItem or cart query","Cart shows PTS prices (loyalty currency leaked to cart — that WOULD be a bug); cart empty (addItem silently no-oped); JS error on cart page load","Remove added item from cart (removeCartItem mutation or UI); sign out",VCST-5100,Draft
+LOYF-026,"Non-eligible user (guest, anonymous) can browse /loyalty-catalog when Enable=true","Loyalty > Catalog Browsing",High,BL-B2B-005,ECL-3.1,"[PRE:CLEAR_SESSION]
+Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). User is NOT signed in (anonymous/guest session). Bug hypothesis: route guard incorrectly blocks anonymous users from viewing the loyalty catalog when it is open to all users.",front_url={{FRONT_URL}}; store_id={{STORE_ID}},"[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] page fully loads","[NAV] URL remains {{FRONT_URL}}/loyalty-catalog (not redirected to 404 or /sign-in)
+[DOM] loyalty catalog product grid renders with at least 1 product card visible
+[DOM] product prices show loyalty currency (@td(LOYALTY_SETTINGS.currency_code))","[API] products query fires with currencyCode=@td(LOYALTY_SETTINGS.currency_code) (confirmed via network tab)
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on products query","404 shown to anonymous user; grid missing; redirect to /sign-in for anonymous user (would be a route guard bug)",none,VCST-5100,Draft

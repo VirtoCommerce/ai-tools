@@ -371,6 +371,51 @@
 [STATE] No organization created with XSS payload in name","[NETWORK] POST registration returns validation error (not 200)
 [CONSOLE] no TypeError or JS errors
 [API] No new organization exists with script tag in name","Registration succeeds with script tags in org name; XSS stored as org name; no validation error shown; org created with executable payload","none","VCST-4691 PR #130","Manual"
+"AUTH-069","Session Invalidation After Password Change — Warning Banner Visible Before Submit","Password Change > Session Invalidation > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_BUYER]
+Storefront /account accessible; Change Password form visible; VCST-4531 frontend PR #2275 deployed","front_url={{FRONT_URL}};email=@td(TECHFLOW_BUYER.email);password=@td(TECHFLOW_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(TECHFLOW_BUYER.email)
+[ACT] Fill 'Password': @td(TECHFLOW_BUYER.password)
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account
+[WAIT] Account page loaded
+[ACT] Locate and click the Change Password section or link
+[WAIT] Change Password form visible with Current Password, New Password, Confirm New Password fields","[DOM] Information notice or green-highlighted warning visible on Change Password page BEFORE form is submitted — text must warn that other sessions will be signed out (wording as per VCST-4531 AC: 'Changing your password will sign you out of all other devices and browsers.' or equivalent)
+[DOM] Current Password field visible and enabled
+[DOM] New Password field visible and enabled
+[DOM] Confirm New Password field visible and enabled
+[STATE] User remains on account page — notice is informational; no redirect occurs before form submission","[NETWORK] No 4xx/5xx on page load
+[CONSOLE] No TypeError or JS errors during page load and form rendering","Information notice absent from Change Password page; console TypeError; page fails to load (500); Change Password section not accessible from account page","[PRE:SIGNOUT]","VCST-4531","Draft"
+"AUTH-070","Account Lockout — Storefront Login Blocked After Threshold Failed Attempts","Login > Security > Lockout","Critical","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
+Storefront login page accessible; a DEDICATED lockout-test user exists (never use agent pool slot accounts — use test-specific AGENT-TEST- user created for this test); lockout policy configured (default 5 failed attempts); VCST-5074/5149 fix deployed (platform >=3.1007.12)","front_url={{FRONT_URL}};lockout_user_email=AGENT-TEST-lockout-sf@test.virtocommerce.com;lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] Login form visible
+[ACT] Fill 'Email': AGENT-TEST-lockout-sf@test.virtocommerce.com
+[ACT] Fill 'Password': WrongPassword1!
+[ACT] Click 'Sign In'
+[WAIT] Error message visible (attempt 1)
+[ASSERT] Login page still displayed; error shown
+[ACT] Fill 'Password': WrongPassword2!
+[ACT] Click 'Sign In'
+[WAIT] Error message visible (attempt 2)
+[ACT] Fill 'Password': WrongPassword3!
+[ACT] Click 'Sign In'
+[WAIT] Error (attempt 3)
+[ACT] Fill 'Password': WrongPassword4!
+[ACT] Click 'Sign In'
+[WAIT] Error (attempt 4)
+[ACT] Fill 'Password': WrongPassword5!
+[ACT] Click 'Sign In'
+[WAIT] Error (attempt 5 — threshold reached)
+[ACT] Fill 'Password': ValidLockPw1! (CORRECT password)
+[ACT] Click 'Sign In'
+[WAIT] Response after threshold reached with correct credentials","[DOM] Error message displayed after each failed login attempt
+[STATE] After 5th failed attempt, login with CORRECT password is REJECTED — account is locked (VCST-5074 fix: AutoAccountsLockoutJob now properly locks accounts)
+[DOM] After threshold: error message visible that indicates account is locked or too many attempts (generic message — must NOT reveal whether account exists; BL-AUTH-003 anti-enumeration rule)
+[STATE] User NOT logged in after 6th attempt (correct password) — locked state prevents access","[API] POST /connect/token for attempt 6 with correct password returns non-200 (400 or 401) — lockout enforced
+[NETWORK] No 5xx errors during any attempt
+[CONSOLE] No TypeError or JS errors","No error shown after failed attempts; 6th attempt with correct password succeeds and user logs in (VCST-5074 regression — lockout not enforced); account existence revealed in lockout message; console TypeError; 500 on any attempt","[SETUP] Create AGENT-TEST-lockout-sf@test.virtocommerce.com via admin if not exists
+[TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149","Draft"
 "AUTH-028","Login on Behalf — Org Maintainer Clicks 'Login on behalf' at /company/members — Confirmation Modal Then Impersonate Flow","Login > Impersonation > Org Maintainer Entry Point","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_MAINTAINER]
 Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). A target org member (IMPERSONATE_TARGET) has a security account and is active in the member list. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET.userId), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in

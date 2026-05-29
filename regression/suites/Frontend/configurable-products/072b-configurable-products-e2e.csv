@@ -603,3 +603,44 @@ Storefront accessible. Seed product @td(CFG_WITH_DEFAULT.name) deployed, indexed
 --- API ROUND-TRIP ---
 [ROUNDTRIP] PDP displayed price matches cart listPrice.amount
 [ROUNDTRIP] configurationItems optionId matches the option that was visually pre-selected on PDP","Default option NOT pre-selected on PDP (user sees None); Add to Cart submits empty/None configurationItems (default not submitted); cart price = base_price only (default surcharge missing); admin order shows no configuration option for this line item; isDefault field absent from productConfiguration GQL response","Remove cart item and cancel order after test","VCST-4715; Synced: PR #880 vc-module-catalog + PR #115 vc-module-x-cart (2026-05-27)","Draft"
+CFG-E2E-075,E2E: Save for Later Preserves Configurable Product Configuration Through Full Cart Journey (VCST-4205) [JOURNEY],Configurable Products > Save for Later > [JOURNEY],Critical,BL-CART-007; BL-CART-010; BL-CAT-006,ECL-7.1; ECL-14.1; ECL-10.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url). User authenticated as ORG_USER.","front_url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, ring_url=@td(CFG_RING.url)","--- SCREEN: PDP ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}@td(CFG_RING.url)
+[WAIT] PDP loaded — Ring configurable product visible
+[WAIT] configuration section with Text input visible
+[ACT] fill Text input with 'AGENT-TEST-CFG-E2E-075'
+[WAIT] text 'AGENT-TEST-CFG-E2E-075' in input confirmed
+[ACT] click '+' (Increase quantity) to add to cart
+[WAIT] cart badge increments to 1
+[ASSERT] [DOM] cart badge = 1
+--- SCREEN: Cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with 1 Ring line item
+[ASSERT] [DOM] Ring line item visible
+[ASSERT] [DOM] configuration detail visible in cart line item (text value or section label)
+[ACT] click 'Save for later' on the Ring line item
+[WAIT] item moved to Saved for later section — cart empty (badge = 0)
+[ASSERT] [DOM] cart empty (0 items or badge = 0)
+[ASSERT] [DOM] Saved for later section contains Ring item
+[ASSERT] [DOM] Saved for later item shows configuration detail (not blank)
+[ACT] click 'Move to cart' on the Saved for later Ring item
+[WAIT] item moved back to active cart (badge = 1)
+[ASSERT] [STATE] cart has 1 Ring item
+[ASSERT] [DOM] restored Ring item has non-blank configuration detail
+--- SCREEN: Cart (verify price) ---
+[WAIT] line item price visible
+[ASSERT] [MATH] line item price > 0","[DOM] Configuration detail visible in cart item before Save for later click
+[STATE] Saved for later section shows Ring item after save
+[DOM] Saved for later Ring item has non-blank configuration detail
+[STATE] Cart has Ring item after Move to cart
+[DOM] Restored Ring item has non-blank configuration detail
+[MATH] Restored Ring item price > 0","[API] moveToSavedForLater mutation errors[] empty
+[API] getSavedForLater configurationItems non-empty for saved Ring item
+[API] moveFromSavedForLater mutation errors[] empty
+[CONSOLE] no JS errors throughout save + restore flow
+[NETWORK] no 4xx/5xx on cart mutations",Saved for later item missing configuration detail (VCST-4205 pre-fix symptom — configuration blank after save); Restored item configuration blank or reset to default; cart badge stays > 0 after Save for later; Move to cart silently fails; Spinner >10s; errors[] non-empty on any cart mutation,Remove Ring item from cart or Saved for later if test is interrupted,VCST-4205,Draft

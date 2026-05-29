@@ -2167,3 +2167,45 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [DATA label=add_item_with_false] data.addItem.itemsCount = 1
 [DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
 [DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true","[EVIDENCE] Pre-fix Issue-A: option.selectedForCheckout on input was ignored at addItem time; section always defaulted to true. Post-fix honors the input flag. Distinct code path from CASE A/B (which exercise changeCartConfiguredItem re-edit handler).","add_item_with_false RAM selectedForCheckout=true (Issue-A regression — input ignored); errors[] non-empty; configurationItems missing the RAM entry entirely","cleanup_post inline","xAPI; Mutation.addItem; ConfigurableProductOptionInput.selectedForCheckout; PR #119 CreateConfiguredLineItemHandler; VCST-4961","Automated"
+CFG-GQL-048,productConfiguration — isDefault Field Returned Per Option (VCST-4715),GraphQL > Configurable Products > Query,Critical,BL-GQL-001; BL-CAT-006,ECL-7.1; ECL-2.1,Runner-native. PUBLIC. CFG_WITH_DEFAULT (CFG-030) has a Product-type section with exactly one option marked isDefault=true (Carbon). Verify: (1) productConfiguration response includes isDefault field on each option object; (2) exactly one option per section has isDefault=true; (3) non-default options have isDefault=false. Schema coverage gate — storefront pre-selection relies on this field.,configurable_id=@td(CFG_WITH_DEFAULT.id),"[GQL-OP get_defaults]
+  query {
+    productConfiguration(
+      configurableProductId: """"@td(CFG_WITH_DEFAULT.id)""""
+      storeId: """"{{STORE_ID}}""""
+      cultureName: """"en-US""""
+      currencyCode: """"USD""""
+    ) {
+      configurationSections {
+        id name type isRequired
+        options { id text isDefault product { id name } listPrice { amount currency { code } } }
+      }
+    }
+  }
+[GQL-EXEC get_defaults]
+[GQL-CAPTURE get_defaults.data.productConfiguration.configurationSections.0.options[?isDefault=true].id → DEFAULT_OPTION_ID]","[ERRORS label=get_defaults] errors[] empty
+[DATA label=get_defaults] data.productConfiguration.configurationSections is non-null
+[COUNT label=get_defaults] data.productConfiguration.configurationSections.length = 1
+[DATA label=get_defaults] data.productConfiguration.configurationSections.0.options[?isDefault=true].id is non-null
+[COUNT label=get_defaults] data.productConfiguration.configurationSections.0.options[*?isDefault=true].length = 1",[EVIDENCE] isDefault=true on exactly one option; non-default options have isDefault=false. Storefront uses options[i].isDefault to set pre-selection state on PDP load.,errors[] non-empty; isDefault field absent from option schema (DV-008 — xCatalog PR not shipped); all options isDefault=false (default not persisted); multiple options isDefault=true (normalization broken),none — read-only,VCST-4715,Draft
+CFG-GQL-049,productConfiguration — Single-Default Normalization: Two isDefault=true Collapses to One (VCST-4715),GraphQL > Configurable Products > Query,High,BL-GQL-001; BL-CAT-006,ECL-7.1; ECL-9.1,Runner-native. ADMIN_DEFAULT. BVA boundary: POST configurations with 2 options both having isDefault=true — server MUST normalize to exactly one default per section (one-default invariant per VCST-4715). Verify via productConfiguration query that only one option retains isDefault=true. IMPORTANT: Cleanup re-POSTs the correct single-default config to restore the fixture for other tests.,configurable_id=@td(CFG_WITH_DEFAULT.id),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP post_cfg]
+POST {{BACK_URL}}/api/catalog/products/configurations
+Content-Type: application/json
+Body: {""configurableProductId"": ""@td(CFG_WITH_DEFAULT.id)"", ""sections"": [{""sectionId"": ""@td(CFG_WITH_DEFAULT.default_section_id)"", ""isActive"": true, ""name"": ""Frame Material"", ""type"": ""Product"", ""isRequired"": true, ""options"": [{""productId"": ""@td(CFG_WITH_DEFAULT.default_option_id)"", ""quantity"": 1, ""isDefault"": true, ""sortOrder"": 0}, {""productId"": ""@td(BUYABLE_NO_MIN_QTY.id)"", ""quantity"": 1, ""isDefault"": true, ""sortOrder"": 1}]}]}
+[REST-EXEC post_cfg]
+[GQL-OP verify_normalization]
+  query {
+    productConfiguration(
+      configurableProductId: """"@td(CFG_WITH_DEFAULT.id)""""
+      storeId: """"{{STORE_ID}}""""
+    ) {
+      configurationSections {
+        id options { id isDefault }
+      }
+    }
+  }
+[GQL-EXEC verify_normalization]","[ERRORS label=post_cfg] HTTP 200
+[ERRORS label=verify_normalization] errors[] empty
+[COUNT label=verify_normalization] data.productConfiguration.configurationSections.0.options[*?isDefault=true].length = 1",[EVIDENCE] Server picks first isDefault=true and clears the rest. Normalization prevents storefront from seeing ambiguous pre-selection state (would default to first option if both true).,errors[] non-empty on POST (reject instead of normalize); 2 options still isDefault=true after POST (normalization not applied); HTTP 500; productConfiguration returns 0 options after malformed POST,"[AUTH role=ADMIN_DEFAULT]
+[REST POST {{BACK_URL}}/api/catalog/products/configurations]
+{""configurableProductId"": ""@td(CFG_WITH_DEFAULT.id)"", ""sections"": [{""sectionId"": ""@td(CFG_WITH_DEFAULT.default_section_id)"", ""isActive"": true, ""name"": ""Frame Material"", ""type"": ""Product"", ""isRequired"": true, ""options"": [{""productId"": ""@td(CFG_WITH_DEFAULT.default_option_id)"", ""quantity"": 1, ""isDefault"": true, ""sortOrder"": 0}]}]}",VCST-4715,Draft

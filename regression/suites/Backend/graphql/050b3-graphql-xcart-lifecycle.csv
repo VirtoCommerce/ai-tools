@@ -938,3 +938,111 @@ CRL-GQL-127,"xCart — Bulk SFL with Mixed CFG Items (Ring + Wedding Cake)","Gra
 [COUNT label=read_sfl] data.getSavedForLater.itemsCount >= 2
 [DATA label=read_sfl] data.getSavedForLater.items.0.configurationItems is non-null
 [DATA label=read_sfl] data.getSavedForLater.items.1.configurationItems is non-null","[EVIDENCE] Both items move in a single bulk call; SFL contains 2 items with mixed configurationItems shapes (1 section for Ring, 5 sections for Cake); no cross-contamination between the two items' configs","errors[] non-empty on bulk_move; one item missing in SFL (silent partial success); configurationItems.length wrong for either item (collision/swap); HTTP 500","clearCart on both default and Saved for later carts at end of run","xAPI; bulk + multi-section SFL coverage gap (BL-CART-014, BL-CART-018); technique: Combinatorial (bulk × multi-section); Added: 2026-05-20",Automated
+CRL-GQL-128,moveToSavedForLater — One of Two Distinct-Config Ring Items Moved; Other Stays In Cart (VCST-4205),GraphQL > xCart > SavedForLater > Configurable > Distinct,Critical,BL-CART-014; BL-CART-018; BL-GQL-001,ECL-10.2; ECL-7.1,"Runner-native. ORG_USER. VCST-4205 Case 1 variant: two Ring items with DIFFERENT customText values (CONFIG-A, CONFIG-B) in cart; move only ITEM_A to SFL. Verify: (a) SFL contains at least 1 item with non-null customText (CONFIG-A preserved); (b) cart still has at least 1 item (CONFIG-B remains). Pre-fix VCST-4205 bug: distinct configs merged into a single SFL item — A1 merge anomaly.",ring_id=@td(CFG_RING.id); text_section_id=@td(CFG_017_SECTIONS.Text),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre_default]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"default"""" }) { id } }
+[GQL-EXEC cleanup_pre_default]
+[GQL-OP cleanup_pre_sfl]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"Saved for later"""" }) { id } }
+[GQL-EXEC cleanup_pre_sfl]
+[GQL-OP add_ring_a]
+  mutation {
+    addItem(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_RING.id)"""" quantity: 1 configurationSections: [{sectionId: """"@td(CFG_017_SECTIONS.Text)"""" type: """"Text"""" textDetails: {customText: """"AGENT-TEST-SFL-CONFIG-A""""}}] }) {
+      id items { id configurationItems { sectionId type customText } }
+    }
+  }
+[GQL-EXEC add_ring_a]
+[GQL-CAPTURE add_ring_a.data.addItem.items.0.id → ITEM_A_ID]
+[GQL-OP add_ring_b]
+  mutation {
+    addItem(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_RING.id)"""" quantity: 1 configurationSections: [{sectionId: """"@td(CFG_017_SECTIONS.Text)"""" type: """"Text"""" textDetails: {customText: """"AGENT-TEST-SFL-CONFIG-B""""}}] }) {
+      id items { id configurationItems { sectionId type customText } }
+    }
+  }
+[GQL-EXEC add_ring_b]
+[GQL-CAPTURE add_ring_b.data.addItem.id → CART_ID]
+[GQL-OP move_to_sfl]
+  mutation {
+    moveToSavedForLater(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartId: """"{{CART_ID}}"""" lineItemIds: [""""{{ITEM_A_ID}}""""] }) {
+      cart { id itemsCount items { id configurationItems { sectionId type customText } } }
+      list { id itemsCount items { id configurationItems { sectionId type customText } } }
+    }
+  }
+[GQL-EXEC move_to_sfl]
+[GQL-OP read_sfl]
+  query { getSavedForLater(storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" currencyCode: """"USD"""") { id itemsCount items { id configurationItems { sectionId type customText } } } }
+[GQL-EXEC read_sfl]
+[GQL-OP cleanup_default]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"default"""" }) { id } }
+[GQL-EXEC cleanup_default]
+[GQL-OP cleanup_sfl]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"Saved for later"""" }) { id } }
+[GQL-EXEC cleanup_sfl]","[ERRORS label=add_ring_a] errors[] empty
+[ERRORS label=add_ring_b] errors[] empty
+[ERRORS label=move_to_sfl] errors[] empty
+[DATA label=move_to_sfl] data.moveToSavedForLater.list.itemsCount >= 1
+[ERRORS label=read_sfl] errors[] empty
+[DATA label=read_sfl] data.getSavedForLater.items.0.configurationItems.0.customText is non-null
+[DATA label=move_to_sfl] data.moveToSavedForLater.cart.itemsCount >= 1",[EVIDENCE] SFL item has non-null customText (CONFIG-A preserved). Cart still has 1 item (CONFIG-B not moved). No merge into single entry. Pre-fix: both items collapsed into one SFL entry; customText was either null or contained only one value.,SFL customText null (A2 fix incomplete — configurationItems absent from getSavedForLater fragment); cart.itemsCount = 0 (both items moved — A3 bulk behavior anomaly); SFL itemsCount = 0 (move_to_sfl silent failure); errors[] non-empty,cleanup via inline cleanup_default + cleanup_sfl,VCST-4205,Draft
+CRL-GQL-129,moveToSavedForLater + moveFromSavedForLater — Multi-Section Config Survives Both Directions With Reprice (VCST-4205),GraphQL > xCart > SavedForLater > Configurable > Reprice,Critical,BL-CART-014; BL-CART-018; BL-GQL-001; BL-CART-010,ECL-10.2; ECL-7.1,Runner-native. ORG_USER. VCST-4205 Case 2 at GraphQL layer using CFG_LAPTOP (2 Product sections): addItem → moveToSFL → verify 2 configurationItems in SFL → moveFromSFL → verify 2 configurationItems preserved in restored cart AND listPrice = ORIGINAL_LIST_PRICE. State Transition: cart → SFL → cart round-trip.,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre_default]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"default"""" }) { id } }
+[GQL-EXEC cleanup_pre_default]
+[GQL-OP cleanup_pre_sfl]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"Saved for later"""" }) { id } }
+[GQL-EXEC cleanup_pre_sfl]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: """"@td(CFG_LAPTOP.id)"""" storeId: """"{{STORE_ID}}"""") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_LAPTOP.id)"""" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId listPrice { amount } configurationItems { sectionId type productId selectedForCheckout } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
+[GQL-CAPTURE add_item.data.addItem.items.0.listPrice.amount → ORIGINAL_LIST_PRICE]
+[GQL-OP move_to_sfl]
+  mutation {
+    moveToSavedForLater(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartId: """"{{CART_ID}}"""" lineItemIds: [""""{{LINE_ITEM_ID}}""""] }) {
+      list { id itemsCount items { id listPrice { amount } configurationItems { sectionId type productId selectedForCheckout } } }
+    }
+  }
+[GQL-EXEC move_to_sfl]
+[GQL-CAPTURE move_to_sfl.data.moveToSavedForLater.list.items.0.id → SFL_ITEM_ID]
+[GQL-OP move_from_sfl]
+  mutation {
+    moveFromSavedForLater(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartId: """"{{CART_ID}}"""" lineItemIds: [""""{{SFL_ITEM_ID}}""""] }) {
+      cart { id itemsCount items { id productId listPrice { amount } configurationItems { sectionId type productId selectedForCheckout } } }
+    }
+  }
+[GQL-EXEC move_from_sfl]
+[GQL-OP cleanup_default]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"default"""" }) { id } }
+[GQL-EXEC cleanup_default]
+[GQL-OP cleanup_sfl]
+  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" cartName: """"Saved for later"""" }) { id } }
+[GQL-EXEC cleanup_sfl]","[ERRORS label=add_item] errors[] empty
+[COUNT label=add_item] data.addItem.items.0.configurationItems.length = 2
+[ERRORS label=move_to_sfl] errors[] empty
+[COUNT label=move_to_sfl] data.moveToSavedForLater.list.items.0.configurationItems.length = 2
+[DATA label=move_to_sfl] data.moveToSavedForLater.list.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId is non-null
+[ERRORS label=move_from_sfl] errors[] empty
+[COUNT label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems.length = 2
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId is non-null
+[DATA label=move_from_sfl] data.moveFromSavedForLater.cart.items.0.listPrice.amount = {{ORIGINAL_LIST_PRICE}}",[EVIDENCE] Pre-fix VCST-4205 Case 2: moveFromSavedForLater returned items with configurationItems empty or null (Anomaly A4 — async-settle overwrite). Post-fix: both sections preserved + listPrice restored. ORIGINAL_LIST_PRICE match confirms reprice path sums both sections after restore.,move_to_sfl: configurationItems.length = 0 (A2 fix incomplete); move_from_sfl: configurationItems.length = 0 (A4 async-settle not fixed); listPrice after restore != ORIGINAL_LIST_PRICE (reprice path broken); errors[] non-empty,cleanup via inline cleanup_default + cleanup_sfl,VCST-4205,Draft

@@ -237,3 +237,41 @@
 [DOM] All non-active sortable columns have aria-sort=""none"" explicitly
 [DOM] Non-sortable headers do not carry an aria-sort attribute
 [STATE] WCAG 4.1.2 compliance: each column sort state uniquely and correctly conveyed to assistive technologies","[CONSOLE] no axe aria-allowed-attr violations on column headers","multiple headers simultaneously show aria-sort=""ascending"" (single-active-indicator rule broken); unsorted columns have no aria-sort attribute when they should have aria-sort=""none""; aria-sort present on non-sortable header","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
+"A11Y-CPN-001","Coupon Sidebar — Invalid-Coupon Error Element Has role=""alert"" (WCAG 3.3.1 / 4.1.3)","Accessibility > Cart > Coupon Sidebar > Error Announcement","High","BL-A11Y-004","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- Coffee theme active (only Coffee theme is a11y-compliant per feedback_a11y_coffee_only).
+- Cart page at {{FRONT_URL}}/cart loaded.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with coupon sidebar visible
+[ASSERT] browser_snapshot — capture initial coupon sidebar state
+[ACT] fill the custom coupon code input with an invalid code: 'BOGUS-SR-TEST'
+[WAIT] input reflects the typed text
+[ACT] click the 'Apply' button (custom coupon card — the arrow/send button on the custom-code input card)
+[WAIT] coupon sidebar updates with error state — error message visible below input
+[ASSERT] browser_snapshot — capture error state
+[ASSERT] evaluate_script: query the DOM for the coupon-card error paragraph — verify role attribute","[DOM] coupon error message element is visible with text 'This code is not valid' or 'Something went wrong with the coupon. Please try again.'
+[DOM] the error <p> element has attribute role=""alert"" — asserting the fix from PR #2303: screen-reader users receive an audible announcement when the error appears (WCAG 4.1.3 Status Messages, Level AA)
+[DOM] the error element is not hidden by CSS (display is not none; visibility is not hidden)
+[STATE] error message text is non-empty — SR has meaningful content to announce","[CONSOLE] zero JS errors during coupon apply attempt; specifically no UnhandledPromiseRejection
+[NETWORK] addCoupon mutation response received (HTTP 200); errors[] is empty; isAppliedSuccessfully=false","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied","VCST-5018; WCAG 3.3.1; WCAG 4.1.3","Draft"
+"A11Y-CPN-002","Coupon Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Accessibility > Cart > Coupon Sidebar > Button Names","High","BL-A11Y-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- Coffee theme active.
+- Cart page at {{FRONT_URL}}/cart loaded with at least 1 preset coupon card visible in the coupon sidebar.
+- A valid coupon exists: @td(COUPONS.percentageCode).","front_url={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with coupon sidebar visible and at least 1 preset coupon card rendered
+[ASSERT] browser_snapshot — capture sidebar with preset cards
+[ASSERT] evaluate_script: query all buttons inside the coupon sidebar widget — for each button, collect its aria-label attribute value
+[ASSERT] verify every preset card apply button has aria-label matching pattern 'Apply coupon <code>' where <code> is the coupon code shown on the card (PR #2303 fix)
+[ACT] fill the custom coupon code input with {{couponCode}}
+[WAIT] input reflects the typed text
+[ASSERT] evaluate_script: inspect the custom apply button aria-label — it must contain 'Apply coupon' and the typed code (live interpolation)
+[ACT] click the apply button on any preset coupon card
+[WAIT] coupon applied — sidebar updates to applied-state with trash/remove icon visible
+[ASSERT] evaluate_script: inspect the trash/remove icon button aria-label — must contain 'Remove coupon'","[DOM] every preset coupon card apply button: aria-label is non-empty AND contains 'Apply coupon' followed by the coupon code (VCST-5017 fix — PR #2303)
+[DOM] custom coupon input apply button: aria-label is non-empty AND contains 'Apply coupon' text
+[DOM] applied-state trash/remove button: aria-label is non-empty AND contains 'Remove coupon' (VCST-5017 fix — PR #2303)
+[STATE] zero buttons inside the coupon sidebar have an empty, null, or generic accessible name (no 'button' without context)","[CONSOLE] zero JS errors; no axe button-name violation if Lighthouse accessibility audit is run on /cart
+[NETWORK] no 5xx during page load or coupon apply","any apply/trash button returns aria-label=null or '' (VCST-5017 regression); aria-label attribute physically absent from button element; Lighthouse accessibility audit flags button-name violation on /cart; custom apply button aria-label does not update when user types a new code","Remove applied coupon via trash button","VCST-5017; WCAG 4.1.2","Draft"

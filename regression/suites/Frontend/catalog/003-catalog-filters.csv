@@ -387,3 +387,21 @@ Category page with price range filter; products at various price points","url={{
 [MATH] Product count > 0 (valid range has products) and matches actual products at or above minimum
 [STATE] Products at exactly the minimum price are included (boundary is inclusive)","[NETWORK] GraphQL filter uses open-ended syntax [min_value TO] in URL facets parameter
 [CONSOLE] no TypeError or JS errors","Products below minimum appearing in results; filter chip showing wrong range; product count mismatch; boundary product excluded; console TypeError","none","GAP-RF-10","Manual"
+"CAT-040","Category Permalink — Slug Preserved Without Truncation After EN→DE Locale Switch","Catalog > Filters > Locale > Permalink Integrity","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; EN is the active locale; at least one top-level category is reachable; DE locale is available in the language switcher","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads
+[ACT] Click the first top-level category link in the category grid
+[WAIT] Category page loads and URL settles
+[ASSERT] Capture the current URL path segment after {{FRONT_URL}} — store as SLUG_BEFORE (e.g. '/accessories'). Verify SLUG_BEFORE is non-empty and does not start with a language code prefix
+[ACT] Open the language/locale selector in the top header (click the language switcher element)
+[WAIT] Language selector dropdown or panel opens
+[ACT] Select 'Deutsch (de)' from the language list
+[WAIT] Page reloads or navigates; URL changes to include the /de/ prefix
+[ASSERT] Capture the URL path segment after the /de/ prefix — store as SLUG_AFTER
+[ASSERT] Compare SLUG_AFTER to SLUG_BEFORE: they must be identical (same full slug string, zero characters dropped or added)
+[ASSERT] Verify the category page renders correctly: no 404, category heading visible","[NAV] URL after locale switch is {{FRONT_URL}}/de/<SLUG_BEFORE> (the full original slug follows /de/ without any character loss)
+[STATE] SLUG_AFTER == SLUG_BEFORE (character-for-character equality; length(SLUG_AFTER) == length(SLUG_BEFORE))
+[DOM] Category heading is visible and non-empty on the DE-locale page
+[DOM] No 404 or 'page not found' error content visible
+[DOM] Language indicator in the header shows 'de' or 'Deutsch' as the active locale","[NETWORK] GET {{FRONT_URL}}/de/<SLUG_BEFORE> returns HTTP 200 (not 404)
+[CONSOLE] no TypeError or JS errors during locale switch and page load","URL after locale switch is {{FRONT_URL}}/de/stinations instead of {{FRONT_URL}}/de/destinations (slug truncated); 404 on the DE-locale category URL; SLUG_AFTER shorter than SLUG_BEFORE; console TypeError on locale switch; language selector does not include DE option","Switch locale back to EN (click language switcher → select English)","VCST-5144","Draft"

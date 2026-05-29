@@ -290,3 +290,16 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [STATE] Cart total > 0 and reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
 [NETWORK] POST add-to-cart returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Draft"
+"CAT-063","Category Permalink Integrity — EN Locale Baseline Slug Capture","Catalog > Navigation > Locale Permalink","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least one top-level category visible in the main navigation; EN is the active locale (default)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads; at least one category card/link visible
+[ACT] Click the first top-level category link in the category grid
+[WAIT] Category page loads; URL settles (no redirect)
+[ASSERT] Capture the current URL path segment after {{FRONT_URL}} — this is the EN-locale slug (e.g. '/accessories') — store as SLUG_EN
+[ASSERT] Verify SLUG_EN is non-empty and does not start with a language code prefix (/de/, /fr/, /en-US/, etc.)
+[ACT] Inspect page heading or breadcrumb — note the category name displayed
+[ASSERT] Verify category page renders correctly: product grid visible OR empty-state message visible (not a 404)","[NAV] URL is {{FRONT_URL}}<SLUG_EN> (the slug matches the category, no extraneous characters)
+[DOM] Category name heading is visible and non-empty
+[DOM] Page is not a 404 — no 'page not found' heading or error content
+[STATE] SLUG_EN captured is the full unmodified path segment (starts with '/', no language prefix)","[NETWORK] GET {{FRONT_URL}}<SLUG_EN> returns HTTP 200 (no 404/301 to error page)
+[CONSOLE] no TypeError or JS errors on category page load","Category page returns 404; SLUG_EN is empty; URL redirected to /catalog or homepage unexpectedly; console TypeError on page load","none — read-only navigation; no state change","VCST-5144","Draft"

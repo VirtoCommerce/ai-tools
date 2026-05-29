@@ -343,3 +343,20 @@ Store with multiple currencies, EUR selected, product in cart","url={{FRONT_URL}
 [FORMAT] Decimal and thousands separators correct per currency locale for each of the three currencies","[API] cart price query returns amount in selected currency
 [CONSOLE] No JavaScript errors related to Intl.NumberFormat during currency formatting
 [NETWORK] Currency symbol data loaded correctly for all three currencies","prices revert to USD after navigation;Raw currency code (e.g., USD) shown instead of symbol;Symbol on wrong side (e.g., 1,234.56$ instead of $1,234.56);Separators incorrect for the selected currency","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
+"L10N-CAT-001","DE Locale — Category Permalink Direct URL Resolves to Correct Category","Localization > German > Category Permalink","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; DE locale is available; at least one top-level category is reachable in EN (a category page at {{FRONT_URL}}/<slug> returns HTTP 200); DE locale category URL follows pattern {{FRONT_URL}}/de/<slug>","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads; at least one category card/link is visible
+[ACT] Click the first top-level category link in the category grid
+[WAIT] Category page loads; URL settles
+[ASSERT] Capture the URL path segment after {{FRONT_URL}} as SLUG_EN (e.g. '/accessories'). Verify SLUG_EN is non-empty and has no language prefix
+[ASSERT] Note the category heading text displayed — store as CATEGORY_NAME_EN
+[NAV] Navigate directly to {{FRONT_URL}}/de/<SLUG_EN> (replace <SLUG_EN> with the full captured slug, preserving all characters)
+[WAIT] Page loads; wait for category heading to appear or error state to resolve
+[ASSERT] Verify the page is not a 404: no 'not found' heading, HTTP response is 200
+[ASSERT] Verify the category heading on the DE page matches the expected content for that category (same category as EN, either in German translation or same label if untranslated)
+[ASSERT] Verify the language indicator shows 'de' or 'Deutsch' as the active locale
+[ASSERT] Verify URL in browser address bar is exactly {{FRONT_URL}}/de/<SLUG_EN> — no redirect to a different slug, no characters altered","[NAV] URL is {{FRONT_URL}}/de/<SLUG_EN> (full slug preserved; no characters stripped from slug after /de/ prefix)
+[DOM] Category page renders correctly: category heading visible and non-empty (not a 404 page)
+[DOM] Language indicator shows 'de' or 'Deutsch' as the active locale
+[STATE] Category content corresponds to the same category navigated to in EN — same category name or its translation","[NETWORK] GET {{FRONT_URL}}/de/<SLUG_EN> returns HTTP 200 (not 404 or 301 to error)
+[CONSOLE] no TypeError or JS errors when loading the DE-locale category URL directly","404 on {{FRONT_URL}}/de/<SLUG_EN>; browser redirected away from the direct DE URL; category heading shows a different category than expected; language indicator still shows EN after direct DE URL navigation; console TypeError on page load","Navigate back to EN locale (click language switcher → select English); close any open panels","VCST-5144","Draft"

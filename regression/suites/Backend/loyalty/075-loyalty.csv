@@ -17,7 +17,7 @@ LOY-002,View loyalty program details,Loyalty > CRUD,Critical,,,Admin user logged
 [ACT] click on program row
 [BLADE] program detail blade opens","[FORM] fields displayed: Active toggle; Priority; Name; Localized names; Store; Start date; End date
 [BLADE] Conditions section visible
-[BLADE] Rewards section visible","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+[BLADE] Rewards section visible",[CONSOLE] no JS errors,,none,VCST-5100,Draft
 LOY-003,Edit existing loyalty program,Loyalty > CRUD,Critical,,,Admin user logged in; at least one loyalty program exists,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] click on existing program
 [BLADE] detail blade opens
@@ -29,7 +29,7 @@ LOY-003,Edit existing loyalty program,Loyalty > CRUD,Critical,,,Admin user logge
 [ACT] click the program again
 [BLADE] detail blade reopens","[FORM] 'Name' shows 'Updated Program Name'
 [FORM] 'Priority' shows 10
-[FORM] 'Active' reflects toggled state","[CONSOLE] no JS errors",,Restore original name and priority; toggle Active back,VCST-5100,Draft
+[FORM] 'Active' reflects toggled state",[CONSOLE] no JS errors,,Restore original name and priority; toggle Active back,VCST-5100,Draft
 LOY-004,Delete loyalty program,Loyalty > CRUD,Critical,,,Admin user logged in; a test loyalty program exists that can be deleted,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] select test loyalty program in list
 [ACT] click 'Delete' button in toolbar
@@ -49,25 +49,25 @@ LOY-005,Add single condition to program,Loyalty > Conditions Engine,Critical,,,A
 [ACT] select 'Completed' from the status picker
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] condition 'Order status' visible in conditions list with value 'Completed'
-[FORM] condition persisted after reopen","[CONSOLE] no JS errors",,Remove added condition and save,VCST-5100,Draft
+[FORM] condition persisted after reopen",[CONSOLE] no JS errors,,Remove added condition and save,VCST-5100,Draft
 LOY-006,Add multiple conditions to program,Loyalty > Conditions Engine,Critical,,,Admin user logged in; a loyalty program is open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open existing program
 [ACT] click 'Add condition'; expand 'Order conditions' group; click 'Order status is...'; click 'Add' link; select 'Completed'
 [ACT] click 'Add condition' again; expand 'Order conditions' group; click 'Order status is...'; click 'Add' link; select 'Pending'
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] both conditions visible in conditions section
-[FORM] logical operator 'If any of the following criteria' applies to all","[CONSOLE] no JS errors",,Remove added conditions and save,VCST-5100,Draft
+[FORM] logical operator 'If any of the following criteria' applies to all",[CONSOLE] no JS errors,,Remove added conditions and save,VCST-5100,Draft
 LOY-007,Remove condition from program,Loyalty > Conditions Engine,Critical,,,Admin user logged in; loyalty program with at least one condition configured,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open program with existing condition
 [ACT] click delete/remove icon on condition row
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] removed condition no longer shows in conditions list
-[FORM] other conditions (if any) unaffected","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+[FORM] other conditions (if any) unaffected",[CONSOLE] no JS errors,,none,VCST-5100,Draft
 LOY-008,Condition with different order statuses,Loyalty > Conditions Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open program
 [ACT] click 'Add condition'; expand 'Order conditions'; click 'Order status is...'; click 'Add' link; select 'Completed'; click 'Save' and verify
 [ACT] click 'Add' link on existing condition row; select a different status (e.g. 'New'); click 'Save' and verify","[FORM] updated status reflected after each save
-[FORM] status picker exposes all available order statuses (at minimum: ReadyForPickup; Custom; Cancelled; New; Completed; Pending; Payment required)","[CONSOLE] no JS errors",,Restore original condition or remove,VCST-5100,Draft
+[FORM] status picker exposes all available order statuses (at minimum: ReadyForPickup; Custom; Cancelled; New; Completed; Pending; Payment required)",[CONSOLE] no JS errors,,Restore original condition or remove,VCST-5100,Draft
 LOY-009,Set fixed points reward,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open existing program
 [ACT] click 'Add reward' in Rewards section
@@ -75,19 +75,19 @@ LOY-009,Set fixed points reward,Loyalty > Rewards Engine,Critical,,,Admin user l
 [ACT] fill points value: 5.00
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] reward entry visible in Rewards section showing value 5.00 and type 'Earn fixed amount of points per order'
-[FORM] reward persists after reopen","[CONSOLE] no JS errors",,Remove reward and save,VCST-5100,Draft
+[FORM] reward persists after reopen",[CONSOLE] no JS errors,,Remove reward and save,VCST-5100,Draft
 LOY-010,Modify reward amount,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program with reward configured (5.00 fixed points),,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open program with existing reward
 [ACT] change points value from 5.00 to 15.50
 [SAVE] click 'Save'
-[ACT] close and reopen program","[FORM] reward shows updated value 15.50","[CONSOLE] no JS errors",,Restore original value or remove reward,VCST-5100,Draft
+[ACT] close and reopen program",[FORM] reward shows updated value 15.50,[CONSOLE] no JS errors,,Restore original value or remove reward,VCST-5100,Draft
 LOY-011,Add multiple rewards to program,Loyalty > Rewards Engine,Critical,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open program
 [ACT] click 'Add reward'; select 'Earn fixed amount of points per order'; fill value 5.00
 [ACT] click 'Add reward'; select 'Earn % of order value as points'; fill percentage value 10.00
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] both reward entries visible in Rewards section with their respective types and values
-[FORM] all rewards persist after reopen","[CONSOLE] no JS errors",,Remove added rewards and save,VCST-5100,Draft
+[FORM] all rewards persist after reopen",[CONSOLE] no JS errors,,Remove added rewards and save,VCST-5100,Draft
 LOY-012,Toggle program active/inactive,Loyalty > Activation & Scheduling,High,,,Admin user logged in; a loyalty program exists,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open loyalty program; note current 'Active' toggle state
 [ACT] toggle 'Active' to OFF
@@ -99,20 +99,20 @@ LOY-012,Toggle program active/inactive,Loyalty > Activation & Scheduling,High,,,
 [SAVE] click 'Save'
 [ACT] close blade; reopen the same program","[FORM] 'Active' toggle persists OFF state after first save+reopen
 [FORM] 'Active' toggle persists ON state after second save+reopen
-[FORM] no data loss (Name; Priority unchanged) during toggle cycle","[CONSOLE] no JS errors",,Restore original active state,VCST-5100,Draft
+[FORM] no data loss (Name; Priority unchanged) during toggle cycle",[CONSOLE] no JS errors,,Restore original active state,VCST-5100,Draft
 LOY-013,Start and end date scheduling,Loyalty > Activation & Scheduling,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open loyalty program
 [ACT] set 'Start date' to a future date (tomorrow)
 [ACT] set 'End date' to a date after start date (next month)
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] both Start date and End date persist correctly
-[FORM] dates displayed in correct format","[CONSOLE] no JS errors",,Restore or clear dates,VCST-5100,Draft
+[FORM] dates displayed in correct format",[CONSOLE] no JS errors,,Restore or clear dates,VCST-5100,Draft
 LOY-014,Priority value persists after save,Loyalty > Activation & Scheduling,High,,,Admin user logged in; at least two loyalty programs exist,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open first program; set Priority to 1; click 'Save'; close blade; reopen first program
 [FORM] verify Priority shows 1
 [ACT] open second program; set Priority to 2; click 'Save'; close blade; reopen second program
 [FORM] verify Priority shows 2","[FORM] Priority value '1' persists on first program after save+reopen
-[FORM] Priority value '2' persists on second program after save+reopen","[CONSOLE] no JS errors",,Restore original priority values,VCST-5100,Draft
+[FORM] Priority value '2' persists on second program after save+reopen",[CONSOLE] no JS errors,,Restore original priority values,VCST-5100,Draft
 LOY-015,Add localized name for program,Loyalty > Localization,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open loyalty program
 [ACT] navigate to Localized names section
@@ -120,12 +120,12 @@ LOY-015,Add localized name for program,Loyalty > Localization,High,,,Admin user 
 [ACT] add localized name for pl-PL: 'Program Lojalnosciowy'
 [SAVE] click 'Save'
 [ACT] close and reopen program","[FORM] es-ES localized name 'Programa de Lealtad' persists
-[FORM] pl-PL localized name 'Program Lojalnosciowy' persists","[CONSOLE] no JS errors",,Remove added localized names,VCST-5100,Draft
+[FORM] pl-PL localized name 'Program Lojalnosciowy' persists",[CONSOLE] no JS errors,,Remove added localized names,VCST-5100,Draft
 LOY-016,Verify store-configured language options available,Loyalty > Localization,High,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open loyalty program
 [ACT] navigate to Localized names section
 [ACT] expand language selection dropdown","[FORM] all store-configured languages appear in the dropdown (language list is store-driven; count and codes depend on store configuration — on @td(STORE_PRIMARY.id) verify at minimum: en-US; de-DE; fr-FR; es-ES; pl-PL; it-IT; pt-PT; ja-JP; zh-CN; ru-RU)
-[FORM] no duplicate language entries","[CONSOLE] no JS errors",,none,VCST-5100,Draft
+[FORM] no duplicate language entries",[CONSOLE] no JS errors,,none,VCST-5100,Draft
 LOY-017,Create program without required name,Loyalty > Validation,Medium,,,Admin user logged in; Loyalty module accessible,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] click 'Add' button
 [BLADE] new program blade opens
@@ -133,13 +133,13 @@ LOY-017,Create program without required name,Loyalty > Validation,Medium,,,Admin
 [ACT] fill Store; Priority; dates
 [SAVE] click 'Save'","[TOAST] validation error displayed — Name is required
 [FORM] program NOT saved
-[GRID] no empty-named program in list","[NETWORK] no 500 error — validation handled gracefully",,none,VCST-5100,Draft
+[GRID] no empty-named program in list",[NETWORK] no 500 error — validation handled gracefully,,none,VCST-5100,Draft
 LOY-018,Set negative points value for reward,Loyalty > Validation,Medium,,,Admin user logged in; loyalty program open for editing,,"[NAV] {{BACK_URL}}/#!/workspace/loyalty
 [ACT] open loyalty program
 [ACT] click 'Add reward'; select 'Earn fixed amount of points per order'
 [ACT] fill points value: -5.00
 [SAVE] click 'Save'","[TOAST] validation error — negative points not allowed OR input field prevents negative value entry
-[FORM] negative points reward NOT saved","[NETWORK] no 500 error — validation handled gracefully",,none,VCST-5100,Draft
+[FORM] negative points reward NOT saved",[NETWORK] no 500 error — validation handled gracefully,,none,VCST-5100,Draft
 LOY-019,Admin SPA — Configure loyalty settings on Store blade (happy path),Loyalty > Store Settings,Critical,,ECL-3.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
 Admin user logged in with loyalty:update permission; Loyalty module installed; store @td(STORE_PRIMARY.id) exists in Admin SPA",store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/stores
@@ -167,7 +167,7 @@ LOY-020,Mode dropdown shows exactly the four allowed values,Loyalty > Store Sett
 [BLADE] 'loyalty-setting-details' blade opens
 [ACT] click 'Loyalty Mode' dropdown
 [WAIT] dropdown options rendered","[FORM] dropdown shows exactly 4 options: 'Loyalty Store'; 'Mixed Cart'; 'Coupon Redemption'; 'Payment Method'
-[FORM] no extra or missing options beyond the 4 AllowedValues","[CONSOLE] no JS errors",Dropdown fails to open; spinner visible >3s,none (read-only observation),VCST-5100,Draft
+[FORM] no extra or missing options beyond the 4 AllowedValues",[CONSOLE] no JS errors,Dropdown fails to open; spinner visible >3s,none (read-only observation),VCST-5100,Draft
 LOY-021,API GET returns configured loyalty settings for store,Loyalty > Store Settings,Critical,,,Loyalty settings for store @td(STORE_PRIMARY.id) are configured: loyaltyEnabled=true; loyaltyMode='Mixed Cart'; loyaltyCurrency=@td(LOYALTY_SETTINGS.currency_code). If not yet configured; run the PUT from LOY-022 pattern first (FIXTURE-SEEDING).,store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] obtain admin Bearer token via POST {{BACK_URL}}/connect/token (grant_type=password; username={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}})
 [HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/@td(STORE_PRIMARY.id) with Authorization: Bearer <token>","[STATUS] HTTP 200
 [BODY] storeId == @td(STORE_PRIMARY.id)
@@ -190,7 +190,7 @@ LOY-023,API PUT without loyalty:update permission returns 403,Loyalty > Store Se
 [NETWORK] no 500 error",HTTP 200 returned (permission bypass); 500 error instead of 403,none,VCST-5100,Draft
 LOY-024,API GET with unknown storeId returns null or empty,Loyalty > Store Settings,High,,,Admin Bearer token obtainable,back_url={{BACK_URL}},"[AUTH] obtain admin Bearer token
 [HTTP] GET {{BACK_URL}}/api/loyalty-setting/store/NON_EXISTENT_STORE_XYZ_99999","[STATUS] HTTP 200
-[BODY] response is null or empty object (NOT a 404 or 500)","[NETWORK] no 5xx error — graceful null response",HTTP 500; 404 returned instead of null/empty,none,VCST-5100,Draft
+[BODY] response is null or empty object (NOT a 404 or 500)",[NETWORK] no 5xx error — graceful null response,HTTP 500; 404 returned instead of null/empty,none,VCST-5100,Draft
 LOY-025,Settings propagate to storefront xAPI store query,Loyalty > Store Settings,Critical,,,Loyalty settings saved: Enable=true; Mode=Mixed Cart; Currency=@td(LOYALTY_SETTINGS.currency_code) for store @td(STORE_PRIMARY.id) (established by LOY-019),store_id=@td(STORE_PRIMARY.id); back_url={{BACK_URL}}; culture={{CULTURE_NAME}},"[AUTH] obtain Bearer token (storefront user or anonymous)
 [HTTP] POST {{BACK_URL}}/graphql body: {""query"": ""{ store(storeId: \""@td(STORE_PRIMARY.id)\"", cultureName: \""{{CULTURE_NAME}}\"") { settings { modules { moduleId settings { name value } } } } }""}","[STATUS] HTTP 200
 [BODY] response contains module with moduleId='VirtoCommerce.Loyalty'
@@ -198,3 +198,78 @@ LOY-025,Settings propagate to storefront xAPI store query,Loyalty > Store Settin
 [BODY] within that module settings[name='Loyalty.Mode'] value == 'Mixed Cart'
 [BODY] within that module settings[name='Loyalty.Currency'] value == @td(LOYALTY_SETTINGS.currency_code)","[API] errors[] is empty (HTTP 200 does NOT guarantee xAPI success)
 [NETWORK] no 4xx/5xx on /graphql",errors[] non-empty; module 'VirtoCommerce.Loyalty' absent from modules array; currency value empty,none,VCST-5100,Draft
+LOY-026,Per-Product Loyalty Factor — Set factor=2 via Product Points Loyalty program and verify persistence,Loyalty > Product Points Loyalty > Product factors,High,,,"[PRE:CLEAR_SESSION]
+VERIFIED 2026-05-29 (Loyalty 3.1003.0): Product factors live under a Product Points Loyalty program; the program's AUDIENCE is set by a rule-tree condition (Add condition > ""Shopper profile"" > ""User group is ..."" or ""Any User Group""). Per-customer-group factors are modeled as ONE program per group (each program has its own Product factors); matching = customer user group -> matching program -> that program's product factor; no matching program/group -> default. Path to factors: Loyalty > Add > ""Product Points Loyalty"" > fill Name/Store (+ add a ""User group is...""/""Any User Group"" condition for audience) > Save > ""Product factors"" widget appears at bottom of the program blade > open it > Add > ""Select Catalog items..."" picker (columns Pic/Name/SKU) > check product > ""Add selected"" > factor grid columns Product name | SKU | Factor (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors (model {loyaltyProgramId, productId, factor}); group lives on the program conditions, not the factor row. Admin logged in; at least one product exists in catalog visible in the product picker.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[BLADE] 'Loyalty programs' list blade is visible
+[ACT] click 'Add' button in the toolbar
+[BLADE] 'Add loyalty program' type-selector blade opens
+[ACT] click the 'Product Points Loyalty' type (subtitle: 'Reward customers with points for purchasing specific products')
+[BLADE] 'New loyalty program' detail blade opens — note the banner 'Save the program first to start managing product factors'
+[ACT] fill 'Name' with a unique value (prefix AGENT-TEST-)
+[ACT] select 'Store': @td(STORE_PRIMARY.id) from the Store dropdown
+[SAVE] click 'Save'
+[BLADE] after save, the 'Product factors' widget (count 0) appears at the bottom of the program blade
+[ACT] click the 'Product factors' widget
+[BLADE] 'Product factors' blade opens (grid empty — 'No data')
+[ACT] click 'Add' in the Product factors blade toolbar
+[BLADE] 'Select Catalog items...' product picker opens
+[ACT] navigate to a category and check one product row
+[ACT] click 'Add selected'
+[FORM] product row appears in the Product factors grid with a 'New' badge and Factor defaulting to 1
+[ACT] set the Factor spinbutton to 2
+[SAVE] click 'Save' in the Product factors blade
+[ACT] click 'Refresh' (or close and reopen the Product factors blade)","[FORM] factor row persists after save — product name + SKU visible with Factor=2
+[FORM] 'New' badge clears after successful save
+[TOAST] success notification after save
+[API] POST /api/loyalty-program-product-factors/search returns the row with factor=2 for the saved program","[CONSOLE] no JS errors during save
+[NETWORK] no 4xx/5xx on the factor save request
+[API] /api/loyalty-program-product-factors/search returns factor=2",Spinner >10s after save; toast error; factor row absent after reopen; factor reverts to 1; 4xx/5xx on save,"Delete the Product factors row, then delete the AGENT-TEST- program (DELETE /api/loyalty-programs?ids=… cascades the factor)",VCST-5023,Draft
+LOY-027,Per-Product Loyalty Factor — Set fractional factor=0.5 and verify it persists,Loyalty > Product Points Loyalty > Product factors,High,,,"[PRE:CLEAR_SESSION]
+VERIFIED 2026-05-29 (Loyalty 3.1003.0): Product factors live under a Product Points Loyalty program; the program's AUDIENCE is set by a rule-tree condition (Add condition > ""Shopper profile"" > ""User group is ..."" or ""Any User Group""). Per-customer-group factors are modeled as ONE program per group (each program has its own Product factors); matching = customer user group -> matching program -> that program's product factor; no matching program/group -> default. Path to factors: Loyalty > Add > ""Product Points Loyalty"" > fill Name/Store (+ add a ""User group is...""/""Any User Group"" condition for audience) > Save > ""Product factors"" widget appears at bottom of the program blade > open it > Add > ""Select Catalog items..."" picker (columns Pic/Name/SKU) > check product > ""Add selected"" > factor grid columns Product name | SKU | Factor (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors (model {loyaltyProgramId, productId, factor}); group lives on the program conditions, not the factor row. State from LOY-026 OR open any saved Product Points Loyalty program and its Product factors blade.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open a 'Product Points Loyalty' program (or the one from LOY-026)
+[ACT] click the 'Product factors' widget to open the Product factors blade
+[ACT] click 'Add' > in the 'Select Catalog items...' picker check a product > click 'Add selected'
+[FORM] product row appears with Factor=1
+[ACT] set the Factor spinbutton to 0.5
+[SAVE] click 'Save'
+[ACT] click 'Refresh' (or reopen the Product factors blade)","[FORM] Factor cell shows 0.5 (not truncated to 0 or rounded to 1)
+[FORM] product + factor correctly associated in the row
+[API] /api/loyalty-program-product-factors/search returns factor=0.5","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on save",Factor truncated to 0 or rounded to 1; save rejected on fractional input; row absent after reopen,"Delete the Product factors row, then delete the AGENT-TEST- program",VCST-5023,Draft
+LOY-028,Per-Product Factor — No matching program/user-group falls back to default factor,Loyalty > Product Points Loyalty > Product factors,High,,,"[PRE:CLEAR_SESSION]
+VERIFIED 2026-05-29 (Loyalty 3.1003.0): Product factors live under a Product Points Loyalty program; the program's AUDIENCE is set by a rule-tree condition (Add condition > ""Shopper profile"" > ""User group is ..."" or ""Any User Group""). Per-customer-group factors are modeled as ONE program per group (each program has its own Product factors); matching = customer user group -> matching program -> that program's product factor; no matching program/group -> default. Path to factors: Loyalty > Add > ""Product Points Loyalty"" > fill Name/Store (+ add a ""User group is...""/""Any User Group"" condition for audience) > Save > ""Product factors"" widget appears at bottom of the program blade > open it > Add > ""Select Catalog items..."" picker (columns Pic/Name/SKU) > check product > ""Add selected"" > factor grid columns Product name | SKU | Factor (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors (model {loyaltyProgramId, productId, factor}); group lives on the program conditions, not the factor row. A Product Points Loyalty program exists scoped to a specific user group (or no program matches the test user); the product under test has either NO factor row OR no program matches the user's group.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open a 'Product Points Loyalty' program scoped to a specific user group (e.g. 'User group is ""VIP""')
+[ACT] click the 'Product factors' widget to open the Product factors blade
+[ACT] confirm the product under test has NO row in the Product factors grid for any program that matches the test user (grid shows 'No data' or only other products)","[FORM] no Product factors row exists for the product under test in a matching program
+[FORM] no row is auto-created on page load (grid stays at its prior count)
+[EVIDENCE] when the customer's user group matches no Product Points Loyalty program (or the product has no factor row), the default factor applies — expected fallback by design","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on page load
+[API] /api/loyalty-program-product-factors/search returns no row for that productId",Factor row erroneously created on load (auto-added without user action),none,VCST-5023,Draft
+LOY-029,Per-Customer-Group Factor — VIP-scoped program applies its factor to a VIP user; non-matching user falls back to default,Loyalty > Product Points Loyalty > User group condition + Product factors,High,,,"[PRE:CLEAR_SESSION]
+VERIFIED 2026-05-29 (Loyalty 3.1003.0): Product factors live under a Product Points Loyalty program; the program's AUDIENCE is set by a rule-tree condition (Add condition > ""Shopper profile"" > ""User group is ..."" or ""Any User Group""). Per-customer-group factors are modeled as ONE program per group (each program has its own Product factors); matching = customer user group -> matching program -> that program's product factor; no matching program/group -> default. Path to factors: Loyalty > Add > ""Product Points Loyalty"" > fill Name/Store (+ add a ""User group is...""/""Any User Group"" condition for audience) > Save > ""Product factors"" widget appears at bottom of the program blade > open it > Add > ""Select Catalog items..."" picker (columns Pic/Name/SKU) > check product > ""Add selected"" > factor grid columns Product name | SKU | Factor (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors (model {loyaltyProgramId, productId, factor}); group lives on the program conditions, not the factor row. VIP user group exists (confirmed selectable: contract-contract2 / Wholesaler / VIP). VIP-group customer user provisioned: @td(LOYALTY_VIP_USER.email) (memberId @td(LOYALTY_VIP_USER.memberId), groups=['VIP'], storefront auth confirmed 2026-05-29). A non-VIP / no-group customer user also exists; a product visible in the picker.",back_url={{BACK_URL}}; store_id=@td(STORE_PRIMARY.id); user_group=@td(USER_GROUP_VIP.name); vip_user=@td(LOYALTY_VIP_USER.email); vip_pwd=@td(LOYALTY_VIP_USER.password),"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] click 'Add' > select 'Product Points Loyalty'
+[ACT] fill 'Name' (prefix AGENT-TEST-, e.g. AGENT-TEST-VIP-Program) and select 'Store': @td(STORE_PRIMARY.id)
+[ACT] in the 'Loyalty program' rule-tree, click 'Add condition' > 'Shopper profile' > 'User group is ...'
+[ACT] in the condition row click 'Add' and select the @td(USER_GROUP_VIP.name) group from the dropdown (chip shows: User group is ""VIP"")
+[SAVE] click 'Save'
+[ACT] open the 'Product factors' widget > 'Add' > pick the test product > 'Add selected' > set Factor (e.g. 6) > 'Save'
+[API] obtain a storefront token for the VIP user: POST {{BACK_URL}}/connect/token grant_type=password&scope=offline_access&username=@td(LOYALTY_VIP_USER.email)&password=@td(LOYALTY_VIP_USER.password)&storeId=@td(STORE_PRIMARY.id)
+[API] as the VIP user, POST {{BACK_URL}}/graphql: products(storeId:""@td(STORE_PRIMARY.id)"",userId:""@td(LOYALTY_VIP_USER.memberId)"",filter:""<product>""){ items{ id loyaltyPoints{ amount currency{ code } } } }
+[API] repeat as a non-VIP / no-group customer (any non-VIP storefront user) for the same product","[FORM] the program saves with the condition 'User group is ""VIP""' and a Product factors row (factor=6) for the product
+[API] for the VIP user, product.loyaltyPoints reflects the VIP program's factor (amount > base; currency.code resolves)
+[API] for the non-VIP / no-group user, product.loyaltyPoints falls back to the default (no VIP-factor applied)
+[EVIDENCE] per-customer-group factor is realized as group-scoped programs: user group -> matching program -> that program's product factor; no match -> default","[CONSOLE] no JS errors during save
+[NETWORK] no 4xx/5xx on save
+[API] /api/loyalty-program-product-factors/search returns the factor row for the VIP program",Condition cannot be added or group dropdown empty; program save fails with the user-group condition; VIP and non-VIP users get identical loyaltyPoints (group scoping not applied); factor not reflected in loyaltyPoints,"Delete the Product factors row, then delete the AGENT-TEST- VIP program (DELETE /api/loyalty-programs?ids=… cascades the factor)",VCST-5023,Draft
+LOY-030,Per-Product Factor — Delete a factor row removes the override,Loyalty > Product Points Loyalty > Product factors,High,,,"[PRE:CLEAR_SESSION]
+VERIFIED 2026-05-29 (Loyalty 3.1003.0): Product factors live under a Product Points Loyalty program; the program's AUDIENCE is set by a rule-tree condition (Add condition > ""Shopper profile"" > ""User group is ..."" or ""Any User Group""). Per-customer-group factors are modeled as ONE program per group (each program has its own Product factors); matching = customer user group -> matching program -> that program's product factor; no matching program/group -> default. Path to factors: Loyalty > Add > ""Product Points Loyalty"" > fill Name/Store (+ add a ""User group is...""/""Any User Group"" condition for audience) > Save > ""Product factors"" widget appears at bottom of the program blade > open it > Add > ""Select Catalog items..."" picker (columns Pic/Name/SKU) > check product > ""Add selected"" > factor grid columns Product name | SKU | Factor (spinbutton, default 1) > Save. REST: /api/loyalty-program-product-factors (model {loyaltyProgramId, productId, factor}); group lives on the program conditions, not the factor row. State from LOY-026 (a Product Points Loyalty program has a saved Product factors row, e.g. factor=2 for a test product).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty
+[ACT] open the 'Product Points Loyalty' program from LOY-026
+[ACT] click the 'Product factors' widget to open the Product factors blade
+[BLADE] the saved factor row is visible
+[ACT] check the row's selection checkbox and click 'Delete' in the Product factors blade toolbar
+[SAVE] click 'Save'
+[ACT] click 'Refresh' (or reopen the Product factors blade)","[FORM] deleted factor row no longer appears in the Product factors grid
+[FORM] blade saves without the row (no stale reference)
+[API] /api/loyalty-program-product-factors/search no longer returns the deleted row
+[EVIDENCE] product falls back to the program/default factor — no explicit override row remains","[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on delete/save",Row persists after delete+save; save fails after delete; 500 on delete; stale row reappears on reopen,Delete the AGENT-TEST- program if not already removed,VCST-5023,Draft

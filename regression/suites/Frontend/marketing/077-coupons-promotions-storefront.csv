@@ -875,3 +875,15 @@ coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_UR
 [STATE] BL-CART-009: BestRewardPromotionPolicy selects the single highest-value reward; both coupons do not stack
 [STATE] If store uses AllRewards policy, both discounts stack — note which policy is active in the test environment","[NETWORK] Cart GraphQL response discountTotal consistent with best-reward calculation; no errors[]
 [CONSOLE] no JS errors when applying a second coupon to a cart that already has one applied","both coupons stack beyond BestReward policy (BL-CART-009 violation — only if store uses BestReward); second coupon application throws unhandled error; discount total drops to 0 after second coupon applied; cart total increases after second coupon","Remove all applied coupons; navigate away from cart","VCST-4896; BL-CART-009; ECL-03.2","Reviewed"
+"CPN-061","Cart Page — Renders Without JS Error When promotionCoupons Field Is Absent (xMarketing Module Not Installed)","Coupons & Promotions > Resilience > Module-Absent","High","BL-CROSS-003; BL-CROSS-011","ECL-10.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- @needs-env-without-xmarketing: this case requires an environment where the VirtoCommerce.MarketingExperienceApi (x-marketing) module is NOT installed. On vcst-qa the module IS installed; run this case on an env without it (virtostart stripped instance or a dedicated no-xmarketing env). The fix under test (PR vc-frontend #2305) makes the frontend conditionally skip the promotionCoupons query when the field is absent from the schema — so on a normal env with the module present the coupon sidebar renders normally. The regression contract: absent module + PR fix = cart renders fine + no console error.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with at least 1 item
+[ASSERT] browser_snapshot — confirm cart line items visible and page not blank
+[WAIT] 2s for all GraphQL requests to settle
+[ACT] open browser console and check for JS errors","[DOM] cart page renders with all expected sections (line items, totals, checkout button) — no blank/broken layout
+[STATE] coupon/discounts sidebar section is either absent or shows graceful empty state — no error state, no spinner stuck indefinitely
+[STATE] NO JavaScript TypeError, UnhandledPromiseRejection, or 'Cannot query field promotionCoupons' error in console (regression contract for VCST-5106 fix)","[CONSOLE] zero console errors related to promotionCoupons (the bug was: 'Cannot query field promotionCoupons on type Query' causing a hard frontend error)
+[NETWORK] if promotionCoupons request fires, it is NOT made when the field is absent from schema (vc-frontend #2305 fix: guard against absent field); if it does fire, it must not crash the page
+[NETWORK] no 5xx on /graphql during cart page load","'Cannot query field promotionCoupons on type Query' error in console (VCST-5106 regression); cart page blank or partially rendered; spinner in coupon sidebar visible >5s; UnhandledPromiseRejection in console","Navigate away from cart","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"

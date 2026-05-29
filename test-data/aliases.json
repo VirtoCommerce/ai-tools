@@ -1,8 +1,10 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.8",
+    "version": "1.5.11",
     "updated": "2026-05-29",
+    "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
+    "changelog_1_5_9": "Added LOCKOUT_TEST_USERS inline alias (5 dedicated AGENT-TEST lockout accounts created on vcst-qa 2026-05-29 via POST /api/platform/security/users/create): sf (Customer, 71b4ca11…, suite 031 AUTH-070), admin (Administrator, 6e9987d1…, 020 PLAT-081), unlock (Administrator, af55646a…, 020 PLAT-082), manager (Manager, 44a2978b…, 020 PLAT-083 / VCST-4999), target (Administrator, 1d90a31b…, 049 API-036). Self-provisioned throwaway accounts, teardown-swept by AGENT-TEST prefix; passwords set by SETUP blocks (not stored in aliases). Verified lock/unlock contract: admin /lock -> lockoutEnd 9999-12-31 sentinel + /locked{locked:true}; /unlock -> lockoutEnd 0001-01-01 + /locked{locked:false}; failed-login (5x bad token) auto-lock -> finite timed lockoutEnd + accessFailedCount reset to 0. See alias _comment for full contract.",
     "changelog_1_5_8": "Added PROD_VARIATION_PARENT_SALE alias (test-data/products/standard.csv STD-002 — SKU EKJ-76373636 / id e5c00858-be87-4df6-9a43-f68341e86c9a, AUTOMET Womens V Neck T Shirts, $17.99 list / $13.99 actual USD, hasVariations=true, availableQuantity=4677, hosting catalog 431d6cd4… linked into B2B virtual catalog fc596540…). Discovered 2026-05-29 via xAPI products() filter on code+B2B subtree as ORG_USER (Emily Johnson / TechFlow). Use for xCatalog variation-parent / sale-pricing / B2B-virtual-catalog-link tests.",
     "changelog_1_5_6": "Added PROD_FULL_FIELD_COVERAGE inline alias (id=0b6297e8-d100-4419-ac54-8bf240777271 / SKU ALCE0128 / Animal Crossing). Pins CAT-GQL-113 (regression/suites/Backend/graphql/050a-graphql-xcatalog.csv) to a known-good product with populated CatalogSeoInfo row, dropping the non-deterministic list_p first-product capture. Reason: storefront default product order shifts between runs, so items[0] could be a product without CatalogSeoInfo row → CAT-GQL-113 would flake into FAIL via the xAPI 3.1008.0 SeoInfo regression (tracked separately by BUG-xAPI-SeoInfo-NonNull-Resolver-NoData). The no-SeoInfo branch is now covered by the bug report; CAT-GQL-113 is now a clean schema-coverage gate.",
     "changelog_1_5_5": "Added CFG_017_SECTIONS inline alias (Text section 2cc0f57e-5654-4396-8795-66fe6e226ad1, config b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d — verified live via productConfiguration on vcst-qa 2026-05-20). Refactored 6 references in regression/suites/Backend/graphql/050b3-graphql-xcart-lifecycle.csv from @td(CFG_RING.section_text_id) (unresolvable — CSV-backed CFG_RING never had that field) to @td(CFG_017_SECTIONS.Text). Matches the established CFG_022_SECTIONS / CFG_023_SECTIONS pattern. 050b3 validator now [OK] 19/19 resolved (was 13/19).",
@@ -2692,6 +2694,31 @@
     "_status": "new-survivor-20260518",
     "_status_note": "Restored env survivor. Direct substitute candidate for CFG_WEDDING_CAKE_CONDITIONAL (5-prefix matches [P!P?P?P?P?]) and CFG_DEEP_CHAIN (5-deep chain). Verify dependsOn grammar before substituting."
   },
+  "USER_GROUP_VIP": {
+    "_inline": true,
+    "name": "VIP",
+    "fields": {
+      "name": "name"
+    },
+    "_notes": "Customer user group used by the Loyalty 'User group is ...' rule-tree condition (Product Points Loyalty audience scoping). Verified 2026-05-29 selectable in the condition group dropdown on vcst-qa alongside 'Wholesaler' and 'contract-contract2'. Used by suite 075-loyalty LOY-029 (per-customer-group factor). If the group set changes, update only this name."
+  },
+  "LOYALTY_VIP_USER": {
+    "_inline": true,
+    "email": "AGENT-TEST-vip@test.virtocommerce.com",
+    "password": "TestVip1!",
+    "memberId": "2fae41c3-3b22-4482-821a-c216a6f540bb",
+    "securityAccountId": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
+    "group": "VIP",
+    "account_type": "Customer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "memberId": "memberId",
+      "group": "group"
+    },
+    "_notes": "Customer-type storefront user provisioned 2026-05-29 for LOY-029 (per-customer-group loyalty factor). Member groups=['VIP']; storefront auth confirmed (storeId=B2B-store). AGENT-TEST- prefix so /qa-seed-data teardown sweeps it (delete security account 1dba59a3-… then member 2fae41c3-…). qa-vip@virtocommerce.com did NOT exist on vcst-qa, so a dedicated AGENT-TEST-vip user was created instead."
+  },
   "VIRTUAL_CATALOG_B2B": {
     "_inline": true,
     "id": "fc596540864a41bf8ab78734ee7353a3",
@@ -2743,5 +2770,41 @@
       "dependent_default_option_id": "dependent_default_option_id"
     },
     "_notes": "VCST-4715 conditional default-option (CFG-PDP-043). Seeded 2026-05-27 via scripts/seed-default-option-cfg.mjs. Two Product sections: parent 'Base Choice' (REQUIRED, default=Standard $0) and dependent 'Add-on' (dependsOn=parent, default=Warranty $25). Parent default reveals the dependent section on PDP load; the dependent section ITSELF has a preselected default. dependsOn wired via POST upsert (PUT 404s on this build). default_section_id/default_option_id mirror the parent (Standard); parent_* and dependent_* hold both sides explicitly. configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI."
+  },
+  "LOCKOUT_TEST_USERS": {
+    "_inline": true,
+    "sf_id": "71b4ca11-abd3-4450-a514-67a1dbc99c3d",
+    "sf_login": "AGENT-TEST-lockout-sf@test.virtocommerce.com",
+    "sf_type": "Customer",
+    "admin_id": "6e9987d1-5ce7-43f3-a9a5-a829be1d4472",
+    "admin_login": "AGENT-TEST-lockout-admin@test.virtocommerce.com",
+    "admin_type": "Administrator",
+    "unlock_id": "af55646a-32fc-42be-a8ab-ac1692eedc8a",
+    "unlock_login": "AGENT-TEST-lockout-unlock@test.virtocommerce.com",
+    "unlock_type": "Administrator",
+    "manager_id": "44a2978b-1c71-4b61-b882-195c48731ebc",
+    "manager_login": "AGENT-TEST-manager-lockout@test.virtocommerce.com",
+    "manager_type": "Manager",
+    "target_id": "1d90a31b-31d7-4c0e-aa8d-fba1cbbe9f10",
+    "target_login": "AGENT-TEST-lockout-target@test.virtocommerce.com",
+    "target_type": "Administrator",
+    "fields": {
+      "sf_id": "sf_id",
+      "sf_login": "sf_login",
+      "sf_type": "sf_type",
+      "admin_id": "admin_id",
+      "admin_login": "admin_login",
+      "admin_type": "admin_type",
+      "unlock_id": "unlock_id",
+      "unlock_login": "unlock_login",
+      "unlock_type": "unlock_type",
+      "manager_id": "manager_id",
+      "manager_login": "manager_login",
+      "manager_type": "manager_type",
+      "target_id": "target_id",
+      "target_login": "target_login",
+      "target_type": "target_type"
+    },
+    "_comment": "Sprint 26-10 Batch-B dedicated lockout test accounts. CREATED on vcst-qa 2026-05-29 via POST /api/platform/security/users/create (idempotent — re-check GET /api/platform/security/users/{login} before recreating). These are AGENT-TEST-* self-provisioned throwaway accounts, swept by /qa-seed-data teardown; passwords are NOT stored here (throwaway test creds, consistent with test-data/users/agent-user-pool.csv) — the SETUP blocks set them: sf=ValidLockPw1!, admin=ValidLockPw1!, unlock=ValidUnlockPw1!, manager=ValidMgrPw1!, target=ValidLockPw1!. Consumers: sf -> suite 031 AUTH-070 (Customer-type storefront user; back-office Administrator users cannot authenticate against the storefront per reference_admin_backoffice_only — so this one is intentionally Customer-type with a linked contact memberId 154c045b-91e3-4915-ad0b-8b981557feb1). admin -> 020 PLAT-081. unlock -> 020 PLAT-082. manager (Manager-type, VCST-4999) -> 020 PLAT-083. target -> 049 API-036. No special permissions assigned (permissions live on Roles per feedback_admin_permissions_via_roles; assign a role to the user record if a case needs one). OBSERVED LOCK CONTRACT (verified 2026-05-29 on the unlock user, platform OAuth + Identity Framework): (a) ADMIN API LOCK — POST /api/platform/security/users/{id}/lock -> {succeeded:true}; GET .../users/{id}/locked -> {locked:true}; user record lockoutEnd='9999-12-31T23:59:59.9999999+00:00' (permanent sentinel) + lockoutEnabled=true. UNLOCK — POST .../users/{id}/unlock -> {succeeded:true}; /locked -> {locked:false}; lockoutEnd resets to '0001-01-01T00:00:00+00:00' (epoch min) + lockoutEnabled stays true. (b) FAILED-LOGIN LOCK — 5+ bad-password POST /connect/token (invalid_grant each) auto-locks: /locked -> {locked:true} with a FINITE timed lockoutEnd (now+window, NOT the 9999 sentinel) + accessFailedCount resets to 0 once locked. Distinguish: admin-lock = 9999 sentinel (permanent); failed-login lock = finite timed window. status/UserState remains null in both (platform persists lock via Identity lockoutEnd, not a UserState enum — same as IMPERSONATE_TARGET_BLOCKED). Use @td(LOCKOUT_TEST_USERS.unlock_id) etc. instead of hardcoding the GUID/login in cases."
   }
 }

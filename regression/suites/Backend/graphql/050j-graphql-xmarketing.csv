@@ -382,3 +382,15 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=removeCouponOp] data.removeCoupon.coupons[?code={{COUPON_CODE}}] is null
 [DATA label=removeCouponOp] data.removeCoupon.discountTotal.amount < 1
 [DATA label=removeCouponOp] data.removeCoupon.total.amount > {{DISCOUNTED_TOTAL}}","[EVIDENCE] After removeCoupon, total restored toward subTotal (modulo shipping/tax in store-specific configs). discountTotal asserted < 1 (rather than = 0) to tolerate near-zero floating-point noise.","errors[] non-empty for valid removal request; coupon still present in coupons[] after removal; discountTotal still > 0 after removal; total unchanged after removal (mutation had no effect); HTTP 500","none — inline cleanup_clear","VCST-4896; BL-CART-003","Automated"
+"MKT-GQL-017","promotionCoupons — Absent xMarketing Module Returns Null Without Hard GraphQL Error","GraphQL > Marketing > promotionCoupons > Resilience","High","BL-CROSS-003; BL-CROSS-011","ECL-10.2","Runner-native. @needs-env-without-xmarketing: this case requires an environment where the VirtoCommerce.MarketingExperienceApi module is NOT installed (x-marketing absent). On vcst-qa the module IS installed — this test will FAIL with errors[] containing FIELDS_ON_CORRECT_TYPE on that env (expected per VCST-5106 bug pre-fix). After the fix (PR vc-frontend #2305), the frontend must not call promotionCoupons when the field is absent from schema; this GraphQL layer case asserts the xAPI contract: when promotionCoupons is absent from the schema, any client query against it returns a structured schema error (not a 5xx), and data.promotionCoupons is null. Run this case on an env without x-marketing (e.g., virtostart or a stripped-down instance). Mark SKIP on envs where x-marketing is installed.","—","[GQL-OP probe_absent]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 1) {
+      totalCount items { id couponCode }
+    }
+  }
+[GQL-EXEC probe_absent]","[ERRORS label=probe_absent] errors[] non-empty — field absent from schema returns structured FIELDS_ON_CORRECT_TYPE error, not a 5xx (BL-CROSS-003)
+[DATA label=probe_absent] data.promotionCoupons is null
+[DATA label=probe_absent] errors[0].message matches /promotionCoupons/
+[DATA label=probe_absent] errors[0].extensions.code = FIELDS_ON_CORRECT_TYPE
+[DATA label=probe_absent] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i","[EVIDENCE] Error extensions.number = 5.3.1 (GraphQL validation code for unknown field on type Query) — matches VCST-5106 bug evidence. Verify in runner JSON evidence.
+[EVIDENCE] HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)","5xx HTTP response when xMarketing module absent (hard crash — BL-CROSS-011 violation); errors[] empty despite field being absent from schema (silent schema bypass); error message exposes server internals (stack trace, SQL)","none — read-only","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"

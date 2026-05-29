@@ -420,3 +420,90 @@ Authenticated user; DevTools Console open; CyberSource payment processor active;
 [DOM] order status updates from 'Payment required' to 'Paid' (or equivalent storefront label)","[CONSOLE] no JS errors during payment-retry flow
 [NETWORK] no 4xx/5xx on payment-retry submission
 [API] order status mutation completes without errors","A purchase event fires when re-processing an existing unpaid order via CyberSource (duplicate tracking bug — VCST-4800 regression for the guard logic); purchase event fires with wrong order data (stale order id or zero value from orderToPay scenario); Payment submission fails (guard interfered with payment logic)","Navigate away from payment page","VCST-4800; vc-frontend PR#2250; BL-GA4-003","Reviewed"
+"GA-028","VCST-5109 — view_item_list Contains items[] Array with Enriched Fields","GA Events > Catalog > view_item_list","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; DevTools Console open; category page with visible product list","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any category page with a visible product list)
+[WAIT] product grid fully rendered — at least 1 product card visible
+[ASSERT] execute window.dataLayer.filter(e => e.event === 'view_item_list') in console — capture first matching entry
+[ASSERT] inspect gtm.eventModel (or top-level event fields) inside the captured entry","[STATE] event.event === 'view_item_list' present in dataLayer
+[DOM] item_list_id is a non-empty string (e.g. 'recently_browsed_products' or category-derived id)
+[DOM] item_list_name is a non-empty string (e.g. 'Recently browsed' or category name)
+[DOM] items key holds an Array (Array.isArray check passes)
+[DOM] items.length >= 1 (at least one item object in array)
+[DOM] items[0].item_id equals product SKU of first visible card (non-empty string)
+[DOM] items[0].item_name equals product name of first visible card (non-empty string)
+[DOM] items[0].brand key is present (string value)
+[DOM] items[0].affiliation key is present
+[DOM] items[0].currency is a non-empty string (e.g. 'USD')
+[STATE] NO items_skus string field at top level of event — old format must be absent","[CONSOLE] no JS errors on category page load
+[NETWORK] no 4xx/5xx on catalog GraphQL query
+[API] GraphQL products query returns name, SKU, brand, vendor fields","view_item_list absent from dataLayer; items is a string (old items_skus format) not an array; items[0].item_id missing or empty; items_skus still present alongside new items array (dual-format regression); currency key absent from item objects","Navigate away from category page","VCST-5109","Draft""GA-029","VCST-5109 — view_item_list items[] Schema: All Required Fields Present Across All Items","GA Events > Catalog > view_item_list > Schema","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in; DevTools Console open; category page with >= 3 product cards rendered","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any category page with >= 3 products)
+[WAIT] product grid fully rendered
+[ASSERT] execute: const evt = window.dataLayer.find(e => e.event === 'view_item_list'); const items = evt && (evt['gtm.eventModel'] || evt).items; items must be non-empty
+[ASSERT] iterate all entries in items and inspect each item object for required keys","[STATE] items is a non-empty array
+[DOM] every item in items[] has key item_id (product SKU — non-empty string)
+[DOM] every item in items[] has key item_name (non-empty string)
+[DOM] every item in items[] has key brand (key present; string value)
+[DOM] every item in items[] has key affiliation (key present)
+[DOM] every item in items[] has key currency (non-empty string)
+[STATE] items.length equals the number of product cards rendered in the list (consistent count)
+[STATE] no item in items[] contains an items_skus field — old format must not appear inside item objects","[CONSOLE] no JS errors during page load
+[NETWORK] no 4xx/5xx on products query
+[API] GraphQL products query includes brand and vendor fields in response","items is empty array when products are visible; any item missing item_id or item_name; currency key absent from any item; items_skus string appearing as a field inside any item object","Navigate away from category page","VCST-5109","Draft""GA-030","VCST-5109 — place_order Event Contains items[] Array and Non-Empty transaction_id","GA Events > Order > place_order","High","BL-GA4-003, BL-CROSS-005","ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; DevTools Console open; at least one in-stock product available; shipping and payment method configured for the store","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog or search for any in-stock product
+[WAIT] product page loads
+[ACT] add product to cart (click + quantity stepper or Add to Cart button)
+[WAIT] cart badge increments
+[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart page loaded with at least 1 line item
+[ACT] click Checkout or Proceed to Checkout button
+[WAIT] checkout flow loads
+[ACT] select or confirm shipping address
+[ACT] select shipping method
+[ACT] select or confirm payment method
+[WAIT] Place Order button becomes enabled
+[ACT] click Place Order
+[WAIT] order confirmation page or confirmation message displayed
+[ASSERT] execute: const evts = window.dataLayer.filter(e => e.event === 'place_order'); inspect evts[evts.length-1]","[STATE] event.event === 'place_order' present in dataLayer after Place Order click
+[DOM] (event['gtm.eventModel'] || event).transaction_id is present and non-empty string (unique order identifier — NEW field added by VCST-5109)
+[DOM] (event['gtm.eventModel'] || event).items is an Array with length >= 1
+[DOM] items[0].item_id equals SKU of ordered product (non-empty string)
+[DOM] items[0].item_name is non-empty string
+[DOM] items[0].currency is non-empty string
+[STATE] transaction_id value matches the order number shown on the confirmation page (or is any non-empty server-assigned identifier)","[CONSOLE] no JS errors during checkout and order placement
+[NETWORK] no 4xx/5xx on createOrder GraphQL mutation
+[API] createOrder mutation response errors[] is empty","place_order absent from dataLayer after confirmation; transaction_id field missing (pre-VCST-5109 regression); transaction_id is null or empty string; items is a scalar or items_skus string instead of array; items array empty despite order having line items","Verify order appears in /account/orders; navigate away","VCST-5109","Draft""GA-031","VCST-5109 — place_order items[] Count Matches Ordered Line Items (Multi-Item Order)","GA Events > Order > place_order > Items Integrity","High","BL-GA4-003, BL-CROSS-005","ECL-7.2, ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; DevTools Console open; 2 distinct in-stock products available to add to cart","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog
+[WAIT] catalog page loaded
+[ACT] add first in-stock product to cart
+[WAIT] cart badge shows 1
+[ACT] navigate to a second distinct in-stock product and add it to cart
+[WAIT] cart badge shows 2
+[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] cart shows 2 distinct line items
+[ACT] select shipping address
+[ACT] select shipping method
+[ACT] select payment method
+[WAIT] Place Order button enabled
+[ACT] click Place Order
+[WAIT] order confirmation displayed
+[ASSERT] execute: const evt = window.dataLayer.filter(e => e.event === 'place_order').slice(-1)[0]; const items = (evt['gtm.eventModel'] || evt).items; inspect items length and per-item fields","[STATE] place_order event present in dataLayer
+[MATH] items.length === 2 (one entry per distinct ordered product line)
+[DOM] items[0].item_id and items[1].item_id are distinct non-empty strings for the two ordered SKUs
+[DOM] each item has item_name (non-empty), currency (non-empty), item_id (non-empty)
+[DOM] transaction_id is present and non-empty
+[STATE] no duplicated item_id entries for a 2-distinct-product order","[CONSOLE] no JS errors during checkout
+[NETWORK] no 4xx/5xx on createOrder mutation
+[API] createOrder response errors[] is empty and returns 2 line items","items.length === 1 for 2-product order (items collapsed or truncated); item_id values duplicated; items array absent even though order placed; transaction_id absent","Verify order in /account/orders; navigate away","VCST-5109","Draft"

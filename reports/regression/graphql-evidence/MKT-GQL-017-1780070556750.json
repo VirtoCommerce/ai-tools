@@ -1,0 +1,94 @@
+{
+  "caseId": "MKT-GQL-017",
+  "title": "promotionCoupons — Absent xMarketing Module Returns Null Without Hard GraphQL Error",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050j-graphql-xmarketing.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-05-29T16:02:36.749Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "probe_absent",
+      "query": "query {\n    promotionCoupons(storeId: \"B2B-store\" first: 1) {\n      totalCount items { id couponCode }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 0,
+        "ok": true,
+        "data": null,
+        "errors": [],
+        "elapsed_ms": 0
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=probe_absent] errors[] non-empty — field absent from schema returns structured FIELDS_ON_CORRECT_TYPE error, not a 5xx (BL-CROSS-003)",
+      "label": "probe_absent",
+      "kind": "ERRORS",
+      "passed": false,
+      "expected": "response for label=\"probe_absent\"",
+      "actual": "no response recorded",
+      "message": "Assertion references unknown label \"probe_absent\" — no [GQL-EXEC probe_absent] was run"
+    },
+    {
+      "raw": "[DATA label=probe_absent] data.promotionCoupons is null",
+      "label": "probe_absent",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "response for label=\"probe_absent\"",
+      "actual": "no response recorded",
+      "message": "Assertion references unknown label \"probe_absent\" — no [GQL-EXEC probe_absent] was run"
+    },
+    {
+      "raw": "[DATA label=probe_absent] errors[0].message matches /promotionCoupons/",
+      "label": "probe_absent",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "response for label=\"probe_absent\"",
+      "actual": "no response recorded",
+      "message": "Assertion references unknown label \"probe_absent\" — no [GQL-EXEC probe_absent] was run"
+    },
+    {
+      "raw": "[DATA label=probe_absent] errors[0].extensions.code = FIELDS_ON_CORRECT_TYPE",
+      "label": "probe_absent",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "response for label=\"probe_absent\"",
+      "actual": "no response recorded",
+      "message": "Assertion references unknown label \"probe_absent\" — no [GQL-EXEC probe_absent] was run"
+    },
+    {
+      "raw": "[DATA label=probe_absent] errors[0].message matches /^((?!at System\\.|SqlException|StackTrace|Microsoft\\.Data|connection string|SELECT .+ FROM).)*$/i",
+      "label": "probe_absent",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "response for label=\"probe_absent\"",
+      "actual": "no response recorded",
+      "message": "Assertion references unknown label \"probe_absent\" — no [GQL-EXEC probe_absent] was run"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Error extensions.number = 5.3.1 (GraphQL validation code for unknown field on type Query) — matches VCST-5106 bug evidence. Verify in runner JSON evidence.",
+      "layer": "EVIDENCE",
+      "note": "Error extensions.number = 5.3.1 (GraphQL validation code for unknown field on type Query) — matches VCST-5106 bug evidence. Verify in runner JSON evidence.",
+      "resolved": "Error extensions.number = 5.3.1 (GraphQL validation code for unknown field on type Query) — matches VCST-5106 bug evidence. Verify in runner JSON evidence."
+    },
+    {
+      "raw": "[EVIDENCE] HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)",
+      "layer": "EVIDENCE",
+      "note": "HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)",
+      "resolved": "HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only",
+    "blocks": []
+  }
+}

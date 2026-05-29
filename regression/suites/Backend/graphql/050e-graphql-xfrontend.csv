@@ -93,3 +93,68 @@ XFE-GQL-057,"xFrontend — pageContext Organization-Scoped White Labeling","Grap
 [GQL-EXEC wl_ctx]","[ERRORS label=wl_ctx] errors[] empty
 [DATA label=wl_ctx] data.pageContext is non-null
 [DATA label=wl_ctx] data.pageContext.store is non-null","[EVIDENCE] whiteLabelingSettings may be null (org has no WL config) or populated with fields. Either is acceptable for schema-coverage.","Schema drift on WhiteLabelingSettingsType (DV-009); HTTP 500",none — read-only,xAPI; graphql-schema.md — WhiteLabelingSettingsType BL-B2B-001,Automated
+XFE-GQL-058,xFrontend — store(domain) Bootstrap Query Returns storeId + storeUrl + settings (VCST-4642),GraphQL > xFrontend,Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. PUBLIC. VCST-4642: storefront fires store(domain) as first bootstrap query (InitializeApplication). Verify: (1) store query accepts domain arg; (2) returns storeId + storeUrl; (3) settings object present. Module list may be null if ""expose versions"" setting is disabled — acceptable; schema coverage is the gate.",front_url={{FRONT_URL}},"[GQL-OP init_store]
+  query InitializeApplication($domain: String!) {
+    store(domain: $domain) {
+      storeId storeName storeUrl
+      settings {
+        modules { moduleId version }
+      }
+    }
+  }
+[GQL-VARS init_store] {""domain"": ""{{FRONT_URL}}""}
+[GQL-EXEC init_store]","[ERRORS label=init_store] errors[] empty
+[DATA label=init_store] data.store is non-null
+[DATA label=init_store] data.store.storeId is non-null
+[DATA label=init_store] data.store.storeUrl is non-null
+[DATA label=init_store] data.store.settings is non-null",[EVIDENCE] store.settings non-null confirms the settings resolver is present. settings.modules may be null if expose-versions setting is off — both acceptable. storeId + storeUrl non-null confirms domain→store resolution.,errors[] non-empty; store null (domain does not resolve — env misconfiguration or domain field not wired); storeUrl null (StoreResponseType missing storeUrl); HTTP 500,none — read-only,VCST-4642,Draft
+XFE-GQL-059,xFrontend — store(storeId) Bootstrap Returns Full Settings Shape Including settings.modules (VCST-4642),GraphQL > xFrontend,Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. PUBLIC. Full-field coverage for the store query using storeId arg (alternative bootstrap path). Verifies defaultLanguage, defaultCurrency, availableLanguages, availableCurrencies, and settings objects present. This is the bootstrap shape the storefront processes to build its feature map before pageContext.",store_id={{STORE_ID}},"[GQL-OP init_by_id]
+  query {
+    store(storeId: """"{{STORE_ID}}"""" cultureName: """"en-US"""") {
+      storeId storeName storeUrl
+      defaultLanguage { cultureName nativeName }
+      defaultCurrency { code symbol }
+      availableLanguages { cultureName }
+      availableCurrencies { code }
+      settings {
+        modules { moduleId version }
+      }
+    }
+  }
+[GQL-EXEC init_by_id]","[ERRORS label=init_by_id] errors[] empty
+[DATA label=init_by_id] data.store is non-null
+[DATA label=init_by_id] data.store.storeId is non-null
+[DATA label=init_by_id] data.store.storeUrl is non-null
+[DATA label=init_by_id] data.store.defaultLanguage is non-null
+[DATA label=init_by_id] data.store.defaultCurrency is non-null
+[DATA label=init_by_id] data.store.settings is non-null","[EVIDENCE] Full store object with all bootstrap fields. settings.modules may be null if expose-versions disabled — schema field presence is the gate, not module list content.",errors[] non-empty; store null for known storeId; defaultLanguage null; settings null (StoreSettingsType not wired); HTTP 500,none — read-only,VCST-4642,Draft
+XFE-GQL-060,xFrontend — store(domain) Invalid Domain Returns null Without HTTP 500 (VCST-4642),GraphQL > xFrontend,High,BL-GQL-001; BL-CROSS-011,ECL-10.2,Runner-native. PUBLIC. Graceful degradation gate (BL-CROSS-011): unknown domain must return data.store=null with errors[] empty — not HTTP 500 or stack trace. When frontend receives null it falls back to storeId-based lookup. Pre-launch risk: unhandled domain-not-found exception white-screens the storefront on first load.,bogus_domain=nonexistent-bogus-domain-agent-test-99999.example.com,"[GQL-OP bad_domain]
+  query {
+    store(domain: """"nonexistent-bogus-domain-agent-test-99999.example.com"""") {
+      storeId storeUrl
+    }
+  }
+[GQL-EXEC bad_domain]","[ERRORS label=bad_domain] errors[] empty
+[DATA label=bad_domain] data.store is null",[EVIDENCE] data.store=null + errors[] empty confirms graceful null contract. HTTP 500 or errors[] non-empty would indicate an unhandled domain-not-found exception.,HTTP 500; errors[] non-empty with stack trace (unhandled exception — white-screens storefront); data.store non-null with wrong storeId (wrong-store resolution),none — read-only,VCST-4642,Draft
+XFE-GQL-061,xFrontend — store + pageContext Combined Bootstrap Returns Consistent storeId (VCST-4642),GraphQL > xFrontend,Critical,BL-GQL-001; BL-GQL-002,ECL-2.1,"Runner-native. PUBLIC. VCST-4642 sequence verification: storefront fires store() then pageContext(). Both must resolve consistently for same storeId. Regression gate: if store() and pageContext() return different storeIds, storefront builds split feature map. storeId match between both responses is the cross-assertion.",store_id={{STORE_ID}},"[GQL-OP store_init]
+  query {
+    store(storeId: """"{{STORE_ID}}"""" cultureName: """"en-US"""") {
+      storeId storeUrl
+      settings { modules { moduleId version } }
+    }
+  }
+[GQL-EXEC store_init]
+[GQL-OP page_ctx_init]
+  query {
+    pageContext(storeId: """"{{STORE_ID}}"""" cultureName: """"en-US"""" permalink: """""""") {
+      store { storeId storeName catalogId storeUrl defaultLanguage { cultureName } defaultCurrency { code } }
+      user { id memberId }
+    }
+  }
+[GQL-EXEC page_ctx_init]","[ERRORS label=store_init] errors[] empty
+[DATA label=store_init] data.store.storeId is non-null
+[ERRORS label=page_ctx_init] errors[] empty
+[DATA label=page_ctx_init] data.pageContext is non-null
+[DATA label=page_ctx_init] data.pageContext.store.storeId is non-null
+[DATA label=page_ctx_init] data.pageContext.store.defaultLanguage.cultureName is non-null
+[DATA label=page_ctx_init] data.pageContext.store.defaultCurrency.code is non-null",[EVIDENCE] Both queries return non-null storeId for same {{STORE_ID}}. pageContext includes defaultLanguage + defaultCurrency for i18n bootstrap. No mismatch between the two queries confirms consistent resolver.,store_init errors[] non-empty; page_ctx_init errors[] non-empty; pageContext.store storeId different from store_init storeId (routing inconsistency); HTTP 500 on either query,none — read-only,VCST-4642,Draft

@@ -374,3 +374,86 @@ Buyer logged in as {{USER_EMAIL}}; browser viewport resized to 375×812 (mobile)
 Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders; keyboard navigation enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders; [WAIT] orders list rendered; [ACT] click 'Filters' button; [WAIT] popover visible; [ACT] click the first aria-label='Open calendar' button; [WAIT] calendar popup visible; [ASSERT] verify calendar grid cells have role='gridcell' with role='button' children (keyboard navigable); [KEY] press ArrowRight to move focus to next day cell; [WAIT] short pause; [ASSERT] verify focus moves to the adjacent day cell (role='button' with different aria-label date); [KEY] press ArrowDown to move focus one row (7 days) forward; [WAIT] short pause; [ASSERT] verify focus moves to the day cell 7 days later; [KEY] press Enter to select the focused day cell; [WAIT] Start date input populated; [ASSERT] verify aria-label='Start date' input value populated with the selected date in MM/DD/YYYY format; [KEY] press Escape; [WAIT] calendar popup closes","[DOM] calendar grid cells have role='gridcell' with role='button' children supporting keyboard navigation; [STATE] ArrowRight moves focus to the next day cell; [STATE] ArrowDown moves focus 7 days forward (one week); [STATE] Enter on a focused cell selects the date and populates the Start date input; [FORMAT] Start date input populates in MM/DD/YYYY format; [DOM] calendar popup closes on Escape without applying filter","[CONSOLE] no JS errors during keyboard navigation in calendar grid; [NETWORK] no premature GetOrders request from keyboard navigation (filter not yet Applied)","ArrowRight does not move focus inside calendar grid (keyboard navigation broken); Enter does not select the date; Escape does not close the calendar; Start date input not populated after Enter selection; JS error during keyboard navigation","Close calendar if still open; clear date inputs before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-17","Draft"
 "ORD-079","Date Picker — Switching from Preset to Custom Shows Empty Inputs","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders; [WAIT] orders list rendered; [ACT] click 'Filters' button; [WAIT] popover visible; [ASSERT] verify preset combobox (aria-label='Created date') shows 'Custom date' as default; [ACT] select 'Last week' from the preset combobox; [WAIT] custom date inputs disappear; [ASSERT] verify aria-label='Start date' and aria-label='End date' inputs are NOT visible (hidden when a non-Custom preset is active); [ACT] select 'Custom date' from the preset combobox (switch back to Custom); [WAIT] custom date inputs reappear; [ASSERT] verify aria-label='Start date' input is visible; [ASSERT] verify aria-label='End date' input is visible; [ASSERT] document whether the inputs are prefilled with the equivalent date range of the 'Last week' preset (e.g. last 7 days pre-populated) or blank — note both outcomes are acceptable products of B10; [ASSERT] verify Apply button state (enabled if inputs prefilled; disabled/dirty-gated if blank)","[DOM] custom date inputs disappear when a non-Custom preset is selected; [DOM] custom date inputs reappear when 'Custom date' is selected again; [STATE] switching presets does not cause a JS crash or layout break; [STATE] Apply button state is consistent with whether inputs are prefilled or blank after switching back to Custom; [DOM] document prefilled vs blank outcome in test evidence (both are valid, one may be preferred UX)","[CONSOLE] no JS errors during preset-to-Custom switch; [NETWORK] no premature GetOrders request on preset combobox change (filter not yet Applied); [NETWORK] 2xx on any eventual Apply","Custom inputs do not reappear when switching back to 'Custom date'; JS error or page freeze on preset switch; Apply button state inconsistent with input content; layout breaks during preset toggle","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-18","Draft"
+"ORD-080","VCST-4892 — Date Picker: Escape Key MUST Close Calendar Popup (FAIL-DETECT — Bug Still Open)","Orders > Date Filter > Keyboard","High","BL-ORD-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded; Filters popover available; PR #2291 build deployed","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the aria-label='Open calendar' button next to Start date input
+[WAIT] calendar popup opens — calendar grid cells visible
+[ASSERT] calendar popup is visible before pressing Escape
+[KEY] press Escape
+[WAIT] 300ms
+[ASSERT] inspect DOM — calendar popup must no longer be visible","[STATE] calendar popup is CLOSED after pressing Escape (dialog or floating element removed from DOM or display:none)
+[DOM] calendar grid cells no longer visible after Escape
+[STATE] focus returns to the calendar-open trigger button or to the date input","[CONSOLE] no JS errors during Escape key handling
+[NETWORK] no premature GetOrders network request triggered by Escape (filter not applied)","Calendar popup still visible after Escape press (BUG-VCST-4892-1 — WCAG 2.1.2 keyboard trap; confirmed STILL OPEN in retest 2026-05-28); JS error on Escape keydown; focus lost entirely (not returned to trigger)","Close calendar if still open; clear date inputs","VCST-4892","Draft""ORD-081","VCST-4892 — Date Picker: Applied Date Range Filter Persists After Back Navigation (FAIL-DETECT — Bug Still Open)","Orders > Date Filter > Navigation","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded; account has orders on multiple dates","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set Start date (e.g. first day of previous month)
+[WAIT] Start date input populates
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set End date (e.g. last day of previous month)
+[WAIT] End date input populates
+[ACT] click Apply button inside the Filters popover
+[WAIT] filtered orders list rendered (fewer rows or same rows for in-range dates)
+[ASSERT] verify Start date and End date inputs show the selected dates
+[NAV] navigate to {{FRONT_URL}}/account/dashboard or {{FRONT_URL}} (any other page)
+[WAIT] navigation completes
+[KEY] press browser Back (use browser_navigate_back tool or Alt+ArrowLeft)
+[WAIT] /account/orders page reloads
+[ASSERT] inspect Start date and End date inputs — MUST retain the previously applied values
+[ASSERT] inspect orders list — MUST show the filtered results matching the applied range","[STATE] Start date input retains the previously set date value after back-navigation
+[STATE] End date input retains the previously set date value after back-navigation
+[STATE] orders list shows filtered results matching the applied date range (not the full unfiltered list)
+[NAV] URL contains date range params (e.g. startDate= and endDate= query params) after back navigation","[CONSOLE] no JS errors during back navigation
+[NETWORK] GetOrders request after back-nav includes date range params in query (not a clean unfiltered request)","Start date and End date inputs empty after back-navigation (BUG-VCST-4892-3 — filter state not persisted; confirmed STILL OPEN retest 2026-05-28); orders list shows unfiltered full list after back-nav; URL contains no date params after back-nav","Clear date filter after test","VCST-4892","Draft""ORD-082","VCST-4892 — Date Picker: Reversed Range Shows Inline Validation and Blocks Apply","Orders > Date Filter > Validation","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click a day cell that is LATER than the intended end date (to set Start date to a future date)
+[WAIT] Start date input populates with the later date
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click a day cell that is EARLIER than the currently set Start date (reversed range)
+[WAIT] End date input populates with the earlier date
+[ASSERT] inspect the Filters popover immediately — validation state","[DOM] inline error message containing 'Invalid date range' (or equivalent text) is visible inside the date filter area
+[DOM] Apply button is disabled (disabled attribute present or pointer-events: none) — cannot submit the reversed range
+[STATE] no GraphQL GetOrders request fired while range is invalid (network stays idle)","[CONSOLE] no JS errors during reversed range input
+[NETWORK] no GetOrders request sent while Apply is disabled (reversed range must not produce a network call)","Apply button NOT disabled when Start > End (pre-fix regression of BUG-VCST-4892-2); no inline error message shown for reversed range; malformed GraphQL filter sent despite invalid range (prior regression)","Clear date filter after test; verify Apply re-enables after correcting range to valid Start < End","VCST-4892","Draft""ORD-083","VCST-4892 — Date Picker: Same-Day Range (Start = End) Accepted and Filters Correctly","Orders > Date Filter > BVA","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least one order; /account/orders loaded","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered; note a date on which at least one order exists (e.g. order creation date from the list)
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click the day cell matching the known order date (same day for Start)
+[WAIT] Start date input populates
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click the SAME day cell (same date for End — Start = End boundary)
+[WAIT] End date input populates with the same date
+[ASSERT] verify Apply button is ENABLED (same-day range is valid)
+[ACT] click Apply button
+[WAIT] filtered orders list rendered
+[ASSERT] inspect orders in list","[STATE] Apply button enabled when Start date equals End date (same-day range is valid — boundary value)
+[DOM] no invalid-range error message shown for Start = End
+[STATE] orders list shows only orders from the specified single day (inclusive boundary)
+[STATE] orders from other dates are absent from the filtered list","[CONSOLE] no JS errors on same-day filter application
+[NETWORK] GetOrders request fires with both date params set to the same date value","Apply button disabled for Start = End (boundary incorrectly rejected); error message shown for same-day range; filtered list shows orders from other dates (inclusive boundary not honored)","Clear date filter after test","VCST-4892","Draft"

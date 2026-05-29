@@ -70,3 +70,46 @@ At least 3 quotes owned by {{ORG_USER_EMAIL}}: one with future expiry, {{EXPIRED
 "QUOTE-030","Quote to Order - Conversion Updates Quote Status to Ordered","Quotes > Conversion","High","PROPOSED-BL-QUOTE-002, PROPOSED-BL-QUOTE-003","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 {{ACCEPTED_QUOTE}} env var set (accepted quote ready for conversion); buyer logged in as {{ORG_USER_EMAIL}}; shipping and payment configured","url={{FRONT_URL}}, user={{ORG_USER_EMAIL}}, password={{ORG_USER_PASSWORD}}, accepted_quote_id={{ACCEPTED_QUOTE}}","[NAV] Navigate to /account/quotes; [ACT] click on quote {{ACCEPTED_QUOTE}}; [ACT] click 'Convert to Order'; [WAIT] wait for checkout; [ACT] complete checkout and place order; [WAIT] wait for order confirmation; [NAV] navigate to /account/quotes; [ACT] find the converted quote; [ASSERT] verify quote status changed to 'Ordered' or 'Closed'; [ASSERT] verify 'Convert to Order' button no longer available; [ASSERT] verify 'Accept Quote' button no longer available; [ASSERT] verify quote references the created order number","[STATE] quote status = 'Ordered' or 'Closed' after conversion; [DOM] 'Convert to Order' button absent on converted quote; [DOM] 'Accept Quote' button absent on converted quote; [DOM] order reference number visible on quote detail; [STATE] quote is terminal — no further actions available","[API] quote detail returns status=Ordered with orderReference; [CONSOLE] no errors on quote detail after conversion; [NETWORK] 2xx on quotes list and detail","quote status unchanged after order placed; 'Convert to Order' still active on converted quote allowing duplicate conversion; no order reference on quote; quote allows re-conversion creating duplicate orders","none","Coverage Gap Analysis — GAP-F06","Draft"
+"QUOTE-031","VCST-4892 — Quotes Date Picker: Escape Key MUST Close Calendar Popup (FAIL-DETECT — Bug Still Open)","Quotes > Date Filter > Keyboard","High","PROPOSED-BL-QUOTE-004","ECL-14.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+B2B org buyer logged in as {{ORG_USER_EMAIL}}; /account/quotes page loaded; Filters or date filter control available on quotes list; PR #2291 build deployed","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/quotes
+[WAIT] quotes list rendered
+[ACT] click Filters button or date filter control on quotes list
+[WAIT] date filter popover or input visible
+[ACT] click the calendar-open trigger (aria-label='Open calendar' or equivalent) next to the date input
+[WAIT] calendar popup opens — calendar grid cells visible
+[ASSERT] calendar popup is visible before pressing Escape
+[KEY] press Escape
+[WAIT] 300ms
+[ASSERT] inspect DOM — calendar popup must no longer be visible","[STATE] calendar popup is CLOSED after pressing Escape (dialog or floating element removed from DOM)
+[DOM] calendar grid cells no longer visible after Escape
+[STATE] focus returns to the calendar-open trigger or date input","[CONSOLE] no JS errors during Escape key handling
+[NETWORK] no premature GetQuotes request triggered by Escape","Calendar popup still visible after Escape press (BUG-VCST-4892-1 — same VcCalendar component as orders filter, same keyboard-trap defect applies to all usages); JS error on Escape keydown","Close calendar if still open; clear date inputs","VCST-4892","Draft""QUOTE-032","VCST-4892 — Quotes Date Picker: Applied Date Range Filter Persists After Back Navigation (FAIL-DETECT — Bug Still Open)","Quotes > Date Filter > Navigation","High","PROPOSED-BL-QUOTE-004","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+B2B org buyer logged in as {{ORG_USER_EMAIL}}; /account/quotes page loaded; account has quotes on multiple dates","url={{FRONT_URL}}
+user={{ORG_USER_EMAIL}}
+password={{ORG_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/quotes
+[WAIT] quotes list rendered
+[ACT] click Filters button or date filter control
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set Start date (first day of a previous month)
+[WAIT] Start date input populates
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set End date (last day of same previous month)
+[WAIT] End date input populates
+[ACT] click Apply button inside the date filter area
+[WAIT] filtered quotes list rendered
+[ASSERT] verify Start date and End date inputs show selected dates
+[NAV] navigate to {{FRONT_URL}}/account/dashboard or any other page
+[WAIT] navigation completes
+[KEY] press browser Back (browser_navigate_back or Alt+ArrowLeft)
+[WAIT] /account/quotes page reloads
+[ASSERT] Start date and End date inputs MUST retain the previously applied values
+[ASSERT] quotes list MUST show filtered results matching the applied range","[STATE] Start date input retains its value after back-navigation
+[STATE] End date input retains its value after back-navigation
+[STATE] quotes list shows filtered results matching the applied date range (not full unfiltered list)
+[NAV] URL contains date range params after back navigation","[CONSOLE] no JS errors during back navigation
+[NETWORK] GetQuotes request after back-nav includes date range params","Start and End date inputs empty after back-nav (BUG-VCST-4892-3 — same component defect; filter state not URL-persisted); quotes list shows full unfiltered list after back-nav","Clear date filter after test","VCST-4892","Draft"

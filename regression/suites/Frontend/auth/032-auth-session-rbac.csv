@@ -205,3 +205,53 @@
 [STATE] User does not land on default post-login page when return URL exists","[NETWORK] POST /connect/token returns HTTP 200
 [NETWORK] Final redirect targets /account/orders
 [CONSOLE] no TypeError or JS errors","User redirected to home instead of original page after login; return URL lost during authentication; 404 on return redirect; console TypeError","Logout after test","","Automated"
+"AUTH-062","Persistent Token Validation — Active Token Authorizes xAPI Request","Session > Token Validation > State: Active","High","BL-AUTH-005, BL-AUTH-006","ECL-3.1","[PRE:CLEAR_SESSION]
+- Authorization__EnablePersistentStorageTokenValidation=true configured on platform
+- BACK_URL and FRONT_URL accessible
+- User account (TECHFLOW_ADMIN) available for storefront token","back_url={{BACK_URL}};front_url={{FRONT_URL}};email=@td(TECHFLOW_ADMIN.email);password=@td(TECHFLOW_ADMIN.password)","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username=@td(TECHFLOW_ADMIN.email) password=@td(TECHFLOW_ADMIN.password) scope=offline_access storeId={{STORE_ID}}
+[WAIT] Receive access_token
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <access_token> body: {""query"": ""{ me { id email } }""}
+[WAIT] Receive GraphQL response (expect me.email to match authenticated user)","[STATUS] POST /connect/token returns HTTP 200
+[BODY] access_token field present and non-empty
+[STATUS] POST /graphql returns HTTP 200
+[BODY] data.me.email matches @td(TECHFLOW_ADMIN.email) — active token authorizes xAPI request
+[BODY] errors[] absent or empty in GraphQL response","[API] Token successfully authorizes xAPI query
+[NETWORK] No 4xx/5xx on either request
+[CONSOLE] No server errors","POST /connect/token returns non-200; access_token absent; POST /graphql returns 401 for valid active token; me query returns null or errors[]","none","VCST-4576","Draft"
+"AUTH-063","Persistent Token Validation — Revoked Token Returns 401 on xAPI","Session > Token Validation > State: Revoked","Critical","BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
+- Authorization__EnablePersistentStorageTokenValidation=true configured
+- BACK_URL and STORE_ID accessible
+- TECHFLOW_BUYER account available (separate from agent pool active sessions)","back_url={{BACK_URL}};email=@td(TECHFLOW_BUYER.email);password=@td(TECHFLOW_BUYER.password)","[HTTP] POST {{BACK_URL}}/connect/token for @td(TECHFLOW_BUYER.email) — obtain Token-A
+[WAIT] Receive Token-A access_token + refresh_token
+[HTTP] POST {{BACK_URL}}/connect/token for same user — obtain Token-B (distinct authorization entry)
+[WAIT] Receive Token-B
+[HTTP] POST {{BACK_URL}}/connect/revocation token=<Token-A refresh_token> token_type_hint=refresh_token Authorization: Bearer <Token-A access_token>
+[WAIT] Revocation returns HTTP 200
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <Token-A access_token> body: {""query"": ""{ me { id } }""}
+[WAIT] Response (expect HTTP 401)
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <Token-B access_token> body: {""query"": ""{ me { id } }""}
+[WAIT] Response (expect HTTP 200 — Token-B unaffected)","[STATUS] POST /connect/revocation returns HTTP 200
+[STATUS] POST /graphql with revoked Token-A returns HTTP 401 — NOT 200 (persistent validation enforced)
+[BODY] 401 response does not contain user data
+[STATUS] POST /graphql with active Token-B returns HTTP 200
+[BODY] Token-B response data.me.id is non-null","[API] Token-A rejected on xAPI immediately after revocation (no request-level cache when EnablePersistentStorageTokenValidation=true)
+[API] Token-B unaffected — scoped revocation
+[NETWORK] No 5xx on any request","Token-A still returns 200 on xAPI after revocation (persistent validation not active — VCST-4576 regression); Token-B also rejected after Token-A revocation (over-broad); 500 on revocation endpoint","none — Token-A already revoked; Token-B cleanup on next session","VCST-4576","Draft"
+"AUTH-064","Session Invalidation After Password Change — Other-Device Token Invalidated (xAPI)","Session > Session Management > Password Change","Critical","BL-AUTH-003","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
+- Authorization__EnablePersistentStorageTokenValidation=true configured
+- BACK_URL and STORE_ID accessible
+- TECHFLOW_BUYER has known current password; two independent tokens can be obtained","back_url={{BACK_URL}};email=@td(TECHFLOW_BUYER.email);password=@td(TECHFLOW_BUYER.password)","[HTTP] POST {{BACK_URL}}/connect/token for @td(TECHFLOW_BUYER.email) — obtain Token-A (Device A simulation)
+[WAIT] Receive Token-A
+[HTTP] POST {{BACK_URL}}/connect/token for same user again — obtain Token-B (Device B simulation)
+[WAIT] Receive Token-B
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <Token-B access_token> body: {""query"": ""{ me { id email } }""} — baseline verification Token-B works
+[WAIT] Confirm Token-B active (HTTP 200 + me.email matches)
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <Token-A access_token> body changePassword mutation: mutation { changePassword(command: {userId: ""..."", currentPassword: ""@td(TECHFLOW_BUYER.password)"", newPassword: ""AGENT-TEST-TempPw1!""}) { succeeded errors { code description } } }
+[WAIT] Password change returns HTTP 200 with succeeded=true
+[HTTP] POST {{BACK_URL}}/graphql Authorization: Bearer <Token-B access_token> body: {""query"": ""{ me { id } }""} — expect 401 after password change
+[WAIT] Response","[STATUS] changePassword mutation returns HTTP 200
+[BODY] changePassword.succeeded = true; errors[] is empty
+[STATUS] POST /graphql with Token-B returns HTTP 401 after password change — Device B session invalidated (VCST-4531 AC: other sessions terminated on password change)
+[BODY] Token-B 401 response does not contain user data","[API] Token-B (other-device simulation) invalidated after password change
+[API] changePassword mutation errors[] is empty
+[NETWORK] No 5xx on any step","changePassword mutation returns errors[]; succeeded=false; Token-B still returns 200 after password change (VCST-4531 regression — OpenIddict revocation not applied on changePassword); 500 errors","[TEARDOWN] Restore original password via admin API: PUT/PATCH {{BACK_URL}}/api/platform/security/users with new password or via admin panel","VCST-4531","Draft"

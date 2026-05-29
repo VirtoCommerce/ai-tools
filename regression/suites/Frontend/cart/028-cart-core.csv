@@ -755,3 +755,35 @@ coupon_code=@td(COUPON_10PCT.code)","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] coupon applied on /cart carries through to checkout review without being reset","[API] cart query at checkout review: cart.coupons[0].isAppliedSuccessfully=true; discount matches /cart value
 [CONSOLE] no JS errors during cart → checkout navigation
 [NETWORK] no 4xx/5xx","coupon code not visible on checkout review (appliedCouponCode missing from review.vue), discount disappears at checkout review, cart.coupons reset on checkout navigation, console TypeError on checkout page","Navigate away without placing order; remove coupon from cart if needed","VCST-4896 AC#review-step, VCST-4590","Reviewed"
+CART-070,Save for Later — Configurable Product Configuration Visible After Save and After Restore (VCST-4205),Cart > Save for Later > Configurable,Critical,BL-CART-007; BL-CART-010,ECL-7.1; ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url). B2B store accessible at {{FRONT_URL}}.","front_url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, ring_url=@td(CFG_RING.url)","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+[PRE:RESET_CART]
+[NAV] {{FRONT_URL}}@td(CFG_RING.url)
+[WAIT] PDP loaded — Ring product detail page visible
+[WAIT] configuration section with Text input visible
+[ACT] fill Text input field with 'AGENT-TEST-SFL-RING-001'
+[WAIT] text value 'AGENT-TEST-SFL-RING-001' confirmed in input
+[ACT] click '+' (Increase quantity) to add item to cart
+[WAIT] cart badge increments to 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with 1 line item
+[ASSERT] [DOM] configuration text 'AGENT-TEST-SFL-RING-001' visible in cart line item OR configuration section label visible
+[ACT] click 'Save for later' on the Ring line item
+[WAIT] item moves to Saved for later section
+[WAIT] cart section shows 0 items
+[ASSERT] [DOM] Saved for later section contains Ring item
+[ASSERT] [DOM] Saved for later item shows configuration detail (text or section label visible — not blank)
+[ACT] click 'Move to cart' on the Saved for later Ring item
+[WAIT] item moves back to active cart (badge = 1)
+[ASSERT] [STATE] cart has 1 Ring line item after restore","[DOM] configuration text 'AGENT-TEST-SFL-RING-001' or configuration detail visible in cart before Save for later
+[STATE] cart empty after Save for later action
+[DOM] Saved for later Ring item has non-blank configuration detail
+[STATE] cart has 1 Ring item after Move to cart
+[DOM] restored Ring item has non-blank configuration detail","[API] moveToSavedForLater mutation errors[] empty
+[API] getSavedForLater configurationItems non-empty for saved Ring item
+[API] moveFromSavedForLater mutation errors[] empty
+[CONSOLE] no JS errors during save + restore flow
+[NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Saved for later item missing configuration label (VCST-4205 pre-fix: configuration blank after save); Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,VCST-4205,Draft

@@ -396,3 +396,52 @@
 [API] POST/PUT price with 0.00 - verify policy-compliant response
 [CONSOLE] Validation error for negative price
 [NETWORK] 400 response for negative price save","Negative price accepted without error; product saves with -10.00 price; no validation message shown; zero price treated inconsistently","restore original product price via Admin","BL-PRICE-002","Not Automated"
+"PLAT-081","Account Lockout — Admin UI Displays User in Locked State After AutoAccountsLockoutJob Runs","Platform > Security > Authentication > Account Lockout","Critical","BL-AUTH-003","ECL-2.1, ECL-3.1","Admin logged into Backend ({{BACK_URL}}); VCST-5074/VCST-5149 fix deployed (platform >=3.1007.12 or >=3.917.10); lockout policy configured (default 5 failed attempts); a DEDICATED lockout-test user AGENT-TEST-lockout-admin@test.virtocommerce.com exists (never use shared agent pool accounts)","back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; lockout_test_user_email=AGENT-TEST-lockout-admin@test.virtocommerce.com","[NAV] Navigate to {{BACK_URL}}
+[WAIT] Admin SPA loaded
+[ACT] Navigate to Security > Users
+[BLADE] Security Users blade opens
+[GRID] Search for 'AGENT-TEST-lockout-admin' in user list
+[WAIT] User found in grid
+[ASSERT] Record initial Locked status = false (unlocked before test)
+[ACT] Open a separate browser context (or API call): POST {{BACK_URL}}/connect/token with username=AGENT-TEST-lockout-admin@test.virtocommerce.com password=WrongPw1! five times (5 failed login attempts)
+[WAIT] Brief pause (2-3s for AutoAccountsLockoutJob to process)
+[ACT] Refresh or reload user list in Admin SPA
+[WAIT] Grid refreshes
+[ACT] Click on AGENT-TEST-lockout-admin user to open user detail blade
+[BLADE] User detail blade opens","[BLADE] User detail blade title contains the username
+[FORM] User status shows Locked or a locked indicator is displayed — THIS IS THE VCST-5074 BUG FIX VERIFICATION: AutoAccountsLockoutJob previously failed to update the lockout state; after the fix, 5 consecutive failures must result in the account showing as Locked in Admin SPA
+[GRID] Locked column or status indicator in user list reflects Locked state after the failed attempts
+[STATE] Account is Locked (not still Unlocked after 5 failures)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} — confirms backend state matches Admin UI display
+[NETWORK] No 5xx on user detail load
+[CONSOLE] No JavaScript errors in Admin SPA","User shows Unlocked in Admin after 5 failed attempts (VCST-5074 regression — AutoAccountsLockoutJob not running or not locking); GET .../locked returns {locked: false}; Admin SPA shows 500 or blank blade","[SAVE] Unlock account: click Unlock button in user detail blade or via API POST {{BACK_URL}}/api/platform/security/users/<id>/unlock; Delete AGENT-TEST- user if created for this test","VCST-5074, VCST-5149","Draft"
+"PLAT-082","Account Lockout — Unlock User via Admin UI Restores Login Access","Platform > Security > User Management > Account Lockout","High","BL-AUTH-003","ECL-2.1","Admin logged into Backend ({{BACK_URL}}); a locked user account AGENT-TEST-lockout-unlock@test.virtocommerce.com exists (locked via 5 failed attempts or via Admin lock action)","back_url={{BACK_URL}}; front_url={{FRONT_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_email=AGENT-TEST-lockout-unlock@test.virtocommerce.com; test_password=ValidUnlockPw1!","[NAV] Navigate to {{BACK_URL}} Admin SPA
+[WAIT] Admin SPA loaded
+[ACT] Navigate to Security > Users
+[BLADE] Security Users blade
+[GRID] Search for AGENT-TEST-lockout-unlock user
+[WAIT] User found
+[ACT] Click user row to open detail blade
+[BLADE] User detail blade opens
+[ASSERT] User shows Locked state
+[ACT] Click 'Unlock' button (or equivalent — 'Reset lockout' / 'Unlock user')
+[WAIT] Unlock action completes; success notification
+[SAVE] Confirmation of unlock saved","[TOAST] Success notification displayed after unlock action
+[FORM] User detail blade shows status as Unlocked (or Locked indicator removed)
+[STATE] Locked state = false after unlock action","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: false} after Admin unlock
+[NETWORK] POST {{BACK_URL}}/connect/token with valid credentials for the unlocked user returns HTTP 200 (storefront login now succeeds after Admin unlock)
+[CONSOLE] No JavaScript errors","Admin unlock action fails (no Unlock button visible, or button disabled); toast not shown; GET .../locked still returns {locked: true} after unlock; storefront login still rejected after Admin unlock","Delete AGENT-TEST- user after test","VCST-5074","Draft"
+"PLAT-083","Account Lockout — Manager-Type Account Subject to Same Lockout Policy","Platform > Security > Authentication > Account Lockout","High","BL-AUTH-003","ECL-2.1, ECL-3.1","Admin logged into Backend ({{BACK_URL}}); VCST-4999 fix deployed (vc-platform PR #3043); a DEDICATED Manager-type user AGENT-TEST-manager-lockout@test.virtocommerce.com exists; lockout policy configured","back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; mgr_email=AGENT-TEST-manager-lockout@test.virtocommerce.com; mgr_password=ValidMgrPw1!","[NAV] Navigate to {{BACK_URL}} Admin SPA
+[WAIT] Admin SPA loaded
+[ACT] Navigate to Security > Users
+[BLADE] Users blade open
+[GRID] Search for AGENT-TEST-manager-lockout
+[WAIT] User found; verify Account Type = Manager
+[ASSERT] User is Unlocked at start of test
+[ACT] In a separate context: attempt login via POST {{BACK_URL}}/connect/token with username=AGENT-TEST-manager-lockout@test.virtocommerce.com password=WrongPw1! five times
+[WAIT] 5 failed attempts completed
+[WAIT] Brief pause (2-3s)
+[ACT] Reload user detail blade in Admin SPA for AGENT-TEST-manager-lockout
+[BLADE] User detail blade refreshed","[FORM] User detail blade shows Locked state for Manager-type account — VCST-4999 fix verification: Manager accounts are now subject to the same lockout policy as Customer accounts
+[STATE] Manager account locked after 5 failed attempts (not exempt from lockout)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} for Manager-type user after 5 failures
+[NETWORK] POST {{BACK_URL}}/connect/token attempt 6 with correct Manager password returns 400/401 (lockout enforced; not 200)
+[CONSOLE] No JavaScript errors","Manager account remains Unlocked after 5 failed attempts (VCST-4999 regression — Manager-type exempt from lockout); attempt 6 with correct Manager password returns 200 (lockout not applied to Manager); GET .../locked returns {locked: false}","[SAVE] Unlock Manager account: click Unlock in Admin SPA; delete AGENT-TEST- user","VCST-4999, VCST-5149","Draft"

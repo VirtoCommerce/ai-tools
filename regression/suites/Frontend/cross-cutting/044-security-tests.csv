@@ -78,3 +78,76 @@
 - Registration or profile edit form accessible"
 "SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in; - Profile with description/about field accessible"
+"SEC-PAT-001","Persistent Access Token — Active Token Authorizes API Request","Security > Token Validation > State: Active","High","BL-AUTH-005, BL-AUTH-006","ECL-3.1","[PRE:CLEAR_SESSION]
+- Platform has Authorization__EnablePersistentStorageTokenValidation=true configured
+- Admin user account available
+- No active persistent token revocation in effect","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[HTTP] POST {{BACK_URL}}/connect/token with grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, scope=offline_access
+[WAIT] Receive access_token and refresh_token in response
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer <access_token>
+[WAIT] Receive response","[STATUS] /connect/token returns HTTP 200
+[BODY] access_token field present and non-empty
+[STATUS] GET /api/platform/security/currentuser returns HTTP 200
+[BODY] Response contains id and login fields matching the authenticated user","[API] No 4xx/5xx on either request
+[CONSOLE] No server errors","POST /connect/token returns non-200; access_token absent; GET /api/platform/security/currentuser returns 401 for valid active token","none","VCST-4576","Draft"
+"SEC-PAT-002","Persistent Access Token — Revoked Token Returns 401 (State Transition: Active → Revoked)","Security > Token Validation > State: Revoked","Critical","BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
+- Platform has Authorization__EnablePersistentStorageTokenValidation=true configured
+- Admin credentials available
+- Two contexts/tokens can be obtained independently","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[HTTP] POST {{BACK_URL}}/connect/token credentials to obtain Token A (access_token + refresh_token)
+[WAIT] Receive Token A
+[HTTP] POST {{BACK_URL}}/connect/token again with same credentials to obtain Token B
+[WAIT] Receive Token B (separate authorization entry)
+[HTTP] POST {{BACK_URL}}/connect/revocation with token=<Token A refresh_token>, token_type_hint=refresh_token, Authorization: Bearer <Token A access_token>
+[WAIT] Revocation completes (HTTP 200)
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer <Token A access_token>
+[WAIT] Receive response (expect 401)
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer <Token B access_token>
+[WAIT] Receive response (expect 200)","[STATUS] POST /connect/revocation returns HTTP 200
+[STATUS] GET /api/platform/security/currentuser with revoked Token A returns HTTP 401 (not 200)
+[BODY] 401 response does not leak user data or internal paths
+[STATUS] GET /api/platform/security/currentuser with active Token B returns HTTP 200 (revocation is scoped)","[API] Token A rejected after revocation; Token B unaffected
+[NETWORK] No 5xx errors on any request","POST /connect/revocation returns non-200; revoked Token A still returns 200 (bug: persistent validation not active); Token B also rejected after Token A revocation (over-broad invalidation); 500 errors","Obtain new token and use to clean up any test state","VCST-4576","Draft"
+"SEC-PAT-003","Persistent Access Token — Never-Issued Token Returns 401","Security > Token Validation > Boundary: Never-Issued","High","BL-AUTH-005, BL-AUTH-006","ECL-4.3","[PRE:CLEAR_SESSION]
+- Platform accessible
+- Authorization__EnablePersistentStorageTokenValidation=true configured","back_url={{BACK_URL}}","[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIn0.invalidsignature
+[WAIT] Receive response (expect 401)
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer AAAA.BBBB.CCCC
+[WAIT] Receive response (expect 401)","[STATUS] Both requests return HTTP 401
+[BODY] No user data in either response
+[BODY] No internal paths or stack traces in error response","[API] No 500 returned for malformed tokens
+[NETWORK] Both requests fail with 401, not 200","200 returned for a fabricated/unsigned token; 500 Internal Server Error instead of 401; user data visible in error response body","none","VCST-4576","Draft"
+"SEC-AUTH-004","Session Invalidation After Password Change — Other Devices Logged Out","Security > Session Management > Password Change","Critical","BL-AUTH-003","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
+- Authorization__EnablePersistentStorageTokenValidation=true configured (enables OpenIddict DB-based revocation)
+- User account available (use agent pool slot 1 for Device A context, slot 2 for Device B context)
+- Two separate sessions can be established for the same user","back_url={{BACK_URL}}, agent_email=@td(ACME_BUYER.email), agent_password=@td(ACME_BUYER.password)","[HTTP] POST {{BACK_URL}}/connect/token for @td(ACME_BUYER.email) — obtain Token-A (Device A session)
+[WAIT] Receive Token-A
+[HTTP] POST {{BACK_URL}}/connect/token for @td(ACME_BUYER.email) again — obtain Token-B (Device B session)
+[WAIT] Receive Token-B
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-A (Device B still active — verify pre-change)
+[ASSERT] Both tokens return 200 before password change
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/changepassword (or changePassword mutation via xAPI) using Token-A with currentPassword=@td(ACME_BUYER.password) and new password
+[WAIT] Password change returns HTTP 200
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-B (Device B token — expect 401 after change)
+[WAIT] Receive response
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Token-A (Device A token — should survive)
+[WAIT] Receive response","[STATUS] Password change returns HTTP 200
+[STATUS] Token-B returns HTTP 401 after password change (other-device session invalidated)
+[BODY] Token-B 401 response contains no user data
+[STATUS] Token-A continues to return HTTP 200 OR returns 401 (either is acceptable — behavior depends on platform implementation; the initiating-session-survives behavior is documented in VCST-4531 comment)","[API] Token-B revoked after password change
+[NETWORK] No 5xx errors
+[ADMIN] Security > Users panel for the account shows no active authorizations for Token-B","Token-B still returns 200 after password change (invalidation not working); 500 errors on password change endpoint; Password change endpoint returns 4xx","Restore original password via admin API; clean up AGENT-TEST- sessions","VCST-4531","Draft"
+"SEC-AUTH-005","Session Invalidation After Password Change — Storefront UX Warning Displayed","Security > Session Management > Password Change > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_BUYER]
+- Storefront accessible; Change Password page available at /account
+- Authorization__EnablePersistentStorageTokenValidation=true configured","front_url={{FRONT_URL}}, email=@td(TECHFLOW_BUYER.email), password=@td(TECHFLOW_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(TECHFLOW_BUYER.email)
+[ACT] Fill 'Password': @td(TECHFLOW_BUYER.password)
+[ACT] Click 'Sign In'
+[WAIT] Authenticated session established
+[NAV] {{FRONT_URL}}/account
+[WAIT] Account page loaded
+[ACT] Navigate to Change Password section
+[WAIT] Change Password form visible
+[ASSERT] Verify information notice or warning text is visible before submitting (as documented in VCST-4531: 'Changing your password will sign you out of all other devices and browsers.')","[DOM] Information notice visible on Change Password page containing text warning about other sessions being signed out (e.g., 'sign you out of all other devices' or equivalent wording)
+[DOM] Change Password form fields visible: Current Password, New Password, Confirm Password
+[STATE] User remains on the current device after seeing the notice (no auto-logout at this point — notice is pre-action)","[NETWORK] No 4xx/5xx on page load
+[CONSOLE] No TypeError or JS errors","Information notice absent from Change Password page (UX regression from VCST-4531 implementation); page errors with 500; console TypeError","Restore password if changed via admin; [PRE:SIGNOUT]","VCST-4531","Draft"

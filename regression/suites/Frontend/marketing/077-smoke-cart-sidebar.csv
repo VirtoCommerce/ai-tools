@@ -103,3 +103,48 @@ coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_UR
 [STATE] BL-CART-009: BestRewardPromotionPolicy selects the single highest-value reward; both coupons do not stack
 [STATE] If store uses AllRewards policy, both discounts stack — note which policy is active in the test environment","[NETWORK] Cart GraphQL response discountTotal consistent with best-reward calculation; no errors[]
 [CONSOLE] no JS errors when applying a second coupon to a cart that already has one applied","both coupons stack beyond BestReward policy (BL-CART-009 violation — only if store uses BestReward); second coupon application throws unhandled error; discount total drops to 0 after second coupon applied; cart total increases after second coupon","Remove all applied coupons; navigate away from cart","VCST-4896; BL-CART-009; ECL-03.2","Reviewed"
+"CPN-062","Cart Sidebar — Graceful Degradation When promotionCoupons Returns Null (xMarketing Absent)","Coupons & Promotions > Cart Sidebar > Resilience","High","BL-CROSS-003; BL-CROSS-011","ECL-10.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- @needs-env-without-xmarketing: environment where x-marketing module is NOT installed OR the promotionCoupons query returns null/errors[]. On vcst-qa with module present, the sidebar renders preset cards. This test verifies the storefront does NOT crash when promotionCoupons is unavailable — the coupon sidebar degrades to either hidden or empty state without a JS error. The fix under test is PR vc-frontend #2305.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with at least 1 item
+[ASSERT] browser_snapshot — capture the full cart page including the coupon/discounts sidebar area
+[WAIT] 2s for all GraphQL requests to settle","[DOM] cart page renders fully — line items, subtotal, checkout button all visible (no blank/broken layout)
+[DOM] 'Discount & coupons' sidebar section is either absent or shows an empty/placeholder state — does NOT show an error widget or broken card list
+[STATE] no spinner stuck indefinitely in the coupon sidebar area","[CONSOLE] NO console error mentioning 'Cannot query field promotionCoupons on type Query' or UnhandledPromiseRejection (the VCST-5106 regression signal)
+[NETWORK] if the promotionCoupons request fired and returned errors[], the page must still be fully functional (no React/Vue crash boundary triggered)
+[NETWORK] no 5xx from /graphql","console error 'Cannot query field promotionCoupons on type Query' present (VCST-5106 regression); page rendered blank or partially broken; coupon sidebar shows persistent spinner or error widget; any UnhandledPromiseRejection from coupon-sidebar.vue","Navigate away from cart","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"
+"CPN-063","Cart Sidebar — Invalid Coupon Error Message Has role=""alert"" (SR Announced)","Coupons & Promotions > Cart Sidebar > A11y > Error Announcement","High","BL-A11Y-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- Cart page loaded at {{FRONT_URL}}/cart.
+- Coffee theme active (only Coffee theme is a11y-compliant).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with coupon sidebar visible
+[ASSERT] browser_snapshot — capture initial state of coupon sidebar with the custom-code input card visible
+[ACT] fill coupon code input field with an invalid code: 'BOGUS-XYZ-REGRESSION-TEST'
+[WAIT] coupon code input reflects the typed value
+[ACT] click the 'Apply' button (custom coupon card apply button)
+[WAIT] coupon sidebar updates — error message appears below the input
+[ASSERT] browser_snapshot — capture the error state of the coupon card","[DOM] error message element <p class=""coupon-card__error""> is visible with text 'This code is not valid' or equivalent
+[DOM] the error <p> element has attribute role=""alert"" (WCAG 4.1.3 Status Messages — verified fix in PR #2303: '<p role=""alert"" class=""coupon-card__error"">{{error}}</p>')
+[STATE] the error element is not hidden (v-if renders the <p> when view === 'error' AND error is non-empty)","[CONSOLE] zero console errors during coupon apply attempt
+[NETWORK] addCoupon mutation fires; response isAppliedSuccessfully=false (not a 5xx); errors[] is empty (invalid coupon is a business-level rejection, not a GraphQL error)","role=""alert"" absent from coupon error <p> (VCST-5018 regression — SR users get no announcement); coupon error <p> not rendered after invalid code; apply button stays disabled preventing test; console TypeError during apply","none — coupon code was not applied (isAppliedSuccessfully=false)","VCST-5018; VCST-4896","Draft"
+"CPN-064","Cart Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Coupons & Promotions > Cart Sidebar > A11y > Button Labels","High","BL-A11Y-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- At least 1 product added to cart.
+- Cart page loaded at {{FRONT_URL}}/cart with at least 1 preset coupon card visible in the sidebar.
+- Coffee theme active.","front_url={{FRONT_URL}}
+couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loaded with coupon sidebar visible and preset coupon cards rendered
+[ASSERT] browser_snapshot — capture coupon sidebar with preset cards
+[WAIT] 1s to ensure all cards are fully rendered
+[ASSERT] inspect the DOM of each preset coupon card apply button — verify aria-label attribute is present and non-empty (DevTools accessibility panel or evaluate_script)
+[ACT] fill the custom coupon code input with {{couponCode}}
+[ASSERT] inspect the custom apply button DOM — verify aria-label contains 'Apply coupon' and the typed code
+[ACT] click 'Apply' (preset card apply button for any displayed preset coupon) to trigger the applied state
+[WAIT] coupon applied and sidebar updates to applied-state card with trash icon
+[ASSERT] inspect the trash/remove button DOM — verify aria-label is present and contains 'Remove coupon' text","[DOM] every preset coupon card apply button has a non-empty aria-label attribute containing 'Apply coupon' and the coupon code (verified fix in PR #2303: aria-label=""Apply coupon {code}"")
+[DOM] the custom coupon card apply button has a non-empty aria-label containing 'Apply coupon' (interpolated with the current typed code)
+[DOM] the applied-state trash/remove button has aria-label containing 'Remove coupon' (verified fix in PR #2303: aria-label=""Remove coupon"")
+[STATE] NO button inside the coupon sidebar widget has an empty or null accessible name","[CONSOLE] zero console errors during inspection; no axe button-name violations if Lighthouse/axe is run
+[NETWORK] no unexpected 4xx/5xx during cart page load","any apply/trash button has aria-label=null or empty string (VCST-5017 regression); aria-label attribute absent from button element; trash button has no accessible name; custom apply button aria-label does not interpolate the coupon code","Remove applied coupon via trash button; navigate away from cart","VCST-5017; VCST-4896","Draft"

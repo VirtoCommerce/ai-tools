@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-27)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-05-29)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -98,8 +98,6 @@ newsArticleTags(languageCode: String!)
 fcmSettings()
 pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
-loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
-loyaltyBalance(userId: String, orderId: String)
 skyflowCards(storeId: String)
 evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: String, userGroups: String)
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: String, isActive: Boolean)
@@ -107,6 +105,8 @@ configurationItems(cartId: String, lineItemId: String!, storeId: String!, curren
 recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, maxProducts: Int)
 recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
 searchHistory(storeId: String!, maxCount: Int!)
+loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
+loyaltyBalance(userId: String, orderId: String)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
@@ -353,7 +353,7 @@ Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `
 
 ### LineItemType
 
-Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`
+Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`, `loyaltyPoints`
 
 ### CustomerOrderType
 
@@ -361,7 +361,7 @@ Fields: `id`, `operationType`, `parentOperationId`, `number`, `isApproved`, `sta
 
 ### Product
 
-Fields: `id`, `code`, `catalogId`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `relevanceScore`, `isConfigurable`, `outline`, `slug`, `name`, `seoInfo`, `descriptions`, `description`, `category`, `imgSrc`, `outerId`, `gtin`, `manufacturerPartNumber`, `weightUnit`, `weight`, `measureUnit`, `height`, `width`, `length`, `brandName`, `brand`, `masterVariation`, `variations`, `hasVariations`, `availabilityData`, `images`, `price`, `prices`, `minVariationPrice`, `properties`, `keyProperties`, `assets`, `outlines`, `breadcrumbs`, `vendor`, `rating`, `inWishlist`, `wishlistIds`, `isPurchased`, `associations`, `videos`
+Fields: `id`, `code`, `catalogId`, `productType`, `minQuantity`, `maxQuantity`, `packSize`, `relevanceScore`, `isConfigurable`, `outline`, `slug`, `name`, `seoInfo`, `descriptions`, `description`, `category`, `imgSrc`, `outerId`, `gtin`, `manufacturerPartNumber`, `weightUnit`, `weight`, `measureUnit`, `height`, `width`, `length`, `brandName`, `brand`, `masterVariation`, `variations`, `hasVariations`, `availabilityData`, `images`, `price`, `prices`, `minVariationPrice`, `properties`, `keyProperties`, `assets`, `outlines`, `breadcrumbs`, `vendor`, `rating`, `inWishlist`, `wishlistIds`, `isPurchased`, `associations`, `videos`, `loyaltyPoints`
 
 ### VariationType
 
