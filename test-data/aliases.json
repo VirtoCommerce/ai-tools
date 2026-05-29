@@ -1352,8 +1352,8 @@
       "url": "storefront_url",
       "price": "base_price"
     },
-    "_status": "shape-drift-20260518",
-    "_status_note": "GUID survived (50529b79…). 4 sections preserved with new IDs/names; File section is now REQUIRED (was optional). Happy-path tests must upload a file."
+    "_status": "shape-drift-20260529",
+    "_status_note": "GUID survived (50529b79…). Storefront URL slug updated 2026-05-29 (category /configurable-caps-shirts/ -> /configurable-products/). FURTHER SHAPE DRIFT verified 2026-05-29: only 1 section now visible on PDP - color picker radiogroup with 5 options ($8/$10/$11/$12/$12). The previously-reported 4 sections (Product+Text+Product+File) NO LONGER EXIST. Base price now $10 (was $12). Tests targeting CFG_TSHIRT for File or Text sections will FAIL - use CFG_RING for Text-section tests; needs a reseeded CFG_TSHIRT or a new CFG_FILE_REQUIRED fixture for File-section tests."
   },
   "CFG_BIKE": {
     "file": "products/configurable-products",

@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "CFG-FILE-001","File Section — Upload Button Disabled After 5th File Uploaded (Max Limit)","Configurable Products > File Section > Upload Limits","High","BL-CAT-006","ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical; max_files=5","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section). Upload fixtures available: Logo1.png, Netflix-25.jpg, newier.pdf, Test.xlsx, large_test.png.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical, max_files=5","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to File upload section
 [ASSERT] File upload button visible and enabled
@@ -27,7 +27,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [API] Each upload returns success response","Spinner visible >5s on any upload; upload button not disabled at 5 files; upload button not re-enabled after deletion; console TypeError during upload","Remove all uploaded files from section; navigate away from product page","VCST-4825","Manual"
 "CFG-FILE-002","File Section — Selecting None on Optional Section Clears Uploaded Files","Configurable Products > File Section > Optional Behavior","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section, shows None option).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section accessible at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical (Hoodie Base, optional File section, shows None option).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to optional File section
 [ASSERT] 'None' option is available and selected by default
@@ -47,7 +47,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [API] addItem mutation returns 200 with no file references in configuration","Files remaining in list after selecting None; add-to-cart blocked despite None selected; console TypeError on None selection","Remove item from cart after test","VCST-4826","Manual"
 "CFG-FILE-003","File Section — 0-Byte File Rejected on Required Upload Section","Configurable Products > File Section > Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703 (Hoodie Base required File). Upload fixture large_logo.png (0 bytes) available at test-data/uploads/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703; empty_file=large_logo.png (0 bytes)","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703 (Hoodie Base required File). Upload fixture large_logo.png (0 bytes) available at test-data/uploads/.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703, empty_file=large_logo.png (0 bytes)","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
 [WAIT] Product configuration widget visible
 [SCROLL] Scroll to required File section
 [ASSERT] File section marked as Required
@@ -69,7 +69,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [API] addItem blocked before valid file; succeeds after valid file uploaded","0-byte file accepted without error; required section satisfied by 0-byte file; add-to-cart succeeds with 0-byte file; server 500 on 0-byte upload attempt","Remove item from cart after test","VCST-4827","Manual"
 "CFG-FILE-004","Cart Quantity Counter Does Not Increment When Required Section Is Unfilled","Configurable Products > File Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
 [WAIT] Product configuration widget visible
 [ASSERT] Required File section is unfilled (no file uploaded)
 [SCROLL] Scroll to quantity control
@@ -89,7 +89,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [NETWORK] No add-to-cart API calls triggered by quantity increment alone","Quantity incrementing with unfilled required section; counter reaching 2 or higher before file uploaded; JS error on quantity click","Navigate away; no cart cleanup needed","VCST-4828","Manual"
 "CFG-FILE-005","Add-to-Cart Plus Button Disabled When Required Section Is Unfilled","Configurable Products > File Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Configurable product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
 [WAIT] Product configuration widget visible
 [ASSERT] Required File section is unfilled
 [SCROLL] Scroll to Add-to-Cart area
@@ -110,7 +110,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with required File sectio
 [NETWORK] No addItem API call made when button is disabled
 [API] addItem mutation succeeds after file uploaded — errors[] is empty","Button clickable despite being visually disabled; cart badge incrementing with unfilled required section; button not becoming enabled after file upload","Remove item from cart after test","VCST-4829","Manual"
 "CFG-FILE-006","File Section — Multiple Files Upload and Individual Remove","Configurable Products > File Section > Upload Management","Medium","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Configurable product with optional File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Configurable product with optional File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to File section
 [ACT] Upload Logo1.png
@@ -128,7 +128,7 @@ User logged in as {{USER_EMAIL}}. Configurable product with optional File sectio
 [STATE] Correct files remain after specific file deletion","[CONSOLE] No JS errors on file removal
 [NETWORK] No unexpected API failures","Removing one file clears all files; wrong file removed; file list showing stale entries","Remove all files; navigate away",,"Manual"
 "CFG-FILE-007","File Section — Accepted and Rejected File Types Boundary","Configurable Products > File Section > Type Validation","High","BL-CAT-006","ECL-7.1; ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures available: Logo1.png, newier.pdf, Test.xlsx, video.mp4 (24MB oversized), download.avif, Stabilio.webp.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
 [WAIT] Configuration widget visible
 [ACT] Upload Logo1.png (.png — accepted type)
 [WAIT] Result
@@ -154,7 +154,7 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/pro
 [DOM] Error messages clearly state format is not supported","[CONSOLE] No 500 errors for rejected type uploads
 [NETWORK] Upload API returns 4xx for rejected types; 200 for accepted","Accepted types rejected; unsupported types silently accepted; server 500 on type rejection","Remove all uploaded files; navigate away",,"Manual"
 "CFG-FILE-008","File Section — Max File Size Enforcement (10MB Platform Limit)","Configurable Products > File Section > Size Validation","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
+User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical. Upload fixtures: large_test.png (5MB), video.mp4 (24MB).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical
 [WAIT] Configuration widget visible
 [ACT] Upload large_test.png (5MB — within 10MB limit)
 [WAIT] Upload completes
@@ -170,7 +170,7 @@ User logged in as {{USER_EMAIL}}. Product with File section at {{FRONT_URL}}/pro
 [NETWORK] Upload API returns 4xx for oversized file; 200 for 5MB file","5MB file rejected incorrectly; 24MB file accepted; server 500 on oversized upload; UI frozen after oversized upload attempt","Remove uploaded files; navigate away",,"Manual"
 "CFG-FILE-009","File Section — Re-Upload After Failed Attempt Works Correctly","Configurable Products > File Section > Upload Recovery","Medium","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
+User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_url=/products-with-options/configurable-caps-shirts/physical-1703","[NAV] {{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical-1703
 [WAIT] Configuration widget visible
 [ACT] Upload download.avif (unsupported type — will be rejected)
 [WAIT] Rejection response
@@ -191,7 +191,7 @@ User logged in as {{USER_EMAIL}}. Product with required File section at {{FRONT_
 [API] addItem mutation succeeds — errors[] empty","Upload control frozen after rejection; valid file rejected after prior failure; stale error messages blocking UI; add-to-cart blocked despite valid file","Remove item from cart after test","VCST-4827","Manual"
 "CFG-TEXT-001","Text Section — Max Length Enforced + Live Counter Verified (Required Text, 30-Char Limit)","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has a required Text section with maxLength 30. PR #2263 deployed: live character counter visible as 'N / M' format, rendered by vc-input-details, associated via aria-describedby. Product URL at {{FRONT_URL}} in /products-with-options/.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has a required Text section with maxLength 30. PR #2263 deployed: live character counter visible as 'N / M' format, rendered by vc-input-details, associated via aria-describedby. Product URL at {{FRONT_URL}} in /products-with-options/.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ASSERT] Text input field visible; character counter element visible showing '0 / 30' (empty state — note: space on each side of slash, e.g. '0 / 30' not '0/30')
@@ -211,18 +211,18 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has a
 [ASSERT] Counter shows '1 / 30'; vc-input-details__counter--limit class absent; role/aria-live not present on counter
 [ACT] Click 'Add to Cart'
 [WAIT] Success notification","[STATE] Text field enforces 30-character maximum via HTML maxlength attribute
-[STATE] 30 characters accepted exactly; counter shows '30 / 30'; vc-input-details__counter--limit applied; role=status + aria-live=polite conditionally active
+[STATE] 30 characters accepted exactly; counter shows '30 / 30'; vc-input-details__counter--limit applied, role=status + aria-live=polite conditionally active
 [STATE] 31st character rejected or trimmed; counter does not exceed '30 / 30'
 [STATE] 1 character accepted; counter shows '1 / 30'; no at-cap class; no role/aria-live on counter
 [DOM] Character counter element present; shows 'N / M' format with spaces around slash (e.g., '0 / 30', '15 / 30', '30 / 30')
 [DOM] aria-describedby on input references counter element id — always-on link
-[DOM] At-cap (30/30): counter has class vc-input-details__counter--limit (BEM modifier, color ≈ #DE3131); role=status and aria-live='polite' conditionally present
+[DOM] At-cap (30/30): counter has class vc-input-details__counter--limit (BEM modifier, color ≈ #DE3131), role=status and aria-live='polite' conditionally present
 [DOM] Below cap: counter is plain div — no role=status, no aria-live, no vc-input-details__counter--limit class","[CONSOLE] No JS errors on limit enforcement or counter update
 [NETWORK] No API call made for over-length input attempts
-[API] addItem call includes text value (trimmed to limit); errors[] empty","31st character accepted without indication; counter element absent from DOM; counter not updating reactively on keypress; counter format '0/30' without spaces (space-format regression); vc-input-details__counter--limit absent at 30/30; aria-describedby missing on input; vc-input-details__counter--limit present below cap (applied too early); add-to-cart blocked by 1-char input","Remove item from cart after test","VCST-4806; VCST-4928; PR #107 (XCart backend validation); PR #2235 (frontend MAX_LENGTH from section); PR #2263 (live counter + aria-describedby); Synced: VCST-4928 / PR #2263 (2026-04-20)","synced"
+[API] addItem call includes text value (trimmed to limit); errors[] empty","31st character accepted without indication; counter element absent from DOM; counter not updating reactively on keypress; counter format '0/30' without spaces (space-format regression); vc-input-details__counter--limit absent at 30/30; aria-describedby missing on input; vc-input-details__counter--limit present below cap (applied too early); add-to-cart blocked by 1-char input","Remove item from cart after test","VCST-4806; VCST-4928; PR #107 (XCart backend validation); PR #2235 (frontend MAX_LENGTH from section); PR #2263 (live counter + aria-describedby); Synced: VCST-4928 / PR #2263 (2026-04-20)","Manual"
 "CFG-TEXT-002","Text Section — Whitespace-Only Input Does Not Satisfy Required Validation","Configurable Products > Text Section > Validation","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ACT] Type 5 spaces into the text field (whitespace only)
@@ -235,10 +235,10 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [WAIT] Success notification","[STATE] Whitespace-only input does not satisfy required text validation
 [DOM] Validation error shown when only whitespace entered
 [STATE] Meaningful text satisfies required validation and allows add-to-cart","[CONSOLE] No JS errors on whitespace validation
-[NETWORK] addItem API not called when whitespace fails validation","Whitespace satisfying required validation; add-to-cart succeeding with spaces-only text; no validation error shown","Remove item from cart after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
+[NETWORK] addItem API not called when whitespace fails validation","Whitespace satisfying required validation; add-to-cart succeeding with spaces-only text; no validation error shown","Remove item from cart after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-003","Text Section — Optional Text Section Allows Empty and Non-Empty Values","Configurable Products > Text Section > Optional Behavior","Medium","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to optional Text section
 [ASSERT] Text field visible but not marked Required
@@ -256,10 +256,10 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 ha
 [STATE] Filled optional text field value preserved in cart
 [DOM] Cart shows text value when provided; no text shown when left empty","[CONSOLE] No errors for either scenario
 [NETWORK] Both addItem calls return 200
-[API] addItem response errors[] empty for both empty and filled text","Optional text blocking add-to-cart when empty; text value missing from cart; wrong item added","Remove both cart items after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
+[API] addItem response errors[] empty for both empty and filled text","Optional text blocking add-to-cart when empty; text value missing from cart; wrong item added","Remove both cart items after test","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-004","Text Section — Long Text at 100-Char Boundary Preserved in Cart and Order","Configurable Products > Text Section > Max Length E2E","Medium","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section with maxLength 100.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [ACT] Type exactly 100 characters: 'This gift message is exactly one hundred characters long. It tests the maximum length boundary ok!'
 [ASSERT] All 100 characters accepted
@@ -274,10 +274,10 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 ha
 [DOM] Cart displays full 100-character text without truncation or corruption
 [FORMAT] No HTML encoding artifacts in text display","[CONSOLE] No errors
 [NETWORK] addItem returns 200
-[API] addItem request body contains full 100-char text; errors[] empty","100 chars rejected; text truncated in cart display; encoding artifacts in long text; 101 chars accepted","Remove item from cart","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
+[API] addItem request body contains full 100-char text; errors[] empty","100 chars rejected; text truncated in cart display; encoding artifacts in long text; 101 chars accepted","Remove item from cart","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-005","Text Section — Special Characters and Unicode Preserved Through Cart","Configurable Products > Text Section > Character Handling","Medium","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 has optional Text section.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-Config-Gift-Box-20260324","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-Config-Gift-Box-20260324
 [WAIT] Configuration widget visible
 [ACT] Type text with special characters: 'Happy Birthday! & Best Wishes — 2026'
 [ACT] Set quantity to 1; click 'Add to Cart'
@@ -296,7 +296,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-Config-Gift-Box-20260324 ha
 [API] Response contains unescaped characters; errors[] empty","& displayed as &amp; in cart; Unicode characters garbled or replaced with ?; add-to-cart blocked by special chars","Remove both cart items after test",,"Manual"
 "CFG-TEXT-006","Text Section — Text Value Preserved Through Full Checkout to Order History","Configurable Products > Text Section > E2E Persistence","High","BL-CAT-006; BL-CART-007","ECL-7.1; ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section (maxLength 30). Checkout must be completable (valid address, payment method available).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section (maxLength 30). Checkout must be completable (valid address, payment method available).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ACT] Type 'With Love Always' into required text field
 [ACT] Set quantity 1; click 'Add to Cart'
@@ -314,9 +314,9 @@ User logged in as {{USER_EMAIL}} with {{USER_PASSWORD}}. Product AGENT-TEST-RING
 [STATE] Text value not dropped at any stage of the purchase flow
 [FORMAT] Text displayed accurately without truncation at all stages","[ADMIN] Admin order detail shows 'With Love Always' in line item configuration
 [API] Order creation POST returns 201; errors[] empty
-[CONSOLE] No errors across entire checkout flow","Text missing at any stage; text truncated; different text shown than entered; order creation failing","None (order placed for test verification)","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","synced"
+[CONSOLE] No errors across entire checkout flow","Text missing at any stage; text truncated; different text shown than entered; order creation failing","None (order placed for test verification)","VCST-4806; PR #107; PR #2235; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-007","Text Section — Required Text Quantity Counter Blocked When Field Empty (Parallel to VCST-4828)","Configurable Products > Text Section > Quantity Validation","High","BL-CAT-006; BL-CART-001","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ASSERT] Required Text section field is empty
 [SCROLL] Scroll to quantity spinbutton
@@ -333,7 +333,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [NETWORK] No addItem API calls triggered by quantity increment alone","Counter incrementing with empty required text; JS error on quantity click; counter not incrementing after text filled","Navigate away; no cart cleanup needed","VCST-4828","Manual"
 "CFG-TEXT-008","Text Section — Add-to-Cart Button Disabled When Required Text Is Empty (Parallel to VCST-4829)","Configurable Products > Text Section > Add-to-Cart Validation","High","BL-CAT-006","ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [ASSERT] Required Text section is empty
 [SCROLL] Scroll to 'Add to Cart' button
@@ -354,7 +354,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [API] addItem succeeds after text filled — errors[] empty","Button enabled with empty required text; cart item added with empty text; button not re-enabling after text entered","Remove item from cart after test","VCST-4829","Manual"
 "CFG-TEXT-009","Text Section — Paste-Bypass Triggers max_length_exceeded i18n Error and Backend Rejection","Configurable Products > Text Section > Server-Side Validation","High","BL-CAT-006; BL-CART-006","ECL-7.2; ECL-14.5","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. Both PR #107 (backend XCart validator) and PR #2235 (frontend MAX_LENGTH from section + max_length_exceeded i18n key) deployed to QA. Active locale = en (default).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars)","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. Both PR #107 (backend XCart validator) and PR #2235 (frontend MAX_LENGTH from section + max_length_exceeded i18n key) deployed to QA. Active locale = en (default).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, over_limit_text=""ThisStringIsThirtyOneCharsLong!"" (31 chars)","[NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
 [ASSERT] Text input visible; input has maxlength=""30"" attribute (DOM check)
@@ -378,10 +378,10 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [NETWORK] If addItem fires with over-limit text: response body validationErrors[] contains errorCode CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED (PR #107 server-side enforcement)
 [NETWORK] Successful addItem (18-char) returns 200 with no validationErrors
 [I18N] Switching locale to fr — error becomes ""Le texte ne doit pas dépasser 30 caractères"" (locales/fr.json max_length_exceeded)
-[API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","synced"
+[API] addItem GraphQL response shape matches BL-GQL-001 (errors[] empty when validation surfaces via validationErrors)","Over-limit text accepted without inline error (PR #2235 not deployed or i18n key not loaded); error message is generic ""invalid"" instead of localized max_length_exceeded; max parameter shown as ""{max}"" literal (i18n interpolation broken); backend silently accepts over-limit text (PR #107 not deployed); add-to-cart succeeds with 31-char text in cart","Remove item from cart after test","VCST-4806; PR #107 (backend CONFIGURATION_SECTION_CUSTOM_TEXT_MAX_LENGTH_EXCEEDED); PR #2235 (frontend max_length_exceeded i18n + section.maxLength binding); locales/en.json max_length_exceeded; Synced: VCST-4806 (2026-04-13)","Manual"
 "CFG-TEXT-019-COND-TOAST","Text Section (Conditional Required) — Toast Save with Empty Required Text Field Must Not Persist to Cart","Configurable Products > Text Section > Toast Validation","Critical","BL-CAT-006","ECL-14.1; ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Storefront accessible. User authenticated. Wedding cake product deployed: {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected. PDP in edit mode (Update cart button visible). Message option selected — Custom text required section (type=Text, isRequired=true, dependsOn=Message section) is visible and empty. Toast ""The product configuration has been changed"" is visible with a Save button. Note: this test specifically exercises the conditional Text section path (Custom text required appears only when Message has a value).","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake; product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id); section_custom_text_id=@td(CFG_023_SECTIONS.Text); section_message_id=@td(CFG_023_SECTIONS.Message); expected_behavior=toast Save blocked or server rejects; invalid_cart_signal=Required sections are missing","--- STOREFRONT ---
+Storefront accessible. User authenticated. Wedding cake product deployed: {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake. Product already in cart (lineItemId in URL) with Base+Creme selected. PDP in edit mode (Update cart button visible). Message option selected — Custom text required section (type=Text, isRequired=true, dependsOn=Message section) is visible and empty. Toast ""The product configuration has been changed"" is visible with a Save button. Note: this test specifically exercises the conditional Text section path (Custom text required appears only when Message has a value).","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, pdp_url={{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake, product_id=@td(CFG_WEDDING_CAKE_CONDITIONAL.id), section_custom_text_id=@td(CFG_023_SECTIONS.Text), section_message_id=@td(CFG_023_SECTIONS.Message), expected_behavior=toast Save blocked or server rejects, invalid_cart_signal=Required sections are missing","--- STOREFRONT ---
 [NAV] Sign in at {{FRONT_URL}} with {{USER_EMAIL}} / {{USER_PASSWORD}}
 [NAV] Navigate to {{FRONT_URL}}/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake
 [WAIT] Configure the parameters widget visible
@@ -414,7 +414,7 @@ Storefront accessible. User authenticated. Wedding cake product deployed: {{FRON
 [CONSOLE] No JS errors
 [NETWORK] No 4xx/5xx on any request","ChangeCartConfiguredItem fires with HTTP 200; payload omits Custom text required section (@td(CFG_023_SECTIONS.Text)); cart shows ""Required sections are missing""; Place order disabled; line item updated to $105 (Message added) without custom text","Remove line item from cart after test. If cart is in invalid state, remove affected line item to prevent contaminating subsequent tests.","VCST-4713; BUG: reports/bugs/open/BUG-Configurable-Toast-Save-Bypasses-Required-Section-Validation.md","Manual"
 "CFG-FILE-010","CFG-024: Text Parent Section Triggers Child Visibility on Input — File-Text Boundary Check","Configurable Products > Conditional Sections > Text Parent Input","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible. CFG-024 (Text-driven conditional) deployed and indexed. No prior text entered.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_TEXT_DRIVEN_COND.slug)","[NAV] Navigate to @td(CFG_TEXT_DRIVEN_COND.url)
+Storefront accessible. CFG-024 (Text-driven conditional) deployed and indexed. No prior text entered.","url={{FRONT_URL}}/search?q=@td(CFG_TEXT_DRIVEN_COND.name)","[NAV] Navigate to @td(CFG_TEXT_DRIVEN_COND.url)
 [WAIT] Configure widget; Engraving Line 1 text input visible; Style Pack NOT in DOM
 [ACT] Click Engraving Line 1 and type a single character: A
 [WAIT] Style Pack section appears
@@ -429,7 +429,7 @@ Storefront accessible. CFG-024 (Text-driven conditional) deployed and indexed. N
 [STATE] Repasting triggers show; previously selected child option cleared on parent change (clearHiddenSectionValues())
 [DOM] Style Pack only visible when Engraving Line 1 has content","[CONSOLE] No JS errors on input/clear cycles; [NETWORK] No page reloads during typing","Single character not sufficient to trigger visibility; Style Pack stays visible after field cleared; previously selected Style Pack value persists after parent re-entered","none","VCST-4713","Manual"
 "CFG-FILE-011","CFG-025: File Parent Section Triggers Child Visibility on Upload — File-Text Boundary Check","Configurable Products > Conditional Sections > File Parent Upload","High","BL-CAT-006","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible. CFG-025 (File-driven conditional) deployed and indexed. Upload fixtures Logo1.png and Test.xlsx available.","url={{FRONT_URL}}/products-with-options/configurations/@td(CFG_FILE_DRIVEN_COND.slug)","[NAV] Navigate to @td(CFG_FILE_DRIVEN_COND.url)
+Storefront accessible. CFG-025 (File-driven conditional) deployed and indexed. Upload fixtures Logo1.png and Test.xlsx available.","url={{FRONT_URL}}/search?q=@td(CFG_FILE_DRIVEN_COND.name)","[NAV] Navigate to @td(CFG_FILE_DRIVEN_COND.url)
 [WAIT] Configure widget; Design Upload file input visible; Finish Type NOT in DOM
 [ACT] Upload Logo1.png to Design Upload
 [WAIT] Upload completes; Finish Type appears
@@ -444,7 +444,7 @@ Storefront accessible. CFG-025 (File-driven conditional) deployed and indexed. U
 [STATE] Uploading a different accepted file type also triggers show; child value reset
 [DOM] Finish Type only visible when at least one file is uploaded in Design Upload","[CONSOLE] No JS errors on upload/remove/re-upload cycle; [NETWORK] File upload API 200/201 for both files; remove API 200","Finish Type not appearing after upload; stays visible after file removed; re-upload does not re-trigger show; file removal API fails","none","VCST-4713","Manual"
 "CFG-TEXT-COUNTER-001","Text Counter — Visible as '0 / 30' on Empty Required Text Field + aria-describedby Linked (S1)","Configurable Products > Text Section > Character Counter > Visibility","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed (section-text-fieldset.vue counter prop, vc-input-details.vue counter rendering, vc-input.vue aria-describedby). Field must be empty at start.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; expected_counter_empty=0 / 30; max_length=30","--- STOREFRONT ---
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed (section-text-fieldset.vue counter prop, vc-input-details.vue counter rendering, vc-input.vue aria-describedby). Field must be empty at start.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, expected_counter_empty=0 / 30, max_length=30","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
@@ -463,7 +463,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [NETWORK] No failed requests on page load (product and configuration sections loaded successfully)
 [API] productConfiguration GraphQL query returns maxLength=30 for the Text section (confirms source of '30' in counter)","Counter element absent from DOM; counter shows '0 / 0' or '0 / null' or '0 / undefined'; counter format '0/30' without spaces (regression); aria-describedby missing on input; aria-describedby points to wrong element; counter not visible (display:none or v-if false) when field is empty; vc-input-details__counter--limit class present at count=0 (at-cap class applied incorrectly)","Navigate away from PDP; no cart cleanup needed (no item added)","VCST-4928; PR #2263 (section-text-fieldset.vue + vc-input-details.vue + vc-input.vue); Technique: Equivalence Partitioning (empty state partition)","Manual"
 "CFG-TEXT-COUNTER-002","Text Counter — Updates Live as User Types (0 → 5 → 30 Sequence)","Configurable Products > Text Section > Character Counter > Live Update","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed (live counter rendering on each input event). Field must be empty at start.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; char_5=Hello; char_30=Exactly thirty characters here!","--- STOREFRONT ---
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed (live counter rendering on each input event). Field must be empty at start.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327; char_5=Hello; char_30=Exactly thirty characters here!","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
@@ -486,7 +486,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [STATE] Counter reflects character count correctly at each step (0, 5, 30)","[CONSOLE] No JS errors during rapid typing or clear action
 [NETWORK] No unexpected API calls triggered by typing (counter is purely client-side)","Counter not updating on keypress (static display); counter jumping by wrong increments; vc-input-details__counter--limit absent at 30/30; vc-input-details__counter--limit persisting after clear; counter format '0/30' without spaces (regression); counter showing wrong count (off by one); counter disappearing mid-typing","Navigate away from PDP; no cart cleanup needed (no item added)","VCST-4928; PR #2263 (vc-input-details.vue counter render logic + at-cap class application); Technique: Boundary Value Analysis (0, 5, 30 progression)","Manual"
 "CFG-TEXT-COUNTER-003","Text Counter — At-Cap Visual Emphasis (Warning/Danger Token) + aria-live Polite Announcement at 30/30","Configurable Products > Text Section > Character Counter > A11y At-Cap","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed. Browser accessibility tree available (Chrome DevTools axe or browser_evaluate). Test verifies both visual token change AND aria-live polite region update at cap.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; cap_text=Exactly thirty characters here!","--- STOREFRONT ---
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 deployed. Browser accessibility tree available (Chrome DevTools axe or browser_evaluate). Test verifies both visual token change AND aria-live polite region update at cap.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, cap_text=Exactly thirty characters here!","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
@@ -506,13 +506,13 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [WAIT] Counter updates to '28 / 30'
 [ASSERT] vc-input-details__counter--limit class removed from counter element (below cap)
 [ASSERT] Counter at 28/30: role=status absent; aria-live absent (conditional attributes removed when cap lifted)","[DOM] At 29/30: vc-input-details__counter--limit absent; counter shows '29 / 30'; no role/aria-live on counter
-[DOM] At 30/30: vc-input-details__counter--limit present (BEM modifier, #DE3131); counter shows '30 / 30'; role=status and aria-live='polite' conditionally active
+[DOM] At 30/30: vc-input-details__counter--limit present (BEM modifier, #DE3131); counter shows '30 / 30', role=status and aria-live='polite' conditionally active
 [DOM] After clearing to 28/30: vc-input-details__counter--limit removed; role/aria-live removed; counter shows '28 / 30'
 [STATE] Visual emphasis boundary is exactly at maxLength (30), not before or after
 [STATE] Conditional ARIA (role=status + aria-live) transitions correctly: absent below cap, present at cap, absent again when count drops","[CONSOLE] No JS errors during at-cap transition or conditional role/aria-live addition/removal
-[NETWORK] No API calls triggered by cap event (purely client-side feedback)","vc-input-details__counter--limit absent at 30/30; Tailwind classes text-warning or text-danger present instead of BEM modifier (implementation drift); class applied at 29/30 or earlier; class persisting after clear to 28/30; role=status/aria-live not applied at cap; role=status/aria-live persisting below cap; format '0/30' without spaces; console TypeError at at-cap boundary","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (vc-input-details.vue vc-input-details__counter--limit BEM + conditional role=status + aria-live=polite); Technique: Boundary Value Analysis (29, 30 boundary); A11y: WCAG 2.1 AA 4.1.3 Status Messages","Manual"
+[NETWORK] No API calls triggered by cap event (purely client-side feedback)","vc-input-details__counter--limit absent at 30/30; Tailwind classes text-warning or text-danger present instead of BEM modifier (implementation drift); class applied at 29/30 or earlier; class persisting after clear to 28/30, role=status/aria-live not applied at cap, role=status/aria-live persisting below cap; format '0/30' without spaces; console TypeError at at-cap boundary","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (vc-input-details.vue vc-input-details__counter--limit BEM + conditional role=status + aria-live=polite); Technique: Boundary Value Analysis (29, 30 boundary); A11y: WCAG 2.1 AA 4.1.3 Status Messages","Manual"
 "CFG-TEXT-COUNTER-005","Text Counter — i18n: Counter Digit-Only Format Renders Correctly Under fr/de/ja Locale Switch","Configurable Products > Text Section > Character Counter > i18n","Medium","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327. Storefront supports locale switching (fr, de, ja). PR #2263 adds no new i18n keys — counter is digit-only 'N / M'. Any adjacent labels in shared.catalog.product_details.product_configuration.* must be translated. Test verifies counter digits render correctly under non-en locale and no i18n key breakage.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; locales_to_test=fr,de,ja","--- STOREFRONT ---
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327. Storefront supports locale switching (fr, de, ja). PR #2263 adds no new i18n keys — counter is digit-only 'N / M'. Any adjacent labels in shared.catalog.product_details.product_configuration.* must be translated. Test verifies counter digits render correctly under non-en locale and no i18n key breakage.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, locales_to_test=fr,de,ja","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
@@ -539,7 +539,7 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327. Stor
 [STATE] Adjacent translated labels are in the correct language for each locale","[CONSOLE] No i18n missing-key warnings or errors under fr/de/ja locale — key shared.catalog.product_details.product_configuration.* must resolve
 [NETWORK] No failed locale asset requests","Counter showing locale-specific i18n key literal (untranslated key placeholder); counter showing numbers in wrong format for a locale (e.g., locale-specific digits breaking 'N / M'); console i18n warning for missing translation key in product_configuration namespace; locale switch breaking counter visibility","Navigate away; no cart cleanup needed","VCST-4928; PR #2263 (digit-only counter — no new i18n keys added per PR description); Technique: Decision Table (locale × counter behavior); i18n scope: shared.catalog.product_details.product_configuration.*","Manual"
 "CFG-TEXT-COUNTER-006","Text Counter — Accessibility: aria-describedby Always-On + Conditional role=status at Cap; WCAG 2.1 AA 1.3.1 + 4.1.3 via axe","Configurable Products > Text Section > Character Counter > Accessibility","High","BL-CAT-006","ECL-7.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 actual a11y model: aria-describedby on input is ALWAYS-ON (present at rest and at cap); role=status and aria-live=polite on counter are CONDITIONAL — applied only when vc-input-details__counter--limit class is active (at-cap). axe run in both states. WCAG 2.1 AA 1.3.1 satisfied via always-on aria-describedby; 4.1.3 satisfied via conditional role=status at cap.","user={{USER_EMAIL}}; password={{USER_PASSWORD}}; front_url={{FRONT_URL}}; product_slug=AGENT-TEST-RING-TXT-CFG-20260327; wcag_criteria=1.3.1,4.1.3","--- STOREFRONT ---
+User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has required Text section with maxLength 30. PR #2263 actual a11y model: aria-describedby on input is ALWAYS-ON (present at rest and at cap), role=status and aria-live=polite on counter are CONDITIONAL — applied only when vc-input-details__counter--limit class is active (at-cap). axe run in both states. WCAG 2.1 AA 1.3.1 satisfied via always-on aria-describedby; 4.1.3 satisfied via conditional role=status at cap.","user={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, product_slug=AGENT-TEST-RING-TXT-CFG-20260327, wcag_criteria=1.3.1,4.1.3","--- STOREFRONT ---
 [NAV] {{FRONT_URL}} — navigate to product AGENT-TEST-RING-TXT-CFG-20260327
 [WAIT] Configuration widget visible
 [SCROLL] Scroll to required Text section
@@ -564,4 +564,4 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [DOM] axe: 0 critical/serious violations in both at-rest and at-cap states (wcag2a + wcag2aa)
 [STATE] WCAG 1.3.1 satisfied by always-on aria-describedby (constraint communicated programmatically at all times)
 [STATE] WCAG 4.1.3 satisfied by conditional role=status + aria-live at cap (status message exposed to AT when limit reached)","[CONSOLE] No axe violation errors in console (axe-core injected or DevTools panel)
-[NETWORK] No 4xx/5xx during page load or accessibility audit","axe reporting WCAG 1.3.1 violation (aria-describedby missing or broken); input missing accessible name; aria-describedby absent at rest; aria-describedby removed at cap; role=status present at rest instead of only at-cap (over-application); role=status absent at cap (under-application); aria-live set to 'off' or 'assertive' instead of 'polite'; counter format '0/30' without spaces; Coffee theme color contrast <4.5:1 for counter text (WCAG 1.4.3)","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (conditional role=status + aria-live=polite at-cap; always-on aria-describedby); WCAG 2.1 AA criteria: 1.3.1 Info and Relationships, 4.1.3 Status Messages; Technique: Error Guessing (a11y misimplementation patterns); Note: Only Coffee theme is WCAG-compliant per memory/feedback_a11y_coffee_only.md — test on Coffee theme","Manual"
+[NETWORK] No 4xx/5xx during page load or accessibility audit","axe reporting WCAG 1.3.1 violation (aria-describedby missing or broken); input missing accessible name; aria-describedby absent at rest; aria-describedby removed at cap, role=status present at rest instead of only at-cap (over-application), role=status absent at cap (under-application); aria-live set to 'off' or 'assertive' instead of 'polite'; counter format '0/30' without spaces; Coffee theme color contrast <4.5:1 for counter text (WCAG 1.4.3)","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (conditional role=status + aria-live=polite at-cap; always-on aria-describedby); WCAG 2.1 AA criteria: 1.3.1 Info and Relationships, 4.1.3 Status Messages; Technique: Error Guessing (a11y misimplementation patterns); Note: Only Coffee theme is WCAG-compliant per memory/feedback_a11y_coffee_only.md — test on Coffee theme","Manual"
