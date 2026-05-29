@@ -15,14 +15,14 @@
 [WAIT] Wait for layout to update
 [ASSERT] Verify product cards display in grid","[DOM] Products shown in multi-column grid layout
 [DOM] Each card shows image, name, and price
-[DOM] Add to cart button present on each card","[NETWORK] no 4xx/5xx on category page request
+[DOM] Quantity stepper (+) present on each card","[NETWORK] no 4xx/5xx on category page request
 [CONSOLE] no TypeError or JS errors","Products not displaying; grid layout broken; images not loading; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-003","Category Page - Product List View","Catalog > Display","High","BL-CAT-001",,"Category with products exists","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Click 'List view' icon
 [WAIT] Wait for layout to update
 [ASSERT] Verify list layout renders","[DOM] Products shown in single-column list format
 [DOM] More detail visible per product compared to grid
-[DOM] Action buttons (Add to cart) accessible in list view","[NETWORK] no 4xx/5xx on layout toggle request
+[DOM] Quantity stepper (+) accessible in list view","[NETWORK] no 4xx/5xx on layout toggle request
 [CONSOLE] no TypeError or JS errors","List layout not switching; products missing in list view; actions inaccessible; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-007","Category - Sorting Options","Catalog > Sorting","Medium","BL-CAT-005",,"Category with multiple products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Open sort dropdown
@@ -47,7 +47,7 @@
 [DOM] Brand list or grid displayed
 [DOM] Each brand entry shows brand name (and logo/image if configured)
 [DOM] Page title or heading confirms Brands context","[NETWORK] GET /Brands returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError","none","Coverage Gap Analysis","Generated"
+[CONSOLE] no TypeError or JS errors","Brands page returns 4xx/5xx; brand list empty when brands exist; brand images failing to load; console TypeError","none","Coverage Gap Analysis","Draft"
 "CAT-036","Brand Navigation","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand with products exists","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [ASSERT] Verify at least one brand entry is visible
 [ACT] Click on a brand entry
@@ -58,7 +58,7 @@
 [STATE] All displayed products associated with the selected brand
 [DOM] Facet filters available on brand result page
 [STATE] URL reflects brand filter context","[NETWORK] GET brand listing page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none","Coverage Gap Analysis","Generated"
+[CONSOLE] no TypeError or JS errors","Brand entry not clickable; brand listing page returns 4xx; non-brand products appearing in brand listing; console TypeError","none","Coverage Gap Analysis","Draft"
 "CAT-037","Brand Product Count","Catalog > Brands","Medium","BL-CAT-001",,"Brands page loaded; at least one brand entry is visible","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [ASSERT] Locate a brand entry showing a product count badge or label
 [ASSERT] Note the displayed count value
@@ -68,7 +68,7 @@
 [ASSERT] Verify the displayed count on the brand entry matches the actual product card count on the listing page","[MATH] Product count shown on brand entry equals number of product cards on the brand listing page
 [DOM] Brand entry shows a non-zero product count label
 [STATE] Zero-count brands hidden or marked as unavailable if feature configured","[NETWORK] GET brand listing returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Product count on Brands page does not match listing count; brand count not showing; console TypeError","none","Coverage Gap Analysis","Generated"
+[CONSOLE] no TypeError or JS errors","Product count on Brands page does not match listing count; brand count not showing; console TypeError","none","Coverage Gap Analysis","Draft"
 "CAT-040","PDP SEO - Meta Tags and Open Graph Tags","Catalog > SEO","Medium","BL-CAT-006",,"Any product with SEO info configured (meta title and description set in admin) exists in the B2B virtual catalog","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} (resolve any in-stock product slug at runtime)
 [WAIT] Wait for PDP to fully render
 [ACT] Open browser DevTools Elements panel
@@ -84,7 +84,7 @@
 [DOM] meta[property=og:description] present and non-empty
 [DOM] meta[property=og:image] present with non-empty image URL
 [DOM] meta[property=og:url] present and matches canonical URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
-[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; canonical URL absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Generated"
+[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; canonical URL absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Draft"
 "CAT-041","Category Page SEO - JSON-LD BreadcrumbList and Canonical URL","Catalog > SEO","Medium","BL-CAT-001, BL-CAT-006",,"Category page with at least one level of subcategory hierarchy exists","url={{FRONT_URL}}","[NAV] Navigate to any subcategory page on {{FRONT_URL}} (a category with parent > child structure)
 [WAIT] Wait for page to fully render
 [ACT] Open browser DevTools Elements panel
@@ -99,7 +99,7 @@
 [DOM] Breadcrumb positions are sequential starting from 1
 [FORMAT] JSON-LD is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
 [CONSOLE] no JSON parse errors from structured data
-[CONSOLE] no TypeError or JS errors","Canonical URL missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Generated"
+[CONSOLE] no TypeError or JS errors","Canonical URL missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02","Draft"
 "CAT-042","Multi-Level Category Navigation with Breadcrumbs","Catalog > Navigation","Medium","BL-CAT-001",,"Category hierarchy exists with at least 3 levels (top-level > subcategory > sub-subcategory)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} main catalog page
 [ACT] Click on a top-level category in the navigation menu
 [WAIT] Wait for top-level category page to load
@@ -120,7 +120,7 @@
 [DOM] Each breadcrumb item is a clickable link (except the current page)
 [NAV] Clicking a breadcrumb ancestor navigates to that level
 [DOM] Products displayed are relevant to the current category level","[NETWORK] GET each category page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Breadcrumbs not updating at deeper levels; URL not reflecting category hierarchy; breadcrumb links not navigable; heading mismatching current category; console TypeError","none","Checklist #3, GAP-CS-03","Generated"
+[CONSOLE] no TypeError or JS errors","Breadcrumbs not updating at deeper levels; URL not reflecting category hierarchy; breadcrumb links not navigable; heading mismatching current category; console TypeError","none","Checklist #3, GAP-CS-03","Draft"
 "CAT-043","Empty Category Handling - No Products Message","Catalog > Navigation","Medium","BL-CAT-004, BL-CAT-001","ECL-3.1","A category exists with zero products assigned (or all products are deactivated/out of stock)","url={{FRONT_URL}}","[NAV] Navigate to a category page with no products on {{FRONT_URL}}
 [WAIT] Wait for page to fully render
 [ASSERT] Verify a 'No products found' or equivalent empty state message is displayed
@@ -134,7 +134,7 @@
 [DOM] Category heading still shows correct category name
 [NAV] Breadcrumbs still functional for navigation back","[NETWORK] GET category page returns HTTP 200 (not 4xx)
 [CONSOLE] no TypeError or JS errors
-[CONSOLE] no Vue hydration warnings","Blank page with no message; filter panel showing options for zero products; pagination showing for empty set; JS errors on empty category; console TypeError","none","Checklist #3, ECL-3.1, GAP-CS-04","Generated"
+[CONSOLE] no Vue hydration warnings","Blank page with no message; filter panel showing options for zero products; pagination showing for empty set; JS errors on empty category; console TypeError","none","Checklist #3, ECL-3.1, GAP-CS-04","Draft"
 "CAT-047","All Products Dropdown - Displays All Top-Level Categories","Catalog > Navigation","High","BL-CAT-001",,"Storefront populated with multiple top-level categories; main navigation rendered","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ASSERT] Locate 'All Products' or equivalent top-level navigation item in the main menu
 [ACT] Hover over or click 'All Products' to open the dropdown
@@ -147,7 +147,7 @@
 [DOM] Each category item has a non-empty href pointing to a category URL path
 [STATE] Dropdown does not show blank or placeholder items","[NETWORK] GET {{FRONT_URL}} returns HTTP 200
 [NETWORK] no 4xx/5xx on menu data request
-[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover","none","Coverage Gap Analysis; GAP-CS-13","Generated"
+[CONSOLE] no TypeError or JS errors","Dropdown not opening; dropdown empty with no categories; category items with empty or # href; console TypeError on hover","none","Coverage Gap Analysis; GAP-CS-13","Draft"
 "CAT-048","All Products Dropdown - Category Link Navigates to Correct Category Page","Catalog > Navigation","High","BL-CAT-001",,"Storefront populated; at least one top-level category accessible from 'All Products' dropdown","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Hover over or click 'All Products' in the main navigation to open the dropdown
 [WAIT] Wait for dropdown to appear
@@ -161,7 +161,7 @@
 [DOM] Breadcrumbs show: Home > [Category Name]
 [DOM] Product grid or product listing is rendered on the category page
 [STATE] Active/highlighted state on the category in navigation (if applicable)","[NETWORK] GET category page returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError","none","Coverage Gap Analysis; GAP-CS-13","Generated"
+[CONSOLE] no TypeError or JS errors","Category page returning 404; URL slug not matching the dropdown label; page heading mismatching clicked category; breadcrumbs absent; console TypeError","none","Coverage Gap Analysis; GAP-CS-13","Draft"
 "CAT-049","Category SEO Slug URL Resolves Correctly","Catalog > Navigation","Medium","BL-CAT-001",,"A category with a configured SEO-friendly slug exists in the catalog","url={{FRONT_URL}}","[NAV] Navigate to any category page using its SEO slug URL (resolve a category slug at runtime from the navigation menu)
 [WAIT] Wait for the page to fully load
 [ASSERT] Verify page loads with HTTP 200 (no redirect to an error page)
@@ -174,7 +174,7 @@
 [DOM] Products are displayed on the page
 [DOM] link[rel=canonical] href equals the current slug URL (not an ID-based URL)
 [STATE] No 301/302 redirect from slug to ID URL","[NETWORK] GET slug URL returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; canonical pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14","Generated"
+[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; canonical pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14","Draft"
 "CAT-056","Catalog Listing Page Renders Correctly at 768px Tablet Viewport","Catalog > Responsive","Medium","BL-CAT-001",,"Category with products exists; storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
 [ACT] Resize the browser viewport to 768x1024 (tablet portrait)
 [WAIT] Wait for layout to reflow
@@ -189,7 +189,7 @@
 [DOM] Facet/filter controls accessible (not off-screen)
 [DOM] Pagination controls visible and not overlapping content
 [STATE] No horizontal scroll bar visible at 768px width","[NETWORK] no 4xx/5xx on category page at tablet viewport
-[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none","Coverage Gap Analysis; GAP-CS-20","Generated"
+[CONSOLE] no TypeError or JS errors","Product grid overflowing at 768px; product cards clipped or inaccessible; navigation menu not accessible; horizontal scrollbar visible; pagination hidden off-screen; console TypeError","none","Coverage Gap Analysis; GAP-CS-20","Draft"
 "CAT-059","Breadcrumb Resets When Navigating from Subcategory Back to Parent via Main Menu","Catalog > Navigation > Breadcrumb State","High","BL-CAT-001","ECL-14.1","Category hierarchy exists with at least 2 levels; user can navigate subcategory then return to parent via main menu","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click on a top-level category in the main navigation menu
 [WAIT] Wait for top-level category page to load
@@ -267,7 +267,7 @@
 [DOM] Product images loaded (at least one <img> with non-empty src)
 [STATE] Total price dynamically updates when options are selected","[NETWORK] POST /graphql (productConfiguration) returns HTTP 200
 [NETWORK] All image requests return HTTP 200
-[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","N/A","E2E-CAT-005, GAP-CS-05","Generated"
+[CONSOLE] no TypeError or JS errors","Configuration sections not rendering; price showing $0; required sections not marked; options not loading; total price not updating; console TypeError","none","E2E-CAT-005, GAP-CS-05","Draft"
 "CAT-045","Configurable Product - Variation Selection Updates Price and SKU","Catalog > Configurable Product","High","BL-CAT-006",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 A configurable product with a Variation section exists in the B2B virtual catalog; the product has at least 2 variation options; resolve the product slug at runtime via xAPI products query with filter='productType:Configurable' and hasVariations:true","url={{FRONT_URL}}","[NAV] Resolve a configurable product with variations at runtime: query xAPI products(storeId,filter='productType:Configurable') — pick a result that has hasVariations=true; navigate to its PDP on {{FRONT_URL}}
@@ -281,7 +281,7 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [WAIT] Wait for price and details to update
 [ASSERT] Verify price changes (or stays the same if variations share a price — both valid; assert price > 0)
 [ASSERT] Verify SKU updates to the second variation's identifier
-[ACT] Click 'Add to cart' with the selected configuration
+[ACT] Click 'Add to cart' button (configurable PDP uses explicit Add to cart, not the qty stepper)
 [WAIT] Wait for cart confirmation
 [ASSERT] Verify cart shows the configured product with a non-empty variation identifier and price > 0","[DOM] Variation section displays available options from the product's variations
 [STATE] Selecting a variation updates the displayed price (price > 0 matching /^\$[0-9,]+\.[0-9]{2}$/)
@@ -289,4 +289,4 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [DOM] Cart line item shows configured product with non-empty variation details
 [STATE] Cart total > 0 and reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
 [NETWORK] POST add-to-cart returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Generated"
+[CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Draft"
