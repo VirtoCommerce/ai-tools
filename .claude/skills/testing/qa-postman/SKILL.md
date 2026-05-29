@@ -1,6 +1,7 @@
 ---
 description: "[Testing] Postman MCP collections — create, configure, verify, and export collections with proper variables, auth, and endpoints"
 argument-hint: "create <purpose> | env <profile> | verify <collection> | export <collection> | list | examples"
+disable-model-invocation: true
 ---
 
 # /qa-postman — Postman Collection Builder

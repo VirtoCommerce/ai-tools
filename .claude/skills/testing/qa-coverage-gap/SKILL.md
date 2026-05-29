@@ -1,6 +1,7 @@
 ---
 description: "[Testing] Autonomous test coverage gap analysis and generation — identifies missing test cases, generates enriched CSV test cases, validates P0 cases via browser, and reports improvements. Single-agent counterpart to /qa-coverage-generation."
 argument-hint: "analyze | generate | validate | full | domain <name> | suite <ID>"
+disable-model-invocation: true
 ---
 
 # /qa-coverage-gap — Test Coverage Gap Analysis & Generation

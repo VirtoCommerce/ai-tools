@@ -30,7 +30,7 @@ grant_type=password&scope=offline_access&username={{username}}&password={{passwo
 ```bash
 curl -X POST "https://vcst-qa.govirto.com/connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=password&scope=offline_access&username=admin&password=Password1!&storeId=B2B-store"
+  -d "grant_type=password&scope=offline_access&username=admin&password=${ADMIN_PASSWORD}&storeId=B2B-store"
 ```
 
 ### Example (browser evaluate / fetch)
@@ -39,7 +39,7 @@ curl -X POST "https://vcst-qa.govirto.com/connect/token" \
 const response = await fetch('/connect/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: 'grant_type=password&scope=offline_access&username=admin&password=Password1!&storeId=B2B-store'
+  body: 'grant_type=password&scope=offline_access&username=admin&password=${ADMIN_PASSWORD}&storeId=B2B-store'
 });
 const data = await response.json();
 // data.access_token — use as Bearer token

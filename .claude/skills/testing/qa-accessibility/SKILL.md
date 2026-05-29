@@ -1,6 +1,7 @@
 ---
 description: "[Testing] WCAG 2.2 AA accessibility audit: POUR + 2.2 additions, axe-core injection, Lighthouse MCP, keyboard walk, ARIA."
 argument-hint: "page URL | component name | full audit"
+disable-model-invocation: true
 ---
 
 # /qa-accessibility — WCAG 2.2 AA Accessibility Audit

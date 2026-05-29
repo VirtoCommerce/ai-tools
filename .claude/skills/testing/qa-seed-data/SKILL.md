@@ -1,6 +1,7 @@
 ---
 description: "[Testing] Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs — full or by profile"
 argument-hint: "[minimal|catalog|b2b|pricing|full|teardown]"
+disable-model-invocation: true
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown

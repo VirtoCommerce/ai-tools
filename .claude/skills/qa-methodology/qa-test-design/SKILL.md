@@ -1,6 +1,7 @@
 ---
 description: "[QA Method] Test design techniques: equivalence partitioning, BVA, decision tables, state transitions, pairwise, error guessing."
 argument-hint: "feature name | technique name | VCST-XXXX"
+disable-model-invocation: true
 ---
 
 # /qa-test-design — Systematic Test Case Derivation

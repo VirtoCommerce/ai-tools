@@ -1,6 +1,7 @@
 ---
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 62 built-in domain checklists (32 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
 argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
+disable-model-invocation: true
 
 ---
 

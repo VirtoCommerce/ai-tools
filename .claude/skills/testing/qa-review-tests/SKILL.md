@@ -1,6 +1,7 @@
 ---
 description: "[Testing] Review test cases for quality, determinism, completeness, data validity, coverage gaps, duplication, and live environment verification. Delegates browser verification to qa-testing-expert."
 argument-hint: "suite <ID> | file <path> | diff | all | domain <name> | --verify | --fix"
+disable-model-invocation: true
 ---
 
 # /qa-review-tests — Test Case Review & Quality Verification

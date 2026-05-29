@@ -1,6 +1,7 @@
 ---
 description: "[QA Method] Bug investigation: reproduce, isolate root cause, gather evidence, common VC patterns."
 argument-hint: "bug description | VCST-XXXX"
+disable-model-invocation: true
 ---
 
 # /qa-investigate — Bug Investigation Flow

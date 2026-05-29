@@ -1,6 +1,7 @@
 ---
 description: "[QA Method] Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or existing suites. Uses business logic invariants and edge case library."
 argument-hint: "VCST-XXXX | domain | suite ID | migrate <suite> | from-checklist <domain>"
+disable-model-invocation: true
 ---
 
 # /qa-test-cases-generator — Agent-Native Test Case Generation

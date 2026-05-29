@@ -1,6 +1,7 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
 argument-hint: "bug description | VCST-XXXX | screenshot path"
+disable-model-invocation: true
 ---
 
 # /qa-bug — File a Bug Report

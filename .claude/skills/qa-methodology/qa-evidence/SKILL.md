@@ -1,6 +1,7 @@
 ---
 description: "[QA Method] Evidence capture & report formatting: screenshot rules, 3-tier verbosity, output paths."
 argument-hint: "[compact|detailed|signoff]"
+disable-model-invocation: true
 ---
 
 # /qa-evidence — Evidence Capture & Output Standards

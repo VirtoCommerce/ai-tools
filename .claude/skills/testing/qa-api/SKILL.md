@@ -1,6 +1,7 @@
 ---
 description: "[Testing] REST API & GraphQL xAPI — reference lookup, test execution, and test case generation."
 argument-hint: "ref <module> | test <scope> | cases <scope>"
+disable-model-invocation: true
 ---
 
 # /qa-api — API & GraphQL Testing
