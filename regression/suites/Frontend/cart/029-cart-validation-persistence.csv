@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CART-012","Save for Later - Move Item","Cart > Save Later","Medium","BL-CART-003","ECL-14.1","[PRE:CLEAR_SESSION]
+"CART-012","Save for Later - Move Item","Cart > Save Later","Medium","","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user logged in on cart page","url={{FRONT_URL}}/cart
@@ -14,7 +14,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] cart badge decremented","[API] moveItemToSaved or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","item stays in cart instead of moving; saved-for-later section not shown; subtotal not updated","Move item back to cart or remove","tests/VCST-3928-save4later-delay-fix; Synced: VCST-4205 (2026-05-19) — VALID for non-configurable products; VCST-4205 anomalies (A1/A2/A3/A4) affect configurable SFL flows only","Automated"
-"CART-013","Save for Later - Move Back","Cart > Save Later","Medium","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-013","Save for Later - Move Back","Cart > Save Later","Medium","","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Item in saved-for-later list, user on cart page","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -28,13 +28,14 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] cart badge incremented","[API] moveItemToCart or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","item stays in saved list; active cart not updated; subtotal unchanged; badge not incremented","Remove item from cart","tests/VCST-3928-save4later-delay-fix; Synced: VCST-4205 (2026-05-19) — VALID for non-configurable products; configurable SFL round-trip coverage in CRL-GQL-100/101 (050b3) and CFG-E2E-058..066 (072b)","Automated"
-"CART-014","Apply Coupon - Valid Code","Cart > Coupons","Medium","BL-CART-004","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-014","Apply Coupon - Valid Code","Cart > Coupons","Medium","BL-CART-003","ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: A valid, active coupon code must exist in QA environment. Set {{VALID_COUPON_CODE}} env var. Check test-data/promotions/coupons.csv for existing codes and verify at least one is active and eligible. User logged in, eligible items in cart.","url={{FRONT_URL}}/cart
+User logged in. Cart has at least 1 eligible item. Coupon @td(COUPON_FIXED5.code) (fixed $5 off, no min-subtotal threshold) is active in the env.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
-[ACT] locate coupon/promo code input field
-[ACT] type valid coupon code
+password={{USER_PASSWORD}}
+coupon_code=@td(COUPON_FIXED5.code)","[NAV] navigate to {{FRONT_URL}}/cart
+[ACT] locate coupon/promo code input field (Coupons sidebar — 'Enter custom code' input)
+[ACT] type @td(COUPON_FIXED5.code)
 [ACT] click 'Apply'
 [WAIT] wait for discount to be applied
 [ASSERT] verify discount line appears in order summary","[DOM] coupon accepted confirmation or discount line visible
@@ -42,8 +43,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [DOM] discount amount shown in order summary
 [STATE] coupon code displayed in cart summary","[API] applyCoupon or addOrUpdateCoupon mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","apply button spins indefinitely; no discount shown; error message for valid code; total not reduced","Remove coupon and items from cart","VCST-4499","Automated — BLOCKED pending seed: valid coupon code ({{VALID_COUPON_CODE}}). SEED verdict 2026-04-21."
-"CART-015","Apply Coupon - Invalid Code","Cart > Coupons","Medium","BL-CART-004","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[NETWORK] no 4xx/5xx","apply button spins indefinitely; no discount shown; error message for valid code; total not reduced","Remove coupon and items from cart","VCST-4499","Manual"
+"CART-015","Apply Coupon - Invalid Code","Cart > Coupons","Medium","BL-CART-003","ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, items in cart","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -57,7 +58,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] cart total unchanged after invalid coupon attempt","[API] applyCoupon mutation returns error message in response (not in errors[])
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx (API-level error is expected, not HTTP 4xx)","no error shown for fake code; discount incorrectly applied; cart total changes","none (no state change)","VCST-4499","Automated"
-"CART-019","Cart Persistence - Sign Out and Sign In","Cart > Persistence","Critical","BL-CART-006","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-019","Cart Persistence - Sign Out and Sign In","Cart > Persistence","Critical","BL-CART-008","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User has an account, at least one product available, note: search index may lag 30-60s after any price/stock changes","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -96,7 +97,7 @@ adminPassword={{ADMIN_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [FORMAT] price formatted to 2 decimal places","[ADMIN] verify price change saved in admin
 [API] getCart query returns updated price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","cart shows old stale price after re-login; price update not reflected even after wait; subtotal mismatch","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). Do not run in parallel regression. REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","cart shows old stale price after re-login; price update not reflected even after wait; subtotal mismatch","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-021","Cart Persistence - Cross-Device (Cross-Session)","Cart > Persistence","High","BL-CART-006","ECL-7.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 TOOL-LIMITATION: Concurrent dual-context cross-session test cannot be executed by a single MCP agent (requires two simultaneous isolated browser contexts). Use API-layer verification instead: add items via storefront, verify via getCart GraphQL query using same user credentials from a second API call. Do not attempt dual-browser simulation via single agent.","url={{FRONT_URL}}
@@ -109,8 +110,8 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} in playwright-chrome 
 [DOM] cart badge and page state consistent with server-side data
 [STATE] cart synchronized via server-side account, not just localStorage","[API] getCart query response errors[] is empty; lineItems count matches browser cart
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","getCart API returns empty lineItems when browser shows items; qty mismatch between browser and API response","Remove items from cart","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: dual-context test replaced with API-layer verification; original dual-browser approach blocked by MCP tool limitation (single-context per agent)."
-"CART-022","Cart Persistence - Guest Cart Merge on Sign In","Cart > Persistence","High","BL-CART-006","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[NETWORK] no 4xx/5xx","getCart API returns empty lineItems when browser shows items; qty mismatch between browser and API response","Remove items from cart","Coverage Gap Analysis","Manual"
+"CART-022","Cart Persistence - Guest Cart Merge on Sign In","Cart > Persistence","High","BL-CART-008","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Store allows guest shopping; user has registered account with existing cart items; user currently signed out","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -126,7 +127,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} without signing in 
 [MATH] cart subtotal reflects all merged items","[API] mergeCarts or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
 [NETWORK] no 4xx/5xx during merge","guest items silently dropped on login; account items overwritten by guest cart; duplicate line items created; subtotal wrong","Remove all items from cart","Coverage Gap Analysis","Automated"
-"CART-023","Cart Validation - Out of Stock After Add","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-023","Cart Validation - Out of Stock After Add","Cart > Validation","Critical","BL-CART-001, BL-CART-002","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Sets product inventory to 0 on shared fixture. Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -146,8 +147,8 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and verify it shows
 [DOM] option to remove unavailable item present","[ADMIN] verify inventory set to 0 in admin
 [API] getCart query reflects out-of-stock status
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","no indication of out-of-stock on cart page; checkout allowed with out-of-stock item; no option to remove","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (sets inventory=0 on shared fixture). REWRITE verdict 2026-04-21."
-"CART-024","Cart Validation - Price Change After Add","Cart > Validation","High","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[NETWORK] no 4xx/5xx","no indication of out-of-stock on cart page; checkout allowed with out-of-stock item; no option to remove","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Manual"
+"CART-024","Cart Validation - Price Change After Add","Cart > Validation","High","BL-PRICE-001, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -166,7 +167,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note the displa
 [STATE] no stale cached price shown","[ADMIN] verify price change saved in admin
 [API] getCart query returns updated price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","old price shown after refresh; line total not recalculated; subtotal mismatch with new price","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","old price shown after refresh; line total not recalculated; subtotal mismatch with new price","Restore product price in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-025","Cart Validation - Product Unpublished After Add","Cart > Validation","High","BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Unpublishes a product on shared fixture, removing it from catalog. Run in isolated environment only; do not run during parallel regression. Republish in Cleanup. Allow 30-60s search index lag.","url={{FRONT_URL}}/cart
@@ -188,7 +189,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart
 [STATE] removing item unblocks checkout","[ADMIN] verify product set to unpublished/inactive in admin
 [API] getCart query reflects unavailable status
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","unavailable item shown as purchasable; checkout allowed with unpublished product; no prompt to remove","Republish product in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (unpublishes product on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","unavailable item shown as purchasable; checkout allowed with unpublished product; no prompt to remove","Republish product in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-026","Cart Validation - Quantity Exceeds Available Stock","Cart > Validation","High","BL-CART-001","ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; product has limited stock (e.g., 5 units); inventory tracking enabled","url={{FRONT_URL}}/cart
@@ -203,7 +204,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [DOM] max available quantity stated in error message","[API] changeCartItemQuantity mutation returns stock validation error or errors[] reflects constraint
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","no validation shown for over-stock qty; checkout proceeds with qty > stock; no indication of stock limit","Restore item quantity to valid amount","Coverage Gap Analysis","Automated"
-"CART-027","Cart Validation - Mixed Valid and Invalid Items","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"CART-027","Cart Validation - Mixed Valid and Invalid Items","Cart > Validation","Critical","BL-CART-001, BL-CART-002","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Sets one product to inventory=0 and unpublishes a second product on shared fixtures. Run in isolated environment only; do not run during parallel regression. Restore both in Cleanup. Allow 30-60s search index lag.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -226,7 +227,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add three or more products to cart
 [STATE] checkout proceeds after all invalid items removed","[ADMIN] verify both admin changes saved
 [API] getCart query returns per-item status flags
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","valid items affected by invalid item flags; all items show same error; checkout proceeds with invalid items; individual item messages missing","Restore inventory and republish products in admin; remove items from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates 2 shared fixtures simultaneously). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","valid items affected by invalid item flags; all items show same error; checkout proceeds with invalid items; individual item messages missing","Restore inventory and republish products in admin; remove items from cart","Coverage Gap Analysis","Manual"
 "CART-028","Price Increase During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
@@ -246,7 +247,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price (e.g
 [STATE] no mismatch between cart price and checkout price","[ADMIN] verify price saved as $15.00 in admin
 [API] getCart query returns updated price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","old $10.00 price persists after refresh; subtotal shows stale value; price mismatch between cart and checkout","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","old $10.00 price persists after refresh; subtotal shows stale value; price mismatch between cart and checkout","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-029","Price Decrease During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
@@ -266,7 +267,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price (e.g
 [STATE] customer benefits from lower price — no residual old price shown","[ADMIN] verify price saved as $15.00 in admin
 [API] getCart query returns updated lower price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","old $20.00 price shown after refresh; line total not recalculated; checkout still charges old price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","old $20.00 price shown after refresh; line total not recalculated; checkout still charges old price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-030","Discount Removal During Session","Cart > Price Changes","Medium","BL-CART-005, BL-CART-004","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Deactivates an active promotion on shared fixture. Run in isolated environment only; do not run during parallel regression. Re-activate promotion in Cleanup. Allow 30-60s search index lag. SEED REQUIRED: Product with active promotion in cart ({{VALID_COUPON_CODE}} or auto-promo).","url={{FRONT_URL}}/cart
@@ -286,7 +287,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add discounted product to cart and note
 [STATE] no stale discount amount persists","[ADMIN] verify promotion deactivated in admin
 [API] getCart query reflects full price without discount
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","stale discount persists after promo deactivation; discount line still shown in summary; total still shows reduced amount","Restore promotion in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (deactivates shared promotion) + coupon seed required. REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","stale discount persists after promo deactivation; discount line still shown in summary; total still shows reduced amount","Restore promotion in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-040","Cart Persistence - Sign Out and Sign Back In","Cart > Persistence","Critical","BL-CART-006","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with items in cart","url={{FRONT_URL}}
@@ -304,7 +305,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [MATH] cart subtotal matches pre-sign-out value
 [STATE] no duplicate or missing items","[API] getCart query response errors[] is empty after re-login
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","cart empty after re-login; items duplicated; quantities wrong; subtotal mismatch","Remove added items from cart","Coverage Gap Analysis","Automated — DUP: substantially overlaps CART-019 (sign-out/sign-in persistence). CART-040 retained for coverage history. Review for consolidation."
+[NETWORK] no 4xx/5xx","cart empty after re-login; items duplicated; quantities wrong; subtotal mismatch","Remove added items from cart","Coverage Gap Analysis","Automated"
 "CART-041","Cart Merge - Guest to Authenticated User","Cart > Persistence","Critical","BL-CART-006, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Registered account with Product A qty 2 already in cart; user currently signed out","url={{FRONT_URL}}
@@ -325,7 +326,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest (not signe
 [MATH] cart subtotal reflects all merged items
 [STATE] no duplicate line items","[API] mergeCarts mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
-[NETWORK] no 4xx/5xx during merge","guest items dropped on login; account items overwritten; duplicates created; quantities wrong; subtotal incorrect","Remove all items from cart","Coverage Gap Analysis","Automated — DUP: substantially overlaps CART-022 (guest cart merge on sign-in). CART-041 retained for coverage history. Review for consolidation."
+[NETWORK] no 4xx/5xx during merge","guest items dropped on login; account items overwritten; duplicates created; quantities wrong; subtotal incorrect","Remove all items from cart","Coverage Gap Analysis","Automated"
 "CART-042","Cart Persistence - Coupon Survives Sign Out/In","Cart > Persistence","Critical","BL-CART-004, BL-CART-006","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: Valid active coupon code ({{VALID_COUPON_CODE}}) must exist in QA environment with eligible products. Check test-data/promotions/coupons.csv and verify code is active before running.","url={{FRONT_URL}}/cart
@@ -346,7 +347,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and navigate to cart
 [STATE] no need to re-enter coupon manually","[API] getCart query returns coupon in cart response after re-login
 [API] applyCoupon mutation response errors[] is empty (initial apply)
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","coupon dropped on re-login; different discount amount after re-login; coupon not shown in summary","Remove coupon and items from cart","Coverage Gap Analysis","Automated — BLOCKED pending seed: valid coupon code ({{VALID_COUPON_CODE}}). SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","coupon dropped on re-login; different discount amount after re-login; coupon not shown in summary","Remove coupon and items from cart","Coverage Gap Analysis","Manual"
 "CART-043","Price Change During Session - Admin Increases Price","Cart > Price Changes","Critical","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
@@ -367,7 +368,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note displayed 
 [STATE] no stale cached price shown","[ADMIN] verify price saved as $15.00 in admin
 [API] getCart query returns updated price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","old $10.00 price persists after admin change and refresh; subtotal shows stale value; checkout charges wrong price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","old $10.00 price persists after admin change and refresh; subtotal shows stale value; checkout charges wrong price","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-044","Price Change During Session - Price Drop With Indicator","Cart > Price Changes","High","BL-CART-005, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag.","url={{FRONT_URL}}/cart
@@ -389,8 +390,8 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart and note price ($25
 [STATE] customer benefits from lower price — old price not prominently displayed without context","[ADMIN] verify price saved as $18.00 in admin
 [API] getCart query returns lower price
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","old $25.00 price shown after refresh; no visual indicator of price change; subtotal not recalculated","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
-"CART-045","Item Goes Out of Stock While in Cart","Cart > Validation","Critical","BL-CART-001, BL-CART-005","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[NETWORK] no 4xx/5xx","old $25.00 price shown after refresh; no visual indicator of price change; subtotal not recalculated","Restore original price in admin; remove item from cart","Coverage Gap Analysis","Manual"
+"CART-045","Item Goes Out of Stock While in Cart","Cart > Validation","Critical","BL-CART-001, BL-CART-002","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Sets product inventory to 0 on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -412,10 +413,10 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart (qty 1) and verify 
 [STATE] other in-stock items unaffected","[ADMIN] verify inventory set to 0 in admin
 [API] getCart query reflects out-of-stock status
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","no out-of-stock indicator on cart; checkout allowed with out-of-stock item; no removal prompt; other items affected","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (sets inventory=0 on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 4xx/5xx","no out-of-stock indicator on cart; checkout allowed with out-of-stock item; no removal prompt; other items affected","Restore inventory in admin; remove item from cart","Coverage Gap Analysis","Manual"
 "CART-046","Checkout Blocked by Out-of-Stock Item","Cart > Validation","Critical","BL-CART-001","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: A dedicated AGENT-TEST out-of-stock product ({{OOS_SKU}}) must be maintained in QA catalog with inventory permanently set to 0. This product serves as a stable OOS fixture — do not restore its inventory. Also requires one standard in-stock product in cart. Run /qa-seed-data to provision OOS fixture.","url={{FRONT_URL}}/cart
+SEED REQUIRED: A dedicated AGENT-TEST out-of-stock product (@td(PROD_OOS.sku)) must be maintained in QA catalog with inventory permanently set to 0. This product serves as a stable OOS fixture — do not restore its inventory. Also requires one standard in-stock product in cart. Run /qa-seed-data to provision OOS fixture.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with mixed availability items
 [ASSERT] verify out-of-stock item shows unavailable status
@@ -430,7 +431,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with mixed ava
 [STATE] in-stock items not affected by validation block
 [DOM] error message is user-friendly and actionable","[API] changeCartItemQuantity or checkout mutation returns blocking error for out-of-stock
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","checkout proceeds with out-of-stock item; error message vague or missing; in-stock items blocked unnecessarily; error not cleared after removal","Remove all test items from cart","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: replaced admin-destructive precondition with dedicated OOS fixture ({{OOS_SKU}}). SEED verdict: provision permanent OOS product in QA catalog."
+[NETWORK] no 4xx/5xx","checkout proceeds with out-of-stock item; error message vague or missing; in-stock items blocked unnecessarily; error not cleared after removal","Remove all test items from cart","Coverage Gap Analysis","Manual"
 "CART-047","Cart Item Quantity Exceeds Available Stock","Cart > Validation","Critical","BL-CART-001","ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; product in cart; product has limited stock (e.g., 3 units available)","url={{FRONT_URL}}/cart
@@ -481,7 +482,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [NETWORK] no 4xx/5xx on cart operations","guest cart items lost; quantities reset; empty cart shown after sign-in","Remove items from cart","Coverage Gap Analysis","Manual"
 "CART-074","Cart Persistence - Empty Cart Stays Empty After Sign-Out/Sign-In","Cart > Persistence","Medium","BL-CART-008","ECL-2.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in with empty cart. DEPENDENCY: If running in a suite that adds items to cart, this test must be executed FIRST or after Cleanup restores empty cart state. Use a dedicated test account ({{USER_EMAIL}}) that starts each run with no cart items.","url={{FRONT_URL}}
+User logged in; cart is empty (guaranteed by [PRE:RESET_CART] above — test is independent of execution order).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USER_EMAIL}}
 [NAV] navigate to {{FRONT_URL}}/cart
@@ -495,7 +496,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in as {{USE
 [DOM] empty cart state displayed; no unexpected line items
 [DOM] cart badge count = 0 or badge hidden","[API] getCart returns empty lineItems array
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","phantom items appear in cart after sign-in; cart count badge shows nonzero value; error message instead of empty state","None","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: added ordering dependency guard. Must run before other cart-add tests or after full cleanup."
+[NETWORK] no 4xx/5xx","phantom items appear in cart after sign-in; cart count badge shows nonzero value; error message instead of empty state","None","Coverage Gap Analysis","Manual"
 "CART-076","Stale Cart Price Warning - Admin Price Change During Session","Cart > Price > Stale","Critical","BL-PRICE-001","ECL-2.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price list on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Revert price in Cleanup.","url={{FRONT_URL}}
@@ -515,7 +516,7 @@ admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in a
 [DOM] price warning or updated price visible on cart page
 [MATH] line total = new unit price x quantity","[API] getCart returns updated unitPrice from current price list
 [CONSOLE] no JS errors on price refresh
-[NETWORK] cart API call returns fresh price data","stale/cached price shown after admin change; no warning displayed; line total uses old price; checkout proceeds with wrong price","Revert price in admin; remove cart items","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (mutates product price on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] cart API call returns fresh price data","stale/cached price shown after admin change; no warning displayed; line total uses old price; checkout proceeds with wrong price","Revert price in admin; remove cart items","Coverage Gap Analysis","Manual"
 "CART-077","Checkout Recalculates Totals to Reflect Current Prices","Cart > Price > Recalculation","Critical","BL-PRICE-001","ECL-2.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in with item in cart; prices are current","url={{FRONT_URL}}
@@ -530,13 +531,13 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
 [STATE] no price discrepancy between cart and checkout
 [DOM] order summary displays correct line prices","[API] checkout API returns recalculated totals
 [CONSOLE] no JS errors during checkout transition
-[NETWORK] no 4xx/5xx","checkout shows different total than cart; cached prices used at checkout; price mismatch between cart and order summary","Clear cart","Coverage Gap Analysis","Manual"
+[NETWORK] no 4xx/5xx","checkout shows different total than cart; cached prices used at checkout; price mismatch between cart and order summary","click 'Clear cart' button → click 'Yes' in the confirmation dialog","Coverage Gap Analysis","Manual"
 "CART-078","Tier Price Update When Quantity Drops Below Threshold","Cart > Price > Tier","High","BL-PRICE-004","ECL-2.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Product with tier pricing configured must exist in QA catalog and B2B virtual catalog. Set {{TIER_PRICED_SKU}} env var. Admin step: configure price list with tier rule: qty >= 10 = reduced price per unit; qty < 10 = standard price. User logged in.","url={{FRONT_URL}}
+SEED REQUIRED: Product with tier pricing configured must exist in QA catalog and B2B virtual catalog. Set @td(PROD_TIER_PRICED.sku) env var. Admin step: configure price list with tier rule: qty >= 10 = reduced price per unit; qty < 10 = standard price. User logged in.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-tier_product_sku={{TIER_PRICED_SKU}}","[NAV] navigate to {{FRONT_URL}}/product/{{TIER_PRICED_SKU}}
+tier_product_sku=@td(PROD_TIER_PRICED.sku)","[NAV] navigate to {{FRONT_URL}}/product/@td(PROD_TIER_PRICED.sku)
 [ACT] set quantity to tier threshold (e.g., 10) and add to cart
 [NAV] navigate to {{FRONT_URL}}/cart
 [ASSERT] verify tier price is applied (e.g., $8/unit)
@@ -548,7 +549,7 @@ tier_product_sku={{TIER_PRICED_SKU}}","[NAV] navigate to {{FRONT_URL}}/product/{
 [STATE] price updates dynamically on quantity change
 [DOM] unit price display changes when quantity crosses tier boundary","[API] changeCartItemQuantity mutation returns updated unitPrice
 [CONSOLE] no JS errors on quantity change
-[NETWORK] no 4xx/5xx on price recalculation","price stays at tier rate after reducing below threshold; line total not recalculated; unit price display stale","Reset cart item quantity or remove","Coverage Gap Analysis","Manual — BLOCKED pending seed: tier-priced product ({{TIER_PRICED_SKU}} with qty-break pricing). SEED verdict 2026-04-21."
+[NETWORK] no 4xx/5xx on price recalculation","price stays at tier rate after reducing below threshold; line total not recalculated; unit price display stale","Reset cart item quantity or remove","Coverage Gap Analysis","Manual"
 "CART-081","Cart Validation - Removed/Unavailable Product in Cart","Cart > Validation","High","BL-CART-001","ECL-2.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Deactivates/unpublishes a product on shared fixture. Run in isolated environment only; do not run during parallel regression. Reactivate in Cleanup.","url={{FRONT_URL}}
@@ -567,10 +568,10 @@ admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and add a pr
 [DOM] checkout blocked until unavailable item removed
 [STATE] removing unavailable item unblocks checkout","[API] getCart returns validation errors for unavailable product
 [CONSOLE] no JS errors
-[NETWORK] no 5xx","unavailable product shown as normal; checkout proceeds; no error message; cart crashes on load","Reactivate product in admin; remove from cart","Coverage Gap Analysis","Manual — BLOCKED: admin-destructive (deactivates product on shared fixture). REWRITE verdict 2026-04-21."
+[NETWORK] no 5xx","unavailable product shown as normal; checkout proceeds; no error message; cart crashes on load","Reactivate product in admin; remove from cart","Coverage Gap Analysis","Manual"
 "CART-082","Cart Validation - Multiple Simultaneous Errors Displayed","Cart > Validation > Multiple","Medium","BL-CART-001","ECL-2.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Requires two validation states simultaneously: (1) {{OOS_SKU}} (permanent OOS fixture, inventory=0) added to cart, and (2) a second product with low stock ({{LOW_STOCK_SKU}}, stock ≤ 5) with qty set above available stock. Both seeds must exist. Run /qa-seed-data first.","url={{FRONT_URL}}
+SEED REQUIRED: Requires two validation states simultaneously: (1) @td(PROD_OOS.sku) (permanent OOS fixture, inventory=0) added to cart, and (2) a second product with low stock ({{LOW_STOCK_SKU}}, stock ≤ 5) with qty set above available stock. Both seeds must exist. Run /qa-seed-data first.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart containing: 1 out-of-stock item + 1 over-max-quantity item
 [ASSERT] verify BOTH validation errors are shown simultaneously (not just the first)
@@ -583,4 +584,4 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart containing: 1 
 [DOM] each error is item-specific not a single generic message
 [STATE] checkout unblocks only after ALL validation errors resolved","[API] getCart returns multiple validation errors
 [CONSOLE] no JS errors
-[NETWORK] no 5xx","only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors","Remove test items from cart","Coverage Gap Analysis","Manual — Rewritten 2026-04-21: replaced admin-destructive precondition with permanent OOS fixture + low-stock seed pattern. SEED verdict: provision {{OOS_SKU}} and {{LOW_STOCK_SKU}}."
+[NETWORK] no 5xx","only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors","Remove test items from cart","Coverage Gap Analysis","Manual"
