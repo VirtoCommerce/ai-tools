@@ -29,6 +29,16 @@
 
 Promotions must be created before coupons. Conditions and rewards are part of the promotion payload.
 
+> ⚠️ **API CONTRACT CORRECTION (2026-06-01) — the curl examples below are OUTDATED.**
+> The `Promotion` model has **no `coupons[]` field** (only a `HasCoupons` bool), and there is **no `POST /promotions/{id}/coupons` endpoint**. The inline `"coupons": [...]` in the promotion bodies below is **silently ignored**, and `POST /promotions/{id}/coupons` returns **404**. Following them verbatim creates promotions with NO coupons attached.
+>
+> **Correct flow (use this instead):**
+> 1. `POST /api/marketing/promotions` with body `{ name, type:"DynamicPromotion", isActive, isPublic, priority, storeIds:["B2B-store"] }` → capture `id`.
+> 2. `POST /api/marketing/promotions/coupons/add` with an **ARRAY** body: `[{ "promotionId":"<id>", "code":"<CODE>", "maxUsesNumber":0, "maxUsesPerUser":0 }]` → expect **204**.
+> 3. Verify: `POST /api/marketing/promotions/coupons/search` body `{ "promotionId":"<id>", "take":10 }`; confirm the code is present.
+>
+> Storefront visibility on `/account/coupons` requires the promotion to be **`isActive=true` AND `isPublic=true` with a non-expired `endDate`** — `promotionCoupons` (PromotionCouponsQueryHandler) filters `OnlyActive=true` + `IsPublic=true`. See `reference_marketing_coupons_api_contract` memory.
+
 ### Step 1 — Obtain access token
 
 ```bash

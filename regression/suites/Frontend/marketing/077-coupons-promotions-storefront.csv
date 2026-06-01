@@ -276,20 +276,30 @@ User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is 
 [DATA] no two items share the same couponCode value (DataLoader cross-contamination check)","[API] HTTP 200, errors[] empty
 [CONSOLE] no DataLoader or batch-related errors in browser console
 [NETWORK] single /graphql request observed in network tab (no N+1 requests visible)","Duplicate coupon codes across different promotions (DataLoader cross-contamination), null couponCode in results, totalCount not matching expected 14, promotions without codes included","none","VCST-4590","Automated"
-"CPN-026","REST API — Promotion CRUD: Create Promotion with IsPublic=true and Coupon Code","Coupons & Promotions > Admin Backend","Critical","BL-PRICE-001","ECL-14.1","Admin user authenticated via OAuth2 token. Marketing module API is accessible at {{ADMIN_URL}}.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{ADMIN_URL}}/connect/token with grant_type=password for {{ADMIN_EMAIL}} to obtain access_token
+"CPN-026","REST API — Promotion + Coupon CRUD (coupon is a SEPARATE entity via /coupons/add, not an inline promotion field)","Coupons & Promotions > Admin Backend","Critical","BL-PRICE-001","ECL-14.1","Admin user authenticated via OAuth2 token. Marketing module API accessible at {{ADMIN_URL}}. CONTRACT: the Promotion model has NO coupons[] collection — only a HasCoupons bool. Coupons are a separate entity (Coupon{code, promotionId}). Create the promotion FIRST, then attach the coupon via POST /api/marketing/promotions/coupons/add (body: Coupon[]). An inline coupons[] field on the promotion create/update body is silently ignored by the model binder.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, timestamp={{TIMESTAMP}} (generated at runtime as Date.now() or YYYYMMDD-HHmmss), coupon_code=AGENT-TEST-CPN026-{{TIMESTAMP}}","[AUTH] POST {{ADMIN_URL}}/connect/token with grant_type=password for {{ADMIN_EMAIL}} to obtain access_token
 [WAIT] access_token received
-[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'API Test Promotion VCST-4590', isActive: true, isPublic: true, coupons: [{ code: 'APITEST4590' }] }
+[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'AGENT-TEST Promotion CPN-026-{{TIMESTAMP}}', type: 'DynamicPromotion', isActive: true, isPublic: true }
 [WAIT] HTTP response
-[ASSERT] 201 or 200 status
+[ASSERT] 200 or 201 status
 [VAR] extract {{CREATED_PROMOTION_ID}} from POST response body id field
+[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions/coupons/add with body (note: ARRAY of Coupon): [{ promotionId: '{{CREATED_PROMOTION_ID}}', code: 'AGENT-TEST-CPN026-{{TIMESTAMP}}', maxUsesNumber: 0, maxUsesPerUser: 0 }]
+[WAIT] HTTP response
+[ASSERT] 204 No Content status
 [HTTP] GET {{ADMIN_URL}}/api/marketing/promotions/{{CREATED_PROMOTION_ID}}
-[WAIT] GET response","[STATUS] POST returns HTTP 201 (or 200)
-[BODY] POST response: id field is a non-empty string (UUID format)
-[BODY] GET response: isPublic = true
-[BODY] GET response: isActive = true
-[BODY] GET response: coupons array contains exactly 1 entry with code = 'APITEST4590'","[API] POST body is valid JSON, no 400 validation error
-[API] GET response HTTP 200
-[CONSOLE] no errors","HTTP 4xx on POST, isPublic not persisted, coupons array empty in GET response, coupon code different from submitted value","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/{{CREATED_PROMOTION_ID}} after test to clean up","VCST-4590","Automated"
+[WAIT] GET response
+[HTTP] POST {{ADMIN_URL}}/api/marketing/promotions/coupons/search with body: { promotionId: '{{CREATED_PROMOTION_ID}}', take: 10, skip: 0 }
+[WAIT] coupons search response
+[VAR] extract {{CREATED_COUPON_ID}} from the search results item whose code = coupon_code","[STATUS] promotion POST returns HTTP 200 or 201
+[BODY] promotion POST response: id is a non-empty string (UUID format)
+[STATUS] coupons/add returns HTTP 204 No Content
+[BODY] GET promotion response: isPublic = true
+[BODY] GET promotion response: isActive = true
+[BODY] GET promotion response: hasCoupons = true (flag flips true once a coupon references the promotion)
+[BODY] coupons/search response: results contains exactly 1 item with code = coupon_code AND promotionId = {{CREATED_PROMOTION_ID}}","[API] promotion POST body is valid JSON, no 400 validation error
+[API] coupons/add accepts a Coupon[] ARRAY body (a single object 400s)
+[API] GET promotion + coupons/search responses HTTP 200
+[CONSOLE] no errors","HTTP 4xx on promotion POST or coupons/add, isPublic/isActive not persisted, hasCoupons stays false after coupons/add, coupon absent from coupons/search results, coupon code mutated from submitted value. NOTE: an empty/absent coupon after posting coupons INSIDE the promotion body is NOT a product bug — that field does not exist on the Promotion model; the coupon must be added via /coupons/add.","[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions/coupons/delete?ids={{CREATED_COUPON_ID}}
+[HTTP] DELETE {{ADMIN_URL}}/api/marketing/promotions?ids={{CREATED_PROMOTION_ID}}","VCST-4590; corrected REG-2026-06-01-1306 (coupons are a separate entity via /coupons/add — vc-module-marketing MarketingModulePromotionController; see reference_marketing_coupons_api_contract memory)","Automated"
 "CPN-027","REST API — Promotion with IsPublic=false Not Returned by GraphQL Storefront Query","Coupons & Promotions > Admin → Frontend Cross-Layer","Critical","BL-PRICE-001","ECL-14.1","Admin user authenticated. A promotion exists with IsPublic=false and an active coupon code. Storefront GraphQL accessible.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, culture_name={{CULTURE_NAME}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[AUTH] obtain admin token via POST {{ADMIN_URL}}/connect/token
 [HTTP] POST {{ADMIN_URL}}/api/marketing/promotions with body: { name: 'Private Promotion VCST-4590', isActive: true, isPublic: false, coupons: [{ code: '@td(COUPON_PRIVATE.code)' }] }
 [WAIT] HTTP 201 or 200 response with new promotion id
@@ -627,17 +637,19 @@ Admin user is logged in. Two promotions exist: one with Exclusivity='Globally ex
 [STATE] the promotionCoupons GraphQL query excludes promotions with zero coupon codes from results regardless of IsPublic value","[API] promotionCoupons query: no item in response has systemName or name matching 'Snack as a gift'
 [API] all items in response have non-empty couponCode field
 [CONSOLE] no errors","Automatic promotion (no coupon code) appears on coupons page (logic bug), coupon card rendered with empty/missing code button, console error during render","Restore 'Snack as a gift' IsPublic to original state if changed during test","VCST-4590","Manual"
-"CPN-044","GA4 — Coupon Code Tracked in GA4 Events on Cart Page After Application","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-044","GA4 — Coupon Attribution Starts at begin_checkout (view_cart intentionally omits coupon)","Coupons & Promotions > Analytics","Medium","BL-PRICE-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is applied in the cart. GA4 tracking is active (G-S2KXT3KTJZ). UI exploration confirmed GA4 events include ep.coupon=@td(COUPON_10PCT.code) in add_shipping_info, add_payment_info, begin_checkout, and view_cart payloads.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code), ga4_id=G-S2KXT3KTJZ","[NAV] {{FRONT_URL}}/cart
+User is authenticated. Cart has at least one item. Coupon @td(COUPON_10PCT.code) is applied in the cart. GA4 tracking active (collect endpoint *.google-analytics.com/g/collect). CONTRACT (vc-frontend client-app/modules/google-analytics/events.ts): coupon attribution is attached starting at begin_checkout and flows through add_shipping_info / add_payment_info / purchase; view_cart deliberately does NOT include coupon (matches GA4 ecommerce schema — view_cart has no coupon parameter). Verified live REG-2026-06-01-1306.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/cart
 [WAIT] cart loads with coupon @td(COUPON_10PCT.code) applied (discount visible in Order summary)
-[WAIT] network requests complete (page fully loaded)
-[ASSERT] inspect network requests to region1.google-analytics.com","[NETWORK] at least one POST to region1.google-analytics.com contains en=view_cart AND ep.coupon=@td(COUPON_10PCT.code) in the query string
-[NETWORK] at least one POST contains en=begin_checkout AND ep.coupon=@td(COUPON_10PCT.code)
-[NETWORK] at least one POST contains en=add_shipping_info AND ep.coupon=@td(COUPON_10PCT.code)
-[NETWORK] at least one POST contains en=add_payment_info AND ep.coupon=@td(COUPON_10PCT.code)
-[FORMAT] coupon value in GA4 payload matches exactly the applied coupon code (case-sensitive)","[NETWORK] all GA4 POSTs return HTTP 200, 204, or 302 (not 4xx/5xx from analytics endpoint)
-[CONSOLE] no GTM/GA4 errors in browser console","GA4 events missing ep.coupon parameter when coupon is applied (GA4 regression), coupon code sent as lowercase in GA4 while stored as uppercase, GA4 events not firing at all","none","VCST-4590","Manual"
+[ACT] start recording network (filter for /g/collect on *.google-analytics.com) and the dataLayer
+[NAV] reload {{FRONT_URL}}/cart to emit a fresh view_cart event with the coupon already applied
+[WAIT] a /g/collect request with en=view_cart is observed
+[ACT] click 'Proceed to Checkout' / 'Checkout'
+[WAIT] checkout page loads and a /g/collect request with en=begin_checkout is observed","[NETWORK] the en=view_cart /g/collect request contains currency, value (epn.value) and item params, and does NOT contain ep.coupon (by design — coupon is not part of GA4 view_cart schema)
+[NETWORK] the en=begin_checkout /g/collect request contains ep.coupon=@td(COUPON_10PCT.code)
+[NETWORK] if add_shipping_info / add_payment_info fire on this build, each also carries ep.coupon=@td(COUPON_10PCT.code)
+[FORMAT] coupon value in the begin_checkout payload matches the applied code exactly (case-sensitive)","[NETWORK] all GA4 /g/collect requests return HTTP 2xx or 302 (not 4xx/5xx)
+[CONSOLE] no GA4/gtag errors in browser console","begin_checkout missing ep.coupon when a coupon is applied (real GA4 regression), coupon code case-mutated in the begin_checkout payload, GA4 events not firing at all. NOTE: ep.coupon ABSENT from view_cart is NOT a defect — vc-frontend viewCart() intentionally omits coupon; do not assert coupon on view_cart.","Remove the applied coupon (trash icon) after the test; do not place an order","VCST-4590; corrected REG-2026-06-01-1306 (coupon attribution starts at begin_checkout, not view_cart — vc-frontend google-analytics/events.ts)","Manual"
 "CPN-045","Admin — Promotion 'Can Be Redeemed More Than Once' Toggle Persists","Coupons & Promotions > Admin Backend","Medium","BL-PRICE-001","ECL-14.1","Admin user is logged in. UI exploration confirmed promotion detail blade shows 'Can be redeemed more than once' toggle with hint 'Enable this option if multiple coupons are required to redeem the offer'.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}}
 [WAIT] Admin SPA loads
 [ACT] navigate to Marketing > Promotions and open 'QA Coupon English Name'
