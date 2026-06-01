@@ -220,9 +220,9 @@ Impersonation of IMPERSONATE_TARGET is active — banner visible. PR #2280 intro
 [STATE] Previous impersonation token {{IMPERSONATION_TOKEN}} is invalidated — a subsequent API call using that token returns 401 (AC#6 — previous token MUST be invalidated)","[NETWORK] POST to revert/token endpoint (revertImpersonate from useImpersonate.ts) returns HTTP 200
 [NETWORK] Follow-up GET {{FRONT_URL}}/api/... or POST /connect/token using {{IMPERSONATION_TOKEN}} returns HTTP 401 (token invalidated — AC#6 verified)
 [CONSOLE] No JS errors during session restore","'Revert back to own account' item not visible in header during impersonation (PR #2280 not deployed or revert hook missing); clicking revert results in full sign-out (operator session cleared); operator session does not restore — anonymous after exit; banner persists after exit; old impersonation token still returns 200 after revert (AC#6 violation); console TypeError","[PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-006, BL-AUTH-007, BL-AUTH-011, ECL-14.1; Synced: VCST-4906 / PR #2280 (2026-05-14) — extended from old 'Stop impersonation via account menu' to 'Revert back to own account' via header hook (top-header.vue + main-menu.vue) + AC#6 previous-token-invalidation cross-layer check","synced"
-"IMP-013","Impersonated User Cannot Initiate Further Impersonation (Nested)","LoginOnBehalf > Authorization > Nested Blocked","High","BL-AUTH-005, BL-AUTH-006, BL-AUTH-009","ECL-14.1","[PRE:CLEAR_SESSION]
+"IMP-013","Nested Impersonation — Target Switch Within an Active Operator Session (by design)","LoginOnBehalf > Authorization > Nested Target Switch","Medium","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
-Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_TARGET do NOT include StorefrontPermissions.CanImpersonate (per RBAC model: permissions live on Roles, not on users). PR #2280 introduces /company/members row 'Login on behalf' action gated by CanImpersonate — the impersonated session of IMPERSONATE_TARGET (which lacks CanImpersonate) should NOT expose the 'Login on behalf' action in the /company/members dropdown either. This test covers both the URL-based nesting attempt AND the UI entry point.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
+Impersonation of IMPERSONATE_TARGET active. IMPERSONATE_TARGET's role does NOT include CanImpersonate (permissions live on Roles). UI gate (PR #2280): the /company/members 'Login on behalf' row action is gated by CanImpersonate, so the impersonated session (which lacks it) should NOT surface that action. URL-based target switch: by design, switching the impersonation target from within an active operator session is permitted — the operator was authorized at session establishment (VCST-5174 closed Not a bug). This test covers the UI gate AND documents the by-design URL behavior.","front_url={{FRONT_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
 [ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
@@ -239,11 +239,10 @@ Impersonation of IMPERSONATE_TARGET active. The role(s) assigned to IMPERSONATE_
 [ASSERT] 'Login on behalf' option is NOT present in the dropdown (IMPERSONATE_TARGET lacks CanImpersonate — PR #2280 gate)
 --- URL-BASED NESTING CHECK ---
 [NAV] {{FRONT_URL}}/account/impersonate/@td(SUPPORT_AGENT.userId)
-[WAIT] Response — either Security Verification Form OR error page OR redirect","[DOM] Actions dropdown at /company/members does NOT show 'Login on behalf' for the impersonated session (lacks CanImpersonate — PR #2280 members-dropdown-menu.vue gate)
-[DOM] URL-based nesting: Security Verification Form is displayed (impersonated session cannot skip — lacks CanImpersonate) OR error/access-denied page
-[STATE] Impersonated session is NOT replaced by a new nested impersonation
-[STATE] No nested impersonation chain established","[NETWORK] POST /connect/token (impersonate grant) returns HTTP 401 or 403 if URL-based nested impersonation attempted
-[CONSOLE] No unhandled exceptions","UI entry point: 'Login on behalf' visible in /company/members dropdown for impersonated session (CanImpersonate leaked into impersonated context — security regression); URL nesting: silent nested impersonation succeeds; session loops; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-009; Synced: VCST-4906 / PR #2280 (2026-05-14) — extended to cover /company/members UI entry point gating under impersonated session","synced"
+[WAIT] Response observed","[DOM] Actions dropdown at /company/members does NOT show 'Login on behalf' for the impersonated session (target lacks CanImpersonate — PR #2280 members-dropdown-menu.vue UI gate; unchanged)
+[DOM] URL-based target switch: by design the grant succeeds (HTTP 200) — operator session was authorized at establishment (hop 1); switching target within an active operator session does not re-prompt
+[STATE] Impersonation target switches to the requested user; vc_operator_user_id remains the original operator","[NETWORK] POST /connect/token (impersonate grant) returns HTTP 200 — target switch permitted by design
+[CONSOLE] No unhandled exceptions","UI gate regression: 'Login on behalf' visible in /company/members dropdown for a session whose user lacks CanImpersonate; session loops; console TypeError","Stop impersonation and [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, VCST-5174 (closed Not a bug / by design 2026-06-01); BL-AUTH-009 (nested forbidden) contradicts by-design — flag for review; UI-gate portion still per PR #2280","synced"
 "IMP-014","Admin SPA — 'Login on behalf' Button Opens Impersonate URL in New Tab","LoginOnBehalf > Admin Entry Point > Button","High","BL-AUTH-005, BL-AUTH-006","","[PRE:SIGNIN_AS:ADMIN] (Admin SPA — back_url={{BACK_URL}})
 Admin authenticated in platform SPA. Target customer user exists with known userId.","back_url={{BACK_URL}}, target_user_id=@td(IMPERSONATE_TARGET.userId), target_email=@td(IMPERSONATE_TARGET.email), front_url={{FRONT_URL}}","[NAV] {{BACK_URL}}/#!/workspace/security
 [BLADE] Open 'Users' list blade
@@ -285,7 +284,7 @@ SUPPORT_AGENT is logged in and visible in the company members list.","front_url=
 [WAIT] Company members table visible with current user's row
 [ASSERT] Locate row where Email matches @td(SUPPORT_AGENT.email)","[DOM] The logged-in user's own row in the members table has NO 'Actions' button/cell
 [STATE] Self-impersonation via the members table UI is not possible (no entry point)","[CONSOLE] No JS errors on page load","Own row shows Actions button with Login on behalf (self-impersonation possible from UI); console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-006","Draft"
-"IMP-017","Self-Impersonation via URL — Operator Navigates to Own UserId","LoginOnBehalf > Edge Cases > Self-Impersonation","Medium","BL-AUTH-005, BL-AUTH-006, BL-AUTH-008","ECL-14.1","[PRE:CLEAR_SESSION]
+"IMP-017","Self-Impersonation via URL — Harmless No-Op (by design)","LoginOnBehalf > Edge Cases > Self-Impersonation","Low","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 SUPPORT_AGENT authenticated. Operator's own platform userId known via @td(SUPPORT_AGENT.userId). State: authenticated as SUPPORT_AGENT → self-impersonation attempt → defined outcome.","front_url={{FRONT_URL}}, own_user_id=@td(SUPPORT_AGENT.userId)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
@@ -295,10 +294,10 @@ SUPPORT_AGENT authenticated. Operator's own platform userId known via @td(SUPPOR
 [ACT] Click 'Sign In'
 [WAIT] Authenticated session established
 [NAV] {{FRONT_URL}}/account/impersonate/@td(SUPPORT_AGENT.userId)
-[WAIT] Page response observed — may show loading overlay or redirect","[STATE] Impersonation does NOT result in a stable authenticated session as self
-[DOM] Acceptable outcomes: (a) redirect to /sign-in (session cleared), (b) error page shown, (c) redirect to home with operator's own session intact and no banner
-[DOM] Unacceptable outcome: banner shows 'Operator logged in as Operator' (circular banner)","[NETWORK] POST /connect/token response code for self-impersonation grant
-[CONSOLE] No unhandled JS exceptions","Session is cleared entirely without error explanation; circular banner 'X logged in as X'; infinite redirect loop; console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, BL-AUTH-005, ECL-14.1","Draft"
+[WAIT] Page response observed — may show loading overlay or redirect","[STATE] By design: self-impersonation is a harmless no-op — operator ends up acting as self with no privilege change
+[DOM] By design: the grant returns HTTP 200 and a circular banner 'Operator logged in as Operator' may appear — cosmetic only, no security impact (operator was already authenticated as self)
+[DOM] Operator can return to normal via the 'Back to {operator}' control","[NETWORK] POST /connect/token (self grant) returns HTTP 200 — permitted
+[CONSOLE] No unhandled JS exceptions","Infinite redirect loop; session destroyed without explanation; console TypeError","[PRE:CLEAR_SESSION]","VCST-4725, VCST-5174 (closed Not a bug / by design 2026-06-01); BL-AUTH-008 (self non-circular) contradicts by-design — flag for review","Draft"
 "IMP-018","Cross-Org Impersonation — Operator Targets User from Different Org (Form Flow)","LoginOnBehalf > Authorization > Cross-Org","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 Unauthenticated user. OTHER_ORG_USER resolves to USR-008 Carlos Rodriguez (BuildRight, ORG-003) — a genuinely different org from both SUPPORT_AGENT (ORG-001 AcmeCorp) and IMPERSONATE_TARGET (ORG-002 TechFlow). Alias fixed 2026-05-12 (was previously pointing to USR-007, same as IMPERSONATE_TARGET).","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), other_org_user_id=@td(OTHER_ORG_USER.userId)","[PRE:SIGNOUT]
 [NAV] {{FRONT_URL}}/account/impersonate/@td(OTHER_ORG_USER.userId)
