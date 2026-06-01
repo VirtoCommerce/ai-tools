@@ -1,5 +1,5 @@
 ---
-description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 62 built-in domain checklists (32 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
+description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 63 built-in domain checklists (33 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
 argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
 disable-model-invocation: true
 
@@ -18,12 +18,12 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 /qa-checklist admin pricing            # Retrieve Pricing Admin checklist
 /qa-checklist VCST-1234                # Generate checklist for JIRA ticket scope
 /qa-checklist new "push messages"      # Create new checklist for unlisted domain
-/qa-checklist all                      # List all 62 domain checklists with item counts
+/qa-checklist all                      # List all 63 domain checklists with item counts
 ```
 
 ## Supporting Files
 
-- **domain-checklists.md** — 32 storefront domain checklists with 407 items (the source of truth for storefront UI domains).
+- **domain-checklists.md** — 33 storefront domain checklists with 427 items (the source of truth for storefront UI domains).
 - **backend-admin-checklists.md** — 27 Admin module checklists + 2 API checklists with 255 items, aligned with Bundle v14.0.8 (53 modules). Source of truth for Admin SPA and Platform API/xAPI domains.
 - **graphql-checklist.md** — GraphQL xAPI checklist with 34 items covering all xAPI modules (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote) + per-change verification template.
 - **checklist-creation-guide.md** — Methodology for creating new checklists: structure rules, quality criteria, VC-specific patterns, cross-layer verification, and examples.
@@ -39,37 +39,37 @@ Checklist items are written to be testable; they assume readers will resolve tes
 | [`../../../agents/knowledge/graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
 | [`../../../agents/knowledge/business-logic.md`](../../../agents/knowledge/business-logic.md) | Cross-link checklist items to `BL-*` invariants in the `Business_Rule` column of derived test cases |
 
-## 62 Built-in Domain Checklists
+## 63 Built-in Domain Checklists
 
-### Storefront Domains (32) — `domain-checklists.md`
+### Storefront Domains (33) — `domain-checklists.md`
 
 | # | Domain | Items | Related Suites |
 |---|--------|-------|----------------|
 | 1 | Auth | 8 | 01, 02, 08 |
-| 2 | Catalog | 21 | 01, 03, 16 |
+| 2 | Catalog | 28 | 01, 03, 16 |
 | 3 | Categories | 6 | 03, 16 |
-| 4 | SEO | 7 | 31 |
-| 5 | Add to Cart | 10 | 01, 04a |
+| 4 | SEO | 8 | 31 |
+| 5 | Add to Cart | 11 | 01, 04a |
 | 6 | Search | 12 | 03, 26 |
-| 7 | Ship-to Selector | 6 | 04a, 04b |
-| 8 | Cart/Checkout | 17 | 04a, 04b, 06 |
+| 7 | Ship-to Selector | 9 | 04a, 04b |
+| 8 | Cart/Checkout | 19 | 04a, 04b, 06 |
 | 9 | Payment | 12 | 06 |
-| 10 | Orders | 7 | 01, 04c, 20 |
+| 10 | Orders | 11 | 01, 04c, 20 |
 | 11 | Company Info | 6 | 02, 21 |
 | 12 | Company Members | 12 | 02, 21 |
-| 13 | Multi-Org | 11 | 02, 21 |
-| 14 | Product Configurations & Variations | 56 | 36 |
+| 13 | Multi-Org | 13 | 02, 21 |
+| 14 | Product Configurations & Variations | 58 | 36 |
 | 15 | PDP (Product Detail Page) | 11 | 01, 03 |
 | 16 | Google Analytics | 11 | 07 |
 | 17 | Anonymous Flow | 8 | 04a, 04b |
-| 18 | Cart Merge | 7 | 04a, 30 |
+| 18 | Cart Merge | 11 | 04a, 30 |
 | 19 | BOPIS (Pickup) | 12 | 05, 30 |
-| 20 | B2B Quotes & RFQ | 13 | 04c, 20 |
-| 21 | B2B Lists & Quick Order | 12 | 13 |
+| 20 | B2B Quotes & RFQ | 14 | 04c, 20 |
+| 21 | B2B Lists & Quick Order | 13 | 13 |
 | 22 | Localization & i18n | 7 | 10 |
 | 23 | Notifications | 12 | 24 |
 | 24 | White Labeling | 13 | 32, 35 |
-| 25 | Account Management | 12 | 01, 02, 13 |
+| 25 | Account Management | 13 | 01, 02, 13 |
 | 26 | Storefront Push Messages | 12 | 33 |
 | 27 | Coupons & Promotions | 12 | 41, 23, 42 |
 | 28 | Security | 10 | 08 |
@@ -77,6 +77,7 @@ Checklist items are written to be testable; they assume readers will resolve tes
 | 30 | Performance | 8 | 11 |
 | 31 | Browser Compatibility | 7 | 12 |
 | 32 | B2C Features | 10 | 13 |
+| 33 | Subscriptions & Recurring Orders | 10 | 14 |
 | **BF** | **Bug Fix Verification** | **10** | *per bug* |
 
 ### Backend & Admin Modules (29) — `backend-admin-checklists.md`
@@ -123,13 +124,13 @@ Aligned with **Bundle v14.0.8** (Platform 3.1007.2, 53 modules).
 
 Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishlists & Saved (2), xOrder (2), xProfile (6), xQuote (2), xCMS & xFrontend (2), Cross-Cutting (3), New Query/Mutation Verification (8).
 
-**Total: 696 checklist items across 62 domains + 1 cross-domain checklist (storefront: 407 + admin: 255 + GraphQL detail: 34).**
+**Total: 716 checklist items across 63 domains + 1 cross-domain checklist (storefront: 427 + admin: 255 + GraphQL detail: 34).**
 
 ## Execution
 
 ### Mode 1: Retrieve Existing Checklist
 
-1. Match the user's argument to one of the 67 domains:
+1. Match the user's argument to one of the 63 domains:
    - Storefront domains: fuzzy match ("payment" → #9, "cart" → #8, "variations" → #14, "pickup" → #19, "pdp" → #15)
    - Admin domains: `admin <module>` prefix routes to `backend-admin-checklists.md` ("admin catalog" → A1, "admin pricing" → A2, "admin orders" → A4)
    - GraphQL: "graphql" / "xapi" → `graphql-checklist.md` for detailed query/mutation checklist, or API2 for high-level xAPI coverage
