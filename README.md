@@ -405,9 +405,9 @@ Type `/skill-name` in Claude Code chat. Organized in [`.claude/skills/`](.claude
 
 **QA Methodology (9):** `/qa-process`, `/qa-investigate`, `/qa-evidence`, `/qa-defect`, `/qa-test-design`, `/qa-test-cases-generator`, `/qa-risk`, `/qa-metrics`, `/qa-sbtm`
 
-### Agents (15)
+### Agents (14)
 
-15 specialized agents in [`.claude/agents/`](.claude/agents/) across two teams (plus `shared-instructions.md`). Use them by name in chat:
+14 specialized agents in [`.claude/agents/`](.claude/agents/) across two teams (plus a shared `shared-instructions.md` include). Use them by name in chat:
 
 ```
 "Use the qa-frontend-expert to verify the checkout flow"
@@ -415,11 +415,11 @@ Type `/skill-name` in Claude Code chat. Organized in [`.claude/skills/`](.claude
 "Use the ba-story-writer to create stories for VCST-1234"
 ```
 
-**QA Team (11):** `qa-lead-orchestrator` (sonnet), `qa-frontend-expert` (opus), `qa-backend-expert` (opus), `qa-testing-expert` (opus), `test-management-specialist` (sonnet), `ui-ux-expert` (sonnet), `regression-orchestrator` (sonnet), `autonomous-regression-orchestrator` (sonnet), `autonomous-test-runner` (sonnet), `test-runner-agent` (sonnet), plus `shared-instructions`
+**QA Team (10):** `qa-lead-orchestrator` (sonnet), `qa-frontend-expert` (opus), `qa-backend-expert` (opus), `qa-testing-expert` (opus), `test-management-specialist` (sonnet), `ui-ux-expert` (sonnet), `regression-orchestrator` (sonnet), `autonomous-regression-orchestrator` (sonnet), `autonomous-test-runner` (sonnet), `test-runner-agent` (sonnet), plus `shared-instructions`
 
 **BA Team (4):** `ba-system-analyzer`, `ba-api-specialist`, `ba-story-writer`, `ba-doc-writer` (all sonnet)
 
-QA agents use a four-layer prompt architecture — business logic, domain knowledge, skill set, design decisions. 23 shared knowledge files in [`.claude/agents/knowledge/`](.claude/agents/knowledge/) cover API auth, business logic, browser quirks, GraphQL schema, products, sitemap, etc.
+QA agents use a four-layer prompt architecture — business logic, domain knowledge, skill set, design decisions. 24 shared knowledge files in [`.claude/agents/knowledge/`](.claude/agents/knowledge/) cover API auth, business logic, browser quirks, GraphQL schema, products, sitemap, etc.
 
 Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md) for browser assignments. Max 3 concurrent browser agents.
 
@@ -481,15 +481,15 @@ npm run refresh-product-guids     # Refresh product GUID fixtures
 vc-mcp-testing-module/
 ├── CLAUDE.md                # Claude Code project instructions
 ├── .claude/
-│   ├── agents/              # 15 agent definitions (qa/ + ba/) + knowledge/ (23 reference files)
+│   ├── agents/              # 14 agent definitions (qa/ + ba/) + knowledge/ (24 reference files)
 │   ├── skills/              # 20 skills across 3 categories
 │   ├── commands/            # 16 slash commands
 │   └── rules/               # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data)
 ├── config/                  # Playwright browser configs + test-suites.json manifest
 ├── ci/                      # CI regression + full-cycle pipeline (gitignored)
 ├── docs/prompts/            # LLM prompt templates
-├── regression/suites/       # 99 CSV suites (~5,951 test cases)
-│   ├── Frontend/            # 45 CSVs in 14 module dirs (auth, catalog, cart, …)
+├── regression/suites/       # 99 CSV suites (~3,756 test cases)
+│   ├── Frontend/            # 46 CSVs in 15 module dirs (auth, catalog, cart, …)
 │   ├── Backend/             # 52 CSVs in 27 module dirs (platform, api, graphql, …)
 │   └── _release/            # Master release suite (080)
 ├── tests/                   # Test cases by sprint/JIRA ticket
@@ -508,7 +508,7 @@ vc-mcp-testing-module/
 
 ## Regression Test Suites
 
-99 suites with **~5,951 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 99`).
+99 suites with **~3,756 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 99`).
 
 Suites are organized under `Frontend/<module>/` and `Backend/<module>/` directories, with IDs like `001-catalog-navigation.csv`, `050a-graphql-xcatalog.csv`, `080-full-regression-release.csv`.
 
@@ -518,7 +518,7 @@ Suites are organized under `Frontend/<module>/` and `Backend/<module>/` director
 |-----------|-------------|----------|
 | `smoke` | 042, 078 | Daily validation before deployment |
 | `critical` | 042, 078, 039, 044, 049 | P0 suites only |
-| `release` | 080 | Master release suite (90 cases) for major releases |
+| `release` | 080 | Master release suite (100 cases) for major releases |
 | `purchase-flow` | Cart + checkout + orders + payment | Purchase flow regression |
 | `catalog` / `search` / `orders` / `auth` / `b2c` / `marketing` / `platform` | Module-aligned | Focused module runs |
 | `bopis` / `payment` / `configurable-products` / `whitelabeling` | Feature-aligned | Focused feature runs |
@@ -527,7 +527,7 @@ Suites are organized under `Frontend/<module>/` and `Backend/<module>/` director
 | `backend` | All Backend/ suites | Backend-only regression |
 | `sprint` | Plan-driven via `docs/Sprint plans/sprint-*-summary.json` (`--no-plan` falls back to P0+P1) | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's scope |
-| `full` | All 97 suites | Before production release |
+| `full` | All 99 suites | Before production release |
 
 ### P0 Critical Suites
 
@@ -554,7 +554,7 @@ Authoring guides:
 
 ### Frontend / Backend module layout
 
-**Frontend (45 CSVs):** `auth/`, `catalog/`, `search/`, `cart/`, `checkout/`, `orders/`, `payment/`, `bopis/`, `b2c/`, `configurable-products/`, `whitelabeling/`, `marketing/`, `cross-cutting/`, `smoke/`
+**Frontend (46 CSVs):** `auth/`, `catalog/`, `search/`, `cart/`, `checkout/`, `orders/`, `payment/`, `bopis/`, `b2c/`, `configurable-products/`, `whitelabeling/`, `marketing/`, `loyalty/`, `cross-cutting/`, `smoke/`
 
 **Backend (52 CSVs):** `platform/`, `store/`, `catalog/`, `customer/`, `pricing/`, `inventory/`, `marketing/`, `notifications/`, `cms/`, `orders/`, `api/`, `graphql/`, `search/`, `configurable-products/`, `whitelabeling/`, `assets/`, `channels/`, `contracts/`, `image-tools/`, `import-export/`, `loyalty/`, `push-messages/`, `returns/`, `seo/`, `shipping/`, `xmarketing/`, `smoke/`
 
@@ -581,7 +581,7 @@ CI environment mapping: `qa` → `FRONT_URL` / `BACK_URL`, `staging` → `VIRTO_
 ### Scheduled Runs
 
 - **Daily smoke**: Mon-Fri 6:00 AM UTC — suite 042, $5 budget
-- **Weekly full**: Sunday 2:00 AM UTC — all 97 suites, $80 budget
+- **Weekly full**: Sunday 2:00 AM UTC — all 99 suites, $80 budget
 - **Full-cycle pipeline** (`.github/workflows/full-cycle.yml`): triggered on PR merge to main; daily Mon-Fri 8 AM UTC; or manual dispatch
 
 ### Cost Estimates
@@ -591,7 +591,7 @@ CI environment mapping: `qa` → `FRONT_URL` / `BACK_URL`, `staging` → `VIRTO_
 | `smoke` | 2 | ~$2-5 | ~30 min |
 | `critical` | 5 | ~$10-15 | ~2 hrs |
 | `sprint` | varies (plan-driven) | ~$40-60 | ~5-8 hrs |
-| `full` | 97 | ~$60-100 | ~10-14 hrs |
+| `full` | 99 | ~$60-100 | ~10-14 hrs |
 
 ### Required GitHub Secrets
 

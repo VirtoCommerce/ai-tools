@@ -79,7 +79,7 @@ The navigation hub — shows which skill, command, or agent to use for each phas
 
 ### VC Adaptation
 - **Sprint planning:** 2-week cadence, focus on JIRA sprint backlog, use `/qa-plan` to map ACs to test conditions
-- **Release planning:** Cross-sprint scope, include regression suite selection from `test-suites.json`, full risk assessment across all 36 suites
+- **Release planning:** Cross-sprint scope, include regression suite selection from `test-suites.json`, full risk assessment across all 99 suites
 
 ---
 
@@ -475,8 +475,8 @@ Phases skipped: Analyze, Design, Implement (pre-defined suite), Close (no retros
 ### Major Release (Extended)
 
 Same as Sprint Cycle but with:
-- **Plan:** Full risk assessment across all 36 suites, cross-browser matrix planning
-- **Execute:** Full regression (`/qa-regression full`), all 36 suites
+- **Plan:** Full risk assessment across all 99 suites, cross-browser matrix planning
+- **Execute:** Full regression (`/qa-regression full`), all 99 suites
 - **Report:** Release gate (>=98% overall), security audit, performance baselines
 - **Close:** Full retrospective with all stakeholders, comprehensive lessons learned, major suite updates
 

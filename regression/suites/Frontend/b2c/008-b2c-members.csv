@@ -30,12 +30,18 @@ Org admin user; organization has >10 members","url={{FRONT_URL}},org_user={{ORG_
 [STATE] Total visible members matches org member count","[CONSOLE] no uncaught JS errors","Members truncated with no pagination; duplicate members after loading more; pagination control missing","none","Coverage Gap Analysis","Draft"
 "B2C-MBR-004","Invite Member - Open Form","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user logged in","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
-2. [ACT] Click Invite Member or Add Member button
-3. [ASSERT] Verify invite form opens
-4. [ASSERT] Verify form has email and first name and last name and role fields","[DOM] Invite member form or modal opens
-[DOM] Email input field visible
-[DOM] First name and last name fields visible
-[DOM] Role selector (dropdown or radio) visible","[CONSOLE] no uncaught JS errors","Invite button missing; form does not open; required fields missing from invite form","none","Coverage Gap Analysis","Draft"
+2. [ACT] Click the 'Invite members' button (top-right, next to Filters)
+3. [ASSERT] Verify the 'Invite member' dialog opens (heading level 2)
+4. [ASSERT] Verify the dialog has a required Role selector (combobox, defaulting to 'Organization employee')
+5. [ASSERT] Verify the dialog has a required multi-email textbox (hint: 'Use commas, semicolons, or the Enter key to separate multiple addresses')
+6. [ASSERT] Verify the dialog has an optional Message textbox
+7. [ASSERT] Verify the footer has Cancel and Send buttons, and Send is disabled until the required fields are filled
+8. [ASSERT] Verify there are NO First name and NO Last name fields","[DOM] 'Invite member' dialog/modal opens
+[DOM] Required Role selector (combobox) visible, default value 'Organization employee'
+[DOM] Required multi-email textbox visible with the multi-address separator hint (invites are by email; there is no field simply labeled 'Email')
+[DOM] Optional Message textbox visible
+[DOM] Cancel and Send buttons present; Send disabled until required fields are filled
+[STATE] No First name and no Last name fields exist on the invite form (invitees provide their name at registration)","[CONSOLE] no uncaught JS errors","'Invite members' button missing; dialog does not open; Role / multi-email / Message fields missing. (Do NOT fail on the absence of first/last name fields — they are intentionally not collected.)","Click Cancel to close the dialog (no invite sent)","Coverage Gap Analysis; vc-frontend invite_member_modal","Draft"
 "B2C-MBR-005","Invite Member - Submit Invitation","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user; invite form open","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},invite_email=invite+$TS_SUFFIX@example.com","1. [SETUP] Generate timestamp suffix: smk-{epoch_ms} — capture as $TS_SUFFIX
 2. [NAV] Navigate to /company/members

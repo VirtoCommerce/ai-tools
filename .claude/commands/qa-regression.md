@@ -10,15 +10,15 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 
 ## Usage
 ```
-/qa-regression                             # Default: smoke (Suite 01)
-/qa-regression smoke                       # Suite 01 only (~15 min)
-/qa-regression critical                    # P0 suites: 01, 06, 08, 14
+/qa-regression                             # Default: smoke (Suite 042)
+/qa-regression smoke                       # Suite 042 only (~15 min)
+/qa-regression critical                    # P0 suites: 042, 039, 044, 049
 /qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs Section 5.1 suites; falls back to static group if no plan
 /qa-regression sprint:26-09                # Pin to a specific sprint plan (reads docs/Sprint plans/sprint-26-09-summary.json)
 /qa-regression sprint --no-plan            # Force static `sprint` selection group from test-suites.json (skip plan lookup)
-/qa-regression full                        # All 36 suites (production release)
-/qa-regression frontend                    # Frontend suites: 01-13, 35-36
-/qa-regression backend                     # Backend suites: 14-34
+/qa-regression full                        # All 99 suites (production release)
+/qa-regression frontend                    # All Frontend/ suites
+/qa-regression backend                     # All Backend/ suites
 /qa-regression 01,04,06                    # Specific suite IDs
 /qa-regression critical --autonomous       # Agent Teams mode (failure recovery + JIRA)
 /qa-regression full --autonomous           # Full regression with autonomous orchestration
@@ -179,12 +179,12 @@ Agents MUST read credentials from this CSV at runtime — never hardcode in prom
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
 | `smoke` | 01 | Daily pre-deploy |
-| `critical` | 01, 06, 08, 14 | P0 gate |
-| `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to static group (26 suites) when no plan exists or `--no-plan` is set | Sprint release |
+| `critical` | 042, 039, 044, 049 | P0 gate |
+| `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to static group (all P0+P1 suites) when no plan exists or `--no-plan` is set | Sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
 | `full` | All 36 | Production release |
-| `frontend` | 01-13, 35-36 | Frontend only |
-| `backend` | 14-34 | Backend only |
+| `frontend` | All Frontend/ suites | Frontend only |
+| `backend` | All Backend/ suites | Backend only |
 
 ---
 

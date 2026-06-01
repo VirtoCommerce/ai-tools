@@ -1298,3 +1298,36 @@
 [WAIT] form rendered
 [ACT] `browser_evaluate` touchTargetAuditSnippet('form, main')","[STATE] undersized.length === 0 (email + password inputs, submit, forgot-password link, sign-up link ≥ 44×44)
 [STATE] tooClose.length === 0","[CONSOLE] no errors","Sign-in form fields or links under 44×44; submit button under 44×44 — blocks mobile login","none","business-logic.md#bl-ui-006 + critical-ui-scope.md /sign-in","Semi-Automated"
+"LAYOUT-CLS-005","CLS on /account/lists — skeleton-to-grid swap at mobile (375 px)","CLS > Initial render","P1","BL-UI-001","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Account has ≥ 1 wishlist so skeleton renders before card grid (empty-state skips skeleton)
+- Cache disabled to force skeleton render
+- Viewport 375×812
+- TIMING NOTE: post-paint CLS only (see CLS-001 note). Pre-paint shifts are under-counted by design (documented in scripts/lib/measure-layout.ts).","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 375×812
+[ACT] Disable browser cache (or use hard-reload equivalent via evaluate)
+[NAV] Navigate to {{FRONT_URL}}/account/lists
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver IMMEDIATELY after navigation (buffered:true)
+[WAIT] Wait for `.wishlist-products-skeleton` or `.vc-widget-skeleton` to appear (skeleton phase)
+[WAIT] Wait for skeleton to be replaced by `.vc-product-card` or `.wishlist-card` grid (content phase), then wait further 5s after network idle
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.triggerReflowProbe to surface lazy shifts
+[WAIT] 1s
+[ACT] `browser_evaluate` LAYOUT_SNIPPETS.readCls; capture {cls, shiftCount}","[MATH] cls <= 0.1 PASS — regression fix verified for skeleton height mismatch (VCST-5110)
+[MATH] cls >= 0.25 P0 FAIL (was 0.483 before fix — skeleton height calibrated for desktop flex-row, not mobile stacked layout)
+[STATE] shiftCount recorded for evidence","[CONSOLE] no JS errors during skeleton-to-grid swap
+[NETWORK] GetWishlists xAPI query returns 200; errors[] empty","cls >= 0.1 after fix (skeleton height still mismatched at 375 px); shiftCount > 0 attributed to wishlist-card grid swap; CLS spikes above 0.25 (P0); LAYOUT_SNIPPETS.installClsObserver returns undefined (observer not installed before navigation)","none — no state side effects (observer only)","VCST-5110; business-logic.md#bl-ui-001","Draft"
+"LAYOUT-SPC-004","Spacing grid — /account/lists at md (768 px) and lg (1024 px) breakpoints","Spacing > Grid compliance","P2","BL-UI-002","ECL-1.5","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Account has ≥ 2 wishlists so list-card separator (space-y) and sidebar sub-list (link-lists__wrapper) are both rendered
+- BVA breakpoints: md=768px and lg=1024px","{{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 768×1024 (md breakpoint — lower boundary)
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] `.link-lists__wrapper` AND list card grid rendered (at least 2 cards visible)
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-container.account-shell, .link-lists__wrapper, .link-lists__wrapper > li, .wishlist-card') from scripts/lib/measure-layout.ts; capture result768
+[ACT] classifySpacing() on result768; capture offGrid768
+[ACT] Set viewport to 1024×768 (lg breakpoint — lower boundary)
+[WAIT] layout reflows
+[ACT] `browser_evaluate` spacingAuditSnippet('.vc-container.account-shell, .link-lists__wrapper, .link-lists__wrapper > li, .wishlist-card'); capture result1024
+[ACT] classifySpacing() on result1024; capture offGrid1024","[STATE] offGrid768.length === 0
+[STATE] offGrid1024.length === 0
+[MATH] Every computed padding/margin/gap value for audited selectors ∈ {0,4,8,12,16,20,24,32,40,48,56,64,80,96} px at both breakpoints
+[STATE] Specifically: .vc-container.account-shell paddingBottom ∈ grid set (was 36 px = off-grid before fix); .link-lists__wrapper paddingLeft ∈ grid set (was 10 px = off-grid before fix); list-card sibling margin-top ∈ grid set (was 10 px from md:space-y-2.5 before fix)","[CONSOLE] no CSS errors during viewport resize
+[NETWORK] no failed requests during layout reflow","offGrid768 or offGrid1024 non-empty; paddingBottom = 36 px (off-grid — was from md:pb-9, not fixed); paddingLeft = 10 px (off-grid — pl-2.5 not replaced); margin-top = 10 px between list cards (md:space-y-2.5 not replaced); spacingAuditSnippet returns empty matched array (selector drift)","none — viewport reset is not required","VCST-5111; business-logic.md#bl-ui-002","Draft"

@@ -17,7 +17,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — 13 domains, 76 rules.
+> **Reference:** `.claude/agents/knowledge/business-logic.md` — 17 domains, 108 rules.
 
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
@@ -67,7 +67,7 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (76 rules) | `.claude/agents/knowledge/business-logic.md` |
+| Business invariants (108 rules) | `.claude/agents/knowledge/business-logic.md` |
 | Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` — console patterns, network signatures, common false positives |
 | Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` — per-browser rendering/behavior differences |
 | Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` — LCP, CLS, TTI, API response budgets |

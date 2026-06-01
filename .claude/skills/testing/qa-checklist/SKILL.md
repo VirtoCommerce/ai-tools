@@ -124,7 +124,7 @@ Aligned with **Bundle v14.0.8** (Platform 3.1007.2, 53 modules).
 
 Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishlists & Saved (2), xOrder (2), xProfile (6), xQuote (2), xCMS & xFrontend (2), Cross-Cutting (3), New Query/Mutation Verification (8).
 
-**Total: 716 checklist items across 63 domains + 1 cross-domain checklist (storefront: 427 + admin: 255 + GraphQL detail: 34).**
+**Total: 738 checklist items across 63 domains + 1 cross-domain checklist (storefront: 411 + admin: 244 + GraphQL detail: 83).**
 
 ## Execution
 
@@ -206,5 +206,5 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 | `/qa-test-design` | Checklist items can be expanded using EP, BVA, decision tables |
 | `/qa-risk` | High-risk domains get more granular checklist items |
 | `/qa-sbtm` | Checklists serve as starting point for exploratory session charters |
-| `/qa-api` | GraphQL checklist (#23) aligns with xAPI test execution and case generation |
+| `/qa-api` | GraphQL xAPI checklist aligns with xAPI test execution and case generation |
 | `agents/knowledge/sitemap.md` | Sitemap provides URLs and product types for UI exploration |

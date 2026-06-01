@@ -2,8 +2,6 @@
   "runId": "REG-2026-06-01-1306",
   "selection": "077",
   "mode": "standard",
-  "seedProfile": null,
-  "teardown": false,
   "environment": "vcst-qa",
   "startedAt": "2026-06-01T13:06:20+02:00",
   "completedAt": "2026-06-01T13:25:00+02:00",
@@ -30,16 +28,52 @@
       "file": "regression/suites/Frontend/marketing/077-coupons-promotions-storefront.csv",
       "priority": "P1",
       "lane": "browser",
+      "testCount": 23,
       "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome",
       "status": "completed",
       "attempts": 1,
       "outputFile": "reports/regression/REG-2026-06-01-1306/suite-077-results.json"
     }
   ],
   "browserPool": {
-    "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
-    "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
-    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null }
-  }
+    "slot1": {
+      "server": "playwright-chrome",
+      "status": "idle",
+      "currentSuite": null
+    },
+    "slot2": {
+      "server": "playwright-firefox",
+      "status": "idle",
+      "currentSuite": null
+    },
+    "slot3": {
+      "server": "playwright-edge",
+      "status": "idle",
+      "currentSuite": null
+    }
+  },
+  "batchLog": [
+    {
+      "batch": 1,
+      "suites": [
+        "039",
+        "040",
+        "041"
+      ],
+      "dispatchedAt": "2026-05-29T21:10:00+02:00"
+    }
+  ],
+  "completedAt": "2026-05-30T02:35:00+02:00",
+  "verdict": {
+    "passed": 702,
+    "failed": 62,
+    "blocked": 865,
+    "skipped": 42
+  },
+  "passRate": {
+    "executable": "91.9% (702/764)",
+    "inclBlocked": "42.0% (702/1673)"
+  },
+  "qualityGate": "CONDITIONAL / NO-GO pending triage — 0 confirmed Critical; multiple High defects to confirm (private-coupon leak, member-block persistence, negative-qty, /soda 404)",
+  "report": "reports/regression/REG-2026-05-29-2107/regression-report.md"
 }

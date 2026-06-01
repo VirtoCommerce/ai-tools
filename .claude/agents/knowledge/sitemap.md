@@ -37,7 +37,7 @@ The site supports **15 languages** with locale-specific URLs:
 - **URL:** `/`
 - **Title:** QA & Main page
 - **Sections (unchanged from March):**
-  - Hero banner ("Gifts for sweetheart. Sale") → links to `/soda` and `/catalog`
+  - Hero banner ("Gifts for sweetheart. Sale") → first slider CTA should link to `/soft-drinks` (corrected target), second to `/catalog`. *Live site still points the first slider at `/soda` → 404 (SMK-001 / BUG_042_001), pending dev fix.*
   - "Discounts. Loyalty cards" — featured gift card products (Vintage Colorado Hoodie + 3 Apple/Retail Therapy gift cards)
   - "Popular categories" — category tiles (Consumer Electronics, Home Appliances, Phones & Accessories, Computer Office & Education, Medical goods)
   - "Might be interesting" — promotional banners (Drinks & Food → `/soft-drinks`, Security & Protection, Digital products)
@@ -59,7 +59,7 @@ The site supports **15 languages** with locale-specific URLs:
 | Compare | `/compare` | Product comparison page |
 | Cart | `/cart` | Shopping cart / checkout page (combined — `/checkout` redirects here) |
 | Checkout Payment | `/checkout/payment` | Checkout payment step (non-CyberSource processors only) |
-| Soda | `/soda` | Promo landing — still linked from homepage hero slider (no longer a top-level category) |
+| Soft-drinks (hero target) | `/soft-drinks` | Correct homepage hero first-slider target. *Live site still links to `/soda` → 404 (SMK-001 / BUG_042_001).* |
 
 ---
 
@@ -159,7 +159,7 @@ Counts are live product totals as of 2026-05-20.
 - `/newtest2` (NewTest2)
 - `/new-catalog-item` (New Catalog Item)
 - `/category1` (Category 1)
-- `/soda` as top-level (still linked from homepage slider but not in /catalog)
+- `/soda` as top-level (404 — homepage hero first-slider still links here; correct target is `/soft-drinks` — SMK-001 / BUG_042_001)
 - `/jewelry-and-gems` subcategories from March (preserved category, but children changed)
 - Alcoholic-drinks subcategories from March (Beer, Cider, Distilled, Wine, etc. — verify each before use)
 - Snacks subcategories from March (Chips, Cookie, Crackers, Nachos — verify)
@@ -562,7 +562,7 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 | Language added | Ελληνικά (Greek, `el`) — 14 → **15** languages |
 | New top-level categories | Tyres, Home appliance (display label), TV & Multimedia, Office furniture, Sports, Services, Books, For women, Craft, Seasonal, WIPO, Wireless Accessory World, Mall of America, Evergreen Wholesale, Meiertobler Demo, Drinks And Food, Standard Test Products |
 | New seed categories | Configurable Parents, Conditional Parents, SEED-20260518-Electronics / Industrial Supplies / Office Supplies |
-| Categories removed | Car Covers EN, Online Courses, Coming Soon, NewTest2, New Catalog Item, Category 1, Bolts (top-level), Soda (top-level — slider link remains) |
+| Categories removed | Car Covers EN, Online Courses, Coming Soon, NewTest2, New Catalog Item, Category 1, Bolts (top-level), Soda (top-level — hero slider still links to `/soda` → 404; correct target `/soft-drinks`, SMK-001 / BUG_042_001) |
 | Renames in nav | "Kitchen Supplies" → "Home supplies", "TV" → "TV new", "Coffee and Tea" → "Coffee and tea" |
 | `/products-with-options` restructured | Old: configurable-caps-shirts, variations-of-jeans, configurations. New: build-the-bike-of-your-dreams, cakes, configurable-products, shirts-jeans-and-more, wonderful-beds |
 | New CFG product paths | Hoodie/T-shirt/Hat now under `/products-with-options/configurable-products/...`; bikes under `/products-with-options/build-the-bike-of-your-dreams/...` |

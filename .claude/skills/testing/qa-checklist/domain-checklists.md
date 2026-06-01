@@ -2,7 +2,7 @@
 
 > Reference file for `test-management-specialist` agent and `/qa-checklist` skill. Read on-demand when writing test cases for a specific domain.
 >
-> For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 255 items).
+> For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 244 items).
 
 **33 storefront domains + 1 cross-domain checklist | 427 checklist items** — every checked item should map to at least one test case.
 

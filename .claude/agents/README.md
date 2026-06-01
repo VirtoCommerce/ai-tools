@@ -124,11 +124,11 @@ Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
 | `smoke` | 01 | Daily pre-deploy |
-| `critical` | 01, 06, 08, 14 | P0 gate |
+| `critical` | 042, 039, 044, 049 | P0 gate |
 | `sprint` | 33 suites | Sprint release |
 | `full` | All 45 | Production release |
-| `frontend` | 01-13, 35-36, 41 | Frontend only |
-| `backend` | 14-34, 37-40, 42 | Backend only |
+| `frontend` | All Frontend/ suites | Frontend only |
+| `backend` | All Backend/ suites | Backend only |
 
 ### 4. Ad-hoc Testing
 Use specialists directly via Agent tool:

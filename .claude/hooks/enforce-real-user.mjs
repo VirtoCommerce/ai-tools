@@ -18,6 +18,18 @@ const ALLOWED_PATTERNS = [
   /\bgtag\s*\(/,
   // Cross-origin iframe inspection (Skyflow / CyberSource payment frames).
   /document\.querySelector(All)?\(\s*['"][^'"]*iframe/,
+  // Read-only layout / a11y measurement — suite 048b (Layout Stability) and
+  // /qa-design. These snippets only READ geometry & computed style (no clicks,
+  // no typing, no forced controls, no page-state mutation), so they don't
+  // violate the real-user rule — they were simply never allowlisted, which
+  // blocked all 160 cases in 048b. Canonical source: scripts/lib/measure-layout.ts
+  // (LAYOUT_SNIPPETS + spacing/alignment/overflow/touch-target/rect/FOUC audits).
+  /window\.__layoutAudit\b/, // CLS observer install/read
+  /['"]layout-shift['"]/, // PerformanceObserver CLS
+  /\bgetBoundingClientRect\s*\(/, // rect snapshots, overflow, alignment, touch targets
+  /\bgetComputedStyle\s*\(/, // spacing, contrast, focus-indicator, overflow audits
+  /\bdocument\.fonts\b/, // FOUC / font-swap readiness
+  /\b(naturalWidth|naturalHeight)\b/, // image aspect-ratio audit (BL-UI-010)
 ];
 
 const BLOCK_MESSAGE = [
@@ -37,6 +49,9 @@ const BLOCK_MESSAGE = [
   "  - execCommand('insertText')  — GraphiQL JWT paste into CodeMirror",
   "  - dataLayer / gtag()         — GA4 verification (JS-only side effect)",
   "  - querySelector('iframe...') — cross-origin payment frame inspection",
+  "  - getBoundingClientRect / getComputedStyle / __layoutAudit /",
+  "    PerformanceObserver('layout-shift') / document.fonts / naturalWidth",
+  "                                 — read-only layout & a11y measurement (suite 048b, /qa-design)",
   "",
   "If your case fits an exception but was blocked, refine the regex in",
   ".claude/hooks/enforce-real-user.mjs (do not bypass — extend the allowlist).",

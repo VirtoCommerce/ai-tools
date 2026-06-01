@@ -46,14 +46,14 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (23 files) for shared refs
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (24 files) for shared refs
 ├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
 ├── .claude/commands/     # 16 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 99 CSV suites (~5,951 cases) in 33 module directories
+├── regression/suites/    # 99 CSV suites (~3,756 cases) in 42 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads

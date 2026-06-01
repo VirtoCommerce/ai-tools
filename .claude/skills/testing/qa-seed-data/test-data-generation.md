@@ -76,7 +76,7 @@ Response: `{ "access_token": "...", "expires_in": 3600 }`
 | Action | Method | Endpoint | Key Fields |
 |--------|--------|----------|------------|
 | Create physical catalog | POST | `/api/catalog/catalogs` | `name`, `languages[]` (e.g. `["en-US","de-DE"]`), `isVirtual: false` |
-| Create virtual catalog | POST | `/api/catalog/catalogs` | `name`, `isVirtual: true`, `links[]` (physical catalog IDs) |
+| Create virtual catalog | POST | `/api/catalog/catalogs` | `name`, `isVirtual: true`, `virtualCatalogProductsHierarchy` with `links[]` (physical catalog IDs). **Storefront visibility requires linking products into the active B2B virtual catalog `@td(VIRTUAL_CATALOG_B2B.id)`** — products only in a physical catalog return 404 on storefront. See `feedback_storefront_virtual_catalog_link.md`. |
 | Get catalog | GET | `/api/catalog/catalogs/{{catalogId}}` | |
 | Delete catalog | DELETE | `/api/catalog/catalogs/{{catalogId}}` | Path-based, not query param |
 
@@ -263,9 +263,12 @@ Create as a product with `mainProductId` pointing to parent:
 
 | Action | Method | Endpoint | Key Fields |
 |--------|--------|----------|------------|
-| Set inventory | PUT | `/api/inventory/products/{{productId}}` | `fulfillmentCenterId`, `inStockQuantity`, `reservedQuantity` (no `/inventories` suffix) |
+| Set inventory (create) | PUT | `/api/inventory/products/{{productId}}` | Array of inventory entries. Returns 200 on create; **500s on some envs when updating** existing rows — fall back to PATCH |
+| Update inventory (preferred for edits) | PATCH | `/api/inventory/{{inventoryId}}` | JsonPatch document. Reliable for status / quantity edits on existing rows. See `reference_inventory_admin_api.md` |
 | Get inventory | GET | `/api/inventory/products/{{productId}}` | |
 | List FFCs | POST | `/api/inventory/fulfillmentcenters/search` | `{ "take": 50 }` |
+
+**`inventoryStatus` enum:** `Enabled` | `Disabled` | `Ignored` (NOT `InStock`). **MUST set `Enabled` for storefront purchase** — xAPI `addItem` silently no-ops (`itemsCount=0`, no error) when status is `Disabled`. See `feedback_xapi_additem_silent_disabled.md`.
 
 **Inventory body:**
 ```json
@@ -274,8 +277,17 @@ Create as a product with `mainProductId` pointing to parent:
     "fulfillmentCenterId": "{{ffcId}}",
     "productId": "{{productId}}",
     "inStockQuantity": 100,
-    "reservedQuantity": 0
+    "reservedQuantity": 0,
+    "inventoryStatus": "Enabled"
   }
+]
+```
+
+**JsonPatch update (PATCH) — set status:**
+```json
+[
+  { "op": "replace", "path": "/inventoryStatus", "value": "Enabled" },
+  { "op": "replace", "path": "/inStockQuantity", "value": 100 }
 ]
 ```
 
@@ -502,7 +514,7 @@ For multiple products, you still need one call per product — but each call han
 
 ## Naming Convention
 
-All test entities use a `AGENT-TEST-` prefix + date stamp for easy identification and cleanup:
+All test entities use a `AGENT-TEST-` prefix + date stamp for easy identification and cleanup. **`{YYYYMMDD}` in the examples below is a placeholder — substitute the current run date at seed time, not the literal `20260306` shown in bodies above.**
 
 | Entity | Pattern | Example |
 |--------|---------|---------|
@@ -593,6 +605,67 @@ Delete in **reverse dependency order**. Run even if seed tests fail.
 
 ---
 
+## Full Profile — Seed All `test-data/` Fixtures
+
+The `full` profile is **not** "the other profiles combined with synthetic `AGENT-TEST-*` entities." It means: **provision the platform from the actual fixtures committed under `test-data/`** so that every `@td()` reference across all 99 regression suites resolves against live data. The §Seed Request Manifest above (synthetic `AGENT-TEST-*` entities) is used by `minimal`/`catalog`/`b2b`/`pricing`; `full` instead walks the CSV-backed fixtures below.
+
+**Guiding rules for `full`:**
+- **Preserve pinned identity.** Where a CSV row or `aliases.json` already pins a `platform_id` / `code` / `slug` / GUID, create the entity with that identity (or update the existing one). Never mint a fresh random ID for a fixture that suites resolve by a pinned value — that breaks `@td()`.
+- **Idempotent.** Look up each fixture first (by pinned ID, then by code/name); create only if missing, else update in place. A `full` re-run must not duplicate fixtures.
+- **Write-back.** When a pinned entity is missing and gets re-provisioned with a new ID, write the new ID back into the source CSV **and** `aliases.json`, then re-run `npx tsx scripts/validate-td-refs.ts` (Step 6 of the skill).
+- **Read GUIDs, never hardcode.** Catalog roots, store IDs, FFC IDs, virtual-catalog IDs come from `aliases.json` (`@td(VIRTUAL_CATALOG_B2B.id)`, `@td(STORE_PRIMARY.id)`, …) or the `01-Infrastructure` discovery folder — see `feedback_no_hardcoded_guids_in_scripts.md`.
+- **Respect the dependency order** (§Entity Dependency Graph). Seed in the order of the table below; reindex last.
+
+### Seed order — each `test-data/` source → platform entity → endpoint
+
+| # | `test-data/` source | Platform entity | Endpoint(s) | Pinned by | Notes |
+|---|---------------------|-----------------|-------------|-----------|-------|
+| 1 | `stores/stores.csv` | Store config | GET/PUT `/api/stores` | `STORE_*` aliases | **Verify, rarely create.** Ensure each store's `catalog`, languages, currencies, and feature flags (`quotes_enabled`, `email_verification_*`, etc.) match the CSV before seeding catalog data. |
+| 2 | `localization/languages.csv` | Store languages | PUT `/api/stores` (languages[]) | — | Apply `supported=true` languages to the store's `languages` list. |
+| 3 | `catalogs/catalogs.csv` | Physical + virtual catalogs | POST/GET `/api/catalog/catalogs` | `STORE_PRIMARY.catalog`, `VIRTUAL_CATALOG_B2B.id` | Assign physical catalog to store (prereq for pricing). Link products into the **active B2B virtual catalog** so they're storefront-visible. |
+| 4 | `catalogs/properties.csv` | Catalog/category properties | POST `/api/catalog/properties` (or via catalog/category PUT) | — | Create dictionary + scalar properties referenced by products. |
+| 5 | `catalogs/categories.csv` | Category tree | POST/PUT `/api/catalog/categories` | — | Honor `parent_id`/`level` ordering (roots first). Preserve `code` + `seo_slug`. |
+| 6 | `products/products-full.csv` | Products (+ variations via `main_product_id`) | POST/PUT `/api/catalog/products` | product aliases | Preserve `sku`/`product_id`. Parents before variations. Attach `properties`, descriptions, SEO. |
+| 6b | `products/configurable-products.csv` | Configurable products + sections/options | POST `/api/catalog/products` + POST `/api/catalog/products/configurations` (body field is `sections`, `isActive:true`) | `CFG_*` aliases + `CFG_*_SECTIONS` inline aliases | Preserve parent GUIDs + section/option IDs that aliases pin. See `reference_configurations_post_body.md`. |
+| 6c | `products/standard.csv` | Standard products | POST/PUT `/api/catalog/products` | `BUYABLE_NO_MIN_QTY`, `PROD_VARIATION_PARENT_SALE`, … | Preserve pinned SKUs/GUIDs. |
+| 7 | `pricing/price-lists.csv` | Price lists + assignments | POST `/api/pricing/pricelists`, POST `/api/pricing/assignments` | — | Catalog MUST be assigned to store first (else assignment 500s). |
+| 8 | `pricing/prices.csv` | Prices (tiered) | PUT `/api/products/prices` (batch — one array call) | tier aliases | Honor `min_quantity` tiers + `currency`. |
+| 9 | `inventory/fulfillment-centers.csv` | Fulfillment centers | POST/GET `/api/inventory/fulfillmentcenters` | FFC IDs | Verify pre-existing FFCs before creating. |
+| 10 | `inventory/stock-levels.csv` | Inventory per product/FFC | PUT `/api/inventory/products/{id}` (PATCH fallback) | `PROD_OOS`, `PROD_LOW_STOCK`, … | **`inventoryStatus: "Enabled"`** for buyable stock (Disabled silently no-ops `addItem`). Honor OOS=0 / low-stock fixtures exactly. |
+| 11 | `b2b/organizations.csv` | B2B organizations | POST/GET `/api/members` (Organization) | `ORG_*` aliases (`platform_id`) | Seed only rows where `seeded=true` need (re)provisioning; preserve hierarchy (AcmeWest → AcmeCorp). |
+| 12 | `b2b/contacts.csv` | Contacts | POST `/api/members` (Contact) | contact `platform_id` | Link to organizations. |
+| 13 | `b2b/roles.csv` | Roles + permissions | POST `/api/platform/security/roles` | role names | Include `CanImpersonate` where the role requires it (see `reference_impersonation_permission_naming.md`). |
+| 14 | `b2b/users.csv` | User accounts (+ role assignment) | POST `/api/platform/security/users/create` | `ACME_*`/`TECHFLOW_*`/… (`platform_id`) | Passwords from `.env`/`agent-user-pool.csv`, NOT literals. `userType=Customer`, `storeId` per CSV, `status=Approved`. |
+| 15 | `b2b/addresses.csv` | Org + contact addresses | PUT member with `addresses[]` | `ADDR_*` (also `addresses/us-addresses.csv`) | Attach to the org/contact rows from steps 11–12. |
+| 16 | `organizations/sample-organizations.csv` | Special-char orgs | POST `/api/members` (Organization) | — | Edge-case org names for search testing. |
+| 17 | `users/test-users.csv` + `users/agent-user-pool.csv` | Personal + agent-pool users | POST `/api/platform/security/users/create` | per-slot creds | Agent-pool users (1 per browser slot) use per-slot passwords from `agent-user-pool.csv`. |
+| 18 | `promotions/promotions.csv` + `conditions.csv` + `rewards.csv` | Promotions | POST `/api/marketing/promotions` | — | Honor reward type, conditions, exclusivity, `start/end_date`. |
+| 19 | `promotions/coupons.csv` + `qa-bulk-coupons.csv` + `edge-cases.csv` | Coupons | POST coupons under their promotion | `COUPON_*` aliases (`code`, `gql_id`) | Preserve `code` + `gql_id` exactly — suites assert by these. Include expired/edge-case coupons. |
+| 20 | `bopis/pickup-locations.csv` + `stores/bopis-locations.csv` | Pickup locations | inventory/FFC `pickup_available=true` + store BOPIS config | BOPIS catalog id | Link pickup locations to fulfillment centers. |
+| 21 | `white-labeling/organizations.csv` + `link-lists.csv` + `users.csv` | WL orgs, menu/footer link lists, WL users | `/api/members`, link-list/menu API, security users | WL aliases | Per-org branding (logo, theme preset, link lists). |
+| 22 | `cms/pagebuilder-pages.md` | CMS / PageBuilder pages | PageBuilder UI / Builder.io | — | **UI-only** — designer blocks must be added via the library click-through, never REST (see `feedback_designer_block_workflow.md`). Seed via `qa-frontend-expert` browser flow, not Postman. |
+| 23 | Loyalty settings (`LOYALTY_SETTINGS`, `USER_GROUP_VIP`, `LOYALTY_VIP_USER` aliases) | Loyalty store setting + VIP user/group | PUT `/api/loyalty-setting`, POST members/users | loyalty aliases | `currency=PTS`, `mode=Mixed Cart`. Provision VIP customer-group user. |
+| 24 | All of the above | Search index | POST `/api/search/indexes/index` (batch all doc types) | — | Reindex once at the end; poll `/api/search/indexes/tasks` to completion. |
+
+### Reference-only `test-data/` sources — consumed in place, NOT seeded
+
+These have no platform entity to create — agents read them at test time:
+
+| Source | Why not seeded |
+|--------|----------------|
+| `payment/test-cards.csv`, `payment/*.png`, `payment-scenarios.csv`, `payment-processor-config.md` | Processor test cards — used during checkout, nothing to provision. |
+| `search-queries/*.csv` | Search input terms — read by search tests. |
+| `uploads/*` (images, PDFs, video, xlsx, …) | Upload fixtures — referenced by file-upload tests. |
+| `graphql/queries/*.graphql`, `graphql/mutations/*.graphql`, `graphql/index.json` | xAPI query/mutation library — sent at runtime. |
+| `security/xss-payloads.csv` | Injection payloads — supplied as inputs. |
+| `*/_seed-results-*.json`, `*-snapshot*.json`, `aliases.json`, `*/README.md`, `*/setup-guide.md` | Metadata / write-back targets / docs — not entities. |
+
+### Order- and quote-state fixtures (admin-driven, see `test-data/README.md`)
+
+Many suite-014 (orders) and suite-015 (quotes) fixtures (`SHIPPED_ORDER`, `COMPLETED_ORDER`, `QUOTE_WITH_ADMIN_RESPONSE`, …) require placing an order/quote and then transitioning its admin status — they cannot be created by a single POST. A `full` seed should **place + transition** these via the order-creation matrix (`order-creation-matrix.md`) and admin status changes, or explicitly report them as `SEED REQUIRED` in the Step 6 report when the status vocabulary is `DEFERRED` (see README §Orders Suite Seed Requirements). Do not silently skip them.
+
+---
+
 ## Reference Data (read-only, pre-existing)
 
 These exist in the environment — read them, don't recreate:
@@ -640,7 +713,7 @@ Poll `/api/search/indexes/tasks` every 5 seconds (not faster). Typical reindex t
 
 ## Seeded B2B Test Data (Ready to Use)
 
-The `b2b` seed profile was executed on **2026-03-10** and entities are **live on the platform**. Agents should use this data instead of creating new B2B entities.
+The `b2b` seed profile was originally executed on **2026-03-10**, **partially wiped by the vcst-qa catalog restore on 2026-05-15** ([project_vcstqa_restore_2026_05_15.md]), and **reseeded 2026-05-19** (see `test-data/b2b/_seed-results-suite-009-restore.json`). Org/contact/user `platform_id` values in `test-data/b2b/*.csv` reflect the post-restore state. Agents should use this data instead of creating new B2B entities; if a lookup 404s, treat the row as stale and re-run `/qa-seed-data b2b` against the affected entity.
 
 ### Source of Truth
 

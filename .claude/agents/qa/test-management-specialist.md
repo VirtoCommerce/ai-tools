@@ -28,7 +28,7 @@ Techniques and data tactics are the **toolbox you reach into after** answering #
 
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — 13 domains, 76 rules.
+> **Reference:** `.claude/agents/knowledge/business-logic.md` — 17 domains, 108 rules.
 
 - Every **BL-*** invariant → at least one test case. **BL-CROSS-*** → cross-layer verification cases
 - When reviewing coverage: "Is every invariant covered?" Uncovered invariants = gaps to fill
@@ -44,11 +44,11 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Layer | What to Test | Step Tags | Assertion Tags | Target Suite |
 |-------|-------------|-----------|---------------|-------------|
-| **REST API** | CRUD, auth, validation, error codes | `[HTTP]` `[AUTH]` `[SETUP]` | `[STATUS]` `[BODY]` `[SCHEMA]` `[HEADER]` | Suite 14+ |
-| **GraphQL xAPI** | Queries, mutations, `errors[]`, perf | `[GQL]` `[VAR]` `[AUTH]` | `[ERRORS]` `[DATA]` `[COUNT]` `[MATH]` | Suite 15 |
-| **Admin UI** | Blade CRUD, grids, forms, widgets | `[BLADE]` `[GRID]` `[SAVE]` | `[TOAST]` `[FORM]` `[BLADE]` `[GRID]` | Suite 16-34 |
-| **Storefront UI** | User journeys, forms, navigation | `[NAV]` `[ACT]` `[WAIT]` `[JOURNEY]` | `[DOM]` `[STATE]` `[MATH]` `[FORMAT]` | Suite 01-13 |
-| **E2E Cross-Layer** | Full flows: storefront → API → admin | `--- LAYER ---` markers | Assertions from ≥2 layers | Suite 00 |
+| **REST API** | CRUD, auth, validation, error codes | `[HTTP]` `[AUTH]` `[SETUP]` | `[STATUS]` `[BODY]` `[SCHEMA]` `[HEADER]` | `Backend/api/049-*` |
+| **GraphQL xAPI** | Queries, mutations, `errors[]`, perf | `[GQL]` `[VAR]` `[AUTH]` | `[ERRORS]` `[DATA]` `[COUNT]` `[MATH]` | `Backend/graphql/050*` |
+| **Admin UI** | Blade CRUD, grids, forms, widgets | `[BLADE]` `[GRID]` `[SAVE]` | `[TOAST]` `[FORM]` `[BLADE]` `[GRID]` | `Backend/<module>/*` |
+| **Storefront UI** | User journeys, forms, navigation | `[NAV]` `[ACT]` `[WAIT]` `[JOURNEY]` | `[DOM]` `[STATE]` `[MATH]` `[FORMAT]` | `Frontend/<area>/*` |
+| **E2E Cross-Layer** | Full flows: storefront → API → admin | `--- LAYER ---` markers | Assertions from ≥2 layers | feature suite |
 
 **Layer detection:** REST endpoints → `api` | GraphQL ops → `graphql` | Admin blades/grids → `admin` | Storefront UI → storefront | Spans ≥2 layers → `e2e` (always for P0)
 
@@ -64,12 +64,12 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (76 rules) | `.claude/agents/knowledge/business-logic.md` |
+| Business invariants (108 rules) | `.claude/agents/knowledge/business-logic.md` |
 | Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
-| Storefront Checklists (28 domains, 331 items) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
-| Backend & Admin Checklists (29 domains, 255 items) | `.claude/skills/testing/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
-| GraphQL xAPI Checklist (34 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
+| Storefront Checklists (33 domains, 411 items) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
+| Backend & Admin Checklists (29 domains, 244 items) | `.claude/skills/testing/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
+| GraphQL xAPI Checklist (83 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
 | GraphiQL Interaction Guide | `.claude/agents/knowledge/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
 | **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
 | **Live Discovery + Random Inputs** | `.claude/agents/knowledge/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Decision tree separating `{{VAR}}` (per-env) / `@td()` (assertion target) / `live-discover` (drift-resilient entity lookup) / `random-data` (unique inputs with `AGENT-TEST-` cleanup prefix). JS helpers: `scripts/lib/live-discover.ts`, `scripts/lib/random-data.ts`. CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`. Parallel-run isolation via the agent user pool. |
@@ -205,11 +205,11 @@ BLOCKED ❌ → escalate to qa-lead
    ```
    | Layer | Applicable? | # Cases | Assigned Agent | Target Suite |
    |-------|-------------|---------|---------------|-------------|
-   | REST API | Yes/No | N | qa-backend-expert | Suite 14 |
-   | GraphQL | Yes/No | N | qa-backend-expert | Suite 15 |
-   | Admin UI | Yes/No | N | qa-backend-expert | Suite NN |
-   | Storefront | Yes/No | N | qa-frontend-expert | Suite NN |
-   | E2E | Yes/No | N | frontend + backend | Suite 00 |
+   | REST API | Yes/No | N | qa-backend-expert | `Backend/api/049-*` |
+   | GraphQL | Yes/No | N | qa-backend-expert | `Backend/graphql/050*` |
+   | Admin UI | Yes/No | N | qa-backend-expert | `Backend/<module>/*` |
+   | Storefront | Yes/No | N | qa-frontend-expert | `Frontend/<area>/*` |
+   | E2E | Yes/No | N | frontend + backend | feature suite |
    ```
 6. **Generate test cases per layer** — use the right tool per layer, applying test conditions from step 4:
    - **REST API layer**: `/qa-api cases REST <module>` — reads `api-test-case-patterns.md` for coverage checklist + `xapi-query-ref.md` for endpoint signatures
@@ -228,7 +228,7 @@ BLOCKED ❌ → escalate to qa-lead
    4. **You do NOT self-promote** — only after `qa-lead-orchestrator` explicit approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`)
    5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
 8. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
-9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→Backend (14-34), GraphQL→Suite 15, Admin→module suite, Storefront→Frontend (01-13), E2E→Suite 00. `Draft` cases live in `tests/Sprint-current/VCST-XXXX/` until promoted
+9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`, Storefront→`Frontend/<area>/*`, E2E→feature suite. `Draft` cases live in `tests/Sprint-current/VCST-XXXX/` until promoted
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links

@@ -64,7 +64,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | `frontend` | All Frontend/ suites | Frontend-only regression |
 | `backend` | All Backend/ suites | Backend-only regression |
 | `sprint` | All P0 + P1 suites | Before sprint release |
-| `full` | All 79 suites | Before production release |
+| `full` | All 99 suites | Before production release |
 
 ## Module Dependencies
 

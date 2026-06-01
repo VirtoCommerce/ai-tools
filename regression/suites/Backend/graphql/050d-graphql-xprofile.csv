@@ -535,3 +535,74 @@ PRF-GQL-062,"[VCST-5073] currentCustomerAddresses — No id Filter Returns Full 
 [GQL-EXEC list_nofilter]","[ERRORS label=list_nofilter] errors[] empty
 [COUNT label=list_nofilter] data.currentCustomerAddresses.totalCount >= 0
 [DATA label=list_nofilter] data.currentCustomerAddresses.items is non-null","[EVIDENCE] Response shape identical to pre-VCST-5073 baseline","errors[] non-empty on no-filter call (regression introduced by new arg); items null","none — read-only","VCST-5073; xAPI; Query.currentCustomerAddresses",Automated
+PRF-GQL-063,"[VCST-5001] currentOrganizationAddresses vs currentCustomerAddresses — Scope Isolation (EP: Org Member)","GraphQL > xProfile > Addresses > Scope Isolation",Critical,"BL-B2B-001; BL-GQL-002","ECL-3.2; ECL-10.2","Runner-native. ORG_USER authenticated (org member). Queries both currentOrganizationAddresses and currentCustomerAddresses in the same session using the same Bearer token. BL-B2B-001: the two result sets must be independent — no address id should appear in both lists. Technique: EP — org-member context is one equivalence class; verifies the core isolation invariant that the positive partition must satisfy.","—","[AUTH role=ORG_USER]
+[GQL-OP org_addrs]
+  query {
+    currentOrganizationAddresses(first: 50) {
+      totalCount
+      items {
+        id city countryCode countryName firstName lastName
+        line1 line2 postalCode regionId regionName
+        phone email addressType isDefault isFavorite description
+      }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC org_addrs]
+[GQL-OP cust_addrs]
+  query {
+    currentCustomerAddresses(first: 50) {
+      totalCount
+      items {
+        id city countryCode countryName firstName lastName
+        line1 line2 postalCode regionId regionName
+        phone email addressType isDefault isFavorite description
+      }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC cust_addrs]","[ERRORS label=org_addrs] errors[] empty — org-scoped query succeeds for org member (BL-B2B-001)
+[ERRORS label=cust_addrs] errors[] empty — personal-scoped query succeeds for same token
+[COUNT label=org_addrs] data.currentOrganizationAddresses.totalCount >= 0
+[COUNT label=cust_addrs] data.currentCustomerAddresses.totalCount >= 0
+[DATA label=org_addrs] data.currentOrganizationAddresses.items is non-null
+[DATA label=cust_addrs] data.currentCustomerAddresses.items is non-null
+[DATA label=org_addrs] data.currentOrganizationAddresses.term_facets is non-null
+[DATA label=cust_addrs] data.currentCustomerAddresses.term_facets is non-null","[ROUNDTRIP] runner-manual: inspect org_addrs.items[*].id and cust_addrs.items[*].id — no id should appear in both sets (BL-B2B-001 isolation). If org has 0 addresses and customer has 0 addresses, isolation is vacuously satisfied; if either list is non-empty the non-overlap must hold.
+[EVIDENCE] countryCode values in items (if any) must be ISO-3 format (USA/CAN/GBR etc.) — not ISO-2. isFavorite field present as Boolean (xAPI storefront-only flag). regionId may be null for non-US/CA addresses.","Either errors[] non-empty (scope access broken); org address ids appear in personal list or vice versa (BL-B2B-001 violation — P0 security/data leak); term_facets null (connection resolver regression)","none — pure read","VCST-5001; xAPI; BL-B2B-001; Sprint 26-10 GAP-17; Technique: EP (org-member partition)",Draft
+PRF-GQL-064,"[VCST-5001] currentOrganizationAddresses — Unauthenticated Access Returns Errors (EP: No-Auth Partition)","GraphQL > xProfile > Addresses > Org > Auth",Critical,"BL-AUTH-004; BL-B2B-001","ECL-10.2","Runner-native. NO [AUTH] step — runner posts currentOrganizationAddresses to /graphql without an Authorization header. Technique: EP — unauthenticated context is the negative equivalence class for org-scoped queries. Mirrors PRF-GQL-051 (which covers currentCustomerAddresses unauthenticated); this case closes the equivalent gap for the org variant.","—","[GQL-OP noauth_org_addrs]
+  query {
+    currentOrganizationAddresses(first: 5) {
+      totalCount
+      items { id city countryCode line1 postalCode }
+    }
+  }
+[GQL-EXEC noauth_org_addrs]","[ERRORS label=noauth_org_addrs] errors[] non-empty — server rejects unauthenticated request for org-scoped addresses (BL-AUTH-004; BL-B2B-001)
+[DATA label=noauth_org_addrs] data.currentOrganizationAddresses is null — no org address data returned without auth","[CONSOLE] runner-manual: no HTTP 500 in server logs; error shape contains authorization message, not a stack trace","200 OK with org address data returned without auth (P0 security defect — more severe than the customer-address variant because org data leaks B2B entity details); HTTP 500 instead of auth error","none — no state created","VCST-5001; xAPI; BL-AUTH-004; BL-B2B-001; Sprint 26-10 GAP-17; Technique: EP (no-auth partition); Mirrors PRF-GQL-051 pattern for org variant",Draft
+PRF-GQL-065,"[VCST-5001] currentOrganizationAddresses — countryCodes ISO-3 Filter Accepted (EP: Filtered Org Query)","GraphQL > xProfile > Addresses > Org > Facets",High,"BL-B2B-001; BL-GQL-001","ECL-3.2","Runner-native. ORG_USER (org member) authenticated. Queries currentOrganizationAddresses with the countryCodes filter arg set to ""USA"" (ISO-3 format per address-data conventions). Technique: EP — filtered org-address query is a distinct partition from the unfiltered happy-path (PRF-GQL-052) and the customer-address filtered path (PRF-GQL-050). Verifies that org-scoped query accepts the same filter surface as its customer counterpart, and that ISO-3 countryCode values in returned items are respected.","—","[AUTH role=ORG_USER]
+[GQL-OP org_us_addrs]
+  query {
+    currentOrganizationAddresses(first: 20, countryCodes: ""USA"") {
+      totalCount
+      items {
+        id city countryCode countryName firstName lastName
+        line1 postalCode regionId regionName isDefault isFavorite
+      }
+      term_facets { name terms { term label count } }
+    }
+  }
+[GQL-EXEC org_us_addrs]
+[GQL-OP org_nonexist_country]
+  query {
+    currentOrganizationAddresses(first: 10, countryCodes: ""ZZZ"") {
+      totalCount
+      items { id city countryCode }
+    }
+  }
+[GQL-EXEC org_nonexist_country]","[ERRORS label=org_us_addrs] errors[] empty — countryCodes filter arg accepted by resolver (BL-GQL-001)
+[DATA label=org_us_addrs] data.currentOrganizationAddresses is non-null
+[COUNT label=org_us_addrs] data.currentOrganizationAddresses.totalCount >= 0
+[DATA label=org_us_addrs] data.currentOrganizationAddresses.term_facets is non-null
+[ERRORS label=org_nonexist_country] errors[] empty — unknown countryCodes value is silently filtered to empty (not a server error)
+[COUNT label=org_nonexist_country] data.currentOrganizationAddresses.totalCount = 0","[EVIDENCE] Any items returned by org_us_addrs must have countryCode = ""USA"" (ISO-3 three-letter code, not ISO-2 ""US""). regionId may be non-null for USA addresses (state-level) — assert field is present in schema, not specific value. isFavorite is storefront-xAPI-only Boolean field — must be present in schema response (DV-009 guard).
+[ROUNDTRIP] runner-manual: re-run org_us_addrs without countryCodes filter (PRF-GQL-052 path) — totalCount should be >= USA-filtered totalCount","org_us_addrs errors[] non-empty (resolver rejects countryCodes arg — DV-008 regression); items with countryCode != ""USA"" returned despite filter; org_nonexist_country errors[] non-empty (invalid country code crashes resolver instead of returning empty); isFavorite field missing (schema drift)","none — pure read","VCST-5001; xAPI; BL-B2B-001; Sprint 26-10 GAP-17; Technique: EP (filtered org-address partition); Address-data convention: ISO-3 countryCode; reference_address_data_conventions",Draft
