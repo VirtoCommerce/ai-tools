@@ -4,7 +4,7 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 244 items).
 
-**33 storefront domains + 1 cross-domain checklist | 411 checklist items** — every checked item should map to at least one test case.
+**33 storefront domains + 1 cross-domain checklist | 427 checklist items** — every checked item should map to at least one test case.
 
 > **GraphQL test coverage**: GraphQL xAPI checklist items are maintained in [`graphql-checklist.md`](./graphql-checklist.md), not here. This file focuses on storefront UI/UX behavior.
 
@@ -13,23 +13,23 @@
 | # | Domain | Items | E2E Catalog | Related Suites |
 |---|--------|-------|-------------|----------------|
 | 1 | Auth | 8 | E2E-AUTH | 01, 02, 08 |
-| 2 | Catalog | 26 | E2E-CAT | 01, 03, 16 |
+| 2 | Catalog | 28 | E2E-CAT | 01, 03, 16 |
 | 3 | Categories | 6 | E2E-CAT | 03, 16 |
-| 4 | SEO | 7 | E2E-CAT | 31 |
-| 5 | Add to Cart | 10 | E2E-CART | 01, 04a |
+| 4 | SEO | 8 | E2E-CAT | 31 |
+| 5 | Add to Cart | 11 | E2E-CART | 01, 04a |
 | 6 | Search | 12 | E2E-SEARCH | 03, 26 |
-| 7 | Ship-to Selector | 6 | E2E-CHK | 04a, 04b |
+| 7 | Ship-to Selector | 9 | E2E-CHK | 04a, 04b |
 | 8 | Cart/Checkout | 19 | E2E-CHK | 04a, 04b, 06 |
 | 9 | Payment | 12 | E2E-PAY | 06 |
 | 10 | Orders | 11 | E2E-ORD | 01, 04c, 20 |
 | 11 | Company Info | 6 | E2E-ORG | 02, 21 |
 | 12 | Company Members | 12 | E2E-MEMBER | 02, 21 |
-| 13 | Multi-Org | 11 | E2E-ORG | 02, 21 |
-| 14 | Product Configurations & Variations | 55 | E2E-CONFIG | 36 |
+| 13 | Multi-Org | 13 | E2E-ORG | 02, 21 |
+| 14 | Product Configurations & Variations | 58 | E2E-CONFIG | 36 |
 | 15 | PDP (Product Detail Page) | 11 | E2E-CAT | 01, 03 |
 | 16 | Google Analytics | 11 | E2E-GA | 07 |
 | 17 | Anonymous Flow | 8 | E2E-CHK | 04a, 04b |
-| 18 | Cart Merge | 7 | E2E-CART | 04a, 30 |
+| 18 | Cart Merge | 11 | E2E-CART | 04a, 30 |
 | 19 | BOPIS (Pickup) | 12 | E2E-BOPIS | 05, 30 |
 | 20 | B2B Quotes & RFQ | 14 | E2E-QUOTE | 04c, 20 |
 | 21 | B2B Lists & Quick Order | 13 | E2E-LIST | 13 |
@@ -67,6 +67,7 @@
 - [ ] Range facet open-ended: `(TO 100]` (up to 100) and `(0 TO)` (greater than zero) return correct products
 - [ ] Range facet with currency: `price.{currency}` scoped to selected currency, switching currency updates range facet values
 - [ ] Range facet counts: each range bucket displays correct product count matching actual filtered results (cascading)
+- [ ] Facet rendering per property value type: ShortText / dictionary → checkbox list, Integer / Decimal / Measure → range slider or buckets (`range_filter_type`), DateTime → date range, Boolean → toggle, color → swatch — each Aggregation property configured in Admin renders the correct control and filters correctly
 - [ ] Filter chips: display, remove one, "Reset filters"
 - [ ] Sorting: price asc/desc, name A-Z, relevance
 - [ ] Pagination / "Load More" / page count
@@ -88,6 +89,7 @@
 - [ ] `Visible` ON + `Can be purchased` OFF → **OutOfStock** label shown, Add to Cart disabled
 - [ ] `Visible` OFF → **SoldOut**, product not displayed in storefront listing or search
 - [ ] In-stock / out-of-stock filter works correctly in product listing
+- [ ] "Purchased before" filter: toggle restricts listing to previously ordered products (authenticated/B2B); works on listing and Brands page alongside in-stock + branch-availability filters
 - [ ] "Purchased Before" tag displayed for previously ordered items (B2B)
 - [ ] Multi-fulfillment center: `availabilityData.inventories` shows per-center stock levels (via xAPI)
 
@@ -101,6 +103,7 @@
 
 ## 4. SEO
 - [ ] SEO-friendly URLs for categories and products
+- [ ] Long vs short link forms: product/category reachable via full hierarchical path (long, `/category/sub/product-slug`) and short slug (`/product-slug`); both resolve to the same page, canonical points to the preferred form, breadcrumbs render consistently for each
 - [ ] Breadcrumbs match URL hierarchy
 - [ ] Canonical URL present and correct on every page
 - [ ] Meta title and description populated
@@ -112,6 +115,7 @@
 - [ ] Stepper +/- buttons: increment, decrement, boundary enforcement
 - [ ] Qty field: direct input, min qty enforced, max stock enforced
 - [ ] Pack size / qty step (e.g., multiples of 6)
+- [ ] Quantity validation messages surface correctly: "Order in packs of {N}" (pack size), "Order from {min} to {max} pcs" (min/max), "Min order {N} pcs not available", "Value must be a positive number" / "Value must be an integer", out-of-stock
 - [ ] Variations (B2B layout): select variant then add
 - [ ] Variations (B2C layout): inline variant selection on card
 - [ ] Configurable products: "Customize" → configure sections → add
@@ -135,10 +139,12 @@
 - [ ] Search by SKU: entering exact SKU returns the matching product
 
 ## 7. Ship-to Selector
-- [ ] Favorite/default address pre-selected
+- [ ] Set favorite address in header: favorite address moves to the top of the list and is pre-selected here and at checkout
 - [ ] Add new address (form validation, save)
 - [ ] "Show more" addresses (lazy load / expand)
 - [ ] Search addresses by name/city/zip
+- [ ] Company vs personal addresses: corporate accounts use org addresses, personal accounts use personal addresses — the selector lists the correct scope, no cross-contamination
+- [ ] Duplicate address handling: adding an address matching an existing one is flagged / de-duplicated, not silently added twice
 - [ ] Switch address → shipping methods update
 - [ ] Address displays correct format (name, street, city, state, zip, country)
 
@@ -225,6 +231,8 @@
 - [ ] Single-org user: org switcher hidden or shows single non-switchable entry
 - [ ] Org switch triggers branding update: logo/favicon/theme change per org white labeling (if WL enabled)
 - [ ] New org assignment: user added to second org → org appears in switcher (after re-login or session refresh)
+- [ ] Impersonate / operate on behalf (`loginOnBehalf` / `CanImpersonate`): support agent impersonates a customer, switches between that customer's companies, actions attributed correctly, banner indicates impersonation, exit returns to own session
+- [ ] Save for later scoped per org: items saved in one org context do not leak into another org's cart/saved list after switch
 
 ## 14. Product Configurations & Variations
 
@@ -250,6 +258,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Optional product section (`isRequired: false`): can skip section, configuration still valid
 - [ ] Multiple options in one section: only one selectable at a time (radio-style), or multiple if allowed
 - [ ] Per-option pricing fields populated: `listPrice`, `salePrice`, `discountAmount` (when on sale), `extendedPrice` — values match current Pricelist for the user/org context
+- [ ] Product section quantity > 1 (e.g. qty 2+): `extendedPrice` = qty × unit price, list + sale price both reflected, and the configurator running total = base product price + sum of all section extended prices
 - [ ] Out-of-stock option: greyed/disabled in section, cannot be selected, configuration cannot complete with it
 
 #### Text Section Type
@@ -294,6 +303,8 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Multiple configurations of same base product: appear as separate cart lines (independent `lineItemId`)
 - [ ] Configured product persists through cart merge (anonymous → authenticated): `configurationItems` carried over intact
 - [ ] Configured product survives cart persistence across sessions
+- [ ] Save for later with a configured product: moving to Saved for Later and back to cart preserves all `configurationItems` (no reset to base product)
+- [ ] BOPIS with a configured product: configured item eligible for pickup, configuration details intact through pickup selection and order confirmation
 - [ ] Checkout displays configuration details in order summary
 - [ ] Order confirmation / order history shows full configuration breakdown
 
@@ -346,6 +357,10 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Price update on merge: merged cart reflects authenticated user's pricing (tier/org-specific), not anonymous prices
 - [ ] Cart merge with org context: B2B user sign-in → anonymous items merge into active org's cart (not personal)
 - [ ] Merge conflict handling: out-of-stock items in anonymous cart flagged after merge, not silently removed
+- [ ] Merge same base product with different options/variations: kept as separate line items, not collapsed into one
+- [ ] Merge carts with different currencies: behavior verified (block, convert, or keep active-cart currency) — no mixed-currency totals
+- [ ] Merge with B2C variations: variant line items (color/size) merged correctly, same variant sums qty, different variants stay separate
+- [ ] `addBulkItemsCart` with duplicate SKU: duplicate-SKU detection modal prompts product selection (SKU shared across catalogs), partial-success handling for the rest (see Bulk Orders)
 
 ## 19. BOPIS (Pickup)
 - [ ] Select "Pickup" delivery → location selector opens (map + list)
@@ -518,7 +533,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 ## 32. B2C Features
 - [ ] B2C product variations: inline variant selection on product cards (color/size swatches visible in listing)
 - [ ] B2C cart layout: simplified cart without B2B-specific elements (no org switcher, no quote option)
-- [ ] Wishlist: add product from PDP (heart icon), view in `/account/wishlist`, move to cart, remove
+- [ ] Wishlist: add product from PDP (heart icon), view in `/account/lists`, move to cart, remove
 - [ ] Compare list: add products to compare, view side-by-side comparison of specs/prices, remove items
 - [ ] Guest checkout: complete purchase without account registration (if enabled), email-only identification
 - [ ] Social login: sign in via Google/Facebook/Apple (if configured), account linking

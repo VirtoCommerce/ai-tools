@@ -202,9 +202,10 @@ Cart has at least 1 item","front_url={{FRONT_URL}}, addr_fixture=ADDR_NY","[NAV]
 "SMK-013","Checkout — Place Order and Confirm","Smoke > Checkout","Critical","BL-CHK-002, BL-CHK-006, BL-ORD-001, BL-ORD-005, BL-CROSS-005","ECL-1.1, ECL-7.3, ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 State: cart at {{FRONT_URL}}/cart with ≥1 item; Delivery selected; valid address entered (ADDR_NY fixture); shipping method selected; payment section visible","front_url={{FRONT_URL}}","[WAIT] cart page with payment section visible
-[WAIT] payment form loaded (CyberSource: form on cart page; others: 'Place Order' button visible)
-[ASSERT] 'Place Order' button (or payment submit) enabled
-[ACT] complete payment or click 'Place Order' — single click only (BL-CHK-002)
+[WAIT] payment form loaded (CyberSource: embedded form on /cart; redirect processors: 'Place Order' visible)
+[ACT] complete the card form per SMK-014 — for CyberSource, type @td(CYBERSOURCE_VISA.number) and @td(CYBERSOURCE_VISA.cvv) into the Microform iframes via snapshot refs, fill Cardholder + Expiration in DOM inputs
+[ASSERT] 'Place Order' button enabled only after the card form is complete
+[ACT] click 'Place Order' — single click only (BL-CHK-002)
 [WAIT] order confirmation page renders
 [ASSERT] order number visible in 'CO[digits]' format (BL-ORD-005)
 [ASSERT] cart badge = 0 (BL-CROSS-005)","[DOM] 'Place Order' button disabled immediately after first click (BL-CHK-002)
@@ -218,18 +219,22 @@ State: cart at {{FRONT_URL}}/cart with ≥1 item; Delivery selected; valid addre
 [NETWORK] GA4 'purchase' event fired to gtag endpoint","'Place Order' remains clickable during processing (BL-CHK-002); createOrderFromCart errors[] non-empty; order number absent; cart not cleared (BL-CROSS-005); total mismatch vs cart (BL-CHK-006); duplicate order from single click","Note created order ID; cart cleared by system","VCST-4499","Automated"
 "SMK-014","Payment — Credit Card Authorization","Smoke > Payment","Critical","BL-CHK-002, BL-ORD-006","ECL-1.1, ECL-1.2, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-State: cart at {{FRONT_URL}}/cart with ≥1 item; delivery address and shipping method selected. Test card details available via processor-specific env vars: CyberSource → @td(CYBERSOURCE_VISA.number)/@td(CYBERSOURCE_VISA.expiry)/@td(CYBERSOURCE_VISA.cvv); Skyflow → SKYFLOW_MASTERCARD/SKYFLOW_EXPIRY/SKYFLOW_CVV; Authorize.Net → AUTHORIZENET_CARD/AUTHORIZENET_EXPIRY/AUTHORIZENET_CVV","card_number={{TEST_CARD_NUMBER}}, card_exp={{TEST_CARD_EXP}}, card_cvv={{TEST_CARD_CVV}}, front_url={{FRONT_URL}}","[WAIT] at payment step (CyberSource: form on cart page; others: after 'Place Order' → /checkout/payment)
-[WAIT] payment form loaded with card input fields
-[ACT] fill card number, expiry, CVV from processor-specific env vars
-[ACT] submit payment — single click only (BL-CHK-002)
-[WAIT] authorization result","[DOM] payment form visible with card number, expiry, CVV fields
-[DOM] card fields accept test card input
-[DOM] 'Place Order' button disabled after submit (BL-CHK-002)
-[DOM] success message or order confirmation visible
-[STATE] order status = 'New' or 'Payment authorized'","[API] payment processor webhook received (verify via admin order payment status)
-[ADMIN] order payment status = Authorized or Paid
+State: cart at {{FRONT_URL}}/cart with ≥1 item; delivery address and shipping method selected. CyberSource is the default QA processor (embedded Bank-card form on /cart). Card via the CYBERSOURCE_VISA alias (number/expiry/cvv/cardholder fields). Redirect processors (Skyflow/Authorize.Net/Datatrans) use their own @td aliases and fill on /checkout/payment after 'Place Order'.","card=@td(CYBERSOURCE_VISA.number), exp=@td(CYBERSOURCE_VISA.expiry), cvv=@td(CYBERSOURCE_VISA.cvv), cardholder=@td(CYBERSOURCE_VISA.cardholder), front_url={{FRONT_URL}}","[WAIT] at payment step (CyberSource: embedded Bank-card form on /cart; redirect processors: after 'Place Order' → /checkout/payment)
+[ACT] take a browser snapshot — CyberSource Flex Microform v2 renders Card number and Security code as cross-origin iframes (title='secure payment field'); Cardholder name and Expiration date are regular DOM inputs
+[ACT] fill Cardholder name with @td(CYBERSOURCE_VISA.cardholder) in the DOM input
+[ACT] type @td(CYBERSOURCE_VISA.number) into the Card number iframe textbox via its snapshot ref (Playwright resolves through .contentFrame() — do NOT treat the iframe as unreachable)
+[ACT] type @td(CYBERSOURCE_VISA.cvv) into the Security code iframe textbox via its snapshot ref
+[ACT] fill Expiration date with @td(CYBERSOURCE_VISA.expiry) (MM/YYYY) in the DOM input
+[WAIT] 'Place order' button transitions disabled → enabled (confirms both iframe fields were accepted)
+[ACT] click 'Place order' — single click only (BL-CHK-002)
+[WAIT] tokenization + authorization result","[DOM] payment form visible: Card number + Security code iframes + Cardholder name + Expiration date inputs
+[NETWORK] POST testflex.cybersource.com/flex/v2/tokens → 201 (Microform tokenizes the typed card)
+[DOM] 'Place order' enabled only after all four fields (incl. both iframes) are filled
+[DOM] 'Place order' disabled immediately after first click (BL-CHK-002)
+[DOM] order confirmation renders with order number in 'CO[digits]' format","[GQL] authorizePayment returns isSuccess: true (a 'held for review'/Decision Manager note in errorMessage is normal CyberSource sandbox fraud-screening and does NOT block order creation)
+[ADMIN] order payment status = Authorized/Paid (or 'Pending review' for held sandbox txns)
 [CONSOLE] no payment script errors
-[NETWORK] no CORS errors on payment form requests","Payment form blank after page load (ad-blocker may block iframe); card fields reject valid test card; payment hangs >30s; button remains active after first click (BL-CHK-002)","none","VCST-3387","Manual"
+[NETWORK] no CORS errors on the Microform iframe requests","Payment form blank after load (ad-blocker may block iframe); 'Place order' never enables after filling all fields; tokens endpoint ≠ 201; payment hangs >30s; button remains active after first click (BL-CHK-002)","none","VCST-3387","Automated"
 "SMK-015","Order Confirmation — GA4 Purchase Event Fired","Smoke > GA4","Critical","BL-CROSS-005","ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 State: on order confirmation page immediately after successful order placement — user authenticated as {{USER_EMAIL}}, order placed with ≥1 item, Delivery + valid address + shipping method selected, payment submitted, confirmation page rendered, order number visible on page; GA4 tracking enabled in storefront config.","front_url={{FRONT_URL}}","[WAIT] on order confirmation page after successful order
@@ -496,7 +501,7 @@ User logged in as {{USER_EMAIL}}; ≥1 saved shipping address available","front_
 "SMK-030","BOPIS — End-to-End Pickup Order Placement and Confirmation","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-BOPIS-006, BL-CHK-002, BL-CHK-006, BL-ORD-005, BL-CROSS-005","ECL-2.1, ECL-6.2, ECL-7.3, ECL-11.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; product @td(BUYABLE_NO_MIN_QTY.slug) in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), addr_fixture=ADDR_NY","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; product @td(BUYABLE_NO_MIN_QTY.slug) in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), addr_fixture=ADDR_NY, card=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), exp=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
 [WAIT] PDP loaded; quantity stepper visible
 [ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
 [WAIT] cart badge = 1
@@ -510,7 +515,8 @@ User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; 
 [WAIT] location name + address visible in cart summary
 [ASSERT] shipping line = $0.00 in cart totals (BL-BOPIS-002)
 [ACT] fill billing address if prompted (BL-BOPIS-006): @td(ADDR_NY.first_name), @td(ADDR_NY.last_name), @td(ADDR_NY.street), @td(ADDR_NY.city), @td(ADDR_NY.state), @td(ADDR_NY.zip), @td(ADDR_NY.country)
-[ACT] complete payment — single click only (CyberSource: form on cart page; others: 'Place Order' → /checkout/payment) (BL-CHK-002)
+[ACT] complete the card form per SMK-014 — for CyberSource, type @td(CYBERSOURCE_VISA.number) and @td(CYBERSOURCE_VISA.cvv) into the Microform iframes via snapshot refs, fill Cardholder + Expiration in DOM inputs
+[ACT] click 'Place Order' — single click only (BL-CHK-002)
 [WAIT] order confirmation page renders
 [NAV] {{FRONT_URL}}/account/orders
 [WAIT] order history loads
@@ -531,3 +537,89 @@ User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; 
 [ADMIN] order shows pickup FFC + 'New' status
 [CONSOLE] no TypeError or JS errors
 [NETWORK] no 4xx/5xx on addOrUpdateCartShipment, createOrderFromCart, or orders queries","Pickup option absent (BOPIS flag off); location modal empty; shipping > $0 for pickup (BL-BOPIS-002); createOrderFromCart errors[] non-empty; confirmation missing FFC; order detail shows delivery address instead of FFC; shippingTotal > 0; cart not cleared (BL-CROSS-005); duplicate order from single click (BL-CHK-002)","Note created order ID; cart cleared by system","VCST-4499, BOPIS-026, BOPIS-075, BOPIS-088","Manual"
+"SMK-031","Configurable Product + Merge Cart — Guest Adds Configured Item, Signs In, Cart Merges","Smoke > Configurable Products","Critical","BL-CART-008, BL-CART-010, BL-CAT-006","ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+Laptop configurable product @td(CFG_LAPTOP.url) accessible at {{FRONT_URL}}; {{USER_EMAIL}} / {{USER_PASSWORD}} credentials valid; guest cart merges into authenticated cart on sign-in (BL-CART-008)","front_url={{FRONT_URL}}, cfg_url=@td(CFG_LAPTOP.url), email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}@td(CFG_LAPTOP.url)
+[WAIT] Laptop configurable PDP loaded — guest session (not signed in)
+[WAIT] configuration section widget visible with ≥2 required Product sections
+[ASSERT] 'Add to Cart' button disabled before required sections filled (BL-CAT-006)
+[ACT] click first option in the first required section (e.g., RAM)
+[WAIT] option shows selected visual state; price updates
+[ACT] click first option in the second required section (e.g., Storage)
+[WAIT] option shows selected visual state; price updates
+[ASSERT] 'Add to Cart' button now enabled
+[ACT] click 'Add to Cart'
+[WAIT] success notification; cart badge = 1
+[ASSERT] note the configured item's name and selected options (e.g., 'RAM: 8GB / Storage: 256GB')
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form visible
+[ACT] fill 'Email': {{USER_EMAIL}}; fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign In'
+[WAIT] redirect to homepage; 'OrgName / UserName' button visible in header
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] configured Laptop line item present in cart (badge ≥ 1)
+[ASSERT] configuration section details visible on the cart line item (selected options, not blank)","[DOM] 'Add to Cart' disabled before both required sections filled (BL-CAT-006)
+[DOM] 'Add to Cart' enabled after both required sections filled
+[DOM] cart badge = 1 after guest add
+[DOM] after sign-in: configured Laptop line item present in cart (guest cart merged — BL-CART-008)
+[DOM] cart line item shows non-blank configuration detail (selected options preserved through merge — BL-CART-010)
+[STATE] cart badge ≥ 1 immediately after sign-in (no empty-cart flash)","[GQL] addItem (guest) returns 200, errors[] empty (ECL-7.3)
+[GQL] mergeCart or cart query after sign-in shows Laptop line item with selectedConfiguration non-null (BL-CART-010)
+[CONSOLE] no JS errors during guest add or sign-in merge
+[NETWORK] no 4xx/5xx on addItem or post-sign-in cart load","Add to Cart remains disabled after filling both required sections (BL-CAT-006 gate broken); cart badge unchanged after guest add; cart empty after sign-in (guest cart lost — BL-CART-008 violation); cart line item shows blank or missing configuration detail after merge (BL-CART-010 violation); spinner >10s after sign-in","Remove configured Laptop from cart after test; sign out if session left authenticated","VCST-4499, VCST-4205","Draft"
+"SMK-032","Configurable Product + Save for Later — Configuration Preserved Through Round-Trip","Smoke > Configurable Products","Critical","BL-CART-007, BL-CART-010, BL-CAT-006","ECL-7.1, ECL-14.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Ring configurable product @td(CFG_RING.url) accessible at {{FRONT_URL}}; Save for Later feature enabled on B2B store; 'Save for later' button visible on cart line items","front_url={{FRONT_URL}}, cfg_url=@td(CFG_RING.url), email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}@td(CFG_RING.url)
+[WAIT] Ring configurable PDP loaded; Text section input field visible
+[ACT] fill the Text section input with 'AGENT-TEST-SMK032'
+[WAIT] text value 'AGENT-TEST-SMK032' confirmed in the input field
+[ACT] click 'Increase quantity' (+) or 'Add to Cart' to add the configured Ring to cart
+[WAIT] success notification; cart badge = 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with 1 Ring line item
+[ASSERT] Ring cart line item shows configuration detail (text label or 'AGENT-TEST-SMK032' visible — not blank)
+[ACT] click 'Save for later' button on the Ring line item
+[WAIT] Ring item moves to 'Saved for later' section; active cart shows 0 items; cart badge = 0
+[ASSERT] 'Saved for later' section visible with the Ring item
+[ASSERT] Saved for later Ring item shows non-blank configuration detail (text label or value visible)
+[ACT] click 'Move to cart' on the Ring item in the 'Saved for later' section
+[WAIT] Ring item moves back to active cart; cart badge = 1
+[ASSERT] restored Ring line item has non-blank configuration detail (text label or 'AGENT-TEST-SMK032' visible — BL-CART-010)","[DOM] Ring cart line item shows non-blank configuration detail before save
+[DOM] 'Save for later' button visible on cart line item
+[STATE] active cart shows 0 items after 'Save for later'; cart badge = 0
+[DOM] 'Saved for later' section appears with Ring item after save
+[DOM] Saved for later Ring item has non-blank configuration detail (BL-CART-010)
+[DOM] after 'Move to cart': Ring line item in active cart with badge = 1
+[DOM] restored Ring line item has non-blank configuration detail (configuration preserved — BL-CART-010)
+[STATE] cart subtotal non-zero after restore (not $0.00)","[GQL] moveToSavedForLater mutation errors[] empty
+[GQL] getSavedForLater response: configurationItems non-empty for saved Ring item (BL-CART-010)
+[GQL] moveFromSavedForLater mutation errors[] empty
+[CONSOLE] no JS errors during save → restore round-trip
+[NETWORK] no 4xx/5xx on save-for-later mutations","'Save for later' button absent on cart line item; item stays in active cart instead of moving; 'Saved for later' section absent or empty after save; saved item shows blank/missing configuration detail (VCST-4205 pre-fix regression); 'Move to cart' fails silently or spinner >10s; restored item shows blank configuration (BL-CART-010 violated)","Remove Ring item from cart or 'Saved for later' section after test","VCST-4205, VCST-4499","Draft"
+"SMK-033","Orders Filters — Status Filter Updates Result Set on /account/orders","Smoke > Orders","Critical","BL-ORD-003","ECL-3.2, ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+User logged in as {{USER_EMAIL}}; /account/orders accessible with ≥1 order in any status (at minimum 'New' from the current smoke run); order filter controls visible on the page","front_url={{FRONT_URL}}, email={{USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/orders
+[WAIT] order list page loads with ≥1 order visible
+[ASSERT] filter control visible on the page (status filter dropdown, selector, or popover button)
+[ACT] note the total number of orders shown in the unfiltered list (N_total)
+[ACT] open the status filter (click the filter control, dropdown, or 'Filter' button)
+[WAIT] status filter options panel opens
+[ASSERT] ≥1 status option selectable (e.g., 'New', 'Completed', or equivalent)
+[ACT] select 'New' (or the first available status option)
+[ACT] click 'Apply' button (or equivalent confirm action in the filter panel)
+[WAIT] filtered order list reloads
+[ASSERT] orders displayed have the filtered status (all visible rows show the selected status label)
+[ASSERT] total displayed order count ≤ N_total (filter reduced or maintained the list)
+[ACT] click 'Clear filters' or 'Reset' (or deselect the status option and click 'Apply')
+[WAIT] unfiltered order list reloads
+[ASSERT] order count returns to N_total (all orders restored)","[DOM] status filter control rendered on /account/orders (not behind a blank state)
+[DOM] filter options panel opens on click (not a no-op)
+[DOM] ≥1 status option selectable
+[DOM] after applying status filter: visible orders reflect the filtered status (no orders with a different status label visible)
+[MATH] filtered order count ≤ N_total
+[STATE] clearing filter restores N_total orders
+[DOM] filter active state indicator visible while filter is applied (e.g., badge count, highlighted control)","[GQL] orders query with status filter returns HTTP 200, errors[] empty
+[GQL] filtered response items[] contain only orders matching the selected status
+[CONSOLE] no JS errors during filter open, apply, or clear
+[NETWORK] no 4xx/5xx on filtered orders request","Filter control absent on /account/orders (BL-ORD-003); filter panel does not open on click; orders with non-matching statuses visible after filter applied; clearing filter does not restore full list; JS error on filter open or apply; filter panel has no 'Apply' button (agent must not skip it — explicit click required per project rule)","none","VCST-4499","Draft"
