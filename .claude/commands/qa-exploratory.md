@@ -30,7 +30,7 @@ Every session must end with at least one **net-new scenario** (not in any regres
    - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
    - Record platform version and theme version — include in the session report header
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
-4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain (e.g., `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`) with `tokens: 8000`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones.
+4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 5. **Coverage map** — for the target domain, identify what's *already covered*:
    - Open the CSV suite(s) for the domain (via [module-suite-map.md](../agents/knowledge/module-suite-map.md) → [`regression/suites/`](../../regression/suites/)) — list the scenarios already tested
    - Open [vc-bug-catalog.md](../agents/knowledge/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
@@ -145,7 +145,7 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - Capture screenshots for every bug found
 - Don't try to fix bugs — just document them
 - If a Critical bug is found, stop and report immediately — escalate via `/qa-bug`
-- Always query Context7 in Step 0 to build a feature inventory for the target domain
+- Always query VirtoOZ MCP (via the `/vc-docs` skill) in Step 0 to build a feature inventory for the target domain (Context7 is fallback only)
 
 ## Related
 - [scenario-discovery.md](../skills/qa-methodology/qa-sbtm/scenario-discovery.md) — **Primary reference.** 10 techniques for finding scenarios our coverage misses

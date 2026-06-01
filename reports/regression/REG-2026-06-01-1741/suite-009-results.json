@@ -1,0 +1,220 @@
+{
+  "suiteId": "009",
+  "suiteName": "B2C Variations & Configs",
+  "runId": "REG-2026-06-01-1741",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-01T16:43:15.000Z",
+  "completedAt": "2026-06-01T17:08:20.000Z",
+  "totalCases": 31,
+  "passed": 16,
+  "failed": 3,
+  "blocked": 9,
+  "skipped": 3,
+  "passRate": "51.6%",
+  "testCases": [
+    { "id": "B2C-VAR-001", "status": "PASS" },
+    { "id": "B2C-VAR-002", "status": "PASS" },
+    { "id": "B2C-VAR-003", "status": "PASS" },
+    {
+      "id": "B2C-VAR-004",
+      "status": "BLOCKED",
+      "title": "Product Variations - Out of Stock Variant",
+      "section": "B2C Features > Variations",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "AUTOMET T-shirt (PROD_VARIATION_PARENT_SALE) has all 30 size/color combinations in stock (verified: 1278–6106 stock per variant). Dedicated OOS product (OOS-PRODUCT-001) is a non-variation product with isAvailable=false — no variant selectors. No variation-parent product with mixed OOS/in-stock variant combinations is seeded on vcst-qa. SEED-REQUIRED before execution."
+    },
+    { "id": "B2C-VAR-005", "status": "PASS" },
+    { "id": "B2C-VAR-006", "status": "PASS" },
+    { "id": "B2C-VAR-007", "status": "PASS" },
+    { "id": "B2C-VAR-008", "status": "PASS" },
+    { "id": "B2C-VAR-009", "status": "PASS" },
+    {
+      "id": "B2C-VAR-010",
+      "status": "FAIL",
+      "title": "Product Variations - Variant URL Parameters",
+      "section": "B2C Features > Variations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[NAV] URL updates with human-readable variant parameters",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-VAR-010-FAIL-url-no-variant-params.png",
+      "consoleErrors": [
+        "Failed to load resource: 404 — https://vcst-qa.govirto.com/cms-content/assets/catalog/431d6/EKJ-76373636/Images/grey_md.jpg",
+        "Failed to load resource: 404 — https://vcst-qa.govirto.com/cms-content/assets/catalog/431d6/IRW-17061345/Images/red_md.jpg",
+        "Failed to load resource: 404 — https://vcst-qa.govirto.com/cms-content/assets/catalog/431d6/TWL-89127817/Images/navy_md.jpg"
+      ],
+      "networkErrors": [],
+      "notes": "After selecting Size L and Color Red/Blue on AUTOMET product PDP, URL remained at parent slug throughout all variant selections. No query parameters were appended (no ?color=Red&size=L). Cannot deep-link to a specific variant combination. Steps 3–6 (copy URL, open in new tab, verify pre-selection) are untestable as a consequence. Console errors are image 404s for catalog thumbnail CDN paths — non-blocking, product renders normally."
+    },
+    { "id": "B2C-VAR-011", "status": "PASS" },
+    {
+      "id": "B2C-VAR-012",
+      "status": "SKIPPED",
+      "title": "Unavailable Variant Combinations - Incompatible Options Disabled",
+      "section": "B2C Features > Variations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-7.1",
+      "notes": "Draft status. SEED-REQUIRED per test case: needs a variation-parent product with at least one OOS variant combination. @td(CFG_RING.slug) resolves to AGENT-TEST-Ring-Txt-Cfg-20260518, a Text-section configurable product — not a variation parent. No suitable variation product with OOS combos available on vcst-qa."
+    },
+    { "id": "B2C-CONFIG-001", "status": "PASS" },
+    { "id": "B2C-CONFIG-002", "status": "PASS" },
+    {
+      "id": "B2C-CONFIG-003",
+      "status": "BLOCKED",
+      "title": "Product Configuration - Optional Add-Ons",
+      "section": "B2C Features > Configurations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-7.1",
+      "notes": "CFG_LAPTOP has 2 required Product sections (RAM *, Storage *) — no optional add-on sections (warranty, gift wrap). No configurable product with optional add-on sections is seeded and accessible for Carlos (BuildRight) on vcst-qa. SEED-REQUIRED: a product with optional Product-type sections and price modifiers (e.g., +$50 warranty, +$5 gift wrap) must be seeded before execution."
+    },
+    { "id": "B2C-CONFIG-004", "status": "PASS" },
+    {
+      "id": "B2C-CONFIG-005",
+      "status": "BLOCKED",
+      "title": "Product Configuration - Image Upload",
+      "section": "B2C Features > Configurations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "No configurable product with a File-type section (image upload) is accessible for Carlos (BuildRight) on vcst-qa. All seeded configurable products (CFG_LAPTOP, CFG_RING, CFG_GIFTBOX, etc.) use Product or Text section types only. SEED-REQUIRED: a product with a File-type configuration section must be seeded before execution."
+    },
+    {
+      "id": "B2C-CONFIG-006",
+      "status": "BLOCKED",
+      "title": "Product Configuration - Dependent Options",
+      "section": "B2C Features > Configurations",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "CFG_CONDITIONAL_BIKE (Phase 3 reseed) has dependsOnSectionId chains (Color→Size→Material). However, the VCST-4612 radio-in-accordion bug (CONFIG-016/017) prevents reliable option selection in collapsed sections — the same interaction failure would block testing dependent option filtering. Blocked pending VCST-4612 fix."
+    },
+    {
+      "id": "B2C-CONFIG-007",
+      "status": "BLOCKED",
+      "title": "Product Configuration - Bundle/Kit Builder",
+      "section": "B2C Features > Configurations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-7.1",
+      "notes": "No multi-step bundle/kit builder product is seeded or accessible for Carlos (BuildRight) on vcst-qa. The vc-module-catalog configurable product architecture (Product-type sections with radio options) differs from a bundle builder (step-based, min/max item selection). SEED-REQUIRED: a bundle-type product with step indicators and min/max item rules must be seeded before execution."
+    },
+    { "id": "B2C-CONFIG-008", "status": "PASS" },
+    {
+      "id": "B2C-CONFIG-009",
+      "status": "SKIPPED",
+      "title": "Product Configuration - Save Configuration for Later",
+      "section": "B2C Features > Configurations",
+      "priority": "Low",
+      "businessRule": "BL-B2B-001",
+      "notes": "Draft status. NOT-IMPLEMENTED per test case note (2026-05-29): 'Save Configuration button absent on vcst-qa CFG PDP — feature not surfaced.' Confirmed on fresh CFG_LAPTOP PDP: no Save Configuration button present in sidebar or configuration section."
+    },
+    {
+      "id": "B2C-CONFIG-010",
+      "status": "SKIPPED",
+      "title": "Product Configuration - Reset Configuration",
+      "section": "B2C Features > Configurations",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "Draft status. NOT-IMPLEMENTED per test case note (2026-05-29): 'Reset/Clear All button absent on vcst-qa CFG PDP — feature not surfaced.' Confirmed on CFG_LAPTOP PDP: no Reset or Clear All button present."
+    },
+    { "id": "B2C-CONFIG-011", "status": "PASS" },
+    { "id": "B2C-CONFIG-012", "status": "PASS" },
+    {
+      "id": "B2C-CONFIG-013",
+      "status": "BLOCKED",
+      "title": "Configurable Product - Discount Scales Correctly with Quantity",
+      "section": "B2C Features > Configurations > Pricing",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-7.1",
+      "notes": "SEED-REQUIRED per test case. CFG_LAPTOP has no discount markers (all options are list-price only: base $999, modifiers $0/$75/$100/$150/$250). No seeded configurable product on vcst-qa has salePrice < listPrice. A configurable product with discounted options must be seeded before this VCST-4586 regression check can execute."
+    },
+    {
+      "id": "B2C-CONFIG-014",
+      "status": "BLOCKED",
+      "title": "Configurable Product - Sale Price Displayed as Primary Price",
+      "section": "B2C Features > Configurations > Pricing",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "notes": "SEED-REQUIRED. Same dependency as B2C-CONFIG-013: no configurable product with salePrice != listPrice is available on vcst-qa. Cannot verify VCST-4586 sale-price-as-primary display regression without a discounted CFG product."
+    },
+    {
+      "id": "B2C-CONFIG-015",
+      "status": "BLOCKED",
+      "title": "Configurable Product - Mobile Sale Price Display",
+      "section": "B2C Features > Configurations > Pricing > Mobile",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "SEED-REQUIRED. Same dependency as B2C-CONFIG-013/014: no discounted configurable product available on vcst-qa. Cannot verify VCST-4586 mobile sale-price regression."
+    },
+    {
+      "id": "B2C-CONFIG-016",
+      "status": "FAIL",
+      "title": "Configurable Product - No Auto-Scroll on First Collapsed Section Click",
+      "section": "B2C Features > Configurations > Interaction",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[STATE] Page does NOT auto-scroll after first radio button click",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-CONFIG-016-017-FAIL-radio-revert.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "VCST-4612 regression confirmed present on playwright-edge (Edge). CFG_LAPTOP PDP (fresh load): Storage section collapsed by default. Steps: 1) Clicked Storage accordion — expanded ([active] confirmed). 2) Immediately clicked '512GB SSD' option. Result: accordion immediately collapsed, page transitioned through loading state (indicating auto-scroll), Storage header reverted to '256GB SSD'. Price unchanged at $1,099. Bug reproduced identically to original VCST-4612 report."
+    },
+    {
+      "id": "B2C-CONFIG-017",
+      "status": "FAIL",
+      "title": "Configurable Product - First Click Radio Selection Sticks (No Revert)",
+      "section": "B2C Features > Configurations > Interaction",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[STATE] Radio button remains selected after first click (does not revert to None or default)",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-CONFIG-016-017-FAIL-radio-revert.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "VCST-4612 regression confirmed present (same sequence as CONFIG-016). After expanding Storage and clicking 512GB SSD: section collapsed immediately, header still shows '256GB SSD' (original pre-selected default). Price stayed $1,099 instead of $1,174 ($999+$100+$75). Selection reverts on first click into newly expanded accordion. Confirmed on both fresh-load and edit-mode (lineItemId) flows."
+    },
+    { "id": "B2C-CONFIG-018", "status": "PASS" },
+    {
+      "id": "B2C-CONFIG-019",
+      "status": "BLOCKED",
+      "title": "Edit Configured Product in Cart - Price Reflects New Configuration",
+      "section": "B2C Features > Configurations",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-7.1",
+      "notes": "Configurator reopened in edit mode (lineItemId param confirmed, 'Update cart' button visible, '1 in Cart' indicator shown). Pre-populated selections verified (RAM: 16GB, Storage: 256GB SSD, price $1,099). Cannot change a section option: VCST-4612 bug (CONFIG-016/017) causes RAM accordion to collapse and option card visibility to fail when attempting to select 32GB or 8GB in edit mode. Core CONFIG-018 assertions all pass; the specific price-change step is blocked by VCST-4612."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_009_001",
+      "title": "Variation product PDP: URL does not update with variant parameters on selection",
+      "severity": "Medium",
+      "testCaseId": "B2C-VAR-010",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[NAV] URL updates with human-readable variant parameters",
+      "stepsToReproduce": "1. Navigate to https://vcst-qa-storefront.govirto.com/products-with-options/shirts-jeans-and-more/automet-womens-v-neck-t-shirts-summer-cap-sleeve-trendy-tops-for-dressy-casual-grey-s\n2. Select Size 'L' using the size variant picker\n3. Select Color 'Red' using the color swatch picker\n4. Observe the browser address bar after each selection",
+      "expected": "URL updates with human-readable variant parameters (e.g., ?color=Red&size=L or equivalent) so the selected variant combination can be shared via URL and pre-selects on direct navigation",
+      "actual": "URL remains permanently at the parent product slug ending in '-grey-s' with no query parameters added. Tested across Size L + Color Red, Size M + Color Blue, Size M + Color Grey combinations — none updated the URL. Deep-linking to a specific variant is not possible.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_009_002",
+      "title": "VCST-4612 regression: first click in newly-expanded configurator accordion collapses section without registering selection",
+      "severity": "High",
+      "testCaseId": "B2C-CONFIG-016",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[STATE] Radio button remains selected after first click (does not revert to None or default)",
+      "stepsToReproduce": "1. Navigate to https://vcst-qa-storefront.govirto.com/seed-20260518-cfg-parents/agent-test-config-laptop-20260518 (fresh page load, no cache)\n2. Note Storage section is collapsed by default (header shows 'AGENT-TEST-CFG-013-256GB SSD')\n3. Click the Storage accordion header to expand it (verify [active] state appears)\n4. Immediately click the '512GB SSD' option image inside the expanded section\n5. Observe: section state, header text, and sidebar Price",
+      "expected": "Storage section remains expanded after clicking an option. '512GB SSD' radio is selected (checked). Header updates to 'AGENT-TEST-CFG-013-512GB SSD'. Sidebar Price updates to $1,174.00 ($999 + $100 RAM + $75 storage). Page scroll position unchanged.",
+      "actual": "After clicking 512GB SSD: Storage accordion immediately collapses to closed state. Header reverts to 'AGENT-TEST-CFG-013-256GB SSD' (original default). Sidebar Price remains $1,099.00. Page transitions through a loading/re-render state (indicating auto-scroll occurred). Selection did not register. Reproduced 3 times on Edge, both fresh-load and edit-mode (lineItemId) flows. VCST-4612 bug is still present on theme Ver. 2.50.0-alpha.2359.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

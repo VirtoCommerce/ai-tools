@@ -1,0 +1,503 @@
+{
+  "suiteId": "010",
+  "suiteName": "B2C Bulk Ship Dashboard",
+  "runId": "REG-2026-06-01-1741",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-01T16:16:49Z",
+  "completedAt": "2026-06-01T16:35:00Z",
+  "totalCases": 52,
+  "passed": 20,
+  "failed": 7,
+  "blocked": 25,
+  "skipped": 0,
+  "passRate": "38.5%",
+  "testCases": [
+    {
+      "id": "B2C-SHIP-001",
+      "status": "BLOCKED",
+      "title": "Ship To - View Saved Addresses",
+      "section": "B2C Features > Ship To",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: USER_DEFAULT (mutykovaelena@gmail.com) is a B2B multi-org user. Navigation to /account/addresses redirects to /account/dashboard for org users. The /account/addresses page is personal-account only per project memory. All B2C-SHIP tests blocked for same reason."
+    },
+    {
+      "id": "B2C-SHIP-002",
+      "status": "BLOCKED",
+      "title": "Ship To - Add New Address",
+      "section": "B2C Features > Ship To",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: USER_DEFAULT is a B2B multi-org user; /account/addresses redirects to dashboard."
+    },
+    {
+      "id": "B2C-SHIP-003",
+      "status": "BLOCKED",
+      "title": "Ship To - Edit Address",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-004",
+      "status": "BLOCKED",
+      "title": "Ship To - Delete Address",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-005",
+      "status": "BLOCKED",
+      "title": "Ship To - Set Default Address",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-006",
+      "status": "BLOCKED",
+      "title": "Ship To - Select Address in Checkout",
+      "section": "B2C Features > Ship To",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user; cannot verify saved addresses for checkout."
+    },
+    {
+      "id": "B2C-SHIP-007",
+      "status": "BLOCKED",
+      "title": "Ship To - Header Selector/Dropdown",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: USER_DEFAULT is B2B user with org context; header Ship-To shows org address not personal addresses."
+    },
+    {
+      "id": "B2C-SHIP-008",
+      "status": "BLOCKED",
+      "title": "Ship To - Add Address During Checkout",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-009",
+      "status": "BLOCKED",
+      "title": "Ship To - Address Validation",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-010",
+      "status": "BLOCKED",
+      "title": "Ship To - Mobile Address Management",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-011",
+      "status": "BLOCKED",
+      "title": "Ship To - International Address Support",
+      "section": "B2C Features > Ship To",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-012",
+      "status": "BLOCKED",
+      "title": "Ship To - Address Nickname",
+      "section": "B2C Features > Ship To",
+      "priority": "Low",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-013",
+      "status": "BLOCKED",
+      "title": "Ship To - XSS Prevention in Address Form Fields",
+      "section": "B2C Features > Ship To",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-SHIP-014",
+      "status": "BLOCKED",
+      "title": "Ship To - Server Silently Skips Duplicate Address on Save",
+      "section": "B2C Features > Ship To",
+      "priority": "Medium",
+      "notes": "PRECONDITION_UNMET: /account/addresses not accessible for B2B org user."
+    },
+    {
+      "id": "B2C-BULK-001",
+      "status": "FAIL",
+      "title": "Quick Order by SKU",
+      "section": "B2C Features > Bulk Order",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRefs": "ECL-14.1",
+      "failedAssertion": "[DOM] Valid SKU entry loads product: name, price, availability in row",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-BULK-001-FAIL-no-product-info.png",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "Manually tab accepts SKU and quantity entry; Add to cart enables after qty input. However, no inline product resolution occurs — row shows only the raw SKU text with no product name, image, unit price, or availability indicator. The Quantity field was always editable (not gated on product lookup). The Copy&Paste tab correctly resolves products and redirects to cart on Add to cart."
+    },
+    {
+      "id": "B2C-BULK-002",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-BULK-003",
+      "status": "FAIL",
+      "title": "Invalid SKU Handling",
+      "section": "B2C Features > Bulk Order",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Row 2 shows error: 'Product not found' or 'Invalid SKU'",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "In Copy&Paste mode, entering XKC-38084072,1 and FAKE-SKU-99999,1 then clicking Add to cart silently ignores the invalid SKU (FAKE-SKU-99999) and adds only the valid product. No per-row error or warning is shown. The Add to cart operation proceeded and valid items were added. The test asserts an error message scoped to the invalid row — this does not occur."
+    },
+    {
+      "id": "B2C-BULK-004",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-BULK-005",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-BULK-006",
+      "status": "FAIL",
+      "title": "Bulk Order Quantity Validation",
+      "section": "B2C Features > Bulk Order",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[STATE] Add to Cart or Add All to Cart blocked for rows with invalid quantities",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "In Manually tab, entering qty=0 in a row with a valid SKU does NOT disable the Add to cart button. The button remained enabled. No validation error message appeared for qty=0. The spinbutton has min=1 attribute but this is not enforced at the UI level to block submission."
+    },
+    {
+      "id": "B2C-BULK-007",
+      "status": "FAIL",
+      "title": "Bulk Order — Duplicate SKU Across Rows Coalesces Into Single Cart Line",
+      "section": "B2C Features > Bulk Order",
+      "priority": "High",
+      "businessRule": "BL-CART-007; BL-B2B-001",
+      "edgeCaseRefs": "ECL-2.1; ECL-14.1",
+      "failedAssertion": "[DOM] Cart page shows exactly 1 row for the SKU (no duplicate lines)",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-BULK-007-FAIL-duplicate-sku-not-coalesced.png",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "Entering ALCE0128,2 three times in Copy&Paste mode and clicking Add to cart resulted in two separate line items for ALCE0128 in the cart (both showing qty=11, which includes prior test items). The cart displayed two distinct rows for the same SKU rather than coalescing into a single line. BL-CART-007 violation: same SKU from bulk order should coalesce into one cart line."
+    },
+    {
+      "id": "B2C-DASH-001",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-002",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-003",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-004",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-005",
+      "status": "BLOCKED",
+      "title": "Dashboard After First Login",
+      "section": "B2C Features > Dashboard",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: Requires a new user account with no prior orders. Test user (mutykovaelena@gmail.com) has existing orders and history. Creating a new account within the test run is out of scope per preflight protocol."
+    },
+    {
+      "id": "B2C-NOTIF-001",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-NOTIF-002",
+      "status": "BLOCKED",
+      "title": "Notification Dropdown Opens",
+      "section": "B2C Features > Notifications",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: Requires at least one notification to exist. Test user has no notifications; dropdown showed empty state 'No new notifications at the moment'."
+    },
+    {
+      "id": "B2C-NOTIF-003",
+      "status": "BLOCKED",
+      "title": "Mark as Read",
+      "section": "B2C Features > Notifications",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: Requires unread notification to exist. Test user has no notifications."
+    },
+    {
+      "id": "B2C-NOTIF-004",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-STOCK-001",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-STOCK-002",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-STOCK-003",
+      "status": "BLOCKED",
+      "title": "Unsubscribe from Alert",
+      "section": "B2C Features > Back in Stock",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: After subscribing in B2C-STOCK-002, the /account/back-in-stock list did not show the newly subscribed product on reload (subscription may require async processing). Unable to locate unsubscribe action for the test product."
+    },
+    {
+      "id": "B2C-POINTS-001",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-POINTS-002",
+      "status": "BLOCKED",
+      "title": "Points After Order",
+      "section": "B2C Features > Loyalty",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "notes": "PRECONDITION_UNMET: Requires placing a new order through checkout. [PRE:RESET_CART] required but placing a full checkout order is outside the scope of this run given time constraints and incomplete payment setup."
+    },
+    {
+      "id": "B2C-NOTIF-008",
+      "status": "BLOCKED",
+      "title": "Notification Bell Badge - Unread Count",
+      "section": "B2C Features > Notifications",
+      "priority": "High",
+      "notes": "PRECONDITION_UNMET: Requires unread notifications. Test user has no unread notifications; bell shows no badge."
+    },
+    {
+      "id": "B2C-NOTIF-009",
+      "status": "BLOCKED",
+      "title": "Notification Dropdown - View Recent",
+      "section": "B2C Features > Notifications",
+      "priority": "High",
+      "notes": "PRECONDITION_UNMET: Requires notifications to exist. Test user has no notifications."
+    },
+    {
+      "id": "B2C-NOTIF-010",
+      "status": "BLOCKED",
+      "title": "Mark Individual Notification as Read",
+      "section": "B2C Features > Notifications",
+      "priority": "High",
+      "notes": "PRECONDITION_UNMET: Requires unread notifications. Test user has none."
+    },
+    {
+      "id": "B2C-NOTIF-011",
+      "status": "BLOCKED",
+      "title": "Mark All Notifications as Read",
+      "section": "B2C Features > Notifications",
+      "priority": "High",
+      "notes": "PRECONDITION_UNMET: Requires multiple unread notifications. Test user has none."
+    },
+    {
+      "id": "B2C-NOTIF-005",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-NOTIF-006",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-NOTIF-007",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-LOY-001",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-LOY-002",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-LOY-003",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-LIST-027",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-LIST-028",
+      "status": "FAIL",
+      "title": "Bulk Order - CSV File Upload",
+      "section": "B2C Features > Bulk Order",
+      "priority": "High",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] File upload area or button visible on bulk order page",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "The /bulk-order page has two modes: Copy&Paste (textarea for SKU,Qty text) and Manually (row-by-row SKU+qty entry). Neither mode offers a file upload control (drag-and-drop zone or file picker button). No file upload UI element found anywhere on the page."
+    },
+    {
+      "id": "B2C-LIST-029",
+      "status": "FAIL",
+      "title": "Quick Order - SKU Autocomplete Suggestions",
+      "section": "B2C Features > Bulk Order",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Autocomplete dropdown appears after typing 3+ characters",
+      "consoleErrors": ["Failed to load resource: 404 /assets/presets/electro2.json"],
+      "networkErrors": [],
+      "notes": "Typed 'XKC' (3 characters) into the SKU input field in Manually tab. No autocomplete dropdown or suggestion list appeared after 2 second wait. The field accepts freeform text only with no typeahead/suggestion functionality."
+    },
+    {
+      "id": "B2C-LIST-030",
+      "status": "FAIL",
+      "title": "Quick Order - Non-Existent SKU Clear Error",
+      "section": "B2C Features > Bulk Order",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Error message displayed for non-existent SKU",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Tested in Copy&Paste mode (B2C-BULK-003 context): entering FAKE-SKU-99999,1 alongside a valid SKU and clicking Add to cart — the invalid SKU is silently skipped with no error message shown. In Manually tab, no real-time SKU validation or error indicator appears for unrecognized SKUs."
+    },
+    {
+      "id": "B2C-LIST-031",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-006",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-007",
+      "status": "PASS"
+    },
+    {
+      "id": "B2C-DASH-008",
+      "status": "PASS"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_010_001",
+      "title": "Bulk Order Manually Tab: No inline product resolution after SKU entry",
+      "severity": "Medium",
+      "testCaseId": "B2C-BULK-001",
+      "businessRule": "BL-B2B-001",
+      "edgeCaseRef": "ECL-14.1",
+      "failedAssertion": "[DOM] Valid SKU entry loads product: name, price, availability in row",
+      "stepsToReproduce": "1. Sign in as mutykovaelena@gmail.com. 2. Navigate to /bulk-order. 3. Click Manually tab. 4. Enter a valid SKU (e.g. XKC-38084072) in row 1. 5. Press Enter or Tab.",
+      "expected": "Product name, image, unit price, and availability indicator appear in the row after SKU entry.",
+      "actual": "Row shows only the typed SKU text and quantity spinbutton. No product info resolved. The Quantity field is immediately editable without product lookup.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_002",
+      "title": "Bulk Order: No error shown for invalid/non-existent SKU in Copy&Paste mode",
+      "severity": "Medium",
+      "testCaseId": "B2C-BULK-003",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Row 2 shows error: 'Product not found' or 'Invalid SKU'",
+      "stepsToReproduce": "1. Sign in. 2. Navigate to /bulk-order (Copy&Paste tab). 3. Enter 'XKC-38084072,1\\nFAKE-SKU-99999,1' in the textarea. 4. Click Add to cart.",
+      "expected": "A per-entry error (e.g. 'Product not found') is shown for FAKE-SKU-99999. Valid row is unaffected. Add to cart warns about or skips invalid entries visibly.",
+      "actual": "No error shown. Page navigates to cart with only the valid product added. Invalid SKU silently discarded. User has no visibility into which entries failed.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_003",
+      "title": "Bulk Order Manually Tab: qty=0 does not block Add to cart",
+      "severity": "Medium",
+      "testCaseId": "B2C-BULK-006",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[STATE] Add to Cart or Add All to Cart blocked for rows with invalid quantities",
+      "stepsToReproduce": "1. Sign in. 2. Navigate to /bulk-order, Manually tab. 3. Enter valid SKU in row 1. 4. Set qty to 0. 5. Observe Add to cart button state.",
+      "expected": "Add to cart button disabled or inline validation error shown when qty=0.",
+      "actual": "Add to cart button remains enabled with qty=0. No validation error displayed. The spinbutton has min=1 attribute but it is not enforced to block the submission UI.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_004",
+      "title": "Bulk Order: Duplicate SKU entries create separate cart lines instead of coalescing (BL-CART-007)",
+      "severity": "High",
+      "testCaseId": "B2C-BULK-007",
+      "businessRule": "BL-CART-007; BL-B2B-001",
+      "edgeCaseRef": "ECL-2.1",
+      "failedAssertion": "[DOM] Cart page shows exactly 1 row for the SKU (no duplicate lines)",
+      "stepsToReproduce": "1. Sign in. 2. Clear cart. 3. Navigate to /bulk-order (Copy&Paste). 4. Enter 'ALCE0128,2\\nALCE0128,2\\nALCE0128,2'. 5. Click Add to cart. 6. Navigate to /cart.",
+      "expected": "Cart shows exactly 1 line item for ALCE0128 with quantity 6 (2+2+2 coalesced per BL-CART-007).",
+      "actual": "Cart shows 2 separate line items for ALCE0128. Duplicate SKU entries from bulk order are NOT coalesced server-side. BL-CART-007 violated.",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-BULK-007-FAIL-duplicate-sku-not-coalesced.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_005",
+      "title": "Bulk Order: No CSV file upload option on /bulk-order page",
+      "severity": "Medium",
+      "testCaseId": "B2C-LIST-028",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] File upload area or button visible on bulk order page",
+      "stepsToReproduce": "1. Sign in. 2. Navigate to /bulk-order. 3. Inspect both Copy&Paste and Manually tabs for file upload controls.",
+      "expected": "A drag-and-drop zone or file picker button is available for uploading a CSV file with SKU/quantity pairs.",
+      "actual": "No file upload UI exists on the page. Only Copy&Paste textarea and Manually row-entry modes available.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_006",
+      "title": "Bulk Order Manually Tab: No SKU autocomplete suggestions",
+      "severity": "Low",
+      "testCaseId": "B2C-LIST-029",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Autocomplete dropdown appears after typing 3+ characters",
+      "stepsToReproduce": "1. Sign in. 2. Navigate to /bulk-order, Manually tab. 3. Type 'XKC' in row 1 SKU field and wait 2 seconds.",
+      "expected": "Autocomplete dropdown with matching product suggestions appears after 3+ characters.",
+      "actual": "No dropdown, no typeahead, no suggestion list. Field accepts freeform text only.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_010_007",
+      "title": "Bulk Order: No error feedback for invalid/non-existent SKU in Manually tab",
+      "severity": "Medium",
+      "testCaseId": "B2C-LIST-030",
+      "businessRule": "BL-B2B-001",
+      "failedAssertion": "[DOM] Error message displayed for non-existent SKU",
+      "stepsToReproduce": "1. Sign in. 2. Navigate to /bulk-order, Copy&Paste tab. 3. Enter 'INVALID_SKU_999,1'. 4. Click Add to cart.",
+      "expected": "Clear error message shown: 'Product not found' or 'SKU not found' for the invalid entry.",
+      "actual": "No error shown. Invalid SKU silently discarded. Same behavior observed in Manually tab — no real-time validation error for unrecognized SKUs.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

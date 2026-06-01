@@ -1,0 +1,122 @@
+{
+  "suiteId": "008",
+  "suiteName": "B2C Members",
+  "runId": "REG-2026-06-01-1741",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-01T15:43:29Z",
+  "completedAt": "2026-06-01T15:55:18Z",
+  "totalCases": 18,
+  "passed": 9,
+  "failed": 1,
+  "blocked": 8,
+  "skipped": 0,
+  "passRate": "50.0%",
+  "testCases": [
+    { "id": "B2C-MBR-001", "status": "PASS" },
+    { "id": "B2C-MBR-002", "status": "PASS" },
+    {
+      "id": "B2C-MBR-003",
+      "status": "BLOCKED",
+      "title": "Members List Pagination",
+      "section": "B2C Features > Members",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-005",
+      "edgeCaseRefs": "ECL-14.2",
+      "notes": "BuildRight org has only 3 members; precondition requires >10. Pagination control correctly absent for small member set, but load-more/pagination behavior cannot be verified without sufficient fixture data."
+    },
+    { "id": "B2C-MBR-004", "status": "PASS" },
+    { "id": "B2C-MBR-005", "status": "PASS" },
+    { "id": "B2C-MBR-006", "status": "PASS" },
+    {
+      "id": "B2C-MBR-007",
+      "status": "BLOCKED",
+      "title": "Invite Member - New Member Sign-In via Invitation Link",
+      "section": "B2C Features > Members",
+      "priority": "High",
+      "businessRule": "BL-B2B-005",
+      "notes": "Invitation sent to invite+smk-1780328727754@example.com which is not a real mailbox. Invitation acceptance link cannot be retrieved from storefront — requires email access or admin notification log. End-to-end acceptance flow is out of storefront scope for this runner."
+    },
+    { "id": "B2C-MBR-008", "status": "PASS" },
+    { "id": "B2C-MBR-009", "status": "PASS" },
+    { "id": "B2C-MBR-010", "status": "PASS" },
+    { "id": "B2C-MBR-011", "status": "PASS" },
+    { "id": "B2C-MBR-012", "status": "PASS" },
+    {
+      "id": "B2C-MBR-013",
+      "status": "BLOCKED",
+      "title": "Delegated Purchasing - Purchaser Order Goes to Approval",
+      "section": "B2C Features > Members",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-005",
+      "notes": "Precondition unmet: BuildRight org has no approval workflow configured. Available roles (Organization employee, Purchasing agent, Organization maintainer) include no Approver role. Cannot verify approval threshold behavior without feature configuration."
+    },
+    {
+      "id": "B2C-MBR-014",
+      "status": "BLOCKED",
+      "title": "Delegated Purchasing - Approver Sees Pending Orders",
+      "section": "B2C Features > Members",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-005",
+      "notes": "Depends on MBR-013 fixture. No approver role exists in BuildRight org and no approval workflow configured."
+    },
+    {
+      "id": "B2C-MBR-015",
+      "status": "BLOCKED",
+      "title": "Delegated Purchasing - Approve Order",
+      "section": "B2C Features > Members",
+      "priority": "Critical",
+      "businessRule": "BL-B2B-005",
+      "notes": "Depends on MBR-013/014 fixtures. No approver account or pending orders available."
+    },
+    {
+      "id": "B2C-MBR-016",
+      "status": "BLOCKED",
+      "title": "Delegated Purchasing - Reject Order",
+      "section": "B2C Features > Members",
+      "priority": "High",
+      "businessRule": "BL-B2B-005",
+      "notes": "Depends on MBR-013/014 fixtures. No approver account or pending orders available."
+    },
+    {
+      "id": "B2C-MBR-017",
+      "status": "BLOCKED",
+      "title": "Delegated Purchasing - Amount Threshold Triggers Approval",
+      "section": "B2C Features > Members",
+      "priority": "High",
+      "businessRule": "BL-B2B-005",
+      "notes": "Precondition unmet: no approval threshold configured for BuildRight org. Cannot test threshold boundary behavior (below vs above threshold)."
+    },
+    {
+      "id": "B2C-MBR-018",
+      "status": "FAIL",
+      "title": "Company Members Count Display",
+      "section": "B2C Features > Members",
+      "priority": "Medium",
+      "businessRule": "BL-B2B-005",
+      "failedAssertion": "[DOM] Member count shown on page (header or footer)",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-MBR-018-FAIL-no-member-count.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "No member count label visible anywhere on /company/members page. Table shows 4 rows (Carlos Rodriguez, Invite sent, Angela Foster, Elena Mutykova) but no count indicator in heading, table caption, or below the table. [MATH] and [FORMAT] count assertions cannot be evaluated."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_008_001",
+      "title": "Company Members page shows no member count indicator",
+      "severity": "Low",
+      "testCaseId": "B2C-MBR-018",
+      "businessRule": "BL-B2B-005",
+      "edgeCaseRef": "",
+      "failedAssertion": "[DOM] Member count shown on page (header or footer)",
+      "stepsToReproduce": "1. Log in as BuildRight Org Admin (Carlos Rodriguez).\n2. Navigate to /company/members.\n3. Observe the page heading and table area.",
+      "expected": "A member count (e.g. '4 members') is displayed on the page, either next to the heading or at the bottom of the table.",
+      "actual": "No count indicator exists anywhere on the page. Only the table rows implicitly show the member count.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}
