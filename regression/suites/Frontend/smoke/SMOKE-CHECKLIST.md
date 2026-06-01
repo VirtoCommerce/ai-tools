@@ -82,8 +82,8 @@
 ## 13. Configurable Products
 - [ ] `@td(CFG_LAPTOP.url)`: Add-to-Cart disabled until required section filled; cart reflects config (BL-CAT-006) — SMK-018
 - [ ] Price updates instantly on option switch; 2 decimals (BL-PRICE-003) — SMK-019
-- [ ] Guest adds configured `@td(CFG_LAPTOP.url)` (both required sections filled) → signs in → cart merges with configuration intact (BL-CART-008, BL-CART-010) — SMK-031
-- [ ] `@td(CFG_RING.url)` with text input: Save for Later → item in saved section with non-blank config detail → Move to cart → config preserved (BL-CART-010, VCST-4205 regression gate) — SMK-032
+- [ ] Guest adds configured `@td(CFG_LAPTOP.url)` (defaults pre-fill required sections) → signs in → cart merges with configuration intact (BL-CART-008, BL-CART-010) — SMK-031
+- [ ] `@td(CFG_RING.url)` text input: Add-to-cart disabled until engraving filled → Save for Later (saved card shows name only — config hidden by design) → Move to cart → engraving preserved on restored line (BL-CAT-006, BL-CART-010, VCST-4205 gate) — SMK-032
 
 ## 14. B2B Multi-Org
 - [ ] `{{MULTI_ORG_USER_EMAIL}}`: org switch changes header + clears badge; no cross-org carryover (BL-B2B-001) — SMK-020

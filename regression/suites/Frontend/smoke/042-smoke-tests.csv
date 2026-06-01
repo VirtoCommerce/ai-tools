@@ -537,20 +537,16 @@ User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; 
 [ADMIN] order shows pickup FFC + 'New' status
 [CONSOLE] no TypeError or JS errors
 [NETWORK] no 4xx/5xx on addOrUpdateCartShipment, createOrderFromCart, or orders queries","Pickup option absent (BOPIS flag off); location modal empty; shipping > $0 for pickup (BL-BOPIS-002); createOrderFromCart errors[] non-empty; confirmation missing FFC; order detail shows delivery address instead of FFC; shippingTotal > 0; cart not cleared (BL-CROSS-005); duplicate order from single click (BL-CHK-002)","Note created order ID; cart cleared by system","VCST-4499, BOPIS-026, BOPIS-075, BOPIS-088","Manual"
-"SMK-031","Configurable Product + Merge Cart — Guest Adds Configured Item, Signs In, Cart Merges","Smoke > Configurable Products","Critical","BL-CART-008, BL-CART-010, BL-CAT-006","ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
+"SMK-031","Configurable Product + Merge Cart — Guest Adds Configured Item, Signs In, Cart Merges","Smoke > Configurable Products","Critical","BL-CART-008, BL-CART-010","ECL-7.3, ECL-14.1","[PRE:CLEAR_SESSION]
 Laptop configurable product @td(CFG_LAPTOP.url) accessible at {{FRONT_URL}}; {{USER_EMAIL}} / {{USER_PASSWORD}} credentials valid; guest cart merges into authenticated cart on sign-in (BL-CART-008)","front_url={{FRONT_URL}}, cfg_url=@td(CFG_LAPTOP.url), email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[PRE:CLEAR_SESSION]
 [NAV] {{FRONT_URL}}@td(CFG_LAPTOP.url)
 [WAIT] Laptop configurable PDP loaded — guest session (not signed in)
-[WAIT] configuration section widget visible with ≥2 required Product sections
-[ASSERT] 'Add to Cart' button disabled before required sections filled (BL-CAT-006)
-[ACT] click first option in the first required section (e.g., RAM)
-[WAIT] option shows selected visual state; price updates
-[ACT] click first option in the second required section (e.g., Storage)
-[WAIT] option shows selected visual state; price updates
-[ASSERT] 'Add to Cart' button now enabled
-[ACT] click 'Add to Cart'
+[WAIT] configuration widget visible with 2 required Product sections (RAM, Storage)
+[ASSERT] 'Add to cart' ENABLED at load — CFG_LAPTOP defaults pre-fill both required sections (the disabled-until-filled gate is exercised on CFG_RING in SMK-032, not here)
+[ACT] keep the pre-filled defaults (optionally switch one option to confirm the price updates live)
+[ASSERT] note the selected options shown in the configuration widget (e.g., 'RAM: 16GB / Storage: 256GB SSD')
+[ACT] click 'Add to cart'
 [WAIT] success notification; cart badge = 1
-[ASSERT] note the configured item's name and selected options (e.g., 'RAM: 8GB / Storage: 256GB')
 [NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in form visible
 [ACT] fill 'Email': {{USER_EMAIL}}; fill 'Password': {{USER_PASSWORD}}
@@ -558,46 +554,48 @@ Laptop configurable product @td(CFG_LAPTOP.url) accessible at {{FRONT_URL}}; {{U
 [WAIT] redirect to homepage; 'OrgName / UserName' button visible in header
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
-[ASSERT] configured Laptop line item present in cart (badge ≥ 1)
-[ASSERT] configuration section details visible on the cart line item (selected options, not blank)","[DOM] 'Add to Cart' disabled before both required sections filled (BL-CAT-006)
-[DOM] 'Add to Cart' enabled after both required sections filled
+[ASSERT] configured Laptop line item present in cart (guest cart merged — badge ≥ 1)
+[ASSERT] line item 'Components list' shows the selected options (e.g., '16GB' / '256GB SSD'), not blank","[DOM] 'Add to cart' enabled at PDP load (defaults pre-fill both required sections)
 [DOM] cart badge = 1 after guest add
 [DOM] after sign-in: configured Laptop line item present in cart (guest cart merged — BL-CART-008)
-[DOM] cart line item shows non-blank configuration detail (selected options preserved through merge — BL-CART-010)
+[DOM] cart line 'Components list' shows the selected options, not blank (config preserved through merge — BL-CART-010)
 [STATE] cart badge ≥ 1 immediately after sign-in (no empty-cart flash)","[GQL] addItem (guest) returns 200, errors[] empty (ECL-7.3)
-[GQL] mergeCart or cart query after sign-in shows Laptop line item with selectedConfiguration non-null (BL-CART-010)
+[GQL] cart query after sign-in returns the Laptop line item with configurationItems[] non-empty — each Product option name non-null (BL-CART-010); merge is server-side, an explicit mergeCart op may not appear
 [CONSOLE] no JS errors during guest add or sign-in merge
-[NETWORK] no 4xx/5xx on addItem or post-sign-in cart load","Add to Cart remains disabled after filling both required sections (BL-CAT-006 gate broken); cart badge unchanged after guest add; cart empty after sign-in (guest cart lost — BL-CART-008 violation); cart line item shows blank or missing configuration detail after merge (BL-CART-010 violation); spinner >10s after sign-in","Remove configured Laptop from cart after test; sign out if session left authenticated","VCST-4499, VCST-4205","Draft"
+[NETWORK] no 4xx/5xx on addItem or post-sign-in cart load","cart badge unchanged after guest add; cart empty after sign-in (guest cart lost — BL-CART-008 violation); cart line 'Components list' blank or missing options after merge (BL-CART-010 violation); configurationItems[] empty/absent in post-sign-in cart query; spinner >10s after sign-in","Remove configured Laptop from cart after test; sign out if session left authenticated","VCST-4499, VCST-4205","Automated"
 "SMK-032","Configurable Product + Save for Later — Configuration Preserved Through Round-Trip","Smoke > Configurable Products","Critical","BL-CART-007, BL-CART-010, BL-CAT-006","ECL-7.1, ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Ring configurable product @td(CFG_RING.url) accessible at {{FRONT_URL}}; Save for Later feature enabled on B2B store; 'Save for later' button visible on cart line items","front_url={{FRONT_URL}}, cfg_url=@td(CFG_RING.url), email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}@td(CFG_RING.url)
-[WAIT] Ring configurable PDP loaded; Text section input field visible
-[ACT] fill the Text section input with 'AGENT-TEST-SMK032'
-[WAIT] text value 'AGENT-TEST-SMK032' confirmed in the input field
-[ACT] click 'Increase quantity' (+) or 'Add to Cart' to add the configured Ring to cart
+[WAIT] Ring configurable PDP loaded; required Text section 'Engraving Text' (maxLength 30) visible and EMPTY
+[ASSERT] 'Add to cart' DISABLED at load — required Text section empty (BL-CAT-006 gate, observable on CFG_RING)
+[ACT] fill the Engraving Text input with 'AGENT-TEST-SMK032'
+[WAIT] character counter shows '17 / 30'; 'Add to cart' becomes ENABLED
+[ACT] click 'Add to cart'
 [WAIT] success notification; cart badge = 1
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with 1 Ring line item
-[ASSERT] Ring cart line item shows configuration detail (text label or 'AGENT-TEST-SMK032' visible — not blank)
-[ACT] click 'Save for later' button on the Ring line item
-[WAIT] Ring item moves to 'Saved for later' section; active cart shows 0 items; cart badge = 0
+[ACT] expand the Ring line item 'Components list' (collapsed by default on this product)
+[ASSERT] Components list shows '1. Selected text: AGENT-TEST-SMK032' (config detail present, not blank)
+[ACT] click 'Save for later' on the Ring line item
+[WAIT] Ring moves to 'Saved for later' section; active cart = 0 items; cart badge = 0
 [ASSERT] 'Saved for later' section visible with the Ring item
-[ASSERT] Saved for later Ring item shows non-blank configuration detail (text label or value visible)
-[ACT] click 'Move to cart' on the Ring item in the 'Saved for later' section
-[WAIT] Ring item moves back to active cart; cart badge = 1
-[ASSERT] restored Ring line item has non-blank configuration detail (text label or 'AGENT-TEST-SMK032' visible — BL-CART-010)","[DOM] Ring cart line item shows non-blank configuration detail before save
-[DOM] 'Save for later' button visible on cart line item
-[STATE] active cart shows 0 items after 'Save for later'; cart badge = 0
-[DOM] 'Saved for later' section appears with Ring item after save
-[DOM] Saved for later Ring item has non-blank configuration detail (BL-CART-010)
-[DOM] after 'Move to cart': Ring line item in active cart with badge = 1
-[DOM] restored Ring line item has non-blank configuration detail (configuration preserved — BL-CART-010)
-[STATE] cart subtotal non-zero after restore (not $0.00)","[GQL] moveToSavedForLater mutation errors[] empty
-[GQL] getSavedForLater response: configurationItems non-empty for saved Ring item (BL-CART-010)
-[GQL] moveFromSavedForLater mutation errors[] empty
+[ASSERT] saved card shows product NAME + price only — engraving/config detail is NOT rendered on saved cards by design (getSavedForLater omits configurationItems); do NOT fail on its absence
+[ACT] click 'Move to cart' on the saved Ring item
+[WAIT] Ring restored to active cart; cart badge = 1
+[ACT] expand the restored Ring line item 'Components list' (auto-expanded on restore)
+[ASSERT] restored Ring shows '1. Selected text: AGENT-TEST-SMK032' — engraving survived the round-trip (BL-CART-010, VCST-4205 gate)","[DOM] 'Add to cart' disabled on PDP load (empty required Text section — BL-CAT-006); enabled after filling the engraving
+[DOM] active-cart Ring 'Components list' (after expand) shows 'Selected text: AGENT-TEST-SMK032' before save
+[DOM] 'Save for later' button present on the cart line item
+[STATE] active cart = 0 items / cart badge = 0 after 'Save for later'
+[DOM] 'Saved for later' section shows the Ring with product name + price (engraving NOT shown on saved card — by design)
+[DOM] after 'Move to cart': Ring restored to active cart, badge = 1
+[DOM] restored Ring 'Components list' shows 'Selected text: AGENT-TEST-SMK032' (config preserved — BL-CART-010)
+[STATE] cart subtotal non-zero after restore (not $0.00)","[GQL] addItem sends configurationSections [{type:Text, customText:'AGENT-TEST-SMK032'}]; returns 200, errors[] empty
+[GQL] moveToSavedForLater returns 200, errors[] empty; getSavedForLater lists the Ring by name/sku (the savedForLaterLineItem fragment does NOT select configurationItems — engraving absent from this payload by design, not data loss)
+[GQL] moveFromSavedForLater returns 200, errors[] empty; restored cart line configurationItems[] = [{name:null, customText:'AGENT-TEST-SMK032', type:'Text'}] (BL-CART-010)
 [CONSOLE] no JS errors during save → restore round-trip
-[NETWORK] no 4xx/5xx on save-for-later mutations","'Save for later' button absent on cart line item; item stays in active cart instead of moving; 'Saved for later' section absent or empty after save; saved item shows blank/missing configuration detail (VCST-4205 pre-fix regression); 'Move to cart' fails silently or spinner >10s; restored item shows blank configuration (BL-CART-010 violated)","Remove Ring item from cart or 'Saved for later' section after test","VCST-4205, VCST-4499","Draft"
+[NETWORK] no 4xx/5xx on save-for-later mutations","'Add to cart' stays disabled after filling the engraving (BL-CAT-006 gate broken); 'Save for later' button absent (verify the feature is enabled first — if off, mark N/A not FAIL); item stays in active cart instead of moving; 'Saved for later' section absent after save; 'Move to cart' fails or spinner >10s; RESTORED Ring shows blank engraving or restored configurationItems lacks customText (VCST-4205 regression — BL-CART-010 violated)","Remove Ring item from active cart and 'Saved for later' section after test","VCST-4205, VCST-4499","Automated"
 "SMK-033","Orders Filters — Status Filter Updates Result Set on /account/orders","Smoke > Orders","Critical","BL-ORD-003","ECL-3.2, ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in as {{USER_EMAIL}}; /account/orders accessible with ≥1 order in any status (at minimum 'New' from the current smoke run); order filter controls visible on the page","front_url={{FRONT_URL}}, email={{USER_EMAIL}}","[NAV] {{FRONT_URL}}/account/orders
 [WAIT] order list page loads with ≥1 order visible
