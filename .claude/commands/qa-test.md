@@ -45,7 +45,7 @@ Gather all inputs and determine scope. Combines pre-flight checks with scope ana
 
 **For a feature name** — use the name to determine which areas are affected.
 
-**Identify applicable domain(s)** — map the ticket/feature to one or more of the 62 domains in `/qa-checklist` (32 storefront + 29 backend/admin + 1 GraphQL).
+**Identify applicable domain(s)** — map the ticket/feature to one or more of the 63 domains in `/qa-checklist` (33 storefront + 29 backend/admin + 1 GraphQL).
 
 **Scope output** (produce before proceeding):
 ```
