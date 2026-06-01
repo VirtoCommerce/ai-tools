@@ -24,7 +24,7 @@ Read **before** executing:
 | `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory |
 | `b2b` | Organization + 3 users (admin/buyer/viewer) + roles + contacts + addresses |
 | `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency |
-| `full` | All profiles combined — complete test environment |
+| `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. |
 | `teardown` | Delete all entities matching `AGENT-TEST-*` naming convention |
 
 ## Workflow
@@ -64,6 +64,8 @@ Reuse existing `VC QA Environment` or create one per [`../qa-postman/variables-a
 07-Reindex        → Trigger all document types in 1 call + poll status
 08-Verify         → GET assertions to confirm entities exist
 ```
+
+**For `full`:** the folders above seed synthetic `AGENT-TEST-*` entities. To seed the entire `test-data/` directory instead, follow `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures — its seed-order table maps every CSV-backed source to its entity + endpoint, flags reference-only sources, and requires idempotent look-up-then-create so pinned `@td()` IDs survive. CMS pages (UI-only) and order/quote-state fixtures (admin-transition) are seeded outside Postman by `qa-frontend-expert`/`qa-backend-expert`.
 
 **Teardown collection:** same single-call approach, reverse dependency order (see `test-data-generation.md` §Teardown Collection).
 
@@ -118,7 +120,7 @@ After the run, capture the seeded entity IDs from the Newman/Postman result JSON
 | `minimal` | ~10s | 0s | ~5s | ~15s | **~20-30s** |
 | `catalog` | ~15s | 0s | ~15s | ~30s | **~30-60s** |
 | `b2b` | ~10s | 0s | ~10s | ~15s | **~25-35s** |
-| `full` | ~20s | 0s | ~30s | ~45s | **~50-95s** |
+| `full` | ~30s | 0s | ~2-4 min | ~45-60s | **~4-6 min** (seeds the entire `test-data/` directory; far heavier than the legacy "all profiles" full) |
 
 ## Profile Details
 
@@ -156,10 +158,14 @@ Pricing module deep test:
 - Products reused from `catalog` profile (or created if run standalone)
 
 ### `full`
-Everything combined. Use before full regression runs.
+**Seeds the entire `test-data/` directory** — not just the synthetic entities created by the other profiles. The goal is a platform state where **every `@td()` reference in every regression suite resolves against live data**. Use before full regression runs.
+
+Seed each CSV-backed fixture in `test-data/`, in dependency order, preserving the IDs/codes/names the CSVs and `aliases.json` already pin (so existing `@td()` rows resolve without rewrites). Sources that are **reference-only** (payment cards, search queries, upload files, GraphQL query library, security payloads) are NOT seeded — they are consumed in place. The full mapping of each `test-data/` source → platform entity → endpoint (and which are reference-only) lives in `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures.
+
+**Idempotency:** the `full` seed must be re-runnable. For each fixture, look it up first (by pinned `platform_id`/code/name); create only if missing, otherwise update in place. A `full` run that 404s on a pinned entity should re-provision that row and write the new ID back into the CSV + `aliases.json` (see Step 6). It must NOT create duplicate copies of fixtures that already exist.
 
 ### `teardown`
-Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in safe order. Also:
+Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in safe order. **Does not** remove the persistent `test-data/` fixtures provisioned by `full` (catalogs, products, B2B orgs/users, promotions/coupons, etc.) — those keep their pinned IDs so `@td()` references stay resolvable across runs; teardown only sweeps the ephemeral `AGENT-TEST-*` entities created by individual tests. Also:
 - Triggers search reindex after deletion
 - Verifies cleanup (GET → assert 404)
 - Reports any orphaned entities that failed to delete
@@ -180,3 +186,7 @@ Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in
 - If seed fails mid-execution, run teardown for the partial data before retrying
 - For Postman troubleshooting (auth errors, variable resolution, ID format) — see [`qa-postman/common-mistakes.md`](../qa-postman/common-mistakes.md)
 - After every successful seed, write the new entity IDs back into [`test-data/`](../../../../test-data/) (CSV files referenced by `aliases.json`) so downstream regression suites resolve them via `@td()` — see [`qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) for the resolver contract
+- **Never hardcode environment GUIDs** (catalog roots, store IDs, FFC IDs, virtual-catalog IDs) inside the seed collection or any helper script — read them from `test-data/aliases.json` (e.g. `@td(VIRTUAL_CATALOG_B2B.id)`, `@td(B2B_STORE.id)`) or via the `01-Infrastructure` discovery folder. See `.claude/rules/test-data.md` and `feedback_no_hardcoded_guids_in_scripts.md`.
+- **Inventory status matters.** New products MUST be seeded with `inventoryStatus: "Enabled"` — xAPI `addItem` silently returns `itemsCount=0` (no error) when status is `Disabled`, masquerading as a cart-layer bug. See `test-data-generation.md` §Inventory.
+- **Storefront visibility requires the B2B virtual catalog.** A product in a fresh physical catalog returns 404 on the B2B storefront until it is linked into `@td(VIRTUAL_CATALOG_B2B.id)`. Include the link step in `02-Catalog` or `03-Products`.
+- **Passwords come from `.env`, not the skill.** The example bodies show `TestPassword123!`/`TestPass123!` for readability only — actual seed runs must read credentials from `.env` (`ADMIN_PASSWORD`, `USER_PASSWORD`) or `test-data/users/agent-user-pool.csv` for agent slots. See `feedback_agents_read_env_creds.md` + `user_test_accounts.md`.
