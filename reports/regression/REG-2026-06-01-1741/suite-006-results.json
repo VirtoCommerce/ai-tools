@@ -2,26 +2,18 @@
   "suiteId": "006",
   "suiteName": "B2C Organization",
   "runId": "REG-2026-06-01-1741",
-  "browser": "playwright-chrome",
+  "browser": "playwright-edge",
   "environment": "https://vcst-qa-storefront.govirto.com",
-  "startedAt": "2026-06-01T15:43:03Z",
-  "completedAt": "2026-06-01T15:54:00Z",
+  "startedAt": "2026-06-01T17:33:30.000Z",
+  "completedAt": "2026-06-01T18:07:20.000Z",
   "totalCases": 39,
-  "passed": 1,
-  "failed": 0,
-  "blocked": 38,
+  "passed": 20,
+  "failed": 1,
+  "blocked": 18,
   "skipped": 0,
-  "passRate": "2.6%",
+  "passRate": "51.3%",
   "testCases": [
-    {
-      "id": "B2C-ORG-001",
-      "status": "BLOCKED",
-      "title": "Org Switcher Visible for Multi-Org User",
-      "section": "B2C Features > Organization",
-      "priority": "Critical",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: ORG_USER_EMAIL (test-emily.johnson-20260310@test-agent.com) is a single-org user (TechFlow only). The org name appears as static text in the nav bar, not a switchable control. No multi-org user is mapped to {{ORG_USER_EMAIL}} in this environment. Tests requiring multi-org switching cannot execute with current credential mapping."
-    },
+    { "id": "B2C-ORG-001", "status": "PASS" },
     {
       "id": "B2C-ORG-002",
       "status": "BLOCKED",
@@ -29,28 +21,11 @@
       "section": "B2C Features > Organization",
       "priority": "Critical",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with different contract pricing per org. ORG_USER_EMAIL is single-org (Emily Johnson / TechFlow)."
+      "failedAssertion": "[FORMAT] Price is different from Org A's price",
+      "notes": "Product a8c1da6d (16inch TV) shows identical price $494.00 in both 'Quoted' Double Quotes (Org A) and ACME Store (Org B). No org-specific contract pricing configured for this multi-org user's orgs. Cannot verify pricing differentiation."
     },
-    {
-      "id": "B2C-ORG-003",
-      "status": "BLOCKED",
-      "title": "Switch Org - Cart Isolation",
-      "section": "B2C Features > Organization",
-      "priority": "Critical",
-      "businessRule": "BL-B2B-005",
-      "edgeCaseRefs": "ECL-7.1",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-004",
-      "status": "BLOCKED",
-      "title": "Switch Org - Addresses Update",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-001",
-      "edgeCaseRefs": "ECL-14.3",
-      "notes": "Precondition UNMET: requires multi-org user with distinct addresses per org. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-003", "status": "PASS" },
+    { "id": "B2C-ORG-004", "status": "PASS" },
     {
       "id": "B2C-ORG-005",
       "status": "BLOCKED",
@@ -58,45 +33,25 @@
       "section": "B2C Features > Organization",
       "priority": "High",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with lists per org. ORG_USER_EMAIL is single-org."
+      "failedAssertion": "[DOM] Org A lists not visible while Org B is active",
+      "notes": "Lists 'new1' (3 items) and 'test list' (0 items) appear identical under both ACME Store and 'Quoted' Double Quotes orgs with same list IDs. Lists appear user-scoped rather than org-scoped in this environment."
     },
-    {
-      "id": "B2C-ORG-006",
-      "status": "BLOCKED",
-      "title": "Default Org on Sign-in",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with a configured default org. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-007",
-      "status": "BLOCKED",
-      "title": "Search Orgs in Switcher",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 6+ org memberships. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-006", "status": "PASS" },
+    { "id": "B2C-ORG-007", "status": "PASS" },
     {
       "id": "B2C-ORG-008",
-      "status": "BLOCKED",
+      "status": "FAIL",
       "title": "Switch Org - Navigation Reset",
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
+      "failedAssertion": "[NAV] After switching orgs, user redirected to neutral page (homepage or catalog root) rather than remaining on Org A context page",
+      "screenshot": "reports/regression/REG-2026-06-01-1741/B2C-ORG-008-FAIL-no-nav-reset.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "User on /accessories/aliexpress/consumer-electronics. After switching from 'Quoted' Double Quotes to ACME Store, URL remained at the same deep category page. Header correctly shows ACME Store / John Doe but page context not reset."
     },
-    {
-      "id": "B2C-ORG-009",
-      "status": "BLOCKED",
-      "title": "Switch Back - Cart Intact",
-      "section": "B2C Features > Organization",
-      "priority": "Critical",
-      "businessRule": "BL-B2B-005",
-      "edgeCaseRefs": "ECL-7.1",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-009", "status": "PASS" },
     {
       "id": "B2C-ORG-010",
       "status": "BLOCKED",
@@ -104,7 +59,8 @@
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: test uses {{USER_EMAIL}} (mutykovaelena@gmail.com) expecting a single-org user, but that account is a multi-org user (BMW-Group + 29+ orgs, has org switcher with search). The precondition 'belongs to exactly one organization' is not met by the mapped credential."
+      "failedAssertion": "[DOM] No org switcher control visible in header or account area",
+      "notes": "USER_EMAIL (mutykovaelena@gmail.com / SmokeTest Runner) is a multi-org user with BMW-Group active and 30+ org memberships — not a single-org user. No single-org test account available in .env."
     },
     {
       "id": "B2C-ORG-011",
@@ -113,17 +69,9 @@
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with different white-label branding per org. ORG_USER_EMAIL is single-org."
+      "notes": "Both 'Quoted' Double Quotes and ACME Store show identical 'B2B-store' logo and theme. No org-specific white-label branding is configured in vcst-qa environment. Precondition not met."
     },
-    {
-      "id": "B2C-ORG-012",
-      "status": "BLOCKED",
-      "title": "Org Search Bar Appears for >10 Organizations",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-012", "status": "PASS" },
     {
       "id": "B2C-ORG-013",
       "status": "BLOCKED",
@@ -131,7 +79,7 @@
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with <=10 orgs. ORG_USER_EMAIL is single-org."
+      "notes": "Requires a user with 10 or fewer org memberships. Multi-org test user has 11 orgs; USER_EMAIL has 30+ orgs. No <=10 org account available."
     },
     {
       "id": "B2C-ORG-014",
@@ -141,63 +89,14 @@
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
       "edgeCaseRefs": "ECL-14.2",
-      "notes": "Precondition UNMET: requires two test accounts with exactly 10 and exactly 11 org memberships. Neither account exists in the current pool."
+      "notes": "Requires two distinct accounts with exactly 10 and exactly 11 orgs respectively. No such boundary-test accounts configured in agent user pool."
     },
-    {
-      "id": "B2C-ORG-015",
-      "status": "BLOCKED",
-      "title": "Org Search - Full Name Match",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-016",
-      "status": "BLOCKED",
-      "title": "Org Search - Partial Name Match",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-017",
-      "status": "BLOCKED",
-      "title": "Org Search - Case Insensitive",
-      "section": "B2C Features > Organization",
-      "priority": "Medium",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-018",
-      "status": "BLOCKED",
-      "title": "Org Search - No Results Found State",
-      "section": "B2C Features > Organization",
-      "priority": "Medium",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-019",
-      "status": "BLOCKED",
-      "title": "Org Search - Clear Search Restores Full List",
-      "section": "B2C Features > Organization",
-      "priority": "Medium",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-020",
-      "status": "BLOCKED",
-      "title": "Org Search - Special Characters in Query",
-      "section": "B2C Features > Organization",
-      "priority": "Medium",
-      "businessRule": "BL-B2B-005",
-      "edgeCaseRefs": "ECL-7.2",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-015", "status": "PASS" },
+    { "id": "B2C-ORG-016", "status": "PASS" },
+    { "id": "B2C-ORG-017", "status": "PASS" },
+    { "id": "B2C-ORG-018", "status": "PASS" },
+    { "id": "B2C-ORG-019", "status": "PASS" },
+    { "id": "B2C-ORG-020", "status": "PASS" },
     {
       "id": "B2C-ORG-021",
       "status": "BLOCKED",
@@ -205,17 +104,9 @@
       "section": "B2C Features > Organization",
       "priority": "Low",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
+      "notes": "The org switcher closes when the clear button is clicked, making multi-step space-trim verification impractical. No dedicated test fixture for this scenario."
     },
-    {
-      "id": "B2C-ORG-022",
-      "status": "BLOCKED",
-      "title": "Org Selection After Filtering via Search",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-022", "status": "PASS" },
     {
       "id": "B2C-ORG-023",
       "status": "BLOCKED",
@@ -223,37 +114,11 @@
       "section": "B2C Features > Organization",
       "priority": "Low",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
+      "notes": "ArrowDown key pressed on search input. Accessibility snapshot does not expose focus highlight state of list items. Cannot confirm [DOM] Currently highlighted item has visual focus indicator without visual screenshot. Per agent rules: non-verifiable control = BLOCKED, not FAIL."
     },
-    {
-      "id": "B2C-ORG-024",
-      "status": "BLOCKED",
-      "title": "Org Search - Placeholder Text and Styling",
-      "section": "B2C Features > Organization",
-      "priority": "Low",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires user with 11+ org memberships. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-025",
-      "status": "BLOCKED",
-      "title": "Cart Isolation - Items in Org A Not Visible in Org B",
-      "section": "B2C Features > Organization",
-      "priority": "Critical",
-      "businessRule": "BL-B2B-005; BL-CART-004",
-      "edgeCaseRefs": "ECL-7.1",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-026",
-      "status": "BLOCKED",
-      "title": "Cart Isolation - Org A Cart Intact After Round-Trip Switch",
-      "section": "B2C Features > Organization",
-      "priority": "Critical",
-      "businessRule": "BL-B2B-005; BL-CART-004",
-      "edgeCaseRefs": "ECL-7.1",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-024", "status": "PASS" },
+    { "id": "B2C-ORG-025", "status": "PASS" },
+    { "id": "B2C-ORG-026", "status": "PASS" },
     {
       "id": "B2C-ORG-027",
       "status": "BLOCKED",
@@ -261,17 +126,9 @@
       "section": "B2C Features > Organization",
       "priority": "Critical",
       "businessRule": "BL-B2B-005; BL-PRICE-007",
-      "notes": "Precondition UNMET: requires multi-org user with different contract prices per org. ORG_USER_EMAIL is single-org."
+      "notes": "No org-specific contract pricing configured between orgs for available catalog products. Cannot verify per-org pricing in cart."
     },
-    {
-      "id": "B2C-ORG-028",
-      "status": "BLOCKED",
-      "title": "Cart Isolation - Coupon in Org A Not Visible in Org B",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005; BL-CART-004",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-028", "status": "PASS" },
     {
       "id": "B2C-ORG-029",
       "status": "BLOCKED",
@@ -279,7 +136,7 @@
       "section": "B2C Features > Organization",
       "priority": "Critical",
       "businessRule": "BL-B2B-005; BL-PRICE-007",
-      "notes": "Precondition UNMET: test requires product with org-specific contract price different from store default. No contract pricing is seeded for TechFlow org with SKU XKC-38084072; cannot verify org vs default price delta."
+      "notes": "No product in vcst-qa catalog has org-specific contract pricing configured for the test account's organizations. Cannot distinguish org contract price from store default."
     },
     {
       "id": "B2C-ORG-030",
@@ -288,7 +145,7 @@
       "section": "B2C Features > Organization",
       "priority": "Critical",
       "businessRule": "BL-B2B-005; BL-PRICE-007",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
+      "notes": "Same root cause as B2C-ORG-002 and B2C-ORG-029: identical pricing across orgs for all checked products."
     },
     {
       "id": "B2C-ORG-031",
@@ -297,35 +154,11 @@
       "section": "B2C Features > Organization",
       "priority": "High",
       "businessRule": "BL-B2B-005; BL-PRICE-007",
-      "notes": "Precondition UNMET: {{USER_EMAIL}} (mutykovaelena@gmail.com) resolves to a multi-org user (BMW-Group + 29+ orgs), not a personal non-org user. Precondition 'personal (non-org) user account' is not met."
+      "notes": "USER_EMAIL (mutykovaelena@gmail.com) is a multi-org user with 30+ org memberships, not a personal/non-org user. Precondition 'personal (non-org) user account' cannot be met."
     },
-    {
-      "id": "B2C-ORG-032",
-      "status": "BLOCKED",
-      "title": "Ship-To Shows Only Current Org Addresses",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005; BL-B2C-003",
-      "notes": "Precondition UNMET: requires multi-org user with distinct addresses per org. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-033",
-      "status": "BLOCKED",
-      "title": "Ship-To - Switching Org Updates Address List",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005; BL-B2C-003",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-034",
-      "status": "BLOCKED",
-      "title": "Ship-To - New Address Scoped to Current Org",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005; BL-B2C-003",
-      "notes": "Precondition UNMET: requires multi-org user to verify cross-org address scope isolation. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-032", "status": "PASS" },
+    { "id": "B2C-ORG-033", "status": "PASS" },
+    { "id": "B2C-ORG-034", "status": "PASS" },
     {
       "id": "B2C-ORG-035",
       "status": "BLOCKED",
@@ -333,17 +166,9 @@
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005; BL-B2C-003",
-      "notes": "Precondition UNMET: requires multi-org user with different default addresses per org. ORG_USER_EMAIL is single-org."
+      "notes": "Org A has 1 address (101 Special St Philadelphia) with no Default badge. Org B shows multiple c10-org-* addresses also without distinct defaults. Precondition requires each org to have a different configured default address — not set in vcst-qa."
     },
-    {
-      "id": "B2C-ORG-036",
-      "status": "BLOCKED",
-      "title": "Default Org Loaded on Sign-In",
-      "section": "B2C Features > Organization",
-      "priority": "High",
-      "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with a configured default org. ORG_USER_EMAIL is single-org."
-    },
+    { "id": "B2C-ORG-036", "status": "PASS" },
     {
       "id": "B2C-ORG-037",
       "status": "BLOCKED",
@@ -351,29 +176,27 @@
       "section": "B2C Features > Organization",
       "priority": "Medium",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user with NO default org configured. ORG_USER_EMAIL is single-org."
+      "notes": "Test account (ricreyacrouyi-3425@yopmail.com) has a default org configured ('Quoted' Double Quotes loads automatically on sign-in). No test account with multi-org membership but no default org is available."
     },
+    { "id": "B2C-ORG-038", "status": "PASS" },
+    { "id": "B2C-ORG-039", "status": "PASS" }
+  ],
+  "bugs": [
     {
-      "id": "B2C-ORG-038",
-      "status": "BLOCKED",
-      "title": "Default Org Persists Across Sign-Out/Sign-In",
-      "section": "B2C Features > Organization",
-      "priority": "Medium",
+      "id": "BUG_006_001",
+      "title": "Org switch does not reset page navigation — user remains on deep category page after switching orgs",
+      "severity": "Low",
+      "testCaseId": "B2C-ORG-008",
       "businessRule": "BL-B2B-005",
-      "notes": "Precondition UNMET: requires multi-org user. ORG_USER_EMAIL is single-org."
-    },
-    {
-      "id": "B2C-ORG-039",
-      "status": "PASS",
-      "title": "Company Info - Add Address XSS Prevention in City, Address, and Description Fields",
-      "section": "B2C Features > Organization > Company Info",
-      "priority": "High",
-      "businessRule": "BL-B2B-005; BL-SEC-001",
-      "edgeCaseRefs": "ECL-5.1; ECL-14.1"
+      "edgeCaseRef": "",
+      "failedAssertion": "[NAV] After switching orgs, user redirected to neutral page (homepage or catalog root) rather than remaining on Org A context page",
+      "stepsToReproduce": "1. Sign in as ricreyacrouyi-3425@yopmail.com ('Quoted' Double Quotes active). 2. Navigate to /accessories/aliexpress/consumer-electronics. 3. Open account menu → Organizations → click ACME Store. 4. Observe URL after org switch completes.",
+      "expected": "After org switch, user redirected to a neutral page (/ or /catalog) so the page context matches the new org.",
+      "actual": "URL remains at /accessories/aliexpress/consumer-electronics. Header correctly shows ACME Store / John Doe but deep-category page context from Org A is not reset.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
     }
   ],
-  "bugs": [],
-  "errors": [
-    "38 of 39 test cases BLOCKED: {{ORG_USER_EMAIL}} maps to a single-org user (Emily Johnson / TechFlow) after the 2026-05-19 credential repoint. Tests B2C-ORG-001 through B2C-ORG-038 require multi-org capabilities (switching, cart isolation, pricing per-org, address scoping, org search). Recommend: (a) map {{ORG_USER_EMAIL}} to MULTI_ORG_USER_EMAIL (ricreyacrouyi-3425@yopmail.com) in suite Test_Data columns, or (b) re-seed a multi-org agent user for the playwright-chrome slot. Additionally, {{USER_EMAIL}} (mutykovaelena@gmail.com) is a multi-org user, not a personal non-org user — B2C-ORG-010 and B2C-ORG-031 preconditions cannot be met with this mapping."
-  ]
+  "errors": []
 }

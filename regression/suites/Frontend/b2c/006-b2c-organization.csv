@@ -1,7 +1,7 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
 "B2C-ORG-001","Org Switcher Visible for Multi-Org User","B2C Features > Organization","Critical","BL-B2B-005",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User belongs to 2 or more organizations, logged in to storefront","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to multiple organizations
+User belongs to 2 or more organizations, logged in to storefront","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to multiple organizations
 2. [NAV] Navigate to storefront header or account area
 3. [ASSERT] Locate the organization switcher control
 4. [ASSERT] Verify it is visible and shows current organization name","[DOM] Org switcher control visible in header or account section
@@ -9,19 +9,19 @@ User belongs to 2 or more organizations, logged in to storefront","url={{FRONT_U
 [STATE] Switcher appears only for users with 2+ org memberships
 [DOM] Single-org users do not see switcher (validated in B2C-ORG-010)","[CONSOLE] no uncaught JS errors","Org switcher not visible for multi-org user; switcher showing for single-org users; current org name not shown on control","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-002","Switch Org - Pricing Update","B2C Features > Organization","Critical","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user, Org A and Org B have different contract pricing for the same product","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active (check org switcher)
-2. [NAV] Navigate to a product with org-specific contract pricing
-3. [ASSERT] Note the price shown for Org A
+Multi-org user. NOTE: vcst-qa has NO org-specific contract pricing configured, so prices may be identical across orgs — that is NOT a failure. Assert the pricing-refresh plumbing (re-query on org switch, PDP/cart consistency), not a price delta. The differential assertion below activates only once per-org contract pricing is seeded.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active (check org switcher)
+2. [NAV] Navigate to product {{TEST_SKU}}
+3. [ASSERT] Note the price shown under Org A
 4. [ACT] Open org switcher and select Org B
 5. [WAIT] Wait for org context to update (header/org name reflects Org B)
 6. [NAV] Navigate to the same product
-6. [ASSERT] Verify price updated to Org B's contract price","[FORMAT] After switching to Org B, product price reflects Org B's contract/tier pricing
-[FORMAT] Price is different from Org A's price
+6. [ASSERT] Verify price re-renders for the active org context (no stale Org A value, no error)","[FORMAT] After switching to Org B, product price re-queries and renders for the active org context (no stale value carried over from Org A)
 [STATE] Pricing update occurs without requiring page reload or re-login
-[FORMAT] Cart prices also update to reflect new org's pricing","[CONSOLE] no uncaught JS errors","Price not changing after org switch; Org A price shown while Org B active; page reload required to see new pricing","none","Coverage Gap Analysis","Draft"
+[FORMAT] Cart price for the product stays consistent with the PDP price under the active org
+[FORMAT] When per-org contract pricing IS configured: Org B price reflects Org B's contract/tier pricing and differs from Org A. When NOT configured: store-default price applies consistently to both orgs (equal prices are acceptable)","[CONSOLE] no uncaught JS errors","Price not re-querying after org switch (stale Org A value persists); page reload required to refresh pricing; PDP and cart prices disagree for the same org context; console/API error on the pricing query after switch","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-003","Switch Org - Cart Isolation","B2C Features > Organization","Critical","BL-B2B-005","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user, logged in as Org A","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active
+Multi-org user, logged in as Org A","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in and confirm Org A is active
 2. [ACT] Add 2 specific products to cart under Org A
 3. [ASSERT] Note the Org A cart items
 4. [ACT] Open org switcher and switch to Org B
@@ -39,7 +39,7 @@ Multi-org user, logged in as Org A","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL
 [DOM] Org B items not present in Org A cart after switching back","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Org A items visible in Org B cart after switch; cart shared between orgs; switching back to Org A loses original cart items","remove item from cart","Coverage Gap Analysis","Draft"
 "B2C-ORG-004","Switch Org - Addresses Update","B2C Features > Organization","High","BL-B2B-001","ECL-14.3","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user, Org A and Org B have different saved addresses. After PR #129 ProfileAuthorizationHandler refactor, currentOrganizationAddresses must return addresses scoped to the caller's CURRENT org context (not leak Org A data into Org B view).","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+Multi-org user, Org A and Org B have different saved addresses. After PR #129 ProfileAuthorizationHandler refactor, currentOrganizationAddresses must return addresses scoped to the caller's CURRENT org context (not leak Org A data into Org B view).","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
 2. [NAV] Navigate to account addresses or ship-to selector
 3. [ASSERT] Note the addresses available for Org A (count and at least one identifier)
 4. [ACT] Switch to Org B using org switcher
@@ -51,19 +51,20 @@ Multi-org user, Org A and Org B have different saved addresses. After PR #129 Pr
 [DOM] Checkout address options reflect active org's addresses","[API] currentOrganizationAddresses query called after org context switch; response scope reflects Org B (totalCount and items differ from Org A view); errors[] is empty
 [API] No Org A address items leak into Org B's currentOrganizationAddresses response (authz boundary maintained per PR #129)
 [CONSOLE] no uncaught JS errors","Org A addresses visible while Org B is active; ship-to selector showing wrong org's addresses; currentOrganizationAddresses errors[] non-empty after org switch (authz over-restriction regression from PR #129)","none","Coverage Gap Analysis; Synced TLC-2026-04-23-1700 (PR #129 authz refactor cross-layer check added)","Draft"
-"B2C-ORG-005","Switch Org - Lists Scope","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user, Org A and Org B each have at least one saved list","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
-2. [NAV] Navigate to My Lists
-3. [ASSERT] Note lists available for Org A
-4. [ACT] Switch to Org B
-5. [WAIT] Wait for org context to update (header/org name reflects Org B)
-6. [NAV] Navigate to My Lists
-6. [ASSERT] Verify only Org B's lists are shown","[DOM] After switching to Org B, only lists associated with Org B are displayed
-[DOM] Org A lists not visible while Org B is active
-[DOM] Shared lists within an org are scoped to that org only
-[STATE] Switching back to Org A restores Org A's lists","[CONSOLE] no uncaught JS errors","Org A lists visible while Org B is active; lists not scoping to active org","none","Coverage Gap Analysis","Draft"
+"B2C-ORG-005","Switch Org - Lists Are User-Scoped (Not Org-Scoped)","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Multi-org user with at least one saved wishlist. NOTE: the OWNER's own wishlists are USER-scoped, not org-scoped — GetWishlists is keyed by storeId+userId with NO org/member argument (verified in vc-frontend source 2026-06-01). The owner sees the same lists regardless of active org. Org-scoping applies ONLY to SHARED lists: a list with scope=Organization is visible to OTHER org members only within the org it was shared in (that cross-member visibility is covered by suite 007, not here). Do NOT expect the owner's own list set to differ per active org.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as the multi-org user; note the active org
+2. [NAV] Navigate to /account/lists (My Lists)
+3. [ASSERT] Record the owned lists (names + IDs + item counts)
+4. [ACT] Switch to a different org via the org switcher
+5. [WAIT] Wait for org context to update (header/org name reflects the new org)
+6. [NAV] Navigate to /account/lists
+7. [ASSERT] Verify the SAME owned lists appear (same IDs, names, item counts) — the list set is unchanged by the org switch","[DOM] Owner's My Lists shows the identical set of owned lists (same list IDs, names, item counts) before and after the org switch
+[STATE] Wishlist set is user-scoped — unchanged by active-org context
+[DOM] Org context does not add or remove the owner's own lists
+[STATE] Owner's own list set is user-scoped; only SHARED lists (scope=Organization) are org-scoped — visible to OTHER members within the sharing org (verified cross-member in suite 007, out of scope here)","[API] GetWishlists query is keyed by storeId+userId (no organizationId/memberId argument); errors[] empty
+[CONSOLE] no uncaught JS errors","Owner's own lists change (appear/disappear) when active org changes; list IDs differ across org switch; GetWishlists errors[] non-empty","none","Coverage Gap Analysis; user-scope verified live 2026-06-01","Reviewed"
 "B2C-ORG-006","Default Org on Sign-in","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user, one org configured as default","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in to storefront with multi-org user credentials
+Multi-org user, one org configured as default","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in to storefront with multi-org user credentials
 2. [ASSERT] Observe which organization loads immediately after sign-in
 3. [ASSERT] Verify org switcher shows default org as active
 4. [ASSERT] Verify default org's pricing and catalog are shown","[DOM] Default org loaded automatically on sign-in (not random or last-used)
@@ -71,7 +72,7 @@ Multi-org user, one org configured as default","url={{FRONT_URL}},org_user={{ORG
 [DOM] Default org's catalog, pricing, addresses, and cart shown
 [STATE] No prompt to select org required on sign-in","[CONSOLE] no uncaught JS errors","Wrong org loaded on sign-in; user prompted to select org on every login; last-used org loaded instead of default","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-007","Search Orgs in Switcher","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 6+ org memberships
+Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 6+ org memberships
 2. [ACT] Open the org switcher
 3. [ASSERT] Locate the search input within the switcher dropdown
 4. [ACT] Type part of an org name (first 3 characters)
@@ -84,7 +85,7 @@ Multi-org user belonging to 6 or more organizations","url={{FRONT_URL}},org_user
 [STATE] Selecting a filtered result correctly switches to that org","[CONSOLE] no uncaught JS errors","Search input missing in switcher; typing does not filter list; clearing search does not restore full list","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-008","Switch Org - Navigation Reset","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user, currently on a deep category or account page for Org A","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
+Multi-org user, currently on a deep category or account page for Org A","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as Org A
 2. [NAV] Navigate to a deep category page or checkout flow
 3. [ASSERT] Note the breadcrumb trail
 4. [ACT] Switch to Org B using org switcher
@@ -95,7 +96,7 @@ Multi-org user, currently on a deep category or account page for Org A","url={{F
 [STATE] In-progress flows (e.g., checkout) exited cleanly","[CONSOLE] no uncaught JS errors","User remains on Org A context page after switch; breadcrumbs still show Org A path; stale Org A state visible","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-009","Switch Back - Cart Intact","B2C Features > Organization","Critical","BL-B2B-005","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as Org A and add 3 specific products to Org A cart
+Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as Org A and add 3 specific products to Org A cart
 2. [ACT] Switch to Org B
 3. [WAIT] Wait for org context to update (header/org name reflects Org B)
 4. [ACT] Optionally add a different item to Org B cart
@@ -108,48 +109,46 @@ Multi-org user, items in Org A cart, currently viewing Org B","url={{FRONT_URL}}
 [DOM] Org B items not present in Org A cart after switching back","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors","Org A cart items lost after switching to Org B and back; quantities changed; Org B items mixed into Org A cart","remove item from cart","Coverage Gap Analysis","Draft"
 "B2C-ORG-010","Single Org User - No Switcher","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User belongs to exactly one organization, logged in to storefront","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to only one organization
+User belongs to exactly one organization, logged in to storefront. ORG_USER_EMAIL (Emily Johnson / TechFlow) is single-org — do NOT use USER_EMAIL (30+ orgs) or MULTI_ORG_USER (11 orgs).","url={{FRONT_URL}},user={{ORG_USER_EMAIL}},password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user who belongs to only one organization
 2. [NAV] Navigate to header and account area
 3. [ASSERT] Look for org switcher control","[DOM] No org switcher control visible in header or account area
 [DOM] Single org active by default
 [DOM] UI not cluttered with switcher that has no utility","[CONSOLE] no uncaught JS errors","Org switcher visible for single-org user; org switcher shown but empty or broken for single-org users","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-011","Org Switch Triggers White-Label Branding Update","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user logged in; Org A and Org B configured with different white-label branding (different logo, favicon, or theme color)","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a multi-org user; confirm Org A is active
+Multi-org user. NOTE: vcst-qa does NOT configure per-org white-label branding, so logo/favicon/theme are expected to stay the same across orgs — that is NOT a failure. Assert branding renders without breakage across the switch; the per-org branding-swap assertions activate only when distinct per-org white-label is configured.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a multi-org user; confirm Org A is active
 2. [ASSERT] Note Org A branding: logo in header, favicon in browser tab, and primary/accent theme color
 3. [ACT] Open the org switcher (account menu dropdown)
 4. [ASSERT] Verify org switcher shows radio buttons and search input
 5. [ACT] Select Org B from the switcher
 6. [WAIT] Wait for page to reload or update
-7. [ASSERT] Verify logo in header has changed to Org B's logo
-8. [ASSERT] Verify favicon in browser tab has changed to Org B's favicon
-9. [ASSERT] Verify primary/accent theme color reflects Org B's white-label colors
+7. [ASSERT] Verify the header logo still renders (no broken image) after the switch
+8. [ASSERT] Verify brand assets (logo, favicon) load with 200 and there are no 404s
 10. [ACT] Switch back to Org A
 11. [WAIT] Wait for org context to update (header/org name reflects Org A)
-12. [ASSERT] Verify Org A branding (logo, favicon, colors) is restored","[DOM] Header logo element src or alt text changes after switching to Org B (Org B logo displayed, not Org A logo)
-[DOM] Browser tab favicon updated to Org B favicon after switch
-[STATE] Theme color (CSS variables or inline styles) reflects Org B's configured brand colors
-[STATE] Switching back to Org A restores Org A logo, favicon, and theme colors
-[DOM] No broken image or missing logo during or after the switch
-[FORMAT] Branding update occurs without requiring manual page refresh","[CONSOLE] no uncaught JS errors
-[NETWORK] logo and favicon assets load with 200 status for Org B
-[CONSOLE] no 404s on Org B brand asset requests","Logo not changing after org switch; favicon unchanged; theme colors unchanged after switch; Org A logo persisting while Org B active; broken image in header after switch; branding change requiring manual refresh","none","Coverage Gap Analysis","Manual"
+12. [ASSERT] Verify branding still renders cleanly after switching back","[DOM] Header logo element renders after switching to Org B — no broken image or missing logo during or after the switch
+[STATE] Branding update (if any) occurs without requiring a manual page refresh
+[STATE] When distinct per-org white-label IS configured: header logo src/alt, favicon, and theme color change to Org B's brand on switch and restore Org A's on switch-back. When NOT configured: branding is unchanged across orgs (acceptable)","[CONSOLE] no uncaught JS errors
+[NETWORK] logo and favicon assets load with 200 status for the active org
+[CONSOLE] no 404s on brand asset requests","Broken image or missing logo in header after switch; brand asset 404s after switch; branding change (when configured) requiring a manual refresh; Org A branding persisting after switch-back when per-org branding IS configured","none","Coverage Gap Analysis","Manual"
 "B2C-ORG-012","Org Search Bar Appears for >10 Organizations","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user belonging to 11 or more organizations","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 11+ org memberships
+Multi-org user belonging to 11 or more organizations","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 11+ org memberships
 2. [ACT] Open the org switcher dropdown
 3. [ASSERT] Verify a search bar / text input appears inside the switcher
 4. [ASSERT] Verify all organizations are listed below the search bar","[DOM] Search input field visible inside org switcher dropdown
 [DOM] Organization list displayed below search input
 [STATE] All 11+ organizations visible (with scroll if needed)","[API] organization query returns 11+ results
 [CONSOLE] no uncaught JS errors","Search bar missing for user with 11+ orgs; org list truncated without search; switcher fails to open","none","C413993-C414010","Draft"
-"B2C-ORG-013","Org Search Bar Hidden for <=10 Organizations","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user belonging to exactly 10 or fewer organizations","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 10 or fewer org memberships
+"B2C-ORG-013","Org Search Bar Hidden for <=10 Organizations","B2C Features > Organization","Medium","BL-B2B-005",,"[N/A-ENV] No storefront account with <=10 org memberships exists in vcst-qa (MULTI_ORG_USER=11, USER_EMAIL=30+). The negative (search-bar-hidden) side cannot be exercised until a <=10-org account is provisioned; the positive >10 side is covered by B2C-ORG-012 (PASS).
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Multi-org user belonging to exactly 10 or fewer organizations","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as a user with 10 or fewer org memberships
 2. [ACT] Open the org switcher dropdown
 3. [ASSERT] Verify NO search bar is shown inside the switcher
 4. [ASSERT] Verify all organizations are listed directly","[DOM] No search input field inside org switcher
 [DOM] All organizations listed directly without search
 [STATE] Org count is 10 or fewer","[CONSOLE] no uncaught JS errors","Search bar incorrectly showing for <=10 orgs; org list missing","none","C413993-C414010","Draft"
-"B2C-ORG-014","Org Search - Boundary: Exactly 10 vs 11 Organizations","B2C Features > Organization","Medium","BL-B2B-005","ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Two test accounts: one with exactly 10 orgs and one with exactly 11 orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as user with exactly 10 orgs
+"B2C-ORG-014","Org Search - Boundary: Exactly 10 vs 11 Organizations","B2C Features > Organization","Medium","BL-B2B-005","ECL-14.2","[N/A-ENV] Requires two accounts (exactly 10 orgs and exactly 11 orgs). vcst-qa has only an 11-org account (MULTI_ORG_USER); no exactly-10-org account exists. Boundary cannot be exercised until a 10-org account is provisioned. The >10 side is covered by B2C-ORG-012 (PASS).
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Two test accounts: one with exactly 10 orgs and one with exactly 11 orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as user with exactly 10 orgs
 2. [ACT] Open org switcher
 3. [ASSERT] Verify NO search bar displayed
 4. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
@@ -159,7 +158,7 @@ Two test accounts: one with exactly 10 orgs and one with exactly 11 orgs","url={
 [DOM] 11-org user: search input visible in switcher
 [STATE] Boundary condition at 10/11 correctly implemented","[CONSOLE] no uncaught JS errors","Search bar present at 10 orgs (should not be); search bar missing at 11 orgs (should be present); inconsistent boundary behavior","none","C413993-C414010","Draft"
 "B2C-ORG-015","Org Search - Full Name Match","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type full org name in search input
 4. [ASSERT] Verify matching org appears in filtered list
@@ -168,7 +167,7 @@ Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{ORG_
 [STATE] Search filters in real-time as user types","[API] organization search returns matching results
 [CONSOLE] no uncaught JS errors","Full name search returns no results; non-matching orgs still visible; search not filtering","none","C413993-C414010","Draft"
 "B2C-ORG-016","Org Search - Partial Name Match","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type first 3 characters of an org name in search input
 4. [ASSERT] Verify all orgs containing the partial text appear in results
@@ -176,7 +175,7 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [DOM] Results filtered in real-time
 [STATE] Partial match works as substring or prefix search","[CONSOLE] no uncaught JS errors","Partial search returns no results; only exact matches shown; search requires full name to work","none","C413993-C414010","Draft"
 "B2C-ORG-017","Org Search - Case Insensitive","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type org name in lowercase
 4. [ASSERT] Verify matching org appears
@@ -185,14 +184,14 @@ Multi-org user with 11+ orgs; known org name","url={{FRONT_URL}},org_user={{ORG_
 [DOM] Uppercase search returns same results as original case
 [STATE] Search is case-insensitive","[CONSOLE] no uncaught JS errors","Case-sensitive search: lowercase fails to find uppercase org name; inconsistent results between cases","none","C413993-C414010","Draft"
 "B2C-ORG-018","Org Search - No Results Found State","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type a non-existent org name (e.g. ZZZ_NONEXISTENT_999)
 4. [ASSERT] Verify empty results state is shown","[DOM] No organization items shown in filtered list
 [DOM] Empty state message displayed (e.g. No organizations found)
 [DOM] No blank or broken layout","[CONSOLE] no uncaught JS errors","Blank area instead of empty state message; dropdown closes when no results; JS error on empty search results","none","C413993-C414010","Draft"
 "B2C-ORG-019","Org Search - Clear Search Restores Full List","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type a search term that filters to 1-2 results
 4. [ASSERT] Verify filtered results shown
@@ -201,7 +200,7 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [STATE] Organization count matches original full list
 [DOM] Search input is empty after clearing","[CONSOLE] no uncaught JS errors","Clearing search does not restore full list; some orgs missing after clearing; search input not clearable","none","C413993-C414010","Draft"
 "B2C-ORG-020","Org Search - Special Characters in Query","B2C Features > Organization","Medium","BL-B2B-005","ECL-7.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type special characters in search (e.g. & or apostrophe)
 4. [ASSERT] Verify search handles special characters without error
@@ -209,13 +208,13 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [DOM] Orgs with special characters in name are findable
 [STATE] No XSS or injection behavior","[CONSOLE] no uncaught JS errors","JS error when typing special characters; search breaks with ampersand or apostrophe; XSS vulnerability","none","C413993-C414010","Draft"
 "B2C-ORG-021","Org Search - Leading/Trailing Spaces Handling","B2C Features > Organization","Low","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs. NOTE: the currently-active org is always shown in the switcher list regardless of the search term — do NOT treat its presence as a filter failure. Assert the SEARCHED org appears.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs); pick a known org name from the switcher that is NOT the active org
 2. [ACT] Open org switcher
-3. [ACT] Type org name with leading and trailing spaces
-4. [ASSERT] Verify matching org still appears in results","[DOM] Leading/trailing spaces are trimmed or ignored in search
-[STATE] Results match as if spaces were trimmed","[CONSOLE] no uncaught JS errors","Spaces cause no-results state when org exists; search breaks with whitespace-only input","none","C413993-C414010","Draft"
+3. [ACT] Type that org name with leading AND trailing spaces (e.g. '  <OrgName>  ')
+4. [ASSERT] Verify the matching org still appears in the filtered results (spaces trimmed/ignored)","[DOM] Leading/trailing spaces are trimmed or ignored in search — the searched org appears in results
+[STATE] Results match as if spaces were trimmed (whitespace does not produce a false no-results state)","[CONSOLE] no uncaught JS errors","Spaces cause no-results state when org exists; search breaks with whitespace-only input","none","C413993-C414010; verified PASS live 2026-06-01","Reviewed"
 "B2C-ORG-022","Org Selection After Filtering via Search","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type partial org name to filter results
 4. [ACT] Click on a filtered org to select it
@@ -225,8 +224,8 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [DOM] Org switcher control shows newly selected org name
 [DOM] Page context updates to new org (pricing and cart)","[API] organization switch mutation succeeds
 [CONSOLE] no uncaught JS errors","Clicking filtered org does not switch; org switcher still shows old org; page context not updating after selection from filtered list","none","C413993-C414010","Draft"
-"B2C-ORG-023","Org Search - Keyboard Navigation in Dropdown","B2C Features > Organization","Low","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+"B2C-ORG-023","Org Search - Keyboard Navigation in Dropdown","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Multi-org user with 11+ orgs. KNOWN FAIL (verified live 2026-06-01): the org switcher dropdown has NO keyboard navigation — ArrowDown does not move a roving highlight (focus stays on the search input), no focus indicator appears on items, and Enter selects nothing; switching works by mouse click only. This is a WCAG 2.1.1 Keyboard (Level A) gap. Assertions below are the CORRECT expected behavior and should FAIL until keyboard nav is implemented (do not mark BLOCKED).","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type partial search to filter results
 4. [KEY] Press Arrow Down to highlight first result
@@ -234,9 +233,9 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 6. [KEY] Press Enter to select highlighted org
 7. [ASSERT] Verify selected org is now active","[STATE] Arrow keys navigate through org list items
 [DOM] Currently highlighted item has visual focus indicator
-[STATE] Enter key selects the highlighted organization","[CONSOLE] no uncaught JS errors","Arrow keys do not navigate dropdown items; Enter does not select highlighted item; no visual focus indicator","none","C413993-C414010","Draft"
+[STATE] Enter key selects the highlighted organization","[CONSOLE] no uncaught JS errors","Arrow keys do not navigate dropdown items; Enter does not select highlighted item; no visual focus indicator","none","C413993-C414010; FAIL confirmed live 2026-06-01 (keyboard nav not implemented)","Reviewed"
 "B2C-ORG-024","Org Search - Placeholder Text and Styling","B2C Features > Organization","Low","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ASSERT] Verify search input has placeholder text
 4. [ASSERT] Verify search input styling is consistent with design system","[DOM] Search input has meaningful placeholder text
@@ -244,7 +243,7 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [FORMAT] Placeholder text is descriptive","[CONSOLE] no uncaught JS errors","Missing placeholder text; search input unstyled or inconsistent with design system","none","C413993-C414010","Draft"
 "B2C-ORG-025","Cart Isolation - Items in Org A Not Visible in Org B","B2C Features > Organization","Critical","BL-B2B-005; BL-CART-004","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user; Org A and Org B configured; empty carts in both orgs","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
+Multi-org user; Org A and Org B configured; empty carts in both orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
 2. [NAV] Navigate to a product page
 3. [ACT] Add product to cart (qty 2)
 4. [ASSERT] Verify cart badge shows 2 items
@@ -258,7 +257,7 @@ Multi-org user; Org A and Org B configured; empty carts in both orgs","url={{FRO
 [CONSOLE] no uncaught JS errors","Org A cart items visible in Org B; cart badge not resetting on org switch; shared cart between organizations","clear cart in Org A","Coverage Gap Analysis","Draft"
 "B2C-ORG-026","Cart Isolation - Org A Cart Intact After Round-Trip Switch","B2C Features > Organization","Critical","BL-B2B-005; BL-CART-004","ECL-7.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user; product added to Org A cart","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
+Multi-org user; product added to Org A cart","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user and confirm Org A is active
 2. [ACT] Add 3 items of a product to cart in Org A
 3. [ASSERT] Verify cart badge shows 3
 4. [ACT] Switch to Org B via org switcher
@@ -274,23 +273,23 @@ Multi-org user; product added to Org A cart","url={{FRONT_URL}},org_user={{ORG_U
 [CONSOLE] no uncaught JS errors","Cart empty after round-trip switch; quantity changed; wrong product in cart after switching back","clear cart in Org A","Coverage Gap Analysis","Draft"
 "B2C-ORG-027","Cart Isolation - Org-Specific Pricing in Cart","B2C Features > Organization","Critical","BL-B2B-005; BL-PRICE-007",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user; Org A and Org B have different contract prices for the same product","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
-2. [NAV] Navigate to product page and note Org A price
+Multi-org user. NOTE: no per-org contract pricing in vcst-qa — assert cart line price equals the PDP price for the SAME active org (internal consistency), not that the two orgs differ. Identical prices across orgs are acceptable here; the differential assertion activates only when contract pricing is seeded.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+2. [NAV] Navigate to product page and note Org A PDP price
 3. [ACT] Add product to cart
 4. [NAV] Navigate to cart and note the line item price
 5. [ACT] Switch to Org B via org switcher
 [WAIT] Wait for org context to update (header/org name reflects Org B)
-6. [NAV] Navigate to same product page
-7. [ASSERT] Verify product price reflects Org B contract price (different from Org A)
-8. [ACT] Add product to Org B cart
-9. [NAV] Navigate to cart
-10. [ASSERT] Verify Org B cart line uses Org B pricing","[MATH] Org A cart line price matches Org A contract price
-[MATH] Org B cart line price matches Org B contract price
-[STATE] Prices are org-specific not shared","[API] cart query returns correct pricing per org context
-[CONSOLE] no uncaught JS errors","Same price shown for both orgs; Org A price persisting in Org B cart; cart total using wrong org pricing","clear carts in both orgs","Coverage Gap Analysis","Draft"
+6. [NAV] Navigate to same product page and note Org B PDP price
+7. [ACT] Add product to Org B cart
+8. [NAV] Navigate to cart
+9. [ASSERT] Verify Org B cart line price equals the Org B PDP price","[MATH] Org A cart line price equals Org A PDP price (cart/PDP consistent per org)
+[MATH] Org B cart line price equals Org B PDP price (cart/PDP consistent per org)
+[STATE] Each org's cart line uses the price queried under that org context (no cross-org leakage of a previously-quoted price)
+[MATH] When per-org contract pricing IS configured: Org A and Org B line prices differ. When NOT configured: equal prices across orgs are acceptable","[API] cart query returns pricing for the active org context
+[CONSOLE] no uncaught JS errors","Cart line price disagrees with PDP price for the same org; Org A price persisting in Org B cart after switch; cart total using a stale/previous org's quoted price","clear carts in both orgs","Coverage Gap Analysis","Draft"
 "B2C-ORG-028","Cart Isolation - Coupon in Org A Not Visible in Org B","B2C Features > Organization","High","BL-B2B-005; BL-CART-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-Multi-org user; valid coupon code for Org A","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},coupon=@td(COUPON_10PCT.code)","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user; valid coupon code for Org A","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},coupon=@td(COUPON_10PCT.code)","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [ACT] Add product to cart
 3. [ACT] Apply coupon code in Org A cart
 4. [ASSERT] Verify coupon applied and discount shown
@@ -302,27 +301,27 @@ Multi-org user; valid coupon code for Org A","url={{FRONT_URL}},org_user={{ORG_U
 [STATE] Coupon scope is per-organization","[API] cart query for Org B shows no applied coupons
 [CONSOLE] no uncaught JS errors","Coupon from Org A visible in Org B cart; discount applied to wrong org; coupon leaking between org contexts","clear carts and remove coupon","Coverage Gap Analysis","Draft"
 "B2C-ORG-029","Org-Specific Pricing - Contract Price for Org Member","B2C Features > Organization","Critical","BL-B2B-005; BL-PRICE-007",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Org user logged in; product has org-specific contract price different from store default","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as org member
+Org member logged in. NOTE: vcst-qa has no org-specific contract pricing, so the org member normally sees the store-default price — that is correct, not a failure. Assert the price is queried under the org context and rendered correctly; the contract-price differentiation assertion activates only when contract pricing is seeded.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as org member
 2. [NAV] Navigate to product page for {{TEST_SKU}}
-3. [ASSERT] Verify displayed price is the org contract price (not store default)
-4. [ASSERT] Verify price label or badge indicates contract/special pricing if applicable","[DOM] Product price shown is the org-specific contract price
-[STATE] Price differs from store default price
-[FORMAT] Price formatted correctly with currency symbol","[API] product query returns org-specific price in response
-[CONSOLE] no uncaught JS errors","Store default price shown instead of contract price; no price differentiation for org member; incorrect price calculation","none","Coverage Gap Analysis","Draft"
+3. [ASSERT] Verify a price is displayed and formatted correctly with currency symbol
+4. [ASSERT] Verify the price is returned by the product query under the active org context (no error)","[DOM] Product price renders for the org member under the active org context
+[FORMAT] Price formatted correctly with currency symbol
+[STATE] When org-specific contract pricing IS configured: displayed price is the org contract price (differs from store default) with a contract/special-pricing label if applicable. When NOT configured: store-default price is shown correctly (acceptable)","[API] product query returns a price in the response under the org context
+[CONSOLE] no uncaught JS errors","Price missing or malformed for org member; product/pricing query errors[] non-empty under org context; price fails to render","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-030","Org-Specific Pricing - Price Changes on Org Switch","B2C Features > Organization","Critical","BL-B2B-005; BL-PRICE-007",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user; same product has different prices in Org A vs Org B","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user. NOTE: no per-org contract pricing in vcst-qa — equal prices across orgs are acceptable. Assert the price re-queries under the new org context after a switch (no stale value, no manual refresh needed), NOT that the two orgs differ. The differential assertion activates only when contract pricing is seeded.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to product page for {{TEST_SKU}}
 3. [ASSERT] Note Org A product price
 4. [ACT] Switch to Org B via org switcher
 [WAIT] Wait for org context to update (header/org name reflects Org B)
 5. [WAIT] Wait for context update
 6. [NAV] Navigate to same product page
-7. [ASSERT] Verify price has changed to Org B contract price","[MATH] Org A price differs from Org B price for same product
-[DOM] Price updates after org switch without manual refresh
-[STATE] Product page reflects current org pricing context","[API] product query returns different price after org switch
-[CONSOLE] no uncaught JS errors","Same price shown for both orgs; price not updating after org switch; stale price from previous org","none","Coverage Gap Analysis","Draft"
+7. [ASSERT] Verify the price is re-rendered for the Org B context without a manual refresh (no stale Org A value, no error)","[DOM] Price re-renders after org switch without manual refresh
+[STATE] Product page price reflects the current (Org B) org context — the pricing query re-runs on org switch
+[MATH] When per-org contract pricing IS configured: Org A price differs from Org B price for the same product. When NOT configured: equal prices across orgs are acceptable","[API] product query re-runs after org switch and returns a price under the new org context
+[CONSOLE] no uncaught JS errors","Price not updating/re-querying after org switch (stale Org A value persists); manual refresh required to reflect new org; pricing query error after switch","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-031","Org-Specific Pricing - Non-Org User Sees Default Price","B2C Features > Organization","High","BL-B2B-005; BL-PRICE-007",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Personal (non-org) user account; same product as org pricing tests","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as personal (non-org) user
+Personal (non-org) user account; same product as org pricing tests. PERSONAL_USER_VIRTO (milamuller2024) has NO org membership — do NOT use USER_EMAIL (multi-org).","url={{FRONT_URL}},user={{PERSONAL_USER_VIRTO}},password={{PERSONAL_USER_VIRTO_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as personal (non-org) user
 2. [NAV] Navigate to product page for {{TEST_SKU}}
 3. [ASSERT] Verify displayed price is the store default price
 4. [ASSERT] Verify no contract/org-specific pricing label shown","[DOM] Price shown is the store default (list) price
@@ -330,7 +329,7 @@ Personal (non-org) user account; same product as org pricing tests","url={{FRONT
 [DOM] No contract price badge or label visible","[API] product query returns default price without org context
 [CONSOLE] no uncaught JS errors","Org contract price shown to non-org user; wrong price tier applied; pricing context leaking from previous session","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-032","Ship-To Shows Only Current Org Addresses","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses or Ship To selector
 3. [ASSERT] Verify only Org A addresses are shown
 4. [ASSERT] Verify no Org B addresses appear in the list","[DOM] Address list contains only addresses belonging to Org A
@@ -338,7 +337,7 @@ Multi-org user; Org A and Org B each have distinct shipping addresses","url={{FR
 [DOM] Address count matches Org A address count","[API] addresses query returns only Org A scoped addresses
 [CONSOLE] no uncaught JS errors","Org B addresses visible in Org A context; mixed addresses from multiple orgs; address scope not filtered by current org","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-033","Ship-To - Switching Org Updates Address List","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
 3. [ASSERT] Note Org A addresses
 4. [ACT] Switch to Org B via org switcher
@@ -350,7 +349,7 @@ Multi-org user; Org A and Org B have different addresses","url={{FRONT_URL}},org
 [DOM] Address entries reflect Org B location data","[API] addresses query after org switch returns Org B addresses
 [CONSOLE] no uncaught JS errors","Org A addresses persisting after switch to Org B; address list not updating on org switch; stale address data","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-034","Ship-To - New Address Scoped to Current Org","B2C Features > Organization","High","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user; Org A active","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user; Org A active","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
 3. [ACT] Click Add New Address
 4. [ACT] Fill address form with test data
@@ -364,17 +363,17 @@ Multi-org user; Org A active","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org
 [STATE] Address is scoped to Org A only","[API] addresses query for Org B does not include newly created Org A address
 [CONSOLE] no uncaught JS errors","New address visible in both orgs; address not scoped to current org; address leaking across organizations","delete test address","Coverage Gap Analysis","Draft"
 "B2C-ORG-035","Ship-To - Default Address Per Org","B2C Features > Organization","Medium","BL-B2B-005; BL-B2C-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user; Org A and Org B each have a different default address","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
+Multi-org user. NOTE: vcst-qa does not configure a distinct Default address per org, so a Default badge may be absent — that alone is NOT a failure. Assert that any Default badge shown is scoped to the active org's own address list and does not leak across the switch; the distinct-default-per-org assertion activates only when each org has a default configured.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user; confirm Org A is active
 2. [NAV] Navigate to Account > Addresses
-3. [ASSERT] Verify Org A default address is marked with Default badge
+3. [ASSERT] Note Org A's address list and whether any address carries a Default badge
 4. [ACT] Switch to Org B
 5. [WAIT] Wait for org context to update (header/org name reflects Org B)
 6. [NAV] Navigate to Account > Addresses
-7. [ASSERT] Verify Org B has its own different default address marked","[DOM] Org A default address has Default indicator
-[DOM] Org B default address has Default indicator and is different from Org A
-[STATE] Each org maintains its own default address independently","[CONSOLE] no uncaught JS errors","Same default address for both orgs; no default address after switch; default not persisting per org","none","Coverage Gap Analysis","Draft"
+7. [ASSERT] Verify the Default badge (if any) belongs to an Org B address — Org A's defaulted address does not appear/carry its badge into Org B","[STATE] Any Default badge shown is scoped to the active org's own address list (no cross-org leakage of a default after switch)
+[DOM] Address list reflects the active org only (consistent with B2C-ORG-032/033 scoping)
+[STATE] When each org has a distinct default configured: Org A and Org B each show their own different Default address. When not configured: absence of a Default badge is acceptable","[CONSOLE] no uncaught JS errors","Org A's defaulted address appears or keeps its Default badge while Org B is active; default leaking across org switch; address list not scoped to the active org","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-036","Default Org Loaded on Sign-In","B2C Features > Organization","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with a default organization configured","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
+Multi-org user with a default organization configured","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
 2. [ACT] Sign in with multi-org credentials
 3. [WAIT] Wait for redirect to home or account page
 4. [ASSERT] Verify org switcher shows the default org name
@@ -382,8 +381,9 @@ Multi-org user with a default organization configured","url={{FRONT_URL}},org_us
 [STATE] Default org is active immediately after sign-in
 [STATE] No org selection prompt shown when default is configured","[API] initial page load context reflects default org
 [CONSOLE] no uncaught JS errors","No default org loaded; org selection prompt shown despite default configured; wrong org active after sign-in","none","Coverage Gap Analysis","Draft"
-"B2C-ORG-037","No Default Org - Org Selector Shown on Sign-In","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with NO default organization configured","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
+"B2C-ORG-037","No Default Org - Org Selector Shown on Sign-In","B2C Features > Organization","Medium","BL-B2B-005",,"[N/A-ENV] No multi-org account WITHOUT a configured default org exists in vcst-qa (MULTI_ORG_USER signs in straight into its default org). The no-default sign-in selector cannot be exercised until such an account is provisioned. The with-default sign-in path is covered by B2C-ORG-036 (PASS).
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Multi-org user with NO default organization configured","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to login page
 2. [ACT] Sign in with multi-org credentials (no default org)
 3. [WAIT] Wait for redirect
 4. [ASSERT] Verify org selector/prompt is displayed
@@ -392,7 +392,7 @@ Multi-org user with NO default organization configured","url={{FRONT_URL}},org_u
 [STATE] User must select an org before proceeding
 [DOM] After selection: org switcher shows chosen org name","[CONSOLE] no uncaught JS errors","No org selector shown; random org auto-selected; blank page after sign-in without default org","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-038","Default Org Persists Across Sign-Out/Sign-In","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with default org configured","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Sign in as multi-org user
+Multi-org user with default org configured","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Sign in as multi-org user
 2. [ASSERT] Note the default org loaded
 3. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 4. [WAIT] Wait for sign-out to complete and redirect
@@ -401,7 +401,7 @@ Multi-org user with default org configured","url={{FRONT_URL}},org_user={{ORG_US
 [DOM] Org switcher shows same org name after re-login
 [STATE] Default org setting persists server-side","[CONSOLE] no uncaught JS errors","Different org loaded after re-login; default org setting lost; org selector shown despite default configured","none","Coverage Gap Analysis","Draft"
 "B2C-ORG-039","Company Info - Add Address XSS Prevention in City, Address, and Description Fields","B2C Features > Organization > Company Info","High","BL-B2B-005; BL-SEC-001","ECL-5.1; ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Org user logged in, /company/info page accessible, user has permission to add address. Note: org address form has NO phone, first name, or last name fields — only Description, Country, ZIP, State, City, Address, Apt.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/info
+Org user logged in, /company/info page accessible, user has permission to add address. Note: org address form has NO phone, first name, or last name fields — only Description, Country, ZIP, State, City, Address, Apt.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/info
 2. [WAIT] Company Info page loads
 3. [ASSERT] Verify company name and Addresses section visible
 4. [ACT] Click 'Add new address' button

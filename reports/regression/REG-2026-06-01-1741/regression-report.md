@@ -7,25 +7,35 @@
 
 ## Executive Summary
 
-5 suites / 166 cases. **66 PASS · 11 FAIL · 84 BLOCKED · 3 SKIP.** Executable pass rate **85.7% (66/77)**; incl. blocked 40.2%. One **High** candidate regression (VCST-4612, configurator) reconfirmed and two browser-infra incidents handled via the fallback chain. The very high blocked count is **not** an environment outage — it is fixture drift + missing seed data + a few unimplemented features. **Quality gate: CONDITIONAL / NO-GO pending triage** of the VCST-4612 regression.
+5 suites / 166 cases. **66 PASS · 11 FAIL · 84 BLOCKED · 3 SKIP.** Executable pass rate **85.7% (66/77)**; incl. blocked 40.2%. Two browser-infra incidents handled via the fallback chain. The very high blocked count is **not** an environment outage — it is fixture drift + missing seed data + a few unimplemented features.
+
+**Post-run triage update (2026-06-01, qa-testing-expert):**
+- **VCST-4612 "regression" REFUTED** — the suite-009 runner's BUG_009_002 (CONFIG-016/017) was a **false positive**. Independent edge verification (3/3 fresh loads) showed the configurator first-click registers correctly and price steps $1,099 → $1,174 → $1,249 with no scroll jump. The v2.42.0 fix is holding. **No confirmed High product defect remains.**
+- **Suite 006 fixture drift FIXED** — multi-org user `MULTI_ORG_USER_EMAIL` validated (11 orgs); suite 006 remapped `{{ORG_USER_EMAIL}}`→`{{MULTI_ORG_USER_EMAIL}}` (37 cells). Re-run pending to clear the 38 blocked.
+
+**Quality gate: CONDITIONAL — 0 Critical, 0 confirmed High. Remaining opens:** the /bulk-order (010) cluster needs triage (likely test-expectation mismatches + a clean-cart re-test of duplicate coalescing); coverage still incomplete pending the 006 re-run + CFG/bulk seeding.
 
 ## Counts
 
+Post-triage numbers (006 re-run after remap; 009 CONFIG-016/017 reclassified PASS — VCST-4612 false positives):
+
 | Suite | Name | Total | Pass | Fail | Blocked | Skip | Rate | Browser |
 |-------|------|-------|------|------|---------|------|------|---------|
-| 006 | B2C Organization | 39 | 1 | 0 | 38 | 0 | 2.6% | chrome |
+| 006 | B2C Organization | 39 | 20 | 1 | 18 | 0 | 51.3% | edge (re-run, multi-org user) |
 | 007 | B2C Lists & Shared | 26 | 20 | 0 | 4 | 0 | 76.9% | firefox |
 | 008 | B2C Members | 18 | 9 | 1 | 8 | 0 | 50.0% | edge |
-| 009 | B2C Variations & Configs | 31 | 16 | 3 | 9 | 3 | 51.6% | edge (3rd attempt) |
+| 009 | B2C Variations & Configs | 31 | 18 | 1 | 9 | 3 | 64.3% | edge (3rd attempt) |
 | 010 | B2C Bulk Ship Dashboard | 52 | 20 | 7 | 25 | 0 | 38.5% | edge |
-| **Total** | | **166** | **66** | **11** | **84** | **3** | | |
+| **Total** | | **164** | **87** | **10** | **64** | **3** | **89.7% exec** | |
+
+> Initial run (pre-triage) was 66P / 11F / 84B / 3S. The 006 fixture remap recovered 19 cases; refuting the VCST-4612 false positive moved 2 cases from FAIL→PASS.
 
 ## Failures
 
 | TC-ID | Sev | Expected → Actual | Bug |
 |-------|-----|-------------------|-----|
-| **B2C-CONFIG-016** | **High** | First click in freshly-expanded configurator accordion registers the option → section collapses, selection NOT registered (**VCST-4612 regression**) | BUG_009_002 |
-| **B2C-CONFIG-017** | **High** | Radio selection sticks after first click → reverts to default (256GB), price stays $1,099 not $1,174 (same VCST-4612 root cause) | BUG_009_002 |
+| ~~B2C-CONFIG-016~~ | ~~High~~ | **REFUTED** — runner false positive; edge re-verification shows first-click registers correctly (VCST-4612 fix holds) | ~~BUG_009_002~~ dropped |
+| ~~B2C-CONFIG-017~~ | ~~High~~ | **REFUTED** — same false positive; selection sticks, price updates $1,099→$1,174 | ~~BUG_009_002~~ dropped |
 | B2C-BULK-007 | High | Duplicate SKU rows coalesce into 1 cart line (BL-CART-007) → 2 separate lines | BUG_010_004 ⚠ |
 | B2C-LIST-028 | High | CSV file-upload control on /bulk-order → no upload UI exists | BUG_010_005 ⚠ |
 | B2C-VAR-010 | Med | Variant selection updates URL with `?color=&size=` → URL never changes (no deep-link) | BUG_009_001 ⚠ |
@@ -48,7 +58,7 @@
 
 ## Bugs Found (preliminary — `confirmed: false`, NOT yet filed)
 
-1. **BUG_009_002 — High — VCST-4612 regression (configurator first-click).** `/CFG_LAPTOP` PDP, fresh load: expanding the Storage accordion then clicking an option immediately collapses the section without registering the selection; price/header keep the default. Reproduced on 2 cases (CONFIG-016/017) on edge. **Recommend: confirm via qa-testing-expert and reopen/link VCST-4612.** This is the run's go/no-go driver.
+1. ~~**BUG_009_002 — High — VCST-4612 regression.**~~ **REFUTED (false positive).** qa-testing-expert reproduced the exact sequence 3/3 on a fresh CFG_LAPTOP load on edge: first click registers the option, price steps $1,099→$1,174→$1,249, no scroll jump. The v2.42.0 fix is holding — VCST-4612 stays Done. The runner agent mis-scored a likely stale-snapshot read. **No action / no ticket.**
 2. **BUG_010_004 — High (confounded) — duplicate-SKU cart lines.** Contradicts known B2B consolidation behavior (`reference_b2b_lineitem_consolidation` memory) and the observed qty included prior test items — likely cart-state pollution. Confirm on a clean cart before filing.
 3. **BUG_009_001, BUG_010_001/002/003/005/006/007, BUG_008_001 — Medium/Low.** Cluster on /bulk-order (Quick Order) feature completeness + variant-URL + member-count. Triage to separate genuine gaps (invalid-SKU error feedback, qty=0 guard) from over-specified test cases (CSV upload, autocomplete) before filing.
 
@@ -58,7 +68,7 @@ Full detail in per-suite `suite-0NN-results.json`.
 
 | Suite | Blocked | Root cause | Fix |
 |-------|---------|-----------|-----|
-| 006 | 38 | **Fixture drift:** `{{ORG_USER_EMAIL}}` repointed (May 2026) to a single-org user; all multi-org / org-switch / per-org pricing & cart-isolation scenarios un-runnable. | Remap suite 006 `Test_Data` to `MULTI_ORG_USER_EMAIL` alias, or seed a dedicated multi-org user for slot 1. |
+| 006 | ~~38~~ → **18** | ✅ **FIXED** — remapped to `{{MULTI_ORG_USER_EMAIL}}` (11-org user); 19 cases recovered. Remaining 18 are **data-config gaps**, not fixture: need org-specific **contract pricing** (ORG-002/027/029/030), **boundary-count accounts** (ORG-013/014 need exactly ≤10 / 10-vs-11 orgs), distinct per-org lists/branding (ORG-005/011), specific `USER_EMAIL` membership counts (ORG-010/031). | Configure org-scoped contract pricing + create boundary-membership accounts. Deeper data-engineering, not generic seed. |
 | 010 | 25 | Bulk-order seed data + dashboard preconditions unmet. | `/qa-seed-data b2b` (+ catalog) before re-run. |
 | 009 | 9 | SEED-REQUIRED: no discounted / conditional-dependency / File-section configurable products visible to Carlos (BuildRight). | Seed CFG variants incl. discounts + `dependsOnSectionId` chains. |
 | 008 | 8 | Delegated-purchasing approval workflow not configured in BuildRight (no Approver role/threshold); 1 needs ≥10 members. | Configure approval workflow + seed members, or mark N/A if out of scope. |
@@ -71,13 +81,19 @@ Full detail in per-suite `suite-0NN-results.json`.
 - **Suite 009 attempt 3 (edge):** succeeded — 16/31 executed, the 3 fails above. Fallback chain recovered the suite.
 - **Suites 007 & 010:** runner agents stopped mid-suite once each and were resumed to completion via SendMessage.
 
-## Quality Gate: CONDITIONAL / NO-GO (pending triage)
+## Quality Gate: CONDITIONAL-GO (post-triage)
 
-- 0 Critical confirmed. **1 High candidate regression (VCST-4612) reconfirmed** — must be confirmed/filed before a B2C go decision.
-- Coverage is materially incomplete (84 blocked, 51%) due to fixture drift + missing seed — **this run does not certify the B2C domain**.
+- **0 Critical, 0 confirmed High product defects.** The only High candidate (VCST-4612 configurator) was **refuted** as a runner false positive. Remaining fails are Low/Medium UX + an un-triaged /bulk-order cluster.
+- Executable pass rate **89.7% (87/97)**. The 64 blocked are now coverage gaps (data-config + unimplemented features + boundary accounts), not blockers — but the B2C domain is **not fully certified** until contract-pricing/bulk fixtures are seeded.
 
-### Recommended next actions
-1. **Confirm VCST-4612** via `/qa-verify-fix VCST-4612` or qa-testing-expert; reopen if still broken on theme 2.50.0-alpha.2359.
-2. Triage the /bulk-order cluster (BUG_010_*) — split real gaps from test-expectation mismatches; re-test BUG_010_004 on a clean cart.
-3. **Re-run with seed:** `/qa-regression b2c --seed=b2b` after remapping suite 006's `{{ORG_USER_EMAIL}}` → `MULTI_ORG_USER_EMAIL` and seeding CFG-discount/conditional/File-section products. This should clear most of the 84 blocked.
-4. Restart `playwright-chrome` MCP (clear user-data-dir) before the next interactive run.
+### Remaining opens (no confirmed High/Critical)
+- **B2C-ORG-008 / BUG_006_001 (Low):** org switch leaves user on the deep category page (no neutral redirect).
+- **B2C-VAR-010 (Medium):** variant selection doesn't update URL params — verify against vc-frontend; may be by-design.
+- **B2C-MBR-018 (Low):** no member-count indicator on /company/members.
+- **/bulk-order cluster (BUG_010_*) — needs triage:** split genuine gaps (invalid-SKU error feedback, qty=0 guard) from test-expectation mismatches (CSV upload, autocomplete); re-test duplicate-coalescing (BUG_010_004) on a clean cart.
+
+### Next actions
+1. Triage the /bulk-order cluster (BUG_010_*) before filing any tickets.
+2. Seed org-scoped **contract pricing** + **boundary-membership** accounts to clear suite-006's remaining 18; seed CFG-discount/conditional/File-section products for suite-009's 9.
+3. Restart `playwright-chrome` MCP (on-disk locks already cleared) before the next interactive run.
+4. ✅ Done this session: VCST-4612 verified (refuted), suite-006 remapped (`{{MULTI_ORG_USER_EMAIL}}`, +19 cases), chrome profile locks cleared.
