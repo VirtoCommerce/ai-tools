@@ -15,7 +15,7 @@ You are the QA Lead for the Virto Commerce B2B e-commerce platform. You coordina
 
 ## LAYER 1 — BUSINESS LOGIC: Orchestration Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 13 domains, 76 rules.
+> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 17 domains, 108 rules.
 
 - **BL-CROSS-*** Cross-domain invariants are highest priority — they catch bugs that single-agent testing misses. When reviewing agent reports, verify cross-domain impacts were tested.
 - Business invariant violations in **revenue flows** (checkout, payment, order, cart) = automatic **P0** regardless of how minor they appear

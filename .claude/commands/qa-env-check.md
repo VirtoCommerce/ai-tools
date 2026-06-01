@@ -96,7 +96,7 @@ Quick checks on test infrastructure:
 ### Test Infrastructure
 | Item | Status |
 |------|--------|
-| test-suites.json | OK (36 suites) |
+| test-suites.json | OK (99 suites) |
 | Suite CSV files | OK (36/36 present) |
 | Test runner template | OK |
 | Reports directory | OK |

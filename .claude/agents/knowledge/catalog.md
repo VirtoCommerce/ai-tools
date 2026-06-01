@@ -1,13 +1,13 @@
 # Catalog — Agent Reference
 
 Platform knowledge for testing the Virto Commerce Catalog module.
-Covers both the **Admin SPA** (Backend Suite 16) and **Storefront xCatalog GraphQL API** (Frontend Suite 03).
+Covers both the **Admin SPA** (`Backend/catalog/` suites 051, 053) and **Storefront xCatalog GraphQL API** (`Frontend/catalog/` suites 001–003).
 
 ## Architecture
 
 Two surfaces:
-- **Admin SPA** — manage catalogs, categories, products, properties (Suite 16, agent: `qa-backend-expert`)
-- **Storefront xCatalog** — GraphQL API serving products/categories to frontend (Suite 03, agent: `qa-frontend-expert`)
+- **Admin SPA** — manage catalogs, categories, products, properties (`Backend/catalog/`, agent: `qa-backend-expert`)
+- **Storefront xCatalog** — GraphQL API serving products/categories to frontend (`Frontend/catalog/`, agent: `qa-frontend-expert`)
 
 Catalog browsing with facets and filters is a **Critical Revenue Flow** — must pass before every deployment.
 
@@ -240,7 +240,7 @@ Tags: `catalog`, `admin`, `crud`, `configurable-products`
 
 | Suite | Relevance |
 |-------|-----------|
-| Suite 15 — GraphQL xAPI | xCatalog product/property queries |
+| Backend/graphql/050* — GraphQL xAPI | xCatalog product/property queries |
 | Suite 19 — Pricing | Price lists linked to catalog products |
 | Suite 22 — Inventory | Stock linked to catalog SKUs |
 | Suite 29 — CSV Import/Export | Catalog product data import |

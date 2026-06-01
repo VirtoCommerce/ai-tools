@@ -363,152 +363,30 @@ Coverage Check <-- Session Execution <-- New Charter Created
 
 ---
 
-## 10. VC-Specific Ready-to-Use Charters
+## 10. Ready-to-Use Charters
 
-These four charters are pre-built for common Virto Commerce exploratory scenarios. Agents can use them immediately without modification.
+VC-specific charter templates live in a dedicated file. The library covers 11 scenarios (Checkout Edge Cases, B2B Procurement, Admin Resilience, API Edge Cases, Feature Flag Lifecycle, Performance & Resource Stress, Accessibility Exploratory, i18n / Localization, Mobile Gesture-Specific, Search Relevance, Cache & State Drift). See [charter-library.md](charter-library.md).
 
-### Charter A: Checkout Edge Cases
+---
 
-```
-## Exploratory Session Charter
-- **Charter ID:** EXP-{YYYY-MM-DD}-CHK
-- **Type:** Edge-Case
-- **Mission:** Explore checkout flow boundary conditions and error recovery
-  to discover payment failures, calculation errors, and state corruption
-- **Focus Area:** Cart -> Shipping -> Payment -> Confirmation
-- **Heuristic:** CRISP (Reliability + Integrity focus)
-- **Tour:** Complexity
-- **Time Box:** 30 minutes
-- **Risk Level:** Critical (revenue path)
-- **Environment:** FRONT_URL from .env
-```
+## 11. Adversarial Heuristics — When CRISP/SFDPOT Aren't Enough
 
-**Test Ideas:**
-- Expired session mid-payment (let session timeout, then click "Pay")
-- Back button after payment submit (does it double-charge?)
-- Duplicate payment click (rapid double-click on submit)
-- Network timeout during payment processing (throttle to offline mid-request)
-- Address validation edge cases (PO Box, APO/FPO, very long address lines)
-- Coupon code at boundary (apply max discount, apply expired code, apply code twice)
-- Cart modification during checkout (open second tab, remove item, return to payment)
-- Zero-quantity line item (modify quantity to 0 via URL parameter or API)
+CRISP and SFDPOT (sections 3–4) are **quality-attribute** heuristics — they ask *"does it work well?"*. When you need to ask *"how do I break it?"*, three additional reference packs apply:
 
-### Charter B: B2B Procurement Workflow
+- [adversarial-heuristics.md](adversarial-heuristics.md) — Whittaker's 10 tours (Garbage Collector, Bad Neighborhood, Couch Potato, Antagonistic, Saboteur, Obsessive-Compulsive, Supermodel, Lonely Businessman, All-Nighter, Tourist), FAILURE mnemonic, Soap Opera Testing template + 2 VC examples, HICCUPPS-F oracles
+- [personas.md](personas.md) — Persona-driven exploration: 6 personas (Impatient Buyer, Screen-Reader User, Malicious User, Slow-Network User, B2B Procurement Officer, Session-Corrupted User) with mindset + starter test ideas
+- [modern-web-attack-surface.md](modern-web-attack-surface.md) — Browser-specific probes: DevTools-as-attack-tool, multi-tab state collisions, storage/cache drift, history/router races, browser-feature attack surface, network/performance probes
 
-```
-## Exploratory Session Charter
-- **Charter ID:** EXP-{YYYY-MM-DD}-B2B
-- **Type:** Workflow
-- **Mission:** Explore the B2B-specific procurement journey for workflow
-  integrity to discover approval chain breaks and role-based access issues
-- **Focus Area:** Catalog -> Quote Request -> Approval -> Order -> Fulfillment
-- **Heuristic:** SFDPOT (Function + Operations focus)
-- **Tour:** Scenario
-- **Time Box:** 30 minutes
-- **Risk Level:** High (core B2B differentiator)
-- **Environment:** FRONT_URL from .env
-```
+Use the **VC bug catalog** as a "Familiar Problems" oracle and to seed Bad Neighborhood Tours: [../../agents/knowledge/vc-bug-catalog.md](../../agents/knowledge/vc-bug-catalog.md).
 
-**Test Ideas:**
-- Multi-level approval chain (request quote as buyer, approve as manager, confirm as admin)
-- Rejected quote re-submission (reject, modify quantities, re-submit — does history persist?)
-- Partial fulfillment (fulfill 3 of 5 items — order status, inventory update, buyer notification)
-- Order modification after approval (can buyer change quantities post-approval?)
-- Role-based visibility (buyer sees own quotes only, manager sees team quotes, admin sees all)
-- Organization switching mid-flow (start quote in Org A, switch to Org B — cart state?)
-- Approval timeout (what happens if approver never acts?)
-- Concurrent approvals (two managers approve the same quote simultaneously)
+### Combining heuristic layers in a 30-minute session
 
-### Charter C: Admin Panel Resilience
+| Layer | Pick one from |
+|-------|----------------|
+| Charter | [charter-library.md](charter-library.md) (or write a custom one using § 2) |
+| Quality heuristic | CRISP or SFDPOT (§§ 3–4) |
+| Attack heuristic | One Whittaker tour + one FAILURE letter |
+| Persona | One persona from [personas.md](personas.md) (optional but recommended) |
+| Probes | 3–5 probes from [modern-web-attack-surface.md](modern-web-attack-surface.md) if relevant |
 
-```
-## Exploratory Session Charter
-- **Charter ID:** EXP-{YYYY-MM-DD}-ADM
-- **Type:** Risk
-- **Mission:** Explore Admin SPA under stress conditions and unusual inputs
-  to discover data corruption, UI crashes, and error handling gaps
-- **Focus Area:** Product management, order management, user management
-- **Heuristic:** CRISP (Security + Reliability focus)
-- **Tour:** Data
-- **Time Box:** 30 minutes
-- **Risk Level:** High (admin operations affect all customers)
-- **Environment:** BACK_URL from .env
-```
-
-**Test Ideas:**
-- Bulk operations with 100+ items (select all, bulk delete, bulk price change)
-- Concurrent admin edits (two browser tabs editing the same product simultaneously)
-- Very long field values (product name with 500 characters, description with 10,000 characters)
-- Special characters in all text fields (Unicode, angle brackets, SQL keywords, null bytes)
-- Rapid pagination (click next page repeatedly without waiting for load)
-- Filter combinations (apply 5+ filters simultaneously, then clear one at a time)
-- Export of large datasets (export 10,000 products to CSV — timeout? memory?)
-- Unsaved changes navigation (edit product, navigate away without saving — warning?)
-
-### Charter D: API Edge Cases
-
-```
-## Exploratory Session Charter
-- **Charter ID:** EXP-{YYYY-MM-DD}-API
-- **Type:** Edge-Case
-- **Mission:** Explore GraphQL xAPI and REST API boundary conditions
-  to discover input validation gaps, error handling issues, and data leaks
-- **Focus Area:** xCart, xCatalog, xOrder mutations and queries
-- **Heuristic:** SFDPOT (Data + Time focus)
-- **Tour:** Data
-- **Time Box:** 30 minutes
-- **Risk Level:** High (API serves all frontend clients)
-- **Environment:** FRONT_URL/graphql and BACK_URL/api
-```
-
-**Test Ideas:**
-- Malformed GraphQL queries (missing closing braces, invalid field names, syntax errors)
-- Missing required fields in mutations (submit addToCart without productId)
-- Extra unknown fields in requests (does API reject or silently ignore?)
-- Deeply nested queries (10+ levels of nested objects — performance? stack overflow?)
-- Pagination boundaries (page 0, page -1, page MAX_INT, pageSize 0, pageSize 10000)
-- Empty arrays in mutations (submit order with empty lineItems array)
-- Null values in required mutation fields (explicitly pass null for required fields)
-- Expired auth tokens (use token from 25 hours ago — error message? status code?)
-- Rate limiting behavior (send 100 requests in 1 second — does rate limit engage?)
-- Mixed valid/invalid items in batch operations (bulk add 5 products, 2 with invalid SKUs)
-
-### Charter E: Feature Flag Lifecycle
-
-```
-## Exploratory Session Charter
-- **Charter ID:** EXP-{YYYY-MM-DD}-FLAG
-- **Type:** Feature
-- **Mission:** Explore feature flags (store settings, module toggles, date-bounded promotions)
-  to discover state inconsistencies, boundary failures, and combination conflicts
-- **Focus Area:** Store settings, Admin feature toggles, Promotion/coupon validity windows
-- **Heuristic:** SFDPOT (Time + Operations focus), Feature Flags sub-dimension
-- **Tour:** Feature + Claims
-- **Time Box:** 30 minutes
-- **Risk Level:** High (flag misconfiguration silently disables revenue-critical features)
-- **Environment:** BACK_URL (Admin SPA) + FRONT_URL (Storefront)
-```
-
-**Test Ideas — On/Off State:**
-- Disable a storefront feature in Admin (e.g., "Coupons enabled") → verify storefront hides the section AND the API returns no data
-- Enable the same feature → verify it reappears without a page reload requirement
-- Toggle a flag mid-session: user is on the coupons page; admin disables coupons; user refreshes — what happens?
-- Disable a module-level flag for one store only; verify second store is unaffected
-- Check for cache effects: toggle flag, immediately navigate to storefront — stale data visible?
-
-**Test Ideas — Start Date / End Date Boundaries:**
-- Create a promotion with `start_date = T+1 day` → confirm it is NOT visible or applicable today
-- Set system clock (or use a dated coupon code) to exactly `T+0 00:00:00` → confirm activation at exact boundary
-- Set `end_date = today 23:59:59` → verify feature is active at 23:59:58 and inactive at 00:00:00 next day
-- Create a promotion with `start_date == end_date` (single-day window) → does it activate and expire correctly?
-- Create a promotion with `start_date > end_date` (inverted) → how does Admin validate it? How does storefront handle it?
-- Verify timezone interpretation: if Admin timezone is UTC+3 and server is UTC, confirm which clock controls activation
-- Apply a coupon code for a not-yet-started promotion → expected: "promo not yet active" error, not "invalid code"
-- Apply a coupon code one day after `end_date` → expected: "promo expired" error distinguishable from "invalid code"
-
-**Test Ideas — Flag Combinations:**
-- Two promotions active simultaneously, both applying to the same cart item — which discount wins?
-- A store-level "Promotions enabled = off" flag vs. an individual promotion that is "active" — which takes precedence?
-- B2B org-specific pricing flag off + storefront promotion flag on — what price does the cart show?
-- Disable a parent module flag (Marketing) — verify all child toggles (Coupons, Loyalty, Banners) are also inactive
-- A/B test flag for new checkout design + feature flag for new payment method — test all four combinations (both on, both off, A on/B off, A off/B on)
+Trying to use all layers at once dilutes focus. Pick a charter and one item from each remaining row.

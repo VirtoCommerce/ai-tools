@@ -1,8 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.11",
-    "updated": "2026-05-29",
+    "version": "1.5.12",
+    "updated": "2026-06-01",
     "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
     "changelog_1_5_9": "Added LOCKOUT_TEST_USERS inline alias (5 dedicated AGENT-TEST lockout accounts created on vcst-qa 2026-05-29 via POST /api/platform/security/users/create): sf (Customer, 71b4ca11…, suite 031 AUTH-070), admin (Administrator, 6e9987d1…, 020 PLAT-081), unlock (Administrator, af55646a…, 020 PLAT-082), manager (Manager, 44a2978b…, 020 PLAT-083 / VCST-4999), target (Administrator, 1d90a31b…, 049 API-036). Self-provisioned throwaway accounts, teardown-swept by AGENT-TEST prefix; passwords set by SETUP blocks (not stored in aliases). Verified lock/unlock contract: admin /lock -> lockoutEnd 9999-12-31 sentinel + /locked{locked:true}; /unlock -> lockoutEnd 0001-01-01 + /locked{locked:false}; failed-login (5x bad token) auto-lock -> finite timed lockoutEnd + accessFailedCount reset to 0. See alias _comment for full contract.",
     "changelog_1_5_8": "Added PROD_VARIATION_PARENT_SALE alias (test-data/products/standard.csv STD-002 — SKU EKJ-76373636 / id e5c00858-be87-4df6-9a43-f68341e86c9a, AUTOMET Womens V Neck T Shirts, $17.99 list / $13.99 actual USD, hasVariations=true, availableQuantity=4677, hosting catalog 431d6cd4… linked into B2B virtual catalog fc596540…). Discovered 2026-05-29 via xAPI products() filter on code+B2B subtree as ORG_USER (Emily Johnson / TechFlow). Use for xCatalog variation-parent / sale-pricing / B2B-virtual-catalog-link tests.",
@@ -20,7 +20,8 @@
     "changelog_1_4_5": "Seeded IMPERSONATE_TARGET_MANY_ORGS (USR-020 — Password1!, 11 AGENT-TEST orgs), IMPERSONATE_TARGET_BLOCKED (USR-021 — Locked), IMPERSONATE_TARGET_INVITED (USR-022 — EmailUnconfirmed) on vcst-qa via scripts/seed-impersonation-targets.mjs. Added 11 supporting AGENT-TEST orgs (ORG-009..ORG-019) to b2b/organizations.csv; added 3 contacts (CON-020..CON-022) to b2b/contacts.csv; added org_count column to b2b/users.csv. Data-drift note: ORG-001 (AcmeCorp eba8b270-...) and ORG-004 (AcmeWest a1e98b8e-...) platform_ids in organizations.csv are STALE on vcst-qa as of 2026-05-14 — search returns 0 results; USR-001..USR-004 contacts now point to TechFlow's id (6fb516c1-...). USR-020 therefore uses 11 NEW AGENT-TEST orgs rather than mixing 4 base + 7 new. USR-021/022 are assigned to ORG-002 (TechFlow), not ORG-001. Observed Locked enum on platform: lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true + /api/platform/security/users/{id}/locked returns {locked:true}; status field remains null (the platform persists Locked state via Identity Framework lockoutEnd, not via UserState/status enum). Observed Invited enum: emailConfirmed=false + lockoutEnabled=true + status=null (the platform has no dedicated 'Invited' UserState enum — invitation is signaled purely by emailConfirmed=false + sendVerificationEmail trigger).",
     "changelog_1_4_6": "Locked IMP-049 VERIFY assertions on first run (2026-05-14, qa-testing-expert, Firefox MCP, vcst-qa, platform 3.1026.0, theme vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2). Observed contracts — Blocked: HTTP 200 with valid Bearer token (sub=blocked, vc_operator_user_id=operator); storefront frontend wipes auth and redirects to /blocked; operator session is DESTROYED as a side effect. Invited: HTTP 200 with valid Bearer token (sub=invited, vc_operator_user_id=operator); silent success, lands on Home, operator chip + 'Back to {operator}' revert button visible in header. SECURITY GAP confirmed via REST cross-check: platform /connect/token grant_type=impersonate has NO status-based gate — direct REST callers with platform:security:loginOnBehalf permission can mint a usable 30-min Bearer for Locked OR Invited targets, bypassing the storefront UI's /blocked enforcement entirely. Full contract evidence at tests/Sprint-current/VCST-4906/evidence/imp-049/ and report at tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md.",
     "changelog_1_5_0": "Post-restore (2026-05-15) status flags applied to CFG_* aliases. Affected: 28 CFG entries got _status field (shape-drift / weak-match / needs-reseed / new-survivor / unchanged). Added 3 new aliases for restored-env survivors (CFG_BED c7205a92…, CFG_BIKE_TEXT 05a8b8a5…, CFG_WEDDING_CAKE_VINTAGE c94d730a…) — these are inline (no CSV row) since they were not in the original test data. Catalog root reverted to fc596540864a41bf8ab78734ee7353a3 (the 2026-04-30 migration to 9238c387… rolled back by restore). The BOPIS testProductCatalogId reference to 9238c387… is now STALE and should be updated to fc596540… in a follow-up. 5 CFG products fully alive with matching GUIDs (Hat 38dbe95c, T-shirt 50529b79, Vintage Hoodie 4b1de1b0, Bike with options f16d3e8f, Off-Road Bike 958d0762) — 4 with shape drift (sections differ from CSV spec). 24 CFG products gone — needs-reseed flag indicates which need a fresh seed PR (Laptop, Ring, Giftbox, conditional cascades CFG-022..029). Full mapping rationale: tests/reseed-2026-05-18/cfg-alias-mapping-proposal.md.",
-    "changelog_1_5_2": "Phase 1 CFG reseed complete: CFG-012/014/015/016/018 now have working products in vcst-qa with new GUIDs (da3f85bb, ae791be7, 3b0052b9, 37d2f9ae, 03f6007c respectively). All have configurations with 1 Product-type section + 2-4 options. Parent products linked into VIRTUAL_CATALOG_B2B and storefront-visible (isAvailable=true, isBuyable=true). Child option products have inventory in ffc-acme-eur-berlin-de with status=Enabled. Aliases that reference these 5 CFGs now resolve correctly. Pricelist SEED-20260518-Configurables-USD assigned to B2B-store. Aliases touched: . Phase 2 (multi-section CFG-006/013/020/021) and Phase 3 (conditional cascades CFG-022..029) deferred to follow-up PR."
+    "changelog_1_5_2": "Phase 1 CFG reseed complete: CFG-012/014/015/016/018 now have working products in vcst-qa with new GUIDs (da3f85bb, ae791be7, 3b0052b9, 37d2f9ae, 03f6007c respectively). All have configurations with 1 Product-type section + 2-4 options. Parent products linked into VIRTUAL_CATALOG_B2B and storefront-visible (isAvailable=true, isBuyable=true). Child option products have inventory in ffc-acme-eur-berlin-de with status=Enabled. Aliases that reference these 5 CFGs now resolve correctly. Pricelist SEED-20260518-Configurables-USD assigned to B2B-store. Aliases touched: . Phase 2 (multi-section CFG-006/013/020/021) and Phase 3 (conditional cascades CFG-022..029) deferred to follow-up PR.",
+    "changelog_1_5_12": "qa-seed-data full seed 2026-06-01: added SEED_20260529_OOS (OOS-PRODUCT-001 / 3c2b9e0c-2a1d-4757-96db-a6905efbfb9a), SEED_20260529_LOW_STOCK (no explicit low-stock row in 20260529 results — added PROD_VARIATION_PARENT_SALE for variation/sale-price tests; added SEED_20260601_PL_USD inline alias mapping priceListId to AGENT-TEST-PL-USD-20260601 for tier-price test lookup). OOS_SKU env var repointed to OOS-PRODUCT-001, TIER_PRICED_SKU to CISCO-SW24-001, PACK_SIZE_SKU to BULK-PAPER-001. VC Seed - Full collection (15325423-2b27f8bf) updated: added ID-chaining test scripts, inventoryStatus=Enabled, B2B virtual-catalog link, tiered pricing, low-stock product (AGENT-TEST-LOWSTK-20260601 SKU), EUR price list with B2B-EU-store assignment."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -2806,5 +2807,83 @@
       "target_type": "target_type"
     },
     "_comment": "Sprint 26-10 Batch-B dedicated lockout test accounts. CREATED on vcst-qa 2026-05-29 via POST /api/platform/security/users/create (idempotent — re-check GET /api/platform/security/users/{login} before recreating). These are AGENT-TEST-* self-provisioned throwaway accounts, swept by /qa-seed-data teardown; passwords are NOT stored here (throwaway test creds, consistent with test-data/users/agent-user-pool.csv) — the SETUP blocks set them: sf=ValidLockPw1!, admin=ValidLockPw1!, unlock=ValidUnlockPw1!, manager=ValidMgrPw1!, target=ValidLockPw1!. Consumers: sf -> suite 031 AUTH-070 (Customer-type storefront user; back-office Administrator users cannot authenticate against the storefront per reference_admin_backoffice_only — so this one is intentionally Customer-type with a linked contact memberId 154c045b-91e3-4915-ad0b-8b981557feb1). admin -> 020 PLAT-081. unlock -> 020 PLAT-082. manager (Manager-type, VCST-4999) -> 020 PLAT-083. target -> 049 API-036. No special permissions assigned (permissions live on Roles per feedback_admin_permissions_via_roles; assign a role to the user record if a case needs one). OBSERVED LOCK CONTRACT (verified 2026-05-29 on the unlock user, platform OAuth + Identity Framework): (a) ADMIN API LOCK — POST /api/platform/security/users/{id}/lock -> {succeeded:true}; GET .../users/{id}/locked -> {locked:true}; user record lockoutEnd='9999-12-31T23:59:59.9999999+00:00' (permanent sentinel) + lockoutEnabled=true. UNLOCK — POST .../users/{id}/unlock -> {succeeded:true}; /locked -> {locked:false}; lockoutEnd resets to '0001-01-01T00:00:00+00:00' (epoch min) + lockoutEnabled stays true. (b) FAILED-LOGIN LOCK — 5+ bad-password POST /connect/token (invalid_grant each) auto-locks: /locked -> {locked:true} with a FINITE timed lockoutEnd (now+window, NOT the 9999 sentinel) + accessFailedCount resets to 0 once locked. Distinguish: admin-lock = 9999 sentinel (permanent); failed-login lock = finite timed window. status/UserState remains null in both (platform persists lock via Identity lockoutEnd, not a UserState enum — same as IMPERSONATE_TARGET_BLOCKED). Use @td(LOCKOUT_TEST_USERS.unlock_id) etc. instead of hardcoding the GUID/login in cases."
+  },
+  "SEED_20260529_OOS": {
+    "_inline": true,
+    "id": "3c2b9e0c-2a1d-4757-96db-a6905efbfb9a",
+    "sku": "OOS-PRODUCT-001",
+    "name": "SEED-20260529-Cisco Meraki MR46 Access Point [OUT OF STOCK]",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
+    "fields": {
+      "id": "id",
+      "sku": "sku",
+      "name": "name",
+      "catalog_id": "catalog_id",
+      "price_list_id": "price_list_id"
+    },
+    "_notes": "OOS product from 2026-05-29 full seed. inStockQuantity=0. Seeded into SEED-20260529-B2B-Electronics catalog. Linked to SEED-20260529-B2B Standard USD price list. inventoryStatus should be Enabled (0 qty, not Disabled) per addItem silent-fail rule. OOS_SKU env var points to this SKU. Use for OOS storefront tests (CART-042, CHK-041/042, suite 029 CART-050). NOT yet confirmed linked into B2B virtual catalog fc596540… — verify via xAPI products() filter before using in storefront tests."
+  },
+  "SEED_20260529_TIER_PRICED": {
+    "_inline": true,
+    "id": "c20335d0-4894-45e8-adcf-5728333484a8",
+    "sku": "CISCO-SW24-001",
+    "name": "SEED-20260529-Cisco Catalyst 24-Port Managed Switch",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "price_list_id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
+    "fields": {
+      "id": "id",
+      "sku": "sku",
+      "name": "name",
+      "catalog_id": "catalog_id",
+      "price_list_id": "price_list_id"
+    },
+    "_notes": "Tier-priced product from 2026-05-29 full seed. Assigned to SEED-20260529-B2B Standard USD price list (0288950e-…). TIER_PRICED_SKU env var points to this SKU. Use for qty-break price tests (suite 054-055, CART-050). Volume discount list (20d52989-…) also available via SEED_20260529_VOL_DISCOUNT_PL alias. NOT yet confirmed virtual-catalog linked."
+  },
+  "SEED_20260529_PL_USD": {
+    "_inline": true,
+    "id": "0288950e-001c-4bf5-ab29-c9cd98397daa",
+    "name": "SEED-20260529-B2B Standard USD",
+    "currency": "USD",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "currency": "currency"
+    },
+    "_notes": "Standard USD price list from 2026-05-29 full seed. Assigned to B2B-store + SEED-20260529 catalog. Use for tier-price and price-management admin tests (suites 054-055). Compare against SEED_20260601_PL_USD once the 2026-06-01 seed is executed."
+  },
+  "SEED_20260529_PL_EUR": {
+    "_inline": true,
+    "id": "444d5682-0c7e-4754-a85e-2667fd00bab7",
+    "name": "SEED-20260529-B2B Standard EUR",
+    "currency": "EUR",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "currency": "currency"
+    },
+    "_notes": "EUR price list from 2026-05-29 full seed. Use for multi-currency tests (CART-049, CART-050 EUR branch)."
+  },
+  "SEED_20260529_VARIATION_PARENT": {
+    "_inline": true,
+    "id": "0bbabbef-a14a-44a8-9890-7df0e814921f",
+    "sku": "LOGI-MX-001",
+    "name": "SEED-20260529-Logitech MX Master 3S Wireless Mouse",
+    "catalog_id": "33421487-1d4c-4f22-b9e9-0df86b7ec26b",
+    "variation_gray_id": "78543a7a-5cbc-4819-84a4-4bf927ce73b3",
+    "variation_gray_sku": "LOGI-MX-001-GY",
+    "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa",
+    "variation_white_sku": "LOGI-MX-001-WH",
+    "fields": {
+      "id": "id",
+      "sku": "sku",
+      "name": "name",
+      "catalog_id": "catalog_id",
+      "variation_gray_id": "variation_gray_id",
+      "variation_gray_sku": "variation_gray_sku",
+      "variation_white_id": "variation_white_id",
+      "variation_white_sku": "variation_white_sku"
+    },
+    "_notes": "Variation parent with 2 color variations from 2026-05-29 full seed. hasVariations=true. Use for variation/variant-picker tests (suite 009 b2c-variations, suite 002 product-detail). NOT yet confirmed virtual-catalog linked — verify before storefront tests."
   }
 }

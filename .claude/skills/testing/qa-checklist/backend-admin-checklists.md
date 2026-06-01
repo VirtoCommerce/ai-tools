@@ -4,7 +4,7 @@
 >
 > For storefront-facing checklists, see `domain-checklists.md`.
 
-**27 Admin domains + 2 API domains | 255 checklist items** — every checked item should map to at least one test case.
+**27 Admin domains + 2 API domains | 244 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 

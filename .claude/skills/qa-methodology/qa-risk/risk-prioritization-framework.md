@@ -249,7 +249,7 @@ Events that require re-running the risk assessment for affected modules.
 | Less than 1 hour | Emergency smoke | Suite 01 only (12 P0 tests): login, search, cart, checkout, payment | All other suites, exploratory, cross-browser, admin |
 | 1-4 hours | Critical path sweep | Suite 01 + suites for changed modules (P0 and P1 cases only) + 1 quick exploratory pass on highest-risk area | P2 and P3 cases, cross-browser, full admin regression |
 | 4-8 hours | Sprint regression | All sprint-scope suites (26 suites, P0 and P1 cases) + 1 exploratory session on top 3 risk items + primary browser | Full cross-browser matrix, P3 cases, performance testing |
-| Full day or more | Comprehensive | All 36 suites (all priority levels) + 2 exploratory sessions + cross-browser (Chrome, Firefox, Edge) + performance spot checks | Nothing skipped — full coverage target |
+| Full day or more | Comprehensive | All 99 suites (all priority levels) + 2 exploratory sessions + cross-browser (Chrome, Firefox, Edge) + performance spot checks | Nothing skipped — full coverage target |
 
 ### When Time Is Insufficient for Risk Level
 

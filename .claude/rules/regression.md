@@ -42,7 +42,7 @@ Central configuration for regression orchestration. Defines:
 
 ## Regression Test Suites
 
-99 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~5,951 test cases**.
+99 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,756 test cases**.
 
 ### Frontend Suites (40 suites, user-facing features & flows)
 

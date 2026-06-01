@@ -36,15 +36,15 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Console errors and network traces
    - HAR file if request-level debugging needed
 
-5. **Identify root cause** by pattern-matching against known VC patterns:
-   - P1: Cache stale after admin change
-   - P2: GraphQL partial error (200 with errors array)
-   - P3: Search index lag
-   - P4: Payment gateway timeout
-   - P5: Multi-store config bleed
-   - P6: Dynamic property missing
-   - P7: Permission/role mismatch
-   - P8: Background job stuck
+5. **Identify root cause** by pattern-matching against the known VC patterns in `bug-investigation-flow.md` §7:
+   - P1: Module version incompatibility
+   - P2: Stale Elasticsearch index
+   - P3: Authorization scope — orphaned organization
+   - P4: SDK/integration serialization
+   - P5: Pre-authentication API call
+   - P6: External resource URL assumption
+   - P7: Duplicate GraphQL queries
+   - P8: Hangfire job failure
 
 6. **Document and hand off:**
    - Write bug report using templates in `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`

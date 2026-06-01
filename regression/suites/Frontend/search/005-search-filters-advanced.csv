@@ -283,24 +283,24 @@ Chrome DevTools viewport emulation at 375px width","url={{FRONT_URL}}","[NAV] Se
 [DOM] Grid adapts to 1-2 column layout (not 3+ columns squished)
 [DOM] Sort dropdown and filter controls accessible without horizontal scrolling
 [DOM] Touch target sizes meet minimum 44x44px","[CONSOLE] no TypeError or JS errors","Heading cut off at 375px; grid not adapting to mobile columns; horizontal scroll required; touch targets smaller than 44x44px; console TypeError","none",,"Manual"
-"SRCH-NEW-033","Search - GA4 search Event Fires on Query Submission","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-DevTools Console open; GTM or GA4 configured on storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
-[ACT] Open DevTools Console tab
-[ASSERT] Run window.dataLayer in console to confirm dataLayer exists
+"SRCH-NEW-033","Search - GA4 search Event Fires on Search-Bar Submission","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+GA4 configured on storefront (production build — events fire; they do NOT fire in dev). The 'search' event is tied to the search-BOX interaction; it does NOT fire on a direct /search?q= URL load.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
+[ASSERT] Read window.dataLayer and confirm it exists
 [ACT] fill 'Search': 'hoodie'
 [KEY] press [Enter]
-[WAIT] Wait for results page
-[ASSERT] Check dataLayer in console for search event","[STATE] dataLayer array exists and is accessible
-[STATE] A 'search' event entry found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'search' and search_term: 'hoodie'
+[WAIT] Wait for the results page to render, then allow ~2-3s for the GA4 push to settle
+[ASSERT] Read window.dataLayer and locate the gtag 'search' event","[STATE] window.dataLayer exists and is accessible
+[STATE] dataLayer entries are gtag arguments-objects (entry['0']==='event', entry['1']===<event name>, entry['2']===params) — NOT {event:'...'} objects
+[STATE] A 'search' event entry is present (entry['1']==='search') whose params (entry['2']) include search_term==='hoodie' (items_count and visible_items are also present; items_count may be 0 on the first push as it fires before results settle — do not fail on that)","[CONSOLE] gtag('event','search',{search_term:'hoodie',...}) pushed to dataLayer
 [CONSOLE] no GA4 or GTM errors
-[CONSOLE] no TypeError or JS errors","No dataLayer push on search submission; search event missing search_term; GTM error in console; console TypeError","none","E2E-GA-004","Manual"
+[CONSOLE] no TypeError or JS errors","No 'search' gtag event after search-bar submission; event missing search_term; console TypeError","none","E2E-GA-004; vc-frontend google-analytics/events.ts (search)","Manual"
 "SRCH-NEW-034","Search - GA4 view_search_results Event on Results Page","Search > Analytics","Medium","BL-SRCH-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-DevTools Console open; GA4 configured on storefront","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
-[WAIT] Wait for results page to fully load
-[ASSERT] Open DevTools Console
-[ASSERT] Check dataLayer for view_search_results event","[STATE] A 'view_search_results' event found in dataLayer with search_term: 'hoodie'","[CONSOLE] dataLayer.push called with event: 'view_search_results' and search_term: 'hoodie'
+GA4 configured on storefront (production build). view_search_results fires on both search-bar submit and a direct /search?q= URL load, after results load.","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for the results page to fully load, then allow ~3s for the GA4 push to settle
+[ASSERT] Read window.dataLayer and locate the gtag 'view_search_results' event","[STATE] dataLayer entries are gtag arguments-objects (entry['0']==='event', entry['1']===name, entry['2']===params)
+[STATE] A 'view_search_results' event entry is present (entry['1']==='view_search_results') whose params (entry['2']) include search_term==='hoodie', a numeric results_count, and a numeric results_page (it carries results_count/results_page and visible_items — NOT items_count)","[CONSOLE] gtag('event','view_search_results',{search_term:'hoodie',results_count,results_page,...}) pushed to dataLayer
 [CONSOLE] no GA4 or GTM errors
-[CONSOLE] no TypeError or JS errors","No view_search_results event in dataLayer; event missing search_term param; GTM error; console TypeError","none","E2E-GA-004","Manual"
+[CONSOLE] no TypeError or JS errors","No view_search_results gtag event after results load; event missing search_term; asserting items_count instead of results_count; console TypeError","none","E2E-GA-004; vc-frontend google-analytics/events.ts (viewSearchResults)","Manual"
 "SRCH-NEW-035","Buyer Journey - Autocomplete to PDP to Cart (Real-World Buy Flow)","Search > Buyer Journey > Search-to-Cart","Critical","BL-SRCH-001, BL-SRCH-002, BL-CAT-006",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User authenticated; cart at a known starting count (capture the live value before the add for defensive math); product-preview-in-dropdown is ENABLED (mini-run verified 2026-05-22; Did-you-mean OFF is fine — this case uses product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv with query_type=broad-noun rows that return >=1 result","url={{FRONT_URL}}; email=@td(USER_DEFAULT.email); password=@td(USER_DEFAULT.password); query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Log in and navigate to {{FRONT_URL}}
