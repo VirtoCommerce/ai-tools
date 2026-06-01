@@ -13,7 +13,7 @@ Review test cases against quality criteria to catch issues before regression run
 /qa-review-tests suite 015              # Review a specific suite by ID (static analysis)
 /qa-review-tests file regression/suites/Frontend/orders/015-quotes.csv
 /qa-review-tests diff                   # Review only git-changed test cases
-/qa-review-tests all                    # Review all 36 suites (summary mode)
+/qa-review-tests all                    # Review all 99 suites (summary mode)
 /qa-review-tests domain checkout        # Review all suites touching a domain
 /qa-review-tests suite 015 --fix        # Review + auto-fix issues (asks before writing)
 /qa-review-tests suite 015 --verify     # Static review + live environment verification via qa-testing-expert
@@ -58,7 +58,7 @@ Read these files to inform the review:
 | `suite NN` | Read `config/test-suites.json` → find suite → read its CSV file |
 | `file <path>` | Read the CSV file directly |
 | `diff` | Run `git diff --name-only` → filter for `regression/suites/**/*.csv` → review only changed/added rows |
-| `all` | Read all 36 suite CSVs → produce summary-level review (top issues per suite, not line-by-line) |
+| `all` | Read all 99 suite CSVs → produce summary-level review (top issues per suite, not line-by-line) |
 | `domain <name>` | Map domain to suites via `config/test-suites.json` tags → review those suites |
 
 ### Step 2: Parse & Validate Structure (Dimension 1)

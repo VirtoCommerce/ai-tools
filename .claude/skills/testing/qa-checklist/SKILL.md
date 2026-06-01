@@ -1,5 +1,5 @@
 ---
-description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 62 built-in domain checklists (32 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
+description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 63 built-in domain checklists (33 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
 argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
 disable-model-invocation: true
 
@@ -23,9 +23,9 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 
 ## Supporting Files
 
-- **domain-checklists.md** — 32 storefront domain checklists with 407 items (the source of truth for storefront UI domains).
-- **backend-admin-checklists.md** — 27 Admin module checklists + 2 API checklists with 255 items, aligned with Bundle v14.0.8 (53 modules). Source of truth for Admin SPA and Platform API/xAPI domains.
-- **graphql-checklist.md** — GraphQL xAPI checklist with 34 items covering all xAPI modules (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote) + per-change verification template.
+- **domain-checklists.md** — 33 storefront domain checklists with 411 items (the source of truth for storefront UI domains).
+- **backend-admin-checklists.md** — 27 Admin module checklists + 2 API checklists with 244 items, aligned with Bundle v14.0.8 (53 modules). Source of truth for Admin SPA and Platform API/xAPI domains.
+- **graphql-checklist.md** — GraphQL xAPI checklist with 83 items covering all xAPI modules (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote) + per-change verification template.
 - **checklist-creation-guide.md** — Methodology for creating new checklists: structure rules, quality criteria, VC-specific patterns, cross-layer verification, and examples.
 
 ## Cross-Skill References (consult when items derive test cases)
@@ -123,13 +123,13 @@ Aligned with **Bundle v14.0.8** (Platform 3.1007.2, 53 modules).
 
 Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishlists & Saved (2), xOrder (2), xProfile (6), xQuote (2), xCMS & xFrontend (2), Cross-Cutting (3), New Query/Mutation Verification (8).
 
-**Total: 696 checklist items across 62 domains + 1 cross-domain checklist (storefront: 407 + admin: 255 + GraphQL detail: 34).**
+**Total: 738 checklist items across 63 domains + 1 cross-domain checklist (storefront: 411 + admin: 244 + GraphQL detail: 83).**
 
 ## Execution
 
 ### Mode 1: Retrieve Existing Checklist
 
-1. Match the user's argument to one of the 67 domains:
+1. Match the user's argument to one of the 63 domains:
    - Storefront domains: fuzzy match ("payment" → #9, "cart" → #8, "variations" → #14, "pickup" → #19, "pdp" → #15)
    - Admin domains: `admin <module>` prefix routes to `backend-admin-checklists.md` ("admin catalog" → A1, "admin pricing" → A2, "admin orders" → A4)
    - GraphQL: "graphql" / "xapi" → `graphql-checklist.md` for detailed query/mutation checklist, or API2 for high-level xAPI coverage
@@ -205,5 +205,5 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 | `/qa-test-design` | Checklist items can be expanded using EP, BVA, decision tables |
 | `/qa-risk` | High-risk domains get more granular checklist items |
 | `/qa-sbtm` | Checklists serve as starting point for exploratory session charters |
-| `/qa-api` | GraphQL checklist (#23) aligns with xAPI test execution and case generation |
+| `/qa-api` | GraphQL xAPI checklist aligns with xAPI test execution and case generation |
 | `agents/knowledge/sitemap.md` | Sitemap provides URLs and product types for UI exploration |

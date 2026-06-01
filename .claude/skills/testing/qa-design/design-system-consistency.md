@@ -132,7 +132,7 @@ Coffee uses a consistent icon library (likely from vc-frontend). Audit:
 
 A single design-system audit produces 0–N findings. Decision tree for what to file:
 
-1. **One component, one violation** → file individual bug via [/qa-bug](../../qa-methodology/qa-bug/SKILL.md) tagged with the violated `BL-UI-NNN`.
+1. **One component, one violation** → file individual bug via [/qa-bug](../../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN`.
 2. **One component, multiple violations** → file ONE bug per component listing all violations (don't fragment).
 3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference [BL-UI-002](../../../agents/knowledge/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) or whichever invariant.
 4. **Token itself is wrong** (e.g. theme switch broke `--color-primary` resolution) → P1 bug, the design system is broken, not the components.

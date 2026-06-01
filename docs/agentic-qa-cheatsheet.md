@@ -33,7 +33,7 @@
 | `/qa-accessibility` | WCAG 2.1 AA accessibility audit | ui-ux-expert |
 | `/qa-design` | Design system consistency, UX heuristics | ui-ux-expert |
 | `/qa-plan` | Test plans from E2E scenario catalog (105 scenarios) | test-management-specialist |
-| `/qa-checklist` | Domain checklists (18 domains, 158 items) | test-management-specialist |
+| `/qa-checklist` | Domain checklists (63 domains, 738 items) | test-management-specialist |
 | `/qa-api` | REST API & GraphQL xAPI testing | qa-backend-expert |
 | `/qa-coverage-gap` | Autonomous coverage gap analysis and test generation | test-management-specialist |
 | `/qa-seed-data` | Generate test data via Postman MCP | qa-backend-expert |
@@ -84,10 +84,10 @@
 # Test a specific JIRA ticket
 /qa-test VCST-1234
 
-# Sprint regression (26 suites, parallel batches of 3)
+# Sprint regression (plan-driven, parallel batches of 3)
 /qa-regression sprint
 
-# Full release regression (all 36 suites, ~$80 budget)
+# Full release regression (all 99 suites, ~$80 budget)
 /qa-regression full
 
 # Custom suite selection
@@ -119,11 +119,11 @@
 | Selection | Command | Suites | Use Case |
 |-----------|---------|--------|----------|
 | smoke | `/qa-regression smoke` | 01 | Daily pre-deploy |
-| critical | `/qa-regression critical` | 01, 06, 08, 14 | P0 gate |
-| sprint | `/qa-regression sprint` | 26 suites | Sprint release |
+| critical | `/qa-regression critical` | 042, 039, 044, 049 | P0 gate |
+| sprint | `/qa-regression sprint` | plan-driven | Sprint release |
 | full | `/qa-regression full` | All 36 | Production release |
-| frontend | `/qa-regression frontend` | 01-13, 35-36 | Frontend only |
-| backend | `/qa-regression backend` | 14-34 | Backend only |
+| frontend | `/qa-regression frontend` | All Frontend/ suites | Frontend only |
+| backend | `/qa-regression backend` | All Backend/ suites | Backend only |
 | custom | `/qa-regression 01,04,06` | Specified IDs | Ad hoc |
 
 ---
@@ -202,9 +202,9 @@
 | `npm install` | Install dependencies |
 | `npm run env:check` | Validate all 33 required environment variables |
 | `npm run ci:smoke` | CI regression: suite 01 only ($5 budget) |
-| `npm run ci:critical` | CI regression: P0 suites 01, 06, 08, 14 |
-| `npm run ci:frontend` | CI regression: all frontend suites (01-13, 35-36) |
-| `npm run ci:backend` | CI regression: all backend suites (14-34) |
-| `npm run ci:full` | CI regression: all 36 suites ($80 budget) |
+| `npm run ci:critical` | CI regression: P0 suites 042, 039, 044, 049 |
+| `npm run ci:frontend` | CI regression: all Frontend/ suites |
+| `npm run ci:backend` | CI regression: all Backend/ suites |
+| `npm run ci:full` | CI regression: all 99 suites ($80 budget) |
 | `npm run ci:regression` | CI regression: custom via `SUITE_SELECTION` env var |
 | `npm run ci:notify` | Send Teams notification (requires `TEAMS_WEBHOOK_URL`) |

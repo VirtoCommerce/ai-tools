@@ -22,7 +22,7 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 13 domains, 76 rules.
+> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 17 domains, 108 rules.
 
 When a test result is ambiguous, check business-logic.md before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 

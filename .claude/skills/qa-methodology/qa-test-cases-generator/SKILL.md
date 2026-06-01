@@ -50,7 +50,7 @@ Read `test-case-template.md` from this skill folder. This defines all 15 CSV col
 |----------|--------|--------|
 | `VCST-XXXX` | JIRA ticket | Fetch via Atlassian MCP → extract AC, scope, affected modules |
 | `domain` | Domain name | Match to domain checklist (`/qa-checklist`) → derive cases from items |
-| `suite NN` | Existing suite | Read `regression/suites/{Frontend\|Backend}/NN-*.csv` → identify gaps → generate new cases |
+| `suite NNN` | Existing suite | Read `regression/suites/{Frontend\|Backend}/<module>/NNN-*.csv` (module-subdir layout) → identify gaps → generate new cases |
 | `migrate NN` | Legacy suite | Read legacy CSV → transform each row to enriched format |
 | `from-checklist domain` | Checklist | Read domain checklist → generate 1 case per item (add a second only if the item has a distinct boundary or negative dimension with a concrete bug hypothesis) |
 | `from-bdd "Given..."` | BDD scenario | Parse Given/When/Then → map to Steps/Assertions/Preconditions |
@@ -80,7 +80,7 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 
 ### Step 2: Gather Context
 
-1. **Identify affected domain(s)** — map input to one or more of the 18 domains in `/qa-checklist`
+1. **Identify affected domain(s)** — map input to one or more of the 63 domains in `/qa-checklist`
 2. **Load business rules** — read `business-logic.md`, find all `BL-*` invariants relevant to the domain
 3. **Load edge cases** — read `e-commerce-edge-cases-library.md`, find all `ECL-*` patterns for the domain
 4. **Check existing coverage** — read the target suite CSV (if it exists) to avoid duplicating existing test cases
@@ -289,10 +289,10 @@ Generated test cases route to the correct executing agent by layer:
 
 | Layer | Execute With | Browser | Suite Target |
 |-------|-------------|---------|-------------|
-| REST API | `qa-backend-expert` | `playwright-edge` or Postman MCP | Suite 14 (`Backend/14-*.csv`) |
-| GraphQL xAPI | `qa-backend-expert` | `playwright-edge` or Postman MCP | Suite 15 (`Backend/15-*.csv`) |
-| Admin UI | `qa-backend-expert` | `playwright-edge` or Chrome DevTools | Suite 16-34 (by module) |
-| Storefront UI | `qa-frontend-expert` | `playwright-chrome` | Suite 01-13 (by area) |
+| REST API | `qa-backend-expert` | `playwright-edge` or Postman MCP | `Backend/api/049-*.csv` |
+| GraphQL xAPI | `qa-backend-expert` | `playwright-edge` or Postman MCP | `Backend/graphql/050*.csv` |
+| Admin UI | `qa-backend-expert` | `playwright-edge` or Chrome DevTools | `Backend/<module>/*.csv` (by module) |
+| Storefront UI | `qa-frontend-expert` | `playwright-chrome` | `Frontend/<area>/*.csv` (by area) |
 | E2E Cross-Layer | `qa-frontend-expert` + `qa-backend-expert` | coordinated | Suite 00 or feature suite |
 | Storybook/A11y | `ui-ux-expert` | Chrome DevTools | Separate |
 

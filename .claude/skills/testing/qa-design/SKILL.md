@@ -26,7 +26,7 @@ Before any design audit, the agent must already be aware of:
 - [`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) — the helper that wraps every required measurement: CLS observer, spacing audit, alignment audit, overflow audit, touch-target audit, rect snapshot for shift detection, **occlusion audit (BL-UI-007)**, **contrast audit (BL-UI-008)**, **focus-indicator audit (BL-UI-009)**, **image aspect-ratio audit (BL-UI-010)**, plus classifiers.
 - [`048b-layout-stability.csv`](../../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv) — the 18-case suite that drives BL-UI-001..006 against live storefront. Run via `SUITE_SELECTION=layout-stability npm run ci:regression`.
 - [storefront-config-flags.md](../../../agents/knowledge/storefront-config-flags.md) — active theme preset + flags affecting which tokens render.
-- [`tests/Sprint-current/proposed-invariants/README.md`](../../../../tests/Sprint-current/proposed-invariants/README.md) — proposed BL-UI-007..010 + BL-UI-001 refinement; snippets are shipped, rules await user approval. Audit *with* them; cite them as `PROPOSED-BL-UI-NNN` until promoted.
+- **Proposed BL-UI-007..010** (occlusion, contrast, focus-indicator, image aspect-ratio) + a BL-UI-001 refinement are implemented as audits in [`measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) but are **not yet promoted** into `business-logic.md` Domain 15 (which currently defines only BL-UI-001..006). Audit *with* them; cite them as `PROPOSED-BL-UI-NNN` until promoted.
 
 ## Supporting Files
 
@@ -120,7 +120,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 | Pattern | What to file |
 |---------|--------------|
-| One component, one violation | Individual bug via [/qa-bug](../../qa-methodology/qa-bug/SKILL.md) tagged with the violated `BL-UI-NNN` |
+| One component, one violation | Individual bug via [/qa-bug](../../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN` |
 | One component, multiple violations | ONE bug per component listing all violations — don't fragment |
 | Multiple components share the same violation (5+ components with off-token color, etc.) | ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Priority bumped to P1 |
 | Token resolution itself is broken | P1 bug — the design system layer is broken, not the components |
@@ -131,7 +131,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 ## Rules
 
 - **Read live tokens, never hardcode** — Coffee is multi-preset (6 light + 3 dark variants); a token's resolved value varies per preset. Hardcoded hex values in this skill or in audits will be wrong half the time.
-- **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants, cite as `PROPOSED-BL-UI-NNN` so reviewers know to consult `tests/Sprint-current/proposed-invariants/`.
+- **Cite the BL / WCAG / ECL ID** for every finding where one applies. Findings without citations decay into vague design debate. For proposed-but-not-promoted invariants (BL-UI-007..010), cite as `PROPOSED-BL-UI-NNN`; their audit logic lives in `scripts/lib/measure-layout.ts` until promoted into `business-logic.md` Domain 15.
 - **Audit at multiple viewports** — 375 / 768 / 1280 minimum; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
 - **Always run the Visual-Review Screenshot Pass** before exiting — invariant snippets are necessary but not sufficient.
