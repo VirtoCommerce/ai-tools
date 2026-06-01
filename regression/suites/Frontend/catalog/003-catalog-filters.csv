@@ -36,29 +36,32 @@ Filters applied to a category page","url={{FRONT_URL}}","[NAV] Navigate to any c
 [DOM] Filter sidebar UI reset — no values selected
 [STATE] URL cleaned of filter parameters","[NETWORK] no 4xx/5xx on reset request
 [CONSOLE] no TypeError or JS errors","Reset button not visible; filters remain after reset; products not restored; URL still contains filter params; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-008","Category - Pagination","Catalog > Pagination","Medium","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Category with 20+ products","url={{FRONT_URL}}","[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
-[SCROLL] Scroll to pagination controls
-[ASSERT] Verify pagination controls are visible
-[ACT] Click page 2
-[WAIT] Wait for new products to load
-[ASSERT] Verify new product set is displayed
-[ACT] Click Previous button
-[WAIT] Wait for page 1 to reload
-[ASSERT] Verify return to first page products","[DOM] Pagination controls visible at bottom of product list
-[DOM] Page 2 shows different products from page 1
-[DOM] Previous button returns to page 1 product set
-[MATH] Total product count consistent across pages","[NETWORK] no 4xx/5xx on pagination request
-[CONSOLE] no TypeError or JS errors","Pagination controls not rendering; same products on page 2; Previous not navigating back; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-009","Category - Products Per Page","Catalog > Pagination","Low","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"CAT-008","Category - Infinite Scroll Loads More Products","Catalog > Pagination","Medium","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Category with 20+ products. Storefront catalog pagination mode is infinite_scroll on vcst-qa (load_more is the alternative theme-configurable mode).","url={{FRONT_URL}}","[NAV] Navigate to a category page with 20+ products on {{FRONT_URL}}
+[WAIT] Wait for the initial product grid to render
+[ACT] Note the initial visible product-card count
+[SCROLL] Scroll to the bottom of the product list
+[WAIT] Wait for the next batch of products to auto-load
+[ASSERT] Verify more product cards were appended (visible count increased)
+[SCROLL] Scroll to the bottom again
+[WAIT] Wait for the next batch to auto-load
+[ASSERT] Verify additional product cards were appended again","[STATE] Scrolling to the bottom auto-appends the next page of products (visible count grows by roughly one page size each scroll)
+[DOM] No numbered pagination, no Prev/Next buttons, and no 'Load more' button on the listing (vcst-qa pagination mode = infinite_scroll)
+[STATE] The URL does NOT gain a ?page= query parameter while scrolling
+[MATH] Appended products are distinct — no duplicates of already-shown items","[NETWORK] next-page catalog/search request fires on scroll and returns 200
+[CONSOLE] no TypeError or JS errors","Scrolling does not load more products; numbered pagination / Prev-Next / 'Load more' controls appear (would indicate a different mode than infinite_scroll); duplicate products appended; console TypeError","none","regression-qa-theme-26.csv; VCST-2799 (catalog Load More mode)","Automated"
+"CAT-009","Category - View Mode Toggle & No Per-Page Selector","Catalog > Listing Toolbar","Low","BL-CAT-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category with many products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
-[ASSERT] Locate 'per page' or items-per-page dropdown
-[ACT] Change 'per page' value (select any value different from the current one)
-[WAIT] Wait for product list to update
-[ASSERT] Verify product count matches selected value","[DOM] Per-page selector visible with multiple options
-[MATH] Visible product card count matches selected per-page value
-[STATE] URL or state updates to reflect new per-page setting","[NETWORK] no 4xx/5xx on per-page change request
-[CONSOLE] no TypeError or JS errors","Per-page selector not rendering; product count unchanged after change; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[WAIT] Wait for the product grid and listing toolbar to render
+[ASSERT] Verify the toolbar has NO items-per-page / 'per page' selector (by design — page size is fixed and paging is infinite scroll)
+[ASSERT] Verify the toolbar DOES expose a Sort-by dropdown and a Grid/List view toggle
+[ACT] Click the view-mode toggle (e.g. 'Switch to list view')
+[WAIT] Wait for the layout to re-render
+[ASSERT] Verify the product layout switched (grid <-> list)","[STATE] No items-per-page selector exists in the listing toolbar (by design)
+[DOM] Sort-by dropdown (combobox) is present in the toolbar
+[DOM] Grid/List view toggle is present and switches the product card layout when clicked
+[STATE] Switching view mode does not reload the page or lose loaded products","[NETWORK] no 4xx/5xx on view-mode change
+[CONSOLE] no TypeError or JS errors","A per-page selector is expected but the storefront has none (test-vs-design mismatch — absence is correct); view-mode toggle missing or does not change layout; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-014","Filter Chips - Facet Filter Chip Display","Catalog > Filters > Chips","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Category with faceted products","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ASSERT] Verify facet panel is visible

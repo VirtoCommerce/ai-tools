@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-05-21T10:58:30.050Z
+**Validated at:** 2026-06-01T09:20:24.691Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 67 fixtures — 65 passed, 2 failed
+**Total:** 67 fixtures — 66 passed, 1 failed
 
-## ❌ Failed Fixtures (2)
+## ❌ Failed Fixtures (1)
 
 ### products (query)
 
@@ -15,15 +15,7 @@
   - `DV-008`: Unknown argument "withFacets" on field "Query.products". Did you mean "facet"?
   - `DV-008`: Unknown argument "withImages" on field "Query.products".
 
-### promotionCoupons (query)
-
-- **Path:** `test-data/graphql/queries/promotionCoupons.graphql`
-- **Role:** ORG_USER
-- **Purpose:** List active promotion coupons available to a user in a store (paginated)
-- **Errors:**
-  - `DV-006`: Cannot query field "promotionCoupons" on type "Query".
-
-## ✅ Passed Fixtures (65)
+## ✅ Passed Fixtures (66)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -69,8 +61,9 @@
 | pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-05-20 | 1 noted |
 | pickupLocations | query | PUBLIC | pickup | (none) | 2026-05-20 | 1 noted |
 | product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
-| productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID c972b4d0-25c2-4d7c-8a18-9360a8889bc3) | 2026-05-20 | 1 noted |
+| productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String, e.g. "B2B-store"), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72) | 2026-05-27 (live introspection + live query against vcst-qa B2B-store / CFG-013 dd56d770-…) | 2 noted |
 | productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
+| promotionCoupons | query | ORG_USER | marketing | (none) | 2026-05-20 | 1 noted |
 | removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-05-20 | 1 noted |
 | removeCartItem | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
 | removeConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
@@ -190,7 +183,7 @@
 - returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend
 
 **initializeApplication**:
-- (none)
+- resolving by `domain` returns `modules[]` list versus resolving by `storeId` (~79 entries with populated `version`). Anonymous/storefront context likely narrows the response — verify against the env you're testing.
 
 **me**:
 - (none)
@@ -225,7 +218,8 @@
 - (none)
 
 **productConfiguration**:
-- cultureName description in schema says "Currency code" — schema description bug; correct semantics are culture (e.g. "en-US")
+- Argument descriptions in the live schema are swapped:
+- Section.allowTextOptions defaults to `true` even on Product-type sections (where it has no effect) — do not assert it false for Product sections.
 
 **productPickupLocations**:
 - availabilityType enum: Today | Transfer | GlobalTransfer (Today = stocked at this location)

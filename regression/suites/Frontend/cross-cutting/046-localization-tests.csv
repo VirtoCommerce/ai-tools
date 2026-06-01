@@ -360,3 +360,143 @@ Storefront accessible at {{FRONT_URL}}; DE locale is available; at least one top
 [DOM] Language indicator shows 'de' or 'Deutsch' as the active locale
 [STATE] Category content corresponds to the same category navigated to in EN — same category name or its translation","[NETWORK] GET {{FRONT_URL}}/de/<SLUG_EN> returns HTTP 200 (not 404 or 301 to error)
 [CONSOLE] no TypeError or JS errors when loading the DE-locale category URL directly","404 on {{FRONT_URL}}/de/<SLUG_EN>; browser redirected away from the direct DE URL; category heading shows a different category than expected; language indicator still shows EN after direct DE URL navigation; console TypeError on page load","Navigate back to EN locale (click language switcher → select English); close any open panels","VCST-5144","Draft"
+"L10N-ROUTE-001","Locale↔Slug Collision — Language Switcher on Deep Route Does Not Eat Slug Characters","Localization > Routing > Locale-Slug Collision","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two supported locales available in the language switcher (e.g. English and one 2-letter locale); STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail","url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el","--- SETUP: discover a collision-eligible slug ---
+[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads; at least one category card/link is visible
+[ACT] browser_snapshot → enumerate all top-level category card link hrefs visible in the main content area
+[ACT] Filter the captured hrefs: find the first slug (path segment after the last '/') whose first 2 characters case-insensitively match any entry in supported_2letter_codes (de|it|no|pl|fi|ru|es|pt|fr|sv|el). Store as COLLISION_SLUG (e.g. 'destinations' → first 2 chars 'de' matches 'de'). Store the matching locale code as COLLISION_LOCALE (e.g. 'de')
+[ACT] If no COLLISION_SLUG found: log 'STRUCTURAL GUARD — no collision-eligible top-level slug present in catalog at this time; skipping case' to evidence and skip remaining steps
+[ACT] Log COLLISION_SLUG and COLLISION_LOCALE to evidence before proceeding
+--- FLOW: set active locale to the collision locale, then navigate to the deep route ---
+[ACT] Ensure active locale is NOT COLLISION_LOCALE: if the language switcher currently shows COLLISION_LOCALE, first click the language switcher and select English (en) or en-GB; wait for page reload
+[NAV] Navigate to {{FRONT_URL}}/catalog
+[ACT] Click the top-level category whose slug is COLLISION_SLUG
+[WAIT] Category page loads and URL settles; verify URL contains COLLISION_SLUG intact
+[ASSERT] Store the full URL path as DEEP_ROUTE (e.g. '/en-GB/destinations' or '/destinations')
+[ASSERT] Store the category heading text visible on the page as CATEGORY_HEADING_BEFORE_SWITCH
+--- FLOW: switch language to COLLISION_LOCALE using the language switcher ---
+[ACT] Locate the language switcher control in the header or footer
+[ACT] Click the language switcher to open the locale list
+[WAIT] Locale list is open and options are visible
+[ACT] Click the option corresponding to COLLISION_LOCALE (e.g. 'Deutsch' for 'de', 'Italiano' for 'it')
+[WAIT] Page reloads; wait for the page heading or main content to settle (up to 5 seconds)
+[ASSERT] Capture the URL in the browser address bar as URL_AFTER_SWITCH
+[ASSERT] Verify URL_AFTER_SWITCH contains the full COLLISION_SLUG without any characters eaten — e.g. if COLLISION_SLUG is 'destinations' and COLLISION_LOCALE is 'de', URL must contain 'destinations' not 'stinations'
+[ASSERT] Verify URL_AFTER_SWITCH does NOT render a 404 page: page heading is not 'not found' / '404' / 'Seite nicht gefunden' or equivalent
+[ASSERT] Verify the language indicator in header shows COLLISION_LOCALE as active","[NAV] URL after language switch contains the full COLLISION_SLUG intact (zero characters eaten from the slug)
+[DOM] Category page renders correctly after switch: page heading is visible and non-empty; heading is not a '404' or 'not found' message
+[DOM] Language indicator shows COLLISION_LOCALE as the active selection after the switch
+[STATE] The category displayed after the switch is the same category as before the switch (same heading, or its translation in COLLISION_LOCALE)","[NETWORK] GET for the post-switch URL returns HTTP 200 (not 404)
+[CONSOLE] No TypeError or routing errors in browser console after the language switch","URL after switch has slug characters eaten (e.g. '/de/stinations' instead of '/de/destinations'); 404 page shown after language switch; language indicator still shows the previous locale after the switch; category heading disappears or shows a different category after the switch; console TypeError on page load","Click the language switcher and select English (en) or en-GB to restore the original locale; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"
+"L10N-ROUTE-002","Locale↔Slug Collision — Direct Address-Bar Navigation Does Not Eat Slug Characters When Active Locale Matches Slug Prefix","Localization > Routing > Locale-Slug Collision","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two supported locales available; STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail","url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el","--- SETUP: discover a collision-eligible slug (same recipe as L10N-ROUTE-001) ---
+[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads
+[ACT] browser_snapshot → enumerate all top-level category card link hrefs visible in the main content area
+[ACT] Filter hrefs: find the first slug whose first 2 characters match any entry in supported_2letter_codes. Store as COLLISION_SLUG; store the matching code as COLLISION_LOCALE
+[ACT] If no COLLISION_SLUG found: log 'STRUCTURAL GUARD — no collision-eligible slug present; skipping case' and skip remaining steps
+[ACT] Log COLLISION_SLUG and COLLISION_LOCALE to evidence
+--- CONTROL: verify the slug resolves correctly when active locale does NOT equal COLLISION_LOCALE ---
+[ACT] Ensure active locale is NOT COLLISION_LOCALE: if needed, open language switcher and select English (en) or en-GB; wait for reload
+[NAV] Navigate directly to {{FRONT_URL}}/<COLLISION_SLUG> (no locale prefix; replace <COLLISION_SLUG> with the captured slug)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL in address bar as CONTROL_URL. Verify page renders a category (not 404) and heading is non-empty. Store heading as CONTROL_HEADING
+--- SUT: activate COLLISION_LOCALE, then navigate the same non-prefixed slug via address bar ---
+[ACT] Open language switcher
+[ACT] Click the language switcher to open the locale list
+[WAIT] Locale list is open
+[ACT] Select COLLISION_LOCALE (e.g. Deutsch for de)
+[WAIT] Page reloads with COLLISION_LOCALE active; language indicator updated
+[NAV] Type {{FRONT_URL}}/<COLLISION_SLUG> directly in the address bar and press Enter (no locale prefix in the typed URL)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL in address bar as SUT_URL
+[ASSERT] Verify SUT_URL contains the full COLLISION_SLUG (no chars eaten) — SUT_URL must include COLLISION_SLUG intact, e.g. '/de/destinations' not '/de/stinations'
+[ASSERT] Verify the page is NOT a 404: heading is not 'not found' / '404' / equivalent
+[ASSERT] Verify the category heading corresponds to the same category as CONTROL_HEADING (same name or its COLLISION_LOCALE translation)","[NAV] SUT_URL contains the full COLLISION_SLUG without character truncation
+[DOM] Page renders a valid category page (not 404) after direct navigation with the active locale matching the slug's leading chars
+[DOM] Category heading is non-empty and corresponds to the same category as the control nav
+[DOM] Language indicator shows COLLISION_LOCALE as active","[NETWORK] GET for SUT_URL returns HTTP 200
+[CONSOLE] No TypeError or routing errors in browser console during direct navigation","SUT_URL shows eaten slug chars (e.g. '/de/stinations'); 404 page shown; different category displayed compared to control nav; console TypeError on load","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"
+"L10N-ROUTE-003","Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending","Localization > Routing > Cross-Locale Deep Link","High","BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (e.g. de and en or en-US); four route types accessible: home, a PDP, a category listing, and search","url={{FRONT_URL}};active_locale=de;incoming_locale=en","--- SETUP: establish a non-default active locale ---
+[ACT] Open language switcher in the header or footer
+[ACT] Click the language switcher to open the locale list
+[WAIT] Locale list is open
+[ACT] Select Deutsch (de) from the locale list
+[WAIT] Page reloads; language indicator shows 'de' / 'Deutsch'
+[ASSERT] Verify active locale is now de (language indicator confirms)
+--- SUB-FLOW A: explicit /{incoming_locale}/ home deep link ---
+[NAV] Navigate directly to {{FRONT_URL}}/en/ in the address bar
+[WAIT] Page loads; wait for main content to settle
+[ASSERT] Capture URL as URL_A and page heading/language-indicator as LOCALE_A
+[ASSERT] Verify URL_A does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify page is not a 404
+[ASSERT] Verify language indicator shows 'en' or English as the now-active locale (locale switched, not stacked)
+--- SUB-FLOW B: explicit /{incoming_locale}/ + category deep link ---
+[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category page loads
+[ACT] Click any top-level category card
+[WAIT] Category page loads; URL settles
+[ACT] Capture the slug portion of the URL (the path after the locale prefix, e.g. '/accessories') as CAT_SLUG
+[NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
+[NAV] Navigate directly to {{FRONT_URL}}/en/<CAT_SLUG> in the address bar (explicit en prefix)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL as URL_B
+[ASSERT] Verify URL_B does NOT contain '/de/en/' (prefix-stack pattern)
+[ASSERT] Verify page is not a 404
+[ASSERT] Verify language indicator shows 'en' or English (locale switched to en, not stacked)
+--- SUB-FLOW C: explicit /{incoming_locale}/ + search query deep link ---
+[NAV] Set active locale back to de: open language switcher → select Deutsch → wait for reload
+[NAV] Navigate directly to {{FRONT_URL}}/en/search?q=laptop in the address bar
+[WAIT] Page loads; wait for search results heading to settle
+[ASSERT] Capture URL as URL_C
+[ASSERT] Verify URL_C does NOT contain '/de/en/' prefix-stack pattern
+[ASSERT] Verify page is not a 404
+[ASSERT] Verify language indicator shows 'en' or English as active locale","[NAV] None of URL_A, URL_B, URL_C contain a double-prefix stacking pattern (e.g. '/de/en/', '/fr/de/', or any /{localeA}/{localeB}/ pattern)
+[DOM] Pages for sub-flows A, B, and C render valid content — not a 404 for any sub-flow
+[DOM] Language indicator shows the incoming locale ('en') as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
+[STATE] Active locale changed to the incoming locale on all three sub-flows","[NETWORK] HTTP responses for URL_A, URL_B, URL_C are all HTTP 200
+[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations","URL contains double-prefix stacking (e.g. '/de/en/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en/' URL (no switch occurred); console TypeError on any sub-flow load","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale","VCST-5144;VCST-5144 residual","Draft"
+"L10N-ROUTE-004","Post-Prefix Boundary Fuzz — Trailing Slash, Percent-Encoded Slash, Fragment, and Double Slash After Locale Prefix Are Handled Gracefully","Localization > Routing > Boundary Chars","Medium","BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category slug is resolvable at runtime","url={{FRONT_URL}};test_locale=de","--- SETUP: capture a valid category slug ---
+[NAV] Navigate to {{FRONT_URL}}/catalog
+[WAIT] Category listing page loads; at least one category card visible
+[ACT] browser_snapshot → capture the href of the first top-level category card link in main content; extract the slug-only portion (path after locale prefix if present, e.g. 'accessories') as VALID_SLUG
+[ACT] Log VALID_SLUG to evidence before proceeding
+--- SETUP: activate DE locale ---
+[ACT] Open language switcher
+[ACT] Click the language switcher to open the locale list
+[WAIT] Locale list is open
+[ACT] Select Deutsch (de)
+[WAIT] Page reloads; language indicator shows de
+--- VARIANT 1: trailing slash after slug ---
+[NAV] Navigate directly to {{FRONT_URL}}/de/<VALID_SLUG>/ (note the trailing slash)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL as URL_V1 and note whether a category heading is visible or a 404 is shown
+[ASSERT] Verify no chars are eaten from VALID_SLUG in URL_V1
+[ASSERT] Verify page is NOT a blank/crash state (either a valid category page OR a graceful redirect/normalisation to the canonical URL is acceptable; what is NOT acceptable is a JS exception or a blank page)
+--- VARIANT 2: percent-encoded slash (%2F) after the locale prefix ---
+[NAV] Navigate directly to {{FRONT_URL}}/de%2F<VALID_SLUG> (percent-encoded slash replaces the literal slash between locale and slug)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL as URL_V2
+[ASSERT] Verify no server-level 5xx is returned; HTTP response is not 500 or 502
+[ASSERT] Verify no unhandled JS exception in console
+--- VARIANT 3: fragment identifier after locale prefix ---
+[NAV] Navigate directly to {{FRONT_URL}}/de/<VALID_SLUG>#section1
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL as URL_V3
+[ASSERT] Verify no chars are eaten from VALID_SLUG (URL must contain VALID_SLUG intact before the '#')
+[ASSERT] Verify page is not a 404
+--- VARIANT 4: double slash after locale prefix ---
+[NAV] Navigate directly to {{FRONT_URL}}/de//<VALID_SLUG> (double slash)
+[WAIT] Page loads; wait for heading or error state to settle
+[ASSERT] Capture URL as URL_V4
+[ASSERT] Verify no unhandled JS exception or blank page; either a valid page or a graceful 404 with the storefront 404 component (not a browser-level crash)
+[ASSERT] Verify URL_V4 does NOT show char-eating (VALID_SLUG intact in the URL if slug is present at all)","[DOM] None of the four variant URLs produce a JS exception / blank-page crash state
+[NAV] VALID_SLUG chars are intact in URL_V1, URL_V3, URL_V4 wherever the slug appears (no char-eating)
+[DOM] Variant 1 (trailing slash): either renders the correct category OR normalises to the canonical URL — not a JS crash
+[DOM] Variant 2 (%2F): no 5xx server error; graceful response (browser-level URL rejection or normalisation is acceptable)
+[DOM] Variant 3 (#fragment): correct category renders; fragment does not corrupt the path
+[DOM] Variant 4 (double slash): either renders correctly or shows a graceful storefront 404 — not a blank page or JS exception","[NETWORK] No 5xx responses for any of the four variant navigations
+[CONSOLE] No TypeError or unhandled promise rejection in browser console for any variant","Any variant URL shows chars eaten from VALID_SLUG; blank white page (SPA crash) on any variant; HTTP 5xx for any variant; unhandled TypeError logged to console for any variant","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"

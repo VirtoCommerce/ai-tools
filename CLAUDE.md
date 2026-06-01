@@ -46,7 +46,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (23 files) for shared refs
+├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (24 files) for shared refs
 ├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
 ├── .claude/commands/     # 16 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)

@@ -113,20 +113,23 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [API] removeItem GraphQL mutation errors[] is empty","remove_from_cart absent from dataLayer; value does not match removed item total; items array empty or wrong product","No cleanup — item already removed","google-analytics","Automated"
 "GA-009","clear_cart - Clear All Items","GA Events > Cart","Low","BL-GA4-002","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Multiple items in cart; on cart page","url={{FRONT_URL}}/cart
+Cart will be seeded with multiple items inside the test (RESET_CART empties it first)","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
-[WAIT] wait for multiple line items to render
+password={{USER_PASSWORD}}","[ACT] Ensure the cart has 2+ line items — if empty after RESET_CART, add 2 distinct in-stock products from the catalog
+[NAV] navigate to {{FRONT_URL}}/cart
+[WAIT] wait for the line items to render
+[ACT] Record the pre-clear cart total and the number of line items (for comparison)
 [ACT] click Clear Cart button
 [ACT] confirm the clear action in dialog
 [WAIT] wait for cart to show empty state
-[ASSERT] execute window.dataLayer.filter(e => e[1] === 'clear_cart') in console","[STATE] event name = clear_cart present in dataLayer
-[FORMAT] currency = USD
-[MATH] value = 0
-[DOM] items array is empty
-[MATH] items_count = 0","[CONSOLE] no JS errors during cart clear
+[ASSERT] execute window.dataLayer.filter(e => e[1] === 'clear_cart') in console and read its params (entry[2])","[STATE] A clear_cart event is present (entry e[1]==='clear_cart')
+[FORMAT] params currency = USD
+[MATH] params value equals the cart total recorded BEFORE clearing (a positive amount > 0) — clear_cart reports the value of the cart that was cleared, NOT 0
+[DOM] params items[] is NON-EMPTY and lists the line items that were in the cart at clear time (each with item_id, item_name, price, quantity)
+[MATH] params items_count equals the number of line items that were in the cart before clearing (> 0)
+[STATE] By GA4 convention this event documents WHAT WAS CLEARED — do NOT expect value=0 or an empty items array","[CONSOLE] no JS errors during cart clear
 [NETWORK] no 4xx/5xx on clear cart mutation
-[API] clearCart GraphQL mutation errors[] is empty","clear_cart absent from dataLayer; value not 0; items array non-empty after clear","Re-add test items to cart if needed for subsequent tests","google-analytics","Automated"
+[API] clearCart GraphQL mutation errors[] is empty","clear_cart absent from dataLayer; value is 0 or items[] empty (would mean it failed to report the cleared cart contents); items_count does not match the number of items that were cleared","Re-add test items to cart if needed for subsequent tests","google-analytics; vc-frontend google-analytics/events.ts (clearCart) + cart.vue (analytics clearCart on empty)","Automated"
 "GA-010","begin_checkout - Start Checkout","GA Events > Checkout","Critical","BL-GA4-003","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Products in cart; on cart page","url={{FRONT_URL}}/cart
@@ -301,20 +304,21 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}
 [STATE] user_id matches the authenticated user's platform ID","[CONSOLE] no JS errors on page load
 [API] account profile query returns user UUID for comparison
 [NETWORK] no 4xx/5xx on config initialization","user_id missing from GA config; user_id not in UUID format; user_id does not match logged-in user","No cleanup needed","google-analytics","Automated"
-"GA-022","Event Items - Product Structure","GA Events > Data Quality","Medium","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+"GA-022","Event Items - view_item Product Structure","GA Events > Data Quality","Medium","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Any product event available; user on product page","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to any product detail page on {{FRONT_URL}}
-[WAIT] wait for page to load
-[ASSERT] execute window.dataLayer.filter(e => e[1] === 'view_item') in console
-[ASSERT] inspect items[0] structure in the view_item event","[DOM] items[0].item_id equals product SKU
-[DOM] items[0].item_name equals product name
-[MATH] items[0].price is a number with correct value
-[MATH] items[0].quantity is a number >= 1
-[DOM] item_category fields present up to 5 hierarchy levels
-[DOM] affiliation field equals vendor or supplier name","[CONSOLE] no JS errors on product page load
+[WAIT] wait for the page to load, then allow ~2-3s for the GA4 push to settle
+[ASSERT] execute window.dataLayer.filter(e => e[1] === 'view_item') to get the view_item gtag entry
+[ASSERT] inspect the event params (entry[2]) and items[0] structure","[STATE] A 'view_item' gtag event is present (entry[1]==='view_item'); its params live in entry[2]
+[DOM] event params carry top-level currency (e.g. 'USD') and a numeric value
+[DOM] items[0].item_id equals the product SKU/code
+[DOM] items[0].item_name equals the product name
+[MATH] items[0].price is a number (this is the product list price)
+[DOM] items[0].affiliation equals the vendor name; item_category hierarchy fields (item_category, item_category2, item_category3, up to 5 levels) present when the product has breadcrumbs
+[STATE] items[0] does NOT carry a quantity field on view_item — quantity is emitted on add_to_cart, not view_item; do not assert quantity here","[CONSOLE] no JS errors on product page load
 [NETWORK] no 4xx/5xx on product detail API
-[API] GraphQL product query returns category hierarchy and affiliation data","item_id missing or wrong; price not a number; category hierarchy truncated or absent; affiliation field missing","Navigate away from PDP","google-analytics","Automated"
+[API] GraphQL product query returns category hierarchy and affiliation data","item_id missing or wrong; price not a number; top-level currency/value missing; category hierarchy absent when breadcrumbs exist; affiliation missing. (Do NOT fail on quantity — it is intentionally absent from view_item.)","Navigate away from PDP","google-analytics; vc-frontend google-analytics/utils.ts (productToGtagItem)","Automated"
 "GA-023","Event Timing - Page Load Events","GA Events > Timing","Medium","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 Performance tab open; fresh browser session","url={{FRONT_URL}}/snacks
 user={{USER_EMAIL}}
@@ -327,33 +331,27 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks
 [STATE] only one view_item_list event per page load (no duplicates)","[CONSOLE] no JS errors during page load
 [NETWORK] no 4xx/5xx on catalog API
 [API] product list query completes before event fires","view_item_list fires before products load (items array empty); duplicate view_item_list events in dataLayer; event never fires","Navigate away from category page","google-analytics","Automated"
-"GA-024","Event Persistence - Multiple Actions","GA Events > Data Quality","Medium","BL-GA4-001","ECL-7.1, ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+"GA-024","Event Persistence - dataLayer Accumulates Across In-App Actions","GA Events > Data Quality","Medium","BL-GA4-001","ECL-7.1, ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Fresh session; DevTools Console open","url={{FRONT_URL}}
+Fresh session. The dataLayer is append-only within a single SPA session but is reset by a hard full-page reload — perform ALL navigation in this test via in-app link clicks, never a new page load.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-search_term=laptop","[NAV] navigate to {{FRONT_URL}}
+search_term=laptop","[NAV] navigate to {{FRONT_URL}} (initial load)
 [WAIT] wait for storefront to load
-[ACT] enter 'laptop' in search field and submit
-[WAIT] wait for search results page to load
-[ASSERT] verify view_search_results event in dataLayer
-[NAV] navigate to {{FRONT_URL}}/snacks category
-[WAIT] wait for product grid to render
-[ASSERT] verify view_item_list event in dataLayer
-[ACT] click on a product to open PDP
-[WAIT] wait for PDP to load
-[ASSERT] verify view_item event in dataLayer
-[ACT] click Add to Cart
-[WAIT] wait for cart badge to update
-[ASSERT] verify add_to_cart event in dataLayer","[STATE] view_search_results event present with correct search_term
-[STATE] view_item_list event present with correct item_list_id
-[STATE] view_item event present with correct item details
-[STATE] add_to_cart event present with correct product data
-[STATE] all 4 events appear in correct sequence in dataLayer
-[DOM] no duplicate events of any type
-[DOM] data values accurate for each event","[CONSOLE] no JS errors across all navigation steps
+[ACT] enter 'laptop' in the search field and submit (search-bar)
+[WAIT] wait for the search results, allow ~3s for the GA push
+[ASSERT] read window.dataLayer; verify a view_search_results gtag event is present
+[ACT] click a product card in the results to open its PDP (in-app navigation — do NOT hard-reload)
+[WAIT] wait for the PDP, allow ~2-3s
+[ASSERT] read window.dataLayer; verify a view_item event is now also present while the earlier view_search_results entry is still in the array
+[ACT] add the product to the cart (quantity + stepper)
+[WAIT] wait for the cart badge to update, allow ~2s
+[ASSERT] read window.dataLayer; verify an add_to_cart event is now present alongside the prior view_search_results and view_item entries","[STATE] dataLayer is append-only within the SPA session: after search -> PDP -> add-to-cart (all via in-app navigation), view_search_results, view_item, and add_to_cart all coexist in the array
+[STATE] add_to_cart items[0] carries quantity (e.g. 1) and a top-level source_route — unlike view_item, which carries no quantity
+[STATE] Repeated same-name events (e.g. view_item_list firing more than once across the flow) are normal and MUST NOT be treated as a defect
+[STATE] A hard full-page reload starts a fresh dataLayer (prior events gone); this test keeps navigation in-app so events accumulate","[CONSOLE] no JS errors across all navigation steps
 [NETWORK] no 4xx/5xx on any API calls during session
-[API] all GraphQL queries return valid data","any of the 4 events missing from dataLayer; events appear out of sequence; duplicate events fired; data from one event bleeds into another","Remove added item from cart","google-analytics","Automated"
+[API] all GraphQL queries return valid data","an expected event (view_search_results / view_item / add_to_cart) missing after its action; dataLayer reset mid-flow due to an accidental hard navigation. (Do NOT fail on duplicate same-name events or strict ordering — both are expected.)","Remove added item from cart","google-analytics; vc-frontend google-analytics/events.ts","Automated"
 "GA-025","VCST-4800 — Redirect-Processor Checkout Fires Exactly One purchase Event via finalizePayment Path","GA Events > Purchase > finalizePayment Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -438,7 +436,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any cate
 [DOM] items[0].currency is a non-empty string (e.g. 'USD')
 [STATE] NO items_skus string field at top level of event — old format must be absent","[CONSOLE] no JS errors on category page load
 [NETWORK] no 4xx/5xx on catalog GraphQL query
-[API] GraphQL products query returns name, SKU, brand, vendor fields","view_item_list absent from dataLayer; items is a string (old items_skus format) not an array; items[0].item_id missing or empty; items_skus still present alongside new items array (dual-format regression); currency key absent from item objects","Navigate away from category page","VCST-5109","Draft""GA-029","VCST-5109 — view_item_list items[] Schema: All Required Fields Present Across All Items","GA Events > Catalog > view_item_list > Schema","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[API] GraphQL products query returns name, SKU, brand, vendor fields","view_item_list absent from dataLayer; items is a string (old items_skus format) not an array; items[0].item_id missing or empty; items_skus still present alongside new items array (dual-format regression); currency key absent from item objects","Navigate away from category page","VCST-5109","Draft"
+"GA-029","VCST-5109 — view_item_list items[] Schema: All Required Fields Present Across All Items","GA Events > Catalog > view_item_list > Schema","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in; DevTools Console open; category page with >= 3 product cards rendered","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any category page with >= 3 products)
@@ -453,7 +452,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any cate
 [STATE] items.length equals the number of product cards rendered in the list (consistent count)
 [STATE] no item in items[] contains an items_skus field — old format must not appear inside item objects","[CONSOLE] no JS errors during page load
 [NETWORK] no 4xx/5xx on products query
-[API] GraphQL products query includes brand and vendor fields in response","items is empty array when products are visible; any item missing item_id or item_name; currency key absent from any item; items_skus string appearing as a field inside any item object","Navigate away from category page","VCST-5109","Draft""GA-030","VCST-5109 — place_order Event Contains items[] Array and Non-Empty transaction_id","GA Events > Order > place_order","High","BL-GA4-003, BL-CROSS-005","ECL-14.3","[PRE:CLEAR_SESSION]
+[API] GraphQL products query includes brand and vendor fields in response","items is empty array when products are visible; any item missing item_id or item_name; currency key absent from any item; items_skus string appearing as a field inside any item object","Navigate away from category page","VCST-5109","Draft"
+"GA-030","VCST-5109 — place_order Event Contains items[] Array and Non-Empty transaction_id","GA Events > Order > place_order","High","BL-GA4-003, BL-CROSS-005","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Authenticated user; DevTools Console open; at least one in-stock product available; shipping and payment method configured for the store","url={{FRONT_URL}}
@@ -480,7 +480,8 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog or search f
 [DOM] items[0].currency is non-empty string
 [STATE] transaction_id value matches the order number shown on the confirmation page (or is any non-empty server-assigned identifier)","[CONSOLE] no JS errors during checkout and order placement
 [NETWORK] no 4xx/5xx on createOrder GraphQL mutation
-[API] createOrder mutation response errors[] is empty","place_order absent from dataLayer after confirmation; transaction_id field missing (pre-VCST-5109 regression); transaction_id is null or empty string; items is a scalar or items_skus string instead of array; items array empty despite order having line items","Verify order appears in /account/orders; navigate away","VCST-5109","Draft""GA-031","VCST-5109 — place_order items[] Count Matches Ordered Line Items (Multi-Item Order)","GA Events > Order > place_order > Items Integrity","High","BL-GA4-003, BL-CROSS-005","ECL-7.2, ECL-14.3","[PRE:CLEAR_SESSION]
+[API] createOrder mutation response errors[] is empty","place_order absent from dataLayer after confirmation; transaction_id field missing (pre-VCST-5109 regression); transaction_id is null or empty string; items is a scalar or items_skus string instead of array; items array empty despite order having line items","Verify order appears in /account/orders; navigate away","VCST-5109","Draft"
+"GA-031","VCST-5109 — place_order items[] Count Matches Ordered Line Items (Multi-Item Order)","GA Events > Order > place_order > Items Integrity","High","BL-GA4-003, BL-CROSS-005","ECL-7.2, ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Authenticated user; DevTools Console open; 2 distinct in-stock products available to add to cart","url={{FRONT_URL}}

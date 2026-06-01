@@ -275,3 +275,31 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
 [DOM] applied-state trash/remove button: aria-label is non-empty AND contains 'Remove coupon' (VCST-5017 fix — PR #2303)
 [STATE] zero buttons inside the coupon sidebar have an empty, null, or generic accessible name (no 'button' without context)","[CONSOLE] zero JS errors; no axe button-name violation if Lighthouse accessibility audit is run on /cart
 [NETWORK] no 5xx during page load or coupon apply","any apply/trash button returns aria-label=null or '' (VCST-5017 regression); aria-label attribute physically absent from button element; Lighthouse accessibility audit flags button-name violation on /cart; custom apply button aria-label does not update when user types a new code","Remove applied coupon via trash button","VCST-5017; WCAG 4.1.2","Draft"
+"A11Y-SR-006","Lists card — modified-date element has contextual screen-reader label (WCAG 1.3.1 regression for VCST-5067)","Screen Reader > Semantic Labels","High","BL-UI-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Personal account (not B2B org user)
+- Account has ≥ 1 wishlist with a visible modified date on the card
+- Coffee theme only (only Coffee is a11y-compliant per project constraint)
+- DOM inspection only — no physical screen reader required","store={{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] At least one `.wishlist-card__date` element rendered with visible date text
+[ACT] `browser_evaluate`: let ariaLabel = document.querySelector('.wishlist-card__date')?.getAttribute('aria-label'); return ariaLabel — capture value
+[ACT] `browser_evaluate`: let visibleText = document.querySelector('.wishlist-card__date')?.textContent?.trim(); return visibleText — capture value
+[ACT] `browser_evaluate`: let hasLabel = document.querySelector('.wishlist-card__date')?.hasAttribute('aria-label'); return hasLabel — capture presence flag
+[WAIT] 300ms (observe DOM state — no user interaction needed)","[DOM] hasLabel === true (aria-label attribute physically present on .wishlist-card__date)
+[DOM] ariaLabel is non-null AND ariaLabel.trim().length > 0 (not empty string)
+[DOM] ariaLabel does NOT equal visibleText alone — it contains a contextual prefix (e.g. 'Last modified: <date>'; confirmed fix in PR #2292 adds i18n key last_modified_label across 15 locale files)
+[STATE] All visible .wishlist-card__date elements (not just first) have aria-label — evaluate querySelectorAll and verify every element","[CONSOLE] no JS errors; no axe 'label' or 'presentation-role-conflict' violation on .wishlist-card__date
+[NETWORK] en-US locale file (or active locale) loads successfully and contains last_modified_label key (no 404)","aria-label attribute absent (VCST-5067 regression re-introduced after merge); ariaLabel equals bare date string only (no prefix — regression to pre-fix state); some cards have label and others do not (partial fix); locale 404 causes fallback to key name displayed as label text","none","VCST-5067; WCAG 1.3.1","Draft"
+"A11Y-CC-003","Lists card — save-v2 icon contrast ratio ≥ 3:1 on white card background (WCAG 1.4.11, regression for VCST-5066)","Color Contrast > UI","High","BL-UI-002","ECL-11.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Personal account with ≥ 1 wishlist so at least one list card renders with the save-v2 icon
+- Coffee theme only (only Coffee is a11y-compliant per project constraint)
+- Browser DevTools / getComputedStyle available via browser_evaluate","store={{FRONT_URL}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] At least one `.wishlist-card` rendered; save-v2 icon element visible (SVG inside .wishlist-card__date area or adjacent to date)
+[ACT] `browser_evaluate`: let iconEl = document.querySelector('.wishlist-card .save-v2, .wishlist-card [class*=\"save-v2\"], .wishlist-card svg'); let iconColor = getComputedStyle(iconEl).color; return iconColor — capture computed color (hex or rgb)
+[ACT] `browser_evaluate`: let cardEl = document.querySelector('.wishlist-card'); let cardBg = getComputedStyle(cardEl).backgroundColor; return cardBg — capture card background color
+[WAIT] 300ms","[FORMAT] Computed icon color is NOT #67AACB (2.56:1 — the failing value before fix per VCST-5066)
+[FORMAT] Icon color is #2b7ea8 (text-info-500, 4.51:1) OR any color with contrast ratio ≥ 3:1 against card background
+[MATH] WCAG relative luminance contrast ratio between iconColor and cardBg is ≥ 3:1 (WCAG 1.4.11 Non-text Contrast minimum for graphical objects)
+[STATE] Card background is #ffffff (verify no unexpected background color change)","[CONSOLE] no JS errors during DOM inspection; no axe 'color-contrast' violation on .wishlist-card svg if Lighthouse accessibility scan is run
+[NETWORK] no failed CSS requests","iconColor computed as #67AACB (2.56:1 — regression to pre-fix state); computed contrast ratio < 3:1 against card background; browser_evaluate returns null (icon selector drifted — update selector to match current rendered DOM); Lighthouse/axe reports color-contrast violation on the save-v2 icon","none","VCST-5066; WCAG 1.4.11","Draft"

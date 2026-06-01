@@ -49,16 +49,17 @@ Product with size and color variations exists in catalog","url={{FRONT_URL}}","[
 [DOM] Badge count is readable (not clipped)
 [DOM] No layout overflow caused by smaller badge size
 [DOM] Badge appearance consistent across different category items","[CONSOLE] no TypeError or JS errors","Badges overflowing category item containers; badge count not readable; inconsistent badge size across items; console TypeError","none","VCST-4623","Manual"
-"CAT-030","Add to Compare","Catalog > Compare","High","BL-CAT-007",,"Category page with product comparison enabled; at least 2 comparable products visible","url={{FRONT_URL}}","[NAV] Navigate to a category page with product cards on {{FRONT_URL}}
-[ASSERT] Verify 'Compare' icon or checkbox is visible on product card (hover or always shown)
-[ACT] Click 'Compare' on the first product
-[WAIT] Wait for compare bar to appear or update
-[ASSERT] Verify compare bar appears with added product
-[ASSERT] Verify compare bar count increments to 1","[DOM] 'Compare' control visible on product card
-[DOM] Compare bar appears at bottom or side of page after first selection
-[DOM] Compare bar shows added product name or thumbnail
-[MATH] Compare bar count shows 1","[NETWORK] no 4xx/5xx on compare add request
-[CONSOLE] no TypeError or JS errors","Compare control not visible on product cards; compare bar not appearing; compare count not incrementing; console TypeError","none","Coverage Gap Analysis","Draft"
+"CAT-030","Add to Compare from Catalog Card","Catalog > Compare","High","BL-CAT-007",,"Category page with product cards; at least 2 comparable products visible. Compare uses browser localStorage so it works for guests and authenticated users alike (no sign-in required).","url={{FRONT_URL}}","[NAV] Navigate to a category page with product cards on {{FRONT_URL}}
+[ASSERT] Verify each product card shows a button labeled 'Add to Compare' (in the card action row, next to 'Add to list')
+[ACT] Note the current count on the header 'Compare' nav link (badge absent or 0 when list empty)
+[ACT] Click 'Add to Compare' on the first product card
+[WAIT] Wait for the success toast and header badge to update
+[ASSERT] Verify the card's button toggled to 'Remove from Compare' (aria-pressed=true)
+[ASSERT] Verify the header 'Compare' link badge count incremented by 1","[DOM] Per-card control is a button labeled 'Add to Compare' that toggles to 'Remove from Compare'; aria-pressed reflects compare state
+[DOM] The compare count is shown ONLY as a numeric badge inside the header 'Compare' nav link (href=/compare) — it increments to 1 after adding
+[STATE] No floating/sticky compare bar exists anywhere on the page (count lives in the header link); a transient success toast appears after add
+[STATE] Compare selection persists in browser localStorage","[NETWORK] no 4xx/5xx on add-to-compare (localStorage-backed; may be no network call)
+[CONSOLE] no TypeError or JS errors","'Add to Compare' button missing on cards; clicking does not toggle the button to 'Remove from Compare'; header Compare badge does not increment; console TypeError","Open /compare and click 'Clear list' (or remove the added item)","Coverage Gap Analysis; vc-frontend shared/compare (useCompareProducts)","Draft"
 "CAT-031","Compare Page Display","Catalog > Compare","High","BL-CAT-007",,"2 or more products added to the compare bar","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
 [ACT] Add 2 or more products to compare bar
 [ACT] Click 'Compare' in compare bar or navigate to /compare
@@ -127,24 +128,17 @@ Product with size and color variations exists in catalog","url={{FRONT_URL}}","[
 [STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
 [API] GraphQL product query returns catalogId matching virtual catalog
 [CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details missing or empty; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01","Draft"
-"CAT-046","PDP Tabs - Description and Specifications and Reviews","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} that has description, specifications, and reviews
+"CAT-046","PDP Description & Properties Inline Sections","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} that has a description and properties
 [WAIT] Wait for PDP to fully load
-[ASSERT] Verify tab navigation is present (Description, Specifications, Reviews or similar)
-[ACT] Click the 'Description' tab
-[WAIT] Wait for content to render
-[ASSERT] Verify description content is visible and non-empty
-[ACT] Click the 'Specifications' tab
-[WAIT] Wait for content to render
-[ASSERT] Verify specifications table/list is visible with property name-value pairs
-[ACT] Click the 'Reviews' tab
-[WAIT] Wait for content to render
-[ASSERT] Verify reviews section is visible (reviews list or empty state with prompt to write review)","[DOM] Tab navigation visible with at least Description and Specifications tabs
-[DOM] Description tab shows non-empty product description HTML content
-[DOM] Specifications tab shows property name-value pairs in structured format
-[DOM] Reviews tab shows review list or 'No reviews yet' empty state
-[STATE] Only one tab content area visible at a time
-[STATE] Active tab has visual indicator (highlighted, underlined, or bold)","[NETWORK] no 4xx/5xx when switching tabs
-[CONSOLE] no TypeError or JS errors
+[ASSERT] Verify the PDP renders sections as INLINE, always-open stacked blocks — there is NO tab navigation (no tab/tablist/tabpanel roles) and NO accordion expand/collapse
+[ASSERT] Verify a 'Description' section (heading level 2) is present with non-empty product description text
+[COND: description is long] [ACT] Click the 'See more' link inside the Description block
+[COND: description is long] [ASSERT] Verify 'See more' expands the truncated description text in place (it is a text-truncation toggle, not a section switcher)
+[ASSERT] Verify a 'Properties' section (heading level 2) is present rendering property name/value rows","[DOM] PDP shows inline always-open blocks; NO tab/tablist/tabpanel roles and NO accordion exist
+[DOM] 'Description' h2 block visible with non-empty description content (and optional 'See more' truncation toggle)
+[DOM] 'Properties' h2 block visible with property label/value rows
+[STATE] All present sections are visible simultaneously on a single scrollable page (no tab switching)
+[STATE] A Reviews/Ratings section is NOT expected (not implemented on the storefront PDP) — do not assert it","[CONSOLE] no TypeError or JS errors
 [CONSOLE] no Vue hydration warnings on tab switch","Tabs not rendering; description content empty; specifications not loading; reviews tab crashing; multiple tab contents visible simultaneously; console TypeError","none","E2E-CAT-005, GAP-CS-06","Draft"
 "CAT-050","In-Stock Product PDP - Availability Badge and Add to Cart Enabled","Catalog > Product","High","BL-CAT-006, BL-CART-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -255,20 +249,22 @@ A product with low inventory (at or below the configured low-stock warning thres
 [DOM] Warning message communicates urgency (quantity count or low stock label)
 [DOM] Warning message is visually distinct from standard product information","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
 [CONSOLE] no TypeError or JS errors","Low stock warning absent when inventory below threshold; quantity stepper (+) incorrectly disabled for low-stock non-zero product; warning message not visually distinct; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
-"CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High",,"ECL-7.1","User logged in as org or personal user; multiple products exist in catalog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
+"CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High",,"ECL-7.1","Multiple products exist in catalog. Compare is localStorage-backed and works for guests and authenticated users.","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
 [WAIT] PDP fully loaded with product details
-[ACT] Click 'Compare' button or toggle on PDP
-[WAIT] Compare indicator appears (badge or checkmark on button)","[DOM] Compare button/toggle shows active/selected state
-[STATE] Product added to compare list (compare indicator visible)
-[DOM] Compare bar or floating widget appears at bottom of page showing 1 item","[API] no GraphQL errors during compare operation
-[CONSOLE] no uncaught JS errors","Compare button missing or disabled; compare indicator does not appear after 3s; no visual feedback on click","Clear compare selection","Coverage Gap Analysis","Draft"
-"CAT-COMP-002","Add Second Product and View Compare Bar","Catalog > Product Comparison","High",,"ECL-7.1","User logged in; one product already in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a different product detail page
+[ASSERT] Verify the PDP action row (sidebar, alongside 'Add to list' / Share / Print) contains a button 'Add to Compare'
+[ACT] Click 'Add to Compare' on the PDP
+[WAIT] Wait for the success toast and header badge to update","[DOM] PDP 'Add to Compare' button toggles to 'Remove from Compare' with aria-pressed=true
+[STATE] Product added to compare list (button reflects selected state; transient success toast shown)
+[DOM] The header 'Compare' nav link (href=/compare) badge shows 1 — there is NO floating/sticky compare widget at the bottom of the page","[API] no GraphQL errors during compare operation (localStorage-backed)
+[CONSOLE] no uncaught JS errors","'Add to Compare' button missing or disabled on PDP; button does not toggle to 'Remove from Compare'; header Compare badge does not reach 1","Open /compare and click 'Clear list'","Coverage Gap Analysis; vc-frontend add-to-compare-catalog.vue","Draft"
+"CAT-COMP-002","Add Second Product and Header Compare Count Reaches 2","Catalog > Product Comparison","High",,"ECL-7.1","One product already in the compare list (from CAT-COMP-001); compare is localStorage-backed (guest or authenticated)","url={{FRONT_URL}}","[NAV] Navigate to a different product detail page
 [WAIT] PDP fully loaded
-[ACT] Click 'Compare' button on second product
-[WAIT] Compare bar updates to show 2 products","[DOM] Compare bar shows 2 product thumbnails or names
-[STATE] Both products listed in compare bar
-[DOM] 'Compare' action button in bar is enabled (minimum 2 products met)","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","Compare bar does not update; second product not added; compare action button still disabled with 2 products","Clear compare selection","Coverage Gap Analysis","Draft"
+[ACT] Click 'Add to Compare' on the second product
+[WAIT] Wait for the success toast and header badge to update
+[ACT] Click the header 'Compare' link to open /compare","[DOM] Second product's button toggles to 'Remove from Compare' (aria-pressed=true)
+[STATE] Header 'Compare' link badge count reaches 2 (there is NO floating compare bar — the count lives in the header link)
+[DOM] The /compare page lists both products side-by-side with their properties (and a 'Show differences only' checkbox + 'Clear list' button)","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Header Compare badge does not reach 2; second product not added; /compare page does not show both products","Open /compare and click 'Clear list'","Coverage Gap Analysis; vc-frontend compare-products.vue","Draft"
 "CAT-COMP-003","Navigate to Compare Page","Catalog > Product Comparison","High",,,"User logged in; 2+ products in compare bar","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click 'Compare' button in the compare bar
 [WAIT] Compare page loads
 [ASSERT] Verify compare page displays products side-by-side","[NAV] URL contains /compare or similar comparison path
@@ -303,16 +299,16 @@ A product with low inventory (at or below the configured low-stock warning thres
 [STATE] Additional product NOT added to compare
 [DOM] Compare bar still shows the same maximum count (unchanged)","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Additional product added without limit; no error message shown; compare bar count exceeds maximum","Clear compare selection","Coverage Gap Analysis","Draft"
-"CAT-COMP-007","Compare from Catalog Listing - Select Products","Catalog > Product Comparison","High",,,"User logged in; category page with multiple products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+"CAT-COMP-007","Compare from Catalog Listing - Select Products","Catalog > Product Comparison","High",,,"Category page with multiple products; compare is localStorage-backed (guest or authenticated)","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [WAIT] Product grid loaded
-[ACT] Check compare checkbox on first product card
-[WAIT] Compare indicator shown on card
-[ACT] Check compare checkbox on second product card
-[WAIT] Compare bar appears with 2 products","[DOM] Compare checkbox/button visible on product cards
-[STATE] First product card shows selected/compare state
-[STATE] Second product card shows selected/compare state
-[DOM] Compare bar appears at bottom with 2 products listed","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","Compare checkbox missing on product cards; compare bar does not appear after selecting 2 products","Clear compare selection","Coverage Gap Analysis","Draft"
+[ACT] Click 'Add to Compare' on the first product card
+[WAIT] Card button toggles to 'Remove from Compare'
+[ACT] Click 'Add to Compare' on the second product card
+[WAIT] Wait for the header Compare badge to update","[DOM] Each product card exposes an 'Add to Compare' button (not a checkbox) that toggles to 'Remove from Compare' with aria-pressed
+[STATE] First product card shows 'Remove from Compare' (selected) state
+[STATE] Second product card shows 'Remove from Compare' (selected) state
+[DOM] Header 'Compare' nav link badge shows 2 (count lives in the header link; there is NO floating compare bar)","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","'Add to Compare' button missing on product cards; header Compare badge does not reach 2 after selecting 2 products","Open /compare and click 'Clear list'","Coverage Gap Analysis; vc-frontend add-to-compare-catalog.vue","Draft"
 "CAT-COMP-008","Compare from Catalog Listing - Navigate to Compare Page","Catalog > Product Comparison","High",,,"User on category page with 2 products selected for compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any category page
 [ACT] Select 2 products for compare via checkboxes
 [WAIT] Compare bar visible with 2 products

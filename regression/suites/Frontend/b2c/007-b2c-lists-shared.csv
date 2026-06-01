@@ -325,3 +325,33 @@ User logged in; list with products that have set quantities","url={{FRONT_URL}},
 6. [ASSERT] Verify quantities in cart match list quantities","[MATH] Cart quantities match list quantities for each item
 [DOM] Each cart line item quantity correct
 [STATE] No quantity duplication or loss during transfer","[CONSOLE] no uncaught JS errors","Quantities changed during add-to-cart; all items added with qty 1 regardless of list qty; quantity data lost","clear cart after test","Coverage Gap Analysis","Draft"
+"B2C-LIST-035","Lists layout — off-grid spacing values absent at md+ breakpoints (regression for VCST-5111)","B2C Features > Lists > Layout","High","BL-UI-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Personal account (not B2B org user — Addresses link and Lists surface differ by account type per memory)
+- Account has ≥ 2 wishlists to ensure list-card separator and sidebar sub-list are both present
+- Viewport set to 768 px (md breakpoint) and 1024 px (lg breakpoint) — the regression affected md+ variants only; mobile branch was correct before fix","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] Set viewport to 768×1024
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] Page loaded: sidebar navigation visible with `.link-lists__wrapper` AND at least 2 list cards visible
+[ACT] Inspect `getComputedStyle(document.querySelector('.vc-container.account-shell')).paddingBottom` via browser_evaluate — capture value
+[ACT] Inspect `getComputedStyle(document.querySelector('.link-lists__wrapper')).paddingLeft` via browser_evaluate — capture value
+[ACT] Inspect `getComputedStyle(document.querySelector('.link-lists__wrapper > li:nth-child(2)')).marginTop` (or gap via space-y parent) via browser_evaluate — capture value
+[WAIT] 500ms
+[ACT] Set viewport to 1024×768 (lg breakpoint)
+[WAIT] layout reflow
+[ACT] Re-capture all three values at lg viewport","[DOM] paddingBottom on .vc-container.account-shell is a multiple of 4 px at both 768 px and 1024 px (was 36 px = off-grid before fix; fixed value should be 32 or 40 px)
+[DOM] paddingLeft on .link-lists__wrapper is a multiple of 4 px at all viewports (was 10 px = off-grid; fixed value 8 or 12 px)
+[DOM] marginTop (or space-y gap) between list cards at md+ is a multiple of 4 px (was 10 px from md:space-y-2.5; fixed value 8 or 12 px)
+[STATE] Mobile (375 px) branch unaffected — baseline was already correct (space-y-3=12 px, pb-6=24 px)","[CONSOLE] no JS errors during viewport resize
+[NETWORK] no 4xx/5xx on /account/lists","paddingBottom still 36 px at 768 px (regression not fixed); paddingLeft still 10 px (pl-2.5 class still present); list-card gap still 10 px (md:space-y-2.5 still present); measured values differ between 768 px and 1024 px (breakpoint-specific regression re-introduced)","Restore viewport to default 1920×1080","VCST-5111; VCST-5110","Draft"
+"B2C-LIST-036","Lists card — modified-date has non-empty screen-reader label (regression for VCST-5067)","B2C Features > Lists > A11y","High","BL-UI-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Personal account with ≥ 1 wishlist so at least one list card with a modified date is rendered
+- Coffee theme (only theme that is a11y-compliant per feedback_a11y_coffee_only)","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] At least one `.wishlist-card` rendered with a visible date element (`.wishlist-card__date`)
+[ACT] `browser_evaluate`: inspect `document.querySelector('.wishlist-card__date').getAttribute('aria-label')` — capture ariaLabel
+[ACT] `browser_evaluate`: inspect `document.querySelector('.wishlist-card__date').textContent.trim()` — capture visibleText
+[WAIT] 500ms (no additional action — observe DOM state only)","[DOM] ariaLabel is non-null AND ariaLabel.trim().length > 0
+[DOM] ariaLabel contains a contextual label prefix (e.g. 'Last modified:' or equivalent i18n key — not a bare date string)
+[DOM] ariaLabel includes the same date value present in visibleText
+[STATE] Screen reader would announce the date WITH semantic context, not just the bare date string (was 'May 6, 2026' with no label before fix; fixed form: 'Last modified: May 6, 2026')","[CONSOLE] no JS errors; no axe missing-label violation for .wishlist-card__date
+[NETWORK] no failed i18n locale file requests","ariaLabel is null or empty string (VCST-5067 regression re-introduced); ariaLabel present but equals visibleText only (bare date, no contextual prefix); i18n key last_modified_label missing from en-US locale (would render as key name fallback)","none","VCST-5067; WCAG 1.3.1","Draft"
