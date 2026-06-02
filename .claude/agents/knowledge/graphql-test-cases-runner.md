@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Runner contract grammar (tag syntax, predicate shapes, @td()/{{VAR}} forms). Format spec, universal."
+---
+
 # Authoring GraphQL Test Cases for Runner-Native Execution
 
 Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.

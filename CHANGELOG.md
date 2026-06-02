@@ -8,20 +8,109 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## [Unreleased] — `feature/v0.2-prep`
+## [Unreleased]
 
-Forward-looking work between v0.1.0-alpha (PR #21, merged) and v0.2.0. Pin to v0.1.0-alpha for stability; this branch tip is unstable.
+Forward-looking work on top of v0.3.0. Pin to v0.3.0 for stability; this branch tip is unstable.
+
+_(no entries yet)_
+
+---
+
+## [0.3.0] — 2026-06-02
+
+Phase 1 substrate complete. Plugin is honestly positioned, vcst-clean at Layer 1, multi-env-aware end-to-end, and ships a customer CI template. Closes 12 of 20 strategic workstreams (#1, #5, #6, #7, #8, #9, #10, #11, #19, #20, and positioning + support docs from v0.2-prep). 8 workstreams remain for Phase 2 (live pilot validation) and Phase 3 (GA).
 
 ### Changed (Tier A — positioning)
 
-- **Plugin positioning honest-reframed** as "starting-point + authoring framework" (Option B from the strategic conversation 2026-06-02). The previous "same suites, your storefront" framing in marketing-onepager.md was overselling — vcst-qa's 99 suites test VC platform behavior plus vcst-qa-specific data; some apply to any customer (~60-70%), some are vcst-specific (~30-40%) and need adaptation. **Customer-authored suites are the expected workflow, not the exception.**
-  - `docs/marketing-onepager.md` — full rewrite. Three-layer value (methodology / agents+framework / reference suites). Explicit "what plugin ships" vs "what you write" table. New "Why this is still valuable even though you'll write your own suites" comparison.
-  - `docs/onboarding.md` — new "What the plugin ships (and what it doesn't)" section. Day 1 / Week 1 / Week 2+ next-steps timeline now centers on customer-authored suites.
-  - `docs/pilot-runbook.md` § 5 — success metric updated. Was "run /qa-smoke on 2 envs + file 1 bug". Now requires **customer to author at least one suite for a customer-specific feature** during the pilot week. Rationale documented inline.
+- **Plugin positioning honest-reframed** as "starting-point + authoring framework" (Option B from the 2026-06-02 strategic re-audit). The previous "same suites, your storefront" framing was overselling. vcst-qa's 99 suites test VC platform behavior plus vcst-qa-specific data; we now measure: **48.5% apply universally, 51.5% are reference-pattern that customers clone-and-adapt, 0% are pure vcst-internal at the suite level.** Customer-authored suites are the expected workflow, not the exception.
+  - `docs/marketing-onepager.md` — full rewrite. Three-layer value (methodology / agents+framework / reference suites). Explicit "what plugin ships" vs "what you write" table.
+  - `docs/onboarding.md` — new "What the plugin ships (and what it doesn't)" section. Day 1 / Week 1 / Week 2+ next-steps timeline centers on customer-authored suites.
+  - `docs/pilot-runbook.md` § 5 — success metric updated to require customer to author at least one suite for a customer-specific feature during pilot week.
 
 ### Added
 
-- **`docs/support-runbook.md`** — internal-to-VC playbook for supporting customers running the plugin. Three-tier support model (Tier 0 self-serve / Tier 1 GitHub Issues / Tier 2 direct paid / Tier 3 consulting), triage flow (plugin bug vs config issue vs customer storefront bug), per-branch playbooks, escalation paths, patch-release workflow, customer-communication templates, anti-patterns. Resolves the "TBD" reference in `docs/distribution.md` § Support Model and the Tier 2 mention in `docs/pilot-runbook.md` § 1.
+#### Multi-env safety (workstreams #7 + #8)
+- **`scripts/verify-multi-env-filters.ts`** — offline verifier that replays `applyMultiEnvFilters` from `ci/run-regression.ts` against the manifest for 6 scenarios. Deterministic, exits 0 iff every expectation holds. Verified results:
+  - virtostart smoke (no restrictions) → 2/2 kept
+  - `MODULES_ENABLED=catalog,customer,orders` → 25/99 skipped via modules gate
+  - `STOREFRONT_PROFILE=b2c` → 4 b2b/hybrid suites skipped
+  - `ENV_RISK=production` (no hatch) → exactly 45 envRiskGate suites skipped (matches manifest's 45 tagged — perfect)
+  - `ENV_RISK=production` + `ALLOW_ADMIN_WRITES_ON_PROD=true` → all 99 kept, `escapeHatchActive: true`
+  - `PAYMENT_PROCESSORS_ENABLED=cybersource` → suite 040 (other processors) skipped via processors gate
+- **`vc/shared/reports/multi-env-verification/verification-2026-06-02.md`** — VC's archived reference artifact (Layer 2). Customer runs of `npm run verify:multi-env:report` land at root `reports/multi-env-verification/`.
+- **npm scripts** — `verify:multi-env` (stdout) and `verify:multi-env:report` (writes to disk).
+
+#### Customer CI template (workstream #20)
+- **`.github/workflows/customer-template.yml`** — drop-in workflow customers copy into their repo. Checks out `vc-mcp-testing-module` as a subdir, runs `verify:multi-env` + `env:check` preflights, executes `ci:regression` with `workflow_dispatch` inputs for suite selection, test_env, env_risk, storefront_profile, modules_enabled, payment_processors_enabled, allow_admin_writes_on_prod, max_budget. 22 GitHub secrets referenced (8 required, ~14 optional / feature-gated).
+- **`docs/test-authoring.md` § 11** — "Running in CI" section documents the template end-to-end (secrets, multi-env inputs, schedule, cost per run).
+
+#### Multi-env Layer 2 split (workstream #6)
+- **`vc/` directory** — Layer 2 (VC-internal deployments) sub-tree:
+  - `vc/vcst-qa/` — primary VC QA env. `vc/vcst-qa/tests/` now holds per-ticket evidence previously at root `tests/`.
+  - `vc/vcptcore-qa/` — second QA env (placeholder until accumulated evidence).
+  - `vc/virtostart/` — staging-like env (placeholder).
+  - `vc/shared/` — cross-env materials; `vc/shared/workshop/` holds VC training material.
+- **`vc/README.md`** — explains Layer 2 model, archive convention, customer-side sparse-checkout to exclude.
+
+#### Per-suite + per-agent + per-knowledge applicability audits (workstreams #5, #10, #11)
+- **`scripts/audit-suite-applicability.ts`** — classifies all 99 suites. Output: 48 universal / 51 reference / 0 vcst-specific.
+- **`scripts/audit-agents-knowledge.ts`** — tags 39 files via YAML frontmatter. 21 universal / 18 reference.
+- **`scripts/audit-aliases.ts`** — classifies 211 aliases. 7 templates / 204 vcst-data.
+- **`config/test-suites.json`** — every suite now has `customerApplicability` field.
+
+#### Failure-mode catalog (workstream #19)
+- **`docs/troubleshooting.md`** — 20-entry quick-index table mapping error → anchor, categorized: install / config / runtime / MCP / platform / update / regression.
+
+#### Aliases template backfill (workstream #9)
+- **`templates/aliases.json.template`** — added `AGENT_POOL_SLOT_1/2/3` (CSV-backed), `ADMIN_ROLE_TESTER`, `ADMIN_ROLES_COMMON`, `ADMIN_USER`, `VIRTUAL_CATALOG_B2B` (inline aliases with `{{REPLACE_*}}` placeholders). Customer install starts from a complete alias set, not a stub.
+
+#### Releases + versioning (workstream #16)
+- **`docs/release-process.md`** — full mechanical release workflow: cadence, roles, trigger criteria, 7-step release process, hotfix flow, pre-release flow, anti-patterns.
+- **`CHANGELOG.md`** — this file. v0.1.0-alpha + v0.3.0 entries documented.
+
+### Changed
+
+- **`.claude-plugin/plugin.json`** — `version: "0.2.0"` → `"0.3.0"`.
+- **`.claude-plugin/marketplace.json`** — `version: "0.2.0"` → `"0.3.0"`.
+- **`.claude/agents/knowledge/storefront-selectors.md`** — paths updated from root `tests/` to `vc/vcst-qa/tests/` (Layer 2 split).
+
+### Added (already covered above, kept for v0.2.0 work that landed in v0.3.0)
+
+- **`docs/support-runbook.md`** — internal-to-VC playbook for supporting customers running the plugin. Three-tier support model, triage flow, per-branch playbooks, escalation paths, patch-release workflow, customer-communication templates, anti-patterns. Resolves the "TBD" in `docs/distribution.md` § Support Model.
+
+### Deferred to Phase 2 / v0.4.0
+
+- Workstream #3 (live smoke on non-vcst VC) — needs `ANTHROPIC_API_KEY` + ~$3-5 + ~18 min. Documented command lives in `docs/test-authoring.md` § 11.
+- Workstream #12 (pilot rehearsal) — protocol shipped this release (`docs/pilot-rehearsal-protocol.md`); the actual rehearsal RUN needs a human.
+- Workstream #13 / #17 (pricing + license) — user decisions.
+- Workstream #14 (support staffing) — needs named owner.
+- Workstream #15 (marketing assets — demo video, getting-started landing) — post-pilot.
+- Workstream #18 (telemetry / opt-in usage signals) — post-pilot.
+- Drop `TEST_ENV='vcst'` default in `config.js` — coordinated breaking change across npm scripts + GitHub Actions.
+- Generalize payment matrix (suite 039 split per processor).
+- Move `test-data/aliases.json` into Layer 2 (requires resolver path config).
+
+### Verified
+
+- `npm run env:check` — green on `TEST_ENV=vcst` and `TEST_ENV=virtostart`
+- `npm run verify:multi-env` — all 6 scenarios pass
+- `npm run suites:lint` — 99 suites, 35 selections, schema valid
+- `npx tsx scripts/validate-td-refs.ts` — all suites resolve
+- `npm run plugin:check` — manifest OK, env present
+- `node .claude/skills/run-vc-mcp-testing-module/driver.mjs` — 7/7 checks pass
+- `scripts/detect-vcst-isms.ts --suites` — 0 findings
+- `scripts/detect-vcst-isms.ts --agents` — 0 findings
+
+### How to tag this release (post-merge)
+
+```bash
+git checkout main
+git pull
+git tag -a v0.3.0 -m "Release v0.3.0 — Phase 1 substrate complete"
+git push origin v0.3.0
+```
+
+Then announce per `docs/release-process.md` § Step 6.
 
 ---
 

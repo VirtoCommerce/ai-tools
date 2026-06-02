@@ -36,23 +36,36 @@ You need each of these before you start. If any are missing, the install will fa
 
 ## Install
 
-```bash
-# 1. Clone (or fetch if already cloned via Claude Code plugin manager).
-git clone https://github.com/VirtoCommerce/vc-mcp-testing-module.git vc-qa
-cd vc-qa
+The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plugin docs](https://code.claude.com/docs/en/plugin-marketplaces)). Two steps:
 
-# 2. Install JS dependencies.
-npm install
+**Step A — install the plugin via Claude Code:**
 
-# 3. Run the interactive installer.
-npm run plugin:install
+```
+/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
+/plugin install vc-qa@vc-tools
 ```
 
-The installer walks you through 5 steps. At the end you'll have:
-- `.env.{env-name}` — per-env config (committable, no secrets)
+(Other accepted source formats: `https://github.com/VirtoCommerce/vc-mcp-testing-module`, `git@github.com:VirtoCommerce/vc-mcp-testing-module.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
+
+Claude Code clones the plugin into its cache and auto-discovers the agents (`.claude/agents/`), skills (`.claude/skills/`), commands (`.claude/commands/`), knowledge files (`.claude/agents/knowledge/`), and MCP server config.
+
+**Step B — configure your env (post-install one-time setup):**
+
+```bash
+# In the plugin install directory (Claude Code shows you the path after install).
+npm install
+npm run plugin:configure
+```
+
+The configure script walks you through 5 steps and writes:
+- `.env.{env-name}` — per-env config (committable in your own repo, no secrets)
 - `.env.local` — your secrets (gitignored)
 - `test-data/aliases.{env-name}.json` — per-env entity overrides (stub)
-- A green `npm run env:check` run
+- A green `npm run env:check` confirms the env loads
+
+Re-run `npm run plugin:configure -- --env=staging` for additional environments.
+
+> **Caveat — v0.2.0-alpha:** The Claude Code plugin install path has been verified end-to-end on the test bench but NOT on a customer-side fresh clone yet. The reliable install path today is still `git clone` + `npm install` + `npm run plugin:configure`. The `/plugin install` path will be the recommended one once verified live in workstream #2 (see plan).
 
 Re-run for additional environments:
 ```bash

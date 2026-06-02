@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Console + network debugging heuristics. Cross-VC universal."
+---
+
 # Debugging Signals — Console & Network Error Patterns
 
 ## Console Error Patterns

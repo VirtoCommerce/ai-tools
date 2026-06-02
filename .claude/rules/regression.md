@@ -104,8 +104,8 @@ Central configuration for regression orchestration. Defines:
 | `platform` | 020-021, 049, 063 | Platform module |
 | `frontend` | All Frontend/ suites (40) | Frontend-only regression |
 | `backend` | All Backend/ suites (38) | Backend-only regression |
-| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
-| `sprint:XX-YY` | Pinned to a specific sprint plan in `docs/Sprint plans/` | Re-run a past sprint's regression scope |
+| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
+| `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
 | `full` | All 99 suites | Before production release |
 
 ## CI Regression Testing

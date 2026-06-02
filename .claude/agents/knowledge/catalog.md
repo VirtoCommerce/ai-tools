@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Storefront catalog reference — assumes vcst's catalog structure. Customer adapts."
+---
+
 # Catalog — Agent Reference
 
 Platform knowledge for testing the Virto Commerce Catalog module.

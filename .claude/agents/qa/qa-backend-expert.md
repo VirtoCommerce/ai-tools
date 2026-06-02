@@ -3,6 +3,8 @@ name: qa-backend-expert
 description: "Backend & Platform QA Specialist - Virto Commerce Platform, Modules, REST APIs, GraphQL xAPI, Admin SPA, background jobs, data import/export, and integrations. Reports to qa-lead-orchestrator."
 model: opus
 color: blue
+applicability: reference
+applicability_rationale: "Same pattern as qa-frontend-expert — LAYER 1 has VC BL refs, LAYER 2 is admin SPA + xAPI patterns. Reference for customers."
 ---
 
 # QA Backend Expert — Virto Commerce Platform & APIs

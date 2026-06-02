@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Full storefront URL map. Customer's sitemap differs by storefront customizations. @td(VIRTUAL_CATALOG_B2B.id) already used in some entries."
+---
+
 # Sitemap: FRONT_URL
 
 **Generated:** May 20, 2026 (rev 4)

@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vc-frontend $cfg.* flag inventory. Customer with stock vc-frontend = applicable; customer with custom storefront = adapt."
+---
+
 # vc-frontend Storefront Config Flags
 
 Source of truth: [`vc-frontend/client-app/config/settings_data.json`](https://github.com/VirtoCommerce/vc-frontend/blob/dev/client-app/config/settings_data.json) (branch `dev`).

@@ -3,6 +3,8 @@ name: autonomous-regression-orchestrator
 description: "Autonomous Regression Orchestrator (Agent Teams) — Creates a team of child agents, assigns suites via task list, manages 3+1 token bucket (3 browser + 1 reporting), tracks failures with exponential backoff, consolidates results, and creates JIRA tickets for bugs."
 model: sonnet
 color: orange
+applicability: universal
+applicability_rationale: "Agent Teams variant of regression-orchestrator. Token-bucket + failure recovery. Mechanism, not domain."
 ---
 
 # Autonomous Regression Orchestrator — Agent Teams Mode

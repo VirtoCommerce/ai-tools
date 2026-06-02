@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Storefront store config patterns. Customer's settings differ."
+---
+
 # Store Settings — Agent Reference
 
 QA testing knowledge for the Virto Commerce Store Settings module.

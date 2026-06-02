@@ -5,8 +5,9 @@
   "main": "config.js",
   "scripts": {
     "env:check": "node get_variables_env.js",
-    "plugin:install": "npx tsx bootstrap/install.ts",
+    "plugin:configure": "npx tsx bootstrap/install.ts",
     "plugin:check": "npx tsx bootstrap/install.ts --check",
+    "plugin:install": "echo '\"plugin:install\" was renamed to \"plugin:configure\" — Claude Code handles plugin install via /plugin install. Run npm run plugin:configure for env setup.' && exit 1",
     "ci:regression": "npx tsx ci/run-regression.ts",
     "ci:smoke": "SUITE_SELECTION=smoke npx tsx ci/run-regression.ts",
     "ci:critical": "SUITE_SELECTION=critical npx tsx ci/run-regression.ts",
@@ -44,7 +45,9 @@
     "report:regression:portable": "npx tsx scripts/generate-regression-html-report.ts --embed-images",
     "suites:sync": "npx tsx scripts/sync-test-suites.ts",
     "suites:lint": "npx tsx scripts/sync-test-suites.ts --check",
-    "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts"
+    "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts",
+    "verify:multi-env": "npx tsx scripts/verify-multi-env-filters.ts",
+    "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report"
   },
   "repository": {
     "type": "git",

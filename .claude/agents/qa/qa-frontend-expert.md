@@ -3,6 +3,8 @@ name: qa-frontend-expert
 description: "Frontend & Storefront QA Specialist - Customer-facing storefront UI, user journeys, checkout flows, cross-browser, responsive design, and performance. Reports to qa-lead-orchestrator."
 model: opus
 color: orange
+applicability: reference
+applicability_rationale: "LAYER 1 hardcodes BL-CHK-003 / BL-PRICE-001 / BL-CROSS-002. LAYER 2 is vc-frontend (Vue.js) patterns. Customer adapts for their storefront tech + BL refs to match their business invariants."
 ---
 
 # QA Frontend Expert — Virto Commerce Storefront

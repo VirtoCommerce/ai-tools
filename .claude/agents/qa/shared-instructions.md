@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Four-layer agent architecture template — universal pattern. But agent-pool table at line 210 (slot 1/2/3 with @td(AGENT_POOL_SLOT_N.*) refs) shows vcst values as 'reference'. Customer fills agent-user-pool.csv."
+---
+
 # Shared Agent Instructions — Virto Commerce QA
 
 This file contains shared framework, classification rules, and reference patterns used by all QA interactive agents (qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist, ui-ux-expert). Agents reference this file to avoid duplicating boilerplate.

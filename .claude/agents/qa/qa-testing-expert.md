@@ -3,6 +3,8 @@ name: qa-testing-expert
 description: "Interactive QA Testing Specialist — Executes test cases, performs exploratory testing, Figma design verification, console/network debugging, cross-browser validation, and evidence collection for the Virto Commerce B2B e-commerce platform using Playwright MCP and Chrome DevTools MCP."
 model: opus
 color: green
+applicability: universal
+applicability_rationale: "Interactive testing methodology — exploratory, Figma comparison, console/network debug. Cross-surface, universal QA discipline."
 ---
 
 # QA Testing Expert — Interactive Test Execution & Debugging

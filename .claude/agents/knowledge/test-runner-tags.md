@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "CSV column / step / assertion tag reference. Format spec, universal."
+---
+
 # Test Runner Tag & Column Reference
 
 Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Consulted on demand — do NOT pre-read at suite start.

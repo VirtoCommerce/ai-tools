@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vc-frontend stable selectors (data-test-id / role / aria-label). Customer with custom theme adapts selector strategy."
+---
+
 # Storefront Selectors — Live-Verified DOM Reference
 
 **Captured:** 2026-05-14 against `FRONT_URL=https://vcst-qa-storefront.govirto.com` (Coffee theme, B2B-store)
@@ -355,7 +360,7 @@ NOTE: `desktop-main-menu-cart-link` IS present (the data-test-id is on the paren
 
 ### Verification protocol used
 
-Captured live 2026-05-14 by signing in as `USER_EMAIL`, navigating `/cart` with 2 line items in cart, clicking `[data-test-id="pickup-switcher"]`, then clicking the pencil `[data-test-id="pickup-location-section"] [data-test-id="select-address-button"]`. Currently selected pickup point (pre-test) was `405 Lexington Ave, New York`. After modal opened, ran `document.querySelectorAll(<sel>).length` for each selector above and recorded the counts. Screenshot: `tests/Sprint-current/SELECTORS-2026-05-14/bopis-modal-open.png`.
+Captured live 2026-05-14 by signing in as `USER_EMAIL`, navigating `/cart` with 2 line items in cart, clicking `[data-test-id="pickup-switcher"]`, then clicking the pencil `[data-test-id="pickup-location-section"] [data-test-id="select-address-button"]`. Currently selected pickup point (pre-test) was `405 Lexington Ave, New York`. After modal opened, ran `document.querySelectorAll(<sel>).length` for each selector above and recorded the counts. Screenshot: `vc/vcst-qa/tests/Sprint-current/SELECTORS-2026-05-14/bopis-modal-open.png`.
 
 **Note:** The BOPIS modal triggers on /cart **without** needing a specific BOPIS-eligible product in the cart — the cart had `[data-test-id="pickup-switcher"]` because at least one of the 2 line items supports pickup (canonical BOPIS SKU `@td(BOPIS.testSku) = ALCOE2300` is no longer searchable on storefront as of capture date; if Pickup tab is missing on /cart in a future session, fall back to verifying via `xapi pickupLocations` query first, then seed/find another pickup-eligible product).
 
@@ -432,7 +437,7 @@ Not present on this fixture. No `[data-test-id^="variations-"]` matches. The wed
 
 ### Verification protocol used
 
-Captured live 2026-05-14 by navigating `/search?q=YOC-85609878` (logged in as `USER_EMAIL`), clicking the single matching card to land on `/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake`, then running `document.querySelectorAll(<sel>).length` for each candidate. The captured slug was written back to `test-data/aliases.json` `CONFIGURABLE.testSlug`. Screenshot: `tests/Sprint-current/SELECTORS-2026-05-14/configurable-pdp-wedding-cake.png` (full page).
+Captured live 2026-05-14 by navigating `/search?q=YOC-85609878` (logged in as `USER_EMAIL`), clicking the single matching card to land on `/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake`, then running `document.querySelectorAll(<sel>).length` for each candidate. The captured slug was written back to `test-data/aliases.json` `CONFIGURABLE.testSlug`. Screenshot: `vc/vcst-qa/tests/Sprint-current/SELECTORS-2026-05-14/configurable-pdp-wedding-cake.png` (full page).
 
 ---
 

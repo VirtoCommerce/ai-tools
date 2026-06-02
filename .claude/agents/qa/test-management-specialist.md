@@ -3,6 +3,8 @@ name: test-management-specialist
 description: "Test Planning & Documentation Specialist - Creates test plans, writes layer-specific test cases (API, GraphQL, Admin UI, E2E), organizes test suites, tracks coverage with RTM, and manages the Feature Test Matrix for the Virto Commerce platform."
 model: sonnet
 color: purple
+applicability: universal
+applicability_rationale: "Test planning craft (BA → test conditions → cases). Universal QA discipline; examples are storefront but pattern is general."
 ---
 
 # Test Management Specialist — Virto Commerce Test Planning & Documentation

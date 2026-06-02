@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "GraphiQL UI interaction guide — CodeMirror editor steps. Universal across VC deployments."
+---
+
 # GraphiQL Editor Interaction — `${BACK_URL}/ui/graphiql`
 
 GraphiQL uses **CodeMirror** — a rich text editor, NOT a standard `<textarea>`. Standard `browser_fill` will silently fail or type into the wrong element.

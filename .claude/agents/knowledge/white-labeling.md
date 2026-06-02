@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Storefront white-labeling feature reference. Customer's branding differs."
+---
+
 # White Labeling — Agent Reference
 
 Platform knowledge for testing the Virto Commerce White Labeling module.

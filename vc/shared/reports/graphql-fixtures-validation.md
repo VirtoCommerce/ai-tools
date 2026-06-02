@@ -1,0 +1,299 @@
+# GraphQL Fixtures Validation
+
+**Validated at:** 2026-06-02T16:00:51.250Z
+**Schema source:** https://vcst-qa.govirto.com/graphql
+**Total:** 67 fixtures — 66 passed, 1 failed
+
+## ❌ Failed Fixtures (1)
+
+### products (query)
+
+- **Path:** `test-data/graphql/queries/products.graphql`
+- **Role:** PUBLIC or ORG_USER
+- **Purpose:** Paginated product list; MUST include the B2B virtual catalog subtree filter so storefront resolvers return rows
+- **Errors:**
+  - `DV-008`: Unknown argument "withFacets" on field "Query.products". Did you mean "facet"?
+  - `DV-008`: Unknown argument "withImages" on field "Query.products".
+
+## ✅ Passed Fixtures (66)
+
+| Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
+|------|------|------|----------|---------------|----------------|--------------|
+| addBulkItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewBulkItemType) | 2026-05-20 | 1 noted |
+| addConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| addConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| addCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-05-20 | 1 noted |
+| addItem | mutation | ORG_USER (or PUBLIC anon cart — userId may be anon guid) | cart | STORE_ID (String), USER_ID (String), PRODUCT_ID (String), QUANTITY (Int — via GraphQL $qty variable) | 2026-05-20 | 1 noted |
+| addItemsCart | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String); cartItems via GraphQL $items variable (Array of InputNewCartItemType) | 2026-05-20 | 1 noted |
+| addOrUpdateCartPayment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| addOrUpdateCartShipment | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| addWishlistItem | mutation | ORG_USER | wishlist | LIST_ID (String), PRODUCT_ID (String) | 2026-05-20 | 1 noted |
+| brand | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), BRAND_ID (String) | 2026-05-20 | 1 noted |
+| brands | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-05-20 | 1 noted |
+| cart | query | ORG_USER (authenticated) or PUBLIC (anonymous cart) | cart | STORE_ID (String), CURRENCY_CODE (String) | 2026-05-20 | 1 noted |
+| cartPickupLocations | query | ORG_USER | pickup | CART_ID (String), STORE_ID (String) | 2026-05-20 | 2 noted |
+| carts | query | ORG_USER | cart | (none) | 2026-05-20 | 1 noted |
+| categories | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-05-20 | 1 noted |
+| category | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), CATEGORY_ID (String) | 2026-05-20 | 1 noted |
+| changeCartConfigurationItemSelected | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| changeCartConfiguredItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| changeCartItemQuantity | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String), QUANTITY via $qty variable (Int) | 2026-05-20 | 1 noted |
+| clearCart | mutation | ORG_USER (or PUBLIC anon cart) | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| configurationItems | query | ORG_USER | configurable-products | STORE_ID (String), CURRENCY_CODE (String, e.g. "USD"), LINE_ITEM_ID (String — capture from cart line item) | 2026-05-20 | 1 noted |
+| contact | query | ORG_USER | profile | CONTACT_ID (String — memberId from me query) | 2026-05-20 | 1 noted |
+| createCartFromWishlist | mutation | ORG_USER | wishlist | LIST_ID (String — capture from wishlists query) | 2026-05-20 | 1 noted |
+| createConfiguredLineItem | mutation | PUBLIC or ORG_USER | configurable-products | STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String) | 2026-05-20 | 1 noted |
+| createOrderFromCart | mutation | ORG_USER | order | CART_ID (String — capture from earlier cart query/mutation) | 2026-05-20 | 1 noted |
+| createOrganization | mutation | ORG_USER or higher (any authenticated user per observed behavior) | organization | ORG_NAME (String) | 2026-05-20 | 1 noted |
+| createWishlist | mutation | ORG_USER | wishlist | STORE_ID (String), USER_ID (String), LIST_NAME (String) | 2026-05-20 | 1 noted |
+| currentCustomerAddresses | query | ORG_USER | profile | (none) | 2026-05-20 | 1 noted |
+| currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-05-20 | 1 noted |
+| deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-05-20 | 1 noted |
+| getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-05-21 | 1 noted |
+| me | query | ORG_USER | profile | (none) | 2026-05-20 | 1 noted |
+| moveFromSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-05-20 | 1 noted |
+| moveToSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-05-20 | 1 noted |
+| order-detail | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-05-20 | 1 noted |
+| order-detail-full | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-05-20 | 3 noted |
+| orders-list | query | ORG_USER | orders | (none) | 2026-05-20 | 1 noted |
+| organization | query | ORG_USER | profile | ORG_ID (String) | 2026-05-20 | 1 noted |
+| pages | query | PUBLIC or ORG_USER | cms | STORE_ID (String) | 2026-05-20 | 1 noted |
+| pickupLocations | query | PUBLIC | pickup | (none) | 2026-05-20 | 1 noted |
+| product | query | PUBLIC or ORG_USER | catalog | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
+| productConfiguration | query | PUBLIC or ORG_USER | configurable-products | STORE_ID (String, e.g. "B2B-store"), CONFIGURABLE_PRODUCT_ID (String — e.g. CFG-013 GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72) | 2026-05-27 (live introspection + live query against vcst-qa B2B-store / CFG-013 dd56d770-…) | 2 noted |
+| productPickupLocations | query | PUBLIC | pickup | PRODUCT_ID (String), STORE_ID (String) | 2026-05-20 | 1 noted |
+| promotionCoupons | query | ORG_USER | marketing | (none) | 2026-05-20 | 1 noted |
+| removeCart | mutation | ORG_USER | cart | USER_ID (String), CART_ID (String — capture from earlier cart query) | 2026-05-20 | 1 noted |
+| removeCartItem | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| removeConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| removeConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| removeCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-05-20 | 1 noted |
+| removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-05-20 | 1 noted |
+| selectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 2 noted |
+| selectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| selectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| slugInfo | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-05-20 | 1 noted |
+| unSelectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 2 noted |
+| unSelectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| unSelectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| unSelectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-05-20 | 1 noted |
+| updateConfigurationItem | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| updateConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-05-20 | 1 noted |
+| updateContact | mutation | ORG_USER | profile | CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String) | 2026-05-20 | 2 noted |
+| updateMemberAddresses | mutation | ORG_USER (the member being updated, or admin) | profile | MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String) | 2026-05-20 | 2 noted |
+| wishlist | query | ORG_USER | wishlist | LIST_ID (String) | 2026-05-20 | 1 noted |
+| wishlists | query | ORG_USER | wishlist | (none) | 2026-05-20 | 1 noted |
+
+## Known-Issues Summary
+
+**addBulkItemsCart**:
+- input takes productSku (NOT productId — differs from addItem/addItemsCart); response shape is BulkCartType { cart, errors } not CartType directly
+
+**addConfigurationItem**:
+- (none)
+
+**addConfigurationItems**:
+- (none)
+
+**addCoupon**:
+- Invalid/expired coupon returns coupons[].isAppliedSuccessfully=false (no schema error)
+
+**addItem**:
+- (none)
+
+**addItemsCart**:
+- (none)
+
+**addOrUpdateCartPayment**:
+- (none)
+
+**addOrUpdateCartShipment**:
+- price MUST match available shipping rate (CartShipmentValidator). Query availableShippingMethods first.
+
+**addWishlistItem**:
+- (none)
+
+**brand**:
+- Resolver may return synthetic object (id=zero-guid, other fields null) for invalid ID — test cases must accept either null or synthetic.
+
+**brands**:
+- The brands query uses "keyword" arg (not "query" like products)
+
+**cart**:
+- (none)
+
+**cartPickupLocations**:
+- availabilityType is computed against the cart's worst-stocked line item; expect Transfer/GlobalTransfer when any item is out of local stock
+- facet arg accepts comma-separated facet field names; filter arg uses the standard xAPI filter syntax (e.g. "address.countryCode:USA")
+
+**carts**:
+- (none)
+
+**categories**:
+- (none)
+
+**category**:
+- (none)
+
+**changeCartConfigurationItemSelected**:
+- Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+
+**changeCartConfiguredItem**:
+- REPLACE semantics for both quantity and configurationSections; pass desired final state.
+
+**changeCartItemQuantity**:
+- Quantity must be >= 1; zero/negative should return validation error
+
+**clearCart**:
+- (none)
+
+**configurationItems**:
+- (none)
+
+**contact**:
+- (none)
+
+**createCartFromWishlist**:
+- (none)
+
+**createConfiguredLineItem**:
+- Returns a ConfigurationLineItemType (preview) — does NOT mutate the cart. Use addItem or addConfigurationItem to persist.
+
+**createOrderFromCart**:
+- Creates a real order in the system; no easy teardown via runner — use sparingly or against disposable accounts.
+
+**createOrganization**:
+- (none)
+
+**createWishlist**:
+- (none)
+
+**currentCustomerAddresses**:
+- (none)
+
+**currentOrganizationAddresses**:
+- (none)
+
+**deleteMemberAddresses**:
+- Deletion matching key is the full address object — pass exact values
+
+**getSavedForLater**:
+- returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend
+
+**initializeApplication**:
+- resolving by `domain` returns `modules[]` list versus resolving by `storeId` (~79 entries with populated `version`). Anonymous/storefront context likely narrows the response — verify against the env you're testing.
+
+**me**:
+- (none)
+
+**moveFromSavedForLater**:
+- configurationItems on configurable line items are restored end-to-end (PR #118 / VCST-4205)
+
+**moveToSavedForLater**:
+- configurationItems on configurable line items are preserved end-to-end (PR #118 / VCST-4205)
+
+**order-detail**:
+- (none)
+
+**order-detail-full**:
+- order.coupons: resolver returns INVALID_OPERATION on some orders (server bug, not schema drift)
+- order.currency.name: resolver returns INVALID_OPERATION (server bug, not schema drift)
+- Both bugs are separate from schema coverage — fields ARE in schema, resolver fails at runtime
+
+**orders-list**:
+- (none)
+
+**organization**:
+- (none)
+
+**pages**:
+- (none)
+
+**pickupLocations**:
+- (none)
+
+**product**:
+- (none)
+
+**productConfiguration**:
+- Argument descriptions in the live schema are swapped:
+- Section.allowTextOptions defaults to `true` even on Product-type sections (where it has no effect) — do not assert it false for Product sections.
+
+**productPickupLocations**:
+- availabilityType enum: Today | Transfer | GlobalTransfer (Today = stocked at this location)
+
+**products**:
+- Without category.subtree filter, results are empty even though products exist (BL feedback)
+
+**promotionCoupons**:
+- (none)
+
+**removeCart**:
+- Returns Boolean directly (no nested object); destination assertion is data.removeCart = true|false.
+
+**removeCartItem**:
+- (none)
+
+**removeConfigurationItem**:
+- The required `configurationSection` input identifies WHICH section to remove (by sectionId/type); option/customText/fileUrls fields are ignored.
+
+**removeConfigurationItems**:
+- (none)
+
+**removeCoupon**:
+- Removing a coupon that was never applied returns 200 OK (silent no-op) by design — not an error.
+
+**removeWishlist**:
+- (none)
+
+**selectAllCartConfigurationItems**:
+- Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+- Scoped to lineItemId only — other configured lineItems in cart are NOT affected.
+
+**selectAllCartItems**:
+- (none)
+
+**selectCartConfigurationItems**:
+- Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+
+**selectCartItems**:
+- Idempotent on already-selected items (does NOT error).
+
+**slugInfo**:
+- (none)
+
+**unSelectAllCartConfigurationItems**:
+- Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+- Scoped to lineItemId only — other configured lineItems in cart are NOT affected.
+
+**unSelectAllCartItems**:
+- (none)
+
+**unSelectCartConfigurationItems**:
+- Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
+
+**unSelectCartItems**:
+- Invalid lineItemId should be a graceful no-op (preserve real items). HTTP 500 = bug.
+
+**updateConfigurationItem**:
+- REPLACE semantics — pass full desired ConfigurationSectionInput each call.
+
+**updateConfigurationItems**:
+- REPLACE semantics — pass full desired list each call.
+
+**updateContact**:
+- BL: EnableNoHtmlTagsValidation rejects HTML in phones
+- BL: MaxLength(64) on phones
+
+**updateMemberAddresses**:
+- BL: EnableNoHtmlTagsValidation applies to city/line1/line2 (XSS rejected)
+- Semantics are REPLACE (pass full desired list each call)
+
+**wishlist**:
+- (none)
+
+**wishlists**:
+- (none)
+

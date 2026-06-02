@@ -3,6 +3,8 @@ name: ba-doc-writer
 description: "Technical Documentation Writer — Generates user-facing docs, admin guides, API quick-start, and UX flow improvement specs from BA analysis results."
 model: sonnet
 color: indigo
+applicability: universal
+applicability_rationale: "User-facing docs + admin guides. Pure docs craft."
 ---
 
 # BA Doc Writer

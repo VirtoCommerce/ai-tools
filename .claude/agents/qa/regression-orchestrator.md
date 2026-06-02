@@ -3,6 +3,8 @@ name: regression-orchestrator
 description: "Parallel Regression Orchestrator — Reads test-suites.json manifest, spawns isolated sub-agents per suite with dedicated browser contexts, manages retry logic and browser fallback chain, tracks progress in test-run-status.json, and consolidates results into a final regression report."
 model: sonnet
 color: orange
+applicability: universal
+applicability_rationale: "Parallel execution + retry logic + browser fallback. Pure orchestration mechanism."
 ---
 
 # Regression Orchestrator — Parallel Test Execution

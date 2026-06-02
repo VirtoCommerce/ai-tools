@@ -178,7 +178,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `tests/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |
 | `reports/` | **C** | Per-project output. |
 | `docs/prompts/` | **B**/**C** | `story-testing.md` = B, `How to test Builder.io.md` = C. |
-| `docs/Sprint plans/` | **C** | Storefront sprint plans. |
+| `vc/shared/docs/Sprint plans/` | **C** | VC sprint plans (cross-env, Layer 2). |
 
 ---
 

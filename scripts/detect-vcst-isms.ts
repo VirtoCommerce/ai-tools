@@ -55,8 +55,8 @@ const PATTERNS: Pattern[] = [
       "knowledge/sitemap.md",       // educational refs that explicitly say "vcst-qa value, customer differs"
       ".env.vcst",                   // intentional env file
       "test-data/aliases.json",      // the alias DEFINES the GUID — by definition
-      "archive/",
-      "docs/Sprint plans/",
+      "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/",
       "CLAUDE.md",
       "/feedback_",                  // memory feedback files
       "/project_",                   // memory project files
@@ -68,7 +68,7 @@ const PATTERNS: Pattern[] = [
     regex: /9238c387[a-f0-9]{4,}/gi,
     description: "Hardcoded OLD B2B virtual catalog root GUID (pre-2026-05-15 restore, stale)",
     remediation: "Replace with @td(VIRTUAL_CATALOG_B2B.id) — the 9238c387… root was rolled back",
-    allowListSubstrings: ["memory/", "MEMORY.md", "archive/", "docs/Sprint plans/"],
+    allowListSubstrings: ["memory/", "MEMORY.md", "vc/vcst-qa/archive/", "docs/Sprint plans/"],
   },
   {
     id: "VCST-ORG-TECHFLOW",
@@ -81,8 +81,8 @@ const PATTERNS: Pattern[] = [
       "knowledge/vc-bug-catalog.md",
       "test-data/",                  // test-data CSVs DEFINE TechFlow (it's the subject of the alias)
       "test-data/aliases.json",
-      "archive/",
-      "docs/Sprint plans/",
+      "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "CLAUDE.md",
       "/feedback_",
@@ -101,8 +101,8 @@ const PATTERNS: Pattern[] = [
       "MEMORY.md",
       "knowledge/vc-bug-catalog.md",
       "test-data/",
-      "archive/",
-      "docs/Sprint plans/",
+      "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "CLAUDE.md",
       "/feedback_",
@@ -119,8 +119,8 @@ const PATTERNS: Pattern[] = [
       "memory/",
       "MEMORY.md",
       "test-data/",
-      "archive/",
-      "docs/Sprint plans/",
+      "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "/feedback_",
       "/project_",
@@ -133,8 +133,8 @@ const PATTERNS: Pattern[] = [
     description: "Hardcoded yopmail.com test user (vcst-qa convention)",
     remediation: "Replace with @td(TEST_USER_*.email) — customer's email domain differs",
     allowListSubstrings: [
-      "memory/", "MEMORY.md", "test-data/", "archive/",
-      "docs/Sprint plans/", "tests/", "CLAUDE.md",
+      "memory/", "MEMORY.md", "test-data/", "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/", "tests/", "CLAUDE.md",
       "/feedback_", "/project_", "/reference_", "/user_",
     ],
   },
@@ -144,8 +144,8 @@ const PATTERNS: Pattern[] = [
     description: "Hardcoded @test.virtocommerce.com test user (vcst-qa convention)",
     remediation: "Replace with @td(TEST_USER_*.email)",
     allowListSubstrings: [
-      "memory/", "MEMORY.md", "test-data/", "archive/",
-      "docs/Sprint plans/", "tests/",
+      "memory/", "MEMORY.md", "test-data/", "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/", "tests/",
       "/feedback_", "/project_", "/reference_",
     ],
   },
@@ -170,8 +170,8 @@ const PATTERNS: Pattern[] = [
     remediation: "Replace with @td(SUPPORT_AGENT.email) or remove — these are VC internal addresses",
     allowListSubstrings: [
       "memory/", "MEMORY.md", "CLAUDE.md",
-      "test-data/", "archive/",
-      "docs/Sprint plans/", "tests/",
+      "test-data/", "vc/vcst-qa/archive/",
+      "vc/shared/docs/Sprint plans/", "tests/",
       "/feedback_", "/project_", "/reference_", "/user_",
       "reports/ba/",  // BA reports may legitimately mention VC team contacts
     ],

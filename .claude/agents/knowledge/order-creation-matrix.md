@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vcst's payment + shipping combinations matrix. Customer's processor + shipping set differs."
+---
+
 # Order Creation Matrix — Payment × Shipping Combinations
 
 Test matrix for end-to-end order creation covering all payment providers and shipping methods.

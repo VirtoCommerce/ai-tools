@@ -1,0 +1,26 @@
+{
+  "name": "vc-qa",
+  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 14 agents, 20 skills, 16 commands, 19 knowledge files, 99 reference suites. Methodology + agent crew + authoring framework — customers run the universal subset and author their own for custom features.",
+  "version": "0.3.0",
+  "displayName": "Virto Commerce QA",
+  "author": {
+    "name": "Virto Commerce",
+    "email": "support@virtocommerce.com"
+  },
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "license": "TBD-internal",
+  "keywords": [
+    "qa",
+    "virtocommerce",
+    "ecommerce",
+    "testing",
+    "agents",
+    "storefront",
+    "admin-spa",
+    "multi-env",
+    "regression",
+    "agentic"
+  ],
+  "category": "testing"
+}

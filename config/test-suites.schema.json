@@ -79,6 +79,11 @@
             "description": "Payment processors this suite exercises. Orchestrator skips the suite if NONE of its processors are in PAYMENT_PROCESSORS_ENABLED env var (empty env = no filter, all suites run). Use for suites that bind to a specific processor's iframe/redirect/API behavior. Customer enables only the processors they actually deploy.",
             "items": { "enum": ["cybersource", "skyflow", "authorize-net", "datatrance", "stripe"] },
             "minItems": 1
+          },
+          "customerApplicability": {
+            "type": "string",
+            "description": "How this suite applies to customer deployments. universal = runs as-is on any VC (customer fills @td() data). reference = clone-and-adapt pattern. vcst-specific = vcst-only, moves to Layer 2 per product audit plan Section 3. Set by scripts/audit-suite-applicability.ts.",
+            "enum": ["universal", "reference", "vcst-specific"]
           }
         }
       }

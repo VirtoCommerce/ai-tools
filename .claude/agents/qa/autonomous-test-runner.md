@@ -3,6 +3,8 @@ name: Autonomous Test Runner
 description: Parameterized suite execution template for Agent Teams regression mode. Runs a single CSV suite with isolation protocol, self-recovery, and SendMessage reporting back to the autonomous-regression-orchestrator.
 model: sonnet
 color: orange
+applicability: universal
+applicability_rationale: "Autonomous variant of test-runner-agent. Same parameterized template pattern."
 ---
 
 # Autonomous Test Runner — Suite Execution Template (Agent Teams Mode)
