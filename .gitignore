@@ -19,7 +19,10 @@ results/
 .mcp.json
 scripts/.graphql-schema.cache.json
 
-# Regression / lifecycle / coverage run evidence — ephemeral by policy
+# Regression / lifecycle / coverage run evidence — ephemeral by policy.
+# Root paths catch live customer / VC active runs.
+# vc/shared/reports/ paths catch the archived Layer-2 mirror after the
+# 2026-06-02 reports->vc/shared/reports/ move (workstream #6).
 reports/regression/REG-*/**/*.png
 reports/regression/REG-*/**/*.har
 reports/regression/REG-*/**/*.jpg
@@ -29,6 +32,15 @@ reports/test-lifecycle/TLC-*/**/*.jpg
 reports/coverage/COV-*/**/*.png
 reports/coverage/COV-*/**/*.har
 reports/coverage/COV-*/**/*.jpg
+vc/shared/reports/regression/REG-*/**/*.png
+vc/shared/reports/regression/REG-*/**/*.har
+vc/shared/reports/regression/REG-*/**/*.jpg
+vc/shared/reports/test-lifecycle/TLC-*/**/*.png
+vc/shared/reports/test-lifecycle/TLC-*/**/*.har
+vc/shared/reports/test-lifecycle/TLC-*/**/*.jpg
+vc/shared/reports/coverage/COV-*/**/*.png
+vc/shared/reports/coverage/COV-*/**/*.har
+vc/shared/reports/coverage/COV-*/**/*.jpg
 
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
