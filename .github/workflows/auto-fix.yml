@@ -1,0 +1,114 @@
+name: Auto-Fix Bugs
+
+# Reads JIRA bug tickets, fixes them in the relevant product repo
+# (vc-frontend / vc-module-* / vc-platform), and opens DRAFT pull requests.
+# Draft-only, never auto-merge. A human reviews & merges; the regression
+# pipeline re-verifies after deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tickets:
+        description: 'Comma-separated JIRA keys (e.g. VCST-5110,VCST-5111). Leave empty to scan by label.'
+        required: false
+        default: ''
+        type: string
+      label:
+        description: 'Label to scan for when no tickets are given'
+        required: false
+        default: 'qa-autofix'
+        type: string
+      max_tickets:
+        description: 'Max tickets to process in one run'
+        required: false
+        default: '3'
+        type: string
+      max_budget:
+        description: 'Total budget in USD'
+        required: false
+        default: '30.0'
+        type: string
+      model:
+        description: 'Claude model'
+        required: true
+        default: 'claude-sonnet-4-5-20250929'
+        type: choice
+        options:
+          - claude-sonnet-4-5-20250929
+          - claude-opus-4-6
+      dry_run:
+        description: 'Dry run (no PR, no JIRA writes)'
+        required: false
+        default: false
+        type: boolean
+  # Nightly scan for labeled tickets (opt-in gate: humans apply the label)
+  # schedule:
+  #   - cron: '0 3 * * 1-5'  # Mon-Fri 03:00 UTC
+
+concurrency:
+  group: auto-fix-${{ github.event.inputs.tickets || 'scan' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # PAT with `repo` write on the VirtoCommerce product repos (NOT the default GITHUB_TOKEN)
+      GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
+      FIX_TICKETS: ${{ github.event.inputs.tickets }}
+      FIX_LABEL: ${{ github.event.inputs.label || 'qa-autofix' }}
+      MAX_TICKETS: ${{ github.event.inputs.max_tickets || '3' }}
+      MAX_BUDGET_USD: ${{ github.event.inputs.max_budget || '30.0' }}
+      MODEL: ${{ github.event.inputs.model || 'claude-sonnet-4-5-20250929' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+    steps:
+      - name: Checkout testing repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup .NET (for backend module fixes)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "vc-qa-autofix[bot]"
+          git config --global user.email "qa-autofix@virtoworks.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify gh auth
+        run: gh auth status || (echo "::error::AUTOFIX_GITHUB_TOKEN missing or invalid"; exit 1)
+
+      - name: Run auto-fix cycle
+        run: npm run ci:fix
+
+      - name: Upload fix run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-fix-${{ github.run_number }}
+          path: reports/fixes/
+          retention-days: 60
+
+      - name: Publish summary
+        if: always()
+        run: |
+          REPORT=$(find reports/fixes -name "fix-report.md" -type f | sort -r | head -1)
+          if [ -n "$REPORT" ]; then cat "$REPORT" >> $GITHUB_STEP_SUMMARY; fi

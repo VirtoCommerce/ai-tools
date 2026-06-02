@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "version": "2.0.0",
+    "description": "Auto-fix repo registry. With 100+ module repos, the allowlist is PATTERN-based, not an enumerated list: a repo is fixable iff its org matches and its name matches an `allow.patterns` entry (and no `allow.deny` entry). `explicit` pins the non-module repos and their kinds. Module repos are discovered live via `gh` (ci/lib/module-registry.ts) and their dependency graph is read from each repo's module.manifest. Org overridable via FIX_REPO_ORG; config path via FIX_REPOS_CONFIG."
+  },
+  "org": "VirtoCommerce",
+  "moduleIdPrefix": "VirtoCommerce.",
+  "allow": {
+    "patterns": ["^vc-module(-x)?-[a-z0-9.-]+$"],
+    "deny": ["sample", "demo", "template", "-tests?$"],
+    "explicit": [
+      { "name": "vc-frontend", "kind": "frontend" },
+      { "name": "vc-platform", "kind": "platform" }
+    ]
+  },
+  "routing": [
+    { "name": "vc-module-x-cart", "match": "\\b(xapi|graphql)\\b[^.]*\\bcart\\b|\\bcart\\b[^.]*\\b(xapi|graphql)\\b" },
+    { "name": "vc-module-x-catalog", "match": "\\b(xapi|graphql)\\b[^.]*\\b(catalog|product|facet|search)\\b" },
+    { "name": "vc-module-x-order", "match": "\\b(xapi|graphql)\\b[^.]*\\border\\b" },
+    { "name": "vc-module-pricing", "match": "\\b(pricing|price ?list|discount tier)\\b" },
+    { "name": "vc-module-marketing", "match": "\\b(promotion|coupon|marketing|content block)\\b" },
+    { "name": "vc-module-inventory", "match": "\\b(inventory|stock|fulfillment center)\\b" },
+    { "name": "vc-module-order", "match": "\\b(order|shipment|quote)s?\\b.*\\b(admin|api|module|backend|status)\\b" },
+    { "name": "vc-module-customer", "match": "\\b(contact|organization|member|customer)\\b.*\\b(admin|api|module|backend)\\b" },
+    { "name": "vc-module-catalog", "match": "\\b(catalog|category|product)\\b.*\\b(admin|api|module|backend|import)\\b" },
+    { "name": "vc-module-notification", "match": "\\b(notification|email template|trigger)\\b" },
+    { "name": "vc-module-store", "match": "\\bstore (setting|management|rounding)\\b" },
+    { "name": "vc-platform", "match": "\\b(security|rbac|role|permission|user account|dynamic propert|platform setting)\\b" },
+    { "name": "vc-frontend", "match": "\\b(storefront|cls|layout shift|a11y|accessibility|wcag|vue|component|pdp|checkout|cart|ui|ux|responsive|mobile|theme)\\b" }
+  ]
+}

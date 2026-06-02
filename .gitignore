@@ -29,3 +29,12 @@ reports/test-lifecycle/TLC-*/**/*.jpg
 reports/coverage/COV-*/**/*.png
 reports/coverage/COV-*/**/*.har
 reports/coverage/COV-*/**/*.jpg
+
+# Auto-fix pipeline — cloned product-repo source is transient working state
+.fix-workspace/
+# Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
+ci/config/.module-registry.cache.json
+# Auto-fix run evidence (keep fix-report.md + summary.json, drop heavy artifacts)
+reports/fixes/FIX-*/**/*.png
+reports/fixes/FIX-*/**/*.har
+reports/fixes/FIX-*/**/*.jpg
