@@ -1,9 +1,10 @@
 {
   "$schema": "./manifest.schema.json",
+  "_deprecated": "This file is NOT the Claude Code plugin manifest. The real plugin manifest is at .claude-plugin/plugin.json (per https://code.claude.com/docs/en/plugin-marketplaces). This file is kept as extended metadata documenting envSchema, requiredMcpServers, quality gates, etc. — fields that don't fit the official plugin.json spec. Consumed by bootstrap/install.ts for the post-install env-setup wizard. May be renamed to vc-qa-metadata.json or moved to docs/ in a future commit.",
   "name": "vc-qa",
   "displayName": "Virto Commerce QA Plugin",
-  "version": "0.1.0-alpha",
-  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 14 agents, 20 skills, 16 commands, 19 knowledge files, 99 regression suites. One install, run the same agents VC's internal QA uses.",
+  "version": "0.2.0",
+  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 14 agents, 20 skills, 16 commands, 19 knowledge files, 99 regression suites (universal + reference + vcst-specific subsets). Methodology + agent crew + authoring framework — customers run the universal subset and author their own for custom features.",
   "author": "Virto Commerce",
   "license": "TBD-internal",
   "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
