@@ -44,6 +44,9 @@ interface ManifestSuite {
   estimatedMinutes: number;
   agent: string;
   tags: string[];
+  storefrontProfile?: Array<"b2b" | "b2c" | "hybrid">;
+  requiresModules?: string[];
+  envRiskGate?: "dev" | "test" | "staging" | "production";
 }
 
 type WhereFilter = {
@@ -157,23 +160,99 @@ function expandSelection(rule: SelectionRule): string[] {
 
 function resolveSuites(selection: string): string[] {
   const rule = manifest.selections[selection];
+  let ids: string[];
   if (rule) {
-    return expandSelection(rule);
-  }
-  // Comma-separated IDs like "01,02,03"
-  const ids = selection.split(",").map((s) => s.trim().padStart(2, "0"));
+    ids = expandSelection(rule);
+  } else {
+    // Comma-separated IDs like "01,02,03"
+    ids = selection.split(",").map((s) => s.trim().padStart(2, "0"));
 
-  const invalidIds = ids.filter((id) => !SUITE_MAP[id]);
-  if (invalidIds.length > 0) {
-    const validGroups = Object.keys(manifest.selections).filter((k) => !k.startsWith("_")).join(", ");
-    const validIds = Object.keys(SUITE_MAP).join(", ");
-    console.error(`Unknown suite ID(s): ${invalidIds.join(", ")}`);
-    console.error(`Valid selections: ${validGroups}`);
-    console.error(`Valid suite IDs: ${validIds}`);
-    process.exit(1);
+    const invalidIds = ids.filter((id) => !SUITE_MAP[id]);
+    if (invalidIds.length > 0) {
+      const validGroups = Object.keys(manifest.selections).filter((k) => !k.startsWith("_")).join(", ");
+      const validIds = Object.keys(SUITE_MAP).join(", ");
+      console.error(`Unknown suite ID(s): ${invalidIds.join(", ")}`);
+      console.error(`Valid selections: ${validGroups}`);
+      console.error(`Valid suite IDs: ${validIds}`);
+      process.exit(1);
+    }
   }
 
-  return ids;
+  // Apply multi-env-aware filters (per feature/qa-agentic-standardization).
+  // Skip suites whose modules / storefront profile / env risk aren't satisfied
+  // by the active env. Each filter logs its skips so the user sees what was excluded.
+  return applyMultiEnvFilters(ids);
+}
+
+// --- Multi-env-aware suite filtering ---
+// Reads MODULES_ENABLED, STOREFRONT_PROFILE, ENV_RISK from the runtime env
+// (set by config.js or directly by CI). Empty/absent env values mean "no filter".
+
+const ENV_RISK_RANK: Record<string, number> = {
+  dev: 0,
+  test: 1,
+  staging: 2,
+  production: 3,
+};
+
+function applyMultiEnvFilters(ids: string[]): string[] {
+  const enabledModules = (process.env.MODULES_ENABLED || "")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const activeProfile = (process.env.STOREFRONT_PROFILE || "").toLowerCase();
+  const activeRisk = (process.env.ENV_RISK || "dev").toLowerCase();
+  const activeRiskRank = ENV_RISK_RANK[activeRisk] ?? 0;
+
+  const skipped: Array<{ id: string; reason: string }> = [];
+  const kept: string[] = [];
+
+  for (const id of ids) {
+    const suite = manifest.suites.find((s) => s.id === id);
+    if (!suite) {
+      kept.push(id); // unknown id — let downstream error handling take it
+      continue;
+    }
+
+    // Module gate: if MODULES_ENABLED is set and suite requires modules not in it, skip.
+    // Empty MODULES_ENABLED = no filter (run everything).
+    if (enabledModules.length > 0 && suite.requiresModules && suite.requiresModules.length > 0) {
+      const missing = suite.requiresModules.filter((m) => !enabledModules.includes(m));
+      if (missing.length > 0) {
+        skipped.push({ id, reason: `requires modules [${missing.join(", ")}] not in MODULES_ENABLED` });
+        continue;
+      }
+    }
+
+    // Storefront-profile gate: if STOREFRONT_PROFILE is set and suite declares profiles, must intersect.
+    if (activeProfile && suite.storefrontProfile && suite.storefrontProfile.length > 0) {
+      if (!suite.storefrontProfile.includes(activeProfile as "b2b" | "b2c" | "hybrid")) {
+        skipped.push({ id, reason: `storefrontProfile [${suite.storefrontProfile.join(", ")}] excludes active "${activeProfile}"` });
+        continue;
+      }
+    }
+
+    // Env-risk gate: suite refuses to run if active env risk exceeds the gate.
+    // Default gate = production (most permissive). Suite tagged "staging" refuses on production.
+    const gate = (suite.envRiskGate || "production").toLowerCase();
+    const gateRank = ENV_RISK_RANK[gate] ?? 3;
+    if (activeRiskRank > gateRank) {
+      skipped.push({ id, reason: `envRiskGate "${gate}" exceeded by active ENV_RISK "${activeRisk}"` });
+      continue;
+    }
+
+    kept.push(id);
+  }
+
+  if (skipped.length > 0) {
+    console.log(`[multi-env-filter] Skipping ${skipped.length} suite(s) due to env constraints:`);
+    for (const { id, reason } of skipped) {
+      console.log(`  - ${id}: ${reason}`);
+    }
+    console.log(`[multi-env-filter] Active env: TEST_ENV=${process.env.TEST_ENV || "(unset)"} ENV_RISK=${activeRisk} STOREFRONT_PROFILE=${activeProfile || "(any)"} MODULES_ENABLED=${enabledModules.length > 0 ? enabledModules.join(",") : "(all)"}`);
+  }
+
+  return kept;
 }
 
 // --- Build the prompt for a suite ---
