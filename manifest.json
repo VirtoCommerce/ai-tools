@@ -1,0 +1,182 @@
+{
+  "$schema": "./manifest.schema.json",
+  "name": "vc-qa",
+  "displayName": "Virto Commerce QA Plugin",
+  "version": "0.1.0-alpha",
+  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 14 agents, 20 skills, 16 commands, 19 knowledge files, 99 regression suites. One install, run the same agents VC's internal QA uses.",
+  "author": "Virto Commerce",
+  "license": "TBD-internal",
+  "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
+
+  "claudeCode": {
+    "minVersion": "1.0.0",
+    "agentsDir": ".claude/agents",
+    "skillsDir": ".claude/skills",
+    "commandsDir": ".claude/commands",
+    "rulesDir": ".claude/rules",
+    "knowledgeDir": ".claude/agents/knowledge"
+  },
+
+  "scope": {
+    "inScope": [
+      "storefront (customer-facing, vc-frontend)",
+      "Admin SPA (back-office, platform UI)",
+      "Platform REST API",
+      "GraphQL xAPI",
+      "Built-in modules: catalog, customer, pricing, inventory, marketing, notifications, cms, orders, store, search, shipping, returns, loyalty, seo, assets, channels, contracts, image-tools, import-export, push-messages, whitelabeling"
+    ],
+    "outOfScope": [
+      "Mobile apps",
+      "Marketplace product",
+      "Modules-as-separate-products (would need their own plugin)",
+      "Customer-authored test cases (Phase 5+)"
+    ]
+  },
+
+  "requiredMcpServers": [
+    {
+      "name": "playwright-chrome",
+      "purpose": "Primary browser for storefront automation"
+    },
+    {
+      "name": "playwright-firefox",
+      "purpose": "Cross-browser storefront verification"
+    },
+    {
+      "name": "playwright-edge",
+      "purpose": "Admin SPA testing + fallback for storefront"
+    }
+  ],
+
+  "optionalMcpServers": [
+    {
+      "name": "postman",
+      "purpose": "REST API testing",
+      "enables": ["/qa-postman", "/qa-api test"]
+    },
+    {
+      "name": "atlassian",
+      "purpose": "JIRA bug filing, sprint planning, ticket triage",
+      "enables": ["/qa-bug (JIRA filing)", "/qa-test-plan", "/qa-status"]
+    },
+    {
+      "name": "context7",
+      "purpose": "Up-to-date library docs",
+      "enables": ["/vc-docs (fallback)"]
+    },
+    {
+      "name": "github",
+      "purpose": "PR review, vc-module-* repo search",
+      "enables": ["/qa-test PR #N", "/ba-analyze"]
+    },
+    {
+      "name": "figma-remote-mcp",
+      "purpose": "Visual comparison against design specs",
+      "enables": ["/qa-design (Figma comparison)"]
+    },
+    {
+      "name": "claude_ai_VirtoOZ_for_virtocommerce_com_docs",
+      "purpose": "Primary VC documentation source (12 topic-scoped tools)",
+      "enables": ["/vc-docs (primary)"]
+    }
+  ],
+
+  "envSchema": {
+    "_meta": {
+      "description": "Required + optional env vars the customer provides at install time. Validated by bootstrap/install.ts. Three buckets per docs/configuration.md: plugin-supplied (in .env.defaults, this repo), customer-required (in .env.${TEST_ENV}, customer-edited), customer-secret (in .env.local, gitignored)."
+    },
+
+    "TEST_ENV": {
+      "bucket": "customer-required",
+      "required": false,
+      "default": "vcst",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Active environment name. Selects .env.${TEST_ENV}. Arbitrary string (dev, qa, staging, prod, customer_eu, anything) — kebab-case rejected because the suffix-promotion in .env.local requires [a-z0-9_]+."
+    },
+    "ENV_RISK": {
+      "bucket": "customer-required",
+      "required": false,
+      "default": "dev",
+      "enum": ["dev", "test", "staging", "production"],
+      "description": "Risk class of this env (NOT env name). 'production' refuses admin-write suites by default. Each env profile sets its own."
+    },
+    "STOREFRONT_PROFILE": {
+      "bucket": "customer-required",
+      "required": false,
+      "default": "hybrid",
+      "enum": ["b2b", "b2c", "hybrid"],
+      "description": "Storefront flavor. Orchestrator skips Frontend suites whose storefrontProfile[] doesn't include this."
+    },
+    "MODULES_ENABLED": {
+      "bucket": "customer-required",
+      "required": false,
+      "default": "",
+      "description": "Comma-separated list of installed VC modules (catalog, customer, marketing, cms, loyalty, etc.). Orchestrator skips Backend suites whose requiresModules[] aren't in this set. Empty = no filter."
+    },
+    "JIRA_PROJECT_KEY": {
+      "bucket": "customer-required",
+      "required": false,
+      "default": "VCST",
+      "description": "Customer's JIRA project key. Used by /qa-bug, /qa-status, /qa-test-plan, /qa-defect."
+    },
+
+    "FRONT_URL": {
+      "bucket": "customer-required",
+      "required": true,
+      "description": "Customer's VC storefront base URL (e.g. https://shop.example.com)."
+    },
+    "BACK_URL": {
+      "bucket": "customer-required",
+      "required": true,
+      "description": "Customer's VC platform / Admin SPA base URL (e.g. https://admin.example.com)."
+    },
+    "STORE_ID": {
+      "bucket": "customer-required",
+      "required": true,
+      "description": "Customer's primary store ID in their VC deployment."
+    },
+
+    "USER_EMAIL": {
+      "bucket": "customer-secret",
+      "required": true,
+      "description": "Storefront non-admin test user email."
+    },
+    "USER_PASSWORD": {
+      "bucket": "customer-secret",
+      "required": true,
+      "description": "Storefront test user password. Supports per-env suffix promotion (USER_PASSWORD_QA, USER_PASSWORD_STAGING, etc.)."
+    },
+    "ADMIN": {
+      "bucket": "customer-secret",
+      "required": true,
+      "description": "Admin SPA admin user email."
+    },
+    "ADMIN_PASSWORD": {
+      "bucket": "customer-secret",
+      "required": true,
+      "description": "Admin SPA admin password. Supports per-env suffix promotion."
+    }
+  },
+
+  "qualityGates": {
+    "_meta": {
+      "description": "Default quality gates. Per docs/versioning.md these are Tier A and won't change without a major version bump."
+    },
+    "smoke": {
+      "passRate": 100,
+      "maxCriticalBugs": 0,
+      "maxHighBugs": 0
+    },
+    "critical": {
+      "passRate": 95,
+      "maxCriticalBugs": 0,
+      "maxHighBugs": 2
+    },
+    "full": {
+      "passRate": 85,
+      "maxCriticalBugs": 0,
+      "maxHighBugs": 5
+    }
+  }
+}
