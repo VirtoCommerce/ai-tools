@@ -47,6 +47,7 @@ interface ManifestSuite {
   storefrontProfile?: Array<"b2b" | "b2c" | "hybrid">;
   requiresModules?: string[];
   envRiskGate?: "dev" | "test" | "staging" | "production";
+  paymentProcessors?: string[];
 }
 
 type WhereFilter = {
@@ -200,6 +201,10 @@ function applyMultiEnvFilters(ids: string[]): string[] {
     .split(",")
     .map((m) => m.trim())
     .filter(Boolean);
+  const enabledProcessors = (process.env.PAYMENT_PROCESSORS_ENABLED || "")
+    .split(",")
+    .map((p) => p.trim().toLowerCase())
+    .filter(Boolean);
   const activeProfile = (process.env.STOREFRONT_PROFILE || "").toLowerCase();
   const activeRisk = (process.env.ENV_RISK || "dev").toLowerCase();
   const activeRiskRank = ENV_RISK_RANK[activeRisk] ?? 0;
@@ -241,6 +246,16 @@ function applyMultiEnvFilters(ids: string[]): string[] {
       continue;
     }
 
+    // Payment-processor gate: if PAYMENT_PROCESSORS_ENABLED is set AND suite declares
+    // paymentProcessors, at least one must intersect. Empty env value = no filter.
+    if (enabledProcessors.length > 0 && suite.paymentProcessors && suite.paymentProcessors.length > 0) {
+      const overlap = suite.paymentProcessors.some((p) => enabledProcessors.includes(p.toLowerCase()));
+      if (!overlap) {
+        skipped.push({ id, reason: `paymentProcessors [${suite.paymentProcessors.join(", ")}] not in PAYMENT_PROCESSORS_ENABLED` });
+        continue;
+      }
+    }
+
     kept.push(id);
   }
 
@@ -249,7 +264,7 @@ function applyMultiEnvFilters(ids: string[]): string[] {
     for (const { id, reason } of skipped) {
       console.log(`  - ${id}: ${reason}`);
     }
-    console.log(`[multi-env-filter] Active env: TEST_ENV=${process.env.TEST_ENV || "(unset)"} ENV_RISK=${activeRisk} STOREFRONT_PROFILE=${activeProfile || "(any)"} MODULES_ENABLED=${enabledModules.length > 0 ? enabledModules.join(",") : "(all)"}`);
+    console.log(`[multi-env-filter] Active env: TEST_ENV=${process.env.TEST_ENV || "(unset)"} ENV_RISK=${activeRisk} STOREFRONT_PROFILE=${activeProfile || "(any)"} MODULES_ENABLED=${enabledModules.length > 0 ? enabledModules.join(",") : "(all)"} PAYMENT_PROCESSORS_ENABLED=${enabledProcessors.length > 0 ? enabledProcessors.join(",") : "(all)"}`);
   }
 
   return kept;

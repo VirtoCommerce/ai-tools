@@ -73,6 +73,12 @@
             "type": "string",
             "description": "Maximum ENV_RISK level this suite will run against. Suite refuses to run if active ENV_RISK exceeds this. Use 'staging' for suites that write data; 'production' (default) for read-only suites.",
             "enum": ["dev", "test", "staging", "production"]
+          },
+          "paymentProcessors": {
+            "type": "array",
+            "description": "Payment processors this suite exercises. Orchestrator skips the suite if NONE of its processors are in PAYMENT_PROCESSORS_ENABLED env var (empty env = no filter, all suites run). Use for suites that bind to a specific processor's iframe/redirect/API behavior. Customer enables only the processors they actually deploy.",
+            "items": { "enum": ["cybersource", "skyflow", "authorize-net", "datatrance", "stripe"] },
+            "minItems": 1
           }
         }
       }

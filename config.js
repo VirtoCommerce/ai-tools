@@ -105,6 +105,7 @@ export const env = {
     ENV_RISK,                                           // dev | test | staging | production — gates destructive ops
     STOREFRONT_PROFILE: getEnvVar('STOREFRONT_PROFILE', 'hybrid'),  // b2b | b2c | hybrid — gates which suites apply
     MODULES_ENABLED: getEnvVar('MODULES_ENABLED', ''),  // CSV of installed VC modules; orchestrator skips suites whose requiresModules[] not satisfied (empty = no filter)
+    PAYMENT_PROCESSORS_ENABLED: getEnvVar('PAYMENT_PROCESSORS_ENABLED', ''),  // CSV of payment processors customer uses (cybersource,skyflow,authorize-net,datatrance,stripe); orchestrator skips payment suites for processors not in this list (empty = no filter)
     JIRA_PROJECT_KEY: getEnvVar('JIRA_PROJECT_KEY', 'VCST'),  // Customer's JIRA project for bug filing
 
     // Application URLs
