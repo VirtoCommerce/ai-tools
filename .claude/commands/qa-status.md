@@ -29,9 +29,9 @@ Read `reports/regression/test-run-status.json` if it exists:
 If no status file exists, report "No active regression run."
 
 ### 2. JIRA Testing Queue
-Query JIRA via Atlassian MCP for tickets in the QA pipeline:
+Query JIRA via Atlassian MCP for tickets in the QA pipeline. Substitute `${JIRA_PROJECT_KEY}` from env (defaults to `VCST`):
 ```
-JQL: project = VCST AND status in ("Ready for Test", "Testing") ORDER BY priority DESC, updated DESC
+JQL: project = ${JIRA_PROJECT_KEY} AND status in ("Ready for Test", "Testing") ORDER BY priority DESC, updated DESC
 ```
 Show a table: Key | Summary | Status | Priority | Assignee | Updated
 

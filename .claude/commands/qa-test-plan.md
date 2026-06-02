@@ -44,8 +44,8 @@ Parse any of `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` (where `XX` is the year su
 | Input | Resolution |
 |-------|-----------|
 | `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` | Match regex `^(?:[Ss]print[-]?)?(\d{2}-\d{2})$` → normalize to `Sprint<XX-YY>` |
-| `current` | Atlassian MCP `searchJiraIssuesUsingJql`: `sprint in openSprints() AND project = VCST` → take the sprint name from any returned issue |
-| `last` | JQL: `sprint in closedSprints() AND project = VCST ORDER BY sprint DESC` → take the most recent closed sprint name |
+| `current` | Atlassian MCP `searchJiraIssuesUsingJql`: `sprint in openSprints() AND project = ${JIRA_PROJECT_KEY}` → take the sprint name from any returned issue |
+| `last` | JQL: `sprint in closedSprints() AND project = ${JIRA_PROJECT_KEY} ORDER BY sprint DESC` → take the most recent closed sprint name |
 
 If parsing fails (input doesn't match `XX-YY` and isn't `current`/`last`), ask the user for the correct sprint label rather than guessing.
 
@@ -62,13 +62,13 @@ Use Atlassian MCP. If unavailable, ask user to paste the issue list (key, summar
 **JQL queries:**
 ```
 # Stories Done
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype = Story AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype = Story AND status = Done
 
 # Bugs Done
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype = Bug AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype = Bug AND status = Done
 
 # Tasks/Tech-debt Done (for context — may include data-test-id refactors)
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype in (Task, "Technical task", Sub-task) AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype in (Task, "Technical task", Sub-task) AND status = Done
 ```
 
 For each returned issue, capture: key, summary, type, priority, components, labels, assignee, **acceptance criteria** (description body), linked PRs (remote links + body URLs), JIRA fix version. Use `getJiraIssue` for full detail on the top 30 by priority — keep payloads under control by lazy-loading the rest only when needed in Step 4.
