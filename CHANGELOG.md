@@ -8,9 +8,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## [Unreleased] — `feature/qa-agentic-standardization`
+## [Unreleased] — `feature/v0.2-prep`
 
-The first stretch of customer-plugin work. Not yet released. Pin to commit SHA if consuming pre-release.
+Forward-looking work between v0.1.0-alpha (PR #21, merged) and v0.2.0. Pin to v0.1.0-alpha for stability; this branch tip is unstable.
+
+### Changed (Tier A — positioning)
+
+- **Plugin positioning honest-reframed** as "starting-point + authoring framework" (Option B from the strategic conversation 2026-06-02). The previous "same suites, your storefront" framing in marketing-onepager.md was overselling — vcst-qa's 99 suites test VC platform behavior plus vcst-qa-specific data; some apply to any customer (~60-70%), some are vcst-specific (~30-40%) and need adaptation. **Customer-authored suites are the expected workflow, not the exception.**
+  - `docs/marketing-onepager.md` — full rewrite. Three-layer value (methodology / agents+framework / reference suites). Explicit "what plugin ships" vs "what you write" table. New "Why this is still valuable even though you'll write your own suites" comparison.
+  - `docs/onboarding.md` — new "What the plugin ships (and what it doesn't)" section. Day 1 / Week 1 / Week 2+ next-steps timeline now centers on customer-authored suites.
+  - `docs/pilot-runbook.md` § 5 — success metric updated. Was "run /qa-smoke on 2 envs + file 1 bug". Now requires **customer to author at least one suite for a customer-specific feature** during the pilot week. Rationale documented inline.
+
+### Added
+
+- **`docs/support-runbook.md`** — internal-to-VC playbook for supporting customers running the plugin. Three-tier support model (Tier 0 self-serve / Tier 1 GitHub Issues / Tier 2 direct paid / Tier 3 consulting), triage flow (plugin bug vs config issue vs customer storefront bug), per-branch playbooks, escalation paths, patch-release workflow, customer-communication templates, anti-patterns. Resolves the "TBD" reference in `docs/distribution.md` § Support Model and the Tier 2 mention in `docs/pilot-runbook.md` § 1.
+
+---
+
+## [0.1.0-alpha] — 2026-06-02
+
+First customer-installable release. Merged via PR #21 into `main`, tagged `v0.1.0-alpha`. Customers should pin to this tag.
 
 ### Added
 

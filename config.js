@@ -52,41 +52,96 @@ if (ENV_RISK === 'production') {
 }
 
 // Validate required environment variables.
-// Required = core flows (URLs, storefront/admin auth, base payment cards) that must exist for any suite to run.
-// Scope-specific vars (staging, 3DS, lockout, BrowserStack) are optional — suites that need them fail fast at runtime.
-const requiredVars = [
+//
+// CORE — must exist for any suite to run. Missing = exit 1, fail loudly.
+// FEATURE-GATED — only required if the customer plans to use the corresponding
+//   feature. Missing = warn (not exit) and disable the gated feature.
+//
+// Customer plugin (per feature/v0.2-prep): the previous "everything required"
+// stance forced customers who don't use Figma or Postman to set placeholder
+// keys just to run env:check. Splitting unblocks the smoke flow.
+
+const coreRequiredVars = [
+    // URLs (both surfaces)
     'FRONT_URL',
     'BACK_URL',
-    'STORYBOOK_URL',
-    'STORYBOOK_DEV_URL',
+    // Credentials (both surfaces)
     'ADMIN',
     'ADMIN_PASSWORD',
     'USER_EMAIL',
     'USER_PASSWORD',
-    'USER2_EMAIL',
-    'USER2_PASSWORD',
+    // Store context
     'STORE_ID',
-    'SKYFLOW_MASTERCARD',
-    'SKYFLOW_EXPIRY',
-    'SKYFLOW_CVV',
-    'CYBERSOURCE_CARD',
-    'CYBERSOURCE_EXPIRY',
-    'CYBERSOURCE_CVV',
-    'AUTHORIZNET_CARD',
-    'AUTHORIZNET_EXPIRY',
-    'AUTHORIZNET_CVV',
-    'DATATRANCE_MASTERCARD',
-    'DATATRANCE_EXPIRY',
-    'DATATRANCE_CVV',
-    'DATATRANCE_OTP',
-    'FIGMA_API_KEY',
-    'POSTMAN_API_KEY'
 ];
 
-const missingVars = requiredVars.filter(varName => !process.env[varName]);
-if (missingVars.length > 0) {
-    console.error('Missing required environment variables:', missingVars.join(', '));
+// Feature-gated: required ONLY when the corresponding skill/suite runs.
+// The orchestrator/skill checks at dispatch time; env:check just warns here.
+const featureGatedVars = {
+    storybook: {
+        vars: ['STORYBOOK_URL', 'STORYBOOK_DEV_URL'],
+        gates: '/qa-storybook (visual regression)',
+    },
+    storefront_pair: {
+        vars: ['USER2_EMAIL', 'USER2_PASSWORD'],
+        gates: 'B2B / list-sharing / multi-user suites',
+    },
+    payment_skyflow: {
+        vars: ['SKYFLOW_MASTERCARD', 'SKYFLOW_EXPIRY', 'SKYFLOW_CVV'],
+        gates: 'PAYMENT_PROCESSORS_ENABLED includes "skyflow"',
+    },
+    payment_cybersource: {
+        vars: ['CYBERSOURCE_CARD', 'CYBERSOURCE_EXPIRY', 'CYBERSOURCE_CVV'],
+        gates: 'PAYMENT_PROCESSORS_ENABLED includes "cybersource"',
+    },
+    payment_authoriznet: {
+        vars: ['AUTHORIZNET_CARD', 'AUTHORIZNET_EXPIRY', 'AUTHORIZNET_CVV'],
+        gates: 'PAYMENT_PROCESSORS_ENABLED includes "authorize-net"',
+    },
+    payment_datatrance: {
+        vars: ['DATATRANCE_MASTERCARD', 'DATATRANCE_EXPIRY', 'DATATRANCE_CVV', 'DATATRANCE_OTP'],
+        gates: 'PAYMENT_PROCESSORS_ENABLED includes "datatrance"',
+    },
+    figma: {
+        vars: ['FIGMA_API_KEY'],
+        gates: '/qa-design Figma comparison',
+    },
+    postman: {
+        vars: ['POSTMAN_API_KEY'],
+        gates: '/qa-postman, /qa-api test',
+    },
+};
+
+const missingCore = coreRequiredVars.filter(v => !process.env[v]);
+if (missingCore.length > 0) {
+    console.error('[config] Missing CORE environment variables (required for any run):', missingCore.join(', '));
+    console.error('[config] Run: npm run plugin:install   (or edit .env.${TEST_ENV} + .env.local manually)');
     process.exit(1);
+}
+
+const enabledProcessors = (process.env.PAYMENT_PROCESSORS_ENABLED || '')
+    .split(',')
+    .map(p => p.trim().toLowerCase())
+    .filter(Boolean);
+
+const warnings = [];
+for (const [featureKey, { vars, gates }] of Object.entries(featureGatedVars)) {
+    // Payment-processor gates check the enabledProcessors set
+    if (featureKey.startsWith('payment_')) {
+        const processor = featureKey.replace('payment_', '').replace('authoriznet', 'authorize-net');
+        // If PAYMENT_PROCESSORS_ENABLED is empty, all processors are "potentially enabled" — warn for missing
+        // If PAYMENT_PROCESSORS_ENABLED is set, only warn for processors the customer enabled
+        const customerWantsThisProcessor = enabledProcessors.length === 0 || enabledProcessors.includes(processor);
+        if (!customerWantsThisProcessor) continue;
+    }
+    const missing = vars.filter(v => !process.env[v]);
+    if (missing.length === vars.length) {
+        warnings.push(`[config] FEATURE-GATED skipped: ${gates} — set ${vars.join(', ')} to enable`);
+    } else if (missing.length > 0) {
+        warnings.push(`[config] FEATURE-GATED partial: ${gates} — missing ${missing.join(', ')} (other vars present)`);
+    }
+}
+if (warnings.length > 0) {
+    for (const w of warnings) console.warn(w);
 }
 
 // Helper function to get environment variable with optional default

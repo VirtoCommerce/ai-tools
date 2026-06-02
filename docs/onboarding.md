@@ -1,10 +1,24 @@
 # VC QA Plugin — Customer Onboarding
 
-> **Audience:** Anyone with a Virto Commerce deployment (storefront + Admin SPA) who wants to run VC's internal QA agents against their own environment.
+> **Audience:** Anyone with a Virto Commerce deployment (storefront + Admin SPA) who wants to use VC's QA agent crew + authoring framework against their own environment.
 >
-> **Time:** 5–15 minutes per environment.
+> **Time:** 5–15 minutes per environment for install. Days-to-weeks for customer-specific suite authoring (your customizations need your tests).
 >
-> **Outcome:** A green `/qa-smoke` run covering both your storefront and Admin SPA, with bugs filed in your JIRA project in the standard format.
+> **What you get on install day:** the agent crew, the framework, multi-env orchestration, and the universal subset of VC platform suites running against your env.
+>
+> **What you build over time:** suites for your custom features, in the same Enriched CSV format as the shipped reference suites.
+
+## What the plugin ships (and what it doesn't)
+
+The plugin is **a methodology + agents + framework + reference suite library** — not a complete test suite for your specific storefront. See [`docs/marketing-onepager.md`](marketing-onepager.md) for the full framing.
+
+| Layer | Out of the box | Your job |
+|-------|---------------|---------|
+| Methodology (ISTQB, evidence policy, defect workflow, report templates) | ✅ Use as-is | — |
+| Agent crew + capability infrastructure (orchestrator, env loader, `@td()`, MCP browser pool) | ✅ Use as-is | — |
+| Reference suites for **universal VC platform behavior** (auth, cart, checkout shape, payment integration patterns, GraphQL xAPI, Admin SPA module surfaces) | ✅ ~60-70% of the 99 suites run as-is once you fill in your `@td()` data | Configure `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED` so non-applicable suites skip |
+| Reference suites that are **vcst-qa-specific** (some BL invariants assume vcst-qa data shape, some UI assertions match VC's default Coffee theme) | ⚠️ Will fail or need adaptation on your deployment | Clone-and-adapt the closest reference, or skip via suite-list selection |
+| Suites for **your custom features** (custom modules, custom checkout customizations, branded theme assertions, business-specific invariants) | ❌ Plugin does NOT ship these | **You write them** under `regression/suites/customer/` — see [`docs/test-authoring.md`](test-authoring.md) |
 
 ## Prerequisites
 
@@ -196,11 +210,22 @@ Default selections are conservative. Don't run `/qa-regression full` against pro
 
 After your first green `/qa-smoke`:
 
+**Day 1:**
 - Try a focused regression: `/qa-regression critical`
 - Run a design audit: `/qa-design <your storefront page>`
-- Generate API test cases: `/qa-api cases <your module>`
 - Explore the agent set: `.claude/agents/README.md`
 - Read the methodology: `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md`
+
+**Week 1:**
+- Identify vcst-specific suites that don't apply to your deployment; add them to your local suite-skip list.
+- For each of your custom features, find the closest reference suite in `regression/suites/Frontend/` or `Backend/` and clone it as a starting pattern.
+
+**Week 2+:**
+- **Start authoring your own suites** under `regression/suites/customer/`. The Enriched CSV format, `@td()` resolver, and BL invariant convention are all reusable. See [`docs/test-authoring.md`](test-authoring.md) for the full guide.
+- Generate API test cases for your custom modules: `/qa-api cases <your module>`
+- Build out your own `aliases.json` entries for your domain entities (custom product types, custom user roles, custom org structures).
+
+**The expected steady state:** you maintain ~10-50 customer-authored suites covering your custom features, while the plugin's reference suites cover the universal VC platform behavior. Both run under the same orchestrator with the same agents.
 
 ## Where to find help
 

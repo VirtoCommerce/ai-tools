@@ -181,15 +181,18 @@ Customer QA lead: ${name}  ${date}
 
 The pilot succeeds when ALL of these hold:
 
-1. Customer's QA lead ran `/qa-smoke` on ≥ 2 envs without VC support.
-2. Customer filed at least one real bug in their JIRA project in the standard `reports.md` format.
-3. No critical plugin bugs surfaced (a critical = "couldn't run any test on any env").
-4. Customer's quote answers "yes, recommend to another VC customer."
-5. Feedback report filed at `reports/pilot-feedback/customer-${name}-${date}.md`.
+1. Customer's QA lead ran the universal suite subset green on ≥ 2 envs without VC support (vcst-specific suites can fail/skip; that's expected, not a pilot failure).
+2. Customer **authored at least one of their own suites** for a customer-specific feature, in the standard Enriched CSV format using `@td()` resolver. Suite runs under the same orchestrator as the shipped reference suites.
+3. Customer filed at least one real bug in their JIRA project in the standard `reports.md` format — bug can come from any suite (reference or customer-authored).
+4. No critical plugin bugs surfaced (a critical = "couldn't run any test on any env", or "framework is broken on Windows", or similar).
+5. Customer's quote answers "yes, recommend to another VC customer."
+6. Feedback report filed at `reports/pilot-feedback/customer-${name}-${date}.md`.
 
-Pilot is a partial success if 1–3 hold but 4 is wobbly — capture the wobble and ship the v0.2 fix; offer a re-pilot.
+Pilot is a partial success if 1–4 hold but 5 is wobbly — capture the wobble and ship the v0.2 fix; offer a re-pilot.
 
-Pilot has failed if 1, 2, or 3 don't hold. Stop. Triage the blockers. Don't run a second pilot until they're fixed.
+Pilot has failed if 1, 2, 3, or 4 don't hold. Stop. Triage the blockers. Don't run a second pilot until they're fixed.
+
+> **Why metric #2 matters:** the plugin's actual value proposition is "framework for authoring + agent crew + methodology", with the reference suites as a starting library. A pilot that runs only the universal subset without ever writing a customer-specific suite hasn't validated the actual product. If the customer can't or won't author their own suite during the pilot week, that signals either (a) the docs/framework aren't approachable enough, or (b) the customer doesn't have features worth testing — both are blockers worth surfacing.
 
 ---
 

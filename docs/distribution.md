@@ -80,10 +80,13 @@ See [`docs/versioning.md`](versioning.md) for the full contract.
 
 **Pre-v1.0:** Best-effort via GitHub Issues. No SLA.
 
-**Post-v1.0 (paid tier, TBD):**
+**Post-v1.0 (paid tier, pricing TBD):**
+- Tier 0: Self-serve docs (`docs/onboarding.md`, troubleshooting in same).
 - Tier 1: Public GitHub Issues + plugin docs (free for all VC customers).
 - Tier 2: Direct customer support via VC Slack + email (paid add-on, pricing TBD post-pilot).
 - Tier 3: Dedicated onboarding + custom suite authoring (consulting engagement).
+
+Full triage flow, SLA targets, communication templates, and patch-release workflow in [`./support-runbook.md`](support-runbook.md).
 
 ## Versioning Sources of Truth
 
