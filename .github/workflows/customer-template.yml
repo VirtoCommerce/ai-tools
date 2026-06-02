@@ -1,0 +1,253 @@
+# =============================================================================
+# vc-qa Customer CI Template
+# =============================================================================
+#
+# Copy this file into YOUR repo at `.github/workflows/regression.yml`,
+# fill in the secret names that exist in your GitHub repo settings, and
+# delete the parts you don't use (e.g. payment-processor steps if you
+# don't use those processors).
+#
+# Source of truth:
+#   - https://github.com/VirtoCommerce/vc-mcp-testing-module
+#   - docs/test-authoring.md
+#
+# Required GitHub secrets in YOUR repo (Settings → Secrets and variables → Actions):
+#   ANTHROPIC_API_KEY      Your Anthropic API key for the Claude Agent SDK
+#   VC_FRONT_URL           Your storefront base URL (https://store.example.com)
+#   VC_BACK_URL            Your platform/admin SPA base URL (https://admin.example.com)
+#   VC_ADMIN_USER          Admin username (platform OAuth user)
+#   VC_ADMIN_PASSWORD      Admin password
+#   VC_STORE_ID            Your store ID (from Admin SPA → Stores)
+#   VC_TEST_USER_EMAIL     A B2C-style storefront test user email
+#   VC_TEST_USER_PASSWORD  Password for the test user
+#
+# Optional secrets (only needed if those features are exercised):
+#   VC_B2B_USER_EMAIL/PASSWORD   For B2B suites (skip if STOREFRONT_PROFILE=b2c)
+#   VC_CYBERSOURCE_CARD/EXPIRY/CVV    For CyberSource payment suites
+#   VC_SKYFLOW_VISA/EXPIRY/CVV        For Skyflow payment suites
+#   TEAMS_WEBHOOK_URL                 For Microsoft Teams notifications
+#   JIRA_API_TOKEN                    For automatic bug filing
+#
+# What the inputs below control:
+#   suite_selection: which group of tests to run.
+#       'smoke' (≈18 min, ≈$3-5)   — basic sanity, daily-suitable
+#       'critical' (≈45 min, ≈$8-12) — P0 suites only
+#       'full' (≈4-6h, ≈$60-80)    — every applicable suite
+#       Or pass an explicit list: '042,049'.
+#   test_env: arbitrary label for YOUR env (lowercase alphanumeric/underscore).
+#       Becomes TEST_ENV. The layered env loader reads .env.${test_env} if
+#       it exists in your repo. Use 'staging', 'prod', 'eu_test', etc.
+#   env_risk: dev | test | staging | production.
+#       Controls the envRiskGate. 'production' BLOCKS all 45 write-heavy
+#       suites by default. Pass allow_admin_writes_on_prod=true to override.
+#   storefront_profile: b2b | b2c | hybrid | (empty for any).
+#       Skips suites that don't apply to your storefront topology.
+#   modules_enabled: comma-separated VC platform modules (catalog,orders,...).
+#       Empty = run every suite. List = skip suites requiring missing modules.
+#   payment_processors_enabled: cybersource,skyflow,authorize-net,datatrance
+#       Empty = run every payment suite. List = skip suites for other processors.
+#
+# Filter pipeline is verified offline via `npm run verify:multi-env`.
+# Report lives at reports/multi-env-verification/.
+# =============================================================================
+
+name: VC QA Regression
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_selection:
+        description: 'Suite selection: smoke | critical | full | comma-separated IDs (042,049)'
+        required: true
+        default: 'smoke'
+        type: string
+      test_env:
+        description: 'Your env label (lowercase alphanumeric/underscore). Becomes TEST_ENV.'
+        required: true
+        default: 'staging'
+        type: string
+      env_risk:
+        description: 'Env risk tier — gates write-heavy suites'
+        required: true
+        default: 'test'
+        type: choice
+        options: [dev, test, staging, production]
+      storefront_profile:
+        description: 'Storefront topology — empty for any'
+        required: false
+        default: ''
+        type: choice
+        options: ['', b2b, b2c, hybrid]
+      modules_enabled:
+        description: 'Comma-separated VC modules (empty = all). Example: catalog,orders,customer'
+        required: false
+        default: ''
+        type: string
+      payment_processors_enabled:
+        description: 'Comma-separated processors (empty = all). Example: cybersource'
+        required: false
+        default: ''
+        type: string
+      allow_admin_writes_on_prod:
+        description: 'DANGER: run write-heavy suites against ENV_RISK=production. Default false.'
+        required: false
+        default: false
+        type: boolean
+      max_budget:
+        description: 'Max budget in USD (Anthropic token spend cap)'
+        required: false
+        default: '10.0'
+        type: string
+
+  # OPTIONAL: schedule daily smoke. Uncomment + adjust cron to enable.
+  # schedule:
+  #   - cron: '0 6 * * 1-5'  # 6 AM UTC, Mon-Fri
+
+concurrency:
+  group: vc-regression-${{ github.event.inputs.suite_selection || 'scheduled' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6h max — cap by max_budget rather than time
+
+    env:
+      SUITE_SELECTION: ${{ inputs.suite_selection || 'smoke' }}
+      TEST_ENV: ${{ inputs.test_env || 'staging' }}
+      ENV_RISK: ${{ inputs.env_risk || 'test' }}
+      STOREFRONT_PROFILE: ${{ inputs.storefront_profile || '' }}
+      MODULES_ENABLED: ${{ inputs.modules_enabled || '' }}
+      PAYMENT_PROCESSORS_ENABLED: ${{ inputs.payment_processors_enabled || '' }}
+      ALLOW_ADMIN_WRITES_ON_PROD: ${{ inputs.allow_admin_writes_on_prod && 'true' || 'false' }}
+      MAX_BUDGET_USD: ${{ inputs.max_budget || '10.0' }}
+
+    steps:
+      - name: Checkout vc-qa plugin
+        uses: actions/checkout@v4
+        with:
+          repository: VirtoCommerce/vc-mcp-testing-module
+          ref: main  # Pin to a release tag for stability — e.g. v1.0.0
+          path: vc-qa
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: vc-qa/package-lock.json
+
+      - name: Install dependencies
+        working-directory: vc-qa
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: vc-qa
+        run: npx playwright install chromium --with-deps
+
+      - name: Pre-flight — verify multi-env filter logic
+        working-directory: vc-qa
+        run: npm run verify:multi-env
+
+      - name: Pre-flight — env health check
+        working-directory: vc-qa
+        env:
+          FRONT_URL: ${{ secrets.VC_FRONT_URL }}
+          BACK_URL: ${{ secrets.VC_BACK_URL }}
+          USER_EMAIL: ${{ secrets.VC_TEST_USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.VC_TEST_USER_PASSWORD }}
+          ADMIN: ${{ secrets.VC_ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ secrets.VC_ADMIN_PASSWORD }}
+          STORE_ID: ${{ secrets.VC_STORE_ID }}
+        run: npm run env:check
+
+      - name: Log run configuration
+        run: |
+          echo "=== VC QA Regression Run ==="
+          echo "Suite Selection:           ${{ env.SUITE_SELECTION }}"
+          echo "TEST_ENV:                  ${{ env.TEST_ENV }}"
+          echo "ENV_RISK:                  ${{ env.ENV_RISK }}"
+          echo "STOREFRONT_PROFILE:        ${{ env.STOREFRONT_PROFILE || '(any)' }}"
+          echo "MODULES_ENABLED:           ${{ env.MODULES_ENABLED || '(all)' }}"
+          echo "PAYMENT_PROCESSORS:        ${{ env.PAYMENT_PROCESSORS_ENABLED || '(all)' }}"
+          echo "ALLOW_ADMIN_WRITES_ON_PROD: ${{ env.ALLOW_ADMIN_WRITES_ON_PROD }}"
+          echo "Max Budget:                \$${{ env.MAX_BUDGET_USD }}"
+
+      - name: Run regression
+        id: regression
+        working-directory: vc-qa
+        env:
+          # Required secrets — map YOUR repo's secret names to the plugin's expected env vars
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FRONT_URL: ${{ secrets.VC_FRONT_URL }}
+          BACK_URL: ${{ secrets.VC_BACK_URL }}
+          ADMIN: ${{ secrets.VC_ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ secrets.VC_ADMIN_PASSWORD }}
+          STORE_ID: ${{ secrets.VC_STORE_ID }}
+          USER_EMAIL: ${{ secrets.VC_TEST_USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.VC_TEST_USER_PASSWORD }}
+          # Optional — only needed for B2B suites
+          B2B_USER_EMAIL: ${{ secrets.VC_B2B_USER_EMAIL }}
+          B2B_USER_PASSWORD: ${{ secrets.VC_B2B_USER_PASSWORD }}
+          # Optional — only needed if payment_processors_enabled includes the matching processor
+          CYBERSOURCE_CARD: ${{ secrets.VC_CYBERSOURCE_CARD }}
+          CYBERSOURCE_EXPIRY: ${{ secrets.VC_CYBERSOURCE_EXPIRY }}
+          CYBERSOURCE_CVV: ${{ secrets.VC_CYBERSOURCE_CVV }}
+          SKYFLOW_VISA: ${{ secrets.VC_SKYFLOW_VISA }}
+          SKYFLOW_EXPIRY: ${{ secrets.VC_SKYFLOW_EXPIRY }}
+          SKYFLOW_CVV: ${{ secrets.VC_SKYFLOW_CVV }}
+        run: npm run ci:regression
+
+      - name: Read run summary
+        if: always()
+        id: summary
+        working-directory: vc-qa
+        run: |
+          SUMMARY_FILE=$(find reports/regression -name "summary.json" -type f 2>/dev/null | sort -r | head -1)
+          if [ -n "$SUMMARY_FILE" ]; then
+            PASS_RATE=$(jq -r '.passRate // 0' "$SUMMARY_FILE")
+            TOTAL_COST=$(jq -r '.totalCostUsd // 0' "$SUMMARY_FILE")
+            PASSED=$(jq -r '.passed // 0' "$SUMMARY_FILE")
+            FAILED=$(jq -r '.failed // 0' "$SUMMARY_FILE")
+            BLOCKED=$(jq -r '.blocked // 0' "$SUMMARY_FILE")
+            {
+              echo "### VC QA Regression Results"
+              echo "| Metric | Value |"
+              echo "|--------|-------|"
+              echo "| Suite Selection | ${{ env.SUITE_SELECTION }} |"
+              echo "| TEST_ENV / ENV_RISK | ${{ env.TEST_ENV }} / ${{ env.ENV_RISK }} |"
+              echo "| Pass Rate | ${PASS_RATE}% |"
+              echo "| Passed | $PASSED |"
+              echo "| Failed | $FAILED |"
+              echo "| Blocked | $BLOCKED |"
+              echo "| Cost (USD) | \$${TOTAL_COST} |"
+            } >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::warning::No summary.json found — orchestrator may have failed early"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vc-regression-${{ env.SUITE_SELECTION }}-${{ github.run_number }}
+          path: |
+            vc-qa/test-results/
+            vc-qa/reports/regression/
+            vc-qa/reports/bugs/
+          retention-days: 30
+
+      # OPTIONAL: Teams notification
+      # - name: Send Teams notification
+      #   if: always()
+      #   working-directory: vc-qa
+      #   env:
+      #     TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      #     RUN_STATUS: ${{ job.status }}
+      #     GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      #     SUITE_SELECTION: ${{ env.SUITE_SELECTION }}
+      #     TEST_ENVIRONMENT: ${{ env.TEST_ENV }}
+      #   run: npm run ci:notify
