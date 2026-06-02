@@ -57,7 +57,29 @@
           "agent": { "type": "string" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "preferredBrowser": { "type": "string" },
-          "browserRequirementReason": { "type": "string" }
+          "browserRequirementReason": { "type": "string" },
+          "storefrontProfile": {
+            "type": "array",
+            "description": "Which storefront profiles this suite applies to. Orchestrator skips suites whose profiles don't include the active STOREFRONT_PROFILE env var. Defaults to all profiles if absent (suite is unconditionally applicable).",
+            "items": { "enum": ["b2b", "b2c", "hybrid"] },
+            "minItems": 1
+          },
+          "requiresModules": {
+            "type": "array",
+            "description": "VC modules this suite requires (e.g. ['cms', 'loyalty', 'marketing']). Orchestrator skips suites whose required modules aren't in the active MODULES_ENABLED env var. Defaults to no requirement if absent. Use for Backend suites that test module-admin surfaces; Frontend storefront suites typically don't need this.",
+            "items": { "type": "string" }
+          },
+          "envRiskGate": {
+            "type": "string",
+            "description": "Maximum ENV_RISK level this suite will run against. Suite refuses to run if active ENV_RISK exceeds this. Use 'staging' for suites that write data; 'production' (default) for read-only suites.",
+            "enum": ["dev", "test", "staging", "production"]
+          },
+          "paymentProcessors": {
+            "type": "array",
+            "description": "Payment processors this suite exercises. Orchestrator skips the suite if NONE of its processors are in PAYMENT_PROCESSORS_ENABLED env var (empty env = no filter, all suites run). Use for suites that bind to a specific processor's iframe/redirect/API behavior. Customer enables only the processors they actually deploy.",
+            "items": { "enum": ["cybersource", "skyflow", "authorize-net", "datatrance", "stripe"] },
+            "minItems": 1
+          }
         }
       }
     },

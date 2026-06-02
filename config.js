@@ -8,6 +8,20 @@ import { config } from 'dotenv';
 // The legacy single .env file is loaded last as a backwards-compat fallback —
 // it fills gaps but does NOT override the above. Remove once everyone migrates.
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
+
+// Validate TEST_ENV: must match [a-z0-9_]+ so the per-env suffix-promotion
+// (which uppercases TEST_ENV and appends as a var suffix) works correctly.
+// Kebab-case names like `customer-staging-eu` silently break suffix promotion
+// because `_CUSTOMER-STAGING-EU` is not a valid env-var suffix.
+if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
+    console.error(
+        `[config] Invalid TEST_ENV="${TEST_ENV}". Must match [a-z0-9_]+. ` +
+        `Use underscores instead of hyphens (e.g. "customer_staging_eu", not "customer-staging-eu"). ` +
+        `This is required so per-env secrets in .env.local (e.g. USER_PASSWORD_${TEST_ENV.toUpperCase().replace(/[^A-Z0-9_]/g, '_')}) resolve correctly.`
+    );
+    process.exit(1);
+}
+
 config({ path: '.env.defaults' });
 config({ path: `.env.${TEST_ENV}`, override: true });
 config({ path: '.env.local', override: true });
@@ -22,7 +36,20 @@ for (const [key, value] of Object.entries(process.env)) {
         process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
     }
 }
-console.log(`[config] TEST_ENV=${TEST_ENV}`);
+
+// ENV_RISK: safety-by-config (not by env name). Production-risk envs block
+// admin-write suites by default; opt-in via --allow-admin-writes-on-prod.
+// Values: dev | test | staging | production. Defaults to 'dev' for backwards-compat.
+const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+if (!['dev', 'test', 'staging', 'production'].includes(ENV_RISK)) {
+    console.error(`[config] Invalid ENV_RISK="${ENV_RISK}". Must be one of: dev, test, staging, production.`);
+    process.exit(1);
+}
+
+console.log(`[config] TEST_ENV=${TEST_ENV} ENV_RISK=${ENV_RISK}`);
+if (ENV_RISK === 'production') {
+    console.log(`[config] ⚠ PRODUCTION-RISK ENV. Admin-write suites blocked unless --allow-admin-writes-on-prod is passed.`);
+}
 
 // Validate required environment variables.
 // Required = core flows (URLs, storefront/admin auth, base payment cards) that must exist for any suite to run.
@@ -73,11 +100,19 @@ const getEnvVar = (name, defaultValue = undefined) => {
 
 // Export configuration object
 export const env = {
+    // Multi-env metadata (per feature/qa-agentic-standardization)
+    TEST_ENV,                                           // The active env name (arbitrary string, validated above)
+    ENV_RISK,                                           // dev | test | staging | production — gates destructive ops
+    STOREFRONT_PROFILE: getEnvVar('STOREFRONT_PROFILE', 'hybrid'),  // b2b | b2c | hybrid — gates which suites apply
+    MODULES_ENABLED: getEnvVar('MODULES_ENABLED', ''),  // CSV of installed VC modules; orchestrator skips suites whose requiresModules[] not satisfied (empty = no filter)
+    PAYMENT_PROCESSORS_ENABLED: getEnvVar('PAYMENT_PROCESSORS_ENABLED', ''),  // CSV of payment processors customer uses (cybersource,skyflow,authorize-net,datatrance,stripe); orchestrator skips payment suites for processors not in this list (empty = no filter)
+    JIRA_PROJECT_KEY: getEnvVar('JIRA_PROJECT_KEY', 'VCST'),  // Customer's JIRA project for bug filing
+
     // Application URLs
     FRONT_URL: getEnvVar('FRONT_URL'),
     BACK_URL: getEnvVar('BACK_URL'),
-    VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT', ''),
-    VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK', ''),
+    VIRTO_START_FRONT: getEnvVar('VIRTO_START_FRONT', ''),       // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
+    VIRTO_START_BACK: getEnvVar('VIRTO_START_BACK', ''),         // TODO(qa-agentic-standardization): deprecate; switch consumers to TEST_ENV=virtostart
     STORYBOOK_URL: getEnvVar('STORYBOOK_URL'),
     STORYBOOK_DEV_URL: getEnvVar('STORYBOOK_DEV_URL'),
 

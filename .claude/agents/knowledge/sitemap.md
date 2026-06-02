@@ -191,7 +191,7 @@ Counts are live product totals as of 2026-05-20.
 | Security & Protection | `/category/eee07117-dbbf-4713-b2be-8c9a96d81192` |
 | Digital products | `/category/03b70abf-a428-4049-957c-230783952ea9` |
 
-> Storefront resolves these category IDs against the **B2B virtual catalog root `fc596540864a41bf8ab78734ee7353a3`** (see `feedback_storefront_virtual_catalog_link` and `aliases.json` → `VIRTUAL_CATALOG_B2B`). Products seeded into the physical catalog without a virtual-catalog link return 404 on storefront.
+> Storefront resolves these category IDs against the **B2B virtual catalog root** — resolve via `@td(VIRTUAL_CATALOG_B2B.id)` (see `aliases.json` for the value on the active env). The vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`; customers will see their own GUID. Products seeded into the physical catalog without a virtual-catalog link return 404 on storefront. See memory `feedback_storefront_virtual_catalog_link` for the failure mode.
 
 ---
 
@@ -484,7 +484,7 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 - Multiple stores, channels, and locations
 - Organization lists
 - Bulk order processing
-- B2B virtual catalog root: `fc596540864a41bf8ab78734ee7353a3`
+- B2B virtual catalog root: `@td(VIRTUAL_CATALOG_B2B.id)` — vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`, customer value differs
 - Same product added twice consolidates into one line item with summed quantity (B2B-store behavior — see `reference_b2b_lineitem_consolidation`)
 
 ---

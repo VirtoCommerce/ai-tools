@@ -243,9 +243,9 @@
       "agent": "qa-frontend-expert",
       "tags": [
         "b2c",
-        "ship-to",           
+        "ship-to",
         "dashboard",
-        "bulk-order",  
+        "bulk-order",
         "sprint"
       ]
     },
@@ -357,6 +357,9 @@
         "management",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "orders"
       ]
     },
     {
@@ -375,6 +378,9 @@
         "admin",
         "payments",
         "sprint"
+      ],
+      "requiresModules": [
+        "orders"
       ]
     },
     {
@@ -393,6 +399,9 @@
         "admin",
         "shipments",
         "sprint"
+      ],
+      "requiresModules": [
+        "orders"
       ]
     },
     {
@@ -447,6 +456,9 @@
         "promotions",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "marketing"
       ]
     },
     {
@@ -466,6 +478,9 @@
         "dynamic-content",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "marketing"
       ]
     },
     {
@@ -485,6 +500,9 @@
         "api",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "marketing"
       ]
     },
     {
@@ -504,6 +522,9 @@
         "admin",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "customer"
       ]
     },
     {
@@ -523,6 +544,9 @@
         "invites",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "customer"
       ]
     },
     {
@@ -653,6 +677,9 @@
         "admin",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "store"
       ]
     },
     {
@@ -672,6 +699,9 @@
         "email",
         "configuration",
         "sprint"
+      ],
+      "requiresModules": [
+        "store"
       ]
     },
     {
@@ -746,7 +776,8 @@
         "cybersource",
         "revenue-critical",
         "daily"
-      ]
+      ],
+      "paymentProcessors": ["cybersource"]
     },
     {
       "id": "040",
@@ -765,7 +796,8 @@
         "authorize-net",
         "datatrance",
         "revenue-critical"
-      ]
+      ],
+      "paymentProcessors": ["skyflow", "authorize-net", "datatrance"]
     },
     {
       "id": "041",
@@ -785,7 +817,8 @@
         "cross-cutting",
         "pci",
         "revenue-critical"
-      ]
+      ],
+      "paymentProcessors": ["cybersource", "skyflow", "authorize-net", "datatrance"]
     },
     {
       "id": "042",
@@ -1245,6 +1278,9 @@
         "products",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "catalog"
       ]
     },
     {
@@ -1263,6 +1299,9 @@
         "admin",
         "configuration",
         "sprint"
+      ],
+      "requiresModules": [
+        "catalog"
       ]
     },
     {
@@ -1282,6 +1321,9 @@
         "categories",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "catalog"
       ]
     },
     {
@@ -1300,6 +1342,9 @@
         "logic",
         "pricelists",
         "sprint"
+      ],
+      "requiresModules": [
+        "pricing"
       ]
     },
     {
@@ -1319,6 +1364,9 @@
         "admin",
         "crud",
         "sprint"
+      ],
+      "requiresModules": [
+        "pricing"
       ]
     },
     {
@@ -1337,6 +1385,9 @@
         "fulfillment",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "inventory"
       ]
     },
     {
@@ -1355,6 +1406,9 @@
         "templates",
         "email",
         "sprint"
+      ],
+      "requiresModules": [
+        "notifications"
       ]
     },
     {
@@ -1373,6 +1427,9 @@
         "triggers",
         "events",
         "sprint"
+      ],
+      "requiresModules": [
+        "notifications"
       ]
     },
     {
@@ -1392,6 +1449,9 @@
         "management",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "cms"
       ]
     },
     {
@@ -1411,6 +1471,9 @@
         "content",
         "builder",
         "sprint"
+      ],
+      "requiresModules": [
+        "cms"
       ]
     },
     {
@@ -1431,6 +1494,9 @@
         "admin",
         "range-facets",
         "sprint"
+      ],
+      "requiresModules": [
+        "search"
       ]
     },
     {
@@ -1450,6 +1516,9 @@
         "download",
         "blob-storage",
         "sprint"
+      ],
+      "requiresModules": [
+        "assets"
       ]
     },
     {
@@ -1488,6 +1557,9 @@
         "export",
         "catalog",
         "sprint"
+      ],
+      "requiresModules": [
+        "import-export"
       ]
     },
     {
@@ -1506,6 +1578,9 @@
         "rates",
         "methods",
         "sprint"
+      ],
+      "requiresModules": [
+        "shipping"
       ]
     },
     {
@@ -1525,6 +1600,9 @@
         "slug",
         "meta",
         "sprint"
+      ],
+      "requiresModules": [
+        "seo"
       ]
     },
     {
@@ -1544,6 +1622,9 @@
         "branding",
         "logo",
         "sprint"
+      ],
+      "requiresModules": [
+        "whitelabeling"
       ]
     },
     {
@@ -1561,6 +1642,9 @@
         "push-messages",
         "notifications",
         "drafts"
+      ],
+      "requiresModules": [
+        "push-messages"
       ]
     },
     {
@@ -1579,6 +1663,9 @@
         "thumbnails",
         "resize",
         "processing"
+      ],
+      "requiresModules": [
+        "image-tools"
       ]
     },
     {
@@ -1710,6 +1797,9 @@
         "admin",
         "status-workflow",
         "sprint"
+      ],
+      "requiresModules": [
+        "returns"
       ]
     },
     {
@@ -1729,6 +1819,9 @@
         "pricing",
         "vendors",
         "sprint"
+      ],
+      "requiresModules": [
+        "contracts"
       ]
     },
     {
@@ -1748,6 +1841,9 @@
         "conditions",
         "store-settings",
         "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
       ]
     },
     {
@@ -1765,6 +1861,9 @@
         "channels",
         "catalog-publishing",
         "data-quality"
+      ],
+      "requiresModules": [
+        "channels"
       ]
     },
     {
@@ -1851,6 +1950,9 @@
         "dynamic-content",
         "rbac",
         "sprint"
+      ],
+      "requiresModules": [
+        "marketing"
       ]
     },
     {

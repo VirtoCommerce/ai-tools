@@ -1,56 +1,44 @@
 {
-  "runId": "REG-2026-06-01-1741",
-  "selection": "b2c",
-  "mode": "standard",
-  "environment": "vcst-qa",
-  "startedAt": "2026-06-01T17:41:00+02:00",
-  "completedAt": "2026-06-01T19:10:00+02:00",
-  "status": "completed",
+  "runId": "SMOKE-2026-06-02-1501",
+  "selection": "042",
+  "mode": "smoke-interactive",
+  "environment": "vcst",
+  "startedAt": "2026-06-02T15:01:00Z",
+  "completedAt": "2026-06-02T15:34:40Z",
+  "status": "interrupted",
   "build": {
     "platform": "3.1032.0",
     "theme": "vc-theme-b2b-vue-2.50.0-alpha.2359",
-    "customer": "3.1007.0",
-    "profileExperienceApi": "3.1007.0",
-    "xcart": "3.1016.0",
-    "catalog": "3.1025.0",
-    "xcatalog": "3.1005.0"
+    "note": "Build state read from prior run REG-2026-06-02-0936; deploy-state-cache.json stale (2026-05-20)."
   },
+  "envHealth": { "storefront": 200, "platformHealth": "Healthy" },
   "seedProfile": null,
-  "totalSuites": 5,
-  "totalTestCases": 166,
-  "verdict": { "passed": 87, "failed": 10, "blocked": 64, "skipped": 3 },
-  "passRate": { "executable": "89.7% (87/97)", "inclBlocked": "53.0% (87/164)" },
-  "postTriage": true,
-  "qualityGate": "CONDITIONAL-GO (post-triage) — 0 Critical, 0 confirmed High. VCST-4612 'regression' (BUG_009_002, CONFIG-016/017) REFUTED as a runner false positive via edge re-verification (3/3 fresh loads, fix holds); those 2 cases reclassified PASS. Suite 006 fixture drift FIXED: remapped to {{MULTI_ORG_USER_EMAIL}} (validated 11-org user), re-run recovered 19 cases (1->20 pass). Remaining 64 blocked are coverage gaps (org contract-pricing + boundary-membership accounts for 006; CFG-discount/conditional/File-section products for 009; bulk-order fixtures + approval workflow for 010/008) — not blockers. Open: /bulk-order cluster (BUG_010_*) needs triage before filing. Chrome MCP profile locks cleared.",
-  "newBugs": [
-    { "id": "BUG_009_002", "severity": "High", "tc": "B2C-CONFIG-016/017", "title": "VCST-4612 regression — REFUTED (runner false positive; edge re-verification shows fix holds, cases reclassified PASS)", "confirmed": false, "refuted": true },
-    { "id": "BUG_006_001", "severity": "Low", "tc": "B2C-ORG-008", "title": "Org switch does not reset page navigation (stays on deep category page)", "confirmed": false },
-    { "id": "BUG_010_004", "severity": "High", "tc": "B2C-BULK-007", "title": "Duplicate SKU rows not coalescing (confounded by cart pollution — re-test clean cart)", "confirmed": false },
-    { "id": "BUG_009_001", "severity": "Medium", "tc": "B2C-VAR-010", "title": "Variant selection does not update URL params (no deep-link)", "confirmed": false },
-    { "id": "BUG_010_001", "severity": "Medium", "tc": "B2C-BULK-001", "title": "Quick Order: no inline product resolution on SKU entry", "confirmed": false },
-    { "id": "BUG_010_002", "severity": "Medium", "tc": "B2C-BULK-003", "title": "No error shown for invalid SKU (Copy&Paste)", "confirmed": false },
-    { "id": "BUG_010_003", "severity": "Medium", "tc": "B2C-BULK-006", "title": "qty=0 does not block Add to Cart", "confirmed": false },
-    { "id": "BUG_010_005", "severity": "High", "tc": "B2C-LIST-028", "title": "No CSV upload UI on /bulk-order (may be expectation mismatch)", "confirmed": false },
-    { "id": "BUG_010_006", "severity": "Low", "tc": "B2C-LIST-029", "title": "No SKU autocomplete (may be expectation mismatch)", "confirmed": false },
-    { "id": "BUG_010_007", "severity": "Medium", "tc": "B2C-LIST-030", "title": "No error feedback for invalid SKU (Manually)", "confirmed": false },
-    { "id": "BUG_008_001", "severity": "Low", "tc": "B2C-MBR-018", "title": "No member-count indicator on /company/members", "confirmed": false }
-  ],
-  "report": "reports/regression/REG-2026-06-01-1741/regression-report.md",
+  "totalSuites": 1,
+  "totalTestCases": 33,
+  "verdict": { "passed": 14, "failed": 0, "notRun": 19 },
+  "passRate": { "executable": "100% (14/14)", "overall": "42.4% (14/33 — 19 not reached)" },
+  "qualityGate": "INCONCLUSIVE — session interrupted after SMK-014. 14 executed, all PASS (0 failures). Critical revenue path (auth, catalog, cart, checkout, CyberSource payment, order creation CO260602-00017) fully green. SMK-015–SMK-033 (GA4, order history, address mgmt, configurable products, B2B org switch, BOPIS, XSS, health) not reached. Rerun required for GO/NO-GO verdict.",
+  "newBugs": [],
+  "report": "reports/regression/SMOKE-2026-06-02-1501/regression-2026-06-02.md",
   "suites": [
-    { "id": "006", "name": "B2C Organization", "priority": "P1", "testCount": 39, "agent": "qa-frontend-expert", "browser": "playwright-edge", "status": "completed", "attempts": 2, "retryReason": "attempt1 chrome: 38 blocked by ORG_USER_EMAIL fixture drift (single-org user); attempt2 edge: remapped to MULTI_ORG_USER_EMAIL, 20 pass / 1 fail / 18 blocked", "verdict": { "passed": 20, "failed": 1, "blocked": 18, "skipped": 0 }, "outputFile": "reports/regression/REG-2026-06-01-1741/suite-006-results.json" },
-    { "id": "007", "name": "B2C Lists & Shared", "priority": "P1", "testCount": 26, "agent": "qa-frontend-expert", "browser": "playwright-firefox", "status": "completed", "attempts": 1, "verdict": { "passed": 20, "failed": 0, "blocked": 4, "skipped": 0 }, "outputFile": "reports/regression/REG-2026-06-01-1741/suite-007-results.json" },
-    { "id": "008", "name": "B2C Members", "priority": "P1", "testCount": 18, "agent": "qa-frontend-expert", "browser": "playwright-edge", "status": "completed", "attempts": 1, "verdict": { "passed": 9, "failed": 1, "blocked": 8, "skipped": 0 }, "outputFile": "reports/regression/REG-2026-06-01-1741/suite-008-results.json" },
-    { "id": "009", "name": "B2C Variations & Configs", "priority": "P1", "testCount": 31, "agent": "qa-frontend-expert", "browser": "playwright-edge", "status": "completed", "attempts": 3, "retryReason": "attempt1 chrome user-data-dir crash; attempt2 firefox pointer-action stability failure; attempt3 edge succeeded", "verdict": { "passed": 16, "failed": 3, "blocked": 9, "skipped": 3 }, "outputFile": "reports/regression/REG-2026-06-01-1741/suite-009-results.json" },
-    { "id": "010", "name": "B2C Bulk Ship Dashboard", "priority": "P1", "testCount": 52, "agent": "qa-frontend-expert", "browser": "playwright-edge", "status": "completed", "attempts": 1, "verdict": { "passed": 20, "failed": 7, "blocked": 25, "skipped": 0 }, "outputFile": "reports/regression/REG-2026-06-01-1741/suite-010-results.json" }
+    {
+      "id": "042",
+      "name": "Smoke Tests",
+      "priority": "P0",
+      "testCount": 33,
+      "agent": "qa-testing-expert",
+      "browser": "playwright-firefox",
+      "status": "interrupted",
+      "attempts": 1,
+      "verdict": { "passed": 14, "failed": 0, "notRun": 19 },
+      "lastExecuted": "SMK-014",
+      "orderCreated": "CO260602-00017",
+      "outputFile": "reports/regression/SMOKE-2026-06-02-1501/regression-2026-06-02.md"
+    }
   ],
   "browserPool": {
     "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
     "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
     "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null }
-  },
-  "batchLog": [
-    { "batch": 1, "suites": ["006", "007", "008"], "dispatchedAt": "2026-06-01T17:42:00+02:00" },
-    { "batch": 2, "suites": ["009", "010"], "dispatchedAt": "2026-06-01T18:05:00+02:00" },
-    { "batch": "009-retry", "suites": ["009"], "browsers": ["firefox", "edge"], "dispatchedAt": "2026-06-01T18:30:00+02:00" }
-  ]
+  }
 }

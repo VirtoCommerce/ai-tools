@@ -1,0 +1,85 @@
+{
+  "_meta": {
+    "description": "Customer test-data aliases. Replace the {{REPLACE_*}} placeholders with your VC entity IDs/SKUs/codes. Resolver: @td(ALIAS.field) in any suite CSV resolves to the field's value from this file or the linked test-data/{file}.csv row.",
+    "version": "0.1.0-template",
+    "privacy_notice": "Use SYNTHETIC test data. Do NOT commit real customer PII, real internal email addresses, or real internal admin role names (some reveal org structure). Synthetic users like 'qa-test-1@example.com' are safe; real users like 'jane.doe@bigcompany.com' are not.",
+    "naming_convention": "Inline aliases (no CSV row) use uppercase snake_case. CSV-backed aliases reference test-data/{domain}/{file}.csv rows by a {filter}. See .claude/rules/test-data.md for the full spec.",
+    "per_env_overrides": "Customers with N envs can create test-data/aliases.{TEST_ENV}.json — the resolver layers env-specific entries on top of this base. Use it ONLY for entries that genuinely differ per env (e.g. dev-only org IDs)."
+  },
+
+  "TEST_CATALOG_ROOT": {
+    "_inline": true,
+    "_comment": "Root catalog ID for storefront catalog tests. Replace with your customer's B2B / primary catalog root from Admin SPA → Catalogs.",
+    "id": "{{REPLACE_CATALOG_ROOT_GUID}}",
+    "name": "{{REPLACE_CATALOG_NAME}}"
+  },
+
+  "TEST_STORE": {
+    "_inline": true,
+    "_comment": "Primary storefront context for tests. Replace with the customer's store ID from Admin SPA → Stores.",
+    "id": "{{REPLACE_STORE_ID}}",
+    "currency": "USD",
+    "culture": "en-US"
+  },
+
+  "TEST_PRODUCT_SIMPLE": {
+    "_inline": true,
+    "_comment": "A buyable, in-stock, single-variant product. Used by smoke tests and basic cart flows. Replace with any standard product from the customer's catalog.",
+    "id": "{{REPLACE_PRODUCT_GUID}}",
+    "sku": "{{REPLACE_PRODUCT_SKU}}",
+    "name": "{{REPLACE_PRODUCT_NAME}}",
+    "slug": "{{REPLACE_PRODUCT_SLUG}}",
+    "price": "{{REPLACE_PRICE_NUMERIC}}"
+  },
+
+  "TEST_PRODUCT_CONFIGURABLE": {
+    "_inline": true,
+    "_comment": "A configurable product (CFG type) — required by suite 072 and friends. Optional if customer doesn't have CFG products. Leave entries empty to skip CFG tests.",
+    "id": "",
+    "sku": "",
+    "name": ""
+  },
+
+  "TEST_USER_B2C": {
+    "_inline": true,
+    "_comment": "Personal-account test user. Different from org users. Email + password are in .env.local with per-env suffix promotion; this alias just records the identity-vs-org-membership shape.",
+    "email": "{{REPLACE_B2C_USER_EMAIL}}",
+    "has_org": false
+  },
+
+  "TEST_ORG_PRIMARY": {
+    "_inline": true,
+    "_comment": "Primary test organization for B2B suites. Optional — leave empty to skip B2B suites entirely.",
+    "id": "",
+    "name": "",
+    "contact_id": ""
+  },
+
+  "TEST_ADDRESS_DOMESTIC": {
+    "_inline": true,
+    "_comment": "A complete, valid shipping address in the customer's primary country. Used by checkout flow tests. Replace with a real-looking but synthetic address (geocodable preferred).",
+    "firstName": "Test",
+    "lastName": "Customer",
+    "line1": "{{REPLACE_STREET_ADDRESS}}",
+    "city": "{{REPLACE_CITY}}",
+    "regionId": "{{REPLACE_STATE_OR_REGION_CODE}}",
+    "postalCode": "{{REPLACE_POSTAL_CODE}}",
+    "countryCode": "{{REPLACE_ISO3_COUNTRY_CODE}}",
+    "phone": "555-0100"
+  },
+
+  "TEST_COUPON_VALID": {
+    "_inline": true,
+    "_comment": "A coupon code that's currently active in Marketing → Promotions. Optional — leave empty to skip coupon-redemption suites.",
+    "code": "",
+    "promotion_id": "",
+    "discount_pct": ""
+  },
+
+  "ADMIN_ROLE_TESTER": {
+    "_inline": true,
+    "_comment": "Customer-specific role assigned to the test admin user. The BL-RBAC invariants reference role CAPABILITIES, not names — so this alias absorbs naming differences. Set name to the customer's actual role name; agents read this instead of assuming 'admin'.",
+    "name": "{{REPLACE_ADMIN_ROLE_NAME}}",
+    "id": "{{REPLACE_ADMIN_ROLE_ID}}"
+  }
+}
