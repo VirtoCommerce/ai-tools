@@ -81,5 +81,83 @@
     "_comment": "Customer-specific role assigned to the test admin user. The BL-RBAC invariants reference role CAPABILITIES, not names — so this alias absorbs naming differences. Set name to the customer's actual role name; agents read this instead of assuming 'admin'.",
     "name": "{{REPLACE_ADMIN_ROLE_NAME}}",
     "id": "{{REPLACE_ADMIN_ROLE_ID}}"
+  },
+
+  "ADMIN_ROLES_COMMON": {
+    "_inline": true,
+    "_comment": "Canonical VC platform admin role NAMES that ship out-of-the-box. Customers may rename these — suites that assert on role NAMES use @td(ADMIN_ROLES_COMMON.<role>). Override individual entries in test-data/aliases.${TEST_ENV}.json if your team renames a role.",
+    "administrator": "Administrator",
+    "store_manager": "Store Manager",
+    "catalog_manager": "Catalog Manager",
+    "order_manager": "Order Manager",
+    "customer_service": "Customer Service",
+    "marketing_manager": "Marketing Manager"
+  },
+
+  "ADMIN_USER": {
+    "_inline": true,
+    "_comment": "Platform admin user (Admin SPA back-office) metadata. Email/password come from .env / .env.local; this alias just records the identity contract for agents that need to assert against a specific admin user.",
+    "email_env_var": "ADMIN",
+    "password_env_var": "ADMIN_PASSWORD",
+    "role_alias": "ADMIN_ROLE_TESTER",
+    "user_type": "Administrator"
+  },
+
+  "VIRTUAL_CATALOG_B2B": {
+    "_inline": true,
+    "_comment": "Customer's B2B virtual catalog root GUID. Storefront resolves category subtree queries against this. Find via Admin SPA → Catalogs → your B2B virtual catalog → ID. The vcst-qa value for reference is fc596540864a41bf8ab78734ee7353a3.",
+    "id": "{{REPLACE_B2B_VIRTUAL_CATALOG_GUID}}",
+    "name": "{{REPLACE_B2B_CATALOG_NAME}}"
+  },
+
+  "AGENT_POOL_SLOT_1": {
+    "_comment": "Browser slot 1 (Chrome) — dedicated test user for parallel runs. Resolves to test-data/users/agent-user-pool.csv row where slot=1. Fields: email, password, browser, agent, b2b_email, b2b_password, b2b_org, b2b_org_id, b2b_role. Customer fills agent-user-pool.csv with their own pool; aliases auto-resolve.",
+    "file": "users/agent-user-pool",
+    "filter": { "slot": "1" },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    }
+  },
+
+  "AGENT_POOL_SLOT_2": {
+    "_comment": "Browser slot 2 (Firefox) — paired with slot 1 for same-org B2B tests by convention.",
+    "file": "users/agent-user-pool",
+    "filter": { "slot": "2" },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    }
+  },
+
+  "AGENT_POOL_SLOT_3": {
+    "_comment": "Browser slot 3 (Edge) — cross-org pair with slots 1+2 by convention.",
+    "file": "users/agent-user-pool",
+    "filter": { "slot": "3" },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    }
   }
 }
