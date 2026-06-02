@@ -203,13 +203,18 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 
 ## Agent User Pool (Parallel Isolation)
 
-When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Read `test-data/users/agent-user-pool.csv` and match on your assigned `{{BROWSER_SERVER}}`:
+When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.password`, `.b2b_email`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`:
 
-| Browser Server | Personal User | B2B User (org) |
-|---------------|---------------|----------------|
-| `playwright-chrome` | `qa-agent-slot1@virtocommerce.com` | `test-john.mitchell-...@test-agent.com` (AcmeCorp) |
-| `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` | `test-emily.johnson-...@test-agent.com` (TechFlow) |
-| `playwright-edge` | `qa-agent-slot3@virtocommerce.com` | `test-carlos.rodriguez-...@test-agent.com` (BuildRight) |
+| Browser Server | Personal User alias | B2B User alias |
+|---------------|---------------------|----------------|
+| `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.email)` | `@td(AGENT_POOL_SLOT_1.b2b_email)` (org: `@td(AGENT_POOL_SLOT_1.b2b_org)`) |
+| `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` (org: `@td(AGENT_POOL_SLOT_2.b2b_org)`) |
+| `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` (org: `@td(AGENT_POOL_SLOT_3.b2b_org)`) |
+
+**vcst-qa values for reference** (customers edit `users/agent-user-pool.csv` with their own):
+- Slot 1: `qa-agent-slot1@virtocommerce.com` / `test-john.mitchell-...@test-agent.com` (AcmeCorp)
+- Slot 2: `qa-agent-slot2@virtocommerce.com` / `test-emily.johnson-...@test-agent.com` (TechFlow)
+- Slot 3: `qa-agent-slot3@virtocommerce.com` / `test-carlos.rodriguez-...@test-agent.com` (BuildRight)
 
 **Resolution order:** agent-user-pool.csv → `process.env` fallback (populated from `.env.${TEST_ENV}` + `.env.local`). If pool users are not seeded (`seeded=false`), fall back to `process.env` and log a warning.
 **Seeding:** `test-data/users/seed-agent-users.md` — run once to create personal users on the platform.

@@ -2885,5 +2885,59 @@
       "variation_white_sku": "variation_white_sku"
     },
     "_notes": "Variation parent with 2 color variations from 2026-05-29 full seed. hasVariations=true. Use for variation/variant-picker tests (suite 009 b2c-variations, suite 002 product-detail). NOT yet confirmed virtual-catalog linked — verify before storefront tests."
+  },
+  "AGENT_POOL_SLOT_1": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "1"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Per feature/qa-agentic-standardization Phase 3: knowledge files reference agent pool slot 1 (Chrome / qa-frontend-expert) via this alias instead of hardcoding qa-agent-slot1@virtocommerce.com. Customers edit users/agent-user-pool.csv with their own values; aliases resolve to whatever they put there. Pattern preserved (3 isolated browsers, per-slot creds, b2b-pair-aware); specific values are theirs."
+  },
+  "AGENT_POOL_SLOT_2": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "2"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Agent pool slot 2 (Firefox / qa-testing-expert). Same pattern as AGENT_POOL_SLOT_1; customer-editable via test-data/users/agent-user-pool.csv."
+  },
+  "AGENT_POOL_SLOT_3": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "3"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Agent pool slot 3 (Edge / qa-backend-expert). Same pattern as AGENT_POOL_SLOT_1/2; customer-editable via test-data/users/agent-user-pool.csv."
   }
 }

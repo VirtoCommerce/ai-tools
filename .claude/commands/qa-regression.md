@@ -164,13 +164,15 @@ Output concise verdict to user with pass rate, bugs, and report path. Mention se
 
 Never assign two agents to the same browser. Never use WebKit on Windows.
 
-**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch from [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv):
+**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch via `@td(AGENT_POOL_SLOT_N.*)` — alias points at [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv) row where `slot=N`.
 
-- Slot 1 (`playwright-chrome`) → `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` (B2B: John Mitchell, TechFlow)
-- Slot 2 (`playwright-firefox`) → `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` (B2B: Emily Johnson, TechFlow — same-org pair with slot 1)
-- Slot 3 (`playwright-edge`) → `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` (B2B: Carlos Rodriguez, BuildRight — different org)
+- Slot 1 (`playwright-chrome`) → `@td(AGENT_POOL_SLOT_1.email)` / `@td(AGENT_POOL_SLOT_1.password)` (B2B pair: `@td(AGENT_POOL_SLOT_1.b2b_email)` in `@td(AGENT_POOL_SLOT_1.b2b_org)`)
+- Slot 2 (`playwright-firefox`) → `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` (same-org pair with slot 1 when CSV configures it that way)
+- Slot 3 (`playwright-edge`) → `@td(AGENT_POOL_SLOT_3.email)` / `@td(AGENT_POOL_SLOT_3.password)` (different-org pair by convention)
 
-Agents MUST read credentials from this CSV at runtime — never hardcode in prompts.
+> vcst-qa values: slots 1/2/3 = `qa-agent-slot{1,2,3}@virtocommerce.com` / `TestAgent{1,2,3}!`; B2B pair: John Mitchell + Emily Johnson in TechFlow (slots 1+2), Carlos Rodriguez in BuildRight (slot 3). Customers edit `test-data/users/agent-user-pool.csv` with their own values; the slot-pair convention is preserved.
+
+Agents MUST resolve credentials via `@td()` at runtime — never hardcode in prompts.
 
 ---
 
