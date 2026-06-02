@@ -29,3 +29,9 @@ reports/test-lifecycle/TLC-*/**/*.jpg
 reports/coverage/COV-*/**/*.png
 reports/coverage/COV-*/**/*.har
 reports/coverage/COV-*/**/*.jpg
+
+# Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
+# during exploratory sessions. Transient working state, not deliverables.
+# (No tracked YAML at repo root, so the bare-yml pattern is safe.)
+/*.yml
+/*.yaml
