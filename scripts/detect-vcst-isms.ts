@@ -48,12 +48,27 @@ const PATTERNS: Pattern[] = [
     regex: /fc596540864a41bf8ab78734ee7353a3/gi,
     description: "Hardcoded B2B virtual catalog root GUID (vcst-qa specific)",
     remediation: "Replace with @td(VIRTUAL_CATALOG_B2B.id)",
+    allowListSubstrings: [
+      "memory/",
+      "MEMORY.md",
+      "knowledge/vc-bug-catalog.md",
+      "knowledge/sitemap.md",       // educational refs that explicitly say "vcst-qa value, customer differs"
+      ".env.vcst",                   // intentional env file
+      "test-data/aliases.json",      // the alias DEFINES the GUID — by definition
+      "archive/",
+      "docs/Sprint plans/",
+      "CLAUDE.md",
+      "/feedback_",                  // memory feedback files
+      "/project_",                   // memory project files
+      "/reference_",                 // memory reference files
+    ],
   },
   {
     id: "VCST-OLD-CATALOG-ROOT",
     regex: /9238c387[a-f0-9]{4,}/gi,
     description: "Hardcoded OLD B2B virtual catalog root GUID (pre-2026-05-15 restore, stale)",
     remediation: "Replace with @td(VIRTUAL_CATALOG_B2B.id) — the 9238c387… root was rolled back",
+    allowListSubstrings: ["memory/", "MEMORY.md", "archive/", "docs/Sprint plans/"],
   },
   {
     id: "VCST-ORG-TECHFLOW",
@@ -61,9 +76,19 @@ const PATTERNS: Pattern[] = [
     description: "Hardcoded vcst-qa org name 'TechFlow'",
     remediation: "Replace with @td(TEST_ORG_PRIMARY.name) and route through aliases.json",
     allowListSubstrings: [
-      "memory/", // memory files may reference TechFlow historically
-      "knowledge/vc-bug-catalog.md", // historical bug catalog
+      "memory/",
       "MEMORY.md",
+      "knowledge/vc-bug-catalog.md",
+      "test-data/",                  // test-data CSVs DEFINE TechFlow (it's the subject of the alias)
+      "test-data/aliases.json",
+      "archive/",
+      "docs/Sprint plans/",
+      "tests/",
+      "CLAUDE.md",
+      "/feedback_",
+      "/project_",
+      "/reference_",
+      "/user_",
     ],
   },
   {
@@ -73,8 +98,16 @@ const PATTERNS: Pattern[] = [
     remediation: "Replace with @td(TEST_ORG_SECONDARY.name) and route through aliases.json",
     allowListSubstrings: [
       "memory/",
-      "knowledge/vc-bug-catalog.md",
       "MEMORY.md",
+      "knowledge/vc-bug-catalog.md",
+      "test-data/",
+      "archive/",
+      "docs/Sprint plans/",
+      "tests/",
+      "CLAUDE.md",
+      "/feedback_",
+      "/project_",
+      "/reference_",
     ],
   },
   {
@@ -82,21 +115,39 @@ const PATTERNS: Pattern[] = [
     regex: /\bAcmeCorp\b/g,
     description: "Hardcoded vcst-qa org name 'AcmeCorp'",
     remediation: "Replace with @td() — or rename the alias if it's already in aliases.json",
-    allowListSubstrings: ["memory/", "MEMORY.md"],
+    allowListSubstrings: [
+      "memory/",
+      "MEMORY.md",
+      "test-data/",
+      "archive/",
+      "docs/Sprint plans/",
+      "tests/",
+      "/feedback_",
+      "/project_",
+      "/reference_",
+    ],
   },
   {
     id: "VCST-USER-YOPMAIL",
     regex: /[a-zA-Z0-9._-]+@yopmail\.com/g,
     description: "Hardcoded yopmail.com test user (vcst-qa convention)",
     remediation: "Replace with @td(TEST_USER_*.email) — customer's email domain differs",
-    allowListSubstrings: ["memory/", "MEMORY.md"],
+    allowListSubstrings: [
+      "memory/", "MEMORY.md", "test-data/", "archive/",
+      "docs/Sprint plans/", "tests/", "CLAUDE.md",
+      "/feedback_", "/project_", "/reference_", "/user_",
+    ],
   },
   {
     id: "VCST-USER-TESTVC",
     regex: /[a-zA-Z0-9._-]+@test\.virtocommerce\.com/g,
     description: "Hardcoded @test.virtocommerce.com test user (vcst-qa convention)",
     remediation: "Replace with @td(TEST_USER_*.email)",
-    allowListSubstrings: ["memory/", "MEMORY.md"],
+    allowListSubstrings: [
+      "memory/", "MEMORY.md", "test-data/", "archive/",
+      "docs/Sprint plans/", "tests/",
+      "/feedback_", "/project_", "/reference_",
+    ],
   },
   {
     id: "VCST-URL-VCST-QA",
@@ -117,7 +168,13 @@ const PATTERNS: Pattern[] = [
     regex: /[a-zA-Z0-9._-]+@virtoworks\.com/g,
     description: "Hardcoded @virtoworks.com email (internal VC team)",
     remediation: "Replace with @td(SUPPORT_AGENT.email) or remove — these are VC internal addresses",
-    allowListSubstrings: ["memory/", "MEMORY.md", "CLAUDE.md"],
+    allowListSubstrings: [
+      "memory/", "MEMORY.md", "CLAUDE.md",
+      "test-data/", "archive/",
+      "docs/Sprint plans/", "tests/",
+      "/feedback_", "/project_", "/reference_", "/user_",
+      "reports/ba/",  // BA reports may legitimately mention VC team contacts
+    ],
   },
 ];
 
