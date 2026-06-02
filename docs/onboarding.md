@@ -41,9 +41,11 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 **Step A — install the plugin via Claude Code:**
 
 ```
-/plugin marketplace add github://VirtoCommerce/vc-mcp-testing-module
+/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
 /plugin install vc-qa@vc-tools
 ```
+
+(Other accepted source formats: `https://github.com/VirtoCommerce/vc-mcp-testing-module`, `git@github.com:VirtoCommerce/vc-mcp-testing-module.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
 
 Claude Code clones the plugin into its cache and auto-discovers the agents (`.claude/agents/`), skills (`.claude/skills/`), commands (`.claude/commands/`), knowledge files (`.claude/agents/knowledge/`), and MCP server config.
 
