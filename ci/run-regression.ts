@@ -209,6 +209,16 @@ function applyMultiEnvFilters(ids: string[]): string[] {
   const activeRisk = (process.env.ENV_RISK || "dev").toLowerCase();
   const activeRiskRank = ENV_RISK_RANK[activeRisk] ?? 0;
 
+  // Escape hatch for the envRiskGate: lets customer run admin-write suites
+  // against ENV_RISK=production. Honored via env var OR CLI flag (process.argv
+  // is checked once at module load so multiple calls don't re-parse).
+  const allowAdminWritesOnProd =
+    process.env.ALLOW_ADMIN_WRITES_ON_PROD === "true" ||
+    process.argv.includes("--allow-admin-writes-on-prod");
+  if (allowAdminWritesOnProd && activeRisk === "production") {
+    console.log(`[multi-env-filter] ⚠ --allow-admin-writes-on-prod active. Admin-write suites WILL run against production-risk env. Make sure you mean it.`);
+  }
+
   const skipped: Array<{ id: string; reason: string }> = [];
   const kept: string[] = [];
 
@@ -239,10 +249,13 @@ function applyMultiEnvFilters(ids: string[]): string[] {
 
     // Env-risk gate: suite refuses to run if active env risk exceeds the gate.
     // Default gate = production (most permissive). Suite tagged "staging" refuses on production.
+    // Escape hatch: `ALLOW_ADMIN_WRITES_ON_PROD=true` env var (or --allow-admin-writes-on-prod
+    // CLI flag) overrides the gate. Use ONLY when you mean it; tagged-staging
+    // suites mutate production state.
     const gate = (suite.envRiskGate || "production").toLowerCase();
     const gateRank = ENV_RISK_RANK[gate] ?? 3;
-    if (activeRiskRank > gateRank) {
-      skipped.push({ id, reason: `envRiskGate "${gate}" exceeded by active ENV_RISK "${activeRisk}"` });
+    if (activeRiskRank > gateRank && !allowAdminWritesOnProd) {
+      skipped.push({ id, reason: `envRiskGate "${gate}" exceeded by active ENV_RISK "${activeRisk}" (pass --allow-admin-writes-on-prod or set ALLOW_ADMIN_WRITES_ON_PROD=true to override)` });
       continue;
     }
 
