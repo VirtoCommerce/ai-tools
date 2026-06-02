@@ -216,7 +216,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - Apply 10 filters simultaneously on catalog; measure response time
 - Capture a performance trace during checkout end-to-end (`performance_analyze_insight`); identify any long tasks
 - Watch console + network during a 5-minute idle on the cart page; check for polling that escalates or leaks
-- Test the catalog with B2B virtual catalog root (`fc596540864a41bf8ab78734ee7353a3` per `feedback_storefront_virtual_catalog_link`); confirm faceted-search response under load
+- Test the catalog with B2B virtual catalog root (resolve via `@td(VIRTUAL_CATALOG_B2B.id)`; vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`); confirm faceted-search response under load
 
 ---
 

@@ -120,7 +120,7 @@ The `filter` argument is a **string** using Virto xAPI filter syntax. Multiple f
 
 | Filter Pattern | Example | Description |
 |---------------|---------|-------------|
-| **Category subtree** | `category.subtree:fc596540864a41bf8ab78734ee7353a3` | Products in category and all subcategories (use category ID) |
+| **Category subtree** | `category.subtree:@td(VIRTUAL_CATALOG_B2B.id)` | Products in category and all subcategories (use category ID). The vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`; customer's catalog root differs. |
 | **Category path** | `category.path:Bolts` | Products in category by path/slug |
 | **Price range (has price)** | `price.USD:(0 TO)` | Products with any USD price > 0 |
 | **Price range (bounded)** | `price.USD:(10 TO 100)` | Products with USD price between 10 and 100 |
@@ -135,10 +135,10 @@ The `filter` argument is a **string** using Virto xAPI filter syntax. Multiple f
 **Combined filter examples:**
 ```
 # Category + in stock + has price
-"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true"
+"category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"
 
 # Category + price range + brand
-"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(10 TO 500) Brand:Acme"
+"category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(10 TO 500) Brand:Acme"
 
 # Keyword search with category filter
 # Use both "query" arg for text search AND "filter" arg for category/price/stock
@@ -148,7 +148,7 @@ The `filter` argument is a **string** using Virto xAPI filter syntax. Multiple f
 ```json
 {
   "storeId": "${STORE_ID}",
-  "filter": "category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true",
+  "filter": "category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true",
   "facet": "Brand price.USD",
   "first": 20
 }
