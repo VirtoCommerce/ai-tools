@@ -8,9 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## [Unreleased] — `feature/qa-agentic-standardization`
+## [Unreleased] — `feature/v0.2-prep`
 
-The first stretch of customer-plugin work. Not yet released. Pin to commit SHA if consuming pre-release.
+Forward-looking work between v0.1.0-alpha (PR #21, merged) and v0.2.0. Pin to v0.1.0-alpha for stability; this branch tip is unstable.
+
+### Added
+
+- **`docs/support-runbook.md`** — internal-to-VC playbook for supporting customers running the plugin. Three-tier support model (Tier 0 self-serve / Tier 1 GitHub Issues / Tier 2 direct paid / Tier 3 consulting), triage flow (plugin bug vs config issue vs customer storefront bug), per-branch playbooks, escalation paths, patch-release workflow, customer-communication templates, anti-patterns. Resolves the "TBD" reference in `docs/distribution.md` § Support Model and the Tier 2 mention in `docs/pilot-runbook.md` § 1.
+
+---
+
+## [0.1.0-alpha] — 2026-06-02
+
+First customer-installable release. Merged via PR #21 into `main`, tagged `v0.1.0-alpha`. Customers should pin to this tag.
 
 ### Added
 
