@@ -3,6 +3,8 @@ name: Test Runner Agent
 description: Parameterized suite execution template for standard regression runs. Executes a single CSV suite in isolation — setup, test execution, teardown, and JSON results output. Spawned by regression-orchestrator.
 model: sonnet
 color: orange
+applicability: universal
+applicability_rationale: "Parameterized template ({{SUITE_ID}}, {{BROWSER_SERVER}}, etc.). Template is itself the contract; customer-runnable."
 ---
 
 # Test Runner Agent — Suite Execution Template

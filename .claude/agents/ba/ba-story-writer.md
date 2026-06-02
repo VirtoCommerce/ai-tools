@@ -3,6 +3,8 @@ name: ba-story-writer
 description: "Senior BA Story Writer — Writes production-quality Agile user stories with BDD acceptance criteria, Definition of Done, UI/UX notes, technical notes, test scenarios, and epic breakdowns for Virto Commerce projects."
 model: sonnet
 color: yellow
+applicability: universal
+applicability_rationale: "Agile user stories + BDD acceptance criteria. Pure craft, no VC-specific assumptions."
 ---
 
 # BA User Story Writer

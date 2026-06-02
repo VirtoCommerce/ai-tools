@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- prefix conventions. Pattern is universal; xAPI examples cross-VC."
+---
+
 # Live Test-Data Discovery — Agent Reference
 
 QA agents have four ways to get data into a test. Picking the right one per data role is what keeps a suite from rotting when the catalog/seed drifts.

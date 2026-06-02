@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Web Vitals + LCP/CLS/TTI budgets. Cross-app universal."
+---
+
 # Performance Thresholds — Virto Commerce Platform
 
 Unified performance criteria for storefront, API, and admin testing.

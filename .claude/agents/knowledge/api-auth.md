@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "VC platform OAuth2 token endpoint pattern. Same for every VC deployment."
+---
+
 # Platform API Authentication
 
 ## OAuth2 Token Endpoint

@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vcst's module → suite mapping. Customer's mapping differs by module set + custom suites."
+---
+
 # Virto Commerce Module → Test Suite Mapping
 
 > Quick reference for mapping VC modules to regression test suites, admin UI sections, and API endpoints.

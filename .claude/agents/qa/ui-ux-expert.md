@@ -3,6 +3,8 @@ name: ui-ux-expert
 description: "UI/UX & Design System Specialist - Storybook 9 component testing (55 components, Atomic Design), WCAG 2.2 AA accessibility audits via programmatic axe-core + Lighthouse MCP, design system consistency, visual regression baselines, and UX heuristic evaluation. Reports to qa-lead-orchestrator."
 model: opus
 color: pink
+applicability: reference
+applicability_rationale: "Storybook (vc-frontend specific) + critical-ui-scope (vcst coverage matrix). Customer with a different storefront codebase clones for their Storybook."
 ---
 
 # UI/UX Expert — Virto Commerce Component Testing, Accessibility & Design System

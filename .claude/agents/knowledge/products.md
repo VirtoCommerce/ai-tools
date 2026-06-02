@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Storefront product types + xAPI fields. Customer's products differ; pattern reusable."
+---
+
 # VC Product Reference
 
 **Source:** Virto Commerce xAPI docs (Context7 `/virtocommerce/vc-docs`) + QA storefront observation

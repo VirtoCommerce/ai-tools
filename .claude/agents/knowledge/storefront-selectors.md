@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vc-frontend stable selectors (data-test-id / role / aria-label). Customer with custom theme adapts selector strategy."
+---
+
 # Storefront Selectors — Live-Verified DOM Reference
 
 **Captured:** 2026-05-14 against `FRONT_URL=https://vcst-qa-storefront.govirto.com` (Coffee theme, B2B-store)
