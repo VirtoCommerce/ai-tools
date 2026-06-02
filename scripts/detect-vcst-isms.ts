@@ -56,7 +56,7 @@ const PATTERNS: Pattern[] = [
       ".env.vcst",                   // intentional env file
       "test-data/aliases.json",      // the alias DEFINES the GUID — by definition
       "vc/vcst-qa/archive/",
-      "docs/Sprint plans/",
+      "vc/shared/docs/Sprint plans/",
       "CLAUDE.md",
       "/feedback_",                  // memory feedback files
       "/project_",                   // memory project files
@@ -82,7 +82,7 @@ const PATTERNS: Pattern[] = [
       "test-data/",                  // test-data CSVs DEFINE TechFlow (it's the subject of the alias)
       "test-data/aliases.json",
       "vc/vcst-qa/archive/",
-      "docs/Sprint plans/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "CLAUDE.md",
       "/feedback_",
@@ -102,7 +102,7 @@ const PATTERNS: Pattern[] = [
       "knowledge/vc-bug-catalog.md",
       "test-data/",
       "vc/vcst-qa/archive/",
-      "docs/Sprint plans/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "CLAUDE.md",
       "/feedback_",
@@ -120,7 +120,7 @@ const PATTERNS: Pattern[] = [
       "MEMORY.md",
       "test-data/",
       "vc/vcst-qa/archive/",
-      "docs/Sprint plans/",
+      "vc/shared/docs/Sprint plans/",
       "tests/",
       "/feedback_",
       "/project_",
@@ -134,7 +134,7 @@ const PATTERNS: Pattern[] = [
     remediation: "Replace with @td(TEST_USER_*.email) — customer's email domain differs",
     allowListSubstrings: [
       "memory/", "MEMORY.md", "test-data/", "vc/vcst-qa/archive/",
-      "docs/Sprint plans/", "tests/", "CLAUDE.md",
+      "vc/shared/docs/Sprint plans/", "tests/", "CLAUDE.md",
       "/feedback_", "/project_", "/reference_", "/user_",
     ],
   },
@@ -145,7 +145,7 @@ const PATTERNS: Pattern[] = [
     remediation: "Replace with @td(TEST_USER_*.email)",
     allowListSubstrings: [
       "memory/", "MEMORY.md", "test-data/", "vc/vcst-qa/archive/",
-      "docs/Sprint plans/", "tests/",
+      "vc/shared/docs/Sprint plans/", "tests/",
       "/feedback_", "/project_", "/reference_",
     ],
   },
@@ -171,7 +171,7 @@ const PATTERNS: Pattern[] = [
     allowListSubstrings: [
       "memory/", "MEMORY.md", "CLAUDE.md",
       "test-data/", "vc/vcst-qa/archive/",
-      "docs/Sprint plans/", "tests/",
+      "vc/shared/docs/Sprint plans/", "tests/",
       "/feedback_", "/project_", "/reference_", "/user_",
       "reports/ba/",  // BA reports may legitimately mention VC team contacts
     ],

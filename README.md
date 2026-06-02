@@ -525,7 +525,7 @@ Suites are organized under `Frontend/<module>/` and `Backend/<module>/` director
 | `layout-stability` | 048b | Critical-UI-scope regression (7 components × 8 pages matrix) |
 | `frontend` | All Frontend/ suites | Frontend-only regression |
 | `backend` | All Backend/ suites | Backend-only regression |
-| `sprint` | Plan-driven via `docs/Sprint plans/sprint-*-summary.json` (`--no-plan` falls back to P0+P1) | Before sprint release |
+| `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` falls back to P0+P1) | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's scope |
 | `full` | All 99 suites | Before production release |
 

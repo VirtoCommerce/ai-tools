@@ -43,7 +43,7 @@ After workstream #6, the convention is:
 VC's archival discipline (going forward):
 - Sprint closes → `git mv tests/Sprint-NN-NN vc/vcst-qa/tests/Sprint-NN-NN` (or whichever env owned it).
 - Old regression run → `git mv reports/regression/REG-OLD-DATE vc/vcst-qa/reports/regression/REG-OLD-DATE`.
-- Sprint plans don't typically archive — they stay at root in `docs/Sprint plans/` (referenced by `/qa-regression sprint` at runtime).
+- Sprint plans live in `vc/shared/docs/Sprint plans/` (cross-env VC team material — not vcst-specific). Referenced by `/qa-regression sprint`, `/qa-coverage-generation sprint`, and `/qa-test-plan` at runtime.
 
 Customer impact:
 - Customer's runs accumulate at root.
