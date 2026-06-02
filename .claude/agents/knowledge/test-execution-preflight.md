@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Pre-run readiness checklist (env health, fixture seed, MCP status). Universal."
+---
+
 # Test Execution Preflight
 
 Canonical protocol every QA agent consults before executing a test case. Fixes the three gaps exposed by real regression runs:

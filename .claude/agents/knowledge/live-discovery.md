@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- prefix conventions. Pattern is universal; xAPI examples cross-VC."
+---
+
 # Live Test-Data Discovery — Agent Reference
 
 QA agents have four ways to get data into a test. Picking the right one per data role is what keeps a suite from rotting when the catalog/seed drifts.
@@ -263,13 +268,18 @@ The regression orchestrator runs up to 3 browser agents in parallel (chrome / fi
 
 **Use the agent user pool** in [`test-data/users/agent-user-pool.csv`](../../../test-data/users/agent-user-pool.csv) — there are dedicated slots keyed by browser:
 
-| Slot | Browser | Personal | B2B account |
+| Slot | Browser | Personal (alias) | B2B account (alias) |
 |---|---|---|---|
-| 1 | `playwright-chrome` | `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` | `test-john.mitchell-…` in TechFlow |
-| 2 | `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` | `test-emily.johnson-…` in TechFlow (paired with slot 1 for same-org tests) |
-| 3 | `playwright-edge` | `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` | `test-carlos.rodriguez-…` in BuildRight |
+| 1 | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.email)` / `@td(AGENT_POOL_SLOT_1.password)` | `@td(AGENT_POOL_SLOT_1.b2b_email)` in `@td(AGENT_POOL_SLOT_1.b2b_org)` |
+| 2 | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` in `@td(AGENT_POOL_SLOT_2.b2b_org)` (paired with slot 1 for same-org tests) |
+| 3 | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` / `@td(AGENT_POOL_SLOT_3.password)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` in `@td(AGENT_POOL_SLOT_3.b2b_org)` (cross-org pair) |
 
-Agents should authenticate against their slot user (resolve at runtime from `agent-user-pool.csv`, never hardcode), so each agent's `discoverFirstCart` / `discoverFirstAddress` returns *its own* isolated state. Cross-reference: `user_test_accounts.md` memory.
+**vcst-qa values for reference** (customers edit `test-data/users/agent-user-pool.csv` with their own; the pattern stays):
+- Slot 1: `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` · `test-john.mitchell-…` in TechFlow
+- Slot 2: `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` · `test-emily.johnson-…` in TechFlow
+- Slot 3: `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` · `test-carlos.rodriguez-…` in BuildRight
+
+Agents should authenticate against their slot user (resolve at runtime via `@td(AGENT_POOL_SLOT_N.*)` from `agent-user-pool.csv`, never hardcode), so each agent's `discoverFirstCart` / `discoverFirstAddress` returns *its own* isolated state. Cross-reference: `user_test_accounts.md` memory.
 
 For read-only discovery (catalog root, product list, any active coupon) the shared user is fine — those calls don't mutate state.
 

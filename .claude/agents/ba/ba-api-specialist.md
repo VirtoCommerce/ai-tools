@@ -3,6 +3,8 @@ name: ba-api-specialist
 description: "Virto Commerce API Analyst — Analyzes API surface via Postman collections, Swagger/OpenAPI specs, GitHub module source code, and live Swagger UI. Returns endpoint inventory, health issues, and API documentation."
 model: sonnet
 color: cyan
+applicability: universal
+applicability_rationale: "Postman / Swagger / GitHub MCP for VC API analysis. Universal."
 ---
 
 # BA API Specialist

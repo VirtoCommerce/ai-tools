@@ -1,0 +1,5133 @@
+{
+  "ts": 1780397384816,
+  "backUrl": "https://vcst-qa.govirto.com",
+  "modules": [
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Azure Application Insights",
+      "description": "Enables developers and administrators to collect, monitor, and analyze application performance, usage, and diagnostic data",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-app-insights",
+      "iconUrl": "Modules/$(VirtoCommerce.ApplicationInsights)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ApplicationInsights.Web.dll",
+      "id": "VirtoCommerce.ApplicationInsights"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1013.0",
+      "title": "Assets Management",
+      "description": "Common abstractions for asset search, retrieval, and manipulation, making it easy for developers to work with assets regardless of their underlying storage location.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-assets",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AssetsModule.Web.dll",
+      "id": "VirtoCommerce.Assets"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Authorize.Net Payment Method",
+      "description": "Provides the integration with Authorize.Net payment provider",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-authorize-net",
+      "iconUrl": "Modules/$(VirtoCommerce.AuthorizeNetPayment)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AuthorizeNetPayment.Web.dll",
+      "id": "VirtoCommerce.AuthorizeNetPayment"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Avalara Tax Provider",
+      "description": "Provides real time integration with Avalara Tax https://www.avalara.com/",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-avatax",
+      "iconUrl": "Modules/$(VirtoCommerce.AvalaraTax)/Content/400.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2025 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Tax",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AvalaraTaxModule.Web.dll",
+      "id": "VirtoCommerce.AvalaraTax"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Azure Active Directory Single Sign-On",
+      "description": "Azure AD SSO integrates with Azure AD to provide secure authentication and authorization for cloud and on-premises applications.",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-azure-ad",
+      "iconUrl": "Modules/$(VirtoCommerce.AzureAD)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AzureAD.Web.dll",
+      "id": "VirtoCommerce.AzureAD"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1010.0",
+      "title": "Azure Blob Storage Assets Provider",
+      "description": "Provide integration with Azure Blob Storage for Assets Management",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-azureblob-assets",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2024-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AzureBlobAssetsModule.Web.dll",
+      "id": "VirtoCommerce.AzureBlobAssets"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1010.0",
+      "title": "Azure Search",
+      "description": "Search functionality with Elastic Azure Search service",
+      "authors": [
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-azure-search",
+      "iconUrl": "Modules/$(VirtoCommerce.AzureSearch)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Third version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.AzureSearchModule.Web.dll",
+      "id": "VirtoCommerce.AzureSearch"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Back In Stock",
+      "description": "Provides customer ability to subscribe for notification, when product is back in stock.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-back-in-stock",
+      "iconUrl": "Modules/$(VirtoCommerce.BackInStock)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.BackInStock.Web.dll",
+      "id": "VirtoCommerce.BackInStock"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1002.0",
+      "title": "Builder.io",
+      "description": "Integration module for Builder.io",
+      "authors": [
+        "Oleg Zhuk"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-builder-io",
+      "iconUrl": "Modules/$(VirtoCommerce.BuilderIO)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pages",
+          "version": {
+            "major": 3,
+            "minor": 1004,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.BuilderIO.Web.dll",
+      "id": "VirtoCommerce.BuilderIO"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Bulk Actions",
+      "description": "Bulk actions module",
+      "authors": [
+        "Burashov T.S."
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-bulk-actions",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.BulkActionsModule.Web.dll",
+      "id": "VirtoCommerce.BulkActionsModule"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1004.0",
+      "title": "Shopping Cart",
+      "description": "Shopping cart / checkout functionality",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-cart",
+      "iconUrl": "Modules/$(VirtoCommerce.Cart)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CartModule.Web.dll",
+      "id": "VirtoCommerce.Cart"
+    },
+    {
+      "version": "3.1025.0",
+      "platformVersion": "3.1016.0",
+      "title": "Catalog",
+      "description": "Easily manage your products, categories, variations, and properties",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-catalog",
+      "iconUrl": "Modules/$(VirtoCommerce.Catalog)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Third version.",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.BulkActionsModule",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1003,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Export",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Seo",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CatalogModule.Web.dll",
+      "id": "VirtoCommerce.Catalog"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "CSV Catalog Export and Import Module",
+      "description": "Enables seamless export and import of catalog data in CSV format, simplifying data management and integration with external systems.",
+      "authors": [
+        "Konstantin Savosteev",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CatalogCsvImportModule.Web.dll",
+      "id": "VirtoCommerce.CatalogCsvImportModule"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Catalog Personalization",
+      "description": "Help businesses personalize their categories and products to specific User Groups",
+      "authors": [
+        "Eugeney Tarincev",
+        "Artyom Androsov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-catalog-personalization",
+      "iconUrl": "Modules/$(VirtoCommerce.CatalogPersonalization)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CatalogPersonalizationModule.Web.dll",
+      "id": "VirtoCommerce.CatalogPersonalization"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1016.0",
+      "title": "Catalog Publishing",
+      "description": "Allow you to see progress on filling in information about products and marks missed info.",
+      "authors": [
+        "Alexey Antonov",
+        "Andrew Orlov",
+        "Aleksandr Vishnyakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-catalog-publishing",
+      "iconUrl": "Modules/$(VirtoCommerce.CatalogPublishing)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Initial implementation of module features.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1019,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CatalogPublishingModule.Web.dll",
+      "id": "VirtoCommerce.CatalogPublishing"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1016.0",
+      "title": "Content",
+      "description": "Easily create, edit, and publish content such as pages, blog posts, and news articles.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-content",
+      "iconUrl": "Modules/$(VirtoCommerce.Content)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.AzureBlobAssets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.FileSystemAssets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ContentModule.Web.dll",
+      "id": "VirtoCommerce.Content"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Contentful",
+      "description": "Integration for contentful.com.",
+      "authors": [
+        "Alexander Siniouguine"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": null,
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": null,
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Content",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pages",
+          "version": {
+            "major": 3,
+            "minor": 1004,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Contentful.Web.dll",
+      "id": "VirtoCommerce.Contentful"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Contracts",
+      "description": "Contract based price personalization for customers and organizations",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-contract",
+      "iconUrl": "Modules/$(VirtoCommerce.Contracts)/Content/logo.svg",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Contracts.Web.dll",
+      "id": "VirtoCommerce.Contracts"
+    },
+    {
+      "version": "3.1004.0",
+      "platformVersion": "3.1026.0",
+      "title": "Commerce core module",
+      "description": "Common e-commerce domain functionality",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-core",
+      "iconUrl": "Modules/$(VirtoCommerce.Core)/Content/logoVC.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CoreModule.Web.dll",
+      "id": "VirtoCommerce.Core"
+    },
+    {
+      "version": "3.1007.0",
+      "platformVersion": "3.1025.0",
+      "title": "Companies and Contacts",
+      "description": "Managing customers contacts and organizations",
+      "authors": [
+        "Artem Dudarev",
+        "Egidijus Mažeika"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-customer",
+      "iconUrl": "Modules/$(VirtoCommerce.Customer)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1003,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Seo",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CustomerModule.Web.dll",
+      "id": "VirtoCommerce.Customer"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Customer Export Import",
+      "description": "This module adds customers export and import functionality. Use it for customer management.",
+      "authors": [
+        "Alexey Shibanov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-customer-export-import",
+      "iconUrl": "Modules/$(VirtoCommerce.CustomerExportImport)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CustomerExportImportModule.Web.dll",
+      "id": "VirtoCommerce.CustomerExportImport"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1016.0",
+      "title": "Rating and Reviews",
+      "description": "Enables customers to share their feedback on products and vendors after making a purchase, helping others make informed decisions.",
+      "authors": [
+        "Egidijus Mazeika",
+        "Andrew Nikutin",
+        "Evgeny Gusev",
+        "Aleksandr Vishniakov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-customer-review",
+      "iconUrl": "Modules/$(VirtoCommerce.CustomerReviews)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.FileExperienceApi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.ProfileExperienceApiModule",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CustomerReviews.Web.dll",
+      "id": "VirtoCommerce.CustomerReviews"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "CyberSource Payment Module",
+      "description": "Integrates CyberSource's payment solutions into your Virto Commerce platform",
+      "authors": [
+        "Basil Kotov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-cyber-source",
+      "iconUrl": "Modules/$(VirtoCommerce.CyberSourcePayment)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.CyberSourcePayment.Web.dll",
+      "id": "VirtoCommerce.CyberSourcePayment"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Datatrans Payment",
+      "description": "Datatrans payment module provides integration with Datatrans payment gateway for Virto Commerce.",
+      "authors": [
+        "Basil Kotov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-datatrans",
+      "iconUrl": "Modules/$(VirtoCommerce.Datatrans)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Datatrans.Web.dll",
+      "id": "VirtoCommerce.Datatrans"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Dynamic Associations",
+      "description": "Dynamic rule based product associations module",
+      "authors": [
+        "Andrey Kozlov",
+        "Alexandr Andreev",
+        "Dmitry Pushnitsa"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-dynamic-associations",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Marketing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.DynamicAssociationsModule.Web.dll",
+      "id": "VirtoCommerce.DynamicAssociationsModule"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Elastic App Search",
+      "description": "Search functionality with Elastic App Search service",
+      "authors": [
+        "Aleksandr Vishnyakov",
+        "Konstantin Savosteev",
+        "Alexander Siniouguine"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-elastic-app-search",
+      "iconUrl": "Modules/$(VirtoCommerce.ElasticAppSearch)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2025 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ElasticAppSearch.Web.dll",
+      "id": "VirtoCommerce.ElasticAppSearch"
+    },
+    {
+      "version": "3.806.0",
+      "platformVersion": "3.853.0",
+      "title": "Elastic Search",
+      "description": "Indexed search functionality with Elasticsearch and OpenSearch engines",
+      "authors": [
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-elastic-search",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Third version.",
+      "copyright": "Copyright © 2011-2024 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 804,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ElasticSearchModule.Web.dll",
+      "id": "VirtoCommerce.ElasticSearch"
+    },
+    {
+      "version": "3.1004.0",
+      "platformVersion": "3.1002.0",
+      "title": "Elastic Search 8",
+      "description": "Indexed search functionality with Elastic 8 engines",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-elastic-search-8",
+      "iconUrl": "Modules/$(VirtoCommerce.ElasticSearch8)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ElasticSearch8.Web.dll",
+      "id": "VirtoCommerce.ElasticSearch8"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Environments Compare",
+      "description": "Enables backend administrators to compare platform settings, environment configurations, and system information across multiple Virto Commerce environments",
+      "authors": [
+        "Kirill Iusupov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-environments-compare",
+      "iconUrl": "Modules/$(VirtoCommerce.EnvironmentsCompare)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.EnvironmentsCompare.Web.dll",
+      "id": "VirtoCommerce.EnvironmentsCompare"
+    },
+    {
+      "version": "3.1008.0",
+      "platformVersion": "3.1007.10",
+      "title": "Event Bus module",
+      "description": "The module enables you to be notified of new messages or changes via a Message Queue of your choice",
+      "authors": [
+        "Andrei Kostyrin",
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-event-bus",
+      "iconUrl": "Modules/$(VirtoCommerce.EventBus)/Content/logo.svg",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.EventBusModule.Web.dll",
+      "id": "VirtoCommerce.EventBus"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Generic Export",
+      "description": "Generic export functionality",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-export",
+      "iconUrl": "Modules/$(VirtoCommerce.Export)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ExportModule.Web.dll",
+      "id": "VirtoCommerce.Export"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1000.0",
+      "title": "File Experience API",
+      "description": "Manages all file-related operations, from file upload to file content download for different client applications.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-file-experience-api",
+      "iconUrl": "Modules/$(VirtoCommerce.FileExperienceApi)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.FileExperienceApi.Web.dll",
+      "id": "VirtoCommerce.FileExperienceApi"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "File Systems Assets Provider",
+      "description": "Provide integration with File Systems for Assets Management",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-filesystem-assets",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.FileSystemAssetsModule.Web.dll",
+      "id": "VirtoCommerce.FileSystemAssets"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "GDPR",
+      "description": "Apply General Data Protection Regulation policies with review or remove their personal details, by anonymizing them, from your online store.",
+      "authors": [
+        "Leysan Nigmatullina"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-gdpr",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.GDPR.Web.dll",
+      "id": "VirtoCommerce.GDPR"
+    },
+    {
+      "version": "4.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Google Analytics 4",
+      "description": "Allows you active Measurement Id for a Store and measure traffic and ecommerce events to collect information about the shopping behavior of your users.",
+      "authors": [
+        "Oleg Zhuk"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-google-ecommerce-analytics",
+      "iconUrl": "Modules/$(VirtoCommerce.GoogleEcommerceAnalytics)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.GoogleEcommerceAnalyticsModule.Web.dll",
+      "id": "VirtoCommerce.GoogleEcommerceAnalytics"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Google Single Sign-On",
+      "description": "Enables Google external login setup (Single Sign-On) for Virto Commerce Platform and Frontend",
+      "authors": [
+        "Vasily Kotov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-google-sso",
+      "iconUrl": "Modules/$(VirtoCommerce.GoogleSSO)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2025 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.GoogleSSO.Web.dll",
+      "id": "VirtoCommerce.GoogleSSO"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Image Tools",
+      "description": "Image tools helps to automate thumbnail generation procedures with resizing and cropping",
+      "authors": [
+        "Konstantin Savosteev",
+        "Nikolay Prohorov",
+        "Eugeney Tatarincev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-image-tools",
+      "iconUrl": "Modules/$(VirtoCommerce.ImageTools)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2025 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ImageToolsModule.Web.dll",
+      "id": "VirtoCommerce.ImageTools"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1013.0",
+      "title": "Inventory",
+      "description": "Simplify inventory management functionality",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-inventory",
+      "iconUrl": "Modules/$(VirtoCommerce.Inventory)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.InventoryModule.Web.dll",
+      "id": "VirtoCommerce.Inventory"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1007.10",
+      "title": "Loyalty",
+      "description": "Customer loyalty program is offering your customers some reward for shopping at your store.",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-loyalty",
+      "iconUrl": "Modules/$(VirtoCommerce.Loyalty)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCart",
+          "version": {
+            "major": 3,
+            "minor": 1011,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1005,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Loyalty.Web.dll",
+      "id": "VirtoCommerce.Loyalty"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1002.0",
+      "title": "Lucene Search",
+      "description": "Indexed search functionality with Lucene engine",
+      "authors": [
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-lucene-search",
+      "iconUrl": "Modules/$(VirtoCommerce.LuceneSearch)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Third version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.LuceneSearchModule.Web.dll",
+      "id": "VirtoCommerce.LuceneSearch"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1016.0",
+      "title": "Marketing",
+      "description": "Marketing system with dynamic contents and promotions management",
+      "authors": [
+        "Virto Commerce",
+        "Evgeny Okhrimenko"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-marketing",
+      "iconUrl": "Modules/$(VirtoCommerce.Marketing)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "Third version.",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.MarketingModule.Web.dll",
+      "id": "VirtoCommerce.Marketing"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Marketing Experience API",
+      "description": "Experience Api extension for Marketing",
+      "authors": [
+        "Evgeny Okhrimenko"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-marketing-experience-api",
+      "iconUrl": "Modules/$(VirtoCommerce.MarketingExperienceApi)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Marketing",
+          "version": {
+            "major": 3,
+            "minor": 1001,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.MarketingExperienceApi.Web.dll",
+      "id": "VirtoCommerce.MarketingExperienceApi"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1017.0",
+      "title": "Native Payment Methods",
+      "description": "Non-integrative payment methods support",
+      "authors": [
+        "Mikhail Getmanskiy"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-NativePaymentMethods",
+      "iconUrl": "Modules/$(VirtoCommerce.NativePaymentMethods)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.NativePaymentMethods.Web.dll",
+      "id": "VirtoCommerce.NativePaymentMethods"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1016.0",
+      "title": "News",
+      "description": "Module allowing content managers to publish news articles",
+      "authors": [
+        "Iusupov Kirill"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-news",
+      "iconUrl": "Modules/$(VirtoCommerce.News)/Content/news.svg",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.News.Web.dll",
+      "id": "VirtoCommerce.News"
+    },
+    {
+      "version": "3.1007.0",
+      "platformVersion": "3.1028.0",
+      "title": "Notifications",
+      "description": "Provides a comprehensive infrastructure for managing and delivering notifications within the Virto Commerce platform.",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Andrei Kostyrin"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-notification",
+      "iconUrl": "Modules/$(VirtoCommerce.Notifications)/Content/logoVC.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.NotificationsModule.Web.dll",
+      "id": "VirtoCommerce.Notifications"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "OpenID Connect",
+      "description": "OpenID Connect is an identity module on top of the OAuth 2.0",
+      "authors": [
+        "Igoris Berniukevicius",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-openid-connect",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.OpenIdConnectModule.Web.dll",
+      "id": "VirtoCommerce.OpenIdConnectModule"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Open Search",
+      "description": "Indexed search functionality with OpenSearch",
+      "authors": [
+        "Okhrimenko Evgeny"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-open-search",
+      "iconUrl": "Modules/$(VirtoCommerce.OpenSearch)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.OpenSearch.Web.dll",
+      "id": "VirtoCommerce.OpenSearch"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Open Telemetry",
+      "description": "Provides Open Telemetry metrics, tracing, and logging via OTLP exporter",
+      "authors": [
+        "Anton Zorya"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-opentelemetry",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.OpenTelemetry.Web.dll",
+      "id": "VirtoCommerce.OpenTelemetry"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Order Management (Business Rules)",
+      "description": "Consolidates order management business rules.",
+      "authors": [
+        "Evgenii Kolosov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-order-management",
+      "iconUrl": "Modules/$(VirtoCommerce.OrderManagement)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.OrderManagement.Web.dll",
+      "id": "VirtoCommerce.OrderManagement"
+    },
+    {
+      "version": "3.1008.0",
+      "platformVersion": "3.1016.0",
+      "title": "Order Management",
+      "description": "Document based flexible order management system.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-order",
+      "iconUrl": "Modules/$(VirtoCommerce.Orders)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Cart",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1009,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.OrdersModule.Web.dll",
+      "id": "VirtoCommerce.Orders"
+    },
+    {
+      "version": "3.1010.0",
+      "platformVersion": "3.1016.0",
+      "title": "CMS Page Builder",
+      "description": "Compose pages in visual page builder.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": null,
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Content",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pages",
+          "version": {
+            "major": 3,
+            "minor": 1004,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.PageBuilderModule.Web.dll",
+      "id": "VirtoCommerce.PageBuilderModule"
+    },
+    {
+      "version": "3.1005.0",
+      "platformVersion": "3.1002.0",
+      "title": "Virto Pages",
+      "description": "Provides a robust and flexible solution for managing content in digital commerce scenarios. Decoupling the CMS post-publishing ensures long-term efficiency, adaptability, and performance.",
+      "authors": [
+        "Basil Kotov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-pages",
+      "iconUrl": "Modules/$(VirtoCommerce.Pages)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Seo",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Pages.Web.dll",
+      "id": "VirtoCommerce.Pages"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1002.0",
+      "title": "Payment module",
+      "description": "Provides management and integration of various payment methods.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-payment",
+      "iconUrl": "Modules/$(VirtoCommerce.Payment)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.PaymentModule.Web.dll",
+      "id": "VirtoCommerce.Payment"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Price Export Import",
+      "description": "This module adds prices export and import functionality using it for price management.",
+      "authors": [
+        "Solution team"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-price-export-import",
+      "iconUrl": "Modules/$(VirtoCommerce.PriceExportImport)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Export",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.PriceExportImportModule.Web.dll",
+      "id": "VirtoCommerce.PriceExportImport"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1013.0",
+      "title": "Pricing",
+      "description": "Robust pricing management functionality based on price list and dynamic evaluation",
+      "authors": [
+        "Eugeney Tatarincev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-pricing",
+      "iconUrl": "Modules/$(VirtoCommerce.Pricing)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2025 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Export",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.PricingModule.Web.dll",
+      "id": "VirtoCommerce.Pricing"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1016.0",
+      "title": "Product Snapshot",
+      "description": "The Product Snapshot module captures and stores product information at the moment an order is created.\n  This ensures that customers and store operators always have access to the exact product details (prices, properties, images, descriptions)\n  that were valid at the time of purchase, even if the product catalog is later modified or products are deleted.",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-product-snapshot",
+      "iconUrl": "Modules/$(VirtoCommerce.ProductSnapshot)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1007,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XOrder",
+          "version": {
+            "major": 3,
+            "minor": 1004,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1014,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ProductSnapshot.Web.dll",
+      "id": "VirtoCommerce.ProductSnapshot"
+    },
+    {
+      "version": "3.1007.0",
+      "platformVersion": "3.1027.0",
+      "title": "Commerce Profile Experience API",
+      "description": "",
+      "authors": [
+        "Konstantin Savosteev",
+        "Aleksandr Vishnyakov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-profile-experience-api",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1007,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Marketing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Tax",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XOrder",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ProfileExperienceApiModule.Web.dll",
+      "id": "VirtoCommerce.ProfileExperienceApiModule"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Push Messages",
+      "description": "Enables back-end admins to send custom notifications to selected organizations within the Virto Commerce platform.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-push-messages",
+      "iconUrl": "Modules/$(VirtoCommerce.PushMessages)/Content/push-messages/img/icons/apple-touch-icon.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.PushMessages.Web.dll",
+      "id": "VirtoCommerce.PushMessages"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Quotes",
+      "description": "Quoter enables business users to execute quote requests online. Once initiated, an online conversation takes place with internal users who interact with the business user's request. The internal user can set prices for quantity breaks or discounts. The quote is then made available to the business user online. The business user can accept the quote and place the order, continue the conversation, or reject the quote.",
+      "authors": [
+        "Artem Dudarev",
+        "Egidijus Mažeika",
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-quote",
+      "iconUrl": "Modules/$(VirtoCommerce.Quote)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Cart",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.FileExperienceApi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Tax",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCart",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.QuoteModule.Web.dll",
+      "id": "VirtoCommerce.Quote"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Returns",
+      "description": "Return management module",
+      "authors": [
+        "Leysan Nigmatullina",
+        "Mikhail Getmansky"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-return",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ReturnModule.Web.dll",
+      "id": "VirtoCommerce.Return"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1002.0",
+      "title": "Sanity",
+      "description": "Integration module for Sanity CMS",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-sanity",
+      "iconUrl": "Modules/$(VirtoCommerce.Sanity)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Pages",
+          "version": {
+            "major": 3,
+            "minor": 1004,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Sanity.Web.dll",
+      "id": "VirtoCommerce.Sanity"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Search Core",
+      "description": "Defines Core Abstractions for indexed search functionality above different search providers, like: Elasticsearch, Azure Search, etc.",
+      "authors": [
+        "Eugeny Tatarincev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-search",
+      "iconUrl": "Modules/$(VirtoCommerce.Search)/Content/logoVC.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.SearchModule.Web.dll",
+      "id": "VirtoCommerce.Search"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1016.0",
+      "title": "SEO",
+      "description": "Infrastructure for managing SEO metadata across the platform",
+      "authors": [
+        "Basil Kotov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-seo",
+      "iconUrl": "Modules/$(VirtoCommerce.Seo)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Seo.Web.dll",
+      "id": "VirtoCommerce.Seo"
+    },
+    {
+      "version": "3.1003.0",
+      "platformVersion": "3.1016.0",
+      "title": "Shipping",
+      "description": "Add shipping methods management",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-shipping",
+      "iconUrl": "Modules/$(VirtoCommerce.Shipping)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ShippingModule.Web.dll",
+      "id": "VirtoCommerce.Shipping"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "ShipStation Integration",
+      "description": "Enables synchronizing customer orders with ShipStation",
+      "authors": [
+        "Dmitry Pushnitsa"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-ShipStation",
+      "iconUrl": "Modules/$(VirtoCommerce.ShipStation)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.ShipStationModule.Web.dll",
+      "id": "VirtoCommerce.ShipStation"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Sitemap Generator",
+      "description": "Simplifies the process of generating sitemaps for online stores",
+      "authors": [
+        "Andrey Orlov"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-sitemaps",
+      "iconUrl": "Modules/$(VirtoCommerce.Sitemaps)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Assets",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Content",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.SitemapsModule.Web.dll",
+      "id": "VirtoCommerce.Sitemaps"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Skyflow",
+      "description": "Skyflow Integration as payment provider enables a unified user experience for Credit Card transactions across diverse payment providers.",
+      "authors": [
+        "Vasily Kotov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-skyflow",
+      "iconUrl": "Modules/$(VirtoCommerce.Skyflow)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Skyflow.Web.dll",
+      "id": "VirtoCommerce.Skyflow"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1023.0",
+      "title": "Sql Queries",
+      "description": "Adds SQL query/report capabilities to the VirtoCommerce platform, enabling advanced data access directly through SQL.",
+      "authors": [
+        "VirtoCommerce"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-sql-queries",
+      "iconUrl": "Modules/$(VirtoCommerce.SqlQueries)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.SqlQueries.Web.dll",
+      "id": "VirtoCommerce.SqlQueries"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1016.0",
+      "title": "Store",
+      "description": "Multi store management with individual store settings",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-store",
+      "iconUrl": "Modules/$(VirtoCommerce.Store)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1003,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Seo",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.StoreModule.Web.dll",
+      "id": "VirtoCommerce.Store"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Subscriptions",
+      "description": "Represent recurrent subscriptions functionality",
+      "authors": [
+        "Egidijus MaЕѕeika",
+        "Eugeney Tatarincev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-subscription",
+      "iconUrl": "Modules/$(VirtoCommerce.Subscription)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": null,
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.SubscriptionModule.Web.dll",
+      "id": "VirtoCommerce.Subscription"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1027.0",
+      "title": "System Operations",
+      "description": "Developer tools page with centralized platform maintenance operations.",
+      "authors": [
+        "Oleg Zhuk"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-system-operations",
+      "iconUrl": "Modules/$(VirtoCommerce.SystemOperations)/Content/logo.svg",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": null,
+      "id": "VirtoCommerce.SystemOperations"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1023.0",
+      "title": "Task Management",
+      "description": "Headquarters personas can use task management to create task lists for retail stores, and to track status by store or worker.",
+      "authors": [
+        "Artem Dudarev",
+        "Oleg Zhuk",
+        "Evgeny Okhrimenko"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-task-management",
+      "iconUrl": "Modules/$(VirtoCommerce.TaskManagement)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Notifications",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.TaskManagement.Web.dll",
+      "id": "VirtoCommerce.TaskManagement"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Tax Core",
+      "description": "Defines Core Abstractions for taxes evaluation by using different tax providers and FixedRateTaxProvider.",
+      "authors": [
+        "Virto Commerce"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-tax",
+      "iconUrl": "Modules/$(VirtoCommerce.Tax)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011-2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Core",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.TaxModule.Web.dll",
+      "id": "VirtoCommerce.Tax"
+    },
+    {
+      "version": "3.1002.0",
+      "platformVersion": "3.1002.0",
+      "title": "Webhooks",
+      "description": "Manage user defined webhooks",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Andrey Kozlov",
+        "Aleksandr Andreev"
+      ],
+      "owners": [
+        "Virto Commerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-webhooks",
+      "iconUrl": null,
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "",
+      "copyright": "Copyright © 2011–2026 Virto Commerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.WebhooksModule.Web.dll",
+      "id": "VirtoCommerce.WebHooks"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "White Labeling",
+      "description": "Provides White labeling functionality for organizations",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-white-labeling",
+      "iconUrl": "Modules/$(VirtoCommerce.WhiteLabeling)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.FileExperienceApi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCMS",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.ImageTools",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.WhiteLabeling.Web.dll",
+      "id": "VirtoCommerce.WhiteLabeling"
+    },
+    {
+      "version": "3.1009.0",
+      "platformVersion": "3.1027.0",
+      "title": "Core Experience API",
+      "description": "Module represents a core functionality for GraphQL and other XAPI modules",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Yan Brovkin",
+        "Fillip Kuksov",
+        "Egidijus Mažeika",
+        "Andrei Kostyrin",
+        "Dmitri Pushnitsa",
+        "Alexandr Andreev",
+        "Andrey Kozlov",
+        "Konstantin Savosteev",
+        "Aleksandr Vishniakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-api",
+      "iconUrl": "Modules/$(VirtoCommerce.Xapi)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.ApplicationInsights",
+          "version": {
+            "major": 3,
+            "minor": 1001,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Search",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Seo",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Store",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Tax",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.Xapi.Web.dll",
+      "id": "VirtoCommerce.Xapi"
+    },
+    {
+      "version": "3.1016.0",
+      "platformVersion": "3.1002.0",
+      "title": "Cart Experience API",
+      "description": "Dedicated to cart-related functionalities, ensuring efficient handling of shopping cart and checkout operations.",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Yan Brovkin",
+        "Fillip Kuksov",
+        "Egidijus Mažeika",
+        "Andrei Kostyrin",
+        "Dmitri Pushnitsa",
+        "Alexandr Andreev",
+        "Andrey Kozlov",
+        "Konstantin Savosteev",
+        "Aleksandr Vishniakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-cart",
+      "iconUrl": "Modules/$(VirtoCommerce.XCart)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1025,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Cart",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.FileExperienceApi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Marketing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1001,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 945,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XCart.Web.dll",
+      "id": "VirtoCommerce.XCart"
+    },
+    {
+      "version": "3.1005.0",
+      "platformVersion": "3.1013.0",
+      "title": "Catalog Experience API",
+      "description": "Manages all catalog-related operations, from product listings to detailed item information.",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Yan Brovkin",
+        "Fillip Kuksov",
+        "Egidijus Mažeika",
+        "Andrei Kostyrin",
+        "Dmitri Pushnitsa",
+        "Alexandr Andreev",
+        "Andrey Kozlov",
+        "Konstantin Savosteev",
+        "Aleksandr Vishniakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-catalog",
+      "iconUrl": "Modules/$(VirtoCommerce.XCatalog)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1017,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Marketing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Pricing",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XCatalog.Web.dll",
+      "id": "VirtoCommerce.XCatalog"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "CMS Experience API",
+      "description": "Integrates with content management systems, facilitating seamless content delivery and management.",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Yan Brovkin",
+        "Fillip Kuksov",
+        "Egidijus Mažeika",
+        "Andrei Kostyrin",
+        "Dmitri Pushnitsa",
+        "Alexandr Andreev",
+        "Andrey Kozlov",
+        "Konstantin Savosteev",
+        "Aleksandr Vishniakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-cms",
+      "iconUrl": "Modules/$(VirtoCommerce.XCMS)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Content",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Customer",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Pages",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.PageBuilderModule",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XCMS.Web.dll",
+      "id": "VirtoCommerce.XCMS"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Frontend Experience API",
+      "description": "Built on top of the Virto Commerce XAPI platform, the Frontend Experience API exposes optimized queries specifically for rendering and user experience scenarios.",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-frontend",
+      "iconUrl": "Modules/$(VirtoCommerce.XFrontend)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025-2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.ProfileExperienceApiModule",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.WhiteLabeling",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": true
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XFrontend.Web.dll",
+      "id": "VirtoCommerce.XFrontend"
+    },
+    {
+      "version": "3.1004.0",
+      "platformVersion": "3.1016.0",
+      "title": "Order Experience API",
+      "description": "Focuses on order processing, providing robust support for order lifecycle management.",
+      "authors": [
+        "Eugeny Tatarincev",
+        "Yan Brovkin",
+        "Fillip Kuksov",
+        "Egidijus Mažeika",
+        "Andrei Kostyrin",
+        "Dmitri Pushnitsa",
+        "Alexandr Andreev",
+        "Andrey Kozlov",
+        "Konstantin Savosteev",
+        "Aleksandr Vishniakov",
+        "Artem Dudarev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-order",
+      "iconUrl": "Modules/$(VirtoCommerce.XOrder)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [
+        "commerce"
+      ],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.FileExperienceApi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Orders",
+          "version": {
+            "major": 3,
+            "minor": 1007,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Payment",
+          "version": {
+            "major": 3,
+            "minor": 1002,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1001,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCart",
+          "version": {
+            "major": 3,
+            "minor": 1001,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XOrder.Web.dll",
+      "id": "VirtoCommerce.XOrder"
+    },
+    {
+      "version": "3.1001.0",
+      "platformVersion": "3.1002.0",
+      "title": "Buy online pickup in store (BOPIS) Experience API",
+      "description": "Handles buy online pickup in store (BOPIS) operations",
+      "authors": [
+        "Kirill Iusupov"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-pickup",
+      "iconUrl": "Modules/$(VirtoCommerce.XPickup)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2025 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Catalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Inventory",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Shipping",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.Cart",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XPickup.Web.dll",
+      "id": "VirtoCommerce.XPickup"
+    },
+    {
+      "version": "3.1000.0",
+      "platformVersion": "3.1002.0",
+      "title": "Product Recommendations",
+      "description": "Recommendations encourage users to expand their search and browse more broadly. Users can jump to similar or complementary items if they don’t find a precise match.",
+      "authors": [
+        "Konstantin Savosteev"
+      ],
+      "owners": [
+        "VirtoCommerce"
+      ],
+      "licenseUrl": null,
+      "projectUrl": "https://github.com/VirtoCommerce/vc-module-x-recommend",
+      "iconUrl": "Modules/$(VirtoCommerce.XRecommend)/Content/logo.png",
+      "requireLicenseAcceptance": false,
+      "releaseNotes": "First version.",
+      "copyright": "Copyright © 2024–2026 VirtoCommerce. All rights reserved",
+      "tags": null,
+      "groups": [],
+      "dependencies": [
+        {
+          "id": "VirtoCommerce.Xapi",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        },
+        {
+          "id": "VirtoCommerce.XCatalog",
+          "version": {
+            "major": 3,
+            "minor": 1000,
+            "patch": 0,
+            "prerelease": ""
+          },
+          "optional": false
+        }
+      ],
+      "validationErrors": [],
+      "isRemovable": false,
+      "isInstalled": true,
+      "installedVersion": null,
+      "packageUrl": "file:///opt/virtocommerce/platform/app_data/modules/VirtoCommerce.XRecommend.Web.dll",
+      "id": "VirtoCommerce.XRecommend"
+    }
+  ]
+}

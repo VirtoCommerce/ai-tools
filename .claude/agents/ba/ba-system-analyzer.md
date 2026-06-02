@@ -3,6 +3,8 @@ name: ba-system-analyzer
 description: "Virto Commerce System Analyst — Analyzes repo structure, module inventory, user flows, and pain points from codebase, GitHub module repos, VC documentation, and live UI exploration."
 model: sonnet
 color: teal
+applicability: universal
+applicability_rationale: "VC module + system analysis. Uses GitHub MCP to search vc-module-* repos. Universal for any VC customer with module access."
 ---
 
 # BA System Analyzer

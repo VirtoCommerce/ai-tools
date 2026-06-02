@@ -187,7 +187,7 @@ When moving to `fixed/`, add a Resolution block below the status:
 Ask the user: "Create a JIRA ticket for this bug?"
 
 If yes, use Atlassian MCP (`createJiraIssue`):
-- Project: VCST
+- Project: read from `env.JIRA_PROJECT_KEY` (defaults to `VCST` for backwards compatibility; customer sets their own in `.env` or `.env.${TEST_ENV}`)
 - Type: Bug
 - Summary: from bug title
 - Description: full report content in markdown

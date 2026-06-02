@@ -1,6 +1,12 @@
-# Tier Classification — Architectural Map for Multi-Project Expansion
+# Tier Classification — Architectural Map for the VC QA Customer Plugin
 
-Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan). This file is the authoritative per-file tier assignment used to decide what becomes a shared org-wide standard, what becomes a parameterized template, and what stays project-local when expanding from the vcst-qa storefront to other VirtoCommerce products (Admin SPA, marketplace, modules, mobile, customer projects).
+Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan). This file is the authoritative per-file tier assignment used to **standardize the vcst-qa project** and **package it as a Claude Code plugin for VirtoCommerce customers — covering BOTH the storefront and the Admin SPA**. Each customer installs the plugin in their own VC deployment repo and supplies their own env values (`FRONT_URL` + `BACK_URL`, dual creds) and `aliases.json`.
+
+**In scope:** the two surfaces every VC customer has out-of-the-box — the customer-facing storefront and the back-office Admin SPA (with its platform APIs, GraphQL xAPI, and built-in modules like catalog/customer/marketing/inventory/orders/CMS) — running across **N customer-named environments** (dev, multiple staging variants, multi-region prod, feature-branch envs — env naming is arbitrary, gated by `ENV_RISK` not env name).
+
+**Out of scope:** mobile apps, marketplace, modules-as-separate-products, internal expansion to multiple VC product lines, `vc-qa-core` repo split, per-product knowledge packs. All customers run the same VC codebase, so a single shared knowledge base (Tier C — storefront + admin) is correct.
+
+**Multi-env is a first-class capability.** The existing `config.js` layered loader (`.env.defaults` → `.env.${TEST_ENV}` → `.env.local`, with per-env password suffix-promotion) already supports arbitrary env names. The plugin adds `ENV_RISK=dev|test|staging|production` for safety-by-config, not safety-by-naming-convention.
 
 ## Tier Definitions
 
@@ -57,7 +63,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `storefront-selectors.md` | **C** | DOM selectors for storefront. |
 | `critical-ui-scope.md` | **C** | 7 components + 8 pages — storefront critical scope. |
 | `order-creation-matrix.md` | **C** | Storefront checkout/payment/shipping matrix. |
-| `graphql-schema.md` | **C** | xAPI schema reference — storefront-flavored. Admin SPA would have its own. |
+| `graphql-schema.md` | **C** | xAPI schema reference — storefront-flavored. Other VC products would have their own. |
 | `graphql-test-cases-runner.md` | **B** | Tag grammar + `@td()` resolver contract. Generic. The xAPI examples are C; the grammar is B. |
 | `graphiql-interaction.md` | **A** | GraphiQL UI interaction guide — generic. |
 | `test-runner-tags.md` | **B** | CSV tag reference — generic format. |
@@ -172,26 +178,32 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `tests/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |
 | `reports/` | **C** | Per-project output. |
 | `docs/prompts/` | **B**/**C** | `story-testing.md` = B, `How to test Builder.io.md` = C. |
-| `docs/Sprint plans/` | **C** | Storefront sprint plans. |
+| `vc/shared/docs/Sprint plans/` | **C** | VC sprint plans (cross-env, Layer 2). |
 
 ---
 
-## Tier D — What's Missing
+## Tier D — What's Missing (for plugin distribution)
 
-These don't exist yet and must be created for multi-project use:
+These don't exist yet and must be created to ship the plugin to VC customers:
 
 | Artifact | Description | Where it lives |
 |----------|-------------|----------------|
-| `.vc-qa.json` | Project manifest declaring product type, knowledge-pack path, suite dir, env profile, core version. | Each consumer project root |
-| `config/vc-qa.schema.json` | Schema for `.vc-qa.json`. | `vc-qa-core` |
-| Knowledge namespacing convention | `BL-{PRODUCT}-{DOMAIN}-NNN` for all per-product BLs. Shared rules use `BL-VC-*`. | `vc-qa-core/methodology/` (the convention) |
-| Lint script | Rejects untagged BL IDs in CI. | `vc-qa-core/scripts/lint-bl-ids.ts` |
-| `vc-qa-core/bootstrap/init.ts` | `npx vc-qa init <product-type>` scaffolder. | `vc-qa-core` |
-| Specialist agent template | `qa-{product}-expert.md` that extends shared base — only LAYER 1 (BL refs) and LAYER 2 (domain knowledge) filled in. | `vc-qa-core/templates/` |
-| Knowledge pack template | Empty `business-logic.{product}.md`, `domain-knowledge.{product}.md`, etc. | `vc-qa-core/templates/knowledge-pack/` |
-| Distribution mechanism | Claude Code plugin (agents/skills/commands) + npm package (scripts/ci) — to be chosen in Phase 2. | `vc-qa-core/README.md` |
-| Cross-project regression dashboard | Aggregated `history.json` view across all consumers. | `vc-qa-core` ops tooling |
-| Per-product agent prefix | `AGENT-TEST-{PRODUCT}-` (extends current `AGENT-TEST-` from `live-discovery.md`). | Convention documented in `vc-qa-core/standards/test-data.md` |
+| `manifest.json` | Plugin metadata: name, version, required MCP servers, env-var schema, supported Claude Code version range. | Plugin root |
+| `templates/.env.local.template` | Customer fills in their URLs, credentials, payment cards, test users. Comments document each var. | `templates/` |
+| `templates/aliases.json.template` | Customer fills in their test entities (orgs, users, products, addresses). Privacy-by-default header. | `templates/` |
+| `bootstrap/install.ts` | Interactive onboarding: scaffolds `.env.local`, generates `aliases.json`, runs `/qa-env-check`. | `bootstrap/` |
+| `STOREFRONT_PROFILE` env var | `b2b\|b2c\|hybrid` — gates which suites run. Suite manifest tags `storefrontProfile[]`. | `.env.defaults` + `config/test-suites.json` |
+| `MODULES_ENABLED` env var | Comma-separated list of installed VC modules; orchestrator skips Backend suites whose `requiresModules[]` aren't satisfied. | `.env.{env}` + `config/test-suites.json` |
+| `ENV_RISK` env var | `dev\|test\|staging\|production` — safety-by-config, not by env name. Production-risk envs block admin-write suites by default. | `.env.{env}` |
+| `config.js` cleanup | Drop `vcst` default for `TEST_ENV` (fail-loud if unset); remove `VIRTO_START_*` exports (push to `aliases.json`); validate `TEST_ENV` matches `[a-z0-9_]+` with helpful error for kebab-case; split `requiredVars[]` into core (always) vs feature-gated (Figma/Postman only when their skills run). | `config.js` |
+| Per-env aliases override | Loader picks `test-data/aliases.${TEST_ENV}.json` if present, falls back to `aliases.json`. Best-practice for customers with 3+ envs. | `scripts/lib/test-data-resolver.ts` |
+| Env-var bucketing | Documented split of the 33 vars into **plugin-supplied** / **customer-required** / **customer-optional**, with explicit dual-URL/dual-cred shape (storefront + admin) and multi-env workflow. | `docs/configuration.md` |
+| Payment-processor matrix | Suite 039 generalized; one tagged variant per processor (CyberSource, Skyflow, Authorize.Net, Datatrance). Customer enables via env. | `regression/suites/Frontend/payment/` |
+| JIRA project key parameterization | `JIRA_PROJECT_KEY` env var; `qa-bug` skill reads it instead of vcst-default. | `.claude/skills/testing/qa-bug/` + env |
+| PII / secret scanner | Lints `aliases.json` for real-looking emails/phones; scrubs HAR / screenshots before they land in `reports/`. | `scripts/lint-aliases-pii.ts`, `scripts/lib/evidence-sanitizer.ts` |
+| Distribution decision | Claude Code plugin (agents/skills/commands/knowledge) + npm package (scripts/ci) — confirmed in Phase 2. | `docs/distribution.md` |
+| Support runbook | Who answers customer questions, SLA, escalation, upgrade guide. | `docs/support-runbook.md` |
+| Versioning + changelog policy | Semver for Tier A (breaking changes forbidden post-v1.0), changelog mandatory on each release. | `CHANGELOG.md` + `docs/versioning.md` |
 
 ---
 
@@ -211,9 +223,9 @@ Phases 2–4: See `~/.claude/plans/functional-singing-cosmos.md`.
 
 ## How to use this file
 
-- **Adding a new agent/skill/command?** Decide its tier *first*. If it's A, propose it as an org-wide standard. If it's B, design with substitution points. If it's C, scope it to the storefront knowledge pack.
-- **Reviewing a PR that touches a Tier A file?** Higher bar — it's about to ship to N teams.
-- **Refactoring a Tier B file?** Look for storefront examples that should become `{{}}` placeholders.
-- **Adding storefront-specific behavior to a Tier A/B file?** Stop. Push it down to Tier C.
+- **Adding a new agent/skill/command?** Decide its tier *first*. If it's A, treat it as the org-wide methodology standard (frozen v1.0 — breaking changes forbidden post-launch). If it's B, design so customer env can drive it. If it's C, it's storefront-domain — fine, but make sure no specific catalog ID / org / user / theme value is hardcoded (route through `aliases.json`).
+- **Reviewing a PR that touches a Tier A file?** Higher bar — every customer using the plugin gets this change.
+- **Refactoring a Tier B file?** Look for vcst-qa-specific values that should become env vars or `aliases.json` entries.
+- **Adding customer-variable behavior to a Tier A/B file?** Stop. Either parameterize via env, or push to a Tier C file the customer can override.
 
 The single design rule: **dependencies point upward** — Tier C may reference Tier A and B; Tier A and B must never reference Tier C.

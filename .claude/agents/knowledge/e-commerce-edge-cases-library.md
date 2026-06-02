@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "13 generic ECL (universal) + 7 VC-specific (reference). File-level classification is reference because the VC-specific ones are intermixed; future refactor: split into universal + VC-specific files."
+---
+
 # E-Commerce QA Edge Cases & Strange User Behavior Library
 
 **Version:** 1.0  

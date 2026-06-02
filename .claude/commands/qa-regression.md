@@ -13,8 +13,8 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke (Suite 042)
 /qa-regression smoke                       # Suite 042 only (~15 min)
 /qa-regression critical                    # P0 suites: 042, 039, 044, 049
-/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs Section 5.1 suites; falls back to static group if no plan
-/qa-regression sprint:26-09                # Pin to a specific sprint plan (reads docs/Sprint plans/sprint-26-09-summary.json)
+/qa-regression sprint                      # Reads vc/shared/docs/Sprint plans/ for the current sprint plan and runs Section 5.1 suites; falls back to static group if no plan
+/qa-regression sprint:26-09                # Pin to a specific sprint plan (reads vc/shared/docs/Sprint plans/sprint-26-09-summary.json)
 /qa-regression sprint --no-plan            # Force static `sprint` selection group from test-suites.json (skip plan lookup)
 /qa-regression full                        # All 99 suites (production release)
 /qa-regression frontend                    # All Frontend/ suites
@@ -93,22 +93,22 @@ The static `sprint` selection group in `test-suites.json` is a generic "all P0+P
 
 Resolution order:
 
-1. **Explicit pin** (`sprint:XX-YY`) → read `docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
+1. **Explicit pin** (`sprint:XX-YY`) → read `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
 
 2. **Bare `sprint`** → auto-detect the active sprint plan:
-   - List `docs/Sprint plans/sprint-*-summary.json` files
+   - List `vc/shared/docs/Sprint plans/sprint-*-summary.json` files
    - Pick the one whose `endDate` is closest to (but not after) today's date — i.e. the most-recent-completed sprint plan
-   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
+   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in vc/shared/docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
 
 3. **Read** `summary.json` and extract `suitesActivated[]` — these are the suite IDs to run. Validate every ID exists in `test-suites.json` (warn and drop unknowns rather than failing).
 
 4. **Resolved-from-plan output** — log to the run report header:
    ```
-   Selection: sprint (resolved from docs/Sprint plans/sprint-26-09-summary.json)
+   Selection: sprint (resolved from vc/shared/docs/Sprint plans/sprint-26-09-summary.json)
    Sprint: Sprint26-09 (2026-04-29 – 2026-05-12)
    Suites: 042, 044, 011, 036, 037, 038, 028, 029, 077, 050, 072, 072b, 052
    Test cases estimated: 63-72 (per plan)
-   Plan link: docs/Sprint plans/sprint-26-09-test-plan.md
+   Plan link: vc/shared/docs/Sprint plans/sprint-26-09-test-plan.md
    ```
 
 5. **`--no-plan` opt-out** → skip 1c entirely; use the static `sprint` group from the manifest.
@@ -164,13 +164,15 @@ Output concise verdict to user with pass rate, bugs, and report path. Mention se
 
 Never assign two agents to the same browser. Never use WebKit on Windows.
 
-**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch from [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv):
+**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch via `@td(AGENT_POOL_SLOT_N.*)` — alias points at [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv) row where `slot=N`.
 
-- Slot 1 (`playwright-chrome`) → `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` (B2B: John Mitchell, TechFlow)
-- Slot 2 (`playwright-firefox`) → `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` (B2B: Emily Johnson, TechFlow — same-org pair with slot 1)
-- Slot 3 (`playwright-edge`) → `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` (B2B: Carlos Rodriguez, BuildRight — different org)
+- Slot 1 (`playwright-chrome`) → `@td(AGENT_POOL_SLOT_1.email)` / `@td(AGENT_POOL_SLOT_1.password)` (B2B pair: `@td(AGENT_POOL_SLOT_1.b2b_email)` in `@td(AGENT_POOL_SLOT_1.b2b_org)`)
+- Slot 2 (`playwright-firefox`) → `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` (same-org pair with slot 1 when CSV configures it that way)
+- Slot 3 (`playwright-edge`) → `@td(AGENT_POOL_SLOT_3.email)` / `@td(AGENT_POOL_SLOT_3.password)` (different-org pair by convention)
 
-Agents MUST read credentials from this CSV at runtime — never hardcode in prompts.
+> vcst-qa values: slots 1/2/3 = `qa-agent-slot{1,2,3}@virtocommerce.com` / `TestAgent{1,2,3}!`; B2B pair: John Mitchell + Emily Johnson in TechFlow (slots 1+2), Carlos Rodriguez in BuildRight (slot 3). Customers edit `test-data/users/agent-user-pool.csv` with their own values; the slot-pair convention is preserved.
+
+Agents MUST resolve credentials via `@td()` at runtime — never hardcode in prompts.
 
 ---
 
@@ -180,7 +182,7 @@ Agents MUST read credentials from this CSV at runtime — never hardcode in prom
 |-----------|--------|----------|
 | `smoke` | 01 | Daily pre-deploy |
 | `critical` | 042, 039, 044, 049 | P0 gate |
-| `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to static group (all P0+P1 suites) when no plan exists or `--no-plan` is set | Sprint release |
+| `sprint` | **Plan-driven** — reads `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to static group (all P0+P1 suites) when no plan exists or `--no-plan` is set | Sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
 | `full` | All 36 | Production release |
 | `frontend` | All Frontend/ suites | Frontend only |
@@ -201,6 +203,6 @@ Agents MUST read credentials from this CSV at runtime — never hardcode in prom
 - `--seed` with `smoke`/`042` is rejected — smoke tests don't need seeded data; warn and skip seeding
 - `--seed` runs sequentially before Step 1; it blocks the regression run and must succeed
 - `--teardown` runs after the report is written; failures are logged but don't fail the run
-- **Sprint-plan precedence:** When selection is `sprint`, `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
+- **Sprint-plan precedence:** When selection is `sprint`, `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
 - **Plan-driven runs are still validated against the manifest** — every `suitesActivated[]` ID must exist in `config/test-suites.json` (warn and drop unknowns rather than failing the run).
 - **No silent fallback:** if `sprint:XX-YY` is pinned but the plan file is missing, abort with a clear error instructing the user to run `/qa-test-plan {XX-YY}` first or add `--no-plan`.

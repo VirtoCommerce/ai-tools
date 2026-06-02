@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "CSV column / step / assertion tag reference. Format spec, universal."
+---
+
 # Test Runner Tag & Column Reference
 
 Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Consulted on demand — do NOT pre-read at suite start.
@@ -101,11 +106,13 @@ Substitute `{{VAR}}` placeholders in `Test_Data`, `Steps`, `Assertions`, `Cross_
 
 Read `test-data/users/agent-user-pool.csv`, match `server_name` = `{{BROWSER_SERVER}}`:
 
-| Browser Server | Personal | B2B |
-|---------------|----------|-----|
-| `playwright-chrome` | `qa-agent-slot1@virtocommerce.com` | `test-john.mitchell-20260310@test-agent.com` (AcmeCorp) |
-| `playwright-firefox` | `qa-agent-slot2@virtocommerce.com` | `test-emily.johnson-20260310@test-agent.com` (TechFlow) |
-| `playwright-edge` | `qa-agent-slot3@virtocommerce.com` | `test-carlos.rodriguez-20260310@test-agent.com` (BuildRight) |
+| Browser Server | Personal alias | B2B alias |
+|---------------|----------------|-----------|
+| `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.email)` | `@td(AGENT_POOL_SLOT_1.b2b_email)` (org: `@td(AGENT_POOL_SLOT_1.b2b_org)`) |
+| `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` (org: `@td(AGENT_POOL_SLOT_2.b2b_org)`) |
+| `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` (org: `@td(AGENT_POOL_SLOT_3.b2b_org)`) |
+
+> vcst-qa values: slot 1 = `qa-agent-slot1@virtocommerce.com` + AcmeCorp; slot 2 = TechFlow; slot 3 = BuildRight. Customers edit `test-data/users/agent-user-pool.csv` with their own values.
 
 **Why:** Sharing a user across parallel agents causes cart pollution, order history bleed, flaky auth.
 

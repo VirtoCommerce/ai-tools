@@ -91,16 +91,36 @@ export class TestDataResolver {
   private csvCache: Map<string, CSVRow[]> = new Map();
   private warnings: string[] = [];
 
-  constructor(testDataDir: string) {
+  constructor(testDataDir: string, testEnv?: string) {
     this.testDataDir = testDataDir;
 
-    const aliasPath = join(testDataDir, "aliases.json");
-    if (existsSync(aliasPath)) {
-      this.aliases = JSON.parse(readFileSync(aliasPath, "utf-8"));
+    // Load base aliases (shared across all environments)
+    const basePath = join(testDataDir, "aliases.json");
+    let merged: AliasRegistry = {};
+    if (existsSync(basePath)) {
+      merged = JSON.parse(readFileSync(basePath, "utf-8"));
     } else {
-      this.aliases = {};
-      console.warn(`[test-data-resolver] aliases.json not found at ${aliasPath}`);
+      console.warn(`[test-data-resolver] aliases.json not found at ${basePath}`);
     }
+
+    // Layer per-env aliases on top (per feature/qa-agentic-standardization).
+    // Defaults to process.env.TEST_ENV so existing callers Just Work without
+    // passing an explicit env. Customers with N envs override only what differs
+    // (org IDs, user emails, addresses) — base aliases.json stays shared.
+    const envName = testEnv ?? process.env.TEST_ENV;
+    if (envName) {
+      const envPath = join(testDataDir, `aliases.${envName}.json`);
+      if (existsSync(envPath)) {
+        const envOverrides = JSON.parse(readFileSync(envPath, "utf-8")) as AliasRegistry;
+        const overrideCount = Object.keys(envOverrides).filter(k => k !== "_meta").length;
+        merged = { ...merged, ...envOverrides };
+        console.log(
+          `[test-data-resolver] Layered ${overrideCount} env override(s) from aliases.${envName}.json`
+        );
+      }
+    }
+
+    this.aliases = merged;
   }
 
   /** Resolve all @td() tokens in a string */

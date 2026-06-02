@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "Per-browser rendering differences. Cross-VC universal."
+---
+
 # Browser Quirks — Cross-Browser Testing Reference
 
 ## iOS Safari

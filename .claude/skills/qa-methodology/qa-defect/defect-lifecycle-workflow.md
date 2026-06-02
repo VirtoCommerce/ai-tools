@@ -171,7 +171,7 @@ Use the 12-item checklist (section 5 below). If score < 10/12, send back to repo
 ### Step 2: Check for Duplicates
 Run JQL search before creating or refining any bug:
 ```
-project = VCST AND issuetype = Bug AND status != Cancelled
+project = ${JIRA_PROJECT_KEY} AND issuetype = Bug AND status != Cancelled
 AND (summary ~ "keyword1" OR summary ~ "keyword2")
 ORDER BY created DESC
 ```
@@ -314,7 +314,7 @@ Six process-health metrics. These are distinct from test execution metrics in `/
 | P2 | < 1 sprint | Review if > 2 sprints |
 | P3 | No hard limit | Review quarterly |
 
-**JQL:** `project = VCST AND issuetype = Bug AND status NOT IN (Done, Cancelled) ORDER BY priority ASC, created ASC`
+**JQL:** `project = ${JIRA_PROJECT_KEY} AND issuetype = Bug AND status NOT IN (Done, Cancelled) ORDER BY priority ASC, created ASC`
 
 ### 8.2 Mean Time to Resolve (MTTR)
 
@@ -327,7 +327,7 @@ Six process-health metrics. These are distinct from test execution metrics in `/
 **Formula:** `bugs_reopened / total_bugs_closed × 100` in the period
 **Target:** < 10%
 **High reopen rate indicates:** Incomplete fixes, insufficient code review, or verification gaps
-**JQL for reopened:** `project = VCST AND issuetype = Bug AND status CHANGED TO "Reopen"`
+**JQL for reopened:** `project = ${JIRA_PROJECT_KEY} AND issuetype = Bug AND status CHANGED TO "Reopen"`
 
 ### 8.4 Defect Escape Rate
 

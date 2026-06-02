@@ -18,7 +18,7 @@ This command is **side-effecting** (modifies suite CSVs) — `disable-model-invo
 /qa-coverage-generation p1               # Gaps with priorityScore >= 5.0  (P0 + P1)
 /qa-coverage-generation full             # All gaps
 /qa-coverage-generation domain <name>    # Single manifest domain — delegates directly to /qa-coverage-gap (no batching, no orchestration overhead)
-/qa-coverage-generation sprint           # Gaps surfaced by current sprint plan (`docs/Sprint plans/sprint-*-summary.json`)
+/qa-coverage-generation sprint           # Gaps surfaced by current sprint plan (`vc/shared/docs/Sprint plans/sprint-*-summary.json`)
 /qa-coverage-generation ci-dry-run       # Analyze + generate only — no browser validation, no commit (CI)
 ```
 
@@ -42,7 +42,7 @@ Per `.claude/templates/agent-dispatch.md` § Pre-Flight Checklist:
 2. **Environment health** — `curl -sk {BACK_URL}/health` (CI may skip; record verdict).
 3. **Manifest sanity** — confirm `config/test-suites.json` loads, `_meta.version >= 3.0`, and selection rule for the requested scope resolves (use `npm run suites:sync --dry-run` if available).
 4. **Budget guard (CI mode)** — fail-fast if `MAX_BUDGET_USD` is unset or `< 5.0`. Default cap: $10 for `p0`, $25 for `p1`, $50 for `full`.
-5. **Sprint-plan resolution (`sprint` scope only)** — read the latest `docs/Sprint plans/sprint-*-summary.json` and extract `domainsAffected[]` and `suitesActivated[]`. Treat those as the gap-analysis scope filter.
+5. **Sprint-plan resolution (`sprint` scope only)** — read the latest `vc/shared/docs/Sprint plans/sprint-*-summary.json` and extract `domainsAffected[]` and `suitesActivated[]`. Treat those as the gap-analysis scope filter.
 
 If any check fails, surface the failure to the user with a one-line summary and ask whether to proceed.
 

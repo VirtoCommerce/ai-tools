@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "Historical VC bug patterns indexed by domain. Customer reads as 'Familiar Problems' oracle but VC-specific entries (VCST-NNNN refs) are vcst's history. Useful learning artifact, adapt for customer's."
+---
+
 # VC Bug Catalog — Where Virto Commerce Historically Breaks
 
 Curated reference of failure modes seen in this Virto Commerce deployment. Use as a **"Familiar Problems"** oracle (HICCUPPS-F) and to seed Bad Neighborhood Tours (`adversarial-heuristics.md`). When exploring a domain, scan this file for the relevant section first — known soft spots reveal themselves faster than fresh exploration.

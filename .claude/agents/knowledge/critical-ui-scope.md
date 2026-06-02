@@ -1,3 +1,8 @@
+---
+applicability: reference
+applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Customer adapts to their components/pages."
+---
+
 # Critical UI Scope — Regression-Enforced Component Checklist
 
 **Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` parses it and fails the build if any covered cell points at a test ID that doesn't exist in any regression suite CSV.

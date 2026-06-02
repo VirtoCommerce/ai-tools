@@ -8,7 +8,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 |---------|-----------|-------------|---------|
 | `/qa-smoke` | `[storefront\|admin]` | No | Daily smoke test (12 P0 tests, ~15 min, GO/NO-GO verdict) |
 | `/qa-test` | `VCST-XXXX \| feature \| PR #N` | No | Test a JIRA ticket, feature, or PR |
-| `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
+| `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |

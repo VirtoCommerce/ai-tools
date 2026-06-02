@@ -1,3 +1,8 @@
+---
+applicability: universal
+applicability_rationale: "VC platform architecture patterns. Same for every VC deployment."
+---
+
 # Virto Commerce Platform Patterns
 
 Cross-layer architecture knowledge shared by all QA agents.

@@ -2885,5 +2885,85 @@
       "variation_white_sku": "variation_white_sku"
     },
     "_notes": "Variation parent with 2 color variations from 2026-05-29 full seed. hasVariations=true. Use for variation/variant-picker tests (suite 009 b2c-variations, suite 002 product-detail). NOT yet confirmed virtual-catalog linked — verify before storefront tests."
+  },
+  "AGENT_POOL_SLOT_1": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "1"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Per feature/qa-agentic-standardization Phase 3: knowledge files reference agent pool slot 1 (Chrome / qa-frontend-expert) via this alias instead of hardcoding qa-agent-slot1@virtocommerce.com. Customers edit users/agent-user-pool.csv with their own values; aliases resolve to whatever they put there. Pattern preserved (3 isolated browsers, per-slot creds, b2b-pair-aware); specific values are theirs."
+  },
+  "AGENT_POOL_SLOT_2": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "2"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Agent pool slot 2 (Firefox / qa-testing-expert). Same pattern as AGENT_POOL_SLOT_1; customer-editable via test-data/users/agent-user-pool.csv."
+  },
+  "AGENT_POOL_SLOT_3": {
+    "file": "users/agent-user-pool",
+    "filter": {
+      "slot": "3"
+    },
+    "fields": {
+      "email": "personal_email",
+      "password": "personal_password",
+      "browser": "server_name",
+      "agent": "agent",
+      "b2b_email": "b2b_email",
+      "b2b_password": "b2b_password",
+      "b2b_org": "b2b_org",
+      "b2b_org_id": "b2b_org_id",
+      "b2b_role": "b2b_role"
+    },
+    "_notes": "Agent pool slot 3 (Edge / qa-backend-expert). Same pattern as AGENT_POOL_SLOT_1/2; customer-editable via test-data/users/agent-user-pool.csv."
+  },
+  "ADMIN_ROLE_TESTER": {
+    "_inline": true,
+    "_comment": "Customer's admin role assigned to the test admin user (ADMIN env var). The BL-RBAC invariants reference role CAPABILITIES, not names — so this alias absorbs naming differences. Customer's actual role name goes here; agents read this instead of assuming 'admin'. Update name + id per customer Admin SPA > Security > Roles.",
+    "name": "Administrator",
+    "id": "00000000-0000-0000-0000-000000000001",
+    "_status": "vcst-qa-default — replace with your role's name + GUID from Admin SPA > Security > Roles"
+  },
+  "ADMIN_ROLES_COMMON": {
+    "_inline": true,
+    "_comment": "Canonical VC platform admin role NAMES that ship out-of-the-box. Customers may rename these — refer to these by capability, not name. Suites that assert on role NAMES should use @td(ADMIN_ROLES_COMMON.<role>) so a customer's renamed role still resolves.",
+    "administrator": "Administrator",
+    "store_manager": "Store Manager",
+    "catalog_manager": "Catalog Manager",
+    "order_manager": "Order Manager",
+    "customer_service": "Customer Service",
+    "marketing_manager": "Marketing Manager",
+    "_note": "If customer renames 'Store Manager' to 'Shop Lead', override only this key in test-data/aliases.${TEST_ENV}.json — base aliases.json stays shared."
+  },
+  "ADMIN_USER": {
+    "_inline": true,
+    "_comment": "The platform admin user (Admin SPA back-office). Email + password come from .env / .env.local (ADMIN + ADMIN_PASSWORD); this alias just records identity metadata for agents that need to assert against a specific admin.",
+    "email_env_var": "ADMIN",
+    "password_env_var": "ADMIN_PASSWORD",
+    "role_alias": "ADMIN_ROLE_TESTER",
+    "user_type": "Administrator"
   }
 }

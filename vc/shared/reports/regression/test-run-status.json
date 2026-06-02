@@ -1,0 +1,44 @@
+{
+  "runId": "SMOKE-2026-06-02-1501",
+  "selection": "042",
+  "mode": "smoke-interactive",
+  "environment": "vcst",
+  "startedAt": "2026-06-02T15:01:00Z",
+  "completedAt": "2026-06-02T15:34:40Z",
+  "status": "interrupted",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "vc-theme-b2b-vue-2.50.0-alpha.2359",
+    "note": "Build state read from prior run REG-2026-06-02-0936; deploy-state-cache.json stale (2026-05-20)."
+  },
+  "envHealth": { "storefront": 200, "platformHealth": "Healthy" },
+  "seedProfile": null,
+  "totalSuites": 1,
+  "totalTestCases": 33,
+  "verdict": { "passed": 14, "failed": 0, "notRun": 19 },
+  "passRate": { "executable": "100% (14/14)", "overall": "42.4% (14/33 — 19 not reached)" },
+  "qualityGate": "INCONCLUSIVE — session interrupted after SMK-014. 14 executed, all PASS (0 failures). Critical revenue path (auth, catalog, cart, checkout, CyberSource payment, order creation CO260602-00017) fully green. SMK-015–SMK-033 (GA4, order history, address mgmt, configurable products, B2B org switch, BOPIS, XSS, health) not reached. Rerun required for GO/NO-GO verdict.",
+  "newBugs": [],
+  "report": "reports/regression/SMOKE-2026-06-02-1501/regression-2026-06-02.md",
+  "suites": [
+    {
+      "id": "042",
+      "name": "Smoke Tests",
+      "priority": "P0",
+      "testCount": 33,
+      "agent": "qa-testing-expert",
+      "browser": "playwright-firefox",
+      "status": "interrupted",
+      "attempts": 1,
+      "verdict": { "passed": 14, "failed": 0, "notRun": 19 },
+      "lastExecuted": "SMK-014",
+      "orderCreated": "CO260602-00017",
+      "outputFile": "reports/regression/SMOKE-2026-06-02-1501/regression-2026-06-02.md"
+    }
+  ],
+  "browserPool": {
+    "slot1": { "server": "playwright-chrome", "status": "idle", "currentSuite": null },
+    "slot2": { "server": "playwright-firefox", "status": "idle", "currentSuite": null },
+    "slot3": { "server": "playwright-edge", "status": "idle", "currentSuite": null }
+  }
+}

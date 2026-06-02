@@ -1,12 +1,12 @@
 ---
-description: "Create a sprint test plan from JIRA Done items + vc-frontend PRs. Pulls Stories/Bugs (status=Done), maps PRs, computes risk, allocates regression suites, and writes a sprint-XX-YY-test-plan.md to docs/Sprint plans/."
+description: "Create a sprint test plan from JIRA Done items + vc-frontend PRs. Pulls Stories/Bugs (status=Done), maps PRs, computes risk, allocates regression suites, and writes a sprint-XX-YY-test-plan.md to vc/shared/docs/Sprint plans/."
 argument-hint: "SprintXX-YY | XX-YY | current | last"
 disable-model-invocation: true
 ---
 
 # /qa-test-plan — Sprint Test Plan Generator
 
-Build a sprint-level test plan by pulling **Done Stories and Bugs** from JIRA, cross-referencing **merged PRs in `VirtoCommerce/vc-frontend`** within the sprint window, scoring risk, and mapping work to regression suites. Reference output: `docs/Sprint plans/sprint-26-08-test-plan.md`.
+Build a sprint-level test plan by pulling **Done Stories and Bugs** from JIRA, cross-referencing **merged PRs in `VirtoCommerce/vc-frontend`** within the sprint window, scoring risk, and mapping work to regression suites. Reference output: `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md`.
 
 You run this orchestration inline. Delegate the heavy "Write" step (Section 6: per-ticket test case generation count + GAP IDs) to `test-management-specialist`. Do NOT delegate to another orchestrator agent.
 
@@ -44,14 +44,14 @@ Parse any of `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` (where `XX` is the year su
 | Input | Resolution |
 |-------|-----------|
 | `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` | Match regex `^(?:[Ss]print[-]?)?(\d{2}-\d{2})$` → normalize to `Sprint<XX-YY>` |
-| `current` | Atlassian MCP `searchJiraIssuesUsingJql`: `sprint in openSprints() AND project = VCST` → take the sprint name from any returned issue |
-| `last` | JQL: `sprint in closedSprints() AND project = VCST ORDER BY sprint DESC` → take the most recent closed sprint name |
+| `current` | Atlassian MCP `searchJiraIssuesUsingJql`: `sprint in openSprints() AND project = ${JIRA_PROJECT_KEY}` → take the sprint name from any returned issue |
+| `last` | JQL: `sprint in closedSprints() AND project = ${JIRA_PROJECT_KEY} ORDER BY sprint DESC` → take the most recent closed sprint name |
 
 If parsing fails (input doesn't match `XX-YY` and isn't `current`/`last`), ask the user for the correct sprint label rather than guessing.
 
-**Output target:** `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) continue to live under `tests/{SPRINT_LABEL}/VCST-XXXX/` — the sprint plan does NOT go there. Create the `docs/Sprint plans/` directory if it doesn't exist.
+**Output target:** `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) continue to live under `tests/{SPRINT_LABEL}/VCST-XXXX/` — the sprint plan does NOT go there. Create the `vc/shared/docs/Sprint plans/` directory if it doesn't exist.
 
-**Duplicate guard:** If `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
+**Duplicate guard:** If `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
 
 ---
 
@@ -62,13 +62,13 @@ Use Atlassian MCP. If unavailable, ask user to paste the issue list (key, summar
 **JQL queries:**
 ```
 # Stories Done
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype = Story AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype = Story AND status = Done
 
 # Bugs Done
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype = Bug AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype = Bug AND status = Done
 
 # Tasks/Tech-debt Done (for context — may include data-test-id refactors)
-project = VCST AND sprint = "{SPRINT_LABEL}" AND issuetype in (Task, "Technical task", Sub-task) AND status = Done
+project = ${JIRA_PROJECT_KEY} AND sprint = "{SPRINT_LABEL}" AND issuetype in (Task, "Technical task", Sub-task) AND status = Done
 ```
 
 For each returned issue, capture: key, summary, type, priority, components, labels, assignee, **acceptance criteria** (description body), linked PRs (remote links + body URLs), JIRA fix version. Use `getJiraIssue` for full detail on the top 30 by priority — keep payloads under control by lazy-loading the rest only when needed in Step 4.
@@ -161,7 +161,7 @@ Delegate Sections 5.2 (Coverage Gaps) and 6 (New Test Cases per Ticket) to `test
 
 #### 6a. Orchestrator-written sections
 
-Follow the structure of `docs/Sprint plans/sprint-26-08-test-plan.md` exactly. Sections:
+Follow the structure of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md` exactly. Sections:
 
 1. **Sprint Summary** — date range, theme (1-2 sentence narrative inferred from top-priority tickets), Done counts (split by type), test-relevant count, merged PR count
 2. **Scope** — 2.1 Stories table, 2.2 Bugs table, 2.3 TechDebt/Structural (BEM, data-test-ids, etc.), 2.4 Out of Scope
@@ -214,9 +214,9 @@ Do NOT generate the actual CSV test cases here — only counts, suite mapping, a
 
 ### Step 7 — Write the Plan
 
-Output path: `docs/Sprint plans/sprint-{XX-YY}-test-plan.md`
+Output path: `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md`
 
-Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`. Do not invent new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._`
+Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md`. Do not invent new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._`
 
 **Header block:**
 ```markdown
@@ -230,7 +230,7 @@ Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`. Do
 ```
 
 **Companion files** (write alongside the plan):
-- `docs/Sprint plans/sprint-{XX-YY}-summary.json` — machine-readable summary (co-located with the plan)
+- `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json` — machine-readable summary (co-located with the plan)
 
 ```json
 {
@@ -246,7 +246,7 @@ Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`. Do
   "newCasesEstimate": "63-72",
   "criticalTickets": ["VCST-..."],
   "outOfScopeCount": 0,
-  "artifacts": "docs/Sprint plans/"
+  "artifacts": "vc/shared/docs/Sprint plans/"
 }
 ```
 
@@ -266,13 +266,13 @@ Critical-risk domains: [...]
 Coverage gaps identified: {GAP_COUNT}
 New test cases estimated: {RANGE}
 
-Plan: docs/Sprint plans/sprint-{XX-YY}-test-plan.md
-Summary: docs/Sprint plans/sprint-{XX-YY}-summary.json
+Plan: vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md
+Summary: vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json
 
 Next: review the plan, then either:
   - /qa-test-cases-generator VCST-XXXX  (per-ticket case generation, driven by Section 6 counts/techniques)
   - /qa-test VCST-XXXX                  (test a specific ticket, prefilled from Section 11 row)
-  - /qa-regression sprint               (auto-resolves docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
+  - /qa-regression sprint               (auto-resolves vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
   - /qa-regression sprint:{XX-YY}       (pin to this exact sprint plan; useful when re-running a past sprint)
 ```
 
@@ -280,7 +280,7 @@ Next: review the plan, then either:
 
 ## Rules
 
-- Reference example: `docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
+- Reference example: `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
 - Pull JIRA items via Atlassian MCP only — do NOT scrape the web. If MCP unavailable, ask user to paste.
 - Pull PRs via GitHub MCP only — do NOT shell out to `gh` from this command (the orchestrator runs inline; `gh` is fine inside agent dispatches).
 - The sprint window for PRs is the **JIRA sprint dates**, not arbitrary dates. Honor `--from` / `--to` only when explicitly given.
