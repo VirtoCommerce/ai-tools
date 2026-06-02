@@ -175,7 +175,10 @@
         "company",
         "sprint"
       ],
-      "storefrontProfile": ["b2b", "hybrid"]
+      "storefrontProfile": [
+        "b2b",
+        "hybrid"
+      ]
     },
     {
       "id": "007",
@@ -212,7 +215,10 @@
         "roles",
         "sprint"
       ],
-      "storefrontProfile": ["b2b", "hybrid"]
+      "storefrontProfile": [
+        "b2b",
+        "hybrid"
+      ]
     },
     {
       "id": "009",
@@ -250,7 +256,10 @@
         "bulk-order",
         "sprint"
       ],
-      "storefrontProfile": ["b2b", "hybrid"]
+      "storefrontProfile": [
+        "b2b",
+        "hybrid"
+      ]
     },
     {
       "id": "011",
@@ -268,7 +277,8 @@
         "flow",
         "revenue-critical",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "012",
@@ -287,7 +297,10 @@
         "anonymous",
         "sprint"
       ],
-      "storefrontProfile": ["b2c", "hybrid"]
+      "storefrontProfile": [
+        "b2c",
+        "hybrid"
+      ]
     },
     {
       "id": "013",
@@ -306,7 +319,10 @@
         "organization",
         "sprint"
       ],
-      "storefrontProfile": ["b2b"]
+      "storefrontProfile": [
+        "b2b"
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "014",
@@ -325,7 +341,8 @@
         "history",
         "detail",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "015",
@@ -343,7 +360,8 @@
         "rfq",
         "b2b",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "017",
@@ -365,7 +383,8 @@
       ],
       "requiresModules": [
         "orders"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "018",
@@ -386,7 +405,8 @@
       ],
       "requiresModules": [
         "orders"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "019",
@@ -407,7 +427,8 @@
       ],
       "requiresModules": [
         "orders"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "020",
@@ -426,7 +447,8 @@
         "roles",
         "settings",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "021",
@@ -443,7 +465,8 @@
         "platform",
         "dynamic-properties",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "023",
@@ -464,7 +487,8 @@
       ],
       "requiresModules": [
         "marketing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "024",
@@ -486,7 +510,8 @@
       ],
       "requiresModules": [
         "marketing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "025",
@@ -508,7 +533,8 @@
       ],
       "requiresModules": [
         "marketing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "026",
@@ -530,7 +556,8 @@
       ],
       "requiresModules": [
         "customer"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "027",
@@ -552,7 +579,8 @@
       ],
       "requiresModules": [
         "customer"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "028",
@@ -685,7 +713,8 @@
       ],
       "requiresModules": [
         "store"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "035",
@@ -707,7 +736,8 @@
       ],
       "requiresModules": [
         "store"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "036",
@@ -782,7 +812,10 @@
         "revenue-critical",
         "daily"
       ],
-      "paymentProcessors": ["cybersource"]
+      "paymentProcessors": [
+        "cybersource"
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "040",
@@ -802,7 +835,12 @@
         "datatrance",
         "revenue-critical"
       ],
-      "paymentProcessors": ["skyflow", "authorize-net", "datatrance"]
+      "paymentProcessors": [
+        "skyflow",
+        "authorize-net",
+        "datatrance"
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "041",
@@ -823,7 +861,13 @@
         "pci",
         "revenue-critical"
       ],
-      "paymentProcessors": ["cybersource", "skyflow", "authorize-net", "datatrance"]
+      "paymentProcessors": [
+        "cybersource",
+        "skyflow",
+        "authorize-net",
+        "datatrance"
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "042",
@@ -998,7 +1042,8 @@
         "rest",
         "platform",
         "daily"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "050a",
@@ -1286,7 +1331,8 @@
       ],
       "requiresModules": [
         "catalog"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "052",
@@ -1307,7 +1353,8 @@
       ],
       "requiresModules": [
         "catalog"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "053",
@@ -1329,7 +1376,8 @@
       ],
       "requiresModules": [
         "catalog"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "054",
@@ -1350,7 +1398,8 @@
       ],
       "requiresModules": [
         "pricing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "055",
@@ -1372,7 +1421,8 @@
       ],
       "requiresModules": [
         "pricing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "056",
@@ -1393,7 +1443,8 @@
       ],
       "requiresModules": [
         "inventory"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "057",
@@ -1414,7 +1465,8 @@
       ],
       "requiresModules": [
         "notifications"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "058",
@@ -1435,7 +1487,8 @@
       ],
       "requiresModules": [
         "notifications"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "059",
@@ -1457,7 +1510,8 @@
       ],
       "requiresModules": [
         "cms"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "060",
@@ -1479,7 +1533,8 @@
       ],
       "requiresModules": [
         "cms"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "061",
@@ -1502,7 +1557,8 @@
       ],
       "requiresModules": [
         "search"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "062",
@@ -1524,7 +1580,8 @@
       ],
       "requiresModules": [
         "assets"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "063",
@@ -1543,7 +1600,8 @@
         "units",
         "languages",
         "permissions"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "064",
@@ -1565,7 +1623,8 @@
       ],
       "requiresModules": [
         "import-export"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "065",
@@ -1586,7 +1645,8 @@
       ],
       "requiresModules": [
         "shipping"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "066",
@@ -1608,7 +1668,8 @@
       ],
       "requiresModules": [
         "seo"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "067",
@@ -1630,7 +1691,8 @@
       ],
       "requiresModules": [
         "whitelabeling"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "068",
@@ -1650,7 +1712,8 @@
       ],
       "requiresModules": [
         "push-messages"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "069",
@@ -1671,7 +1734,8 @@
       ],
       "requiresModules": [
         "image-tools"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "070",
@@ -1805,7 +1869,8 @@
       ],
       "requiresModules": [
         "returns"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "074",
@@ -1827,7 +1892,8 @@
       ],
       "requiresModules": [
         "contracts"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "075",
@@ -1849,7 +1915,8 @@
       ],
       "requiresModules": [
         "loyalty"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "076",
@@ -1869,7 +1936,8 @@
       ],
       "requiresModules": [
         "channels"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "077",
@@ -1888,7 +1956,8 @@
         "promotions",
         "storefront",
         "sprint"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "077b",
@@ -1958,7 +2027,8 @@
       ],
       "requiresModules": [
         "marketing"
-      ]
+      ],
+      "envRiskGate": "staging"
     },
     {
       "id": "080",
