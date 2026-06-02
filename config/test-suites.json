@@ -83,7 +83,8 @@
         "navigation",
         "categories",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "002",
@@ -101,7 +102,8 @@
         "pdp",
         "product-detail",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "003",
@@ -120,7 +122,8 @@
         "facets",
         "range-facets",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "004",
@@ -138,7 +141,8 @@
         "autocomplete",
         "results",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "005",
@@ -156,7 +160,8 @@
         "filters",
         "advanced",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "006",
@@ -178,7 +183,8 @@
       "storefrontProfile": [
         "b2b",
         "hybrid"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "007",
@@ -196,7 +202,8 @@
         "wishlists",
         "shared-lists",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "008",
@@ -218,7 +225,8 @@
       "storefrontProfile": [
         "b2b",
         "hybrid"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "009",
@@ -236,7 +244,8 @@
         "variations",
         "configurations",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "010",
@@ -259,7 +268,8 @@
       "storefrontProfile": [
         "b2b",
         "hybrid"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "011",
@@ -278,7 +288,8 @@
         "revenue-critical",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "012",
@@ -300,7 +311,8 @@
       "storefrontProfile": [
         "b2c",
         "hybrid"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "013",
@@ -322,7 +334,8 @@
       "storefrontProfile": [
         "b2b"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "014",
@@ -342,7 +355,8 @@
         "detail",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "015",
@@ -361,7 +375,8 @@
         "b2b",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "017",
@@ -384,7 +399,8 @@
       "requiresModules": [
         "orders"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "018",
@@ -406,7 +422,8 @@
       "requiresModules": [
         "orders"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "019",
@@ -428,7 +445,8 @@
       "requiresModules": [
         "orders"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "020",
@@ -448,7 +466,8 @@
         "settings",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "021",
@@ -466,7 +485,8 @@
         "dynamic-properties",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "023",
@@ -488,7 +508,8 @@
       "requiresModules": [
         "marketing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "024",
@@ -511,7 +532,8 @@
       "requiresModules": [
         "marketing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "025",
@@ -534,7 +556,8 @@
       "requiresModules": [
         "marketing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "026",
@@ -557,7 +580,8 @@
       "requiresModules": [
         "customer"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "027",
@@ -580,7 +604,8 @@
       "requiresModules": [
         "customer"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "028",
@@ -600,7 +625,8 @@
         "coupons-sidebar",
         "revenue-critical",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "029",
@@ -618,7 +644,8 @@
         "validation",
         "persistence",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "030",
@@ -636,7 +663,8 @@
         "merge",
         "anonymous",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "031",
@@ -654,7 +682,8 @@
         "login",
         "register",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "032",
@@ -673,7 +702,8 @@
         "rbac",
         "permissions",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "033",
@@ -691,7 +721,8 @@
         "company",
         "account-menu",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "034",
@@ -714,7 +745,8 @@
       "requiresModules": [
         "store"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "035",
@@ -737,7 +769,8 @@
       "requiresModules": [
         "store"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "036",
@@ -755,7 +788,8 @@
         "store-selector",
         "pickup",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "037",
@@ -773,7 +807,8 @@
         "cart",
         "pickup",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "038",
@@ -791,7 +826,8 @@
         "checkout",
         "pickup",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "039",
@@ -815,7 +851,8 @@
       "paymentProcessors": [
         "cybersource"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "040",
@@ -840,7 +877,8 @@
         "authorize-net",
         "datatrance"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "041",
@@ -867,7 +905,8 @@
         "authorize-net",
         "datatrance"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "042",
@@ -891,7 +930,8 @@
         "search",
         "security",
         "regression"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "043",
@@ -908,7 +948,8 @@
         "analytics",
         "ga4",
         "tracking"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "044",
@@ -927,7 +968,8 @@
         "xss",
         "csrf",
         "daily"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "045",
@@ -944,7 +986,8 @@
         "accessibility",
         "wcag",
         "a11y"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "046",
@@ -961,7 +1004,8 @@
         "i18n",
         "localization",
         "languages"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "047",
@@ -978,7 +1022,8 @@
         "performance",
         "core-web-vitals",
         "load-time"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "048",
@@ -994,7 +1039,8 @@
       "tags": [
         "cross-browser",
         "compatibility"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "048b",
@@ -1024,7 +1070,8 @@
         "critical-ui-scope",
         "ui-ux",
         "non-functional"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "049",
@@ -1043,7 +1090,8 @@
         "platform",
         "daily"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "050a",
@@ -1063,7 +1111,8 @@
         "range-facets",
         "price-filter-bva",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050b1",
@@ -1082,7 +1131,8 @@
         "xcart",
         "cart-quantity",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050b2",
@@ -1101,7 +1151,8 @@
         "xcart",
         "coupons",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050b3",
@@ -1120,7 +1171,8 @@
         "xcart",
         "checkout",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050b4",
@@ -1140,7 +1192,8 @@
         "cross-domain",
         "schema-coverage",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050c",
@@ -1158,7 +1211,8 @@
         "xapi",
         "xorder",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050d",
@@ -1177,7 +1231,8 @@
         "xprofile",
         "registration",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050e",
@@ -1196,7 +1251,8 @@
         "xfrontend",
         "page-context",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050f",
@@ -1214,7 +1270,8 @@
         "xapi",
         "xcms",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050g",
@@ -1232,7 +1289,8 @@
         "xapi",
         "cross-cutting",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050h",
@@ -1250,7 +1308,8 @@
         "xapi",
         "wishlist",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050i",
@@ -1269,7 +1328,8 @@
         "configurable-products",
         "configurations",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050j",
@@ -1289,7 +1349,8 @@
         "promotion-coupons",
         "marketing",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "050k",
@@ -1309,7 +1370,8 @@
         "pickup",
         "bopis",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "051",
@@ -1332,7 +1394,8 @@
       "requiresModules": [
         "catalog"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "052",
@@ -1354,7 +1417,8 @@
       "requiresModules": [
         "catalog"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "053",
@@ -1377,7 +1441,8 @@
       "requiresModules": [
         "catalog"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "054",
@@ -1399,7 +1464,8 @@
       "requiresModules": [
         "pricing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "055",
@@ -1422,7 +1488,8 @@
       "requiresModules": [
         "pricing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "056",
@@ -1444,7 +1511,8 @@
       "requiresModules": [
         "inventory"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "057",
@@ -1466,7 +1534,8 @@
       "requiresModules": [
         "notifications"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "058",
@@ -1488,7 +1557,8 @@
       "requiresModules": [
         "notifications"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "059",
@@ -1511,7 +1581,8 @@
       "requiresModules": [
         "cms"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "060",
@@ -1534,7 +1605,8 @@
       "requiresModules": [
         "cms"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "061",
@@ -1558,7 +1630,8 @@
       "requiresModules": [
         "search"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "062",
@@ -1581,7 +1654,8 @@
       "requiresModules": [
         "assets"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "063",
@@ -1601,7 +1675,8 @@
         "languages",
         "permissions"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     },
     {
       "id": "064",
@@ -1624,7 +1699,8 @@
       "requiresModules": [
         "import-export"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "065",
@@ -1646,7 +1722,8 @@
       "requiresModules": [
         "shipping"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "066",
@@ -1669,7 +1746,8 @@
       "requiresModules": [
         "seo"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "067",
@@ -1692,7 +1770,8 @@
       "requiresModules": [
         "whitelabeling"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "068",
@@ -1713,7 +1792,8 @@
       "requiresModules": [
         "push-messages"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "069",
@@ -1735,7 +1815,8 @@
       "requiresModules": [
         "image-tools"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "070",
@@ -1754,7 +1835,8 @@
         "theme",
         "responsive",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "071",
@@ -1773,7 +1855,8 @@
         "logo",
         "favicon",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "072",
@@ -1792,7 +1875,8 @@
         "pdp",
         "widget",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "072b",
@@ -1810,7 +1894,8 @@
         "e2e",
         "admin-to-storefront",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "072c",
@@ -1829,7 +1914,8 @@
         "graphql",
         "security",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "072d",
@@ -1848,7 +1934,8 @@
         "text-input",
         "validation",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "073",
@@ -1870,7 +1957,8 @@
       "requiresModules": [
         "returns"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "074",
@@ -1893,7 +1981,8 @@
       "requiresModules": [
         "contracts"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "075",
@@ -1916,7 +2005,8 @@
       "requiresModules": [
         "loyalty"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "076",
@@ -1937,7 +2027,8 @@
       "requiresModules": [
         "channels"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "077",
@@ -1957,7 +2048,8 @@
         "storefront",
         "sprint"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "077b",
@@ -1976,7 +2068,8 @@
         "cart-sidebar",
         "storefront",
         "VCST-4896"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "078",
@@ -2003,7 +2096,8 @@
         "inventory",
         "auth",
         "regression"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "079",
@@ -2028,7 +2122,8 @@
       "requiresModules": [
         "marketing"
       ],
-      "envRiskGate": "staging"
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
     },
     {
       "id": "080",
@@ -2048,7 +2143,8 @@
         "e2e",
         "cross-layer",
         "revenue-critical"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "081",
@@ -2071,7 +2167,8 @@
         "VCST-4710",
         "PR-129",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "082",
@@ -2090,7 +2187,8 @@
         "login-on-behalf",
         "security",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "universal"
     },
     {
       "id": "083",
@@ -2109,7 +2207,8 @@
         "route-guard",
         "currency-override",
         "sprint"
-      ]
+      ],
+      "customerApplicability": "reference"
     }
   ],
   "selections": {
