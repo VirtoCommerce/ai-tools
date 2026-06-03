@@ -1,0 +1,40 @@
+{
+  "ticket": "VCST-5108",
+  "verdict": "FAIL",
+  "date": "2026-06-03",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "2.50.0",
+    "feature": "PreRender.io dynamic rendering for SEO"
+  },
+  "agents_dispatched": ["qa-frontend-expert", "qa-backend-expert"],
+  "smoke_test": {
+    "A1_bot_prerender": "PARTIAL",
+    "A2_human_spa": "PASS",
+    "A3_excluded_bypass": "FAIL",
+    "B1_pdp_completeness": "FAIL",
+    "B2_plp_completeness": "FAIL",
+    "B3_no_artifacts": "PASS",
+    "C1_404_status": "BY_DESIGN_SOFT404",
+    "C2_removed_product": "BY_DESIGN_SOFT404",
+    "D1_title_desc_canonical": "FAIL",
+    "D2_robots_sitemap": "FAIL",
+    "D3_product_schema": "FAIL",
+    "E_operational": "NOT_VERIFIABLE_FROM_QA"
+  },
+  "key_findings": [
+    "Prerender snapshots chrome-only: vc-frontend has no window.prerenderReady; content renders async after shell so snapshot fires too early",
+    "Site-wide robots=noindex (index.html default never flipped); no canonical, no JSON-LD even after hydration",
+    "Sitemap generated/exported but not crawlable: /sitemap.xml (robots.txt target) 404s; index at /sitemap/sitemap.xml=200 but all child <loc> /en-US/sitemap/*.xml 404",
+    "Soft-404 (200 not 404) is documented by-design",
+    "Catalog SeoInfo data gap: products 0/30 sampled have pageTitle/metaDescription (4579 total); categories have title=name but ~96% lack metaDescription (445 total)",
+    "Layer proven: with seoInfo populated, hydrated SPA renders configured title/description/keywords (MATCH) on PDP+PLP; robots=noindex and missing canonical/JSON-LD are independent of seoInfo and noindex is not auth-gated"
+  ],
+  "actions_taken": [
+    "Created sitemap 'seo.xml' for B2B-store and ran Export to store assets (job SUCCESS)"
+  ],
+  "bugs_filed": [],
+  "jira_comment_posted": false,
+  "artifacts": "tests/Sprint26-11/VCST-5108/"
+}

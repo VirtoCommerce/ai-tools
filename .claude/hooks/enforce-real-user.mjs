@@ -30,6 +30,15 @@ const ALLOWED_PATTERNS = [
   /\bgetComputedStyle\s*\(/, // spacing, contrast, focus-indicator, overflow audits
   /\bdocument\.fonts\b/, // FOUC / font-swap readiness
   /\b(naturalWidth|naturalHeight)\b/, // image aspect-ratio audit (BL-UI-010)
+  // Read-only SEO <head> inspection — PreRender/SEO verification (VCST-5108).
+  // These snippets only READ document head meta/link/JSON-LD to compare the
+  // hydrated SPA's SEO output against the prerendered snapshot. No clicks,
+  // typing, or page-state mutation — same read-only spirit as the layout/a11y
+  // and payment-iframe exceptions above.
+  /\bdocument\.title\b/, // final hydrated <title>
+  /meta\[name=['"]robots['"]\]/, // robots index/noindex check
+  /link\[rel=['"]canonical['"]\]/, // canonical URL check
+  /script\[type=['"]application\/ld\+json['"]\]/, // JSON-LD Product schema
 ];
 
 const BLOCK_MESSAGE = [
