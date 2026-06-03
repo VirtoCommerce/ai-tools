@@ -220,13 +220,15 @@ Role_1 assigned to User_1",,"1. Login as User_1
 4. Verify results include contacts matching the single-character wildcard
 5. Try ? at different positions in the query
 6. Verify non-matching queries return empty results",,,,,"",
-"CUST-055","Contact Filters UI","Customer > Contact Management > Filters","Medium",,,"Admin logged in to Backend (${BACK_URL}), contacts list has multiple entries with different statuses and organizations",,"1. Navigate to Customer module > Contacts
-2. Locate the filter controls (column headers or filter panel)
-3. Apply a filter on the Status column (e.g. Active)
-4. Verify only contacts with Active status are shown
-5. Apply an additional filter on Organization
-6. Verify results are filtered by both criteria simultaneously
-7. Clear all filters and verify the full list is restored",,,,,"C346120",
+"CUST-055","Contact Filters UI (va-filter-panel)","Customer > Contact Management > Filters","Medium",,,"Admin logged in to Backend (${BACK_URL}), Contacts list has multiple entries of different member types (Vendor, Organization, Contact)",,"1. Navigate to Customer module > Contacts
+2. Click the filter toggle next to the 'Search keyword...' box to open the filter panel
+3. Verify the panel shows Member type (All/Organization/Employee/Contact/Vendor), Created date and Modified date controls
+4. Set Member type = Organization
+5. Verify the grid and the 'Companies and contacts' count narrow to only Organization members
+6. Type a keyword matching one organization in the search box and apply
+7. Verify results are filtered by Member type and keyword simultaneously
+8. Click 'Clear filters', then clear the keyword box
+9. Verify the full list and original count are restored","Member type / Created date / Modified date controls render; selecting a Member type filters the grid and updates the count badge; keyword combines with the type filter; 'Clear filters' resets type/date and clearing the keyword restores the full count",,"[CONSOLE] no AngularJS injection error (e.g. Unknown provider: virtoCommerce.customerModule.predefinedSearchFilters) when opening Contacts or applying filters","Filter selection has no effect on grid/count; AngularJS injection error in console; full list not restored after Clear filters + keyword clear",,"C346120 VCST-5148","ready"
 "CUST-056","Email Verification After Account Creation","Customer > Contact Management > Account","High",,,"Admin logged in to Backend (${BACK_URL}), email service is configured for the test environment",,"1. Navigate to Customer module > Contacts
 2. Click Add to create a new contact
 3. Enter contact details including a valid test email address
