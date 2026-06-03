@@ -14,6 +14,11 @@
     ]
   },
   "routing": [
+    { "name": "vc-module-CyberSource", "match": "\\bcyber ?source\\b" },
+    { "name": "vc-module-Authorize.Net", "match": "\\bauthorize ?\\.?net\\b|\\bauthnet\\b" },
+    { "name": "vc-module-datatrans", "match": "\\bdatatran(s|ce)\\b" },
+    { "name": "vc-module-stripe", "match": "\\bstripe\\b" },
+    { "name": "vc-module-payment", "match": "\\bpayment (method|gateway|processor|provider)\\b" },
     { "name": "vc-module-x-cart", "match": "\\b(xapi|graphql)\\b[^.]*\\bcart\\b|\\bcart\\b[^.]*\\b(xapi|graphql)\\b" },
     { "name": "vc-module-x-catalog", "match": "\\b(xapi|graphql)\\b[^.]*\\b(catalog|product|facet|search)\\b" },
     { "name": "vc-module-x-order", "match": "\\b(xapi|graphql)\\b[^.]*\\border\\b" },

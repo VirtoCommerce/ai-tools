@@ -46,10 +46,10 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 14 agents in qa/ + ba/ subfolders, knowledge/ (24 files) for shared refs
-├── .claude/skills/       # 20 skills (vc-knowledge, testing, qa-methodology)
-├── .claude/commands/     # 16 slash commands
-├── .claude/rules/        # Reference docs (agents, regression, skills, MCP)
+├── .claude/agents/       # 16 agents in qa/ + ba/ + developers/ subfolders, knowledge/ (25 files) for shared refs
+├── .claude/skills/       # 23 skills (vc-knowledge, testing, qa-methodology, development)
+├── .claude/commands/     # 17 slash commands
+├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
@@ -87,9 +87,10 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 ## Detailed References
 
 - `.claude/architecture/TIER.md` — Tier classification (A/B/C/D) for multi-project expansion; canonical map of what's methodology vs capability vs storefront-domain vs missing. Read before any change aimed at standardization or cross-product reuse.
-- `.claude/rules/agents.md` — 14 agents, browser assignments, delegation rules
+- `.claude/rules/agents.md` — 16 agents (QA 10 + BA 4 + Developers 2), browser assignments, delegation rules
 - `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 16 commands + 20 skills with arguments
+- `.claude/rules/skills-commands.md` — 17 commands + 23 skills with arguments
+- `.claude/rules/quality-gates.md` — **Single source of truth for the bug auto-fix gate ladder (G0–G7)**: shared by the interactive `/qa-fix` (+ `developers/` team `fullstack-backend`/`backend-reviewer`) and the headless `ci/run-fix-cycle.ts`. Triage→reproduce→fix→review→CI/E2E→human-review; never auto-merge. Read before any change to the auto-fix flow.
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - `.claude/rules/test-data.md` — `@td()` resolver + `{{VAR}}` policy: never hardcode IDs/SKUs/prices/cards/etc.; canonical sources, validation script, where the rule is enforced
 - `.claude/rules/reports.md` — Report file policy + brevity rule: 4 allowed categories, hard size caps per type (bug <150 lines, clean regression <30, BA <250), bloat patterns to cut, reference-don't-inline

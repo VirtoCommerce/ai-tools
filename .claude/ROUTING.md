@@ -14,6 +14,7 @@ Quick decision tree for commands, skills, and agents.
 | **Run exploratory testing session** | `/qa-exploratory [checkout\|catalog\|B2B\|mobile]` | Command |
 | **Full test case lifecycle** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
+| **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID` | Skill |
 | **Generate test seed data** | `/qa-seed-data [minimal\|catalog\|b2b\|pricing\|full\|teardown]` | Skill |
@@ -35,6 +36,7 @@ Quick decision tree for commands, skills, and agents.
 - `/qa-regression` — Run regression suites in parallel (add `--autonomous` for Agent Teams mode with failure recovery + JIRA)
 - `/qa-exploratory` — Guided exploratory session
 - `/qa-bug` — Reproduce and document bugs
+- `/qa-fix` — Autonomous fix of an already-filed bug: triage → reproduce-as-test → minimal single-repo fix → PR → STOP for human review (never auto-merges). Interactive twin of `ci/run-fix-cycle.ts`; delegates to the `developers/` team
 - `/qa-verify-fix` — Verify a bug fix: reproduce original bug, confirm fix, run regression checks, transition JIRA
 - `/qa-test-lifecycle` — Unified test case pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve. Handles both change-driven sync (PR, module, diff, changelog) and direct scope (suite, domain, VCST-XXXX)
 - `/qa-coverage-generation` — Orchestrated parallel coverage generation across domain batches with CI support
@@ -88,6 +90,10 @@ Quick decision tree for commands, skills, and agents.
 - `ba-story-writer` — Agile user stories with BDD acceptance criteria
 - `ba-doc-writer` — User docs, admin guides, API quick-start
 
+**Developers Team (2 agents — only write-capable team, used by `/qa-fix`):**
+- `fullstack-backend` — Fixes one `vc-module-*` / `vc-platform` repo (.NET 10 + module Admin Angular); reproduce-as-test → minimal fix → PR
+- `backend-reviewer` — Gate-4 reviewer of the diff before the PR (single-repo, no test edits, no breaking changes, BL-* preserved)
+
 ### Knowledge Base (shared agent references in `agents/knowledge/`)
 - `api-auth.md` — Platform API OAuth2 authentication (token endpoint, credentials, headers)
 - `business-logic.md` — Testable business invariants: pricing, cart, checkout, orders, auth, B2B, catalog
@@ -113,6 +119,7 @@ Quick decision tree for commands, skills, and agents.
 | `/qa-regression` | `/qa-metrics` | Regression results feed into quality gates |
 | `/qa-regression` | `/qa-coverage-gap` | Coverage gap analysis validates suite completeness before regression runs |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses investigation flow + defect templates |
+| `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream), `/qa-defect`, `/qa-risk` | Chain: `/qa-bug` files the ticket → `/qa-fix` triages + fixes + opens PR (STOP for human review) → after merge, `/qa-verify-fix` closes the loop. Gate ladder: `.claude/rules/quality-gates.md` |
 | `/qa-test` | `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Test derives cases, applies domain checklists, and prioritizes based on risk |
 | `/qa-test` | `/qa-test-cases-generator` | Test command can use generator for new test cases |
 | `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests`, `/qa-sync-tests` (merged) | Unified pipeline: sync + gap analysis + quality review |

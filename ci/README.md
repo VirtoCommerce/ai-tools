@@ -119,7 +119,7 @@ regression *re-verifies* after deploy.
 |-------|--------|--------------|-------|
 | Context | — | Fetch JIRA issue (REST) + find linked `reports/bugs/*.md` | (orchestrator) |
 | 0. Triage | 15% | Real, code-fixable defect? Route to a repo. **Bails on by-design / config-gated / env-data / API-only / no-STR.** | Read, Glob, Grep, Bash |
-| (checkout) | — | Clone repo, cut branch `qa-autofix/VCST-XXXX` (deterministic) | `gh`, `git` |
+| (checkout) | — | Clone repo, cut branch `claude/qa-autofix/VCST-XXXX` (deterministic) | `gh`, `git` |
 | 1. Fix | 70% | Reproduce-as-test (red) → minimal fix → build + lint + typecheck + test (green) → commit + push | Read, Edit, Write, Glob, Grep, Bash |
 | (PR + JIRA) | 15% | `gh pr create --draft`, label, JIRA comment + transition | `gh`, JIRA REST |
 

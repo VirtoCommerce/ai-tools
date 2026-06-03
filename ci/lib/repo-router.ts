@@ -92,7 +92,10 @@ function loadConfig() {
   const org = process.env.FIX_REPO_ORG || cfg.org;
   if (!org) throw new Error(`No org in ${configPath} and FIX_REPO_ORG unset`);
 
-  const allowPatterns = (cfg.allow?.patterns || []).map((p) => new RegExp(p));
+  // Case-insensitive: real module repos are mixed-case (vc-module-CyberSource,
+  // vc-module-Authorize.Net, vc-module-Paypal-*) — a lowercase-only pattern would
+  // wrongly reject them and STOP Gate 1 on a valid repo.
+  const allowPatterns = (cfg.allow?.patterns || []).map((p) => new RegExp(p, "i"));
   const denyPatterns = (cfg.allow?.deny || []).map((p) => new RegExp(p, "i"));
   const explicit: Record<string, RepoKind> = {};
   for (const e of cfg.allow?.explicit || []) explicit[e.name] = e.kind;
@@ -220,7 +223,10 @@ export function checkoutForFix(
   const name = repo.split("/")[1];
   const dest = join(ws, name);
   const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
-  const workBranch = `qa-autofix/${ticketKey}`;
+  // `claude/`-prefixed so Claude Code Routines (scheduled cloud runs) can push it
+  // without needing "Allow unrestricted branch pushes". The interactive /qa-fix and
+  // the headless CI path share this convention.
+  const workBranch = `claude/qa-autofix/${ticketKey}`;
 
   if (!existsSync(dest)) {
     sh(`gh repo clone ${repo} "${dest}" -- --depth 1 --branch ${baseBranch}`);

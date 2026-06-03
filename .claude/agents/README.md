@@ -15,7 +15,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 
 ---
 
-## Agent Inventory (14 agents + shared instructions)
+## Agent Inventory (16 agents + shared instructions)
 
 ### QA Team (10 agents + shared-instructions)
 
@@ -41,6 +41,18 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | **ba-story-writer** | sonnet | yellow | Agile user stories with BDD acceptance criteria |
 | **ba-doc-writer** | sonnet | indigo | User docs, admin guides, API quick-start |
 
+### Developers Team (2 agents + shared-instructions)
+
+The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). The QA
+team stays read-only on GitHub. Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`); reuses
+`ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. Gate ladder:
+`.claude/rules/quality-gates.md`. **Never auto-merges.** No browser.
+
+| Agent | Model | Color | Purpose |
+|-------|-------|-------|---------|
+| **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Extensible: a `fullstack-frontend` (vc-frontend/Vue) is the planned next member. |
+| **backend-reviewer** | opus | blue | Reviews the local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
+
 ---
 
 ## Slash Commands (13)
@@ -57,6 +69,7 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix with regression checks | varies |
 | `/qa-status` | Dashboard: run status, JIRA queue, env health | < 30 sec |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug | ~5 min |
+| `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → reproduce-as-test → minimal single-repo fix → PR → STOP for human review (never auto-merges) | varies |
 | `/qa-exploratory [area]` | Guided exploratory testing session with heuristics | ~20 min |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra | < 30 sec |
 
