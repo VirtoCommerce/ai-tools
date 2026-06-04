@@ -147,7 +147,7 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
 2. **Preconditions**: Read the `Preconditions` column.
    - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED`.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
-3. **Arm Failure_Signals** + common signals.
+3. **Arm Failure_Signals** + common signals. **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = immediate-fail checkpoint.
 5. **Evaluate Assertions** — BL-* violation = FAIL even if DOM passed.
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
@@ -176,6 +176,8 @@ Rules:
 ## Phase 4: Bug Entries (preliminary only)
 
 For each FAIL record preliminary entry with `confirmed: false`. Independent investigation confirms. Transient signals (index lag, stale data, cold start) NOT auto-confirmed.
+
+**Incidental defects (out-of-scope-bug rule).** If continuous observation (Phase 2 step 3) surfaced a real defect **outside the assertions of a case that PASSed** — a 5xx, GraphQL `errors[]`, unhandled JS exception, or visible layout break unrelated to the case — record it as an extra preliminary `bugs[]` entry with `confirmed: false`, `testCaseId` = the surfacing case, plus `"incidental": true` and a one-line `notes`. Do not change that case's PASS verdict. Skip known-transient signals and disabled-control / API-only / by-design non-bugs per the Live-Verification Policy.
 
 ## Phase 5: Teardown
 

@@ -64,6 +64,7 @@ Output: reports/regression/{RUN_ID}/suite-042-trackA-results.json
 Follow the test-runner-agent protocol in .claude/agents/qa/test-runner-agent.md.
 Execute all 30 smoke test cases (SMK-001 through SMK-030) as a customer journey, including the Cross_Layer_Checks column on each case.
 For every case, record PASS/FAIL/SKIP against the matching item in SMOKE-CHECKLIST.md, and the matching UI-vs-backend parity item in SMOKE-CROSS-LAYER-CHECKLIST.md.
+Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer during the journey — record any incidental defect (console exception, 5xx, GraphQL errors[] inside 200, visual break) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
 Capture evidence on failures. Write structured JSON results (per SMK-ID, plus a checklist section/item rollup) to the output file.
 ```
 
@@ -86,6 +87,7 @@ Execute the Admin SPA cases covered by ADMIN-SMOKE-CHECKLIST.md (83 cases across
 The pure REST/GraphQL API cases in 078 (the excluded list at the top of the checklist) are covered by Suite 049/050 — skip them here unless verifying Track A cross-layer parity.
 Prioritize the Critical-priority cases (checklist §1–12) first — a failure there is a NO-GO; High/Medium failures are GO-WITH-RISK per the checklist's own GO/NO-GO table.
 For every executed case, record PASS/FAIL/SKIP against the matching item in ADMIN-SMOKE-CHECKLIST.md. If Track A data is available, verify created contacts/orders appear in Admin.
+Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer — record any incidental defect (Angular blade exception, 5xx, GraphQL errors[] inside 200, schema/data mismatch) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
 Capture evidence on failures. Write structured JSON results (per BSM-ID, plus a checklist section/item rollup) to the output file.
 ```
 

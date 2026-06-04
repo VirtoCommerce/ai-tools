@@ -116,7 +116,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 2. **Preconditions**: Read the `Preconditions` column.
    - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED` immediately.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
-3. **Arm Failure_Signals monitoring** + common signals (see knowledge file).
+3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).
 5. **Evaluate Assertions** — all must pass. BL-* violation = FAIL even if DOM passed.
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
@@ -131,6 +131,8 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 ## Phase 3: Bug Entries (preliminary only)
 
 For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa-testing-expert` investigation confirms defects — never escalate yourself. Transient signals (index lag, stale data, cold start) are NOT auto-confirmed.
+
+**Incidental defects (out-of-scope-bug rule).** If continuous observation (Phase 2 step 3) surfaced a real defect that is **outside the assertions of the case that PASSed** — e.g. a 5xx, a GraphQL `errors[]`, an unhandled JS exception, or a visible layout break unrelated to the case — record it as an extra preliminary `bugs[]` entry with `confirmed: false`, set `testCaseId` to the case that surfaced it, and add `"incidental": true` plus a one-line `notes` of what you saw. Do not change that case's PASS verdict. Skip known-transient signals and disabled-control / API-only / by-design non-bugs per the Live-Verification Policy.
 
 ## Phase 4: Teardown
 

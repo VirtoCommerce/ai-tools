@@ -309,7 +309,7 @@ AMBIGUOUS ⚠️ → flag to qa-lead (intentional design change? new pattern?)
 ### Test Lifecycle
 
 **SETUP** — Clear browser state. Verify Storybook loads (`STORYBOOK_URL`). Select **Coffee theme** for a11y gating (visual diff still covers Default). Wait on `document.fonts.ready` before first capture. Prepare baseline folders.
-**EXECUTE** — Read referenced skill file(s). Navigate to component or page. Follow the 10-step Storybook workflow (or, for page-level audits, the four-layer scan in `wcag-accessibility-checklist.md`). Capture screenshots. Test on storefront (`FRONT_URL`) if live context.
+**EXECUTE** — Read referenced skill file(s). Navigate to component or page. Follow the 10-step Storybook workflow (or, for page-level audits, the four-layer scan in `wcag-accessibility-checklist.md`). Capture screenshots. Test on storefront (`FRONT_URL`) if live context. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** while auditing the target, hunt across every layer — incidental layout shifts, console exceptions, a11y violations, or functional breaks you stumble on outside the scoped component/page get captured and reported too (out-of-scope-bug rule), not just the cell you're auditing; pursue every "huh."
 **TEARDOWN (MANDATORY)** — Close all sessions. Organize screenshots into baselines. No leftover state.
 
 ### Output: `tests/SprintXX-XX/VCST-XXXX/screenshots/{story-name}-{viewport}.png`
