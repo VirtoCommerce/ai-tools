@@ -23,6 +23,7 @@
     { "name": "vc-module-x-catalog", "match": "\\b(xapi|graphql)\\b[^.]*\\b(catalog|product|facet|search)\\b" },
     { "name": "vc-module-x-order", "match": "\\b(xapi|graphql)\\b[^.]*\\border\\b" },
     { "name": "vc-module-pricing", "match": "\\b(pricing|price ?list|discount tier)\\b" },
+    { "name": "vc-module-marketing-experience-api", "match": "\\b(xapi|graphql|resolver)\\b[^.]*\\b(promotion|coupon|marketing)\\b|\\b(promotion|coupon|marketing)\\b[^.]*\\b(xapi|graphql|resolver)\\b" },
     { "name": "vc-module-marketing", "match": "\\b(promotion|coupon|marketing|content block)\\b" },
     { "name": "vc-module-inventory", "match": "\\b(inventory|stock|fulfillment center)\\b" },
     { "name": "vc-module-order", "match": "\\b(order|shipment|quote)s?\\b.*\\b(admin|api|module|backend|status)\\b" },

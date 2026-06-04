@@ -31,6 +31,25 @@ and the same gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## GitHub authentication (the write token)
+The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
+**cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write
+token** `GITHUB_FIX_BUGS_TOKEN` from `.env.local` (gitignored), exposed to `gh`/`git` as `GH_TOKEN`
+(`GH_TOKEN` takes precedence over the ambient `GITHUB_TOKEN`). This is the interactive mirror of CI's
+`AUTOFIX_GITHUB_TOKEN → GH_TOKEN` (`.github/workflows/auto-fix.yml`); `ci/lib/repo-router.ts` stays
+token-name-agnostic (it just consumes ambient `gh`), so only the env binding differs between twins.
+
+Load the token once per shell command (it does not persist between Bash calls) and **never print it**:
+```bash
+FIX=$(grep '^GITHUB_FIX_BUGS_TOKEN=' .env.local | sed 's/^GITHUB_FIX_BUGS_TOKEN=//' | awk '{print $1}')
+GH_TOKEN="$FIX" gh repo clone VirtoCommerce/<repo> ...          # clone  (gh honours GH_TOKEN)
+GH_TOKEN="$FIX" git -c credential.helper='!gh auth git-credential' push -u origin claude/qa-autofix/VCST-XXXX
+GH_TOKEN="$FIX" gh pr create ...                                # PR
+```
+The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is **required**: this
+host's default helper is the Windows credential manager, which would otherwise serve the wrong (read)
+token. `gh` commands need only the `GH_TOKEN=` prefix.
+
 ## Hard rules (a violation = STOP, never "push anyway")
 1. **Single repo.** All changed files in ONE allowed repo. Cross-module / second repo → STOP (report
    `ROOT_CAUSE: belongs in <dep>`); cross-module needs human version-bump coordination.

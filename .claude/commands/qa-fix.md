@@ -49,7 +49,12 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 2. If no ticket or no report → STOP: "Run `/qa-bug VCST-XXXX` first to reproduce + file the report."
 3. `/qa-env-check endpoints`; build verify (deployed versions via GitHub MCP from `vc-deploy-dev`
    `vcst-qa`); Context7 query on expected post-fix behavior.
-4. Create the run dir `reports/fixes/FIX-YYYY-MM-DD-HHMM/` (heavy artifacts gitignored).
+4. **Write-token preflight:** confirm `GITHUB_FIX_BUGS_TOKEN` is present in `.env.local` and resolves
+   to a token with push access (`GH_TOKEN="$FIX" gh api repos/VirtoCommerce/<routed-repo> --jq .permissions.push`
+   → `true`). The ambient `gh` session is the **read-only** MCP token and cannot push; clone/push/PR
+   must use `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (see `developers/shared-instructions.md` §GitHub
+   authentication). Missing/expired token → STOP before clone.
+5. Create the run dir `reports/fixes/FIX-YYYY-MM-DD-HHMM/` (heavy artifacts gitignored).
 
 ## Phase 1 — Triage (Gate 0) + Root-cause + Repo route (Gate 1)
 > **Owner:** `qa-lead-orchestrator` (triage) → `qa-backend-expert` (root-cause). Reuses the
@@ -132,6 +137,8 @@ available for CI-on-PR; the routine is the lighter scheduled trigger.
 - Reuse `ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts` — do not
   reinvent routing/checkout. Other org / customer fork → `FIX_REPO_ORG`. Workspace `.fix-workspace/`,
   branch `claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
-- Never modify existing tests (ADD only). Never auto-merge. Never echo the GitHub PAT.
+- Never modify existing tests (ADD only). Never auto-merge. Never echo the GitHub PAT. All remote
+  git/gh writes run as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`), not the ambient read-only
+  token — exact command pattern in `developers/shared-instructions.md` §GitHub authentication.
 - Ask before every JIRA transition (consistent with `/qa-bug` Step 5 and `/qa-verify-fix` Step 6).
 - Reports follow `.claude/rules/reports.md` (the `reports/fixes/` category; long logs via SendMessage).
