@@ -43,7 +43,7 @@ fix doesn't re-introduce a historical VC failure pattern.
 
 > **Reference:** `.claude/agents/knowledge/vc-module-architecture.md` — repo layout (`*.Core` →
 > `*.Data` → `*.Web` (+ `Web/Scripts/` Admin Angular UI) → `*.Tests`), build/test `REPO_PROFILES`
-> (`ci/lib/repo-router.ts`), .NET 10 idioms, xUnit/Jasmine conventions, dependency boundary.
+> (`ci/lib/repo-router.ts`), .NET 10 idioms, xUnit conventions, dependency boundary.
 
 - **Find the seam:** controller → service → domain → repository → events. `Grep`/`Glob` on the RCA's
   type/method/endpoint/GraphQL-field/settings-key. Verify the real contract (VC "wrong field silently
@@ -58,14 +58,14 @@ fix doesn't re-introduce a historical VC failure pattern.
 Invoke the development skills:
 - `/dotnet-unit-test` — reproduce as a failing xUnit test (red).
 - `/dotnet-fix` — minimal idiomatic .NET 10 fix → green; build + test gate.
-- `/angular-admin` — when the owning layer is the module's Admin SPA UI (Jasmine/Karma red→green).
+- `/angular-admin` — when the owning layer is the module's Admin SPA UI (red→green via uncommitted Node scratch harness — modules have no JS test harness).
 
 **Workflow (mirrors `ci/agents/fix-backend-agent.md`):**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
    layer, RCA). Confirm root cause, not symptom.
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
-3. **Restore/install** — `dotnet restore` (C#) / repo install cmd (Admin UI).
+3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
    only for one-line guards/typos (note in PR body).
 5. **Fix (green)** — smallest correct change to production code; re-run until green; **existing tests

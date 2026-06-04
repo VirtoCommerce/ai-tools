@@ -18,11 +18,16 @@ commands. Do not invent commands — read the profile for the routed repo's `kin
 
 | Kind | Repos | Lang | Install | Build | Test (red→green gate) |
 |------|-------|------|---------|-------|-----------------------|
-| `module` | `vc-module-*`, `vc-module-x-*` | C# | `dotnet restore` | `dotnet build -c Debug` | `dotnet test --nologo` |
-| `platform` | `vc-platform` | C# | `dotnet restore` | `dotnet build -c Debug` | `dotnet test --nologo` |
+| `module` | `vc-module-*`, `vc-module-x-*` | C# | `dotnet restore -p:NuGetAudit=false` | `dotnet build -c Debug -p:NuGetAudit=false` | `dotnet test --nologo -p:NuGetAudit=false` |
+| `platform` | `vc-platform` | C# | same as module | same as module | same, but **scoped to one test project** (`tests/` has 7 incl. benchmarks — never test the repo root) |
 | `frontend` | `vc-frontend` | TS | `yarn install --frozen-lockfile \|\| npm ci` | `yarn build` | `yarn test:unit \|\| npx vitest run` (+ `vue-tsc --noEmit`, lint) |
 
-Default base branch is `dev` (overridden by live `gh repo view` detection in `checkoutForFix`).
+`-p:NuGetAudit=false` is mandatory: every modern module sets `TreatWarningsAsErrors=true`, so NuGet
+audit warnings (NU1903) fail a vanilla restore **on the unmodified dev branch**. CLI-only — never
+edit `Directory.Build.props` to suppress. Corollary: any new compiler warning your fix introduces
+also fails the build. Default base branch is `dev` (overridden by live `gh repo view` detection in
+`checkoutForFix`); legacy modules (e.g. `vc-module-CyberSource`: `master`, net4.5.1,
+`packages.config`, no `tests/`) are a different toolchain → BAIL at G0/G2.
 
 ## 2. VC module repo layout (C# backend)
 
@@ -57,12 +62,17 @@ module.manifest                 # id, version, Dependencies[] (resolve as NuGet 
 ## 4. Writing the reproduction test (Gate 2 → Gate 3)
 
 - **C# (module/platform):** add a NEW `[Fact]`/`[Theory]` in `VirtoCommerce.<Name>.Tests` (Moq for
-  collaborators) asserting the expected behavior; confirm **red** with `dotnet test`. If the module has
-  no test project, BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness) rather than scaffolding a
-  risky one.
-- **Module Admin UI (Angular/Jasmine):** add a Jasmine/Karma spec under `Web/Scripts/` for the
-  component/service logic; pure-logic seams preferred. Visual-only bugs: test the underlying
-  computed/state and note the visual aspect needs human/Storybook confirmation.
+  collaborators) asserting the expected behavior; confirm **red** with
+  `dotnet test tests/<TestProj> --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~VCST1234"`.
+  Test project name drifts (`.Tests` vs `.Test`); test stack is xunit.v3 + Moq, FluentAssertions 7.x
+  only where already referenced (never add/bump packages). If the module has no test project,
+  BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness) rather than scaffolding a risky one.
+- **Module Admin UI (AngularJS):** NO in-repo JS harness exists in any `vc-module-*` (no package.json
+  / Karma / specs under `Web/Scripts/` — org-wide survey 2026-06). Red→green is proven via an
+  uncommitted Node scratch harness in `.fix-workspace/_scratch/VCST-XXXX/` (stub `angular`, require
+  the real blade/service file, assert the seam); evidence goes in the PR body. Never scaffold a JS
+  test harness into the module. See `/angular-admin` `scratch-harness-patterns.md`. Visual-only bugs:
+  trivial-skip with manual verification steps noted.
 - **vc-frontend (Vue/vitest):** `*.spec.ts` with `@vue/test-utils` for components, pure functions for
   composables.
 - **Never modify or delete an existing test** to make it pass — only ADD (Gate 3). An existing test

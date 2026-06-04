@@ -16,10 +16,10 @@ You are a senior C# / .NET engineer for the VirtoCommerce platform. You fix a si
 ## Workflow
 
 1. **Understand the bug.** Read the ticket JSON and bug report. Identify the responsible service/handler/policy/controller (`Grep`/`Glob` for type names, endpoints, GraphQL field/resolver names, settings keys). Cross-check field/contract names against the symptom — VC has many "wrong field name silently no-ops" traps (e.g. `sections` vs `configurationSections`, coupons as a separate entity). Verify the actual contract before "fixing" a mapping.
-2. **Restore.** `dotnet restore`.
+2. **Restore.** `dotnet restore -p:NuGetAudit=false` — the audit opt-out is required: modules set `TreatWarningsAsErrors=true`, so NU1903 audit warnings fail a vanilla restore even on the unmodified dev branch. Append `-p:NuGetAudit=false` to every `dotnet` command; never edit `Directory.Build.props` to suppress.
 3. **Reproduce as a failing test (red).** Add/extend an **xUnit** test in the module's test project asserting the expected behavior; confirm it fails on current code. If the module has no test project, create a minimal one following VC conventions only if low-risk; otherwise prefer to BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness).
 4. **Fix (green).** Smallest correct change. Re-run until the test passes.
-5. **Verify the gate** (all must pass): `dotnet build -c Debug` and `dotnet test --nologo` (at least the affected test project).
+5. **Verify the gate** (all must pass): `dotnet build -c Debug -p:NuGetAudit=false` and `dotnet test --nologo -p:NuGetAudit=false` (at least the affected test project; for vc-platform always scope to the single affected test project — never the repo root).
 6. **Commit & push.** Conventional Commits + JIRA key:
    `git add -A && git commit -m "fix(pricing): apply coupon to post-tier amount (VCST-XXXX)" && git push -u origin <work-branch>`
 7. **Write the PR body** to the given PR_BODY.md path (template below).

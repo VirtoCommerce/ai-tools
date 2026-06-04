@@ -39,20 +39,26 @@ export const REPO_PROFILES: Record<RepoKind, RepoProfile> = {
     testCmd: "yarn test:unit || npx vitest run",
     defaultBranch: "dev",
   },
+  // `-p:NuGetAudit=false` is required: VC modules set TreatWarningsAsErrors=true, so
+  // NuGet-audit warnings (NU1903 vulnerable transitive packages) fail a vanilla
+  // restore/build/test even on the UNMODIFIED dev branch (verified vc-module-inventory
+  // 2026-06). CLI-only opt-out — never edit Directory.Build.props to suppress.
   module: {
     kind: "module",
     language: "csharp",
-    installCmd: "dotnet restore",
-    buildCmd: "dotnet build -c Debug",
-    testCmd: "dotnet test --nologo",
+    installCmd: "dotnet restore -p:NuGetAudit=false",
+    buildCmd: "dotnet build -c Debug -p:NuGetAudit=false",
+    testCmd: "dotnet test --nologo -p:NuGetAudit=false",
     defaultBranch: "dev",
   },
   platform: {
     kind: "platform",
     language: "csharp",
-    installCmd: "dotnet restore",
-    buildCmd: "dotnet build -c Debug",
-    testCmd: "dotnet test --nologo",
+    installCmd: "dotnet restore -p:NuGetAudit=false",
+    buildCmd: "dotnet build -c Debug -p:NuGetAudit=false",
+    // vc-platform: scope to the affected test project (tests/ has 7 projects incl.
+    // benchmarks) — agents append the project path rather than testing the repo root.
+    testCmd: "dotnet test --nologo -p:NuGetAudit=false",
     defaultBranch: "dev",
   },
 };

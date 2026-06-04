@@ -22,6 +22,10 @@ Web/Scripts/
 | API service | `services/*.js` | wrong endpoint/field, missing param |
 | Registration | `module.js` | blade/route/menu/permission key not wired |
 
+No `package.json`, bundler, or test harness exists anywhere under `Scripts/` — these are static
+assets the platform serves directly. Red→green proof happens in a scratch harness outside the repo
+(`scratch-harness-patterns.md`), never by scaffolding tooling into the module.
+
 ## Fix guidance
 - **Save-persists** bugs: trace controller `save()` → service → REST; verify the field/contract name
   (VC "wrong field silently no-ops" trap applies on the UI side too).

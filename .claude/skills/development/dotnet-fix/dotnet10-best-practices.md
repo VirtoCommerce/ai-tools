@@ -24,6 +24,17 @@ minimal (Gate 0/G4); best practices guide how the new/edited lines look, matched
 - **Settings keys / permissions**: defined in `*.Core`; reuse the existing constant, don't hardcode.
 - **Error handling**: throw the platform's typed exceptions; no stack traces leaked to API responses.
 
+## Build hygiene (verified on real dev-branch checkouts)
+- **`TreatWarningsAsErrors=true`** is set in every modern module's `Directory.Build.props` — any new
+  warning your fix introduces fails the build. Resolve the warning; never add `NoWarn`/pragmas.
+- **NuGet audit fails clean checkouts**: NU1903 (vulnerable transitive package) becomes a restore
+  *error* under warnings-as-errors — on the unmodified `dev` branch. Append `-p:NuGetAudit=false` to
+  every `dotnet restore/build/test` invocation. CLI-only — editing build props to suppress it is a
+  review failure.
+- **No package adds or bumps** — production or test. FluentAssertions is pinned at 7.x org-wide
+  (8+ is commercially licensed); legacy `dotnet-xunit` CLI-tool references you may see are inert
+  leftovers, leave them.
+
 ## Do-not (breaking changes — STOP at Gate 0)
 - Changing a public REST/GraphQL/DTO contract, a DB schema, a domain-event shape, or `module.manifest`.
 - Bumping NuGet dependency versions.

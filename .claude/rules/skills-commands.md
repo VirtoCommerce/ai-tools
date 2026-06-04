@@ -69,7 +69,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 |-------|-----------|---------|-----------------|
 | `/dotnet-unit-test` | _(invoked by `fullstack-backend`)_ | Reproduce a VC backend bug as a failing xUnit test (red), prove fix green; never edits existing tests | `xunit-patterns.md` |
 | `/dotnet-fix` | _(invoked by `fullstack-backend`)_ | Implement a minimal, idiomatic .NET 10 fix in one VC module → green; build+test gate | `fix-patterns.md`, `dotnet10-best-practices.md` |
-| `/angular-admin` | _(invoked by `fullstack-backend`)_ | Fix + Jasmine/Karma unit-test a module's Admin SPA (Angular) UI that ships inside the `vc-module-*` repo | `angular-patterns.md`, `jasmine-karma-patterns.md` |
+| `/angular-admin` | _(invoked by `fullstack-backend`)_ | Fix a module's Admin SPA (AngularJS) UI that ships inside the `vc-module-*` repo; red→green via uncommitted Node scratch harness (modules have no JS test harness) | `angular-patterns.md`, `scratch-harness-patterns.md` |
 
 ## Usage
 
