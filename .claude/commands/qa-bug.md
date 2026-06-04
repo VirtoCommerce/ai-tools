@@ -265,7 +265,7 @@ Report the ticket key back to the user.
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
 - Ask before creating JIRA tickets (explicit permission required)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
-- **File every confirmed bug — never filter.** `/qa-bug` reports all defects and routes each one; auto-fix
+- **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix
   eligibility (Gate 0) is `/qa-fix`'s decision, not `/qa-bug`'s.
 - **Always fill the Fix Routing block** (Step 4) — owning layer + exact repo + `repoKind`. This is the
   `/qa-bug` → `/qa-fix` handoff contract; a named, evidence-backed repo lets `/qa-fix` Gate 1 confirm
