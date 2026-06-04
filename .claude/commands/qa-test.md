@@ -141,6 +141,8 @@ Evidence policy: follow .claude/skills/qa-methodology/qa-evidence/evidence-captu
 - Network: capture 4xx/5xx and slow requests (>2s)
 - HAR: always capture
 
+Always-on bug detection (shared-instructions §Always-On Bug Detection): the checklist is the floor, not the ceiling. While executing, hunt across EVERY layer (UI/visual, functional, console, network, GraphQL errors[] inside 200, a11y, perf) and file any incidental defect you see — even one unrelated to this ticket (out-of-scope-bug rule). Pursue every "huh." Verify before filing (disabled control / API-only / by-design are not bugs).
+
 Write a test execution report to tests/{SPRINT}/VCST-XXXX/test-execution-report.md.
 ```
 

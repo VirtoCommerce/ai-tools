@@ -48,6 +48,30 @@ AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
 
 Ambiguous examples: label text changed (intentional?), new console warning (harmful?), performance 5% slower (regression or noise?), UI element restyled (design update or bug?).
 
+## Always-On Bug Detection — Continuous Observation (MANDATORY, every agent, every run)
+
+**Testing is never just executing the script.** Whatever the task — a scripted test case, a checklist item, a regression suite, a fix verification, or a quick smoke — you are simultaneously *hunting for defects across every layer*, not only checking the one expected-vs-actual the current step names. The test case is the floor of your attention, never the ceiling. This applies to **all** QA agents without exception.
+
+**Watch every channel, on every screen you touch, after every action:**
+
+| Layer | What to notice |
+|-------|----------------|
+| Visual / UI | Layout break, overlap, clipping, off-grid spacing, CLS/shift, broken image, wrong/missing state, absent empty state |
+| Functional | Wrong result, stale data, control that does nothing, state not persisting, miscalculated total, broken navigation |
+| Console | JS exception, unhandled rejection, Vue/Angular warning tied to behavior, CSP violation |
+| Network | 4xx/5xx, GraphQL `errors[]` inside HTTP 200, request > 2s, duplicate or missing call |
+| API / data | Schema mismatch, cascade failure, orphaned record, wrong status code |
+| A11y | Missing label/alt, broken tab order, no focus indicator, low contrast, target size below gate |
+| Performance | LCP/CLS/TTI over budget, visible jank, memory growth on repeat open/close |
+
+**The out-of-scope-bug rule.** When you notice a defect that has *nothing to do with the case you're running*, you do NOT ignore it. Capture evidence, note it, and file/report it (cross-linked to where you saw it). A bug you walked past because "that's not what this test covers" is the bug that ships. The current case's PASS/FAIL is still decided on its own assertions; the incidental defect is reported **separately**.
+
+**Pursue every "huh."** Any unexpected observation gets at least a few seconds of follow-up before you dismiss it. The dismissed "huh"s are the missed bugs.
+
+**This does NOT lower the bar for what counts as a bug.** The Live-Verification Policy below still governs filing: a disabled control is validation working (not a bug), an API-only repro is not a UI-layer defect, and by-design / config-gated behavior is verified at the source before filing. Notice everything; **verify before you file.** Continuous observation widens what you *look at* — it does not widen what you *call a defect*.
+
+**Discovery pass — ticket / feature / PR testing only (NOT bulk regression).** When testing a ticket, feature, or PR (i.e. not executing a pre-built regression suite), spend a short focused block — ~5–10 min — on active discovery beyond the scripted cases: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the existing cases don't cover. Bulk-regression runs (`test-runner-agent` / `autonomous-test-runner` executing a CSV suite) skip this timed pass and rely on the continuous-observation reflex above. Full methodology: `/qa-exploratory` (discovery-first command) and `/qa-sbtm` (charters, CRISP/SFDPOT, Whittaker tours, personas). Read the VC bug catalog (`knowledge/vc-bug-catalog.md`) to avoid re-discovering known patterns.
+
 ## Evidence Collection Standards
 
 - **Screenshots**: FAIL state + critical-flow final state only. Skip passing-step captures. Budget per scope defined in evidence-capture-policy.md §1.

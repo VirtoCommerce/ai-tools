@@ -187,7 +187,7 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 ### Test Lifecycle
 
 **SETUP** — Verify `BACK_URL` accessible. Health check (`/health`). Check versions at systeminfo. Obtain OAuth2 token (see `api-auth.md`). Prepare test data via `/qa-seed-data` or Postman MCP.
-**EXECUTE** — APIs first (REST + GraphQL), then Admin UI. Monitor console + network. Check Hangfire after background operations. Verify cross-layer (API → Admin → storefront xAPI).
+**EXECUTE** — APIs first (REST + GraphQL), then Admin UI. Monitor console + network. Check Hangfire after background operations. Verify cross-layer (API → Admin → storefront xAPI). **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute — schema mismatches, GraphQL `errors[]` inside 200, cascade/orphan failures, Angular blade exceptions — not just the case's assertions; file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass before sign-off.
 **TEARDOWN (MANDATORY)** — Delete test entities. Revert config changes. Invalidate tokens. Close sessions. Document any failed cleanup.
 
 ### Error Handling

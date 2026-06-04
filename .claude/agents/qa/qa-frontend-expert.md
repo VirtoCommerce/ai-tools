@@ -172,7 +172,7 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 ### Test Lifecycle
 
 **SETUP** — Clear browser state. Create test account (`qa-test-{timestamp}@test.com`). Login. Verify dashboard.
-**EXECUTE** — Fetch JIRA ticket. Read reference files. Navigate. Test. Monitor console + network. Screenshot key steps. Desktop AND mobile.
+**EXECUTE** — Fetch JIRA ticket. Read reference files. Navigate. Test. Monitor console + network. Screenshot key steps. Desktop AND mobile. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute, not just the case's expected-vs-actual — file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass (surprise-seeking + one adversarial tour/persona) before sign-off.
 **TEARDOWN (MANDATORY)** — Login to Admin SPA. Delete test orgs, contacts, user account. Verify cleanup. Document any failed cleanup.
 
 ### Error Handling
