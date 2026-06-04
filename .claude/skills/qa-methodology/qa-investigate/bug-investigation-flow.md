@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Investigation Phases
+## Investigation Phases (Overview)
 
 ```
 BUG REPORTED / SUSPECTED
@@ -31,13 +31,13 @@ BUG REPORTED / SUSPECTED
 ```
 
 **Key rules:**
-- **Resolve `TEST_ENV` *first*** (Section 0) — every URL, credential, and App Insights resource is per-env. Investigating the wrong env wastes the whole session.
+- **Resolve `TEST_ENV` *first*** (Section 1) — every URL, credential, and App Insights resource is per-env. Investigating the wrong env wastes the whole session.
 - **Never file a bug you cannot reproduce.** If you can't reproduce after exhausting the checklist in Section 2, document the failed attempt and escalate.
 - **Gather *all* logs, not just the browser** (Section 4 + 9) — a frontend symptom often has a server-side cause that only App Insights / Hangfire reveal.
 
 ---
 
-## 0. Resolve the Environment (`TEST_ENV`) — DO THIS FIRST
+## 1. Resolve the Environment (`TEST_ENV`) — DO THIS FIRST
 
 Before reproducing anything, pin which environment you are investigating. The project is multi-env
 (layered loader keyed by `TEST_ENV`, default `vcst`); URLs, credentials, store IDs, **and the Azure App
@@ -58,7 +58,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 5. **Capture the build versions** for this env (`{BACK_URL}/#!/workspace/systeminfo` or the deploy repo's
    `packages.json`/`artifact.json`) — needed for the Module Versions line in the report and for P1 version-skew.
 
-> Output of Section 0 is a one-line env header you carry into the report:
+> Output of Section 1 is a one-line env header you carry into the report:
 > `Env: <TEST_ENV> — <FRONT_URL> / <BACK_URL> @ Platform <ver>, Theme <ver> (ENV_RISK=<level>)`
 
 ---
@@ -207,7 +207,7 @@ evidence is how by-design behavior and infra blips get misfiled as code bugs.
 Before filing: confirm the bug is a real defect, not environment- or data-specific.
 
 ### Environment Isolation
-- [ ] `TEST_ENV` resolved and stated (Section 0) — reproduced on that env's `FRONT_URL`/`BACK_URL`
+- [ ] `TEST_ENV` resolved and stated (Section 1) — reproduced on that env's `FRONT_URL`/`BACK_URL`
 - [ ] Platform version checked at `{BACK_URL}/#!/workspace/systeminfo`
 - [ ] Module versions noted (mismatch between environments? — "works on env A, fails on env B" = version skew, P1)
 
@@ -513,7 +513,7 @@ The team tests on many envs (qa, demo, localhost, new customer envs…) and each
 resource — or none. Resolve the resource for *this* `TEST_ENV` by **discovery**, never by assuming a fixed
 name:
 
-1. **From the active `BACK_URL` host** (Section 0): an App Insights component is conventionally named after
+1. **From the active `BACK_URL` host** (Section 1): an App Insights component is conventionally named after
    the same env slug as the host (e.g. a `*-storefront` companion for the storefront server). Use that as
    the search hint — not as a literal.
 2. **List & match via Azure MCP** — enumerate App Insights components in the subscription/resource group and

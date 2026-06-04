@@ -19,7 +19,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
 1. **Read the investigation flow:** Load `bug-investigation-flow.md` from this skill folder for the full process, decision tree, and common VC patterns (P1–P8).
 
-2. **Resolve `TEST_ENV` FIRST** (`bug-investigation-flow.md` §0):
+2. **Resolve `TEST_ENV` FIRST** (`bug-investigation-flow.md` §1):
    - Determine the env (user-named → ticket field → default `vcst`); state it explicitly
    - Resolve `FRONT_URL` / `BACK_URL` / `STORE_ID` / `ENV_RISK`; run `/qa-env-check endpoints` to confirm health
    - Discover the env's App Insights resource(s) by matching the active URLs (don't assume a fixed name; some envs have none)
@@ -54,7 +54,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
 7. **Document and hand off:**
    - Write bug report using templates in `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`
-   - Include the **env header** (§0) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
+   - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - Save to `reports/bugs/`
    - Optionally create JIRA ticket via Atlassian MCP
 
