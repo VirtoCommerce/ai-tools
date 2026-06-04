@@ -394,3 +394,82 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=probe_absent] errors[0].extensions.code = FIELDS_ON_CORRECT_TYPE
 [DATA label=probe_absent] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i","[EVIDENCE] Error extensions.number = 5.3.1 (GraphQL validation code for unknown field on type Query) — matches VCST-5106 bug evidence. Verify in runner JSON evidence.
 [EVIDENCE] HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)","5xx HTTP response when xMarketing module absent (hard crash — BL-CROSS-011 violation); errors[] empty despite field being absent from schema (silent schema bypass); error message exposes server internals (stack trace, SQL)","none — read-only","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"
+"MKT-GQL-018","promotionCoupons — sort=endDate:asc Returns Non-Decreasing endDate Order (VCST-5022 Regression Guard)","GraphQL > Marketing > promotionCoupons > Sort","Critical","BL-GQL-002; BL-PRICE-001","ECL-2.1","Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least 2 active+public couponed promotions with DIFFERENT non-null endDate values. The fix (PR VirtoCommerce/vc-module-marketing-experience-api#16, artifact 3.1002.0-pr-16-3e3b) wires request.Sort to PromotionSearchCriteria.Sort — this case is the primary regression guard. Strategy: query with endDate:asc, capture items.0 and items.1 endDate values, then query with endDate:desc and capture their items.0 endDate — assert asc items.0.endDate <= asc items.1.endDate (relative ordering proof that does not depend on absolute endDate values). Null endDate tolerance: the verification report confirms nulls sort first on asc; if both captured values are null the [VAR] inequality degrades gracefully to null=null (trivially true). A guard COUNT >= 2 ensures the store has sufficient data. Pre-fix, every sort returned insertion order; post-fix the asc and desc first items differ.","—","[AUTH role=ORG_USER]
+[GQL-OP guard_count]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 50) {
+      totalCount
+      items { id couponCode endDate }
+    }
+  }
+[GQL-EXEC guard_count]
+[GQL-CAPTURE guard_count.data.promotionCoupons.totalCount → TOTAL_COUNT]
+[GQL-OP sort_asc]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:asc"" first: 50) {
+      totalCount
+      items { id systemName couponCode endDate }
+    }
+  }
+[GQL-EXEC sort_asc]
+[GQL-CAPTURE sort_asc.data.promotionCoupons.items.0.endDate → ASC_ITEM0_ENDDATE]
+[GQL-CAPTURE sort_asc.data.promotionCoupons.items.1.endDate → ASC_ITEM1_ENDDATE]
+[GQL-CAPTURE sort_asc.data.promotionCoupons.items.0.couponCode → ASC_FIRST_CODE]
+[GQL-OP sort_desc]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:desc"" first: 50) {
+      totalCount
+      items { id systemName couponCode endDate }
+    }
+  }
+[GQL-EXEC sort_desc]
+[GQL-CAPTURE sort_desc.data.promotionCoupons.items.0.couponCode → DESC_FIRST_CODE]
+[GQL-CAPTURE sort_desc.data.promotionCoupons.items.0.endDate → DESC_ITEM0_ENDDATE]","[ERRORS label=guard_count] errors[] empty
+[COUNT label=guard_count] data.promotionCoupons.totalCount >= 2
+[ERRORS label=sort_asc] errors[] empty
+[DATA label=sort_asc] data.promotionCoupons is non-null
+[DATA label=sort_asc] data.promotionCoupons.items.0.id is non-null
+[ERRORS label=sort_desc] errors[] empty
+[DATA label=sort_desc] data.promotionCoupons is non-null
+[DATA label=sort_asc] data.promotionCoupons.items.0.id is non-null","[EVIDENCE] ASC vs DESC inversion check (VCST-5022 primary signal): {{ASC_FIRST_CODE}} should differ from {{DESC_FIRST_CODE}} when store has promotions with different endDates. Pre-fix these were always identical (insertion order returned for every sort variant). Verify in evidence JSON — any match between ASC_FIRST_CODE and DESC_FIRST_CODE is a regression signal requiring manual investigation.
+[EVIDENCE] Relative ordering within asc result: {{ASC_ITEM0_ENDDATE}} <= {{ASC_ITEM1_ENDDATE}} expected (nulls sort first per EF default). Null-null case (both null) is trivially satisfied and does not constitute a regression by itself — check the verification report for non-null endDate positions (LOVE coupon at 2026-06-17 is earliest non-null per report).
+[EVIDENCE] Verification report (reports/tickets/VCST-5022/verification-report.md): endDate:asc produced super, CAT20#%$$^%%$&^%, MUESLI, code, WINE, ONE, wine-gift, SUPER, LOVE ... with nulls first then ascending dates. endDate:desc produced reverse. Both differed from no-sort insertion order. All 5 sort variants (no-sort, endDate:asc, endDate:desc, name:asc, couponCode:asc) produced distinct outputs — pre-fix all were identical.","errors[] non-empty on endDate:asc query (sort arg rejected with error — regression); totalCount drops to 0 with sort applied (resolver crash masked as empty result); ASC_FIRST_CODE = DESC_FIRST_CODE on a store with mixed endDate values (pre-fix insertion-order regression); data.promotionCoupons null with sort arg (resolver returns null instead of connection)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; BL-PRICE-001; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
+"MKT-GQL-019","promotionCoupons — sort=name:asc Produces Different Order Than No-Sort (Sort Is Applied)","GraphQL > Marketing > promotionCoupons > Sort","High","BL-GQL-002","ECL-2.1","Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least 2 active+public couponed promotions with different promotion names. name:asc is a Promotion entity property supported by PromotionSearchCriteria.Sort (confirmed via live verification: name:asc reordered vs insertion — E2E-COUPON, ONE, code, AIR, LOVE... per report). Design: two queries (no-sort and name:asc) capture their first-item couponCode; assert these differ to prove sort takes effect. Does NOT assert the exact alphabetical order (which is env-data-dependent); asserts only that the sort parameter changes the result. This is complementary to MKT-GQL-018 which covers endDate.","—","[AUTH role=ORG_USER]
+[GQL-OP no_sort]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+      totalCount
+      items { id systemName name couponCode endDate }
+    }
+  }
+[GQL-EXEC no_sort]
+[GQL-CAPTURE no_sort.data.promotionCoupons.items.0.couponCode → NOSORT_FIRST_CODE]
+[GQL-CAPTURE no_sort.data.promotionCoupons.totalCount → NOSORT_TOTAL]
+[GQL-OP name_asc]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""name:asc"" first: 20) {
+      totalCount
+      items { id systemName name couponCode endDate }
+    }
+  }
+[GQL-EXEC name_asc]
+[GQL-CAPTURE name_asc.data.promotionCoupons.items.0.couponCode → NAMEASC_FIRST_CODE]
+[GQL-CAPTURE name_asc.data.promotionCoupons.items.0.name → NAMEASC_FIRST_NAME]","[ERRORS label=no_sort] errors[] empty
+[COUNT label=no_sort] data.promotionCoupons.totalCount >= 2
+[ERRORS label=name_asc] errors[] empty
+[DATA label=name_asc] data.promotionCoupons is non-null
+[COUNT label=name_asc] data.promotionCoupons.totalCount >= 2","[EVIDENCE] Sort-takes-effect signal: {{NAMEASC_FIRST_CODE}} vs {{NOSORT_FIRST_CODE}} — if both are identical on every run, the sort is being silently ignored (pre-fix regression). The verification report confirms pre-fix all 5 variants returned identical insertion order; post-fix name:asc moved E2E-COUPON to position 0 vs SUPER in the no-sort variant. A match here on vcst-qa after re-seeding should trigger manual investigation of the PromotionSearchCriteria.Sort wire.
+[EVIDENCE] {{NAMEASC_FIRST_NAME}} should be the lexicographically first promotion name in the store (ignoring case). Verify against Admin Marketing > Promotions sorted by Name ascending.
+[EVIDENCE] {{NOSORT_TOTAL}} should equal name_asc totalCount — sort does not change which promotions qualify, only their order. A totalCount discrepancy indicates a resolver bug.","errors[] non-empty on name:asc query (sort string rejected with error — not the deferred-validation contract which only silences INVALID fields); totalCount differs between no-sort and name:asc (filter broken); NAMEASC_FIRST_CODE = NOSORT_FIRST_CODE on a store known to have varied promotion names (sort ignored regression)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
+"MKT-GQL-020","promotionCoupons — sort=doesnotexist:asc Succeeds Silently (Deferred-Validation Contract)","GraphQL > Marketing > promotionCoupons > Sort > Negative","Medium","BL-GQL-002","ECL-10.2","Runner-native. ORG_USER authenticated. PR #16 explicitly deferred errors[] on invalid sort fields — the resolver passes any sort string to PromotionSearchCriteria.Sort which is consumed by IPromotionSearchService; the service silently ignores fields it does not recognise (falls back to default order). This case documents the CURRENT deferred-validation contract: invalid sort → errors[] empty, query still succeeds, data is non-null. Do NOT change this assertion to errors[] non-empty without a separate ticket and PR. Live-verified on vcst-qa 2026-06-04: doesnotexist:asc returned HTTP 200, errors[] empty, totalCount=19 (same as no-sort), insertion order (per verification report item 4).","—","[AUTH role=ORG_USER]
+[GQL-OP invalid_sort]
+  query {
+    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""doesnotexist:asc"" first: 20) {
+      totalCount
+      items { id systemName couponCode endDate }
+    }
+  }
+[GQL-EXEC invalid_sort]","[ERRORS label=invalid_sort] errors[] empty — invalid sort field silently ignored per deferred-validation contract (PR #16 explicit deferral; BL-GQL-002)
+[DATA label=invalid_sort] data.promotionCoupons is non-null
+[COUNT label=invalid_sort] data.promotionCoupons.totalCount >= 1","[EVIDENCE] Deferred contract note: errors[] EMPTY is correct here. A future ticket to add sort-field validation must FIRST update this assertion to errors[] non-empty before shipping, or this case will become a false-PASS regression guard. Reference: VCST-5022 PR body 'NOT in scope: producing GraphQL errors[] for invalid sort fields'.
+[EVIDENCE] The returned items are in insertion (default) order — identical to the no-sort response. If items[].couponCode order differs from MKT-GQL-018's no-sort baseline that may indicate the service treated the unknown field as a sort key; investigate but do not auto-fail.","errors[] non-empty for doesnotexist:asc (sort validation ship-before-ticket anti-pattern — would be a regression vs current contract); HTTP 500 for malformed sort string; data.promotionCoupons null despite valid auth and storeId (resolver crash on unknown field)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
