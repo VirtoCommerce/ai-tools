@@ -1,0 +1,30 @@
+{
+  "runId": "REG-2026-06-04-1321",
+  "selection": "050j",
+  "startedAt": "2026-06-04T13:21:00+03:00",
+  "environment": "vcst-qa",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "vc-theme-b2b-vue-2.51.0-alpha.2362",
+    "modules": {
+      "VirtoCommerce.MarketingExperienceApi": "3.1002.0-pr-16-3e3b",
+      "VirtoCommerce.Marketing": "3.1003.0"
+    }
+  },
+  "suites": [
+    {
+      "id": "050j",
+      "name": "GraphQL xMarketing (promotionCoupons)",
+      "file": "regression/suites/Backend/graphql/050j-graphql-xmarketing.csv",
+      "priority": "P1",
+      "testCount": 16,
+      "agent": "qa-backend-expert",
+      "executionMode": "graphql-runner (runner-native, no browser)",
+      "status": "completed",
+      "attempts": 1,
+      "result": { "cases": 20, "passed": 18, "failed": 0, "skipped": 2, "verdict": "PASS" }
+    }
+  ],
+  "completedAt": "2026-06-04T13:30:00+03:00",
+  "report": "reports/regression/REG-2026-06-04-1321/regression-report.md"
+}
