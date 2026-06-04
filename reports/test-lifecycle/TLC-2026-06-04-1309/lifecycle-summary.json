@@ -1,0 +1,43 @@
+{
+  "runId": "TLC-2026-06-04-1309",
+  "inputType": "change-source",
+  "source": "VCST-5022 + PR vc-module-marketing-experience-api#16",
+  "date": "2026-06-04",
+  "verdict": "APPROVED_WITH_WARNINGS",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "vc-theme-b2b-vue-2.51.0-alpha.2362",
+    "modules": {
+      "VirtoCommerce.MarketingExperienceApi": "3.1002.0-pr-16-3e3b (PR artifact, unmerged)",
+      "VirtoCommerce.Marketing": "3.1003.0"
+    }
+  },
+  "changedModules": ["MarketingExperienceApi"],
+  "changedLayers": ["backend", "graphql"],
+  "affectedSuites": ["050j", "079", "077", "077-smoke"],
+  "casesAnalyzed": 54,
+  "casesSynced": 0,
+  "casesGenerated": 3,
+  "casesReviewed": 54,
+  "casesVerified": 3,
+  "generatedCases": ["MKT-GQL-018", "MKT-GQL-019", "MKT-GQL-020"],
+  "runnerValidation": {
+    "MKT-GQL-018": "PASS 8/8",
+    "MKT-GQL-019": "PASS 5/5",
+    "MKT-GQL-020": "PASS 3/3"
+  },
+  "filesModified": [
+    "regression/suites/Backend/graphql/050j-graphql-xmarketing.csv",
+    "config/test-suites.json",
+    ".claude/agents/knowledge/graphql-schema.md"
+  ],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "WARN",
+    "G5": "PASS", "G6": "PASS", "G7": "PASS", "G8": "PASS", "G9": "PASS"
+  },
+  "verifyMode": "runner-live-exec (browser pass waived — GraphQL-only changes; surfaces E2E-verified same day in reports/tickets/VCST-5022/)",
+  "manualItems": [
+    "MKT-GQL-018 EVIDENCE inversion check is runner-manual; re-confirm after env re-seed",
+    "CPN-025 (077) pre-existing hardcoded totalCount=14 vs live 19 — fix in next 077 pass"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ticket": "VCST-5022",
+  "verdict": "VERIFIED",
+  "date": "2026-06-04",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "vcst-qa",
+    "relevant_modules": { "VirtoCommerce.MarketingExperienceApi": "3.1002.0-pr-16-3e3b" },
+    "pr_build": "PR #16 (commit 3e3b442) — deployed to vcst-qa while open (unmerged)"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "checklist_total": 6,
+  "checklist_passed": 6,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["read-path sort; auth (anonymous denied) preserved"],
+  "jira_transition": "PENDING_USER_DECISION (pre-merge — PR #16 not yet merged)",
+  "pr": "https://github.com/VirtoCommerce/vc-module-marketing-experience-api/pull/16",
+  "artifacts": "reports/tickets/VCST-5022/"
+}
