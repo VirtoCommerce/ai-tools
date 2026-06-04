@@ -65,13 +65,16 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   by-design / config-gated / env-data-drift / API-only-repro / security-disclosure / no-STR / needs
   refactoring / breaking change / ambiguous. On BAIL: comment the ticket out-of-auto-fix-scope + reason,
   leave at TO DO, end.
-- **Gate 1 — single target repo:** from the `/qa-bug` **owning layer** + RCA, route to exactly ONE
-  allowed repo via `suggestRepo()` → confirm with `mcp__github__search_code` on the RCA method/error
-  string → validate with `isAllowedRepo()`. Determine the repo **kind** (`repoKind`) → pick the matching
-  developer agent (table above). Multi-repo / off-allowlist / no-match → STOP, comment, hand off. Never
-  guess. (If the routed kind has no developer agent enabled yet — e.g. `frontend` before
-  `fullstack-frontend` ships — STOP with "routed to <repo> (<kind>); no developer agent enabled for this
-  kind yet — handing off"; the ticket stays filed.)
+- **Gate 1 — single target repo:** if the `/qa-bug` report carries a **Fix Routing block** (Suggested repo
+  + `repoKind` + RCA anchor + routing confidence — see `qa-bug.md` Step 4), read it **verbatim as the
+  primary signal** and *confirm* it (don't re-derive from scratch): validate the named repo with
+  `isAllowedRepo()` and verify the RCA anchor with `mcp__github__search_code`. Only when the block is
+  absent, confidence is LOW, or the anchor doesn't confirm, fall back to deriving the route from the
+  **owning layer** + RCA via `suggestRepo()`. Either way: resolve to exactly ONE allowed repo, determine
+  the repo **kind** (`repoKind`) → pick the matching developer agent (table above). Multi-repo /
+  off-allowlist / no-match → STOP, comment, hand off. Never guess. (If the routed kind has no developer
+  agent enabled yet — e.g. `frontend` before `fullstack-frontend` ships — STOP with "routed to <repo>
+  (<kind>); no developer agent enabled for this kind yet — handing off"; the ticket stays filed.)
 - On PASS: transition JIRA **TO DO → IN PROGRESS** ("Take to development"; ask user first) with a
   comment naming the routed repo + kind.
 

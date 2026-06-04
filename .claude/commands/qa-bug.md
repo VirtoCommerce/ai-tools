@@ -93,19 +93,53 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 **Owning layer:** [lowest FAIL layer — this is where the fix belongs]
 ```
 
-**Layer-to-owner mapping** (informs triage in Step 5):
-- Layer 4 FAIL → module team (`vc-module-*` repo)
-- Layer 3 FAIL only → xAPI team (`vc-module-x-*` repo)
-- Layer 2 FAIL only → Admin SPA / module admin UI
-- Layer 1 FAIL only → `vc-frontend` theme / components
+**Layer → repo-kind → repo mapping** — this is the **load-bearing handoff to `/qa-fix`**. The owning
+layer fixes the `repoKind`; Step 3 then resolves the *exact* repo. The vocabulary below is the same one
+`ci/lib/repo-router.ts` (`repoKind` / `isAllowedRepo`) and `ci/config/fix-repos.json` use — keep them in
+sync, never invent a different one.
+
+| Lowest FAIL layer | `repoKind` | Owning repo | Notes |
+|---|---|---|---|
+| **Layer 4** REST | `module` (or `platform`) | `vc-module-<name>`; `vc-platform` if security/RBAC/users/dynamic-properties/platform-settings | Lowest layer wins — REST wrong = the whole stack inherits it. |
+| **Layer 3** xAPI only | `module` | `vc-module-x-<name>` (xCart/xCatalog/xOrder/xProfile/xCMS) | REST correct + GraphQL wrong = resolver/aggregation bug in the **x-** module. |
+| **Layer 2** Admin only | `module` | `vc-module-<name>` (**same repo as Layer 4** — the Admin SPA Angular UI ships *inside* the module repo) | Admin-UI-only bug → the module's `*.Web`/Angular SPA, not a separate repo. |
+| **Layer 1** Storefront only | `frontend` | `vc-frontend` | REST + GraphQL + Admin all correct, only the storefront UI is wrong = theme/component/client-state bug. |
+
+> **Heuristic, not authority.** This table fixes the *kind*; the *exact* repo is confirmed in Step 3 via
+> `module-suite-map.md` + the `fix-repos.json` routing hints + `search_code`. `/qa-fix` Gate 1 re-validates
+> your choice with `isAllowedRepo()` — so a wrong guess is caught, but a **named, evidence-backed repo**
+> lets Gate 1 confirm instead of re-deriving.
 
 ---
 
-## Step 3 — Research Source Code & Logs
+## Step 3 — Research Source Code & Logs + Resolve the Exact Repo
 
 > **Tools:** GitHub MCP (`search_code`, `get_file_contents`), Azure MCP (`applicationinsights`), `/qa-investigate` isolation phase.
 
 After reproducing the bug, research the root cause before writing the report:
+
+### Step 3a — Resolve the exact owning repo (drives `/qa-fix` Gate 1)
+
+Step 2 gave you the `repoKind` and a layer. Now name the **one** concrete repo so the bug report carries a
+ready-to-route target. Resolve it deterministically (do **not** free-guess):
+
+1. **Map the domain → module** via [`.claude/agents/knowledge/module-suite-map.md`](../agents/knowledge/module-suite-map.md)
+   (the *Module → REST API Path → xAPI Module* table). The failing REST path (`/api/pricing/…` → `vc-module-pricing`)
+   or the xAPI module name (xCatalog → `vc-module-x-catalog`) from your Layer 3/4 capture is the strongest signal.
+2. **Cross-check against the routing hints** in [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
+   `routing[]` — these are the exact `text → repo` rules `/qa-fix`'s `suggestRepo()` applies. If your domain
+   matches a rule, use that repo name verbatim (e.g. CyberSource → `vc-module-CyberSource`, promotion/coupon →
+   `vc-module-marketing`, xAPI+promotion → `vc-module-marketing-experience-api`).
+3. **Confirm with `search_code`** on the RCA method/error string in the candidate repo (`repo:VirtoCommerce/<name> "<symbol>"`).
+   A hit confirms the repo *and* gives you the file:line anchor for the Root Cause Analysis. No hit → widen the
+   search or downgrade routing confidence to LOW.
+4. **Note the repo class** — one allowed repo (`vc-module-*` / `vc-module-x-*` / `vc-platform` / `vc-frontend`),
+   or, if the root cause clearly spans **multiple** repos, name them all and set routing confidence LOW with a
+   one-line note. Either way the bug is still filed — picking up / declining the fix is `/qa-fix` Gate 0's call,
+   not yours.
+
+Record the result as the **Fix Routing** block (template below). When the layer/RCA is ambiguous, set
+routing confidence LOW and say why — `/qa-fix` will still re-validate, but an honest LOW prevents a bad route.
 
 **Source code research (GitHub MCP):**
 - Search `VirtoCommerce/vc-frontend` for the affected component/page (use `search_code` with relevant keywords from error messages, URL paths, or component names)
@@ -160,7 +194,7 @@ Valid statuses:
 - `OPEN` — reported, not yet reproduced
 - `CONFIRMED` — reproduced, root cause identified
 - `REPRODUCED` — reproduced, root cause not yet identified
-- `READY_TO_SUBMIT` — ready to file in JIRA
+- `READY_TO_SUBMIT` — ready to file in JIRA (Fix Routing block filled → eligible for `/qa-fix VCST-XXXX`)
 - `FIXED` — fix verified (move file to `fixed/`)
 - `CLOSED` — won't fix / cannot reproduce / false positive / duplicate (move file to `closed/`)
 
@@ -176,7 +210,30 @@ When moving to `fixed/`, add a Resolution block below the status:
 
 ### Report Template
 
-> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`](../skills/qa-methodology/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, and **Root Cause Analysis**; the `/qa-defect` templates carry the JIRA fields.
+> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`](../skills/qa-methodology/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
+
+### Fix Routing block (REQUIRED — the `/qa-fix` handoff contract)
+
+Every report MUST end with this block. It is the **strongest signal** the `/qa-fix` triage agent reads
+(per `ci/agents/fix-triage-agent.md`) — naming the layer + exact repo lets Gate 1 *confirm* your finding
+instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact repo).
+
+```markdown
+## Fix Routing (→ /qa-fix)
+
+- **Owning layer:** Layer N — <Storefront | Admin | xAPI | REST>
+- **Suggested repo:** VirtoCommerce/<vc-module-… | vc-module-x-… | vc-platform | vc-frontend>
+- **repoKind:** module | platform | frontend
+- **Component / module:** <e.g. Pricing, xCatalog resolver, vc-frontend PDP>
+- **RCA anchor:** <file:line or method/error string for search_code validation>
+- **Routing confidence:** HIGH | MEDIUM | LOW  (LOW = ambiguous layer/RCA; say why)
+```
+
+> **Scope boundary — report every bug, route honestly.** `/qa-bug` files **all** confirmed defects and
+> determines routing for each; it does **not** decide auto-fix eligibility or filter bugs out. Whether a
+> bug is auto-fixable (by-design / config-gated / breaking / multi-repo, etc.) is decided downstream by
+> `/qa-fix` **Gate 0** (`.claude/rules/quality-gates.md`). If routing genuinely spans multiple repos, just
+> say so in **Routing confidence: LOW** + a one-line note — still file the bug.
 
 ---
 
@@ -208,3 +265,12 @@ Report the ticket key back to the user.
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
 - Ask before creating JIRA tickets (explicit permission required)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
+- **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix
+  eligibility (Gate 0) is `/qa-fix`'s decision, not `/qa-bug`'s.
+- **Always fill the Fix Routing block** (Step 4) — owning layer + exact repo + `repoKind`. This is the
+  `/qa-bug` → `/qa-fix` handoff contract; a named, evidence-backed repo lets `/qa-fix` Gate 1 confirm
+  rather than re-derive routing.
+- **Keep the routing vocabulary in sync with one source of truth:** `repoKind` and the allowed-repo set
+  come from [`ci/lib/repo-router.ts`](../../ci/lib/repo-router.ts) + [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
+  (the same files `/qa-fix` uses). Resolve the exact module via
+  [`module-suite-map.md`](../agents/knowledge/module-suite-map.md). Never invent a parallel naming scheme.

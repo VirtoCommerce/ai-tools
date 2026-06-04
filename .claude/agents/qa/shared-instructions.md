@@ -186,7 +186,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Generating CSV test cases | `/qa-test-cases-generator` | `test-case-template.md` |
 | Prioritizing test depth | `/qa-risk` | `risk-prioritization-framework.md` |
 | Exploratory testing | `/qa-sbtm` | `session-based-testing.md` |
-| Investigating a bug | `/qa-investigate` | `bug-investigation-flow.md` |
+| Investigating a bug | `/qa-investigate` | `bug-investigation-flow.md` — **follow it in order**: resolve `TEST_ENV` first (§1) → reproduce → isolate layer **and name the fix target** (layer → `repoKind` → repo, §3+§8) → gather **all** logs incl. App Insights (§4+§9) → root cause → document with the **Fix Routing** block |
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
