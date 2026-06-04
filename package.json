@@ -19,6 +19,8 @@
     "ci:cycle:pr": "CHANGE_SOURCE=\"PR #${PR_NUMBER}\" npx tsx ci/run-full-cycle.ts",
     "ci:cycle:sync-only": "SKIP_LIFECYCLE=true SKIP_REGRESSION=true npx tsx ci/run-full-cycle.ts",
     "ci:cycle:no-sync": "SKIP_SYNC=true npx tsx ci/run-full-cycle.ts",
+    "ci:fix": "npx tsx ci/run-fix-cycle.ts",
+    "ci:fix:dry": "DRY_RUN=true npx tsx ci/run-fix-cycle.ts",
     "seed": "node scripts/seed-test-data.js",
     "seed:minimal": "node scripts/seed-test-data.js minimal",
     "seed:catalog": "node scripts/seed-test-data.js catalog",
