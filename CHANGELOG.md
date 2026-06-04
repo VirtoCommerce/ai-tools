@@ -12,7 +12,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Forward-looking work on top of v0.3.0. Pin to v0.3.0 for stability; this branch tip is unstable.
 
-_(no entries yet)_
+### Added
+
+#### Bug auto-fix pipeline (interactive + headless twins) — PR #20
+- **`.claude/rules/quality-gates.md`** — single source of truth for the auto-fix gate ladder **G0–G7**: fix-eligibility triage → single-repo route → reproduce-as-failing-test (red) → minimal fix (green) → code review → build/CI → E2E verification → **human review (never auto-merge)**. Both entry points reference gates by ID and share the no-auto-merge triple guard (permission deny + orchestrator + agent).
+- **`/qa-fix VCST-XXXX`** (`.claude/commands/qa-fix.md`) — interactive autonomous fix of an already-filed bug. Interactive twin of `ci/run-fix-cycle.ts` (same relationship as `/qa-regression` ↔ `ci/run-regression.ts`).
+- **`developers/` agent team** — first write-capable team, isolated from read-only QA agents: `fullstack-backend` (opus; .NET 10 / C# + module Admin SPA Angular, reproduce-as-test → minimal fix → PR) and `backend-reviewer` (opus; Gate-4 diff review before the PR). Plus `shared-instructions.md`.
+- **Headless CI auto-fix** — `ci/run-fix-cycle.ts` + `.github/workflows/auto-fix.yml` (JIRA bug → draft PR): `ci/agents/fix-triage-agent.md` / `fix-backend-agent.md` / `fix-frontend-agent.md`, repo allowlist `ci/config/fix-repos.json`, routing/checkout `ci/lib/repo-router.ts`, live module dependency graph `ci/lib/module-registry.ts` (Platform API, cached). npm scripts: `ci:fix`, `ci:fix:dry`.
+- **Development skills** (`.claude/skills/development/`, used by `fullstack-backend`): `/dotnet-unit-test` (red repro as xUnit test, never edits existing tests), `/dotnet-fix` (minimal idiomatic .NET 10 fix + build/test gate), `/angular-admin` (module Admin SPA fixes; red→green via uncommitted Node scratch harness since module repos ship no JS test runner).
+- **`.claude/agents/knowledge/vc-module-architecture.md`** — VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the fix agents.
+- **Dedicated write token** — `GITHUB_FIX_BUGS_TOKEN` → `GH_TOKEN` for `/qa-fix` push/PR scope; QA agents stay read-only on GitHub.
+
+### Changed
+
+- **`regression/suites/Backend/graphql/050j-graphql-xmarketing.csv`** — +7 cases (13 → 20): VCST-5022 `promotionCoupons` sort coverage — 3 regression guards (endDate/name honored, `;` multi-field separator, silently-ignored syntaxes) + lifecycle sync. Manifest `testCount` updated.
+- **`regression/suites/Backend/customer/026-customer-contacts.csv`** — CUST-055 updated for the new `va-filter-panel` contacts filter UI (VCST-5148, PR #24).
+- **`ci/lib/repo-router.ts`** — marketing-xAPI routing fixed (`vc-module-x-marketing` resolution); .NET build hardening in the fix cycle.
+- **`.gitignore`** — auto-fix transient state ignored: `.fix-workspace/` (cloned product repos), `ci/config/.module-registry.cache.json`, heavy artifacts under `reports/fixes/FIX-*/` (png/har/jpg; fix-report.md + summary.json stay tracked).
 
 ---
 
