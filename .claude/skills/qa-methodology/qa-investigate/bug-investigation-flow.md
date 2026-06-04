@@ -10,26 +10,56 @@
 ```
 BUG REPORTED / SUSPECTED
         │
-   ┌────▼─────┐     ┌──────────┐     ┌───────────┐     ┌────────────┐     ┌──────────────┐
-   │ REPRODUCE │────►│ ISOLATE  │────►│  GATHER   │────►│ IDENTIFY   │────►│ DOCUMENT &   │
-   │           │     │  LAYER   │     │ EVIDENCE  │     │ ROOT CAUSE │     │  HAND OFF    │
-   └───────────┘     └──────────┘     └───────────┘     └────────────┘     └──────────────┘
-    Confirm it's       Frontend?        Screenshots,      Pattern match      Bug report or
-    real & get STR     Backend?         console, network,  against known     handoff to
-                       Infra?           HAR, DOM state     VC patterns       another agent
-                                              │
-                                     ┌────────┴────────┐
-                                     ▼                  ▼
-                              ┌─────────────┐   ┌──────────────┐
-                              │ SOURCE CODE │   │ APP INSIGHTS │
-                              │ (GitHub)    │   │ (Azure)      │
-                              └─────────────┘   └──────────────┘
-                               §8: Search VC     §9: KQL queries,
-                               module repos,     exceptions, deps,
-                               trace logic       request traces
+   ┌────▼─────┐    ┌──────────┐    ┌──────────┐    ┌───────────┐    ┌────────────┐    ┌──────────────┐
+   │ RESOLVE  │───►│ REPRODUCE │───►│ ISOLATE  │───►│  GATHER   │───►│ IDENTIFY   │───►│ DOCUMENT &   │
+   │ TEST_ENV │    │           │    │  LAYER   │    │ ALL LOGS  │    │ ROOT CAUSE │    │  HAND OFF    │
+   └──────────┘    └───────────┘    └──────────┘    └───────────┘    └────────────┘    └──────────────┘
+    Which env?      Confirm it's      Layer →         Console, net,     Pattern match     Bug report +
+    URLs + App      real & get STR    repoKind →      HAR, Hangfire,    against known     Fix Routing
+    Insights +                        module/repo     App Insights      VC patterns       handoff block
+    ENV_RISK                          (§3 + §8)       (§4 + §9)         (§7)
+                                                            │
+                                                   ┌────────┴────────┐
+                                                   ▼                  ▼
+                                            ┌─────────────┐   ┌──────────────┐
+                                            │ SOURCE CODE │   │ APP INSIGHTS │
+                                            │ (GitHub)    │   │ (Azure)      │
+                                            └─────────────┘   └──────────────┘
+                                             §8: Search VC     §9: KQL queries,
+                                             module repos,     exceptions, deps,
+                                             trace logic       request traces
 ```
 
-**Key rule:** Never file a bug you cannot reproduce. If you can't reproduce after exhausting the checklist in Section 2, document the failed reproduction attempt and escalate.
+**Key rules:**
+- **Resolve `TEST_ENV` *first*** (Section 0) — every URL, credential, and App Insights resource is per-env. Investigating the wrong env wastes the whole session.
+- **Never file a bug you cannot reproduce.** If you can't reproduce after exhausting the checklist in Section 2, document the failed attempt and escalate.
+- **Gather *all* logs, not just the browser** (Section 4 + 9) — a frontend symptom often has a server-side cause that only App Insights / Hangfire reveal.
+
+---
+
+## 0. Resolve the Environment (`TEST_ENV`) — DO THIS FIRST
+
+Before reproducing anything, pin which environment you are investigating. The project is multi-env
+(layered loader keyed by `TEST_ENV`, default `vcst`); URLs, credentials, store IDs, **and the Azure App
+Insights resource pair all differ per env.** A bug confirmed on the wrong env is a wasted session — and
+"works on QA, fails on staging" is itself a frequent root cause (version skew).
+
+1. **Determine `TEST_ENV`.** Use the value the user named; else the ticket's environment field; else the
+   default `vcst`. State it explicitly at the start of the investigation ("Investigating on `TEST_ENV=vcst`").
+2. **Resolve the endpoints** for that env (config.js loads `.env.${TEST_ENV}`): `FRONT_URL`, `BACK_URL`,
+   `STORE_ID`, `ENV_RISK`. Run `/qa-env-check endpoints` to confirm they're reachable and healthy
+   (`{BACK_URL}/health` — see memory `Platform health endpoint`). A red endpoint = stop and report infra,
+   don't chase a "bug".
+3. **Note `ENV_RISK`.** If the env is production-class, treat all reproduction as read-only — no seeding,
+   no state mutation, no destructive repro.
+4. **Discover the matching App Insights resource** for this env (Section 9 — by matching the active
+   `BACK_URL`/`FRONT_URL`, not by assuming a fixed name; some envs like `localhost`/fresh demos have none).
+   Record what you found now so every KQL query in Section 9 targets the right resource.
+5. **Capture the build versions** for this env (`{BACK_URL}/#!/workspace/systeminfo` or the deploy repo's
+   `packages.json`/`artifact.json`) — needed for the Module Versions line in the report and for P1 version-skew.
+
+> Output of Section 0 is a one-line env header you carry into the report:
+> `Env: <TEST_ENV> — <FRONT_URL> / <BACK_URL> @ Platform <ver>, Theme <ver> (ENV_RISK=<level>)`
 
 ---
 
@@ -59,7 +89,7 @@ BUG REPORTED / SUSPECTED
 | Works with fresh cart | Test with items in cart, saved-for-later items, mixed pickup/delivery |
 | Works after fresh login | Test with stale session, expired token, incognito |
 | Only fails sometimes | Check for race conditions, stale cache, ES index lag (wait 5s, retry) |
-| Works on QA, fails on staging | Compare platform/module versions at `BACK_URL/#!/workspace/systeminfo` |
+| Works on one env, fails on another | Compare platform/module versions across envs at `{BACK_URL}/#!/workspace/systeminfo` (version skew, P1) |
 
 ---
 
@@ -117,9 +147,47 @@ BUG REPORTED / SUSPECTED
 - Stale data → Index not rebuilt after data change (see Pattern P2)
 - Intermittent failures → Load balancer, cert expiry, or resource contention
 
+### Step 5: Map the owning layer → `repoKind` → repo (the fix target)
+
+Once the lowest failing layer is known, name **where the fix lives** in the same vocabulary
+`/qa-bug`'s Fix Routing block and `ci/lib/repo-router.ts` + `ci/config/fix-repos.json` use. This is what
+makes the handoff to `/qa-fix` precise (Section 8 then confirms the *exact* repo via `search_code`).
+
+| Lowest failing layer | `repoKind` | Owning repo | Tell-tale |
+|---|---|---|---|
+| **REST API** (Step 3b wrong) | `module` / `platform` | `vc-module-<name>`; `vc-platform` if security/RBAC/users/dynamic-properties/platform-settings | REST wrong = whole stack inherits it (lowest layer wins). |
+| **xAPI / GraphQL only** (3a wrong, REST right) | `module` | `vc-module-x-<name>` (xCart/xCatalog/xOrder/xProfile/xCMS) | Resolver/aggregation bug — REST correct, GraphQL response wrong. |
+| **Admin SPA only** | `module` | `vc-module-<name>` (**same repo** — the Angular Admin UI ships inside the module repo) | Admin UI wrong but data correct in REST. |
+| **Storefront only** (Step 2) | `frontend` | `vc-frontend` | REST + GraphQL + Admin all correct, only the Vue UI is wrong. |
+
+Resolve the **exact** module name via `.claude/agents/knowledge/module-suite-map.md` (Module → REST path →
+xAPI module) + the `fix-repos.json` `routing[]` hints — then confirm in Section 8 with `search_code`. Carry
+the result into the report's **Fix Routing** block (see `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm
+rather than re-derive. *Determine the layer/module/frontend/platform precisely — never hand off a vague "backend bug".*
+
 ---
 
 ## 4. Debugging Techniques by MCP Tool
+
+### Gather ALL logs (don't stop at the browser console)
+
+A frontend symptom frequently has a server-side cause that the browser cannot show. For any bug with a
+backend or data component, collect **every** log source below before concluding root cause — partial
+evidence is how by-design behavior and infra blips get misfiled as code bugs.
+
+| Source | Where / Tool | Always capture |
+|---|---|---|
+| **Browser console** | `browser_console_messages` (all tabs incl. Admin SPA via Chrome DevTools) | errors + warnings tied to the action; ignore favicon/analytics noise |
+| **Network / HAR** | `browser_network_requests` → export HAR | the failing request URL/payload/status + the **operation/trace ID** for §9 correlation |
+| **Hangfire jobs** | `{BACK_URL}/hangfire` — Failed / Scheduled / Recurring tabs | failed background jobs behind "didn't happen" symptoms (P8) |
+| **Platform / module info** | `{BACK_URL}/#!/workspace/systeminfo` | platform + module versions (P1 version-skew) |
+| **Application Insights** | Azure MCP `applicationinsights` — **env-matched resource** (§9) | server exceptions, dependency failures, and the full request trace for the op ID. **Mandatory whenever any REST/xAPI/Admin layer is involved.** |
+
+> Pull the **operation/trace ID** from the failed request in the network tab (`Request-Id` / `traceparent`)
+> — it is the join key that turns a browser 500 into a full server-side root cause in §9. Capture it during
+> reproduction; it's hard to recover later.
+
+### By symptom
 
 | Symptom | Tool | Technique |
 |---|---|---|
@@ -139,9 +207,9 @@ BUG REPORTED / SUSPECTED
 Before filing: confirm the bug is a real defect, not environment- or data-specific.
 
 ### Environment Isolation
-- [ ] Reproduced on QA environment (primary)
-- [ ] Platform version checked at `BACK_URL/#!/workspace/systeminfo`
-- [ ] Module versions noted (mismatch between environments?)
+- [ ] `TEST_ENV` resolved and stated (Section 0) — reproduced on that env's `FRONT_URL`/`BACK_URL`
+- [ ] Platform version checked at `{BACK_URL}/#!/workspace/systeminfo`
+- [ ] Module versions noted (mismatch between environments? — "works on env A, fails on env B" = version skew, P1)
 
 ### Browser Isolation
 - [ ] Tested in Chrome (primary) AND at least one of: Firefox, Edge
@@ -437,9 +505,27 @@ When frontend source code investigation reveals the root cause:
 
 ## 9. Application Insights Investigation
 
-Use **Azure Application Insights** to investigate server-side errors, performance issues, and runtime behavior that cannot be observed from the browser alone. Two App Insights resources are available:
-- **vcst-qa** — Platform backend (REST API, modules, background jobs)
-- **vcst-qa-storefront** — Storefront frontend server (SSR, middleware)
+Use **Azure Application Insights** to investigate server-side errors, performance issues, and runtime behavior that cannot be observed from the browser alone. **Check it for every bug with a REST / xAPI / Admin / background-job component** — not as an optional last resort.
+
+### Discover the App Insights resource for the active env (do NOT hardcode a name)
+
+The team tests on many envs (qa, demo, localhost, new customer envs…) and each has its **own** App Insights
+resource — or none. Resolve the resource for *this* `TEST_ENV` by **discovery**, never by assuming a fixed
+name:
+
+1. **From the active `BACK_URL` host** (Section 0): an App Insights component is conventionally named after
+   the same env slug as the host (e.g. a `*-storefront` companion for the storefront server). Use that as
+   the search hint — not as a literal.
+2. **List & match via Azure MCP** — enumerate App Insights components in the subscription/resource group and
+   match the one whose linked app URL / instrumentation corresponds to the active `BACK_URL` /`FRONT_URL`.
+   Pick the **platform** resource (REST/modules/jobs) and its **storefront** companion (SSR/middleware) if one
+   exists. Defaults for `vcst` live in memory (`Azure Application Insights` index) — treat them as an example
+   of the *pattern*, not a hardcoded target.
+3. **No App Insights for this env (e.g. `localhost` / a fresh demo)?** Fall back to local/server logs: the
+   platform console/stdout, container logs, and `{BACK_URL}/hangfire` — and say so in the report ("App
+   Insights N/A for this env; used server console logs").
+
+Record the chosen resource(s) once, then point every KQL query below at them.
 
 ### When to Use Application Insights
 
@@ -466,11 +552,14 @@ BUG WITH SERVER-SIDE COMPONENT
 
 ### Access Points
 
-| Resource | Portal Link | Purpose |
+Substitute `<platform-ai>` / `<storefront-ai>` with the resources you discovered above for the active env —
+the blades are the same regardless of name:
+
+| Blade | Where | Purpose |
 |---|---|---|
-| vcst-qa failures | Azure Portal → vcst resource group → vcst-qa → Failures blade | Platform API exceptions |
-| vcst-qa-storefront search | Azure Portal → vcst resource group → vcst-qa-storefront → Search | Storefront server logs |
-| vcst-qa live metrics | Azure Portal → vcst-qa → Live Metrics | Real-time request/failure stream |
+| Failures | `<platform-ai>` → Failures | Platform API exceptions, failed-request rate, top operations |
+| Search / Logs | `<storefront-ai>` → Search (or Logs) | Storefront server logs (SSR, middleware) |
+| Live Metrics | `<platform-ai>` → Live Metrics | Real-time request/failure stream while reproducing |
 
 ### Key KQL Queries
 
