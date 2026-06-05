@@ -127,6 +127,8 @@ one):
 To serve different policies per domain/language, use separate stores, each with its own file.
 ([Custom robots.txt File](https://docs.virtocommerce.org/platform/user-guide/store/custom-robot-txt))
 
+**CDN caveat (verified live 2026-06-05):** the override is immediate at origin, but `/robots.txt` is CDN-cached (`max-age=14400` = 4 h on vcst-qa/Cloudflare). Verify via `/robots.txt?nocache=1`; the canonical URL updates after CDN purge or TTL expiry.
+
 > Note: editing a `robots.txt` inside a theme via the **Content** module is the legacy
 > vc-storefront (Liquid) pattern and does not apply to the current vc-frontend Vue SPA. Use the
 > store Assets upload above.
