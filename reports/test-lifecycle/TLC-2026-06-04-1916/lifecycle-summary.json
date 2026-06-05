@@ -1,0 +1,73 @@
+{
+  "runId": "TLC-2026-06-04-1916",
+  "inputType": "change-source",
+  "source": "VCST-5009 (PR vc-frontend#2308 + vc-module-skyflow#23)",
+  "date": "2026-06-04",
+  "verdict": "APPROVED_WITH_WARNINGS",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "vc-theme-b2b-vue-2.51.0-pr-2308-219c",
+    "modules": {
+      "VirtoCommerce.Skyflow": "3.1002.0-pr-23-5a1b (PR artifact, unmerged)"
+    }
+  },
+  "changedModules": ["Skyflow", "vc-frontend payment components"],
+  "changedLayers": ["backend", "graphql", "storefront"],
+  "affectedSuites": ["040", "043", "048b", "080", "050c", "011", "039", "041", "042"],
+  "casesAnalyzed": 22,
+  "casesSynced": 13,
+  "casesMinorUpdated": 6,
+  "casesGenerated": 10,
+  "casesVerified": 8,
+  "generatedCases": [
+    "CART-PAY-GQL-001", "CART-PAY-GQL-002", "CART-PAY-GQL-003",
+    "PAY-SKY-010", "PAY-SKY-011", "PAY-SKY-012", "PAY-SKY-013", "PAY-SKY-014",
+    "GA-032", "GA-033"
+  ],
+  "runnerValidation": {
+    "CART-PAY-GQL-001": "PASS 11/11",
+    "CART-PAY-GQL-002": "PASS 2/2",
+    "CART-PAY-GQL-003": "PASS 8/8"
+  },
+  "liveVerification": {
+    "phase5Targets": "6/6 VERIFIED, 0 CHANGED/BROKEN",
+    "declineCVVs": "902 + 904 → decline code 65 CONFIRMED; CVV 900 → success; orders CO260604-00009/00010",
+    "processorBehindSkyflow": "Authorize.Net",
+    "duplicateTransactionWindow": "~3 min wait required before retry — encoded in PAY-SKY-013/014 steps",
+    "ghostOrders": "none (BL-CHK-002/004 hold)"
+  },
+  "validateTdRefs": "2201 refs, 0 failures",
+  "filesModified": [
+    "regression/suites/Frontend/payment/040-payment-processors.csv",
+    "regression/suites/Frontend/cross-cutting/043-google-analytics.csv",
+    "regression/suites/Frontend/cross-cutting/048b-layout-stability.csv",
+    "regression/suites/_release/080-full-regression-release.csv",
+    "regression/suites/Backend/graphql/050c-graphql-xorder.csv",
+    "config/test-suites.json"
+  ],
+  "testCountUpdates": { "040": 36, "043": 33, "050c": 7 },
+  "gateResults": {
+    "G1_structure": "PASS",
+    "G2_determinism": "PASS",
+    "G3_completeness": "PASS",
+    "G4_testability": "PASS",
+    "G5_data_validity": "PASS",
+    "G6_coverage": "PASS",
+    "G7_duplication": "WARN (PAY-SKY-006 vs 010 deliberate smoke/cross-layer overlap)",
+    "G8_environment": "PASS",
+    "G9_sync": "PASS"
+  },
+  "remainingItems": [
+    "DONE: F6 bug filed as VCST-5198 (second-source repro confirmed 2026-06-04); linked in GA-033 References",
+    "DONE: schema:refresh introspection extended (+10 payment types, 46 total) — allowCartPayment captured",
+    "Decide PAY-SKY-006/010 overlap post-merge",
+    "Promote GA-032/033 + PAY-SKY-010/011/012 from Draft after first regression execution (PAY-SKY-013/014 already Reviewed)",
+    "Pre-existing: PAY-DT-001/002/003 duplicated in committed 040 — needs deliberate dedup pass"
+  ],
+  "postRunUpdates": {
+    "ga4CaseRenumbering": "GA-027→GA-032, GA-028→GA-033 (ID collision with existing 043 cases, caught 2026-06-04 post-run)",
+    "declineVerification": "CVV 902/904 live-verified → PAY-SKY-013/014 promoted to Reviewed; duplicate-transaction-window wait steps added",
+    "bugFiled": "VCST-5198 (GA4 add_payment_info stale)",
+    "2026-06-05": "PAY-SKY-015 per-brand CVV sentinel added (VCST-5202, dry-run verified → Reviewed, 040 testCount → 37); Skyflow test-cards expiry rows → MM/YY; report files restored after subagent cleanup deleted them pre-commit"
+  }
+}
