@@ -1,0 +1,58 @@
+{
+  "ticket": "VCST-5108",
+  "verdict": "FAIL",
+  "verdict_scope_note": "PR #2313 (robots, hydrated SPA) PASSES its own scope 7/7; VCST-5108 overall still FAIL — PreRender does not deliver SEO-complete crawlable HTML to bots.",
+  "date": "2026-06-03",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "2.51.0-pr-2313 (PR #2313 deployed)",
+    "feature": "PreRender.io dynamic rendering for SEO"
+  },
+  "pr_under_test": {
+    "number": 2313,
+    "repo": "VirtoCommerce/vc-frontend",
+    "title": "feat(seo): set robots=index on indexable routes, keep noindex on private/auth pages (VCST-5108)",
+    "state": "open",
+    "verdict": "PASS (7/7 hydrated routes)",
+    "files": ["App.vue", "404.vue", "router/routes/cart.ts", "router/routes/checkout.ts", "router/routes/main.ts", "vue-router.d.ts", "index.html", "public/robots.txt"]
+  },
+  "agents_dispatched": ["qa-frontend-expert", "qa-backend-expert"],
+  "smoke_test": {
+    "method": "Googlebot UA curl, cache-bust forced-fresh renders (2026-06-03 later re-run)",
+    "tally": "PASS 3 (A2,B3,E1) / FAIL 8 (A1,A3,B1,B2,C1/C2,D1,D2,D3) / NOT_VERIFIED 2 (E2,E3)",
+    "A1_bot_prerender": "FAIL (fresh PDP MISS = 132KB shell, no name/price/desc)",
+    "A2_human_spa": "PASS (4232B shell, no x-prerender-cache)",
+    "A3_excluded_bypass": "FAIL (/account,/checkout,/cart all x-prerender-cache:HIT)",
+    "B1_pdp_completeness": "FAIL (chrome-only snapshot)",
+    "B2_plp_completeness": "FAIL (no cards/prices)",
+    "B3_no_artifacts": "PASS",
+    "C1_404_status": "FAIL/BY_DESIGN_SOFT404 (HTTP 200; prerender shows index,follow)",
+    "C2_removed_product": "FAIL (same soft-404 200)",
+    "D1_title_desc_canonical": "FAIL (PDP/PLP prerender shell title, no desc; canonical absent on EVERY page incl. hydrated)",
+    "D2_robots_sitemap": "FAIL (robots.txt 200 & advertises /sitemap.xml, but /sitemap.xml=404; /sitemap/sitemap.xml=200 but self-referential, no product/category URLs)",
+    "D3_product_schema": "FAIL (0 application/ld+json in prerender AND hydrated DOM; Rich Results = No items detected)",
+    "E1_cache_hit": "PASS (x-prerender-cache:HIT L1)",
+    "E2_cache_bust_on_publish": "NOT_VERIFIED",
+    "E3_prerender_logs": "NOT_VERIFIABLE_FROM_QA"
+  },
+  "decisive_signal": "Prerender CAN capture content+correct SEO: /catalog fresh MISS rendered real title+description+robots:index,follow+7 product anchors+15 prices. Same-build PDP/PLP fresh MISS captured only App.vue robots default + shell title -> async route content/SEO loses the snapshot race. Root cause = missing window.prerenderReady handshake (unchanged). Canonical + Product JSON-LD unimplemented everywhere.",
+  "key_findings": [
+    "PR #2313 verified: route-aware robots works in hydrated SPA (PDP/PLP/catalog=index; cart/account/sign-in/404=noindex) 7/7 PASS",
+    "Bots still get noindex + chrome-only content: prerender snapshots pre-hydration with no window.prerenderReady; PR #2313 robots fix does not reach the prerendered HTML until prerenderReady lands + cache busts",
+    "Prerender content gap unchanged (no product name/price/description/cards in snapshot)",
+    "canonical + Product JSON-LD still absent (PR #2313 scoped them as follow-ups)",
+    "Sitemap not crawlable: /sitemap.xml 404; generated index at /sitemap/sitemap.xml but child <loc> 404",
+    "Catalog SeoInfo data gap: most products lack pageTitle/metaDescription"
+  ],
+  "remaining_work": [
+    "prerenderReady handshake (highest impact — fixes bot content + bot robots)",
+    "canonical link + Product JSON-LD",
+    "storefront /sitemap.xml routing",
+    "populate catalog SeoInfo (pageTitle/metaDescription)",
+    "exclude /account,/checkout,/cart from bot->prerender nginx rule (A3)"
+  ],
+  "bugs_filed": [],
+  "jira_comment_posted": true,
+  "artifacts": "tests/Sprint26-11/VCST-5108/"
+}
