@@ -1,0 +1,15 @@
+// Backend (platform) failed outbound dependencies — SQL, Redis, HTTP, search,
+// payment-gateway calls. Backend App Insights resource. Signature combines
+// dependency type + target + result code. Window via API `timespan`.
+dependencies
+| where client_Type != "Browser" and success == false
+| summarize
+    count_ = count(),
+    firstSeen = min(timestamp),
+    lastSeen = max(timestamp),
+    sampleOperationId = any(operation_Id),
+    sampleData = any(data),
+    cloud_RoleName = any(cloud_RoleName)
+    by signature = strcat(type, " ", target, " ", tostring(resultCode)), depType = type, target = target, resultCode = tostring(resultCode)
+| order by count_ desc
+| take 50

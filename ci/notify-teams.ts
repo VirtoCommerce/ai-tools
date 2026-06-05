@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 
 // --- Configuration ---
@@ -9,6 +9,11 @@ const GITHUB_RUN_URL = process.env.GITHUB_RUN_URL || "";
 const SUITE_SELECTION = process.env.SUITE_SELECTION || "unknown";
 const TEST_ENVIRONMENT = process.env.TEST_ENVIRONMENT || "qa";
 const TRIGGER = process.env.TRIGGER || "manual";
+
+// Mode: "monitor" sends an Application Insights monitoring card; default is the
+// regression card. The monitor twin (ci/run-monitor.ts) sets MONITOR_RUN_ID.
+const NOTIFY_MODE =
+  process.env.NOTIFY_MODE || (process.env.MONITOR_RUN_ID ? "monitor" : "regression");
 
 // --- Find the latest summary.json ---
 
@@ -153,6 +158,111 @@ function buildAdaptiveCard(summary: RunSummary | null): object {
   };
 }
 
+// --- Monitoring (App Insights) card ---
+
+interface MonitorSummary {
+  runId: string;
+  configured: boolean;
+  layers: string[];
+  window?: string;
+  dryRun?: boolean;
+  signaturesSeen?: number;
+  new?: number;
+  spiking?: number;
+  triaged?: number;
+  confirmed?: number;
+  needsReview?: number;
+  totalCostUsd?: number;
+}
+
+function findMonitorSummary(): MonitorSummary | null {
+  const root = join("reports", "monitoring");
+  const runId = process.env.MONITOR_RUN_ID;
+  if (runId) {
+    const p = join(root, runId, "summary.json");
+    if (existsSync(p)) {
+      try { return JSON.parse(readFileSync(p, "utf-8")); } catch { /* fall through */ }
+    }
+  }
+  // Fall back to the most recent MONITOR-* run directory.
+  if (!existsSync(root)) return null;
+  const dirs = readdirSync(root, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name.startsWith("MONITOR-"))
+    .map((d) => d.name)
+    .sort()
+    .reverse();
+  for (const d of dirs) {
+    const p = join(root, d, "summary.json");
+    if (existsSync(p)) {
+      try { return JSON.parse(readFileSync(p, "utf-8")); } catch { /* try next */ }
+    }
+  }
+  return null;
+}
+
+function buildMonitorCard(summary: MonitorSummary | null): object {
+  const confirmed = summary?.confirmed ?? 0;
+  const needsReview = summary?.needsReview ?? 0;
+  const hasFindings = confirmed > 0 || needsReview > 0;
+  const statusEmoji = confirmed > 0 ? "❌" : needsReview > 0 ? "⚠️" : "✅";
+  const statusText = confirmed > 0 ? "CONFIRMED BUGS" : needsReview > 0 ? "NEEDS REVIEW" : "CLEAN";
+
+  const facts: Array<{ title: string; value: string }> = [
+    { title: "Status", value: `${statusEmoji} ${statusText}` },
+    { title: "Environment", value: TEST_ENVIRONMENT },
+    { title: "Layers", value: (summary?.layers || []).join(", ") || "none configured" },
+  ];
+  if (summary) {
+    facts.push(
+      { title: "Window", value: summary.window || "-" },
+      { title: "Signatures", value: `${summary.signaturesSeen ?? 0} seen · ${summary.new ?? 0} new · ${summary.spiking ?? 0} spiking` },
+      { title: "Findings", value: `${confirmed} confirmed · ${needsReview} needs review` },
+      { title: "Cost", value: `$${(summary.totalCostUsd ?? 0).toFixed(2)}${summary.dryRun ? " (dry-run)" : ""}` },
+    );
+  }
+
+  const body: object[] = [
+    {
+      type: "TextBlock",
+      size: "Medium",
+      weight: "Bolder",
+      text: `${statusEmoji} App Insights Monitoring — ${statusText}`,
+    },
+    { type: "FactSet", facts },
+  ];
+  if (hasFindings) {
+    body.push({
+      type: "TextBlock",
+      wrap: true,
+      size: "Small",
+      text: "Review the monitoring report under `reports/monitoring/` — no JIRA filed, no fixes attempted.",
+    });
+  }
+  if (GITHUB_RUN_URL) {
+    body.push({
+      type: "ActionSet",
+      actions: [{ type: "Action.OpenUrl", title: "View Run Details", url: GITHUB_RUN_URL }],
+    });
+  }
+
+  return {
+    type: "message",
+    attachments: [
+      {
+        contentType: "application/vnd.microsoft.card.adaptive",
+        contentUrl: null,
+        content: {
+          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard",
+          version: "1.4",
+          msteams: { width: "Full" },
+          body,
+        },
+      },
+    ],
+  };
+}
+
 // --- Send notification ---
 
 async function sendNotification(): Promise<void> {
@@ -161,8 +271,10 @@ async function sendNotification(): Promise<void> {
     return;
   }
 
-  const summary = findSummary();
-  const card = buildAdaptiveCard(summary);
+  const card =
+    NOTIFY_MODE === "monitor"
+      ? buildMonitorCard(findMonitorSummary())
+      : buildAdaptiveCard(findSummary());
 
   try {
     const response = await fetch(TEAMS_WEBHOOK_URL, {

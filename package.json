@@ -21,6 +21,8 @@
     "ci:cycle:no-sync": "SKIP_SYNC=true npx tsx ci/run-full-cycle.ts",
     "ci:fix": "npx tsx ci/run-fix-cycle.ts",
     "ci:fix:dry": "DRY_RUN=true npx tsx ci/run-fix-cycle.ts",
+    "ci:monitor": "npx tsx ci/run-monitor.ts",
+    "ci:monitor:dry": "DRY_RUN=true npx tsx ci/run-monitor.ts",
     "seed": "node scripts/seed-test-data.js",
     "seed:minimal": "node scripts/seed-test-data.js minimal",
     "seed:catalog": "node scripts/seed-test-data.js catalog",
@@ -64,6 +66,7 @@
   },
   "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
+    "@azure/identity": "^4.13.1",
     "@playwright/mcp": "^0.0.75",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",

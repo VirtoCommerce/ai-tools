@@ -56,3 +56,10 @@ ci/config/.module-registry.cache.json
 reports/fixes/FIX-*/**/*.png
 reports/fixes/FIX-*/**/*.har
 reports/fixes/FIX-*/**/*.jpg
+
+# Online monitoring (App Insights) — fingerprint dedup state is local working
+# state, not a report. Keep MONITOR-* reports; drop heavy run artifacts.
+reports/monitoring/.seen-fingerprints.json
+reports/monitoring/MONITOR-*/**/*.png
+reports/monitoring/MONITOR-*/**/*.har
+reports/monitoring/MONITOR-*/**/*.jpg

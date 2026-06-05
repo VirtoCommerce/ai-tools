@@ -1,0 +1,172 @@
+name: App Insights Monitoring
+
+on:
+  workflow_dispatch:
+    inputs:
+      layers:
+        description: 'Layers to monitor'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - frontend
+          - backend
+      since_min:
+        description: 'Look-back window in minutes'
+        required: true
+        default: '35'
+        type: string
+      max_budget:
+        description: 'Max budget in USD'
+        required: true
+        default: '15.0'
+        type: string
+      model:
+        description: 'Claude model'
+        required: true
+        default: 'claude-sonnet-4-5-20250929'
+        type: choice
+        options:
+          - claude-sonnet-4-5-20250929
+          - claude-opus-4-6
+      dry_run:
+        description: 'Dry run (triage only — no live repro, no bug drafts)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  # Uncomment to poll continuously during business hours (every 30 min, Mon–Fri).
+  # The look-back window (35 min) overlaps the 30-min cadence so nothing slips
+  # between runs; the fingerprint cache (below) keeps it idempotent across runs.
+  # schedule:
+  #   - cron: '*/30 13-22 * * 1-5'
+
+# One monitoring run at a time so the fingerprint cache stays consistent.
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      MONITOR_LAYERS: ${{ github.event_name == 'workflow_dispatch' && inputs.layers || 'both' }}
+      MONITOR_SINCE_MIN: ${{ github.event_name == 'workflow_dispatch' && inputs.since_min || '35' }}
+      MAX_BUDGET_USD: ${{ github.event_name == 'workflow_dispatch' && inputs.max_budget || '15.0' }}
+      MODEL: ${{ github.event_name == 'workflow_dispatch' && inputs.model || 'claude-sonnet-4-5-20250929' }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Carry the fingerprint dedup state forward across runs. A new cache is
+      # written each run; restore-keys pulls the most recent prior state so
+      # repeated signatures are recognized as SEEN-stable, not re-triaged.
+      - name: Restore fingerprint state
+        uses: actions/cache@v4
+        with:
+          path: reports/monitoring/.seen-fingerprints.json
+          key: monitor-fingerprints-${{ github.run_id }}
+          restore-keys: |
+            monitor-fingerprints-
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ci/Dockerfile
+          tags: vc-regression:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run monitoring
+        id: monitor
+        run: |
+          docker run --rm \
+            --shm-size=2gb \
+            -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+            -e MONITOR_LAYERS="${{ env.MONITOR_LAYERS }}" \
+            -e MONITOR_SINCE_MIN="${{ env.MONITOR_SINCE_MIN }}" \
+            -e MAX_BUDGET_USD="${{ env.MAX_BUDGET_USD }}" \
+            -e MODEL="${{ env.MODEL }}" \
+            -e DRY_RUN="${{ env.DRY_RUN }}" \
+            -e FRONT_URL="${{ secrets.FRONT_URL }}" \
+            -e BACK_URL="${{ secrets.BACK_URL }}" \
+            -e ADMIN="${{ secrets.ADMIN }}" \
+            -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
+            -e USER_EMAIL="${{ secrets.USER_EMAIL }}" \
+            -e USER_PASSWORD="${{ secrets.USER_PASSWORD }}" \
+            -e STORE_ID="${{ secrets.STORE_ID }}" \
+            -e AZURE_SUBSCRIPTION_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -e AZURE_RESOURCE_GROUP="${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            -e APPINSIGHTS_APP_ID_BACKEND="${{ secrets.APPINSIGHTS_APP_ID_BACKEND }}" \
+            -e APPINSIGHTS_APP_ID_STOREFRONT="${{ secrets.APPINSIGHTS_APP_ID_STOREFRONT }}" \
+            -e APPINSIGHTS_API_KEY_BACKEND="${{ secrets.APPINSIGHTS_API_KEY_BACKEND }}" \
+            -e APPINSIGHTS_API_KEY_STOREFRONT="${{ secrets.APPINSIGHTS_API_KEY_STOREFRONT }}" \
+            -v ${{ github.workspace }}/reports:/app/reports \
+            vc-regression npm run ci:monitor
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          # 0 = clean, 1 = confirmed bug(s) drafted, 2 = budget/limit only
+          if [ $EXIT_CODE -eq 1 ]; then
+            echo "::warning::Confirmed bug(s) detected — see the monitoring report artifact"
+          fi
+          exit 0
+
+      - name: Read run summary
+        if: always()
+        id: summary
+        run: |
+          SUMMARY_FILE=$(find reports/monitoring -name "summary.json" -type f | sort -r | head -1)
+          if [ -n "$SUMMARY_FILE" ]; then
+            RUN_ID=$(jq -r '.runId // ""' "$SUMMARY_FILE")
+            CONFIRMED=$(jq -r '.confirmed // 0' "$SUMMARY_FILE")
+            NEEDS=$(jq -r '.needsReview // 0' "$SUMMARY_FILE")
+            echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+            echo "### App Insights Monitoring" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Confirmed bugs | $CONFIRMED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Needs review | $NEEDS |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::warning::No monitoring summary.json found"
+          fi
+
+      - name: Upload monitoring artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-${{ github.run_number }}
+          path: reports/monitoring/
+          retention-days: 30
+
+      - name: Send Teams notification
+        if: always()
+        run: npx tsx ci/notify-teams.ts
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          NOTIFY_MODE: monitor
+          MONITOR_RUN_ID: ${{ steps.summary.outputs.run_id }}
+          RUN_STATUS: ${{ job.status }}
+          TEST_ENVIRONMENT: qa
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}

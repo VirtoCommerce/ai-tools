@@ -24,6 +24,7 @@ npm run ci:full          # Full regression (all 99 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
+npm run ci:monitor       # Online bug monitoring from App Insights (ci:monitor:dry = triage-only)
 npm run ci:notify        # Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
@@ -47,8 +48,8 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 ```
 ├── .claude/agents/       # 16 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (26 files) for shared refs
-├── .claude/skills/       # 23 skills (vc-knowledge, testing, qa-methodology, development)
-├── .claude/commands/     # 17 slash commands
+├── .claude/skills/       # 24 skills (vc-knowledge, testing, qa-methodology, development)
+├── .claude/commands/     # 18 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)

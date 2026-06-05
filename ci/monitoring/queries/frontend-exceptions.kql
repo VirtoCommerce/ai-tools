@@ -1,0 +1,17 @@
+// Storefront browser JS exceptions, grouped by signature. Storefront App
+// Insights resource (env-resolved App ID). operation_Name carries the page/route.
+// Window via API `timespan`. Columns are consumed by ci/lib/fingerprint-store.ts.
+exceptions
+| where client_Type == "Browser" or isnotempty(client_Browser)
+| summarize
+    count_ = count(),
+    firstSeen = min(timestamp),
+    lastSeen = max(timestamp),
+    sampleOperationId = any(operation_Id),
+    sampleMessage = any(outerMessage),
+    sampleStack = any(tostring(details)),
+    samplePage = any(operation_Name),
+    sampleBrowser = any(client_Browser)
+    by signature = problemId, sampleType = type, sampleMethod = method
+| order by count_ desc
+| take 50
