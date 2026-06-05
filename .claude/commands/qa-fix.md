@@ -47,8 +47,8 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 1. Resolve `VCST-XXXX` via Atlassian MCP (`getJiraIssue`). Confirm it's a Bug in a workable status
    (TO DO / REOPEN). Load the linked `/qa-bug` report from `reports/bugs/open/` (or `fixed/`).
 2. If no ticket or no report → STOP: "Run `/qa-bug VCST-XXXX` first to reproduce + file the report."
-3. `/qa-env-check endpoints`; build verify (deployed versions via GitHub MCP from `vc-deploy-dev`
-   `vcst-qa`); Context7 query on expected post-fix behavior.
+3. `/qa-env-check endpoints`; build verify (deployed versions via GitHub MCP from `vc-deploy-dev`,
+   branch `vcst-qa` by default — use the branch matching `TEST_ENV` for other envs); Context7 query on expected post-fix behavior.
 4. **Write-token preflight:** confirm `GITHUB_FIX_BUGS_TOKEN` is present in `.env.local` and resolves
    to a token with push access (`GH_TOKEN="$FIX" gh api repos/VirtoCommerce/<routed-repo> --jq .permissions.push`
    → `true`). The ambient `gh` session is the **read-only** MCP token and cannot push; clone/push/PR

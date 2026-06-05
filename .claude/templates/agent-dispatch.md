@@ -163,8 +163,10 @@ Use **GitHub MCP** (`get_file_contents`) against the deploy repo:
 ```
 owner: "VirtoCommerce"
 repo: "vc-deploy-dev"
-branch: "vcst-qa"
+branch: "vcst-qa"   # default for TEST_ENV=vcst; use the branch matching TEST_ENV (e.g. vcptcore, virtostart) for other envs
 ```
+
+> The deploy branch is env-specific: it tracks the active `TEST_ENV`. Never hardcode `vcst-qa` for runs against another environment — read the branch matching `TEST_ENV`.
 
 | File | Contains |
 |------|----------|

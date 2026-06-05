@@ -13,9 +13,8 @@ the live Virto Commerce documentation properties and **must be re-grounded again
 
 ## 0. Who reads these docs
 
-**Virto's customers are B2B enterprises** — companies like Heineken, Infosys, PickJet, Notions, and
-Luminace Lab that license the platform and run their own B2B storefronts and portals on it. That shapes
-the audiences:
+**Virto's customers and partners are B2B enterprise organizations** that license the platform and run
+their own B2B storefronts and portals on it. That shapes the audiences:
 
 - A **customer organization** has two reader roles: the **operators/admins** who run the store
   (back-office) and their **end buyers** who shop the storefront. Both are documented, in different styles
@@ -25,8 +24,8 @@ the audiences:
   multi-account management, contract pricing, organization-specific catalogs, RFQ, impersonation, scale.
 - **Developer** docs serve integrators at the customer or their systems integrator (SI) partner.
 
-When a doc is for a *named* customer (e.g. a Heineken pilot), keep the platform terminology generic and
-parameterized — never hardcode that customer's catalog IDs, store names, or URLs (use `{{VAR}}` / `@td()`).
+When a doc is for a *named* customer or partner, keep the platform terminology generic and parameterized —
+never hardcode that customer's catalog IDs, store names, or URLs (use `{{VAR}}` / `@td()`).
 
 ## 1. The four audiences
 

@@ -1,0 +1,480 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - 'button "Language: English (United States) en" [ref=e9] [cursor=pointer]':
+            - generic [ref=e10]: "Language:"
+            - img "English (United States)" [ref=e11]
+            - generic [ref=e12]: en
+            - img [ref=e14]
+          - 'button "Currency: USD" [ref=e19] [cursor=pointer]':
+            - generic [ref=e20]: "Currency:"
+            - generic [ref=e21]: USD
+            - img [ref=e23]
+          - 'button "Ship to: 456 Test Street, Suite 200, Beverly Hills, California, 90210, United States of America" [ref=e28] [cursor=pointer]':
+            - img [ref=e30]
+            - generic [ref=e32]: "Ship to:"
+            - generic [ref=e33]: 456 Test Street, Suite 200, Beverly Hills, California, 90210, United States of America
+            - img [ref=e35]
+        - generic [ref=e37]:
+          - 'button "Theme: light" [ref=e39] [cursor=pointer]':
+            - 'button "Theme: light" [ref=e40]':
+              - img [ref=e42]
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - generic [ref=e49]: "Call us:"
+            - link "+1 (213) 603 3536" [ref=e50] [cursor=pointer]:
+              - /url: tel:+1 (213) 603 3536
+          - link "Dashboard" [ref=e52] [cursor=pointer]:
+            - /url: /account/dashboard
+          - link "Contacts" [ref=e54] [cursor=pointer]:
+            - /url: /contacts
+          - button "Account menu" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]: Agent Chrome
+            - img [ref=e60]
+      - generic [ref=e62]:
+        - navigation "Main menu" [ref=e64]:
+          - link "B2B-store" [ref=e65] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=e66]
+          - generic [ref=e69]:
+            - searchbox "Search" [ref=e70]
+            - generic [ref=e71]:
+              - button "Barcode scan" [ref=e72] [cursor=pointer]:
+                - img [ref=e75]
+              - button "Search" [ref=e77] [cursor=pointer]:
+                - img [ref=e80]
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - link "Bulk order" [ref=e84] [cursor=pointer]:
+                - /url: /bulk-order
+                - img [ref=e87]
+                - generic [ref=e89]: Bulk order
+            - listitem [ref=e90]:
+              - link "Compare" [ref=e91] [cursor=pointer]:
+                - /url: /compare
+                - img [ref=e94]
+                - generic [ref=e96]: Compare
+            - listitem [ref=e97]:
+              - link "Lists" [ref=e98] [cursor=pointer]:
+                - /url: /account/lists
+                - img [ref=e101]
+                - generic [ref=e103]: Lists
+            - listitem [ref=e104]:
+              - link "Orders" [ref=e105] [cursor=pointer]:
+                - /url: /account/orders
+                - img [ref=e108]
+                - generic [ref=e110]: Orders
+            - listitem [ref=e111]:
+              - button "Notifications" [ref=e114] [cursor=pointer]:
+                - img [ref=e117]
+                - generic [ref=e119]: Notifications
+            - listitem [ref=e120]:
+              - link "1 Cart" [ref=e121] [cursor=pointer]:
+                - /url: /cart
+                - generic [ref=e122]:
+                  - img [ref=e124]
+                  - generic [ref=e127]: "1"
+                - generic [ref=e128]: Cart
+        - navigation "Main navigation" [ref=e129]:
+          - button "All products" [ref=e132] [cursor=pointer]:
+            - img [ref=e134]
+            - generic [ref=e136]: All products
+          - menubar "Navigation" [ref=e138]:
+            - menuitem "Alcoholic Drinks" [ref=e139] [cursor=pointer]
+            - menuitem "Accessories" [ref=e140] [cursor=pointer]
+            - menuitem "Jewelry and gems" [ref=e141] [cursor=pointer]
+            - menuitem "Tyres" [ref=e142] [cursor=pointer]
+            - menuitem "Home appliance" [ref=e143] [cursor=pointer]
+            - menuitem "Juice" [ref=e144] [cursor=pointer]
+            - menuitem "Home supplies" [ref=e145] [cursor=pointer]
+            - menuitem "Products with options" [ref=e146] [cursor=pointer]
+            - menuitem "Soft drinks" [ref=e147] [cursor=pointer]
+            - menuitem "Snacks" [ref=e148] [cursor=pointer]
+            - menuitem "Printers" [ref=e149] [cursor=pointer]
+            - menuitem "Rental home" [ref=e150] [cursor=pointer]
+            - menuitem "TV new" [ref=e151] [cursor=pointer]
+            - menuitem "All brands" [ref=e152] [cursor=pointer]
+            - menuitem "Loyalty" [ref=e153] [cursor=pointer]
+            - menuitem "SEE ALL PRODUCTS" [ref=e154] [cursor=pointer]
+      - main [ref=e155]:
+        - generic [ref=e156]:
+          - img [ref=e158]
+          - generic [ref=e161]:
+            - navigation "Breadcrumbs navigation" [ref=e162]:
+              - list [ref=e163]:
+                - listitem [ref=e164]:
+                  - link "Home" [ref=e165] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e166]: /
+                - listitem [ref=e167]: Cart
+            - heading "Cart" [level=1] [ref=e168]
+            - generic [ref=e170]:
+              - generic [ref=e172]:
+                - generic [ref=e175]:
+                  - generic [ref=e177]:
+                    - generic [ref=e180]: "Vendor: N/A"
+                    - generic [ref=e182]:
+                      - generic [ref=e183]:
+                        - checkbox "Toggle vendor select" [checked] [ref=e186] [cursor=pointer]
+                        - generic [ref=e188]: Product
+                        - generic [ref=e189]: Properties
+                        - generic [ref=e190]: Price per item
+                        - generic [ref=e192]: Quantity
+                        - generic [ref=e193]: Total
+                      - generic [ref=e196]:
+                        - checkbox "Toggle vendor select" [checked] [ref=e199] [cursor=pointer]
+                        - img "Fanta Mango Soda 6x330ml" [ref=e202]
+                        - generic [ref=e203]:
+                          - generic [ref=e204]:
+                            - link "Fanta Mango Soda 6x330ml" [ref=e206] [cursor=pointer]:
+                              - /url: /soft-drinks/soda/fanta-mango-soda-6x330ml
+                            - button "Save for later" [ref=e209] [cursor=pointer]:
+                              - generic [ref=e210]:
+                                - img [ref=e213]
+                                - generic [ref=e215]: Save for later
+                          - generic [ref=e216]:
+                            - generic [ref=e217]:
+                              - generic [ref=e218]: Brand
+                              - generic [ref=e220]: Fanta
+                            - generic [ref=e221]:
+                              - generic [ref=e222]: Flavor
+                              - generic [ref=e224]: Mango
+                            - generic [ref=e225]:
+                              - generic [ref=e226]: Sugar
+                              - generic [ref=e228]: "Yes"
+                          - generic [ref=e230]: $89.00
+                          - generic [ref=e231]:
+                            - generic [ref=e233]:
+                              - generic [ref=e236]:
+                                - button "Decrease quantity" [disabled] [ref=e238]:
+                                  - img [ref=e241]
+                                - spinbutton "Product quantity" [ref=e243]: "1"
+                                - button "Increase quantity" [ref=e245] [cursor=pointer]:
+                                  - img [ref=e248]
+                              - generic "In stock" [ref=e251]:
+                                - generic [ref=e252]:
+                                  - img [ref=e254]
+                                  - generic [ref=e256]: "435"
+                            - generic [ref=e258]: $89.00
+                          - button "Remove from cart" [ref=e259] [cursor=pointer]:
+                            - img [ref=e262]
+                      - generic [ref=e264]:
+                        - button "Remove selected" [ref=e265] [cursor=pointer]:
+                          - generic [ref=e267]: Remove selected
+                        - generic [ref=e268]:
+                          - generic [ref=e269]: "Subtotal:"
+                          - generic [ref=e270]: $89.00
+                  - button "Clear cart" [ref=e272] [cursor=pointer]:
+                    - generic [ref=e274]: Clear cart
+                - generic [ref=e275]:
+                  - generic [ref=e277]:
+                    - img [ref=e281]
+                    - generic [ref=e283]: + Add a gift
+                  - generic "+ Add a gift" [ref=e285]:
+                    - generic [ref=e290]:
+                      - checkbox "Toggle vendor select" [checked] [ref=e293] [cursor=pointer]
+                      - img "SHOT" [ref=e296]
+                      - generic [ref=e297]:
+                        - generic "SHOT" [ref=e300]
+                        - spinbutton "Product quantity" [disabled] [ref=e306]: "1"
+                - generic [ref=e307]:
+                  - generic [ref=e309]:
+                    - img [ref=e313]
+                    - generic [ref=e315]: Shipping details
+                  - generic "Shipping details" [ref=e317]:
+                    - generic [ref=e318]:
+                      - generic [ref=e319]:
+                        - generic [ref=e320]: Delivery option
+                        - generic [ref=e321]:
+                          - button "Pickup" [ref=e323] [cursor=pointer]:
+                            - img [ref=e325]
+                            - generic [ref=e327]: Pickup
+                          - button "Shipping" [ref=e329] [cursor=pointer]:
+                            - img [ref=e331]
+                            - generic [ref=e333]: Shipping
+                      - generic [ref=e334]:
+                        - generic [ref=e335]:
+                          - generic [ref=e336]: Shipping address*
+                          - generic [ref=e338]:
+                            - generic [ref=e339]: 456 Test Street, Suite 200, Beverly Hills, California, 90210, United States of America
+                            - button [ref=e340] [cursor=pointer]:
+                              - img [ref=e343]
+                        - generic [ref=e345]:
+                          - generic [ref=e346]: Delivery method*
+                          - button "Delivery method" [ref=e350] [cursor=pointer]:
+                            - generic [ref=e352]:
+                              - img [ref=e353]
+                              - text: Select a delivery method
+                            - img [ref=e355]
+                - generic [ref=e358]:
+                  - generic [ref=e360]:
+                    - img [ref=e364]
+                    - generic [ref=e366]: Payment details
+                  - generic "Payment details" [ref=e368]:
+                    - generic [ref=e369]:
+                      - generic [ref=e370]:
+                        - generic [ref=e371]: Billing address*
+                        - generic [ref=e372]:
+                          - generic [ref=e374] [cursor=pointer]:
+                            - checkbox "billingAddressEqualsShipping" [checked] [ref=e375]
+                            - button "Same as shipping address" [ref=e378]:
+                              - generic [ref=e379]: Same as shipping address
+                          - generic [ref=e381]: 456 Test Street, Suite 200, Beverly Hills, California, 90210, United States of America
+                      - generic [ref=e383]:
+                        - generic [ref=e384]: Payment method*
+                        - button "Payment method" [ref=e388] [cursor=pointer]:
+                          - generic [ref=e390]:
+                            - img [ref=e391]
+                            - text: Select a payment method
+                          - img [ref=e393]
+                - generic [ref=e396]:
+                  - generic [ref=e398]:
+                    - img [ref=e402]
+                    - generic [ref=e404]: Order comment
+                  - generic "Order comment" [ref=e406]:
+                    - generic [ref=e407]:
+                      - textbox [ref=e408]:
+                        - /placeholder: Enter a value
+                      - generic [ref=e410]: 0 / 1000
+                - generic [ref=e411]:
+                  - generic [ref=e413]:
+                    - img [ref=e417]
+                    - generic [ref=e419]: Recently browsed
+                  - generic "Recently browsed" [ref=e421]:
+                    - generic [ref=e423]:
+                      - generic [ref=e425]:
+                        - img "Fanta Mango Soda 6x330ml" [ref=e429]
+                        - generic [ref=e430]:
+                          - link "Fanta Mango Soda 6x330ml" [ref=e432] [cursor=pointer]:
+                            - /url: /soft-drinks/soda/fanta-mango-soda-6x330ml
+                          - generic [ref=e434]: $89.00
+                          - generic [ref=e437]:
+                            - button "Decrease quantity" [ref=e439] [cursor=pointer]:
+                              - img [ref=e442]
+                            - spinbutton "Product quantity" [ref=e444]: "1"
+                            - button "Increase quantity" [ref=e446] [cursor=pointer]:
+                              - img [ref=e449]
+                      - generic [ref=e453]:
+                        - img "Erdinger Dunkel Dark German Wheat Beer 500ml Bottles" [ref=e457]
+                        - generic [ref=e458]:
+                          - link "Erdinger Dunkel Dark German Wheat Beer 500ml Bottles" [ref=e460] [cursor=pointer]:
+                            - /url: /alcoholic-drinks/efes-beer/erdinger-dunkel-dark-german-wheat-beer-500ml-bottles
+                          - generic [ref=e462]: $100.00
+                          - generic [ref=e465]:
+                            - button "Decrease quantity" [disabled] [ref=e467]:
+                              - img [ref=e470]
+                            - spinbutton "Product quantity" [ref=e472]: "0"
+                            - button "Increase quantity" [ref=e474] [cursor=pointer]:
+                              - img [ref=e477]
+                      - generic [ref=e481]:
+                        - img "Efes Pilsner Bottle 50cl" [ref=e485]
+                        - generic [ref=e486]:
+                          - link "Efes Pilsner Bottle 50cl" [ref=e488] [cursor=pointer]:
+                            - /url: /alcoholic-drinks/efes-beer/efes-bottle-50cl
+                          - generic [ref=e490]: $64.00
+                          - generic [ref=e493]:
+                            - button "Decrease quantity" [disabled] [ref=e495]:
+                              - img [ref=e498]
+                            - spinbutton "Product quantity" [ref=e500]: "0"
+                            - button "Increase quantity" [ref=e502] [cursor=pointer]:
+                              - img [ref=e505]
+                      - generic [ref=e509]:
+                        - img "Vintage Colorado Hoodie" [ref=e513]
+                        - generic [ref=e514]:
+                          - link "Vintage Colorado Hoodie" [ref=e516] [cursor=pointer]:
+                            - /url: /products-with-options/shirts-jeans-and-more/hoodie
+                          - generic [ref=e518]: $20.00
+                          - generic [ref=e521]:
+                            - button "Decrease quantity" [disabled] [ref=e523]:
+                              - img [ref=e526]
+                            - spinbutton "Product quantity" [ref=e528]: "0"
+                            - button "Increase quantity" [ref=e530] [cursor=pointer]:
+                              - img [ref=e533]
+                      - generic [ref=e537]:
+                        - img "Men's Flannel Shirts Lightweight Cotton Button Down Long Sleeve Shirt Casual Plaid Pocket Shirts Outdoor Work" [ref=e541]
+                        - generic [ref=e542]:
+                          - link "Men's Flannel Shirts Lightweight Cotton Button Down Long Sleeve Shirt Casual Plaid Pocket Shirts Outdoor Work" [ref=e544] [cursor=pointer]:
+                            - /url: /products-with-options/shirts-jeans-and-more/mens-flannel-shirts-lightweight-cotton-button-down-long-sleeve-shirt-casual-plaid-pocket-shirts-outdoor-work-blue-cotton-l-b2c
+                          - generic [ref=e546]:
+                            - generic [ref=e547]: From
+                            - text: $8.00
+                          - link "6 variations" [ref=e549] [cursor=pointer]:
+                            - /url: /products-with-options/shirts-jeans-and-more/mens-flannel-shirts-lightweight-cotton-button-down-long-sleeve-shirt-casual-plaid-pocket-shirts-outdoor-work-blue-cotton-l-b2c
+                            - generic [ref=e551]: 6 variations
+              - complementary "Sidebar" [ref=e552]:
+                - generic [ref=e553]:
+                  - generic [ref=e554]:
+                    - generic [ref=e557]: Order summary
+                    - generic "Order summary" [ref=e559]:
+                      - generic [ref=e560]:
+                        - generic [ref=e561]:
+                          - generic [ref=e562]: Subtotal
+                          - generic [ref=e563]: $89.00
+                        - generic [ref=e564]:
+                          - generic [ref=e565]:
+                            - generic [ref=e566]: Discount
+                            - generic [ref=e567]: $0.00
+                          - generic [ref=e568]:
+                            - generic [ref=e569]: Tax
+                            - generic [ref=e570]: + $17.80
+                          - generic [ref=e571]:
+                            - generic [ref=e572]: Shipping cost
+                            - generic [ref=e573]: $0.00
+                        - generic [ref=e574]:
+                          - generic [ref=e575]: Total
+                          - generic [ref=e576]: $106.80
+                      - button "Place order" [disabled] [ref=e577]:
+                        - generic [ref=e579]: Place order
+                      - generic [ref=e580]:
+                        - img [ref=e583]
+                        - generic [ref=e585]: Complete all required information to proceed.
+                      - generic [ref=e586]: Availability, shipping, tax and promotions are not final until you complete your order.
+                  - generic [ref=e587]:
+                    - generic [ref=e590]: Discount & coupons
+                    - generic [ref=e591]:
+                      - generic [ref=e592]:
+                        - generic [ref=e593]:
+                          - img [ref=e596]
+                          - generic [ref=e598]:
+                            - heading "$30.00 off cart subtotal" [level=3] [ref=e599]
+                            - paragraph [ref=e600]: Test 100%
+                            - generic [ref=e602]:
+                              - textbox "Enter custom code" [ref=e603]: super
+                              - button "Apply coupon super" [ref=e605] [cursor=pointer]:
+                                - img [ref=e608]
+                        - generic [ref=e610]:
+                          - img [ref=e613]
+                          - generic [ref=e615]:
+                            - paragraph [ref=e616]: QA Category Percent Special
+                            - generic [ref=e618]:
+                              - textbox "Enter custom code" [ref=e619]: CAT20#%$$^%%$&^%
+                              - button "Apply coupon CAT20#%$$^%%$&^%" [ref=e621] [cursor=pointer]:
+                                - img [ref=e624]
+                        - generic [ref=e626]:
+                          - img [ref=e629]
+                          - generic [ref=e631]:
+                            - 'heading "GIFT: Muesli" [level=3] [ref=e632]'
+                            - paragraph [ref=e633]: Muesli as a gift
+                            - generic [ref=e635]:
+                              - textbox "Enter custom code" [ref=e636]: MUESLI
+                              - button "Apply coupon MUESLI" [ref=e638] [cursor=pointer]:
+                                - img [ref=e641]
+                        - generic [ref=e643]:
+                          - img [ref=e646]
+                          - generic [ref=e648]:
+                            - paragraph [ref=e649]: Code1
+                            - generic [ref=e651]:
+                              - textbox "Enter custom code" [ref=e652]: code
+                              - button "Apply coupon code" [ref=e654] [cursor=pointer]:
+                                - img [ref=e657]
+                        - generic [ref=e659]:
+                          - img [ref=e662]
+                          - generic [ref=e664]:
+                            - paragraph [ref=e665]: Custom code
+                            - generic [ref=e667]:
+                              - textbox "Enter custom code" [ref=e668]
+                              - button "Apply coupon" [ref=e670] [cursor=pointer]:
+                                - img [ref=e673]
+                      - link "View all coupons & promotions" [ref=e675] [cursor=pointer]:
+                        - /url: /account/coupons
+                        - text: View all coupons & promotions
+                        - img [ref=e677]
+                  - generic [ref=e679]:
+                    - generic [ref=e682]: Quote request
+                    - generic "Quote request" [ref=e684]:
+                      - paragraph [ref=e685]: You can request items in your cart through a special service
+                      - button "Add cart items to quote" [ref=e686] [cursor=pointer]:
+                        - generic [ref=e688]: Add cart items to quote
+      - contentinfo "Footer" [ref=e689]:
+        - generic [ref=e690]:
+          - img "B2B-store" [ref=e692]
+          - navigation [ref=e693]:
+            - generic [ref=e694]:
+              - generic [ref=e697]: Account details
+              - generic [ref=e699]:
+                - link "Orders" [ref=e701] [cursor=pointer]:
+                  - /url: /account/orders
+                - link "Notifications" [ref=e703] [cursor=pointer]:
+                  - /url: /account/notifications
+                - link "Quote requests" [ref=e705] [cursor=pointer]:
+                  - /url: /account/quotes
+            - generic [ref=e706]:
+              - generic [ref=e709]: About us
+              - generic [ref=e711]:
+                - link "About Virto" [ref=e713] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/about-us
+                - link "Our partners" [ref=e715] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/our-partners
+                - link "Manufacturer partners" [ref=e717] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/solutions/b2b-portal-for-manufacturers
+                - link "News" [ref=e719] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/blog/category/news
+                - link "Careers" [ref=e721] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/career
+                - link "News" [ref=e723] [cursor=pointer]:
+                  - /url: /news
+            - generic [ref=e724]:
+              - generic [ref=e727]: Popular categories
+              - generic [ref=e729]:
+                - link "Allbiz" [ref=e731] [cursor=pointer]:
+                  - /url: /category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847
+                - link "Computer, Office, Education" [ref=e733] [cursor=pointer]:
+                  - /url: /category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e
+                - link "Consumer Electronics" [ref=e735] [cursor=pointer]:
+                  - /url: /category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578
+                - link "Home Appliances" [ref=e737] [cursor=pointer]:
+                  - /url: /category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d
+                - link "Phones and Accessories" [ref=e739] [cursor=pointer]:
+                  - /url: /category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac
+            - generic [ref=e740]:
+              - generic [ref=e743]: Online resources
+              - generic [ref=e745]:
+                - link "Sign Up" [ref=e747] [cursor=pointer]:
+                  - /url: /sign-up
+                - link "Catalog" [ref=e749] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Demo Landing" [ref=e751] [cursor=pointer]:
+                  - /url: /demo-landing
+                - link "Builder I.O" [ref=e753] [cursor=pointer]:
+                  - /url: https://www.builder.io/
+            - generic [ref=e754]:
+              - generic [ref=e757]: External links
+              - generic [ref=e759]:
+                - link "Vcst-admin" [ref=e761] [cursor=pointer]:
+                  - /url: https://vcst-qa.govirto.com/
+                - link "Virto-start" [ref=e763] [cursor=pointer]:
+                  - /url: https://virtostart-demo-store.govirto.com/
+            - generic [ref=e764]:
+              - generic [ref=e767]: Customer support
+              - generic [ref=e769]:
+                - link "Catalog" [ref=e771] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Contact Us" [ref=e773] [cursor=pointer]:
+                  - /url: /contacts
+                - link "Find a Branch" [ref=e775] [cursor=pointer]:
+                  - /url: /branch/vendor-fulfillment
+            - generic [ref=e776]:
+              - generic [ref=e779]: Brands
+              - link "All popular brands" [ref=e783] [cursor=pointer]:
+                - /url: /brands
+        - generic [ref=e784]:
+          - generic [ref=e785]:
+            - text: Ver. 2.51.0-pr-2309-ba0b-ba0bcf37. © 2026
+            - strong [ref=e786]: Virto Commerce
+            - text: . All rights reserved
+          - generic [ref=e787]:
+            - text: ASP.NET ecommerce platform
+            - link "Virto Commerce" [ref=e788] [cursor=pointer]:
+              - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA" [ref=e789]':
+      - generic [ref=e791]: QA
+  - region "Notifications"

@@ -75,7 +75,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 Before starting the pipeline:
 
 1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version, theme version, and modules relevant to the target scope
    - Include version info in the lifecycle report header (Phase 6)
 2. **Duplicate check** — scan `reports/test-lifecycle/` for a `TLC-*` run on the same scope in the last 24 hours. If found, warn user and show previous verdict.
@@ -123,7 +123,7 @@ Step 1 — Fetch current deploy state via GitHub MCP:
 1. `backend/packages.json` — platform version + all module IDs and versions
 2. `theme/artifact.json` — theme package URL with version
 
-Use GitHub MCP: `get_file_contents` with `owner: "VirtoCommerce"`, `repo: "vc-deploy-dev"`, `branch: "vcst-qa"` for each file.
+Use GitHub MCP: `get_file_contents` with `owner: "VirtoCommerce"`, `repo: "vc-deploy-dev"`, `branch: "vcst-qa"` (default; use the branch matching `TEST_ENV` for other envs) for each file.
 
 Step 2 — Compare against last known state:
 - Compare with `reports/full-cycle/last-deploy-state.json` (if exists)

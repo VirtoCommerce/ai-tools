@@ -1,0 +1,95 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e873]:
+      - generic [ref=e874]:
+        - link "B2B-store" [ref=e875] [cursor=pointer]:
+          - /url: /
+          - img "B2B-store" [ref=e876]
+        - generic [ref=e878]:
+          - img [ref=e880]
+          - generic [ref=e882]: Secure checkout
+      - generic [ref=e884]:
+        - img [ref=e886]
+        - generic [ref=e889]:
+          - heading "Payment" [level=1] [ref=e890]
+          - list [ref=e891]:
+            - listitem [ref=e892]:
+              - link "Back to order details" [ref=e893] [cursor=pointer]:
+                - /url: /account/orders/6c25282c-d239-4f40-9f44-eb78b65f1feb
+                - img [ref=e896]
+                - generic [ref=e898]: Back to order details
+            - listitem [ref=e899]:
+              - generic [ref=e900]:
+                - generic [ref=e901]: "1"
+                - generic [ref=e902]: Payment
+            - listitem [ref=e903]:
+              - generic [ref=e904]:
+                - generic [ref=e905]: "2"
+                - generic [ref=e906]: Completed
+          - generic [ref=e908]:
+            - generic [ref=e912]:
+              - generic [ref=e914]:
+                - img [ref=e915]
+                - text: Bank card (Authorize.Net)
+              - generic [ref=e917]:
+                - generic [ref=e919]:
+                  - generic [ref=e920]:
+                    - generic [ref=e921]: Card number*
+                    - textbox "Card number" [ref=e923]:
+                      - /placeholder: 1111 1111 1111 1111
+                  - generic [ref=e924]:
+                    - generic [ref=e925]: Cardholder name*
+                    - textbox "Cardholder name" [ref=e927]
+                  - generic [ref=e928]:
+                    - generic [ref=e929]:
+                      - generic [ref=e930]: Expiration date*
+                      - textbox "Expiration date" [ref=e932]:
+                        - /placeholder: MM / YY
+                    - generic [ref=e933]:
+                      - generic [ref=e934]: Security code*
+                      - textbox "Security code" [ref=e936]:
+                        - /placeholder: "111"
+                - generic [ref=e938]:
+                  - paragraph [ref=e939]:
+                    - text: By placing an order, you accept the terms of our
+                    - link "User agreement" [ref=e940] [cursor=pointer]:
+                      - /url: /agreement
+                    - text: and agree that we may process your personal data as per our
+                    - link "Privacy policy" [ref=e941] [cursor=pointer]:
+                      - /url: /policy
+                  - button "Pay now" [disabled] [ref=e942]:
+                    - generic [ref=e944]: Pay now
+            - complementary "Sidebar" [ref=e945]:
+              - generic [ref=e947]:
+                - generic [ref=e950]: Order summary
+                - generic "Order summary" [ref=e952]:
+                  - generic [ref=e953]:
+                    - generic [ref=e954]:
+                      - generic [ref=e955]: Subtotal
+                      - generic [ref=e956]: $21.00
+                    - generic [ref=e957]:
+                      - generic [ref=e958]:
+                        - generic [ref=e959]: Discount
+                        - generic [ref=e960]: $0.00
+                      - generic [ref=e961]:
+                        - generic [ref=e962]: Tax
+                        - generic [ref=e963]: + $34.20
+                      - generic [ref=e964]:
+                        - generic [ref=e965]: Shipping cost
+                        - generic [ref=e966]: + $150.00
+                    - generic [ref=e967]:
+                      - generic [ref=e968]: Total
+                      - generic [ref=e969]: $205.20
+      - contentinfo "Footer" [ref=e970]:
+        - generic [ref=e971]:
+          - generic [ref=e972]:
+            - text: Ver. 2.51.0-pr-2309-ba0b-ba0bcf37. © 2026
+            - strong [ref=e973]: Virto Commerce
+            - text: . All rights reserved
+          - generic [ref=e974]:
+            - text: ASP.NET ecommerce platform
+            - link "Virto Commerce" [ref=e975] [cursor=pointer]:
+              - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA" [ref=e780]':
+      - generic [ref=e782]: QA
+  - region "Notifications"
