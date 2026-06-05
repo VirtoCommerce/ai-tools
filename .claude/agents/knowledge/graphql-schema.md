@@ -411,6 +411,34 @@ Fields: `id`, `name`, `relativeUrl`, `permalink`, `content`
 
 Fields: `availableQuantity`, `isBuyable`, `isAvailable`, `isInStock`, `isActive`, `isTrackInventory`, `isEstimated`, `inventories`
 
+### PaymentMethodType
+
+Fields: `code`, `description`, `logoUrl`, `priority`, `isAvailableForPartial`, `allowCartPayment`, `name`, `currency`, `price`, `priceWithTax`, `discountAmount`, `discountAmountWithTax`, `total`, `totalWithTax`, `taxType`, `taxPercentRate`, `taxTotal`, `taxDetails`, `paymentMethodType`, `paymentMethodGroupType`
+
+### PaymentType
+
+Fields: `id`, `outerId`, `paymentGatewayCode`, `purpose`, `currency`, `amount`, `billingAddress`, `price`, `priceWithTax`, `total`, `totalWithTax`, `discountAmount`, `discountAmountWithTax`, `taxTotal`, `taxPercentRate`, `taxType`, `taxDetails`, `discounts`, `comment`, `vendor`, `dynamicProperties`
+
+### PaymentInType
+
+Fields: `id`, `organizationId`, `organizationName`, `customerName`, `customerId`, `purpose`, `gatewayCode`, `incomingDate`, `outerId`, `operationType`, `number`, `isApproved`, `status`, `statusDisplayValue`, `comment`, `isCancelled`, `cancelledDate`, `cancelReason`, `parentOperationId`, `objectType`, `createdDate`, `modifiedDate`, `createdBy`, `modifiedBy`, `authorizedDate`, `capturedDate`, `voidedDate`, `orderId`, `price`, `sum`, `tax`, `paymentMethod`, `currency`, `billingAddress`, `vendor`, `transactions`, `order`, `dynamicProperties`
+
+### InitializeCartPaymentResultType
+
+Fields: `isSuccess`, `errorMessage`, `storeId`, `paymentId`, `paymentMethodCode`, `paymentActionType`, `actionRedirectUrl`, `actionHtmlForm`, `publicParameters`
+
+### InitializePaymentResultType
+
+Fields: `isSuccess`, `errorMessage`, `storeId`, `paymentId`, `orderId`, `orderNumber`, `paymentMethodCode`, `paymentActionType`, `actionRedirectUrl`, `actionHtmlForm`, `publicParameters`
+
+### AuthorizePaymentResultType
+
+Fields: `isSuccess`, `errorMessage`
+
+### KeyValueType
+
+Fields: `key`, `value`
+
 ---
 
 ## Key Input Types
@@ -494,6 +522,18 @@ Fields: `id: String`, `city: String (required)`, `countryCode: String (required)
 ### InputPersonalDataType
 
 Fields: `email: String`, `fullName: String`, `firstName: String`, `lastName: String`, `middleName: String`
+
+### InputInitializeCartPaymentType
+
+Fields: `cartId: String (required)`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`
+
+### InputInitializePaymentType
+
+Fields: `orderId: String`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`, `parameters: InputKeyValueType`
+
+### InputAuthorizePaymentType
+
+Fields: `orderId: String`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`, `parameters: InputKeyValueType`
 
 ---
 

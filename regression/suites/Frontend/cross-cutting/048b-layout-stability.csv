@@ -652,7 +652,7 @@
 [STATE] IF design is non-sticky: header is fully out of viewport (top + height < 0), not partially shifted
 [STATE] heightDelta === 0 (header height stable across scroll)","[CONSOLE] no errors","Header partially shifts on scroll (broken sticky); header height changes mid-scroll","none","business-logic.md#bl-ui-003 + critical-ui-scope.md §11 Header","Semi-Automated"
 "LAYOUT-PAGE-CLS-PAYMENT-001","CLS on /checkout/payment (non-CyberSource processor)","Pages > CLS","P1","BL-UI-001","ECL-1.2","- Authenticated user with cart of ≥ 1 items
-- Store payment method set to non-CyberSource (Skyflow/Authorize.Net/Datatrans) per feedback_payment_flow_learnings
+- Store payment method set to non-CyberSource redirect processor (Authorize.Net or Datatrans); NOTE: Skyflow now uses cart-embedded flow (VCST-5009 AllowCartPayment=true) and does NOT redirect to /checkout/payment — use Authorize.Net or Datatrans for this test; the /checkout/payment page is still used by Skyflow decline-retry flow
 - Cache disabled
 - Network throttled Fast 3G","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -670,7 +670,7 @@
 [MATH] 0.1 <= cls < 0.25 FAIL (P1 on revenue path)
 [MATH] cls >= 0.25 P0
 [STATE] capture {cls, shiftCount}","[CONSOLE] no errors during payment-form load
-[NETWORK] processor iframe/script returns 200","Payment iframe loads after document ready and pushes content; hosted form has no width/height reservation; loading skeleton swap shifts page","[PRE:RESET_CART]","business-logic.md#bl-ui-001 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+[NETWORK] processor iframe/script returns 200","Payment iframe loads after document ready and pushes content; hosted form has no width/height reservation; loading skeleton swap shifts page","[PRE:RESET_CART]","business-logic.md#bl-ui-001 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings; Synced: VCST-5009 (2026-06-04) — Skyflow removed from processor scope, AN/DT only","Semi-Automated"
 "LAYOUT-PAGE-CLS-SIGNIN-001","CLS on /sign-in (incognito context)","Pages > CLS","P2","BL-UI-001","ECL-1.2","- Incognito browser context (no auth — authenticated sessions redirect away)
 - Cache disabled","{{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in (FRESH incognito context — see storefront-selectors.md §6 BLOCKER)
 [ACT] IMMEDIATELY after navigation, `browser_evaluate` LAYOUT_SNIPPETS.installClsObserver
@@ -1261,15 +1261,15 @@
 [ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
 [STATE] table either responsive-card variant on mobile OR scrolls internally — never pushes document scroll","[CONSOLE] no errors","Quotes table pushes document horizontally on 375 px","none","business-logic.md#bl-ui-004 + critical-ui-scope.md /account/quotes","Semi-Automated"
 "LAYOUT-PAGE-SPC-PAYMENT-001","Spacing on /checkout/payment","Pages > Spacing","P2","BL-UI-002","ECL-2.1","- Authenticated user with cart of ≥ 1 items
-- Store payment method set to non-CyberSource (Skyflow/Authorize.Net/Datatrans)","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Store payment method set to non-CyberSource redirect processor (Authorize.Net or Datatrans); NOTE: Skyflow now cart-embedded (VCST-5009) — use AN or Datatrans to reach /checkout/payment","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 [NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
 [ACT] On PDP, click + once
 [NAV] {{FRONT_URL}}/cart
 [ACT] Click Place Order — redirects to /checkout/payment
 [WAIT] payment hosted form / iframe rendered (host-specific selector per feedback_payment_flow_learnings)
-[ACT] `browser_evaluate` spacingAuditSnippet('main, main > *, [data-test-id*=\"payment\"]')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on payment page wrapper; iframe container has hardcoded margin","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
-"LAYOUT-OVF-PAYMENT-001","Overflow on /checkout/payment at 375 px","Pages > Overflow","P1","BL-UI-004","ECL-1.3","- Authenticated user with cart; non-CyberSource processor; viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ACT] `browser_evaluate` spacingAuditSnippet('main, main > *, [data-test-id*=\"payment\"]')","[STATE] offGrid.length === 0","[CONSOLE] no errors","Off-grid padding on payment page wrapper; iframe container has hardcoded margin","[PRE:RESET_CART]","business-logic.md#bl-ui-002 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings; Synced: VCST-5009 (2026-06-04)","Semi-Automated"
+"LAYOUT-OVF-PAYMENT-001","Overflow on /checkout/payment at 375 px","Pages > Overflow","P1","BL-UI-004","ECL-1.3","- Authenticated user with cart; non-CyberSource redirect processor (Authorize.Net or Datatrans); viewport 375 px; NOTE: Skyflow now cart-embedded (VCST-5009) — use AN or Datatrans","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 [NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
 [ACT] On PDP, click + once
@@ -1278,8 +1278,8 @@
 [ACT] Click Place Order — redirects to /checkout/payment
 [WAIT] payment iframe / hosted form rendered
 [ACT] `browser_evaluate` LAYOUT_SNIPPETS.overflowAudit","[STATE] documentScrolls === false
-[STATE] payment iframe fits within viewport (or scrolls internally) — never pushes document horizontal scroll","[CONSOLE] no errors","Payment iframe wider than viewport; revenue-blocking horizontal scroll on /checkout/payment","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
-"LAYOUT-PAGE-TGT-PAYMENT-001","Touch targets on /checkout/payment at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Authenticated user with cart; non-CyberSource processor; viewport 375 px","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] payment iframe fits within viewport (or scrolls internally) — never pushes document horizontal scroll","[CONSOLE] no errors","Payment iframe wider than viewport; revenue-blocking horizontal scroll on /checkout/payment","[PRE:RESET_CART]","business-logic.md#bl-ui-004 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings; Synced: VCST-5009 (2026-06-04)","Semi-Automated"
+"LAYOUT-PAGE-TGT-PAYMENT-001","Touch targets on /checkout/payment at 375 px","Pages > Touch targets","P1","BL-UI-006","ECL-11.2","- Authenticated user with cart; non-CyberSource redirect processor (Authorize.Net or Datatrans); viewport 375 px; NOTE: Skyflow now cart-embedded (VCST-5009)","{{FRONT_URL}}; @td(STRESS.longTitleSku)","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 [NAV] {{FRONT_URL}}/search?q=@td(STRESS.longTitleSku)
 [ACT] On PDP, click + once
@@ -1288,7 +1288,7 @@
 [ACT] Click Place Order
 [WAIT] payment form rendered
 [ACT] `browser_evaluate` touchTargetAuditSnippet('main')","[STATE] undersized.length === 0 (all fields, submit/pay button, back link ≥ 44×44 — note hosted-iframe controls are out of scope, audit only parent storefront chrome)
-[STATE] tooClose.length === 0","[CONSOLE] no errors","Pay/back buttons under 44×44; revenue-blocking on mobile","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings","Semi-Automated"
+[STATE] tooClose.length === 0","[CONSOLE] no errors","Pay/back buttons under 44×44; revenue-blocking on mobile","[PRE:RESET_CART]","business-logic.md#bl-ui-006 + critical-ui-scope.md /checkout/payment + feedback_payment_flow_learnings; Synced: VCST-5009 (2026-06-04)","Semi-Automated"
 "LAYOUT-OVF-SIGNIN-001","Overflow on /sign-in at 375 px","Pages > Overflow","P2","BL-UI-004","ECL-1.3","- Incognito context; viewport 375 px","{{FRONT_URL}}","[ACT] Set viewport to 375×812
 [NAV] {{FRONT_URL}}/sign-in (incognito)
 [WAIT] form rendered

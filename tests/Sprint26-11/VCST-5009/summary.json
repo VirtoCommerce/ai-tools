@@ -1,0 +1,39 @@
+{
+  "ticket": "VCST-5009",
+  "title": "Extend Skyflow with AllowCartPayment",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-06-04",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "2.51.0-pr-2308-219c (vc-frontend PR #2308)",
+    "relevant_modules": {
+      "VirtoCommerce.Skyflow": "3.1002.0-pr-23-5a1b (vc-module-skyflow PR #23)",
+      "VirtoCommerce.Payment": "3.1002.0",
+      "VirtoCommerce.XCart": "3.1016.0"
+    }
+  },
+  "agents_dispatched": ["test-management-specialist", "qa-frontend-expert", "qa-backend-expert", "qa-testing-expert"],
+  "total_cases": 36,
+  "passed": 33,
+  "failed": 0,
+  "blocked": 0,
+  "not_applicable": 2,
+  "partial_by_design": 1,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CHK-002", "BL-CHK-004", "BL-CHK-006", "BL-ORD-001", "BL-ORD-006", "BL-PAY-001", "BL-PAY-002", "BL-PAY-003"],
+  "exploratory": {
+    "charter": "Feature charter — cart-embedded Skyflow form integration boundaries (cart mutation while mounted, decline-retry abandonment, persistence, guest, mobile)",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 1, "observations": 7, "risks": 1 }
+  },
+  "notes": [
+    "F6 (Risk, analytics-only): GA4 add_payment_info fires with stale value/items_count when cart is mutated after the Skyflow form mounted (value=8.4/qty 1 vs actual $180/qty 2, order CO260604-00008). Money path correct. Needs dev confirm + follow-up GA4 mutate-then-pay test case.",
+    "F4 (Question, out of feature scope): $0 net merchandise + $150 shipping produced +$30.00 tax — route to tax-engine owner.",
+    "PO question: on decline the user is routed to order-context /checkout/payment retry (order pre-created, ghost-order-safe) rather than staying on /cart — confirm intended AC-2 UX.",
+    "F9: Skyflow card form on cart is address-gated, not guest-gated — guests see it after providing a billing address.",
+    "Suite 040 PAY-SKY-001..009 + PAY-SKTOK-001 assert the OLD redirect flow and will false-fail against this build — run /qa-test-lifecycle suite 040 after merge.",
+    "Orders created: CO260604-00001 (Skyflow new-card), CO260604-00003 (decline→retry), CO260604-00006 (CyberSource regression), CO260604-00007 (saved card), CO260604-00008 (exploratory mutated-cart)."
+  ],
+  "artifacts": "tests/Sprint26-11/VCST-5009/"
+}
