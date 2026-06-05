@@ -363,13 +363,13 @@ FRR-036,Payment - Datatrans Valid Card (3D Secure),Full Regression > Payment > D
 - Correct OTP authorizes payment
 - Order placed with confirmation","[NETWORK] no raw card data in network requests
 [CONSOLE] no JS errors","Payment form not loading, OTP field missing when 3DS enabled, console TypeError",Cancel test order in Admin,PAY-DT-001,Manual
-FRR-037,Payment - Skyflow Valid Card (PCI Tokenization),Full Regression > Payment > Skyflow,High,BL-CHK-004,,  "Checkout at payment step, Skyflow configured","skyflow_visa={{SKYFLOW_VISA}}, skyflow_expiry={{SKYFLOW_EXPIRY}}, skyflow_cvv={{SKYFLOW_CVV}}, front_url={{FRONT_URL}}","1. Select 'Bank card (Skyflow)'
-2. Enter: {{SKYFLOW_VISA}}, expiry {{SKYFLOW_EXPIRY}}, CVV {{SKYFLOW_CVV}}
-3. Submit payment","- Skyflow secure form loads
-- Card data tokenized before submission
-- Only token sent to server (no raw PAN in requests)
-- Order confirmation on success (BL-CHK-004)","[NETWORK] verify no raw PAN in any network request (token only sent to server)
-[CONSOLE] no JS errors","Raw card number visible in network request, payment form not loading, spinner >5s",Cancel test order in Admin,PAY-SK-001,Manual
+FRR-037,Payment - Skyflow Valid Card (PCI Tokenization Cart-Embedded),Full Regression > Payment > Skyflow,High,BL-CHK-004,,  "Logged in user; items in cart; Skyflow configured with AllowCartPayment=true (VCST-5009)","skyflow_mc=@td(SKYFLOW_MC.number); skyflow_mc_exp=@td(SKYFLOW_MC.expiry); skyflow_mc_cvv=@td(SKYFLOW_MC.cvv); front_url={{FRONT_URL}}","1. Navigate to {{FRONT_URL}}/cart; select 'Bank card (Skyflow)'; if 'Select credit card' dropdown appears select 'Add new card'
+2. Fill Card number '@td(SKYFLOW_MC.number)'; Expiration date '@td(SKYFLOW_MC.expiry)'; Security code '@td(SKYFLOW_MC.cvv)'
+3. Click 'Place order' inline on /cart (no redirect to /checkout/payment)","- Skyflow secure form loads INLINE on /cart (not on /checkout/payment)
+- Card data tokenized by Skyflow (js.skyflow.com v2.7.7) before submission
+- Only token sent to Virto Commerce backend (no raw PAN in requests)
+- Order confirmation on success (BL-CHK-004)","[NETWORK] verify no raw PAN '@td(SKYFLOW_MC.number)' in any network request
+[CONSOLE] no JS errors","Raw PAN visible in network; form loads on /checkout/payment instead of /cart (old-flow regression); 'Place order' redirect triggers",Cancel test order in Admin,"PAY-SKY-001; Synced: VCST-5009 PR#2308+PR#23 (2026-06-04)",Manual
 FRR-038,Payment - Invalid Card Rejected with Clear Error,Full Regression > Payment > Negative,High,BL-CHK-004,,  "Payment form ready (any processor)","front_url={{FRONT_URL}}","1. Enter invalid card: @td(CYBERSOURCE_INVALID.number)
 2. Fill other fields with valid data
 3. Attempt to submit","- Real-time validation on card number field

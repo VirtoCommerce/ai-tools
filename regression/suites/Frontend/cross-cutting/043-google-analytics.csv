@@ -355,7 +355,7 @@ search_term=laptop","[NAV] navigate to {{FRONT_URL}} (initial load)
 "GA-025","VCST-4800 — Redirect-Processor Checkout Fires Exactly One purchase Event via finalizePayment Path","GA Events > Purchase > finalizePayment Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Authenticated user; DevTools Console open; A redirect-payment-processor is active on the store (Datatrans, Authorize.Net, or Skyflow — any processor that redirects to /checkout/payment before completing payment); VCST-4800 fix deployed (analytics('purchase') call present in useCheckout.ts)
+Authenticated user; DevTools Console open; A redirect-payment-processor is active on the store (Datatrans or Authorize.Net — processors that redirect to /checkout/payment before completing payment); NOTE: Skyflow now uses cart-embedded flow as of VCST-5009 (AllowCartPayment=true) — do NOT use Skyflow for this test; use Datatrans or Authorize.Net instead; VCST-4800 fix deployed (analytics('purchase') call present in useCheckout.ts)
 [MCP:CHROME_DEVTOOLS] Chrome DevTools MCP required — test uses window.dataLayer inspection via DevTools Console; assign to agent with Chrome DevTools MCP access","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/catalog or {{FRONT_URL}}/search
 [ACT] add one in-stock item to cart
 [WAIT] cart badge updates
@@ -374,7 +374,7 @@ Authenticated user; DevTools Console open; A redirect-payment-processor is activ
 [DOM] /checkout/completed page loaded (not stuck on /checkout/payment)
 [FORMAT] purchase event structure matches GA4 ecommerce schema: event name, currency, value, items[]","[CONSOLE] no JS errors during /checkout/payment redirect flow
 [NETWORK] no 4xx/5xx on /checkout/completed page load
-[API] order creation GraphQL mutation returns no errors; placedOrder.value is populated (required for analytics call in useCheckout.ts)","No purchase event in dataLayer after redirect-processor order completes (VCST-4800 regression — analytics call missing from useCheckout.ts); More than one purchase event present (duplicate fire); purchase event fires with empty items[]; purchase event fires before /checkout/completed loads (premature); window.dataLayer undefined or not accessible","Remove test order from cart view; navigate to /account/orders to confirm order created","VCST-4800; vc-frontend PR#2250; BL-GA4-003","Reviewed"
+[API] order creation GraphQL mutation returns no errors; placedOrder.value is populated (required for analytics call in useCheckout.ts)","No purchase event in dataLayer after redirect-processor order completes (VCST-4800 regression — analytics call missing from useCheckout.ts); More than one purchase event present (duplicate fire); purchase event fires with empty items[]; purchase event fires before /checkout/completed loads (premature); window.dataLayer undefined or not accessible","Remove test order from cart view; navigate to /account/orders to confirm order created","VCST-4800; vc-frontend PR#2250; BL-GA4-003; Synced: VCST-5009 PR#2308 (2026-06-04) — Skyflow removed from redirect-processor list","synced"
 "GA-026","VCST-4800 — CyberSource Checkout Fires Exactly One purchase Event via Direct Component Path (Not useCheckout)","GA Events > Purchase > CyberSource Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -508,3 +508,46 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog
 [STATE] no duplicated item_id entries for a 2-distinct-product order","[CONSOLE] no JS errors during checkout
 [NETWORK] no 4xx/5xx on createOrder mutation
 [API] createOrder response errors[] is empty and returns 2 line items","items.length === 1 for 2-product order (items collapsed or truncated); item_id values duplicated; items array absent even though order placed; transaction_id absent","Verify order in /account/orders; navigate away","VCST-5109","Draft"
+"GA-032","VCST-5009 — Skyflow Cart-Flow Checkout Fires Exactly One purchase Event","GA Events > Purchase > Skyflow Cart Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user WITHOUT saved Skyflow cards (so new-card iframe renders immediately; for users with saved cards select 'Add new card' from the 'Select credit card' dropdown first); DevTools Console open (window.dataLayer GTM-backed); Skyflow payment processor active with AllowCartPayment=true; VCST-5009 deployed
+[MCP:CHROME_DEVTOOLS] Chrome DevTools MCP required — test uses window.dataLayer inspection via DevTools Console; assign to agent with Chrome DevTools MCP access","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};sky_card=@td(SKYFLOW_MC.number);sky_exp=@td(SKYFLOW_MC.expiry);sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] {{FRONT_URL}}/catalog or {{FRONT_URL}}/search
+[ACT] add one in-stock item to cart
+[WAIT] cart badge updates
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with item AND Skyflow iframe fields render inline (no redirect)
+[ACT] select 'Bank card (Skyflow)'; if 'Select credit card' dropdown appears, select 'Add new card'
+[WAIT] Skyflow iframe fields visible: Card number / Cardholder name / Expiration date / Security code
+[ACT] fill '@td(SKYFLOW_MC.number)' in Card number; fill '@td(SKYFLOW_MC.expiry)' in Expiration date; fill '@td(SKYFLOW_MC.cvv)' in Security code
+[WAIT] 'Place order' button becomes enabled (isPaymentDataValid=true)
+[ACT] click 'Place order'
+[WAIT] payment processes; order confirmation or /checkout/completed loads
+[ASSERT] inspect window.dataLayer in DevTools Console: window.dataLayer.filter(e => e[1] === 'purchase' || e.event === 'purchase').length === 1
+[ASSERT] the single purchase event has: value field is a positive number (order total); items array is non-empty; transaction_id field present
+[ASSERT] no second purchase event present (analytics('purchase') fires only for cart-flow, not orderToPay-driven per PR #2308)","[STATE] exactly one purchase event in dataLayer after Skyflow cart-flow checkout
+[STATE] purchase event value > 0 and matches order confirmation total
+[STATE] purchase event items array contains the ordered product(s)
+[FORMAT] purchase event structure matches GA4 ecommerce schema: event name, currency, value, items[]
+[DOM] order confirmation page loaded (not stuck on /cart or /checkout/payment)","[CONSOLE] no JS errors during Skyflow cart-embedded payment flow
+[NETWORK] no 4xx/5xx on order confirmation load
+[API] createOrderFromCart mutation returns no errors","No purchase event in dataLayer after Skyflow cart-flow order (analytics('purchase') missing from payment-processing-skyflow.vue cart path); duplicate purchase event (fired twice); purchase event fires before order confirmed; event fires on orderToPay-driven path (should NOT — conditional in PR#2308)","Remove test order; navigate to /account/orders to confirm order created","VCST-5009; PR#2308 (analytics purchase fires only when !orderToPay-driven); BL-GA4-003; Synced: VCST-5009 (2026-06-04)","Draft"
+"GA-033","VCST-5009 — Skyflow add_payment_info Event Has Stale Values When Cart Mutated After Form Mounts (Known Issue F6 / VCST-5198)","GA Events > add_payment_info > Skyflow Cart Path","P2","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authenticated user; DevTools Console open (window.dataLayer); Skyflow payment processor active; VCST-5009 deployed; Chrome DevTools MCP required
+NOTE: This case CURRENTLY FAILS — add_payment_info carries stale value/items_count when cart is mutated after the Skyflow form mounts. Exploratory finding F6 from VCST-5009 testing (2026-06-04). Assertions are written for CORRECT behavior so the case fails until the bug is fixed. Do NOT change assertions to match stale behavior.
+[MCP:CHROME_DEVTOOLS]","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};sky_card=@td(SKYFLOW_MC.number);sky_exp=@td(SKYFLOW_MC.expiry);sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] {{FRONT_URL}}/cart with one item
+[WAIT] Skyflow payment section renders inline; note initial cart total T1
+[ACT] select 'Bank card (Skyflow)'; wait for Skyflow form
+[ACT] increase qty of the cart item by 1 using quantity stepper
+[WAIT] cart total updates to T2 (T2 > T1)
+[ACT] fill Skyflow Card number '@td(SKYFLOW_MC.number)'; fill Expiration date '@td(SKYFLOW_MC.expiry)'; fill Security code '@td(SKYFLOW_MC.cvv)'
+[WAIT] 'Place order' button enabled
+[ACT] click 'Place order'
+[WAIT] order confirmation or /checkout/completed loads
+[ASSERT] inspect window.dataLayer in DevTools Console: locate add_payment_info event; verify event value = T2 (the UPDATED total after qty increase, NOT stale T1)
+[ASSERT] add_payment_info event items array reflects updated quantity (not pre-mutation quantity)","[STATE] add_payment_info event value = T2 (post-mutation total, not stale T1)
+[STATE] add_payment_info items quantity reflects post-mutation qty
+NOTE: These assertions are CORRECT behavior — this case will FAIL until the stale-capture bug is fixed","[CONSOLE] no JS errors during cart mutation and Skyflow payment
+[NETWORK] no 4xx/5xx on order placement","add_payment_info event value = T1 (stale, captured before qty mutation — THIS IS THE KNOWN BUG); items quantity does not reflect updated quantity","Remove test order; [PRE:RESET_CART]","VCST-5198 (bug ticket, filed 2026-06-04); VCST-5009 exploratory finding F6 confirmed by second-source repro 2026-06-04; BL-GA4-003; Synced: VCST-5009 (2026-06-04)","Draft"

@@ -130,3 +130,135 @@ ORD-GQL-013,"xOrder — CustomerOrderType Full-Field Schema Coverage","GraphQL >
 [DATA label=order_full] data.order.shipments is non-null","[ROUNDTRIP label=order_full] runner-manual: re-execute → identical response structure
 [MATH label=order_full] runner-manual: subTotal + shippingTotal + taxTotal - discountTotal ≈ total (within rounding tolerance) — runner-v2","Any CustomerOrderType field renamed/removed (DV-009); errors[] non-empty; MoneyType drift (currencyCode vs currency.code); addresses/items/inPayments/shipments null when order has them","none — pure read","xAPI; graphql-schema.md — CustomerOrderType, MoneyType, CurrencyType, OrderAddressType, OrderLineItemType, PaymentInType, ShipmentType",Automated
 ORD-GQL-TODO-001,"xOrder Coverage Gap — 7 mutations + 2 queries not covered (DRAFT placeholder, file individual cases)","GraphQL > xOrder > Coverage TODO",Low,BL-GQL-001,ECL-2.1,"COVERAGE PLACEHOLDER. 050c currently covers only 3 read paths (orders list, order detail by number, full-field schema coverage). Missing xAPI mutations per graphql-schema.md (verified 2026-05-21): (1) changeOrderStatus — covered partially via Admin SPA in 017-orders-management; storefront xAPI variant uncovered; (2) changePurchaseOrderNumber — uncovered; (3) addOrUpdateOrderPayment — uncovered; (4) updateOrderDynamicProperties — uncovered; (5) updateOrderItemDynamicProperties — uncovered; (6) updateOrderPaymentDynamicProperties — uncovered; (7) updateOrderShipmentDynamicProperties — uncovered. Missing queries: payments query, refunds query (if present). createOrderFromCart IS covered in 050b4 cross-domain. ACTION: file one ORD-GQL-NNN case per mutation as separate PRs once owner is assigned. OWNER: TBD (likely test-management-specialist).","—","[MANUAL-BLOCKED] This row is a coverage tracking placeholder, not an executable case. Do NOT run via graphql-runner — Automation_Status=Draft excludes it.","[MANUAL] N/A","[EVIDENCE] N/A","Coverage stays at 3 read paths; mutation regressions go undetected","N/A",xAPI; graphql-schema.md — Mutation block ChangeOrderStatusType / InputAddOrUpdateOrderPaymentType etc.; coverage-todo,Draft
+CART-PAY-GQL-001,"xCart — initializeCartPayment Returns Skyflow publicParameters for Cart-Embedded Payment","GraphQL > xOrder > Cart Payment Init",Critical,BL-ORD-001; BL-PAY-004,ECL-14.6,"Runner-native. ORG_USER authenticated. Builds a minimal cart (addItem), adds Skyflow payment row, then calls initializeCartPayment. addItem returns empty items[] (async settle) — cart ID captured from addOrUpdateCartPayment response per reference_additem_async_settle. Uses agent-pool user for isolation; AGENT-TEST- cleanup prefix conventions. Validates AllowCartPayment=true backend behavior (VCST-5009 PR#23).","store_id={{STORE_ID}}; culture=en-US; currency=USD; gateway=SkyflowPaymentMethod; product_id=@td(VIRTUAL_CATALOG_B2B.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_product]
+  query {
+    products(
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""{{culture}}""
+      currencyCode: ""{{currency}}""
+      filter: ""category.subtree:{{product_id}}""
+      first: 1
+    ) { items { id slug } }
+  }
+[GQL-EXEC discover_product]
+[GQL-CAPTURE discover_product.data.products.items.0.id → PROD_ID]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cultureName: ""{{culture}}"" currencyCode: ""{{currency}}""
+      productId: ""{{PROD_ID}}"" quantity: 1
+    }) { id }
+  }
+[GQL-EXEC add_item]
+[GQL-OP add_payment]
+  mutation {
+    addOrUpdateCartPayment(command: {
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      cultureName: ""{{culture}}"" currencyCode: ""{{currency}}""
+      payment: { paymentGatewayCode: ""{{gateway}}"" }
+    }) {
+      id
+      payments { id paymentGatewayCode }
+    }
+  }
+[GQL-EXEC add_payment]
+[GQL-CAPTURE add_payment.data.addOrUpdateCartPayment.id → CART_ID]
+[GQL-CAPTURE add_payment.data.addOrUpdateCartPayment.payments.0.id → PAYMENT_ID]
+[GQL-OP init_cart_payment]
+  mutation {
+    initializeCartPayment(command: {
+      cartId: ""{{CART_ID}}""
+      paymentId: ""{{PAYMENT_ID}}""
+    }) {
+      isSuccess
+      errorMessage
+      publicParameters { key value }
+    }
+  }
+[GQL-EXEC init_cart_payment]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=setup_me] errors[] empty
+[ERRORS label=discover_product] errors[] empty
+[DATA label=discover_product] data.products.items.0.id is non-null
+[ERRORS label=add_item] errors[] empty
+[ERRORS label=add_payment] errors[] empty
+[DATA label=add_payment] data.addOrUpdateCartPayment.id is non-null
+[DATA label=add_payment] data.addOrUpdateCartPayment.payments.0.paymentGatewayCode = SkyflowPaymentMethod
+[ERRORS label=init_cart_payment] errors[] empty
+[DATA label=init_cart_payment] data.initializeCartPayment.isSuccess = true
+[DATA label=init_cart_payment] data.initializeCartPayment.errorMessage is null
+[COUNT label=init_cart_payment] data.initializeCartPayment.publicParameters.length > 0","[EVIDENCE] publicParameters should include keys: accessToken, vaultURL, vaultID, tableName — inspect evidence JSON for key names
+[STOREFRONT] After init, storefront Skyflow JS (js.skyflow.com v2.7.7) uses these publicParameters to initialize Skyflow Elements iframe","isSuccess=false; errorMessage non-null; publicParameters empty; CART_ID or PAYMENT_ID null (capture failed — check addOrUpdateCartPayment response shape); errors[] non-empty on init_cart_payment","[AUTH role=ORG_USER]
+[GQL-OP final_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC final_clear]","VCST-5009; PR#23 (vc-module-skyflow AllowCartPayment=true); graphql-schema.md initializeCartPayment → InputInitializeCartPaymentType",Automated
+CART-PAY-GQL-002,"xCart — initializeCartPayment With Invalid cartId Returns errors[] INVALID_OPERATION (No 500)","GraphQL > xOrder > Cart Payment Init > Negative",High,BL-PAY-004,ECL-3.1,"Runner-native. ORG_USER authenticated. Passes a well-formed but non-existent GUID as cartId. Validates safe-cast change in ProcessPaymentAsync (PR#23) — a 500 response here means the old hard-cast exception is back.","store_id={{STORE_ID}}; bad_cart_id=00000000-0000-0000-0000-000000000001; bad_payment_id=00000000-0000-0000-0000-000000000002","[AUTH role=ORG_USER]
+[GQL-OP init_bad]
+  mutation {
+    initializeCartPayment(command: {
+      cartId: ""{{bad_cart_id}}""
+      paymentId: ""{{bad_payment_id}}""
+    }) {
+      isSuccess
+      errorMessage
+      publicParameters { key value }
+    }
+  }
+[GQL-EXEC init_bad]","[ERRORS label=init_bad] errors[] non-empty
+[NULL label=init_bad] data.initializeCartPayment","[EVIDENCE] HTTP status must be 200 (GQL errors are protocol-level, not HTTP-level); a 500 HTTP is the regression signal","HTTP 500 (safe-cast regression — PR#23 fixed the hard cast; 500 means the fix regressed); errors[] empty with isSuccess=true for bogus IDs; null response body","none — no cart was created","VCST-5009; PR#23 safe-cast fix (PaymentIn cast in ProcessPaymentAsync); graphql-schema.md",Automated
+CART-PAY-GQL-003,"xCart — cart.availablePaymentMethods Exposes SkyflowPaymentMethod with allowCartPayment=true","GraphQL > xOrder > Cart Payment Init > Schema",Critical,BL-ORD-001; BL-PAY-004,ECL-14.6,"Runner-native. ORG_USER authenticated. Cart must have ≥1 item so availablePaymentMethods is populated. Validates AllowCartPayment property exposed on PaymentMethodType (new field in VCST-5009 PR#23).","store_id={{STORE_ID}}; culture=en-US; currency=USD; product_id=@td(VIRTUAL_CATALOG_B2B.id); expected_gateway=SkyflowPaymentMethod","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" filter: ""category.subtree:{{product_id}}"" first: 1)
+    { items { id slug } }
+  }
+[GQL-EXEC discover_product]
+[GQL-CAPTURE discover_product.data.products.items.0.id → PROD_ID]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" productId: ""{{PROD_ID}}"" quantity: 1 })
+    { id }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"") {
+      availablePaymentMethods {
+        code
+        name
+        allowCartPayment
+      }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.availablePaymentMethods[?code=SkyflowPaymentMethod].allowCartPayment → SKY_ALLOW_CART]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=setup_me] errors[] empty
+[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.availablePaymentMethods is non-null
+[COUNT label=read_cart] data.cart.availablePaymentMethods.length > 0
+[DATA label=read_cart] data.cart.availablePaymentMethods[?code=SkyflowPaymentMethod].code = SkyflowPaymentMethod
+[DATA label=read_cart] data.cart.availablePaymentMethods[?code=SkyflowPaymentMethod].allowCartPayment = true
+[VAR] {{SKY_ALLOW_CART}} = true","[EVIDENCE] allowCartPayment=true confirms vc-module-skyflow SkyflowPaymentMethod.AllowCartPayment property override is wired to the xAPI schema field","SkyflowPaymentMethod absent from availablePaymentMethods (AllowCartPayment not set or not exposed); allowCartPayment=false or null (backend property not mapped to schema field); errors[] non-empty on read_cart","[AUTH role=ORG_USER]
+[GQL-OP final_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC final_clear]","VCST-5009; PR#23; graphql-schema.md — CartType.availablePaymentMethods; note: allowCartPayment field added by VCST-5009, not yet in graphql-schema.md snapshot — schema snapshot refresh needed",Automated

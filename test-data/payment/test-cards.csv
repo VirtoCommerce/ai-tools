@@ -1,13 +1,13 @@
 processor,card_type,card_number,expiry_month,expiry_year,expiry_format,cvv,cardholder_name,test_scenario,expected_result,notes,qa_verified
-Skyflow,Visa,4111111111111111,12,2029,12/2029,900,John Smith,Valid Visa card,Success,Standard test Visa from Skyflow,unverified
-Skyflow,Visa,4242424242424242,09,2029,09/2029,900,Mary Johnson,Valid Visa alternate,Success,Alternate Skyflow Visa,unverified
-Skyflow,Mastercard,5424000000000015,12,2029,12/2029,900,Robert Brown,Valid Mastercard,Success,Canonical Skyflow card per order-creation-matrix.txt row 4 — only Skyflow card verified routable in QA vault,VERIFIED 2026-05-04 (CO260504-00003 retry + CO260504-00009)
-Skyflow,Mastercard,5200828282828210,10,2028,10/2028,900,Lisa Wilson,Valid Mastercard alternate,Success,Alternate Skyflow Mastercard,unverified
-Skyflow,Amex,378282246310005,06,2030,06/2030,9004,David Martinez,Valid American Express,Success,Amex with 4-digit CVV,unverified
-Skyflow,Discover,6011111111111117,03,2027,03/2027,456,Jennifer Lee,Valid Discover card,Success,Discover card test,unverified
-Skyflow,Visa,4000000000000002,12,2029,12/2029,900,Decline Test,Declined transaction,Decline,Card declined by processor,unverified
-Skyflow,Visa,4000000000000127,12,2029,12/2029,900,Incorrect CVV Test,CVV error,Error,Incorrect CVV simulation,unverified
-Skyflow,Visa,4000000000000119,12,2029,12/2029,900,Processing Error Test,Processing error,Error,Generic processing error,unverified
+Skyflow,Visa,4111111111111111,12,2029,12/29,900,John Smith,Valid Visa card,Success,Standard test Visa from Skyflow,unverified
+Skyflow,Visa,4242424242424242,09,2029,09/29,900,Mary Johnson,Valid Visa alternate,Success,Alternate Skyflow Visa,unverified
+Skyflow,Mastercard,5424000000000015,12,2029,12/29,900,Robert Brown,Valid Mastercard,Success,Canonical Skyflow card per order-creation-matrix.txt row 4 — only Skyflow card verified routable in QA vault,VERIFIED 2026-05-04 (CO260504-00003 retry + CO260504-00009)
+Skyflow,Mastercard,5200828282828210,10,2028,10/28,900,Lisa Wilson,Valid Mastercard alternate,Success,Alternate Skyflow Mastercard,unverified
+Skyflow,Amex,378282246310005,06,2030,06/30,9004,David Martinez,Valid American Express,Success,Amex with 4-digit CVV,unverified
+Skyflow,Discover,6011111111111117,03,2027,03/27,456,Jennifer Lee,Valid Discover card,Success,Discover card test,unverified
+Skyflow,Visa,4000000000000002,12,2029,12/29,900,Decline Test,Declined transaction,Decline,Card declined by processor,unverified
+Skyflow,Visa,4000000000000127,12,2029,12/29,900,Incorrect CVV Test,CVV error,Error,Incorrect CVV simulation,unverified
+Skyflow,Visa,4000000000000119,12,2029,12/29,900,Processing Error Test,Processing error,Error,Generic processing error,unverified
 CyberSource,Visa,4622943127013705,09,2029,09/2029,838,John Smith,Valid CyberSource Visa,Success,Canonical CyberSource card per order-creation-matrix.txt row 7 — Microform v2.0.2 iframes accessible from Edge via Playwright frameLocator,VERIFIED 2026-05-04 (CO260504-00001)
 CyberSource,Visa,4111111111111111,12,2029,12/2029,838,Jane Doe,Valid Visa alternate,Success,Alternate CyberSource Visa,unverified
 CyberSource,Mastercard,5555555555554444,12,2029,12/2029,123,Michael Chen,Valid CyberSource Mastercard,Success,CyberSource Mastercard test,unverified

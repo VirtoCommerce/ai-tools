@@ -132,6 +132,10 @@ async function main() {
     'CouponType', 'MoneyType', 'CurrencyType', 'PriceType', 'ProductConnection',
     'TermFacet', 'FacetTermType', 'RangeFacet', 'FacetRangeType', 'PageType',
     'AvailabilityData',
+    // Payment domain (VCST-5009: allowCartPayment + cart-payment initialization)
+    'PaymentMethodType', 'PaymentType', 'PaymentInType',
+    'InitializeCartPaymentResultType', 'InitializePaymentResultType',
+    'AuthorizePaymentResultType', 'KeyValueType',
   ];
 
   // Introspect key input types (from mutations used in suite 050)
@@ -144,6 +148,9 @@ async function main() {
     'InputUpdateMemberAddressType', 'InputRemoveCartType', 'InputClearCartType',
     'InputShipmentType', 'InputPaymentType', 'InputMemberAddressType',
     'InputPersonalDataType',
+    // Payment initialization/authorization (VCST-5009)
+    'InputInitializeCartPaymentType', 'InputInitializePaymentType',
+    'InputAuthorizePaymentType',
   ];
 
   const typeResults = {};
