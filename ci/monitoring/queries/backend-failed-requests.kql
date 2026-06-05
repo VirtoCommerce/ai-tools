@@ -1,0 +1,16 @@
+// Backend (platform) failed HTTP requests (5xx + unhandled 4xx), grouped by
+// signature. Backend App Insights resource. `name` is the route/operation
+// template (not a concrete URL), so the signature is env-resilient. Window via
+// API `timespan`.
+requests
+| where success == false and toint(resultCode) >= 500
+| summarize
+    count_ = count(),
+    firstSeen = min(timestamp),
+    lastSeen = max(timestamp),
+    sampleOperationId = any(operation_Id),
+    sampleUrl = any(url),
+    cloud_RoleName = any(cloud_RoleName)
+    by signature = strcat(tostring(resultCode), " ", name), resultCode = tostring(resultCode), operation = name
+| order by count_ desc
+| take 50

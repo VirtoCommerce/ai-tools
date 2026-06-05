@@ -109,6 +109,15 @@ const featureGatedVars = {
         vars: ['POSTMAN_API_KEY'],
         gates: '/qa-postman, /qa-api test',
     },
+    monitoring: {
+        // App IDs gate the feature. Auth is AAD-first (az login / service principal /
+        // managed identity) — API keys are an OPTIONAL fallback, not required here.
+        vars: [
+            'APPINSIGHTS_APP_ID_BACKEND',
+            'APPINSIGHTS_APP_ID_STOREFRONT',
+        ],
+        gates: '/qa-monitoring, ci:monitor (App Insights online bug monitoring)',
+    },
 };
 
 const missingCore = coreRequiredVars.filter(v => !process.env[v]);
@@ -218,6 +227,20 @@ export const env = {
     DATATRANCE_EXPIRY: getEnvVar('DATATRANCE_EXPIRY'),
     DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
     DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP'),
+
+    // Azure / Application Insights — online bug monitoring (/qa-monitoring, ci:monitor)
+    // Resource IDs are per-env identifiers (Bucket #2, committed in .env.${TEST_ENV});
+    // API keys are secrets (Bucket #3, .env.local only). All optional — the monitor
+    // flow no-ops with a clear message when the App IDs / keys are unset.
+    AZURE_SUBSCRIPTION_ID: getEnvVar('AZURE_SUBSCRIPTION_ID', ''),
+    AZURE_RESOURCE_GROUP: getEnvVar('AZURE_RESOURCE_GROUP', ''),
+    APPINSIGHTS_APP_ID_BACKEND: getEnvVar('APPINSIGHTS_APP_ID_BACKEND', ''),
+    APPINSIGHTS_APP_ID_STOREFRONT: getEnvVar('APPINSIGHTS_APP_ID_STOREFRONT', ''),
+    APPINSIGHTS_API_KEY_BACKEND: getEnvVar('APPINSIGHTS_API_KEY_BACKEND', ''),
+    APPINSIGHTS_API_KEY_STOREFRONT: getEnvVar('APPINSIGHTS_API_KEY_STOREFRONT', ''),
+    // Resource NAMES — used only to build portal deep-links; per-env, never hardcoded.
+    APPINSIGHTS_RESOURCE_BACKEND: getEnvVar('APPINSIGHTS_RESOURCE_BACKEND', ''),
+    APPINSIGHTS_RESOURCE_STOREFRONT: getEnvVar('APPINSIGHTS_RESOURCE_STOREFRONT', ''),
 
     // Figma API key
     FIGMA_API_KEY: getEnvVar('FIGMA_API_KEY'),

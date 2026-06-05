@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (17) — `.claude/commands/`
+## Slash Commands (18) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -12,6 +12,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
 | `/qa-fix` | `VCST-XXXX` | No | Autonomous fix of an already-filed bug: triage (Gate 0) → root-cause + single-repo route (Gate 1) → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Never auto-merges. Interactive twin of `ci/run-fix-cycle.ts`; reuses `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`. Delegates to the `developers/` team (`fullstack-backend`, `backend-reviewer`). Gate ladder: `.claude/rules/quality-gates.md` |
+| `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | No | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert → STOP for human. Detect-and-report only (never files JIRA / auto-fixes). Interactive twin of `ci/run-monitor.ts`; shares `ci/monitoring/queries/*.kql` + `ci/agents/monitor-triage-agent.md` + the fingerprint store. |
 | `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
@@ -24,7 +25,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (23) — `.claude/skills/` (grouped by category)
+## Skills (24) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -49,7 +50,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 
-**`qa-methodology/` — QA Methodology (9) — manual invocation:**
+**`qa-methodology/` — QA Methodology (10) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -62,6 +63,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-risk` | `feature \| sprint \| release \| VCST-XXXX` | Risk-based test prioritization: 5x5 matrix | `risk-prioritization-framework.md` |
 | `/qa-metrics` | `[metrics\|gates\|report\|trends]` | Quality metrics & gates: pass rate, defect density, DRE, coverage | `quality-metrics-catalog.md`, `quality-gates.md` |
 | `/qa-sbtm` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | `session-based-testing.md` |
+| `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only. Twin of `ci/run-monitor.ts` | `SKILL.md` (KQL probe library + triage taxonomy + dedup model) |
 
 **`development/` — Development (3) — manual invocation (used by the `developers/` team in `/qa-fix`):**
 
