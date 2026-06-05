@@ -82,7 +82,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, Checkout/Payment, Orders, B2B Multi-org, GA4 tracking.
 
-**Payment flow:** CyberSource shows the payment form directly on the cart page. All other processors (Skyflow, Authorize.Net, Datatrance) require clicking "Place Order" first, which redirects to `/checkout/payment` page.
+**Payment flow:** CyberSource, Skyflow (VCST-5009), and Authorize.Net (VCST-5162, PR-deployed) have `allowCartPayment=true` — the card form renders directly on the cart page. Datatrans is the only remaining redirect processor: clicking "Place Order" redirects to `/checkout/payment`.
 
 ## Detailed References
 

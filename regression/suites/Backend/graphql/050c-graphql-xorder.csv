@@ -262,3 +262,49 @@ CART-PAY-GQL-003,"xCart — cart.availablePaymentMethods Exposes SkyflowPaymentM
 [GQL-OP final_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
 [GQL-EXEC final_clear]","VCST-5009; PR#23; graphql-schema.md — CartType.availablePaymentMethods; note: allowCartPayment field added by VCST-5009, not yet in graphql-schema.md snapshot — schema snapshot refresh needed",Automated
+CART-PAY-GQL-004,"xCart — cart.availablePaymentMethods Exposes AuthorizeNetPaymentMethod with allowCartPayment=true","GraphQL > xOrder > Cart Payment Init > Schema",Critical,BL-ORD-001; BL-PAY-004,ECL-14.6,"Runner-native. ORG_USER authenticated. Cart must have ≥1 item so availablePaymentMethods is populated. Validates AllowCartPayment=true hardcoded on AuthorizeNetPaymentMethod exposed via xAPI (new in VCST-5162). Twin of CART-PAY-GQL-003 for Skyflow.","store_id={{STORE_ID}}; culture=en-US; currency=USD; product_id=@td(VIRTUAL_CATALOG_B2B.id); expected_gateway=AuthorizeNetPaymentMethod","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" filter: ""category.subtree:{{product_id}}"" first: 1)
+    { items { id slug } }
+  }
+[GQL-EXEC discover_product]
+[GQL-CAPTURE discover_product.data.products.items.0.id → PROD_ID]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" productId: ""{{PROD_ID}}"" quantity: 1 })
+    { id }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"") {
+      availablePaymentMethods {
+        code
+        name
+        allowCartPayment
+      }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.availablePaymentMethods[?code=AuthorizeNetPaymentMethod].allowCartPayment → AN_ALLOW_CART]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=setup_me] errors[] empty
+[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.availablePaymentMethods is non-null
+[COUNT label=read_cart] data.cart.availablePaymentMethods.length > 0
+[DATA label=read_cart] data.cart.availablePaymentMethods[?code=AuthorizeNetPaymentMethod].code = AuthorizeNetPaymentMethod
+[DATA label=read_cart] data.cart.availablePaymentMethods[?code=AuthorizeNetPaymentMethod].allowCartPayment = true
+[VAR] {{AN_ALLOW_CART}} = true","[EVIDENCE] allowCartPayment=true confirms AuthorizeNetPaymentMethod.AllowCartPayment = true (hardcoded in VCST-5162) is wired to the xAPI schema field","AuthorizeNetPaymentMethod absent from availablePaymentMethods (processor not enabled or gateway code mismatch); allowCartPayment=false or null (VCST-5162 backend change not deployed or schema field not mapped); errors[] non-empty on read_cart; gateway code returned as different string (check exact code in Admin SPA payment settings)","[AUTH role=ORG_USER]
+[GQL-OP final_clear]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
+[GQL-EXEC final_clear]","VCST-5162 (AllowCartPayment=true hardcoded on AuthorizeNetPaymentMethod); twin of CART-PAY-GQL-003 (Skyflow); graphql-schema.md CartType.availablePaymentMethods allowCartPayment field; PAY-AN-010 (storefront UI twin)",Draft
