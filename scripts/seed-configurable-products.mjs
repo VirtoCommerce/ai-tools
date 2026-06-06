@@ -13,7 +13,7 @@
  *   node scripts/seed-configurable-products.mjs [--dry-run] [--verbose] [--only CFG-012]
  *
  * Safety:
- *   - Host allowlist (vcst-qa, vcptcore-qa).
+ *   - ENV_RISK gate (blocks ENV_RISK=production; override --allow-admin-writes-on-prod).
  *   - Idempotent: searches by name first, reuses existing entities.
  *   - --dry-run prints plan, no writes.
  *
@@ -23,8 +23,12 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config } from 'dotenv';
-config();
+import { config as loadDotenv } from 'dotenv';
+// Layered, TEST_ENV-aware load (later files override) — matches config.js so the
+// seeder works across envs (vcst/vcptcore/localhost/...). No legacy root `.env`.
+loadDotenv({ path: '.env.defaults' });
+loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
+loadDotenv({ path: '.env.local', override: true });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -51,9 +55,9 @@ const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
-const ALLOWED_HOSTS = ['vcst-qa.govirto.com', 'vcptcore-qa.govirto.com'];
-if (!ALLOWED_HOSTS.includes(new URL(BACK_URL).host)) {
-  console.error(`ABORT: BACK_URL host not in allowlist`);
+const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) {
+  console.error(`ABORT: ENV_RISK=production for ${new URL(BACK_URL).host} — refusing to seed. Pass --allow-admin-writes-on-prod to override.`);
   process.exit(2);
 }
 
