@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.12",
+    "version": "1.5.13",
     "updated": "2026-06-01",
     "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
     "changelog_1_5_9": "Added LOCKOUT_TEST_USERS inline alias (5 dedicated AGENT-TEST lockout accounts created on vcst-qa 2026-05-29 via POST /api/platform/security/users/create): sf (Customer, 71b4ca11…, suite 031 AUTH-070), admin (Administrator, 6e9987d1…, 020 PLAT-081), unlock (Administrator, af55646a…, 020 PLAT-082), manager (Manager, 44a2978b…, 020 PLAT-083 / VCST-4999), target (Administrator, 1d90a31b…, 049 API-036). Self-provisioned throwaway accounts, teardown-swept by AGENT-TEST prefix; passwords set by SETUP blocks (not stored in aliases). Verified lock/unlock contract: admin /lock -> lockoutEnd 9999-12-31 sentinel + /locked{locked:true}; /unlock -> lockoutEnd 0001-01-01 + /locked{locked:false}; failed-login (5x bad token) auto-lock -> finite timed lockoutEnd + accessFailedCount reset to 0. See alias _comment for full contract.",
@@ -533,7 +533,6 @@
       "code": "code",
       "promo_name": "promo_name",
       "id": "coupon_id",
-      "gql_id": "gql_id",
       "description": "description"
     }
   },
@@ -545,8 +544,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_20PCT": {
@@ -557,8 +555,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_SHIPPING": {
@@ -569,8 +566,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_WELCOME": {
@@ -581,8 +577,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_E2E": {
@@ -593,8 +588,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_WINE": {
@@ -605,8 +599,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_PRIVATE": {
@@ -639,8 +632,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_FREESHIP": {
@@ -651,8 +643,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_THRESH50": {
@@ -663,8 +654,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_EXCLUSIVE": {
@@ -675,8 +665,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "COUPON_SPECIAL_CHARS": {
@@ -687,8 +676,7 @@
     "fields": {
       "code": "code",
       "promo_name": "promo_name",
-      "id": "coupon_id",
-      "gql_id": "gql_id"
+      "id": "coupon_id"
     }
   },
   "LOYALTY_SETTINGS": {

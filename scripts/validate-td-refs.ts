@@ -1,10 +1,17 @@
 /**
- * Validate @td() References
+ * Validate @td() References + Hardcoded-ID Anti-Pattern Scan
  *
- * Scans all regression suite CSVs for @td() tokens and attempts to resolve them.
- * Reports unresolvable references, stats by domain and suite.
+ * 1. Scans all regression suite CSVs for @td() tokens and attempts to resolve them.
+ *    Reports unresolvable references, stats by domain and suite.
+ * 2. Enforces DV-013 (`.claude/skills/testing/qa-review-tests/review-criteria.md`):
+ *    flags bare UUID/GUID literals in suite CSVs that are NOT wrapped in @td() or {{VAR}}.
+ *    System-generated GUIDs regenerate on every teardown+reseed and differ per env, so a
+ *    literal one rots into a false BLOCKED/FAIL. Reference data by its stable business key
+ *    (code / name / slug / SKU) and resolve the GUID at runtime if truly needed — see DV-020.
  *
- * Usage: npx tsx scripts/validate-td-refs.ts
+ * Usage:
+ *   npx tsx scripts/validate-td-refs.ts              # @td failures AND hardcoded IDs are fatal (default gate)
+ *   npx tsx scripts/validate-td-refs.ts --warn-only  # downgrade hardcoded IDs to warnings (WIP escape hatch)
  */
 
 import { readFileSync, readdirSync, statSync } from "fs";
@@ -14,8 +21,42 @@ import { TestDataResolver } from "./lib/test-data-resolver.js";
 const ROOT = process.cwd();
 const SUITES_DIR = join(ROOT, "regression", "suites");
 const TEST_DATA_DIR = join(ROOT, "test-data");
+const WARN_ONLY = process.argv.includes("--warn-only");
 
 const resolver = new TestDataResolver(TEST_DATA_DIR);
+
+// --- DV-013 hardcoded-ID scan config ---
+// UUID-style and bare 32-char-hex literals are entity GUIDs unless allowlisted below.
+const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
+const HEX32_RE = /\b[0-9a-f]{32}\b/gi;
+// Sentinel/empty GUIDs (00000000-…-0000/0001/0002) are null-id placeholders, not entity refs.
+const SENTINEL_RE = /^0{8}-0{4}-0{4}-0{4}-0{11}[0-9a-fA-F]$/;
+// Stable environment constants (documented in knowledge/catalog.md & store-settings.md) — allowed.
+// Keep tiny; everything else must be @td() or runtime-resolved.
+const ALLOWED_IDS = new Set<string>([
+  "fc596540864a41bf8ab78734ee7353a3", // active B2B virtual-catalog root (stable across deploys)
+]);
+
+interface IdHit { file: string; line: number; value: string; }
+
+// Find bare GUID/ID literals AFTER stripping @td(...) and {{VAR}} (those are the correct forms).
+function scanHardcodedIds(file: string, content: string): IdHit[] {
+  const hits: IdHit[] = [];
+  const lines = content.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const stripped = lines[i].replace(/@td\([^)]*\)/g, "").replace(/\{\{[^}]*\}\}/g, "");
+    for (const re of [UUID_RE, HEX32_RE]) {
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(stripped)) !== null) {
+        const v = m[0];
+        if (SENTINEL_RE.test(v) || ALLOWED_IDS.has(v.toLowerCase())) continue;
+        hits.push({ file: relative(ROOT, file).replace(/\\/g, "/"), line: i + 1, value: v });
+      }
+    }
+  }
+  return hits;
+}
 
 interface SuiteReport {
   file: string;
@@ -51,11 +92,15 @@ const reports: SuiteReport[] = [];
 let totalRefs = 0;
 let totalResolved = 0;
 let totalFailed = 0;
+const idHits: IdHit[] = [];
 
 for (const file of csvFiles) {
   const content = readFileSync(file, "utf-8");
-  const refs = countRefs(content);
 
+  // DV-013: scan EVERY suite (even those with no @td() refs) for bare hardcoded GUIDs.
+  idHits.push(...scanHardcodedIds(file, content));
+
+  const refs = countRefs(content);
   if (refs.length === 0) continue;
 
   resolver.clearWarnings();
@@ -134,4 +179,27 @@ for (const [domain, count] of Object.entries(domainCounts).sort((a, b) => b[1] -
   console.log(`  ${domain}: ${count} refs`);
 }
 
-process.exit(totalFailed > 0 ? 1 : 0);
+// --- DV-013: Hardcoded ID / GUID anti-pattern ---
+console.log("\n--- Hardcoded ID / GUID Scan (DV-013) ---\n");
+if (idHits.length === 0) {
+  console.log("  No bare GUID/ID literals found. ✓");
+} else {
+  // Group by file for readable output.
+  const byFile = new Map<string, IdHit[]>();
+  for (const h of idHits) (byFile.get(h.file) ?? byFile.set(h.file, []).get(h.file)!).push(h);
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${idHits.length} hardcoded ID/GUID literal(s) across ${byFile.size} file(s) [${tag}]:`);
+  for (const [file, hits] of byFile) {
+    for (const h of hits) console.log(`    ${file}:${h.line}  ${h.value}`);
+  }
+  console.log(
+    "\n  Anti-pattern: a system GUID rots on every teardown+reseed and differs per env.\n" +
+    "  Fix: reference by stable business key (code / name / slug / SKU) and capture the\n" +
+    "  GUID at runtime ([GQL-CAPTURE] / live-discover) if truly needed. See DV-013 / DV-020\n" +
+    "  in .claude/skills/testing/qa-review-tests/review-criteria.md." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
+const idFatal = idHits.length > 0 && !WARN_ONLY;
+process.exit(totalFailed > 0 || idFatal ? 1 : 0);

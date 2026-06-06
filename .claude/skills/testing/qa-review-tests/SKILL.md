@@ -116,8 +116,9 @@ For every test case row, evaluate:
   - [ ] MoneyType uses `currency { code }` not `currencyCode` (DV-011)
 - [ ] Referenced products/SKUs exist in `test-data/` or use `{{TEST_SKU}}`
 - [ ] Referenced org users use `{{ORG_USER_EMAIL}}` not hardcoded emails
-- [ ] **Golden Rule — no hardcoded env-dependent values** (DV-013…DV-018):
+- [ ] **Golden Rule — no hardcoded env-dependent values** (DV-013…DV-018, DV-020). Machine check: `npx tsx scripts/validate-td-refs.ts` (fails on hardcoded GUID/ID literals by default; `--warn-only` to downgrade):
   - [ ] No GUIDs/entity IDs for products/catalogs/categories/users/orgs/orders (DV-013) — use `@td()` resolver or runtime resolution
+  - [ ] No fixture/alias column holding a volatile system GUID (DV-020) — reference by business key (`code`/`promo_name`/`slug`/`sku`); capture a system id at runtime, never persist it (the `gql_id` anti-pattern)
   - [ ] No literal SKUs / product names outside `test-data/` fixtures (DV-014) — use `{{TEST_SKU}}` or `@td(ALIAS.sku)`
   - [ ] No literal user emails outside `.env` vars or agent-user-pool slots (DV-015)
   - [ ] No exact-value assertions on env-dependent data (DV-016) — assert structural invariants (math identity, ordering, relation, shape/regex) instead of literal prices, order numbers, slugs, titles, counts

@@ -2,7 +2,7 @@
 
 Detailed review criteria for the `/qa-review-tests` skill. Each criterion has a severity, description, detection rule, and examples of good vs bad patterns.
 
-> **Cross-reference for Dimension 5 (Data Validity):** The consolidated test-data policy lives at [`.claude/rules/test-data.md`](../../../rules/test-data.md). The canonical `@td()` resolver contract is at [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md); the alias registry is [`test-data/aliases.json`](../../../../test-data/aliases.json). DV-013 / DV-014 / DV-016 / DV-017 below are the enforcement rules — when a reviewer flags one, point the author at the rule file for the rationale and the `@td()` patterns.
+> **Cross-reference for Dimension 5 (Data Validity):** The consolidated test-data policy lives at [`.claude/rules/test-data.md`](../../../rules/test-data.md). The canonical `@td()` resolver contract is at [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md); the alias registry is [`test-data/aliases.json`](../../../../test-data/aliases.json). DV-013 / DV-014 / DV-016 / DV-017 / DV-020 below are the enforcement rules — when a reviewer flags one, point the author at the rule file for the rationale and the `@td()` patterns. **DV-013 is also machine-enforced:** `npx tsx scripts/validate-td-refs.ts` scans every suite for bare GUID/ID literals and **fails the build** on any (use `--warn-only` to downgrade for WIP). The golden habit (DV-013 + DV-020): reference data by its **stable business key** (code / name / slug / SKU), keep system GUIDs out of fixtures entirely, and capture a GUID at runtime only when a step truly needs it.
 
 ---
 
@@ -237,7 +237,16 @@ Ensures all referenced data is valid and resolvable.
 - **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
 - **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
 - **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.
+- **Enforced by:** `npx tsx scripts/validate-td-refs.ts` **fails the build** on any bare UUID/32-hex literal not wrapped in `@td()`/`{{VAR}}` (sentinel `00000000-…` and documented env constants allowlisted; `--warn-only` downgrades to a warning for WIP). The same GUID arriving one indirection away — via a fixture column — is **DV-020**.
 - **Auto-fixable:** No — requires domain choice on how to resolve.
+
+### DV-020: Fixture/alias field that stores a volatile system GUID `[High]`
+- **Detection:** A `@td(ALIAS.field)` reference — or an `aliases.json` `fields` mapping — whose column holds a **system-generated** id (an entity primary key, `gql_id`, `promotionId`, …) rather than a stable business key (`code`, `promo_name`, `sku`, `slug`). The literal isn't in the test, but the fixture column it resolves to regenerates on every teardown+reseed and differs per environment, so it rots exactly like a hardcoded GUID (DV-013) — just one indirection away.
+- **Exception:** an id column a **seeder writes back on every run** (e.g. `@td(PRODUCT_BIKE.id)`, refreshed into `test-data/` by `seed-*`) is acceptable — the indirection stays current. The smell is a GUID column nothing maintains.
+- **Impact:** Silent rot. Worked example (2026-06 `gql_id` incident): `coupons.csv` carried each coupon's promotion GUID; a teardown+reseed minted new GUIDs, leaving `@td(COUPON_*.gql_id)` in suite 077 preconditions pointing at deleted promotions. Fixed by dropping the `gql_id` column + alias mappings entirely — coupons are referenced by `code`, promotions by `promo_name`.
+- **Bad:** `@td(COUPON_10PCT.gql_id)` ; an `aliases.json` mapping `"gql_id": "gql_id"`.
+- **Good:** `@td(COUPON_10PCT.code)` + `@td(COUPON_10PCT.promo_name)` ; if the system id is genuinely needed mid-test, capture it at runtime (`[GQL-OP]+[GQL-CAPTURE]`, `live-discover`) — never persist it in a fixture column.
+- **Auto-fixable:** Partial — drop the GUID-field reference and its backing column; reviewer proposes the business-key form.
 
 ### DV-014: Hardcoded SKU or product identifier `[High]`
 - **Detection:** Steps, Assertions, or Test_Data contain a literal SKU like `KC3000-1TB`, a product name like `Kingston KC3000 1TB`, or a variant code that is not the generic `{{TEST_SKU}}` placeholder or a `TEST-*` seeded pattern. Exception: product fixtures explicitly seeded for the suite under `test-data/products/*.csv` and resolved via `@td(ALIAS.field)`.
