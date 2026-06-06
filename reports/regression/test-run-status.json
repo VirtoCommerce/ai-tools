@@ -78,12 +78,22 @@
       "name": "Datatrans section clean run (PAY-DT-001..008, post-fix)",
       "priority": "P0",
       "browser": "playwright-chrome",
-      "status": "in_progress",
+      "status": "completed",
       "attempts": 1,
-      "parent": "040"
+      "parent": "040",
+      "results": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "passRate": "100.0%"
+      },
+      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-dt-results.json",
+      "completedAt": "2026-06-06T10:53:10.325Z"
     }
   ],
-  "status": "running",
-  "completedAt": "2026-06-05T22:11:24.694Z",
+  "status": "completed",
+  "completedAt": "2026-06-06T10:53:10.325Z",
   "report": "reports/regression/REG-2026-06-05-1752/regression-2026-06-05.md"
 }

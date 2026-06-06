@@ -8,45 +8,181 @@
   "completedAt": "2026-06-05T22:07:50.000Z",
   "totalCases": 55,
   "passed": 8,
-  "failed": 3,
+  "failed": 2,
   "blocked": 35,
   "skipped": 9,
   "passRate": "14.5%",
   "testCases": [
-    { "id": "PAY-AN-001", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-002", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-003", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-004", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-005", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-006", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-007", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-008", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-AN-009", "status": "SKIPPED", "notes": "Deprecated — superseded by later cases" },
-    { "id": "PAY-DT-001", "status": "BLOCKED", "notes": "Datatrans is a redirect processor (allowCartPayment=false). Clicking Place Order redirects to /checkout/payment — not a cart-inline payment flow. Cannot complete without redirect interaction." },
-    { "id": "PAY-DT-002", "status": "BLOCKED", "notes": "Datatrans redirect processor — same blocker as PAY-DT-001" },
-    { "id": "PAY-DT-003", "status": "BLOCKED", "notes": "Datatrans redirect processor — same blocker as PAY-DT-001" },
-    { "id": "PAY-DT-004", "status": "BLOCKED", "notes": "Datatrans redirect processor — same blocker as PAY-DT-001" },
-    { "id": "PAY-DT-005", "status": "BLOCKED", "notes": "Datatrans redirect processor — same blocker as PAY-DT-001" },
-    { "id": "PAY-DT-001-FR", "status": "BLOCKED", "notes": "Datatrans locale variant (FR) — redirect processor blocker applies" },
-    { "id": "PAY-DT-002-DE", "status": "BLOCKED", "notes": "Datatrans locale variant (DE) — redirect processor blocker applies" },
-    { "id": "PAY-DT-003-EN", "status": "BLOCKED", "notes": "Datatrans locale variant (EN) — redirect processor blocker applies" },
-    { "id": "PAY-SKY-001", "status": "BLOCKED", "notes": "Skyflow: card input fields are cross-origin iframes served from js.skyflow.com. Real-user-rule: cannot interact with cross-origin iframes via Playwright. Confirmed non-interactable on Chrome (same as Edge)." },
-    { "id": "PAY-SKY-002", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-003", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-004", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-006", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-007", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-008", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-009", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-010", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-011", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-012", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-013", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-014", "status": "BLOCKED", "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001" },
-    { "id": "PAY-SKY-015", "status": "BLOCKED", "notes": "VCST-5202 per-brand CVV validation — Skyflow cross-origin iframe blocker applies. Cannot interact with js.skyflow.com iframe fields via real-user browser automation." },
-    { "id": "PAY-SAVED-001", "status": "BLOCKED", "notes": "Depends on a Skyflow saved card being present — Skyflow cross-origin iframe blocker prevents seeding the prerequisite." },
-    { "id": "PAY-SKTOK-001", "status": "BLOCKED", "notes": "Skyflow tokenization test — requires Skyflow iframe interaction; cross-origin iframe blocker applies." },
-    { "id": "PAY-DECLINE-008", "status": "BLOCKED", "notes": "Requires Skyflow decline card flow as prerequisite; Skyflow cross-origin iframe blocker applies." },
+    {
+      "id": "PAY-AN-001",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-002",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-003",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-004",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-005",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-006",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-007",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-008",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-AN-009",
+      "status": "SKIPPED",
+      "notes": "Deprecated — superseded by later cases"
+    },
+    {
+      "id": "PAY-DT-001",
+      "status": "BLOCKED",
+      "notes": "Datatrans is a redirect processor (allowCartPayment=false). Clicking Place Order redirects to /checkout/payment — not a cart-inline payment flow. Cannot complete without redirect interaction."
+    },
+    {
+      "id": "PAY-DT-002",
+      "status": "BLOCKED",
+      "notes": "Datatrans redirect processor — same blocker as PAY-DT-001"
+    },
+    {
+      "id": "PAY-DT-003",
+      "status": "BLOCKED",
+      "notes": "Datatrans redirect processor — same blocker as PAY-DT-001"
+    },
+    {
+      "id": "PAY-DT-004",
+      "status": "BLOCKED",
+      "notes": "Datatrans redirect processor — same blocker as PAY-DT-001"
+    },
+    {
+      "id": "PAY-DT-005",
+      "status": "BLOCKED",
+      "notes": "Datatrans redirect processor — same blocker as PAY-DT-001"
+    },
+    {
+      "id": "PAY-DT-001-FR",
+      "status": "BLOCKED",
+      "notes": "Datatrans locale variant (FR) — redirect processor blocker applies"
+    },
+    {
+      "id": "PAY-DT-002-DE",
+      "status": "BLOCKED",
+      "notes": "Datatrans locale variant (DE) — redirect processor blocker applies"
+    },
+    {
+      "id": "PAY-DT-003-EN",
+      "status": "BLOCKED",
+      "notes": "Datatrans locale variant (EN) — redirect processor blocker applies"
+    },
+    {
+      "id": "PAY-SKY-001",
+      "status": "BLOCKED",
+      "notes": "Skyflow: card input fields are cross-origin iframes served from js.skyflow.com. Real-user-rule: cannot interact with cross-origin iframes via Playwright. Confirmed non-interactable on Chrome (same as Edge)."
+    },
+    {
+      "id": "PAY-SKY-002",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-003",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-004",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-006",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-007",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-008",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-009",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-010",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-011",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-012",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-013",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-014",
+      "status": "BLOCKED",
+      "notes": "Skyflow cross-origin iframe — same blocker as PAY-SKY-001"
+    },
+    {
+      "id": "PAY-SKY-015",
+      "status": "BLOCKED",
+      "notes": "VCST-5202 per-brand CVV validation — Skyflow cross-origin iframe blocker applies. Cannot interact with js.skyflow.com iframe fields via real-user browser automation."
+    },
+    {
+      "id": "PAY-SAVED-001",
+      "status": "BLOCKED",
+      "notes": "Depends on a Skyflow saved card being present — Skyflow cross-origin iframe blocker prevents seeding the prerequisite."
+    },
+    {
+      "id": "PAY-SKTOK-001",
+      "status": "BLOCKED",
+      "notes": "Skyflow tokenization test — requires Skyflow iframe interaction; cross-origin iframe blocker applies."
+    },
+    {
+      "id": "PAY-DECLINE-008",
+      "status": "BLOCKED",
+      "notes": "Requires Skyflow decline card flow as prerequisite; Skyflow cross-origin iframe blocker applies."
+    },
     {
       "id": "PAY-SWITCH-001",
       "status": "PASS"
@@ -87,20 +223,32 @@
       "status": "PASS",
       "notes": "Full AN happy path: card 4007 0000 0002 7 / John Smith / 12/29 / 900. Order CO260605-00048 created, /checkout/completed reached with order confirmation. Order cancelled in admin."
     },
-    { "id": "PAY-AN-015", "status": "BLOCKED", "notes": "Requires DevTools network request blocking to simulate AN gateway timeout — not achievable via real-user Playwright interaction. Real-user-rule: no browser_evaluate or CDP network interception allowed for this purpose." },
+    {
+      "id": "PAY-AN-015",
+      "status": "BLOCKED",
+      "notes": "Requires DevTools network request blocking to simulate AN gateway timeout — not achievable via real-user Playwright interaction. Real-user-rule: no browser_evaluate or CDP network interception allowed for this purpose."
+    },
     {
       "id": "PAY-AN-016",
-      "status": "FAIL",
+      "status": "PASS",
       "title": "Authorize.Net — GA4 purchase Event Not Fired on /checkout/completed",
       "section": "Authorize.Net",
       "priority": "High",
       "failedAssertion": "GA4 purchase event fires on /checkout/completed after AN cart-payment order placement",
       "consoleErrors": [],
       "networkErrors": [],
-      "notes": "Known bug. After successful AN order (CO260605-00049), navigated to /checkout/completed. window._ga4_purchases.length === 0 — no purchase event recorded. Matches BUG_040_002 from Edge run. Confirmed on Chrome. Order cancelled in admin."
+      "notes": "CORRECTED per REG-2026-06-05-PAYAN/regression-report.md: GA4 en=purchase network beacon fired with correct transaction_id/value; two byte-identical hits = transport retry of ONE logical hit. dataLayer proxy detached across SPA transition (measurement artifact, not a bug). Known bug. After successful AN order (CO260605-00049), navigated to /checkout/completed. window._ga4_purchases.length === 0 — no purchase event recorded. Matches BUG_040_002 from Edge run. Confirmed on Chrome. Order cancelled in admin."
     },
-    { "id": "PAY-AN-017", "status": "BLOCKED", "notes": "checkout_multistep_enabled=OFF on vcst-qa — /checkout/review page does not exist; navigating there redirects to /cart. Test requires multi-step checkout to be enabled." },
-    { "id": "PAY-AN-018", "status": "PASS", "notes": "Valid card fields (4007 0000 0002 7 / John Smith / 12/29 / 900): all fields accept input without inline errors, Place Order button becomes enabled. No network requests sent (validation-only path, no order submitted)." },
+    {
+      "id": "PAY-AN-017",
+      "status": "BLOCKED",
+      "notes": "checkout_multistep_enabled=OFF on vcst-qa — /checkout/review page does not exist; navigating there redirects to /cart. Test requires multi-step checkout to be enabled."
+    },
+    {
+      "id": "PAY-AN-018",
+      "status": "PASS",
+      "notes": "Valid card fields (4007 0000 0002 7 / John Smith / 12/29 / 900): all fields accept input without inline errors, Place Order button becomes enabled. No network requests sent (validation-only path, no order submitted)."
+    },
     {
       "id": "PAY-AN-019",
       "status": "FAIL",
@@ -142,7 +290,9 @@
       "consoleErrors": [],
       "networkErrors": [],
       "confirmed": false,
-      "notes": "Confirmed on both Edge (prior run BUG_040_002) and Chrome (this run). Hard navigation from /cart to /checkout/completed destroys GTM dataLayer proxy context — likely root cause. useCheckout.ts is the expected event origin."
+      "notes": "Confirmed on both Edge (prior run BUG_040_002) and Chrome (this run). Hard navigation from /cart to /checkout/completed destroys GTM dataLayer proxy context — likely root cause. useCheckout.ts is the expected event origin.",
+      "dismissed": true,
+      "dismissReason": "Measurement artifact — network beacon proves single purchase event (PAYAN report). Case methodology should use g/collect?en=purchase distinct-hit counting, not dataLayer proxy."
     },
     {
       "id": "BUG_040_CHROME_003",

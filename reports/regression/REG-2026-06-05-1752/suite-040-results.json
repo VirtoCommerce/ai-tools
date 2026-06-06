@@ -13,11 +13,36 @@
   "skipped": 6,
   "passRate": "7.3%",
   "testCases": [
-    { "id": "PAY-AN-001", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-002", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-003", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-004", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-005", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
+    {
+      "id": "PAY-AN-001",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-002",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-003",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-004",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-005",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
     {
       "id": "PAY-DT-001",
       "status": "BLOCKED",
@@ -161,10 +186,30 @@
       "priority": "High",
       "notes": "Skyflow uses cross-origin iframes (js.skyflow.com) — Playwright cannot interact with cross-origin iframe."
     },
-    { "id": "PAY-AN-006", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-007", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-008", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
-    { "id": "PAY-AN-009", "status": "SKIPPED", "title": "deprecated", "notes": "deprecated — superseded" },
+    {
+      "id": "PAY-AN-006",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-007",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-008",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
+    {
+      "id": "PAY-AN-009",
+      "status": "SKIPPED",
+      "title": "deprecated",
+      "notes": "deprecated — superseded"
+    },
     {
       "id": "PAY-DT-001-FR",
       "status": "BLOCKED",
@@ -273,7 +318,7 @@
       "businessRule": "BL-CHK-004",
       "edgeCaseRefs": "ECL-14.6",
       "failedAssertion": "[NAV] From /cart with inline AN form → order confirmation reached without /checkout/payment redirect",
-      "notes": "Order CO260605-00025 created and reached /checkout/completed, but flow transited through /checkout/payment before confirmation (redirect to /checkout/payment observed). CSV asserts 'not redirected to /checkout/payment'. The payment did succeed end-to-end (order confirmed, cart cleared), but the AllowCartPayment flow redirects to /checkout/payment step en route. Order cancelled in admin.",
+      "notes": "SUPERSEDED: artifact of the 12/2029-in-MM/YY-mask expiry trap (entered expired 12/20 → known no-validation bug → fallback redirect) and/or detached dataLayer proxy. PAYAN edge re-run + 040-dt: no detour, beacon fired. See regression report. Order CO260605-00025 created and reached /checkout/completed, but flow transited through /checkout/payment before confirmation (redirect to /checkout/payment observed). CSV asserts 'not redirected to /checkout/payment'. The payment did succeed end-to-end (order confirmed, cart cleared), but the AllowCartPayment flow redirects to /checkout/payment step en route. Order cancelled in admin.",
       "consoleErrors": []
     },
     {
@@ -293,7 +338,7 @@
       "businessRule": "BL-PAY-004",
       "edgeCaseRefs": "ECL-14.6",
       "failedAssertion": "[STATE] Exactly 1 purchase event in GA4 dataLayer (window._ga4_purchases.length === 1)",
-      "notes": "dataLayer intercept proxy installed via allowed GA4 path. Order CO260605-00025 confirmed on /checkout/completed. window._ga4_purchases.length returned 0 — no purchase event captured. The useCheckout.ts purchase event did not fire for the AN cart-embedded flow, or fired before the intercept proxy was installed. Order cancelled in admin.",
+      "notes": "SUPERSEDED: artifact of the 12/2029-in-MM/YY-mask expiry trap (entered expired 12/20 → known no-validation bug → fallback redirect) and/or detached dataLayer proxy. PAYAN edge re-run + 040-dt: no detour, beacon fired. See regression report. dataLayer intercept proxy installed via allowed GA4 path. Order CO260605-00025 confirmed on /checkout/completed. window._ga4_purchases.length returned 0 — no purchase event captured. The useCheckout.ts purchase event did not fire for the AN cart-embedded flow, or fired before the intercept proxy was installed. Order cancelled in admin.",
       "consoleErrors": []
     },
     {
@@ -327,7 +372,9 @@
       "actual": "Navigation goes /cart → /checkout/payment → /checkout/payment/success → /checkout/completed. The order is successfully created and payment authorized, but the flow transits through /checkout/payment contrary to the AllowCartPayment=true design intent documented in VCST-5162.",
       "consoleErrors": [],
       "networkErrors": [],
-      "confirmed": false
+      "confirmed": false,
+      "dismissed": true,
+      "dismissReason": "Artifact of expiry MM/YY truncation test-data trap (BUG_040_001) / proxy detachment (BUG_040_002); refuted by PAYAN edge re-run with corrected expiry."
     },
     {
       "id": "BUG_040_002",
@@ -342,7 +389,9 @@
       "actual": "window._ga4_purchases.length === 0. No purchase event captured in the dataLayer intercept. Either the useCheckout.ts purchase event is not firing for the AN cart-embedded flow, or it fires at a different lifecycle point that pre-dates the interceptor installation. Note: the flow also transits through /checkout/payment (BUG_040_001), which may affect when/whether the GA4 event fires.",
       "consoleErrors": [],
       "networkErrors": [],
-      "confirmed": false
+      "confirmed": false,
+      "dismissed": true,
+      "dismissReason": "Artifact of expiry MM/YY truncation test-data trap (BUG_040_001) / proxy detachment (BUG_040_002); refuted by PAYAN edge re-run with corrected expiry."
     }
   ],
   "errors": []

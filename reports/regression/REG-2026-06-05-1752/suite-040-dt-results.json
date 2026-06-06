@@ -5,13 +5,13 @@
   "browser": "playwright-chrome",
   "environment": "https://vcst-qa-storefront.govirto.com",
   "startedAt": "2026-06-06T09:38:00.000Z",
-  "completedAt": null,
+  "completedAt": "2026-06-06T10:50:15.000Z",
   "totalCases": 8,
-  "passed": 5,
+  "passed": 8,
   "failed": 0,
   "blocked": 0,
   "skipped": 0,
-  "passRate": "62.5%",
+  "passRate": "100.0%",
   "testCases": [
     {
       "id": "PAY-DT-001",
@@ -37,6 +37,21 @@
       "id": "PAY-DT-005",
       "status": "PASS",
       "notes": "Order #CO260606-00006 (GUID: cf75e563-7213-4981-8177-c996e6e52f11). Datatrans trxId: 260606121407088964. Payment success page displayed three navigation links: 'BACK TO ORDER', 'ORDERS LIST', 'CONTINUE SHOPPING'. 'Back to order' verified: clicked and landed on /account/orders/cf75e563-7213-4981-8177-c996e6e52f11 (order detail, Status: Processing, Total $300). 'Orders list' verified: navigated to /account/orders showing CO260606-00006 at top of list with Status Processing. 'Continue shopping' destination /catalog verified accessible. BL-CROSS-005: all three post-payment navigation links functional. Order cancelled in admin (Status: Cancelled)."
+    },
+    {
+      "id": "PAY-DT-006",
+      "status": "PASS",
+      "notes": "Order #CO260606-00007 (GUID: 4d18a3c4-4fc4-4143-b766-4e1146328dbc). Datatrans trxId: 260606122502863402. French locale (fr) Datatrans lightbox labels confirmed: payment method selection heading 'Choisir moyen de paiement', card form heading 'Formulaire de paiement', card number field 'Numéro de carte (Mastercard)', expiry field 'Date d échéance' (placeholder 'MM/AA'), CVV field 'CVV', pay button 'Payer USD 300.00', close button 'fermer', back link 'Retour'. /checkout/payment page showed French: 'Paiement' heading, 'Payer maintenant · 300,00 $' button. Payment success page in French: 'Paiement réussi', nav links 'Retour à la commande', 'Liste des commandes', 'Continuer vos achats'. Order cancelled in admin (Status: Cancelled). English locale restored via language selector."
+    },
+    {
+      "id": "PAY-DT-007",
+      "status": "PASS",
+      "notes": "Order #CO260606-00008 (GUID: 9530a3fb-a233-4d8e-bc0c-18d362e28264). Datatrans trxId: 260606123625033108. German locale (de) full Datatrans flow verified. /de/checkout/payment page: 'Zahlung' heading, 'Jetzt bezahlen · 300,00 $' button. Datatrans lightbox in German: payment method selection heading 'Zahlungsart auswählen', close button 'Schliessen', card form heading 'Zahlungsformular', card number field 'Kartennummer (Mastercard)', expiry field 'Verfallsdatum' (placeholder 'MM/JJ'), CVV field 'CVV', pay button 'Zahlen USD 300.00', back link 'Zurück'. Payment completed. Success page in German: 'Zahlung erfolgreich', order reference 'Bestellung #CO260606-00008', nav links 'Zurück zur Bestellung', 'Bestellliste', 'Weiter einkaufen'. Storefront German UI labels confirmed: 'Warenkorb', 'Bestellung aufgeben', 'Liefermethode', 'Zahlungsmethode'. Order cancelled in admin (Status: Cancelled). English locale restored via language selector."
+    },
+    {
+      "id": "PAY-DT-008",
+      "status": "PASS",
+      "notes": "Order #CO260606-00009 (GUID: e50df953-ed60-4f0e-a7b0-adec492b12b5). Datatrans trxId: 260606124531135410. English locale (en-GB) default Datatrans flow verified end-to-end. Cart: 2x HP LaserJet Pro MFP M127fn @ $315 each = $630 subtotal + $150 shipping + $156 tax = $936 total. /en-GB/checkout/payment page: 'Payment' heading (English), 'Pay now · $936.00' button (English). Datatrans lightbox in English: payment method selection heading 'Choose your payment method', amount 'USD 936.00', payment methods listed (Visa, Mastercard, American Express, PayPal, Diners Club, Discover, Alipay+), footer 'Secure payment by Datatrans', close button 'Close', back link 'Back'. Card form heading 'Payment Form', card number field 'Card number (Mastercard)' (placeholder '0000 0000 0000 0000'), expiry field 'Expiration date' (placeholder 'MM/YY'), CVV field 'CVV', pay button 'Pay USD 936.00'. Card 5100001000000014 / 06/28 / 123 accepted — no OTP prompt (consistent with PAY-DT-001 through PAY-DT-007). Payment success page in English: 'Payment successful', 'Order #CO260606-00009', status 'Processing', nav links 'Back to order', 'Orders list', 'Continue shopping'. Order cancelled in admin (Status: Cancelled)."
     }
   ],
   "bugs": [],
