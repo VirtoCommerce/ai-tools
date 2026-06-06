@@ -70,9 +70,11 @@ const FRONTEND_WRITE_SUITES = new Set([
   "013", // Checkout B2B — places orders
   "014", // Orders Frontend — order operations
   "015", // Quotes — creates quotes
-  "039", // Payment CyberSource — places orders
-  "040", // Payment Processors — places orders
-  "041", // Payment Cross-Cutting — places orders
+  "039",  // Payment CyberSource — places orders
+  "040a", // Payment Skyflow — places orders
+  "040b", // Payment Authorize.Net — places orders
+  "040c", // Payment Datatrans — places orders
+  "041",  // Payment Cross-Cutting — places orders
   "077", // Marketing Coupons Storefront — applies/redeems
 ]);
 

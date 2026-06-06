@@ -146,17 +146,17 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Subscription/recurring orders | None | **GAP** — not active in current QA environment |
 
 ### PAYMENT — Payment Processing
-**Domain:** `purchase-flow` | **Selection:** `payment` | **Suites:** 039, 040, 041
+**Domain:** `purchase-flow` | **Selection:** `payment` | **Suites:** 039, 040a, 040b, 040c, 041
 
 | Feature | Suites | Status |
 |---------|--------|--------|
 | CyberSource | 039 | Covered |
-| Skyflow | 040 | Covered |
-| Authorize.Net | 040 | Covered |
-| Datatrance | 040 | Covered |
+| Skyflow | 040a | Covered |
+| Authorize.Net | 040b | Covered |
+| Datatrans | 040c | Covered |
 | Payment cross-cutting (UX, form, tabs) | 041 | Covered |
 | PCI compliance | 044 | Covered |
-| Declined card recovery | 039, 040 | Partial — basic error paths exist, no full recovery flow |
+| Declined card recovery | 039, 040a, 040b | Partial — basic error paths exist, no full recovery flow |
 
 ### ORDERS — Order Management
 **Domain:** `purchase-flow` | **Selection:** `orders` | **Suites:** 014, 015, 017, 018, 019

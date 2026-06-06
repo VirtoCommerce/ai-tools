@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-04-27",
-    "totalSuites": 99,
+    "generated": "2026-06-06",
+    "totalSuites": 101,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -855,30 +855,77 @@
       "customerApplicability": "universal"
     },
     {
-      "id": "040",
-      "name": "Payment Processors",
-      "file": "regression/suites/Frontend/payment/040-payment-processors.csv",
+      "id": "040a",
+      "name": "Payment - Skyflow",
+      "file": "regression/suites/Frontend/payment/040a-payment-skyflow.csv",
       "domain": "purchase-flow",
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 36,
-      "estimatedMinutes": 20,
+      "testCount": 17,
+      "estimatedMinutes": 12,
       "agent": "qa-frontend-expert",
       "tags": [
         "payment",
         "skyflow",
-        "authorize-net",
-        "datatrance",
         "revenue-critical"
       ],
       "paymentProcessors": [
-        "skyflow",
-        "authorize-net",
-        "datatrance"
+        "skyflow"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "universal"
+      "customerApplicability": "universal",
+      "references": [
+        "VCST-5009"
+      ]
+    },
+    {
+      "id": "040b",
+      "name": "Payment - Authorize.Net",
+      "file": "regression/suites/Frontend/payment/040b-payment-authorizenet.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 19,
+      "estimatedMinutes": 12,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "payment",
+        "authorize-net",
+        "revenue-critical"
+      ],
+      "paymentProcessors": [
+        "authorize-net"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "references": [
+        "VCST-5162"
+      ]
+    },
+    {
+      "id": "040c",
+      "name": "Payment - Datatrans",
+      "file": "regression/suites/Frontend/payment/040c-payment-datatrans.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 8,
+      "estimatedMinutes": 8,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "payment",
+        "datatrans",
+        "revenue-critical"
+      ],
+      "paymentProcessors": [
+        "datatrans"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "notes": "Datatrans is the only redirect processor. Redirect to /checkout/payment is the DESIGNED flow — never mark cases BLOCKED on the redirect."
     },
     {
       "id": "041",
@@ -888,8 +935,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 14,
-      "estimatedMinutes": 10,
+      "testCount": 17,
+      "estimatedMinutes": 12,
       "agent": "qa-frontend-expert",
       "preferredBrowser": "playwright-chrome",
       "browserRequirementReason": "Includes PCI compliance checks against CyberSource Microform iframe; Firefox MCP cannot access cross-origin iframe DOM.",
@@ -903,7 +950,7 @@
         "cybersource",
         "skyflow",
         "authorize-net",
-        "datatrance"
+        "datatrans"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "universal"

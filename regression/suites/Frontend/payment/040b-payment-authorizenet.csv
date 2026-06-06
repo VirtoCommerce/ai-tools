@@ -1,0 +1,403 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"PAY-AN-001","Authorize.Net - Complete Payment Flow [DEPRECATED — superseded by PAY-AN-010]","Authorize.Net","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment processor configured and active
+- Authorize.Net test credentials set in environment
+- DEPRECATED: This case encoded the old redirect-to-/checkout/payment flow. VCST-5162 (AllowCartPayment=true) changes Authorize.Net to render inline on /cart (same as CyberSource/Skyflow). Superseded by PAY-AN-010 (happy path cart-embedded). Do not execute.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net as payment method if not pre-selected
+[ACT] Click 'Place Order' — this redirects to the Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for {{FRONT_URL}}/checkout/payment to load with Authorize.Net payment form
+[ACT] Fill 'Card Number' with '{{TEST_CARD_NUMBER}}'
+[ACT] Fill 'Expiry Date' with '{{TEST_CARD_EXP}}'
+[ACT] Fill 'CVV' with '{{TEST_CARD_CVV}}'
+[ACT] Fill 'Cardholder Name' with a test name
+[ACT] Click 'Place Order' or 'Submit Payment'
+[WAIT] Wait for payment authorization response","[NAV] After clicking 'Place Order' from cart user is redirected to {{FRONT_URL}}/checkout/payment
+[DOM] Payment form renders correctly on /checkout/payment page
+[NAV] After successful payment user navigated to order confirmation page
+[STATE] Order confirmation displays order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Authorize.Net payment method recorded
+[NETWORK] Payment request sent to Authorize.Net endpoint; no raw card data in storefront API requests","No redirect to /checkout/payment after clicking Place Order from cart; payment form does not load; order confirmation not reached; mutation returns errors[]","Cancel order via admin","google-analytics; STALE: VCST-5162 AllowCartPayment=true — redirects to /checkout/payment no longer expected; superseded by PAY-AN-010","deprecated"
+"PAY-AN-002","Authorize.Net - Invalid Card Number Validation [DEPRECATED — superseded by PAY-AN-012]","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment (reached by clicking Place Order from cart)
+- DEPRECATED: Encoded old /checkout/payment redirect path. VCST-5162: form now inline on /cart. Superseded by PAY-AN-012 (invalid card, cart-embedded). Do not execute.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach Authorize.Net payment form at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for payment form to load
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_INVALID.number)' (fails Luhn check)
+[ACT] Fill 'Expiry Date' with a valid future date; fill 'CVV' with a valid 3-digit value
+[ACT] Attempt to submit payment
+[ASSERT] Validation error appears on 'Card Number' field
+[ASSERT] Form does not submit with invalid card number","[DOM] 'Card Number' field shows validation error indicating invalid card
+[STATE] Payment submission blocked for Luhn-failing card number
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired or mutation returns errors[]
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; form submits and reaches payment processor with known-bad card; user navigated away from /checkout/payment unexpectedly","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-012","deprecated"
+"PAY-AN-003","Authorize.Net - Empty Fields Validation [DEPRECATED — superseded by PAY-AN-013]","Authorize.Net","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment form loaded at {{FRONT_URL}}/checkout/payment
+- DEPRECATED: Encoded old /checkout/payment redirect path. VCST-5162: form now inline on /cart. Superseded by PAY-AN-013. Do not execute.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order' to reach {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for Authorize.Net payment form to fully load
+[ACT] Leave all payment fields ('Card Number', 'Expiry Date', 'CVV', 'Cardholder Name') empty
+[ACT] Click 'Place Order' or payment submit button
+[ASSERT] Each empty field shows an individual validation error message
+[ASSERT] Form is not submitted until all required fields are filled","[DOM] Per-field validation errors appear for each empty required field
+[STATE] Form submission blocked until all fields are valid
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No JS errors","Single generic error shown instead of per-field errors; form submits with empty fields; only some fields validated on empty submit","none — no order created","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-013","deprecated"
+"PAY-AN-004","Authorize.Net - Transaction ID on Order Confirmation [DEPRECATED — superseded by PAY-AN-010 + 018 layer]","Authorize.Net","Medium","BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Authorize.Net payment processor configured with test credentials
+- DEPRECATED: Encoded old /checkout/payment path. VCST-5162: form now inline on /cart. Transaction record shape also changed (VCST-5162 PR#12 backend change #4: Status=short enum, ResponseCode=TransactionResponseCode, Note=full description). Admin-layer assertions moved to 018 suite. Do not execute.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; complete Authorize.Net payment form on {{FRONT_URL}}/checkout/payment
+[ACT] Fill payment form with {{TEST_CARD_NUMBER}}, {{TEST_CARD_EXP}}, {{TEST_CARD_CVV}}; submit payment
+[WAIT] Wait for order confirmation page to load
+[ASSERT] Order confirmation page displays order number
+[NAV] Navigate to account order history; find the placed order
+[ASSERT] Transaction ID or payment reference is visible in order details","[NAV] User reaches order confirmation page after payment
+[DOM] Order confirmation shows order number
+[DOM] Order details page or confirmation shows transaction ID / payment reference","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order in admin shows Authorize.Net transaction ID in payment details","No transaction ID visible on confirmation or order details; order confirmation page not reached; order absent from account history","Cancel order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + admin transaction shape changed; superseded by PAY-AN-010/018-suite","deprecated"
+"PAY-AN-005","Authorize.Net - Order Visible in Admin with Payment Details [DEPRECATED — superseded by PAY-AN-010 cross-layer + 018 suite]","Authorize.Net","High","BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Authorize.Net payment completed (PAY-AN-001 passed or equivalent)
+- Admin login credentials available
+- DEPRECATED: Encoded old /checkout/payment redirect flow + old transaction record shape. VCST-5162 PR#12 backend change #4: transaction Status now stores short TransactionResponse enum (not gateway description), ResponseCode stores TransactionResponseCode, Note stores full description + Transaction ID. Admin assertions updated in suite 018 (ORD-018 VCST-5162 sync). Do not execute.","FRONT_URL={{FRONT_URL}}, ADMIN_URL={{ADMIN_URL}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Complete Authorize.Net payment flow (navigate to {{FRONT_URL}}/cart, place order, complete payment at /checkout/payment); note the order number from confirmation
+[NAV] Open {{ADMIN_URL}} in a separate browser context; log in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
+[NAV] Navigate to Orders section; search for the order by order number
+[ACT] Open the order detail view
+[ASSERT] Order is found in admin
+[ASSERT] Payment method field shows label containing 'Authorize.Net' (displayed as 'Bank card (Authorize.Net)')
+[ASSERT] Transaction ID is recorded in payment section
+[MATH] Order total in admin matches the cart total from storefront","[ADMIN] Order found in admin Orders list
+[DOM] Payment method displayed as Authorize.Net
+[DOM] Transaction ID field populated in payment details
+[MATH] Order total in admin equals storefront cart total","[API] createOrderFromCart GraphQL mutation errors[] was empty at time of order creation
+[ADMIN] Order status reflects successful payment authorization","Order not found in admin; payment method label missing or incorrect; transaction ID absent; total mismatch between storefront and admin","Cancel order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + admin transaction shape changed (PR#12 backend #4); superseded by PAY-AN-010 + 018 suite","deprecated"
+"PAY-AN-006","Authorize.Net Form Renders on Checkout Payment Page [DEPRECATED — superseded by PAY-AN-010]","Payment > Authorize.Net > Form Render","Critical","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; items in cart; Authorize.Net payment processor configured
+- DEPRECATED: Encoded old redirect flow to /checkout/payment. VCST-5162 AllowCartPayment=true — AN form now renders inline on /cart via Accept.js, no redirect. Superseded by PAY-AN-010. Do not execute.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with items
+[ACT] complete checkout steps (address + shipping)
+[ACT] click Place Order
+[WAIT] wait for redirect to {{FRONT_URL}}/checkout/payment
+[ASSERT] verify Authorize.Net payment form renders on /checkout/payment page
+[ASSERT] verify card number field present
+[ASSERT] verify expiry date field present
+[ASSERT] verify CVV field present
+[ASSERT] verify submit/pay button visible","[DOM] Authorize.Net payment form visible on /checkout/payment
+[DOM] all required card fields present
+[DOM] submit button visible and enabled","[NETWORK] Authorize.Net SDK/form loaded
+[CONSOLE] no JS errors on payment page
+[NETWORK] no 4xx/5xx on page load","form does not render; blank payment page; missing fields; wrong payment processor form shown","None","Coverage Gap Analysis; STALE: VCST-5162 AllowCartPayment=true — /checkout/payment path no longer expected for AN; superseded by PAY-AN-010","deprecated"
+"PAY-AN-007","Authorize.Net Invalid Card Rejected With Error [DEPRECATED — superseded by PAY-AN-012]","Payment > Authorize.Net > Validation","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net payment form rendered on /checkout/payment
+- DEPRECATED: Encoded old /checkout/payment redirect flow. VCST-5162 — AN card form is now inline on /cart; Accept.js client-side validation responds without leaving /cart. Superseded by PAY-AN-012. Do not execute.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] enter invalid card number (e.g., 0000000000000000)
+[ACT] fill valid expiry and CVV
+[ACT] click submit/pay
+[WAIT] wait for validation response
+[ASSERT] verify error message for invalid card
+[ASSERT] verify no order created
+[ASSERT] verify form remains editable for correction","[DOM] error message visible for invalid card
+[STATE] no order placed
+[DOM] form fields editable after error","[NETWORK] no successful payment transaction
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 5xx","invalid card accepted; no error; order created; form crashes","None","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-012","deprecated"
+"PAY-AN-008","Authorize.Net Empty Required Fields Blocked [DEPRECATED — superseded by PAY-AN-013]","Payment > Authorize.Net > Empty Fields","High","BL-PAY-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net payment form rendered on /checkout/payment
+- DEPRECATED: Encoded old /checkout/payment redirect flow. VCST-5162 — AN inline form on /cart blocks empty-field submission via Accept.js before leaving /cart. Superseded by PAY-AN-013. Do not execute.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] leave all payment fields empty
+[ACT] click submit/pay
+[ASSERT] verify validation errors for all empty required fields
+[ASSERT] verify form submission blocked
+[ASSERT] verify no payment request sent","[DOM] validation errors visible for empty fields
+[STATE] submission prevented
+[DOM] no loading state triggered","[NETWORK] no payment API call with empty data
+[CONSOLE] no JS errors
+[NETWORK] no outbound POST","form submits with empty fields; no validation; payment attempted with empty data","None","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path; superseded by PAY-AN-013","deprecated"
+"PAY-AN-009","Authorize.Net Successful Payment Redirects to Confirmation [DEPRECATED — superseded by PAY-AN-014]","Payment > Authorize.Net > Success Flow","Critical","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Authorize.Net form rendered; valid test card available
+- DEPRECATED: Encoded old redirect-to-/checkout/payment flow and non-standard {{AUTHORIZNET_CARD}} var (misspelled). VCST-5162 — AN processes inline on /cart; confirmation is reached without /checkout/payment redirect. Also uses non-standard env var names {{AUTHORIZNET_CARD}} (note typo). Superseded by PAY-AN-014 which uses AUTHORIZENET_VISA.number/.expiry/.cvv aliases. Do not execute.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+authnet_card={{AUTHORIZNET_CARD}}
+authnet_exp={{AUTHORIZNET_EXPIRY}}
+authnet_cvv={{AUTHORIZNET_CVV}}","[NAV] navigate to Authorize.Net payment form at /checkout/payment
+[ACT] enter valid test card number
+[ACT] enter valid expiry date and CVV
+[ACT] click submit/pay
+[WAIT] wait for payment processing
+[ASSERT] verify redirect to order confirmation page
+[ASSERT] verify order number displayed
+[ASSERT] verify order status indicates successful payment","[NAV] redirect from /checkout/payment to confirmation
+[DOM] order number visible on confirmation
+[STATE] order successfully created","[API] order creation succeeds
+[CONSOLE] no JS errors
+[NETWORK] no 5xx; successful payment response","stuck on payment page; no redirect; order not created; payment processed but no confirmation","Cancel test order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + misspelled {{AUTHORIZNET_*}} vars; superseded by PAY-AN-014","deprecated"
+"PAY-AN-010","Authorize.Net - Cart Page Shows Inline Accept.js Form and allowCartPayment Cross-Layer Check","Authorize.Net > Cart Embedded Form","Critical","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net payment processor configured with AllowCartPayment=true (VCST-5162; payment-processing-authorize-net.vue renders inline on /cart via Accept.js)
+- No saved AN cards assumed (form renders directly on method select)","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for payment methods section to render
+[ASSERT] Payment method option containing 'Authorize.Net' (displayed as 'Bank card (Authorize.Net)') is visible WITHOUT clicking 'Place order'
+[ACT] Select the Authorize.Net payment method if not pre-selected
+[WAIT] Wait for Accept.js payment form to render inline on the cart page
+[ASSERT] Card number input field is visible inside the inline payment form
+[ASSERT] Cardholder name field is visible
+[ASSERT] Expiration date field is visible (MM/YY mask)
+[ASSERT] CVV/Security code field is visible
+[ASSERT] 'Place order' button is present on the cart page
+[ASSERT] No redirect to /checkout/payment has occurred — URL remains {{FRONT_URL}}/cart
+[ASSERT] 'Place order' button is disabled while all card fields are empty","[DOM] Authorize.Net card number, cardholder name, expiration date, CVV fields rendered inline on /cart without navigation to /checkout/payment
+[STATE] URL remains {{FRONT_URL}}/cart after Authorize.Net method selected
+[DOM] 'Place order' button present on /cart
+[STATE] 'Place order' button disabled while form fields are empty","[API] cart(availablePaymentMethods { code allowCartPayment }) — AuthorizeNetPaymentMethod allowCartPayment=true (CART-PAY-GQL-004 covers this at API layer)
+[NETWORK] Accept.js script loaded from js.authorize.net domain (not a raw card input handled on storefront origin)
+[CONSOLE] No JS errors during form render","AN form absent on /cart; 'Place order' causes redirect to /checkout/payment (old flow regression — VCST-5162 regressed); iframe/form not loaded; card fields missing; URL changes away from /cart; 'Place order' enabled with empty fields","[PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-010 for Skyflow; CART-PAY-GQL-004 (API layer twin)","Reviewed"
+"PAY-AN-011","Authorize.Net - Method Switch Guard: AN → Manual → Place Order Does Not Charge Card","Authorize.Net > Processor Switch","Critical","BL-PAY-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item (use a separate fresh cart — reuse risks stale payment rows)
+- Authorize.Net AND at least one Manual/non-AllowCartPayment payment method both enabled (e.g. Wire Transfer or Purchase Order)
+- IMPORTANT: This case validates the useCheckout.ts guard: finalizePayment only runs when paymentMethod.value?.allowCartPayment === true. Switching from AN (allowCartPayment=true) to a manual method (allowCartPayment=false or absent) MUST NOT trigger AN's Accept.js charge.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart
+[WAIT] Wait for payment methods section to render
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ACT] Fill the card number field with '@td(AUTHORIZENET_VISA.number)'
+[ACT] Fill the expiration date field with '@td(AUTHORIZENET_VISA.expiry)'
+[ACT] Fill the CVV/Security code field with '@td(AUTHORIZENET_VISA.cvv)'
+[ASSERT] Card fields are filled; Accept.js form appears ready (card number visible/masked)
+[ACT] Switch to the manual payment method (e.g. Wire Transfer or Purchase Order) by clicking its option
+[WAIT] Wait for the AN card form to unmount/hide and the manual method UI to appear
+[ASSERT] AN inline card form is no longer visible — the manual payment method section is now shown
+[ASSERT] No payment authorization request is sent to Authorize.Net at this point (check Network tab — no POST to api2.authorize.net or /api/payment)
+[ACT] Click 'Place order'
+[WAIT] Wait for order creation response
+[ASSERT] Order is created successfully with the manual payment method (NOT charged to the AN card)
+[ASSERT] Order confirmation page is shown (or order appears in /account/orders with status pending/awaiting payment for manual method)
+[ASSERT] No AN transaction appears in the network log during or after 'Place order' with manual method selected","[STATE] After switching from AN to manual method: AN form is unmounted and no longer in the active payment pipeline
+[STATE] 'Place order' with manual method selected creates the order WITHOUT triggering Accept.js charge flow
+[DOM] Order confirmation shown for manual method order
+[STATE] /account/orders shows a new order with manual payment method — NOT paid/charged via AN","[NETWORK] No POST to js.authorize.net, api2.authorize.net, or platform /api/payment during manual-method 'Place order' action
+[API] createOrderFromCart — order created with manual payment method; no authorizePayment call to AN processor
+[CONSOLE] No JS errors; no 'isActive' guard warning (payment-processing-authorize-net.vue unmount guard — if visible, it confirms the guard fired correctly but note it should be silently suppressed)","AN card charged after switching to manual method (useCheckout.ts allowCartPayment guard failed); stale AN processor fires on non-AN order submission; isActive guard missing — late async init after unmount registers processor and charges card; order created as AN-paid instead of manual-method pending","Cancel test order via admin if created; [PRE:RESET_CART]","VCST-5162 (useCheckout.ts allowCartPayment guard + payment-processing-authorize-net.vue isActive unmount guard); mirrors PAY-SKY-011 method-switch pattern; BL-PAY-004","Reviewed"
+"PAY-AN-012","Authorize.Net - Invalid Card Number Rejected by Accept.js Client-Side Validation","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- NOTE: Uses @td(CYBERSOURCE_INVALID.number) — a Luhn-fail test card number valid for client-side rejection testing regardless of processor","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, invalid_card=@td(CYBERSOURCE_INVALID.number)","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ACT] Fill the card number field with '@td(CYBERSOURCE_INVALID.number)' (Luhn-invalid number — rejected before any network call)
+[ACT] Fill the expiration date with a valid future date (e.g. 12/29 — MM/YY mask)
+[ACT] Fill the CVV with '123'
+[ACT] Blur the card number field to trigger validation
+[ASSERT] An error message is displayed on the card number field (e.g. 'Invalid card number', 'Please enter a valid credit card number')
+[ASSERT] 'Place order' button remains disabled while the invalid card number is entered
+[ASSERT] No payment request is sent to Authorize.Net (no api2.authorize.net POST in network)
+[ACT] Clear the card number field and enter '@td(AUTHORIZENET_VISA.number)' (valid AN Visa)
+[ACT] Fill expiry '@td(AUTHORIZENET_VISA.expiry)' and CVV '@td(AUTHORIZENET_VISA.cvv)'
+[ASSERT] Error clears; card number field shows valid state
+[ASSERT] 'Place order' button becomes enabled once all fields are valid","[DOM] Inline error message on card number field for Luhn-invalid input
+[STATE] 'Place order' button disabled with invalid card
+[STATE] Error clears and 'Place order' re-enables on valid card entry","[NETWORK] No payment API call during invalid-card state (Accept.js rejects client-side before any POST)
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted without error; 'Place order' enabled with invalid Luhn number; form crashes on blur; error message does not clear when valid card entered; network request sent with invalid card","[PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-007/PAY-SKY-003 validation pattern; BL-PAY-001","Reviewed"
+"PAY-AN-013","Authorize.Net - Empty Required Fields Block Submission","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ASSERT] 'Place order' button is disabled while all card fields are empty
+[ACT] Attempt to click 'Place order' while all card fields remain empty (button should be disabled; if clickable, observe result)
+[ASSERT] No payment request is sent to Authorize.Net (no API call in network log)
+[ASSERT] No order is created (no navigation to confirmation)
+[ACT] Fill only the card number field with '@td(AUTHORIZENET_VISA.number)' and leave expiry and CVV empty
+[ASSERT] 'Place order' button remains disabled — partial field fill is not sufficient
+[ACT] Fill all required card fields: number '@td(AUTHORIZENET_VISA.number)', expiry '@td(AUTHORIZENET_VISA.expiry)', CVV '@td(AUTHORIZENET_VISA.cvv)'
+[ASSERT] 'Place order' button becomes enabled once all fields are complete
+[ASSERT] No premature payment submission occurred during the partial-fill steps","[DOM] 'Place order' button disabled while any required card field is empty
+[STATE] No payment API call during empty or partial field states
+[STATE] 'Place order' enabled only after all required fields are validly filled","[NETWORK] No POST to Authorize.Net or platform payment endpoint during empty/partial field state
+[CONSOLE] No JS errors during empty-field state","'Place order' enabled with empty fields; form submits with empty card data; payment request sent with empty data; button never enables after filling all fields","[PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-008/PAY-SKY-004 empty-fields pattern; BL-PAY-001","Reviewed"
+"PAY-AN-014","Authorize.Net - Successful Cart-Embedded Payment Reaches Order Confirmation","Authorize.Net > Success Flow","Critical","BL-CHK-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- Valid test card available: @td(AUTHORIZENET_VISA.number) — VERIFIED 2026-06-05 (order CO260605-00044); Authorize.Net sandbox; expiry MM/YY mask (e.g., 12/29 — same as Skyflow; a 4-digit year truncates to an expired date)
+- IMPORTANT: Authorize.Net sandbox enforces ~3 min duplicate-transaction window for same-amount retries; if a prior test used this card in the same amount, wait before running","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for payment methods section to render
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render (no redirect to /checkout/payment)
+[ASSERT] URL remains {{FRONT_URL}}/cart
+[ACT] Fill 'Card number' field with '@td(AUTHORIZENET_VISA.number)' (13-digit Visa test card)
+[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask — e.g., 12/29)
+[ACT] Fill 'CVV'/'Security code' field with '@td(AUTHORIZENET_VISA.cvv)'
+[ACT] Fill cardholder name if required
+[WAIT] Wait for 'Place order' button to become enabled (all fields validly filled)
+[ASSERT] 'Place order' button is enabled
+[ACT] Click 'Place order'
+[WAIT] Wait for payment processing (Accept.js tokenizes card data, platform calls Authorize.Net API)
+[ASSERT] User navigates to order confirmation page (not stuck on /cart, not redirected to /checkout/payment)
+[ASSERT] Order number is displayed on the confirmation page
+[ASSERT] Cart is cleared (no items remaining) — cart badge shows 0 or empty
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] New order appears in order history with Authorize.Net payment method and paid/processing status","[NAV] From /cart with inline AN form → order confirmation reached without /checkout/payment redirect
+[DOM] Order number visible on confirmation page
+[STATE] Cart cleared after successful order creation
+[STATE] Order visible in /account/orders with AN payment method","[API] createOrderFromCart mutation succeeds; errors[] empty
+[CONSOLE] No JS errors during cart-embedded payment flow; raw PAN '@td(AUTHORIZENET_VISA.number)' absent from all network request payloads (Accept.js tokenization)
+[NETWORK] No 5xx responses; no raw card data in POST bodies","Stuck on /cart after 'Place order'; redirected to /checkout/payment (old flow regression); order not created; payment processed but no confirmation; cart not cleared; raw PAN visible in network payloads","Cancel test order via admin; [PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-009 (Skyflow success flow); @td(AUTHORIZENET_VISA.number) VERIFIED CO260605-00044; BL-CHK-004; expiry mask MM/YY (same as Skyflow)","Reviewed"
+"PAY-AN-015","Authorize.Net - Accept.js Script Load Failure Does Not Strand User on /cart","Authorize.Net > Error Handling","High","BL-PAY-004","ECL-5.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form attempted on /cart (AllowCartPayment=true, VCST-5162)
+- SIMULATION: Block js.authorize.net in browser (Chrome DevTools Network → Block request URL pattern '*js.authorize.net*') to simulate CDN failure
+- NOTE: This tests the isActive guard and graceful-degradation path — user should NOT be left on a blank/broken /cart with no way to proceed","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[ACT] In Chrome DevTools Network tab, block the URL pattern '*js.authorize.net*' (or equivalent Accept.js CDN origin) to simulate script load failure
+[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for the payment form area to resolve (load timeout expected)
+[ASSERT] An error state is surfaced to the user — e.g. 'Payment method unavailable', an error message in the payment section, or the form area shows a graceful fallback
+[ASSERT] The user is NOT stranded with a blank/empty payment section and no actionable message
+[ASSERT] 'Place order' button is NOT enabled in this failure state (no form = no submission path)
+[ASSERT] The storefront does not throw an unhandled JS exception (no blank white screen, no uncaught TypeError in console)
+[ACT] Remove the block in DevTools and reload the page
+[WAIT] Wait for Accept.js to load normally
+[ASSERT] Authorize.Net payment form renders correctly after re-enabling the script","[STATE] Accept.js block → user sees error state or unavailable indicator in payment section — NOT a blank/broken form
+[STATE] 'Place order' disabled when payment form fails to load
+[STATE] After unblocking: form renders normally — no permanent damage to checkout flow
+[CONSOLE] No uncaught TypeError or unhandled promise rejection from payment-processing-authorize-net.vue on load failure","[CONSOLE] payment-processing-authorize-net.vue isActive guard fires during unmount sequence (expected — confirms guard prevents late-init registration after component is torn down)
+[NETWORK] No payment POST sent during script-load-failure state","Blank /cart payment section with no error message (user stranded); unhandled TypeError in console from Accept.js undefined; 'Place order' enabled despite form load failure; white screen of death; page completely broken after script block","[PRE:RESET_CART]; remove Chrome DevTools URL block","VCST-5162 (payment-processing-authorize-net.vue isActive guard); BL-PAY-004; CDN-failure pattern; ECL-5.2 (graceful degradation)","Reviewed"
+"PAY-AN-016","Authorize.Net - GA4 Purchase Event Fires Exactly Once for Cart-Embedded Payment","Authorize.Net > GA4","High","BL-PAY-004","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- GA4 dataLayer tracking enabled; Google Analytics connected
+- IMPORTANT: GA4 purchase event for AN cart-payment is fired by useCheckout.ts (NOT by payment-processing-authorize-net.vue — the component explicitly skips the event, unlike CyberSource). This case validates the useCheckout.ts purchase event fires exactly once and payment-processing-authorize-net.vue does NOT double-fire.
+- NOTE: Authorize.Net sandbox duplicate-transaction window (~3 min) applies — ensure no prior same-amount transaction in the window","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart and items
+[ACT] Open Chrome DevTools Console; run: window._ga4_purchases = []; window.dataLayer.push = new Proxy(window.dataLayer.push, { apply(target, thisArg, args) { if (args[0]?.event === 'purchase') window._ga4_purchases.push(args[0]); return Reflect.apply(target, thisArg, args); } }); to intercept GA4 purchase events
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ACT] Fill card number '@td(AUTHORIZENET_VISA.number)', expiry '@td(AUTHORIZENET_VISA.expiry)', CVV '@td(AUTHORIZENET_VISA.cvv)'
+[WAIT] Wait for 'Place order' to become enabled
+[ACT] Click 'Place order'
+[WAIT] Wait for order confirmation page
+[ASSERT] Order confirmation is displayed
+[ACT] In Chrome DevTools Console, run: window._ga4_purchases.length to count intercepted purchase events
+[ASSERT] Exactly ONE purchase event was fired (window._ga4_purchases.length === 1)
+[ASSERT] The purchase event transaction_id matches the order number shown on the confirmation page
+[ASSERT] The purchase event value matches the cart total (from earlier page state)
+[ASSERT] No second purchase event is present (payment-processing-authorize-net.vue correctly skips the event — useCheckout.ts is the sole firer)","[DOM] Order confirmation displayed after AN cart-embedded payment
+[STATE] Exactly 1 purchase event in GA4 dataLayer (no duplicate from payment-processing-authorize-net.vue component)
+[STATE] GA4 purchase event transaction_id matches confirmed order number","[NETWORK] GA4/gtag.js event POST includes exactly one 'purchase' event type for this transaction
+[CONSOLE] No unhandled JS errors during payment or dataLayer intercept
+[CONSOLE] No second purchase push event from payment-processing-authorize-net.vue (component explicitly skips GA4 — verified in VCST-5162 implementation)","Two or more GA4 purchase events fired (double-fire regression — payment component AND checkout both fire); zero GA4 purchase events fired (useCheckout.ts GA4 guard broken); purchase event transaction_id does not match order number; purchase event value wrong","Cancel test order via admin; [PRE:RESET_CART]","VCST-5162 (payment-processing-authorize-net.vue skips GA4; useCheckout.ts fires purchase event); mirrors GA-032 for Skyflow; GA4 no-double-fire pattern from VCST-5009; BL-PAY-004","Reviewed"
+"PAY-AN-017","Authorize.Net - Multistep Checkout: Card Form on Billing Step Survives Unmount and Charges at Place Order","Authorize.Net > Multistep Checkout","Critical","BL-PAY-004; BL-CHK-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net configured with AllowCartPayment=true (VCST-5162)
+- REQUIRES: checkout_multistep_enabled config flag = true (see storefront-config-flags.md $cfg.checkout_multistep_enabled). If the flag is OFF, /cart redirects away from /checkout/review — MARK CASE BLOCKED, NOT FAIL. Verify by navigating to {{FRONT_URL}}/checkout/review after adding to cart: if redirected back to /cart, the flag is off and this case cannot run.
+- IMPORTANT: This case tests the onUnmounted survival path in payment-processing-authorize-net.vue (PR#2309). In multistep checkout the AN inline form lives on the Billing step and unmounts when the user proceeds to the Review step. The shared payment processor state + isCanFinalizePayment MUST survive unmount so finalizePayment fires correctly when Place Order is clicked on Review step. This is the same designed behavior as CyberSource in multistep mode.
+- Valid test card: @td(AUTHORIZENET_VISA.number); expiry MM/YY mask (e.g., 12/29); AN sandbox duplicate-transaction window (~3 min) applies","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[PRE-CHECK] Navigate to {{FRONT_URL}}/checkout/review after adding 1 item to cart — if the browser redirects away from /checkout/review back to /cart, checkout_multistep_enabled is OFF; STOP and mark case BLOCKED (not FAIL); do NOT proceed
+[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart containing ≥1 item
+[WAIT] Wait for payment methods section to render
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render on the cart/billing step
+[ASSERT] URL remains on the cart or billing step — no premature redirect
+--- BILLING STEP: fill AN card form ---
+[ACT] Fill 'Card number' field with '@td(AUTHORIZENET_VISA.number)'
+[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask)
+[ACT] Fill 'CVV'/'Security code' field with '@td(AUTHORIZENET_VISA.cvv)'
+[ACT] Fill cardholder name if required
+[WAIT] Wait for 'Place order' or 'Proceed' / 'Continue' button to become enabled (all fields validly filled)
+[ASSERT] Place order / Continue button is enabled — card state is valid
+--- PROCEED TO REVIEW STEP: AN form unmounts ---
+[ACT] Click 'Continue' or 'Proceed' to advance to the Review step ({{FRONT_URL}}/checkout/review)
+[WAIT] Wait for the Review step page to load
+[ASSERT] URL is {{FRONT_URL}}/checkout/review (multistep mode confirmed active)
+[ASSERT] AN inline card form is NO LONGER visible on the Review step — it unmounted with the Billing step
+[ASSERT] The Review step shows the order summary (items, shipping, total) and a 'Place order' button
+[ASSERT] The 'Place order' button is ENABLED on the Review step — isCanFinalizePayment survived the Billing-step unmount (this is the core regression signal: if disabled, processor state was lost)
+--- PLACE ORDER ON REVIEW STEP ---
+[ACT] Click 'Place order' on the Review step
+[WAIT] Wait for payment processing (finalizePayment calls Accept.js tokenization with the preserved card state, then charges via Authorize.Net)
+[ASSERT] User navigates to order confirmation page — NOT stuck on /checkout/review, NOT redirected to /checkout/payment
+[ASSERT] Order number is displayed on the confirmation page
+[ASSERT] Cart is cleared (cart badge shows 0 or empty)
+[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ASSERT] New order appears with Authorize.Net payment method and paid/authorized status — NOT in 'Payment Required' or pending-payment state
+[ASSERT] Inspect window.dataLayer: exactly ONE purchase event fired (no duplicate from component + checkout double-fire)","[NAV] Multistep checkout flow: Billing step (AN form filled) → Review step (AN form unmounted) → Place Order → confirmation reached
+[DOM] Order number visible on confirmation page
+[STATE] AN card form absent on Review step (unmounted from Billing step)
+[DOM] 'Place order' button ENABLED on Review step — processor + isCanFinalizePayment state survived unmount
+[STATE] Cart cleared after successful order creation
+[STATE] Order in /account/orders shows paid/authorized status via AN — NOT pending payment","[API] createOrderFromCart mutation succeeds; errors[] empty
+[CONSOLE] No JS errors during multistep flow; raw PAN '@td(AUTHORIZENET_VISA.number)' absent from all network request payloads (Accept.js tokenization preserved across unmount)
+[NETWORK] No 5xx responses; no raw card data in POST bodies","Order created but in 'Payment Required' / unpaid state (CRITICAL: processor state lost on Billing-step unmount — onUnmounted guard failed; finalizePayment never called); 'Place order' button on Review step is disabled (isCanFinalizePayment reset to false on unmount — core regression); checkout stuck on /checkout/review after Place Order; double GA4 purchase event; redirect to /checkout/payment after Place Order on Review step (old non-multistep flow regression); BLOCKED verdict if checkout_multistep_enabled flag is off","Cancel test order via admin if created; [PRE:RESET_CART]","VCST-5162 (PR#2309 payment-processing-authorize-net.vue onUnmounted survival path — same design as CyberSource in multistep); storefront-config-flags.md checkout_multistep_enabled; project memory project_checkout_multistep_gate.md; mirrors CyberSource multistep behavior; BL-PAY-004; BL-CHK-004","Reviewed"
+"PAY-AN-018","Authorize.Net - Form Validation Happy Path: Valid Card Data Produces Valid State (Validation-Only, No Submission)","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- VALIDATION-ONLY case: do NOT click 'Place order' at any point (AN cart flow pre-creates a 'Payment required' order on submit — see BUG-AN-cart-no-client-card-validation)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv), an_name=@td(AUTHORIZENET_VISA.cardholder)","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ASSERT] 'Place order' button is disabled while all card fields are empty
+[ACT] Fill 'Card number' with '@td(AUTHORIZENET_VISA.number)' and blur the field
+[ASSERT] No validation error is shown on the card number field
+[ACT] Fill 'Expiration date' with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask) and blur
+[ASSERT] No validation error is shown on the expiration date field
+[ACT] Fill 'CVV'/'Security code' with '@td(AUTHORIZENET_VISA.cvv)' and blur
+[ASSERT] No validation error is shown on the CVV field
+[ACT] Fill cardholder name with '@td(AUTHORIZENET_VISA.cardholder)' if the field is present
+[ASSERT] All fields show valid (non-error) state — no inline error messages anywhere in the form
+[ASSERT] 'Place order' button is now enabled
+[ASSERT] No payment or order request was sent during form fill (validation is client-side only)
+[ACT] Do NOT click 'Place order' — end of case","[STATE] 'Place order' disabled with empty form, enabled only after all fields validly filled
+[DOM] No inline validation errors with fully valid card data
+[STATE] No order created during this case","[NETWORK] No POST to api2.authorize.net, no Accept.js tokenization call, no createOrderFromCart during form fill
+[CONSOLE] No JS errors during fill/blur cycle","Valid card data flagged as invalid (false-negative validation); 'Place order' stays disabled after valid fill; error message persists after valid input; any payment/order network call fired during fill","[PRE:RESET_CART]","VCST-5162; complements PAY-AN-012 (Luhn negative) and PAY-AN-013 (empty fields); validation-only pattern from PAY-SKY-015; BL-PAY-001","Reviewed"
+"PAY-AN-019","Authorize.Net - Per-Field Negative Validation: Expired Date, Out-of-Range Month, Short CVV Rejected (Validation-Only)","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1; ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- NOTE: Expired-date rejection is CURRENTLY FAILING per BUG-AN-cart-no-client-card-validation (2026-06-05, not yet filed in JIRA) — this case asserts the CORRECT behavior (Skyflow/CyberSource parity) and stays red until fixed
+- VALIDATION-ONLY case: do NOT click 'Place order' at any point — submitting with invalid AN data creates a ghost 'Payment required' order","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+--- NEGATIVE 1: expired date (valid month, year in the past) ---
+[ACT] Fill 'Card number' with '@td(AUTHORIZENET_VISA.number)' (valid), 'Expiration date' with '01/20' (expired — MM/YY mask), CVV with '@td(AUTHORIZENET_VISA.cvv)'; blur the expiry field
+[ASSERT] Inline error is shown on the expiration date field (expired date rejected)
+[ASSERT] 'Place order' button remains disabled
+--- NEGATIVE 2: out-of-range month ---
+[ACT] Replace expiry with '13/29'; blur
+[ASSERT] Inline error shown (month must be 01-12)
+[ASSERT] 'Place order' remains disabled
+--- NEGATIVE 3: CVV too short ---
+[ACT] Fix expiry to '@td(AUTHORIZENET_VISA.expiry)'; replace CVV with '12'; blur
+[ASSERT] Inline error on CVV field OR 'Place order' remains disabled (CVV must be 3-4 digits)
+--- NEGATIVE 4: non-numeric CVV ---
+[ACT] Replace CVV with 'abc'; blur
+[ASSERT] Non-numeric input is rejected/filtered (field empty or error shown) and 'Place order' remains disabled
+--- RECOVERY: valid data clears all errors ---
+[ACT] Fill all fields with valid data: '@td(AUTHORIZENET_VISA.number)' / '@td(AUTHORIZENET_VISA.expiry)' / '@td(AUTHORIZENET_VISA.cvv)'
+[ASSERT] All errors clear; 'Place order' becomes enabled
+[ASSERT] No payment/order network call was sent during any negative state
+[ACT] Do NOT click 'Place order' — end of case","[DOM] Inline error per invalid field state (expired date, month 13, short CVV, non-numeric CVV)
+[STATE] 'Place order' disabled in every invalid state; enabled only after full valid recovery
+[STATE] No order created during this case","[NETWORK] No POST to api2.authorize.net or createOrderFromCart during any invalid state
+[CONSOLE] No unhandled JS exceptions on blur/validation","Expired date accepted with no error and 'Place order' enabled (KNOWN — BUG-AN-cart-no-client-card-validation); month 13 accepted; 2-digit CVV accepted; non-numeric CVV accepted; errors do not clear on valid recovery; ghost 'Payment required' order created","[PRE:RESET_CART]","VCST-5162; BUG-AN-cart-no-client-card-validation (reports/bugs/); complements PAY-AN-012/013; mirrors PAY-SKY-015 validation-only pattern; BL-PAY-001","Reviewed"

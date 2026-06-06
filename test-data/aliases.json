@@ -457,6 +457,7 @@
       "expiry": "expiry_format",
       "cvv": "cvv",
       "cardholder": "cardholder_name",
+      "otp": "otp",
       "notes": "notes"
     }
   },

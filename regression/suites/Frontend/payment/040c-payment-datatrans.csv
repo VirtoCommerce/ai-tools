@@ -1,0 +1,143 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"PAY-DT-001","Datatrans - Complete Payment Flow","Datatrans","High","BL-CROSS-005","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Datatrans payment processor configured and active
+- NOTE: redirect to /checkout/payment is the DESIGNED Datatrans flow (only redirect processor) — never mark BLOCKED because the flow is not cart-inline","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD=@td(DATATRANCE_MC.number), DT_EXP=@td(DATATRANCE_MC.expiry), DT_CVV=@td(DATATRANCE_MC.cvv), DT_OTP=@td(DATATRANCE_OTP.otp)","[NAV] Navigate to {{FRONT_URL}}/cart; select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)') if not pre-selected
+[ACT] Click 'Place Order' from cart page — this redirects to Datatrans payment flow at {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for Datatrans payment redirect or modal to load
+[ACT] In the Datatrans form enter card number '@td(DATATRANCE_MC.number)', expiry '@td(DATATRANCE_MC.expiry)', CVV '@td(DATATRANCE_MC.cvv)'
+[ACT] Complete payment flow within Datatrans hosted form; if an OTP prompt appears, enter '@td(DATATRANCE_OTP.otp)'
+[WAIT] Wait for return redirect back to storefront
+[ASSERT] User is returned to storefront after Datatrans payment completes
+[ASSERT] Order confirmation page displayed with order number","[NAV] Clicking 'Place Order' from cart redirects to {{FRONT_URL}}/checkout/payment with Datatrans form
+[NAV] After completing Datatrans flow user is redirected back to storefront order confirmation
+[DOM] Order confirmation shows order number and summary","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Datatrans payment method
+[NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","VCST-4893","Manual"
+"PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-ORD-006","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Datatrans configured
+- OTP challenge card and OTP value resolve via the DATATRANCE_OTP alias (see Test_Data) — the frictionless DATATRANCE_MC card never triggers the OTP prompt","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD=@td(DATATRANCE_OTP.number), DT_EXP=@td(DATATRANCE_OTP.expiry), DT_CVV=@td(DATATRANCE_OTP.cvv), DT_OTP=@td(DATATRANCE_OTP.otp)","[NAV] Navigate to {{FRONT_URL}}/cart; select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)'); click 'Place Order'
+[WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
+[ACT] Enter card number '@td(DATATRANCE_OTP.number)', expiry '@td(DATATRANCE_OTP.expiry)', CVV '@td(DATATRANCE_OTP.cvv)' in Datatrans form
+[ACT] Submit card details within Datatrans form
+[WAIT] Wait for OTP prompt to appear (redirect or modal)
+[ASSERT] OTP input prompt is displayed
+[ACT] Enter OTP '@td(DATATRANCE_OTP.otp)'
+[ACT] Submit the OTP
+[WAIT] Wait for return redirect to storefront
+[ASSERT] User redirected back to storefront order confirmation with order number","[NAV] Datatrans OTP prompt appears after card submission
+[DOM] OTP input field is visible and accepts input
+[NAV] After valid OTP submission user returns to storefront confirmation page
+[DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","VCST-4893","Manual"
+"PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-CHK-004; BL-CROSS-010","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item added
+- Datatrans payment processor configured and active
+- OTP challenge card resolves via the DATATRANCE_OTP alias (see Test_Data) — the frictionless DATATRANCE_MC card never triggers the OTP prompt","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD=@td(DATATRANCE_OTP.number), DT_EXP=@td(DATATRANCE_OTP.expiry), DT_CVV=@td(DATATRANCE_OTP.cvv), DT_OTP=@td(DATATRANCE_OTP.otp)","[NAV] Navigate to {{FRONT_URL}}/cart; select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)') if not pre-selected
+[ACT] Click 'Place Order' to initiate Datatrans redirect to {{FRONT_URL}}/checkout/payment
+[WAIT] Wait for Datatrans payment form to load
+[ACT] Enter card number '@td(DATATRANCE_OTP.number)', expiry '@td(DATATRANCE_OTP.expiry)', CVV '@td(DATATRANCE_OTP.cvv)' in Datatrans form and submit
+[WAIT] Wait for Datatrans OTP prompt to appear
+[ACT] At OTP input: fill OTP field with '000000' (intentionally incorrect)
+[ACT] Submit the incorrect OTP
+[WAIT] Wait for Datatrans error response
+[ASSERT] Error message displayed indicating invalid OTP
+[ASSERT] Retry mechanism available — OTP field still accessible or re-prompted
+[ACT] Fill OTP field with the correct value '@td(DATATRANCE_OTP.otp)'
+[ACT] Submit the correct OTP
+[WAIT] Wait for return redirect to storefront
+[ASSERT] Payment succeeds; user reaches order confirmation","[DOM] Error message shown after incorrect OTP submission
+[STATE] Retry mechanism available after invalid OTP (field not permanently locked)
+[NAV] Correct OTP leads to successful return to storefront
+[STATE] Only one order created — no duplicate from the failed first OTP attempt","[API] createOrderFromCart GraphQL mutation errors[] is empty on final successful submission
+[ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","VCST-4893","Manual"
+"PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Datatrans payment form loaded at {{FRONT_URL}}/checkout/payment (reached via Place Order from cart)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; click 'Place Order'; wait for Datatrans form at {{FRONT_URL}}/checkout/payment
+[ACT] Fill card number field with a value that fails Luhn check (e.g., a sequential number that is clearly invalid)
+[ACT] Fill other fields with valid-format values (future expiry, valid CVV length)
+[ACT] Attempt to proceed / submit card details
+[ASSERT] Validation error appears on card number field
+[ASSERT] Payment cannot proceed with invalid card number","[DOM] Card number validation error displayed
+[STATE] Datatrans form blocks progression with invalid card
+[NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis; BL gap: no client-validation invariant exists in business-logic.md (ex-BL-PAY-003 unpromoted) — PROPOSED-BL backlog","Manual"
+"PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-CROSS-005; BL-ORD-006","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Cart has at least one item
+- Datatrans configured
+- OTP value resolves via @td(DATATRANCE_OTP.otp) if the 3DS step-up challenge is prompted","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD=@td(DATATRANCE_MC.number), DT_EXP=@td(DATATRANCE_MC.expiry), DT_CVV=@td(DATATRANCE_MC.cvv), DT_OTP=@td(DATATRANCE_OTP.otp)","[NAV] Navigate to {{FRONT_URL}}/cart; select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)'); click 'Place Order'
+[WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
+[ACT] Complete full Datatrans payment flow; if an OTP step-up prompt appears, enter '@td(DATATRANCE_OTP.otp)'
+[WAIT] Wait for automatic redirect back to storefront
+[ASSERT] User is automatically redirected to storefront after Datatrans completes (no manual action required)
+[ASSERT] Order confirmation page shows order number
+[ASSERT] Ordered items and totals on confirmation match the cart contents
+[ASSERT] Shipping address on confirmation matches the address entered during checkout
+[NAV] Navigate to account order history
+[ASSERT] Order appears in account order history","[NAV] Automatic redirect from Datatrans back to storefront without manual intervention
+[DOM] Order confirmation page shows order number, line items, totals, shipping address
+[MATH] Totals on confirmation match original cart totals
+[NAV] Order visible in account order history","[API] createOrderFromCart GraphQL mutation errors[] is empty
+[ADMIN] Order in admin with correct total and Datatrans payment method","No automatic redirect — user stranded on Datatrans page; order confirmation page missing order number; cart contents not reflected on confirmation; order absent from account history","Cancel order via admin","Coverage Gap Analysis","Manual"
+"PAY-DT-006","Datatrans Lightbox - French locale renders French labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Store has Datatrans payment method enabled
+- Storefront locale set to French (fr)
+- At least one product in cart","lang_code: fr
+store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language to French via language selector
+[ASSERT] Verify storefront header/UI labels are in French
+[ACT] Add a product to cart and proceed to checkout
+[NAV] Navigate to /checkout/payment page
+[ASSERT] Verify 'Pay Now' button label is in French (e.g. 'Payer maintenant')
+[ACT] Select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)'); Datatrans lightbox opens
+[ASSERT] Verify lightbox title and field labels are in French (e.g. 'Méthode de paiement')
+[ASSERT] Verify no English-language labels appear in the lightbox","[DOM] 'Payer maintenant' or French equivalent visible on Pay Now button
+[DOM] Datatrans lightbox labels are French (not English)
+[DOM] No English label leakage inside lightbox
+[STATE] storefront locale is fr","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'fr'
+[CONSOLE] No JS errors during lightbox load","Pay Now button still in English; lightbox shows English labels; cultureName not sent in API call","Close tab; restore locale to English","VCST-4893","Reviewed"
+"PAY-DT-007","Datatrans Lightbox - German locale renders German labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Store has Datatrans payment method enabled
+- Storefront locale set to German (de)
+- At least one product in cart","lang_code: de
+store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language to German via language selector
+[ASSERT] Verify storefront UI labels are in German
+[ACT] Add a product to cart and proceed to checkout
+[NAV] Navigate to /checkout/payment page
+[ASSERT] Verify 'Pay Now' button label is in German (e.g. 'Jetzt bezahlen')
+[ACT] Select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)'); Datatrans lightbox opens
+[ASSERT] Verify lightbox field labels are in German
+[ASSERT] Verify no English labels appear inside lightbox","[DOM] German 'Jetzt bezahlen' or equivalent visible on Pay Now button
+[DOM] Datatrans lightbox labels are German
+[STATE] storefront locale is de","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'de'
+[CONSOLE] No JS errors during lightbox load","Pay Now button in English; lightbox in English; cultureName missing from API call","Close tab; restore locale to English","VCST-4893","Reviewed"
+"PAY-DT-008","Datatrans Lightbox - English locale (default) renders English labels","Datatrans > Localization","Medium","","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Store has Datatrans payment method enabled
+- Storefront locale is English (en) — default","lang_code: en
+store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English locale
+[ACT] Add a product to cart and proceed to checkout
+[NAV] Navigate to /checkout/payment page
+[ASSERT] Verify 'Pay Now' button label is English
+[ACT] Select payment method containing 'Datatrans' (displayed as 'Bank card (Datatrans)'); lightbox opens
+[ASSERT] Verify lightbox labels are English
+[ASSERT] Verify no untranslated i18n key strings (e.g. 'shared.catalog.product_details...')","[DOM] 'Pay Now' button label is English
+[DOM] Datatrans lightbox labels are English
+[DOM] No raw i18n key strings visible
+[STATE] storefront locale is en","[NETWORK] POST /graphql (initializeCartPayment) includes cultureName: 'en' or omits it (defaults to en)
+[CONSOLE] No JS errors","Raw i18n key strings visible; wrong language displayed for en locale; console errors during lightbox load","Close tab","VCST-4893","Reviewed"

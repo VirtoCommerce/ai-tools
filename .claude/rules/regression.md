@@ -36,15 +36,15 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 99 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Suite definitions**: 101 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
 - **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-99 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,756 test cases**.
+101 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,756 test cases**.
 
-### Frontend Suites (40 suites, user-facing features & flows)
+### Frontend Suites (42 suites, user-facing features & flows)
 
 | Directory | Suites | Tests | Description |
 |-----------|--------|-------|-------------|
@@ -54,7 +54,7 @@ Central configuration for regression orchestration. Defines:
 | `Frontend/cart/` | 028-030 | 77 | Core, validation/persistence, merge |
 | `Frontend/checkout/` | 011-013 | 64 | Flow, guest, B2B |
 | `Frontend/orders/` | 014-015 | 97 | Orders frontend, quotes |
-| `Frontend/payment/` | 039-041 | 65 | CyberSource, processors, cross-cutting |
+| `Frontend/payment/` | 039, 040a-040c, 041 | 84 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
 | `Frontend/bopis/` | 036-038 | 88 | Store selector, cart, checkout |
 | `Frontend/b2c/` | 006-010 | 166 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
 | `Frontend/configurable-products/` | 072, 072b, 072c | 139 | UI, E2E scenarios, cross-cutting |
@@ -106,7 +106,7 @@ Central configuration for regression orchestration. Defines:
 | `backend` | All Backend/ suites (38) | Backend-only regression |
 | `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 99 suites | Before production release |
+| `full` | All 101 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -128,7 +128,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 99 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 101 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.

@@ -1,47 +1,47 @@
-processor,card_type,card_number,expiry_month,expiry_year,expiry_format,cvv,cardholder_name,test_scenario,expected_result,notes,qa_verified
-Skyflow,Visa,4111111111111111,12,2029,12/29,900,John Smith,Valid Visa card,Success,Standard test Visa from Skyflow,unverified
-Skyflow,Visa,4242424242424242,09,2029,09/29,900,Mary Johnson,Valid Visa alternate,Success,Alternate Skyflow Visa,unverified
-Skyflow,Mastercard,5424000000000015,12,2029,12/29,900,Robert Brown,Valid Mastercard,Success,Canonical Skyflow card per order-creation-matrix.txt row 4 — only Skyflow card verified routable in QA vault,VERIFIED 2026-05-04 (CO260504-00003 retry + CO260504-00009)
-Skyflow,Mastercard,5200828282828210,10,2028,10/28,900,Lisa Wilson,Valid Mastercard alternate,Success,Alternate Skyflow Mastercard,unverified
-Skyflow,Amex,378282246310005,06,2030,06/30,9004,David Martinez,Valid American Express,Success,Amex with 4-digit CVV,unverified
-Skyflow,Discover,6011111111111117,03,2027,03/27,456,Jennifer Lee,Valid Discover card,Success,Discover card test,unverified
-Skyflow,Visa,4000000000000002,12,2029,12/29,900,Decline Test,Declined transaction,Decline,Card declined by processor,unverified
-Skyflow,Visa,4000000000000127,12,2029,12/29,900,Incorrect CVV Test,CVV error,Error,Incorrect CVV simulation,unverified
-Skyflow,Visa,4000000000000119,12,2029,12/29,900,Processing Error Test,Processing error,Error,Generic processing error,unverified
-CyberSource,Visa,4622943127013705,09,2029,09/2029,838,John Smith,Valid CyberSource Visa,Success,Canonical CyberSource card per order-creation-matrix.txt row 7 — Microform v2.0.2 iframes accessible from Edge via Playwright frameLocator,VERIFIED 2026-05-04 (CO260504-00001)
-CyberSource,Visa,4111111111111111,12,2029,12/2029,838,Jane Doe,Valid Visa alternate,Success,Alternate CyberSource Visa,unverified
-CyberSource,Mastercard,5555555555554444,12,2029,12/2029,123,Michael Chen,Valid CyberSource Mastercard,Success,CyberSource Mastercard test,unverified
-CyberSource,Amex,378282246310005,06,2030,06/2030,1234,Sarah Kim,Valid CyberSource Amex,Success,Amex with 4-digit CVV,unverified
-CyberSource,Visa,4000000000000002,12,2029,12/2029,123,Decline Test,Declined transaction,Decline,Simulated decline,unverified
-CyberSource,Visa,1234567890123456,12,2029,12/2029,123,Invalid Card,Invalid card number,Error,Invalid Luhn check,unverified
-Authorize.Net,Visa,4007000000027,12,2029,12/29,900,John Smith,Valid Authorize.Net Visa,Success,Primary Authorize.Net test (13-digit Visa) — expiry field masks MM/YY (always has; a 4-digit year truncates to an expired MM/YY — the old 12/2029 value here was wrong),VERIFIED 2026-06-05 (CO260605-00044; MM/YY confirmed live)
-Authorize.Net,Visa,4012888818888,12,2029,12/29,123,Jane Doe,Valid Visa alternate,Success,Alternate Authorize.Net Visa,unverified
-Authorize.Net,Mastercard,5424000000000015,10,2028,10/28,900,Robert Johnson,Valid Authorize.Net Mastercard,Success,Authorize.Net Mastercard — also matches Skyflow canonical card,unverified (likely OK — same PAN routable for Skyflow)
-Authorize.Net,Amex,370000000000002,06,2030,06/30,1234,Maria Garcia,Valid Authorize.Net Amex,Success,Amex 4-digit CVV,unverified
-Authorize.Net,Discover,6011000000000012,03,2027,03/27,456,David Lee,Valid Authorize.Net Discover,Success,Discover card,unverified
-Authorize.Net,Visa,4000000000000002,12,2029,12/29,902,Decline Test,Declined transaction,Decline,Simulated decline,unverified
-Datatrance,Mastercard,5100001000000014,06,28,06/28,123,John Smith,Valid Datatrance Mastercard,Success,Canonical Datatrance card per order-creation-matrix.txt row 13 — frictionless approval (no OTP for $299.99 sandbox),VERIFIED 2026-05-04 (CO260504-00010)
-Datatrance,Visa,4111111111111111,12,2029,12/2029,123,Jane Doe,Valid Datatrance Visa,Success,Datatrance Visa test,unverified
-Datatrance,Mastercard,5200000000000007,10,2028,10/2028,200,Michael Brown,Valid Mastercard alternate,Success,Alternate Datatrance Mastercard,unverified
-Datatrance,Visa,4000000000000002,12,2029,12/2029,123,Decline Test,Declined transaction,Decline,Simulated decline,unverified
-Datatrance,Mastercard,5123456789012346,12,2029,12/2029,100,OTP Test,3D Secure with OTP,Success (with OTP),Requires OTP: 112233 (NOTE: order-creation-matrix.txt specifies OTP=4000 — OTP only invoked on step-up 3DS challenge; not always prompted),unverified
-Generic,Visa,4000000000009995,12,2029,12/2029,123,Insufficient Funds,Insufficient funds error,Decline,Card has insufficient funds,unverified
-Generic,Visa,4000000000009987,12,2029,12/2029,123,Lost Card,Lost card error,Decline,Card reported lost,unverified
-Generic,Visa,4000000000009979,12,2029,12/2029,123,Stolen Card,Stolen card error,Decline,Card reported stolen,unverified
-Generic,Visa,4000000000000069,01,2025,01/2025,123,Expired Card,Expired card error,Error,Card expiration date passed,unverified
-Generic,Visa,4000000000000077,12,2029,12/2029,123,Processing Error,Processing error,Error,Generic processing error,unverified
-Generic,Mastercard,5555555555554444,12,2029,12/2029,999,Invalid CVV,CVV mismatch error,Error,CVV does not match,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Mary-Jane O'Connor,Special chars in name,Success,Name with hyphen and apostrophe,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,José García,Unicode characters,Success,Spanish accented name,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Hans Müller,Unicode umlaut,Success,German umlaut in name,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,François Dubois,French accents,Success,French accented name,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Björn Andersson,Swedish character,Success,Swedish character in name,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Van Der Berg,Multiple words,Success,Multiple word last name,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Smith Jr.,Name with suffix,Success,Name with period and suffix,unverified
-Special,Visa,4242424242424242,12,2029,12/2029,123,Christopher Alexander Montgomery-Williamson III,Very long name,Success,Extremely long hyphenated name with suffix,unverified
-Boundary,Visa,4242424242424242,01,2026,01/2026,123,Min Date Test,Expiry near future,Success,Card expiring soon (within 1 year),unverified
-Boundary,Visa,4242424242424242,12,2035,12/2035,123,Max Date Test,Expiry far future,Success,Card expiring 10+ years out,unverified
-Boundary,Visa,4242424242424242,12,2029,12/2029,000,Min CVV,CVV boundary test,Success,CVV with leading zeros,unverified
-Boundary,Visa,4242424242424242,12,2029,12/2029,999,Max CVV,CVV boundary test,Success,Maximum CVV value,unverified
-Boundary,Amex,378282246310005,12,2029,12/2029,0000,Min CVV Amex,Amex CVV boundary,Success,Amex CVV with leading zeros,unverified
-Boundary,Amex,378282246310005,12,2029,12/2029,9999,Max CVV Amex,Amex CVV boundary,Success,Maximum Amex CVV value,unverified
+processor,card_type,card_number,expiry_month,expiry_year,expiry_format,cvv,cardholder_name,test_scenario,expected_result,notes,qa_verified,otp
+Skyflow,Visa,4111111111111111,12,2029,12/29,900,John Smith,Valid Visa card,Success,Standard test Visa from Skyflow,unverified,
+Skyflow,Visa,4242424242424242,09,2029,09/29,900,Mary Johnson,Valid Visa alternate,Success,Alternate Skyflow Visa,unverified,
+Skyflow,Mastercard,5424000000000015,12,2029,12/29,900,Robert Brown,Valid Mastercard,Success,Canonical Skyflow card per order-creation-matrix.txt row 4 — only Skyflow card verified routable in QA vault,VERIFIED 2026-05-04 (CO260504-00003 retry + CO260504-00009),
+Skyflow,Mastercard,5200828282828210,10,2028,10/28,900,Lisa Wilson,Valid Mastercard alternate,Success,Alternate Skyflow Mastercard,unverified,
+Skyflow,Amex,378282246310005,06,2030,06/30,9004,David Martinez,Valid American Express,Success,Amex with 4-digit CVV,unverified,
+Skyflow,Discover,6011111111111117,03,2027,03/27,456,Jennifer Lee,Valid Discover card,Success,Discover card test,unverified,
+Skyflow,Visa,4000000000000002,12,2029,12/29,900,Decline Test,Declined transaction,Decline,Card declined by processor,unverified,
+Skyflow,Visa,4000000000000127,12,2029,12/29,900,Incorrect CVV Test,CVV error,Error,Incorrect CVV simulation,unverified,
+Skyflow,Visa,4000000000000119,12,2029,12/29,900,Processing Error Test,Processing error,Error,Generic processing error,unverified,
+CyberSource,Visa,4622943127013705,09,2029,09/2029,838,John Smith,Valid CyberSource Visa,Success,Canonical CyberSource card per order-creation-matrix.txt row 7 — Microform v2.0.2 iframes accessible from Edge via Playwright frameLocator,VERIFIED 2026-05-04 (CO260504-00001),
+CyberSource,Visa,4111111111111111,12,2029,12/2029,838,Jane Doe,Valid Visa alternate,Success,Alternate CyberSource Visa,unverified,
+CyberSource,Mastercard,5555555555554444,12,2029,12/2029,123,Michael Chen,Valid CyberSource Mastercard,Success,CyberSource Mastercard test,unverified,
+CyberSource,Amex,378282246310005,06,2030,06/2030,1234,Sarah Kim,Valid CyberSource Amex,Success,Amex with 4-digit CVV,unverified,
+CyberSource,Visa,4000000000000002,12,2029,12/2029,123,Decline Test,Declined transaction,Decline,Simulated decline,unverified,
+CyberSource,Visa,1234567890123456,12,2029,12/2029,123,Invalid Card,Invalid card number,Error,Invalid Luhn check,unverified,
+Authorize.Net,Visa,4007000000027,12,2029,12/29,900,John Smith,Valid Authorize.Net Visa,Success,Primary Authorize.Net test (13-digit Visa) — expiry field masks MM/YY (always has; a 4-digit year truncates to an expired MM/YY — the old 12/2029 value here was wrong),VERIFIED 2026-06-05 (CO260605-00044; MM/YY confirmed live),
+Authorize.Net,Visa,4012888818888,12,2029,12/29,123,Jane Doe,Valid Visa alternate,Success,Alternate Authorize.Net Visa,unverified,
+Authorize.Net,Mastercard,5424000000000015,10,2028,10/28,900,Robert Johnson,Valid Authorize.Net Mastercard,Success,Authorize.Net Mastercard — also matches Skyflow canonical card,unverified (likely OK — same PAN routable for Skyflow),
+Authorize.Net,Amex,370000000000002,06,2030,06/30,1234,Maria Garcia,Valid Authorize.Net Amex,Success,Amex 4-digit CVV,unverified,
+Authorize.Net,Discover,6011000000000012,03,2027,03/27,456,David Lee,Valid Authorize.Net Discover,Success,Discover card,unverified,
+Authorize.Net,Visa,4000000000000002,12,2029,12/29,902,Decline Test,Declined transaction,Decline,Simulated decline,unverified,
+Datatrance,Mastercard,5100001000000014,06,28,06/28,123,John Smith,Valid Datatrance Mastercard,Success,Canonical Datatrance card per order-creation-matrix.txt row 13 — frictionless approval (no OTP for $299.99 sandbox),VERIFIED 2026-05-04 (CO260504-00010),
+Datatrance,Visa,4111111111111111,12,2029,12/2029,123,Jane Doe,Valid Datatrance Visa,Success,Datatrance Visa test,unverified,
+Datatrance,Mastercard,5200000000000007,10,2028,10/2028,200,Michael Brown,Valid Mastercard alternate,Success,Alternate Datatrance Mastercard,unverified,
+Datatrance,Visa,4000000000000002,12,2029,12/2029,123,Decline Test,Declined transaction,Decline,Simulated decline,unverified,
+Datatrance,Mastercard,5123456789012346,12,2029,12/29,100,OTP Test,3D Secure with OTP,Success (with OTP),Requires OTP: 112233 (NOTE: order-creation-matrix.txt specifies OTP=4000 — OTP only invoked on step-up 3DS challenge; not always prompted; expiry_format fixed 12/2029→12/29 on 2026-06-06 to match the VERIFIED Datatrance MM/YY row),unverified,112233
+Generic,Visa,4000000000009995,12,2029,12/2029,123,Insufficient Funds,Insufficient funds error,Decline,Card has insufficient funds,unverified,
+Generic,Visa,4000000000009987,12,2029,12/2029,123,Lost Card,Lost card error,Decline,Card reported lost,unverified,
+Generic,Visa,4000000000009979,12,2029,12/2029,123,Stolen Card,Stolen card error,Decline,Card reported stolen,unverified,
+Generic,Visa,4000000000000069,01,2025,01/2025,123,Expired Card,Expired card error,Error,Card expiration date passed,unverified,
+Generic,Visa,4000000000000077,12,2029,12/2029,123,Processing Error,Processing error,Error,Generic processing error,unverified,
+Generic,Mastercard,5555555555554444,12,2029,12/2029,999,Invalid CVV,CVV mismatch error,Error,CVV does not match,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Mary-Jane O'Connor,Special chars in name,Success,Name with hyphen and apostrophe,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,José García,Unicode characters,Success,Spanish accented name,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Hans Müller,Unicode umlaut,Success,German umlaut in name,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,François Dubois,French accents,Success,French accented name,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Björn Andersson,Swedish character,Success,Swedish character in name,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Van Der Berg,Multiple words,Success,Multiple word last name,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Smith Jr.,Name with suffix,Success,Name with period and suffix,unverified,
+Special,Visa,4242424242424242,12,2029,12/2029,123,Christopher Alexander Montgomery-Williamson III,Very long name,Success,Extremely long hyphenated name with suffix,unverified,
+Boundary,Visa,4242424242424242,01,2026,01/2026,123,Min Date Test,Expiry near future,Success,Card expiring soon (within 1 year),unverified,
+Boundary,Visa,4242424242424242,12,2035,12/2035,123,Max Date Test,Expiry far future,Success,Card expiring 10+ years out,unverified,
+Boundary,Visa,4242424242424242,12,2029,12/2029,000,Min CVV,CVV boundary test,Success,CVV with leading zeros,unverified,
+Boundary,Visa,4242424242424242,12,2029,12/2029,999,Max CVV,CVV boundary test,Success,Maximum CVV value,unverified,
+Boundary,Amex,378282246310005,12,2029,12/2029,0000,Min CVV Amex,Amex CVV boundary,Success,Amex CVV with leading zeros,unverified,
+Boundary,Amex,378282246310005,12,2029,12/2029,9999,Max CVV Amex,Amex CVV boundary,Success,Maximum Amex CVV value,unverified,
