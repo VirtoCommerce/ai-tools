@@ -222,25 +222,30 @@ password={{USER_PASSWORD}}","[NAV] complete checkout flow to final review step o
 [DOM] items array contains all order line items (may include gift items)","[CONSOLE] no JS errors on order submission
 [NETWORK] no 4xx/5xx on createOrder mutation
 [API] createOrder GraphQL mutation errors[] is empty","place_order absent from dataLayer before redirect; value mismatches order total; items array missing gift items","Order is created — verify in admin if needed","google-analytics","Automated"
-"GA-016","purchase - Payment Complete","GA Events > Order","Critical","BL-GA4-003","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-Order with Payment Required status exists; Authorize.Net test card ready","url={{FRONT_URL}}
+"GA-016","purchase - Payment Complete (Order-Context — Unpaid Order Pay Now Flow)","GA Events > Order","Critical","BL-GA4-003","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+Order with Payment Required status exists; Authorize.Net test card ready
+- SYNC VCST-5162: Covers the ORDER-CONTEXT path (/account/orders → Pay Now → /checkout/payment). UNCHANGED by VCST-5162 — AN still redirects to /checkout/payment for existing unpaid orders; the CART-CONTEXT now uses inline (PAY-AN-016 covers AN cart GA4). Expiry format for AN: MM/YYYY (e.g. 12/2029).
+- NOTE: Non-standard {{TEST_CARD_AUTHORIZE_NET}} var replaced with AUTHORIZENET_VISA.number / .expiry / .cvv aliases per test-data policy.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
-card_number={{TEST_CARD_AUTHORIZE_NET}}","[NAV] navigate to the order detail page for a Payment Required order on {{FRONT_URL}}
-[ACT] click Pay Now button
-[WAIT] wait for payment form to load
-[ACT] enter test card number {{TEST_CARD_AUTHORIZE_NET}} in card number field
-[ACT] fill in expiry date and CVV with test values
-[ACT] click Submit Payment button
+an_card=@td(AUTHORIZENET_VISA.number)
+an_exp=@td(AUTHORIZENET_VISA.expiry)
+an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] navigate to {{FRONT_URL}}/account/orders; find an order with 'Payment Required' status (or place a manual-method order to create one)
+[ACT] open the order detail page
+[ACT] click 'Pay Now' button
+[WAIT] wait for redirect to {{FRONT_URL}}/checkout/payment with Authorize.Net form (order-context — expected; VCST-5162 only moved cart-context to inline)
+[ACT] enter test card number '@td(AUTHORIZENET_VISA.number)' in card number field
+[ACT] fill in expiry date '@td(AUTHORIZENET_VISA.expiry)' (MM/YYYY format) and CVV '@td(AUTHORIZENET_VISA.cvv)'
+[ACT] click 'Submit Payment' or 'Pay' button
 [WAIT] wait for payment success confirmation page
-[ASSERT] execute window.dataLayer.filter(e => e[1] === 'purchase') in console","[STATE] event name = purchase present in dataLayer
+[ASSERT] execute window.dataLayer.filter(e => e[1] === 'purchase') in console","[STATE] event name = purchase present in dataLayer after order-context payment completes
 [FORMAT] currency = USD
 [MATH] value equals order total
 [MATH] shipping equals shipping cost
 [MATH] tax equals tax amount
 [DOM] items array contains all purchased line items","[CONSOLE] no JS errors during payment submission
 [NETWORK] no 4xx/5xx on payment API
-[API] payment processor response indicates success","purchase absent from dataLayer after successful payment; event fires on place_order instead of after payment confirmation; value/shipping/tax mismatches order amounts","Verify order status in admin","google-analytics","Manual"
+[API] payment processor response indicates success","purchase absent from dataLayer after successful payment; event fires on place_order instead of after payment confirmation; value/shipping/tax mismatches; legacy {{TEST_CARD_AUTHORIZE_NET}} var referenced in steps (must be @td)","Verify order status in admin","google-analytics; Synced: VCST-5162 (test data vars {{TEST_CARD_AUTHORIZE_NET}} replaced with AUTHORIZENET_VISA.number/.expiry/.cvv aliases; order-context path unchanged; flow clarification + expiry format documented)","Manual"
 "GA-017","view_search_results - Search Results","GA Events > Search","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -355,26 +360,27 @@ search_term=laptop","[NAV] navigate to {{FRONT_URL}} (initial load)
 "GA-025","VCST-4800 — Redirect-Processor Checkout Fires Exactly One purchase Event via finalizePayment Path","GA Events > Purchase > finalizePayment Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Authenticated user; DevTools Console open; A redirect-payment-processor is active on the store (Datatrans or Authorize.Net — processors that redirect to /checkout/payment before completing payment); NOTE: Skyflow now uses cart-embedded flow as of VCST-5009 (AllowCartPayment=true) — do NOT use Skyflow for this test; use Datatrans or Authorize.Net instead; VCST-4800 fix deployed (analytics('purchase') call present in useCheckout.ts)
+Authenticated user; DevTools Console open; A redirect-payment-processor is active on the store (Datatrans ONLY — the only remaining redirect-to-/checkout/payment processor as of VCST-5162); NOTE: Skyflow uses cart-embedded flow (AllowCartPayment=true, VCST-5009); Authorize.Net now ALSO uses cart-embedded flow (AllowCartPayment=true, VCST-5162) — do NOT use Authorize.Net for this test. Use Datatrans only. CyberSource is also cart-embedded (covered by GA-026). VCST-4800 fix deployed (analytics('purchase') call present in useCheckout.ts)
 [MCP:CHROME_DEVTOOLS] Chrome DevTools MCP required — test uses window.dataLayer inspection via DevTools Console; assign to agent with Chrome DevTools MCP access","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/catalog or {{FRONT_URL}}/search
 [ACT] add one in-stock item to cart
 [WAIT] cart badge updates
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with item
-[ACT] proceed to checkout — click 'Checkout' or 'Place Order' button
-[WAIT] redirect to /checkout/payment (redirect-processor path)
-[ACT] complete payment using the test credentials for the active redirect processor (do NOT use CyberSource)
+[ACT] select Datatrans as the payment method (the ONLY redirect processor after VCST-5162)
+[ACT] proceed to checkout — click 'Place Order' button
+[WAIT] redirect to /checkout/payment (Datatrans redirect path)
+[ACT] complete payment using Datatrans test credentials
 [WAIT] payment processor redirects back to storefront; /checkout/completed page loads
 [WAIT] order confirmation message displayed
 [ASSERT] inspect window.dataLayer in DevTools Console: window.dataLayer.filter(e => e[1] === 'purchase').length === 1
 [ASSERT] the single purchase event has: event_category or event name = 'purchase'; value field is a positive number (order total); items array is non-empty; transaction_id field present (may be null — pre-existing gap per VCST-4800 note)
-[ASSERT] no second purchase event present (no duplicate)","[STATE] exactly one purchase event in dataLayer after redirect-processor checkout completes
+[ASSERT] no second purchase event present (no duplicate)","[STATE] exactly one purchase event in dataLayer after Datatrans redirect-processor checkout completes
 [STATE] purchase event value matches order total shown on /checkout/completed page
 [STATE] purchase event items array contains the ordered product(s)
 [DOM] /checkout/completed page loaded (not stuck on /checkout/payment)
 [FORMAT] purchase event structure matches GA4 ecommerce schema: event name, currency, value, items[]","[CONSOLE] no JS errors during /checkout/payment redirect flow
 [NETWORK] no 4xx/5xx on /checkout/completed page load
-[API] order creation GraphQL mutation returns no errors; placedOrder.value is populated (required for analytics call in useCheckout.ts)","No purchase event in dataLayer after redirect-processor order completes (VCST-4800 regression — analytics call missing from useCheckout.ts); More than one purchase event present (duplicate fire); purchase event fires with empty items[]; purchase event fires before /checkout/completed loads (premature); window.dataLayer undefined or not accessible","Remove test order from cart view; navigate to /account/orders to confirm order created","VCST-4800; vc-frontend PR#2250; BL-GA4-003; Synced: VCST-5009 PR#2308 (2026-06-04) — Skyflow removed from redirect-processor list","synced"
+[API] order creation GraphQL mutation returns no errors; placedOrder.value is populated (required for analytics call in useCheckout.ts)","No purchase event in dataLayer after redirect-processor order completes (VCST-4800 regression); More than one purchase event present (duplicate fire); purchase event fires with empty items[]; purchase event fires before /checkout/completed loads (premature); window.dataLayer undefined or not accessible; Authorize.Net used instead of Datatrans (AN is no longer a redirect processor)","Remove test order from cart view; navigate to /account/orders to confirm order created","VCST-4800; vc-frontend PR#2250; BL-GA4-003; Synced: VCST-5009 PR#2308 (2026-06-04) — Skyflow removed; Synced: VCST-5162 (2026-06-05) — Authorize.Net removed (AllowCartPayment=true now); Datatrans is the ONLY remaining redirect-processor example","synced"
 "GA-026","VCST-4800 — CyberSource Checkout Fires Exactly One purchase Event via Direct Component Path (Not useCheckout)","GA Events > Purchase > CyberSource Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]

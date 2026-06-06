@@ -2,6 +2,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { TestDataResolver } from "../scripts/lib/test-data-resolver.js";
+import { resolveTestEnv } from "../scripts/lib/resolve-test-env.js";
 
 // --- Configuration from environment variables ---
 
@@ -12,15 +13,22 @@ const TEST_ENVIRONMENT = process.env.TEST_ENVIRONMENT || "qa";
 const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
 
 // --- Environment URLs ---
+//
+// URLs are env-driven — config.js loads FRONT_URL/BACK_URL from .env.${TEST_ENV}.
+// NEVER hardcode a specific customer environment (e.g. vcst-qa) here: TEST_ENVIRONMENT
+// only selects WHICH env-var pair to read; the values always come from the target
+// TEST_ENV's config. Missing vars are caught by validateEnv() below.
+// Resolves process.env.TEST_ENV > .env.test-env (team/per-dev default) > 'vcst'.
+const TEST_ENV = resolveTestEnv("vcst");
 
 const ENV_URLS: Record<string, { front: string; back: string }> = {
   qa: {
-    front: process.env.FRONT_URL || "https://vcst-qa-storefront.govirto.com",
-    back: process.env.BACK_URL || "https://vcst-qa.govirto.com",
+    front: process.env.FRONT_URL || "",
+    back: process.env.BACK_URL || "",
   },
   staging: {
-    front: process.env.VIRTO_START_FRONT || "https://virtostart-demo-store.govirto.com",
-    back: process.env.VIRTO_START_BACK || "https://virtostart-demo-admin.govirto.com",
+    front: process.env.VIRTO_START_FRONT || process.env.FRONT_URL || "",
+    back: process.env.VIRTO_START_BACK || process.env.BACK_URL || "",
   },
 };
 
@@ -118,7 +126,20 @@ function validateEnv(): void {
     process.exit(1);
   }
 
-  const recommended = ["FRONT_URL", "BACK_URL", "USER_EMAIL", "USER_PASSWORD", "ADMIN", "ADMIN_PASSWORD", "STORE_ID"];
+  // URLs are mandatory now that there is no hardcoded env fallback — resolve the
+  // pair for the selected TEST_ENVIRONMENT and fail loudly if the target env's
+  // config (.env.${TEST_ENV}) didn't supply them.
+  const urls = ENV_URLS[TEST_ENVIRONMENT] || ENV_URLS.qa;
+  if (!urls.front || !urls.back) {
+    console.error(
+      `Missing URLs for TEST_ENV="${TEST_ENV}" (TEST_ENVIRONMENT="${TEST_ENVIRONMENT}"): ` +
+        `set FRONT_URL and BACK_URL in .env.${TEST_ENV} (or VIRTO_START_FRONT/VIRTO_START_BACK for staging). ` +
+        `These are no longer defaulted to any specific environment.`
+    );
+    process.exit(1);
+  }
+
+  const recommended = ["USER_EMAIL", "USER_PASSWORD", "ADMIN", "ADMIN_PASSWORD", "STORE_ID"];
   const missingRec = recommended.filter((v) => !process.env[v]);
   if (missingRec.length > 0) {
     console.warn(`Warning: Missing recommended env vars (tests may fail): ${missingRec.join(", ")}`);

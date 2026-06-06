@@ -2,7 +2,7 @@
 
 **This file is the only place the report policy lives.** All other files (`shared-instructions.md`, `evidence-capture-policy.md`, skill SKILLs, agent definitions) point here. Reports are read by humans on a deadline — long reports get skimmed and bugs get missed. Long-form reasoning, investigation logs, and progress updates belong in SendMessage to the orchestrator, never on disk.
 
-## 1. Only Four Report Categories Allowed
+## 1. Only Five Report Categories Allowed
 
 | # | Category | Path | When |
 |---|----------|------|------|
@@ -10,6 +10,7 @@
 | 2 | Test cases | `regression/suites/` (CSV) | Adding/updating test coverage |
 | 3 | BA report | `reports/ba/` | `/ba-analyze` deliverables |
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
+| 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
 
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
 
@@ -23,6 +24,7 @@
 | Functional bug | 50–80 | 120 |
 | Cross-layer bug | 80–120 | 150 |
 | BA report | 80–150 | 250 (exec summary ≤5 sentences; diagram OR prose, not both) |
+| Monitoring summary | **15–40** | 100 (confirmed / needs-review / dismissed tables; reference telemetry by portal link; a truncated top-frames stack — ≤6 lines — is OK for confirmed/needs-review items, but never full multi-frame dumps) |
 
 Over the hard cap is a review failure — trim before merge. If content genuinely doesn't fit, split it: keep the bug at <150 lines and link a separate investigation file.
 
@@ -31,6 +33,8 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 **Bug report:** Title + severity tag · Env (1 line: env name + build) · Summary (≤3 sentences) · STR (numbered, start from nearest relevant state) · Expected vs Actual · 1–2 inline screenshots · optional BL/ECL refs, root cause.
 
 **Regression summary:** Run ID/date/env/browser/selection · Counts table · Failures section (TC-ID, expected, actual, evidence ref, bug link) · Passes as one comma-separated line · Bugs Found (links only) · Quality Gate verdict.
+
+**Monitoring summary:** Run ID/date/env/window/layers · Signature counts (seen/new/spiking/triaged/deferred) · Confirmed bugs table (severity, layer, signature, repo, draft link, telemetry link) · Needs-review table · Dismissed table (class, signature, oracle) · "no JIRA filed, no fix attempted" footer.
 
 **BA report:** Title + scope + env · Executive summary (≤5 sentences) · One of: architecture diagram OR prose · Findings table (issue, severity, recommendation) · Open questions/follow-ups.
 

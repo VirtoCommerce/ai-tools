@@ -1,0 +1,24 @@
+// Storefront failed browser AJAX/XHR calls (failed xAPI / REST from the SPA),
+// grouped by signature. Storefront App Insights resource. The URL path is normalized
+// to a template — query string stripped, GUID/numeric id segments collapsed to
+// {id} — so the signature does not drift with test data (feedback_env_resilience).
+// Window via API `timespan`.
+dependencies
+| where client_Type == "Browser" and success == false
+// Real HTTP error responses only — drop resultCode 0 (CORS/blocked/aborted, not a
+// server defect) and third-party analytics/telemetry beacons (GA, GTM, etc.).
+| where toint(resultCode) >= 400
+| where data !has "google-analytics" and data !has "/g/collect" and data !has "googletagmanager"
+    and data !has "doubleclick" and data !has "/collect" and data !has "browser.events.data"
+| extend rawPath = tostring(parse_url(data).Path)
+| extend pathTemplate = replace_regex(replace_regex(rawPath, @"[0-9a-fA-F]{8}-[0-9a-fA-F-]{27,}", "{id}"), @"/\d+", "/{n}")
+| summarize
+    count_ = count(),
+    firstSeen = min(timestamp),
+    lastSeen = max(timestamp),
+    sampleOperationId = any(operation_Id),
+    sampleUrl = any(data),
+    samplePage = any(operation_Name)
+    by signature = strcat(tostring(resultCode), " ", pathTemplate), resultCode = tostring(resultCode), pathTemplate
+| order by count_ desc
+| take 50

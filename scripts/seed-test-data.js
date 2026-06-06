@@ -11,7 +11,10 @@
  *   minimal   — 1 catalog, 1 category, 3 products, 1 price list, basic inventory (default)
  *   catalog   — All catalogs, categories, products with variations and pricing
  *   full      — Everything: catalog + B2B orgs/users + all price lists + all inventory
- *   teardown  — Delete all SEED-* entities created by this script
+ *   teardown  — Delete this seeder's entities from EVERY prior run (matches the
+ *               date-independent `AGENT-TEST-SEED-*` family + legacy `SEED-*`),
+ *               not just today's. Deleting a seed catalog cascades to its
+ *               categories/products; price lists are swept by keyword.
  *
  * Examples:
  *   node scripts/seed-test-data.js                  # minimal profile
@@ -21,16 +24,18 @@
  *   node scripts/seed-test-data.js catalog --dry-run # preview without creating
  */
 
-import { config } from 'dotenv';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse/sync';
+// Layered env loader (side-effect import): populates process.env from
+// .env.defaults + .env.${TEST_ENV} + .env.local and validates required vars.
+// Replaces the old direct `.env` load so seeding respects TEST_ENV like every
+// other entry point. Run from the repo root (config.js uses CWD-relative paths).
+import '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-
-config({ path: join(ROOT, '.env'), override: true });
 
 // --- Config ---
 const BACK_URL = process.env.BACK_URL;
@@ -38,8 +43,23 @@ const ADMIN = process.env.ADMIN;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STORE_ID = process.env.STORE_ID || 'B2B-store';
 const DATE_STAMP = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-const PREFIX = `SEED-${DATE_STAMP}`;
+
+// Naming convention. The STABLE family prefix is date-independent so teardown can
+// sweep EVERY prior run (not just today's). The per-run PREFIX adds the date for
+// traceability. The family lives under `AGENT-TEST-` so it matches the repo-wide
+// teardown convention shared by the Postman path + the specialized .mjs seeders
+// (resolving the old SEED-* vs AGENT-TEST-* prefix drift). Legacy `SEED-*` entities
+// from before this change are still matched by teardown for backward compatibility.
+const SEED_FAMILY = 'AGENT-TEST-SEED';        // stable matcher (all runs, all dates)
+const LEGACY_PREFIX = 'SEED-';                // pre-2026-06 runs, swept for back-compat
+const PREFIX = `${SEED_FAMILY}-${DATE_STAMP}`; // per-run entity name/code prefix
 const RESULTS_FILE = join(ROOT, 'test-data', `_seed-results-${DATE_STAMP}.json`);
+
+// An entity belongs to this seeder if its name/code carries the current family
+// prefix OR the legacy one. Used by teardown — date-independent on purpose.
+function isSeedEntity(name) {
+  return typeof name === 'string' && (name.startsWith(SEED_FAMILY) || name.startsWith(LEGACY_PREFIX));
+}
 
 // --- CLI Args ---
 const args = process.argv.slice(2);
@@ -584,67 +604,48 @@ async function verifySeededData() {
 
 // --- Teardown ---
 
+// Merge entity IDs from EVERY _seed-results-*.json (all prior runs, newest first),
+// so teardown can clean runs whose entities no longer carry a discoverable name
+// (e.g. a product moved into a non-seed catalog). The catalog-prefix sweep below
+// is the primary, results-file-independent path; this is the supplementary one.
+function loadAllSeedResults() {
+  const dir = join(ROOT, 'test-data');
+  const merged = { products: [], priceLists: [], storeOriginalCatalog: null, files: [] };
+  let files = [];
+  try {
+    files = readdirSync(dir).filter(f => /^_seed-results-.*\.json$/.test(f)).sort().reverse();
+  } catch { /* test-data dir missing — nothing to merge */ }
+  for (const f of files) {
+    try {
+      const r = JSON.parse(readFileSync(join(dir, f), 'utf-8'));
+      merged.files.push(f);
+      if (Array.isArray(r?.created?.products)) merged.products.push(...r.created.products);
+      if (Array.isArray(r?.created?.priceLists)) merged.priceLists.push(...r.created.priceLists);
+      if (!merged.storeOriginalCatalog && r?.storeOriginalCatalog) merged.storeOriginalCatalog = r.storeOriginalCatalog;
+    } catch { verbose(`Skipping unreadable results file: ${f}`); }
+  }
+  return merged;
+}
+
 async function teardown() {
-  log('Starting teardown — deleting SEED-* entities...');
+  log(`Starting teardown — deleting ${SEED_FAMILY}-* (and legacy ${LEGACY_PREFIX}*) entities across ALL runs...`);
 
-  // Load seed results file for entity IDs
-  const resultsFile = join(ROOT, 'test-data', `_seed-results-${DATE_STAMP}.json`);
-  let seedResults = null;
-  if (existsSync(resultsFile)) {
-    seedResults = JSON.parse(readFileSync(resultsFile, 'utf-8'));
-    log(`Loaded seed results from ${resultsFile}`);
+  const seedResults = loadAllSeedResults();
+  if (seedResults.files.length) {
+    log(`Aggregated IDs from ${seedResults.files.length} results file(s): ${seedResults.files.join(', ')}`);
   }
 
-  // Delete seed products (from results file or by searching catalogs)
-  if (seedResults?.created?.products?.length) {
-    const allIds = seedResults.created.products.map(p => p.id);
-    const variationIds = seedResults.created.products.filter(p => p.isVariation).map(p => p.id);
-    const parentIds = allIds.filter(id => !variationIds.includes(id));
+  // --- 1. Find every seed catalog by the date-independent prefix ---
+  const allCatalogs = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200] });
+  const seedCatalogs = (allCatalogs?.results || []).filter(c => isSeedEntity(c.name));
+  log(`Found ${seedCatalogs.length} seed catalog(s)`);
 
-    if (variationIds.length > 0) {
-      await api('POST', '/api/catalog/listentries/delete', {
-        listEntryIds: variationIds,
-        objectType: 'CatalogProduct',
-      }, { expectStatus: [200, 204] });
-      log(`  ✓ Deleted ${variationIds.length} variations`);
-    }
-    if (parentIds.length > 0) {
-      await api('POST', '/api/catalog/listentries/delete', {
-        listEntryIds: parentIds,
-        objectType: 'CatalogProduct',
-      }, { expectStatus: [200, 204] });
-      log(`  ✓ Deleted ${parentIds.length} products`);
-    }
-  } else {
-    log('  No seed results file found — searching catalogs for seed products...');
-    // Fallback: search within seed catalogs (found later in the teardown flow)
-  }
-
-  // Delete price lists (from results file or by keyword search)
-  if (seedResults?.created?.priceLists?.length) {
-    const plIds = seedResults.created.priceLists.map(pl => pl.id).join(',');
-    await api('DELETE', `/api/pricing/pricelists?ids=${plIds}`, null, { expectStatus: [200, 204] });
-    log(`  ✓ Deleted ${seedResults.created.priceLists.length} price lists`);
-  } else {
-    const plSearch = await api('GET', `/api/pricing/pricelists?keyword=SEED-${DATE_STAMP}`, null, { expectStatus: [200] });
-    if (Array.isArray(plSearch) && plSearch.length > 0) {
-      const plIds = plSearch.map(pl => pl.id).join(',');
-      await api('DELETE', `/api/pricing/pricelists?ids=${plIds}`, null, { expectStatus: [200, 204] });
-      log(`  ✓ Deleted ${plSearch.length} price lists`);
-    }
-  }
-
-  // Search for seed catalogs by listing all and filtering by prefix
-  const allCatalogs = await api('POST', '/api/catalog/catalogs/search', { take: 200 }, { expectStatus: [200] });
-  const seedCatalogs = (allCatalogs?.results || []).filter(c => c.name && c.name.startsWith(`SEED-${DATE_STAMP}`));
-
-  // Search for seed categories within each seed catalog
+  // --- 2. Within each seed catalog, delete seed categories (products cascade with
+  //        the catalog at step 5, but explicit category deletion keeps the catalog
+  //        empty so its own deletion can't be blocked by residual content) ---
   for (const cat of seedCatalogs) {
-    const catSearch = await api('POST', '/api/catalog/search/categories', {
-      catalogId: cat.id,
-      take: 200,
-    });
-    const seedCats = (catSearch?.results || []).filter(c => c.name?.startsWith(`SEED-${DATE_STAMP}`) || c.code?.startsWith(`SEED-${DATE_STAMP}`));
+    const catSearch = await api('POST', '/api/catalog/search/categories', { catalogId: cat.id, take: 500 });
+    const seedCats = (catSearch?.results || []).filter(c => isSeedEntity(c.name) || isSeedEntity(c.code));
     if (seedCats.length > 0) {
       await api('POST', '/api/catalog/listentries/delete', {
         listEntryIds: seedCats.map(c => c.id),
@@ -654,7 +655,56 @@ async function teardown() {
     }
   }
 
-  // Delete seed catalogs (virtual first, then physical)
+  // --- 3. Best-effort product deletion from aggregated results files. Covers
+  //        products whose catalog was already removed or is shared; survivors in
+  //        a seed catalog cascade away at step 5. 404 is tolerated (already gone). ---
+  const resultProductIds = [...new Set(
+    seedResults.products.map(p => p.id).filter(id => id && !String(id).startsWith('dry-'))
+  )];
+  if (resultProductIds.length > 0) {
+    const variationIds = seedResults.products.filter(p => p.isVariation).map(p => p.id);
+    const parentIds = resultProductIds.filter(id => !variationIds.includes(id));
+    for (const [ids, label] of [[variationIds, 'variations'], [parentIds, 'products']]) {
+      if (ids.length === 0) continue;
+      try {
+        await api('POST', '/api/catalog/listentries/delete', {
+          listEntryIds: ids,
+          objectType: 'CatalogProduct',
+        }, { expectStatus: [200, 204, 404] });
+        log(`  ✓ Deleted ${ids.length} ${label} (from results files)`);
+      } catch (err) {
+        verbose(`results-file ${label} delete failed: ${err.message.slice(0, 120)}`);
+      }
+    }
+  }
+
+  // --- 4. Delete seed price lists: keyword search per family + results-file IDs ---
+  const plIds = new Set(seedResults.priceLists.map(pl => pl.id).filter(Boolean));
+  for (const family of [SEED_FAMILY, LEGACY_PREFIX]) {
+    const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(family)}`, null, { expectStatus: [200, 404] });
+    const list = Array.isArray(plSearch) ? plSearch : (plSearch?.results || []);
+    list.filter(pl => isSeedEntity(pl.name)).forEach(pl => plIds.add(pl.id));
+  }
+  if (plIds.size > 0) {
+    await api('DELETE', `/api/pricing/pricelists?ids=${[...plIds].join(',')}`, null, { expectStatus: [200, 204, 404] });
+    log(`  ✓ Deleted ${plIds.size} price lists`);
+  }
+
+  // --- 5. Restore the store catalog BEFORE deleting catalogs, so the store never
+  //        points at a deleted catalog mid-teardown ---
+  const currentStore = await api('GET', `/api/stores/${STORE_ID}`);
+  if (currentStore?.catalog && seedCatalogs.some(c => c.id === currentStore.catalog)) {
+    const originalCatalog = seedResults.storeOriginalCatalog || created.storeOriginalCatalog;
+    if (originalCatalog) {
+      currentStore.catalog = originalCatalog;
+      await api('PUT', '/api/stores', currentStore, { expectStatus: [200, 204] });
+      log(`  ✓ Restored store catalog to ${originalCatalog}`);
+    } else {
+      log('  ⚠ Store catalog points to a seed catalog but no original catalog ID found — restore manually');
+    }
+  }
+
+  // --- 6. Delete seed catalogs (virtual first, then physical; cascades products) ---
   const virtualCats = seedCatalogs.filter(c => c.isVirtual);
   const physicalCats = seedCatalogs.filter(c => !c.isVirtual);
   for (const cat of [...virtualCats, ...physicalCats]) {
@@ -663,20 +713,7 @@ async function teardown() {
   }
   if (seedCatalogs.length > 0) log(`  ✓ Deleted ${seedCatalogs.length} catalogs`);
 
-  // Restore store catalog if it's currently a SEED catalog
-  const currentStore = await api('GET', `/api/stores/${STORE_ID}`);
-  if (currentStore?.catalog && seedCatalogs.some(c => c.id === currentStore.catalog)) {
-    const originalCatalog = seedResults?.storeOriginalCatalog || created.storeOriginalCatalog;
-    if (originalCatalog) {
-      currentStore.catalog = originalCatalog;
-      await api('PUT', '/api/stores', currentStore, { expectStatus: [200, 204] });
-      log(`  ✓ Restored store catalog to ${originalCatalog}`);
-    } else {
-      log('  ⚠ Store catalog points to SEED catalog but no original catalog ID found — restore manually');
-    }
-  }
-
-  // Reindex to clear deleted entities
+  // --- 7. Reindex to clear deleted entities ---
   await triggerReindex();
   log('Teardown complete');
 }

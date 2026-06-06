@@ -17,7 +17,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Cart** | 028, 029, 030 | — | — (storefront-only) | — | xCart |
 | **Checkout** | 011, 012, 013 | — | — (storefront-only) | — | xCart |
 | **Orders** | 014, 015 | 017, 018, 019 | Orders → All Orders, Payment Requests | `/api/order/` | xOrder |
-| **Payment** | 039, 040, 041 | — | Orders → Payments | `/api/payments/` | — |
+| **Payment** | 039, 040a, 040b, 040c, 041 | — | Orders → Payments | `/api/payments/` | — |
 | **BOPIS/Shipping** | 036, 037, 038 | 065 | Shipping → Methods, BOPIS | `/api/shipping/` | — |
 | **Authentication** | 031, 032, 033 | — | Settings → Security, OAuth | `/connect/token` | — |
 | **B2C Features** | 006-010 | — | — (wishlists, variations, orgs) | — | — |
@@ -54,7 +54,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | `smoke` | 042 | Daily go/no-go (19 P0 tests) |
 | `critical` | 042, 039, 044, 049 | P0 suites only |
 | `release` | 080 | Master release suite |
-| `purchase-flow` | 028-030, 011-013, 014-015, 039-041 | Revenue path: cart → checkout → payment → orders |
+| `purchase-flow` | 028-030, 011-013, 014-015, 039, 040a, 040b, 040c, 041 | Revenue path: cart → checkout → payment → orders |
 | `catalog` | 001-003, 051, 053 | Catalog frontend + admin |
 | `search` | 004-005, 061 | Search frontend + admin |
 | `orders` | 014-019 | Orders frontend + admin |
@@ -63,7 +63,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | `marketing` | 023-025, 077 | Marketing admin + storefront |
 | `platform` | 020-021, 049, 063 | Platform core + API |
 | `bopis` | 036-038 | BOPIS/pickup |
-| `payment` | 039-041 | Payment processors |
+| `payment` | 039, 040a, 040b, 040c, 041 | Payment processors |
 | `configurable-products` | 052, 072, 072b, 072c | Config products admin + storefront |
 | `whitelabeling` | 067, 070-071 | White labeling admin + storefront |
 | `frontend` | All Frontend/ suites | Frontend-only regression |
@@ -88,9 +88,9 @@ When a module changes, test these suites:
 | Changed Module | Must Run | Should Run |
 |---------------|----------|------------|
 | Catalog | 001-003, 051, 053 | 042, 050, 061, 064 |
-| Orders | 017-019 | 042, 014-015, 039-041, 050, 065 |
+| Orders | 017-019 | 042, 014-015, 039, 040a, 040b, 040c, 041, 050, 065 |
 | Cart (xAPI) | 028-030 | 042, 011-013, 036-038, 050, 077 |
-| Payment | 039-041 | 042, 011, 017-018 |
+| Payment | 039, 040a, 040b, 040c, 041 | 042, 011, 017-018 |
 | Platform Core | 049, 020-021, 063 | 042, 031-033, 044 |
 | Search | 061 | 042, 004-005, 051 |
 | Authentication | 031-033, 044 | 042, 049 |

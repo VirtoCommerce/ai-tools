@@ -4,8 +4,8 @@
 //
 // IDEMPOTENT: discovers existing AGENT-TEST entities for 20260514 and reuses them.
 //
-// Read-only: never seeds against production — asserts BACK_URL matches vcst-qa
-// or vcptcore-qa hosts. Admin password resolved from process.env (.env.local).
+// Prod-safety by config (ENV_RISK), not hostname — blocks ENV_RISK=production unless
+// --allow-admin-writes-on-prod. Admin password resolved from process.env (.env.local).
 //
 // IMPORTANT data-drift note (2026-05-14):
 //   On vcst-qa the original AcmeCorp (ORG-001 eba8b270-...) and AcmeWest
@@ -24,13 +24,13 @@ import { dirname } from 'node:path';
 const DATE = '20260514';
 const REPORT_PATH = `reports/seed/seed-impersonation-targets-${DATE}.json`;
 
-const ALLOWED_HOSTS = ['vcst-qa.govirto.com', 'vcptcore-qa.govirto.com'];
 const backHost = new URL(env.BACK_URL).host;
-if (!ALLOWED_HOSTS.includes(backHost)) {
-  console.error(`ABORT: BACK_URL host "${backHost}" not in allowlist [${ALLOWED_HOSTS.join(', ')}]`);
+const ENV_RISK = (env.ENV_RISK || 'dev').toLowerCase();
+if (ENV_RISK === 'production' && !process.argv.includes('--allow-admin-writes-on-prod')) {
+  console.error(`ABORT: ENV_RISK=production for ${backHost} — refusing to seed. Pass --allow-admin-writes-on-prod to override.`);
   process.exit(2);
 }
-console.log(`[seed] target host: ${backHost}`);
+console.log(`[seed] target host: ${backHost} (ENV_RISK=${ENV_RISK})`);
 
 const headers = { 'Content-Type': 'application/json' };
 

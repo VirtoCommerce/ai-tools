@@ -24,7 +24,7 @@
  *   teardown   — Delete every org/contact whose name starts with "AGENT-TEST-"
  *
  * Safety:
- *   - Host allowlist (vcst-qa, vcptcore-qa) — refuses to run against prod/virtostart.
+ *   - ENV_RISK gate — blocks ENV_RISK=production (override --allow-admin-writes-on-prod); runs on dev/test/staging/localhost.
  *   - --dry-run prints the plan, no writes.
  *   - Idempotent: re-running finds existing entities by name/email and reuses them.
  *
@@ -41,7 +41,6 @@ const TEST_ENV = process.env.TEST_ENV || 'vcst';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-loadDotenv({ path: '.env' }); // legacy fallback
 
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
@@ -64,11 +63,10 @@ if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
   process.exit(1);
 }
 
-// --- Safety: host allowlist ---
-const ALLOWED_HOSTS = ['vcst-qa.govirto.com', 'vcptcore-qa.govirto.com'];
-const backHost = new URL(BACK_URL).host;
-if (!ALLOWED_HOSTS.includes(backHost)) {
-  console.error(`ABORT: BACK_URL host "${backHost}" not in allowlist [${ALLOWED_HOSTS.join(', ')}]`);
+// --- Safety: prod gate by config (ENV_RISK), not hostname — see feedback_seed_env_risk_not_host_allowlist ---
+const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) {
+  console.error(`ABORT: ENV_RISK=production for ${new URL(BACK_URL).host} — refusing to seed. Pass --allow-admin-writes-on-prod to override.`);
   process.exit(2);
 }
 

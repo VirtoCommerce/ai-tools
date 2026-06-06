@@ -37,7 +37,7 @@ The Skyflow card form's CVV validation uses the generic storefront-set regex `^[
 `client-app/shared/payment/components/payment-processing-skyflow.vue` defines `const CVV_REGEX = "^[0-9]{3,4}$"` and passes it into the Skyflow element config — a static brand-agnostic rule. The Skyflow SDK already detects the brand (icon/grouping prove it); the storefront never derives CVV length from it. Fix: brand-conditional CVV rule (AMEX → `^[0-9]{4}$`, others → `^[0-9]{3}$`) + brand-aware CVV placeholder. Compounding factor: VCST-5009 cart flow pre-creates the order, so each validation miss now also produces an unpaid order.
 
 ## Regression coverage
-Suite `040-payment-processors.csv` → **PAY-SKY-015** asserts correct per-brand behavior; stays red until fixed.
+Suite `040a-payment-skyflow.csv` → **PAY-SKY-015** asserts correct per-brand behavior; stays red until fixed.
 
 ## Fix Routing (→ /qa-fix)
 - **Owning layer:** Layer 1 — Storefront

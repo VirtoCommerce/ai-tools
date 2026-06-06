@@ -227,7 +227,7 @@ Quick patterns to start from. None of these ship — they're suggestions for wha
 | If your storefront has... | Your suite covers... |
 |---------------------------|----------------------|
 | Custom checkout step (e.g., "Pre-order date picker") | Adds case to checkout flow asserting the picker appears, validates input, blocks invalid dates |
-| Custom payment processor (not Skyflow/CyberSource/AuthorizeNet/Datatrance) | Clone suite 040, adapt for your processor's iframe/redirect/SDK contract |
+| Custom payment processor (not Skyflow/CyberSource/AuthorizeNet/Datatrans) | Clone the provider-closest suite (040a for cart-inline iframe, 040c for redirect processor), adapt for your processor's iframe/redirect/SDK contract |
 | Custom B2B approval workflow | Test the threshold, approver assignment, post-approval order placement |
 | Custom catalog model (e.g., subscription products) | Test product browse, add-to-cart with subscription terms, subscription-aware checkout |
 | Branded theme with custom CSS | Visual regression suite (clone from `qa-design` patterns); assert key brand elements present |

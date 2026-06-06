@@ -1,30 +1,99 @@
 {
-  "runId": "REG-2026-06-04-1321",
-  "selection": "050j",
-  "startedAt": "2026-06-04T13:21:00+03:00",
+  "runId": "REG-2026-06-05-1752",
+  "selection": "040,041",
+  "startedAt": "2026-06-05T17:52:00+02:00",
   "environment": "vcst-qa",
   "build": {
     "platform": "3.1032.0",
-    "theme": "vc-theme-b2b-vue-2.51.0-alpha.2362",
+    "theme": "vc-theme-b2b-vue-2.51.0-pr-2309-ba0bcf37",
     "modules": {
-      "VirtoCommerce.MarketingExperienceApi": "3.1002.0-pr-16-3e3b",
-      "VirtoCommerce.Marketing": "3.1003.0"
+      "VirtoCommerce.AuthorizeNetPayment": "3.1001.0-pr-12-c821",
+      "VirtoCommerce.Skyflow": "3.1002.0",
+      "VirtoCommerce.Datatrans": "3.1001.0",
+      "VirtoCommerce.CyberSourcePayment": "3.1001.0"
     }
   },
   "suites": [
     {
-      "id": "050j",
-      "name": "GraphQL xMarketing (promotionCoupons)",
-      "file": "regression/suites/Backend/graphql/050j-graphql-xmarketing.csv",
-      "priority": "P1",
-      "testCount": 16,
-      "agent": "qa-backend-expert",
-      "executionMode": "graphql-runner (runner-native, no browser)",
+      "id": "040",
+      "name": "Payment Processors",
+      "file": "regression/suites/Frontend/payment/040-payment-processors.csv",
+      "priority": "P0",
+      "testCount": 36,
+      "browser": "playwright-edge",
       "status": "completed",
       "attempts": 1,
-      "result": { "cases": 20, "passed": 18, "failed": 0, "skipped": 2, "verdict": "PASS" }
+      "results": {
+        "total": 55,
+        "passed": 4,
+        "failed": 3,
+        "blocked": 42,
+        "skipped": 6,
+        "passRate": "7.3%"
+      },
+      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-results.json",
+      "completedAt": "2026-06-05T17:05:53.217Z"
+    },
+    {
+      "id": "041",
+      "name": "Payment Cross-Cutting",
+      "file": "regression/suites/Frontend/payment/041-payment-cross-cutting.csv",
+      "priority": "P0",
+      "testCount": 14,
+      "browser": "playwright-chrome",
+      "status": "completed",
+      "attempts": 1,
+      "results": {
+        "total": 14,
+        "passed": 7,
+        "failed": 3,
+        "blocked": 2,
+        "skipped": 2,
+        "passRate": "50.0%"
+      },
+      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-041-results.json",
+      "completedAt": "2026-06-05T17:08:00.910Z",
+      "note": "PAY-GUEST-001/002 reclassified by-design (BUG_041_001 dismissed)"
+    },
+    {
+      "id": "040-retry",
+      "name": "Payment Processors — chrome retry (blocked subset + 014/016 verification)",
+      "priority": "P0",
+      "browser": "playwright-chrome",
+      "status": "completed",
+      "attempts": 1,
+      "parent": "040",
+      "results": {
+        "total": 55,
+        "passed": 8,
+        "failed": 3,
+        "blocked": 35,
+        "skipped": 9,
+        "passRate": "14.5%"
+      },
+      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-retry-results.json"
+    },
+    {
+      "id": "040-dt",
+      "name": "Datatrans section clean run (PAY-DT-001..008, post-fix)",
+      "priority": "P0",
+      "browser": "playwright-chrome",
+      "status": "completed",
+      "attempts": 1,
+      "parent": "040",
+      "results": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "passRate": "100.0%"
+      },
+      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-dt-results.json",
+      "completedAt": "2026-06-06T10:53:10.325Z"
     }
   ],
-  "completedAt": "2026-06-04T13:30:00+03:00",
-  "report": "reports/regression/REG-2026-06-04-1321/regression-report.md"
+  "status": "completed",
+  "completedAt": "2026-06-06T10:53:10.325Z",
+  "report": "reports/regression/REG-2026-06-05-1752/regression-2026-06-05.md"
 }

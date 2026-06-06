@@ -14,14 +14,18 @@
  * submit exactly one default per section.
  *
  * USAGE: node scripts/seed-default-option-cfg.mjs [--verbose] [--only CFG-030]
- * Safety: host allowlist (vcst-qa, vcptcore-qa); idempotent by product code.
+ * Safety: ENV_RISK gate (blocks production; override --allow-admin-writes-on-prod); idempotent by product code.
  * Writes test-data/_seed-results-cfg-default-{DATE}.json.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config } from 'dotenv';
-config();
+import { config as loadDotenv } from 'dotenv';
+// Layered, TEST_ENV-aware load (later files override) — matches config.js so the
+// seeder works across envs (vcst/vcptcore/localhost/...). No legacy root `.env`.
+loadDotenv({ path: '.env.defaults' });
+loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
+loadDotenv({ path: '.env.local', override: true });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -40,8 +44,8 @@ const args = process.argv.slice(2);
 const VERBOSE = args.includes('--verbose');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
-const ALLOWED_HOSTS = ['vcst-qa.govirto.com', 'vcptcore-qa.govirto.com'];
-if (!ALLOWED_HOSTS.includes(new URL(BACK_URL).host)) { console.error('ABORT: host not allowlisted'); process.exit(2); }
+const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) { console.error(`ABORT: ENV_RISK=production — refusing to seed; pass --allow-admin-writes-on-prod to override.`); process.exit(2); }
 
 // key = intra-spec id for dependsOn wiring; default:true marks the default option.
 const CFG_SPECS = [

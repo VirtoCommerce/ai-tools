@@ -32,14 +32,16 @@ Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and 
 | **autonomous-test-runner** | sonnet | orange | Standalone autonomous test execution agent |
 | **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 
-### BA Team (4 agents)
+### BA Team (4 agents + shared-instructions)
+
+Team framework: `.claude/agents/ba/shared-instructions.md`.
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
 | **ba-system-analyzer** | sonnet | teal | Repo structure, modules, user flows, pain points |
 | **ba-api-specialist** | sonnet | cyan | API surface via Postman/Swagger, health assessment |
 | **ba-story-writer** | sonnet | yellow | Agile user stories with BDD acceptance criteria |
-| **ba-doc-writer** | sonnet | indigo | User docs, admin guides, API quick-start |
+| **ba-doc-writer** | sonnet | indigo | Audience-targeted docs — Customer / Admin / Developer / Sales (per `knowledge/virto-doc-style.md`) |
 
 ### Developers Team (2 agents + shared-instructions)
 
@@ -181,13 +183,13 @@ QA agents use a **four-layer prompt architecture**:
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (15 files): `api-auth.md`, `business-logic.md`, `platform-patterns.md`, `browser-quirks.md`, `debugging-signals.md`, `performance-thresholds.md`, `catalog.md`, `store-settings.md`, `white-labeling.md`, `e-commerce-edge-cases-library.md`, `module-suite-map.md`, `sitemap.md`, `products.md`, `graphiql-interaction.md`, `order-creation-matrix.md`.
+Shared knowledge files in `knowledge/` (26 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
 
 ---
 
 ## Customizing Agents
 
-Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`) and `.claude/agents/ba/` (4 BA agents). Shared knowledge files are in `.claude/agents/knowledge/` (15 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`), `.claude/agents/ba/` (4 BA agents + `shared-instructions.md`), and `.claude/agents/developers/` (2 agents + `shared-instructions.md`). Shared knowledge files are in `.claude/agents/knowledge/` (26 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 

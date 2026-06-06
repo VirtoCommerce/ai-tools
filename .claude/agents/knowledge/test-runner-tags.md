@@ -133,6 +133,12 @@ Read `test-data/users/agent-user-pool.csv`, match `server_name` = `{{BROWSER_SER
 - **BLOCKED** — preconditions not met or environment prevents execution
 - **SKIPPED** — intentionally skipped (document reason)
 
+### BLOCKED misuse — the case steps are the contract
+
+- **A flow that differs from the rest of the suite is NOT a blocker.** If the Steps script a redirect (e.g. Datatrans: Place Order → `/checkout/payment` → widget → OTP), execute THROUGH the redirect. "This processor isn't cart-inline" is never a valid BLOCKED reason (REG-2026-06-05-1752 incident: 8 Datatrans cases falsely blocked on exactly this).
+- **"Hard" ≠ "impossible."** Before BLOCKING on a third-party payment widget/iframe: take a `browser_snapshot` after the widget fully loads, attempt click/type via the snapshot refs, and record WHAT failed (frame URL, element, error) in `notes`. A BLOCKED without a documented failed attempt is invalid. Same-run evidence proved Skyflow iframes complete E2E (captured payments) while runners labeled them "cannot interact".
+- **Write each case's result to the output JSON immediately after the case finishes** — never compose the JSON from memory at end of run (post-compaction blanket statuses are how false BLOCKED blocks happen).
+
 ## Transient Failure Signals (NOT auto-confirmed bugs)
 
 - Search index lag (ECL-14.2): price/product not reflected within 60s

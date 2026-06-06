@@ -1,0 +1,57 @@
+{
+  "ticket": "VCST-5162",
+  "verdict": "FAIL",
+  "date": "2026-06-05",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1032.0",
+    "theme": "2.51.0-pr-2309-ba0b-ba0bcf37 (PR head — artifact.json bumped from stale ee2627ef this run, deploy 3eb47580)",
+    "relevant_modules": { "VirtoCommerce.AuthorizeNetPayment": "3.1001.0-pr-12-c821" }
+  },
+  "agents_dispatched": ["test-management-specialist", "qa-frontend-expert", "qa-backend-expert", "qa-testing-expert"],
+  "total_cases": 13,
+  "passed": 9,
+  "failed": 2,
+  "blocked": 1,
+  "skipped": 1,
+  "case_results": {
+    "PAY-AN-010": "PASS",
+    "PAY-AN-011": "PASS (allowCartPayment finalize guard verified on ba0bcf37)",
+    "PAY-AN-012": "FAIL (no inline Luhn error; ghost 'Payment required' order CO260605-00012; /checkout/payment fallback — persists on PR head)",
+    "PAY-AN-013": "PASS",
+    "PAY-AN-014": "PASS (CO260605-00014)",
+    "PAY-AN-015": "SKIPPED-tooling (no request-blocking in playwright-chrome MCP)",
+    "PAY-AN-016": "PASS (exactly 1 GA4 purchase event)",
+    "PAY-AN-017": "BLOCKED (checkout_multistep_enabled=false — by-design semantics)",
+    "Q1-expired-date": "FAIL (second-sourced firefox+chrome; ghost order CO260605-00016; same root cause as PAY-AN-012)",
+    "coupon-survival": "PASS",
+    "CART-PAY-GQL-004": "PASS (8/8, runner-native)",
+    "xAPI-allowCartPayment-matrix": "PASS (AN/CyberSource/Skyflow=true; Datatrans/Manual/Loyalty=false)",
+    "ORD-018-transaction-shape": "PASS with bug candidate (transactions:[] on authorized AN orders)"
+  },
+  "bugs_filed": [],
+  "bug_candidates": [
+    {
+      "title": "AN inline /cart form: no client-side card validation (Luhn + expired date) — enabled Place Order creates ghost 'Payment required' order then falls back to /checkout/payment",
+      "severity": "High",
+      "evidence": "PAY-AN-012 + Q1; orders CO260605-00012/00016 (cancelled); cross-browser second-sourced",
+      "status": "Documented in reports/bugs/BUG-AN-cart-no-client-card-validation.md — NOT filed in JIRA (user decision); dev-intent question open with PR author"
+    },
+    {
+      "title": "AN authorize does not persist PaymentGatewayTransaction (transactions:[] / Admin 'No data', isApproved=false) — CyberSource/Skyflow do persist on same env",
+      "severity": "Medium",
+      "evidence": "CO260605-00014/00015 via REST + Admin UI (two sources); affects reconciliation/refund traceability",
+      "status": "Documented in reports/bugs/BUG-AN-no-payment-gateway-transaction.md — NOT filed in JIRA (user decision)"
+    }
+  ],
+  "business_rules_verified": ["BL-CHK-002", "BL-CHK-004", "BL-ORD-001", "BL-ORD-006", "BL-CROSS-005", "BL-CROSS-010"],
+  "business_rules_notes": "BL-PAY-001/BL-PAY-004 cited in suite 040 CSV do not exist in business-logic.md — proposed-invariant filing needed",
+  "exploratory": {
+    "charter": "Risk charter: cart-embedded AN form integration boundaries beyond PAY-AN-010..017",
+    "heuristic": "SFDPOT",
+    "findings": { "bugs": 0, "questions": 1, "observations": 8, "risks": 1 },
+    "notes": "Q1 (expired date) escalated to chrome second-source and confirmed → merged into High bug candidate"
+  },
+  "cleanup": "All 5 run orders cancelled via Admin (00014/00015 payments voided). Pre-existing AN orders 00010/00011 untouched.",
+  "artifacts": "tests/Sprint26-11/VCST-5162/"
+}

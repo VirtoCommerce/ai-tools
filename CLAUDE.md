@@ -20,10 +20,11 @@ npm run ci:smoke         # Smoke tests only (suite 042)
 npm run ci:critical      # P0 suites (042, 039, 044, 049)
 npm run ci:frontend      # Frontend-layer suites
 npm run ci:backend       # Backend-layer suites
-npm run ci:full          # Full regression (all 99 suites)
+npm run ci:full          # Full regression (all 101 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
+npm run ci:monitor       # Online bug monitoring from App Insights (ci:monitor:dry = triage-only)
 npm run ci:notify        # Teams notification (requires TEAMS_WEBHOOK_URL)
 ```
 
@@ -46,14 +47,14 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 16 agents in qa/ + ba/ + developers/ subfolders, knowledge/ (25 files) for shared refs
-├── .claude/skills/       # 23 skills (vc-knowledge, testing, qa-methodology, development)
-├── .claude/commands/     # 17 slash commands
+├── .claude/agents/       # 16 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (26 files) for shared refs
+├── .claude/skills/       # 24 skills (vc-knowledge, testing, qa-methodology, development)
+├── .claude/commands/     # 18 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 99 CSV suites (~3,756 cases) in 42 module directories
+├── regression/suites/    # 101 CSV suites (~3,756 cases) in 42 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads
@@ -82,7 +83,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, Checkout/Payment, Orders, B2B Multi-org, GA4 tracking.
 
-**Payment flow:** CyberSource shows the payment form directly on the cart page. All other processors (Skyflow, Authorize.Net, Datatrance) require clicking "Place Order" first, which redirects to `/checkout/payment` page.
+**Payment flow:** CyberSource, Skyflow (VCST-5009), and Authorize.Net (VCST-5162, PR-deployed) have `allowCartPayment=true` — the card form renders directly on the cart page. Datatrans is the only remaining redirect processor: clicking "Place Order" redirects to `/checkout/payment`.
 
 ## Detailed References
 

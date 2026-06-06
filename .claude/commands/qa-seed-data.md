@@ -1,33 +1,32 @@
 ---
-description: "Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs — full or by profile"
+description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products"
 argument-hint: "minimal | catalog | b2b | pricing | full | teardown"
 disable-model-invocation: true
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown
 
-Seed a complete test environment via REST API using Postman MCP, or tear down previously created test data.
+Seed a complete test environment, or tear down previously created test data. Two execution paths: **repo seed scripts** (`npm run seed*` + specialized `.mjs` seeders — direct REST/xAPI, the practical default) or **Postman MCP** (reusable collections). The skill's "Seeding Tooling — Two Execution Paths" section is the canonical map of every seeder.
 
 ## Usage
 ```
-/qa-seed-data minimal     # 1 product + price + inventory (fastest)
-/qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency
-/qa-seed-data b2b         # Organization + 3 users with roles
+/qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
+/qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
+/qa-seed-data b2b         # Organization + users with roles → node scripts/seed-b2b-fixtures.mjs
 /qa-seed-data pricing     # Price lists, tiers, multi-currency
-/qa-seed-data full        # All profiles combined
-/qa-seed-data teardown    # Delete all AGENT-TEST-* entities
+/qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B seeders
+/qa-seed-data teardown    # Delete ephemeral seeded entities (match teardown to the path that seeded)
 ```
 
 ---
 
 ## Execution
 
-Read the skill definition and its references, then follow the workflow exactly:
+Read the skill definition and its references, then choose the path:
 
-1. Read `.claude/skills/testing/qa-seed-data/SKILL.md`
-2. Read `.claude/skills/testing/qa-seed-data/test-data-generation.md`
-3. Read `.claude/skills/testing/qa-postman/SKILL.md` (index) and the relevant sub-guides — start with `mcp-tools.md`, then `collections-and-requests.md`, plus `test-data-fixtures.md` for fixture-driven values
-4. Execute the 6-step workflow from the skill (Read → Reuse check → Environment → Build → Execute → Report)
+1. Read `.claude/skills/testing/qa-seed-data/SKILL.md` — start with **Seeding Tooling — Two Execution Paths** to pick a script vs Postman.
+2. **Path A (script — fastest):** run the relevant `npm run seed*` / `node scripts/seed-*.mjs` from the tooling table, then write IDs back to `test-data/` and run `npx tsx scripts/validate-td-refs.ts`.
+3. **Path B (Postman MCP):** read `.claude/skills/testing/qa-seed-data/test-data-generation.md`, then `.claude/skills/testing/qa-postman/SKILL.md` (index) + sub-guides (`mcp-tools.md`, `collections-and-requests.md`, `test-data-fixtures.md`), and execute the 6-step workflow (Read → Reuse check → Environment → Build → Execute → Report).
 
 ## Test Data Directory
 

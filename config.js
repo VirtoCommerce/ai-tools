@@ -1,13 +1,18 @@
 import { config } from 'dotenv';
+import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
 //   4. process.env         — already wins (CI passes via -e flags)
-// The legacy single .env file is loaded last as a backwards-compat fallback —
-// it fills gaps but does NOT override the above. Remove once everyone migrates.
-const TEST_ENV = process.env.TEST_ENV || 'vcst';
+// The legacy monolithic .env file was removed — all values live in the layered
+// files above. Per-env scaffolds are committed; secrets stay in .env.local.
+//
+// TEST_ENV selects WHICH .env.${TEST_ENV} loads, so it must be resolved before any
+// dotenv file is read. Precedence: process.env.TEST_ENV > .env.test-env (gitignored
+// team/per-dev default) > 'vcst'. See scripts/lib/resolve-test-env.js.
+const TEST_ENV = resolveTestEnv('vcst');
 
 // Validate TEST_ENV: must match [a-z0-9_]+ so the per-env suffix-promotion
 // (which uppercases TEST_ENV and appends as a var suffix) works correctly.
@@ -25,7 +30,6 @@ if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
 config({ path: '.env.defaults' });
 config({ path: `.env.${TEST_ENV}`, override: true });
 config({ path: '.env.local', override: true });
-config({ path: '.env' });
 
 // Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
 // is promoted to its base name. Lets `.env.local` carry per-env password
@@ -108,6 +112,15 @@ const featureGatedVars = {
     postman: {
         vars: ['POSTMAN_API_KEY'],
         gates: '/qa-postman, /qa-api test',
+    },
+    monitoring: {
+        // App IDs gate the feature. Auth is AAD-first (az login / service principal /
+        // managed identity) — API keys are an OPTIONAL fallback, not required here.
+        vars: [
+            'APPINSIGHTS_APP_ID_BACKEND',
+            'APPINSIGHTS_APP_ID_STOREFRONT',
+        ],
+        gates: '/qa-monitoring, ci:monitor (App Insights online bug monitoring)',
     },
 };
 
@@ -218,6 +231,20 @@ export const env = {
     DATATRANCE_EXPIRY: getEnvVar('DATATRANCE_EXPIRY'),
     DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
     DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP'),
+
+    // Azure / Application Insights — online bug monitoring (/qa-monitoring, ci:monitor)
+    // Resource IDs are per-env identifiers (Bucket #2, committed in .env.${TEST_ENV});
+    // API keys are secrets (Bucket #3, .env.local only). All optional — the monitor
+    // flow no-ops with a clear message when the App IDs / keys are unset.
+    AZURE_SUBSCRIPTION_ID: getEnvVar('AZURE_SUBSCRIPTION_ID', ''),
+    AZURE_RESOURCE_GROUP: getEnvVar('AZURE_RESOURCE_GROUP', ''),
+    APPINSIGHTS_APP_ID_BACKEND: getEnvVar('APPINSIGHTS_APP_ID_BACKEND', ''),
+    APPINSIGHTS_APP_ID_STOREFRONT: getEnvVar('APPINSIGHTS_APP_ID_STOREFRONT', ''),
+    APPINSIGHTS_API_KEY_BACKEND: getEnvVar('APPINSIGHTS_API_KEY_BACKEND', ''),
+    APPINSIGHTS_API_KEY_STOREFRONT: getEnvVar('APPINSIGHTS_API_KEY_STOREFRONT', ''),
+    // Resource NAMES — used only to build portal deep-links; per-env, never hardcoded.
+    APPINSIGHTS_RESOURCE_BACKEND: getEnvVar('APPINSIGHTS_RESOURCE_BACKEND', ''),
+    APPINSIGHTS_RESOURCE_STOREFRONT: getEnvVar('APPINSIGHTS_RESOURCE_STOREFRONT', ''),
 
     // Figma API key
     FIGMA_API_KEY: getEnvVar('FIGMA_API_KEY'),

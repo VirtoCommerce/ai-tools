@@ -1,0 +1,20 @@
+{
+  "runId": "MONITOR-2026-06-06-0858",
+  "date": "2026-06-06",
+  "configured": true,
+  "layers": [
+    "backend"
+  ],
+  "window": "PT1440M",
+  "model": "claude-sonnet-4-5-20250929",
+  "dryRun": false,
+  "signaturesSeen": 4,
+  "new": 0,
+  "spiking": 0,
+  "triaged": 0,
+  "capped": 0,
+  "confirmed": 0,
+  "needsReview": 0,
+  "totalCostUsd": 0,
+  "outcomes": []
+}

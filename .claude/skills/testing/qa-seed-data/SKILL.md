@@ -1,14 +1,46 @@
 ---
-description: "[Testing] Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs — full or by profile"
+description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products — via repo seed scripts (npm run seed) or Postman MCP"
 argument-hint: "[minimal|catalog|b2b|pricing|full|teardown]"
 disable-model-invocation: true
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown
 
-Generate a complete test environment by seeding all required entities via REST API, or tear down previously created test data.
+Single entry point for seeding **every** kind of test data this repo needs — and for tearing it down. Covers two execution paths (script-based and Postman MCP), the full `test-data/` fixture surface, and the specialized one-purpose seeders.
 
-**Postman mechanics:** This skill uses Postman MCP for collection building. **The MCP cannot execute collections** — execution happens out-of-band via Newman or the Postman CLI (see `/qa-postman/execution.md`). For auth patterns, variable scoping, collection structure, common mistakes, and tool signatures — read `/qa-postman` first. This skill only covers **what** to seed and **in what order**, not how Postman MCP works.
+## Seeding Tooling — Two Execution Paths
+
+Pick the path by what you're seeding. Both end with the same obligation: write seeded IDs back into `test-data/` so `@td()` resolves (Step 6 below).
+
+### Path A — Repo seed scripts (direct REST/xAPI) — the practical default
+
+Node seeders in [`scripts/`](../../../../scripts/) read CSVs from [`test-data/`](../../../../test-data/), call the platform API directly, are **idempotent** (look-up-then-create), respect `TEST_ENV` (via `config.js`), enforce a **host allowlist** (vcst-qa / vcptcore-qa — can't hit prod), and write results to `test-data/_seed-results-*.json`. No Postman/Newman needed.
+
+| Script | Seeds | Invoke | Write-back |
+|--------|-------|--------|-----------|
+| [`seed-test-data.js`](../../../../scripts/seed-test-data.js) | Catalog → category → product → pricing → inventory from `test-data/` CSVs. Profiles: `minimal`/`catalog`/`full`/`teardown` | `npm run seed` · `seed:minimal` · `seed:catalog` · `seed:full` · `seed:teardown` · `seed:dry-run` | `_seed-results-{date}.json` |
+| [`seed-standard-products.mjs`](../../../../scripts/seed-standard-products.mjs) | 6 standard products (`PROD_HEADPHONES`, `PROD_LAPTOP`, `PROD_OOS`, `PROD_LOW_STOCK`, `PROD_PACK_SIZE`, `PROD_TIER_PRICED`) | `node scripts/seed-standard-products.mjs [--dry-run] [--only PROD-001]` | `_seed-results-std-{date}.json` |
+| [`seed-configurable-products.mjs`](../../../../scripts/seed-configurable-products.mjs) | Single-section configurable products (CFG-012/014/015/016/018) + child-option products | `node scripts/seed-configurable-products.mjs [--dry-run] [--only CFG-012]` | `_seed-results-cfg-{date}.json` |
+| [`seed-conditional-sections-extended.mjs`](../../../../scripts/seed-conditional-sections-extended.mjs) | Conditional-cascade CFGs (CFG-022..029, `dependsOnSectionId`) | `node scripts/seed-conditional-sections-extended.mjs [--dry-run]` | `_seed-results-cfg-cond-{date}.json` |
+| [`seed-default-option-cfg.mjs`](../../../../scripts/seed-default-option-cfg.mjs) | Default-option CFGs (VCST-4715: CFG-030/031, `option.isDefault`) | `node scripts/seed-default-option-cfg.mjs [--only CFG-030]` | `_seed-results-cfg-default-{date}.json` |
+| [`seed-bike-flat-cfg.mjs`](../../../../scripts/seed-bike-flat-cfg.mjs) | Flat Bike CFG-032 for suite 072 (CFG-PDP-*) | `node scripts/seed-bike-flat-cfg.mjs` | `_seed-results-bike-flat-{date}.json` |
+| [`seed-promotions.mjs`](../../../../scripts/seed-promotions.mjs) | Marketing promotions + rewards + coupons from `test-data/promotions/*.csv` | `npm run seed:promotions` (`[--dry-run] [--only P01] [--teardown]`) | `_seed-results-promotions-{date}.json` |
+| [`seed-bopis.mjs`](../../../../scripts/seed-bopis.mjs) | BOPIS pickup locations from `test-data/stores/bopis-locations.csv` (vc-module-shipping; linked to an existing FFC) | `npm run seed:bopis` (`[--only LOC-001] [--teardown]`) | `_seed-results-bopis-{date}.json` |
+| [`seed-catalog-properties.mjs`](../../../../scripts/seed-catalog-properties.mjs) | Catalog/variation property definitions + dictionary values from `test-data/catalogs/properties.csv` | `npm run seed:properties` (`[--only PROP-001] [--teardown]`) | `_seed-results-properties-{date}.json` |
+| [`seed-white-labeling.mjs`](../../../../scripts/seed-white-labeling.mjs) | Menu link lists + white-labeling org config + users from `test-data/white-labeling/*.csv` | `npm run seed:white-labeling` (`[--skip-users] [--teardown]`) | `_seed-results-wl-{date}.json` |
+| [`seed-b2b-fixtures.mjs`](../../../../scripts/seed-b2b-fixtures.mjs) | B2B orgs + contacts + addresses from `test-data/b2b/*.csv` (this is the real `b2b` seeder) | `node scripts/seed-b2b-fixtures.mjs` | `_seed-results-orgs-{date}.json` |
+| [`seed-impersonation-targets.mjs`](../../../../scripts/seed-impersonation-targets.mjs) | 11 orgs + users for IMP-048/049 (suite 082) | `node scripts/seed-impersonation-targets.mjs` | `reports/seed/seed-impersonation-targets-{date}.json` |
+| [`refresh-product-guids.mjs`](../../../../scripts/refresh-product-guids.mjs) | Refreshes product GUIDs in `test-data/` after a reseed | `npm run refresh-product-guids` | updates `test-data/` CSVs + `aliases.json` |
+
+`seed-test-data.js` covers only `minimal/catalog/full/teardown` — **B2B is `seed-b2b-fixtures.mjs`**, and pricing is folded into the `catalog`/`full` profiles. The CFG `.mjs` seeders are phased (Phase 1+2 → conditional → default-option → bike) and share catalog/category/pricelist/ffc/virtual-catalog wiring.
+
+The newer seeders (`seed-promotions`, `seed-bopis`, `seed-catalog-properties`, `seed-white-labeling`) share [`scripts/lib/seed-common.mjs`](../../../../scripts/lib/seed-common.mjs) — the common env-load / host-allowlist / auth / `api()` / CSV / write-back helper — and all support `--dry-run` (reads only, never writes), `--verbose`, `--only <id>`, and `--teardown` (deletes exactly the rows they seed). **Reference-only `test-data/` (payment cards, search queries, security payloads, uploads, GraphQL query library) and discovered/pre-existing infra (FFCs, stores, languages) intentionally have no seeder.** Known remaining gaps with no script: `test-data/b2b/roles.csv` (its permission strings are abstract and don't map to real VC permission keys — would create empty roles) and standalone B2B user-account creation (partially covered by `seed-impersonation-targets.mjs`).
+
+### Path B — Postman MCP (collection-driven)
+
+The 6-step workflow below builds a reusable Postman collection via MCP and executes it via Newman / Postman CLI. Use when you want a **shareable, reusable seed collection** or are already in a Postman-centric flow. **The MCP cannot execute collections** — execution is out-of-band (see `/qa-postman/execution.md`). Read `/qa-postman` first for auth, variable scoping, collection structure, and tool signatures.
+
+> **Prefixes & teardown scope.** All seeders now share the `AGENT-TEST-*` family. `seed-test-data.js` tags entities `AGENT-TEST-SEED-{date}` (date for traceability, stable base for matching), and `npm run seed:teardown` sweeps **every prior run** of that script — matching the date-independent `AGENT-TEST-SEED-*` family plus legacy `SEED-*` (back-compat). It is intentionally scoped to its own family, so it does **not** delete the specialized `.mjs`/Postman fixtures (`AGENT-TEST-CFG-*`, B2B orgs, etc.) that carry pinned `@td()` IDs. The Postman `teardown` profile sweeps the broader `AGENT-TEST-*` ephemeral set. Deleting a seed catalog cascades to its categories/products; price lists are swept by keyword.
 
 ## Reference
 
@@ -18,14 +50,14 @@ Read **before** executing:
 
 ## Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `minimal` | 1 catalog + 1 category + 1 product + price + inventory |
-| `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory |
-| `b2b` | Organization + 3 users (admin/buyer/viewer) + roles + contacts + addresses |
-| `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency |
-| `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. |
-| `teardown` | Delete all entities matching `AGENT-TEST-*` naming convention |
+| Argument | Description | Fastest backing tool |
+|----------|-------------|----------------------|
+| `minimal` | 1 catalog + 1 category + 1 product + price + inventory | `npm run seed:minimal` |
+| `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory | `npm run seed:catalog` |
+| `b2b` | Organization + users + roles + contacts + addresses | `node scripts/seed-b2b-fixtures.mjs` |
+| `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency | folded into `seed:catalog` / `seed:full` (Postman path for standalone) |
+| `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. | `npm run seed:full` + the specialized CFG/B2B `.mjs` seeders |
+| `teardown` | Delete ephemeral seeded entities. Script path: `npm run seed:teardown` sweeps all prior `AGENT-TEST-SEED-*` runs (+ legacy `SEED-*`). Postman path: sweeps the broader `AGENT-TEST-*` set. See the prefix note above. | `npm run seed:teardown` (script) |
 
 ## Workflow
 

@@ -25,9 +25,10 @@ Payment in status 'Authorized' with manual payment method",,"1. Open order with 
 2. Click 'Capture' on payment document
 3. Verify capture result",,,,,"C358190",
 "ORD-018","Capture authorized payment (authorize.net and native) fails","Orders > Capture","Medium",,,"Admin logged in to Backend
-Payment in status 'Authorized' with authorize.net or native payment method",,"1. Open order with authorized payment (authorize.net)
+Payment in status 'Authorized' with authorize.net or native payment method
+- SYNC NOTE VCST-5162 (backend PR#12 change #4): PaymentGatewayTransaction shape changed. 'Status' now stores short TransactionResponse enum string (e.g. 'Approved'), 'ResponseCode' stores numeric TransactionResponseCode, 'Note' carries full description + 'Transaction ID: {id}'. If Admin UI assertions on transaction Status/ResponseCode/Note labels are added in future, use this shape. No executable assertion change needed in this legacy-format case.",,"1. Open order with authorized payment (authorize.net)
 2. Try to capture
-3. Repeat with native payment method",,,,,"C358191 C358192",
+3. Repeat with native payment method",,,,,"C358191 C358192; Synced: VCST-5162 (backend change #4 transaction shape note added)",
 "ORD-019","Capture non-authorized payment fails","Orders > Capture","Medium",,,"Admin logged in to Backend
 Payment NOT in status 'Authorized'",,"1. Open order with non-authorized payment
 2. Try to capture",,,,,"C358193",

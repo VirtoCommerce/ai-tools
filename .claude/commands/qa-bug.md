@@ -20,7 +20,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
 1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
 2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
 3. **Duplicate check** — scan `reports/bugs/open/` and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
@@ -148,7 +148,7 @@ routing confidence LOW and say why — `/qa-fix` will still re-validate, but an 
 - Look for related issues/PRs: `search_issues` with error text or feature keywords
 
 **Application Insights logs (Azure MCP):**
-- Query **vcst-qa** (platform) or **vcst-qa-storefront** (storefront) Application Insights via `applicationinsights` tool
+- Query the active env's Application Insights via `applicationinsights` tool — platform resource is named after `TEST_ENV` and storefront is `${TEST_ENV}-storefront` (default env `vcst`: **vcst-qa** / **vcst-qa-storefront**)
 - Search for exceptions, failed requests, or dependency failures matching the bug timeframe
 - Use error messages, request URLs, or operation IDs from HAR/network captures as query filters
 - Check for correlated server-side errors (e.g., 500s behind a frontend error)

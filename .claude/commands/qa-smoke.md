@@ -31,7 +31,7 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 
 1. **Environment health** — run `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`). If unhealthy, warn user and ask whether to proceed.
 2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version and theme version — include in the smoke report header (Step 4)
 3. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
 4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.

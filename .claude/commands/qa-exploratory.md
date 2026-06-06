@@ -27,7 +27,7 @@ Every session must end with at least one **net-new scenario** (not in any regres
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version and theme version — include in the session report header
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
 4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.

@@ -163,7 +163,7 @@
 [DOM] Order confirmation page shows order number and ordered items
 [STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Payment token (not raw card number) sent in request payload for guest session
-[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005","Manual"
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05, REG-2026-06-05-1752 dismissed BUG_041_001) — expectation wrong; rewrite to assert guest-available payment methods; do NOT file 'form missing for guest' as a bug","Manual"
 "PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
@@ -182,7 +182,7 @@
 [ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
 [STATE] Form does not submit with any invalid guest payment input
 [NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
-[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005","Manual"
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05) — validation-parity premise invalid for CyberSource; rewrite against guest-available payment methods","Manual"
 "PAY-XLAY-001","Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount","Cross-Layer Verification","Medium","BL-CHK-006, BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -248,3 +248,76 @@ declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to paym
 [DOM] decline error messages shown for each attempt","[API] multiple decline responses received without state corruption
 [CONSOLE] no JS errors accumulating across retries
 [NETWORK] no 5xx","addresses cleared after second decline; cart modified; checkout session invalidated; error messages accumulate and overlap; form becomes unresponsive","Cancel any test orders via admin","Coverage Gap Analysis","Manual"
+"PAY-SWITCH-001","Payment Method Switch - Form Resets and Processor Unregisters When Switching","Payment Method Switching","Medium","BL-PAY-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user
+- Fresh cart with at least one item (IMPORTANT: start from a fresh cart for each switch direction — cart-resolver appends payment rows on every switch; orphaned rows from prior switches cause false test state)
+- CyberSource and Skyflow payment processors both enabled on store
+- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv), sky_card=@td(SKYFLOW_MC.number), sky_exp=@td(SKYFLOW_MC.expiry), sky_cvv=@td(SKYFLOW_MC.cvv)","--- Switch direction 1: CyberSource → Skyflow ---
+[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart; confirm both CyberSource and Skyflow options visible
+[ACT] Select 'Bank card (CyberSource)' payment method
+[WAIT] Wait for CyberSource Flex Microform iframe fields to render
+[ACT] Fill 'Card Number' with '@td(CYBERSOURCE_VISA.number)'; fill 'Cardholder Name' with '@td(CYBERSOURCE_VISA.cardholder)'; fill 'Expiry Date' with '@td(CYBERSOURCE_VISA.expiry)'; fill 'CVV' with '@td(CYBERSOURCE_VISA.cvv)'
+[ASSERT] All four CyberSource fields contain entered data
+[ACT] Switch to 'Bank card (Skyflow)'
+[WAIT] Wait for Skyflow inline form to render
+[ASSERT] Skyflow iframe fields are visible; CyberSource form fields are hidden or removed from DOM
+[ASSERT] 'Place order' button is DISABLED (CyberSource onUnmounted called setCardDataInvalid; Skyflow not yet filled)
+[ASSERT] No stale CyberSource card data persisted in DOM
+--- Switch direction 2: Skyflow → CyberSource (fresh cart) ---
+[PRE:RESET_CART]
+[NAV] Navigate to {{FRONT_URL}}/cart with fresh cart
+[ACT] Select 'Bank card (Skyflow)'
+[WAIT] Wait for Skyflow inline form to render on /cart
+[ACT] Fill '@td(SKYFLOW_MC.number)' in Skyflow card field; fill '@td(SKYFLOW_MC.expiry)' and '@td(SKYFLOW_MC.cvv)'
+[ACT] Switch to 'Bank card (CyberSource)'
+[WAIT] Wait for CyberSource form to render
+[ASSERT] CyberSource Flex Microform iframe fields are visible; Skyflow form absent from DOM
+[ASSERT] CyberSource fields are empty — no Skyflow card data leaked
+[ASSERT] 'Place order' button is DISABLED (Skyflow onUnmounted called setCardDataInvalid; CyberSource not yet filled)","[DOM] After CS→Skyflow switch: Skyflow form renders; CyberSource form absent; no stale CS data
+[STATE] After CS→Skyflow switch: 'Place order' button disabled until Skyflow fields filled (onUnmounted cleanup fired)
+[DOM] After Skyflow→CS switch: CyberSource form renders; Skyflow form absent; no stale Skyflow data
+[STATE] After Skyflow→CS switch: 'Place order' button disabled until CS fields filled (onUnmounted cleanup fired)","[CONSOLE] No JS errors during either switch direction — no 'processor already registered' errors
+[NETWORK] No payment tokenization request fired when switching payment methods
+[CONSOLE] No TypeError on stale processor reference after unmount","Stale card data persists in DOM after switching away; 'Place order' button stays enabled after switch (onUnmounted setCardDataInvalid not called — processor cleanup regression); JS error on switch; wrong payment form shown for selected method","[PRE:RESET_CART]","ECL-7.1; BL-PAY-004; Moved from 040 to 041 (cross-cutting: covers CS↔Skyflow switch; PAY-SKY-011 covers Skyflow↔CS specific teardown; PAY-AN-011 covers AN→manual guard); Synced: VCST-5009 PR#2308+PR#23 (2026-06-04)","Reviewed"
+"PAY-MANUAL-001","Manual Payment - Purchase Order Placed with Pending Payment Status","Manual Payments","Medium","BL-PAY-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered B2B user (organization member with PO payment permission)
+- Cart has at least one item
+- 'Purchase Order' or 'Wire Transfer' (manual/offline) payment method enabled in store settings
+- Admin access available to verify order status","FRONT_URL={{FRONT_URL}}, BACK_URL={{BACK_URL}}, USER_EMAIL={{B2B_USER_EMAIL}}, USER_PASSWORD={{B2B_USER_PASSWORD}}, ADMIN_EMAIL={{ADMIN_EMAIL}}, ADMIN_PASSWORD={{ADMIN_PASSWORD}}, PO_NUMBER=PO-TEST-{{TIMESTAMP}}","[NAV] Log in as {{B2B_USER_EMAIL}} / {{B2B_USER_PASSWORD}}; add at least one item to cart
+[NAV] Navigate to {{FRONT_URL}}/cart
+[WAIT] Wait for payment methods to render
+[ACT] Select payment method displayed as 'Manual' (label may say 'Manual' or contain 'Purchase Order' — the storefront displays it as 'Manual' with an 'Enter a purchase order number' textbox)
+[ASSERT] PO reference number textbox appears — fill with PO_NUMBER
+[ASSERT] No card number, CVV, or expiry date fields are shown for manual payment
+[ACT] Click 'Place Order'
+[WAIT] Wait for order confirmation response
+[ASSERT] Order confirmation page displayed with order number
+[ASSERT] Payment status on confirmation indicates 'Pending Payment' or equivalent (not 'Paid')
+[NAV] Log in to {{BACK_URL}} admin with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}; locate the order in Orders list
+[ASSERT] Order in admin shows payment status as 'Pending' or 'Awaiting Payment'
+[ASSERT] Order status allows fulfilment workflow to proceed (not blocked at payment)","[DOM] Manual payment option selectable without triggering card input fields
+[NAV] Order confirmation page reached after selecting manual payment and clicking 'Place Order'
+[DOM] Order confirmation indicates pending/offline payment status — not shown as 'Paid'
+[ADMIN] Order in admin with payment status 'Pending' or 'New' (not 'Paid')","[API] createOrderFromCart GraphQL mutation errors[] is empty for manual payment flow
+[ADMIN] Order payment method recorded as Purchase Order / Wire Transfer in admin order details","Manual payment option not shown to B2B user; form incorrectly shows card input fields for manual payment; order placed but shows 'Paid' status immediately (BL-PAY-003 violation); order not visible in admin after placement","Cancel order via admin","Checklist #9 item 11; BL-PAY-003; Moved from 040 to 041 (cross-cutting: provider-agnostic manual/PO flow, no card processor involved)","Manual"
+"PAY-DECLINE-008","After Decline User Can Switch Payment Method Entirely","Payment > Decline > Method Switch","High","BL-CHK-004","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User logged in; at checkout; multiple payment methods available; first attempt declined","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}
+declined_card=@td(CYBERSOURCE_DECLINED.number)","[NAV] complete checkout to payment step
+[ACT] select first payment method (e.g., CyberSource)
+[ACT] enter declined card details and attempt payment
+[WAIT] wait for decline error
+[ASSERT] verify decline error shown
+[ACT] select a different payment method (e.g., Authorize.Net or manual payment)
+[ASSERT] verify payment form changes to the new method
+[ASSERT] verify cart and shipping still intact after method switch
+[ACT] complete payment with the alternative method
+[ASSERT] verify order confirmation reached","[DOM] payment method selector still functional after decline
+[DOM] new payment form rendered for alternative method
+[STATE] checkout state preserved during method switch","[API] new payment method used in final order creation
+[CONSOLE] no JS errors during method switch
+[NETWORK] no 5xx","payment method selector locked after decline; cannot switch methods; previous method form persists; checkout state lost during switch","Cancel test order via admin","Coverage Gap Analysis; Moved from 040 to 041 (cross-cutting: decline→method-switch covers any processor combination, not provider-specific)","Manual"

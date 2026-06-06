@@ -65,7 +65,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, abort — regression on a broken env wastes budget.
 2. **Build & version verification** — fetch full deploy state per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`)
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record: platform version, theme version, and all module versions
    - Include full deploy state in the regression report header (Step 6)
    - Save to `reports/deploy-state-cache.json` for cross-reference
