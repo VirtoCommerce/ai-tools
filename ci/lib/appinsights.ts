@@ -20,12 +20,39 @@
  * fetch + AbortController timeout shape mirrors scripts/lib/graphql-executor.ts.
  */
 import { DefaultAzureCredential, type AccessToken, type TokenCredential } from "@azure/identity";
+import { existsSync } from "node:fs";
+import { delimiter, join } from "node:path";
 
 export type Layer = "backend" | "frontend";
 
 const API_BASE = "https://api.applicationinsights.io/v1/apps";
 /** AAD scope for the App Insights Data Plane query API. */
 const AI_SCOPE = "https://api.applicationinsights.io/.default";
+
+/**
+ * Make sure the Azure CLI is resolvable before `DefaultAzureCredential` is
+ * built: its `AzureCliCredential` link spawns `az` from `process.env.PATH`, so
+ * when the parent shell lacks the CLI directory (bash-spawned npm, some CI
+ * runners) AAD auth silently degrades to the API-key fallback. Probes the
+ * standard install locations and prepends the first hit to PATH; a non-standard
+ * install can be pointed at with AZURE_CLI_DIR.
+ */
+function ensureAzOnPath(): void {
+  const exe = process.platform === "win32" ? "az.cmd" : "az";
+  const path = process.env.PATH || "";
+  if (path.split(delimiter).some((dir) => dir && existsSync(join(dir, exe)))) return;
+  const candidates = [
+    process.env.AZURE_CLI_DIR || "",
+    ...(process.platform === "win32"
+      ? [
+          "C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin",
+          "C:\\Program Files (x86)\\Microsoft SDKs\\Azure\\CLI2\\wbin",
+        ]
+      : ["/usr/bin", "/usr/local/bin", "/opt/homebrew/bin"]),
+  ];
+  const found = candidates.find((dir) => dir && existsSync(join(dir, exe)));
+  if (found) process.env.PATH = `${found}${delimiter}${path}`;
+}
 
 // --- AAD token (cached across queries within a run) ---
 let _credential: TokenCredential | null = null;
@@ -39,7 +66,10 @@ let _cachedToken: AccessToken | null = null;
 export async function getAadToken(): Promise<string | null> {
   if ((process.env.MONITOR_AUTH || "").toLowerCase() === "key") return null;
   try {
-    if (!_credential) _credential = new DefaultAzureCredential();
+    if (!_credential) {
+      ensureAzOnPath();
+      _credential = new DefaultAzureCredential();
+    }
     if (!_cachedToken || _cachedToken.expiresOnTimestamp - Date.now() < 60_000) {
       _cachedToken = await _credential.getToken(AI_SCOPE);
     }

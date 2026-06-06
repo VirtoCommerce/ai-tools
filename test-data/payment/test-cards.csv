@@ -14,12 +14,12 @@ CyberSource,Mastercard,5555555555554444,12,2029,12/2029,123,Michael Chen,Valid C
 CyberSource,Amex,378282246310005,06,2030,06/2030,1234,Sarah Kim,Valid CyberSource Amex,Success,Amex with 4-digit CVV,unverified
 CyberSource,Visa,4000000000000002,12,2029,12/2029,123,Decline Test,Declined transaction,Decline,Simulated decline,unverified
 CyberSource,Visa,1234567890123456,12,2029,12/2029,123,Invalid Card,Invalid card number,Error,Invalid Luhn check,unverified
-Authorize.Net,Visa,4007000000027,12,2029,12/2029,900,John Smith,Valid Authorize.Net Visa,Success,Primary Authorize.Net test (13-digit Visa),VERIFIED 2026-05-04 (CO260504-00002)
-Authorize.Net,Visa,4012888818888,12,2029,12/2029,123,Jane Doe,Valid Visa alternate,Success,Alternate Authorize.Net Visa,unverified
-Authorize.Net,Mastercard,5424000000000015,10,2028,10/2028,900,Robert Johnson,Valid Authorize.Net Mastercard,Success,Authorize.Net Mastercard — also matches Skyflow canonical card,unverified (likely OK — same PAN routable for Skyflow)
-Authorize.Net,Amex,370000000000002,06,2030,06/2030,1234,Maria Garcia,Valid Authorize.Net Amex,Success,Amex 4-digit CVV,unverified
-Authorize.Net,Discover,6011000000000012,03,2027,03/2027,456,David Lee,Valid Authorize.Net Discover,Success,Discover card,unverified
-Authorize.Net,Visa,4000000000000002,12,2029,12/2029,902,Decline Test,Declined transaction,Decline,Simulated decline,unverified
+Authorize.Net,Visa,4007000000027,12,2029,12/29,900,John Smith,Valid Authorize.Net Visa,Success,Primary Authorize.Net test (13-digit Visa) — expiry field masks MM/YY (always has; a 4-digit year truncates to an expired MM/YY — the old 12/2029 value here was wrong),VERIFIED 2026-06-05 (CO260605-00044; MM/YY confirmed live)
+Authorize.Net,Visa,4012888818888,12,2029,12/29,123,Jane Doe,Valid Visa alternate,Success,Alternate Authorize.Net Visa,unverified
+Authorize.Net,Mastercard,5424000000000015,10,2028,10/28,900,Robert Johnson,Valid Authorize.Net Mastercard,Success,Authorize.Net Mastercard — also matches Skyflow canonical card,unverified (likely OK — same PAN routable for Skyflow)
+Authorize.Net,Amex,370000000000002,06,2030,06/30,1234,Maria Garcia,Valid Authorize.Net Amex,Success,Amex 4-digit CVV,unverified
+Authorize.Net,Discover,6011000000000012,03,2027,03/27,456,David Lee,Valid Authorize.Net Discover,Success,Discover card,unverified
+Authorize.Net,Visa,4000000000000002,12,2029,12/29,902,Decline Test,Declined transaction,Decline,Simulated decline,unverified
 Datatrance,Mastercard,5100001000000014,06,28,06/28,123,John Smith,Valid Datatrance Mastercard,Success,Canonical Datatrance card per order-creation-matrix.txt row 13 — frictionless approval (no OTP for $299.99 sandbox),VERIFIED 2026-05-04 (CO260504-00010)
 Datatrance,Visa,4111111111111111,12,2029,12/2029,123,Jane Doe,Valid Datatrance Visa,Success,Datatrance Visa test,unverified
 Datatrance,Mastercard,5200000000000007,10,2028,10/2028,200,Michael Brown,Valid Mastercard alternate,Success,Alternate Datatrance Mastercard,unverified

@@ -163,7 +163,7 @@
 [DOM] Order confirmation page shows order number and ordered items
 [STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Payment token (not raw card number) sent in request payload for guest session
-[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005","Manual"
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05, REG-2026-06-05-1752 dismissed BUG_041_001) — expectation wrong; rewrite to assert guest-available payment methods; do NOT file 'form missing for guest' as a bug","Manual"
 "PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
@@ -182,7 +182,7 @@
 [ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
 [STATE] Form does not submit with any invalid guest payment input
 [NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
-[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005","Manual"
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05) — validation-parity premise invalid for CyberSource; rewrite against guest-available payment methods","Manual"
 "PAY-XLAY-001","Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount","Cross-Layer Verification","Medium","BL-CHK-006, BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user

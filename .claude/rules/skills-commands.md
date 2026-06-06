@@ -21,7 +21,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-test-plan` | `Sprint26-08 \| 26-08 \| current \| last` | No | Build a sprint test plan: pull JIRA Done Stories/Bugs + merged vc-frontend PRs in the sprint window, score risk per domain, map to regression suites, and write `tests/SprintXX-XX/sprint-XX-XX-test-plan.md`. Delegates Sections 5.2 + 6 to test-management-specialist |
 | `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ | No | Merged into `/qa-test-lifecycle`. Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead |
 | `/qa-verify-fix` | `VCST-XXXX` | No | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition JIRA |
-| `/qa-seed-data` | `[minimal\|catalog\|b2b\|pricing\|full\|teardown]` | No | Generate test data via Postman MCP or tear down AGENT-TEST-* entities |
+| `/qa-seed-data` | `[minimal\|catalog\|b2b\|pricing\|full\|teardown]` | No | Seed/teardown all test data via repo seed scripts (`npm run seed*` + specialized `.mjs` seeders) or Postman MCP |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
@@ -47,7 +47,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-api` | `ref <module> \| test <scope> \| cases <scope>` | REST API & GraphQL xAPI — reference lookup, test execution, and test case generation | `xapi-query-ref.md`, `test-cases-api-graphql.md`, `api-test-case-patterns.md` |
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
 | `/qa-postman` | `create <purpose> \| env <profile> \| verify <collection> \| export <collection> \| list \| examples` | Postman MCP collections — create, configure, verify, and export (MCP doesn't execute — Newman/Postman CLI does) | `mcp-tools.md`, `variables-and-environments.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md`, `common-mistakes.md`, `examples.md` |
-| `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Generate test data via Postman MCP: catalogs, products, pricing, inventory, users, orgs | `test-data-generation.md` (knowledge file) |
+| `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Seed/teardown all test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products — via repo seed scripts (`npm run seed*`) or Postman MCP | `test-data-generation.md` (knowledge file) |
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 
 **`qa-methodology/` — QA Methodology (10) — manual invocation:**

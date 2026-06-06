@@ -1,0 +1,170 @@
+{
+  "suiteId": "041",
+  "suiteName": "Payment Cross-Cutting",
+  "runId": "REG-2026-06-05-1752",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-05T17:52:00.000Z",
+  "completedAt": "2026-06-05T20:10:00.000Z",
+  "totalCases": 14,
+  "passed": 7,
+  "failed": 3,
+  "blocked": 2,
+  "skipped": 2,
+  "passRate": "50.0%",
+  "testCases": [
+    {
+      "id": "PAY-UX-001",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-UX-002",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-PERF-001",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-EDGE-001",
+      "status": "PASS",
+      "notes": "Order CO260605-00017 created and cancelled in cleanup"
+    },
+    {
+      "id": "PAY-DECLINE-001",
+      "status": "FAIL",
+      "title": "AN inline form — client-side card validation",
+      "section": "Decline Scenarios",
+      "priority": "High",
+      "businessRule": "BL-PAY-001",
+      "failedAssertion": "Invalid card number rejected client-side before submission; AN inline form should show client-side Luhn/expiry validation",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Known documented bug — reports/bugs/BUG-AN-cart-no-client-card-validation.md. Ghost 'Payment required' order CO260605-00019 created (no client validation); cancelled in cleanup."
+    },
+    {
+      "id": "PAY-DECLINE-002",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-DECLINE-003",
+      "status": "BLOCKED",
+      "title": "CyberSource Microform — expired card decline",
+      "section": "Decline Scenarios",
+      "priority": "Medium",
+      "notes": "CyberSource payment method unavailable for selection during this execution slot — payment method dropdown did not surface CyberSource as an option in the cart session used for decline testing. Unable to complete expired-card scenario."
+    },
+    {
+      "id": "PAY-DECLINE-004",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-DECLINE-005",
+      "status": "PASS"
+    },
+    {
+      "id": "PAY-DECLINE-006",
+      "status": "FAIL",
+      "title": "AN authorized order — PaymentGatewayTransaction persistence",
+      "section": "Decline Scenarios",
+      "priority": "High",
+      "businessRule": "BL-PAY-002",
+      "failedAssertion": "Authorized AN order must persist at least one PaymentGatewayTransaction in admin order detail",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Known documented bug — reports/bugs/BUG-AN-no-payment-gateway-transaction.md. Order CO260605-00021 created (authorized), PaymentGatewayTransaction absent in admin. Cancelled in cleanup."
+    },
+    {
+      "id": "PAY-DECLINE-007",
+      "status": "FAIL",
+      "title": "AN duplicate-transaction window handling",
+      "section": "Decline Scenarios",
+      "priority": "Medium",
+      "businessRule": "BL-PAY-002",
+      "failedAssertion": "AN sandbox duplicate-transaction within ~3 min window returns expected error; second charge accepted after window expires",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Known documented bug — AN sandbox duplicate-transaction window behavior. Orders CO260605-00023 and CO260605-00024 created during testing; both cancelled in cleanup."
+    },
+    {
+      "id": "PAY-GUEST-001",
+      "status": "SKIPPED",
+      "title": "CyberSource Microform renders for guest (unauthenticated) users",
+      "section": "Guest Checkout",
+      "priority": "High",
+      "businessRule": "BL-PAY-003",
+      "edgeCaseRefs": "ECL-7.1",
+      "failedAssertion": "CyberSource payment form (Microform iframes) renders in cart for guest user selecting CyberSource payment method",
+      "screenshot": "test-results\\chrome\\page-2026-06-05T17-04-04-911Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Reclassified FAIL->SKIPPED(by-design): CyberSource Microform not offered to guest sessions — user-confirmed 2026-06-05. Case flagged STALE-BY-DESIGN in CSV for rewrite. NEW BUG: CyberSource Microform iframes (card number + CVV) do NOT render for unauthenticated/guest users. Payment method can be selected but the Microform frame area remains empty/invisible. Guest users cannot complete CyberSource payment. Authenticated users unaffected (Microform renders correctly for signed-in users — confirmed by PAY-EDGE-001 PASS)."
+    },
+    {
+      "id": "PAY-GUEST-002",
+      "status": "SKIPPED",
+      "title": "Guest checkout completes CyberSource payment and creates order",
+      "section": "Guest Checkout",
+      "priority": "High",
+      "businessRule": "BL-PAY-003",
+      "edgeCaseRefs": "ECL-7.1",
+      "failedAssertion": "Guest user can enter card in CyberSource Microform, place order, and receive order confirmation",
+      "screenshot": "test-results\\chrome\\page-2026-06-05T17-04-04-911Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Reclassified FAIL->SKIPPED(by-design): CyberSource Microform not offered to guest sessions — user-confirmed 2026-06-05. Case flagged STALE-BY-DESIGN in CSV for rewrite. Same root cause as PAY-GUEST-001 — CyberSource Microform does not render for guest users. Order creation cannot be completed without a rendered card form. Both PAY-GUEST-001 and PAY-GUEST-002 are blocked by this same defect."
+    },
+    {
+      "id": "PAY-XLAY-001",
+      "status": "BLOCKED",
+      "title": "Cross-Layer Order Total Verification — CyberSource charge matches cart/order totals",
+      "section": "Cross-Layer Checks",
+      "priority": "High",
+      "businessRule": "BL-PAY-004",
+      "notes": "Shipping address selection persistently failed after 4 attempts (2 sessions). Address dialog shows row selection (checkmark visible) and OK button enables, but cart state does not update — address remains 'Please select a shipping address' after dialog close. Root cause consistent with Apollo cart stale data pattern (feedback_apollo_cart_shipment_stale_data). Cart showed $1,206.36 total (Epson WF-3640 × 11 @ $109.67 = $1,206.37 — within rounding). Cross-layer charge verification requires a complete order which cannot be placed without shipping address. Screenshot: test-results\\chrome\\page-2026-06-05T17-04-04-911Z.png"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_041_001",
+      "title": "CyberSource Microform iframes do not render for unauthenticated (guest) users on /cart",
+      "severity": "High",
+      "testCaseId": "PAY-GUEST-001",
+      "businessRule": "BL-PAY-003",
+      "edgeCaseRef": "ECL-7.1",
+      "failedAssertion": "CyberSource Microform card-number and CVV iframes render in cart for guest user selecting CyberSource payment method",
+      "stepsToReproduce": "1. Open storefront at https://vcst-qa-storefront.govirto.com without signing in (guest session). 2. Add any product to cart and navigate to /cart. 3. In the Payment method section, select 'CyberSource' from the payment method dropdown. 4. Observe the card form area.",
+      "expected": "CyberSource Microform renders two cross-origin iframes: one for card number, one for CVV/security code. Guest user can enter card details and proceed to payment.",
+      "actual": "No Microform iframes render. The payment form area remains empty after selecting CyberSource as payment method. The card entry fields are absent entirely. Guest user cannot enter card data or place order via CyberSource.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Authenticated users are unaffected — Microform renders correctly for signed-in users (confirmed by PAY-EDGE-001 PASS with order CO260605-00017). The defect is specific to guest/unauthenticated sessions. Build: theme 2.51.0-pr-2309-ba0bcf37, Platform 3.1032.0. PAY-GUEST-002 fails with same root cause.",
+      "confirmed": false,
+      "incidental": false,
+      "dismissed": true,
+      "dismissReason": "By design — guests are not offered CyberSource Microform (QA lead confirmation 2026-06-05). Memory: project_cybersource_guest_by_design."
+    }
+  ],
+  "errors": [],
+  "notes": {
+    "buildContext": "theme 2.51.0-pr-2309-ba0bcf37; AuthorizeNetPayment 3.1001.0-pr-12-c821; Platform 3.1032.0",
+    "knownBugsDocumented": [
+      "reports/bugs/BUG-AN-cart-no-client-card-validation.md (reproduced by PAY-DECLINE-001)",
+      "reports/bugs/BUG-AN-no-payment-gateway-transaction.md (reproduced by PAY-DECLINE-006)"
+    ],
+    "ordersCreated": [
+      "CO260605-00017 (PAY-EDGE-001 — AN valid, cancelled)",
+      "CO260605-00019 (PAY-DECLINE-001 — AN ghost order, cancelled)",
+      "CO260605-00021 (PAY-DECLINE-006 — AN authorized, no gateway transaction, cancelled)",
+      "CO260605-00023 (PAY-DECLINE-007 — AN duplicate window test #1, cancelled)",
+      "CO260605-00024 (PAY-DECLINE-007 — AN duplicate window test #2, cancelled)"
+    ],
+    "newBugs": [
+      "BUG_041_001: CyberSource Microform does not render for guest users (PAY-GUEST-001/002)"
+    ],
+    "blockedNotes": [
+      "PAY-DECLINE-003: CyberSource payment method unavailable in cart payment dropdown during decline-test session",
+      "PAY-XLAY-001: Shipping address selection persistently failing (4 attempts, 2 sessions) — Apollo cart stale data pattern prevents address mutation from taking effect"
+    ]
+  }
+}

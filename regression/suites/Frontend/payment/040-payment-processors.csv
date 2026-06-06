@@ -80,15 +80,16 @@
 [DOM] Transaction ID field populated in payment details
 [MATH] Order total in admin equals storefront cart total","[API] createOrderFromCart GraphQL mutation errors[] was empty at time of order creation
 [ADMIN] Order status reflects successful payment authorization","Order not found in admin; payment method label missing or incorrect; transaction ID absent; total mismatch between storefront and admin","Cancel order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + admin transaction shape changed (PR#12 backend #4); superseded by PAY-AN-010 + 018 suite","deprecated"
-"PAY-DT-001","Datatrans - Complete Payment Flow","Datatrans","High","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"PAY-DT-001","Datatrans - Complete Payment Flow","Datatrans","High","BL-CROSS-005","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
-- Datatrans payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
+- Datatrans payment processor configured and active
+- NOTE: redirect to /checkout/payment is the DESIGNED Datatrans flow (only redirect processor) — never mark BLOCKED because the flow is not cart-inline","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD={{DATATRANCE_MASTERCARD}}, DT_EXP={{DATATRANCE_EXPIRY}}, DT_CVV={{DATATRANCE_CVV}}, DT_OTP={{DATATRANCE_OTP}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
 [ACT] Click 'Place Order' from cart page — this redirects to Datatrans payment flow at {{FRONT_URL}}/checkout/payment
 [WAIT] Wait for Datatrans payment redirect or modal to load
-[ACT] Follow Datatrans payment form — enter required card details
-[ACT] Complete payment flow within Datatrans hosted form
+[ACT] In the Datatrans form enter card number '{{DATATRANCE_MASTERCARD}}', expiry '{{DATATRANCE_EXPIRY}}', CVV '{{DATATRANCE_CVV}}'
+[ACT] Complete payment flow within Datatrans hosted form; if an OTP prompt appears, enter '{{DATATRANCE_OTP}}'
 [WAIT] Wait for return redirect back to storefront
 [ASSERT] User is returned to storefront after Datatrans payment completes
 [ASSERT] Order confirmation page displayed with order number","[NAV] Clicking 'Place Order' from cart redirects to {{FRONT_URL}}/checkout/payment with Datatrans form
@@ -96,14 +97,14 @@
 [DOM] Order confirmation shows order number and summary","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Datatrans payment method
 [NETWORK] Datatrans redirect handled correctly — no redirect loop","No redirect to /checkout/payment after placing order; Datatrans form does not load; return redirect to storefront fails; order not created","Cancel order via admin","VCST-4893","Manual"
-"PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+"PAY-DT-002","Datatrans - OTP Authentication Flow","Datatrans","High","BL-ORD-006","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
 - Datatrans configured
-- OTP value available from DATATRANCE_OTP environment variable","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
+- OTP value available from DATATRANCE_OTP environment variable","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD={{DATATRANCE_MASTERCARD}}, DT_EXP={{DATATRANCE_EXPIRY}}, DT_CVV={{DATATRANCE_CVV}}, DT_OTP={{DATATRANCE_OTP}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
 [WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
-[ACT] Enter test card number, expiry date, and CVV in Datatrans form
+[ACT] Enter card number '{{DATATRANCE_MASTERCARD}}', expiry '{{DATATRANCE_EXPIRY}}', CVV '{{DATATRANCE_CVV}}' in Datatrans form
 [ACT] Submit card details within Datatrans form
 [WAIT] Wait for OTP prompt to appear (redirect or modal)
 [ASSERT] OTP input prompt is displayed
@@ -115,14 +116,14 @@
 [NAV] After valid OTP submission user returns to storefront confirmation page
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation errors[] is empty
 [ADMIN] Order appears in admin with Datatrans payment method and status reflecting OTP-authenticated payment","OTP prompt does not appear; valid OTP rejected; return redirect to storefront fails; order confirmation not reached","Cancel order via admin","VCST-4893","Manual"
-"PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+"PAY-DT-003","Datatrans - Invalid OTP Recovery","Datatrans","High","BL-CHK-004; BL-CROSS-010","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item added
-- Datatrans payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
+- Datatrans payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD={{DATATRANCE_MASTERCARD}}, DT_EXP={{DATATRANCE_EXPIRY}}, DT_CVV={{DATATRANCE_CVV}}, DT_OTP={{DATATRANCE_OTP}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans payment method if not pre-selected
 [ACT] Click 'Place Order' to initiate Datatrans redirect to {{FRONT_URL}}/checkout/payment
 [WAIT] Wait for Datatrans payment form to load
-[ACT] Enter test card details (card number/expiry/CVV) in Datatrans form and submit
+[ACT] Enter card number '{{DATATRANCE_MASTERCARD}}', expiry '{{DATATRANCE_EXPIRY}}', CVV '{{DATATRANCE_CVV}}' in Datatrans form and submit
 [WAIT] Wait for Datatrans OTP prompt to appear
 [ACT] At OTP input: fill OTP field with '000000' (intentionally incorrect)
 [ACT] Submit the incorrect OTP
@@ -137,7 +138,7 @@
 [NAV] Correct OTP leads to successful return to storefront
 [STATE] Only one order created — no duplicate from the failed first OTP attempt","[API] createOrderFromCart GraphQL mutation errors[] is empty on final successful submission
 [ADMIN] Single order in admin — no duplicate orders from retry scenario","No error shown for incorrect OTP; OTP field locked without retry option; duplicate orders created from retry; correct OTP rejected after previous incorrect attempt","Cancel order via admin","VCST-4893","Manual"
-"PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","BL-PAY-003","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"PAY-DT-004","Datatrans - Card Number Validation","Datatrans","High","","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
@@ -149,13 +150,13 @@
 [ASSERT] Payment cannot proceed with invalid card number","[DOM] Card number validation error displayed
 [STATE] Datatrans form blocks progression with invalid card
 [NAV] User remains on {{FRONT_URL}}/checkout/payment","[API] No createOrderFromCart GraphQL mutation fired
-[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis","Manual"
-"PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-PAY-003","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No unhandled JS exceptions","Invalid card number accepted; Datatrans form submits with Luhn-failing card; no error shown on card field","none — no order created","Coverage Gap Analysis; BL gap: no client-validation invariant exists in business-logic.md (ex-BL-PAY-003 unpromoted) — PROPOSED-BL backlog","Manual"
+"PAY-DT-005","Datatrans - Return to Store After Payment Completion","Datatrans","Critical","BL-CROSS-005; BL-ORD-006","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
 - Datatrans configured
-- OTP from DATATRANCE_OTP available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
+- OTP from DATATRANCE_OTP available","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, DT_CARD={{DATATRANCE_MASTERCARD}}, DT_EXP={{DATATRANCE_EXPIRY}}, DT_CVV={{DATATRANCE_CVV}}, DT_OTP={{DATATRANCE_OTP}}","[NAV] Navigate to {{FRONT_URL}}/cart; select Datatrans; click 'Place Order'
 [WAIT] Wait for redirect to {{FRONT_URL}}/checkout/payment and Datatrans payment form
 [ACT] Complete full Datatrans payment flow including OTP from DATATRANCE_OTP
 [WAIT] Wait for automatic redirect back to storefront
@@ -514,13 +515,13 @@ authnet_cvv={{AUTHORIZNET_CVV}}","[NAV] navigate to Authorize.Net payment form a
 [STATE] order successfully created","[API] order creation succeeds
 [CONSOLE] no JS errors
 [NETWORK] no 5xx; successful payment response","stuck on payment page; no redirect; order not created; payment processed but no confirmation","Cancel test order via admin","Coverage Gap Analysis; STALE: VCST-5162 — old /checkout/payment path + misspelled {{AUTHORIZNET_*}} vars; superseded by PAY-AN-014","deprecated"
-"PAY-DT-001","Datatrans Lightbox - French locale renders French labels","Datatrans > Localization","High","BL-PAY-003","ECL-7.2","[PRE:CLEAR_SESSION]
+"PAY-DT-006","Datatrans Lightbox - French locale renders French labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Store has Datatrans payment method enabled
 - Storefront locale set to French (fr)
 - At least one product in cart","lang_code: fr
-store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/store and switch language to French via language selector
+store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language to French via language selector
 [ASSERT] Verify storefront header/UI labels are in French
 [ACT] Add a product to cart and proceed to checkout
 [NAV] Navigate to /checkout/payment page
@@ -532,7 +533,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/store and switch lang
 [DOM] No English label leakage inside lightbox
 [STATE] storefront locale is fr","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'fr'
 [CONSOLE] No JS errors during lightbox load","Pay Now button still in English; lightbox shows English labels; cultureName not sent in API call","Close tab; restore locale to English","VCST-4893","Reviewed"
-"PAY-DT-002","Datatrans Lightbox - German locale renders German labels","Datatrans > Localization","High","BL-PAY-003","ECL-7.2","[PRE:CLEAR_SESSION]
+"PAY-DT-007","Datatrans Lightbox - German locale renders German labels","Datatrans > Localization","High","","ECL-7.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Store has Datatrans payment method enabled
@@ -549,7 +550,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and switch language t
 [DOM] Datatrans lightbox labels match German locale
 [STATE] storefront locale is de","[NETWORK] POST /graphql (initializeCartPayment) request includes cultureName: 'de'
 [CONSOLE] No JS errors during lightbox load","Pay Now button in English; lightbox in English; cultureName missing from API call","Close tab; restore locale to English","VCST-4893","Reviewed"
-"PAY-DT-003","Datatrans Lightbox - English locale (default) renders English labels","Datatrans > Localization","Medium","BL-PAY-003","","[PRE:CLEAR_SESSION]
+"PAY-DT-008","Datatrans Lightbox - English locale (default) renders English labels","Datatrans > Localization","Medium","","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Store has Datatrans payment method enabled
@@ -708,7 +709,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [WAIT] Wait for Accept.js payment form to render inline on the cart page
 [ASSERT] Card number input field is visible inside the inline payment form
 [ASSERT] Cardholder name field is visible
-[ASSERT] Expiration date field is visible (MM/YYYY format for Authorize.Net)
+[ASSERT] Expiration date field is visible (MM/YY mask)
 [ASSERT] CVV/Security code field is visible
 [ASSERT] 'Place order' button is present on the cart page
 [ASSERT] No redirect to /checkout/payment has occurred — URL remains {{FRONT_URL}}/cart
@@ -752,7 +753,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [ACT] Select Authorize.Net payment method
 [WAIT] Wait for inline Accept.js card form to render
 [ACT] Fill the card number field with '@td(CYBERSOURCE_INVALID.number)' (Luhn-invalid number — rejected before any network call)
-[ACT] Fill the expiration date with a valid future date (e.g. 12/2029)
+[ACT] Fill the expiration date with a valid future date (e.g. 12/29 — MM/YY mask)
 [ACT] Fill the CVV with '123'
 [ACT] Blur the card number field to trigger validation
 [ASSERT] An error message is displayed on the card number field (e.g. 'Invalid card number', 'Please enter a valid credit card number')
@@ -787,14 +788,14 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [PRE:RESET_CART]
 - Logged in as registered user; fresh cart with ≥1 item
 - Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
-- Valid test card available: @td(AUTHORIZENET_VISA.number) — VERIFIED 2026-05-04 (order CO260504-00002); Authorize.Net sandbox; expiry MM/YYYY format (e.g., 12/2029) — NOTE: different from Skyflow MM/YY (e.g., 12/29)
+- Valid test card available: @td(AUTHORIZENET_VISA.number) — VERIFIED 2026-06-05 (order CO260605-00044); Authorize.Net sandbox; expiry MM/YY mask (e.g., 12/29 — same as Skyflow; a 4-digit year truncates to an expired date)
 - IMPORTANT: Authorize.Net sandbox enforces ~3 min duplicate-transaction window for same-amount retries; if a prior test used this card in the same amount, wait before running","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for payment methods section to render
 [ACT] Select Authorize.Net payment method
 [WAIT] Wait for inline Accept.js card form to render (no redirect to /checkout/payment)
 [ASSERT] URL remains {{FRONT_URL}}/cart
 [ACT] Fill 'Card number' field with '@td(AUTHORIZENET_VISA.number)' (13-digit Visa test card)
-[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YYYY format — e.g., 12/2029)
+[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask — e.g., 12/29)
 [ACT] Fill 'CVV'/'Security code' field with '@td(AUTHORIZENET_VISA.cvv)'
 [ACT] Fill cardholder name if required
 [WAIT] Wait for 'Place order' button to become enabled (all fields validly filled)
@@ -810,7 +811,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [STATE] Cart cleared after successful order creation
 [STATE] Order visible in /account/orders with AN payment method","[API] createOrderFromCart mutation succeeds; errors[] empty
 [CONSOLE] No JS errors during cart-embedded payment flow; raw PAN '@td(AUTHORIZENET_VISA.number)' absent from all network request payloads (Accept.js tokenization)
-[NETWORK] No 5xx responses; no raw card data in POST bodies","Stuck on /cart after 'Place order'; redirected to /checkout/payment (old flow regression); order not created; payment processed but no confirmation; cart not cleared; raw PAN visible in network payloads","Cancel test order via admin; [PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-009 (Skyflow success flow); @td(AUTHORIZENET_VISA.number) VERIFIED CO260504-00002; BL-CHK-004; expiry format MM/YYYY (AN) vs MM/YY (Skyflow/CyberSource)","Draft"
+[NETWORK] No 5xx responses; no raw card data in POST bodies","Stuck on /cart after 'Place order'; redirected to /checkout/payment (old flow regression); order not created; payment processed but no confirmation; cart not cleared; raw PAN visible in network payloads","Cancel test order via admin; [PRE:RESET_CART]","VCST-5162; mirrors PAY-SKY-009 (Skyflow success flow); @td(AUTHORIZENET_VISA.number) VERIFIED CO260605-00044; BL-CHK-004; expiry mask MM/YY (same as Skyflow)","Draft"
 "PAY-AN-015","Authorize.Net - Accept.js Script Load Failure Does Not Strand User on /cart","Authorize.Net > Error Handling","High","BL-PAY-004","ECL-5.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user; fresh cart with ≥1 item
@@ -860,7 +861,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 - Authorize.Net configured with AllowCartPayment=true (VCST-5162)
 - REQUIRES: checkout_multistep_enabled config flag = true (see storefront-config-flags.md $cfg.checkout_multistep_enabled). If the flag is OFF, /cart redirects away from /checkout/review — MARK CASE BLOCKED, NOT FAIL. Verify by navigating to {{FRONT_URL}}/checkout/review after adding to cart: if redirected back to /cart, the flag is off and this case cannot run.
 - IMPORTANT: This case tests the onUnmounted survival path in payment-processing-authorize-net.vue (PR#2309). In multistep checkout the AN inline form lives on the Billing step and unmounts when the user proceeds to the Review step. The shared payment processor state + isCanFinalizePayment MUST survive unmount so finalizePayment fires correctly when Place Order is clicked on Review step. This is the same designed behavior as CyberSource in multistep mode.
-- Valid test card: @td(AUTHORIZENET_VISA.number); expiry format MM/YYYY (e.g., 12/2029); AN sandbox duplicate-transaction window (~3 min) applies","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[PRE-CHECK] Navigate to {{FRONT_URL}}/checkout/review after adding 1 item to cart — if the browser redirects away from /checkout/review back to /cart, checkout_multistep_enabled is OFF; STOP and mark case BLOCKED (not FAIL); do NOT proceed
+- Valid test card: @td(AUTHORIZENET_VISA.number); expiry MM/YY mask (e.g., 12/29); AN sandbox duplicate-transaction window (~3 min) applies","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[PRE-CHECK] Navigate to {{FRONT_URL}}/checkout/review after adding 1 item to cart — if the browser redirects away from /checkout/review back to /cart, checkout_multistep_enabled is OFF; STOP and mark case BLOCKED (not FAIL); do NOT proceed
 [NAV] Navigate to {{FRONT_URL}}/cart with fresh cart containing ≥1 item
 [WAIT] Wait for payment methods section to render
 [ACT] Select Authorize.Net payment method
@@ -868,7 +869,7 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [ASSERT] URL remains on the cart or billing step — no premature redirect
 --- BILLING STEP: fill AN card form ---
 [ACT] Fill 'Card number' field with '@td(AUTHORIZENET_VISA.number)'
-[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YYYY format)
+[ACT] Fill 'Expiration date' field with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask)
 [ACT] Fill 'CVV'/'Security code' field with '@td(AUTHORIZENET_VISA.cvv)'
 [ACT] Fill cardholder name if required
 [WAIT] Wait for 'Place order' or 'Proceed' / 'Continue' button to become enabled (all fields validly filled)
@@ -896,6 +897,58 @@ store_url: {{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with default English 
 [STATE] Order in /account/orders shows paid/authorized status via AN — NOT pending payment","[API] createOrderFromCart mutation succeeds; errors[] empty
 [CONSOLE] No JS errors during multistep flow; raw PAN '@td(AUTHORIZENET_VISA.number)' absent from all network request payloads (Accept.js tokenization preserved across unmount)
 [NETWORK] No 5xx responses; no raw card data in POST bodies","Order created but in 'Payment Required' / unpaid state (CRITICAL: processor state lost on Billing-step unmount — onUnmounted guard failed; finalizePayment never called); 'Place order' button on Review step is disabled (isCanFinalizePayment reset to false on unmount — core regression); checkout stuck on /checkout/review after Place Order; double GA4 purchase event; redirect to /checkout/payment after Place Order on Review step (old non-multistep flow regression); BLOCKED verdict if checkout_multistep_enabled flag is off","Cancel test order via admin if created; [PRE:RESET_CART]","VCST-5162 (PR#2309 payment-processing-authorize-net.vue onUnmounted survival path — same design as CyberSource in multistep); storefront-config-flags.md checkout_multistep_enabled; project memory project_checkout_multistep_gate.md; mirrors CyberSource multistep behavior; BL-PAY-004; BL-CHK-004","Draft"
+"PAY-AN-018","Authorize.Net - Form Validation Happy Path: Valid Card Data Produces Valid State (Validation-Only, No Submission)","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- VALIDATION-ONLY case: do NOT click 'Place order' at any point (AN cart flow pre-creates a 'Payment required' order on submit — see BUG-AN-cart-no-client-card-validation)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv), an_name=@td(AUTHORIZENET_VISA.cardholder)","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+[ASSERT] 'Place order' button is disabled while all card fields are empty
+[ACT] Fill 'Card number' with '@td(AUTHORIZENET_VISA.number)' and blur the field
+[ASSERT] No validation error is shown on the card number field
+[ACT] Fill 'Expiration date' with '@td(AUTHORIZENET_VISA.expiry)' (MM/YY mask) and blur
+[ASSERT] No validation error is shown on the expiration date field
+[ACT] Fill 'CVV'/'Security code' with '@td(AUTHORIZENET_VISA.cvv)' and blur
+[ASSERT] No validation error is shown on the CVV field
+[ACT] Fill cardholder name with '@td(AUTHORIZENET_VISA.cardholder)' if the field is present
+[ASSERT] All fields show valid (non-error) state — no inline error messages anywhere in the form
+[ASSERT] 'Place order' button is now enabled
+[ASSERT] No payment or order request was sent during form fill (validation is client-side only)
+[ACT] Do NOT click 'Place order' — end of case","[STATE] 'Place order' disabled with empty form, enabled only after all fields validly filled
+[DOM] No inline validation errors with fully valid card data
+[STATE] No order created during this case","[NETWORK] No POST to api2.authorize.net, no Accept.js tokenization call, no createOrderFromCart during form fill
+[CONSOLE] No JS errors during fill/blur cycle","Valid card data flagged as invalid (false-negative validation); 'Place order' stays disabled after valid fill; error message persists after valid input; any payment/order network call fired during fill","[PRE:RESET_CART]","VCST-5162; complements PAY-AN-012 (Luhn negative) and PAY-AN-013 (empty fields); validation-only pattern from PAY-SKY-015; BL-PAY-001","Draft"
+"PAY-AN-019","Authorize.Net - Per-Field Negative Validation: Expired Date, Out-of-Range Month, Short CVV Rejected (Validation-Only)","Authorize.Net > Validation","High","BL-PAY-001","ECL-1.1; ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as registered user; fresh cart with ≥1 item
+- Authorize.Net inline form rendered on /cart (AllowCartPayment=true, VCST-5162)
+- NOTE: Expired-date rejection is CURRENTLY FAILING per BUG-AN-cart-no-client-card-validation (2026-06-05, not yet filed in JIRA) — this case asserts the CORRECT behavior (Skyflow/CyberSource parity) and stays red until fixed
+- VALIDATION-ONLY case: do NOT click 'Place order' at any point — submitting with invalid AN data creates a ghost 'Payment required' order","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, an_card=@td(AUTHORIZENET_VISA.number), an_exp=@td(AUTHORIZENET_VISA.expiry), an_cvv=@td(AUTHORIZENET_VISA.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] Select Authorize.Net payment method
+[WAIT] Wait for inline Accept.js card form to render
+--- NEGATIVE 1: expired date (valid month, year in the past) ---
+[ACT] Fill 'Card number' with '@td(AUTHORIZENET_VISA.number)' (valid), 'Expiration date' with '01/20' (expired — MM/YY mask), CVV with '@td(AUTHORIZENET_VISA.cvv)'; blur the expiry field
+[ASSERT] Inline error is shown on the expiration date field (expired date rejected)
+[ASSERT] 'Place order' button remains disabled
+--- NEGATIVE 2: out-of-range month ---
+[ACT] Replace expiry with '13/29'; blur
+[ASSERT] Inline error shown (month must be 01-12)
+[ASSERT] 'Place order' remains disabled
+--- NEGATIVE 3: CVV too short ---
+[ACT] Fix expiry to '@td(AUTHORIZENET_VISA.expiry)'; replace CVV with '12'; blur
+[ASSERT] Inline error on CVV field OR 'Place order' remains disabled (CVV must be 3-4 digits)
+--- NEGATIVE 4: non-numeric CVV ---
+[ACT] Replace CVV with 'abc'; blur
+[ASSERT] Non-numeric input is rejected/filtered (field empty or error shown) and 'Place order' remains disabled
+--- RECOVERY: valid data clears all errors ---
+[ACT] Fill all fields with valid data: '@td(AUTHORIZENET_VISA.number)' / '@td(AUTHORIZENET_VISA.expiry)' / '@td(AUTHORIZENET_VISA.cvv)'
+[ASSERT] All errors clear; 'Place order' becomes enabled
+[ASSERT] No payment/order network call was sent during any negative state
+[ACT] Do NOT click 'Place order' — end of case","[DOM] Inline error per invalid field state (expired date, month 13, short CVV, non-numeric CVV)
+[STATE] 'Place order' disabled in every invalid state; enabled only after full valid recovery
+[STATE] No order created during this case","[NETWORK] No POST to api2.authorize.net or createOrderFromCart during any invalid state
+[CONSOLE] No unhandled JS exceptions on blur/validation","Expired date accepted with no error and 'Place order' enabled (KNOWN — BUG-AN-cart-no-client-card-validation); month 13 accepted; 2-digit CVV accepted; non-numeric CVV accepted; errors do not clear on valid recovery; ghost 'Payment required' order created","[PRE:RESET_CART]","VCST-5162; BUG-AN-cart-no-client-card-validation (reports/bugs/); complements PAY-AN-012/013; mirrors PAY-SKY-015 validation-only pattern; BL-PAY-001","Draft"
 "PAY-SKY-015","Skyflow - Per-Brand CVV Length Validation (Amex 4-Digit vs MC 3-Digit)","Skyflow > Validation","Medium","BL-PAY-001","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user; cart has ≥1 item

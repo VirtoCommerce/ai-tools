@@ -2,6 +2,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { TestDataResolver } from "../scripts/lib/test-data-resolver.js";
+import { resolveTestEnv } from "../scripts/lib/resolve-test-env.js";
 
 // --- Configuration from environment variables ---
 
@@ -17,7 +18,8 @@ const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
 // NEVER hardcode a specific customer environment (e.g. vcst-qa) here: TEST_ENVIRONMENT
 // only selects WHICH env-var pair to read; the values always come from the target
 // TEST_ENV's config. Missing vars are caught by validateEnv() below.
-const TEST_ENV = process.env.TEST_ENV || "vcst";
+// Resolves process.env.TEST_ENV > .env.test-env (team/per-dev default) > 'vcst'.
+const TEST_ENV = resolveTestEnv("vcst");
 
 const ENV_URLS: Record<string, { front: string; back: string }> = {
   qa: {

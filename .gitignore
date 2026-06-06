@@ -9,6 +9,9 @@ node_modules
 !.env.vcst
 !.env.vcptcore
 !.env.virtostart
+# Per-developer / per-team default env selector (set once per checkout, not shared).
+# Format + onboarding documented in .env.example.
+.env.test-env
 .playwright-mcp/
 .vscode/
 settings.json
