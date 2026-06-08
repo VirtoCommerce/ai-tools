@@ -1,0 +1,29 @@
+{
+  "runId": "FIX-2026-06-08-1538",
+  "ticket": "VCST-5212",
+  "repo": "VirtoCommerce/vc-platform",
+  "repoKind": "platform",
+  "branch": "claude/qa-autofix/VCST-5212",
+  "base": "dev",
+  "commit": "23c309b",
+  "pr": "https://github.com/VirtoCommerce/vc-platform/pull/3051",
+  "prNumber": 3051,
+  "merged": false,
+  "gates": {
+    "G0_eligibility": "PASS",
+    "G1_single_repo": "PASS",
+    "G2_reproduce_red": "PASS",
+    "G3_fix_green": "PASS",
+    "G4_review": "APPROVE",
+    "G5_ci": "PENDING",
+    "G6_e2e": "DEFERRED_NEEDS_DEPLOY",
+    "G7_human_review": "PR_OPEN"
+  },
+  "jiraStatus": "In review",
+  "confidence": "HIGH",
+  "filesChanged": [
+    "src/VirtoCommerce.Platform.Web/Controllers/Api/ModulesController.cs",
+    "tests/VirtoCommerce.Platform.Web.Tests/Controllers/Api/ModulesControllerTests.cs"
+  ],
+  "notes": "GITHUB_FIX_BUGS_TOKEN had stray inline comment appended to value; fixed in .env.local. license/cla check pending (bot must sign CLA)."
+}

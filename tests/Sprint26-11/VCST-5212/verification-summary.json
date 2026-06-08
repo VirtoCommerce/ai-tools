@@ -1,0 +1,25 @@
+{
+  "ticket": "VCST-5212",
+  "verdict": "VERIFIED",
+  "date": "2026-06-08",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1035.0-pr-3051-23c3-vcst-5212-23c309b0",
+    "theme": "n/a (backend/platform fix)",
+    "relevant_modules": {},
+    "pr_build": "vc-platform PR #3051 (claude/qa-autofix/VCST-5212) — OPEN/unmerged, deployed to QA"
+  },
+  "agent_used": "direct (REST) + playwright-edge (Admin Modules blade)",
+  "str_result": "3/3",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "notes": "Original NRE is non-deterministic; could not be force-reproduced on QA. reload POST not run (denied on shared env). Verified via correct code fix + new xUnit test + deployed PR build + live endpoint returning 200 with 14 null-iconUrl entries handled gracefully + Admin Modules blade rendering Installed(83). localhost:8090 500s in console are a stale prior dev session, not vcst-qa.",
+  "pr_status": "OPEN/unmerged, license/cla pending",
+  "jira_transition_recommended": "TESTED (hold DONE until human merge)",
+  "artifacts": "tests/Sprint26-11/VCST-5212/"
+}

@@ -1,0 +1,26 @@
+{
+  "ticket": "VCST-5153",
+  "verdict": "FIX_INCOMPLETE",
+  "verdict_detail": "Item 1 VERIFIED 3/3; Items 2 & 3 BLOCKED (handlers shipped but calendar grid never receives keyboard focus in storefront, and Storybook is down 503 so the dev's validation path could not be re-run); Item 4 out of scope (dev deferred to separate story)",
+  "date": "2026-06-08",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.51.0-pr-2312-0edd-0eddbfcd",
+    "pr_build": "vc-frontend#2312 (OPEN, branch fear/VCST-5153-a11y) — confirmed deployed",
+    "storybook": "DOWN (503) — isolation pass not possible"
+  },
+  "agent_used": "qa-frontend-expert",
+  "items": {
+    "1_escape_closes_popover": { "wcag": "2.1.2", "result": "VERIFIED", "str": "3/3" },
+    "2_home_end_week_nav": { "wcag": "2.1.1", "result": "BLOCKED", "reason": "grid never receives keyboard focus in storefront; handler code present + wired" },
+    "3_pgup_pgdn_month_year": { "wcag": "2.1.1", "result": "BLOCKED", "reason": "same grid-focus-entry gap; NOTE shipped code uses Shift+PgUp/Dn for year (WAI-ARIA APG), ticket STR says Ctrl" },
+    "4_back_nav_filter_state": { "result": "OUT_OF_SCOPE", "reason": "dev deferred to separate story (JIRA comment 2026-06-03)" }
+  },
+  "regression": { "R1_typing_zero": "PASS", "R2_reversed_range_block": "PASS", "R3_no_new_console_errors": "PASS" },
+  "side_effects": ["Pre-existing focus-entry gap: VcDatePicker never moves keyboard focus into the calendar grid on open (governed by VcPopover, NOT changed by PR #2312 — likely pre-existing, not a regression). Makes the new Home/End/PgUp/PgDn handlers unreachable for keyboard users → WCAG 2.1.1 goal not delivered in product."],
+  "ac_discrepancy": "Ticket Item 3 AC says Ctrl+PgUp/Dn for year; shipped code uses Shift+PgUp/Dn (correct per WAI-ARIA APG). AC should be corrected.",
+  "bugs_filed": [],
+  "business_rules_verified": ["WCAG 2.1.2 (keyboard trap) — RESOLVED via Escape"],
+  "jira_transition": "PENDING_USER_DECISION",
+  "artifacts": "tests/Sprint26-11/VCST-5153/"
+}

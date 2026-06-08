@@ -1,0 +1,40 @@
+{
+  "runId": "FIX-2026-06-08-1006",
+  "ticket": "VCST-5091",
+  "title": "Indexation blade stays \"In progress\" after a fatal error during index creation",
+  "repo": "VirtoCommerce/vc-module-search",
+  "repoKind": "module",
+  "developerAgent": "fullstack-backend",
+  "branch": "claude/qa-autofix/VCST-5091",
+  "commits": ["612e0ad", "4c9493d"],
+  "pr": {
+    "url": "https://github.com/VirtoCommerce/vc-module-search/pull/138",
+    "number": 138,
+    "base": "dev",
+    "state": "open",
+    "merged": false,
+    "draft": false
+  },
+  "env": { "platform": "3.1032.0", "searchModule": "3.1001.0", "name": "vcst-qa" },
+  "gates": {
+    "G0_eligibility": "PASS",
+    "G1_singleRepo": "PASS",
+    "G2_reproduceRed": "PASS",
+    "G3_fixGreen": "PASS",
+    "G4_codeReview": "PASS (APPROVE, HIGH)",
+    "G5_ci": "PASS",
+    "G6_e2e": "DEFERRED (needs deploy)",
+    "G7_humanReview": "STOP — PR open, never merged"
+  },
+  "ci": {
+    "sonarQualityGate": "pass",
+    "ci_build_unit": "pass",
+    "autoTests": { "mysql": "pass", "postgres": "pass", "sqlserver": "pass" },
+    "cla": "pass"
+  },
+  "tests": { "total": 112, "preexisting": 110, "added": 2, "modifiedExisting": 0 },
+  "rootCause": "Singleton IndexingJobs reuses one transient IndexProgressHandler; shared _notification field left first run's notification with Finished==null on the manual-job error path under concurrency.",
+  "confidence": "HIGH",
+  "jiraStatus": "Ready for test",
+  "nextStep": "/qa-verify-fix VCST-5091 after deploy to QA"
+}

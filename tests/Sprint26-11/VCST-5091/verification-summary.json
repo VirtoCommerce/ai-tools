@@ -1,0 +1,39 @@
+{
+  "ticket": "VCST-5091",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-06-08",
+  "environment": "vcst-qa (BACK_URL)",
+  "build": {
+    "platform": "3.1035.0-pr-3051",
+    "theme": "n/a (backend/admin)",
+    "relevant_modules": { "VirtoCommerce.Search": "3.1003.0-pr-138-6c22" },
+    "pr_build": "VirtoCommerce.Search_3.1003.0-pr-138-6c22 (PR #138 OPEN/unmerged; newer commit than morning run's 4c94 build)"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "success-path PASS (ContentFile, morning run); contended/AlreadyInProgress race-path PASS 3/3 (deliberately reproduced: heavy Product job A holds lock, job B on ContentFile/Pages/Member each rejected and sealed terminal with End set); error-path (fatal CreateIndexAsync exception) N/A-LIVE (covered by PR unit tests)",
+  "race_verification": {
+    "method": "heavy lock-holder (Product 9550 recs, additive Build) + concurrent second Build while A running",
+    "clean_races": "3/3",
+    "job_b_terminal_text": "Indexation completed with errors / Errors: 1 -> 'Indexation is already in progress.' / Start AND End populated / Indexed 0 of 0",
+    "persisted_after_reload": true,
+    "job_a_sealed_independently": "Indexed 9198/9198, Start+End set, Elapsed 0:6:41"
+  },
+  "doc_types_checked": {
+    "ContentFile": "PASS — success-path seal (morning) + race job B",
+    "Member": "PASS — race job B sealed terminal under contention",
+    "Pages": "PASS — race job B sealed terminal under contention",
+    "Product": "PASS — heavy lock-holder job A, sealed terminal (Errors:65 are pre-existing ES8 data-quality mapping failures, unrelated to fix)"
+  },
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": ["benign Page Builder logo 404 + GA collect ERR_ABORTED (unrelated)"],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CROSS-002 (search-index lag) preserved"],
+  "jira_status": "Tested (unchanged this run)",
+  "jira_transition": "none (PR #138 unmerged; pending human decision)",
+  "pr": "https://github.com/VirtoCommerce/vc-module-search/pull/138",
+  "notes": "Race condition between job processes deliberately reproduced 3/3 clean — each rejected concurrent run seals its own notification (End set), no stuck 'In progress' spinner. Error-path (fatal index-creation exception) not safely inducible on shared QA; covered by PR #138 unit tests. Full Done deferred until human merge of PR #138.",
+  "artifacts": "tests/Sprint26-11/VCST-5091/ (race-verification-2026-06-08.md + screenshots/race-0{1..4}-*.png)"
+}

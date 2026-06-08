@@ -1,0 +1,42 @@
+{
+  "runId": "MONITOR-2026-06-08-0947",
+  "date": "2026-06-08T09:47:41.082Z",
+  "env": "vcst-qa",
+  "layers": ["backend"],
+  "windowMinutes": 1440,
+  "windowStart": "2026-06-07T09:46:00Z",
+  "windowEnd": "2026-06-08T09:46:00Z",
+  "mode": "full",
+  "access": "azure-mcp/monitor_resource_log_query (AAD)",
+  "telemetry": { "requests": 14429, "dependencies": 145347, "exceptions": 0 },
+  "verdict": "HEALTHY",
+  "counts": {
+    "backend-exceptions": { "rows": 0, "new": 0, "spiking": 0 },
+    "backend-failed-requests": { "rows": 0, "new": 0, "spiking": 0 },
+    "backend-failed-dependencies": { "rows": 2, "new": 2, "spiking": 0 }
+  },
+  "confirmed": [],
+  "needsReview": [
+    {
+      "fingerprint": "f1c9a0d4e7b2",
+      "signature": "HTTP fcm.googleapis.com 404",
+      "probe": "backend-failed-dependencies",
+      "class": "THIRD_PARTY",
+      "severity": "P3",
+      "count": 5,
+      "sample": "https://fcm.googleapis.com/v1/projects/vcst-qa/messages:send",
+      "reproduced": false
+    }
+  ],
+  "dismissed": [
+    {
+      "fingerprint": "a3e8b1f60c45",
+      "signature": "HTTP essearch-es-http.elastic-system.svc.cluster.local:9200 404",
+      "probe": "backend-failed-dependencies",
+      "class": "TRANSIENT",
+      "count": 1
+    }
+  ],
+  "jiraFiled": false,
+  "fixAttempted": false
+}

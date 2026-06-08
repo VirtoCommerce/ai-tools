@@ -1,0 +1,38 @@
+{
+  "runId": "MONITOR-2026-06-08-1012",
+  "date": "2026-06-08T10:12:21.591Z",
+  "env": "vcst-qa-storefront",
+  "layers": ["frontend"],
+  "windowMinutesInvoked": 35,
+  "windowMinutesEffective": 1440,
+  "windowNote": "35-min window caught a sparse 2-min burst; widened to 24h for a representative read",
+  "mode": "full",
+  "access": "azure-mcp/monitor_resource_log_query (AAD)",
+  "telemetry24h": { "dependencies": 1206, "pageViews": 105, "exceptions": 5 },
+  "verdict": "CLEAN",
+  "counts": {
+    "frontend-exceptions": { "rows": 2, "new": 0, "spiking": 0 },
+    "frontend-browser-failures": { "rows": 1, "new": 0, "spiking": 0 }
+  },
+  "confirmed": [],
+  "needsReview": [
+    {
+      "fingerprint": "2d63c774c7e3",
+      "signature": "ReferenceError at setup (useCartConfigurationSections is not defined)",
+      "probe": "frontend-exceptions",
+      "page": "Cart",
+      "class": "TRANSIENT",
+      "severity": "P3",
+      "count": 3,
+      "window": "2026-06-08T07:03:51Z..07:24:58Z",
+      "reproduced": false,
+      "reason": "symbol absent from current vc-frontend source; deploy-window stale-chunk, not a live code defect"
+    }
+  ],
+  "dismissed": [
+    { "fingerprint": "621b3f0090cd", "signature": "ApolloError: Failed to fetch", "class": "NOISE", "count": 2 },
+    { "fingerprint": "4acc1bc6a425", "signature": "500 POST /graphql (Cart)", "class": "TRANSIENT", "count": 6, "crossLayer": "no matching platform 5xx in 24h" }
+  ],
+  "jiraFiled": false,
+  "fixAttempted": false
+}

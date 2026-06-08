@@ -1,0 +1,21 @@
+{
+  "runId": "MONITOR-2026-06-08-0746",
+  "date": "2026-06-08",
+  "configured": true,
+  "mode": "interactive-triage",
+  "layers": [
+    "backend",
+    "frontend"
+  ],
+  "window": "PT35M",
+  "signaturesSeen": 2,
+  "new": 1,
+  "spiking": 0,
+  "candidates": 1,
+  "confirmed": 0,
+  "needsReview": 0,
+  "dismissed": 1,
+  "dismissedReason": "dev-environment telemetry leak (localhost Vite dev server) — not a QA-env bug",
+  "jiraFiled": false,
+  "fixAttempted": false
+}
