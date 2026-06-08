@@ -63,7 +63,9 @@ are always high severity), `debugging-signals.md` (benign-noise filter),
 NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.
 
 ## Dedup model (`ci/lib/fingerprint-store.ts`)
-- Fingerprint = md5(`layer|probe|normalized-signature`).
+- Fingerprint = md5(`env|layer|probe|normalized-signature`). The store is shared across
+  envs (vcst, vcptcore, …); the `env` (= `TEST_ENV`) keeps each env's signatures separate
+  inside the one file, so a vcst decision never masks the same signature in vcptcore.
 - Per signature: first/last seen, cumulative count, run count, EMA baseline, status
   (`new|triaged|confirmed|noise|filed`).
 - SPIKING = `count ≥ max(baseline×factor, baseline+minDelta)` (factor/minDelta env-tunable).

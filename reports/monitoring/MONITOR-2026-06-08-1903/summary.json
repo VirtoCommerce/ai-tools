@@ -1,0 +1,53 @@
+{
+  "runId": "MONITOR-2026-06-08-1903",
+  "date": "2026-06-08T19:03:38.789Z",
+  "env": "vcptcore-qa",
+  "frontUrl": "https://vcptcore-qa-storefront.govirto.com",
+  "backUrl": "https://vcptcore-qa.govirto.com/",
+  "layers": ["backend", "frontend"],
+  "windowMinutesInvoked": 35,
+  "windowMinutesEffective": 35,
+  "context24h": "Triage cross-checked against a 24h dependency/request/exception sweep",
+  "mode": "full",
+  "access": "appinsights REST query API (AAD via DefaultAzureCredential / az login)",
+  "configFix": {
+    "file": ".env.vcptcore",
+    "AZURE_RESOURCE_GROUP": "vcptcore-qa -> vcptcore",
+    "APPINSIGHTS_APP_ID_BACKEND": "884ea59d... -> 0ab21c6a-c538-4e49-8bf8-92459beb4e45",
+    "APPINSIGHTS_APP_ID_STOREFRONT": "0e1e631f... -> e015609e-0547-401e-91db-f38c47d8c343",
+    "reason": "prior values were resource/object ids, not data-plane AppIds; every probe returned 'The application could not be found'"
+  },
+  "verdict": "CLEAN",
+  "counts": {
+    "backend-exceptions": { "rows": 0, "new": 0, "spiking": 0 },
+    "backend-failed-requests": { "rows": 0, "new": 0, "spiking": 0 },
+    "backend-failed-dependencies": { "rows": 2, "new": 2, "spiking": 0 },
+    "frontend-exceptions": { "rows": 0, "new": 0, "spiking": 0 },
+    "frontend-browser-failures": { "rows": 0, "new": 0, "spiking": 0 }
+  },
+  "confirmed": [],
+  "needsReview": [
+    {
+      "fingerprint": "4f9076712788",
+      "relatedFingerprint": "2ea04082647e",
+      "signature": "Azure Search qa-demovc-3-search.search.windows.net 404 (Add/update/delete documents) + InProc Microsoft.Search SearchClient.IndexDocuments",
+      "probe": "backend-failed-dependencies",
+      "class": "NEEDS_REVIEW",
+      "severity": "P3",
+      "count35m": 2,
+      "count24h": 5,
+      "reproduced": false,
+      "liveCheck": "SEARCH_FUNCTIONAL — storefront search returns query-specific results (beer=20, printer=11) with facets + PDPs; index is queryable",
+      "reason": "indexer write-path 404 on a subset of ops; no user-facing impact; back-office follow-up to confirm indexer keeps up and the cross-env-looking target qa-demovc-3-search"
+    }
+  ],
+  "dismissed": [
+    { "signature": "webhook.site POST 404 (multiple GUIDs)", "class": "THIRD_PARTY", "count24h": 26, "reason": "expired test-webhook capture endpoints" },
+    { "signature": "EventGrid SendEvents / POST /api/events 401 + ClientSecretCredential.GetToken 401", "class": "CONFIG", "count24h": 6, "reason": "test-event-grid integration AAD secret; config not code" },
+    { "signature": "AuthorizationError: password expired / access denied", "class": "BY_DESIGN", "count24h": 4, "reason": "expected auth flow" },
+    { "signature": "graphql/MergeCart 500 + single ChangePassword/GetFullCart 500", "class": "NEEDS_REVIEW_LOW", "count24h": 4, "reason": "out of 35-min window; MergeCart 500 often stale legacy-cart data; watch next run" },
+    { "signature": "storefront images ERR_NAME_NOT_RESOLVED -> starmarket-platform.demo.govirto.com", "class": "INCIDENTAL", "reason": "found in live repro not telemetry; image-CDN host misconfig, cosmetic, out of scope" }
+  ],
+  "jiraFiled": false,
+  "fixAttempted": false
+}
