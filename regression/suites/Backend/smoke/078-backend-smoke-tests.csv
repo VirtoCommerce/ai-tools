@@ -1013,3 +1013,28 @@ BSM-111,Admin SPA — Products Grid Pagination Navigate to Page 2,Backend Smoke 
 [GRID] page 2 shows different products than page 1 (no duplicates)
 [DOM] active page indicator changes (page 2 highlighted, then page 1 highlighted on return)
 [GRID] returning to page 1 shows original first-page products","[API] POST {{BACK_URL}}/api/catalog/search/products body: {""skip"": 20, ""take"": 20} → 200; items differ from skip=0 results; totalCount consistent across both calls","Pagination controls absent when product count > page size, page 2 shows same products as page 1, Previous button navigates incorrectly, Angular error on pagination, page navigation clears active filters",none,"Suite 051 (Catalog Admin Products)",Automated
+BSM-112,Admin SPA — News Module Blade Opens and Lists Articles,Backend Smoke > News Admin,Critical,BL-CROSS-003,,"Admin logged in (BSM-001 passed); vc-news module installed","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] vc-news embedded app (iframe) loads
+[ACT] observe article list, sidebar filters and toolbar","[BLADE] 'Articles: All' region visible
+[DOM] sidebar filters present: Drafts, Scheduled, Published, Archived, All
+[DOM] toolbar buttons present: Refresh, Add, Delete
+[GRID] list columns: Name, Store, Is published, Publish date, Is archived, Archive date","[API] POST {{BACK_URL}}/api/news/search body: storeId={{STORE_ID}}, take=5 → 200 with totalCount >= 0 and results array
+[CONSOLE] no console errors (no TypeError/ReferenceError/uncaught) after app load","Embedded app iframe blank or 404, app fails to mount, /api/news/search returns 404 (module not installed), grid renders framework error",none,"Suite 084 (News Articles regression)",Automated
+BSM-113,"Admin SPA — Create News Article, Edit Fields and Verify in API",Backend Smoke > News Admin,High,BL-CROSS-001,ECL-2.1,"Admin logged in; News module open (BSM-112 passed)","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click 'Add'
+[ACT] fill Name = {{name}}; select Store = {{store}}; select Publish scope = Anonymous
+[ACT] click 'Save'
+[WAIT] save completes (editor expands, unsaved indicator clears)
+[ACT] expand 'Content'; fill Title (en-US) = 'Smoke {{TIMESTAMP}}'; click 'copy from title'; type Content body
+[ACT] expand 'SEO'; fill URL slug = agent-test-news-{{TIMESTAMP}}
+[ACT] click 'Save'","[ALERT] unsaved-changes indicator clears after each Save
+[FIELD] Title in list equals Title after 'copy from title'
+[GRID] {{name}} appears in the article list","[API] POST {{BACK_URL}}/api/news → 200; capture id → NEWS_ID
+[API] GET {{BACK_URL}}/api/news/{{NEWS_ID}} → name={{name}}; localizedContents[0].title='Smoke {{TIMESTAMP}}'; seoInfos[0].semanticUrl=agent-test-news-{{TIMESTAMP}}
+[CONSOLE] no console errors after create and after edit Save","Create or edit Save errors on valid input, edited title/slug absent in API after reload, editor does not expand post-create, console TypeError/ReferenceError on save","[HTTP] DELETE {{BACK_URL}}/api/news?ids={{NEWS_ID}}","Suite 084 NEWS-002/004/005",Automated
+BSM-114,Admin SPA — Archive News Article,Backend Smoke > News Admin,Medium,,,"Admin logged in; a disposable article exists (create inline or via BSM-113)","admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}","[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create/open article ({{name}}, {{store}}, Anonymous); capture id → NEWS_ID
+[ACT] click 'Archive' in the article toolbar
+[ACT] open 'Archived' filter and search {{name}}","[GRID] article listed under 'Archived' filter
+[GRID] 'Is archived' = true and 'Archive date' is set for the article","[API] GET {{BACK_URL}}/api/news/{{NEWS_ID}} → isArchived=true, archiveDate non-null
+[CONSOLE] no console errors after Archive","Archive button no-op, isArchived stays false in API, article not listed under Archived filter","[HTTP] DELETE {{BACK_URL}}/api/news?ids={{NEWS_ID}}","Suite 084 NEWS-008",Automated
