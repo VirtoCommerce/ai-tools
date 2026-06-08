@@ -1,0 +1,25 @@
+{
+  "ticket": "VCST-5210",
+  "verdict": "VERIFIED",
+  "date": "2026-06-08",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1035.0-pr-3051-23c3-vcst-5212-23c309b0",
+    "theme": "n/a (backend module bug)",
+    "relevant_modules": { "VirtoCommerce.PushMessages": "3.1001.0-pr-24-433d" },
+    "pr_build": "VirtoCommerce.PushMessages_3.1001.0-pr-24-433d (PR #24, commit 433d13b) — confirmed loaded"
+  },
+  "agent_used": "qa-backend-expert (active trigger) + orchestrator (App Insights analysis)",
+  "method": "telemetry-only bug; active trigger of 3 identical Admin-SPA pushes, App Insights fcm dependency analysis",
+  "str_result": "3 sends: fcm 404 count 17 -> 3 -> 0 (monotonic decay to zero; pre-deploy baseline was 102x404 with no decay)",
+  "checklist_total": 6,
+  "checklist_passed": 6,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["healthy/transient tokens preserved (push #2 200 succeeded; no over-deletion)"],
+  "jira_transition": "PENDING_USER_CONFIRMATION (recommend Finish test -> Tested; hold Done until PR #24 merged — Gate 7)",
+  "pr_open": "https://github.com/VirtoCommerce/vc-module-push-messages/pull/24",
+  "artifacts": "tests/Sprint26-11/VCST-5210/"
+}
