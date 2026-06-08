@@ -547,7 +547,7 @@ BSM-062,Admin SPA — Push Messages Module Health Check,Backend Smoke > Push Mes
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with valid response structure (or 404 — SKIP if module not installed)
 [BODY] if 200: response has 'totalCount' >= 0 and 'results' array (may be empty)
 [BODY] no 'exception' or internal error fields in 200 response
-[DOM] if 200: Push Messages or Push Notifications item visible in Admin left nav","HTTP 500 (module installed but broken), 403 (permissions misconfigured), blade opens but throws Angular error immediately",none,"Suite 075 (Push Messages)",Automated
+[DOM] if 200: Push Messages or Push Notifications item visible in Admin left nav",,"HTTP 500 (module installed but broken), 403 (permissions misconfigured), blade opens but throws Angular error immediately",none,"Suite 075 (Push Messages)",Automated
 BSM-063,Platform REST API — Loyalty Programs Endpoint,Backend Smoke > Loyalty,Medium,BL-CROSS-011,ECL-10.8,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/loyalty/programs?take=5
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK with programs array and totalCount (or 404 — SKIP if not installed)
 [BODY] if 200: totalCount >= 0; no 'error' fields in response
