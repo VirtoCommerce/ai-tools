@@ -1,0 +1,43 @@
+{
+  "ticket": "VCST-5211",
+  "verdict": "FAIL",
+  "verdict_meaning": "Bug CONFIRMED — reproduces on storefront across Chrome + Firefox; ACs unmet (no fix shipped). Ticket is valid and correctly P1. Storybook isolation proves PR #2312 handler code is correct; the defect is purely the VcPopover focus-entry integration gap, exactly as filed.",
+  "date": "2026-06-08",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "health 200 (vcst-qa)",
+    "theme": "vc-frontend 2.51.0-pr-2312-ebf6-ebf6c0c2 (PR #2312 deployed)",
+    "relevant_modules": { "vc-frontend": "2.51.0-pr-2312", "ui-kit-component": "VcDatePicker / VcCalendar / VcPopover" }
+  },
+  "agents_dispatched": ["qa-frontend-expert", "ui-ux-expert", "qa-testing-expert"],
+  "total_cases": 9,
+  "passed": 3,
+  "failed": 2,
+  "blocked": 1,
+  "isolation_confirm": 1,
+  "notes": "passed = C5/R1/R2 (no-regression); failed = C1/C2 (core defect); blocked = C3 (blocked-by-C1 = the bug). C4 Storybook isolation = all 12 keys work (code correct).",
+  "bugs_filed": [],
+  "bug_confirmed": "VCST-5211",
+  "business_rules_verified": [
+    "WCAG 2.1.1 Keyboard (Level A) — FAIL in storefront integration (grid unreachable)",
+    "WCAG 2.1.2 No Keyboard Trap — PASS (no trap; Escape exits, VCST-5153 item-1 not regressed)",
+    "BL-UI [P1-ux] WCAG-overlapping severity — confirmed P1"
+  ],
+  "ac_text_correction": "Year change binding is Shift+PageUp/PageDown (NOT Ctrl per parent AC text); shipped code follows WAI-ARIA APG — confirmed in Storybook.",
+  "incidental_findings": [
+    "Trigger lacks aria-haspopup=dialog + aria-expanded (WCAG 4.1.2)",
+    "Day grid uses role=application instead of WAI-ARIA APG role=grid",
+    "No aria-current=date on today's cell",
+    "Date-range validation errors expose no aria-invalid / no announced reason (WCAG 3.3.1)",
+    "Selected-day pill color contrast 2.11:1 (#fff on #f99e24) vs 4.5:1 needed (WCAG 1.4.3) — pre-existing brand token, verify on Coffee theme",
+    "Applied date filter is client-state only — lost on refresh, not deep-linkable",
+    "Mitigation: typed date input IS a working keyboard path — lowers practical impact, but the grid widget still fails 2.1.1 standalone"
+  ],
+  "exploratory": {
+    "charter": "Risk charter — VcDatePicker keyboard operability + integration boundaries",
+    "heuristic": "CRISP/SFDPOT",
+    "engine_independent": true,
+    "findings": { "bugs": 1, "questions": 1, "observations": 4, "risks": 2 }
+  },
+  "artifacts": "tests/Sprint26-11/VCST-5211/"
+}
