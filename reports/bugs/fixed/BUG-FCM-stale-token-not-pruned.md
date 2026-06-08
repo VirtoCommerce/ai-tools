@@ -1,6 +1,12 @@
 # BUG: Push-messages never prunes FCM tokens rejected with UNREGISTERED (404) — dead tokens retried forever
 
-## Status: READY_TO_SUBMIT — filed as [VCST-5210](https://virtocommerce.atlassian.net/browse/VCST-5210)
+## Status: FIXED — verified on vcst-qa 2026-06-08 ([VCST-5210](https://virtocommerce.atlassian.net/browse/VCST-5210))
+
+## Resolution
+- **Fixed in:** module `VirtoCommerce.PushMessages 3.1001.0-pr-24-433d` (PR [#24](https://github.com/VirtoCommerce/vc-module-push-messages/pull/24), commit `433d13b`) — deployed to vcst-qa, confirmed loaded in Admin → Modules. **PR still OPEN — pending human review/merge (Gate 7).**
+- **Verified:** 2026-06-08 via active trigger (3 identical Admin pushes to one org) + App Insights `fcm.googleapis.com` dependency analysis. Stale-token 404 count decayed **17 → 3 → 0** across the three sends; pre-deploy baseline held steady at 102×404 with no decay. Healthy tokens preserved (push #2 `200` succeeded); no exceptions during the window.
+- **Method:** terminal per-token errors (`Unregistered`/`InvalidArgument`) now pruned via existing `IFcmTokenService.DeleteAsync`; transient errors still logged, not deleted.
+- **Evidence:** `tests/Sprint26-11/VCST-5210/` (verification-report.md + screenshots 01–06).
 
 **Env:** vcst-qa @ Platform 3.103x (backend) · module `vc-module-push-messages` (`dev`), FirebaseAdmin 3.4.0
 **Severity:** Low (Minor) · **Type:** Defect — missing error handling / resource hygiene

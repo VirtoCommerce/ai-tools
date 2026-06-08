@@ -1,0 +1,34 @@
+{
+  "runId": "FIX-2026-06-08-1914",
+  "ticket": "VCST-5210",
+  "severity": "Low",
+  "repo": "VirtoCommerce/vc-module-push-messages",
+  "repoKind": "module",
+  "branch": "claude/qa-autofix/VCST-5210",
+  "baseBranch": "dev",
+  "commit": "433d13bb0a3b8d46a8573bbb60892bd576fd7ff4",
+  "pr": {
+    "url": "https://github.com/VirtoCommerce/vc-module-push-messages/pull/24",
+    "number": 24,
+    "state": "OPEN",
+    "isDraft": false,
+    "merged": false,
+    "label": "bug"
+  },
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "APPROVE",
+    "G5": "PASS",
+    "G6": "DEFERRED_NEEDS_DEPLOY",
+    "G7": "STOP_HUMAN_REVIEW"
+  },
+  "confidence": "HIGH",
+  "diff": { "filesChanged": 4, "insertions": 308, "deletions": 8, "existingTestsModified": false },
+  "ciNotes": "mysql auto-test leg reran once (transient Docker Hub mysql:9.3 manifest timeout); all checks green",
+  "tokenNote": "PR opened via gh keyring login; GITHUB_FIX_BUGS_TOKEN PAT lacks Pull requests: R&W scope",
+  "jiraStatus": "REFINEMENT (pending Ready-to-test transition on user confirmation)",
+  "merged": false
+}
