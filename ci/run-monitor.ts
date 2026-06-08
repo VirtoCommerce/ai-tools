@@ -69,6 +69,9 @@ const PHASE_TIMEOUT_MS = parseInt(process.env.PHASE_TIMEOUT_MS || "900000", 10);
 const SPIKE_FACTOR = parseFloat(process.env.MONITOR_SPIKE_FACTOR || "3");
 const SPIKE_MIN_DELTA = parseInt(process.env.MONITOR_SPIKE_MIN_DELTA || "20", 10);
 const STORE_PATH = process.env.MONITOR_STORE || "reports/monitoring/.seen-fingerprints.json";
+// The store is shared across envs; the env is part of each fingerprint so vcst
+// and vcptcore signatures stay separate inside the one file.
+const MONITOR_ENV = process.env.TEST_ENV || "vcst";
 
 const FRONT_URL = process.env.FRONT_URL || "";
 const BACK_URL = process.env.BACK_URL || "";
@@ -535,7 +538,7 @@ async function main() {
         log(`Query ${layer}/${probe} failed: ${res.error}`);
         continue;
       }
-      const sigs = res.rows.map((r) => signalFromRow(layer, probe, r)).filter((s): s is Signal => s !== null);
+      const sigs = res.rows.map((r) => signalFromRow(MONITOR_ENV, layer, probe, r)).filter((s): s is Signal => s !== null);
       log(`Query ${layer}/${probe}: ${sigs.length} signatures (${res.elapsed_ms}ms)`);
       allSignals.push(...sigs);
     }

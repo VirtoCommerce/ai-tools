@@ -8,7 +8,11 @@
  * orchestrator only spends triage budget on genuinely new or surging problems.
  *
  * State lives at reports/monitoring/.seen-fingerprints.json (gitignored — it is
- * local working state, not a report). The flow is:
+ * local working state, not a report). The store is shared across environments
+ * (vcst, vcptcore, …) by design — one noise gate for all of them. To keep that
+ * sharing safe, the env is part of the fingerprint, so the same error signature
+ * in two envs gets two independent entries (separate baselines, separate triage
+ * decisions) instead of colliding into one. The flow is:
  *   load → classify(store, signals) → triage NEW+SPIKING → setStatus(...) →
  *   recordRun(store, signals) → save
  * classify reads the *previous* baseline; recordRun updates it. Order matters.
@@ -18,12 +22,16 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import type { Layer, Row } from "./appinsights.js";
 
-export const STORE_VERSION = 1;
+// v2: env is part of the fingerprint. v1 entries were env-agnostic and their
+// hashes no longer match, so loadStore drops them — a one-time reset of the
+// shared store the first run after this change.
+export const STORE_VERSION = 2;
 export const DEFAULT_STORE_PATH = "reports/monitoring/.seen-fingerprints.json";
 
 /** A normalized error signature for one run. */
 export interface Signal {
   fingerprint: string;
+  env: string; // TEST_ENV the signature was observed in (vcst, vcptcore, …)
   layer: Layer;
   probe: string;
   signature: string;
@@ -38,6 +46,7 @@ export type SignalStatus = "new" | "triaged" | "confirmed" | "noise" | "filed";
 
 export interface StoreEntry {
   fingerprint: string;
+  env: string; // env this entry belongs to (part of the fingerprint)
   layer: Layer;
   probe: string;
   signature: string;
@@ -75,20 +84,21 @@ export interface Classification {
 // Signal construction
 // ---------------------------------------------------------------------------
 
-/** Stable fingerprint for a signature within a (layer, probe). */
-export function fingerprintOf(layer: Layer, probe: string, signature: string): string {
-  const norm = `${layer}|${probe}|${String(signature).trim().toLowerCase().replace(/\s+/g, " ")}`;
+/** Stable fingerprint for a signature within an (env, layer, probe). */
+export function fingerprintOf(env: string, layer: Layer, probe: string, signature: string): string {
+  const norm = `${env}|${layer}|${probe}|${String(signature).trim().toLowerCase().replace(/\s+/g, " ")}`;
   return createHash("md5").update(norm).digest("hex").slice(0, 12);
 }
 
 /** Build a Signal from a KQL result row. Rows missing a signature are dropped. */
-export function signalFromRow(layer: Layer, probe: string, row: Row): Signal | null {
+export function signalFromRow(env: string, layer: Layer, probe: string, row: Row): Signal | null {
   const signature = row.signature != null ? String(row.signature) : "";
   if (!signature) return null;
   const count = Number(row.count_ ?? row.count ?? 0) || 0;
   const { signature: _s, count_: _c, ...sample } = row;
   return {
-    fingerprint: fingerprintOf(layer, probe, signature),
+    fingerprint: fingerprintOf(env, layer, probe, signature),
+    env,
     layer,
     probe,
     signature,
@@ -107,7 +117,16 @@ export function loadStore(path = DEFAULT_STORE_PATH): Store {
   if (existsSync(path)) {
     try {
       const parsed = JSON.parse(readFileSync(path, "utf-8")) as Store;
-      if (parsed && parsed.entries) return parsed;
+      if (parsed && parsed.entries) {
+        // Drop legacy (pre-v2, env-agnostic) entries: their fingerprints no
+        // longer match and they'd never resolve again. Keep env-tagged entries.
+        if ((parsed.version ?? 1) < STORE_VERSION) {
+          for (const [fp, entry] of Object.entries(parsed.entries)) {
+            if (!entry.env) delete parsed.entries[fp];
+          }
+        }
+        return parsed;
+      }
     } catch {
       // corrupt store — start fresh rather than crash the run
     }
@@ -175,6 +194,7 @@ export function recordRun(store: Store, signals: Signal[], runId: string): void 
     if (!existing) {
       store.entries[sig.fingerprint] = {
         fingerprint: sig.fingerprint,
+        env: sig.env,
         layer: sig.layer,
         probe: sig.probe,
         signature: sig.signature,
