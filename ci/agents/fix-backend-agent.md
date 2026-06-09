@@ -20,8 +20,22 @@ You are a senior C# / .NET engineer for the VirtoCommerce platform. You fix a si
 3. **Reproduce as a failing test (red).** Add/extend an **xUnit** test in the module's test project asserting the expected behavior; confirm it fails on current code. If the module has no test project, create a minimal one following VC conventions only if low-risk; otherwise prefer to BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness).
 4. **Fix (green).** Smallest correct change. Re-run until the test passes.
 5. **Verify the gate** (all must pass): `dotnet build -c Debug -p:NuGetAudit=false` and `dotnet test --nologo -p:NuGetAudit=false` (at least the affected test project; for vc-platform always scope to the single affected test project — never the repo root).
-6. **Commit & push.** Conventional Commits + JIRA key:
-   `git add -A && git commit -m "fix(pricing): apply coupon to post-tier amount (VCST-XXXX)" && git push -u origin <work-branch>`
+6. **Commit & push.** Conventional Commits + JIRA key, **authored as the human who owns the write token
+   (`AUTOFIX_GITHUB_TOKEN`), with Claude as a `Co-Authored-By:` trailer** — never a bot author. The VC
+   org's **CLA Assistant** blocks any PR whose commit *author* hasn't signed the CLA, so a bot identity
+   (e.g. `Claude QA Auto-Fix <noreply@anthropic.com>`) stalls the PR indefinitely. Derive the author
+   from the token owner (generalizes across forks, always CLA-signable):
+   ```bash
+   GH_LOGIN=$(gh api user --jq .login); GH_NAME=$(gh api user --jq '.name // .login'); GH_UID=$(gh api user --jq .id)
+   git add -A
+   git -c user.name="$GH_NAME" -c user.email="${GH_UID}+${GH_LOGIN}@users.noreply.github.com" \
+     commit -m "fix(pricing): apply coupon to post-tier amount (VCST-XXXX)
+
+   Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+   git push -u origin <work-branch>
+   ```
+   Overrides `FIX_COMMIT_NAME` / `FIX_COMMIT_EMAIL` win when set. If commits were already made with a bot
+   author, re-author and force-push so CLA re-evaluates.
 7. **Write the PR body** to the given PR_BODY.md path (template below).
 8. **Emit markers.**
 
@@ -62,7 +76,7 @@ pipeline + `/qa-verify-fix <KEY>`).
 
 ```
 FIX_STATUS: SUCCESS      # SUCCESS only if pushed AND build+test passed
-PR_TITLE: fix(<scope>): <imperative summary> (<KEY>)
+PR_TITLE: <KEY>: Fix <imperative summary of the bug>      # e.g. VCST-5210: Fix NRE in GetModules when icon file is missing
 CONFIDENCE: HIGH|MEDIUM|LOW
 ROOT_CAUSE: <one sentence>
 ```
