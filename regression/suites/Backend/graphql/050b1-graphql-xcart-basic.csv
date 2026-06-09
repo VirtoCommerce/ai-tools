@@ -435,7 +435,7 @@ CRB-GQL-093,"xCart — carts Query Lists User Carts with Pagination","GraphQL > 
 [DATA label=list_carts] data.carts is non-null
 [COUNT label=list_carts] data.carts.totalCount >= 0
 [DATA label=list_carts] data.carts.items is non-null","[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount","errors[] non-empty; carts null; totalCount negative",none — read-only,xAPI; graphql-schema.md — Query.carts,Automated
-CRB-GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line Item","GraphQL > xCart",High,BL-CART-007; BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. ORG_USER. Submits the same SKU 1507112554 three times (quantity 2 each) in one addBulkItemsCart call to verify BL-CART-007: same-SKU repeats MUST coalesce into ONE cart line with summed quantity (6), not create 3 duplicate lines. SKU 1507112554 (Coca Cola Regular 6x330ml, SKU 1507112554) verified buyable on B2B-store in QA 2026-04-30. Note: addBulkItemsCart input uses productSku (not productId — differs from addItem/addItemsCart) and returns BulkCartType { cart, errors }.","SKU=1507112554 (Coca Cola Regular 6x330ml; verified live in QA 2026-04-30). Documented duplicate-SKU bulk-add example.","[AUTH role=ORG_USER]
+CRB-GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Line Item (BL-CART-007 — same currency)","GraphQL > xCart",High,BL-CART-007; BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-2.1; ECL-10.2,"Runner-native. ORG_USER. Submits the same SKU 1507112554 three times (quantity 2 each) in one addBulkItemsCart call to verify BL-CART-007: same-SKU repeats MUST coalesce into ONE cart line with summed quantity (6), not create 3 duplicate lines. SKU 1507112554 (Coca Cola Regular 6x330ml, SKU 1507112554) verified buyable on B2B-store in QA 2026-04-30. Note: addBulkItemsCart input uses productSku (not productId — differs from addItem/addItemsCart) and returns BulkCartType { cart, errors }. NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — coalescing applies when the same SKU is added in the same currency; adding the same SKU via a different itemCurrencyCode creates a separate line. This case covers same-currency-only coalescing.","SKU=1507112554 (Coca Cola Regular 6x330ml; verified live in QA 2026-04-30). Documented duplicate-SKU bulk-add example.","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -474,8 +474,8 @@ CRB-GQL-132,"xCart — addBulkItemsCart Coalesces Duplicate SKUs Into Single Lin
 [ERRORS label=verify_cart] errors[] empty
 [COUNT label=verify_cart] data.cart.itemsCount = 1
 [COUNT label=verify_cart] data.cart.itemsQuantity = 6
-[COUNT label=verify_cart] data.cart.items.0.quantity = 6","[EVIDENCE] verify_cart query right after bulk_add_dup must show ONE row for sku 1507112554 with quantity 6 — never 3 separate rows of quantity 2 (BL-CART-007 line-item dedupe invariant)","errors[] non-empty; data.addBulkItemsCart.errors[] non-empty (e.g. PRODUCT_MIN_MAX_QTY — pick a different verified SKU); cart.items contains 3 separate rows for sku 1507112554 (BL-CART-007 violation); itemsCount=3 instead of 1; itemsQuantity ≠ 6; productSku rejected because mutation was called with productId (schema requires productSku for InputNewBulkItemType)",none — clearCart at end of steps,xAPI; graphql-schema.md — Mutation.addBulkItemsCart / InputAddBulkItemsType / InputNewBulkItemType; test-data/graphql/mutations/addBulkItemsCart.graphql; BL-CART-007,Automated
-CRB-GQL-021,"[VCST-4936] addItem ×2 for Same SKU Accumulates Quantity to 2 (BL-CART-007)","GraphQL > xCart > Quantity Merge",High,"BL-CART-001; BL-CART-007","ECL-2.1","Runner-native. ORG_USER. VCST-4936 BL-CART-007 verification via standard addItem mutation (not the deprecated addBulkItemsCart). Two consecutive addItem calls with same productId, qty=1 each → one lineItem with quantity=2. Pre-fix Quick Order symptom: duplicate-SKU lines in bulk-add lost second-entry quantity. This case proves the cart's quantity-accumulation invariant works at the xCart layer.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[COUNT label=verify_cart] data.cart.items.0.quantity = 6","[EVIDENCE] verify_cart query right after bulk_add_dup must show ONE row for sku 1507112554 with quantity 6 — never 3 separate rows of quantity 2 (BL-CART-007 line-item dedupe invariant)","errors[] non-empty; data.addBulkItemsCart.errors[] non-empty (e.g. PRODUCT_MIN_MAX_QTY — pick a different verified SKU); cart.items contains 3 separate rows for sku 1507112554 (BL-CART-007 violation); itemsCount=3 instead of 1; itemsQuantity ≠ 6; productSku rejected because mutation was called with productId (schema requires productSku for InputNewBulkItemType)",none — clearCart at end of steps,xAPI; graphql-schema.md — Mutation.addBulkItemsCart / InputAddBulkItemsType / InputNewBulkItemType; test-data/graphql/mutations/addBulkItemsCart.graphql; BL-CART-007 (same-currency scope); Synced: VCST-5101 (2026-06-09),Automated
+CRB-GQL-021,"[VCST-4936] addItem ×2 for Same SKU Accumulates Quantity to 2 (BL-CART-007 — same currency)","GraphQL > xCart > Quantity Merge",High,"BL-CART-001; BL-CART-007","ECL-2.1","Runner-native. ORG_USER. VCST-4936 BL-CART-007 verification via standard addItem mutation (not the deprecated addBulkItemsCart). Two consecutive addItem calls with same productId, qty=1 each → one lineItem with quantity=2. NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — same productId in the SAME currency coalesces (this case); same productId in a DIFFERENT currency creates a new line. This case covers same-currency coalescing only — gap GQL-MC-001 covers the different-currency separation path.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -500,4 +500,70 @@ CRB-GQL-021,"[VCST-4936] addItem ×2 for Same SKU Accumulates Quantity to 2 (BL-
 [DATA label=add_2] data.addItem.itemsCount = 1
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.itemsCount = 1
-[DATA label=read_back] data.cart.itemsQuantity = 5","[EVIDENCE] BL-CART-007: same-SKU duplicate add accumulates qty (2+3=5) on a single lineItem; itemsCount stays 1.","itemsCount > 1 (duplicate lines); itemsQuantity != 5 (accumulation broken); HTTP 500",cleanup_post inline,"xAPI; Mutation.addItem; VCST-4936 (Quick Order regression); BL-CART-007 same-SKU merge rule",Draft
+[DATA label=read_back] data.cart.itemsQuantity = 5","[EVIDENCE] BL-CART-007: same-SKU duplicate add accumulates qty (2+3=5) on a single lineItem; itemsCount stays 1.","itemsCount > 1 (duplicate lines); itemsQuantity != 5 (accumulation broken); HTTP 500",cleanup_post inline,"xAPI; Mutation.addItem; VCST-4936 (Quick Order regression); BL-CART-007 same-SKU merge rule (same-currency scope); Synced: VCST-5101 (2026-06-09)",Draft
+GQL-MC-001,"Mixed Cart — addItem with itemCurrencyCode=PTS Creates a Separate PTS Line Item","GraphQL > xCart > Mixed Cart",Critical,"BL-LOY-002; BL-CART-007; BL-GQL-001","ECL-2.1; ECL-7.3","Runner-native. LOYALTY_VIP_USER (member of VIP group — has access to loyalty catalog and PTS pricing). Live-discover a loyalty product whose price is in PTS currency using products() filter currencyCode=@td(LOYALTY_SETTINGS.currency_code). Add it to a cart that already has a USD item via addItem with itemCurrencyCode=@td(LOYALTY_SETTINGS.currency_code). Assert: (1) cart has 2 line items; (2) one item has currencyCode=USD, one has currencyCode=PTS; (3) same productId added a second time with the same itemCurrencyCode produces quantity accumulation, not a third line. Fixture: LOYALTY_SETTINGS.currency_code=PTS, LOYALTY_VIP_USER gives VIP auth.","storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); USD_product=@td(BUYABLE_NO_MIN_QTY.id); loyalty_user=@td(LOYALTY_VIP_USER.email)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") {
+      items { id code }
+    }
+  }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { productId currencyCode } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id itemsCount items { id productId currencyCode quantity } } }
+[GQL-EXEC add_pts_item]
+[GQL-OP verify_cart]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount itemsQuantity items { id productId currencyCode quantity listPrice { amount currency { code } } } } }
+[GQL-EXEC verify_cart]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_usd_item] errors[] empty
+[DATA label=add_usd_item] data.addItem.itemsCount = 1
+[ERRORS label=add_pts_item] errors[] empty
+[COUNT label=verify_cart] data.cart.itemsCount = 2
+[DATA label=verify_cart] data.cart.items[?currencyCode=USD].productId is non-null
+[DATA label=verify_cart] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].productId is non-null","[EVIDENCE] Two separate line items in cart: one with currencyCode=USD, one with currencyCode=PTS. BL-CART-007 currency-scope rule: same productId in different currency → separate line, not quantity merge.","itemsCount=1 (PTS item merged into USD line — BL-CART-007 currency-scope violation); add_pts_item errors[] non-empty (itemCurrencyCode rejected); discover_pts_product returns 0 items (loyalty catalog not indexed or user not VIP)",cleanup_post inline,"VCST-5101; BL-CART-007 (currency-scoped); xAPI addItem.itemCurrencyCode; Mixed Cart",Reviewed
+GQL-MC-004,"Mixed Cart — Single-Currency Cart Yields cartTotals With Exactly One Element","GraphQL > xCart > Mixed Cart",High,"BL-LOY-003; BL-GQL-001","ECL-7.3","Runner-native. ORG_USER (standard USD-only user). Add one USD item to a freshly-cleared cart. Query cartTotals. Assert: exactly one element with isDefaultTotalCurrency=true. No PTS or other foreign-currency element should be present in a single-currency cart.","storeId={{STORE_ID}}; USD_product=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP check_totals]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      id itemsCount
+      cartTotals {
+        isDefaultTotalCurrency
+        total { amount currency { code } }
+        subTotal { amount }
+        taxTotal { amount }
+        discountTotal { amount }
+      }
+    }
+  }
+[GQL-EXEC check_totals]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=check_totals] errors[] empty
+[COUNT label=check_totals] data.cart.cartTotals = 1
+[DATA label=check_totals] data.cart.cartTotals.0.isDefaultTotalCurrency = true
+[DATA label=check_totals] data.cart.cartTotals.0.total is non-null
+[DATA label=check_totals] data.cart.cartTotals.0.total.currency.code is non-null","[EVIDENCE] Single-currency cart produces cartTotals with exactly 1 element — not 0, not 2+. isDefaultTotalCurrency=true on that element.","cartTotals is null or empty (field not available — schema regression); cartTotals has 2+ elements for a single-currency cart (ghost currency leak); isDefaultTotalCurrency=false on the only element",cleanup_post inline,"VCST-5101; BL-GQL-001; Mixed Cart cartTotals single-currency edge case",Reviewed

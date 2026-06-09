@@ -100,11 +100,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert (cart totals), qa-backend-expert (promotion engine API)
 - **Known behavior (2026-03-13):** Under `BestRewardPromotionPolicy`, applying a coupon-backed `CartSubtotalReward` **always replaces** an auto-applied cart subtotal reward, even if the coupon discount is smaller. This is by design in `BestRewardPromotionPolicy.cs:79-80` — coupon-backed rewards are explicitly preferred via `FirstOrDefault(x => !x.Coupon.IsNullOrEmpty()) ?? FirstOrDefault()`. Under `CombineStackablePromotionPolicy`, only one `CartSubtotalReward` per priority group is kept. Stacking two cart subtotal discounts requires different priority values. Neither policy is a bug — it's a store configuration choice. See `SBTM-promotions-2026-03-13.md` for full source code analysis.
 
-### BL-CART-004: Currency switching recalculates cart `[P0-revenue]`
-- **Rule:** When the user switches currency, every cart line item must recalculate using the new currency's price list. If a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax also recalculate. The cart total must reflect the new currency — no mixed-currency state.
-- **Verify:** Add items → switch currency → all prices update → check cart subtotal, shipping, tax use new currency → products without new-currency prices show error or are removed.
-- **Violation signal:** Cart shows prices in mixed currencies; line item uses old-currency price; subtotal not recalculated; shipping still in previous currency.
+### BL-CART-004: Currency switching recalculates primary-currency lines `[P0-revenue]`
+- **Rule:** When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.
+- **Verify:** Single-currency cart: add items → switch currency → all prices, subtotal, shipping, tax use the new currency; products without a new-currency price are flagged/removed. Mixed cart: with a PTS loyalty line present, switch the base currency USD→EUR → USD lines convert to EUR, the PTS line stays PTS, item count unchanged.
+- **Violation signal:** A previous-currency line still uses the old price; subtotal/shipping not recalculated; **OR** (Mixed Cart) a non-primary-currency loyalty line is wrongly converted, dropped, or duplicated on currency switch.
 - **Agents:** qa-frontend-expert (cart UI), qa-backend-expert (xAPI cart recalculation)
+- **Amended:** 2026-06-09 (Mixed Cart — VCST-5101). Previously asserted "no mixed-currency state"; superseded by the Mixed Cart model — see Domain 17 (BL-LOY).
 
 ### BL-CART-005: Cart isolation per organization `[P1-data]`
 - **Rule:** In B2B mode, each organization has its own cart. When a user switches organizations, the previous org's cart is preserved server-side but not visible. The active cart reflects only the current organization's items, prices, and shipping context. Cart items from Org A must never appear in Org B's cart.
@@ -851,6 +852,60 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Agents:** qa-backend-expert (xAPI security), qa-testing-expert (cross-user negative cases).
 - **Suite coverage:** `050g` XCC-GQL-016 (direct test of all four sub-rules); ~82 references mark every operation that requires `[AUTH role=ORG_USER]` prelude (all xCart/xProfile/xMarketing mutation cases).
 - **Promoted:** 2026-05-15.
+
+---
+
+## Domain 17: Loyalty & Mixed Cart (BL-LOY)
+
+> Loyalty "Mixed Cart" mode (store setting `Loyalty.Mode = "Mixed Cart"`, `Loyalty.Currency` e.g. `PTS`) lets a single cart hold regular primary-currency lines and loyalty (points-currency) lines simultaneously, with one checkout. These invariants govern that model. Introduced with VCST-5101 / Epic VCST-5099 (vc-module-x-cart PR #120, vc-module-cart PR #188, vc-frontend PR #2310). See BL-CART-004 (currency switch, amended) and BL-CART-003 (coupon + sale).
+
+### BL-LOY-001: Mixed Cart — promotion/coupon evaluation scoped to primary-currency lines only `[P0-revenue]`
+- **Rule:** In Mixed Cart mode, promotion and coupon discount evaluation MUST use only line items whose currency matches the cart's primary currency. Loyalty-currency lines MUST NOT enter the promotion entries, the discount base (`CartTotal`), or any reward calculation. A percentage-off coupon on a mixed cart applies exclusively to the primary-currency (e.g. USD) subtotal, independent of loyalty-line quantity.
+- **Verify:** Add 1 USD line + 1 PTS loyalty line; apply a 10% subtotal coupon → discount = exactly 10% × USD subtotal with zero contribution from the PTS line. Step PTS qty 1→2→3 with the USD line constant → discount does not change.
+- **Violation signal:** Discount > 10% × USD subtotal, or discount equals `(USD_subtotal + PTS_qty × PTS_listPrice) × 0.10` (PTS value folded into the base at 1:1). This is the VCST-5101 Bug-1 symptom.
+- **Agents:** qa-frontend-expert (cart totals), qa-backend-expert (promotion engine API)
+- **Source:** vc-module-x-cart PR #120 `CartMappingProfile.cs` — `CartAggregate → PromotionEvaluationContext` iterates `CartCurrencySelectedLineItems` ("Tax and Promotion are computed only on primary-currency lines"). Note: the per-line loop is filtered, but the cart-subtotal `%`-coupon evaluates against `promoEvalcontext.CartTotal = Cart.SubTotal` — the suspected leak site (BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md). Suite: `050b4` GQL-MC-006.
+- **Promoted:** 2026-06-09.
+
+### BL-LOY-002: Mixed Cart — `addItem(itemCurrencyCode)` pins the line currency; no cross-currency merge `[P1-data]`
+- **Rule:** When `addItem` is called with a non-null `itemCurrencyCode`, the resulting `LineItem.Currency` MUST equal `itemCurrencyCode` and the cart-product key MUST be `{productId}:{itemCurrencyCode}`. Adding the same `productId` at two different currencies MUST produce two separate line items — never a merged/quantity-summed line. (This is the Mixed Cart counterpart to BL-CART-007, which merges same-SKU adds in a single currency.)
+- **Verify:** `addItem(productId=X, itemCurrencyCode="PTS")` then `addItem(productId=X, itemCurrencyCode=cart.currency)` → assert two distinct line items for `X` with different `currencyCode`.
+- **Violation signal:** One line item for `X` with doubled quantity; cross-currency dedup collapses the two adds.
+- **Agents:** qa-backend-expert (addItem mutation)
+- **Source:** vc-module-x-cart PR #120 `CartAggregate.cs` — cart-product key / find-existing-line matches on productId AND currency. Suite: `050b4` GQL-MC-001/005.
+- **Promoted:** 2026-06-09.
+
+### BL-LOY-003: Mixed Cart — `cartTotals` exposes one entry per distinct line currency `[P1-data]`
+- **Rule:** `cart.cartTotals[]` MUST contain exactly one entry per distinct currency present among the cart's line items. The entry with `isDefaultTotalCurrency = true` MUST correspond to `cart.currency`. Each entry's `subTotal`/`discountTotal`/`taxTotal`/`total` reflect ONLY that currency's lines. A primary-currency-only cart → exactly one entry.
+- **Verify:** Mixed cart (USD + PTS) → query `cartTotals { isDefaultTotalCurrency total { currency { code } } subTotal { amount } }` → assert exactly 2 entries; the default entry's currency = cart currency; each `subTotal` = that currency's lines' sum.
+- **Violation signal:** Single entry on a mixed cart (grouping broken); zero or multiple `isDefaultTotalCurrency = true` entries; a block's totals include other-currency values.
+- **Agents:** qa-backend-expert (xAPI), qa-frontend-expert (split-by-currency summary)
+- **Source:** vc-module-x-cart PR #120 `CartType.cartTotals` + vc-module-cart PR #188 `DefaultShoppingCartTotalsCalculator` (`cartsByCurrency`). `CartTotalType` = `{ isDefaultTotalCurrency, total, subTotal, taxTotal, discountTotal }`. Suite: `050b4` GQL-MC-002, `CRX-GQL-096`.
+- **Promoted:** 2026-06-09.
+
+### BL-LOY-004: Mixed Cart — loyalty lines excluded from the promotion context even when selected for checkout `[P0-revenue]`
+- **Rule:** A loyalty-currency line with `selectedForCheckout = true` MUST NOT appear in the promotion evaluation context's entries, and its price MUST NOT contribute to the discount base. This holds for every reward type (percentage, fixed amount, free shipping, gift). Selecting a PTS line for checkout never makes it eligible for a primary-currency promotion.
+- **Verify:** Select a PTS line for checkout; apply a 100% subtotal coupon → USD lines receive a 100% discount, the PTS price is unchanged, and no discount line appears on the PTS item.
+- **Violation signal:** PTS item is discounted; or the USD total discount exceeds the USD subtotal because the PTS line entered the base.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** vc-module-x-cart PR #120 `CartMappingProfile.cs` (currency-filtered loop) + `CartAggregate.EvaluatePromotionsAsync` gate `CartCurrencySelectedLineItems.Any()`. Complements BL-LOY-001.
+- **Promoted:** 2026-06-09.
+
+### BL-LOY-005: Mixed Cart — a loyalty-currency line shows no "earn points" indicator `[P2-ux]`
+- **Rule:** When loyalty points are computed for a line item, if `lineItem.Currency == Loyalty.Currency` (the store's configured points currency), the returned `loyaltyPoints` MUST be zero or null. Computing points-on-points from a points-priced item is semantically invalid and MUST NOT be displayed.
+- **Verify:** Mode "Mixed Cart", `Loyalty.Currency = "PTS"`; add a PTS line → query `cart.items { loyaltyPoints { amount } }` → assert the PTS line returns null or 0.
+- **Violation signal:** A PTS line returns a non-zero `loyaltyPoints` value (suggests earning points on a points purchase).
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** vc-module-loyalty `LineItemTypeHook.CalculatePoints(x.ExtendedPrice, x.ProductId)` has no currency guard; `LoyaltyPointsCalculator` resolves `PointsCurrency` from the `Loyalty.Currency` setting.
+- **Promoted:** 2026-06-09.
+
+### BL-LOY-006: Mixed Cart — currency switch converts primary lines, preserves loyalty lines `[P1-data]`
+- **Rule:** On a cart-currency change in Mixed Cart mode, items whose currency = the PREVIOUS cart currency MUST be converted to the new cart currency; items in any other currency (e.g. PTS loyalty) MUST retain their original currency. No line item is lost or duplicated. This is the Mixed Cart refinement of BL-CART-004.
+- **Verify:** Mixed cart USD + PTS, `cart.currency = USD`; `changeCartCurrency → EUR` → USD items now EUR (EUR pricing), PTS items still PTS at original prices, item count unchanged.
+- **Violation signal:** PTS items disappear, are duplicated, or are switched to the new base currency on a currency change.
+- **Agents:** qa-backend-expert
+- **Source:** vc-module-x-cart PR #120 `ChangeCartCurrencyCommandHandler.ResolveTargetCurrency` — `itemCurrencyCode.EqualsIgnoreCase(current.Cart.Currency) ? newCart.Currency : current.GetCurrencyByCode(itemCurrencyCode)`. See BL-CART-004 (amended).
+- **Promoted:** 2026-06-09.
 
 ---
 
