@@ -25,3 +25,5 @@ Files (2): `src/VirtoCommerce.Platform.Web/Controllers/Api/ModulesController.cs`
 | G7 human review | PR open, NOT merged. JIRA: In review |
 
 **Confidence:** HIGH. **Token preflight note:** `GITHUB_FIX_BUGS_TOKEN` had a stray inline `#(expires …)` comment glued to the value (broke auth); stripped to its own comment line in `.env.local`.
+
+**CLA fix:** original commit was authored by `Claude QA Auto-Fix <noreply@anthropic.com>` (login `claude`), so CLA Assistant waited on an identity the human couldn't sign for. Re-authored as `Elena Mutykova <elena.mutykova@virtoworks.com>` (→ `Lenajava1`, Claude kept as `Co-Authored-By`), force-pushed (`23c309b` → `7056057`). CLA re-evaluated → **signed/success**. **Follow-up:** update `fullstack-backend` / `ci/agents/fix-backend-agent.md` to author commits as the human + Claude co-author, so future auto-fix PRs don't hit this.

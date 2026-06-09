@@ -615,8 +615,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 44,
-      "estimatedMinutes": 32,
+      "testCount": 47,
+      "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
         "cart",
@@ -1169,8 +1169,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 17,
-      "estimatedMinutes": 14,
+      "testCount": 19,
+      "estimatedMinutes": 16,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",
@@ -1229,8 +1229,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 20,
-      "estimatedMinutes": 17,
+      "testCount": 24,
+      "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
         "graphql",

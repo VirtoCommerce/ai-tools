@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-06-04)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-06-09)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -349,11 +349,11 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 
 ### CartType
 
-Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `isAnonymous`, `customerId`, `customerName`, `organizationId`, `organizationName`, `isRecuring`, `comment`, `purchaseOrderNumber`, `checkoutId`, `volumetricWeight`, `weightUnit`, `weight`, `total`, `subTotal`, `subTotalWithTax`, `extendedPriceTotal`, `extendedPriceTotalWithTax`, `currency`, `taxTotal`, `taxPercentRate`, `taxType`, `taxDetails`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `shippingPrice`, `shippingPriceWithTax`, `shippingTotal`, `shippingTotalWithTax`, `shipments`, `availableShippingMethods`, `paymentPrice`, `paymentPriceWithTax`, `paymentTotal`, `paymentTotalWithTax`, `payments`, `availablePaymentMethods`, `handlingTotal`, `handlingTotalWithTax`, `discountTotal`, `discountTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `discounts`, `addresses`, `gifts`, `availableGifts`, `items`, `itemsCount`, `itemsQuantity`, `coupons`, `dynamicProperties`, `validationErrors`, `type`, `warnings`
+Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `isAnonymous`, `customerId`, `customerName`, `organizationId`, `organizationName`, `isRecuring`, `comment`, `purchaseOrderNumber`, `checkoutId`, `volumetricWeight`, `weightUnit`, `weight`, `total`, `subTotal`, `subTotalWithTax`, `extendedPriceTotal`, `extendedPriceTotalWithTax`, `currency`, `taxTotal`, `taxPercentRate`, `taxType`, `taxDetails`, `fee`, `feeWithTax`, `feeTotal`, `feeTotalWithTax`, `shippingPrice`, `shippingPriceWithTax`, `shippingTotal`, `shippingTotalWithTax`, `shipments`, `availableShippingMethods`, `paymentPrice`, `paymentPriceWithTax`, `paymentTotal`, `paymentTotalWithTax`, `payments`, `availablePaymentMethods`, `handlingTotal`, `handlingTotalWithTax`, `discountTotal`, `discountTotalWithTax`, `subTotalDiscount`, `subTotalDiscountWithTax`, `discounts`, `addresses`, `gifts`, `availableGifts`, `items`, `itemsCount`, `itemsQuantity`, `coupons`, `dynamicProperties`, `validationErrors`, `type`, `warnings`, `cartTotals`
 
 ### LineItemType
 
-Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`, `loyaltyPoints`
+Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `currencyCode`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`, `loyaltyPoints`
 
 ### CustomerOrderType
 
@@ -445,7 +445,7 @@ Fields: `key`, `value`
 
 ### InputAddItemType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `productId: String (required)`, `quantity: Int (required)`, `price: Decimal`, `comment: String`, `dynamicProperties: InputDynamicPropertyValueType`, `configurationSections: ConfigurationSectionInput`, `createdDate: DateTime`
+Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `productId: String (required)`, `quantity: Int (required)`, `price: Decimal`, `itemCurrencyCode: String`, `comment: String`, `dynamicProperties: InputDynamicPropertyValueType`, `configurationSections: ConfigurationSectionInput`, `createdDate: DateTime`
 
 ### InputRemoveItemType
 

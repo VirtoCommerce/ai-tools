@@ -28,6 +28,7 @@
  */
 
 import { config as loadDotenv } from "dotenv";
+import { resolveTestEnv } from "./lib/resolve-test-env.js";
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join, resolve, basename } from "path";
 import {
@@ -39,7 +40,13 @@ import {
   ValidationError,
 } from "./lib/graphql-validator.js";
 
-loadDotenv();
+// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
+// Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which does
+// not exist in this repo, so `--refresh` introspection would see no BACK_URL.
+const _TEST_ENV = resolveTestEnv("vcst");
+loadDotenv({ path: ".env.defaults" });
+loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
+loadDotenv({ path: ".env.local", override: true });
 
 const ROOT = resolve(process.cwd());
 const FIXTURES_DIR = join(ROOT, "test-data", "graphql");

@@ -1,0 +1,41 @@
+{
+  "runId": "MONITOR-2026-06-09-0741",
+  "date": "2026-06-09T07:41:52.000Z",
+  "env": "vcst",
+  "layers": ["backend", "frontend"],
+  "windowMinutes": 1440,
+  "source": "azure-mcp:monitor_resource_log_query (AAD)",
+  "counts": {
+    "observed": 18,
+    "new": 13,
+    "spiking": 1,
+    "seenStable": 5,
+    "triaged": 13,
+    "deferred": 0,
+    "confirmed": 0,
+    "needsReview": 3,
+    "dismissed": 15
+  },
+  "confirmed": [],
+  "needsReview": [
+    { "severity": "P2", "layer": "frontend", "signature": "Theme context is missing. (+3 cascade TypeErrors, Cart/SignIn)", "verdict": "live-verified TRANSIENT — watch" },
+    { "severity": "P2", "layer": "backend", "signature": "500 POST Security/Create", "verdict": "not reproduced; payload-only, withheld" },
+    { "severity": "P3", "layer": "backend", "signature": "500 POST MarketingModulePromotion/AddCoupons", "verdict": "single occurrence; likely test payload" }
+  ],
+  "dismissed": [
+    { "class": "NOISE", "signature": "TypeError: Failed to fetch dynamically imported module (localhost:3000 vite)", "oracle": "developer local dev-session telemetry leak" },
+    { "class": "NOISE", "signature": "ApolloError: Failed to fetch", "oracle": "prior-run noise 621b3f00" },
+    { "class": "KNOWN_ISSUE", "signature": "500 POST graphql/ + AuthorizationError (anonymous)", "oracle": "auth-rejection path, dup da047d" },
+    { "class": "FILED", "signature": "HTTP fcm.googleapis.com 404 x157", "oracle": "VCST-5210; raw spike = 24h window artifact" },
+    { "class": "TRANSIENT", "signature": "graphql/GetPageContext + InitializeApplication + SearchIdsNoCacheAsync 500s", "oracle": "live-verified 200 now; deploy burst" },
+    { "class": "TRANSIENT", "signature": "SQL vcst-qa-platform_restored connect-fail x5", "oracle": "cold-start warmup; infra" },
+    { "class": "TRANSIENT", "signature": "HTTP vcst-qa.govirto.com 404 (wss pushNotificationHub)", "oracle": "websocket reconnect" },
+    { "class": "TRANSIENT", "signature": "essearch 404 x1 / browser 500 POST /graphql Cart x3", "oracle": "prior-run transient" }
+  ],
+  "liveRepro": [
+    { "target": "storefront theme/store-settings context (home, /cart, /signin)", "verdict": "TRANSIENT", "detail": "not reproduced 07:38; InitializeApplication/GetPageContext=200, theme renders" }
+  ],
+  "jiraFiled": false,
+  "fixAttempted": false,
+  "fingerprintStore": { "version": 2, "entries": 27, "migratedFromV1": true }
+}
