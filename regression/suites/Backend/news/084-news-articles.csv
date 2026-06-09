@@ -1,0 +1,257 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,"""Automation_Status"""
+NEWS-001,"""""""News Module Blade Opens and Lists Articles""""""","""""""News Admin > Module Load""""""",Critical,BL-CROSS-003,,"""""""Admin logged in (BSM-001 passed); vc-news module installed""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] vc-news embedded app (iframe) loads
+[ACT] observe article list, sidebar filters and toolbar""""""","""""""[BLADE] 'Articles: All' region visible
+[DOM] sidebar filters present: Drafts, Scheduled, Published, Archived, All
+[DOM] toolbar buttons present: Refresh, Add, Delete
+[GRID] list grid renders columns: Name, Store, Is published, Publish date, Is archived, Archive date
+[GRID] pagination control present (e.g. '1-20 of N')""""""","""""""[API] POST {{back_url}}/api/news/search (body: storeId={{store}}, take=5, skip=0) -> 200 with totalCount >= 0 and results array
+[CONSOLE] no console errors (no TypeError/ReferenceError/uncaught) after app load""""""","""""""Embedded app iframe blank or 404, app fails to mount, grid renders Angular/Vue error, /api/news/search returns 404 (module not installed)""""""",none,"""""""Suite 078 BSM-112; module vc-news; /api/news""""""","""Automated"""
+NEWS-002,"""""""Create Article With Required Fields and Verify in API""""""","""""""News Admin > Create""""""",Critical,BL-CROSS-001,ECL-2.1,"""""""Admin logged in; News module open (NEWS-001 passed)""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click 'Add'
+[WAIT] Article create blade opens
+[ACT] fill Name = {{name}}
+[ACT] select Store = {{store}}
+[ACT] select Publish scope = Anonymous
+[ACT] click 'Save'
+[WAIT] save completes ('Has unsaved changes' alert clears)""""""","""""""[ALERT] 'Has unsaved changes' indicator disappears after Save
+[DOM] full article editor renders post-save (Content / Metadata / SEO sections appear)
+[GRID] new article {{name}} appears in list (search by name returns 1 row, Store={{store}})""""""","""""""[API] POST {{back_url}}/api/news -> 200; capture response id -> NEWS_ID
+[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> 200 with name={{name}}, storeId={{store}}, publishScope=Anonymous
+[CONSOLE] no console errors after Save""""""","""""""Save returns error on valid required input, article absent from /api/news/search after save, POST /api/news non-200, editor does not expand after create""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""Suite 078 BSM-112; /api/news""""""","""Automated"""
+NEWS-003,"""""""Required-Field Validation Blocks Save""""""","""""""News Admin > Create""""""",High,,ECL-10.2,"""""""Admin logged in; News module open""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click 'Add'
+[WAIT] create blade opens
+[ACT] click 'Save' with Name, Store and Publish scope all empty""""""","""""""[DOM] required-field markers (*) shown on Name, Store, Publish scope
+[STATE] article is NOT persisted (no success toast / list count unchanged)
+[STATE] blade remains on the create form""""""","""""""[API] no successful POST {{back_url}}/api/news (200) is issued for the empty form
+[CONSOLE] no uncaught exceptions on Save attempt""""""","""""""Empty form persists an article, POST /api/news fires and returns 200 for empty required fields, app crashes on invalid Save""""""","""""""If an article was unexpectedly created, DELETE it via {{back_url}}/api/news?ids=<id>""""""","""""""known gap: no explicit inline validation message observed (only * markers) — see session notes""""""","""Semi-Automated"""
+NEWS-004,"""""""Edit Localized Content (Title, Title-in-list, Content) Persists""""""","""""""News Admin > Edit""""""",High,,ECL-2.1,"""""""An editable article exists (create via NEWS-002 or live-discover first article)""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create or open an article (Name={{name}}, Store={{store}}, scope=Anonymous)
+[ACT] expand 'Content' section
+[ACT] fill Title (en-US) = 'QA edit {{TIMESTAMP}}'
+[ACT] click 'copy from title' (Title in list)
+[ACT] type body text in Content markdown editor
+[ACT] click 'Save'
+[WAIT] save completes""""""","""""""[FIELD] Title in list equals Title after 'copy from title'
+[ALERT] unsaved-changes indicator clears after Save
+[EDITOR] Content markdown editor retains typed body""""""","""""""[API] PUT {{back_url}}/api/news -> 200; capture article id -> NEWS_ID
+[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> localizedContents[0].title = 'QA edit {{TIMESTAMP}}', listTitle equals title, content is non-empty
+[CONSOLE] no console errors after Save""""""","""""""PUT /api/news non-200, edited title/content not present in localizedContents after reload, 'copy from title' does not populate list field""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""VC-CMS-002; /api/news""""""","""Automated"""
+NEWS-005,"""""""Edit SEO Fields Persists in seoInfos""""""","""""""News Admin > Edit""""""",High,,ECL-2.1,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}; slug=agent-test-news-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create or open an article ({{name}}, {{store}}, Anonymous)
+[ACT] expand 'SEO' section
+[ACT] fill URL slug (en-US) = {{slug}}
+[ACT] fill Page title = 'QA SEO {{TIMESTAMP}}'
+[ACT] fill Meta description = 'QA meta {{TIMESTAMP}}'
+[ACT] click 'Save'""""""","""""""[FIELD] SEO inputs retain entered values after Save
+[ALERT] unsaved-changes indicator clears""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> seoInfos[0].semanticUrl={{slug}}, pageTitle and metaDescription match entered values
+[CONSOLE] no console errors after Save""""""","""""""SEO values not present in seoInfos after reload, slug not persisted, save error""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""VC-CMS-001; /api/news""""""","""Automated"""
+NEWS-006,"""""""'Copy from title' and 'Copy from summary' Populate List Fields""""""","""""""News Admin > Edit""""""",Medium,,,"""""""An editable article with Title and Summary filled""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open an article, expand Content
+[ACT] enter Title and Summary text
+[ACT] click 'copy from title'
+[ACT] click 'copy from summary'""""""","""""""[FIELD] Title (in list) equals Title
+[FIELD] Summary (in list) equals Summary""""""","""""""[CONSOLE] no console errors after copy actions""""""",""""""", copy buttons do nothing, list fields remain empty after copy""""""",none,"""""""/api/news""""""","""Automated"""
+NEWS-007,Publish Article (Title+Content → Publish button) sets isPublished → Published,News Admin > Lifecycle,High,,ECL-2.1,Admin logged in; News module open. NOTE: Save persists localized content only when BOTH Title and Content (en-US) are filled — Content alone leaves Save disabled. The 'Publish' button appears only after content is saved (newsArticleCanPublish).,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create article ({{name}}, {{store}}, Anonymous); capture id -> NEWS_ID
+[ACT] expand 'Content'; fill Title (en-US) AND type body into Content (en-US) — Title is required for Save to enable
+[ACT] click 'Save'
+[ASSERT] GET {{back_url}}/api/news/{{NEWS_ID}} -> localizedContents[0].content is non-empty (DOM text alone is NOT proof on this build)
+[ASSERT] a 'Publish' button now appears in the toolbar
+[ACT] leave Publish date empty (or set a PAST date)
+[ACT] click 'Publish'
+[ACT] open 'Published' filter and search {{name}}","[TOOLBAR] 'Publish' hidden for an empty article; appears only after Title+Content are saved
+[GRID] after Publish the article is under 'Published' (publishDate empty or past) and not under 'Drafts'","[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> isPublished=true; publishDate null or <= now
+[API] isPublished is server-managed — cannot be set via raw PUT (HTTP 500); only the Publish action sets it
+[CONSOLE] no console errors after Save/Publish",Save stays disabled or content not persisted when only Content (no Title) is filled; Publish button missing after content saved; Publish does not set isPublished=true; published article absent from 'Published'; raw PUT can set isPublished,[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},NewsArticleSearchService; useNewsArticleDetails.newsArticleCanPublish; build quirk: Title required to enable Save,Automated
+NEWS-008,"""""""Archive Article Sets isArchived and Moves to Archived Filter""""""","""""""News Admin > Lifecycle""""""",High,,,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create/open article ({{name}}, {{store}}, Anonymous)
+[ACT] click 'Archive' in the article toolbar
+[ACT] open 'Archived' filter and search {{name}}""""""","""""""[GRID] article appears under 'Archived' filter
+[GRID] 'Is archived' column shows true for the article
+[GRID] 'Archive date' is set (not 'Not set')""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> isArchived=true, archiveDate is non-null
+[CONSOLE] no console errors after Archive""""""","""""""Archive button no-op, isArchived stays false in API, article not listed under Archived""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""/api/news""""""","""Automated"""
+NEWS-009,"""""""Create Copy Clones Content and Resets Publish State""""""","""""""News Admin > Lifecycle""""""",Medium,,ECL-2.1,"""""""A content-rich source article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open a source article that has Title, Content and SEO
+[ACT] click 'Create copy'
+[WAIT] copy is created
+[ACT] search list for '[COPY]'""""""","""""""[GRID] a new '[COPY] <source name>' article exists
+[STATE] copy opens as a draft (Publish date = Not set)""""""","""""""[API] GET {{back_url}}/api/news/<copyId> -> name starts with '[COPY]', localizedContents content length equals source, storeId/publishScope match source, publishDate=null
+[API] compare seoInfos[0].semanticUrl of copy vs source
+[CONSOLE] no console errors after Create copy
+[NOTE] copy duplicates the source SEO slug verbatim — publishing the copy without changing the slug risks a duplicate-URL collision (candidate defect)""""""","""""""Copy not created, content/SEO not carried over, copy auto-published (publishDate inherited) instead of draft""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids=<copyId>""""""","""""""/api/news; session finding: duplicate SEO slug on clone""""""","""Semi-Automated"""
+NEWS-010,"""""""Delete Single Article With Confirmation""""""","""""""News Admin > Delete""""""",High,BL-CROSS-012,,"""""""A disposable article exists (create one first)""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create article ({{name}}, {{store}}, Anonymous)
+[ACT] select the article row checkbox
+[ACT] click 'Delete'
+[WAIT] confirmation dialog appears
+[ACT] click 'Confirm'""""""","""""""[DIALOG] confirmation 'Are you sure you want to delete ... article?' with Confirm/Cancel
+[GRID] article removed from list after Confirm
+[GRID] search for {{name}} returns 0 rows""""""","""""""[API] POST {{back_url}}/api/news/search (keyword={{name}}) -> totalCount=0 after delete
+[CONSOLE] no console errors after Delete""""""","""""""No confirmation dialog shown, article still present after Confirm, delete error toast""""""",none,"""""""/api/news; DELETE returns 204""""""","""Automated"""
+NEWS-011,"""""""Bulk Delete Multiple Articles With Confirmation""""""","""""""News Admin > Delete""""""",Medium,BL-CROSS-012,,"""""""Two or more disposable articles exist""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create 2 articles with AGENT-TEST- prefix
+[ACT] filter list to AGENT-TEST and select both rows
+[ACT] click 'Delete'
+[ACT] confirm 'delete 2 articles?'""""""","""""""[DIALOG] confirmation states the correct count (2 articles)
+[GRID] both rows removed after Confirm""""""","""""""[API] POST {{back_url}}/api/news/search (keyword=AGENT-TEST) -> totalCount=0 after delete
+[CONSOLE] no console errors after bulk delete""""""","""""""Confirmation count wrong, partial delete (one row remains), error on multi-delete""""""",none,"""""""/api/news""""""","""Automated"""
+NEWS-012,"""""""List Keyword Search Filters Results""""""","""""""News Admin > List""""""",Medium,,,"""""""At least one article whose name contains a known token exists""""""","""""""admin_url={{ADMIN_URL}}; token=AGENT-TEST""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] type {{token}} in 'Search keywords'
+[WAIT] list reloads""""""","""""""[GRID] only rows whose Name matches {{token}} are shown
+[GRID] result count badge updates (e.g. '1-1 of 1')
+[DOM] 'Clear' affordance appears and resets the filter""""""","""""""[API] POST {{back_url}}/api/news/search (keyword={{token}}) -> results all match token
+[CONSOLE] no console errors after search""""""","""""""Search does not filter, unrelated rows remain, clear does not reset""""""",none,"""""""/api/news/search""""""","""Automated"""
+NEWS-013,Status Filters Return Correct Subsets (Draft/Scheduled/Published/Archived),News Admin > List,Medium,,,"Articles exist in mixed states: a Draft (isPublished=false), a Published (isPublished=true + past/empty date), a Scheduled (isPublished=true + future date), an Archived (isArchived=true), and ideally one published-then-archived article",admin_url={{ADMIN_URL}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click each sidebar filter: Drafts, Scheduled, Published, Archived, All","[GRID] 'Drafts' = NOT published and not archived (isPublished=false && isArchived=false) — keyed on isPublished, independent of publish date
+[GRID] 'Scheduled' = isPublished=true && publishDate>now
+[GRID] 'Published' = isPublished=true && (publishDate==null || publishDate<=now) — NOTE: does NOT exclude archived; a published-then-archived article appears under BOTH 'Published' AND 'Archived' (overlap is by design)
+[GRID] 'Archived' = isArchived=true (&& archiveDate null or <= now)
+[GRID] 'All' shows the full set; count(All) >= each subset (Published and Archived may overlap)","[CONSOLE] no console errors when switching filters
+[NOTE] bucket logic per NewsArticleSearchService.BuildStatusSearchCriteria (computed at query time)",A filter shows rows from another state; Drafts judged by publish date instead of isPublished; Scheduled drops valid future-dated published articles; filter switch throws,none,NewsArticleSearchService.cs (Published has no !IsArchived clause),Automated
+NEWS-014,"""""""Publish Scope Anonymous vs Authorized Persists""""""","""""""News Admin > Fields""""""",Medium,,,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create article ({{name}}, {{store}})
+[ACT] set Publish scope = Authorized, Save
+[ACT] reopen article and read Publish scope""""""","""""""[FIELD] Publish scope shows 'Authorized' after reload""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> publishScope=Authorized
+[CONSOLE] no console errors after Save""""""","""""""Scope reverts to Anonymous or empty after save, value not persisted in API""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""/api/news""""""","""Automated"""
+NEWS-015,"""""""Add Second-Language Content via Language Switcher""""""","""""""News Admin > Localization""""""",Medium,,ECL-2.1,"""""""Store has more than one language configured""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create/open article ({{name}}, {{store}}, Anonymous)
+[ACT] fill Title (en-US)
+[ACT] switch language to a second locale via the language switcher
+[ACT] fill Title for the second locale
+[ACT] Save""""""","""""""[SWITCHER] language switcher lists configured store languages
+[FIELD] each locale retains its own Title value when toggling""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> localizedContents has an entry per filled languageCode with the correct per-locale title
+[CONSOLE] no console errors after Save""""""","""""""Second-locale content overwrites en-US, only one localizedContents entry saved, switcher missing locales""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""/api/news""""""","""Semi-Automated"""
+NEWS-016,"""""""Metadata (Author, Tags) Persists""""""","""""""News Admin > Fields""""""",Medium,,,"""""""An editable article exists; at least one contact exists for Author""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{store}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create/open article ({{name}}, {{store}}, Anonymous)
+[ACT] expand 'Metadata'
+[ACT] select an Author
+[ACT] add a tag value (en-US)
+[ACT] Save""""""","""""""[FIELD] Author and Tags retain values after reload""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> authorId is non-null and localizedTags contains the entered tag
+[CONSOLE] no console errors after Save""""""","""""""Author/tags not persisted, author dropdown empty, save error""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""/api/news""""""","""Automated"""
+NEWS-017,"""""""Published Article Is Exposed via xAPI newsArticles""""""","""""""News Admin > Cross-Layer""""""",Medium,BL-GQL-002,ECL-2.1,"""""""A published, active, anonymous-scope article exists (NEWS-007 passed)""""""","""""""back_url={{BACK_URL}}; store={{store}}""""""","""""""[GQL] POST {{back_url}}/graphql with query: newsArticles(storeId: \""""{{store}}\"""", languageCode: \""""en-US\"""", first: 10) { totalCount items { id title publishDate } }""""""","""""""[GQL] response has no errors[] and data.newsArticles is non-null
+[GQL] totalCount >= 1; items carry id, title and publishDate""""""","""""""[API] cross-check: the admin article id created in NEWS-007 corresponds to a newsArticles item (same title)
+[CONSOLE] N/A (API-only)""""""","""""""newsArticles returns errors[] or HTTP 500, published admin article absent from xAPI result, items missing publishDate""""""",none,"""""""xAPI Query.newsArticles; CMS-GQL-127/128/129 (050f-graphql-xcms.csv)""""""","""Automated"""
+NEWS-018,"""""""News Module Reachable from Admin Navigation (More → News)""""""","""""""News Admin > Module Load""""""",High,BL-CROSS-003,,"""""""Admin logged in (BSM-001 passed); vc-news registered as an embedded app""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace
+[WAIT] admin workspace dashboard loads
+[ASSERT] 'News' is NOT a top-level navigation item
+[ACT] click 'More' in the left navigation
+[WAIT] 'More' menu expands
+[ACT] click 'News'
+[WAIT] embedded app loads""""""","""""""[DOM] 'News' item is listed under the 'More' menu
+[ROUTE] URL becomes {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[BLADE] 'Articles: All' list renders (module mounted from menu navigation)""""""","""""""[CONSOLE] no console errors after navigating More → News""""""","""""""'News' absent from the 'More' menu, clicking News 404s or shows a blank iframe, route does not change to embedded-app/vc-news""""""",none,"""""""Suite 078 BSM-112; vc-news embedded app registration""""""",Automated
+NEWS-019,"""""""List Column Sorting (Name, Publish date)""""""","""""""News Admin > List""""""",Medium,,,"""""""At least 2 articles exist in the list (e.g. NEWS-ART-1 plus seed data)""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] article list renders
+[ACT] click the 'Name' column header
+[WAIT] grid re-sorts
+[ACT] click the 'Name' column header again (toggle direction)
+[ACT] click the 'Publish date' column header
+[WAIT] grid re-sorts by date""""""","""""""[GRID] first click sorts Name ascending (A→Z); the column shows an active ascending sort indicator
+[GRID] second click toggles to descending (Z→A); indicator flips
+[GRID] sorting by 'Publish date' orders rows chronologically; only one column shows an active sort indicator at a time
+[GRID] row count is unchanged by sorting (sort reorders, does not filter)""""""","""""""[CONSOLE] no console errors after each sort toggle""""""","""""""Clicking a column header does nothing, row order does not change, sort indicator stuck or shown on multiple columns simultaneously, sorting drops/duplicates rows""""""",none,"""""""Suite 084 NEWS-001; vc-news article list grid""""""",Automated
+NEWS-020,"""""""List Select-All Across Pages (Select all N items)""""""","""""""News Admin > List""""""",Medium,BL-CROSS-012,,"""""""More than one page of articles exists (>1 page, e.g. 51 items across pages)""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] article list renders with pagination (e.g. '1-20 of 51')
+[ACT] click the header (select-all) checkbox
+[WAIT] page rows become selected
+[ASSERT] banner appears: 'All items in this page are selected.' with a 'Select all N items' link
+[ACT] click 'Select all N items'
+[ACT] click 'Delete' to open the confirmation (DO NOT confirm)
+[ACT] click 'Cancel' in the confirmation dialog
+[ACT] click the header checkbox again to clear the selection""""""","""""""[GRID] header checkbox selects every row on the current page only
+[BANNER] cross-page banner shows the correct total (matches '... of N' pagination total)
+[SELECT] 'Select all N items' extends selection to all items across all pages (selection count = N)
+[DIALOG] Delete confirmation reflects the full cross-page count ('delete N articles?')
+[STATE] Cancel aborts with no deletion; toggling header checkbox clears the selection and hides the banner""""""","""""""[CONSOLE] no console errors during select-all / clear""""""","""""""Banner does not appear after page select-all, 'Select all N' count wrong or does not extend beyond the current page, Delete confirmation count mismatches the selection, Cancel still deletes, selection cannot be cleared""""""","""""""none — NON-DESTRUCTIVE: confirmation is cancelled, no articles are deleted (do not Confirm — would wipe all store news)""""""","""""""Suite 084 NEWS-011 (bulk delete); vc-news list grid""""""",Semi-Automated
+NEWS-021,"""""""List Show/Hide Columns (visibility, Show All, Reset)""""""","""""""News Admin > List""""""",Low,,,"""""""Article list rendered (NEWS-001)""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] article list renders
+[ACT] click the 'Show/Hide Columns' control in the grid header
+[WAIT] column-visibility popover opens
+[ACT] uncheck a visible column (e.g. 'Store')
+[ACT] check 'Author Id' (hidden by default)
+[ACT] click 'Show All'
+[ACT] reopen the popover and click 'Reset'""""""","""""""[POPOVER] lists all columns with checkboxes reflecting current visibility: Name, Store, Is published, Publish date, Is archived, Archive date (checked) and Author Id (unchecked)
+[GRID] unchecking 'Store' removes that column from the grid; checking 'Author Id' adds it
+[GRID] 'Show All' makes every column (including Author Id) visible
+[GRID] 'Reset' restores the default column set (Author Id hidden again, defaults checked)""""""","""""""[CONSOLE] no console errors when toggling columns / Show All / Reset""""""","""""""Show/Hide control missing, toggling a checkbox does not add/remove the grid column, Show All or Reset is a no-op, default set not restored by Reset""""""",none,"""""""Suite 084 NEWS-001; vc-news list grid column manager""""""",Automated
+NEWS-022,List Pagination Navigation,"""""""News Admin > List""""""",Medium,,,"""""""More than one page of articles exists (e.g. 51 across 3 pages)""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[WAIT] list renders showing '1-20 of N' with pagination
+[ACT] click 'Next page'
+[ACT] click 'Last page'
+[ACT] click 'First page'
+[ACT] click page number '2'""""""","""""""[GRID] each navigation shows a different row set (no duplicate rows across pages)
+[GRID] active-page indicator updates on every navigation
+[GRID] First/Previous disabled on page 1; Next/Last disabled on the last page
+[GRID] total in '1-20 of N' stays consistent across pages""""""","""""""[CONSOLE] no console errors during pagination""""""","""""""Pagination controls absent with >1 page, same rows across pages, active-page indicator stuck, disabled-states wrong""""""",none,"""""""Suite 078 BSM-111; NEWS-001""""""",Automated
+NEWS-023,List Refresh Reflects Backend Changes,"""""""News Admin > List""""""",Low,,,"""""""Admin logged in; News module open""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}}""""""","""""""[REST-OP] POST {{back_url}}/api/news (name={{name}}, storeId={{store}}, publishScope=Anonymous); capture id -> NEWS_ID
+[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click 'Refresh' in the toolbar
+[ACT] search {{name}}""""""","""""""[GRID] after Refresh the API-created article {{name}} appears in the list""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> 200 (article exists)
+[CONSOLE] no console errors after Refresh""""""","""""""Refresh does not reload data, newly created article missing after refresh, spinner hangs""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""NEWS-001""""""",Automated
+NEWS-024,List Empty State (no search results),"""""""News Admin > List""""""",Medium,,ECL-10.2,"""""""Article list rendered""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; token=ZZZ-no-such-article-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] type {{token}} in 'Search keywords'
+[WAIT] list reloads""""""","""""""[GRID] zero rows displayed
+[DOM] an empty-state message is shown (not a blank or broken grid)
+[GRID] count shows 0; Clear resets to the full list""""""","""""""[API] POST {{back_url}}/api/news/search (keyword={{token}}) -> 200 totalCount=0
+[CONSOLE] no console errors on empty result""""""","""""""Grid throws on empty result, no empty-state messaging, count not zero, Clear does not restore list""""""",none,"""""""NEWS-012""""""",Automated
+NEWS-025,Sidebar Status Filter Active State and Counts,"""""""News Admin > List""""""",Low,,,"""""""Articles exist in multiple states""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] click each sidebar filter in turn: Drafts, Scheduled, Published, Archived, All""""""","""""""[DOM] the clicked filter shows an active/selected state; only one active at a time
+[GRID] if count badges are shown, each matches the number of rows that filter returns
+[GRID] 'All' count is >= each individual filter count""""""","""""""[CONSOLE] no console errors switching filters""""""","""""""No active-state indication, counts (if shown) inconsistent with row totals, filter switch throws""""""",none,"""""""NEWS-013""""""",Automated
+NEWS-026,Editor Reset Discards Unsaved Changes,"""""""News Admin > Edit""""""",Medium,,,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open an article
+[ACT] change Title (en-US) to a new value (do NOT save)
+[ACT] click 'Reset'""""""","""""""[FIELD] Title reverts to the last-saved value
+[ALERT] 'Has unsaved changes' indicator clears after Reset""""""","""""""[API] no PUT {{back_url}}/api/news is issued by Reset (article unchanged server-side)
+[CONSOLE] no console errors after Reset""""""","""""""Reset does not revert fields, unsaved indicator persists, Reset accidentally fires a PUT (saves)""""""",none,"""""""NEWS-004""""""",Automated
+NEWS-027,Unsaved-Changes Guard on Navigate Away,"""""""News Admin > Edit""""""",Medium,,,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open an article and edit a field (do NOT save)
+[ACT] attempt to close the blade or open another article""""""","""""""[DIALOG] an unsaved-changes guard appears before discarding edits
+[STATE] choosing to stay keeps the edits; choosing to leave discards them""""""","""""""[CONSOLE] no console errors on the guard prompt""""""","""""""Navigation discards edits silently with no guard, 'stay' still loses edits, app errors on navigation""""""",none,"""""""NEWS-026""""""",Semi-Automated
+NEWS-028,Content Markdown Editor Toolbar and View Modes,"""""""News Admin > Edit""""""",Medium,VC-CMS-002,,"""""""An editable article exists""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open an article, expand 'Content'
+[ACT] in the Content editor apply: Bold, Heading, Bullet list, Insert link, Insert table
+[ACT] toggle Preview, then Source code, then Side-by-side, then Fullscreen""""""","""""""[EDITOR] each formatting button inserts the corresponding markup
+[EDITOR] Preview renders formatted output; Source shows raw markdown; Side-by-side shows both; Fullscreen expands the editor
+[EDITOR] toggling back returns to the normal editing view""""""","""""""[CONSOLE] no console errors using the toolbar or view toggles""""""","""""""A toolbar button is a no-op, Preview/Source/Fullscreen broken, formatting not reflected in content""""""",none,"""""""NEWS-004; VC-CMS-002""""""",Semi-Automated
+NEWS-029,Close Article Blade Returns to List,"""""""News Admin > Navigation""""""",Low,,,"""""""An article is open in the editor (saved, no pending changes)""""""","""""""admin_url={{ADMIN_URL}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open a saved article
+[ACT] close the article blade via the back/breadcrumb/close control""""""","""""""[BLADE] the article blade closes and focus returns to the 'Articles' list
+[GRID] the list remains rendered and interactive after closing""""""","""""""[CONSOLE] no console errors on blade close""""""","""""""Close control missing or no-op, list not restored after close, app errors on close""""""",none,"""""""NEWS-001""""""",Automated
+NEWS-030,Duplicate SEO Slug Across Articles (negative),"""""""News Admin > SEO""""""",High,VC-CMS-001,ECL-2.1,"""""""At least one existing published article with a known SEO slug exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-dupe-{{TIMESTAMP}}""""""","""""""[REST-OP] GET an existing published article via {{back_url}}/api/news/search then /api/news/{id}; capture seoInfos[0].semanticUrl -> DUPE_SLUG
+[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create a new article ({{name}}, {{store}}, Anonymous)
+[ACT] SEO -> set URL slug = {{DUPE_SLUG}} (same as the existing article)
+[ACT] set Active and Publish date today
+[ACT] click 'Save'""""""","""""""[VALIDATION] the system should reject or warn about the duplicate slug (slug uniqueness per store/language)""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> check whether the duplicate semanticUrl was persisted
+[CONSOLE] no console errors on save
+[NOTE] expected: duplicate slug blocked/warned. Suspected defect (see NEWS-009): save/clone accepts a duplicate slug silently -> storefront URL collision""""""","""""""Duplicate slug saved with no warning AND both articles publish on the same semanticUrl (URL collision) -> file a bug""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""NEWS-009 finding; VC-CMS-001""""""",Semi-Automated
+NEWS-031,Name and Slug Accept Special Characters and Long Values,"""""""News Admin > Validation""""""",Medium,,ECL-10.2,"""""""News module open""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}} (variant: 200+ chars and special chars - ampersand, percent, unicode, emoji)""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create an article with a very long Name (200+ chars) containing special characters (ampersand, percent, unicode, emoji)
+[ACT] SEO -> enter a slug containing spaces, uppercase and special characters
+[ACT] click 'Save'""""""","""""""[FIELD] long Name is accepted or gracefully validated/truncated (no crash)
+[SEO] slug is normalized (lowercased, spaces to hyphens, illegal chars stripped) or validated with a message
+[GRID] the article renders in the list without breaking layout; special chars are escaped (no markup injection)""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> Name persisted consistently; seoInfos semanticUrl normalized
+[CONSOLE] no console errors on save with special input""""""","""""""Save crashes or 500s on special chars, slug stored with spaces/illegal chars, long Name breaks grid layout, unescaped markup in the list (XSS)""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""ECL-10.2""""""",Semi-Automated
+NEWS-032,Published Article with Future Date → Scheduled (auto-returns to Published when date passes),News Admin > Lifecycle,Medium,,ECL-2.1,An article with saved Title+Content that has been Published (isPublished=true) — e.g. via NEWS-007.,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-{{TIMESTAMP}},"[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create article with Title+Content, Save, click 'Publish' (isPublished=true); capture id -> NEWS_ID
+[ACT] Publish settings -> set Publish date to a FUTURE date, then Save. NOTE: changing ONLY the date may leave Save disabled (the datepicker does not mark the form dirty on this build) — touch another field if Save stays disabled.
+[ACT] open 'Scheduled' filter and search {{name}}","[GRID] the published article with a FUTURE publish date appears under 'Scheduled', NOT under 'Published' or 'Drafts'
+[GRID] when the publish date is moved to the past (or the future date passes) the article returns to 'Published' automatically — no re-publish needed","[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> isPublished=true AND publishDate > now while Scheduled
+[CONSOLE] no console errors
+[NOTE] Scheduled = isPublished && publishDate>now; Published = isPublished && (publishDate==null||publishDate<=now). Computed at query time (no background job) — transition is automatic.",Published future-dated article shows as Published (date ignored) or drops to Drafts; Scheduled empty for a published future-dated article; no auto-return to Published when date passes,[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},NewsArticleSearchService; build quirk: date-only change may not enable Save,Semi-Automated
+NEWS-033,Future Archive Date Does Not Archive Until Date Passes,"""""""News Admin > Lifecycle""""""",Medium,,ECL-10.1,"""""""A published article exists""""""","""""""admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; store={{STORE_ID}}; name=AGENT-TEST-News-futarch-{{TIMESTAMP}}""""""","""""""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] create and publish article ({{name}}, {{store}})
+[ACT] Publish settings -> set Archive date to a FUTURE date
+[ACT] click 'Save'""""""","""""""[STATE] the article remains active / not archived while the archive date is in the future
+[GRID] the article is not listed under 'Archived' yet""""""","""""""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> archiveDate is in the future; isArchived=false until the date passes
+[CONSOLE] no console errors after save""""""","""""""Article is archived immediately despite a future archive date, or archive date is not persisted""""""","""""""[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}}""""""","""""""NEWS-008; ECL-10.1""""""",Semi-Automated
+NEWS-034,Unpublish Returns Article to Draft,News Admin > Lifecycle,Medium,,,A Published or Scheduled article exists (isPublished=true) — e.g. via NEWS-007.,admin_url={{ADMIN_URL}}; back_url={{BACK_URL}}; name=AGENT-TEST-News-{{TIMESTAMP}},"""[NAV] {{ADMIN_URL}}/#!/workspace/embedded-app/vc-news
+[ACT] open a published/scheduled article (isPublished=true); capture id -> NEWS_ID
+[ASSERT] an 'Unpublish' button is present in the toolbar
+[ACT] click 'Unpublish'
+[ACT] open 'Drafts' filter and search {{name}}""","""[TOOLBAR] 'Unpublish' is shown only while the article is published
+[GRID] after Unpublish the article appears under 'Drafts' and not under 'Published'/'Scheduled'""","""[API] GET {{back_url}}/api/news/{{NEWS_ID}} -> isPublished=false after Unpublish
+[CONSOLE] no console errors after Unpublish""",Unpublish button missing on a published article; Unpublish does not clear isPublished; article stays in Published/Scheduled,[HTTP] DELETE {{back_url}}/api/news?ids={{NEWS_ID}},useNewsArticleDetails.newsArticleCanUnpublish,Automated
