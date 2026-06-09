@@ -1,0 +1,441 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PUSH-011,xAPI GraphQL — Query Push Messages List (Happy Path),GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push targeted to ORG_USER (member {{ORG_USER_ID}}) as ADMIN, then reads the recipient inbox via xAPI. Store-user token requires storeId (runner sets it from STORE_ID).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push011"", ""shortMessage"": ""AGENT-TEST-push011-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_msg]
+--- READ (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP get_messages]
+  query GetPushMessages($first: Int, $unreadOnly: Boolean, $keyword: String, $sort: String) {
+    pushMessages(first: $first, unreadOnly: $unreadOnly, keyword: $keyword, sort: $sort) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      items {
+        id
+        shortMessage
+        isRead
+        createdDate
+      }
+    }
+  }
+[GQL-VARS get_messages] {""first"": 20, ""unreadOnly"": false}
+[GQL-EXEC get_messages]
+[GQL-CAPTURE get_messages.data.pushMessages.items.0.id → FIRST_MSG_ID]","[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=get_messages] errors[] empty
+[DATA label=get_messages] data.pushMessages.totalCount >= 1
+[DATA label=get_messages] data.pushMessages.items.0.id is non-null
+[DATA label=get_messages] data.pushMessages.items.0.shortMessage is non-null
+[DATA label=get_messages] data.pushMessages.items.0.isRead is non-null
+[DATA label=get_messages] data.pushMessages.items.0.createdDate is non-null","[ROUNDTRIP label=get_messages] response data matches REST GET /api/push-message/{id} for captured FIRST_MSG_ID
+[CONSOLE] no JS errors","errors[] non-empty, totalCount=0 despite sent messages existing, isRead field absent from response items, HTTP 401 (storeId missing from token request)",none — seed is AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-001,Automated
+PUSH-012,xAPI GraphQL — Mark Single Push Message as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces it unread (markAllPushMessagesUnread) so an unread message is guaranteed before marking it read.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push012"", ""shortMessage"": ""AGENT-TEST-push012-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_msg]
+--- READ STATE (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP force_unread]
+  mutation { markAllPushMessagesUnread }
+[GQL-EXEC force_unread]
+[GQL-OP probe_before]
+  query { pushMessages(first: 5, unreadOnly: true) { items { id isRead } } }
+[GQL-EXEC probe_before]
+[GQL-CAPTURE probe_before.data.pushMessages.items.0.id → MSG_ID]
+[GQL-OP mark_read]
+  mutation MarkRead($command: InputMarkPushMessageReadType!) {
+    markPushMessageRead(command: $command)
+  }
+[GQL-VARS mark_read] {""command"": {""messageId"": ""{{MSG_ID}}""}}
+[GQL-EXEC mark_read]
+[GQL-OP read_back]
+  query ReadBack($first: Int) {
+    pushMessages(first: $first, unreadOnly: false) {
+      items { id isRead }
+    }
+  }
+[GQL-VARS read_back] {""first"": 50}
+[GQL-EXEC read_back]","[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=force_unread] errors[] empty
+[ERRORS label=probe_before] errors[] empty
+[DATA label=probe_before] data.pushMessages.items.0.id is non-null
+[ERRORS label=mark_read] errors[] empty
+[DATA label=mark_read] data.markPushMessageRead = true
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.pushMessages.items[?id={{MSG_ID}}].isRead = true","[ROUNDTRIP label=read_back] item with MSG_ID shows isRead=true after mutation
+[CONSOLE] no JS errors","errors[] non-empty on mark_read, markPushMessageRead returns false, isRead remains false in read_back, HTTP 401",none — message stays read (acceptable),COV-2026-06-09-push GAP-001,Automated
+PUSH-013,xAPI GraphQL — Mark Single Push Message as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read (markAllPushMessagesRead) so a read message is guaranteed before flipping it back to unread.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push013"", ""shortMessage"": ""AGENT-TEST-push013-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_msg]
+--- READ STATE (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP seed_read]
+  mutation { markAllPushMessagesRead }
+[GQL-EXEC seed_read]
+[GQL-OP probe_before]
+  query { pushMessages(first: 20, unreadOnly: false) { items { id isRead } } }
+[GQL-EXEC probe_before]
+[GQL-CAPTURE probe_before.data.pushMessages.items[?isRead=true].id → MSG_ID]
+[GQL-OP mark_unread]
+  mutation MarkUnread($command: InputMarkPushMessageUnreadType!) {
+    markPushMessageUnread(command: $command)
+  }
+[GQL-VARS mark_unread] {""command"": {""messageId"": ""{{MSG_ID}}""}}
+[GQL-EXEC mark_unread]
+[GQL-OP read_back]
+  query { pushMessages(first: 20, unreadOnly: true) { items { id isRead } } }
+[GQL-EXEC read_back]","[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=seed_read] errors[] empty
+[ERRORS label=probe_before] errors[] empty
+[DATA label=probe_before] data.pushMessages.items[?isRead=true].id is non-null
+[ERRORS label=mark_unread] errors[] empty
+[DATA label=mark_unread] data.markPushMessageUnread = true
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.pushMessages.items[?id={{MSG_ID}}].isRead = false","[ROUNDTRIP label=read_back] unreadOnly=true query now includes MSG_ID
+[CONSOLE] no JS errors","errors[] non-empty on mark_unread, markPushMessageUnread returns false, MSG_ID absent from unreadOnly=true list after mutation, HTTP 401",none,COV-2026-06-09-push GAP-001,Automated
+PUSH-014,xAPI GraphQL — Mark All Push Messages as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces all unread, marks all read, and verifies unread count drops to 0 while the total list is unchanged (marked, not deleted).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push014"", ""shortMessage"": ""AGENT-TEST-push014-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_msg]
+--- READ STATE (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP seed_unread]
+  mutation { markAllPushMessagesUnread }
+[GQL-EXEC seed_unread]
+[GQL-OP probe_before]
+  query { pushMessages(first: 50, unreadOnly: true) { totalCount items { id } } }
+[GQL-EXEC probe_before]
+[GQL-OP mark_all_read]
+  mutation { markAllPushMessagesRead }
+[GQL-EXEC mark_all_read]
+[GQL-OP read_back]
+  query { pushMessages(first: 50, unreadOnly: true) { totalCount } }
+[GQL-EXEC read_back]
+[GQL-OP verify_all]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount } }
+[GQL-EXEC verify_all]","[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=seed_unread] errors[] empty
+[ERRORS label=probe_before] errors[] empty
+[COUNT label=probe_before] data.pushMessages.totalCount >= 1
+[ERRORS label=mark_all_read] errors[] empty
+[DATA label=mark_all_read] data.markAllPushMessagesRead = true
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.pushMessages.totalCount = 0
+[ERRORS label=verify_all] errors[] empty
+[COUNT label=verify_all] data.pushMessages.totalCount >= 1","[ROUNDTRIP label=read_back] unreadOnly=true returns totalCount=0 after markAllPushMessagesRead
+[ROUNDTRIP label=verify_all] full list (unreadOnly=false) still returns all messages — none deleted
+[CONSOLE] no JS errors","errors[] non-empty on mark_all_read, markAllPushMessagesRead returns false, unreadOnly=true still returns items after bulk mark, messages deleted instead of marked read",none,COV-2026-06-09-push GAP-001,Automated
+PUSH-015,xAPI GraphQL — Mark All Push Messages as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read; markAllPushMessagesUnread must flip everything back to unread so unreadOnly=true returns at least the seeded message.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push015"", ""shortMessage"": ""AGENT-TEST-push015-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_msg]
+--- READ STATE (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP seed_read]
+  mutation { markAllPushMessagesRead }
+[GQL-EXEC seed_read]
+[GQL-OP probe_before]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount } }
+[GQL-EXEC probe_before]
+[GQL-OP mark_all_unread]
+  mutation { markAllPushMessagesUnread }
+[GQL-EXEC mark_all_unread]
+[GQL-OP read_back]
+  query { pushMessages(first: 50, unreadOnly: true) { totalCount } }
+[GQL-EXEC read_back]","[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=seed_read] errors[] empty
+[ERRORS label=probe_before] errors[] empty
+[COUNT label=probe_before] data.pushMessages.totalCount >= 1
+[ERRORS label=mark_all_unread] errors[] empty
+[DATA label=mark_all_unread] data.markAllPushMessagesUnread = true
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.pushMessages.totalCount >= 1","[ROUNDTRIP label=read_back] unreadOnly=true returns all messages after markAllPushMessagesUnread (all flipped to unread)
+[CONSOLE] no JS errors","errors[] non-empty on mark_all_unread, markAllPushMessagesUnread returns false, unreadOnly=true count is 0 after mutation, messages deleted",Mark all as read again to restore baseline state: markAllPushMessagesRead mutation,COV-2026-06-09-push GAP-001,Automated
+PUSH-016,xAPI GraphQL — Clear All Push Messages,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to EUR_USER (isolated agent-pool account) then clears its inbox via clearAllPushMessages. Uses EUR_USER (not ORG_USER) so the destructive clear does not disturb the ORG_USER fixtures the other cases self-seed.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","--- DISCOVER recipient member id ---
+[AUTH role=EUR_USER]
+[GQL-OP me]
+  query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → RCPT_MEMBER_ID]
+--- SEED (ADMIN) targeting recipient member ---
+[AUTH role=ADMIN]
+[REST-OP seed_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-push016"", ""shortMessage"": ""AGENT-TEST-push016-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{RCPT_MEMBER_ID}}""]}
+[REST-EXEC seed_msg]
+--- CLEAR (EUR_USER xAPI) ---
+[AUTH role=EUR_USER]
+[GQL-OP probe_before]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id } } }
+[GQL-EXEC probe_before]
+[GQL-OP clear_all]
+  mutation { clearAllPushMessages }
+[GQL-EXEC clear_all]
+[GQL-OP read_back]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount } }
+[GQL-EXEC read_back]","[ERRORS label=me] errors[] empty
+[DATA label=me] data.me.id is non-null
+[ERRORS label=seed_msg] HTTP 200
+[ERRORS label=probe_before] errors[] empty
+[COUNT label=probe_before] data.pushMessages.totalCount >= 1
+[ERRORS label=clear_all] errors[] empty
+[DATA label=clear_all] data.clearAllPushMessages = true
+[ERRORS label=read_back] errors[] empty
+[COUNT label=read_back] data.pushMessages.totalCount = 0","[ROUNDTRIP label=read_back] totalCount=0 after clearAllPushMessages — all messages removed for this user
+[CONSOLE] no JS errors","errors[] non-empty on clear_all, clearAllPushMessages returns false, messages still returned after clear, totalCount unchanged after mutation",none,COV-2026-06-09-push GAP-001,Automated
+PUSH-026,Authorization Boundary — Storefront Customer Token Cannot Call Platform Push Notifications,API > Push Messages > Authorization,Critical,BL-NOTIF-001,ECL-7.3,"Storefront customer token (ORG_USER, storeId={{STORE_ID}}) must NOT be authorized for the platform push-notifications admin endpoint — expect HTTP 403.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+[REST-OP platform_push]
+POST /api/platform/pushnotifications
+Content-Type: application/json
+Body: {""title"": ""AGENT-TEST-authz-probe"", ""message"": ""authz probe""}
+[REST-EXEC platform_push]","[ERRORS label=platform_push] HTTP 403","[ADMIN] confirm no notification created by the failed call — admin Push Messages list unchanged
+[CONSOLE] no JS errors from REST call","HTTP 200 from platform endpoint using storefront token (authorization failure), HTTP 401 instead of 403 (wrong boundary signal), notification actually delivered despite 403 status",none — no message was created,COV-2026-06-09-push GAP-002,Automated
+PUSH-027,E2E Cross-Layer — Admin Sends Targeted Push; Recipient Receives and Reads via xAPI,E2E > Push Messages > End-to-End Delivery,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Admin creates a Sent push directly (status:Sent in POST body — there is no /send subendpoint) targeting ORG_USER member; ORG_USER reads it via xAPI and marks it read.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN ---
+[AUTH role=ADMIN]
+[REST-OP create_msg]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-e2e-delivery"", ""shortMessage"": ""AGENT-TEST-e2e-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC create_msg]
+[REST-CAPTURE create_msg.body.id → PUSH_MSG_ID]
+--- STOREFRONT (xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP probe_inbox]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id shortMessage isRead } } }
+[GQL-EXEC probe_inbox]
+[GQL-CAPTURE probe_inbox.data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id → RECEIVED_ID]
+[GQL-OP mark_read]
+  mutation MarkRead($command: InputMarkPushMessageReadType!) {
+    markPushMessageRead(command: $command)
+  }
+[GQL-VARS mark_read] {""command"": {""messageId"": ""{{RECEIVED_ID}}""}}
+[GQL-EXEC mark_read]
+[GQL-OP verify_read]
+  query { pushMessages(first: 50, unreadOnly: false) { items { id shortMessage isRead } } }
+[GQL-EXEC verify_read]","[ERRORS label=create_msg] HTTP 200
+[DATA label=create_msg] body.id is non-null
+[ERRORS label=probe_inbox] errors[] empty
+[DATA label=probe_inbox] data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id is non-null
+[ERRORS label=mark_read] errors[] empty
+[DATA label=mark_read] data.markPushMessageRead = true
+[ERRORS label=verify_read] errors[] empty
+[DATA label=verify_read] data.pushMessages.items[?id={{RECEIVED_ID}}].isRead = true","[ADMIN] POST /api/push-message/search with statuses:[Sent] confirms message status=Sent
+[ROUNDTRIP label=verify_read] isRead=true confirmed for the delivered message
+[CONSOLE] no JS errors","create_msg returns 4xx/5xx, PUSH_MSG_ID null, probe_inbox cannot find message with AGENT-TEST-e2e-body shortMessage, mark_read errors[] non-empty, isRead still false in verify_read",none — Sent message is not deletable (AGENT-TEST-prefixed; leave in system),COV-2026-06-09-push GAP-003,Automated
+PUSH-028,xAPI GraphQL — pushMessages Query Filters (unreadOnly / keyword / sort / cursor paging),GraphQL > Push Messages > Filters,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 2 Sent AGENT-TEST pushes to ORG_USER so keyword/sort/paging have at least 2 messages and a known keyword to match; store-user token requires storeId.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) two messages ---
+[AUTH role=ADMIN]
+[REST-OP seed_a]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-filter-a"", ""shortMessage"": ""AGENT-TEST-filter-a-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_a]
+[REST-OP seed_b]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-filter-b"", ""shortMessage"": ""AGENT-TEST-filter-b-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-02T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_b]
+--- FILTERS (ORG_USER xAPI) ---
+[AUTH role=ORG_USER]
+[GQL-OP force_unread]
+  mutation { markAllPushMessagesUnread }
+[GQL-EXEC force_unread]
+[GQL-OP unread_filter]
+  query GetUnread { pushMessages(first: 20, unreadOnly: true) { totalCount items { id isRead } } }
+[GQL-EXEC unread_filter]
+[GQL-OP keyword_filter]
+  query GetByKeyword($keyword: String) { pushMessages(first: 20, keyword: $keyword) { totalCount items { id shortMessage } } }
+[GQL-VARS keyword_filter] {""keyword"": ""AGENT-TEST-filter""}
+[GQL-EXEC keyword_filter]
+[GQL-OP sort_desc]
+  query GetSorted($sort: String) { pushMessages(first: 20, sort: $sort) { items { id createdDate } } }
+[GQL-VARS sort_desc] {""sort"": ""createdDate:desc""}
+[GQL-EXEC sort_desc]
+[GQL-CAPTURE sort_desc.data.pushMessages.items.0.id → FIRST_ID]
+[GQL-OP page_one]
+  query Page1 { pushMessages(first: 1) { items { id } pageInfo { endCursor hasNextPage } } }
+[GQL-EXEC page_one]
+[GQL-CAPTURE page_one.data.pushMessages.pageInfo.endCursor → PAGE_CURSOR]
+[GQL-CAPTURE page_one.data.pushMessages.items.0.id → PAGE1_ID]
+[GQL-OP page_two]
+  query Page2($after: String) { pushMessages(first: 1, after: $after) { items { id } } }
+[GQL-VARS page_two] {""after"": ""{{PAGE_CURSOR}}""}
+[GQL-EXEC page_two]","[ERRORS label=force_unread] errors[] empty
+[ERRORS label=unread_filter] errors[] empty
+[DATA label=unread_filter] data.pushMessages.items[?isRead=true].id is null
+[ERRORS label=keyword_filter] errors[] empty
+[COUNT label=keyword_filter] data.pushMessages.totalCount >= 2
+[DATA label=keyword_filter] data.pushMessages.items.0.shortMessage matches /AGENT-TEST-filter/i
+[ERRORS label=sort_desc] errors[] empty
+[DATA label=sort_desc] data.pushMessages.items.0.createdDate >= data.pushMessages.items.1.createdDate
+[ERRORS label=page_one] errors[] empty
+[DATA label=page_one] data.pushMessages.pageInfo.hasNextPage = true
+[ERRORS label=page_two] errors[] empty
+[DATA label=page_two] data.pushMessages.items.0.id is non-null","[ROUNDTRIP label=page_two] items on page 2 are different from items on page 1 (no duplicates)
+[CONSOLE] no JS errors","errors[] non-empty on any filter op, unreadOnly=true returns read messages, keyword filter returns messages not matching keyword, page 2 cursor returns same items as page 1, HTTP 401",none — seeds are AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-004,Automated
+PUSH-030,E2E — trackNewRecipients Toggle: tracking flag flips without error and inbox count never decreases,E2E > Push Messages > Recipient Tracking,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Seeds a Sent tracked push to EUR_USER (isolated agent-pool account), toggles trackNewRecipients on/off via PUT /api/push-message/{id}/tracking/{bool}, and confirms inbox count does not increase after tracking is disabled. storeId required for storefront token.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","--- DISCOVER recipient member ---
+[AUTH role=ORG_USER]
+[GQL-OP me]
+  query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → RCPT_MEMBER_ID]
+--- ADMIN: seed a Sent tracked push and enable tracking ---
+[AUTH role=ADMIN]
+[REST-OP seed_tracked]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-track"", ""shortMessage"": ""AGENT-TEST-track-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_tracked]
+[REST-CAPTURE seed_tracked.body.id → TRACKED_MSG_ID]
+[REST-OP set_track_on]
+PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/true
+[REST-EXEC set_track_on]
+--- STOREFRONT (xAPI) — inbox while tracking ON ---
+[AUTH role=ORG_USER]
+[GQL-OP inbox_on]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id shortMessage } } }
+[GQL-EXEC inbox_on]
+--- ADMIN: disable tracking ---
+[AUTH role=ADMIN]
+[REST-OP set_track_off]
+PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/false
+[REST-EXEC set_track_off]
+--- STOREFRONT (xAPI) — inbox while tracking OFF ---
+[AUTH role=ORG_USER]
+[GQL-OP inbox_off]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id } } }
+[GQL-EXEC inbox_off]","[ERRORS label=me] errors[] empty
+[ERRORS label=seed_tracked] HTTP 200
+[DATA label=seed_tracked] body.id is non-null
+[ERRORS label=set_track_on] HTTP 200
+[ERRORS label=inbox_on] errors[] empty
+[COUNT label=inbox_on] data.pushMessages.totalCount >= 1
+[ERRORS label=set_track_off] HTTP 200
+[ERRORS label=inbox_off] errors[] empty
+[COUNT label=inbox_off] data.pushMessages.totalCount >= 1","[ROUNDTRIP label=inbox_on] recipient sees the TRACKED_MSG_ID message in inbox when trackNewRecipients=true
+[ROUNDTRIP label=inbox_off] totalCount after set_track_off does not increase
+[CONSOLE] no JS errors","set_track_on returns 4xx/5xx, inbox empty despite seeded message, inbox_off shows additional messages added after tracking disabled, HTTP 401 for xAPI call (storeId missing)","[AUTH role=ADMIN]
+[REST PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/false]",COV-2026-06-09-push GAP-006,Automated
+PUSH-031,Admin — Push Message Targeting Variants: Organization / User Group / Broadcast,Admin > Push Messages > Targeting,High,BL-NOTIF-001 BL-NOTIF-003,ECL-7.3,"Admin account accessible; at least one Organization exists in the system (resolved live via members/search); {{BACK_URL}} reachable. Creates Draft messages with org / user-group / broadcast targeting.","back_url={{BACK_URL}}","[AUTH role=ADMIN]
+[REST-OP discover_org]
+POST /api/members/search
+Content-Type: application/json
+Body: {""memberType"": ""Organization"", ""take"": 1, ""skip"": 0}
+[REST-EXEC discover_org]
+[REST-CAPTURE discover_org.body.results.0.id → TARGET_ORG_ID]
+[REST-OP create_org_target]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-target-org"", ""shortMessage"": ""AGENT-TEST-org-targeting"", ""status"": ""Draft"", ""targetOrganizationIds"": [""{{TARGET_ORG_ID}}""]}
+[REST-EXEC create_org_target]
+[REST-CAPTURE create_org_target.body.id → ORG_MSG_ID]
+[REST-OP create_group_target]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-target-group"", ""shortMessage"": ""AGENT-TEST-group-targeting"", ""status"": ""Draft"", ""userGroups"": [""Registered""]}
+[REST-EXEC create_group_target]
+[REST-CAPTURE create_group_target.body.id → GROUP_MSG_ID]
+[REST-OP create_broadcast]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-broadcast"", ""shortMessage"": ""AGENT-TEST-broadcast-all"", ""status"": ""Draft""}
+[REST-EXEC create_broadcast]
+[REST-CAPTURE create_broadcast.body.id → BROADCAST_MSG_ID]","[ERRORS label=discover_org] HTTP 200
+[DATA label=discover_org] body.results.0.id is non-null
+[ERRORS label=create_org_target] HTTP 200
+[DATA label=create_org_target] body.id is non-null
+[DATA label=create_org_target] body.topic = AGENT-TEST-target-org
+[ERRORS label=create_group_target] HTTP 200
+[DATA label=create_group_target] body.id is non-null
+[ERRORS label=create_broadcast] HTTP 200
+[DATA label=create_broadcast] body.id is non-null","[ADMIN] Admin Push Messages list shows all three created draft messages with correct titles
+[ADMIN] Organization-targeted draft shows org filter in recipient detail blade
+[ADMIN] User-group-targeted draft shows user group Registered in recipient detail blade
+[CONSOLE] no JS errors","create_org_target returns 4xx (org field name wrong), create_group_target returns 4xx (group field name wrong), body.id null, Admin blade shows no recipient scope for targeting variants","[AUTH role=ADMIN]
+[REST DELETE /api/push-message?ids={{ORG_MSG_ID}}]
+[REST DELETE /api/push-message?ids={{GROUP_MSG_ID}}]
+[REST DELETE /api/push-message?ids={{BROADCAST_MSG_ID}}]",COV-2026-06-09-push GAP-007,Automated
+PUSH-032,E2E — Scheduled Push Lifecycle: Future startDate then Auto-Delivery then Received by Recipient,E2E > Push Messages > Scheduled Delivery,High,BL-NOTIF-003,ECL-14.3,"PARTIAL-AUTO: full auto-delivery needs a multi-minute scheduler wait the browserless runner cannot poll. Authored to create+verify a scheduled Draft with a future startDate; the [WAIT] step + auto-delivery confirmation are runner-manual. Admin account accessible; ORG_USER storefront account (storeId=B2B-store); scheduler active.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN ---
+[AUTH role=ADMIN]
+[REST-OP create_scheduled]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-scheduled"", ""shortMessage"": ""AGENT-TEST-scheduled-body"", ""status"": ""Draft"", ""memberIds"": [""{{ORG_USER_ID}}""], ""startDate"": ""2099-01-01T00:00:00Z""}
+[REST-EXEC create_scheduled]
+[REST-CAPTURE create_scheduled.body.id → SCHED_ID]
+[REST-OP verify_created]
+GET /api/push-message/{{SCHED_ID}}
+[REST-EXEC verify_created]
+[WAIT] runner-manual: scheduler auto-delivers at startDate; poll GET /api/push-message/{{SCHED_ID}} until status=Sent, then re-query xAPI inbox as ORG_USER for AGENT-TEST-scheduled-body","[ERRORS label=create_scheduled] HTTP 200
+[DATA label=create_scheduled] body.id is non-null
+[ERRORS label=verify_created] HTTP 200
+[DATA label=verify_created] body.startDate is non-null","[ROUNDTRIP] After startDate passes, GET shows body.status=Sent and ORG_USER xAPI inbox contains AGENT-TEST-scheduled-body (runner-manual — scheduler wait)
+[CONSOLE] no JS errors","create_scheduled returns 4xx/5xx, SCHED_ID null, startDate not persisted, scheduler never flips status to Sent (escalate)","[AUTH role=ADMIN]
+[REST DELETE /api/push-message?ids={{SCHED_ID}}]",COV-2026-06-09-push GAP-008,needs-review
+PUSH-034,Admin API Negative — Delete Sent Message Returns Error (HTTP 500 Known Defect),API > Push Messages > Negative,Medium,BL-NOTIF-003,ECL-14.1,"A Sent push message exists (this case seeds one); DELETE of a Sent message is a known 500 defect — the module rejects modify/delete of Sent with HTTP 500 (should arguably be 4xx).","back_url={{BACK_URL}}, org_user_id={{ORG_USER_ID}}","[AUTH role=ADMIN]
+[REST-OP seed_sent]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-neg-sent"", ""shortMessage"": ""AGENT-TEST-neg-sent-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+[REST-EXEC seed_sent]
+[REST-CAPTURE seed_sent.body.id → SENT_ID]
+[REST-OP delete_sent]
+DELETE /api/push-message?ids={{SENT_ID}}
+[REST-EXEC delete_sent]
+[REST-OP verify_still_there]
+GET /api/push-message/{{SENT_ID}}
+[REST-EXEC verify_still_there]","[ERRORS label=seed_sent] HTTP 200
+[DATA label=seed_sent] body.id is non-null
+[DATA label=delete_sent] data.status >= 400
+[ERRORS label=verify_still_there] HTTP 200
+[DATA label=verify_still_there] body.status = Sent","[ADMIN] Sent message still exists in admin list after the failed delete
+[CONSOLE] no JS errors from REST calls","delete_sent returns HTTP 200 (deletion of Sent message allowed — business rule violation), message deleted after delete_sent succeeds","none — Sent message must remain in system; HTTP 500 on delete is a known defect (should be 4xx)",COV-2026-06-09-push GAP-010,Automated
+PUSH-035,Admin Negative — Create Push Message with Zero Recipients Stays Draft,Admin > Push Messages > Negative,Medium,BL-NOTIF-003,ECL-14.1,"Admin account accessible; {{BACK_URL}} reachable. Creates a Draft with empty memberIds and verifies it persists as Draft (no implicit transition to Sent with zero delivery targets).","back_url={{BACK_URL}}","[AUTH role=ADMIN]
+[REST-OP create_zero_rec]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-zero-recipients"", ""shortMessage"": ""AGENT-TEST-no-recipients-body"", ""status"": ""Draft"", ""memberIds"": []}
+[REST-EXEC create_zero_rec]
+[REST-CAPTURE create_zero_rec.body.id → ZERO_MSG_ID]
+[REST-OP verify_zero]
+GET /api/push-message/{{ZERO_MSG_ID}}
+[REST-EXEC verify_zero]","[ERRORS label=create_zero_rec] HTTP 200
+[DATA label=create_zero_rec] body.id is non-null
+[ERRORS label=verify_zero] HTTP 200
+[DATA label=verify_zero] body.status = Draft","[ADMIN] Admin Push Messages list shows AGENT-TEST-zero-recipients with status Draft (not Sent)
+[CONSOLE] no JS errors","message created with status Sent and zero recipients (business rule violation — Sent with no delivery targets), message deleted instead of staying Draft","[AUTH role=ADMIN]
+[REST DELETE /api/push-message?ids={{ZERO_MSG_ID}}]",COV-2026-06-09-push GAP-011,Automated
+PUSH-038,Admin — Localized Push Content Multi-Language (Verification Probe),Admin > Push Messages > Localization,Medium,,,"PROBE: module per-culture support for push messages is unconfirmed. cultureName is accepted on the record; this case probes whether create accepts per-culture variants without 5xx. Do NOT treat as a positive localization assertion — escalate to qa-lead if cultureName is silently ignored.","back_url={{BACK_URL}}","[AUTH role=ADMIN]
+[REST-OP create_msg_fr]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-locale-probe-fr"", ""shortMessage"": ""AGENT-TEST-locale-body-fr"", ""status"": ""Draft"", ""cultureName"": ""fr-FR""}
+[REST-EXEC create_msg_fr]
+[REST-CAPTURE create_msg_fr.body.id → FR_MSG_ID]
+[REST-OP create_msg_en]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"": ""AGENT-TEST-locale-probe-en"", ""shortMessage"": ""AGENT-TEST-locale-body-en"", ""status"": ""Draft"", ""cultureName"": ""en-US""}
+[REST-EXEC create_msg_en]
+[REST-CAPTURE create_msg_en.body.id → EN_MSG_ID]","[ERRORS label=create_msg_fr] HTTP 200
+[DATA label=create_msg_fr] body.id is non-null
+[ERRORS label=create_msg_en] HTTP 200
+[DATA label=create_msg_en] body.id is non-null","[ADMIN] if both succeed: inspect whether Admin Push Messages blade exposes a locale selector / language variants; if not, cultureName is stored but not surfaced — document as blocked:needs-verification
+[CONSOLE] no JS errors","create_msg_fr returns 5xx on the cultureName field, body.id null, module rejects cultureName as unknown property","[AUTH role=ADMIN]
+[REST DELETE /api/push-message?ids={{FR_MSG_ID}}]
+[REST DELETE /api/push-message?ids={{EN_MSG_ID}}]",COV-2026-06-09-push GAP-014,needs-review

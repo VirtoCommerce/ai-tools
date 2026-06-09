@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-06-09",
-    "totalSuites": 102,
+    "totalSuites": 103,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1421,6 +1421,28 @@
       "customerApplicability": "universal"
     },
     {
+      "id": "050l",
+      "name": "GraphQL xAPI — Push Messages",
+      "file": "regression/suites/Backend/graphql/050l-graphql-push.csv",
+      "domain": "communication",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P2",
+      "testCount": 15,
+      "estimatedMinutes": 13,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "push-messages",
+        "notifications"
+      ],
+      "requiresModules": [
+        "push-messages"
+      ],
+      "customerApplicability": "reference"
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -1828,7 +1850,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 25,
+      "testCount": 22,
       "estimatedMinutes": 18,
       "agent": "qa-backend-expert",
       "tags": [

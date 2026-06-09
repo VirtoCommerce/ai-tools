@@ -112,58 +112,6 @@ PUSH-010,Recipient Tracking — New Recipients Do NOT Receive Message When Disab
 [DOM] new user's notification inbox does NOT contain this message","[API] GET /api/platform/pushnotifications for new user returns empty or does not contain this message
 [NETWORK] no delivery request for new user after toggle=OFF
 [CONSOLE] no JS errors","New user receives message despite tracking disabled, 4xx/5xx on toggle save",Delete test user account if created during test,C385365,Not Automated
-PUSH-011,Push Messages API — Retrieve Unread Messages,Admin > Push Messages API,High,BL-NOTIF-001,,Published push messages exist in the system; authenticated user has unread messages,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate as user with unread push messages; obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=20&onlyNew=true
-[WAIT] response received","[STATUS] HTTP 200 returned
-[BODY] response contains array of unread push notifications
-[BODY] each notification object has id, title, description, created, isNew=true fields
-[SCHEMA] response matches expected notification schema","[API] GET with onlyNew=false returns all messages including already-read ones
-[NETWORK] request includes Authorization header with valid Bearer token
-[CONSOLE] no errors","HTTP 401 (auth not set), 500 error, empty array when unread messages exist, isNew field missing",none,C397014,Not Automated
-PUSH-012,Push Messages API — Mark Single Message as Read,Admin > Push Messages API,High,BL-NOTIF-001,,At least one unread push message exists for the authenticated user,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate; obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=5&onlyNew=true
-[VAR] extract id of first unread notification
-[HTTP] PUT {{BACK_URL}}/api/platform/pushnotifications/{{notification_id}}/markRead (or POST markread endpoint)
-[WAIT] response received
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications/{{notification_id}} to verify","[STATUS] mark-read call returns HTTP 200
-[BODY] subsequent GET for this notification shows isNew=false
-[BODY] notification still exists (not deleted) — only status changed","[API] GET all unread messages no longer includes this notification id
-[NETWORK] PUT/POST request returns 200 with no error body
-[CONSOLE] no errors","HTTP 404 on mark-read, 500 error, notification still shows isNew=true after mark-read, notification deleted instead of marked read",none,C397021,Not Automated
-PUSH-013,Push Messages API — Mark Single Message as Unread,Admin > Push Messages API,Medium,BL-NOTIF-001,,At least one read (isNew=false) push message exists for the authenticated user,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate; obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=20&onlyNew=false
-[VAR] extract id of a read notification (isNew=false)
-[HTTP] PUT {{BACK_URL}}/api/platform/pushnotifications/{{notification_id}}/markUnread (or appropriate endpoint)
-[WAIT] response received
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications/{{notification_id}} to verify","[STATUS] mark-unread call returns HTTP 200
-[BODY] subsequent GET shows isNew=true for this notification
-[BODY] notification still exists","[API] GET unread-only list now includes this notification id
-[CONSOLE] no errors","HTTP 404, 500, notification remains isNew=false after mark-unread, notification deleted",Mark message as read again after test to restore state,C397022,Not Automated
-PUSH-014,Push Messages API — Mark All Messages as Read,Admin > Push Messages API,High,BL-NOTIF-001,,Multiple unread push messages exist for the authenticated user,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate; obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=50&onlyNew=true
-[ASSERT] verify count > 1 unread messages exist
-[HTTP] POST {{BACK_URL}}/api/platform/pushnotifications/markAllRead (or equivalent bulk endpoint)
-[WAIT] response received
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=50&onlyNew=true to verify","[STATUS] mark-all-read returns HTTP 200
-[BODY] subsequent unread-only GET returns empty array or count=0
-[BODY] all previously-unread notifications now show isNew=false in full list","[API] GET all messages (onlyNew=false) still returns all notifications (not deleted)
-[CONSOLE] no errors","Mark-all-read returns 500, some messages remain unread, messages deleted instead of marked read",none,C397019,Not Automated
-PUSH-015,Push Messages API — Mark All Messages as Unread,Admin > Push Messages API,Medium,BL-NOTIF-001,,All push messages for the authenticated user are currently read (isNew=false),"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate; obtain Bearer token
-[HTTP] POST {{BACK_URL}}/api/platform/pushnotifications/markAllUnread (or equivalent bulk endpoint)
-[WAIT] response received
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=50&onlyNew=true to verify","[STATUS] mark-all-unread returns HTTP 200
-[BODY] subsequent unread GET returns all notifications with isNew=true
-[BODY] message count in unread list equals total message count","[API] GET all messages still returns same count (not deleted)
-[CONSOLE] no errors","500 error on mark-all-unread, messages remain isNew=false, messages deleted instead of marked",Mark all as read again to restore state,C397020,Not Automated
-PUSH-016,Push Messages API — Clear All Push Messages,Admin > Push Messages API,Medium,BL-NOTIF-001,,Push messages exist for the authenticated user,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] authenticate; obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=50&onlyNew=false
-[ASSERT] verify at least 1 message exists before clear
-[HTTP] DELETE {{BACK_URL}}/api/platform/pushnotifications (or POST clear endpoint)
-[WAIT] response received
-[HTTP] GET {{BACK_URL}}/api/platform/pushnotifications?count=50&onlyNew=false to verify","[STATUS] clear-all returns HTTP 200 or 204
-[BODY] subsequent GET returns empty array or totalCount=0
-[BODY] all messages permanently removed for this user","[API] GET confirms zero messages after clear
-[CONSOLE] no errors","500 on clear, messages still returned after clear, partial clear (some messages remain)",Re-seed push messages via Admin if needed for subsequent tests,C397018,Not Automated
 PUSH-017,Storefront Notifications Page — List of Received Notifications,Storefront > Notifications,High,BL-NOTIF-001,,User authenticated on storefront; at least 2 push messages have been published and targeted to this user's account or role,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [WAIT] storefront home page loads
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already signed in
@@ -235,14 +183,6 @@ PUSH-022,Storefront Notifications — Notification Inline Content and Read Toggl
 [FORMAT] message content renders correctly — no raw HTML tags or markdown syntax visible","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns items with description/body matching inline content
 [NETWORK] no 4xx/5xx on notification toggle
 [CONSOLE] no JS errors during click/toggle","Content truncated to title only in list view, raw HTML tags visible in rendered message, clicking does not toggle read state, blue dot indicator does not change, 4xx/5xx on toggle request","Sign out; no data mutation",ECL-14.3,Not Automated
-PUSH-023,Storefront Notifications — Notification Link Navigates to Related Entity,Storefront > Notifications,Medium,,,User authenticated; at least one push message with an actionable link (to an order, quote, or shipment) exists in user's inbox,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
-[WAIT] notifications page loads
-[ACT] locate a notification item that contains a link or action button (e.g. 'View Order', 'View Quote')
-[ACT] click the notification link or action button
-[WAIT] navigation completes","[NAV] URL navigates to the related entity page (e.g. /account/orders/{orderId} or /account/quotes/{quoteId})
-[DOM] the target page loads and displays the related entity referenced in the notification
-[DOM] the linked entity (order/quote/shipment) exists and its details are visible","[NETWORK] no 4xx/5xx on navigation to linked entity
-[CONSOLE] no JS errors during link click or navigation","Link click produces no navigation, navigates to 404, wrong entity loaded, entity page blank","Sign out; no data mutation",ECL-14.3,Not Automated
 PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages,Storefront > Notifications,High,BL-NOTIF-001,"ECL-7.3","Two user accounts exist (User A and User B); a push message was published targeting only User A's role or user ID; both users are accessible for testing","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, org_email={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [ACT] sign in as {{USER_EMAIL}} (User A — targeted user)
 [WAIT] authenticated session established
@@ -263,3 +203,67 @@ PUSH-025,Storefront Notifications — Empty State When No Notifications Exist,St
 [DOM] no error messages or broken layout elements","[API] GET {{BACK_URL}}/api/platform/pushnotifications for this user returns empty array
 [NETWORK] no 4xx/5xx on page load
 [CONSOLE] no JS errors on empty notifications page","Blank white page with no empty state message, spinner does not resolve, 500 error, error message shown instead of friendly empty state","Sign out after test",ECL-14.3,Not Automated
+PUSH-029,Storefront — Clear All Notifications (Bell Dropdown) and Mark Single as Unread,Storefront > Notifications > Bell Dropdown,High,BL-NOTIF-001,"""ECL-7.3""","""User authenticated with ≥3 notifications (mix of read and unread); bell dropdown accessible in header""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}
+[ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
+[WAIT] header bell icon visible with notification indicator
+[ACT] click bell icon to open notifications dropdown
+[WAIT] dropdown popover opens showing notification items
+[ASSERT] verify 'Clear all' action is present in bell dropdown
+[ACT] click 'Clear all' in bell dropdown
+[WAIT] dropdown refreshes or closes
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] notifications page loads
+[ASSERT] verify notifications list is empty (clear all succeeded)
+[ACT] navigate to a new session where messages exist (or re-seed a single message)
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] page loads
+[ASSERT] locate a read notification item (no unread indicator)
+[ACT] click the 'Mark as unread' control on a read notification (icon, checkbox, or context action)
+[WAIT] visual state updates""","""[DOM] 'Clear all' action is present in bell dropdown
+[STATE] after 'Clear all': bell dropdown shows 'No new notifications' and badge clears to 0 — clear-all resets the bell tray/badge only; full /account/notifications history is RETAINED (not a bulk delete)
+[DOM] bell badge disappears or shows 0 after clear all
+[DOM] after 'Mark as unread': notification shows unread visual indicator (blue dot or bold)
+[STATE] bell badge increments by 1 after marking single notification unread""","""[API] xAPI clearAllPushMessages mutation fires on 'Clear all'; errors[] empty
+[API] xAPI pushMessages(unreadOnly: true) returns totalCount=0 after clear all (unread/new tray emptied); pushMessages(unreadOnly: false) totalCount UNCHANGED (history retained, not deleted)
+[API] xAPI markPushMessageUnread mutation fires on 'Mark as unread'; errors[] empty
+[NETWORK] no 4xx/5xx on either mutation
+[CONSOLE] no JS errors""","""'Clear all' absent in dropdown, notifications still visible after clear all, errors[] non-empty on clearAllPushMessages, 'Mark as unread' control absent on a read notification, unread indicator absent after marking as unread""","""Re-seed push messages via admin if needed for subsequent tests; sign out""",COV-2026-06-09-push GAP-005,validated
+PUSH-033,Storefront — Real-Time Delivery via SignalR Without Page Reload,Storefront > Notifications > Real-Time,High,BL-NOTIF-001,ECL-14.3,"""User {{USER_EMAIL}} logged in on storefront; pushNotificationHub SignalR connection is active; admin can create and send a push message targeting {{USER_EMAIL}} in real time""","""front_url={{FRONT_URL}}, back_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""--- STOREFRONT ---
+[NAV] {{FRONT_URL}}
+[ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}}
+[WAIT] authenticated session — bell badge visible
+[ASSERT] record initial bell badge unread count
+--- ADMIN (setup — send targeted message via API, admin-authenticated) ---
+[API] POST {{BACK_URL}}/api/push-message  body: {""topic"":""AGENT-TEST-realtime"",""shortMessage"":""AGENT-TEST-realtime-body"",""status"":""Sent"",""memberIds"":[""{{TEST_USER_ID}}""]} -> 200 (message created+sent)
+--- STOREFRONT (observe — no page reload) ---
+[WAIT] up to 10 seconds for bell badge to update without page reload""","""[DOM] bell badge count increments by 1 within 10s of admin send — without page reload
+[STATE] clicking bell dropdown reveals the new AGENT-TEST-realtime-body message in the list
+[DOM] new message appears at top of dropdown (newest first)""","""[NETWORK] SignalR pushNotificationHub WebSocket connection is active (ws:// or wss:// frame visible in network tab)
+[API] xAPI pushMessages(unreadOnly: true) confirms new message in inbox after real-time delivery
+[CONSOLE] no JS errors; no SignalR connection-error events""","""Bell badge does not increment after send (SignalR not connected), badge only updates on page reload, new message absent from dropdown after badge update, AGENT-TEST-realtime-body not in xAPI pushMessages response, console SignalR error""","""REST DELETE {{BACK_URL}}/api/push-message?ids={{RT_MSG_ID}} (will return 500 if Sent — acceptable; log and proceed); sign out""",COV-2026-06-09-push GAP-009,validated
+PUSH-036,Storefront — Badge Live-Decrement on Read; Bell Dropdown vs Full Page Parity,Storefront > Notifications > Badge,Medium,BL-NOTIF-001,"""ECL-7.3""","""User authenticated with ≥2 unread notifications; bell badge shows unread count""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}
+[ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
+[WAIT] header visible with bell badge showing unread count
+[ASSERT] record badge count as N
+[ACT] click bell icon to open dropdown
+[WAIT] dropdown shows notification list with unread indicators
+[ASSERT] record unread item count in dropdown
+[ACT] click one unread notification item in dropdown
+[WAIT] item visual state changes to read
+[ASSERT] observe bell badge count""","""[DOM] badge count decrements by exactly 1 after reading one notification (N → N-1)
+[DOM] clicked notification loses unread indicator in dropdown
+[STATE] badge count in header (N-1) matches unread count shown in dropdown after reading
+[NAV] navigate to {{FRONT_URL}}/account/notifications
+[DOM] full notifications page unread count equals badge count (N-1) — dropdown and full page are in parity""","""[API] xAPI pushMessages(unreadOnly: true) totalCount = N-1 after marking one read
+[API] markPushMessageRead mutation fires on click; errors[] empty
+[CONSOLE] no JS errors during read action or badge update""","""Badge count does not decrement after reading (stuck at N), badge decrements by wrong amount, dropdown shows different unread count than full notifications page (parity failure), errors[] non-empty on mark-read mutation, HTTP 4xx/5xx on GraphQL call""","""Sign out; no data mutation needed""",COV-2026-06-09-push GAP-012,validated
+PUSH-037,Storefront — Notification Link Navigates to Linked Entity (Order / Quote / Shipment),Storefront > Notifications > Navigation,Medium,BL-NOTIF-001,ECL-14.3,"""User authenticated; at least one push message with a link to an order, quote, or shipment exists in the user's inbox (not only category links). NOTE: push-message model has no dedicated link field — a working link requires an HTML <a> anchor embedded directly in shortMessage; self-seed via admin POST /api/push-message if no such message exists.""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}/account/notifications
+[ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
+[WAIT] notifications page loads
+[ACT] scan notification items for any that contain an embedded URL or action button referencing /account/orders/, /account/quotes/, or /account/shipments/
+[ASSERT] at least one such notification is visible
+[ACT] click the notification link or 'View [entity]' button
+[WAIT] navigation completes — target page loads""","""[NAV] URL navigates to a path matching /account/orders/{id} OR /account/quotes/{id} OR /account/shipments/{id} — NOT a category link
+[DOM] target entity page loads with entity details visible (order number, quote ID, or shipment details)
+[DOM] entity referenced in notification matches the entity displayed on the target page""","""[NETWORK] no 4xx on navigation to linked entity (linked entity must exist)
+[CONSOLE] no JS errors during link click or navigation""","""Link navigates to /catalog or other non-entity page (wrong entity scope), 404 on entity page, entity page blank, entity ID in URL does not match notification content""","""Sign out; no data mutation""",COV-2026-06-09-push GAP-013,validated
