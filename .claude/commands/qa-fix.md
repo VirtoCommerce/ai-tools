@@ -111,9 +111,12 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 ## Phase 6 — Await CI + E2E (Gates 5 & 6)
 > **Owner:** orchestrator (CI poll) + `qa-backend-expert` / `qa-frontend-expert` (E2E, by kind).
 - **Gate 5 (CI):** poll `gh pr checks` / `mcp__github__get_pull_request_status` until the repo's
-  GitHub Actions are all `success` + `mergeable`. Background polling, not blocking sleeps. RED →
-  developer self-corrects in the SAME repo (≤2 iterations), re-push, re-poll; persistent RED / cross-repo
-  → STOP + hand off.
+  GitHub Actions are all `success` + `mergeable` — **including the SonarCloud quality gate** (the
+  `test-and-sonar` / `SonarCloud Code Analysis` check) and `license/cla`. Background polling, not blocking
+  sleeps. RED → developer self-corrects in the SAME repo (≤2 iterations), re-push, re-poll. **Sonar QG
+  red → fix the valid findings on the changed lines** (real bug/vuln/hotspot, or add new-code coverage)
+  within minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks.
+  Persistent RED / cross-repo / repo-owned QG threshold → STOP + hand off.
 - **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
   `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes

@@ -35,6 +35,10 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
 6. **BL-* preserved** — the fix doesn't violate a `business-logic.md` invariant or re-introduce a
    `vc-bug-catalog.md` pattern. Cite the relevant `BL-*`/`VC-*` id.
 7. **No secrets / config churn** — no credentials, `.env*`, `*.Development.json`, lockfiles, CI config.
+8. **SonarCloud-QG-ready (pre-empt G5)** — the changed lines won't trip the repo's SonarCloud quality
+   gate: no obvious new bug/vulnerability (unhandled null, resource leak, swallowed exception, injection),
+   no unreviewed security hotspot, and the new code is exercised by the added test (so **new-code**
+   coverage holds). Flag likely Sonar findings now → REQUEST_CHANGES, so the fix doesn't bounce at G5.
 
 Reuse the built-in `/code-review` skill for mechanical diff inspection, but the GO/NO-GO is the
 VC-specific checklist above.

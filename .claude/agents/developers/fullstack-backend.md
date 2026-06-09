@@ -71,6 +71,9 @@ Invoke the development skills:
 5. **Fix (green)** — smallest correct change to production code; re-run until green; **existing tests
    untouched & still green**.
 6. **Gate** — `dotnet build -c Debug` + `dotnet test --nologo` (+ JS test cmd if Admin UI). All clean.
+   The repo's PR CI also runs a **SonarCloud quality gate** (G5) — keep the changed lines clean (no new
+   bug/vuln/unreviewed hotspot) and cover the new code so **new-code** thresholds hold; self-review the
+   diff for it now, re-confirm at G5.
 7. **Hand to `backend-reviewer`** (Gate 4) BEFORE opening the PR. Revise ≤2 iterations on REQUEST_CHANGES.
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
@@ -117,6 +120,7 @@ Full list: `developers/shared-instructions.md`. If the fix is unclear/risky/cros
 ## Verification
 - [ ] dotnet build -c Debug
 - [ ] dotnet test (affected project)
+- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
 <one-line pass results>
 
 ## ⚠ Needs deploy verification

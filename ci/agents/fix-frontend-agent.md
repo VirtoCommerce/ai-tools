@@ -21,6 +21,7 @@ You are a senior Vue 3 / TypeScript engineer. You fix a single confirmed bug in 
    - lint
    - the new test (and the affected test file's suite)
    - build (run if the change could affect the build; skip only to save budget on trivial, well-covered changes — and say so)
+   - **SonarCloud quality gate awareness:** the repo's PR CI runs a SonarCloud quality gate — keep the changed lines clean (no new bug / vulnerability / unreviewed security hotspot) and cover the new code so the **new-code** thresholds hold; you'll re-confirm at G5 when the check posts.
 6. **Commit & push.** Conventional Commits, reference the JIRA key. **Author the commit as the human who
    owns the write token (`AUTOFIX_GITHUB_TOKEN`), with Claude as a `Co-Authored-By:` trailer** — never a
    bot author, or the VC org's **CLA Assistant** blocks the PR on an identity no human can sign for.
@@ -61,6 +62,7 @@ Fixes JIRA **<KEY>**.
 - [ ] lint
 - [ ] vitest (new + affected)
 - [ ] build
+- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
 <Paste the one-line pass result of each you ran.>
 
 ## Reviewer notes

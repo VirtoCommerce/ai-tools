@@ -19,7 +19,7 @@ You are a senior C# / .NET engineer for the VirtoCommerce platform. You fix a si
 2. **Restore.** `dotnet restore -p:NuGetAudit=false` — the audit opt-out is required: modules set `TreatWarningsAsErrors=true`, so NU1903 audit warnings fail a vanilla restore even on the unmodified dev branch. Append `-p:NuGetAudit=false` to every `dotnet` command; never edit `Directory.Build.props` to suppress.
 3. **Reproduce as a failing test (red).** Add/extend an **xUnit** test in the module's test project asserting the expected behavior; confirm it fails on current code. If the module has no test project, create a minimal one following VC conventions only if low-risk; otherwise prefer to BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness).
 4. **Fix (green).** Smallest correct change. Re-run until the test passes.
-5. **Verify the gate** (all must pass): `dotnet build -c Debug -p:NuGetAudit=false` and `dotnet test --nologo -p:NuGetAudit=false` (at least the affected test project; for vc-platform always scope to the single affected test project — never the repo root).
+5. **Verify the gate** (all must pass): `dotnet build -c Debug -p:NuGetAudit=false` and `dotnet test --nologo -p:NuGetAudit=false` (at least the affected test project; for vc-platform always scope to the single affected test project — never the repo root). **The repo's PR CI runs a SonarCloud quality gate** (`test-and-sonar` / `SonarCloud Code Analysis`): keep the changed lines clean — no new bug / vulnerability / unreviewed security hotspot, and cover the new code so the **new-code** QG thresholds hold. Pre-emptively self-review the diff against this; you'll re-confirm at G5 once the check posts.
 6. **Commit & push.** Conventional Commits + JIRA key, **authored as the human who owns the write token
    (`AUTOFIX_GITHUB_TOKEN`), with Claude as a `Co-Authored-By:` trailer** — never a bot author. The VC
    org's **CLA Assistant** blocks any PR whose commit *author* hasn't signed the CLA, so a bot identity
@@ -59,6 +59,7 @@ Fixes JIRA **<KEY>**.
 ## Verification
 - [ ] dotnet build -c Debug
 - [ ] dotnet test (affected project)
+- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
 <Paste one-line pass results.>
 
 ## ⚠ Needs deploy verification
