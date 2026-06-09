@@ -180,7 +180,7 @@ CRX-GQL-055,"xOrder — createOrderFromCart Without Auth","GraphQL > xOrder > Ne
 [GQL-EXEC create_noauth]","[ERRORS label=create_noauth] errors[] non-empty — Unauthorized (BL-GQL-004)
 [DATA label=create_noauth] data.createOrderFromCart is null","[EVIDENCE] errors[].extensions.code = Unauthorized. No sensitive info in messages.","Order created without auth (P0 security); data non-null; HTTP 500",none,xAPI; BL-GQL-004 auth,Automated
 CRX-GQL-095,"Catalog — productConfiguration Query","GraphQL > Catalog > productConfiguration",High,BL-GQL-001; BL-GQL-002,ECL-10.2; ECL-2.1,"BLOCKED: Requires a configurable product ID (from aliases.json CFG-* entries). productConfiguration query returns ConfigurationSections for a given configurable product.","—","[MANUAL-BLOCKED] Needs configurable product GUID captured at runtime. Legacy suite runs via GraphiQL.","[MANUAL] blocked on configurable product fixture","[EVIDENCE] Track as Draft","—",none — read-only,xAPI; BL-CFG-001,Draft
-CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level CartType field from graphql-schema.md. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Queries every top-level CartType field from graphql-schema.md including cartTotals (Mixed Cart VCST-5101). Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -202,6 +202,15 @@ CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > S
       feeTotalWithTax { amount }
       handlingTotal { amount }
       handlingTotalWithTax { amount }
+      extendedPriceTotal { amount }
+      extendedPriceTotalWithTax { amount }
+      cartTotals {
+        isDefaultTotalCurrency
+        total { amount currency { code } }
+        subTotal { amount }
+        taxTotal { amount }
+        discountTotal { amount }
+      }
       items { id productId sku name quantity }
       addresses { id city countryCode firstName lastName }
       coupons { code isAppliedSuccessfully }
@@ -217,8 +226,10 @@ CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > S
 [DATA label=cart_full] data.cart.id is non-null
 [DATA label=cart_full] data.cart.storeId is non-null
 [DATA label=cart_full] data.cart.total is non-null
-[DATA label=cart_full] data.cart.items is non-null","[ROUNDTRIP label=cart_full] re-execute — identical response structure","Any CartType field renamed/removed (DV-009); MoneyType drift (currencyCode vs currency.code)",none — read-only,xAPI; graphql-schema.md — CartType full coverage,Automated
-CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Adds an item, then queries every LineItemType field. Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
+[DATA label=cart_full] data.cart.items is non-null
+[DATA label=cart_full] data.cart.cartTotals is non-null
+[COUNT label=cart_full] data.cart.cartTotals >= 1","[ROUNDTRIP label=cart_full] re-execute — identical response structure","Any CartType field renamed/removed (DV-009); MoneyType drift (currencyCode vs currency.code); cartTotals missing from response (VCST-5101 Mixed Cart schema regression)",none — read-only,"xAPI; graphql-schema.md — CartType full coverage; Synced: VCST-5101 (2026-06-09)",Automated
+CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart > Schema Coverage",High,BL-GQL-002,ECL-2.1,"Runner-native. Adds an item, then queries every LineItemType field including currencyCode (Mixed Cart VCST-5101). Any field rename/removal → DV-009 at runner lint time.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -238,6 +249,7 @@ CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart
     cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
       items {
         id productId sku name quantity
+        currencyCode
         listPrice { amount }
         salePrice { amount }
         placedPrice { amount }
@@ -258,7 +270,8 @@ CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart
 [GQL-OP cleanup_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=cart_items_full] errors[] empty
-[DATA label=cart_items_full] data.cart.items is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift",none — clearCart at end,xAPI; graphql-schema.md — LineItemType full coverage,Automated
+[DATA label=cart_items_full] data.cart.items is non-null
+[DATA label=cart_items_full] data.cart.items.0.currencyCode is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves including currencyCode; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift; currencyCode missing from items (VCST-5101 Mixed Cart schema regression)",none — clearCart at end,"xAPI; graphql-schema.md — LineItemType full coverage; Synced: VCST-5101 (2026-06-09)",Automated
 CRX-GQL-099,"Catalog — productConfiguration Query Exposes maxLength","GraphQL > Catalog > productConfiguration > Schema",High,BL-GQL-002; BL-CFG-001,ECL-2.1,"BLOCKED: Requires a configurable product with a Text section that has maxLength set. Legacy suite covers this via specific CFG-* fixtures. Mark Draft until runner has configurable-product primitives.","—","[MANUAL-BLOCKED] Needs configurable-product Text section fixture.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength field missing from productConfiguration schema",none,xAPI; BL-CFG-001,Draft
 CRX-GQL-100,"xCart — addItem Rejects CustomText Exceeding Section MaxLength","GraphQL > xCart > Configuration Validation",High,BL-GQL-001; BL-CFG-001,ECL-10.2; ECL-2.1,"BLOCKED: Needs (a) configurable product with Text section (maxLength), (b) addItem with configurationSections payload exceeding maxLength. Complex fixture + mutation shape.","—","[MANUAL-BLOCKED] Needs configurable-product Text section with maxLength.","[MANUAL]","[EVIDENCE] Track as Draft","maxLength not enforced; oversized custom text silently accepted",none,xAPI; BL-CFG-001 validation,Draft
 CRX-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean Rejection (VCST-4960)","GraphQL > Cart > Cross-Domain Validation",Medium,"BL-GQL-001; BL-CART-001","ECL-10.2; ECL-10.2","Runner-native. ORG_USER. Cross-domain validation: add a regular (non-configurable) product to cart via @td(CFG_HOODIE.id) (confirmed non-configurable alias), capture its lineItemId, then call changeCartConfiguredItem referencing that lineItemId with any configurationSections payload. Verifies the validation is not limited to configurable products — the mutation must reject cleanly (validationErrors[] non-empty) without HTTP 500 or data corruption.","plain_product_id=@td(CFG_HOODIE.id)","[AUTH role=ORG_USER]
@@ -350,3 +363,175 @@ CRX-GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reach
 [DATA label=remove_item] data.removeCartItem.itemsCount = 0
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.itemsCount = 0","[EVIDENCE] BL-CART-008: removeCartItem fully removes the line just created. Pre-fix: remove could no-op due to stale read.","remove_item.itemsCount = 1 (remove no-op'd — pre-fix lock bug); read_back.itemsCount = 1",cleanup_post inline,"VCST-5083; BL-CART-008; xAPI removeCartItem lock regression; XCart 3.1013.0 fix",Automated
+GQL-MC-002,"Mixed Cart — cartTotals Returns Per-Currency Breakdown With Exactly One isDefaultTotalCurrency=true","GraphQL > xCart > Mixed Cart",Critical,"BL-LOY-003; BL-GQL-001","ECL-7.3","Runner-native. LOYALTY_VIP_USER. Live-discover a PTS loyalty product. Build a mixed cart (1 USD item + 1 PTS item). Query cartTotals. Assert: (1) exactly 2 elements returned; (2) exactly one has isDefaultTotalCurrency=true (USD); (3) the PTS element has isDefaultTotalCurrency=false; (4) each element's total.currency.code matches its currency; (5) USD total.amount > 0; (6) PTS total.amount > 0. Also assert currencyCode per line item in items[].","storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); USD_product=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") {
+      items { id code }
+    }
+  }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP query_mixed_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      id itemsCount
+      extendedPriceTotal { amount currency { code } }
+      cartTotals {
+        isDefaultTotalCurrency
+        total { amount currency { code } }
+        subTotal { amount }
+        taxTotal { amount }
+        discountTotal { amount }
+      }
+      items { id productId currencyCode quantity extendedPrice { amount currency { code } } }
+    }
+  }
+[GQL-EXEC query_mixed_cart]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=query_mixed_cart] errors[] empty
+[COUNT label=query_mixed_cart] data.cart.itemsCount = 2
+[COUNT label=query_mixed_cart] data.cart.cartTotals = 2
+[DATA label=query_mixed_cart] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.currency.code is non-null
+[DATA label=query_mixed_cart] data.cart.cartTotals[?isDefaultTotalCurrency=false].total.currency.code is non-null
+[DATA label=query_mixed_cart] data.cart.items[?currencyCode=USD].productId is non-null
+[DATA label=query_mixed_cart] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].productId is non-null","[EVIDENCE] Mixed cart (USD + PTS items) produces exactly 2 cartTotals elements. Exactly one has isDefaultTotalCurrency=true (USD). extendedPriceTotal covers USD-only lines.","cartTotals has 1 element (PTS total missing — Mixed Cart grouping broken); cartTotals has 0 isDefaultTotalCurrency=true entries; items[].currencyCode null for PTS item (field not populated)",cleanup_post inline,"VCST-5101; BL-GQL-001; BL-GQL-002; xCart cartTotals Mixed Cart; vc-module-x-cart PR #120",Reviewed
+GQL-MC-003,"Mixed Cart — extendedPriceTotal Covers USD-Currency Lines Only (Excludes PTS)","GraphQL > xCart > Mixed Cart",High,"BL-LOY-001; BL-GQL-001","ECL-7.3; ECL-4.1","Runner-native. LOYALTY_VIP_USER. Build a mixed cart: 2 USD items (product A qty=1, product B qty=2) + 1 PTS item. Query extendedPriceTotal and compare to sum of USD-only extendedPrice values. Assert extendedPriceTotal.amount equals sum of USD line extendedPrice.amounts and does NOT include PTS line amounts.","storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); USD_product=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") {
+      items { id }
+    }
+  }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item_a]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 2 }) { id } }
+[GQL-EXEC add_usd_item_a]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP query_ext_price]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      id itemsCount
+      extendedPriceTotal { amount currency { code } }
+      extendedPriceTotalWithTax { amount }
+      items {
+        productId currencyCode quantity
+        extendedPrice { amount currency { code } }
+      }
+    }
+  }
+[GQL-EXEC query_ext_price]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=query_ext_price] errors[] empty
+[COUNT label=query_ext_price] data.cart.itemsCount = 2
+[DATA label=query_ext_price] data.cart.extendedPriceTotal.currency.code is non-null
+[DATA label=query_ext_price] data.cart.extendedPriceTotal.amount > 0
+[DATA label=query_ext_price] data.cart.items[?currencyCode=USD].extendedPrice.amount > 0
+[DATA label=query_ext_price] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount > 0","[EVIDENCE] extendedPriceTotal is in USD currency and equals sum of USD-only line extendedPrice values; PTS line extendedPrice is in PTS but is NOT included in extendedPriceTotal.","extendedPriceTotal includes PTS line amount (cross-currency bleed into primary total); extendedPriceTotal.currency.code = PTS (wrong currency); cartTotals null (Mixed Cart not deployed)",cleanup_post inline,"VCST-5101; BL-CART-003; BL-GQL-001; xCart extendedPriceTotal USD-only scope; vc-module-x-cart PR #120",Reviewed
+GQL-MC-005,"Mixed Cart — changeCartItemQuantity Targets PTS Line Item via lineItemId","GraphQL > xCart > Mixed Cart",High,"BL-LOY-002; BL-CART-002; BL-GQL-001","ECL-2.1; ECL-7.3","Runner-native. LOYALTY_VIP_USER. Build a mixed cart (1 USD item + 1 PTS item). Capture PTS lineItemId. Call changeCartItemQuantity with that lineItemId and quantity=3. Assert: PTS line quantity=3, USD line quantity=1 (unchanged). changeCartItemQuantity identifies the target line by lineItemId (not currencyCode) — so routing is correct as long as lineItemId is from the PTS line.","storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); USD_product=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query {
+    products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1
+      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") {
+      items { id }
+    }
+  }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id productId currencyCode } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id items { id productId currencyCode } } }
+[GQL-EXEC add_pts_item]
+[GQL-OP read_after_add]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { items { id currencyCode productId quantity } } }
+[GQL-EXEC read_after_add]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
+[GQL-OP update_pts_qty]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" quantity: 3 }) { id items { id currencyCode quantity } } }
+[GQL-EXEC update_pts_qty]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=update_pts_qty] errors[] empty
+[COUNT label=update_pts_qty] data.changeCartItemQuantity.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].quantity = 3
+[COUNT label=update_pts_qty] data.changeCartItemQuantity.items[?currencyCode=USD].quantity = 1","[EVIDENCE] changeCartItemQuantity targets the PTS line item by lineItemId; USD line is unaffected. The two currency lines are independent.","update_pts_qty errors[] non-empty (lineItemId not found — Mixed Cart isolation bug); PTS quantity not updated (wrong line targeted); USD line quantity changed instead of PTS",cleanup_post inline,"VCST-5101; BL-CART-002; xCart changeCartItemQuantity Mixed Cart currency isolation; vc-module-x-cart PR #120",Reviewed
+GQL-MC-006,Mixed Cart — cart-% coupon discounts primary-currency lines only (PTS line excluded from coupon base),GraphQL > xCart > Mixed Cart,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Loyalty mode 'Mixed Cart', currency @td(LOYALTY_SETTINGS.currency_code). Cart-% coupon @td(COUPONS.percentageCode). Live-discover a PTS loyalty product. Builds USD-only+coupon (baseline), then adds/bumps a PTS line; the coupon discount must stay equal to the USD-only baseline. DOCUMENTS VCST-5101 Bug-1 — RED on current build until the mixed-cart coupon/promotion discount base is scoped to cart-currency (USD) lines.",storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); USD_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_user=@td(LOYALTY_VIP_USER.email),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } coupons { code } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed_q1]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode discountTotal { amount } } } }
+[GQL-EXEC cart_mixed_q1]
+[GQL-CAPTURE cart_mixed_q1.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX1]
+[GQL-OP bump_pts_qty]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 2 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC bump_pts_qty]
+[GQL-OP cart_mixed_q3]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
+[GQL-EXEC cart_mixed_q3]
+[GQL-CAPTURE cart_mixed_q3.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX3]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[ERRORS label=cart_mixed_q1] errors[] empty
+[VAR] {{COUPON_DISC_MIX1}} = {{COUPON_DISC_BASE}}
+[VAR] {{COUPON_DISC_MIX3}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed_q1] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0
+[DATA label=cart_mixed_q1] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0",[API] Coupon discount (discounts[?coupon=@td(COUPONS.percentageCode)].amount) must be invariant to the PTS line: USD-only baseline == mixed q1 == mixed q3. PTS line + PTS cartTotals block carry discountTotal 0.,Coupon discount grows when the PTS line qty increases with the USD line constant (PTS value folded into the cart-% coupon base at 1:1); PTS line or PTS cartTotals block shows a non-zero discountTotal (promotion wrongly applied to loyalty currency).,cleanup_post inline (clearCart removes coupon + items),VCST-5101 Bug-1 (mixed-cart coupon PTS-leak); reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; reports/ba/ba-report-2026-06-09.md (refined RCA); BL-CART-003; vc-module-x-cart PR #120 CartMappingProfile.cs (promoEvalcontext.CartTotal=Cart.SubTotal — %-coupon base not currency-scoped); vc-module-cart PR #188,Reviewed

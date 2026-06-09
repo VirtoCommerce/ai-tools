@@ -1,0 +1,50 @@
+{
+  "ticket": "VCST-5101",
+  "verdict": "FAIL",
+  "verdict_reason": "Task-1 AC violated: cart-percentage coupon (QA10OFF) folds the PTS loyalty line into the USD discount base (1:1), over-discounting USD. Promotion not scoped to primary-currency lines.",
+  "date": "2026-06-09",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1035.0",
+    "theme": "vc-theme-b2b-vue-2.51.0-pr-2310-6b00d69d",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1018.0-pr-120",
+      "VirtoCommerce.Cart": "3.1005.0-pr-188"
+    }
+  },
+  "agents_dispatched": ["qa-testing-expert"],
+  "execution_evidence_source": "this session's live verification (lifecycle Phase 5 + graphql-runner), same build/env",
+  "total_cases": 7,
+  "passed": 6,
+  "failed": 1,
+  "blocked": 0,
+  "ac_results": {
+    "task1_cartTotals_per_currency": "PASS",
+    "task1_promotion_tax_primary_only": "FAIL",
+    "task2_add_with_currency": "PASS",
+    "task3_split_summary": "PASS",
+    "exclude_configurable": "OUT_OF_SCOPE"
+  },
+  "bugs_found": [
+    {
+      "title": "Cart-% coupon over-discounts by folding PTS line into USD discount base",
+      "severity": "High",
+      "layer": "backend (mixed-cart promotion/coupon scoping)",
+      "filed": false,
+      "evidence": "screenshots/VCST-5101-BUG-pts-qty-leaks-usd-discount.png, screenshots/cart-resp-coupon-pts-leak.json"
+    }
+  ],
+  "business_rules_verified": ["BL-CART-007", "BL-CART-001"],
+  "business_rules_flagged": ["BL-CART-004 (superseded by Mixed Cart — amendment pending)"],
+  "exploratory": {
+    "charter": "Feature charter — mixed-cart boundaries (persistence, merge, checkout, promotion/tax, exclusion)",
+    "heuristic": "SFDPOT + CRISP",
+    "findings": { "bugs": 1, "risks": 2, "questions": 1, "observations": 4 }
+  },
+  "open_items": [
+    "File Bug 1 (coupon PTS-leak) via /qa-bug — High, revenue, clean STR, API-confirmed",
+    "Add regression case: promotion/coupon scoping on a mixed cart (coverage gap)",
+    "vc-frontend Apollo currencyCode cache write (local bug report; fires on every cart mutation)"
+  ],
+  "artifacts": "tests/Sprint26-11/VCST-5101/"
+}

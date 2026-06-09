@@ -1,0 +1,21 @@
+{
+  "runId": "FIX-2026-06-09-1022",
+  "ticket": "VCST-4767",
+  "repo": "VirtoCommerce/vc-module-marketing",
+  "repoKind": "module",
+  "agent": "fullstack-backend",
+  "scope": "client-side-only",
+  "branch": "claude/qa-autofix/VCST-4767",
+  "commit": "f9dd883",
+  "fixPr": "https://github.com/VirtoCommerce/vc-module-marketing/pull/268",
+  "artifact": "VirtoCommerce.Marketing_3.1005.0-pr-268-f9dd.zip",
+  "deployPr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/5932",
+  "deployBranch": "VCST-4767-vcst-qa-deployment",
+  "deployTarget": "vcst-qa",
+  "gates": {
+    "G0": "PASS", "G1": "PASS", "G2": "PASS", "G3": "PASS",
+    "G4": "APPROVE", "G5": "GREEN", "G6": "deferred-needs-deploy", "G7": "stop-human-review"
+  },
+  "merged": false,
+  "confidence": "HIGH"
+}

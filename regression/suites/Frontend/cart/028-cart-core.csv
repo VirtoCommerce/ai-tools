@@ -158,19 +158,19 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [NETWORK] no 4xx/5xx","confirmation dialog skipped; items remain after clear; cart badge not reset; GA4 clear_cart event not fired","none (cart empty)","google-analytics","Automated"
 "CART-016","Cart Calculations - Subtotal","Cart > Calculations","Critical","BL-CART-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Multiple items in cart with different quantities, user on cart page","url={{FRONT_URL}}/cart
+Multiple items in cart with different quantities, user on cart page. All items must be in the default store currency ({{CURRENCY_CODE}} / USD) — this case tests single-currency subtotal math. For Mixed Cart (VCST-5101): USD subtotal covers USD-currency line items only; PTS loyalty items appear in a separate currency group with their own total.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] record unit price and quantity for each line item
-[ASSERT] calculate expected subtotal: sum of (unit price × qty) for all lines
+[ASSERT] record unit price and quantity for each line item (USD-currency items only)
+[ASSERT] calculate expected subtotal: sum of (unit price × qty) for all USD-currency lines
 [ASSERT] compare expected subtotal to displayed subtotal
 [ACT] change one item quantity
 [WAIT] wait for totals to recalculate
-[ASSERT] verify subtotal updated correctly","[MATH] each line total = unit price × quantity (2 decimal places)
-[MATH] displayed subtotal = sum of all line totals (2 decimal places)
+[ASSERT] verify subtotal updated correctly","[MATH] each line total = unit price × quantity (2 decimal places) for USD-currency lines
+[MATH] displayed subtotal = sum of all USD-currency line totals (2 decimal places) — PTS lines NOT included in USD subtotal
 [MATH] subtotal updates immediately after quantity change
 [FORMAT] all amounts formatted as currency with 2 decimal places","[CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on cart recalculation requests","subtotal does not match sum of line totals; rounding error > $0.01; subtotal not updating after quantity change","Restore quantities or remove items","VCST-4499","Automated"
+[NETWORK] no 4xx/5xx on cart recalculation requests","subtotal does not match sum of USD line totals; rounding error > $0.01; subtotal not updating after quantity change; PTS-currency line totals incorrectly included in USD subtotal (Mixed Cart boundary violation)","Restore quantities or remove items","VCST-4499; Synced: VCST-5101 (2026-06-09)","Automated"
 "CART-017","Cart Calculations - Tax","Cart > Calculations","High","BL-CART-003","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Taxable items in cart, tax configured for shipping address, user on cart page","url={{FRONT_URL}}/cart
@@ -232,9 +232,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}
 [STATE] product not listed in cart page","[API] removeCartItem mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx","spinbutton stays at 1; 'in Cart' indicator persists; cart badge not decremented; product still in cart","none (item removed)","QS-PDP-004","Manual"
-"CART-033","Quantity Stepper - Same SKU from Listing and PDP Creates Single Line Item","Cart > Quantity Stepper","Critical","BL-CART-007","ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CART-033","Quantity Stepper - Same SKU from Listing and PDP Creates Single Line Item (BL-CART-007 — same currency)","Cart > Quantity Stepper","Critical","BL-CART-007","ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in, cart empty or product not in cart","url={{FRONT_URL}}
+User logged in, cart empty or product not in cart. Test product must be a standard USD-currency product (not a loyalty/PTS product). NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — same SKU in the SAME currency creates a single line (this case); same SKU added via itemCurrencyCode=PTS creates a SEPARATE line (covered by gap GQL-MC-001). This case covers same-currency coalescing only.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_URL}}
 [ACT] click '+' (Increase quantity) on product card — qty becomes 1
@@ -244,11 +244,11 @@ password={{USER_PASSWORD}}","[NAV] navigate to category listing page on {{FRONT_
 [ACT] click '+' (Increase quantity) on PDP
 [WAIT] wait for API update
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] count line items for this product SKU","[STATE] exactly one line item in cart for this SKU (no duplicate)
+[ASSERT] count line items for this product SKU","[STATE] exactly one line item in cart for this SKU in USD currency (no duplicate)
 [DOM] line item quantity = 2
 [STATE] PDP spinbutton reflected qty added from listing (server-side sync)","[API] addItem/changeCartItemQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx","duplicate line items created for same SKU; PDP shows 0 instead of 1; total qty wrong; two line items in cart","Remove item from cart","QS-PDP-006","Manual"
+[NETWORK] no 4xx/5xx","duplicate line items created for same SKU+same currency; PDP shows 0 instead of 1; total qty wrong; two line items in cart","Remove item from cart","QS-PDP-006; Synced: VCST-5101 (2026-06-09)","Manual"
 "CART-034","Quantity Stepper - Cart Page Minimum is 1","Cart > Quantity Stepper","High","BL-CART-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty=1; on {{FRONT_URL}}/cart page","url={{FRONT_URL}}/cart
@@ -328,22 +328,22 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [STATE] cart quantity persisted server-side (not lost on refresh)
 [MATH] line total and subtotal consistent with qty=3","[CONSOLE] no JS errors on page load after refresh
 [NETWORK] no 4xx/5xx on cart data fetch after refresh","qty resets to 1 after refresh; cart badge resets; subtotal recalculates to unit price only","none","QS-PERSIST-001","Manual"
-"CART-039","Quantity Stepper - Rapid Double-Click Does Not Corrupt Cart","Cart > Quantity Stepper","High","BL-CART-007","ECL-1.2, ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CART-039","Quantity Stepper - Rapid Double-Click Does Not Corrupt Cart (BL-CART-007 — same currency)","Cart > Quantity Stepper","High","BL-CART-007","ECL-1.2, ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product in cart with qty=1; on PDP or cart page","url={{FRONT_URL}}/product/{{TEST_SKU}}
+Product in cart with qty=1; on PDP or cart page. Test product must be a standard USD-currency product. NOTE (VCST-5101 Mixed Cart): BL-CART-007 is now currency-scoped — 'exactly one line item' applies to the same-currency domain. Double-clicking a USD product must not create duplicates within USD lines. A PTS product is a separate entity and would have its own single PTS line.","url={{FRONT_URL}}/product/{{TEST_SKU}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/product/{{TEST_SKU}}
 [ACT] double-click '+' (Increase quantity) button rapidly
 [WAIT] wait 2 seconds for all API responses to settle
 [ASSERT] observe spinbutton value (expect 2 or 3, deterministic)
 [NAV] navigate to {{FRONT_URL}}/cart
-[ASSERT] verify line item quantity and count
+[ASSERT] verify line item quantity and count for the USD-currency SKU
 [ASSERT] check browser console for errors","[STATE] spinbutton shows deterministic value — 2 or 3 (not indeterminate or 0)
-[STATE] exactly one line item for SKU (no duplicates created)
+[STATE] exactly one USD-currency line item for this SKU (no same-currency duplicates)
 [MATH] cart total arithmetically consistent with displayed quantity
 [DOM] no error messages on cart page","[API] all addItem/changeCartItemQuantity mutation responses errors[] are empty
 [CONSOLE] no JS race condition errors or duplicate mutation errors
-[NETWORK] no failed requests from race conditions","duplicate line items from double-click; qty jumps to unexpected value; console errors from race; cart total mismatch","Remove item from cart","QS-ERR-001","Manual"
+[NETWORK] no failed requests from race conditions","duplicate USD-currency line items from double-click; qty jumps to unexpected value; console errors from race; cart total mismatch","Remove item from cart","QS-ERR-001; Synced: VCST-5101 (2026-06-09)","Manual"
 "CART-049","Currency Switch - Cart Prices Recalculate Using New Price List","Cart > Currency","Critical","BL-CART-004","ECL-4.1, ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; products in cart with prices in multiple currencies; store supports at least two currencies (e.g., USD and EUR)","url={{FRONT_URL}}/cart
@@ -787,3 +787,50 @@ Ring configurable product (CFG_RING) accessible at {{FRONT_URL}}@td(CFG_RING.url
 [API] moveFromSavedForLater mutation errors[] empty
 [CONSOLE] no JS errors during save + restore flow
 [NETWORK] no 4xx/5xx on cart API requests",Save for later click does nothing or shows error; Saved for later item missing configuration label (VCST-4205 pre-fix: configuration blank after save); Move to cart restores item with empty/default configuration; Spinner visible >10s; errors[] non-empty on moveToSavedForLater; cart badge stays at 1 after Save,Remove Ring item from cart or Saved for later if test leaves items behind,VCST-4205,Draft
+"CART-071","Mixed Cart — Adding Loyalty PTS Product Shows 'Products in PTS' Group on Cart Page","Cart > Mixed Cart","Critical","BL-B2B-005; BL-CART-007","ECL-7.3","[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). Theme vc-theme-b2b-vue-2.51.0-pr-2310+. User is in VIP group. Requires at least 1 product with PTS price in the loyalty catalog.","front_url={{FRONT_URL}}; store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); loyalty_user=@td(LOYALTY_VIP_USER.email)","[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card
+[ACT] click first product card
+[WAIT] PDP loads; price visible in @td(LOYALTY_SETTINGS.currency_code)
+[ACT] click Add to Cart / '+' button
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page fully loads
+[ASSERT] locate section heading containing '@td(LOYALTY_SETTINGS.currency_code)' (e.g. 'Products in PTS')
+[ASSERT] verify loyalty line item is inside that section","[DOM] a section heading matching 'Products in @td(LOYALTY_SETTINGS.currency_code)' (or i18n equivalent) is visible on cart page
+[DOM] the loyalty product line item appears under this PTS section (not in the default USD section)
+[DOM] order summary contains a 'Total in @td(LOYALTY_SETTINGS.currency_code)' block (data-test-id='cart-other-currency-totals' or text equivalent)
+[DOM] PTS line item price is displayed in @td(LOYALTY_SETTINGS.currency_code) (not USD)
+[STATE] USD section (if present) does NOT contain the PTS line item","[API] cart query returns items[].currencyCode = @td(LOYALTY_SETTINGS.currency_code) for the loyalty item
+[API] cartTotals has >= 2 elements after adding PTS item to a cart that also has USD items
+[CONSOLE] no unhandled JS errors on cart page
+[NETWORK] no 4xx/5xx on addItem or cart page load","PTS product shown in the USD section without a separate PTS heading; 'Products in PTS' heading absent (vc-frontend PR #2310 not deployed or i18n key missing); cart-other-currency-totals block absent from order summary; PTS line item price displayed in USD (currency bleed)","Remove loyalty item from cart; sign out","VCST-5101; BL-B2B-005","Reviewed"
+"CART-072","Mixed Cart — Same Product in Different Currencies Creates Independent Cart Counts","Cart > Mixed Cart","High","BL-CART-007","ECL-2.1; ECL-7.3","[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.currency_code). A product must exist with both a USD price (standard catalog) and a PTS price (loyalty catalog). If such a product exists, adding it as USD then as PTS should show 2 separate lines. If only one currency is available, this test verifies the add-to-cart badge and line counts per currency independently.","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); loyalty_user=@td(LOYALTY_VIP_USER.email)","[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] loyalty catalog product grid loads
+[ACT] add 1 unit of first loyalty product (PTS currency) to cart via + button
+[WAIT] cart badge shows 1 item
+[NAV] {{FRONT_URL}}/catalog (standard catalog)
+[WAIT] standard catalog loads
+[ACT] add 1 unit of any standard USD product to cart
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads","[STATE] cart badge shows 2 items total (1 USD + 1 PTS)
+[DOM] two distinct line items visible on cart page
+[DOM] USD section shows the standard product (USD price)
+[DOM] PTS section shows the loyalty product (PTS price)
+[DOM] PTS product add-to-cart on loyalty catalog page does NOT merge into or modify the USD line count","[API] cart query returns itemsCount = 2 with two distinct currencyCode values (USD and @td(LOYALTY_SETTINGS.currency_code))
+[CONSOLE] no unhandled JS errors
+[NETWORK] no 4xx/5xx","Two items show as ONE line (BL-CART-007 currency-scope violated — different-currency items incorrectly merged); badge shows 1 when 2 items expected; PTS item missing from cart after navigating away from loyalty catalog","Remove all items from cart; sign out","VCST-5101; BL-CART-007 (currency-scoped)","Reviewed"
+CART-073,"No Apollo cache ""Missing field currencyCode"" error in console on cart mutations (Mixed Cart)",Cart > Mixed Cart,Low,BL-CART-007,ECL-7.3,"[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Theme vc-theme-b2b-vue-2.51.0-pr-2310+. Client-side regression guard for the VCST-5101 cache-write finding. RED until vc-frontend includes currencyCode in the cart mutation cache write.",front_url={{FRONT_URL}}; loyalty_user=@td(LOYALTY_VIP_USER.email),"[NAV] {{FRONT_URL}}/catalog
+[WAIT] product grid loaded
+[ACT] add a standard USD product to cart (product-card Add to Cart)
+[NAV] {{FRONT_URL}}/loyalty-catalog
+[ACT] add a PTS loyalty product to cart
+[ACT] open browser devtools console and review messages emitted during the add-to-cart mutations","[CONSOLE] no Apollo error containing ""Missing field 'currencyCode' while writing result"" (Apollo invariant 13) after any add-to-cart mutation
+[NETWORK] the cart mutation response includes items[].currencyCode (server returns it correctly)","[NETWORK] cart mutation 200 with items[].currencyCode populated (backend confirmed clean)
+[CONSOLE] capture the exact Apollo invariant message if present","Console logs ""Invariant Violation: Missing field 'currencyCode' while writing result"" (Apollo error 13) on add-to-cart; fires on every cart mutation incl. USD-only adds.",Clear cart; sign out,VCST-5101 (client-side finding); reports/bugs/BUG-mixed-cart-currencyCode-apollo-cache-write.md. Definitive coverage = vc-frontend vitest unit test on the cart mutation cache write; this browser guard is the regression backstop.,Draft

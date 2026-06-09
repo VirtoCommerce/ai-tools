@@ -1,0 +1,59 @@
+{
+  "runId": "TLC-2026-06-09-1426",
+  "inputType": "change-source",
+  "source": "VCST-5101 (PRs vc-frontend#2310 + vc-module-x-cart#120 + vc-module-cart#188)",
+  "date": "2026-06-09",
+  "verdict": "APPROVED",
+  "build": {
+    "platform": "3.1035.0",
+    "theme": "vc-theme-b2b-vue-2.51.0-pr-2310-6b00d69d",
+    "modules": {
+      "VirtoCommerce.XCart": "3.1018.0-pr-120-6ece",
+      "VirtoCommerce.Cart": "3.1005.0-pr-188-e2a6"
+    },
+    "allPrsDeployed": true
+  },
+  "changedModules": ["Cart", "XCart", "vc-frontend cart/checkout"],
+  "changedLayers": ["backend", "graphql", "storefront"],
+  "affectedSuites": ["028", "083", "050b1", "050b4"],
+  "casesAnalyzed": 15,
+  "casesSynced": 8,
+  "casesGenerated": 7,
+  "generatedCases": ["GQL-MC-001", "GQL-MC-002", "GQL-MC-003", "GQL-MC-004", "GQL-MC-005", "CART-071", "CART-072"],
+  "liveVerification": {
+    "browser": "playwright-firefox (storefront) + project config.js loader (graphql-runner)",
+    "featureWorking": true,
+    "cartTotalsShape": "2 elements: [0] USD isDefaultTotalCurrency=true, [1] PTS false; per-line currencyCode present; extendedPriceTotal USD-only",
+    "gqlCasesPass": ["GQL-MC-001 6/6", "GQL-MC-002 7/7", "GQL-MC-003 6/6", "GQL-MC-004 5/5", "GQL-MC-005 3/3"],
+    "syncedStorefrontVerified": ["CART-016", "CART-033", "CART-039", "CART-071", "CART-072", "LOYF-025"],
+    "orchestratorFix": "filter operator ==->= (12 occurrences in 050b1/050b4); re-run live all PASS"
+  },
+  "validateTdRefs": "2329/2329, 0 failures, no bare GUIDs",
+  "filesModified": [
+    "regression/suites/Backend/graphql/050b1-graphql-xcart-basic.csv",
+    "regression/suites/Backend/graphql/050b4-graphql-xcart-cross-domain.csv",
+    "regression/suites/Frontend/cart/028-cart-core.csv",
+    "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
+    "config/test-suites.json",
+    "test-data/aliases.json",
+    ".env.vcst",
+    ".env.local",
+    ".claude/agents/knowledge/graphql-schema.md"
+  ],
+  "testCountUpdates": { "028": 46, "050b1": 19, "050b4": 23 },
+  "gateResults": {
+    "G1_structure": "PASS", "G2_determinism": "PASS", "G3_completeness": "PASS",
+    "G4_testability": "PASS", "G5_data_validity": "PASS", "G6_coverage": "PASS",
+    "G7_duplication": "PASS", "G8_environment": "PASS", "G9_sync": "PASS"
+  },
+  "blConflicts": [
+    { "id": "BL-CART-004", "observedBehavior": "Mixed Cart intentionally holds multi-currency state", "suggestedAction": "add Mixed-Cart exception clause", "flaggedOnly": true },
+    { "id": "BL-CART-007", "observedBehavior": "same productId + different currencyCode creates new line", "suggestedAction": "add currency-scope clause", "flaggedOnly": true }
+  ],
+  "remainingItems": [
+    "Promote 7 Draft cases -> Reviewed (feature live-verified, all green)",
+    "Decide BL-CART-004 / BL-CART-007 amendments (run --update-bl or edit manually)",
+    "Optional non-VIP + PTS-only negative case (CART-073 / GQL-MC-006)",
+    "Second-source repro of Apollo 'currencyCode' cache-write error on add-to-cart before filing"
+  ]
+}

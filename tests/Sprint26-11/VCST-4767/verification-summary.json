@@ -1,0 +1,23 @@
+{
+  "ticket": "VCST-4767",
+  "verdict": "VERIFIED",
+  "date": "2026-06-09",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1035.0-pr-3051-23c3-vcst-5212-23c309b0",
+    "relevant_modules": {"VirtoCommerce.Marketing": "3.1005.0-pr-268-f9dd"},
+    "pr_build": "VirtoCommerce.Marketing_3.1005.0-pr-268-f9dd.zip (vc-module-marketing PR #268, deploy PR vc-deploy-dev#5932 merged)"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "fix_pr_merged": false,
+  "jira_transition": "TESTED (pending; DONE deferred until PR #268 merged)",
+  "artifacts": "tests/Sprint26-11/VCST-4767/"
+}
