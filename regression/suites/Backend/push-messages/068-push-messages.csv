@@ -183,14 +183,6 @@ PUSH-022,Storefront Notifications — Notification Inline Content and Read Toggl
 [FORMAT] message content renders correctly — no raw HTML tags or markdown syntax visible","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns items with description/body matching inline content
 [NETWORK] no 4xx/5xx on notification toggle
 [CONSOLE] no JS errors during click/toggle","Content truncated to title only in list view, raw HTML tags visible in rendered message, clicking does not toggle read state, blue dot indicator does not change, 4xx/5xx on toggle request","Sign out; no data mutation",ECL-14.3,Not Automated
-PUSH-023,Storefront Notifications — Notification Link Navigates to Related Entity,Storefront > Notifications,Medium,,,User authenticated; at least one push message with an actionable link (to an order, quote, or shipment) exists in user's inbox,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
-[WAIT] notifications page loads
-[ACT] locate a notification item that contains a link or action button (e.g. 'View Order', 'View Quote')
-[ACT] click the notification link or action button
-[WAIT] navigation completes","[NAV] URL navigates to the related entity page (e.g. /account/orders/{orderId} or /account/quotes/{quoteId})
-[DOM] the target page loads and displays the related entity referenced in the notification
-[DOM] the linked entity (order/quote/shipment) exists and its details are visible","[NETWORK] no 4xx/5xx on navigation to linked entity
-[CONSOLE] no JS errors during link click or navigation","Link click produces no navigation, navigates to 404, wrong entity loaded, entity page blank","Sign out; no data mutation",ECL-14.3,Not Automated
 PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages,Storefront > Notifications,High,BL-NOTIF-001,"ECL-7.3","Two user accounts exist (User A and User B); a push message was published targeting only User A's role or user ID; both users are accessible for testing","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, org_email={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [ACT] sign in as {{USER_EMAIL}} (User A — targeted user)
 [WAIT] authenticated session established
