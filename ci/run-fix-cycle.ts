@@ -476,11 +476,11 @@ ${profile.typecheckCmd ? `- Type-check: \`${profile.typecheckCmd}\`\n` : ""}${pr
 1. Implement the fix on the work branch with a minimal diff.
 2. Add a test that fails before your fix and passes after (red→green).
 3. Run build${profile.typecheckCmd ? " + type-check" : ""}${profile.lintCmd ? " + lint" : ""} + test — all must pass.
-4. Commit (Conventional Commits, reference ${key}) and \`git push -u origin ${checkout.workBranch}\`.
+4. Commit (Conventional Commits, reference ${key}) and \`git push -u origin ${checkout.workBranch}\`. **Author the commit as the human who owns the write token (\`gh api user\` → \`user.name\`/\`user.email\` = \`<id>+<login>@users.noreply.github.com\`), with \`Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\` as a trailer — NEVER a bot author, or the org's CLA Assistant blocks the PR (overrides \`FIX_COMMIT_NAME\`/\`FIX_COMMIT_EMAIL\` win when set).
 5. Write the PR description to: ${prBodyPath}
 6. End your reply with these markers on their own lines:
    - \`FIX_STATUS: SUCCESS\` | \`PARTIAL\` | \`FAILED\`
-   - \`PR_TITLE: <conventional-commit-style title>\`
+   - \`PR_TITLE: ${key}: Fix <imperative summary of the bug>\`  (JIRA key first; distinct from the Conventional-Commits commit message)
    - \`CONFIDENCE: HIGH\` | \`MEDIUM\` | \`LOW\`
    - \`ROOT_CAUSE: <one sentence>\`
 
@@ -497,7 +497,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
 
   const fixStatus = (marker(fix.result, "FIX_STATUS") || "FAILED").toUpperCase();
   const confidence = (marker(fix.result, "CONFIDENCE") || "LOW").toUpperCase();
-  const prTitle = marker(fix.result, "PR_TITLE") || `fix: ${ticket?.summary || key} (${key})`;
+  const prTitle = marker(fix.result, "PR_TITLE") || `${key}: Fix ${ticket?.summary || key}`;
   const rootCause = marker(fix.result, "ROOT_CAUSE") || "";
 
   if (fixStatus !== "SUCCESS" || confidence === "LOW") {

@@ -99,17 +99,24 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 
 ## Phase 5 — Branch + PR
 > **Owner:** the routed developer agent.
-- `git commit` (Conventional Commits + JIRA key) → `git push -u origin claude/qa-autofix/VCST-XXXX` →
-  `gh pr create` (a **normal PR for human review — not auto-merged**), body from the agent's PR template
-  ("DO NOT MERGE until human review"; backend adds "needs deploy verification"), label, link JIRA.
+- `git commit` (Conventional Commits + JIRA key), **authored as the human token-owner with Claude as
+  `Co-Authored-By`** (NOT a bot author — CLA Assistant blocks bot-authored commits; pattern in
+  `developers/shared-instructions.md` §Commit identity) → `git push -u origin claude/qa-autofix/VCST-XXXX`
+  → `gh pr create` (a **normal PR for human review — not auto-merged**), **PR title `VCST-XXXX: Fix
+  <summary>`** (JIRA key first — distinct from the Conventional-Commits commit message; see
+  `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
+  human review"; backend adds "needs deploy verification"), label, link JIRA.
 - Transition JIRA **IN PROGRESS → IN REVIEW** ("Go to review"; ask user first) with the PR link.
 
 ## Phase 6 — Await CI + E2E (Gates 5 & 6)
 > **Owner:** orchestrator (CI poll) + `qa-backend-expert` / `qa-frontend-expert` (E2E, by kind).
 - **Gate 5 (CI):** poll `gh pr checks` / `mcp__github__get_pull_request_status` until the repo's
-  GitHub Actions are all `success` + `mergeable`. Background polling, not blocking sleeps. RED →
-  developer self-corrects in the SAME repo (≤2 iterations), re-push, re-poll; persistent RED / cross-repo
-  → STOP + hand off.
+  GitHub Actions are all `success` + `mergeable` — **including the SonarCloud quality gate** (the
+  `test-and-sonar` / `SonarCloud Code Analysis` check) and `license/cla`. Background polling, not blocking
+  sleeps. RED → developer self-corrects in the SAME repo (≤2 iterations), re-push, re-poll. **Sonar QG
+  red → fix the valid findings on the changed lines** (real bug/vuln/hotspot, or add new-code coverage)
+  within minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks.
+  Persistent RED / cross-repo / repo-owned QG threshold → STOP + hand off.
 - **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
   `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes
@@ -142,6 +149,8 @@ available for CI-on-PR; the routine is the lighter scheduled trigger.
   branch `claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
 - Never modify existing tests (ADD only). Never auto-merge. Never echo the GitHub PAT. All remote
   git/gh writes run as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`), not the ambient read-only
-  token — exact command pattern in `developers/shared-instructions.md` §GitHub authentication.
+  token, and commits are **authored as the human token-owner + `Co-Authored-By: Claude`** (CLA
+  Assistant blocks bot-authored commits) — exact command patterns in
+  `developers/shared-instructions.md` §GitHub authentication / §Commit identity.
 - Ask before every JIRA transition (consistent with `/qa-bug` Step 5 and `/qa-verify-fix` Step 6).
 - Reports follow `.claude/rules/reports.md` (the `reports/fixes/` category; long logs via SendMessage).

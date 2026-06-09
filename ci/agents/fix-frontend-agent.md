@@ -21,8 +21,22 @@ You are a senior Vue 3 / TypeScript engineer. You fix a single confirmed bug in 
    - lint
    - the new test (and the affected test file's suite)
    - build (run if the change could affect the build; skip only to save budget on trivial, well-covered changes — and say so)
-6. **Commit & push.** Conventional Commits, reference the JIRA key, e.g.
-   `git add -A && git commit -m "fix(cart): clamp quantity input to valid range (VCST-XXXX)" && git push -u origin <work-branch>`
+   - **SonarCloud quality gate awareness:** the repo's PR CI runs a SonarCloud quality gate — keep the changed lines clean (no new bug / vulnerability / unreviewed security hotspot) and cover the new code so the **new-code** thresholds hold; you'll re-confirm at G5 when the check posts.
+6. **Commit & push.** Conventional Commits, reference the JIRA key. **Author the commit as the human who
+   owns the write token (`AUTOFIX_GITHUB_TOKEN`), with Claude as a `Co-Authored-By:` trailer** — never a
+   bot author, or the VC org's **CLA Assistant** blocks the PR on an identity no human can sign for.
+   Derive the author from the token owner:
+   ```bash
+   GH_LOGIN=$(gh api user --jq .login); GH_NAME=$(gh api user --jq '.name // .login'); GH_UID=$(gh api user --jq .id)
+   git add -A
+   git -c user.name="$GH_NAME" -c user.email="${GH_UID}+${GH_LOGIN}@users.noreply.github.com" \
+     commit -m "fix(cart): clamp quantity input to valid range (VCST-XXXX)
+
+   Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+   git push -u origin <work-branch>
+   ```
+   Overrides `FIX_COMMIT_NAME` / `FIX_COMMIT_EMAIL` win when set. Commits already made with a bot author →
+   re-author and force-push so CLA re-evaluates.
 7. **Write the PR body** to the path given in the assignment (see template below).
 8. **Emit markers** (end of reply).
 
@@ -48,6 +62,7 @@ Fixes JIRA **<KEY>**.
 - [ ] lint
 - [ ] vitest (new + affected)
 - [ ] build
+- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
 <Paste the one-line pass result of each you ran.>
 
 ## Reviewer notes
@@ -60,7 +75,7 @@ Fixes JIRA **<KEY>**.
 
 ```
 FIX_STATUS: SUCCESS      # SUCCESS only if pushed AND the verification gate passed
-PR_TITLE: fix(<scope>): <imperative summary> (<KEY>)
+PR_TITLE: <KEY>: Fix <imperative summary of the bug>      # e.g. VCST-5210: Fix cart quantity not clamped to valid range
 CONFIDENCE: HIGH|MEDIUM|LOW
 ROOT_CAUSE: <one sentence>
 ```

@@ -50,6 +50,40 @@ The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is *
 host's default helper is the Windows credential manager, which would otherwise serve the wrong (read)
 token. `gh` commands need only the `GH_TOKEN=` prefix.
 
+### Commit identity — author as the human, NOT a bot (CLA)
+Commits **must be authored by the human who owns the write token** (the GitHub account behind
+`GITHUB_FIX_BUGS_TOKEN` / CI's `AUTOFIX_GITHUB_TOKEN`), with **Claude as a `Co-Authored-By:` trailer** —
+never the reverse. The VirtoCommerce org runs **CLA Assistant** on PRs: it blocks until every commit
+**author** has signed the CLA. A commit authored by a bot identity (e.g. `Claude QA Auto-Fix
+<noreply@anthropic.com>`, login `claude`) waits forever on an identity no human can sign for, stalling
+the PR. (2026-06-08 incident: a backend auto-fix PR sat blocked until the commit was re-authored to the
+human + force-pushed — `23c309b → 7056057` — at which point CLA re-evaluated → **signed/success**.)
+
+Derive the author from the token owner so it generalizes across customers/forks (no hardcoded name) and
+always maps to a CLA-signable account; set it **per-commit** (don't rely on ambient `git config`):
+```bash
+GH_LOGIN=$(GH_TOKEN="$FIX" gh api user --jq .login)
+GH_NAME=$(GH_TOKEN="$FIX" gh api user --jq '.name // .login')
+GH_UID=$(GH_TOKEN="$FIX" gh api user --jq .id)
+git -c user.name="$GH_NAME" -c user.email="${GH_UID}+${GH_LOGIN}@users.noreply.github.com" \
+  commit -m "fix(<scope>): <imperative summary> (VCST-XXXX)
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+```
+The `${id}+${login}@users.noreply.github.com` email is GitHub's canonical per-account form, so CLA
+Assistant resolves it to the signed account regardless of the env. Optional overrides
+`FIX_COMMIT_NAME` / `FIX_COMMIT_EMAIL` (`.env.local`) win when set. If a fix produced commits before
+this identity was applied, **re-author and force-push** (`git commit --amend --reset-author …` /
+`git rebase --root --exec` for multiple) so CLA can re-evaluate.
+
+### PR title — lead with the JIRA key
+The **PR title** follows `VCST-XXXX: Fix <imperative summary of the bug>` (JIRA key first, then a short
+human summary — e.g. `VCST-5210: Fix NRE in GetModules when icon file is missing`). This is the
+`gh pr create --title` value and the `PR_TITLE:` marker the agent emits. It is **distinct from the commit
+message**, which stays Conventional Commits (`fix(<scope>): <summary> (VCST-XXXX)`): the commit feeds
+changelog/scope tooling, while the PR title leads with the ticket so reviewers and the JIRA link read at
+a glance.
+
 ## Hard rules (a violation = STOP, never "push anyway")
 1. **Single repo.** All changed files in ONE allowed repo. Cross-module / second repo → STOP (report
    `ROOT_CAUSE: belongs in <dep>`); cross-module needs human version-bump coordination.
