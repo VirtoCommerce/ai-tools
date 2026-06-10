@@ -1,4 +1,6 @@
-# BUG — Mixed-cart cart-% coupon folds the PTS loyalty line into the USD discount base `[High / revenue]`
+# BUG — Mixed-cart cart-% coupon folds the PTS loyalty line into the USD discount base `[High / revenue]` — **FIXED, verified 2026-06-10**
+
+> **Fix verification (2026-06-10, vcst-qa):** 8/8 cases PASS post-deploy — coupon = 10% × USD-only ($16) invariant to PTS presence (R1), qty steps (R5), selection (GQL-MC-010), and deletion (GQL-MC-011/S7); guards MC-007/008/009 (fixed-$, auto promo, merge) unregressed. The previously-RED MC-010/011 flipped GREEN on exactly the leak assertions. Rows GQL-MC-007..011 promoted into suite `050b4` as permanent regression guards. Evidence: `reports/regression/graphql-evidence/GQL-MC-00*-1781094*.json`, `R1/R5/S7-1781094*.json`.
 
 **Env:** vcst-qa @ Platform 3.1035.0 · theme 2.51.0-pr-2310 · XCart 3.1018.0-pr-120 · Cart 3.1005.0-pr-188 · store B2B-store · loyalty `PTS`, mode "Mixed Cart"
 **Ticket:** VCST-5101 (Loyalty Mixed Cart) — violates Task-1 AC "Tax and Promotion is computed only on primary-currency lines"
