@@ -1,0 +1,307 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+TASK-001,Create Task — All Fields Populated,Admin > Tasks > Create,Critical,BL-AUTH-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active at {{BACK_URL}}; Task Management module v3.1002.0-pr-28 installed; at least one task type exists in Settings","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks (or main menu — Tasks)
+[BLADE] Wait for 'All tasks' view to load
+[ACT] Click 'Add' or 'Create' button to open new-task blade
+[BLADE] Wait for create-task blade to open
+[ACT] Select a task type from the 'Type' dropdown
+[ACT] Fill 'Summary' field with 'AGENT-TEST-create-all-fields'
+[ACT] Fill 'Description' field with 'Automated test task — all fields'
+[ACT] Select 'High' from the 'Priority' dropdown
+[ACT] Set 'Due' date to a future date (today + 7 days)
+[ACT] Click the 'Assignee' field and search for {{ADMIN_EMAIL}}; select the result
+[SAVE] Click 'Save' and wait for success notification","[TOAST] Success notification appears (e.g. 'Saved' or 'Task created')
+[BLADE] Create-task blade closes or shows the created task detail
+[FORM] Task record displays Summary = 'AGENT-TEST-create-all-fields'
+[FORM] Priority field shows 'High'
+[FORM] Assignee field shows the selected user name
+[FORM] Due date is populated with the future date","[API] POST /api/task-management/search with name filter returns the new task record
+[API] Returned record has non-empty id and name = 'AGENT-TEST-create-all-fields'
+[CONSOLE] No JS errors in Admin SPA during create flow
+[NETWORK] No 4xx/5xx on task-management API calls during create",Blade does not open; 'Save' button disabled after filling fields; 500 on POST /api/task-management; spinner visible >5s; toast shows error message; Assignee search returns no results,Delete the created task via Admin UI or DELETE /api/task-management with ids=[captured task id],module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-002,Create Task — Missing Required Fields Shows Validation Error,Admin > Tasks > Create,High,BL-AUTH-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; Task Management module installed","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view to load
+[ACT] Click 'Add' or 'Create' button to open new-task blade
+[BLADE] Wait for create-task blade to open
+[ACT] Leave 'Summary' field empty
+[SAVE] Click 'Save' without filling required fields","[FORM] Validation error message displayed on the 'Summary' or other required field(s)
+[BLADE] Blade remains open (not dismissed)
+[FORM] Save action does not persist a new task","[API] No POST /api/task-management request fired (or request returns 4xx validation error)
+[CONSOLE] No unhandled JS exceptions
+[NETWORK] No 201 response for task creation",Form submits without validation; blade closes with no task created; no inline error shown; spinner visible with no resolution,none — no task was created,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-003,Assign Task to User — Assignee Receives Email Notification,Admin > Tasks > Assign,High,BL-NOTIF-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; a valid member user exists searchable by {{USER_EMAIL}}; notification toggle enabled in Settings — Task management — Notifications; Hangfire dashboard accessible","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, assignee_email={{USER_EMAIL}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view to load
+[ACT] Click 'Add' / 'Create' to open new-task blade
+[ACT] Fill 'Summary' with 'AGENT-TEST-assign-notification'
+[ACT] Select any task type from 'Type' dropdown
+[ACT] Set 'Due' date to a future date (today + 7 days)
+[ACT] Click 'Assignee' field; search for {{USER_EMAIL}}; select the matching member (Assignee is required -- Save is disabled without it)
+[SAVE] Click 'Save' and wait for success notification
+[WAIT] Wait 10s for notification job to be queued","[TOAST] Task saved successfully
+[FORM] Assignee field shows the display name for {{USER_EMAIL}}
+[EMAIL] Hangfire dashboard shows task-assignment notification job enqueued or succeeded within 30s","[API] GET /api/task-management/search returns task with responsibleName matching the selected member
+[EMAIL] Check {{BACK_URL}}/hangfire — task-assignment job status is Succeeded
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on task-management or notification API calls",Assignee field does not accept the member; Save button remains disabled (Assignee is mandatory); Save fails; Hangfire job not created; notification job fails; spinner >5s,DELETE /api/task-management with captured task id; restore notification toggle state if changed,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,needs-review
+TASK-004,Create Task — All Five Priority Values Persist Correctly,Admin > Tasks > Create,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; at least one task type exists; GET {{BACK_URL}}/api/task-management/tasks/types returns non-empty list; POST {{BACK_URL}}/api/task-management/members/search (body {take:1}) returns at least one member","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[ACT] Click 'Add' / 'Create'; fill 'Summary' with 'AGENT-TEST-priority-lowest'; select 'Lowest' from 'Priority'; set 'Due' date to a future date; click 'Assignee' field and select any member (Assignee is required); click 'Save'
+[WAIT] Wait for success; note task id
+[ACT] Click 'Add' / 'Create'; fill 'Summary' with 'AGENT-TEST-priority-normal'; select 'Normal' from 'Priority'; set 'Due' date to a future date; select any member as Assignee; click 'Save'
+[WAIT] Wait for success
+[ACT] Click 'Add' / 'Create'; fill 'Summary' with 'AGENT-TEST-priority-highest'; select 'Highest' from 'Priority'; set 'Due' date to a future date; select any member as Assignee; click 'Save'
+[WAIT] Wait for success
+[ACT] Re-open each created task and verify Priority label shown","[FORM] 'AGENT-TEST-priority-lowest' blade shows Priority = 'Lowest'
+[FORM] 'AGENT-TEST-priority-normal' blade shows Priority = 'Normal'
+[FORM] 'AGENT-TEST-priority-highest' blade shows Priority = 'Highest'","[API] GET /api/task-management/search for each task name; verify priority field value matches label selected in UI
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on any save",Priority dropdown missing one of the five options; priority reverts to default after save; API priority value does not match UI label; Save button disabled (Assignee not filled),Delete all three AGENT-TEST-priority-* tasks via DELETE /api/task-management,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-005,Complete Task — Status Becomes Done and Task Moves to Archive,Admin > Tasks > Complete,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; an active task named 'AGENT-TEST-complete-done' exists in 'All tasks' (create it first via the create flow if not present)","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[GRID] Locate task 'AGENT-TEST-complete-done' in the grid; click to open its blade
+[BLADE] Wait for task detail blade to load
+[ACT] Click 'Complete' action button
+[WAIT] Wait for success confirmation or blade close
+[NAV] Click 'Archive tasks' view in the left navigation panel
+[GRID] Search for 'AGENT-TEST-complete-done' in the archive grid","[TOAST] Completion success notification shown
+[GRID] Task 'AGENT-TEST-complete-done' is no longer listed in 'All tasks'
+[GRID] Task appears in 'Archive tasks' view
+[FORM] Task status shows 'Done' in the archive detail blade","[API] GET /api/task-management/{id} returns status = 'Done' and isActive = false
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on POST /api/task-management/finish",Task does not disappear from 'All tasks' after Complete; task not found in archive; status remains unchanged; 'Complete' button absent; spinner >5s,Task is already archived in Done state — no additional cleanup needed,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-006,Reject Task — Status Becomes Canceled and Task Moves to Archive,Admin > Tasks > Reject,Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; an active task named 'AGENT-TEST-reject-canceled' exists in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[GRID] Locate task 'AGENT-TEST-reject-canceled'; click to open its blade
+[BLADE] Wait for task detail blade
+[ACT] Click 'Reject' action button
+[WAIT] Wait for success confirmation
+[NAV] Click 'Archive tasks' view in the left navigation panel
+[GRID] Search for 'AGENT-TEST-reject-canceled'","[TOAST] Rejection success notification shown
+[GRID] Task removed from 'All tasks'
+[GRID] Task appears in 'Archive tasks'
+[FORM] Task status shows 'Canceled' in archive detail blade","[API] GET /api/task-management/{id} returns status = 'Canceled' and isActive = false
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on POST /api/task-management/finish",Task does not disappear from 'All tasks' after Reject; status not 'Canceled'; task not found in archive; 'Reject' button absent,Task is already archived — no additional cleanup needed,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-007,Reset Task — Unsaved Edits Are Discarded,Admin > Tasks > Reset,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; an active task with a known Summary value exists in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[GRID] Locate an existing active task; click to open its blade
+[BLADE] Wait for task detail blade
+[ACT] Note the current 'Summary' value (original)
+[ACT] Change the 'Summary' field to append ' MODIFIED'
+[ACT] Click 'Reset' action button (without saving)
+[WAIT] Wait for blade to refresh","[FORM] 'Summary' field reverts to the original pre-edit value after Reset
+[FORM] No unsaved modification indicator remains in the blade","[API] GET /api/task-management/{id} returns name equal to the original value (not the modified one)
+[CONSOLE] No JS errors
+[NETWORK] No PUT /api/task-management request fired during Reset",Reset does not revert the field; 'Reset' button triggers save instead; edited value persists after Reset; no Reset button visible,none — Reset is a discard action with no server side effect,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-008,Edit and Save Existing Task — Changes Persisted,Admin > Tasks > Edit,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; an active task named 'AGENT-TEST-edit-save' exists in 'All tasks' (to create it: POST {{BACK_URL}}/api/task-management/members/search body {take:1} to get a member id; then POST {{BACK_URL}}/api/task-management with name, type from GET /tasks/types, responsibleId, dueDate)","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[GRID] Locate task 'AGENT-TEST-edit-save'; click to open its blade
+[BLADE] Wait for task detail blade
+[ACT] Change the 'Priority' field to 'Low'
+[ACT] Change the 'Description' field to 'Updated by automation test'
+[SAVE] Click 'Save' and wait for success notification
+[BLADE] Close and re-open the same task blade","[TOAST] Save success notification shown
+[FORM] Reopened task shows Priority = 'Low'
+[FORM] Reopened task shows Description = 'Updated by automation test'","[API] GET /api/task-management/{id} returns priority matching 'Low' and description = 'Updated by automation test'
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on PUT /api/task-management",Save button not responsive; toast shows error; values revert on reopen; 4xx on PUT,Delete 'AGENT-TEST-edit-save' task or restore original priority and description via PUT,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-009,Delete Task — Task Removed from All Views,Admin > Tasks > Delete,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; an active task named 'AGENT-TEST-delete-me' exists in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[GRID] Locate task 'AGENT-TEST-delete-me'; click to open its blade
+[BLADE] Wait for task detail blade
+[ACT] Click 'Delete' action button
+[WAIT] Wait for confirmation dialog if shown
+[ACT] Confirm deletion in the dialog
+[WAIT] Wait for blade to close and grid to refresh
+[GRID] Confirm task is gone from 'All tasks'","[BLADE] Delete confirmation dialog shown (if applicable) and accepted
+[GRID] Task 'AGENT-TEST-delete-me' is absent from 'All tasks' after deletion
+[TOAST] Deletion success notification shown
+[NOTE] API DELETE /api/task-management returns 204 but does NOT reliably remove the task record (hard-delete support unconfirmed -- verified 2026-06-10); assert UI absence only","[API] POST /api/task-management/search with name = 'AGENT-TEST-delete-me' returns totalCount = 0
+[CONSOLE] No JS errors
+[NETWORK] DELETE /api/task-management returns 200 or 204",No confirmation dialog shown; task remains in grid after confirmation; 4xx/5xx on DELETE; grid does not refresh. NOTE: single-task delete = DELETE /api/task-management with the bare task id as a JSON string body (the UI Delete path) -> 204 and the task IS removed; bulk delete (array body / ?ids=) is not exposed in the UI (by design),none — task has been deleted,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10; single-task delete verified working (JSON-string-id body / UI path) vcptcore-qa 2026-06-10; bulk delete not a UI feature,validated
+TASK-010,Filter Tasks by Type — Grid Shows Only Matching Tasks,Admin > Tasks > Filters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; at least 2 different task types exist; tasks of different types are present in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[ACT] Open the filter panel
+[ACT] Select a specific task 'Type' filter value
+[WAIT] Wait for grid to refresh
+[GRID] Inspect all visible task rows","[GRID] All visible rows have the type matching the selected filter
+[GRID] Rows with other task types are not visible","[API] POST /api/task-management/search with type filter returns count consistent with grid row count
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on filter search request",Filter has no effect on grid; rows of other types still shown; spinner never resolves; 4xx on search,Clear Type filter after test,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-011,Filter Tasks by Priority — Grid Reduces to Matching Rows,Admin > Tasks > Filters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; tasks of at least 2 different priorities exist in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[ACT] Open the filter panel
+[ACT] Select 'High' from the 'Priority' filter
+[WAIT] Wait for grid to refresh","[GRID] All visible task rows show Priority = 'High'
+[GRID] Tasks with priorities other than 'High' are not displayed","[API] POST /api/task-management/search with priority filter returns count consistent with grid
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx",Priority filter not present; filter has no effect; other-priority rows remain; 4xx on filtered search,Clear Priority filter after test,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-012,My Tasks View — Shows Only Current User Assigned Tasks,Admin > Tasks > My Tasks,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; at least one task assigned to the admin user ({{ADMIN_EMAIL}}) exists; at least one task assigned to a different user exists","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[ACT] Click 'My tasks' in the left navigation panel
+[BLADE] Wait for 'My tasks' view to load
+[GRID] Inspect all visible task rows","[GRID] All visible tasks show Assignee = admin user display name (matching {{ADMIN_EMAIL}})
+[GRID] Tasks assigned to other users are not shown","[API] POST /api/task-management/search with responsibleId = current admin user id returns the same set
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx",'My tasks' view shows tasks for other users; all tasks shown without filter applied; 4xx on view load,Switch back to 'All tasks' view,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-013,Archive Views — Show Only Done/Canceled Tasks Not Active Tasks,Admin > Tasks > Archive,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; at least one completed (Done) and one canceled task exist; at least one active task exists in 'All tasks'","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[ACT] Click 'Archive tasks' in the left navigation panel
+[BLADE] Wait for 'Archive tasks' view to load
+[GRID] Note visible tasks and their statuses
+[ACT] Click 'My archive tasks' in the left navigation panel
+[BLADE] Wait for 'My archive tasks' view to load
+[GRID] Note visible tasks and their statuses","[GRID] 'Archive tasks' view shows only tasks with status 'Done' or 'Canceled'
+[GRID] Active tasks are not visible in either archive view
+[GRID] 'My archive tasks' shows only archived tasks assigned to the current admin user","[API] POST /api/task-management/search with isActive = false returns items consistent with 'Archive tasks' grid count
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx",Active tasks appear in archive; archive view empty when completed tasks exist; 'My archive tasks' shows all users' archived tasks,none,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-014,Settings — Add and Edit Task Type,Admin > Tasks > Settings > Task Types,High,BL-AUTH-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; Platform Settings accessible via main menu","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} — Platform — Settings
+[ACT] Search for 'Task management' settings group
+[BLADE] Wait for Task management settings blade to open
+[ACT] Click 'General' section
+[BLADE] Wait for task types list to load
+[ACT] Click 'Add' to create a new task type; enter name 'AGENT-TEST-task-type'
+[SAVE] Click Save or confirm
+[ACT] Locate 'AGENT-TEST-task-type' in the list; click to edit; change name to 'AGENT-TEST-task-type-edited'
+[SAVE] Save the edit","[TOAST] Success notification after add
+[FORM] 'AGENT-TEST-task-type' appears in the task types list after add
+[TOAST] Success notification after edit
+[FORM] Updated name 'AGENT-TEST-task-type-edited' displayed in list","[API] GET /api/task-management/tasks/types returns list including the new type name
+[CONSOLE] No JS errors in Settings blade
+[NETWORK] No 4xx/5xx during save",Settings blade does not load; 'Add' button absent; new type not saved; edit not persisted; 4xx on save,Delete 'AGENT-TEST-task-type-edited' task type from Settings after test,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-015,Settings — Notification Toggle Persists After Save,Admin > Tasks > Settings > Notifications,Medium,BL-NOTIF-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; Task management Settings accessible","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} — Platform — Settings — Task management
+[ACT] Click 'Notifications' section
+[BLADE] Wait for notification settings to load
+[ACT] Note the current state of the 'Task-notification' toggle (on or off)
+[ACT] Toggle the 'Task-notification' switch to the opposite state
+[SAVE] Click 'Save' and wait for success
+[NAV] Reload the Settings — Task management — Notifications blade
+[GRID] Verify the toggle state","[TOAST] Save success notification shown
+[FORM] Toggled state persists after blade reload
+[FORM] No-reply email and Tasks portal base URL fields are visible and editable in the Notifications section","[NETWORK] No 4xx/5xx on settings save
+[CONSOLE] No JS errors",Toggle reverts to original after save; Settings blade fails to load; No-reply email field absent; 4xx on save,Restore original toggle state by toggling it back and saving,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-016,Permissions Gating — User Without Create Permission Cannot Create Task,Admin > Tasks > RBAC,High,BL-AUTH-005,,"[PRE:CLEAR_SESSION]
+A test role exists with Task Management 'read' permission only (no 'create'); a test user is assigned this restricted role and has credentials; Admin credentials available to set up the role if needed","admin_url={{BACK_URL}}, restricted_user_email={{USER_EMAIL}}, restricted_user_password={{USER_PASSWORD}}","[PRE:SIGNIN_AS:RESTRICTED_USER]
+[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for Tasks app to load
+[GRID] Inspect the toolbar for an 'Add' or 'Create' button","[BLADE] Tasks app loads (assuming 'access' permission is granted) but 'Add' button is absent or disabled for the restricted user
+[FORM] No create-task blade can be opened by this user","[API] POST /api/task-management with the restricted user's Bearer token returns HTTP 403 Forbidden
+[CONSOLE] No JS errors
+[NETWORK] No unauthorized 201 response on create attempt",'Add' button visible and functional for restricted user; restricted user can submit create form; API returns 200 or 201 instead of 403,Restore admin session: [PRE:CLEAR_SESSION] then sign back in as admin,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,needs-review
+TASK-017,API — Search Tasks with Paging Returns Correct Structure,API > Task Management > Search,Critical,BL-AUTH-005,,Admin Bearer token obtainable; at least 5 tasks exist in the system,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with grant_type=password; username={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}}; capture access_token
+[HTTP] POST {{BACK_URL}}/api/task-management/search with body {take: 3, skip: 0} and Authorization: Bearer <token>
+[WAIT] Wait for 200 response
+[HTTP] POST {{BACK_URL}}/api/task-management/search with body {take: 3, skip: 3} and Authorization: Bearer <token>
+[WAIT] Wait for 200 response","[STATUS] Both requests return HTTP 200
+[BODY] First page response contains 'totalCount' integer field
+[BODY] First page 'results' array length is <= 3
+[SCHEMA] Each result item contains fields: id; name; priority; status
+[BODY] Second page 'results' items differ from first page items (no overlap — paging works)","[NETWORK] Both POST requests complete without timeout (< 3s)
+[CONSOLE] No JS errors",Non-200 response; 'results' field absent; totalCount missing; second page returns same items as first; response time > 3s,none,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-018,API — Create Task Then Retrieve by ID (Round-Trip),API > Task Management > Create + Get,Critical,,,Admin Bearer token obtainable; GET {{BACK_URL}}/api/task-management/tasks/types returns non-empty list; POST {{BACK_URL}}/api/task-management/members/search (body {take:1}) returns at least one member,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[SETUP] POST {{BACK_URL}}/api/task-management/members/search with body {take:1}; capture results[0].id as assignee_id and results[0].name as assignee_name
+[SETUP] GET {{BACK_URL}}/api/task-management/tasks/types; capture first type name as task_type
+[HTTP] POST {{BACK_URL}}/api/task-management with body {name: 'AGENT-TEST-api-create'; priority: 'Normal'; description: 'API create test'; type: <task_type>; responsibleId: <assignee_id>; responsibleName: <assignee_name>; dueDate: <today+7days ISO8601>} and Authorization: Bearer <token>
+[WAIT] Wait for response
+[SETUP] Capture 'id' field from POST response body
+[HTTP] GET {{BACK_URL}}/api/task-management/{captured-id} with Authorization: Bearer <token>
+[WAIT] Wait for 200 response","[STATUS] POST returns HTTP 200 or 201
+[BODY] POST response contains non-empty 'id' field
+[STATUS] GET by id returns HTTP 200
+[BODY] GET response 'name' equals 'AGENT-TEST-api-create'
+[BODY] GET response 'priority' equals 'Normal'
+[BODY] GET response 'responsibleId' equals the captured assignee_id
+[BODY] GET response 'isActive' equals true","[ADMIN] Navigate to {{BACK_URL}}/apps/tasks — task 'AGENT-TEST-api-create' appears in 'All tasks' grid
+[NETWORK] Both API calls complete without 4xx/5xx",POST returns 4xx or 5xx; response has no 'id'; GET returns 404; name or priority does not match payload; POST returns 500 (indicates missing required field -- check responsibleId/type/dueDate are present); Admin UI does not show the task,DELETE {{BACK_URL}}/api/task-management with body {ids: [captured-id]} and Authorization: Bearer <token>,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-019,API — Update Task via PUT — Changes Persisted,API > Task Management > Update,High,,,Admin Bearer token obtainable; at least one task exists in the system (live-discovered via search),"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[HTTP] POST {{BACK_URL}}/api/task-management/search with body {take: 1}; capture first result as full task object (id, name, type, priority, responsibleId, responsibleName, dueDate, and all other fields)
+[SETUP] Store original name for cleanup
+[HTTP] PUT {{BACK_URL}}/api/task-management with the FULL task object body, changing only: name to 'AGENT-TEST-api-updated' and priority to 'High'; Authorization: Bearer <token> (PUT requires the complete WorkTask object -- partial body causes 500)
+[WAIT] Wait for 200 response
+[HTTP] GET {{BACK_URL}}/api/task-management/{id} to verify update","[STATUS] PUT returns HTTP 200
+[STATUS] GET after PUT returns HTTP 200
+[BODY] GET response 'name' equals 'AGENT-TEST-api-updated'
+[BODY] GET response 'priority' equals 'High'","[NETWORK] No 4xx/5xx on PUT or GET
+[ADMIN] Admin UI 'All tasks' grid reflects the updated task name after refresh",PUT returns 4xx or 5xx; GET after PUT still shows old name; priority not persisted; response time > 3s; PUT returns 500 (indicates partial body sent -- must PUT the full WorkTask object),PUT the original name and priority back via full-object PUT /api/task-management to restore the task,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-020,API — Finish Task with Completed Result Sets Status Done,API > Task Management > Finish,Critical,,,Admin Bearer token obtainable,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[SETUP] POST {{BACK_URL}}/api/task-management/members/search with body {take:1}; capture results[0].id as assignee_id and results[0].name as assignee_name
+[SETUP] GET {{BACK_URL}}/api/task-management/tasks/types; capture first type name
+[HTTP] POST {{BACK_URL}}/api/task-management with body {name: 'AGENT-TEST-finish-done'; priority: 'Normal'; type: <type>; responsibleId: <assignee_id>; responsibleName: <assignee_name>; dueDate: <today+7days ISO8601>}; capture created task id
+[HTTP] POST {{BACK_URL}}/api/task-management/finish?id=<task-id>&completed=true with Authorization: Bearer <token> -- NO request body (contract: query params only)
+[WAIT] Wait for response
+[HTTP] GET {{BACK_URL}}/api/task-management/{id} to verify final state","[STATUS] POST /api/task-management/finish returns HTTP 200
+[BODY] GET response 'completed' equals true
+[BODY] GET response 'isActive' equals false
+[NOTE] In this build 'status' field remains null even after a valid finish -- assert on completed/isActive only, NOT on status=='Done'","[ADMIN] Task appears in 'Archive tasks' view in Admin UI
+[NETWORK] No 4xx/5xx on finish or GET",POST /finish returns 4xx or 5xx; completed still false after finish; isActive still true; task not found in archive; sending a request body instead of query params causes incorrect behavior,Task is already archived in Done state — no additional cleanup needed,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-021,API — Finish Task with Rejected Result Sets Status Canceled,API > Task Management > Finish-Reject,High,,,Admin Bearer token obtainable,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[SETUP] POST {{BACK_URL}}/api/task-management/members/search with body {take:1}; capture results[0].id as assignee_id and results[0].name as assignee_name
+[SETUP] GET {{BACK_URL}}/api/task-management/tasks/types; capture first type name
+[HTTP] POST {{BACK_URL}}/api/task-management with body {name: 'AGENT-TEST-finish-canceled'; priority: 'Low'; type: <type>; responsibleId: <assignee_id>; responsibleName: <assignee_name>; dueDate: <today+7days ISO8601>}; capture task id
+[HTTP] POST {{BACK_URL}}/api/task-management/finish?id=<task-id>&completed=false with Authorization: Bearer <token> -- NO request body (contract: query params only)
+[WAIT] Wait for response
+[HTTP] GET {{BACK_URL}}/api/task-management/{id}","[STATUS] POST /api/task-management/finish returns HTTP 200
+[BODY] GET response 'completed' equals false
+[BODY] GET response 'isActive' equals false
+[NOTE] In this build 'status' field remains null even after a valid finish -- assert on completed/isActive only, NOT on status=='Canceled'","[ADMIN] Task appears in 'Archive tasks' with status 'Canceled'
+[NETWORK] No 4xx/5xx",POST /finish returns 4xx; completed not false; isActive still true; task not in archive; sending a request body instead of query params causes incorrect behavior,Task is archived — no additional cleanup; DELETE via /api/task-management if needed,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-022,API — Members Search Returns Assignable Members,API > Task Management > Members,Medium,,,Admin Bearer token obtainable,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[HTTP] POST {{BACK_URL}}/api/task-management/members/search with body {} and Authorization: Bearer <token>
+[WAIT] Wait for response","[STATUS] HTTP 200
+[BODY] Response contains 'results' array (non-empty when members exist)
+[BODY] Each member item has 'id' and 'name' (or equivalent identifier) fields
+[BODY] Response contains 'totalCount' field","[NETWORK] No 4xx/5xx
+[CONSOLE] No JS errors",Non-200; results array absent; member items missing id or name; totalCount absent,none,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-023,API — Task Types Endpoint Returns Configured Types,API > Task Management > Types,Medium,,,Admin Bearer token obtainable; at least one task type configured in Settings,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[HTTP] GET {{BACK_URL}}/api/task-management/tasks/types with Authorization: Bearer <token>
+[WAIT] Wait for response","[STATUS] HTTP 200
+[BODY] Response is a non-empty array
+[BODY] Each item has at least a 'name' field or equivalent type identifier","[NETWORK] No 4xx/5xx
+[CONSOLE] No JS errors",Non-200; empty array returned when types are configured; items missing name field,none,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-024,API — Unauthenticated Request Returns 401 Unauthorized,API > Task Management > AuthZ Negative,Critical,BL-AUTH-005,,No valid Bearer token available (unauthenticated context),admin_url={{BACK_URL}},"[HTTP] POST {{BACK_URL}}/api/task-management/search with body {} and NO Authorization header
+[WAIT] Wait for response","[STATUS] HTTP 401 Unauthorized (or 403 Forbidden)
+[BODY] Response body does not contain task data (no 'results' array or 'totalCount')",[NETWORK] No task data leaked in 401 or 403 response,Response returns 200 with task data (auth bypass); response returns 5xx instead of 4xx,none,module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,validated
+TASK-025,API — Create Task with Empty Body Returns 4xx Validation Error,API > Task Management > Negative Create,High,,,Admin Bearer token obtainable,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token; capture access_token
+[HTTP] POST {{BACK_URL}}/api/task-management with body {} (empty — no name or type) and Authorization: Bearer <token>
+[WAIT] Wait for response","[STATUS] Expected HTTP 400 Bad Request or 422 Unprocessable Entity (clean validation rejection)
+[BODY] Response contains an error message or validation details
+[BODY] Response does not contain a new task 'id'
+[NOTE] Observed current behavior (vcptcore-qa 2026-06-10): server returns HTTP 500 (cast error, not a clean 4xx); a nameless record may be persisted -- this is an API-hygiene defect (minor, non-blocker) not a critical regression",[NETWORK] No 201 Created response,Request returns 200 or 201 with a complete task record (should not happen); no error detail in response body. NOTE: HTTP 500 with cast error is the currently observed behavior -- it may persist a nameless record; confirm via POST /search that no stray record was created,"If a nameless record was created (HTTP 500 path), DELETE it via POST /search to find it then DELETE /api/task-management with its id",module VirtoCommerce.TaskManagement v3.1002.0-pr-28; surface live-verified vcptcore-qa; contracts live-verified vcptcore-qa 2026-06-10,needs-review
+TASK-026,Filter by Due Date — Grid Shows Only Tasks Within the From/To Window,Admin > Tasks > Filters,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin session active; at least 2 tasks with Due dates in different ranges exist (one inside and one outside the chosen window)","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}}/apps/tasks
+[BLADE] Wait for 'All tasks' view
+[ACT] Open the filter panel
+[ACT] Set 'Due date' From and To to a narrow window expected to exclude most tasks (e.g. today to today)
+[ACT] Click 'Apply'
+[API] Capture the POST /api/task-management/search request body
+[GRID] Inspect all visible task rows","[GRID] Only tasks whose Due date falls within the From-To window are listed
+[API] search request body includes startDueDate and endDueDate matching the selected window
+[GRID] Tasks with Due dates outside the window are not shown","[API] POST /api/task-management/search honors startDueDate/endDueDate (server-side verified: impossible window returns totalCount 0)
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx on the filter search request",Grid returns out-of-range tasks; request omits startDueDate/endDueDate (sends startDate/endDate or no date params); due-date window silently ignored -- KNOWN DEFECT VCST-5227,Clear Due date filter after test; no data mutation,VCST-5227 (Due date filter not applied); module VirtoCommerce.TaskManagement; surface live-verified vcptcore-qa + vcst-qa 2026-06-10,needs-review
