@@ -1,0 +1,6 @@
+# Regression suite CSVs must stay CRLF end-to-end: the GraphQL runner's csv-parse
+# (relax_column_count: false) fails on mixed line endings inside multi-line quoted cells
+# (2026-06-10 incident: LF rows appended to CRLF 050b4 broke the whole suite's parse).
+regression/suites/**/*.csv text eol=crlf
+tests/**/*.csv text eol=crlf
+test-data/**/*.csv text eol=crlf
