@@ -1,0 +1,544 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+R1,Mixed-cart cart-% coupon base — simple physical USD line (baseline),GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Loyalty mode Mixed Cart, currency PTS. Baseline VCST-5101 Bug-1 repro on a simple physical USD line (BUYABLE_NO_MIN_QTY). Fresh cart -> add 1x USD product -> apply QA10OFF -> capture USD-only coupon discount + USD extendedPrice -> add 1x live-discovered PTS loyalty product -> re-query. Coupon discount MUST stay equal to USD-only baseline (= 10% x USD extendedPrice). RED on current build (leak).",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } items { currencyCode quantity listPrice { amount } salePrice { amount } placedPrice { amount } extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-CAPTURE cart_usd_only.data.cart.subTotal.amount → USD_SUBTOTAL]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { currency { code } } } items { currencyCode quantity listPrice { amount } extendedPrice { amount currency { code } } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT_PRICE]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[ERRORS label=cart_mixed] errors[] empty
+[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0
+[DATA label=cart_mixed] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0",[API] COUPON_DISC_MIX must equal COUPON_DISC_BASE (= 10% x USD extendedPrice). PTS line + PTS cartTotals block discountTotal = 0.,Coupon discount grows after the PTS line is added (PTS value folded into the cart-% coupon base at 1:1); PTS line/PTS cartTotals shows non-zero discountTotal.,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-003; vc-module-x-cart PR #120,Automated
+R2,Mixed-cart cart-% coupon base — variation-parent on sale (list vs actual price probe),GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-PRICE-001; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. USD line = PROD_VARIATION_PARENT_SALE (physical variation-parent, list 17.99 -> actual 13.99). Same flow as R1. ADDITIONALLY captures the USD line listPrice, salePrice, placedPrice, extendedPrice so the discount delta reveals whether the coupon base uses LIST or ACTUAL (sale) price.",storeId={{STORE_ID}}; usd_product=@td(PROD_VARIATION_PARENT_SALE.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(PROD_VARIATION_PARENT_SALE.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } items { currencyCode quantity listPrice { amount } salePrice { amount } placedPrice { amount } extendedPrice { amount } listTotal { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].listPrice.amount → USD_LIST_PRICE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].salePrice.amount → USD_SALE_PRICE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].placedPrice.amount → USD_PLACED_PRICE]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode quantity extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT_PRICE]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[ERRORS label=cart_mixed] errors[] empty
+[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0",[API] List/actual probe — COUPON_DISC_BASE should equal 10% x USD extendedPrice (= actual price). COUPON_DISC_MIX must equal COUPON_DISC_BASE.,Coupon discount grows after PTS line added; coupon base computed off LIST price rather than ACTUAL (sale) price (separate price-base anomaly).,cleanup_post inline,VCST-5101 Bug-1; BL-PRICE-001; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md,Automated
+R3,Mixed-cart cart-% coupon base — variation CHILD as USD line,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. USD line = a variation CHILD. First verifies SEED_20260529_VARIATION_PARENT.variation_gray_id is virtual-catalog-linked (products query filtered by category.subtree:VIRTUAL_CATALOG_B2B); if the seeded child returns 0 items, the discover query also returns the first available variation child in the catalog as a fallback (capture handles both). Same coupon-leak flow as R1.",storeId={{STORE_ID}}; seeded_child=@td(SEED_20260529_VARIATION_PARENT.variation_gray_id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP verify_child_linked]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) productType:Physical"" query: ""@td(SEED_20260529_VARIATION_PARENT.variation_gray_sku)"") { totalCount items { id code productType } } }
+[GQL-EXEC verify_child_linked]
+[GQL-OP discover_usd_child]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) is:variation price.USD:(0 TO)"") { totalCount items { id code productType } } }
+[GQL-EXEC discover_usd_child]
+[GQL-CAPTURE discover_usd_child.data.products.items.0.id → USD_CHILD_ID]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{USD_CHILD_ID}}"" quantity: 1 }) { id items { id productId productType } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discounts { amount coupon } items { currencyCode quantity productType listPrice { amount } salePrice { amount } extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode quantity extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT_PRICE]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=verify_child_linked] errors[] empty
+[ERRORS label=discover_usd_child] errors[] empty
+[DATA label=discover_usd_child] data.products.items.0.id is non-null
+[ERRORS label=add_usd_item] errors[] empty
+[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[ERRORS label=cart_mixed] errors[] empty
+[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0",[API] verify_child_linked.totalCount documents whether the seeded gray child is virtual-catalog-linked. USD line is a variation child. COUPON_DISC_MIX must equal COUPON_DISC_BASE.,Coupon discount grows after PTS line added; variation child not addable to cart (separate finding).,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md,Automated
+R4,Mixed-cart cart-% coupon base — CONFIGURABLE product as USD line,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-CAT-006; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. USD line = a CONFIGURED line item (CFG_LAPTOP, two required Product sections). Discovers the section/option IDs via productConfiguration, adds the configured line via addItem with configurationSections (per 050i), applies QA10OFF, then adds a PTS loyalty line. If the platform rejects the configurable+mixed-cart combination, the error is recorded verbatim (itself a finding). Coupon discount must stay equal to USD-only baseline.",storeId={{STORE_ID}}; configurable_id=@td(CFG_LAPTOP.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id productId productType extendedPrice { amount } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discounts { amount coupon } items { currencyCode quantity productType extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode quantity productType extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT_PRICE]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[ERRORS label=cart_mixed] errors[] empty
+[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0",[API] Configured line as USD line in a mixed cart. If add_item errors[] non-empty the combination is rejected (record verbatim). COUPON_DISC_MIX must equal COUPON_DISC_BASE.,add_item errors[] non-empty (platform rejects configurable in mixed cart — record error verbatim); coupon discount grows after PTS line added.,cleanup_post inline,VCST-5101 Bug-1; BL-CAT-006; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md,Automated
+R5,Mixed-cart cart-% coupon — PTS qty-step signature 1->2->3 on baseline,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. USD line constant (BUYABLE_NO_MIN_QTY, qty 1). PTS line stepped qty 1 -> 2 -> 3 via changeCartItemQuantity. Captures the coupon discount at each step. Bug signature: discount grows by exactly 10% x PTS unit value per step. Captures PTS unit value (extendedPrice/quantity) to compute the expected per-step delta.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP read_after_add]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { id currencyCode quantity extendedPrice { amount } } } }
+[GQL-EXEC read_after_add]
+[GQL-CAPTURE read_after_add.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_Q1]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_UNIT_VALUE]
+[GQL-OP step_q2]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" quantity: 2 }) { id } }
+[GQL-EXEC step_q2]
+[GQL-OP read_q2]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { currencyCode quantity } } }
+[GQL-EXEC read_q2]
+[GQL-CAPTURE read_q2.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_Q2]
+[GQL-OP step_q3]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" quantity: 3 }) { id } }
+[GQL-EXEC step_q3]
+[GQL-OP read_q3]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { currencyCode quantity } } }
+[GQL-EXEC read_q3]
+[GQL-CAPTURE read_q3.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_Q3]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_after_add] errors[] empty
+[ERRORS label=read_q2] errors[] empty
+[ERRORS label=read_q3] errors[] empty
+[DATA label=read_after_add] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[VAR] {{DISC_Q2}} = {{DISC_Q1}}
+[VAR] {{DISC_Q3}} = {{DISC_Q1}}",[API] Coupon discount must be invariant to PTS quantity: DISC_Q1 == DISC_Q2 == DISC_Q3. Per-step delta (DISC_Q2-DISC_Q1) reveals leak magnitude = 10% x PTS unit value. PTS_UNIT_VALUE captured for the expected-delta computation.,Discount grows by 10% x PTS unit value per qty step (PTS folded into cart-% coupon base).,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md,Automated
+S1,Mixed-cart STATIC fixed-$ coupon (FIXED5) — does the $5 land only in USD and stay constant vs PTS line,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,Runner-native. LOYALTY_VIP_USER. Baseline mixed cart (1x USD BUYABLE_NO_MIN_QTY + 1x live-discovered PTS). Apply fixed-$ coupon FIXED5 ($5 off cart subtotal). Capture coupon discount USD-only (before PTS) then mixed (after PTS). A fixed-$ coupon should be a flat $5 in the USD bucket regardless of the PTS line. PTS bucket discountTotal must stay 0.,storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.fixedAmountCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.fixedAmountCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP cart_usd_only]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } coupons { code } items { currencyCode quantity extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_usd_only]
+[GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount → COUPON_DISC_BASE]
+[GQL-CAPTURE cart_usd_only.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { currency { code } } } items { currencyCode quantity extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount → COUPON_DISC_MIX]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
+[DATA label=cart_usd_only] data.cart.coupons[?code=@td(COUPONS.fixedAmountCode)].code is non-null
+[DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount is non-null
+[ERRORS label=cart_mixed] errors[] empty
+[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0
+[DATA label=cart_mixed] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0",[API] Fixed-$ coupon: COUPON_DISC_BASE should be a flat $5 in USD; COUPON_DISC_MIX must equal COUPON_DISC_BASE (PTS line presence must not change a fixed-$ discount). PTS bucket discountTotal = 0.,Coupon fails to apply (coupons[] empty — fallback to E2E-COUPON); fixed amount changes when PTS line added; PTS bucket carries non-zero discountTotal.,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-003,Automated
+S2,"Mixed-cart AUTOMATIC -20% promo scoping (no coupon) — USD line discounted, PTS line discountTotal=0",GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Baseline mixed cart, NO coupon. With the store auto -20% promotion active, the USD line must carry a ~20% per-line discount (listTotal vs extendedPrice) while the PTS line discountTotal = 0 PTS. Formalizes the earlier R1/R2 observation that automatic promo scopes correctly to the primary currency.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_mixed]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { subTotal { amount } discountTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency subTotal { amount } discountTotal { amount } total { amount currency { code } } } items { currencyCode quantity listPrice { amount } listTotal { amount } extendedPrice { amount } discountTotal { amount } } } }
+[GQL-EXEC cart_mixed]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=USD].listTotal.amount → USD_LIST_TOTAL]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT_PRICE]
+[GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=USD].discountTotal.amount → USD_LINE_DISCOUNT]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_mixed] errors[] empty
+[DATA label=cart_mixed] data.cart.items[?currencyCode=USD].discountTotal.amount > 0
+[DATA label=cart_mixed] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount = 0
+[DATA label=cart_mixed] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0
+[DATA label=cart_mixed] data.cart.items[?currencyCode=USD].extendedPrice.amount = data.cart.items[?currencyCode=USD].listTotal.amount - data.cart.items[?currencyCode=USD].discountTotal.amount",[API] Auto promo: USD line discountTotal > 0 (~20% of listTotal); PTS line + PTS cartTotals discountTotal = 0. USD extendedPrice = listTotal - discountTotal (per-line arithmetic).,PTS line carries a non-zero per-line discount (auto promo leaking into PTS); USD line not discounted; arithmetic inconsistent.,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-003,Automated
+S3,Mixed-cart MERGE — second named cart (USD item) merged into VIP mixed cart preserves both currencies,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-CART-002; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Build the default mixed cart (1x USD + 1x PTS). Build a SECOND named cart (cartName=AGENT-TEST-merge-src) with 1x USD PROD_VARIATION_PARENT_SALE. mergeCart the named cart into the default cart via secondCartId (String!, per InputMergeCartType) with deleteAfterMerge=true. Assert both currencies survive, merged USD line appears (2 USD lines now), PTS line intact, cartTotals still split into exactly 2 buckets.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); merge_usd_product=@td(PROD_VARIATION_PARENT_SALE.id); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code); src_cart_name=AGENT-TEST-merge-src,"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP cleanup_src_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{src_cart_name}}"" }) { id } }
+[GQL-EXEC cleanup_src_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP build_src_cart]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{src_cart_name}}"" productId: ""@td(PROD_VARIATION_PARENT_SALE.id)"" quantity: 1 }) { id itemsCount } }
+[GQL-EXEC build_src_cart]
+[GQL-OP read_src_cart]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{src_cart_name}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount } }
+[GQL-EXEC read_src_cart]
+[GQL-CAPTURE read_src_cart.data.cart.id → SRC_CART_ID]
+[GQL-OP do_merge]
+  mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SRC_CART_ID}}"" deleteAfterMerge: true }) { id itemsCount items { currencyCode productId quantity } cartTotals { isDefaultTotalCurrency total { currency { code } } } } }
+[GQL-EXEC do_merge]
+[GQL-OP read_merged]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { currencyCode productId quantity extendedPrice { amount currency { code } } } cartTotals { isDefaultTotalCurrency total { currency { code } } } } }
+[GQL-EXEC read_merged]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=build_src_cart] errors[] empty
+[ERRORS label=do_merge] errors[] empty
+[ERRORS label=read_merged] errors[] empty
+[COUNT label=read_merged] data.cart.cartTotals = 2
+[COUNT label=read_merged] data.cart.items[*?currencyCode=USD].length >= 2
+[DATA label=read_merged] data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].productId is non-null
+[DATA label=read_merged] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.currency.code is non-null
+[DATA label=read_merged] data.cart.cartTotals[?isDefaultTotalCurrency=false].total.currency.code is non-null","[API] mergeCart via secondCartId (String!) preserves both currency buckets: >=2 USD lines after merge, PTS line intact, exactly 2 cartTotals. deleteAfterMerge removes the source cart.",mergeCart errors[] non-empty (secondCartId rejected/wrong field); PTS line lost after merge; cartTotals collapses to 1 bucket; merged USD line missing.,cleanup_post inline (clearCart default cart). Source cart removed by deleteAfterMerge.,VCST-5101 Bug-1; reference_mergecart_secondcartid; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md,Automated
+S4,Mixed-cart QA10OFF — USD line qty 1->2->3 (PTS constant): coupon = 10% x (USD ext + PTS value) at each step,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-004; BL-CART-002; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Baseline mixed cart + QA10OFF. Capture USD line id + PTS unit value. Step the USD line qty 1->2->3 via changeCartItemQuantity, PTS line constant at qty 1. Coupon discount should scale with the USD subtotal at each step while the PTS leak stays a constant +10% x PTS value. Also verify the PTS bucket subtotal is unchanged across USD steps (currency-bucket independence).",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP read_after_add]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency subTotal { amount } } items { id currencyCode quantity extendedPrice { amount } } } }
+[GQL-EXEC read_after_add]
+[GQL-CAPTURE read_after_add.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_U1]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=USD].id → USD_LINE_ID]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_UNIT_EXT]
+[GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_VALUE]
+[GQL-CAPTURE read_after_add.data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount → PTS_BUCKET_SUB_1]
+[GQL-OP step_u2]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{USD_LINE_ID}}"" quantity: 2 }) { id } }
+[GQL-EXEC step_u2]
+[GQL-OP read_u2]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency subTotal { amount } } items { currencyCode quantity } } }
+[GQL-EXEC read_u2]
+[GQL-CAPTURE read_u2.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_U2]
+[GQL-CAPTURE read_u2.data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount → PTS_BUCKET_SUB_2]
+[GQL-OP step_u3]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{USD_LINE_ID}}"" quantity: 3 }) { id } }
+[GQL-EXEC step_u3]
+[GQL-OP read_u3]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency subTotal { amount } } items { currencyCode quantity } } }
+[GQL-EXEC read_u3]
+[GQL-CAPTURE read_u3.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_U3]
+[GQL-CAPTURE read_u3.data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount → PTS_BUCKET_SUB_3]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_after_add] errors[] empty
+[ERRORS label=read_u2] errors[] empty
+[ERRORS label=read_u3] errors[] empty
+[DATA label=read_after_add] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[VAR] {{PTS_BUCKET_SUB_2}} = {{PTS_BUCKET_SUB_1}}
+[VAR] {{PTS_BUCKET_SUB_3}} = {{PTS_BUCKET_SUB_1}}",[API] USD qty step: DISC_U1/U2/U3 should track 10% x (USD ext x qty + PTS value). PTS bucket subTotal must be invariant across USD steps (PTS_BUCKET_SUB_1==2==3). Per-step USD delta = 10% x USD unit ext; constant PTS leak = 10% x PTS value baked into every step.,PTS bucket subtotal changes when USD qty changes (cross-currency bleed); discount does not scale with USD qty.,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-002; BL-CART-003,Automated
+S5,"Mixed-cart TOTALS with QA10OFF — 2 buckets, per-currency arithmetic consistent, PTS discount/tax = 0",GraphQL > xCart > Mixed Cart > Coupon Leak Repro,High,BL-LOY-001; BL-LOY-003; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Baseline mixed cart + QA10OFF. Full cartTotals assertion set: exactly 2 elements, exactly one isDefaultTotalCurrency=true (USD). Per-bucket arithmetic: total = subTotal - discountTotal + taxTotal (+ shipping, zero pre-checkout). USD bucket discount > 0 (coupon + auto promo), PTS bucket discountTotal = 0 and taxTotal = 0. Flag any arithmetic inconsistency beyond the known coupon leak.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_totals]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount cartTotals { isDefaultTotalCurrency subTotal { amount currency { code } } discountTotal { amount } taxTotal { amount } total { amount currency { code } } } } }
+[GQL-EXEC cart_totals]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_totals] errors[] empty
+[COUNT label=cart_totals] data.cart.cartTotals = 2
+[COUNT label=cart_totals] data.cart.cartTotals[*?isDefaultTotalCurrency=true].length = 1
+[DATA label=cart_totals] data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount > 0
+[DATA label=cart_totals] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = data.cart.cartTotals[?isDefaultTotalCurrency=true].subTotal.amount - data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount + data.cart.cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount
+[DATA label=cart_totals] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0
+[DATA label=cart_totals] data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0
+[DATA label=cart_totals] data.cart.cartTotals[?isDefaultTotalCurrency=false].total.amount = data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount - data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount + data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount",[API] cartTotals: exactly 2 buckets; one USD default; per-bucket total=subTotal-discount+tax. USD discount>0 (coupon+auto promo); PTS discount=0 & tax=0.,cartTotals != 2; >1 default-currency bucket; PTS bucket carries discount/tax; per-bucket total arithmetic inconsistent.,cleanup_post inline,VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-LOY-003; BL-CART-003,Automated
+S6,Mixed-cart SELECT/UNSELECT per currency with QA10OFF — does the coupon base follow SELECTED lines,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,Critical,BL-LOY-001; BL-LOY-004; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Baseline mixed cart + QA10OFF. Probes whether the buggy coupon base is SelectedLineItems (open RCA question Cart.SubTotal vs CartCurrencySelectedLineItems). Steps: (a) unselect the PTS line -> does coupon drop to 10% x USD-only? (b) re-select PTS, unselect the USD line -> what does the coupon do with only PTS selected? (c) re-select all -> back to leaked value. Capture discounts[]+cartTotals at each step. lineItemIds is a String per InputChangeCartItemsSelectedType.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP read_all_selected]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { id currencyCode selectedForCheckout extendedPrice { amount } } } }
+[GQL-EXEC read_all_selected]
+[GQL-CAPTURE read_all_selected.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_ALL]
+[GQL-CAPTURE read_all_selected.data.cart.items[?currencyCode=USD].id → USD_LINE_ID]
+[GQL-CAPTURE read_all_selected.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
+[GQL-CAPTURE read_all_selected.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT]
+[GQL-CAPTURE read_all_selected.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT]
+[GQL-OP unselect_pts]
+  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{PTS_LINE_ID}}"" }) { id } }
+[GQL-EXEC unselect_pts]
+[GQL-OP read_pts_unsel]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode selectedForCheckout } } }
+[GQL-EXEC read_pts_unsel]
+[GQL-CAPTURE read_pts_unsel.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_PTS_UNSEL]
+[GQL-OP reselect_pts]
+  mutation { selectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{PTS_LINE_ID}}"" }) { id } }
+[GQL-EXEC reselect_pts]
+[GQL-OP unselect_usd]
+  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{USD_LINE_ID}}"" }) { id } }
+[GQL-EXEC unselect_usd]
+[GQL-OP read_usd_unsel]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode selectedForCheckout } } }
+[GQL-EXEC read_usd_unsel]
+[GQL-CAPTURE read_usd_unsel.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_USD_UNSEL]
+[GQL-OP reselect_all]
+  mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC reselect_all]
+[GQL-OP read_reselected]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { currencyCode selectedForCheckout } } }
+[GQL-EXEC read_reselected]
+[GQL-CAPTURE read_reselected.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_RESELECT_ALL]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_all_selected] errors[] empty
+[ERRORS label=unselect_pts] errors[] empty
+[ERRORS label=read_pts_unsel] errors[] empty
+[ERRORS label=unselect_usd] errors[] empty
+[ERRORS label=read_usd_unsel] errors[] empty
+[ERRORS label=reselect_all] errors[] empty
+[DATA label=read_all_selected] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
+[VAR] {{DISC_RESELECT_ALL}} = {{DISC_ALL}}","[API] KEY PROBE: if DISC_PTS_UNSEL drops to 10% x USD_EXT only, the coupon base follows SelectedLineItems (confirms Cart.SubTotal sums selected lines across currency). DISC_RESELECT_ALL must return to DISC_ALL (leaked value). Record DISC_PTS_UNSEL and DISC_USD_UNSEL verbatim.",unselect/select mutation errors[] non-empty (lineItemIds contract wrong); coupon does NOT change on unselect (base ignores selection - different RCA); re-select-all does not restore leaked value.,cleanup_post inline,VCST-5101 Bug-1; reports/ba/ba-report-2026-06-09.md (open RCA question #2 SelectedLineItems); reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-003,Automated
+S7,Mixed-cart DELETE PTS line from coupon'd cart — USD coupon discount + USD bucket total must be unchanged,GraphQL > xCart > Mixed Cart > Coupon Leak Repro,Critical,BL-LOY-001; BL-LOY-004; BL-CART-002; BL-CART-003; BL-GQL-001,ECL-7.3,"Runner-native. LOYALTY_VIP_USER. Build baseline mixed cart (1x USD BUYABLE_NO_MIN_QTY + 1x live-discovered PTS) + QA10OFF. Capture USD coupon discount + USD bucket total BEFORE, then removeCartItem the PTS line, capture AFTER. Per AC the PTS line was never a legitimate part of the USD coupon base, so deleting it must leave the USD coupon discount and USD bucket total IDENTICAL. Predicted actual (RewardExtensions.cs:201 selection-driven cross-currency base, no currency filter): coupon drops 24->16 and USD bucket total recalculates upward by ~10% x PTS value on deletion. cartTotals 2->1 (PTS bucket disappears) is correct/by-design.",storeId={{STORE_ID}}; usd_product=@td(BUYABLE_NO_MIN_QTY.id); coupon=@td(COUPONS.percentageCode); loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_item]
+[GQL-OP apply_coupon]
+  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+[GQL-EXEC apply_coupon]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP cart_before]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { amount currency { code } } } items { id currencyCode quantity extendedPrice { amount } } } }
+[GQL-EXEC cart_before]
+[GQL-CAPTURE cart_before.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_BEFORE]
+[GQL-CAPTURE cart_before.data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount → USD_TOTAL_BEFORE]
+[GQL-CAPTURE cart_before.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT]
+[GQL-CAPTURE cart_before.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
+[GQL-CAPTURE cart_before.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].extendedPrice.amount → PTS_EXT]
+[GQL-OP remove_pts]
+  mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" }) { id itemsCount } }
+[GQL-EXEC remove_pts]
+[GQL-OP cart_after]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { amount currency { code } } } items { id currencyCode quantity extendedPrice { amount } } } }
+[GQL-EXEC cart_after]
+[GQL-CAPTURE cart_after.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_AFTER]
+[GQL-CAPTURE cart_after.data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount → USD_TOTAL_AFTER]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=cart_before] errors[] empty
+[ERRORS label=remove_pts] errors[] empty
+[ERRORS label=cart_after] errors[] empty
+[COUNT label=cart_before] data.cart.cartTotals = 2
+[COUNT label=cart_after] data.cart.cartTotals = 1
+[DATA label=cart_after] data.cart.itemsCount = 1
+[DATA label=cart_after] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.currency.code = USD
+[VAR] {{DISC_AFTER}} = {{DISC_BEFORE}}
+[VAR] {{USD_TOTAL_AFTER}} = {{USD_TOTAL_BEFORE}}",[API] DISC_AFTER must equal DISC_BEFORE and USD_TOTAL_AFTER must equal USD_TOTAL_BEFORE (PTS deletion must not change the USD bucket). cartTotals 2->1 + itemsCount->1 is the only legitimate change. Delta DISC_BEFORE-DISC_AFTER = 10% x PTS value quantifies the leak removed on deletion.,Coupon discount drops on PTS deletion (PTS was in the base); USD bucket total recalculates upward by 10% x PTS value; removeCartItem errors[] non-empty.,cleanup_post inline,"VCST-5101 Bug-1; RewardExtensions.cs:201 (x-cart feat/VCST-5101 — SelectedForCheckout sum, no currency filter); reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md; BL-CART-003",Automated

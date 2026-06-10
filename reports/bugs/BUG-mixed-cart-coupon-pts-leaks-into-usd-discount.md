@@ -23,14 +23,35 @@ In a mixed-currency cart (USD primary + a PTS loyalty line), applying a **cart-s
 - `tests/Sprint26-11/VCST-5101/screenshots/cart-resp-coupon-pts-leak.json` (API payload — discount base proof)
 - Two-source confirmed: UI quantity-step repro + GraphQL `cart` `discounts[]` capture (per the network-payload second-source rule).
 
-## Root cause (refined via code grounding — BA-2026-06-09)
-Initial hypothesis ("the discount base sums all line `ListTotal`s across currencies") is **partially refuted by the PR #120 source**: the per-line promotion mapping IS currency-filtered. `CartMappingProfile.cs` maps `CartAggregate → PromotionEvaluationContext` by iterating `cartAggr.CartCurrencySelectedLineItems` (explicit comment: *"Tax and Promotion are computed only on primary-currency lines"*), and the tax mapper uses the same filter — which is why the **automatic −20% promotion scopes correctly** (PTS per-line discount = 0).
+## Root cause (CONFIRMED in source — 2026-06-10, supersedes the BA hypothesis)
+The defect is NOT in `promoEvalcontext.CartTotal = Cart.SubTotal` (BA hypothesis): the Cart #188 calculator (`DefaultShoppingCartTotalsCalculator.cs`) currency-filters `Cart.SubTotal` (`selectedItemsWithoutGifts.Where(x => x.Currency == currencyCode)`), and the eval-context scalar only feeds promotion *conditions*, not the reward amount.
 
-The leak is narrower: the same mapping sets `promoEvalcontext.CartTotal = cartAggr.Cart.SubTotal` (the scalar), and a **cart-subtotal percentage coupon** is evaluated against that scalar rather than against the filtered `CartPromoEntries`. If `Cart.SubTotal` is still summed across currencies upstream (via the Cart #188 totals calculator's `selectedItemsWithoutGifts` / the aggregate's `SelectedLineItems`, which were not confirmed currency-filtered), the % coupon applies to the inflated cross-currency base ($364) even though per-line entries are filtered. The captured API payload (`discounts[0].amount = $36.40`, a server response) confirms the defect is **server-side**, not an Apollo cache artifact.
+The actual defect is in the **reward application** — `vc-module-x-cart` `feat/VCST-5101` (PR #120), `src/VirtoCommerce.XCart.Core/Extensions/RewardExtensions.cs:201`:
 
-**Fix:** make the cart-subtotal coupon base use primary-currency lines only — derive `CartTotal` from `CartCurrencySelectedLineItems.Sum(x => x.ListTotal)` (or guarantee `Cart.SubTotal` is currency-filtered upstream), mirroring the per-line `CartPromoEntries` loop and `extendedPriceTotal`'s `CartCurrencySelectedLineItems` usage.
+```csharp
+var subTotalExcludeDiscount = shoppingCart.Items.Where(li => li.SelectedForCheckout)
+    .Sum(li => (li.ListPrice - li.DiscountAmount) * li.Quantity);   // ← NO currency filter
+...
+discount.DiscountAmount = reward.GetTotalAmount(subTotalExcludeDiscount, 1, aggregate.Currency); // booked as USD
+```
 
-**To confirm before the fix:** whether `SelectedLineItems` / `selectedItemsWithoutGifts` feeding `Cart.SubTotal` already filters by currency (open question #2 in `reports/ba/ba-report-2026-06-09.md`).
+`CartSubtotalReward` (% coupon) is computed over **all `SelectedForCheckout` lines across currencies** (extendedPrice base) and booked in the cart currency. This explains every observation exactly: extendedPrice-based amounts (10%×$160=16 / 10%×$240=24), selection-driven leak (S6), fixed-$ coupons immune (S1 — absolute `GetTotalAmount` ignores the base), per-line auto promo correct (different reward type, mapped via the currency-filtered `CartCurrencySelectedLineItems`).
+
+**Fix:** add the primary-currency filter to the `subTotalExcludeDiscount` sum, mirroring `CartAggregate.CartCurrencySelectedLineItems` (`CartAggregate.cs:140`): `li.Currency.EqualsIgnoreCase(shoppingCart.Currency) || li.Currency.IsNullOrEmpty()`.
+
+## Fix Routing
+- **Repo:** `VirtoCommerce/vc-module-x-cart` (branch `feat/VCST-5101`, PR #120 — fold into the open PR)
+- **File/line:** `src/VirtoCommerce.XCart.Core/Extensions/RewardExtensions.cs:201` (`ApplyRewards` / `CartSubtotalReward` block)
+- **Layer:** xAPI (L3) · single-repo, single-line filter change · repro tests: `tests/Sprint26-11/VCST-5101/repro-coupon-product-types.csv` R1–R5, S4–S7
+
+## Scope confirmation — 2026-06-10 xAPI matrix (11 cases, `tests/Sprint26-11/VCST-5101/repro-coupon-product-types.csv`)
+
+- **Product-type-agnostic (R1–R4):** leak reproduces identically with simple physical, sale-priced variation parent, variation child, and configurable USD lines (+10% × PTS value in every case). Configurable + mixed cart is accepted by the platform, no rejection.
+- **Selection-scoped — root cause confirmed (S6):** unselect the PTS line → coupon drops to exactly 10% × USD-only ($24 → $16); select only the PTS line → `discounts[]` empty ($0.00); re-select all → leak returns. The PTS value enters the base **iff the PTS line is selected** → the buggy base is `Cart.SubTotal` over **`SelectedLineItems` summed across currencies** (answers open question #2; fix = scope to selected primary-currency lines).
+- **%-coupon path only (S1):** fixed-$ coupon `FIXED5` does NOT leak — flat $5 in USD, invariant to PTS presence/qty. Auto −20% promo scopes correctly (S2: PTS line discount 0). Per-bucket totals arithmetic is otherwise sound (S5: USD `total = subTotal − discount + tax` holds; only the embedded coupon value is inflated). `mergeCart` is currency-safe (S3).
+- **Additive offset (S4/R5):** USD qty steps scale the coupon correctly (+10% × USD per step) while the leak stays a constant +10% × PTS value; PTS qty steps grow it linearly. Buckets remain independent.
+- **Deletion recalculates the USD total (S7):** removing the PTS line from a coupon'd mixed cart drops the coupon $31 → $16 (−10% × PTS150) and moves the USD bucket total $154.80 → $172.80 (+$15 phantom discount + $3 tax echo at 20%). Per the AC, deleting a PTS line must not move USD totals at all — deletion is the membership-side mirror of the S6 unselect probe.
+- Evidence: `reports/regression/graphql-evidence/R1…R5,S1…S7-*.json`. Repro suite: 12 runner-native cases.
 
 ## Severity rationale
 High / revenue — real monetary miscalculation that **over-discounts** every mixed cart with a cart-% coupon (grows with PTS quantity); directly contradicts an explicit Task-1 acceptance criterion. Not gated at checkout (place-order enables), so it would reach order capture.
