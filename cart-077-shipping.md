@@ -1,0 +1,124 @@
+- main [ref=e313]:
+  - generic [ref=e314]:
+    - img [ref=e316]
+    - generic [ref=e319]:
+      - navigation "Breadcrumbs navigation" [ref=e320]:
+        - list [ref=e321]:
+          - listitem [ref=e322]:
+            - link "Home" [ref=e323] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e324]: /
+          - listitem [ref=e325]: Cart
+      - heading "Cart" [level=1] [ref=e326]
+      - generic [ref=e328]:
+        - generic [ref=e330]:
+          - generic [ref=e3]:
+            - generic [ref=e5]:
+              - generic [ref=e8]: "Vendor: N/A"
+              - generic [ref=e10]:
+                - generic [ref=e11]:
+                  - checkbox "Toggle vendor select" [checked] [ref=e14] [cursor=pointer]
+                  - generic [ref=e16]: Product
+                  - generic [ref=e17]: Properties
+                  - generic [ref=e18]: Price per item
+                  - generic [ref=e20]: Quantity
+                  - generic [ref=e21]: Total
+                - generic [ref=e22]:
+                  - generic [ref=e24]
+                  - generic [ref=e94]
+                - generic [ref=e162]:
+                  - button "Remove selected" [ref=e163] [cursor=pointer]
+                  - generic [ref=e166]
+            - button "Clear cart" [ref=e170] [cursor=pointer]:
+              - generic [ref=e172]: Clear cart
+          - generic [ref=e331]:
+            - generic [ref=e333]:
+              - img [ref=e337]
+              - generic [ref=e339]: Shipping details
+            - generic "Shipping details" [ref=e341]:
+              - generic [ref=e342]:
+                - generic [ref=e343]:
+                  - generic [ref=e344]: Delivery option
+                  - generic [ref=e345]
+                - generic [ref=e358]:
+                  - generic [ref=e359]
+                  - generic [ref=e369]
+          - generic [ref=e382]:
+            - generic [ref=e384]:
+              - img [ref=e388]
+              - generic [ref=e390]: Payment details
+            - generic "Payment details" [ref=e392]:
+              - generic [ref=e393]:
+                - generic [ref=e394]:
+                  - generic [ref=e395]: Billing address*
+                  - generic [ref=e396]
+                - generic [ref=e407]:
+                  - generic [ref=e408]: Payment method*
+                  - button "Payment method" [ref=e412] [cursor=pointer]
+          - generic [ref=e420]:
+            - generic [ref=e422]:
+              - img [ref=e426]
+              - generic [ref=e428]: Order comment
+            - generic "Order comment" [ref=e430]:
+              - generic [ref=e431]:
+                - textbox [ref=e432]:
+                  - /placeholder: Enter a value
+                - generic [ref=e434]: 0 / 1000
+          - generic [ref=e435]:
+            - generic [ref=e437]:
+              - img [ref=e441]
+              - generic [ref=e443]: Recently browsed
+            - generic "Recently browsed" [ref=e445]:
+              - generic [ref=e447]:
+                - generic [ref=e449]:
+                  - img "AGENT-TEST-OOS-Fixture" [ref=e453]
+                  - generic [ref=e454]
+                - generic [ref=e478]:
+                  - img "AGENT-TEST-Tier-Priced-Fixture" [ref=e482]
+                  - generic [ref=e483]
+                - generic [ref=e507]:
+                  - img "AGENT-TEST-Low-Stock-Fixture" [ref=e511]
+                  - generic [ref=e512]
+                - generic [ref=e536]:
+                  - img "Erdinger Alkoholfrei German Alcohol Free Wheat Beer 12x500ml Cans" [ref=e540]
+                  - generic [ref=e541]
+                - generic [ref=e565]:
+                  - img "[World Premiere] UMIDIGI G6 5G Smartphone 5G Android 13 Dimensity 6100+ 6GB 128GB 6.57 90Hz 50MP Ultra-Clear Dual Camera NFC" [ref=e569]
+                  - generic [ref=e570]
+                - generic [ref=e594]:
+                  - img "AGENT-TEST-Config-Laptop-20260518" [ref=e598]
+                  - generic [ref=e599]
+        - complementary "Sidebar" [ref=e613]:
+          - generic [ref=e173]:
+            - generic [ref=e174]:
+              - generic [ref=e177]: Order summary
+              - generic "Order summary" [ref=e179]:
+                - generic [ref=e180]:
+                  - generic [ref=e181]
+                  - generic [ref=e184]
+                  - generic [ref=e197]
+                - button "Place order" [disabled] [ref=e200]:
+                  - generic [ref=e202]: Place order
+                - generic [ref=e203]:
+                  - img [ref=e206]
+                  - generic [ref=e208]: Complete all required information to proceed.
+                - generic [ref=e209]: Availability, shipping, tax and promotions are not final until you complete your order.
+            - generic [ref=e210]:
+              - generic [ref=e213]: Discount & coupons
+              - generic [ref=e214]:
+                - generic [ref=e215]:
+                  - generic [ref=e216]
+                  - generic [ref=e233]
+                  - generic [ref=e250]
+                  - generic [ref=e266]
+                  - generic [ref=e283]
+                - link "View all coupons & promotions" [ref=e299] [cursor=pointer]:
+                  - /url: /account/coupons
+                  - text: View all coupons & promotions
+                  - img [ref=e301]
+            - generic [ref=e303]:
+              - generic [ref=e306]: Quote request
+              - generic "Quote request" [ref=e308]:
+                - paragraph [ref=e309]: You can request items in your cart through a special service
+                - button "Add cart items to quote" [ref=e310] [cursor=pointer]:
+                  - generic [ref=e312]: Add cart items to quote

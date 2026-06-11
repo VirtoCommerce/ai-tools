@@ -1,0 +1,166 @@
+- main [ref=e1]:
+  - generic [ref=e4]:
+    - img [ref=e6]
+    - generic [ref=e9]:
+      - navigation "Breadcrumbs navigation" [ref=e10]:
+        - list [ref=e11]:
+          - listitem [ref=e12]:
+            - link "Home" [ref=e13] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e14]: /
+          - listitem [ref=e15]:
+            - link "Catalog" [ref=e16] [cursor=pointer]:
+              - /url: /catalog
+          - listitem [ref=e17]: /
+          - listitem [ref=e18]:
+            - link "Products with options" [ref=e19] [cursor=pointer]:
+              - /url: /products-with-options
+          - listitem [ref=e20]: /
+          - listitem [ref=e21]:
+            - link "Configurable products" [ref=e22] [cursor=pointer]:
+              - /url: /products-with-options/configurable-products
+          - listitem [ref=e23]: /
+          - listitem [ref=e24]: Configurable Hat
+      - heading "Configurable Hat" [level=1] [ref=e25]
+      - generic [ref=e27]:
+        - generic [ref=e29]: "SKU #YER-80407217"
+        - button "Copy" [ref=e30] [cursor=pointer]:
+          - img [ref=e33]
+      - generic [ref=e36]:
+        - generic [ref=e39]:
+          - generic [ref=e46]:
+            - img [ref=e49]
+            - img "Image 1" [ref=e54]
+            - generic [ref=e58]: "-62%"
+          - generic [ref=e567]:
+            - generic [ref=e569]:
+              - img [ref=e573]
+              - generic [ref=e575]: Configure the parameters
+            - generic "Configure the parameters" [ref=e577]:
+              - generic [ref=e578]:
+                - generic [ref=e579]:
+                  - button "Color Personalize your selection further (optional)" [ref=e580] [cursor=pointer]:
+                    - generic [ref=e581]:
+                      - generic [ref=e582]:
+                        - generic [ref=e583]: Color
+                        - generic [ref=e585]: Personalize your selection further (optional)
+                      - img [ref=e588]
+                  - radiogroup "Color" [ref=e592]:
+                    - generic [ref=e594]:
+                      - generic [ref=e595]:
+                        - radio [ref=e598] [cursor=pointer]
+                        - img "Red hat" [ref=e602]
+                      - generic [ref=e603]:
+                        - link "Red hat" [ref=e605] [cursor=pointer]:
+                          - /url: /product/42ec462f-4bb3-4e12-8068-6d5cdf59fbe1
+                        - generic [ref=e607]: $5.00
+                        - spinbutton "Product quantity" [disabled] [ref=e611]: "1"
+                        - generic [ref=e614]: $5.00
+                    - generic [ref=e616]:
+                      - generic [ref=e617]:
+                        - radio [ref=e620] [cursor=pointer]
+                        - img "Beige hat" [ref=e624]
+                      - generic [ref=e625]:
+                        - link "Beige hat" [ref=e627] [cursor=pointer]:
+                          - /url: /product/3cc2ab6e-d031-488a-acad-127ee88f1858
+                        - generic [ref=e629]: $4.00
+                        - spinbutton "Product quantity" [disabled] [ref=e633]: "1"
+                        - generic [ref=e636]: $4.00
+                    - generic [ref=e638]:
+                      - generic [ref=e639]:
+                        - radio [ref=e642] [cursor=pointer]
+                        - img "Black hat" [ref=e646]
+                      - generic [ref=e647]:
+                        - link "Black hat" [ref=e649] [cursor=pointer]:
+                          - /url: /product/aa8116e5-1448-447b-af51-89db83cb5c19
+                        - generic [ref=e651]: $2.00
+                        - spinbutton "Product quantity" [disabled] [ref=e655]: "1"
+                        - generic [ref=e658]: $2.00
+                    - generic [ref=e660]:
+                      - generic [ref=e661]:
+                        - radio [ref=e664] [cursor=pointer]
+                        - img "Green hat" [ref=e668]
+                      - generic [ref=e669]:
+                        - link "Green hat" [ref=e671] [cursor=pointer]:
+                          - /url: /product/59e78525-07db-43d0-bfcc-c670b7c31862
+                        - generic [ref=e673]: $5.00
+                        - spinbutton "Product quantity" [disabled] [ref=e677]: "1"
+                        - generic [ref=e680]: $5.00
+                    - generic [ref=e682]:
+                      - generic [ref=e683]:
+                        - radio [checked] [ref=e686] [cursor=pointer]
+                        - img [ref=e690]
+                      - generic "None" [ref=e693]
+                - button "Print Personalize your selection further (optional)" [ref=e695] [cursor=pointer]:
+                  - generic [ref=e696]:
+                    - generic [ref=e697]:
+                      - generic [ref=e698]: Print
+                      - generic [ref=e700]: Personalize your selection further (optional)
+                    - img [ref=e703]
+        - complementary "Sidebar" [ref=e198]:
+          - generic [ref=e199]:
+            - generic [ref=e200]:
+              - generic [ref=e203]: Price and delivery
+              - generic "Price and delivery" [ref=e205]:
+                - generic [ref=e206]:
+                  - generic [ref=e207]:
+                    - generic [ref=e208]: "Price:"
+                    - generic [ref=e209]:
+                      - generic [ref=e210]: $16.00
+                      - generic [ref=e211]: $6.00
+                  - generic [ref=e213]:
+                    - button "Add to cart" [ref=e705] [cursor=pointer]:
+                      - generic [ref=e216]: Add to cart
+                    - generic "In stock" [ref=e218]:
+                      - generic [ref=e219]:
+                        - img [ref=e221]
+                        - generic [ref=e223]: "7696"
+              - generic [ref=e225]:
+                - button "Wishlists are available only for authenticated users" [disabled] [ref=e226]:
+                  - img [ref=e229]
+                - button "Add to Compare" [ref=e231] [cursor=pointer]:
+                  - img [ref=e234]
+                - button "Share" [ref=e238] [cursor=pointer]:
+                  - img [ref=e240]
+                - link "Send link by email" [ref=e242] [cursor=pointer]:
+                  - /url: mailto:?subject=Have%20a%20look%20at%20the%20product%3A%20Configurable%20Hat&body=https%3A%2F%2Fvcst-qa-storefront.govirto.com%2Fproducts-with-options%2Fconfigurable-products%2Fconfigurable-hat
+                  - img [ref=e244]
+                - button "Print" [ref=e246] [cursor=pointer]:
+                  - img [ref=e248]
+            - generic [ref=e250]:
+              - generic [ref=e253]: Shipment options
+              - generic [ref=e256]:
+                - img "Check pickup locations" [ref=e257]
+                - button "Check pickup locations" [ref=e258] [cursor=pointer]:
+                  - generic [ref=e259]: Check pickup locations
+                  - img [ref=e261]
+      - generic [ref=e263]:
+        - generic [ref=e265]:
+          - img [ref=e269]
+          - generic [ref=e271]: Customers bought together
+        - generic "Customers bought together" [ref=e273]:
+          - generic [ref=e275]:
+            - generic [ref=e277]:
+              - img "Off-Road Bike. Configurable product" [ref=e281]
+              - generic [ref=e282]:
+                - link "Off-Road Bike. Configurable product" [ref=e285] [cursor=pointer]:
+                  - /url: /product/958d0762-404c-4a6f-a45a-46ed4943f5f0
+                - generic [ref=e288]:
+                  - generic [ref=e289]: From
+                  - text: $540.00
+            - generic [ref=e291]:
+              - img "Custom T-shirt" [ref=e295]
+              - generic [ref=e296]:
+                - link "Custom T-shirt" [ref=e298] [cursor=pointer]:
+                  - /url: /product/50529b79-a018-4e84-93d5-860d7969b630
+                - generic [ref=e301]:
+                  - generic [ref=e302]: From
+                  - text: $0.00
+            - generic [ref=e304]:
+              - img "Black California Beach Pullover Hoodie XS" [ref=e308]
+              - generic [ref=e309]:
+                - link "Black California Beach Pullover Hoodie XS" [ref=e311] [cursor=pointer]:
+                  - /url: /product/b7422c58-ac8f-4267-bc6a-5b4dd24774b6
+                - generic [ref=e314]:
+                  - generic [ref=e315]: From
+                  - text: $19.00

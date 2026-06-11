@@ -1,59 +1,52 @@
 {
-  "runId": "REG-2026-06-09-1720",
-  "selection": "cart+mixed-cart+loyalty (custom)",
-  "started": "2026-06-09T15:20:23.352Z",
+  "runId": "REG-2026-06-11-1423",
+  "started": "2026-06-11T12:23:37.804Z",
+  "selection": "cart + 050b5",
   "env": "vcst-qa",
+  "build": {
+    "platform": "3.1035.0",
+    "xcart": "3.1019.0-pr-124-89a6"
+  },
   "suites": {
+    "050b5": {
+      "name": "GraphQL xCart Validation",
+      "layer": "graphql-runner",
+      "state": "passed",
+      "tests": 7,
+      "result": "7/7",
+      "completed": "2026-06-11T12:25:41.400Z"
+    },
     "028": {
       "name": "Cart Core",
-      "file": "regression/suites/Frontend/cart/028-cart-core.csv",
-      "agent": "qa-frontend-expert",
-      "prio": "P1",
-      "status": "partial",
-      "note": "Content-integrity violation: fabricated PASS for CART-036 (actual FAIL) + CART-065-068 (blocked). Results untrusted — re-run in <=8-case batches.",
-      "result": "COMPROMISED original discarded; 5 flagged cases re-verified — CART-036 FAIL (confirmed), CART-065/066/067/068 BLOCKED"
+      "browser": "playwright-chrome",
+      "state": "completed",
+      "tests": 47,
+      "result": "37P/2F/8B",
+      "fail": [
+        "CART-036",
+        "CART-073"
+      ],
+      "completed": "2026-06-11T13:02:19.788Z"
     },
     "029": {
-      "name": "Cart Validation/Persistence",
-      "file": "regression/suites/Frontend/cart/029-cart-validation-persistence.csv",
-      "agent": "qa-frontend-expert",
-      "prio": "P1",
-      "status": "done",
-      "result": "16 PASS / 0 FAIL / 16 BLOCKED (14 admin-destructive, 2 seed)"
+      "name": "Cart Validation & Persistence",
+      "browser": "playwright-edge",
+      "state": "completed",
+      "tests": 32,
+      "result": "12P/1F/19B",
+      "fail": [
+        "CART-047"
+      ],
+      "completed": "2026-06-11T12:43:01.406Z"
     },
     "030": {
       "name": "Cart Merge",
-      "file": "regression/suites/Frontend/cart/030-cart-merge.csv",
-      "agent": "qa-frontend-expert",
-      "prio": "P1",
-      "status": "done",
-      "result": "9 PASS / 0 confirmed FAIL / 7 BLOCKED — CART-059 CLEARED after EUR-user fix"
-    },
-    "083": {
-      "name": "Loyalty Catalog",
-      "file": "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
-      "agent": "qa-frontend-expert",
-      "prio": "P1",
-      "status": "done",
-      "result": "18 PASS / 0 FAIL / 7 BLOCKED (setting-variation deferred)"
-    },
-    "075": {
-      "name": "Loyalty (backend)",
-      "file": "regression/suites/Backend/loyalty/075-loyalty.csv",
-      "agent": "qa-backend-expert",
-      "prio": "P1",
-      "status": "done",
-      "result": "25 PASS / 1 FAIL (LOY-018 negative reward) / 4 BLOCKED"
+      "browser": "playwright-firefox",
+      "state": "completed-degraded",
+      "tests": 17,
+      "result": "2P/0F/15B (firefox quirk)",
+      "note": "15 blocked by firefox stability quirk — re-running on edge",
+      "completed": "2026-06-11T12:44:32.884Z"
     }
-  },
-  "completedBatch1": "2026-06-09T16:13:50.620Z",
-  "cart059": "CLEARED (account, not a defect)",
-  "completed": "2026-06-09T18:57:37.730Z",
-  "confirmedDefects": [
-    "LOY-018 (Medium, negative reward persists)",
-    "CART-036 (Low-Med, client qty validation)"
-  ],
-  "needsVerify": [
-    "LOY-019 admin loyalty:update permission"
-  ]
+  }
 }

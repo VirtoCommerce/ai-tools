@@ -1,0 +1,74 @@
+{
+  "run_id": "REG-2026-06-11-1423",
+  "suite": "030-cart-merge",
+  "type": "fallback re-run (Firefox blocked 15/17 on browser-stability quirk)",
+  "browser": "playwright-edge",
+  "environment": "vcst-qa",
+  "build": "Platform 3.1035.0, XCart 3.1019.0-pr-124-89a6",
+  "front_url": "https://vcst-qa-storefront.govirto.com",
+  "started": "2026-06-11T14:23:00Z",
+  "skipped_already_passed_on_firefox": ["CART-058", "CART-060"],
+  "cfg_hat_real_path_finding": "CONFIRMED WORKING: /products-with-options/configurable-products/configurable-hat renders the Configurable Hat PDP (breadcrumb 'Configurable products', heading 'Configurable Hat', SKU YER-80407217). The aliases.json CFG_HAT.url segment 'configurable-caps-shirts' is STALE/wrong; correct category segment is 'configurable-products'. Recommend updating CFG_HAT storefront_url + CART-061/071/072/073 hat_url to use 'configurable-products'. Live color options differ from CSV: Red $5, Beige $4, Black $2, Green $5, None(default) — all OPTIONAL (None default). Used Black($2) vs Green($5) for distinct A/B.",
+  "env_default_selection": "ON (confirmed: guest-added items arrive selected/checked) — CART-068/069/070 require OFF, so BLOCKED",
+  "results": [
+    {
+      "id": "CART-063",
+      "title": "Cart Merge Selection - Empty Cart + Selected All (ON)",
+      "status": "PASS",
+      "notes": "User (slot-3 personal 'Agent Edge') cart empty; guest added DORITOS + OREO (both auto-selected ON). After sign-in merge: both items present (2 line items), both checkboxes [checked], Order Summary includes both (Subtotal $28 list, Total $9.60 after -$20 promo + $1.60 tax; math consistent BL-CHK-006). 'Place order' disabled only pending delivery/payment selection (by-design inline checkout, not a selection defect). No console errors on merged authenticated cart. mergeCart succeeded.",
+      "bl": ["BL-CART-006", "BL-CART-008"]
+    },
+    {
+      "id": "CART-064",
+      "title": "Cart Merge Selection - Both Selected All (ON)",
+      "status": "PASS",
+      "notes": "User cart had DORITOS+OREO (selected); guest added ASUS ROG + Bike Holder (different items, selected). After merge: all 4 distinct line items present, all 4 checkboxes [checked]. Order Summary subtotal $500 list, discount -$40, tax +$92, total $552 (math consistent). No items deselected. No console errors on merged cart.",
+      "bl": ["BL-CART-006", "BL-CART-008"]
+    },
+    {
+      "id": "CART-065",
+      "title": "Cart Merge Selection - Both Unselected All (ON)",
+      "status": "PASS",
+      "notes": "User cart items all manually unselected; guest items (DORITOS+OREO re-added) also unselected. After merge: all items present (guest DORITOS/OREO consolidated qty with user DORITOS/OREO - e.g. DORITOS qty=2), ALL items remain UNSELECTED, Order Summary subtotal $0.00, Place order disabled. FINDING: merge PRESERVES the unselected state from both carts rather than resetting to store default ON. AC is open-ended (preserved OR reset) - PASS, behavior is consistent. No items lost. No console errors.",
+      "bl": ["BL-CART-006"]
+    },
+    {
+      "id": "CART-066",
+      "title": "Cart Merge Selection - Selected + Unselected (ON)",
+      "status": "PASS",
+      "notes": "User cart 4 items all selected; guest Vintage Hoodie unselected. After merge: 5 distinct items present. Per-item selection preserved correctly - 4 user items [checked], Hoodie NOT checked. Header checkbox [checked=mixed] (indeterminate) correctly reflects mixed state. Order Summary subtotal $528 includes ONLY selected items (Hoodie $20 list excluded), total $561.60. No blanket override, no selection swap. No console errors.",
+      "bl": ["BL-CART-006"]
+    },
+    {
+      "id": "CART-067",
+      "title": "Cart Merge Selection - Mixed + Mixed (ON)",
+      "status": "PASS",
+      "notes": "User cart mixed (Hoodie unselected, 4 others selected); guest mixed (Animal Crossing selected, Wine glass unselected). After merge: 6 distinct items across 2 vendor groups. Per-item selection preserved EXACTLY per source: Animal Crossing [checked], Wine NOT checked, Hoodie NOT checked, Bike/ASUS/DORITOS/OREO [checked]. Vendor N/A header [checked=mixed]. Order Summary subtotal $728 = selected items only (Wine $15 + Hoodie $20 excluded), discount -$70, tax +$131.60, total $789.60 (math consistent BL-CHK-006). No blanket override. Only benign stale-image 404s in console.",
+      "bl": ["BL-CART-006"]
+    },
+    {
+      "id": "CART-071",
+      "title": "Cart Merge - Configurable Product, Different Options Create Separate Lines",
+      "status": "FAIL",
+      "severity": "Medium (display/UI; data layer correct)",
+      "notes": "MERGE INVARIANTS PASS: guest added 2 distinct Hat configs (Black totalA=$8, Green totalB=$11). Guest cart showed 2 distinct lines; after sign-in merge cart STILL shows exactly 2 Configurable Hat lines, distinct totals ($11 + $8), subtotal $19 = totalA+totalB, NO collapse, NO qty merge - BL-CART-007 exception honored. Component lists correct & preserved through merge (line1 '1. Green hat', line2 '1. Black hat'). FAIL REASON (UI display bug, second-source confirmed): BOTH line summary headers display identical 'Color: Emerald green / Size: S' regardless of actual config - the $8 Black line wrongly shows 'Emerald green' in its summary label while its Components list correctly reads 'Black hat'. Spec asserts 'one line displays option A config; the other displays option B config' - the rendered config-summary labels are identical/wrong. Pre-existing (visible pre-merge), NOT merge-specific, NOT data corruption (component list + totals + lineItemIds all correct). Evidence: CART-071-FAIL-config-summary-label-mismatch.png. No console errors.",
+      "bl": ["BL-CART-006", "BL-CART-007", "BL-CAT-006"]
+    },
+    {
+      "id": "CART-072",
+      "title": "Cart Merge - Same Configurable Product Same Configuration Sums Quantity",
+      "status": "FAIL",
+      "severity": "Medium-High (functional; BL-CART-007 consolidation not honored for configurable products on merge)",
+      "notes": "User cart: 1x Black-hat config (qty 1, lineItemId fcd03d20). Guest cart: SAME Black-hat config (qty set to 2, lineItemId 1e2b1528). Both byte-identical (Components list confirms '1. Black hat' for BOTH; same single Product section). After sign-in merge: cart shows TWO separate Configurable Hat lines (qty 2 + qty 1) NOT consolidated into one qty=3 line. CSV/BL-CART-007 asserts identical configuration of same base product = duplicate -> quantities sum into ONE line, no second line created. VIOLATED: second line for identical config persists. Total quantity IS correct (3 hats, subtotal $54=3x$18, total $28.80) but split across 2 lines. Contrast: simple products DO consolidate on merge (observed DORITOS qty summed in CART-065); configurable identical-config does NOT. Second-source confirmed via component lists + distinct lineItemIds. No console errors. Evidence: CART-072-FAIL-identical-config-not-consolidated.png. RECOMMEND second-source/dev confirmation before filing - configurable-merge consolidation is a nuanced area; possible by-design (each cart line preserved) vs the CSV's stated expectation.",
+      "bl": ["BL-CART-006", "BL-CART-007", "BL-CAT-006"]
+    },
+    {
+      "id": "CART-073",
+      "title": "Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",
+      "status": "FAIL",
+      "severity": "Medium (display/UI; data layer correct - same root cause as CART-071)",
+      "notes": "User cart: Black config A ($8, lineItemId 9eceee0a). Guest cart: Green config B ($11, lineItemId 0171663e). After cross-cart sign-in merge: cart shows exactly 2 distinct Configurable Hat lines, distinct totals ($11 Green + $8 Black), subtotal $19=A+B, order summary $39 list / total $22.80, NO collapse, NO qty merge - data layer correct (component lists confirm line1 'Green hat', line2 'Black hat'; distinct lineItemIds preserved). FAIL REASON (UI display bug, same as CART-071): BOTH line summary headers show identical 'Color: Emerald green / Size: S' regardless of actual config - the $8 Black line's summary wrongly reads 'Emerald green' while its Components list correctly reads 'Black hat'. Spec asserts each line displays its own option config in the summary - the rendered labels are identical/wrong. No console errors. Evidence: CART-073-FAIL-config-summary-label-mismatch.png.",
+      "bl": ["BL-CART-006", "BL-CART-007", "BL-CAT-006"]
+    }
+  ]
+}
