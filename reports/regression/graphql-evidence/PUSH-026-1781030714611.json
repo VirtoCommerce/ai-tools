@@ -1,0 +1,51 @@
+{
+  "caseId": "PUSH-026",
+  "title": "Authorization Boundary — Storefront Customer Token Cannot Call Platform Push Notifications",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050l-graphql-push.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-09T18:45:14.610Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-09T18:45:14.459Z",
+      "expiresAt": "2026-06-09T19:15:14.459Z"
+    }
+  ],
+  "variables": {
+    "back_url": "{{BACK_URL}}",
+    "store_id": "{{STORE_ID}}"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=platform_push] HTTP 403",
+      "label": "platform_push",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "HTTP 403",
+      "actual": "HTTP 403"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ADMIN] confirm no notification created by the failed call — admin Push Messages list unchanged",
+      "layer": "ADMIN",
+      "note": "confirm no notification created by the failed call — admin Push Messages list unchanged",
+      "resolved": "confirm no notification created by the failed call — admin Push Messages list unchanged"
+    },
+    {
+      "raw": "[CONSOLE] no JS errors from REST call",
+      "layer": "CONSOLE",
+      "note": "no JS errors from REST call",
+      "resolved": "no JS errors from REST call"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — no message was created",
+    "blocks": []
+  }
+}

@@ -1,5 +1,5 @@
 ---
-description: "Test a JIRA ticket, feature area, or PR. Analyzes scope, dispatches specialist agents, and produces a verdict."
+description: "Test a JIRA ticket, feature area, or PR. Analyzes scope, dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict."
 argument-hint: "VCST-XXXX | feature name | PR #NNN"
 disable-model-invocation: true
 ---
@@ -107,6 +107,8 @@ Determine testing strategy: load knowledge, query docs, and route agents.
 
 Read environment URLs from `config.js` (`FRONT_URL`, `BACK_URL`).
 
+**Record the test window start** — note the current timestamp before dispatching. The interval from here until execution agents return defines the App Insights correlation window used in Step 6a.
+
 Launch all applicable agents **simultaneously** in a single message using the Agent tool. Each agent prompt must include:
 - The ticket ID(s) or feature being tested
 - **Testing checklist or test cases** — include the output from Step 3
@@ -186,7 +188,16 @@ After all execution agents return, run a **targeted exploratory session** using 
 
 Collect results, decide verdict, transition JIRA, and deliver summary.
 
-**6a. Validate evidence quality:**
+**6a. Correlate App Insights logs (test window):**
+
+Catch backend errors the UI test *triggered but didn't surface* — 5xx, failed dependencies, server exceptions, and GraphQL `errors[]` returned inside a 200. This is the `/qa-monitoring` machinery scoped to the test window: **query → dedup → triage**, no separate live-repro phase (the execution agents were already live — an error that fired during their window *is* the repro).
+
+1. **Pre-flight.** Confirm App Insights access the same way `/qa-monitoring` Phase 0 does (Azure MCP `applicationinsights`, **or** `APPINSIGHTS_APP_ID_*` + `APPINSIGHTS_API_KEY_*` set). If neither is configured → **skip this sub-step with a one-line note** ("App Insights not configured — log correlation skipped"); never block the verdict on it.
+2. **Query the window.** For each affected layer (frontend → storefront resource, backend → platform resource; resolve from `APPINSIGHTS_*` env vars, never hardcode), run the probe queries from `ci/monitoring/queries/` scoped to the Step 4 window — a relative `ago()` window covering execution start through now, +2 min buffer.
+3. **Dedup + triage.** Classify signatures against `reports/monitoring/.seen-fingerprints.json` (read-only here — do not persist; a narrow test window must still surface SEEN-stable errors if they fired during it). Delegate interpretation to `qa-backend-expert` using `ci/agents/monitor-triage-agent.md`: each signal → `REAL_BUG | KNOWN_ISSUE | NOISE | CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence. When ambiguous, prefer NEEDS_REVIEW over REAL_BUG.
+4. **Fold into the verdict.** A HIGH-confidence `REAL_BUG` correlated to the test window is failing evidence (see 6c) — the error fired while the agents exercised this feature, so it is already reproduced. Attach the signature + telemetry portal link as evidence; do NOT draft a separate `BUG-AI-*` monitoring report (the test's own bug filing in 6d owns it). NEEDS_REVIEW / NOISE / KNOWN_ISSUE → note in the report, don't fail on them.
+
+**6b. Validate evidence quality:**
 
 | Check | Action if Missing |
 |---|---|
@@ -196,17 +207,18 @@ Collect results, decide verdict, transition JIRA, and deliver summary.
 | Bugs found but no JIRA tickets mentioned | Ask user if bugs should be filed via `/qa-bug` |
 | Business rule `BL-*` listed in prompt but not mentioned in results | Flag as untested — request verification |
 | Exploratory session skipped for P0/P1 ticket | Flag as incomplete — exploratory coverage required |
+| HIGH-confidence `REAL_BUG` in the App Insights window (6a) but not reflected in agent results | Surface it — the UI test missed a backend error; fold into verdict |
 
-**6b. Decide verdict:**
+**6c. Decide verdict:**
 
 | Decision | Criteria |
 |---|---|
-| **PASS** | All ACs met, all `BL-*` rules verified, no P0/P1 bugs, exploratory session clean |
-| **PASS WITH NOTES** | ACs met, minor P2/P3 issues tracked in JIRA, exploratory observations logged |
-| **FAIL** | Any AC not met, any `BL-*` rule violated, or P0/P1 bug found |
+| **PASS** | All ACs met, all `BL-*` rules verified, no P0/P1 bugs, exploratory session clean, no correlated HIGH-confidence `REAL_BUG` in the test window (6a) |
+| **PASS WITH NOTES** | ACs met, minor P2/P3 issues tracked in JIRA, exploratory observations logged, only NEEDS_REVIEW/NOISE/KNOWN_ISSUE in the log window |
+| **FAIL** | Any AC not met, any `BL-*` rule violated, P0/P1 bug found, or a HIGH-confidence `REAL_BUG` correlated to the test window (6a) |
 | **BLOCKED** | Environment down, missing test data, unresolved dependency |
 
-**6c. JIRA transition (with confirmation):**
+**6d. JIRA transition (with confirmation):**
 
 Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 
@@ -219,12 +231,13 @@ Add a JIRA comment with:
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
 Exploratory: [N] findings ([bugs/observations/risks]).
+App Insights (test window): [N] correlated signals — [confirmed/needs-review/none].
 Business rules verified: [BL-* list].
 Bugs: [list or None]. Decision: [verdict].
 Artifacts: tests/{SPRINT}/VCST-XXXX/
 ```
 
-**6d. Deliver summary:**
+**6e. Deliver summary:**
 
 Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
@@ -250,6 +263,13 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
     "heuristic": "SFDPOT|CRISP",
     "findings": { "bugs": 0, "questions": 0, "observations": 0, "risks": 0 }
   },
+  "appinsights": {
+    "checked": true,
+    "layers": ["frontend", "backend"],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": []
+  },
   "artifacts": "tests/{SPRINT}/VCST-XXXX/"
 }
 ```
@@ -274,3 +294,5 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 - `test-management-specialist` (Step 3) must complete before dispatching execution agents (Step 4)
 - Exploratory session (Step 5) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
 - If `qa-testing-expert` is already dispatched in Step 4, combine exploratory charter into that agent's prompt rather than spawning a second instance
+- App Insights correlation (Step 6a) reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the test window — **no separate live-repro phase** (the execution agents already exercised the feature). Resolve resources from `APPINSIGHTS_*`, never hardcode; skip gracefully (don't block the verdict) when App Insights is unconfigured
+- A correlated error does NOT get its own `BUG-AI-*` monitoring draft — the test's own bug filing (`/qa-bug` in 6d) owns it, to avoid duplicate reports

@@ -1,0 +1,214 @@
+{
+  "caseId": "PUSH-027",
+  "title": "E2E Cross-Layer — Admin Sends Targeted Push; Recipient Receives and Reads via xAPI",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050l-graphql-push.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-09T18:46:04.093Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ADMIN",
+      "acquiredAt": "2026-06-09T18:46:02.981Z",
+      "expiresAt": "2026-06-09T19:16:01.981Z"
+    },
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-09T18:46:03.613Z",
+      "expiresAt": "2026-06-09T19:16:03.613Z"
+    }
+  ],
+  "variables": {
+    "back_url": "{{BACK_URL}}",
+    "front_url": "{{FRONT_URL}}",
+    "store_id": "{{STORE_ID}}",
+    "org_user_id": "{{ORG_USER_ID}}",
+    "PUSH_MSG_ID": "3c8d1d5b-513c-4940-930f-a41636c8415a",
+    "RECEIVED_ID": ""
+  },
+  "nullCaptures": [
+    "probe_inbox.data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id → RECEIVED_ID (undefined)"
+  ],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "probe_inbox",
+      "query": "query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id shortMessage isRead } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "pushMessages": {
+            "totalCount": 3,
+            "items": [
+              {
+                "id": "cba5d364-d93b-40a8-a9d1-f8f736b9143b",
+                "shortMessage": "VCST-5210 verify 3",
+                "isRead": false
+              },
+              {
+                "id": "1303d70f-1ed1-4d89-8078-2e388619e9d9",
+                "shortMessage": "VCST-5210 verify 2",
+                "isRead": false
+              },
+              {
+                "id": "b31e1679-d3d8-4449-86ce-db5e69626958",
+                "shortMessage": "VCST-5210 verify 1",
+                "isRead": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 139
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "mark_read",
+      "query": "mutation MarkRead($command: InputMarkPushMessageReadType!) {\n    markPushMessageRead(command: $command)\n  }",
+      "variables": {
+        "command": {
+          "messageId": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "markPushMessageRead": true
+        },
+        "errors": [],
+        "elapsed_ms": 184
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "verify_read",
+      "query": "query { pushMessages(first: 50, unreadOnly: false) { items { id shortMessage isRead } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "pushMessages": {
+            "items": [
+              {
+                "id": "cba5d364-d93b-40a8-a9d1-f8f736b9143b",
+                "shortMessage": "VCST-5210 verify 3",
+                "isRead": false
+              },
+              {
+                "id": "1303d70f-1ed1-4d89-8078-2e388619e9d9",
+                "shortMessage": "VCST-5210 verify 2",
+                "isRead": false
+              },
+              {
+                "id": "b31e1679-d3d8-4449-86ce-db5e69626958",
+                "shortMessage": "VCST-5210 verify 1",
+                "isRead": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 146
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_msg] HTTP 200",
+      "label": "create_msg",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "HTTP 200",
+      "actual": "HTTP 200"
+    },
+    {
+      "raw": "[DATA label=create_msg] body.id is non-null",
+      "label": "create_msg",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "body.id is non-null",
+      "actual": "body.id = \"3c8d1d5b-513c-4940-930f-a41636c8415a\""
+    },
+    {
+      "raw": "[ERRORS label=probe_inbox] errors[] empty",
+      "label": "probe_inbox",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=probe_inbox] data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id is non-null",
+      "label": "probe_inbox",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id is non-null",
+      "actual": "data.pushMessages.items[?shortMessage=AGENT-TEST-e2e-body].id is null"
+    },
+    {
+      "raw": "[ERRORS label=mark_read] errors[] empty",
+      "label": "mark_read",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=mark_read] data.markPushMessageRead = true",
+      "label": "mark_read",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.markPushMessageRead = true",
+      "actual": "data.markPushMessageRead = true"
+    },
+    {
+      "raw": "[ERRORS label=verify_read] errors[] empty",
+      "label": "verify_read",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=verify_read] data.pushMessages.items[?id={{RECEIVED_ID}}].isRead = true",
+      "label": "verify_read",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.pushMessages.items[?id=].isRead = true",
+      "actual": "data.pushMessages.items[?id=].isRead = undefined"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ADMIN] POST /api/push-message/search with statuses:[Sent] confirms message status=Sent",
+      "layer": "ADMIN",
+      "note": "POST /api/push-message/search with statuses:[Sent] confirms message status=Sent",
+      "resolved": "POST /api/push-message/search with statuses:[Sent] confirms message status=Sent"
+    },
+    {
+      "raw": "[ROUNDTRIP label=verify_read] isRead=true confirmed for the delivered message",
+      "layer": "ROUNDTRIP",
+      "note": "isRead=true confirmed for the delivered message",
+      "resolved": "isRead=true confirmed for the delivered message"
+    },
+    {
+      "raw": "[CONSOLE] no JS errors",
+      "layer": "CONSOLE",
+      "note": "no JS errors",
+      "resolved": "no JS errors"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — Sent message is not deletable (AGENT-TEST-prefixed; leave in system)",
+    "blocks": []
+  }
+}

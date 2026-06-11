@@ -1,0 +1,65 @@
+{
+  "suiteId": "075",
+  "chunk": "LOY-003-010",
+  "runId": "REG-2026-06-09-1720",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-06-09T17:20:00Z",
+  "completedAt": "2026-06-09T17:32:00Z",
+  "totalCases": 8,
+  "passed": 8,
+  "failed": 0,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "100.0%",
+  "cases": [
+    {
+      "id": "LOY-003",
+      "status": "PASS",
+      "title": "Edit existing loyalty program",
+      "evidence": "reports/regression/REG-2026-06-09-1720/screenshots/LOY-003-verify-reopen.png"
+    },
+    {
+      "id": "LOY-004",
+      "status": "PASS",
+      "title": "Delete loyalty program"
+    },
+    {
+      "id": "LOY-005",
+      "status": "PASS",
+      "title": "Add single condition to program"
+    },
+    {
+      "id": "LOY-006",
+      "status": "PASS",
+      "title": "Add multiple conditions to program",
+      "notes": "Verified: two Order status conditions (Completed + Pending) added, saved, close+reopen persistence confirmed. Operator 'If any of the following criteria' applied to both. Cleanup: both conditions removed and saved."
+    },
+    {
+      "id": "LOY-007",
+      "status": "PASS",
+      "title": "Remove condition from program",
+      "notes": "Setup: added Completed + Pending conditions. Removed Completed condition via delete icon, saved. Close+reopen confirmed only 'Order status is Pending' present; Completed condition absent. Single-condition program saved cleanly."
+    },
+    {
+      "id": "LOY-008",
+      "status": "PASS",
+      "title": "Condition with different order statuses",
+      "notes": "Opened status picker on existing Pending condition row. Dropdown exposed 6 selectable options (Pending excluded as already-selected tag). All 7 statuses confirmed present: ReadyForPickup, Custom, Cancelled, New, Completed, Pending, Payment required."
+    },
+    {
+      "id": "LOY-009",
+      "status": "PASS",
+      "title": "Set fixed points reward",
+      "notes": "Clicked 'Add reward', selected 'Earn fixed amount of points per order'. Entered 5.00 via individual keypresses. Saved. Close+reopen confirmed second reward row shows 'Get 5.00 fixed points'. Pre-existing default row 'Get 0.00 fixed points' also present."
+    },
+    {
+      "id": "LOY-010",
+      "status": "PASS",
+      "title": "Modify reward amount",
+      "notes": "With program open from LOY-009 reopen, clicked 5.00 textbox and entered 15.50 via keypresses. Saved (Save became [active]/disabled = clean). Close+reopen confirmed second reward row shows 'Get 15.50 fixed points'. Value persisted correctly."
+    }
+  ],
+  "bugs": [],
+  "errors": []
+}

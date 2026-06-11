@@ -1,0 +1,202 @@
+{
+  "suiteId": "030",
+  "suiteName": "Cart Merge",
+  "runId": "REG-2026-06-09-1720",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-09T16:00:00.000Z",
+  "completedAt": "2026-06-09T16:10:30.000Z",
+  "totalCases": 17,
+  "passed": 9,
+  "failed": 1,
+  "blocked": 7,
+  "skipped": 0,
+  "passRate": "52.9%",
+  "testCases": [
+    {
+      "id": "CART-057",
+      "status": "BLOCKED",
+      "title": "Cart Merge - Anonymous Then Register",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-008",
+      "edgeCaseRefs": "ECL-7.3, ECL-14.1",
+      "notes": "Registration requires email verification which cannot be auto-completed in MCP browser session. The storefront shows 'verify your email' prompt after registration and does not auto-login. Manual email verification step is not automatable via MCP agent."
+    },
+    {
+      "id": "CART-058",
+      "status": "PASS",
+      "title": "Cart Merge - No Duplicate SKUs",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-008, BL-CART-007",
+      "edgeCaseRefs": "ECL-7.3, ECL-14.1"
+    },
+    {
+      "id": "CART-059",
+      "status": "FAIL",
+      "title": "Cart Merge - Currency Mismatch",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-008, BL-CART-004",
+      "edgeCaseRefs": "ECL-4.1, ECL-7.3, ECL-14.4",
+      "failedAssertion": "[DOM] prices displayed in customer default currency (EUR)",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "EUR_USER_EMAIL (larch9900.mango@mail.com) signed in successfully but currency header remained USD after merge. Prices displayed in USD ($124.00) instead of EUR. The currency context for EUR user account was not applied after guest-to-user cart merge. All products remained at USD pricing. BL-CART-004 violated: cart currency did not switch to user account default currency on sign-in."
+    },
+    {
+      "id": "CART-060",
+      "status": "PASS",
+      "title": "Cart Merge - Persists After Logout and Re-login",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-008",
+      "edgeCaseRefs": "ECL-7.3, ECL-14.1"
+    },
+    {
+      "id": "CART-061",
+      "status": "PASS",
+      "title": "Cart Merge - Different Product Types",
+      "section": "Cart > Merge",
+      "priority": "Medium",
+      "businessRule": "BL-CART-008, BL-CART-007",
+      "edgeCaseRefs": "ECL-7.3, ECL-14.1"
+    },
+    {
+      "id": "CART-062",
+      "status": "PASS",
+      "title": "Cart Merge - Smart Merge Failure Handling",
+      "section": "Cart > Merge",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-7.3, ECL-14.2"
+    },
+    {
+      "id": "CART-063",
+      "status": "PASS",
+      "title": "Cart Merge Selection - Empty Cart + Selected All (ON)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1"
+    },
+    {
+      "id": "CART-064",
+      "status": "PASS",
+      "title": "Cart Merge Selection - Both Selected All (ON)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1"
+    },
+    {
+      "id": "CART-065",
+      "status": "PASS",
+      "title": "Cart Merge Selection - Both Unselected All (ON)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "Store setting ON; both user and guest items were manually unselected pre-merge. After merge all items preserved unselected state. ON setting applies to newly-added items only, does not override pre-existing explicit unselected state."
+    },
+    {
+      "id": "CART-066",
+      "status": "PASS",
+      "title": "Cart Merge Selection - Selected + Unselected (ON)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "User cart items retained selected state; guest cart items retained unselected state after merge. Header checkbox showed indeterminate [checked=mixed]. Mixed selection state handled correctly."
+    },
+    {
+      "id": "CART-067",
+      "status": "PASS",
+      "title": "Cart Merge Selection - Mixed + Mixed (ON)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "Both user and guest carts had mixed selected/unselected states. After merge, per-item selection states preserved correctly. No blanket select/deselect override on merge."
+    },
+    {
+      "id": "CART-068",
+      "status": "BLOCKED",
+      "title": "Cart Merge Selection - Empty + Unselected All (OFF)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' is ON in QA environment. Changing to OFF requires Admin SPA access not available in this test run. Blocked as documented in preconditions."
+    },
+    {
+      "id": "CART-069",
+      "status": "BLOCKED",
+      "title": "Cart Merge Selection - Both Selected All (OFF)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' is ON in QA environment. Blocked as documented in preconditions."
+    },
+    {
+      "id": "CART-070",
+      "status": "BLOCKED",
+      "title": "Cart Merge Selection - Mixed + Mixed (OFF)",
+      "section": "Cart > Merge > Selection",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006",
+      "edgeCaseRefs": "ECL-14.1",
+      "notes": "ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' is ON in QA environment. Blocked as documented in preconditions."
+    },
+    {
+      "id": "CART-071",
+      "status": "PASS",
+      "title": "Cart Merge - Configurable Product, Different Options Create Separate Lines",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-006, BL-CART-007, BL-CAT-006",
+      "edgeCaseRefs": "ECL-7.1, ECL-7.3, ECL-14.1",
+      "notes": "User cart: Black hat (product/aa8116e5) qty=1. Guest cart: Red hat (product/42ec462f) qty=1. After merge: 2 separate line items - Red hat ($4.00 discounted) and Black hat ($1.60 discounted). Cart header shows 2 Cart. BL-CART-007 confirmed: different configurations of same parent configurable product appear as separate lines. Note: Green hat GUID (59e78525) returned 404 - not in B2B virtual catalog; Red/Black hats used instead of Black/Green as specified."
+    },
+    {
+      "id": "CART-072",
+      "status": "PASS",
+      "title": "Cart Merge - Same Configurable Product Same Configuration Sums Quantity",
+      "section": "Cart > Merge",
+      "priority": "High",
+      "businessRule": "BL-CART-006, BL-CART-007, BL-CAT-006",
+      "edgeCaseRefs": "ECL-7.1, ECL-7.3, ECL-14.1",
+      "notes": "User cart: Red hat qty=2. Guest cart: Red hat qty=1. After merge: single line item Red hat qty=3 ($12.00 discounted from $15.00). Cart header shows 3 Cart. BL-CART-007 confirmed: identical configuration quantities sum into one line on merge."
+    },
+    {
+      "id": "CART-073",
+      "status": "PASS",
+      "title": "Cart Merge - Configurable Product, Different Configs Across User and Guest Carts",
+      "section": "Cart > Merge",
+      "priority": "Medium",
+      "businessRule": "BL-CART-006, BL-CART-007, BL-CAT-006",
+      "edgeCaseRefs": "ECL-7.1, ECL-7.3, ECL-14.1",
+      "notes": "User cart: Black hat (product/aa8116e5) qty=1. Guest cart: Red hat (product/42ec462f) qty=1. After merge: 2 separate lines - Red hat ($4.00) and Black hat ($1.60). Cart header shows 2 Cart. BL-CART-007 honored: different configurations of same base product remain separate lines after cross-cart merge. Green hat GUID returned 404; Red hat used as optionB instead."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_030_001",
+      "title": "Cart merge does not apply EUR user's default currency after guest-to-user merge",
+      "severity": "High",
+      "testCaseId": "CART-059",
+      "businessRule": "BL-CART-004",
+      "edgeCaseRef": "ECL-4.1",
+      "failedAssertion": "[DOM] prices displayed in customer default currency (EUR)",
+      "stepsToReproduce": "1. Navigate to storefront as guest with USD currency. 2. Add any product to cart (prices shown in USD). 3. Sign in as EUR_USER_EMAIL (larch9900.mango@mail.com, default currency EUR). 4. Navigate to /cart.",
+      "expected": "After sign-in, currency header switches to EUR and all prices display in EUR (user's default currency).",
+      "actual": "Currency header remains USD after merge. All prices displayed in USD ($124.00). EUR currency context not applied.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

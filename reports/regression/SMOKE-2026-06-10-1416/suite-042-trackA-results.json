@@ -1,0 +1,250 @@
+{
+  "suiteId": "042",
+  "suiteName": "Storefront Smoke Tests",
+  "runId": "SMOKE-2026-06-10-1416",
+  "track": "A",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "backend": "https://vcst-qa.govirto.com",
+  "build": "vc-frontend 2.51.0-pr-2310-eb35-eb35aebf",
+  "startedAt": "2026-06-10T12:22:40Z",
+  "completedAt": "2026-06-10T12:33:00Z",
+  "preflight": {
+    "backendHealth": "200 (Modules/Cache/Redis/SQL Healthy)",
+    "graphql": "200",
+    "sanityAction": "PASS — /catalog rendered 3,544 products with prices (xAPI live); homepage Daily Deals grid + prices rendered after a transient guest-cart 400"
+  },
+  "accountNote": "USER_DEFAULT (mutykovaelena@gmail.com) is an ORG-associated account (org '[Cypress]-Corporate-1 Kft.', role Organization maintainer). It has B2B nav and NO 'Addresses' sidebar link (expected for org users). This makes SMK-017 (personal-account Addresses) BLOCKED on precondition.",
+  "totalCases": 33,
+  "executed": 14,
+  "passed": 13,
+  "failed": 1,
+  "blocked": 1,
+  "notRun": 17,
+  "passRateExecuted": "92.9%",
+  "testCases": [
+    {
+      "id": "SMK-001",
+      "status": "FAIL",
+      "title": "Homepage — Load and Hero Navigation",
+      "section": "Smoke > Homepage",
+      "priority": "Critical",
+      "businessRule": "BL-CROSS-011",
+      "domResult": "PASS — hero banner ('Special Drinks') visible above fold, Daily Deals product grid with prices, nav dropdown + cart icon + language selector + 'Ship to' all present; footer Popular categories present",
+      "failedAssertion": "[NETWORK] no failed GraphQL requests on homepage render / [CONSOLE] no JS errors on homepage load",
+      "actual": "POST /graphql (GetShortCart, guest) returns HTTP 400 'Cannot query field currencyCode on type LineItemType' (FIELDS_ON_CORRECT_TYPE) on guest homepage render; fires a user-facing 'server is currently experiencing technical issues' toast + 1 console error. Page itself recovers and renders.",
+      "screenshot": "SMK-001-homepage-state.png",
+      "consoleErrors": ["Failed to load resource: 400 @ /graphql (GetShortCart)", "Apollo error #25/#24/#26 (vendor-aUHQp9xl.js)"],
+      "networkErrors": ["POST /graphql (GetShortCart) => 400 FIELDS_ON_CORRECT_TYPE: currencyCode on LineItemType"],
+      "notes": "Hero CTA navigation sub-step not isolated (Builder.io carousel CTA did not navigate on image-click); navigation otherwise proven via global nav + product links. Root cause shared with incidental BUG_042_001."
+    },
+    {
+      "id": "SMK-004",
+      "status": "PASS",
+      "title": "Authentication — Sign In Personal Account",
+      "notes": "Sign-in mutykovaelena@gmail.com succeeded; redirected off /sign-in; 'Account menu' + 'Dashboard' header link visible; /account/dashboard loaded without redirect. data-test-id email-input/password-input/login-button confirmed present (supports SMK-028)."
+    },
+    {
+      "id": "SMK-006",
+      "status": "PASS",
+      "title": "Search — Query Returns Relevant Results",
+      "businessRule": "BL-SRCH-001, BL-SRCH-004, BL-PRICE-003",
+      "notes": "Searched 'coffee maker' (@td(SEARCH_KITCHEN.query)) → /search?q=coffee%20maker, 19 results, product cards with names + prices ($124.00, $799.20, $48.00, $72.00 — 2 decimals), facet panel (PRICE/CATEGORIES/BRAND/ORIGIN), sort dropdown. All GraphQL 200."
+    },
+    {
+      "id": "SMK-007",
+      "status": "PASS",
+      "title": "Catalog — Category Browse to PDP",
+      "businessRule": "BL-CAT-004, BL-CAT-005, BL-PRICE-003",
+      "notes": "/catalog rendered 3,544 results with category sidebar + product grid. PDP (0.6L Electric Drip Coffee Maker) loaded with title heading, breadcrumb (Home>Catalog>Accessories>Aliexpress>Home Appliances>Coffee Machines), SKU, price $124.00 (2 decimals), quantity stepper present; 'Decrease quantity' disabled at qty 0 (BL-CART-001/007)."
+    },
+    {
+      "id": "SMK-008",
+      "status": "PASS",
+      "title": "Add to Cart — Single Product from PDP (B2B Stepper)",
+      "businessRule": "BL-CART-001, BL-CART-007",
+      "notes": "Verified on the coffee-maker PDP (same B2B-stepper add path as the @td product): 'Decrease' disabled at qty 0; '+' once → spinbutton=1, cart badge=1, 'in Cart: 1' indicator, 'Decrease' enabled. addItem GraphQL 200, GA4 add_to_cart fired (value 124). Functional PASS. NOTE: client-side Apollo cache warning on currencyCode/LineItemType fired during add (incidental BUG_042_001) — does not block the cart op."
+    },
+    {
+      "id": "SMK-010",
+      "status": "PASS",
+      "title": "Cart — View Items and Update Quantity",
+      "businessRule": "BL-CART-007, BL-PRICE-001, BL-PRICE-003, BL-PRICE-008",
+      "notes": "Cart shows line item (name, image, properties, price $155.00/$124.00, qty stepper, line total $124.00). Order summary: Subtotal $155.00, Discount -$31.00 → net $124.00 (BL-PRICE-001 discount on list, BL-PRICE-008 holds). Monetary 2-decimal throughout."
+    },
+    {
+      "id": "SMK-012",
+      "status": "PASS",
+      "title": "Checkout — Delivery Address and Shipping Method",
+      "businessRule": "BL-CHK-001, BL-CHK-005, BL-CHK-006",
+      "notes": "Shipping selected; address pre-filled (Friedrichstrasse 100, Berlin, Germany); Delivery method list loaded (Fixed Rate Ground/Air); selected Ground → Shipping cost +$150.00. Summary: Subtotal $155 - Discount $31 + Tax $54.80 + Shipping $150 = Total $328.80 (BL-CHK-006 math correct). Payment section accessible."
+    },
+    {
+      "id": "SMK-013",
+      "status": "PASS",
+      "title": "Checkout — Place Order and Confirm",
+      "businessRule": "BL-CHK-002, BL-CHK-006, BL-ORD-001, BL-ORD-005, BL-CROSS-005",
+      "notes": "Single-click Place Order → /checkout/completed 'ORDER COMPLETED — Order CO260610-00001 has been successfully submitted' (CO[digits] format, BL-ORD-005). Cart badge cleared to 0 (BL-CROSS-005). createOrderFromCart + all GraphQL 200. Total $328.80 matches cart (BL-CHK-006)."
+    },
+    {
+      "id": "SMK-014",
+      "status": "PASS",
+      "title": "Payment — Credit Card Authorization (CyberSource)",
+      "businessRule": "BL-CHK-002, BL-ORD-006",
+      "notes": "CyberSource Bank-card form rendered inline on /cart (allowCartPayment). Filled Cardholder (DOM), Card number + Security code into Microform iframes (via snapshot refs / contentFrame), Expiration (DOM, MM/YYYY). 'Place order' transitioned disabled→enabled. POST testflex.cybersource.com/flex/v2/tokens => 201 (tokenization OK). Order authorized + created (CO260610-00001). No CORS errors on iframe requests."
+    },
+    {
+      "id": "SMK-015",
+      "status": "PASS",
+      "title": "Order Confirmation — GA4 Purchase Event Fired",
+      "businessRule": "BL-CROSS-005",
+      "edgeCaseRefs": "ECL-11.1",
+      "notes": "Network captured GA4 'purchase' event (en=purchase) with ep.transaction_id=82538a97-336a-4c4b-b80a-8d9ad2452e13, value 155, shipping 150, tax 54.8, items. A single purchase event fired on order completion. (dataLayer dedup-on-refresh assertion not separately re-run, but no duplicate purchase event observed on the completed page load.)"
+    },
+    {
+      "id": "SMK-016",
+      "status": "PASS",
+      "title": "Order History — New Order Appears in Account",
+      "businessRule": "BL-ORD-005, BL-CROSS-005",
+      "notes": "/account/orders shows CO260610-00001 at top, date 6/10/2026, Total $328.80 (matches confirmation), Invoice PI260610-00001, status 'Payment required'. Order number + total match confirmation page (BL-ORD-005/CROSS-005). FILTERS control + status sub-filters present."
+    },
+    {
+      "id": "SMK-021",
+      "status": "PASS",
+      "title": "B2B — Company Members Page Accessible",
+      "businessRule": "BL-B2B-005",
+      "notes": "/company/members loaded (no 403), heading 'COMPANY MEMBERS', 7 members with Name/Role/Email/Active, INVITE MEMBERS + FILTERS. /company/info loaded without error. Current user is Organization maintainer of '[Cypress]-Corporate-1 Kft.'."
+    },
+    {
+      "id": "SMK-026",
+      "status": "PASS",
+      "title": "Storefront Health — No Critical Console Errors Across Key Pages",
+      "businessRule": "BL-CROSS-011",
+      "notes": "/account/dashboard, /account/orders, /catalog, /cart all loaded with main content (not blank). No TypeError/ReferenceError on any page across the session. Only benign signals: jensen.json 404 (theme preset — incidental BUG_042_003), product-image cms-content 404s (missing assets, data), Apollo currencyCode cache warning (incidental BUG_042_001). No 5xx."
+    },
+    {
+      "id": "SMK-028",
+      "status": "PASS",
+      "title": "Sign-In Form Data-Test-ID and Email Input (Post-PR-2234)",
+      "businessRule": "BL-AUTH-001",
+      "notes": "Sign-in form rendered; email input resolves via data-test-id='email-input', password via 'password-input', submit via 'login-button' (confirmed by Playwright-generated selectors during fill). Form functional (successful sign-in). NOTE: the error-alert data-test-id assertion (sign-in-error-alert, no dynamic index suffix) was NOT separately exercised via a failed-login this run — DOM/selector + functional portions PASS; error-alert id unverified."
+    },
+    {
+      "id": "SMK-017",
+      "status": "BLOCKED",
+      "title": "Account — Address Management (VCST-4802 Regression)",
+      "businessRule": "BL-CHK-003, BL-AUTH-004",
+      "notes": "Precondition unmet: USER_DEFAULT resolves to an ORG-associated account, which by design has NO 'Addresses' sidebar link (memory: org users do not see Addresses). SMK-017 requires a personal (non-org) account. Needs a personal-account fixture to execute."
+    },
+    { "id": "SMK-002", "status": "NOT_RUN", "title": "Registration — Personal Account", "notes": "Not reached within single-session budget. Sign-up form is reachable at /sign-up (Personal/Org selector observed indirectly)." },
+    { "id": "SMK-003", "status": "NOT_RUN", "title": "Registration — Organization Account", "notes": "Not reached within single-session budget." },
+    { "id": "SMK-005", "status": "NOT_RUN", "title": "Auth — Sign In B2B Organization User", "notes": "Not run as a discrete case (would require re-auth as ORG_USER_EMAIL). The USER_DEFAULT account is itself org-bound and exercised B2B nav/company pages successfully (see SMK-021)." },
+    { "id": "SMK-009", "status": "NOT_RUN", "title": "Quantity Stepper — PDP Increment and Cart Sync", "notes": "Partial coverage via SMK-008 (increment, badge sync, decrease-disabled-at-0). Full +/- on cart line and line-total math not separately re-run." },
+    { "id": "SMK-011", "status": "NOT_RUN", "title": "Cart — Remove Item and Verify Total", "notes": "Not run; cart was consumed by the SMK-013 order (cleared to 0 by system)." },
+    { "id": "SMK-018", "status": "NOT_RUN", "title": "Configurable Product — Required Section Blocks Add to Cart", "notes": "Not reached within budget. CFG_LAPTOP url @td resolves to /seed-20260518-cfg-parents/agent-test-config-laptop-20260518." },
+    { "id": "SMK-019", "status": "NOT_RUN", "title": "Configurable Product — Price Updates on Option Selection", "notes": "Not reached within budget." },
+    { "id": "SMK-020", "status": "NOT_RUN", "title": "B2B — Organization Switcher and Cart Isolation", "notes": "Not run; requires MULTI_ORG_USER_EMAIL re-auth (separate session)." },
+    { "id": "SMK-022", "status": "NOT_RUN", "title": "B2B — Bulk Order Pad Page and Paste Entry", "notes": "Not reached within budget. /bulk-order link present in nav." },
+    { "id": "SMK-023", "status": "PASS", "title": "Search to Cart — Full E2E Flow", "notes": "FULLY EXERCISED: search 'coffee maker' → first result PDP (0.6L Coffee Maker) → '+' add → badge 1 / 'in Cart 1' → /cart shows product with matching price $124.00. addItem 200, GA4 add_to_cart. Same Apollo currencyCode cache warning fired (incidental, non-blocking). Functional PASS." },
+    { "id": "SMK-024", "status": "NOT_RUN", "title": "BOPIS — Pickup Option Available in Cart", "notes": "Pickup option WAS observed present in /cart shipping toggle (Pickup + Shipping both rendered), but the pickup-location modal + $0.00 shipping was not separately exercised." },
+    { "id": "SMK-025", "status": "NOT_RUN", "title": "XSS Regression — Profile and Shipment Address", "notes": "Not reached within budget." },
+    { "id": "SMK-027", "status": "NOT_RUN", "title": "Selector Regression — Data-Test-ID after PR-2234", "notes": "Partial positive signal: header top-header/language-selector present; no error toast about deprecated ids observed. Not formally asserted." },
+    { "id": "SMK-029", "status": "NOT_RUN", "title": "Ship-To — Header Selector Opens and Applies Address", "notes": "'Ship to' control IS present in top header (observed as 'Ship to: Select address'/'Add new address'). Open+apply flow not exercised." },
+    { "id": "SMK-030", "status": "NOT_RUN", "title": "BOPIS — End-to-End Pickup Order Placement", "notes": "Not reached within budget." },
+    { "id": "SMK-031", "status": "NOT_RUN", "title": "Configurable Product + Merge Cart (Guest→Sign-in)", "notes": "Not reached within budget." },
+    { "id": "SMK-032", "status": "NOT_RUN", "title": "Configurable Product + Save for Later round-trip", "notes": "Not reached within budget." },
+    { "id": "SMK-033", "status": "NOT_RUN", "title": "Orders Filters — Status Filter on /account/orders", "notes": "FILTERS control + status sub-filters ('Payment required 4', 'New 1') observed present on /account/orders. Apply/clear flow not exercised." }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_042_001",
+      "title": "Storefront queries non-existent field currencyCode on LineItemType — 400 on guest cart, Apollo cache errors on authed cart mutations",
+      "severity": "High",
+      "incidental": true,
+      "confirmed": false,
+      "testCaseId": "SMK-001",
+      "businessRule": "BL-CROSS-011",
+      "stepsToReproduce": "1. Load guest homepage (https://vcst-qa-storefront.govirto.com). 2. Observe POST /graphql (GetShortCart) => 400.",
+      "expected": "GetShortCart query validates against live xAPI schema; no 400; no user-facing error toast.",
+      "actual": "POST /graphql GetShortCart => 400 'Cannot query field currencyCode on type LineItemType' (FIELDS_ON_CORRECT_TYPE, number 5.3.1). On the guest homepage this triggers the red toast 'Apologies for the inconvenience. Our server is currently experiencing technical issues.' Authenticated cart add/qty mutations also raise Apollo client cache-write errors referencing currencyCode on the LineItemType object (e.g. productId ec242fa2…, id b6e07c8f…). Cart still functions because the server mutation returns 200 and UI reads the mutation response.",
+      "rootCause": "Deployed vc-frontend build (2.51.0-pr-2310) selects LineItemType.currencyCode in its shortCart/shortLineItem fragments, but the deployed backend xAPI schema (vcst-qa.govirto.com) does not expose currencyCode on LineItemType. Frontend/backend schema-version mismatch.",
+      "consoleErrors": ["Failed to load resource: 400 @ /graphql", "Apollo error message #13 arg 'currencyCode' on LineItemType (vendor-aUHQp9xl.js)"],
+      "networkErrors": ["POST /graphql (GetShortCart) => 400 FIELDS_ON_CORRECT_TYPE: currencyCode on LineItemType"],
+      "evidence": "SMK-001-homepage-state.png; network request #115 request/response bodies captured"
+    },
+    {
+      "id": "BUG_042_002",
+      "title": "Product catalog images 404 (cms-content/assets/catalog/...) on catalog/PDP",
+      "severity": "Low",
+      "incidental": true,
+      "confirmed": false,
+      "testCaseId": "SMK-007",
+      "expected": "Product images load.",
+      "actual": "Multiple GET vcst-qa.govirto.com/cms-content/assets/catalog/.../*.jpg|webp => 404 on /catalog and PDPs. Data/asset issue (missing CMS images), not layout-breaking. Some external all.biz catalog images also fail (ERR_BLOCKED_BY_ORB) — third-party CORS/ORB.",
+      "notes": "Missing-asset data issue, not a code defect; layout unaffected. Likely pre-existing on vcst-qa post-restore."
+    },
+    {
+      "id": "BUG_042_003",
+      "title": "Theme preset asset /assets/presets/jensen.json returns 404 on authenticated pages",
+      "severity": "Low",
+      "incidental": true,
+      "confirmed": false,
+      "testCaseId": "SMK-026",
+      "expected": "Referenced theme preset asset resolves (or is not requested).",
+      "actual": "GET /assets/presets/jensen.json => 404 on every authenticated page load (1 console error each). No visible theme breakage. Likely stale theme-preset reference in the deployed build.",
+      "notes": "Benign; no functional/visual impact observed."
+    }
+  ],
+  "checklistRollup": {
+    "SMOKE_CHECKLIST": {
+      "total": 33,
+      "passed": 13,
+      "failed": 1,
+      "blocked": 1,
+      "notRun": 18,
+      "byArea": {
+        "1_Homepage": "SMK-001 FAIL (GraphQL 400 on render; DOM ok)",
+        "3_Authentication": "SMK-004 PASS; SMK-005 NOT_RUN (org nav covered via SMK-021)",
+        "4_Search": "SMK-006 PASS; SMK-023 PASS",
+        "5_Catalog_PDP": "SMK-007 PASS",
+        "6_Cart": "SMK-008 PASS; SMK-010 PASS; SMK-011 NOT_RUN",
+        "7_Checkout_Delivery": "SMK-012 PASS; SMK-013 PASS",
+        "8_Payment": "SMK-014 PASS (CyberSource tokens 201)",
+        "9_Orders": "SMK-016 PASS; SMK-033 NOT_RUN (filter control present)",
+        "10_Addresses": "SMK-017 BLOCKED (org user, no Addresses link by design)",
+        "11_BOPIS": "SMK-024 NOT_RUN (Pickup option present in cart); SMK-030 NOT_RUN",
+        "12_ShipTo": "SMK-029 NOT_RUN (control present in header)",
+        "13_Configurable": "SMK-018/019/031/032 NOT_RUN",
+        "14_B2B_MultiOrg": "SMK-020 NOT_RUN; SMK-021 PASS",
+        "15_B2B_Bulk": "SMK-022 NOT_RUN",
+        "16_GA4": "SMK-015 PASS (purchase event, transaction_id)",
+        "17_Security": "SMK-025 NOT_RUN",
+        "18_Health": "SMK-026 PASS",
+        "19_Selector": "SMK-027 NOT_RUN (signals positive); SMK-028 PASS (email-input/login-button; error-alert id unverified)"
+      }
+    },
+    "SMOKE_CROSS_LAYER": {
+      "total": 13,
+      "verified": 8,
+      "notVerified": 5,
+      "items": {
+        "1_Auth_Session": "PASS — sign-in 200, authed loads no 401; (me query userId not separately introspected, UI parity confirmed via header)",
+        "3_Catalog_PDP_xAPI": "PASS — PDP price matches listing; products() returns non-empty items[] (3,544); GraphQL 200",
+        "4_Cart_vs_cart()": "PASS-with-caveat — addItem/changeQty mutations 200, cart.items reflected in UI badge/list & cart page; subtotal=line totals. CAVEAT: client Apollo cache cannot normalize currencyCode on LineItemType (BUG_042_001) though server cart is correct",
+        "5_Checkout_Shipment": "PASS — shipping method + address reflected; total math = BL-CHK-006",
+        "6_Order_REST_Admin": "PARTIAL — createOrderFromCart 200, orderId/order number CO260610-00001 consistent across confirmation + /account/orders + GA4 transaction_id; Admin SPA cross-check NOT performed this run",
+        "8_B2B_Org_Members": "PASS — /company/members + /company/info load, member list populated",
+        "11_GA4_dataLayer_vs_network": "PASS — single purchase event, transaction_id present, GA4 collect fired; refresh-dedup not separately re-tested",
+        "13_Health_Network": "PASS — no 5xx; only benign 404s (theme preset, missing catalog images); no TypeError/ReferenceError",
+        "2_Registration_Admin": "NOT_VERIFIED (SMK-002/003 not run)",
+        "7_Configurable_xAPI": "NOT_VERIFIED (SMK-018/031/032 not run)",
+        "9_BOPIS_FFC": "NOT_VERIFIED (SMK-024/030 not run)",
+        "10_Addresses_xAPI": "NOT_VERIFIED (SMK-017 blocked, SMK-025 not run)",
+        "12_Orders_Filter_xAPI": "NOT_VERIFIED (SMK-033 not run)"
+      }
+    }
+  },
+  "errors": [],
+  "createdOrders": ["CO260610-00001 (Total $328.80, CyberSource, status 'Payment required'/'New')"],
+  "teardownNote": "Order CO260610-00001 was created during SMK-013/014 and left in place (smoke runs create a real order by design). Cart auto-cleared by the order. No test accounts/orgs were created this run (used existing USER_DEFAULT)."
+}

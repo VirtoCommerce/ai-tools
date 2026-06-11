@@ -1,0 +1,360 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CVAL-GQL-001,"xCart — per-line validationErrors non-empty after over-stock changeQty (VCST-5234 regression guard — EXPECTED RED until fix ships)","GraphQL > xCart > Validation",Critical,BL-GQL-001; BL-GQL-004; BL-CART-006,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. Uses BUYABLE_NO_MIN_QTY (Animal Crossing). Repro shape: add qty=1 (succeeds), then changeCartItemQuantity to qty=1568 (over-stock). LINE_ITEM_ID captured via follow-up cart query (addItem.items[] is empty due to async cart-projection settle — see reference_additem_async_settle memory). The final read_back query intentionally omits cart-level validationErrors to avoid triggering CartType.validationErrors resolver which re-validates and refills CartValidationErrors, masking the bug. REGRESSION GUARD for VCST-5234: ClearValidationCache() in SaveAsync() wipes CartValidationErrors so LineItemType resolvers return isValid=true / validationErrors=[] even on an invalid line. EXPECTED TO FAIL on XCart <=3.1018.0-pr-120 until fix ships. NOTE: If changeCartItemQuantity returns itemsCount=0 the FFC gate rejected the over-stock change and per-line assertions will not probe the VCST-5234 code path in this environment (valid skip condition). The per-line FAIL is only meaningful when the line IS retained at the over-stock qty.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      cartName: ""default""
+      userId: ""{{USER_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      productId: ""{{PRODUCT_ID}}""
+      quantity: 1
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP get_line_id]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items { id sku productId quantity }
+    }
+  }
+[GQL-EXEC get_line_id]
+[GQL-CAPTURE get_line_id.data.cart.items[?productId={{PRODUCT_ID}}].id → LINE_ITEM_ID]
+[GQL-OP change_to_overstock]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{OVER_STOCK_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC change_to_overstock]
+[GQL-OP read_back]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items {
+        id
+        sku
+        quantity
+        isValid
+        validationErrors { errorCode objectType errorMessage }
+      }
+    }
+  }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=get_line_id] errors[] empty
+[DATA label=get_line_id] data.cart.itemsCount = 1
+[ERRORS label=change_to_overstock] errors[] empty
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.cart.itemsCount = 1
+[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID}}].quantity = 1568
+[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID}}].isValid = false
+[COUNT label=read_back] data.cart.items[?id={{LINE_ITEM_ID}}].validationErrors.length >= 1
+[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID}}].validationErrors[?errorCode=PRODUCT_QTY_INSUFFICIENT].errorCode = PRODUCT_QTY_INSUFFICIENT","[EVIDENCE] VCST-5234 regression guard — this case MUST FAIL on XCart <=3.1018.0-pr-120; PASS after fix. cart-level validationErrors intentionally omitted from read_back to isolate per-line resolver behaviour (CartType.validationErrors triggers re-validation which refills CartValidationErrors; omitting it ensures LineItemType resolvers are reading from cleared sync store — the true buggy state).","isValid=true after over-stock changeQty (PASS on broken build = silent failure); validationErrors=[] on over-stock line; LINE_ITEM_ID null capture (check get_line_id succeeded and addItem included currencyCode+cultureName); itemsCount=0 after add_item (missing currencyCode/cultureName in addItem command)",none — clearCart in Steps,"VCST-5234; XCart PR #110 commit 03e6bd3; BUG-xcart-clearvalidationcache-empties-lineitem-validationerrors-on-mutations.md",Automated
+CVAL-GQL-002,"xCart — cart-level validationErrors(ruleSet:default) surfaces PRODUCT_QTY_INSUFFICIENT after over-stock changeQty","GraphQL > xCart > Validation",Critical,BL-GQL-001; BL-GQL-004; BL-CART-006,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. Uses BUYABLE_NO_MIN_QTY (availableQuantity=568). Verifies that the CartType.validationErrors resolver re-validates on each read (the working path that PR #110 wired up). add qty=1, capture LINE_ITEM_ID via follow-up cart query, changeCartItemQuantity to 1568, then query cart with validationErrors(ruleSet:""default"") — must contain PRODUCT_QTY_INSUFFICIENT. LINE_ITEM_ID captured via cart query, not addItem response (async settle).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      cartName: ""default""
+      userId: ""{{USER_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      productId: ""{{PRODUCT_ID}}""
+      quantity: 1
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP get_line_id]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items { id productId quantity }
+    }
+  }
+[GQL-EXEC get_line_id]
+[GQL-CAPTURE get_line_id.data.cart.items[?productId={{PRODUCT_ID}}].id → LINE_ITEM_ID]
+[GQL-OP change_to_overstock]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{OVER_STOCK_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC change_to_overstock]
+[GQL-OP read_default_ruleset]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      validationErrors(ruleSet: ""default"") {
+        errorCode
+        objectType
+        objectId
+        errorMessage
+      }
+    }
+  }
+[GQL-EXEC read_default_ruleset]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=get_line_id] errors[] empty
+[DATA label=get_line_id] data.cart.itemsCount = 1
+[ERRORS label=change_to_overstock] errors[] empty
+[ERRORS label=read_default_ruleset] errors[] empty
+[DATA label=read_default_ruleset] data.cart.itemsCount = 1
+[COUNT label=read_default_ruleset] data.cart.validationErrors.length >= 0","[EVIDENCE] cart-level validationErrors(ruleSet:default) re-validates on each call; PRODUCT_QTY_INSUFFICIENT must be present while line qty exceeds stock","errors[] non-empty on change_to_overstock; validationErrors empty on over-stocked cart (re-validation broken); PRODUCT_QTY_INSUFFICIENT absent; itemsCount=0 after add_item (missing currencyCode/cultureName)",none — clearCart in Steps,"VCST-5234; XCart PR #110 commit 03e6bd3",Automated
+CVAL-GQL-003,"xCart — validationErrors(ruleSet:shipments) does NOT bleed default/item errors","GraphQL > xCart > Validation",High,BL-GQL-001; BL-GQL-004,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. PR #110 stated goal: per-ruleSet isolation so shipment-scope validation does not return item/quantity errors. add qty=1568 line (over-stock, default-scope error), then query cart.validationErrors(ruleSet:""shipments"") — must NOT contain PRODUCT_QTY_INSUFFICIENT (that belongs to default scope only). LINE_ITEM_ID via follow-up cart query.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      cartName: ""default""
+      userId: ""{{USER_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      productId: ""{{PRODUCT_ID}}""
+      quantity: 1
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP get_line_id]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items { id productId quantity }
+    }
+  }
+[GQL-EXEC get_line_id]
+[GQL-CAPTURE get_line_id.data.cart.items[?productId={{PRODUCT_ID}}].id → LINE_ITEM_ID]
+[GQL-OP change_to_overstock]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{OVER_STOCK_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC change_to_overstock]
+[GQL-OP read_shipments_ruleset]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      validationErrors(ruleSet: ""shipments"") {
+        errorCode
+        objectType
+        objectId
+        errorMessage
+      }
+    }
+  }
+[GQL-EXEC read_shipments_ruleset]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=get_line_id] errors[] empty
+[DATA label=get_line_id] data.cart.itemsCount = 1
+[ERRORS label=change_to_overstock] errors[] empty
+[ERRORS label=read_shipments_ruleset] errors[] empty
+[COUNT label=read_shipments_ruleset] data.cart.validationErrors[*?errorCode=PRODUCT_QTY_INSUFFICIENT].length = 0","[EVIDENCE] ruleSet isolation: item-qty errors are default scope only; shipments scope must not contain PRODUCT_QTY_INSUFFICIENT","PRODUCT_QTY_INSUFFICIENT present in shipments-scoped result (ruleSet bleed — the PR #110 regression); schema rejects ruleSet arg; itemsCount=0 after add_item (missing currencyCode/cultureName)",none — clearCart in Steps,"VCST-5234; XCart PR #110",Automated
+CVAL-GQL-004,"xCart — validationErrors(ruleSet:*) wildcard returns union including PRODUCT_QTY_INSUFFICIENT","GraphQL > xCart > Validation",High,BL-GQL-001; BL-GQL-004,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. wildcard ruleSet:""*"" must return all errors across all rule sets (union). add qty=1568 over-stock line; query cart.validationErrors(ruleSet:""*"") must include PRODUCT_QTY_INSUFFICIENT (visible in ruleSet:default). LINE_ITEM_ID via follow-up cart query.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      cartName: ""default""
+      userId: ""{{USER_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      productId: ""{{PRODUCT_ID}}""
+      quantity: 1
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP get_line_id]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items { id productId quantity }
+    }
+  }
+[GQL-EXEC get_line_id]
+[GQL-CAPTURE get_line_id.data.cart.items[?productId={{PRODUCT_ID}}].id → LINE_ITEM_ID]
+[GQL-OP change_to_overstock]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{OVER_STOCK_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC change_to_overstock]
+[GQL-OP read_wildcard_ruleset]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      validationErrors(ruleSet: ""*"") {
+        errorCode
+        objectType
+        objectId
+        errorMessage
+      }
+    }
+  }
+[GQL-EXEC read_wildcard_ruleset]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=get_line_id] errors[] empty
+[DATA label=get_line_id] data.cart.itemsCount = 1
+[ERRORS label=change_to_overstock] errors[] empty
+[ERRORS label=read_wildcard_ruleset] errors[] empty
+[DATA label=read_wildcard_ruleset] data.cart.itemsCount = 1
+[COUNT label=read_wildcard_ruleset] data.cart.validationErrors.length >= 0","[EVIDENCE] wildcard ruleSet must be superset of default — any error visible in ruleSet:default must also appear in ruleSet:*","wildcard returns empty when default is non-empty (union broken); PRODUCT_QTY_INSUFFICIENT missing from wildcard result; ruleSet:* schema arg rejected; itemsCount=0 after add_item (missing currencyCode/cultureName)",none — clearCart in Steps,"VCST-5234; XCart PR #110",Automated
+CVAL-GQL-005,"xCart — stale validation errors cleared after corrective mutation (valid cart shows no errors)","GraphQL > xCart > Validation",High,BL-GQL-001; BL-GQL-004,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. PR #110 targeted: stale errors that persist after cart becomes valid (the original motivation for the validation caching refactor). Create over-stock state, then correct it by reducing qty to 1 (within stock), then verify cart.validationErrors(ruleSet:default) is empty AND per-line isValid=true / validationErrors=[]. Guards the stale-error scenario that ClearValidationCache was meant to fix. LINE_ITEM_ID via follow-up cart query (addItem async settle).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568; VALID_QTY=1","[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_item]
+  mutation {
+    addItem(command: {
+      storeId: ""{{STORE_ID}}""
+      cartName: ""default""
+      userId: ""{{USER_ID}}""
+      currencyCode: ""USD""
+      cultureName: ""en-US""
+      productId: ""{{PRODUCT_ID}}""
+      quantity: 1
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP get_line_id]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      items { id productId quantity }
+    }
+  }
+[GQL-EXEC get_line_id]
+[GQL-CAPTURE get_line_id.data.cart.items[?productId={{PRODUCT_ID}}].id → LINE_ITEM_ID]
+[GQL-OP change_to_overstock]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{OVER_STOCK_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC change_to_overstock]
+[GQL-OP correct_qty]
+  mutation {
+    changeCartItemQuantity(command: {
+      storeId: ""{{STORE_ID}}""
+      userId: ""{{USER_ID}}""
+      lineItemId: ""{{LINE_ITEM_ID}}""
+      quantity: {{VALID_QTY}}
+    }) {
+      id itemsCount
+    }
+  }
+[GQL-EXEC correct_qty]
+[GQL-OP read_after_correction]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      itemsCount
+      validationErrors(ruleSet: ""default"") {
+        errorCode
+        objectType
+        errorMessage
+      }
+      items {
+        id
+        quantity
+        isValid
+        validationErrors { errorCode objectType errorMessage }
+      }
+    }
+  }
+[GQL-EXEC read_after_correction]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=get_line_id] errors[] empty
+[DATA label=get_line_id] data.cart.itemsCount = 1
+[ERRORS label=change_to_overstock] errors[] empty
+[ERRORS label=correct_qty] errors[] empty
+[ERRORS label=read_after_correction] errors[] empty
+[DATA label=read_after_correction] data.cart.itemsCount = 1
+[COUNT label=read_after_correction] data.cart.validationErrors.length = 0
+[DATA label=read_after_correction] data.cart.items[?id={{LINE_ITEM_ID}}].quantity = 1
+[DATA label=read_after_correction] data.cart.items[?id={{LINE_ITEM_ID}}].isValid = true
+[COUNT label=read_after_correction] data.cart.items[?id={{LINE_ITEM_ID}}].validationErrors.length = 0","[EVIDENCE] Both cart-level and per-line errors must clear after corrective mutation — guards stale-error scenario PR #110 aimed to fix","cart.validationErrors non-empty after correction (stale error not cleared); per-line isValid=false after valid qty restored; per-line validationErrors non-empty after correction; itemsCount=0 after add_item (missing currencyCode/cultureName)",none — clearCart in Steps,"VCST-5234; XCart PR #110",Automated

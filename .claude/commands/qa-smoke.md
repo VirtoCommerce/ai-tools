@@ -1,5 +1,5 @@
 ---
-description: "Run P0 smoke tests (storefront suite 042 + admin suite 078) for pre-deployment validation. GO/NO-GO verdict gated by the smoke checklists."
+description: "Run P0 smoke tests (storefront suite 042 + admin suite 078) for pre-deployment validation. Correlates App Insights logs for the run window. GO/NO-GO verdict gated by the smoke checklists."
 argument-hint: "[storefront|admin]"
 disable-model-invocation: true
 ---
@@ -44,6 +44,8 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 4. Create output directory: `reports/regression/{RUN_ID}/`
 
 ### Step 2 — Dispatch Parallel Tracks
+
+**Record the run window start** — note the current timestamp before dispatching. The interval from here until both tracks complete defines the App Insights correlation window used in Step 3a.
 
 Unless the user specified `storefront` or `admin` only, launch **both tracks simultaneously** in a single message using the Agent tool:
 
@@ -93,7 +95,16 @@ Capture evidence on failures. Write structured JSON results (per BSM-ID, plus a 
 
 ### Step 3 — Collect Results & Verdict
 
-After both tracks complete, read both output files and apply verdict rules (these mirror the GO/NO-GO tables inside each checklist):
+**3a. Correlate App Insights logs (run window):**
+
+Catch backend errors the smoke journey *triggered but didn't surface* — 5xx, failed dependencies, server exceptions, GraphQL `errors[]` inside a 200. This reuses `/qa-monitoring`'s machinery scoped to the run window: **query → dedup → triage**, no separate live-repro phase (the track agents were already live — an error in-window *is* the repro).
+
+1. **Pre-flight.** Confirm App Insights access as `/qa-monitoring` Phase 0 does (Azure MCP `applicationinsights`, **or** `APPINSIGHTS_APP_ID_*` + `APPINSIGHTS_API_KEY_*` set). If neither is configured → **skip with a one-line note**; never block the GO/NO-GO verdict on it.
+2. **Query the window.** Run the probe queries from `ci/monitoring/queries/` over the Step 2 window (relative `ago()` covering dispatch → now, +2 min buffer). Track A → storefront resource, Track B → platform resource; resolve from `APPINSIGHTS_*` env vars, never hardcode.
+3. **Dedup + triage.** Classify signatures against `reports/monitoring/.seen-fingerprints.json` (**read-only** — do not persist; a smoke window must still surface SEEN-stable errors that fired during it), then triage via `qa-backend-expert` + `ci/agents/monitor-triage-agent.md`: `REAL_BUG | KNOWN_ISSUE | NOISE | CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence. When ambiguous, prefer NEEDS_REVIEW.
+4. **Fold into the verdict** per the table below. Attach the signature + telemetry portal link in the report; do NOT draft a separate `BUG-AI-*` monitoring report (the run's Bugs Found section owns it).
+
+**3b. Apply verdict rules** (these mirror the GO/NO-GO tables inside each checklist):
 
 | Condition | Verdict |
 |-----------|---------|
@@ -104,6 +115,8 @@ After both tracks complete, read both output files and apply verdict rules (thes
 | Any cross-layer parity item fails (SMOKE-CROSS-LAYER §1–11) | **NO-GO** — UI/backend mismatch |
 | Admin SPA won't load (BSM-001) or any admin Critical case (§1–12) fails | **NO-GO** — Platform unhealthy |
 | 3+ items fail | **NO-GO** — Too many failures |
+| HIGH-confidence `REAL_BUG` correlated to the run window (3a) on a critical flow (checkout/payment/cart/auth) | **NO-GO** — backend error during smoke journey |
+| HIGH-confidence `REAL_BUG` correlated to the run window (3a) elsewhere | **CONDITIONAL GO** — deploy with monitoring; file the bug |
 
 ### Step 4 — Write Report
 
@@ -138,6 +151,10 @@ Checklist gate: ADMIN-SMOKE-CHECKLIST.md (__/83 — Critical __/__)
 |--------|-----------|--------|-------|
 | BSM-001 | Admin SPA login + dashboard | PASS/FAIL | ... |
 
+## App Insights (run window)
+
+(N correlated signals — confirmed / needs-review / none. Reference telemetry by portal link; skip section if App Insights unconfigured.)
+
 ## Bugs Found
 
 (list or "None")
@@ -160,3 +177,4 @@ Output verdict, pass rate, bugs found, and report path to the user.
 - Never assign both tracks to the same browser server
 - Read all URLs from config.js / .env — never hardcode
 - If a browser fails to launch, retry with fallback browser (max 1 retry per track)
+- App Insights correlation (Step 3a) reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the run window — **no separate live-repro phase**. Resolve resources from `APPINSIGHTS_*`, never hardcode; skip gracefully (don't block GO/NO-GO) when App Insights is unconfigured. Correlated errors fold into the Bugs Found section — no duplicate `BUG-AI-*` draft

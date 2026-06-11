@@ -1,0 +1,224 @@
+{
+  "suiteId": "042",
+  "suiteName": "Storefront Smoke Tests",
+  "runId": "SMOKE-2026-06-10-1220",
+  "track": "A",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "backendUrl": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-06-10T10:41:00Z",
+  "completedAt": "2026-06-10T10:50:22.218Z",
+  "totalCases": 33,
+  "passed": 0,
+  "failed": 0,
+  "blocked": 33,
+  "skipped": 0,
+  "passRate": "0.0%",
+  "verdict": "NO-GO",
+  "verdictReason": "Backend xAPI unreachable — storefront cannot render any data-backed page. Smoke suite not executable.",
+  "backendHealth": {
+    "storefrontShell": "200 (HTML shell loads; title=Virto Commerce)",
+    "storefrontRender": "BLANK — no DOM content; accessibility snapshot empty on / and /catalog after fresh reload + 6-8s wait",
+    "apolloClient": "ApolloError: signal timed out at 120106ms (vendor-aUHQp9xl.js) — initial xAPI query never returns",
+    "storefrontGraphqlRequests": "POST /graphql => net::ERR_ABORTED (client aborts on timeout)",
+    "directHealthProbe": "GET https://vcst-qa.govirto.com/health => http=000, timed out at 30s",
+    "directGraphqlProbe": "POST https://vcst-qa.govirto.com/graphql {__typename} => http=000, timed out at 60s"
+  },
+  "checklistRollup": {
+    "SMOKE-CHECKLIST": "0/33 (all BLOCKED — none executable)",
+    "SMOKE-CROSS-LAYER-CHECKLIST": "0/25 (all BLOCKED — UI-vs-backend parity unverifiable while backend is down)"
+  },
+  "testCases": [
+    {
+      "id": "SMK-001",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-002",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-003",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-004",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-005",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-006",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-007",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-008",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-009",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-010",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-011",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-012",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-013",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-014",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-015",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-016",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-017",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-018",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-019",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-020",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-021",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-022",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-023",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-024",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-025",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-026",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-027",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-028",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-029",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-030",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-031",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-032",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    },
+    {
+      "id": "SMK-033",
+      "status": "BLOCKED",
+      "notes": "Environment unreachable — storefront renders blank shell; all xAPI /graphql queries time out (ApolloError: signal timed out @120s). Backend /health and /graphql return http=000 (timeout) on direct probe. Not executable."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_042_001",
+      "title": "vcst-qa backend xAPI unreachable — storefront renders blank shell, all /graphql queries time out",
+      "severity": "P0",
+      "testCaseId": "SMK-001",
+      "failedAssertion": "[NETWORK] no failed GraphQL requests on homepage render",
+      "stepsToReproduce": "1. Navigate to https://vcst-qa-storefront.govirto.com/ on playwright-chrome. 2. Wait 6s, re-snapshot. 3. Observe blank page (empty accessibility tree, white screenshot). 4. Check console: ApolloError: signal timed out @120106ms. 5. Check network: POST /graphql => net::ERR_ABORTED. 6. Probe backend directly: curl -sk https://vcst-qa.govirto.com/health => http=000 (30s timeout); curl -sk -X POST .../graphql {__typename} => http=000 (60s timeout).",
+      "expected": "Storefront homepage and /catalog render with hero, categories, product cards + prices; xAPI /graphql returns 200; /health returns 200.",
+      "actual": "Storefront SPA shell loads (HTML 200, title set) but no content renders on any page; every xAPI query hangs until the 120s Apollo client timeout; backend /health and /graphql both unresponsive (http=000) on direct probe.",
+      "consoleErrors": [
+        "ApolloError: signal timed out (vendor-aUHQp9xl.js:57)"
+      ],
+      "networkErrors": [
+        "POST https://vcst-qa-storefront.govirto.com/graphql => net::ERR_ABORTED",
+        "GET https://vcst-qa.govirto.com/health => timeout http=000",
+        "POST https://vcst-qa.govirto.com/graphql => timeout http=000"
+      ],
+      "evidence": "reports/regression/SMOKE-2026-06-10-1220/BLOCKED-catalog-blank-backend-down.png",
+      "confirmed": false,
+      "incidental": false
+    }
+  ],
+  "errors": [
+    "environment_unreachable: backend xAPI (vcst-qa.govirto.com) not responding — storefront blank shell; suite halted at pre-flight per runner protocol"
+  ]
+}

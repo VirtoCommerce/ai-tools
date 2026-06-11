@@ -1,0 +1,84 @@
+{
+  "caseId": "PUSH-034",
+  "title": "Admin API Negative — Delete Sent Message Returns Error (HTTP 500 Known Defect)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050l-graphql-push.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-09T18:40:43.160Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ADMIN",
+      "acquiredAt": "2026-06-09T18:40:42.524Z",
+      "expiresAt": "2026-06-09T19:10:42.524Z"
+    }
+  ],
+  "variables": {
+    "back_url": "{{BACK_URL}}",
+    "org_user_id": "{{ORG_USER_ID}}",
+    "SENT_ID": "d4f79ddd-53b7-4b80-9308-9d55a5a470c4"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=seed_sent] HTTP 200",
+      "label": "seed_sent",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "HTTP 200",
+      "actual": "HTTP 200"
+    },
+    {
+      "raw": "[DATA label=seed_sent] body.id is non-null",
+      "label": "seed_sent",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "body.id is non-null",
+      "actual": "body.id = \"d4f79ddd-53b7-4b80-9308-9d55a5a470c4\""
+    },
+    {
+      "raw": "[ERRORS label=delete_sent] HTTP 500",
+      "label": "delete_sent",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "HTTP 500",
+      "actual": "HTTP 500"
+    },
+    {
+      "raw": "[ERRORS label=verify_still_there] HTTP 200",
+      "label": "verify_still_there",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "HTTP 200",
+      "actual": "HTTP 200"
+    },
+    {
+      "raw": "[DATA label=verify_still_there] body.status = Sent",
+      "label": "verify_still_there",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "body.status = Sent",
+      "actual": "body.status = Sent"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ADMIN] Sent message still exists in admin list after the failed delete",
+      "layer": "ADMIN",
+      "note": "Sent message still exists in admin list after the failed delete",
+      "resolved": "Sent message still exists in admin list after the failed delete"
+    },
+    {
+      "raw": "[CONSOLE] no JS errors from REST calls",
+      "layer": "CONSOLE",
+      "note": "no JS errors from REST calls",
+      "resolved": "no JS errors from REST calls"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — Sent message must remain in system; HTTP 500 on delete is a known defect (should be 4xx)",
+    "blocks": []
+  }
+}

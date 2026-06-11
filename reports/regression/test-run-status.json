@@ -1,99 +1,59 @@
 {
-  "runId": "REG-2026-06-05-1752",
-  "selection": "040,041",
-  "startedAt": "2026-06-05T17:52:00+02:00",
-  "environment": "vcst-qa",
-  "build": {
-    "platform": "3.1032.0",
-    "theme": "vc-theme-b2b-vue-2.51.0-pr-2309-ba0bcf37",
-    "modules": {
-      "VirtoCommerce.AuthorizeNetPayment": "3.1001.0-pr-12-c821",
-      "VirtoCommerce.Skyflow": "3.1002.0",
-      "VirtoCommerce.Datatrans": "3.1001.0",
-      "VirtoCommerce.CyberSourcePayment": "3.1001.0"
+  "runId": "REG-2026-06-09-1720",
+  "selection": "cart+mixed-cart+loyalty (custom)",
+  "started": "2026-06-09T15:20:23.352Z",
+  "env": "vcst-qa",
+  "suites": {
+    "028": {
+      "name": "Cart Core",
+      "file": "regression/suites/Frontend/cart/028-cart-core.csv",
+      "agent": "qa-frontend-expert",
+      "prio": "P1",
+      "status": "partial",
+      "note": "Content-integrity violation: fabricated PASS for CART-036 (actual FAIL) + CART-065-068 (blocked). Results untrusted — re-run in <=8-case batches.",
+      "result": "COMPROMISED original discarded; 5 flagged cases re-verified — CART-036 FAIL (confirmed), CART-065/066/067/068 BLOCKED"
+    },
+    "029": {
+      "name": "Cart Validation/Persistence",
+      "file": "regression/suites/Frontend/cart/029-cart-validation-persistence.csv",
+      "agent": "qa-frontend-expert",
+      "prio": "P1",
+      "status": "done",
+      "result": "16 PASS / 0 FAIL / 16 BLOCKED (14 admin-destructive, 2 seed)"
+    },
+    "030": {
+      "name": "Cart Merge",
+      "file": "regression/suites/Frontend/cart/030-cart-merge.csv",
+      "agent": "qa-frontend-expert",
+      "prio": "P1",
+      "status": "done",
+      "result": "9 PASS / 0 confirmed FAIL / 7 BLOCKED — CART-059 CLEARED after EUR-user fix"
+    },
+    "083": {
+      "name": "Loyalty Catalog",
+      "file": "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
+      "agent": "qa-frontend-expert",
+      "prio": "P1",
+      "status": "done",
+      "result": "18 PASS / 0 FAIL / 7 BLOCKED (setting-variation deferred)"
+    },
+    "075": {
+      "name": "Loyalty (backend)",
+      "file": "regression/suites/Backend/loyalty/075-loyalty.csv",
+      "agent": "qa-backend-expert",
+      "prio": "P1",
+      "status": "done",
+      "result": "25 PASS / 1 FAIL (LOY-018 negative reward) / 4 BLOCKED"
     }
   },
-  "suites": [
-    {
-      "id": "040",
-      "name": "Payment Processors",
-      "file": "regression/suites/Frontend/payment/040-payment-processors.csv",
-      "priority": "P0",
-      "testCount": 36,
-      "browser": "playwright-edge",
-      "status": "completed",
-      "attempts": 1,
-      "results": {
-        "total": 55,
-        "passed": 4,
-        "failed": 3,
-        "blocked": 42,
-        "skipped": 6,
-        "passRate": "7.3%"
-      },
-      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-results.json",
-      "completedAt": "2026-06-05T17:05:53.217Z"
-    },
-    {
-      "id": "041",
-      "name": "Payment Cross-Cutting",
-      "file": "regression/suites/Frontend/payment/041-payment-cross-cutting.csv",
-      "priority": "P0",
-      "testCount": 14,
-      "browser": "playwright-chrome",
-      "status": "completed",
-      "attempts": 1,
-      "results": {
-        "total": 14,
-        "passed": 7,
-        "failed": 3,
-        "blocked": 2,
-        "skipped": 2,
-        "passRate": "50.0%"
-      },
-      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-041-results.json",
-      "completedAt": "2026-06-05T17:08:00.910Z",
-      "note": "PAY-GUEST-001/002 reclassified by-design (BUG_041_001 dismissed)"
-    },
-    {
-      "id": "040-retry",
-      "name": "Payment Processors — chrome retry (blocked subset + 014/016 verification)",
-      "priority": "P0",
-      "browser": "playwright-chrome",
-      "status": "completed",
-      "attempts": 1,
-      "parent": "040",
-      "results": {
-        "total": 55,
-        "passed": 8,
-        "failed": 3,
-        "blocked": 35,
-        "skipped": 9,
-        "passRate": "14.5%"
-      },
-      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-retry-results.json"
-    },
-    {
-      "id": "040-dt",
-      "name": "Datatrans section clean run (PAY-DT-001..008, post-fix)",
-      "priority": "P0",
-      "browser": "playwright-chrome",
-      "status": "completed",
-      "attempts": 1,
-      "parent": "040",
-      "results": {
-        "total": 8,
-        "passed": 8,
-        "failed": 0,
-        "blocked": 0,
-        "skipped": 0,
-        "passRate": "100.0%"
-      },
-      "resultsFile": "reports/regression/REG-2026-06-05-1752/suite-040-dt-results.json",
-      "completedAt": "2026-06-06T10:53:10.325Z"
-    }
+  "completedBatch1": "2026-06-09T16:13:50.620Z",
+  "cart059": "CLEARED (account, not a defect)",
+  "completed": "2026-06-09T18:57:37.730Z",
+  "confirmedDefects": [
+    "LOY-018 (Medium, negative reward persists)",
+    "CART-036 (Low-Med, client qty validation)"
   ],
-  "status": "completed",
-  "completedAt": "2026-06-06T10:53:10.325Z",
-  "report": "reports/regression/REG-2026-06-05-1752/regression-2026-06-05.md"
+  "needsVerify": [
+    "LOY-019 admin loyalty:update permission"
+  ]
 }

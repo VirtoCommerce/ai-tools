@@ -1,0 +1,111 @@
+{
+  "caseId": "PROBE-006",
+  "title": "Test addItem with explicit currency and cultureName",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\reports\\regression\\graphql-evidence\\probe-additem-full.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-10T15:43:12.329Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-10T15:43:07.851Z",
+      "expiresAt": "2026-06-10T16:13:06.851Z"
+    }
+  ],
+  "variables": {
+    "LIVE_PRODUCT_ID": "ff6df3ef-51f9-433b-b26f-8281d4c774ab",
+    "OVER_QTY": "9999",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 188
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" currencyCode: \"USD\" cultureName: \"en-US\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 2477
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\"\n      cartName: \"default\"\n      userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      currencyCode: \"USD\"\n      cultureName: \"en-US\"\n      productId: \"ff6df3ef-51f9-433b-b26f-8281d4c774ab\"\n      quantity: 1\n    }) {\n      id itemsCount\n      items { id productId quantity }\n      validationErrors { errorCode objectType errorMessage }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e",
+            "itemsCount": 1,
+            "items": [
+              {
+                "id": "66f7f698-e888-4eb9-8f1c-05e585f518de",
+                "productId": "ff6df3ef-51f9-433b-b26f-8281d4c774ab",
+                "quantity": 1
+              }
+            ],
+            "validationErrors": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1803
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_item] errors[] empty",
+      "label": "add_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=add_item] data.addItem.itemsCount = 1",
+      "label": "add_item",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addItem.itemsCount = 1",
+      "actual": "data.addItem.itemsCount = 1"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

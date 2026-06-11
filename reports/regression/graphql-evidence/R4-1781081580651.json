@@ -1,0 +1,430 @@
+{
+  "caseId": "R4",
+  "title": "Mixed-cart cart-% coupon base — CONFIGURABLE product as USD line",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\tests\\Sprint26-11\\VCST-5101\\repro-coupon-product-types.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-10T08:53:00.650Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "LOYALTY_VIP_USER",
+      "acquiredAt": "2026-06-10T08:52:55.089Z",
+      "expiresAt": "2026-06-10T09:22:55.089Z"
+    }
+  ],
+  "variables": {
+    "storeId": "{{STORE_ID}}",
+    "configurable_id": "dd56d770-3c3b-4e09-b126-0c2bb8bd0f72",
+    "coupon": "QA10OFF",
+    "loyalty_currency": "PTS",
+    "USER_ID": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
+    "SECTION_RAM_ID": "5190d8cc-56f5-4675-9a34-d94c28f306f7",
+    "OPT_RAM_BASE_ID": "b147e934-6255-4a39-902c-17a816591932",
+    "SECTION_STORAGE_ID": "e5fbc712-8697-4c48-b4f4-a8943f8d3d21",
+    "OPT_STORAGE_BASE_ID": "d6f1452a-ab62-49ff-8241-85a51b542a8c",
+    "PTS_PRODUCT_ID": "25bd0e7f-07db-44e5-b3bd-e8c5db03734e",
+    "COUPON_DISC_BASE": "93.92",
+    "USD_EXT_PRICE": "939.2",
+    "COUPON_DISC_MIX": "101.92",
+    "PTS_EXT_PRICE": "80"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "1dba59a3-7658-4b3f-9517-6549aebbf5b1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 134
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 317
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "get_def",
+      "query": "query { productConfiguration(configurableProductId: \"dd56d770-3c3b-4e09-b126-0c2bb8bd0f72\" storeId: \"B2B-store\") { configurationSections { id type options { product { id } } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "productConfiguration": {
+            "configurationSections": [
+              {
+                "id": "5190d8cc-56f5-4675-9a34-d94c28f306f7",
+                "type": "Product",
+                "options": [
+                  {
+                    "product": {
+                      "id": "b147e934-6255-4a39-902c-17a816591932"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "fb7997e5-c00d-448e-88cd-02bea0e786fe"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "58de484f-dbaa-4193-b319-2c5c55152e86"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "e5fbc712-8697-4c48-b4f4-a8943f8d3d21",
+                "type": "Product",
+                "options": [
+                  {
+                    "product": {
+                      "id": "d6f1452a-ab62-49ff-8241-85a51b542a8c"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "efda4b3d-5843-4dc1-961b-965b8f423d14"
+                    }
+                  },
+                  {
+                    "product": {
+                      "id": "7b0e3a34-1778-41fc-a743-50c0794c4e51"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 693
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "discover_pts_product",
+      "query": "query { products(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"PTS\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.PTS:(0 TO)\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "25bd0e7f-07db-44e5-b3bd-e8c5db03734e"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 136
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation AddItem($configurationSections: [ConfigurationSectionInput]) {\n    addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" productId: \"dd56d770-3c3b-4e09-b126-0c2bb8bd0f72\" quantity: 1 configurationSections: $configurationSections }) {\n      id itemsCount items { id productId productType extendedPrice { amount } }\n    }\n  }",
+      "variables": {
+        "configurationSections": [
+          {
+            "sectionId": "5190d8cc-56f5-4675-9a34-d94c28f306f7",
+            "type": "Product",
+            "option": {
+              "productId": "b147e934-6255-4a39-902c-17a816591932",
+              "quantity": 1
+            }
+          },
+          {
+            "sectionId": "e5fbc712-8697-4c48-b4f4-a8943f8d3d21",
+            "type": "Product",
+            "option": {
+              "productId": "d6f1452a-ab62-49ff-8241-85a51b542a8c",
+              "quantity": 1
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf",
+            "itemsCount": 1,
+            "items": [
+              {
+                "id": "79c26220-a42c-4dac-8845-cb579910f25b",
+                "productId": "dd56d770-3c3b-4e09-b126-0c2bb8bd0f72",
+                "productType": "Physical",
+                "extendedPrice": {
+                  "amount": 939.2
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1709
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_coupon",
+      "query": "mutation { addCoupon(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" cultureName: \"en-US\" couponCode: \"QA10OFF\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 676
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cart_usd_only",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { subTotal { amount } discounts { amount coupon } items { currencyCode quantity productType extendedPrice { amount } discountTotal { amount } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "subTotal": {
+              "amount": 1174
+            },
+            "discounts": [
+              {
+                "amount": 93.92,
+                "coupon": "QA10OFF"
+              }
+            ],
+            "items": [
+              {
+                "currencyCode": "USD",
+                "quantity": 1,
+                "productType": "Physical",
+                "extendedPrice": {
+                  "amount": 939.2
+                },
+                "discountTotal": {
+                  "amount": 234.8
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 457
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_pts_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" productId: \"25bd0e7f-07db-44e5-b3bd-e8c5db03734e\" quantity: 1 itemCurrencyCode: \"PTS\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 638
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cart_mixed",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { subTotal { amount } discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode quantity productType extendedPrice { amount } discountTotal { amount } } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "subTotal": {
+              "amount": 1174
+            },
+            "discounts": [
+              {
+                "amount": 101.92,
+                "coupon": "QA10OFF"
+              }
+            ],
+            "cartTotals": [
+              {
+                "isDefaultTotalCurrency": true,
+                "discountTotal": {
+                  "amount": 336.72
+                }
+              },
+              {
+                "isDefaultTotalCurrency": false,
+                "discountTotal": {
+                  "amount": 0
+                }
+              }
+            ],
+            "items": [
+              {
+                "currencyCode": "PTS",
+                "quantity": 1,
+                "productType": "Physical",
+                "extendedPrice": {
+                  "amount": 80
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              },
+              {
+                "currencyCode": "USD",
+                "quantity": 1,
+                "productType": "Physical",
+                "extendedPrice": {
+                  "amount": 939.2
+                },
+                "discountTotal": {
+                  "amount": 234.8
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 371
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 412
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=add_item] errors[] empty",
+      "label": "add_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=add_item] data.addItem.itemsCount = 1",
+      "label": "add_item",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addItem.itemsCount = 1",
+      "actual": "data.addItem.itemsCount = 1"
+    },
+    {
+      "raw": "[ERRORS label=cart_usd_only] errors[] empty",
+      "label": "cart_usd_only",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=cart_usd_only] data.cart.discounts[?coupon=QA10OFF].amount is non-null",
+      "label": "cart_usd_only",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.discounts[?coupon=QA10OFF].amount is non-null",
+      "actual": "data.cart.discounts[?coupon=QA10OFF].amount = 93.92"
+    },
+    {
+      "raw": "[ERRORS label=cart_mixed] errors[] empty",
+      "label": "cart_mixed",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[VAR] {{COUPON_DISC_MIX}} = {{COUPON_DISC_BASE}}",
+      "label": "_default",
+      "kind": "VAR",
+      "passed": false,
+      "expected": "101.92 = 93.92",
+      "actual": "101.92 = 93.92"
+    },
+    {
+      "raw": "[DATA label=cart_mixed] data.cart.items[?currencyCode=PTS].discountTotal.amount = 0",
+      "label": "cart_mixed",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items[?currencyCode=PTS].discountTotal.amount = 0",
+      "actual": "data.cart.items[?currencyCode=PTS].discountTotal.amount = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[API] Configured line as USD line in a mixed cart. If add_item errors[] non-empty the combination is rejected (record verbatim). COUPON_DISC_MIX must equal COUPON_DISC_BASE.",
+      "layer": "API",
+      "note": "Configured line as USD line in a mixed cart. If add_item errors[] non-empty the combination is rejected (record verbatim). COUPON_DISC_MIX must equal COUPON_DISC_BASE.",
+      "resolved": "Configured line as USD line in a mixed cart. If add_item errors[] non-empty the combination is rejected (record verbatim). COUPON_DISC_MIX must equal COUPON_DISC_BASE."
+    }
+  ],
+  "cleanup": {
+    "raw": "cleanup_post inline",
+    "blocks": []
+  }
+}

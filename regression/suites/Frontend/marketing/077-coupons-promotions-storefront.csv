@@ -147,21 +147,26 @@ User is authenticated. Cart has at least one item ({{TEST_SKU}}). Coupon '@td(CO
 [DOM] only currently active/valid coupons are displayed to the user","[API] POST /graphql response for promotionCoupons does not include expired promotions in the data
 [API] GraphQL response errors[] is empty
 [CONSOLE] no errors","Expired coupon visible and copyable to user, console error, GraphQL errors[] non-empty","none","VCST-4590","Automated"
-"CPN-015","Coupon Code Case Preserved — Code Copied Exactly As Displayed (No Mutation)","Coupons & Promotions > Copy Functionality","Medium","BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CPN-015","Coupon Code Case Fidelity — Lowercase-Stored Code Displayed and Copied in Original Case (Not Uppercased)","Coupons & Promotions > Copy Functionality","High","BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User is authenticated. Coupon with code '@td(COUPON_10PCT.code)' (uppercase) is visible on coupons page. Cart page is accessible with at least 1 item. Theme 2.48.0-pr-2269-cd06 or later deployed.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_10PCT.code)","[NAV] {{FRONT_URL}}/account/coupons
+User is authenticated. Coupon '@td(COUPON_SUPER.code)' (promotion: '@td(COUPON_SUPER.promo_name)') is stored with a lowercase code and is visible on the /account/coupons page. Cart page is accessible with at least 1 item. Theme 2.48.0-pr-2269-cd06 or later deployed. NOTE: This case currently FAILS pending the VCST-5233 fix — coupon-item.vue applies .toUpperCase() to both the displayed value and the clipboard copy, so '@td(COUPON_SUPER.code)' is shown/copied as its uppercased form instead of the stored lowercase value.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_SUPER.code), coupon_promo=@td(COUPON_SUPER.promo_name)","[NAV] {{FRONT_URL}}/account/coupons
 [WAIT] 'All coupons & promotions' heading visible
-[ACT] click '@td(COUPON_10PCT.code) Click to copy' button
-[WAIT] 'Coupon copied successfully' notification
+[SCROLL] scroll to the '@td(COUPON_SUPER.promo_name)' coupon card
+[ASSERT] '@td(COUPON_SUPER.promo_name)' card is visible
+[ASSERT] the coupon code displayed on the card button reads '@td(COUPON_SUPER.code)' (stored lowercase) — NOT its uppercased form
+[ACT] click '@td(COUPON_SUPER.code) Click to copy' button (or its displayed label if uppercased by the bug — click the copy button on the card)
+[WAIT] 'Coupon copied successfully' notification appears
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads
 [SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
 [ASSERT] 'Custom code' card visible at bottom of widget
 [ACT] click into 'Enter custom code' input on the Custom code card
 [KEY] Ctrl+V
-[WAIT] code appears in input","[DOM] coupon code in 'Enter custom code' input after paste reads exactly '@td(COUPON_10PCT.code)' (uppercase, no leading/trailing whitespace)
-[DOM] no lowercase conversion, no space padding, no truncation of the code","[CONSOLE] no clipboard errors
-[NETWORK] no errors","Code pasted as lowercase '@td(COUPON_10PCT.code)', trailing space in pasted value, code truncated or mangled, 'Enter custom code' input not found in .coupons-section","none — do not apply the coupon, just verify the pasted value","VCST-4590, Synced: VCST-4896 PR#2269 (2026-04-27)","synced"
+[WAIT] code appears in input","[DOM] coupon code displayed on the /account/coupons card button reads exactly '@td(COUPON_SUPER.code)' — the stored lowercase value (no forced uppercasing, no CSS uppercase transform rendering a different visual value)
+[DOM] coupon code pasted into 'Enter custom code' input reads exactly '@td(COUPON_SUPER.code)' (matches the stored code character-for-character; must contain at least one lowercase letter matching the stored code; must NOT equal the all-uppercase form of the stored code)
+[DOM] no leading/trailing whitespace in the pasted value
+[FORMAT] stored code @td(COUPON_SUPER.code) satisfies /[a-z]/ (contains lowercase letters) — confirming the coupon chosen for this test is lowercase-stored","[CONSOLE] no clipboard errors
+[NETWORK] no errors","Displayed coupon code on card is the uppercased form of '@td(COUPON_SUPER.code)' (toUpperCase bug active); pasted value in 'Enter custom code' is the uppercase form instead of '@td(COUPON_SUPER.code)'; 'Enter custom code' input not found in .coupons-section","none — do not apply the coupon; cleanup not needed as cart is reset in preconditions","VCST-4590, VCST-5233 (regression guard — currently FAILS pending fix), Synced: VCST-4896 PR#2269 (2026-04-27)","Draft"
 "CPN-017","Localized URL — Coupons Page Accessible Under Locale Prefix","Coupons & Promotions > Localization","Low","BL-PRICE-001","ECL-4.2","User is authenticated. Store supports at least one non-default locale. CULTURE_NAME env var set to a non-default locale.","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, culture_name={{CULTURE_NAME}}","[NAV] {{FRONT_URL}}/{{CULTURE_NAME}}/account/coupons
 [WAIT] page loads","[DOM] 'All coupons & promotions' heading visible (or localized equivalent)
 [DOM] coupon cards rendered with correct data
@@ -899,3 +904,32 @@ coupon2=@td(COUPONS.fixedAmountCode)","[NAV] Navigate to cart page at {{FRONT_UR
 [STATE] NO JavaScript TypeError, UnhandledPromiseRejection, or 'Cannot query field promotionCoupons' error in console (regression contract for VCST-5106 fix)","[CONSOLE] zero console errors related to promotionCoupons (the bug was: 'Cannot query field promotionCoupons on type Query' causing a hard frontend error)
 [NETWORK] if promotionCoupons request fires, it is NOT made when the field is absent from schema (vc-frontend #2305 fix: guard against absent field); if it does fire, it must not crash the page
 [NETWORK] no 5xx on /graphql during cart page load","'Cannot query field promotionCoupons on type Query' error in console (VCST-5106 regression); cart page blank or partially rendered; spinner in coupon sidebar visible >5s; UnhandledPromiseRejection in console","Navigate away from cart","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"
+"CPN-062","VCST-5233 Regression: Lowercase Coupon Code — Displayed, Copied, and Applied in Stored Lowercase Case","Coupons & Promotions > Copy Functionality","Critical","BL-PRICE-001","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+User is authenticated. Coupon '@td(COUPON_SUPER.code)' (promotion: '@td(COUPON_SUPER.promo_name)') is stored with a lowercase code (satisfies /[a-z]/), is active (no endDate, no cart-subtotal threshold), and is visible on /account/coupons. Cart contains at least 1 item ({{TEST_SKU}}). Theme 2.48.0-pr-2269-cd06 or later deployed. NOTE: This case currently FAILS pending the VCST-5233 fix — coupon-item.vue force-uppercases both display and clipboard values, and the xAPI ValidateCoupon mutation is case-sensitive (uppercase code validates false).","email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}, coupon_code=@td(COUPON_SUPER.code), coupon_promo=@td(COUPON_SUPER.promo_name), test_sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/account/coupons
+[WAIT] 'All coupons & promotions' heading visible
+[SCROLL] scroll to the '@td(COUPON_SUPER.promo_name)' coupon card
+[ASSERT] '@td(COUPON_SUPER.promo_name)' card is visible
+[ASSERT] displayed coupon code on the card button equals '@td(COUPON_SUPER.code)' — the stored lowercase value (NOT the uppercased form)
+[ACT] click the copy button on the '@td(COUPON_SUPER.promo_name)' card
+[WAIT] 'Coupon copied successfully' notification appears
+[ACT] evaluate clipboard content via browser evaluate: navigator.clipboard.readText()
+[ASSERT] clipboard value equals '@td(COUPON_SUPER.code)' (stored case) and NOT the uppercased form of '@td(COUPON_SUPER.code)'
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 1 item
+[SCROLL] scroll past OrderSummary to 'Discount & coupons' widget (.coupons-section)
+[ASSERT] 'Custom code' card visible at bottom of widget
+[ACT] click into 'Enter custom code' input on the Custom code card
+[KEY] Ctrl+V
+[WAIT] pasted value appears in input
+[ASSERT] input value equals '@td(COUPON_SUPER.code)' (stored lowercase) — NOT the uppercased form
+[ACT] click the arrow-right apply button on the 'Custom code' card
+[WAIT] up to 5s for card to transition to applied state OR for error message to appear","[DOM] coupon code displayed on /account/coupons card button equals '@td(COUPON_SUPER.code)' (contains lowercase, matches stored value exactly)
+[STATE] clipboard content after copy equals '@td(COUPON_SUPER.code)' — character-for-character match with the stored code; does NOT equal the uppercased form of '@td(COUPON_SUPER.code)'
+[DOM] pasted value in 'Enter custom code' input equals '@td(COUPON_SUPER.code)' (stored lowercase)
+[DOM] 'Custom code' card transitions to applied state: success-green border, round-check icon, trash icon visible
+[DOM] Discount line item appears in OrderSummary showing a non-zero amount (coupon successfully applied)
+[STATE] no error message 'This code is not valid' (which would indicate the uppercased code was submitted instead of stored-case code)","[API] POST /graphql (validateCoupon query) with coupon='@td(COUPON_SUPER.code)' returns validateCoupon=true (case-sensitive validation succeeds with stored-case code)
+[API] POST /graphql (addCoupon mutation) returns HTTP 200, errors[] empty, cart.coupons contains '@td(COUPON_SUPER.code)' with isAppliedSuccessfully=true
+[CONSOLE] no TypeError or clipboard API errors
+[NETWORK] no 4xx/5xx on /graphql during copy and apply flow","Displayed code on /account/coupons card is the uppercased form of '@td(COUPON_SUPER.code)' (toUpperCase bug active — coupon-item.vue applies .toUpperCase() to {{ coupon.couponCode }} and @click copyCoupon argument); clipboard value is the uppercased form (not stored-case); pasted value in 'Enter custom code' is the uppercased form; 'This code is not valid' error appears after apply (uppercase code rejected by case-sensitive ValidateCoupon — validateCoupon=false); discount line absent from OrderSummary","Click trash icon on applied coupon card to remove '@td(COUPON_SUPER.code)' if coupon was successfully applied. Cart reset handled by [PRE:RESET_CART] on next run.","VCST-5233 (regression guard — currently FAILS pending fix; root cause: coupon-item.vue line ~12 @click=""copyCoupon(coupon.couponCode?.toUpperCase())"" and {{ coupon.couponCode?.toUpperCase() }} + CSS uppercase class; fix: remove toUpperCase() calls and uppercase CSS), BL-PRICE-001, ECL-1.3","Draft"

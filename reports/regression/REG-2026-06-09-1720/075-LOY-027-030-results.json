@@ -1,0 +1,53 @@
+{
+  "suiteId": "075",
+  "suiteName": "Loyalty (Backend/Admin)",
+  "chunk": "LOY-027-030",
+  "runId": "REG-2026-06-09-1720",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-06-09T18:10:46Z",
+  "completedAt": "2026-06-09T19:00:00Z",
+  "totalCases": 4,
+  "passed": 3,
+  "failed": 0,
+  "blocked": 1,
+  "skipped": 0,
+  "passRate": "75.0%",
+  "testCases": [
+    {
+      "id": "LOY-027",
+      "status": "PASS",
+      "title": "Per-Product Loyalty Factor — Set fractional factor=0.5 and verify it persists",
+      "section": "Loyalty > Product Points Loyalty > Product factors",
+      "priority": "High",
+      "evidence": "Factor spinbutton shows 0.5 after Refresh. API /api/loyalty-program-product-factors/search returns factor:0.50 for productCode SEED-20260518-DELL-LAT-001-8-256 (id f08c9ee1-b005-414c-94d7-f213fe5fb63c). Save returned HTTP 204. No JS errors. No 4xx/5xx on save/search."
+    },
+    {
+      "id": "LOY-028",
+      "status": "PASS",
+      "title": "Per-Product Factor — No matching program/user-group falls back to default factor",
+      "section": "Loyalty > Product Points Loyalty > Product factors",
+      "priority": "High",
+      "evidence": "Opened 'Product points' program (id d78ae7a7) with UserGroupIsCondition scoped audience. Product factors blade loaded without error. Grid shows totalCount:2 (Hollister eGift GC863612 factor:1, Apple Gift GC952104 factor:2). Dell Latitude SEED-20260518-DELL-LAT-001-8-256 has NO factor row — confirmed via UI grid and API /api/loyalty-program-product-factors/search (loyaltyProgramId:d78ae7a7) response. No auto-created rows on load. No 4xx/5xx on page load. No JS errors."
+    },
+    {
+      "id": "LOY-029",
+      "status": "BLOCKED",
+      "title": "Per-Customer-Group Factor — VIP-scoped program applies its factor to a VIP user; non-matching user falls back to default",
+      "section": "Loyalty > Product Points Loyalty > User group condition + Product factors",
+      "priority": "High",
+      "notes": "Admin UI portion COMPLETED: AGENT-TEST-VIP-Program (id 53bfe61f-8795-4370-953e-8f8251ada119) was created with UserGroupIsCondition='VIP', Store=B2B-store, and product factors for GC863612 (factor=1) and SEED-20260518-DELL-LAT-001-8-256 (factor=6) — both confirmed via UI and API (PUT /api/loyalty-program-product-factors/factors → HTTP 204). BLOCKED on cross-layer xAPI assertion: the LOYALTY_VIP_USER account (AGENT-TEST-vip@test.virtocommerce.com, securityAccountId 1dba59a3-7658-4b3f-9517-6549aebbf5b1) was swept between sessions (AGENT-TEST- prefix teardown). Platform /api/platform/security/users/{id} returns null — account no longer exists. Without a VIP-group storefront Bearer token, the xAPI products() loyaltyPoints assertion ([API] VIP user: loyaltyPoints.amount > base; non-VIP user: null) cannot be executed. Re-create the VIP user account to unblock: POST /api/members + POST /api/platform/security/users/create with userType=Customer, storeId=B2B-store, emailConfirmed=true, member groups=['VIP']."
+    },
+    {
+      "id": "LOY-030",
+      "status": "PASS",
+      "title": "Per-Product Factor — Delete a factor row removes the override",
+      "section": "Loyalty > Product Points Loyalty > Product factors",
+      "priority": "High",
+      "evidence": "Opened AGENT-TEST-ProductPoints-LOY026 program (id 72b9a853-299b-4003-828f-b3868c3ef9df). Product factors blade showed 2 rows (Dell Latitude factor=0.5, Extended Warranty SEED-20260518-WARRANTY-EXT-001 factor=2). Selected Extended Warranty row checkbox, clicked Delete in Product factors toolbar. Confirmation dialog 'Delete product factors — Are you sure?' shown; clicked Yes. Row immediately disappeared, badge updated to 1. After Refresh: only Dell Latitude row remains. API /api/loyalty-program-product-factors/search (loyaltyProgramId:72b9a853) returns totalCount:1, single result: {productCode:SEED-20260518-DELL-LAT-001-8-256, factor:0.5}. Extended Warranty row confirmed absent from API response. No JS errors. No 4xx/5xx on delete/refresh.",
+      "screenshot": "reports/regression/REG-2026-06-09-1720/screenshots/LOY-030-PASS-after-delete-refresh.png"
+    }
+  ],
+  "bugs": [],
+  "errors": []
+}

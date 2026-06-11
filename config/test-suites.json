@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-06-09",
-    "totalSuites": 103,
+    "totalSuites": 104,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1243,6 +1243,27 @@
       "customerApplicability": "universal"
     },
     {
+      "id": "050b5",
+      "name": "GraphQL xCart — Per-RuleSet Validation & Line-Item Validity",
+      "file": "regression/suites/Backend/graphql/050b5-graphql-xcart-validation.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 5,
+      "estimatedMinutes": 7,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xcart",
+        "validation",
+        "regression-guard",
+        "sprint"
+      ],
+      "customerApplicability": "universal"
+    },
+    {
       "id": "050c",
       "name": "GraphQL xOrder",
       "file": "regression/suites/Backend/graphql/050c-graphql-xorder.csv",
@@ -2330,6 +2351,7 @@
         "050b2",
         "050b3",
         "050b4",
+        "050b5",
         "050c",
         "050k"
       ]

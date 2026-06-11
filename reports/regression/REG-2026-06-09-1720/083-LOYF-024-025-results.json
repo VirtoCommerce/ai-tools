@@ -1,0 +1,59 @@
+{
+  "suiteId": "083",
+  "suiteName": "Loyalty Catalog",
+  "chunk": "LOYF-024-025",
+  "runId": "REG-2026-06-09-1720",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "themeVersion": "2.51.0-pr-2310-6b00-6b00d69d",
+  "startedAt": "2026-06-09T17:20:00Z",
+  "completedAt": "2026-06-09T17:53:30Z",
+  "totalCases": 2,
+  "passed": 2,
+  "failed": 0,
+  "blocked": 0,
+  "skipped": 0,
+  "passRate": "100.0%",
+  "testCases": [
+    {
+      "id": "LOYF-024",
+      "status": "PASS",
+      "title": "PDP reached from loyalty catalog — price shows LOYALTY currency (PTS), not USD (PR #2296 PDP-currency wiring shipped)",
+      "section": "Loyalty > Catalog Browsing > PDP",
+      "priority": "High",
+      "businessRule": "BL-B2B-005",
+      "edgeCaseRefs": "ECL-7.3",
+      "evidence": {
+        "url": "https://vcst-qa-storefront.govirto.com/loyalty-catalog/product/25bd0e7f-07db-44e5-b3bd-e8c5db03734e",
+        "productName": "Double Drum Autoclave",
+        "pdpPriceObserved": "PTS64.00 (actual) / PTS80.00 (list) — PTS prefix, not USD",
+        "getProductCurrencyCode": "PTS (confirmed in request #153: variables.currencyCode='PTS')",
+        "consoleErrors": 0,
+        "networkErrors": "none — all graphql 200",
+        "screenshot": "reports/regression/REG-2026-06-09-1720/screenshots/LOYF-024-PASS-pdp-pts-price.png"
+      }
+    },
+    {
+      "id": "LOYF-025",
+      "status": "PASS",
+      "title": "Cart shows loyalty product under 'Products in PTS' group (Mixed Cart mode — VCST-5101)",
+      "section": "Loyalty > Catalog Browsing > Cart",
+      "priority": "High",
+      "businessRule": "BL-B2B-005",
+      "edgeCaseRefs": "ECL-7.3",
+      "evidence": {
+        "url": "https://vcst-qa-storefront.govirto.com/cart",
+        "cartSectionHeading": "heading 'Products in PTS' [level=4] present — loyalty line item in PTS group",
+        "lineItemPrice": "PTS150.00 (not USD)",
+        "orderSummaryTotalInPTS": "'Total in PTS' block present: Subtotal PTS150.00, Discount PTS0.00, Total PTS150.00",
+        "usdSectionPresent": "USD Total block present separately ($0.00 — no USD items)",
+        "apiCurrencyCode": "GetShortCart response items[0].currencyCode='PTS' (request #83)",
+        "consoleErrors": 0,
+        "networkErrors": "none — all graphql 200",
+        "screenshot": "reports/regression/REG-2026-06-09-1720/screenshots/LOYF-025-PASS-cart-pts-group.png"
+      }
+    }
+  ],
+  "bugs": [],
+  "errors": []
+}
