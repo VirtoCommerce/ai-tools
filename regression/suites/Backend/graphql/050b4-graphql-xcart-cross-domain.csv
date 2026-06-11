@@ -760,3 +760,103 @@ GQL-MC-011,Mixed Cart — deleting the PTS line must not change the USD coupon d
 [DATA label=cart_after] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.currency.code = USD
 [VAR] {{DISC_AFTER}} = {{DISC_BEFORE}}
 [VAR] {{USD_TOTAL_AFTER}} = {{USD_TOTAL_BEFORE}}","[API] POST-FIX: DISC_AFTER == DISC_BEFORE and USD_TOTAL_AFTER == USD_TOTAL_BEFORE (deleting the PTS line does not touch the USD bucket). Only legitimate change: cartTotals 2 -> 1 and itemsCount -> 1. RED today: deleting PTS drops the leaked 10% x PTS from the coupon, so DISC_AFTER < DISC_BEFORE and the USD total rises.",DISC_AFTER < DISC_BEFORE (PTS was in the coupon base); USD_TOTAL_AFTER > USD_TOTAL_BEFORE (USD total recalculates on PTS deletion); removeCartItem errors[] non-empty.,cleanup_post inline,Promote to 050b4 alongside the VCST-5101 fix (RewardExtensions.cs:201). VCST-5101 Bug-1; reports/bugs/BUG-mixed-cart-coupon-pts-leaks-into-usd-discount.md. From scratch S7. RED until fix (RewardExtensions.cs:201) on DISC_AFTER == DISC_BEFORE and USD_TOTAL_AFTER == USD_TOTAL_BEFORE. BL-CART-002; BL-CART-003,Reviewed
+"GQL-MC-012","Mixed Cart — unselect ALL line items: ALL cartTotals[] buckets must zero (totals not selection-gated in cartTotals[] projection — REGRESSION GUARD)","GraphQL > xCart > Mixed Cart > Totals","Critical","BL-CART-010; BL-CART-001; BL-GQL-001; BL-LOY-001; BL-LOY-003","ECL-7.3","Runner-native. LOYALTY_VIP_USER on B2B-store (loyalty mode Mixed Cart, loyalty currency PTS). Builds a genuine mixed-currency cart: a USD primary line via @td(BUYABLE_NO_MIN_QTY.id) + a PTS loyalty line via live-discover (same discover_pts_product pattern as GQL-MC-005/010 — DISTINCT product to avoid B2B same-productId consolidation). Selects the Ground fixed-rate shipping method (captured dynamically at optionName=Ground, not index 0 which may be BOPIS $0). Then unselects BOTH line items (selectedForCheckout=false for all) and reads full cart totals.
+
+GROUND TRUTH (verified 2026-06-10 via scripts/graphql-runner.ts on MC-UNSEL-001, 22/22 flat assertions PASS):
+  FLAT fields (cart.total/subTotal/taxTotal/shippingTotal/shippingPrice) = 0 after unselect-all — BASELINE PASS today.
+  cartTotals[] USD bucket (isDefaultTotalCurrency=true): total=180, taxTotal=30 — FAILS today.
+    Root cause: CartTotals projection is NOT gated by SelectedForCheckout; shipping ($150) + tax ($30) leak into the USD bucket total.
+  cartTotals[] PTS bucket (isDefaultTotalCurrency=false): total=0, taxTotal=0 — PASS today.
+
+DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal projection is fixed to gate on SelectedForCheckout):
+  cartTotals[?isDefaultTotalCurrency=true].total.amount = 0
+  cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount = 0
+  All buckets: subTotal.amount = 0, discountTotal.amount = 0","storeId={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP discover_pts_product]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC discover_pts_product]
+[GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
+[GQL-EXEC add_usd_item]
+[GQL-OP add_pts_item]
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_item]
+[GQL-OP read_pre]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    itemsCount
+    total { amount currency { code } } subTotal { amount } taxTotal { amount }
+    shippingPrice { amount } shippingTotal { amount }
+    items { id currencyCode selectedForCheckout }
+    availableShippingMethods { code name optionName price { amount currency { code } } }
+    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }
+  } }
+[GQL-EXEC read_pre]
+[GQL-CAPTURE read_pre.data.cart.items[?currencyCode=USD].id → USD_LINE_ID]
+[GQL-CAPTURE read_pre.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
+[GQL-CAPTURE read_pre.data.cart.availableShippingMethods[?optionName=Ground].code → SHIP_CODE]
+[GQL-CAPTURE read_pre.data.cart.availableShippingMethods[?optionName=Ground].optionName → SHIP_OPTION]
+[GQL-CAPTURE read_pre.data.cart.availableShippingMethods[?optionName=Ground].price.amount → SHIP_PRICE]
+[GQL-OP add_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" } } }) { id } }
+[GQL-EXEC add_shipment]
+[GQL-OP read_with_ship]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    total { amount } subTotal { amount } taxTotal { amount } shippingTotal { amount }
+    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }
+    shipments { id shipmentMethodCode price { amount } }
+  } }
+[GQL-EXEC read_with_ship]
+[GQL-OP unselect_usd]
+  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{USD_LINE_ID}}"" }) { id } }
+[GQL-EXEC unselect_usd]
+[GQL-OP unselect_pts]
+  mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{PTS_LINE_ID}}"" }) { id } }
+[GQL-EXEC unselect_pts]
+[GQL-OP read_unsel]
+  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    itemsCount
+    total { amount currency { code } } subTotal { amount } taxTotal { amount }
+    shippingPrice { amount } shippingTotal { amount }
+    items { id currencyCode selectedForCheckout }
+    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }
+  } }
+[GQL-EXEC read_unsel]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=discover_pts_product] errors[] empty
+[ERRORS label=add_usd_item] errors[] empty
+[ERRORS label=add_pts_item] errors[] empty
+[ERRORS label=read_pre] errors[] empty
+[ERRORS label=add_shipment] errors[] empty
+[ERRORS label=read_with_ship] errors[] empty
+[ERRORS label=unselect_usd] errors[] empty
+[ERRORS label=unselect_pts] errors[] empty
+[ERRORS label=read_unsel] errors[] empty
+[COUNT label=read_pre] data.cart.items >= 2
+[COUNT label=read_pre] data.cart.cartTotals = 2
+[DATA label=read_with_ship] data.cart.shippingTotal.amount > 0
+[DATA label=read_with_ship] data.cart.total.amount > 0
+[DATA label=read_with_ship] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount > 0
+[DATA label=read_unsel] data.cart.items[?id={{USD_LINE_ID}}].selectedForCheckout = false
+[DATA label=read_unsel] data.cart.items[?id={{PTS_LINE_ID}}].selectedForCheckout = false
+[DATA label=read_unsel] data.cart.subTotal.amount = 0
+[DATA label=read_unsel] data.cart.taxTotal.amount = 0
+[DATA label=read_unsel] data.cart.shippingTotal.amount = 0
+[DATA label=read_unsel] data.cart.shippingPrice.amount = 0
+[DATA label=read_unsel] data.cart.total.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].subTotal.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].total.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0
+[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0","[EVIDENCE] DECISIVE BACKEND GUARD — no Apollo cache in path. PRE: 2 items selected + Ground shipment; cartTotals[] 2 buckets non-zero. WITH_SHIP: confirms USD bucket total > 0 (shipping applied). UNSEL: flat fields all = 0 (PASS today); cartTotals[] USD bucket total/taxTotal = 0 (FAILS today: 180/30 leak). PTS bucket total = 0 (PASS today). FAIL on cartTotals[?isDefaultTotalCurrency=true].total/taxTotal guards = active backend bug confirmed. PASS on all guards = fix verified (CartTotals projection now selection-gated). [ADMIN] After the fix, the Admin order-creation flow for a cart with all items deselected should show $0.00 grand total.","add_shipment errors[] non-empty (rate mismatch — SHIP_PRICE capture null; check Ground method availability); read_with_ship shippingTotal = 0 (shipment not applied — BLOCKED; abort run); cartTotals[?isDefaultTotalCurrency=true].total.amount != 0 after unselect-all (active backend bug — EXPECTED FAIL until fix); cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount != 0 after unselect-all (same root cause); flat total/tax/shipping != 0 after unselect-all (separate regression if this breaks); itemsCount drops to 0 (items removed not just unselected — wrong mutation used)","none — cleanup_post clears the default cart inline in Steps","VCST-5101; repro: tests/Sprint26-11/VCST-5101/repro-mixed-cart-unselect-totals.csv MC-UNSEL-001 (22/22 flat assertions PASS; cartTotals[] bucket assertions are the decisive guards); DefaultShoppingCartTotalsCalculator.cs L81-106; cartTotals[] CartTotal projection not gated by SelectedForCheckout (distinct from VCST-5238 Apollo currencyCode MissingFieldError — frontend-only defect); BL-CART-010; BL-LOY-001; BL-LOY-003; vc-module-x-cart","Automated"

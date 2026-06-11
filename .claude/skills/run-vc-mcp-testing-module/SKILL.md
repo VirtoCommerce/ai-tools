@@ -43,14 +43,18 @@ node .claude/skills/run-vc-mcp-testing-module/driver.mjs
 Verified output this session (`7/7 checks OK`, exit 0):
 
 ```
-▶ env:check … PASS (exit 0) — POSTMAN_API_KEY: SET (len=64)
-▶ td-refs … PASS (exit 0) —   b2b-orgs: 6 refs
-▶ scope … PASS (exit 0) — [scope:validate] Suites scanned: 99 CSV file(s) under regression\suites/
-▶ suites:lint … PASS (exit 0) — [suites:lint] OK (99 suites, 35 selections)
+▶ env:check … PASS (exit 0) — APPINSIGHTS_RESOURCE_STOREFRONT: SET (len=18)
+▶ td-refs … PASS (exit 0) —   No bare GUID/ID literals found. ✓
+▶ scope … PASS (exit 0) — [scope:validate] Suites scanned: 103 CSV file(s) under regression\suites/
+▶ suites:lint … PASS (exit 0) — [suites:lint] OK (104 suites, 35 selections)
 ▶ seed:dry-run … PASS (exit 0) — ✅ Seed complete!
 ▶ graphql:fixtures … PASS (exit 1) — Markdown report: …/reports/graphql-fixtures-validation.md
 ▶ graphql:labels … PASS (exit 0) — ✅ No findings …
 ```
+
+(Counts drift as suites are added — they were 103 CSVs / 104 manifest suites / 35
+selections this run. The driver asserts exit codes, not counts, so it keeps
+passing as the repo grows.)
 
 List checks without running, or run a subset by name substring:
 
@@ -64,11 +68,11 @@ What each check guards (all run from the repo root):
 | Check | Underlying command | Asserts |
 |-------|--------------------|---------|
 | `env:check` | `node get_variables_env.js` | 33 env vars reported SET/EMPTY (exit 0 even if some EMPTY) |
-| `td-refs` | `npx tsx scripts/validate-td-refs.ts` | every `@td()` ref in all 99 suites resolves |
+| `td-refs` | `npx tsx scripts/validate-td-refs.ts` | every `@td()` ref across all suites resolves; no bare GUID/ID literals |
 | `scope` | `npx tsx scripts/validate-critical-ui-scope.ts` | critical-UI-scope matrix cells point at existing test IDs |
 | `suites:lint` | `npx tsx scripts/sync-test-suites.ts --check` | `config/test-suites.json` matches CSVs on disk |
 | `seed:dry-run` | `node scripts/seed-test-data.js catalog --dry-run` | seed planner resolves fixtures, makes no API writes |
-| `graphql:fixtures` | `npx tsx scripts/validate-graphql-fixtures.ts` | 67 `.graphql` fixtures validate vs cached schema |
+| `graphql:fixtures` | `npx tsx scripts/validate-graphql-fixtures.ts` | every `.graphql` fixture validates vs cached schema |
 | `graphql:labels` | `npx tsx scripts/review-graphql-labels.ts <csv>` | runner-native GraphQL CSV has balanced labels |
 
 The driver calls these scripts **directly** rather than via their `npm run`
@@ -82,7 +86,7 @@ just what you changed instead of the whole driver — the label linter takes a f
 npx tsx scripts/review-graphql-labels.ts regression/suites/Backend/graphql/
 ```
 
-(Verified: scans 14 files / 267 runner-native cases, exit 0 when balanced.) For
+(Verified: scans 16 files / 300 runner-native cases, exit 0 when balanced.) For
 non-GraphQL CSV edits, re-run the `td-refs` and `suites:lint` checks:
 `node .claude/skills/run-vc-mcp-testing-module/driver.mjs td-refs suites`.
 

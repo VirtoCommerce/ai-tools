@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 20 skills organized in 3 category groups. Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 26 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -91,6 +91,13 @@
 │       ├── defect-lifecycle-workflow.md
 │       └── defect-report-templates.md
 │
+├── development/                     # Development (5) — used by the developers/ team in /qa-fix
+│   ├── dotnet-unit-test/            # Reproduce a backend bug as a failing xUnit test (red)
+│   ├── dotnet-fix/                  # Minimal .NET 10 fix → green
+│   ├── angular-admin/               # Fix a module's Admin SPA (AngularJS) UI (scratch-harness red→green)
+│   ├── vue-unit-test/               # Reproduce a vc-frontend bug as a failing vitest test (red)
+│   └── vue-fix/                     # Minimal Vue 3 / TS fix → green
+│
 └── README.md                        # This file
 ```
 
@@ -153,6 +160,21 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-test-cases-generator` | Generate agent-native test cases in enriched CSV format from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
+
+## Development (5) — `development/`
+
+Manual invocation, used by the **developers/** team in `/qa-fix` (the only write-capable team). One
+test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path.
+
+| Skill | Invoked by | Purpose | Supporting Files |
+|-------|-----------|---------|-----------------|
+| `/dotnet-unit-test` | fullstack-backend | Reproduce a VC backend bug as a failing xUnit test (red) | xunit-patterns.md |
+| `/dotnet-fix` | fullstack-backend | Minimal, idiomatic .NET 10 fix → green; build+test gate | fix-patterns.md, dotnet10-best-practices.md |
+| `/angular-admin` | fullstack-backend | Fix a module's Admin SPA (AngularJS) UI in-repo; red→green via uncommitted Node scratch harness | angular-patterns.md, scratch-harness-patterns.md |
+| `/vue-unit-test` | fullstack-frontend | Reproduce a vc-frontend storefront bug as a failing vitest test (red); `@vue/test-utils` + `effectScope` | vitest-patterns.md |
+| `/vue-fix` | fullstack-frontend | Minimal, idiomatic Vue 3 / TS fix → green; vue-tsc + lint + vitest + build gate | vue-fix-patterns.md, vue3-best-practices.md |
+
+> `/storybook-test` (UI-kit Storybook play-function interaction tests) is planned/optional — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent.
 
 ## Dependency Graph
 

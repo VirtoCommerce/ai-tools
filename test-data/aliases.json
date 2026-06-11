@@ -1,8 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.14",
-    "updated": "2026-06-09",
+    "version": "1.5.15",
+    "updated": "2026-06-10",
     "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
     "changelog_1_5_9": "Added LOCKOUT_TEST_USERS inline alias (5 dedicated AGENT-TEST lockout accounts created on vcst-qa 2026-05-29 via POST /api/platform/security/users/create): sf (Customer, 71b4ca11…, suite 031 AUTH-070), admin (Administrator, 6e9987d1…, 020 PLAT-081), unlock (Administrator, af55646a…, 020 PLAT-082), manager (Manager, 44a2978b…, 020 PLAT-083 / VCST-4999), target (Administrator, 1d90a31b…, 049 API-036). Self-provisioned throwaway accounts, teardown-swept by AGENT-TEST prefix; passwords set by SETUP blocks (not stored in aliases). Verified lock/unlock contract: admin /lock -> lockoutEnd 9999-12-31 sentinel + /locked{locked:true}; /unlock -> lockoutEnd 0001-01-01 + /locked{locked:false}; failed-login (5x bad token) auto-lock -> finite timed lockoutEnd + accessFailedCount reset to 0. See alias _comment for full contract.",
     "changelog_1_5_8": "Added PROD_VARIATION_PARENT_SALE alias (test-data/products/standard.csv STD-002 — SKU EKJ-76373636 / id e5c00858-be87-4df6-9a43-f68341e86c9a, AUTOMET Womens V Neck T Shirts, $17.99 list / $13.99 actual USD, hasVariations=true, availableQuantity=4677, hosting catalog 431d6cd4… linked into B2B virtual catalog fc596540…). Discovered 2026-05-29 via xAPI products() filter on code+B2B subtree as ORG_USER (Emily Johnson / TechFlow). Use for xCatalog variation-parent / sale-pricing / B2B-virtual-catalog-link tests.",
@@ -21,6 +21,7 @@
     "changelog_1_4_6": "Locked IMP-049 VERIFY assertions on first run (2026-05-14, qa-testing-expert, Firefox MCP, vcst-qa, platform 3.1026.0, theme vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2). Observed contracts — Blocked: HTTP 200 with valid Bearer token (sub=blocked, vc_operator_user_id=operator); storefront frontend wipes auth and redirects to /blocked; operator session is DESTROYED as a side effect. Invited: HTTP 200 with valid Bearer token (sub=invited, vc_operator_user_id=operator); silent success, lands on Home, operator chip + 'Back to {operator}' revert button visible in header. SECURITY GAP confirmed via REST cross-check: platform /connect/token grant_type=impersonate has NO status-based gate — direct REST callers with platform:security:loginOnBehalf permission can mint a usable 30-min Bearer for Locked OR Invited targets, bypassing the storefront UI's /blocked enforcement entirely. Full contract evidence at tests/Sprint-current/VCST-4906/evidence/imp-049/ and report at tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md.",
     "changelog_1_5_0": "Post-restore (2026-05-15) status flags applied to CFG_* aliases. Affected: 28 CFG entries got _status field (shape-drift / weak-match / needs-reseed / new-survivor / unchanged). Added 3 new aliases for restored-env survivors (CFG_BED c7205a92…, CFG_BIKE_TEXT 05a8b8a5…, CFG_WEDDING_CAKE_VINTAGE c94d730a…) — these are inline (no CSV row) since they were not in the original test data. Catalog root reverted to fc596540864a41bf8ab78734ee7353a3 (the 2026-04-30 migration to 9238c387… rolled back by restore). The BOPIS testProductCatalogId reference to 9238c387… is now STALE and should be updated to fc596540… in a follow-up. 5 CFG products fully alive with matching GUIDs (Hat 38dbe95c, T-shirt 50529b79, Vintage Hoodie 4b1de1b0, Bike with options f16d3e8f, Off-Road Bike 958d0762) — 4 with shape drift (sections differ from CSV spec). 24 CFG products gone — needs-reseed flag indicates which need a fresh seed PR (Laptop, Ring, Giftbox, conditional cascades CFG-022..029). Full mapping rationale: tests/reseed-2026-05-18/cfg-alias-mapping-proposal.md.",
     "changelog_1_5_2": "Phase 1 CFG reseed complete: CFG-012/014/015/016/018 now have working products in vcst-qa with new GUIDs (da3f85bb, ae791be7, 3b0052b9, 37d2f9ae, 03f6007c respectively). All have configurations with 1 Product-type section + 2-4 options. Parent products linked into VIRTUAL_CATALOG_B2B and storefront-visible (isAvailable=true, isBuyable=true). Child option products have inventory in ffc-acme-eur-berlin-de with status=Enabled. Aliases that reference these 5 CFGs now resolve correctly. Pricelist SEED-20260518-Configurables-USD assigned to B2B-store. Aliases touched: . Phase 2 (multi-section CFG-006/013/020/021) and Phase 3 (conditional cascades CFG-022..029) deferred to follow-up PR.",
+    "changelog_1_5_15": "Added COUPON_SUPER alias (COU-024 — code='super', stored lowercase, promo 'Test 100%', no endDate, no threshold). Used by CPN-015 (updated) and CPN-062 (new) as the canonical lowercase-stored coupon for VCST-5233 regression guard: coupon-item.vue toUpperCase() bug forces display/clipboard to 'SUPER' instead of stored 'super'; ValidateCoupon is case-sensitive — 'SUPER' validates false, 'super' validates true.",
     "changelog_1_5_12": "qa-seed-data full seed 2026-06-01: added SEED_20260529_OOS (OOS-PRODUCT-001 / 3c2b9e0c-2a1d-4757-96db-a6905efbfb9a), SEED_20260529_LOW_STOCK (no explicit low-stock row in 20260529 results — added PROD_VARIATION_PARENT_SALE for variation/sale-price tests; added SEED_20260601_PL_USD inline alias mapping priceListId to AGENT-TEST-PL-USD-20260601 for tier-price test lookup). OOS_SKU env var repointed to OOS-PRODUCT-001, TIER_PRICED_SKU to CISCO-SW24-001, PACK_SIZE_SKU to BULK-PAPER-001. VC Seed - Full collection (15325423-2b27f8bf) updated: added ID-chaining test scripts, inventoryStatus=Enabled, B2B virtual-catalog link, tiered pricing, low-stock product (AGENT-TEST-LOWSTK-20260601 SKU), EUR price list with B2B-EU-store assignment."
   },
   "CFG_LAPTOP": {
@@ -678,6 +679,18 @@
       "promo_name": "promo_name",
       "id": "coupon_id"
     }
+  },
+  "COUPON_SUPER": {
+    "file": "promotions/coupons",
+    "filter": {
+      "coupon_id": "COU-024"
+    },
+    "fields": {
+      "code": "code",
+      "promo_name": "promo_name",
+      "id": "coupon_id"
+    },
+    "_notes": "COU-024 'Test 100%' promotion, code='super' (stored lowercase). No endDate, no cart-subtotal threshold. Used by CPN-015 and CPN-062 as the canonical lowercase-stored coupon for VCST-5233 case-fidelity regression. toUpperCase() in coupon-item.vue force-uppercases to 'SUPER' on /account/coupons — the bug this alias guards against. ValidateCoupon is case-sensitive: 'SUPER' -> false, 'super' -> true."
   },
   "LOYALTY_SETTINGS": {
     "_inline": true,

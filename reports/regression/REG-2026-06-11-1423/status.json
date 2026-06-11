@@ -1,0 +1,52 @@
+{
+  "runId": "REG-2026-06-11-1423",
+  "started": "2026-06-11T12:23:37.804Z",
+  "selection": "cart + 050b5",
+  "env": "vcst-qa",
+  "build": {
+    "platform": "3.1035.0",
+    "xcart": "3.1019.0-pr-124-89a6"
+  },
+  "suites": {
+    "050b5": {
+      "name": "GraphQL xCart Validation",
+      "layer": "graphql-runner",
+      "state": "passed",
+      "tests": 7,
+      "result": "7/7",
+      "completed": "2026-06-11T12:25:41.400Z"
+    },
+    "028": {
+      "name": "Cart Core",
+      "browser": "playwright-chrome",
+      "state": "completed",
+      "tests": 47,
+      "result": "37P/2F/8B",
+      "fail": [
+        "CART-036",
+        "CART-073"
+      ],
+      "completed": "2026-06-11T13:02:19.788Z"
+    },
+    "029": {
+      "name": "Cart Validation & Persistence",
+      "browser": "playwright-edge",
+      "state": "completed",
+      "tests": 32,
+      "result": "12P/1F/19B",
+      "fail": [
+        "CART-047"
+      ],
+      "completed": "2026-06-11T12:43:01.406Z"
+    },
+    "030": {
+      "name": "Cart Merge",
+      "browser": "playwright-firefox",
+      "state": "completed-degraded",
+      "tests": 17,
+      "result": "2P/0F/15B (firefox quirk)",
+      "note": "15 blocked by firefox stability quirk — re-running on edge",
+      "completed": "2026-06-11T12:44:32.884Z"
+    }
+  }
+}

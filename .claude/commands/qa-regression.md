@@ -1,5 +1,5 @@
 ---
-description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
+description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Correlates App Insights logs for the run window. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
 argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|01,04,06] [--autonomous] [--seed=...] [--teardown] [--no-plan]"
 disable-model-invocation: true
 ---
@@ -122,6 +122,9 @@ Create `REG-YYYY-MM-DD-HHMM` and output directory `reports/regression/{RUN_ID}/`
 Write `reports/regression/test-run-status.json` with all suites in `pending` state.
 
 ### Step 4 — Dispatch Sub-Agents in Batches of 3
+
+**Record the run window start** — note the current timestamp before the first batch dispatch. The interval from here until the last batch completes defines the App Insights correlation window used in Step 5.5.
+
 With 3 browser slots (playwright-chrome, playwright-firefox, playwright-edge):
 1. Pick next 3 pending suites (P0 first, then P1, then P2)
 2. Assign each a browser slot
@@ -135,11 +138,21 @@ With 3 browser slots (playwright-chrome, playwright-firefox, playwright-edge):
 - Free browser slots and dispatch next batch
 - On environment unreachable: stop all remaining suites
 
+### Step 5.5 — Correlate App Insights logs (run window)
+
+Catch backend errors the suites *triggered but didn't surface* — 5xx, failed dependencies, server exceptions, GraphQL `errors[]` inside a 200. This reuses `/qa-monitoring`'s machinery scoped to the run window: **query → dedup → triage**, no separate live-repro phase (the suite agents were already live — an error in-window *is* the repro). Applies in both standard and `--autonomous` modes.
+
+1. **Pre-flight.** Confirm App Insights access as `/qa-monitoring` Phase 0 does (Azure MCP `applicationinsights`, **or** `APPINSIGHTS_APP_ID_*` + `APPINSIGHTS_API_KEY_*` set). If neither is configured → **skip with a one-line note**; never block the run on it.
+2. **Query the window.** Run the probe queries from `ci/monitoring/queries/` over the Step 4 window (relative `ago()` covering first dispatch → last batch complete, +2 min buffer). Query both layers (regression spans frontend + backend suites); resolve each resource from `APPINSIGHTS_*` env vars, never hardcode.
+3. **Dedup + triage.** Classify signatures against `reports/monitoring/.seen-fingerprints.json` (**read-only** — do not persist; the run window must still surface SEEN-stable errors that fired during it). Cap triage at `MONITOR_MAX_SIGNALS` (default 15) by occurrence and **log deferrals** (no silent truncation). Delegate interpretation to `qa-backend-expert` + `ci/agents/monitor-triage-agent.md`: `REAL_BUG | KNOWN_ISSUE | NOISE | CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence. When ambiguous, prefer NEEDS_REVIEW.
+4. **Attribute where possible.** Correlate signal timestamps to the batch/suite running at that moment so the report can name a likely owning suite. A HIGH-confidence `REAL_BUG` is a finding even when every suite reported PASS (the UI checks missed a backend error). Do NOT draft a separate `BUG-AI-*` monitoring report — fold into the run's Bugs Found section (Step 6).
+
 ### Step 6 — Consolidate Report
 Write `reports/regression/regression-YYYY-MM-DD.md` with:
 - Executive summary (suites run/passed/failed, pass rate)
 - Suite-by-suite results table
-- Bugs found
+- Bugs found (include App Insights-correlated `REAL_BUG` signals, attributed to a suite where possible)
+- App Insights (run window): correlated signal counts (real_bug / needs-review / dismissed), deferrals; reference telemetry by portal link. Skip if unconfigured
 - Retry log
 - Detailed results per suite
 
@@ -206,3 +219,4 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - **Sprint-plan precedence:** When selection is `sprint`, `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
 - **Plan-driven runs are still validated against the manifest** — every `suitesActivated[]` ID must exist in `config/test-suites.json` (warn and drop unknowns rather than failing the run).
 - **No silent fallback:** if `sprint:XX-YY` is pinned but the plan file is missing, abort with a clear error instructing the user to run `/qa-test-plan {XX-YY}` first or add `--no-plan`.
+- **App Insights correlation (Step 5.5)** reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the run window — **no separate live-repro phase**. Resolve resources from `APPINSIGHTS_*`, never hardcode; cap + log deferrals; skip gracefully (don't block the run) when App Insights is unconfigured. Correlated `REAL_BUG` signals fold into Bugs Found — no duplicate `BUG-AI-*` draft.

@@ -199,14 +199,14 @@ Body: {""topic"": ""AGENT-TEST-push016"", ""shortMessage"": ""AGENT-TEST-push016
 [ERRORS label=read_back] errors[] empty
 [COUNT label=read_back] data.pushMessages.totalCount = 0","[ROUNDTRIP label=read_back] totalCount=0 after clearAllPushMessages — all messages removed for this user
 [CONSOLE] no JS errors","errors[] non-empty on clear_all, clearAllPushMessages returns false, messages still returned after clear, totalCount unchanged after mutation",none,COV-2026-06-09-push GAP-001,Automated
-PUSH-026,Authorization Boundary — Storefront Customer Token Cannot Call Platform Push Notifications,API > Push Messages > Authorization,Critical,BL-NOTIF-001,ECL-7.3,"Storefront customer token (ORG_USER, storeId={{STORE_ID}}) must NOT be authorized for the platform push-notifications admin endpoint — expect HTTP 403.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","[AUTH role=ORG_USER]
+PUSH-026,Authorization Boundary — Storefront Customer Token Cannot Create Push Messages via Admin API,API > Push Messages > Authorization,Critical,BL-NOTIF-001,ECL-7.3,"Storefront customer token (ORG_USER, storeId={{STORE_ID}}) must NOT be authorized to create push messages via the module admin endpoint POST /api/push-message — expect HTTP 403 (authenticated but lacking the module permission). NOTE: /api/platform/pushnotifications is the Platform self-notification feed ([Authorize] = any principal) and correctly returns 200 — it is NOT an authz boundary.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","[AUTH role=ORG_USER]
 [REST-OP platform_push]
-POST /api/platform/pushnotifications
+POST /api/push-message
 Content-Type: application/json
-Body: {""title"": ""AGENT-TEST-authz-probe"", ""message"": ""authz probe""}
+Body: {""topic"": ""AGENT-TEST-authz-probe"", ""shortMessage"": ""authz probe"", ""status"": ""Draft""}
 [REST-EXEC platform_push]","[ERRORS label=platform_push] HTTP 403","[ADMIN] confirm no notification created by the failed call — admin Push Messages list unchanged
-[CONSOLE] no JS errors from REST call","HTTP 200 from platform endpoint using storefront token (authorization failure), HTTP 401 instead of 403 (wrong boundary signal), notification actually delivered despite 403 status",none — no message was created,COV-2026-06-09-push GAP-002,Automated
-PUSH-027,E2E Cross-Layer — Admin Sends Targeted Push; Recipient Receives and Reads via xAPI,E2E > Push Messages > End-to-End Delivery,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Admin creates a Sent push directly (status:Sent in POST body — there is no /send subendpoint) targeting ORG_USER member; ORG_USER reads it via xAPI and marks it read.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN ---
+[CONSOLE] no JS errors from REST call","HTTP 200/201 from /api/push-message using storefront token (real authorization gap — escalate), HTTP 404/405 (wrong endpoint or method, not an authz signal), message actually created despite 403 status",none — no message was created,COV-2026-06-09-push GAP-002,Automated
+PUSH-027,E2E Cross-Layer — Admin Sends Targeted Push; Recipient Receives and Reads via xAPI,E2E > Push Messages > End-to-End Delivery,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Admin creates a Sent push directly (status:Sent in POST body — there is no /send subendpoint) targeting ORG_USER member; ORG_USER reads it via xAPI and marks it read. ASYNC-DELIVERY: per-recipient inbox projection is asynchronous — a just-created Sent message is NOT guaranteed in the recipient xAPI inbox synchronously (verified 2026-06-09: probe_inbox returns null immediately after create). RUNNER-MANUAL — re-query the inbox after a short delay / poll until the message appears before mark_read.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN ---
 [AUTH role=ADMIN]
 [REST-OP create_msg]
 POST /api/push-message
@@ -237,8 +237,8 @@ Body: {""topic"": ""AGENT-TEST-e2e-delivery"", ""shortMessage"": ""AGENT-TEST-e2
 [ERRORS label=verify_read] errors[] empty
 [DATA label=verify_read] data.pushMessages.items[?id={{RECEIVED_ID}}].isRead = true","[ADMIN] POST /api/push-message/search with statuses:[Sent] confirms message status=Sent
 [ROUNDTRIP label=verify_read] isRead=true confirmed for the delivered message
-[CONSOLE] no JS errors","create_msg returns 4xx/5xx, PUSH_MSG_ID null, probe_inbox cannot find message with AGENT-TEST-e2e-body shortMessage, mark_read errors[] non-empty, isRead still false in verify_read",none — Sent message is not deletable (AGENT-TEST-prefixed; leave in system),COV-2026-06-09-push GAP-003,Automated
-PUSH-028,xAPI GraphQL — pushMessages Query Filters (unreadOnly / keyword / sort / cursor paging),GraphQL > Push Messages > Filters,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 2 Sent AGENT-TEST pushes to ORG_USER so keyword/sort/paging have at least 2 messages and a known keyword to match; store-user token requires storeId.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) two messages ---
+[CONSOLE] no JS errors","create_msg returns 4xx/5xx, PUSH_MSG_ID null, probe_inbox cannot find message with AGENT-TEST-e2e-body shortMessage, mark_read errors[] non-empty, isRead still false in verify_read",none — Sent message is not deletable (AGENT-TEST-prefixed; leave in system),COV-2026-06-09-push GAP-003,needs-review
+PUSH-028,xAPI GraphQL — pushMessages Query Filters (unreadOnly / keyword / sort / cursor paging),GraphQL > Push Messages > Filters,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 2 Sent AGENT-TEST pushes to ORG_USER so keyword/sort/paging have at least 2 messages and a known keyword to match; store-user token requires storeId. ASYNC-DELIVERY: the keyword/count assertions over the just-seeded messages are delivery-timing-dependent (verified 2026-06-09: keyword_filter totalCount=0 immediately after seed — per-recipient delivery is async). RUNNER-MANUAL — poll inbox until both seeds appear before the keyword/sort/paging block. Structural filters (unreadOnly / sort / cursor-paging) over the pre-existing inbox are synchronous and pass.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) two messages ---
 [AUTH role=ADMIN]
 [REST-OP seed_a]
 POST /api/push-message
@@ -287,14 +287,8 @@ Body: {""topic"": ""AGENT-TEST-filter-b"", ""shortMessage"": ""AGENT-TEST-filter
 [DATA label=page_one] data.pushMessages.pageInfo.hasNextPage = true
 [ERRORS label=page_two] errors[] empty
 [DATA label=page_two] data.pushMessages.items.0.id is non-null","[ROUNDTRIP label=page_two] items on page 2 are different from items on page 1 (no duplicates)
-[CONSOLE] no JS errors","errors[] non-empty on any filter op, unreadOnly=true returns read messages, keyword filter returns messages not matching keyword, page 2 cursor returns same items as page 1, HTTP 401",none — seeds are AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-004,Automated
-PUSH-030,E2E — trackNewRecipients Toggle: tracking flag flips without error and inbox count never decreases,E2E > Push Messages > Recipient Tracking,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Seeds a Sent tracked push to EUR_USER (isolated agent-pool account), toggles trackNewRecipients on/off via PUT /api/push-message/{id}/tracking/{bool}, and confirms inbox count does not increase after tracking is disabled. storeId required for storefront token.","back_url={{BACK_URL}}, store_id={{STORE_ID}}","--- DISCOVER recipient member ---
-[AUTH role=ORG_USER]
-[GQL-OP me]
-  query { me { id } }
-[GQL-EXEC me]
-[GQL-CAPTURE me.data.me.id → RCPT_MEMBER_ID]
---- ADMIN: seed a Sent tracked push and enable tracking ---
+[CONSOLE] no JS errors","errors[] non-empty on any filter op, unreadOnly=true returns read messages, keyword filter returns messages not matching keyword, page 2 cursor returns same items as page 1, HTTP 401",none — seeds are AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-004,needs-review
+PUSH-030,E2E — trackNewRecipients Toggle: tracking flag flips without error and inbox count never decreases,E2E > Push Messages > Recipient Tracking,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Seeds a Sent tracked push to ORG_USER (member {{ORG_USER_ID}}), toggles trackNewRecipients on/off via PUT /api/push-message/{id}/tracking/{bool}, and confirms inbox count does not increase after tracking is disabled. storeId required for storefront token.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN: seed a Sent tracked push and enable tracking ---
 [AUTH role=ADMIN]
 [REST-OP seed_tracked]
 POST /api/push-message
@@ -319,8 +313,7 @@ PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/false
 [AUTH role=ORG_USER]
 [GQL-OP inbox_off]
   query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id } } }
-[GQL-EXEC inbox_off]","[ERRORS label=me] errors[] empty
-[ERRORS label=seed_tracked] HTTP 200
+[GQL-EXEC inbox_off]","[ERRORS label=seed_tracked] HTTP 200
 [DATA label=seed_tracked] body.id is non-null
 [ERRORS label=set_track_on] HTTP 200
 [ERRORS label=inbox_on] errors[] empty
@@ -401,7 +394,7 @@ DELETE /api/push-message?ids={{SENT_ID}}
 GET /api/push-message/{{SENT_ID}}
 [REST-EXEC verify_still_there]","[ERRORS label=seed_sent] HTTP 200
 [DATA label=seed_sent] body.id is non-null
-[DATA label=delete_sent] data.status >= 400
+[ERRORS label=delete_sent] HTTP 500
 [ERRORS label=verify_still_there] HTTP 200
 [DATA label=verify_still_there] body.status = Sent","[ADMIN] Sent message still exists in admin list after the failed delete
 [CONSOLE] no JS errors from REST calls","delete_sent returns HTTP 200 (deletion of Sent message allowed — business rule violation), message deleted after delete_sent succeeds","none — Sent message must remain in system; HTTP 500 on delete is a known defect (should be 4xx)",COV-2026-06-09-push GAP-010,Automated

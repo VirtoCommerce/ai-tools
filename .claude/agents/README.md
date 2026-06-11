@@ -1,6 +1,6 @@
 # Agent System — Virto Commerce QA & BA
 
-Two agent teams for the Virto Commerce platform: **QA** (quality assurance) and **BA** (business analysis).
+Three agent teams for the Virto Commerce platform: **QA** (quality assurance), **BA** (business analysis), and **Developers** (the only write-capable team — bug auto-fix via `/qa-fix`).
 
 ## Quick Start
 
@@ -43,17 +43,20 @@ Team framework: `.claude/agents/ba/shared-instructions.md`.
 | **ba-story-writer** | sonnet | yellow | Agile user stories with BDD acceptance criteria |
 | **ba-doc-writer** | sonnet | indigo | Audience-targeted docs — Customer / Admin / Developer / Sales (per `knowledge/virto-doc-style.md`) |
 
-### Developers Team (2 agents + shared-instructions)
+### Developers Team (4 agents + shared-instructions)
 
 The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). The QA
 team stays read-only on GitHub. Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`); reuses
-`ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. Gate ladder:
+`ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. **One developer +
+one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 `.claude/rules/quality-gates.md`. **Never auto-merges.** No browser.
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
-| **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Extensible: a `fullstack-frontend` (vc-frontend/Vue) is the planned next member. |
-| **backend-reviewer** | opus | blue | Reviews the local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
+| **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
+| **backend-reviewer** | opus | blue | Reviews the C#/Angular local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
+| **fullstack-frontend** | opus | cyan | Fixes the `vc-frontend` storefront — Vue 3 / TS / Vite + the in-repo UI kit + Storybook. Reproduce-as-vitest-test → minimal fix → PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix` (`/storybook-test` optional). |
+| **frontend-reviewer** | opus | blue | Reviews the Vue/TS local diff before the PR (Gate 4): single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
 
 ---
 

@@ -31,7 +31,7 @@ interface Classification {
   path: string;
   applicability: Applicability;
   rationale: string;
-  category: "agent-qa" | "agent-ba" | "agent-shared" | "knowledge";
+  category: "agent-qa" | "agent-ba" | "agent-dev" | "agent-shared" | "knowledge";
 }
 
 // --- Hand-classified mapping ---
@@ -60,9 +60,13 @@ const CLASSIFICATIONS: Classification[] = [
   { path: ".claude/agents/qa/autonomous-test-runner.md", category: "agent-qa", applicability: "universal",
     rationale: "Autonomous variant of test-runner-agent. Same parameterized template pattern." },
 
-  // Shared (1)
+  // Shared instructions (3) — one per team
   { path: ".claude/agents/qa/shared-instructions.md", category: "agent-shared", applicability: "reference",
     rationale: "Four-layer agent architecture template — universal pattern. But agent-pool table at line 210 (slot 1/2/3 with @td(AGENT_POOL_SLOT_N.*) refs) shows vcst values as 'reference'. Customer fills agent-user-pool.csv." },
+  { path: ".claude/agents/ba/shared-instructions.md", category: "agent-shared", applicability: "universal",
+    rationale: "BA-team framework — VirtoOZ-first sourcing, the four documentation audiences, no-hardcode + external-write discipline, output policy. Pure BA craft/process, no vcst-specific assumptions." },
+  { path: ".claude/agents/developers/shared-instructions.md", category: "agent-shared", applicability: "reference",
+    rationale: "Developers-team framework — write-token discipline, CLA commit identity, gate ladder, escalation/reporting. Universal pattern; the GITHUB_FIX_BUGS_TOKEN binding + repo allowlist are env/data (ci/config/fix-repos.json)." },
 
   // BA agents (4)
   { path: ".claude/agents/ba/ba-system-analyzer.md", category: "agent-ba", applicability: "universal",
@@ -74,7 +78,17 @@ const CLASSIFICATIONS: Classification[] = [
   { path: ".claude/agents/ba/ba-doc-writer.md", category: "agent-ba", applicability: "universal",
     rationale: "User-facing docs + admin guides. Pure docs craft." },
 
-  // Knowledge files (24)
+  // Developers agents (4) — the only write-capable team, used by /qa-fix
+  { path: ".claude/agents/developers/fullstack-backend.md", category: "agent-dev", applicability: "universal",
+    rationale: ".NET 10 + Angular + xUnit/Jasmine fix workflow against vc-module-* / vc-platform repos via local git/gh. Repo allowlist is data; universal across VC customers." },
+  { path: ".claude/agents/developers/backend-reviewer.md", category: "agent-dev", applicability: "universal",
+    rationale: "C#/Angular Gate-4 review discipline against VC business invariants + .NET 10 best practices. Universal." },
+  { path: ".claude/agents/developers/fullstack-frontend.md", category: "agent-dev", applicability: "universal",
+    rationale: "Vue 3 / TS + vitest/@vue/test-utils + Storybook fix workflow against vc-frontend via local git/gh. Repo allowlist is data; universal across VC storefront forks." },
+  { path: ".claude/agents/developers/frontend-reviewer.md", category: "agent-dev", applicability: "universal",
+    rationale: "Vue 3 / TS Gate-4 review discipline against BL-UI invariants + Vue 3 best practices. Universal." },
+
+  // Knowledge files (26)
   { path: ".claude/agents/knowledge/api-auth.md", category: "knowledge", applicability: "universal",
     rationale: "VC platform OAuth2 token endpoint pattern. Same for every VC deployment." },
   { path: ".claude/agents/knowledge/browser-quirks.md", category: "knowledge", applicability: "universal",
@@ -121,6 +135,10 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "CSV column / step / assertion tag reference. Format spec, universal." },
   { path: ".claude/agents/knowledge/vc-bug-catalog.md", category: "knowledge", applicability: "reference",
     rationale: "Historical VC bug patterns indexed by domain. Customer reads as 'Familiar Problems' oracle but VC-specific entries (VCST-NNNN refs) are vcst's history. Useful learning artifact, adapt for customer's." },
+  { path: ".claude/agents/knowledge/vc-module-architecture.md", category: "knowledge", applicability: "reference",
+    rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the auto-fix pipeline. Universal PATTERN; repo list + routing are data (ci/). Customer adapts to their module set." },
+  { path: ".claude/agents/knowledge/vc-frontend-architecture.md", category: "knowledge", applicability: "reference",
+    rationale: "vc-frontend storefront repo anatomy + Vue 3 / TS / vitest / @vue/test-utils / Storybook conventions for the auto-fix pipeline. Applicable to stock vc-frontend; customer with a custom storefront adapts." },
   { path: ".claude/agents/knowledge/white-labeling.md", category: "knowledge", applicability: "reference",
     rationale: "Storefront white-labeling feature reference. Customer's branding differs." },
 ];
@@ -235,6 +253,7 @@ const report = `# Agents + Knowledge Files — Customer Applicability Audit — 
 |----------|-----------|-----------|--------------|
 | QA agents | ${byCategoryAndApp["agent-qa"]?.universal ?? 0} | ${byCategoryAndApp["agent-qa"]?.reference ?? 0} | ${byCategoryAndApp["agent-qa"]?.["vcst-specific"] ?? 0} |
 | BA agents | ${byCategoryAndApp["agent-ba"]?.universal ?? 0} | ${byCategoryAndApp["agent-ba"]?.reference ?? 0} | ${byCategoryAndApp["agent-ba"]?.["vcst-specific"] ?? 0} |
+| Developers agents | ${byCategoryAndApp["agent-dev"]?.universal ?? 0} | ${byCategoryAndApp["agent-dev"]?.reference ?? 0} | ${byCategoryAndApp["agent-dev"]?.["vcst-specific"] ?? 0} |
 | Shared instructions | ${byCategoryAndApp["agent-shared"]?.universal ?? 0} | ${byCategoryAndApp["agent-shared"]?.reference ?? 0} | ${byCategoryAndApp["agent-shared"]?.["vcst-specific"] ?? 0} |
 | Knowledge files | ${byCategoryAndApp["knowledge"]?.universal ?? 0} | ${byCategoryAndApp["knowledge"]?.reference ?? 0} | ${byCategoryAndApp["knowledge"]?.["vcst-specific"] ?? 0} |
 

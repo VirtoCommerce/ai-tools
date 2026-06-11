@@ -3,7 +3,7 @@
 ## Status: FIXED — verified on vcst-qa 2026-06-08 ([VCST-5210](https://virtocommerce.atlassian.net/browse/VCST-5210))
 
 ## Resolution
-- **Fixed in:** module `VirtoCommerce.PushMessages 3.1001.0-pr-24-433d` (PR [#24](https://github.com/VirtoCommerce/vc-module-push-messages/pull/24), commit `433d13b`) — deployed to vcst-qa, confirmed loaded in Admin → Modules. **PR still OPEN — pending human review/merge (Gate 7).**
+- **Fixed in:** module `VirtoCommerce.PushMessages 3.1001.0-pr-24-433d` (PR [#24](https://github.com/VirtoCommerce/vc-module-push-messages/pull/24), commit `433d13b`) — deployed to vcst-qa, confirmed loaded in Admin → Modules. **PR #24 MERGED to `dev` 2026-06-09 17:49 UTC** (merge commit `3adb552`).
 - **Verified:** 2026-06-08 via active trigger (3 identical Admin pushes to one org) + App Insights `fcm.googleapis.com` dependency analysis. Stale-token 404 count decayed **17 → 3 → 0** across the three sends; pre-deploy baseline held steady at 102×404 with no decay. Healthy tokens preserved (push #2 `200` succeeded); no exceptions during the window.
 - **Method:** terminal per-token errors (`Unregistered`/`InvalidArgument`) now pruned via existing `IFcmTokenService.DeleteAsync`; transient errors still logged, not deleted.
 - **Evidence:** `tests/Sprint26-11/VCST-5210/` (verification-report.md + screenshots 01–06).
@@ -62,6 +62,14 @@ foreach (var response in batchResponse.Responses.Where(x => !x.IsSuccess))
 - **Component / module:** Push Messages — `FcmPushMessageRecipientChangedEventHandler.SendFirebaseMessage`
 - **RCA anchor:** `src/VirtoCommerce.PushMessages.Data/Handlers/FcmPushMessageRecipientChangedEventHandler.cs` → `SendFirebaseMessage` (FirebaseAdmin 3.4.0 `SendEachForMulticastAsync`); token delete in `FcmTokenService` / `DeleteFcmTokenCommandHandler`
 - **Routing confidence:** HIGH
+
+## Cross-environment status (vcptcore-qa) — 2026-06-09
+Reproduced on **vcptcore-qa** via `/qa-bug VCST-5210 vcptcore-qa`. The defect is still live there because vcptcore-qa runs the **pre-fix** build.
+
+- **Deployed module:** `VirtoCommerce.PushMessages_3.1001.0-pr-23-fd01` (`vc-deploy-dev@vcptcore-qa` `backend/packages.json`) — PR #23, predates the fix `3.1001.0-pr-24-433d`. PR #24 **merged to `dev` 2026-06-09 17:49 UTC** (commit `3adb552`) but is **not yet deployed to vcptcore-qa**.
+- **App Insights `vcptcore-qa` dependencies (14d):** `fcm.googleapis.com` **404 ×29 / 29 distinct ops** (01-Jun → 09-Jun, latest 09-Jun 17:22 UTC) + **200 ×8** (healthy recipients still succeed). **No paired `FirebaseMessagingException`** in `exceptions` — identical catch-and-log-only signature as vcst-qa.
+- **Recurrence, no decay:** daily 404 counts 9 (01-Jun) → 20 (09-Jun) — fresh bursts, opposite of the post-fix 17→3→0 decay observed on vcst-qa. Confirms the token is never pruned.
+- **Action:** deploy the merged fix to vcptcore-qa, then re-verify (`/qa-verify-fix VCST-5210` against `TEST_ENV=vcptcore`). Until then the dependency-404 noise continues on vcptcore-qa. No user-facing impact (Severity Low, unchanged).
 
 ## Related
 - VCST-4605 — different FCM defect (storefront service-worker registration 404; Done). Same subsystem, unrelated root cause/layer.

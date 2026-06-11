@@ -93,7 +93,7 @@
 - Logged in as registered user who has previously completed a successful CyberSource or Skyflow payment
 - A saved/tokenized card exists in the user's account (from prior payment — CyberSource or Skyflow both applicable; Skyflow saves cards per live-verified behavior 2026-06-04)
 - Cart has at least one item
-- CyberSource or Skyflow payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{RETURNING_USER_EMAIL}}, USER_PASSWORD={{RETURNING_USER_PASSWORD}}","[NAV] Log in as {{RETURNING_USER_EMAIL}} / {{RETURNING_USER_PASSWORD}} — a user with a previously saved card
+- CyberSource or Skyflow payment processor configured and active","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}","[NAV] Log in as {{USER_EMAIL}} / {{USER_PASSWORD}} — a user with a previously saved card (seed one via PAY-SKY-009 if the account has none — Skyflow saves the card after any successful cart payment)
 [ACT] Add at least one item to cart
 [NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for payment section to render
@@ -108,7 +108,7 @@
 [NAV] Order confirmation reached after clicking 'Place order' with saved card
 [DOM] Order confirmation shows order number","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Network request uses stored token — raw card PAN absent from all payloads
-[ADMIN] Order in admin shows payment method as stored card / tokenized reference","Saved card not shown after prior successful payment; user forced to re-enter full card details; raw card number visible in network payload; order fails with saved card; saved Skyflow card not presented inline on /cart","Cancel order via admin if created","Checklist #9 item 12; ECL-14.6; BL-PAY-003; BL-PAY-001; Synced: VCST-5009 PR#2308+PR#23 (2026-06-04)","Reviewed"
+[ADMIN] Order in admin shows payment method as stored card / tokenized reference","Saved card not shown after prior successful payment; user forced to re-enter full card details; raw card number visible in network payload; order fails with saved card; saved Skyflow card not presented inline on /cart; saved-card CVV re-entry creates a stray CVV-only vault record (POST) instead of updating the saved card record (PUT) — VCST-5009 / PR#2328 pre-fix symptom","Cancel order via admin if created","Checklist #9 item 12; ECL-14.6; BL-PAY-003; BL-PAY-001; Synced: VCST-5009 PR#2308+PR#23 (2026-06-04); PR#2328 (saved-card CVV re-entry binds skyflowID on the CVV element → PUT-updates existing record, not a stray POST), re-synced 2026-06-11","Reviewed"
 "PAY-SKTOK-001","Skyflow Tokenization - Raw Card PAN Absent from All Network Requests (Cart-Embedded)","Skyflow > Tokenization","Medium","BL-PAY-001, BL-PAY-002","ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
@@ -364,3 +364,25 @@ skyflow_cvv=@td(SKYFLOW_MC.cvv)","[NAV] navigate to {{FRONT_URL}}/cart; select '
 [DOM] MC + 3-digit CVV → valid, Place order enabled
 [DOM] CVV placeholder is brand-aware (1111-style for Amex, 111-style for MC)","[CONSOLE] No JS errors while switching brands/CVV values (known-benign Skyflow postMessage noise excluded)
 [STATE] No order created during the whole case (validation-only — /account/orders count unchanged)","Amex + 3-digit CVV shows valid and enables Place order (VCST-5202 symptom — generic ^[0-9]{3,4}$ regex); MC + 4-digit CVV accepted; CVV placeholder static '111' regardless of brand; brand icon fails to switch","none — no order created; [PRE:RESET_CART]","VCST-5202 (per-brand CVV validation bug — case currently failing by design); VCST-5009 (cart-embedded form); evidence tests/Sprint26-11/VCST-5009/amex-cvv-probe.md; DRY-RUN VERIFIED 2026-06-05: deterministic, fails at exactly the 3 expected red-by-design assertions, no order created; case fixes applied same day (conditional saved-cards clause, delivery-method gate step, Skyflow expiry data MM/YY)","Reviewed"
+"PAY-SKY-016","Skyflow - Saved-Card Payment With CVV Re-entry Updates Existing Vault Record (No Stray CVV-Only Record)","Skyflow > Saved Cards","High","BL-PAY-003, BL-CHK-004","ECL-14.6, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+- Logged in as a registered user who already has at least one saved Skyflow card (Skyflow saves the card after any successful cart payment — live-verified 2026-06-04). If the account has none, seed one by running PAY-SKY-009 (one successful Skyflow cart payment) first, then start this case.
+- Cart has at least one item
+- Skyflow configured with AllowCartPayment=true (vc-module-skyflow 3.1003.0+)
+- REGRESSION GUARD for VCST-5009 / vc-frontend PR#2328. Pre-fix, the CVV collect element had no skyflowID bound at creation, so collect() POSTed a new bare-CVV-only record to the vault instead of PUT-updating the saved card record — saved-card authorization then failed. The fix binds selectedSkyflowCard.skyflowId on the CVV element in initCvvForm and removes the post-collect cvvElement.update() workaround. PR#2328 ALSO calls registerPaymentProcessor(sendPaymentData) at the start of onMounted so Place-order routing no longer depends on Skyflow init completing first.","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] Navigate to {{FRONT_URL}}/cart; select a Delivery method (e.g. Fixed Rate Ground) so payment is the only remaining Place-order gate
+[ACT] Select 'Bank card (Skyflow)' payment method if not pre-selected
+[WAIT] Wait for the 'Select credit card' dropdown to render listing the user's saved Skyflow card (masked, e.g. 'Mastercard ending in 0015')
+[ACT] Select the SAVED card from the dropdown (do NOT choose 'Add new card')
+[ASSERT] Full card number / expiration fields are NOT shown — only the masked saved card plus a 'Security code' (CVV) re-entry field render
+[ACT] Open DevTools Network tab and start recording (capture Skyflow vault + createOrderFromCart requests)
+[ACT] Fill the 'Security code' (CVV) iframe field with '@td(SKYFLOW_MC.cvv)' (CVV 900 — happy-path)
+[WAIT] Wait for 'Place order' button to become enabled
+[ACT] Click 'Place order'
+[WAIT] Wait for payment processing and order confirmation
+[ASSERT] Payment SUCCEEDS — user navigated to order confirmation / /checkout/completed with an order number","[STATE] Saved Skyflow card selectable from the dropdown with only a CVV re-entry field (no full card fields re-shown)
+[NAV] Order confirmation reached after paying with the saved card + re-entered CVV — NO redirect to /checkout/payment for this cart-context saved-card flow
+[DOM] Order number visible on confirmation
+[STATE] Payment authorized using the saved card (not a freshly created card record)","[NETWORK] The Skyflow CVV collect request is an UPDATE against the saved card's existing vault record (PUT carrying the card's skyflowID) — NOT an INSERT (POST) that creates a new bare-CVV-only record
+[API] createOrderFromCart GraphQL mutation errors[] is empty
+[NETWORK] Raw card PAN absent from all payloads — only the Skyflow token / saved-card skyflowID reference is transmitted
+[ADMIN] Order in admin records the saved/tokenized card reference (no new card instrument created)","Saved-card payment fails or is declined after CVV re-entry (pre-fix VCST-5009 symptom); Skyflow vault receives a new stray CVV-only record via POST instead of a PUT update on the saved card; 'Place order' silently no-ops because no payment processor was registered on mount (registerPaymentProcessor not called); redirect to /checkout/payment for the cart-context saved-card flow; raw PAN visible in any network payload","Cancel order via admin","VCST-5009; vc-frontend PR#2328 (skyflowID bound on CVV element in initCvvForm; registerPaymentProcessor moved to onMounted start); BL-PAY-003; BL-CHK-004; Synced: VCST-5009 PR#2328 (2026-06-11)","Draft"

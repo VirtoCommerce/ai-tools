@@ -862,8 +862,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 17,
-      "estimatedMinutes": 12,
+      "testCount": 18,
+      "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
         "payment",
@@ -1229,7 +1229,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 30,
       "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1238,6 +1238,27 @@
         "xcart",
         "cross-domain",
         "schema-coverage",
+        "sprint"
+      ],
+      "customerApplicability": "universal"
+    },
+    {
+      "id": "050b5",
+      "name": "GraphQL xCart — Per-RuleSet Validation & Line-Item Validity",
+      "file": "regression/suites/Backend/graphql/050b5-graphql-xcart-validation.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 5,
+      "estimatedMinutes": 7,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "xcart",
+        "validation",
+        "regression-guard",
         "sprint"
       ],
       "customerApplicability": "universal"
@@ -2267,7 +2288,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 26,
       "estimatedMinutes": 28,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2352,6 +2373,7 @@
         "050b2",
         "050b3",
         "050b4",
+        "050b5",
         "050c",
         "050k"
       ]

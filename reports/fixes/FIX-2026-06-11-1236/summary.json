@@ -1,0 +1,43 @@
+{
+  "ticket": "VCST-5233",
+  "repo": "VirtoCommerce/vc-module-x-cart",
+  "kind": "module",
+  "branch": "claude/qa-autofix/VCST-5233",
+  "base": "dev",
+  "commit": "b3693555bef6d4aa54804522ef8085ea335c0a9f",
+  "commit_author": "Elena Mutykova <56412054+Lenajava1@users.noreply.github.com>",
+  "pr_url": "https://github.com/VirtoCommerce/vc-module-x-cart/pull/123",
+  "pr_title": "VCST-5233: Fix case-sensitive coupon matching in cart validation",
+  "merged": false,
+  "rerouted_from": "vc-frontend",
+  "files_changed": [
+    "src/VirtoCommerce.XCart.Core/CartAggregate.cs",
+    "tests/VirtoCommerce.XCart.Tests/Aggregates/CartAggregateTests.cs"
+  ],
+  "tests_added": [
+    "CartAggregateTests.ValidateCouponAsync_CaseInsensitiveMatch_CouponValidated",
+    "CartAggregateTests.Coupons_CaseInsensitiveMatch_ReportsAppliedSuccessfully"
+  ],
+  "gates": {
+    "G0_eligibility": "PASS",
+    "G1_single_repo": "PASS",
+    "G2_reproduce_red": "PASS",
+    "G3_fix_green": "PASS",
+    "G4_review": "APPROVE",
+    "G5_ci": "PASS",
+    "G6_e2e": "DEFERRED_POST_DEPLOY",
+    "G7_human_review": "OPEN_PR_NOT_MERGED"
+  },
+  "ci_checks": {
+    "ci": "pass",
+    "sonarcloud_qg": "pass",
+    "auto_tests_mysql": "pass",
+    "auto_tests_postgres": "pass",
+    "auto_tests_sqlserver": "pass",
+    "license_cla": "pass"
+  },
+  "jira_status": "Ready for test",
+  "confidence": "HIGH",
+  "root_cause": "Cart layer compared entered coupon code against stored canonical code ordinally at two sites in CartAggregate.cs while engine/DB match case-insensitively.",
+  "next_action": "/qa-verify-fix VCST-5233 after human merge + QA deploy"
+}

@@ -44,6 +44,9 @@ vc/shared/reports/test-lifecycle/TLC-*/**/*.jpg
 vc/shared/reports/coverage/COV-*/**/*.png
 vc/shared/reports/coverage/COV-*/**/*.har
 vc/shared/reports/coverage/COV-*/**/*.jpg
+tests/screenshots/*.png
+tests/screenshots/**/*.png
+*.png
 
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
