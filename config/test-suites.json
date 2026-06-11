@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-06-09",
-    "totalSuites": 103,
+    "totalSuites": 104,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2297,6 +2297,28 @@
         "admin",
         "sprint"
       ]
+    },
+    {
+      "id": "085",
+      "name": "Task Management",
+      "file": "regression/suites/Backend/task-management/085-task-management.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P2",
+      "testCount": 26,
+      "estimatedMinutes": 35,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "task-management",
+        "tasks",
+        "workflow",
+        "assignments"
+      ],
+      "requiresModules": [
+        "task-management"
+      ],
+      "customerApplicability": "reference"
     }
   ],
   "selections": {

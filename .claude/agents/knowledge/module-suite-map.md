@@ -43,6 +43,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Loyalty** | — | 075 | Customers → Loyalty | `/api/loyalty/` | — |
 | **Channels** | — | 076 | Catalog → Publishing, Data Quality | `/api/channels/` | — |
 | **xMarketing** | — | 079 | Marketing → xAPI Dynamic Content | — | xMarketing |
+| **Task Management** | — | 085 | Tasks app (`/apps/tasks`); Settings → Task management | `/api/task-management/` | — |
 | **Cross-cutting** | 042-048 | — | — | — | — |
 
 ## Selection Groups (module-based)
