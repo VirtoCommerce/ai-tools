@@ -11,7 +11,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-regression` | `[smoke\|critical\|sprint\|sprint:XX-YY\|full\|frontend\|backend\|IDs] [--no-plan]` | No | Run regression suites in parallel. `sprint` auto-resolves `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (falls back to static group with `--no-plan` or when no plan exists). |
 | `/qa-status` | `[run\|jira\|env]` | **Yes** | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | Reproduce, document, and optionally file a JIRA bug |
-| `/qa-fix` | `VCST-XXXX` | No | Autonomous fix of an already-filed bug: triage (Gate 0) → root-cause + single-repo route (Gate 1) → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Never auto-merges. Interactive twin of `ci/run-fix-cycle.ts`; reuses `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`. Delegates to the `developers/` team (`fullstack-backend`, `backend-reviewer`). Gate ladder: `.claude/rules/quality-gates.md` |
+| `/qa-fix` | `VCST-XXXX` | No | Autonomous fix of an already-filed bug: triage (Gate 0) → root-cause + single-repo route (Gate 1) → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Never auto-merges. Interactive twin of `ci/run-fix-cycle.ts`; reuses `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`. Delegates to the `developers/` team by repo kind — `fullstack-backend` + `backend-reviewer` (module/platform) or `fullstack-frontend` + `frontend-reviewer` (vc-frontend). Gate ladder: `.claude/rules/quality-gates.md` |
 | `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | No | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert → STOP for human. Detect-and-report only (never files JIRA / auto-fixes). Interactive twin of `ci/run-monitor.ts`; shares `ci/monitoring/queries/*.kql` + `ci/agents/monitor-triage-agent.md` + the fingerprint store. |
 | `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
@@ -25,7 +25,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (24) — `.claude/skills/` (grouped by category)
+## Skills (26) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -65,13 +65,17 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-sbtm` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | `session-based-testing.md` |
 | `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only. Twin of `ci/run-monitor.ts` | `SKILL.md` (KQL probe library + triage taxonomy + dedup model) |
 
-**`development/` — Development (3) — manual invocation (used by the `developers/` team in `/qa-fix`):**
+**`development/` — Development (5) — manual invocation (used by the `developers/` team in `/qa-fix`):**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
 | `/dotnet-unit-test` | _(invoked by `fullstack-backend`)_ | Reproduce a VC backend bug as a failing xUnit test (red), prove fix green; never edits existing tests | `xunit-patterns.md` |
 | `/dotnet-fix` | _(invoked by `fullstack-backend`)_ | Implement a minimal, idiomatic .NET 10 fix in one VC module → green; build+test gate | `fix-patterns.md`, `dotnet10-best-practices.md` |
 | `/angular-admin` | _(invoked by `fullstack-backend`)_ | Fix a module's Admin SPA (AngularJS) UI that ships inside the `vc-module-*` repo; red→green via uncommitted Node scratch harness (modules have no JS test harness) | `angular-patterns.md`, `scratch-harness-patterns.md` |
+| `/vue-unit-test` | _(invoked by `fullstack-frontend`)_ | Reproduce a vc-frontend storefront bug as a failing vitest test (red), prove fix green; `@vue/test-utils` for UI, `effectScope` for composables; never edits existing tests/stories | `vitest-patterns.md` |
+| `/vue-fix` | _(invoked by `fullstack-frontend`)_ | Implement a minimal, idiomatic Vue 3 / TS fix in vc-frontend → green; typecheck (`vue-tsc`) + lint + vitest + build gate | `vue-fix-patterns.md`, `vue3-best-practices.md` |
+
+> `/storybook-test` (UI-kit Storybook play-function interaction tests) is **planned/optional** — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent (vc-frontend has no play functions today).
 
 ## Usage
 

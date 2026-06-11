@@ -80,6 +80,16 @@ Invoke the development skills:
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
    origin claude/qa-autofix/VCST-XXXX` → `gh pr create` (a normal PR for human review — **not**
    auto-merged). Write `PR_BODY.md` (template below).
+9. **Verify CI (Gate 5) — don't assume green.** Poll the PR's checks (`gh pr checks`) until both
+   **`Module CI / ci`** (Build = `vc-build Compile`, **Unit Tests** = `vc-build Test`, SonarCloud
+   **Quality Gate**, and **Swagger validation** on PRs to `dev`) and **`Module CI / auto-tests`** (the
+   shared pytest **`graphql, restapi, e2e`** suites against the built module in a docker-env) resolve,
+   plus `license/cla`. **Green →** capture pass results in the PR body. **Red →** `gh run view <id>
+   --log-failed`, read the failing step / pytest case, **classify the reason and self-correct in the
+   same repo (≤2 iterations), re-push, re-poll** — full reason→action table in `shared-instructions.md`
+   §After the PR. Persistent / unrelated-flaky / cross-repo red → STOP + report. (The live storefront
+   symptom still needs post-merge deploy verification — the `auto-tests` env is generic, not your exact
+   STR; keep the "needs deploy verification" PR note.)
 
 ---
 

@@ -192,3 +192,39 @@ Loyalty settings: Enable=true; Mode='Mixed Cart'; Currency=@td(LOYALTY_SETTINGS.
 [API] cartTotals[] has at least 2 elements when both USD and PTS items are in cart (one isDefaultTotalCurrency=true for USD)
 [CONSOLE] no unhandled JS errors
 [NETWORK] no 4xx/5xx on addItem or cart query","Cart shows loyalty item merged into USD section (Mixed Cart display broken); no 'Products in PTS' heading visible; cart empty (addItem silently no-oped); JS error on cart page load; 'Total in PTS' block absent from order summary","Remove added item from cart (removeCartItem mutation or UI); sign out","VCST-5100; VCST-5101; Synced: VCST-5101 (2026-06-09)",Draft
+"LOYF-026","Mixed Cart — unselect ALL items in /cart Order Summary: every total row (Subtotal/Discount/Tax/Shipping/Grand Total + Total in PTS) must display 0.00 — REGRESSION GUARD","Loyalty > Mixed Cart > Cart Totals","Critical","BL-CART-010; BL-LOY-001; BL-LOY-003","ECL-7.3","[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Loyalty settings: Enable=true; Mode=Mixed Cart; Currency=@td(LOYALTY_SETTINGS.currency_code) (PTS). Default store currency {{CURRENCY_CODE}} (USD). Theme with Mixed Cart support (vc-theme-b2b-vue-2.51.0-pr-2310+).
+
+GROUND TRUTH (verified 2026-06-10):
+  After unselect-all with a shipping method selected:
+  - Subtotal/Discount/Shipping rows correctly display $0.00.
+  - Grand Total row displays $180 (FAILS today — binds to buggy cartTotals[] USD bucket total=180).
+  - Tax row displays +$30 (FAILS today — binds to cartTotals[] taxTotal=30).
+  - Total in PTS block correctly displays 0 PTS.
+This case asserts the FIXED behavior: ALL rows including Grand Total and Tax = 0.00 after unselect-all. WILL FAIL today on Grand Total + Tax rows until the cartTotals[] backend projection is selection-gated. Related JIRA: VCST-5238 (Apollo currencyCode MissingFieldError — a separate frontend defect not targeted by this case).","front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card
+[ACT] click the '+' (Add to Cart) button on the first product card to add a PTS loyalty product
+[WAIT] cart badge increments OR toast 'Item added' appears
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] standard catalog product grid loaded with at least 1 product card
+[ACT] click the '+' (Add to Cart) button on the first product card to add a USD product
+[WAIT] cart badge shows 2 OR toast 'Item added' appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with at least 2 line items visible
+[ASSERT] Order Summary is visible; Subtotal row shows a value > $0.00 (both items selected at this point)
+[ACT] locate the delivery method selector in the cart (shipping method dropdown or radio group)
+[ACT] select any available fixed-rate delivery method (e.g. 'Ground' or 'Air') — not BOPIS/Pickup
+[WAIT] Order Summary updates — Shipping row shows a value > $0.00; Grand Total > $0.00
+[ASSERT] Shipping row is not $0.00 (confirms a paid shipping method was selected, not BOPIS)
+[ACT] locate the select-all checkbox at the top of the line item list (or individual checkboxes for each line item)
+[ACT] if a select-all toggle is present: click it to deselect all items; else: individually uncheck the checkbox next to each line item
+[WAIT] Order Summary recalculates (all line items should show as deselected/greyed out)
+[ASSERT] Order Summary visible after unselect-all","[DOM] Order Summary Subtotal row displays $0.00 (or 0.00 {{CURRENCY_CODE}})
+[DOM] Order Summary Discount row displays $0.00 or is absent/hidden (no discounts on deselected cart)
+[DOM] Order Summary Tax row displays $0.00 or +$0.00 — NOT +$30 or any non-zero value
+[DOM] Order Summary Shipping row displays $0.00
+[DOM] Order Summary Grand Total row displays $0.00 — NOT $180 or any non-zero value (THIS FAILS TODAY)
+[DOM] 'Total in @td(LOYALTY_SETTINGS.currency_code)' block in Order Summary displays 0 @td(LOYALTY_SETTINGS.currency_code) (PTS block correctly zeroed)
+[STATE] all line items show deselected checkbox state (not selected for checkout)","[API] After unselect-all, cart() GraphQL query should return cartTotals[?isDefaultTotalCurrency=true].total.amount = 0 (currently 180 — active backend bug). Frontend Grand Total and Tax bind to this bucket; they display non-zero because the backend does not zero the projection. This case fails at the DOM level (Grand Total = $180, Tax = +$30) because of the backend defect — the frontend is correctly reflecting what the API returns. [BACKEND] See GQL-MC-012 in 050b4 for the runner-native backend guard encoding the same invariant at the xAPI level.
+[CONSOLE] After unselect-all, VCST-5238 ApolloError currencyCode MissingFieldError may appear in console on any cart mutation — this is a SEPARATE known defect; do NOT fail this case for that error alone. Fail only if the totals DOM assertions above fail.","Grand Total row shows $180 after unselect-all (active bug — EXPECTED FAIL until cartTotals[] backend fix); Tax row shows +$30 after unselect-all (same root cause); Subtotal/Shipping rows show non-zero values after unselect-all (separate regression if this breaks); Total in PTS block shows non-zero PTS after unselect-all (PTS bucket regression); Cart page shows error/spinner >10s after unselect-all; No delivery method options available (BLOCKED — check store shipping config)","Remove all items from cart via the cart UI (remove buttons or clear-cart if available). Sign out.","VCST-5101; VCST-5238 (Apollo currencyCode MissingFieldError — separate frontend defect, do not conflate); GQL-MC-012 in regression/suites/Backend/graphql/050b4-graphql-xcart-cross-domain.csv (backend runner-native guard for the same invariant); BL-CART-010; BL-LOY-001; BL-LOY-003","Draft"

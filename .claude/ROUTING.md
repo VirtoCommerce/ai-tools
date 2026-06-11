@@ -90,9 +90,11 @@ Quick decision tree for commands, skills, and agents.
 - `ba-story-writer` — Agile user stories with BDD acceptance criteria
 - `ba-doc-writer` — User docs, admin guides, API quick-start
 
-**Developers Team (2 agents — only write-capable team, used by `/qa-fix`):**
+**Developers Team (4 agents — only write-capable team, used by `/qa-fix`; one dev + one reviewer per repo kind):**
 - `fullstack-backend` — Fixes one `vc-module-*` / `vc-platform` repo (.NET 10 + module Admin Angular); reproduce-as-test → minimal fix → PR
-- `backend-reviewer` — Gate-4 reviewer of the diff before the PR (single-repo, no test edits, no breaking changes, BL-* preserved)
+- `backend-reviewer` — Gate-4 reviewer of the C#/Angular diff before the PR (single-repo, no test edits, no breaking changes, BL-* preserved)
+- `fullstack-frontend` — Fixes the `vc-frontend` storefront (Vue 3 / TS + in-repo UI kit + Storybook); reproduce-as-vitest-test → minimal fix → PR
+- `frontend-reviewer` — Gate-4 reviewer of the Vue/TS diff before the PR (single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved)
 
 ### Knowledge Base (shared agent references in `agents/knowledge/`)
 - `api-auth.md` — Platform API OAuth2 authentication (token endpoint, credentials, headers)

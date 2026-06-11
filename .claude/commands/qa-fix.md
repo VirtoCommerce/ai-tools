@@ -19,7 +19,7 @@ a rewrite:
 | Repo kind (from `ci/lib/repo-router.ts`) | Repos | Developer agent | Toolchain (`REPO_PROFILES`) |
 |---|---|---|---|
 | `module` / `platform` | `vc-module-*`, `vc-module-x-*`, `vc-platform` | **`fullstack-backend`** (live) | .NET 10 / xUnit (+ module Admin Angular / Jasmine) |
-| `frontend` | `vc-frontend` | `fullstack-frontend` *(planned extension; CI twin `ci/agents/fix-frontend-agent.md` exists today)* | Vue 3 / TS / vitest |
+| `frontend` | `vc-frontend` | **`fullstack-frontend`** (live; CI twin `ci/agents/fix-frontend-agent.md`) | Vue 3 / TS / vitest (+ in-repo UI kit / Storybook) |
 
 Routing, the repo allowlist, and the org are **config** (`ci/config/fix-repos.json`; org overridable
 via `FIX_REPO_ORG` for customer forks / other projects) — `/qa-fix` reads them via
@@ -72,15 +72,17 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   absent, confidence is LOW, or the anchor doesn't confirm, fall back to deriving the route from the
   **owning layer** + RCA via `suggestRepo()`. Either way: resolve to exactly ONE allowed repo, determine
   the repo **kind** (`repoKind`) → pick the matching developer agent (table above). Multi-repo /
-  off-allowlist / no-match → STOP, comment, hand off. Never guess. (If the routed kind has no developer
-  agent enabled yet — e.g. `frontend` before `fullstack-frontend` ships — STOP with "routed to <repo>
-  (<kind>); no developer agent enabled for this kind yet — handing off"; the ticket stays filed.)
+  off-allowlist / no-match → STOP, comment, hand off. Never guess. (If a *future* routed kind ever has
+  no developer agent enabled yet, STOP with "routed to <repo> (<kind>); no developer agent enabled for
+  this kind yet — handing off"; the ticket stays filed. Both live kinds — `module`/`platform` and
+  `frontend` — have an agent today.)
 - On PASS: transition JIRA **TO DO → IN PROGRESS** ("Take to development"; ask user first) with a
   comment naming the routed repo + kind.
 
 ## Phase 2 — Clone + Reproduce (Gate 2)
 > **Owner:** the routed developer agent (`fullstack-backend` for module/platform; `fullstack-frontend`
-> for frontend). Skills: `/dotnet-unit-test` + `/angular-admin` (backend) or the frontend test skill.
+> for frontend). Skills: `/dotnet-unit-test` + `/angular-admin` (backend) or `/vue-unit-test`
+> (+ `/storybook-test` for UI-kit interaction bugs, optional) (frontend).
 
 - Clone the one routed repo into `.fix-workspace/` on branch `claude/qa-autofix/VCST-XXXX` (reuse
   `checkoutForFix`; base = detected default branch). Use the repo's own test command (`repoProfile`).
@@ -94,7 +96,8 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   (per `repoProfile`).
 
 ## Phase 4 — Self code-review (Gate 4)
-> **Owner:** `backend-reviewer` (the kind-appropriate reviewer). Reviews the local diff before any PR.
+> **Owner:** the kind-appropriate reviewer — `backend-reviewer` (module/platform) or `frontend-reviewer`
+> (frontend). Reviews the local diff before any PR.
 > `APPROVE` → continue; `REQUEST_CHANGES` → developer revises (≤2 iterations); still not approved → STOP.
 
 ## Phase 5 — Branch + PR
@@ -111,12 +114,20 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 ## Phase 6 — Await CI + E2E (Gates 5 & 6)
 > **Owner:** orchestrator (CI poll) + `qa-backend-expert` / `qa-frontend-expert` (E2E, by kind).
 - **Gate 5 (CI):** poll `gh pr checks` / `mcp__github__get_pull_request_status` until the repo's
-  GitHub Actions are all `success` + `mergeable` — **including the SonarCloud quality gate** (the
-  `test-and-sonar` / `SonarCloud Code Analysis` check) and `license/cla`. Background polling, not blocking
-  sleeps. RED → developer self-corrects in the SAME repo (≤2 iterations), re-push, re-poll. **Sonar QG
-  red → fix the valid findings on the changed lines** (real bug/vuln/hotspot, or add new-code coverage)
-  within minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks.
-  Persistent RED / cross-repo / repo-owned QG threshold → STOP + hand off.
+  GitHub Actions are all `success` + `mergeable`. Wait on **both** PR jobs (background polling, not
+  blocking sleeps): (1) the build/test job — **`ci`** (build + unit tests + the **SonarCloud quality
+  gate**: `Quality Gate` / `SonarCloud Code Analysis`; backend also runs **Swagger validation** on
+  PRs to `dev`), and (2) the **`auto-tests`** job — the shared pytest **`graphql, restapi, e2e`** suites
+  against a real/deployed instance (a vc-frontend PR to `dev` auto-deploys to the `qa` env first) — plus
+  `license/cla`. **Storybook CI does not run on PRs** — don't wait on it. **RED → fetch and read the logs
+  before acting** (`gh run view <id> --log-failed`; for `auto-tests`, the failing pytest case + assertion;
+  for Sonar, the PR annotations), **classify the reason**, then the developer self-corrects in the SAME
+  repo (≤2 iterations), re-pushes, re-polls. Real regression in `auto-tests` on a touched area → fix the
+  root cause; unrelated/known-flaky `auto-tests` red → re-run once, then note + escalate (don't contort
+  the fix). Sonar QG red on changed lines → fix the valid finding / add new-code coverage within
+  minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks. Persistent
+  RED / cross-repo / repo-owned QG threshold → STOP + hand off. (Full reason→action table:
+  `developers/shared-instructions.md` §After the PR.)
 - **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
   `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes

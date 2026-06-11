@@ -1,15 +1,17 @@
 ---
 applicability: reference
-applicability_rationale: "Developers-team shared framework — write-tool discipline, single-repo + no-auto-merge + never-edit-tests rules, escalation, reporting. Universal across VC customers' vc-module-* repos; the repo allowlist is data (ci/config/fix-repos.json)."
+applicability_rationale: "Developers-team shared framework — write-tool discipline, single-repo + no-auto-merge + never-edit-tests rules, escalation, reporting. Universal across VC customers' vc-module-* and vc-frontend repos; the repo allowlist is data (ci/config/fix-repos.json)."
 ---
 
 # Shared Developer Instructions — Virto Commerce Auto-Fix
 
-Shared framework for the **developers team** — `fullstack-backend` (implements fixes) and
-`backend-reviewer` (gates the diff). These agents are the **interactive twins** of the headless CI
-fix agents (`ci/agents/fix-triage-agent.md`, `fix-backend-agent.md`, `fix-frontend-agent.md`) and the
-`/qa-fix` command is the interactive twin of `ci/run-fix-cycle.ts`. Both paths share the same infra
-and the same gate ladder — never diverge from it.
+Shared framework for the **developers team** — one developer + one reviewer **per repo kind**:
+`fullstack-backend` + `backend-reviewer` (module/platform, .NET 10 / Angular) and `fullstack-frontend`
++ `frontend-reviewer` (vc-frontend, Vue 3 / TS). The developer implements the fix; the reviewer gates
+the diff. These agents are the **interactive twins** of the headless CI fix agents
+(`ci/agents/fix-triage-agent.md`, `fix-backend-agent.md`, `fix-frontend-agent.md`) and the `/qa-fix`
+command is the interactive twin of `ci/run-fix-cycle.ts`. Both paths share the same infra and the same
+gate ladder — never diverge from it.
 
 ## What this team is (and is not)
 - **Is:** a small, write-capable developer team that fixes a single confirmed, simple, non-breaking
@@ -25,7 +27,8 @@ and the same gate ladder — never diverge from it.
 | Module→repo routing, `isAllowedRepo`, `checkoutForFix`, build/test `REPO_PROFILES` | `ci/lib/repo-router.ts` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
-| VC repo anatomy, .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/vc-module-architecture.md` |
+| VC module repo anatomy, .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/vc-module-architecture.md` |
+| vc-frontend storefront anatomy, Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/vc-frontend-architecture.md` |
 | BL-* invariants / historical failures | `business-logic.md`, `vc-bug-catalog.md` |
 | Workspace | `.fix-workspace/<repo>/` (gitignored) |
 | Branch | `claude/qa-autofix/VCST-XXXX` |
@@ -84,6 +87,52 @@ message**, which stays Conventional Commits (`fix(<scope>): <summary> (VCST-XXXX
 changelog/scope tooling, while the PR title leads with the ticket so reviewers and the JIRA link read at
 a glance.
 
+## After the PR — verify CI, don't assume green (Gate 5)
+**Opening the PR is not the finish line.** The run is not done until the PR's GitHub Actions checks are
+green. The product repos run **two** PR jobs you must wait on (plus `license/cla`):
+
+1. **The build/test/quality job** — `Theme CI / ci` (vc-frontend) or `Module CI / ci` (modules/platform):
+   build, **unit tests** (`yarn test:coverage` + `yarn test:typing` on frontend; `vc-build Test` on
+   backend), and the **SonarCloud quality gate** (`SonarCloud Code Analysis` / the `Quality Gate` step;
+   backend also runs **Swagger validation** on PRs to `dev`).
+2. **The autotest job** — `… / auto-tests`: the shared `pytest-tests.yml` running the
+   **`graphql, restapi, e2e`** suites against a real/deployed instance (frontend PRs to `dev` also
+   auto-deploy to the `qa` environment first). This is the live-behavior check — it can catch a
+   regression a unit test won't.
+
+Poll until both resolve (re-poll on an interval; don't block-sleep), then act:
+```bash
+GH_TOKEN="$FIX" gh pr checks <pr-url-or-branch>             # status of every check
+GH_TOKEN="$FIX" gh pr view <pr> --json statusCheckRollup    # machine-readable rollup
+```
+(Interactive `/qa-fix` owns this poll directly; in headless CI the orchestrator `ci/run-fix-cycle.ts`
+polls and hands a red back to you — either way the analyze-and-fix loop below is yours. Note: **Storybook
+CI does NOT run on PRs** — it's push-only — so don't wait on it.)
+
+- **All green + `mergeable`** → done. Capture the one-line pass results in the PR body. Never merge.
+- **Any check RED → fetch and READ the logs before touching anything.** Don't guess from the check name:
+  ```bash
+  GH_TOKEN="$FIX" gh run view <run-id> --log-failed          # only the failing steps' logs
+  GH_TOKEN="$FIX" gh run view --job <job-id> --log           # full log of a specific job
+  ```
+  For the Sonar gate, read the PR's SonarCloud check annotations; for `auto-tests`, read the failing
+  pytest case name + assertion in the job log. **Classify the reason, then act:**
+  | Red reason | Action |
+  |------------|--------|
+  | Build / compile error (incl. a new `vue-tsc` warning, or a C# warning under `TreatWarningsAsErrors`) | Fix at the source within the minimal diff; never suppress the warning or disable the rule |
+  | A **new** test you added fails on CI but passed locally | Investigate the env difference (timezone, locale, ordering, async settle); fix your test/code, never weaken the assertion |
+  | A **pre-existing** unit test went red | Contract conflict → **STOP**, do NOT edit the existing test, report (human decision) |
+  | `auto-tests` (graphql/restapi/e2e) red **on an area your fix touches** | A real regression — read the failing case, fix the root cause, re-push |
+  | `auto-tests` red **on an unrelated area / known-flaky / env data** | Re-run the job once; if it still fails unrelated to your change, it's pre-existing/infra → note it in the PR and escalate, don't contort the fix |
+  | Lint / format / locale / a11y / Swagger-validation check | Fix in your changed lines; never edit the CI/lint config to pass |
+  | SonarCloud QG red on **changed** lines (real bug / vuln / unreviewed hotspot, or missing new-code coverage) | Fix the valid finding / add coverage within minimal-diff + never-edit-existing-tests |
+  | SonarCloud QG red on **pre-existing** debt unrelated to the diff | Don't chase it — mark won't-fix in Sonar or note it in the PR; not your scope |
+  | Infra / flake (runner timeout, transient network, queue, env provisioning) | Re-run once; if it recurs it's infra → escalate, don't loop |
+- **Self-correct in the SAME repo, re-push, re-poll — at most 2 iterations.** Each push re-triggers CI;
+  wait for the new run, don't assume the fix worked. Persistent RED, a cross-repo cause surfaced by the
+  logs, or a repo-owned QG threshold → **STOP + report** (`FIX_STATUS: FAILED` with the reason quoted
+  from the logs); do not keep pushing. **Never** merge to make a check pass.
+
 ## Hard rules (a violation = STOP, never "push anyway")
 1. **Single repo.** All changed files in ONE allowed repo. Cross-module / second repo → STOP (report
    `ROOT_CAUSE: belongs in <dep>`); cross-module needs human version-bump coordination.
@@ -108,7 +157,9 @@ a glance.
 ## Reporting discipline
 - Long transcripts / investigation logs go via SendMessage to the orchestrator (or the `reports/fixes/FIX-*/`
   per-ticket transcript), **never** as standalone files in the repo (per `.claude/rules/reports.md`).
-- End with the marker block your role defines (`fullstack-backend`: `FIX_STATUS`/`PR_TITLE`/`CONFIDENCE`/
-  `ROOT_CAUSE`; `backend-reviewer`: `REVIEW: APPROVE|REQUEST_CHANGES` + reasons).
+- End with the marker block your role defines (the developer — `fullstack-backend` / `fullstack-frontend`:
+  `FIX_STATUS`/`PR_TITLE`/`PR_URL`/`CONFIDENCE`/`ROOT_CAUSE`; the reviewer — `backend-reviewer` /
+  `frontend-reviewer`: `REVIEW: APPROVE|REQUEST_CHANGES` + reasons + `CONFIDENCE`).
 - Real-user / browser rules do **not** apply here — this team writes code; it does not drive browsers.
-  E2E verification (Gate 6) is delegated back to `qa-backend-expert` via `/qa-regression`.
+  E2E verification (Gate 6) is delegated back to `qa-backend-expert` (module/platform) or
+  `qa-frontend-expert` (vc-frontend) via `/qa-regression`.

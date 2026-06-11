@@ -43,7 +43,7 @@ const CHECKS = [
   },
   {
     name: "td-refs",
-    desc: "every @td() reference in all 99 suites resolves",
+    desc: "every @td() reference across all regression suites resolves",
     cmd: "npx",
     args: ["tsx", "scripts/validate-td-refs.ts"],
     acceptExit: [0],
@@ -71,7 +71,7 @@ const CHECKS = [
   },
   {
     name: "graphql:fixtures",
-    desc: "67 .graphql fixtures validate vs cached schema (exit 1 = drift findings, not crash)",
+    desc: "all .graphql fixtures validate vs cached schema (exit 1 = drift findings, not crash)",
     cmd: "npx",
     args: ["tsx", "scripts/validate-graphql-fixtures.ts"],
     acceptExit: [0, 1],
