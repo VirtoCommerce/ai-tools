@@ -621,3 +621,15 @@ User logged in as {{USER_EMAIL}}; /account/orders accessible with ≥1 order in 
 [GQL] filtered response items[] contain only orders matching the selected status
 [CONSOLE] no JS errors during filter open, apply, or clear
 [NETWORK] no 4xx/5xx on filtered orders request","Filter control absent on /account/orders (BL-ORD-003); filter panel does not open on click; orders with non-matching statuses visible after filter applied; clearing filter does not restore full list; JS error on filter open or apply; filter panel has no 'Apply' button (agent must not skip it — explicit click required per project rule)","none","VCST-4499","Draft"
+"SMK-034","Payment — Saved Skyflow Card Cart Payment Succeeds (Revenue-Path Guard)","Smoke > Payment","Critical","BL-PAY-003, BL-CHK-002, BL-ORD-001","ECL-1.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Lean daily GO/NO-GO guard for the saved-Skyflow-card cart-payment revenue path (VCST-5009 / vc-frontend PR#2328). USER_DEFAULT ({{USER_EMAIL}}) must hold the saved canonical Mastercard ending 0015 (SKYFLOW_MC, seeded by PAY-SKY-009). Skyflow configured with AllowCartPayment=true (cart-inline form). Deep vault-PUT / race-guard coverage lives in suite 040a (PAY-SKY-016/017) — this smoke case only confirms a saved-card order completes. No DevTools network capture, no multi-card switching.","front_url={{FRONT_URL}}, sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] {{FRONT_URL}}/cart with one item in cart; select a Delivery method (e.g. Fixed Rate Ground) so payment is the only remaining Place-order gate
+[ACT] select 'Bank card (Skyflow)' payment method if not pre-selected
+[WAIT] 'Select credit card' dropdown renders listing the saved Mastercard ending 0015
+[ACT] select the saved Mastercard ending 0015 (do NOT choose 'Add new card')
+[ACT] fill the 'Security code' (CVV) field with @td(SKYFLOW_MC.cvv) (CVV 900)
+[ACT] click 'Place order' — single click only (BL-CHK-002)
+[WAIT] payment processing + order confirmation","[STATE] saved-card flow shows only the masked card + a CVV field (no full card fields, no redirect to /checkout/payment)
+[DOM] order confirmation renders with an order number
+[STATE] 'Place order' disabled immediately after first click (BL-CHK-002)","[GQL] createOrderFromCart / authorizePayment returns isSuccess: true, errors[] empty
+[NETWORK] no 4xx/5xx on the payment mutations","saved Mastercard ending 0015 absent from the dropdown (saved-card list broken); 'Place order' silently no-ops or stays clickable after first click (BL-CHK-002); redirect to /checkout/payment for the cart-context saved-card flow; order number absent; authorizePayment isSuccess=false on the canonical card","Note created order ID; cancel order via admin if needed. Saved card left in place.","VCST-5009; vc-frontend PR#2328; Skyflow module 3.1003.0","Reviewed"

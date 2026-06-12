@@ -832,3 +832,47 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
 [DATA label=read_wildcard] data.cart.itemsCount = 1
 [COUNT label=read_wildcard] data.cart.validationErrors.length >= 1
 [DATA label=read_wildcard] data.cart.validationErrors[?errorCode=PRODUCT_QTY_CHANGED].errorCode = PRODUCT_QTY_CHANGED","[EVIDENCE] Cross-request unknown-ruleSet cache-poison guard (VCST-4952 Test 4). read_foo (req1, unknown ruleSet) must return empty validationErrors; read_wildcard (req2, ruleSet:*, separate POST) must contain PRODUCT_QTY_CHANGED. A poisoned-cache regression would return read_wildcard.validationErrors=[] because the unknown-ruleSet req1 stamped the cache as validated-clean.","read_wildcard.validationErrors empty after read_foo was sent first (cross-request cache poison — the pre-PR#110 regression, exact scenario from VCST-4952 review comment 95783); read_foo.validationErrors non-empty (unknown ruleSet unexpectedly populated); LINE_ITEM_ID null capture; itemsCount=0 after add_item (missing cartName/currencyCode/cultureName)",none — clearCart in Steps,"VCST-4952; VCST-5234; XCart PR #110",Automated
+"CVAL-GQL-012","xCart/Skyflow — saved-card list (skyflowCards) returns masked PAN + skyflowId with NO raw PAN, and deleteSkyflowCard removes a disposable card (API surface for saved-card delete)","GraphQL > xCart > Saved Cards","P1","BL-PAY-003; BL-PAY-001","ECL-14.6; ECL-9.1","Runner-native. USER_DEFAULT authenticated (saved Skyflow cards live on the storefront user, not the org). Schema surface confirmed via live introspection 2026-06-12: query skyflowCards(storeId:String) -> SkyflowCardResponseType { cards { skyflowId cardNumber cardType cardScheme cardholderName expiryMonth expiryYear active } } (cardNumber is the MASKED PAN — vault never returns raw PAN to the client); mutation deleteSkyflowCard(command: DeleteSkyflowCardCommandType { skyflowId:String! storeId:String! }) -> Boolean. PRECONDITION: USER_DEFAULT must hold >=2 saved Skyflow cards — the canonical Mastercard ending 0015 (SKYFLOW_MC, seeded by PAY-SKY-009) PLUS at least one DISPOSABLE card to delete (seed a 2nd via a new-card cart payment with Save card checked, e.g. PAY-SKY-018). The case deletes cards[1] (the 2nd / disposable card), NEVER cards[0], so the canonical MC used by the success cases is preserved. If skyflowCards returns <2 cards the delete cannot run deterministically — that is a seed-state gap; re-seed a disposable card, do NOT delete the canonical MC. REGRESSION GUARD that the saved-card API surface (list + delete) exists and never leaks raw PAN — guards VCST-5009 / PR #2328 saved-card mechanics at the API layer.","STORE_ID={{STORE_ID}}; CANONICAL_MASK_TAIL=0015","[AUTH role=USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP list_cards_before]
+  query {
+    skyflowCards(storeId: ""{{STORE_ID}}"") {
+      cards {
+        skyflowId
+        cardNumber
+        cardType
+        cardScheme
+        cardholderName
+        expiryMonth
+        expiryYear
+        active
+      }
+    }
+  }
+[GQL-EXEC list_cards_before]
+[GQL-CAPTURE list_cards_before.data.skyflowCards.cards[1].skyflowId → DISPOSABLE_SKYFLOW_ID]
+[GQL-OP delete_card]
+  mutation {
+    deleteSkyflowCard(command: {
+      skyflowId: ""{{DISPOSABLE_SKYFLOW_ID}}""
+      storeId: ""{{STORE_ID}}""
+    })
+  }
+[GQL-EXEC delete_card]
+[GQL-OP list_cards_after]
+  query {
+    skyflowCards(storeId: ""{{STORE_ID}}"") {
+      cards { skyflowId cardNumber active }
+    }
+  }
+[GQL-EXEC list_cards_after]","[ERRORS label=list_cards_before] errors[] empty
+[COUNT label=list_cards_before] data.skyflowCards.cards.length >= 2
+[DATA label=list_cards_before] data.skyflowCards.cards[0].skyflowId is non-null
+[DATA label=list_cards_before] data.skyflowCards.cards[0].cardNumber is non-null
+[ERRORS label=delete_card] errors[] empty
+[DATA label=delete_card] data.deleteSkyflowCard = true
+[ERRORS label=list_cards_after] errors[] empty
+[COUNT label=list_cards_after] data.skyflowCards.cards[*?skyflowId={{DISPOSABLE_SKYFLOW_ID}}].length = 0","[EVIDENCE] API surface for saved-card list + delete (introspection-confirmed 2026-06-12). cards[].cardNumber is the masked PAN (e.g. XXXX0015) — assert it is non-null and present; the raw 16-digit PAN must NEVER appear in any response (vault tokenization, BL-PAY-001). Delete targets cards[1] (disposable) so the canonical MC (cards[0], ending {{CANONICAL_MASK_TAIL}}) is preserved for the success cases. deleteSkyflowCard returns a bare Boolean true. After delete, the disposable skyflowId is absent from skyflowCards.cards[].","skyflowCards query unresolved / errors[] non-empty (no API surface — STOP and report); cards[].cardNumber contains a full 16-digit PAN (raw-PAN leak, BL-PAY-001 violation — file P0 bug); deleteSkyflowCard returns false or errors[]; deleted skyflowId still present in list_cards_after (delete no-op); DISPOSABLE_SKYFLOW_ID null capture = fewer than 2 saved cards (seed gap — re-seed a disposable card, never delete the canonical MC)","Deletes the disposable card (cards[1]) as part of the flow; canonical MC preserved. To restore the disposable card, re-run PAY-SKY-018 (save-card persistence).","VCST-5009; vc-frontend PR#2328; Skyflow module 3.1003.0; schema introspection 2026-06-12 (skyflowCards/SkyflowCardResponseType, deleteSkyflowCard/DeleteSkyflowCardCommandType); BL-PAY-003, BL-PAY-001","Reviewed"
