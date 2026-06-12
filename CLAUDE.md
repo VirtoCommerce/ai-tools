@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `docs/prompts/`.
+**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `vc/vcst-qa/docs/prompts/`.
 
 ## Prerequisites
 
@@ -15,12 +15,12 @@
 
 ```bash
 npm install              # Install dependencies
-npm run env:check        # Verify all required env vars (33 total)
-npm run ci:smoke         # Smoke tests only (suite 042)
-npm run ci:critical      # P0 suites (042, 039, 044, 049)
+npm run env:check        # Verify env vars (42 total; 26 required)
+npm run ci:smoke         # Smoke tests only (suites 042, 078)
+npm run ci:critical      # P0 suites (042, 078, 039, 044, 049)
 npm run ci:frontend      # Frontend-layer suites
 npm run ci:backend       # Backend-layer suites
-npm run ci:full          # Full regression (all 101 suites)
+npm run ci:full          # Full regression (all 104 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
@@ -49,12 +49,13 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ```
 ├── .claude/agents/       # 18 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (27 files) for shared refs
 ├── .claude/skills/       # 26 skills (vc-knowledge, testing, qa-methodology, development)
-├── .claude/commands/     # 18 slash commands
+├── .claude/commands/     # 19 slash commands
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
-├── docs/prompts/         # LLM prompt templates
-├── regression/suites/    # 101 CSV suites (~3,756 cases) in 42 module directories
+├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/vcst-qa/docs/prompts/)
+├── vc/                    # Layer 2 — VC internal per-env data (vcst-qa, shared); customers ignore
+├── regression/suites/    # 104 CSV suites (~3,790 cases) in 44 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads
@@ -90,7 +91,7 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 - `.claude/architecture/TIER.md` — Tier classification (A/B/C/D) for multi-project expansion; canonical map of what's methodology vs capability vs storefront-domain vs missing. Read before any change aimed at standardization or cross-product reuse.
 - `.claude/rules/agents.md` — 18 agents (QA 10 + BA 4 + Developers 4), browser assignments, delegation rules
 - `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 18 commands + 26 skills with arguments
+- `.claude/rules/skills-commands.md` — 19 commands + 26 skills with arguments
 - `.claude/rules/quality-gates.md` — **Single source of truth for the bug auto-fix gate ladder (G0–G7)**: shared by the interactive `/qa-fix` (+ `developers/` team — `fullstack-backend`/`backend-reviewer` for module/platform, `fullstack-frontend`/`frontend-reviewer` for vc-frontend) and the headless `ci/run-fix-cycle.ts`. Triage→reproduce→fix→review→CI/E2E→human-review; never auto-merge. Read before any change to the auto-fix flow.
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - `.claude/rules/test-data.md` — `@td()` resolver + `{{VAR}}` policy: never hardcode IDs/SKUs/prices/cards/etc.; canonical sources, validation script, where the rule is enforced

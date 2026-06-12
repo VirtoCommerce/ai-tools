@@ -359,9 +359,16 @@ Invoke: `/qa-regression critical --autonomous`. Results land in `results/{RUN_ID
 
 Invoke: `CHANGE_SOURCE="PR #123" npm run ci:cycle`.
 
+### Two More Pipelines
+
+Each has an interactive + headless-CI twin pair:
+
+- **Online monitoring** (`/qa-monitoring` ↔ `ci/run-monitor.ts`): watches Azure Application Insights for live errors — query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert. Detect-and-report only (never files JIRA, never auto-fixes).
+- **Bug auto-fix** (`/qa-fix` ↔ `ci/run-fix-cycle.ts`): triage (Gate 0) → single-repo route (Gate 1) → reproduce-as-test → minimal fix → review → CI/E2E → open PR for human review. Gate ladder G0–G7 in [`.claude/rules/quality-gates.md`](.claude/rules/quality-gates.md). **Never auto-merges.**
+
 ### Prompt Templates
 
-Located in `docs/prompts/`:
+Located in `vc/vcst-qa/docs/prompts/`:
 
 | Template | Purpose |
 |----------|---------|
@@ -372,7 +379,7 @@ Located in `docs/prompts/`:
 
 ## Commands, Skills & Agents
 
-### Slash Commands (16)
+### Slash Commands (19)
 
 Type `/command-name` in Claude Code chat. See [`.claude/rules/skills-commands.md`](.claude/rules/skills-commands.md) for full argument reference.
 
@@ -383,6 +390,8 @@ Type `/command-name` in Claude Code chat. See [`.claude/rules/skills-commands.md
 | `/qa-regression` | Run regression suites in parallel (plan-driven `sprint`, or any selection group / IDs) |
 | `/qa-status` | Dashboard: run status, JIRA queue, env health, recent bugs |
 | `/qa-bug` | Reproduce, document, and file a JIRA bug |
+| `/qa-fix` | Autonomous fix of a filed bug: triage → reproduce-as-test → minimal single-repo fix → PR → STOP for human review (never auto-merges) |
+| `/qa-monitoring` | Online bug monitoring from App Insights: query → dedup → triage → live repro → report (detect-and-report only) |
 | `/qa-design` | Dual Storybook + Storefront BL-UI audit for components; storefront-only for pages/flows |
 | `/qa-exploratory` | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra |
@@ -392,22 +401,27 @@ Type `/command-name` in Claude Code chat. See [`.claude/rules/skills-commands.md
 | `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ |
 | `/qa-verify-fix` | Verify a bug fix with regression checks + JIRA transition |
 | `/qa-seed-data` | Generate test data via Postman MCP / tear down AGENT-TEST-* entities |
+| `/qa-onboarding` | Customer onboarding flow: post-install handoff from "plugin installed" to first green smoke run + first bug filed |
 | `/ba-analyze` | Business analysis with GitHub search + live UI |
 | `/ba-stories` | Generate Agile user stories with BDD criteria |
 
-### Skills (20)
+### Skills (26)
 
-Type `/skill-name` in Claude Code chat. Organized in [`.claude/skills/`](.claude/skills/) across 3 categories:
+Type `/skill-name` in Claude Code chat. Organized in [`.claude/skills/`](.claude/skills/) across 4 categories (plus a repo-tooling skill at the root):
 
-**VC Knowledge (1):** `/vc-docs` — documentation lookup via Context7
+**VC Knowledge (1):** `/vc-docs` — documentation lookup via VirtoOZ MCP (Context7 fallback)
 
 **Testing (10):** `/qa-storybook`, `/qa-accessibility`, `/qa-design`, `/qa-plan`, `/qa-checklist`, `/qa-api`, `/qa-coverage-gap`, `/qa-postman`, `/qa-seed-data`, `/qa-review-tests`
 
-**QA Methodology (9):** `/qa-process`, `/qa-investigate`, `/qa-evidence`, `/qa-defect`, `/qa-test-design`, `/qa-test-cases-generator`, `/qa-risk`, `/qa-metrics`, `/qa-sbtm`
+**QA Methodology (10):** `/qa-process`, `/qa-investigate`, `/qa-evidence`, `/qa-defect`, `/qa-test-design`, `/qa-test-cases-generator`, `/qa-risk`, `/qa-metrics`, `/qa-sbtm`, `/qa-monitoring`
 
-### Agents (14)
+**Development (5):** `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`, `/vue-unit-test`, `/vue-fix` — used by the `developers/` team in `/qa-fix`
 
-14 specialized agents in [`.claude/agents/`](.claude/agents/) across two teams (plus a shared `shared-instructions.md` include). Use them by name in chat:
+Plus `/run-vc-mcp-testing-module` — build/launch/smoke-test/health-check this repo's tooling.
+
+### Agents (18)
+
+18 specialized agents in [`.claude/agents/`](.claude/agents/) across three teams (each team also has a shared `shared-instructions.md` include). Use them by name in chat:
 
 ```
 "Use the qa-frontend-expert to verify the checkout flow"
@@ -415,11 +429,13 @@ Type `/skill-name` in Claude Code chat. Organized in [`.claude/skills/`](.claude
 "Use the ba-story-writer to create stories for VCST-1234"
 ```
 
-**QA Team (10):** `qa-lead-orchestrator` (sonnet), `qa-frontend-expert` (opus), `qa-backend-expert` (opus), `qa-testing-expert` (opus), `test-management-specialist` (sonnet), `ui-ux-expert` (sonnet), `regression-orchestrator` (sonnet), `autonomous-regression-orchestrator` (sonnet), `autonomous-test-runner` (sonnet), `test-runner-agent` (sonnet), plus `shared-instructions`
+**QA Team (10):** `qa-lead-orchestrator` (sonnet), `qa-frontend-expert` (opus), `qa-backend-expert` (opus), `qa-testing-expert` (opus), `test-management-specialist` (sonnet), `ui-ux-expert` (sonnet), `regression-orchestrator` (sonnet), `autonomous-regression-orchestrator` (sonnet), `autonomous-test-runner` (sonnet), `test-runner-agent` (sonnet)
 
 **BA Team (4):** `ba-system-analyzer`, `ba-api-specialist`, `ba-story-writer`, `ba-doc-writer` (all sonnet)
 
-QA agents use a four-layer prompt architecture — business logic, domain knowledge, skill set, design decisions. 24 shared knowledge files in [`.claude/agents/knowledge/`](.claude/agents/knowledge/) cover API auth, business logic, browser quirks, GraphQL schema, products, sitemap, etc.
+**Developers Team (4):** `fullstack-backend` (opus), `backend-reviewer` (opus), `fullstack-frontend` (opus), `frontend-reviewer` (opus) — the only write-capable team (local `git`/`gh`), driven by `/qa-fix`; one developer + one reviewer per repo kind; never auto-merges.
+
+QA agents use a four-layer prompt architecture — business logic, domain knowledge, skill set, design decisions. 27 shared knowledge files in [`.claude/agents/knowledge/`](.claude/agents/knowledge/) cover API auth, business logic, browser quirks, GraphQL schema, products, sitemap, module/frontend architecture, etc.
 
 Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md) for browser assignments. Max 3 concurrent browser agents.
 
@@ -481,17 +497,19 @@ npm run refresh-product-guids     # Refresh product GUID fixtures
 vc-mcp-testing-module/
 ├── CLAUDE.md                # Claude Code project instructions
 ├── .claude/
-│   ├── agents/              # 14 agent definitions (qa/ + ba/) + knowledge/ (24 reference files)
-│   ├── skills/              # 20 skills across 3 categories
-│   ├── commands/            # 16 slash commands
-│   └── rules/               # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data)
+│   ├── agents/              # 18 agent definitions (qa/ + ba/ + developers/) + knowledge/ (27 reference files)
+│   ├── skills/              # 26 skills across 4 categories (+ 1 repo-tooling skill)
+│   ├── commands/            # 19 slash commands
+│   └── rules/               # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
 ├── config/                  # Playwright browser configs + test-suites.json manifest
-├── ci/                      # CI regression + full-cycle pipeline (gitignored)
-├── docs/prompts/            # LLM prompt templates
-├── regression/suites/       # 99 CSV suites (~3,756 test cases)
-│   ├── Frontend/            # 46 CSVs in 15 module dirs (auth, catalog, cart, …)
-│   ├── Backend/             # 52 CSVs in 27 module dirs (platform, api, graphql, …)
-│   └── _release/            # Master release suite (080)
+├── ci/                      # CI regression + full-cycle + auto-fix + monitoring pipelines (gitignored)
+├── docs/                    # Plugin distribution/onboarding docs
+├── vc/                      # Layer 2 — VC internal per-env data (vcst-qa, shared); customers ignore
+│   └── vcst-qa/docs/prompts/ # LLM prompt templates
+├── regression/suites/       # 104 CSV suites (~3,790 test cases)
+│   ├── Frontend/            # 48 CSVs in 15 module dirs (auth, catalog, cart, …)
+│   ├── Backend/             # 56 CSVs in 29 module dirs (platform, api, graphql, …)
+│   └── _release/            # Master release suite (080, defined in manifest)
 ├── tests/                   # Test cases by sprint/JIRA ticket
 ├── test-data/               # Aliases registry + CSV fixtures (orgs, addresses, accounts)
 ├── reports/                 # Bug reports + regression reports
@@ -508,7 +526,7 @@ vc-mcp-testing-module/
 
 ## Regression Test Suites
 
-99 suites with **~3,756 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 99`).
+104 suites with **~3,790 test cases** in enriched agent-native CSV format. Authoritative definitions in [`config/test-suites.json`](config/test-suites.json) (`_meta.totalSuites: 104`).
 
 Suites are organized under `Frontend/<module>/` and `Backend/<module>/` directories, with IDs like `001-catalog-navigation.csv`, `050a-graphql-xcatalog.csv`, `080-full-regression-release.csv`.
 
@@ -527,7 +545,7 @@ Suites are organized under `Frontend/<module>/` and `Backend/<module>/` director
 | `backend` | All Backend/ suites | Backend-only regression |
 | `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` falls back to P0+P1) | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's scope |
-| `full` | All 99 suites | Before production release |
+| `full` | All 104 suites | Before production release |
 
 ### P0 Critical Suites
 
@@ -554,9 +572,9 @@ Authoring guides:
 
 ### Frontend / Backend module layout
 
-**Frontend (46 CSVs):** `auth/`, `catalog/`, `search/`, `cart/`, `checkout/`, `orders/`, `payment/`, `bopis/`, `b2c/`, `configurable-products/`, `whitelabeling/`, `marketing/`, `loyalty/`, `cross-cutting/`, `smoke/`
+**Frontend (48 CSVs, 15 module dirs):** `auth/`, `catalog/`, `search/`, `cart/`, `checkout/`, `orders/`, `payment/`, `bopis/`, `b2c/`, `configurable-products/`, `whitelabeling/`, `marketing/`, `loyalty/`, `cross-cutting/`, `smoke/`
 
-**Backend (52 CSVs):** `platform/`, `store/`, `catalog/`, `customer/`, `pricing/`, `inventory/`, `marketing/`, `notifications/`, `cms/`, `orders/`, `api/`, `graphql/`, `search/`, `configurable-products/`, `whitelabeling/`, `assets/`, `channels/`, `contracts/`, `image-tools/`, `import-export/`, `loyalty/`, `push-messages/`, `returns/`, `seo/`, `shipping/`, `xmarketing/`, `smoke/`
+**Backend (56 CSVs, 29 module dirs):** `platform/`, `store/`, `catalog/`, `customer/`, `pricing/`, `inventory/`, `marketing/`, `notifications/`, `cms/`, `orders/`, `api/`, `graphql/`, `search/`, `configurable-products/`, `whitelabeling/`, `assets/`, `channels/`, `contracts/`, `image-tools/`, `import-export/`, `loyalty/`, `news/`, `push-messages/`, `returns/`, `seo/`, `shipping/`, `task-management/`, `xmarketing/`, `smoke/`
 
 Full suite-to-module mapping lives in [`.claude/agents/knowledge/module-suite-map.md`](.claude/agents/knowledge/module-suite-map.md).
 
@@ -581,7 +599,7 @@ CI environment mapping: `qa` → `FRONT_URL` / `BACK_URL`, `staging` → `VIRTO_
 ### Scheduled Runs
 
 - **Daily smoke**: Mon-Fri 6:00 AM UTC — suite 042, $5 budget
-- **Weekly full**: Sunday 2:00 AM UTC — all 99 suites, $80 budget
+- **Weekly full**: Sunday 2:00 AM UTC — all 104 suites, $80 budget
 - **Full-cycle pipeline** (`.github/workflows/full-cycle.yml`): triggered on PR merge to main; daily Mon-Fri 8 AM UTC; or manual dispatch
 
 ### Cost Estimates
@@ -591,7 +609,7 @@ CI environment mapping: `qa` → `FRONT_URL` / `BACK_URL`, `staging` → `VIRTO_
 | `smoke` | 2 | ~$2-5 | ~30 min |
 | `critical` | 5 | ~$10-15 | ~2 hrs |
 | `sprint` | varies (plan-driven) | ~$40-60 | ~5-8 hrs |
-| `full` | 99 | ~$60-100 | ~10-14 hrs |
+| `full` | 104 | ~$60-100 | ~10-14 hrs |
 
 ### Required GitHub Secrets
 

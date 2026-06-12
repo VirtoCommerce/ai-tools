@@ -57,7 +57,9 @@
 │       ├── SKILL.md                 # Test case quality review (8-dimension analysis)
 │       └── review-criteria.md       # 8-dimension review criteria reference
 │
-├── qa-methodology/                  # QA Methodology (9) — cross-team practices
+├── qa-methodology/                  # QA Methodology (10) — cross-team practices
+│   ├── qa-monitoring/
+│   │   └── SKILL.md                 # Online bug monitoring from App Insights (KQL probes + triage taxonomy + dedup)
 │   ├── qa-test-cases-generator/
 │   │   ├── SKILL.md                 # Generate agent-native test cases in enriched CSV format
 │   │   ├── test-case-template.md    # Enriched CSV column spec with step type tags
@@ -98,8 +100,13 @@
 │   ├── vue-unit-test/               # Reproduce a vc-frontend bug as a failing vitest test (red)
 │   └── vue-fix/                     # Minimal Vue 3 / TS fix → green
 │
+├── run-vc-mcp-testing-module/       # Repo tooling (not a QA category): build / launch / smoke-test / health-check this repo
+│   └── SKILL.md
+│
 └── README.md                        # This file
 ```
+
+> Plus one repo-tooling skill at the root — `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) — outside the 4 QA category groups (27 `SKILL.md` files total).
 
 ## VC Knowledge (1) — `vc-knowledge/`
 
@@ -128,9 +135,9 @@ Manual invocation, delegates to specialist agents.
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 
-## QA Methodology (9) — `qa-methodology/`
+## QA Methodology (10) — `qa-methodology/`
 
-Manual invocation, cross-team best practices. Process framework, reactive (post-bug), proactive (pre-testing), and generation methodology.
+Manual invocation, cross-team best practices. Process framework, reactive (post-bug), proactive (pre-testing), monitoring, and generation methodology.
 
 ### Process Framework
 
@@ -154,6 +161,12 @@ Manual invocation, cross-team best practices. Process framework, reactive (post-
 | `/qa-risk` | Risk-based test prioritization: 5x5 matrix, severity/priority classification, test depth allocation | risk-prioritization-framework.md |
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage, gate enforcement | quality-metrics-catalog.md, quality-gates.md |
 | `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT heuristics, tours, debrief | session-based-testing.md |
+
+### Monitoring (online)
+
+| Skill | Purpose | Supporting Files |
+|-------|---------|-----------------|
+| `/qa-monitoring` | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert. Detect-and-report only (twin of `ci/run-monitor.ts`) | SKILL.md (KQL probe library + triage taxonomy + dedup model) |
 
 ### Generation
 

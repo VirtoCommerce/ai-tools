@@ -8,14 +8,14 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 /qa-smoke                    # Daily smoke test (12 P0 tests, ~15 min)
 /qa-test VCST-1234           # Test a specific JIRA ticket
 /qa-regression critical      # Run P0 regression suites
-/qa-regression full          # Full 45-suite regression
+/qa-regression full          # Full 104-suite regression
 /ba-analyze                  # Full business analysis
 /ba-analyze flows            # User flow analysis only
 ```
 
 ---
 
-## Agent Inventory (16 agents + shared instructions)
+## Agent Inventory (18 agents + per-team shared instructions)
 
 ### QA Team (10 agents + shared-instructions)
 
@@ -60,7 +60,9 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 
 ---
 
-## Slash Commands (13)
+## Slash Commands (19)
+
+Full argument reference: [`.claude/rules/skills-commands.md`](../rules/skills-commands.md).
 
 ### QA Commands
 
@@ -71,12 +73,18 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 | `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full) | varies |
 | `/qa-coverage-generation [scope]` | Orchestrated parallel coverage generation with CI support | varies |
 | `/qa-test-lifecycle` | Unified pipeline: sync stale cases + analyze gaps + generate + review + verify (PR, module, diff, suite, domain) | varies |
+| `/qa-test-plan [sprint]` | Build a sprint test plan from JIRA + merged PRs in the sprint window | varies |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix with regression checks | varies |
 | `/qa-status` | Dashboard: run status, JIRA queue, env health | < 30 sec |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a JIRA bug | ~5 min |
 | `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → reproduce-as-test → minimal single-repo fix → PR → STOP for human review (never auto-merges) | varies |
+| `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup → triage → live repro → report (detect-and-report only) | varies |
+| `/qa-design [target]` | Dual Storybook + Storefront BL-UI audit | varies |
 | `/qa-exploratory [area]` | Guided exploratory testing session with heuristics | ~20 min |
+| `/qa-seed-data [profile]` | Seed / tear down test data (Postman MCP + seed scripts) | varies |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra | < 30 sec |
+| `/qa-onboarding [env]` | Customer onboarding flow: install → first green smoke run + first bug filed | varies |
+| `/qa-sync-tests` | _(deprecated — redirects to `/qa-test-lifecycle`)_ | — |
 
 ### BA Commands
 
@@ -141,10 +149,10 @@ Reads `config/test-suites.json`, dispatches sub-agents in batches of 3, retries 
 
 | Selection | Suites | Use Case |
 |-----------|--------|----------|
-| `smoke` | 01 | Daily pre-deploy |
-| `critical` | 042, 039, 044, 049 | P0 gate |
-| `sprint` | 33 suites | Sprint release |
-| `full` | All 45 | Production release |
+| `smoke` | 042, 078 | Daily pre-deploy |
+| `critical` | 042, 078, 039, 044, 049 | P0 gate |
+| `sprint` | Plan-driven (sprint-*-summary.json) | Sprint release |
+| `full` | All 104 | Production release |
 | `frontend` | All Frontend/ suites | Frontend only |
 | `backend` | All Backend/ suites | Backend only |
 
@@ -186,13 +194,13 @@ QA agents use a **four-layer prompt architecture**:
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (26 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
+Shared knowledge files in `knowledge/` (27 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
 
 ---
 
 ## Customizing Agents
 
-Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`), `.claude/agents/ba/` (4 BA agents + `shared-instructions.md`), and `.claude/agents/developers/` (2 agents + `shared-instructions.md`). Shared knowledge files are in `.claude/agents/knowledge/` (26 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+Agents are organized in subfolders: `.claude/agents/qa/` (10 QA agents + `shared-instructions.md`), `.claude/agents/ba/` (4 BA agents + `shared-instructions.md`), and `.claude/agents/developers/` (4 agents + `shared-instructions.md`). Shared knowledge files are in `.claude/agents/knowledge/` (27 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 
