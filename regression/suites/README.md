@@ -1,228 +1,102 @@
 # Test Suite Files Index
 
 **Location:** `regression/suites/`
-**Updated:** 2026-03-21
+**Updated:** 2026-06-12
 **Format:** Enriched Agent-Native CSV (15-column)
-**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration
+**Manifest:** [`config/test-suites.json`](../../config/test-suites.json) — single source of truth for orchestration (`_meta.totalSuites: 104`)
+
+Suites are organized into **module-aligned subdirectories** under `Frontend/` and `Backend/`. IDs are
+zero-padded and may carry letter suffixes for split suites (e.g. `040a`, `050b1`, `072c`).
+
+**Totals:** 104 CSV suites · ~3,790 test cases · 48 Frontend (15 modules) + 56 Backend (29 modules).
+The master release suite `080` is defined in the manifest (`_release/080-full-regression-release.csv`).
 
 ---
 
-## Suites by Domain
+## Frontend (48 suites, 15 modules)
 
-Domains group related suites across Frontend and Backend layers. Use `domain:<name>` selections for domain-scoped regression runs.
+| Module | Suites |
+|--------|--------|
+| `auth/` | 031 Login & Register (P1) · 032 Session & RBAC (P1) · 033 Company & Account Menu (P1) · 082 Impersonation / Login-on-Behalf (P1) |
+| `b2c/` | 006 Organization (P1) · 007 Lists & Shared (P1) · 008 Members (P1) · 009 Variations & Configs (P1) · 010 Bulk / Ship / Dashboard (P1) |
+| `bopis/` | 036 Store Selector (P1) · 037 Cart (P1) · 038 Checkout (P1) |
+| `cart/` | 028 Core (P1) · 029 Validation & Persistence (P1) · 030 Merge (P1) |
+| `catalog/` | 001 Navigation (P1) · 002 Product Detail (P1) · 003 Filters (P1) |
+| `checkout/` | 011 Flow (P1) · 012 Guest (P1) · 013 B2B (P1) · 081 Select Shipping Address Popup (P1) |
+| `configurable-products/` | 072 UI (P1) · 072b E2E (P1) · 072c Cross-Cutting (P1) · 072d File & Text Sections (P1) |
+| `cross-cutting/` | 043 Google Analytics (P2) · 044 Security (P0) · 045 Accessibility (P2) · 046 Localization (P2) · 047 Performance (P2) · 048 Browser Compatibility (P1) · 048b Layout Stability (P1) |
+| `loyalty/` | 083 Loyalty Catalog Browsing (P1) |
+| `marketing/` | 077 Coupons & Promotions Storefront (P1) · 077b Coupons & Promotions — Cart Sidebar (P1) |
+| `orders/` | 014 Orders Frontend (P1) · 015 Quotes (P1) |
+| `payment/` | 039 CyberSource (P0) · 040a Skyflow (P0) · 040b Authorize.Net (P0) · 040c Datatrans (P0) · 041 Cross-Cutting (P0) |
+| `search/` | 004 Core (P1) · 005 Filters & Advanced (P1) |
+| `smoke/` | 042 Smoke Tests (P0) |
+| `whitelabeling/` | 070 Storefront (P1) · 071 Branding (P1) |
 
-### purchase-flow (10 suites, ~628 cases)
-Revenue-critical path: cart → checkout → payment → orders → shipping → inventory → returns.
+## Backend (56 suites, 29 modules)
 
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 04a | [Cart Tests](Frontend/04a-cart-tests.csv) | frontend | functional | 77 | P1 |
-| 04b | [Checkout Tests](Frontend/04b-checkout-tests.csv) | frontend | functional | 80 | P1 |
-| 04c | [Orders & Quotes Tests](Frontend/04c-orders-quotes-tests.csv) | frontend | functional | 81 | P1 |
-| 05 | [BOPIS Pickup Tests](Frontend/05-bopis-pickup-tests.csv) | frontend | functional | 88 | P1 |
-| 06 | [Payment Tests](Frontend/06-payment-tests.csv) | frontend | functional | 65 | P0 |
-| 19 | [Pricing Admin Tests](Backend/19-pricing-tests.csv) | backend | admin | 62 | P1 |
-| 20 | [Orders Admin Tests](Backend/20-orders-tests.csv) | backend | admin | 90 | P1 |
-| 22 | [Inventory Admin Tests](Backend/22-inventory-tests.csv) | backend | admin | 43 | P1 |
-| 30 | [Shipping Module Tests](Backend/30-shipping-tests.csv) | backend | admin | 20 | P1 |
-| 37 | [Returns Admin Tests](Backend/37-returns-tests.csv) | backend | admin | 22 | P1 |
-
-### catalog-search (5 suites, ~405 cases)
-Product discovery: catalog, search, configurable products, indexing, import/export.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 03 | [Catalog & Search Tests](Frontend/03-catalog-search-tests.csv) | frontend | functional | 130 | P1 |
-| 36 | [Configurable Products Tests](Frontend/36-configurable-products-tests.csv) | frontend | functional | 133 | P1 |
-| 16 | [Catalog Admin Tests](Backend/16-catalog-tests.csv) | backend | admin | 78 | P1 |
-| 26 | [Search & Indexing Tests](Backend/26-search-indexing-tests.csv) | backend | admin | 46 | P1 |
-| 29 | [CSV Export Import Tests](Backend/29-csv-export-import-tests.csv) | backend | admin | 18 | P1 |
-
-### auth-security (4 suites, ~213 cases)
-Authentication, authorization, platform API, and security.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 02 | [Authentication Tests](Frontend/02-authentication-tests.csv) | frontend | functional | 68 | P1 |
-| 08 | [Security Tests](Frontend/08-security-tests.csv) | frontend | functional | 32 | P0 |
-| 14 | [Platform API Tests](Backend/14-platform-api-tests.csv) | backend | api | 33 | P0 |
-| 17 | [Platform Core Tests](Backend/17-platform-core-tests.csv) | backend | admin | 80 | P1 |
-
-### marketing (3 suites, ~181 cases)
-Promotions, coupons, dynamic content, xMarketing.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 41 | [Coupons & Promotions Tests](Frontend/41-coupons-promotions-tests.csv) | frontend | functional | 54 | P1 |
-| 23 | [Marketing Admin Tests](Backend/23-marketing-tests.csv) | backend | admin | 89 | P1 |
-| 42 | [xMarketing Module Tests](Backend/42-xmarketing-tests.csv) | backend | admin | 38 | P1 |
-
-### customer-b2b (4 suites, ~286 cases)
-Customer management, B2C features, contracts, loyalty.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 13 | [B2C Features Tests](Frontend/13-b2c-features-tests.csv) | frontend | functional | 166 | P1 |
-| 21 | [Customer Admin Tests](Backend/21-customer-tests.csv) | backend | admin | 84 | P1 |
-| 38 | [Contracts Admin Tests](Backend/38-contracts-tests.csv) | backend | admin | 18 | P1 |
-| 39 | [Loyalty Admin Tests](Backend/39-loyalty-tests.csv) | backend | admin | 18 | P1 |
-
-### platform-config (4 suites, ~127 cases)
-GraphQL xAPI, store configuration, core settings, channels.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 15 | [GraphQL xAPI Tests](Backend/15-graphql-xapi-tests.csv) | backend | api | 33 | P1 |
-| 18 | [Store Admin Tests](Backend/18-store-tests.csv) | backend | admin | 65 | P1 |
-| 28 | [Core Settings Tests](Backend/28-core-settings-tests.csv) | backend | admin | 14 | P2 |
-| 40 | [Channels & Data Quality Tests](Backend/40-channels-tests.csv) | backend | admin | 15 | P2 |
-
-### content-cms (3 suites, ~127 cases)
-CMS, page builder, assets, image tools.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 25 | [CMS & Page Builder Tests](Backend/25-cms-pagebuilder-tests.csv) | backend | admin | 75 | P1 |
-| 27 | [Assets Module Tests](Backend/27-assets-tests.csv) | backend | admin | 24 | P1 |
-| 34 | [Image Tools Tests](Backend/34-image-tools-tests.csv) | backend | admin | 28 | P2 |
-
-### branding (3 suites, ~128 cases)
-SEO, white labeling (backend + frontend).
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 35 | [Frontend White Labeling Tests](Frontend/35-frontend-whitelabeling-tests.csv) | frontend | functional | 68 | P1 |
-| 31 | [SEO Module Tests](Backend/31-seo-tests.csv) | backend | admin | 20 | P1 |
-| 32 | [White Labeling Tests](Backend/32-whitelabeling-tests.csv) | backend | admin | 40 | P2 |
-
-### communication (2 suites, ~89 cases)
-Notifications and push messages.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 24 | [Notifications Admin Tests](Backend/24-notifications-tests.csv) | backend | admin | 64 | P1 |
-| 33 | [Push Messages Tests](Backend/33-push-messages-tests.csv) | backend | admin | 25 | P2 |
-
-### cross-cutting (7 suites, ~233 cases)
-Smoke, analytics, accessibility, localization, performance, browser compatibility, master suite.
-
-| # | Suite | Layer | Concern | Cases | Priority |
-|---|-------|-------|---------|-------|----------|
-| 00 | [Full Regression Release](Frontend/00-full-regression-release.csv) | frontend | functional | 100 | P0 |
-| 01 | [Smoke Tests](Frontend/01-smoke-tests.csv) | frontend | functional | 19 | P0 |
-| 07 | [Google Analytics Tests](Frontend/07-google-analytics-tests.csv) | frontend | non-functional | 24 | P2 |
-| 09 | [Accessibility Tests](Frontend/09-accessibility-tests.csv) | frontend | non-functional | 23 | P1 |
-| 10 | [Localization Tests](Frontend/10-localization-tests.csv) | frontend | non-functional | 26 | P2 |
-| 11 | [Performance Tests](Frontend/11-performance-tests.csv) | frontend | non-functional | 20 | P2 |
-| 12 | [Browser Compatibility Tests](Frontend/12-browser-compatibility-tests.csv) | frontend | non-functional | 21 | P1 |
-
----
-
-## Suites by Layer
-
-### Frontend (19 suites)
-
-| # | File | Cases | Priority | Domain |
-|---|------|-------|----------|--------|
-| 00 | [00-full-regression-release.csv](Frontend/00-full-regression-release.csv) | 100 | P0 | cross-cutting |
-| 01 | [01-smoke-tests.csv](Frontend/01-smoke-tests.csv) | 19 | P0 | cross-cutting |
-| 02 | [02-authentication-tests.csv](Frontend/02-authentication-tests.csv) | 68 | P1 | auth-security |
-| 03 | [03-catalog-search-tests.csv](Frontend/03-catalog-search-tests.csv) | 130 | P1 | catalog-search |
-| 04a | [04a-cart-tests.csv](Frontend/04a-cart-tests.csv) | 77 | P1 | purchase-flow |
-| 04b | [04b-checkout-tests.csv](Frontend/04b-checkout-tests.csv) | 80 | P1 | purchase-flow |
-| 04c | [04c-orders-quotes-tests.csv](Frontend/04c-orders-quotes-tests.csv) | 81 | P1 | purchase-flow |
-| 05 | [05-bopis-pickup-tests.csv](Frontend/05-bopis-pickup-tests.csv) | 88 | P1 | purchase-flow |
-| 06 | [06-payment-tests.csv](Frontend/06-payment-tests.csv) | 65 | P0 | purchase-flow |
-| 07 | [07-google-analytics-tests.csv](Frontend/07-google-analytics-tests.csv) | 24 | P2 | cross-cutting |
-| 08 | [08-security-tests.csv](Frontend/08-security-tests.csv) | 32 | P0 | auth-security |
-| 09 | [09-accessibility-tests.csv](Frontend/09-accessibility-tests.csv) | 23 | P1 | cross-cutting |
-| 10 | [10-localization-tests.csv](Frontend/10-localization-tests.csv) | 26 | P2 | cross-cutting |
-| 11 | [11-performance-tests.csv](Frontend/11-performance-tests.csv) | 20 | P2 | cross-cutting |
-| 12 | [12-browser-compatibility-tests.csv](Frontend/12-browser-compatibility-tests.csv) | 21 | P1 | cross-cutting |
-| 13 | [13-b2c-features-tests.csv](Frontend/13-b2c-features-tests.csv) | 166 | P1 | customer-b2b |
-| 35 | [35-frontend-whitelabeling-tests.csv](Frontend/35-frontend-whitelabeling-tests.csv) | 68 | P1 | branding |
-| 36 | [36-configurable-products-tests.csv](Frontend/36-configurable-products-tests.csv) | 133 | P1 | catalog-search |
-| 41 | [41-coupons-promotions-tests.csv](Frontend/41-coupons-promotions-tests.csv) | 54 | P1 | marketing |
-
-### Backend (26 suites)
-
-| # | File | Cases | Priority | Domain |
-|---|------|-------|----------|--------|
-| 14 | [14-platform-api-tests.csv](Backend/14-platform-api-tests.csv) | 33 | P0 | auth-security |
-| 15 | [15-graphql-xapi-tests.csv](Backend/15-graphql-xapi-tests.csv) | 33 | P1 | platform-config |
-| 16 | [16-catalog-tests.csv](Backend/16-catalog-tests.csv) | 78 | P1 | catalog-search |
-| 17 | [17-platform-core-tests.csv](Backend/17-platform-core-tests.csv) | 80 | P1 | auth-security |
-| 18 | [18-store-tests.csv](Backend/18-store-tests.csv) | 65 | P1 | platform-config |
-| 19 | [19-pricing-tests.csv](Backend/19-pricing-tests.csv) | 62 | P1 | purchase-flow |
-| 20 | [20-orders-tests.csv](Backend/20-orders-tests.csv) | 90 | P1 | purchase-flow |
-| 21 | [21-customer-tests.csv](Backend/21-customer-tests.csv) | 84 | P1 | customer-b2b |
-| 22 | [22-inventory-tests.csv](Backend/22-inventory-tests.csv) | 43 | P1 | purchase-flow |
-| 23 | [23-marketing-tests.csv](Backend/23-marketing-tests.csv) | 89 | P1 | marketing |
-| 24 | [24-notifications-tests.csv](Backend/24-notifications-tests.csv) | 64 | P1 | communication |
-| 25 | [25-cms-pagebuilder-tests.csv](Backend/25-cms-pagebuilder-tests.csv) | 75 | P1 | content-cms |
-| 26 | [26-search-indexing-tests.csv](Backend/26-search-indexing-tests.csv) | 46 | P1 | catalog-search |
-| 27 | [27-assets-tests.csv](Backend/27-assets-tests.csv) | 24 | P1 | content-cms |
-| 28 | [28-core-settings-tests.csv](Backend/28-core-settings-tests.csv) | 14 | P2 | platform-config |
-| 29 | [29-csv-export-import-tests.csv](Backend/29-csv-export-import-tests.csv) | 18 | P1 | catalog-search |
-| 30 | [30-shipping-tests.csv](Backend/30-shipping-tests.csv) | 20 | P1 | purchase-flow |
-| 31 | [31-seo-tests.csv](Backend/31-seo-tests.csv) | 20 | P1 | branding |
-| 32 | [32-whitelabeling-tests.csv](Backend/32-whitelabeling-tests.csv) | 40 | P2 | branding |
-| 33 | [33-push-messages-tests.csv](Backend/33-push-messages-tests.csv) | 25 | P2 | communication |
-| 34 | [34-image-tools-tests.csv](Backend/34-image-tools-tests.csv) | 28 | P2 | content-cms |
-| 37 | [37-returns-tests.csv](Backend/37-returns-tests.csv) | 22 | P1 | purchase-flow |
-| 38 | [38-contracts-tests.csv](Backend/38-contracts-tests.csv) | 18 | P1 | customer-b2b |
-| 39 | [39-loyalty-tests.csv](Backend/39-loyalty-tests.csv) | 18 | P1 | customer-b2b |
-| 40 | [40-channels-tests.csv](Backend/40-channels-tests.csv) | 15 | P2 | platform-config |
-| 42 | [42-xmarketing-tests.csv](Backend/42-xmarketing-tests.csv) | 38 | P1 | marketing |
-
----
-
-## Legacy
-
-| File | Status | Replaced By |
-|------|--------|-------------|
-| [04-cart-checkout-tests.csv](_legacy/04-cart-checkout-tests.csv) | Deprecated | Suites 04a, 04b, 04c |
+| Module | Suites |
+|--------|--------|
+| `api/` | 049 Platform REST API (P0) |
+| `assets/` | 062 Assets (P1) |
+| `catalog/` | 051 Admin Products (P1) · 053 Admin Categories (P1) |
+| `channels/` | 076 Channels (P2) |
+| `cms/` | 059 Page Management (P1) · 060 Design & Content (P1) |
+| `configurable-products/` | 052 Admin (P1) |
+| `contracts/` | 074 Contracts (P1) |
+| `customer/` | 026 Contacts (P1) · 027 Orgs & Invites (P1) |
+| `graphql/` | 050a xCatalog · 050b1–050b5 xCart · 050c xOrder · 050d xProfile · 050e xFrontend (pageContext) · 050f xCMS · 050g Cross-Cutting · 050h Wishlist · 050i Configurable Products · 050j xMarketing · 050k xPickup · 050l Push Messages (16 suites, mostly P1) |
+| `image-tools/` | 069 Image Tools (P2) |
+| `import-export/` | 064 CSV Import / Export (P1) |
+| `inventory/` | 056 Inventory (P1) |
+| `loyalty/` | 075 Loyalty (P1) |
+| `marketing/` | 023 Promotions (P1) · 024 Content (P1) · 025 Coupons & API (P1) |
+| `news/` | 084 News Articles (P1) |
+| `notifications/` | 057 Templates (P1) · 058 Triggers (P1) |
+| `orders/` | 017 Management (P1) · 018 Payments (P1) · 019 Shipments (P1) |
+| `platform/` | 020 Users / Roles / Settings (P1) · 021 Dynamic Properties (P1) · 063 Core Settings (P2) |
+| `pricing/` | 054 Logic (P1) · 055 Management (P1) |
+| `push-messages/` | 068 Push Messages (P2) |
+| `returns/` | 073 Returns (P1) |
+| `search/` | 061 Search Indexing Admin (P1) |
+| `seo/` | 066 SEO (P1) |
+| `shipping/` | 065 Shipping (P1) |
+| `smoke/` | 078 Backend Smoke Tests (P0) |
+| `store/` | 034 Management (P1) · 035 Rounding & Email (P1) |
+| `task-management/` | 085 Task Management (P2) |
+| `whitelabeling/` | 067 Admin (P1) |
+| `xmarketing/` | 079 xMarketing Admin & REST (P1) |
 
 ---
 
 ## Selection Groups
 
-### By Priority
+Authoritative definitions live in the manifest's `selections` block. Regenerate with
+`npm run suites:sync`; verify with `npm run suites:lint`.
+
+### By Priority / scope
+
 | Selection | Suites | CI Command |
 |-----------|--------|------------|
-| `smoke` | 01 | `npm run ci:smoke` |
-| `critical` | 01, 06, 08, 14 | `npm run ci:critical` |
-| `release` | 00 | — |
-| `sprint` | 33 suites | — |
-| `full` | All 45 | `npm run ci:full` |
+| `smoke` | 042, 078 | `npm run ci:smoke` |
+| `critical` | 042, 078, 039, 044, 049 | `npm run ci:critical` |
+| `release` | 080 | — |
+| `layout-stability` | 048b | — |
+| `sprint` | Plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1) | — |
+| `full` | All 104 | `npm run ci:full` |
 
 ### By Layer
+
 | Selection | Suites | CI Command |
 |-----------|--------|------------|
-| `frontend` | 01-13, 35, 36, 41 (19 suites) | `npm run ci:frontend` |
-| `backend` | 14-34, 37-40, 42 (26 suites) | `npm run ci:backend` |
+| `frontend` | All `Frontend/` suites (48) | `npm run ci:frontend` |
+| `backend` | All `Backend/` suites (56) | `npm run ci:backend` |
 
-### By Domain
-| Selection | Suites | Use Case |
-|-----------|--------|----------|
-| `domain:purchase-flow` | 04a, 04b, 04c, 05, 06, 19, 20, 22, 30, 37 | Revenue path changes |
-| `domain:catalog-search` | 03, 16, 26, 29, 36 | Catalog/search module updates |
-| `domain:auth-security` | 02, 08, 14, 17 | Auth or security changes |
-| `domain:marketing` | 23, 41, 42 | Promotions/coupons changes |
-| `domain:content-cms` | 25, 27, 34 | CMS or asset module updates |
-| `domain:customer-b2b` | 13, 21, 38, 39 | Customer/B2B module changes |
-| `domain:platform-config` | 15, 18, 28, 40 | Platform configuration changes |
-| `domain:communication` | 24, 33 | Notification module updates |
-| `domain:branding` | 31, 32, 35 | SEO/white-labeling changes |
-| `domain:cross-cutting` | 00, 01, 07, 09, 10, 11, 12 | Non-functional & smoke |
+### Module / feature groups
 
-### By Concern
-| Selection | Description |
-|-----------|-------------|
-| `concern:functional` | Storefront user-facing functional tests |
-| `concern:non-functional` | GA4, a11y, i18n, performance, browser compat |
-| `concern:api` | REST API + GraphQL xAPI |
-| `concern:admin` | Admin SPA module testing |
+`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`,
+`configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty` — see the manifest's `selections`
+for the exact suite lists.
 
 ---
 
@@ -234,12 +108,18 @@ All CSV files use the enriched agent-native format (15 columns):
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 ```
 
+Authoring guides:
+- Browser-mode CSV tags: [`.claude/agents/knowledge/test-runner-tags.md`](../../.claude/agents/knowledge/test-runner-tags.md)
+- Runner-native GraphQL cases: [`.claude/agents/knowledge/graphql-test-cases-runner.md`](../../.claude/agents/knowledge/graphql-test-cases-runner.md)
+- Test data resolver (`@td()` + `{{VAR}}`): [`.claude/rules/test-data.md`](../../.claude/rules/test-data.md)
+
 ---
 
 ## Related Documentation
 
 - [test-suites.json](../../config/test-suites.json) — Regression orchestration manifest (single source of truth)
 - [CLAUDE.md](../../CLAUDE.md) — Project testing overview
+- [.claude/rules/regression.md](../../.claude/rules/regression.md) — Testing modes, CI pipeline, selection groups
 - [module-suite-map.md](../../.claude/agents/knowledge/module-suite-map.md) — Module-to-suite mapping
 - [feature-domain-map.md](../../.claude/skills/testing/qa-coverage-gap/feature-domain-map.md) — Feature coverage tracking
 - [Bug Reports](../../reports/bugs/) — Bug documentation
