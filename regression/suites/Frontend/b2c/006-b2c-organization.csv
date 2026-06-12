@@ -225,7 +225,7 @@ Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL
 [DOM] Page context updates to new org (pricing and cart)","[API] organization switch mutation succeeds
 [CONSOLE] no uncaught JS errors","Clicking filtered org does not switch; org switcher still shows old org; page context not updating after selection from filtered list","none","C413993-C414010","Draft"
 "B2C-ORG-023","Org Search - Keyboard Navigation in Dropdown","B2C Features > Organization","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Multi-org user with 11+ orgs. KNOWN FAIL (verified live 2026-06-01): the org switcher dropdown has NO keyboard navigation — ArrowDown does not move a roving highlight (focus stays on the search input), no focus indicator appears on items, and Enter selects nothing; switching works by mouse click only. This is a WCAG 2.1.1 Keyboard (Level A) gap. Assertions below are the CORRECT expected behavior and should FAIL until keyboard nav is implemented (do not mark BLOCKED).","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
+Multi-org user with 11+ orgs. The org switcher dropdown supports full keyboard navigation: ArrowDown from the search input moves a visible roving focus into the filtered org list, ArrowUp/ArrowDown move through items (wrapping at both ends), Enter selects/switches to the highlighted org, and Escape closes the dropdown and returns focus to the account button. Focus is tracked via aria-activedescendant; current org is aria-selected. WCAG 2.1.1 (Keyboard, Level A) + 2.4.7 (Focus Visible, AA). Implemented in VCST-5176 / PR #2321 (theme 2.51.0-pr-2321); verified live 2026-06-12 — expected PASS.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher
 3. [ACT] Type partial search to filter results
 4. [KEY] Press Arrow Down to highlight first result
@@ -233,7 +233,7 @@ Multi-org user with 11+ orgs. KNOWN FAIL (verified live 2026-06-01): the org swi
 6. [KEY] Press Enter to select highlighted org
 7. [ASSERT] Verify selected org is now active","[STATE] Arrow keys navigate through org list items
 [DOM] Currently highlighted item has visual focus indicator
-[STATE] Enter key selects the highlighted organization","[CONSOLE] no uncaught JS errors","Arrow keys do not navigate dropdown items; Enter does not select highlighted item; no visual focus indicator","none","C413993-C414010; FAIL confirmed live 2026-06-01 (keyboard nav not implemented)","Reviewed"
+[STATE] Enter key selects the highlighted organization","[CONSOLE] no uncaught JS errors","Arrow keys do not navigate dropdown items; Enter does not select highlighted item; no visual focus indicator","none","C413993-C414010; PASS verified live 2026-06-12 (VCST-5176 / PR #2321 — keyboard nav implemented)","Reviewed"
 "B2C-ORG-024","Org Search - Placeholder Text and Styling","B2C Features > Organization","Low","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multi-org user with 11+ orgs","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Log in as multi-org user (11+ orgs)
 2. [ACT] Open org switcher

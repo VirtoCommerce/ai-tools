@@ -1,0 +1,24 @@
+{
+  "ticket": "VCST-5176",
+  "verdict": "VERIFIED",
+  "date": "2026-06-12",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue 2.51.0-pr-2321",
+    "pr_build": "vc-theme-b2b-vue-2.51.0-pr-2321 (PR #2321, confirmed deployed via vc-deploy-dev theme/artifact.json @ vcst-qa)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "wcag_verified": ["2.1.1 Keyboard (A)", "2.4.7 Focus Visible (AA)"],
+  "related": ["VCST-4815"],
+  "coverage_case": "006-b2c-organization.csv -> B2C-ORG-023",
+  "jira_transition": "Testing -> TESTED (Finish test) -> DONE (Move to done)",
+  "artifacts": "tests/Sprint26-11/VCST-5176/"
+}
