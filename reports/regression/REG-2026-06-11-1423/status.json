@@ -48,5 +48,135 @@
       "note": "15 blocked by firefox stability quirk — re-running on edge",
       "completed": "2026-06-11T12:44:32.884Z"
     }
-  }
+  },
+  "recovery": {
+    "groupB": {
+      "result": "0P/0F/7B",
+      "rootCause": "store-wide exclusive AUTOMATIC promo seals every cart; no promo-neutral product on storefront; even user own preset coupons rejected",
+      "fix": "admin/API deactivate exclusive auto-promo, re-run, reactivate — QUEUED post-GroupA (avoid concurrent promo mutation)",
+      "cases": [
+        "CART-058",
+        "CART-059",
+        "CART-014",
+        "CART-061",
+        "CART-062",
+        "CART-042",
+        "CART-065"
+      ],
+      "emailBlock": [
+        "CART-065 also needs email-verify + presets are public"
+      ]
+    },
+    "groupA": {
+      "result": "4P/0F/9B",
+      "recovered": [
+        "CART-024",
+        "CART-028",
+        "CART-043",
+        "CART-076"
+      ],
+      "rootCauseOfRemaining": "slot-1 B2B cart corrupted/non-mutable (Apollo legacy-cart; all writes no-op, subtotal frozen $1266.99) — NOT parallel-unsafe",
+      "fix": "removeCart reset → fresh cart → re-run 9",
+      "remaining": [
+        "CART-020",
+        "CART-023",
+        "CART-025",
+        "CART-027",
+        "CART-029",
+        "CART-030",
+        "CART-044",
+        "CART-045",
+        "CART-081"
+      ]
+    },
+    "groupE": {
+      "result": "2P/0F/0B",
+      "recovered": [
+        "CART-021",
+        "CART-004"
+      ],
+      "note": "both prior blocks were wrong-approach; CART-021 via logout/login session persistence, CART-004 via live-discovered variation product (STD-002 alias too limited — single USD color)"
+    },
+    "tally": {
+      "originallyBlocked": 31,
+      "recoveredPASS": 12,
+      "passWithCaveat": 1,
+      "newRealFails": 1,
+      "queuedAdmin": [
+        "D(3)",
+        "C-OOS(2)"
+      ],
+      "envDesignResidue": [
+        "Group B coupons(7)",
+        "CART-030"
+      ],
+      "infraResidue": [
+        "CART-065",
+        "CART-066",
+        "CART-057"
+      ]
+    },
+    "groupA_retry": {
+      "result": "6P/1F/1Pcaveat/1B",
+      "pass": [
+        "CART-020",
+        "CART-023",
+        "CART-025",
+        "CART-027",
+        "CART-045",
+        "CART-081"
+      ],
+      "passCaveat": [
+        "CART-029 (lazy-reprice: stale on passive reload, correct after any write — not financial)"
+      ],
+      "fail": [
+        "CART-044 (no price-change indicator even after correct)"
+      ],
+      "blocked": [
+        "CART-030 (cannot isolate the auto-promo among 49 active to remove safely)"
+      ],
+      "cartFix": "removeCart of 5 dup carts + logout/login cleared Apollo phantom"
+    },
+    "newFindings": [
+      "B2B multi-cart write/read desync — user has 5 default carts; reads/writes hit different rows; cart-page load auto-appends orphan shipment+payment each visit (HIGH, backend xCart, reproducible)",
+      "Lazy-reprice on decrease — cart line reprices on write not on passive read-after-external-price-change (Low/Med UX, not financial)",
+      "CART-044 — no price-change indicator/badge/toast even after price corrects (Low/Med UX)"
+    ],
+    "groupD_COOS": {
+      "result": "5P/0F/0B",
+      "pass": [
+        "CART-068",
+        "CART-069",
+        "CART-070",
+        "CART-046",
+        "CART-082"
+      ],
+      "restored": "store default-selected setting -> ON (verified); WH-001 inventory -> 49 (verified); cart emptied"
+    },
+    "final": {
+      "recoveredPASS": 17,
+      "passCaveat": [
+        "CART-029"
+      ],
+      "newRealFail": [
+        "CART-044"
+      ],
+      "promoGated": [
+        "CART-014",
+        "CART-042",
+        "CART-058",
+        "CART-059",
+        "CART-061",
+        "CART-062",
+        "CART-065",
+        "CART-030"
+      ],
+      "infraGated": [
+        "CART-066(mock)",
+        "CART-057(email)"
+      ],
+      "note": "from 31 BLOCKED: 17 recovered to PASS (+1 caveat), 1 real bug surfaced, ~10 env-design/infra-gated (promo store design + no test mailbox)"
+    }
+  },
+  "state": "recovery-complete"
 }
