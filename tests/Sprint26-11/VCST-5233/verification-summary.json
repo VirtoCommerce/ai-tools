@@ -1,0 +1,31 @@
+{
+  "ticket": "VCST-5233",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-06-12",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1035.0",
+    "relevant_modules": { "VirtoCommerce.XCart": "3.1020.0-pr-123-f160" },
+    "pr_build": "vc-module-x-cart PR #123 (deployed, unmerged)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "fix_verification_path": "QA-coupon (code 'QA', stored uppercase) entered as 'qa'/'Qa'/'qA' — exact VCST-5233 case-mismatch scenario; original 'agent' coupon could not be used because an exclusive sub-$1000 promotion suppressed all coupons",
+  "fresh_user": "agent-test-vcst5233-kli53i@yopmail.com",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "discount_observed": "all casings qa/Qa/qA/QA -> identical -$266.89 on $5,337.84 subtotal; validateCoupon:true + isAppliedSuccessfully:true for all four",
+  "negative_control": "NOPE123 -> 'This code is not valid', Apply disabled (fix did not make everything pass)",
+  "regression_issues": [],
+  "side_effects": [],
+  "notes": [
+    "Store has an exclusive automatic promotion '[E2E Test] Cart subtotal specific discount' (isExclusive:true, fires when cart subtotal <= $1000) that suppresses ALL coupon promotions on sub-$1000 carts -> validateCoupon returns false for every code incl. exact case. This (not the fix) caused the initial BLOCKED run (cart was $549). Verified on a >$1000 cart where coupons evaluate normally.",
+    "Test-data recommendation: keep coupon-case regression carts above $1000 (or disable that exclusive promo) so coupon behaviour stays observable.",
+    "The original 'Agent Case Test' promotion (coupon 'agent') was not directly re-confirmed; the fix's code path was verified via the equivalent 'QA' coupon."
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CART-003", "BL-CART-009"],
+  "jira_transition": "PENDING_USER_APPROVAL (proposed: TESTING -> TESTED via 'Finish test')",
+  "artifacts": "tests/Sprint26-11/VCST-5233/"
+}

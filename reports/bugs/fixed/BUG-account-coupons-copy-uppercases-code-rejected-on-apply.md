@@ -1,6 +1,12 @@
 # BUG: `/account/coupons` copies coupon code force-uppercased → rejected as invalid on `/cart`
 
-## Status: CONFIRMED
+## Status: FIXED
+
+## Resolution
+- **Fixed in:** vc-module-x-cart PR #123 (`CartAggregate.cs` — `ValidateCouponAsync` + `Coupons` getter now compare entered-vs-stored coupon codes via `EqualsIgnoreCase`). Deployed build **VirtoCommerce.XCart 3.1020.0-pr-123-f160**.
+- **JIRA:** VCST-5233.
+- **Verified:** 2026-06-12 via `/qa-verify-fix` (live, G6) — STR 3/3, coupon `QA` entered `qa`/`Qa`/`qA`/`QA` all apply the identical discount; `validateCoupon`→true & `isAppliedSuccessfully`→true for all casings; invalid code still rejected. Evidence: `tests/Sprint26-11/VCST-5233/`.
+- **Note:** verified via the equivalent `QA` coupon (not the original `agent` coupon) — an exclusive sub-$1000 store promotion (`[E2E Test] Cart subtotal specific discount`) suppresses all coupons on small carts; verification used a >$1000 cart. PR #123 remains open/unmerged pending human review.
 
 **JIRA:** [VCST-5233](https://virtocommerce.atlassian.net/browse/VCST-5233)
 **Severity:** Medium (functional — customers cannot redeem their own coupons via the copy flow)

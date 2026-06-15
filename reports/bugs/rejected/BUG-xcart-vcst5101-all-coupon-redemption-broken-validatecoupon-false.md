@@ -1,6 +1,20 @@
 # BUG — All coupon redemption broken on the VCST-5101 build (`validateCoupon` returns false for every coupon)
 
-**Severity:** High / Release-blocker (no coupon can be redeemed; VCST-5101 is merged to `dev`, so it ships forward)
+## Disposition: REJECTED — NOT A BUG (by-design exclusive promotion + cross-env A/B confound) · 2026-06-12
+
+**Re-classified from High/Release-blocker → not-a-bug after live re-test on the same VCST-5101 build.** The symptom is not a coupon-evaluation regression; it is an **exclusive automatic promotion suppressing all other promotions on small carts**, present only in vcst-qa's promotion *data*.
+
+- **Real cause:** promotion **`[E2E Test] Cart subtotal specific discount`** (Marketing API, vcst-qa): `isExclusive: true`, condition `ConditionCartSubtotalLeast { subTotal: 1000, compareCondition: "IsLessThanOrEqual" }`, customer `ConditionIsEveryone`, reward `$10`, active. An **exclusive** promotion, when it matches, suppresses every other promotion — including all coupon-backed ones — so `validateCoupon` returns `false` for **every** coupon while "only the automatic discount applies" (that automatic discount *is* this exclusive $10 promo). This is the exact reported signature.
+- **Threshold A/B on the SAME build (XCart 3.1019/3.1020-pr-123, vcst-qa), same env:** coupons FAIL on carts ≤ $1000 ($232, $549 → `validateCoupon:false` for all) and WORK on carts > $1000 ($5,337 / $7,518 / $13,755 → `QA`, `agent1`, `FriDAY`, VALID-class all apply with `validateCoupon:true` and correct discounts). The only discriminator is the $1000 threshold, matching the exclusive promo's condition — **not** the build. (Verified during VCST-5233 G6 verification, 2026-06-12.)
+- **Why the original A/B misattributed it:** the "decisive A/B" compared **two different environments** (vcptcore-qa vs vcst-qa), which have different promotion data. The `[E2E Test]` exclusive promo lives on vcst-qa, not vcptcore-qa — so the changed variable was env data + small test carts, not the VCST-5101 / PR #120 mixed-currency code. Cross-env confound.
+- **Consequences corrected:** VCST-5101 / PR #120 is NOT implicated; **VCST-5233 is NOT blocked** (verified live on a >$1000 cart — see `reports/bugs/fixed/BUG-account-coupons-copy-uppercases-code-rejected-on-apply.md`).
+- **Test-data note:** keep coupon regression carts above $1000 (or disable / scope this exclusive promo) so coupon behaviour stays observable. No JIRA ticket was filed for this report; no further action required beyond the test-data hygiene note.
+
+> Original report retained below for the record.
+
+---
+
+**Severity:** ~~High / Release-blocker~~ → **Rejected (not a bug)** — see Disposition above.
 
 **Env:** vcst-qa @ Platform `3.1035.0`, **XCart `3.1019.0-pr-123-fcd6` (VCST-5101)**, Cart `3.1005.0-pr-188`, Marketing `3.1005.0-pr-268`, MarketingExperienceApi `3.1003.0`
 

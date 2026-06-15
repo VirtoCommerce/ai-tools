@@ -1,0 +1,25 @@
+{
+  "runId": "MONITOR-2026-06-12-1518",
+  "date": "2026-06-12",
+  "env": "vcst",
+  "window_min": 35,
+  "layers": ["backend", "frontend"],
+  "auth": "aad",
+  "configured": true,
+  "signatures": { "queried": 1, "new": 1, "spiking": 0, "stable": 0, "triaged": 1, "deferred": 0 },
+  "confirmed": 0,
+  "needsReview": 0,
+  "dismissed": [
+    {
+      "class": "NOISE",
+      "layer": "frontend",
+      "probe": "frontend-exceptions",
+      "signature": "ErrorEvent: ResizeObserver loop completed with undelivered notifications",
+      "count": 1,
+      "reason": "Benign browser warning, no app-code stack, not a defect"
+    }
+  ],
+  "jiraFiled": false,
+  "fixAttempted": false,
+  "teamsNotified": false
+}
