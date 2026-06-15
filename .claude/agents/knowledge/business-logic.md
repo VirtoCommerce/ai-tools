@@ -941,6 +941,34 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 
 ---
 
+## Domain 18: Payment Processors (BL-PAY)
+
+### BL-PAY-001: Client-side card validation gates order submission `[P0-revenue]`
+- **Rule:** A storefront bank-card payment form validates card fields client-side — card number (Luhn), all required fields present, expiry month 01–12 with a fully-entered 2-digit year that is not in the past, CVV 3–4 numeric digits — and keeps the "Place order" / pay action disabled until every field is valid. No payment-authorization request is sent and no order is created while any field is invalid or incomplete.
+- **Verify:** Enter a Luhn-invalid number, empty/partial fields, an expired or out-of-range expiry, or a short/non-numeric CVV → "Place order" stays disabled; no POST to the processor (e.g. `api2.authorize.net`) and no `createOrderFromCart`; an inline field-level error is shown; errors clear and the button enables only on fully valid data.
+- **Violation signal:** Invalid card accepted with no error; pay/place-order enabled with bad or incomplete data; a payment request or a ghost "Payment required" order created from invalid card input.
+- **Agents:** qa-frontend-expert
+- **Source:** VCST-5162 PR vc-frontend#2309 (`bank-card-form.vue` `validationSchema`, incl. `isExpirationDateValid` "not-expired" test + yup `.length(2)` year rule); suite 040b PAY-AN-012/013/018/019/020; mirrors CyberSource/Skyflow validation.
+- **Promoted:** 2026-06-15.
+
+### BL-PAY-003: Successful card payment creates a paid order with a recorded transaction `[P0-revenue]`
+- **Rule:** On a successful tokenized card payment the order is created, the cart is cleared, the user reaches the confirmation page with an order number, and the order persists the payment-method label and the processor transaction id (visible in `/account/orders` and admin). Raw PAN never appears in storefront network payloads (SDK tokenization).
+- **Verify:** Complete a valid card payment → confirmation page with order number; cart badge empty; order in `/account/orders` and admin shows the processor method + a transaction id; no raw card number in any request body; `createOrderFromCart` `errors[]` empty.
+- **Violation signal:** Stuck on `/cart` or payment page after submit; no confirmation/order number; cart not cleared; missing transaction id; raw PAN present in network POST bodies.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** suite 040b PAY-AN-014 (+ deprecated 004/005 admin transaction-record shape); VCST-5162; backend transaction-record change (Status=short enum, ResponseCode=TransactionResponseCode). See BL-ORD-006 (payment state machine).
+- **Promoted:** 2026-06-15.
+
+### BL-PAY-004: AllowCartPayment renders the card form inline on /cart with a lifecycle-safe shared processor `[P0-revenue]`
+- **Rule:** When a payment method has `allowCartPayment=true`, its card form renders inline on `/cart` (no redirect to `/checkout/payment`) and initialization uses the cart-context mutation `initializeCartPayment` (not `initializePayment`). The shared cart payment processor is registered only after a successful init and only while the component is mounted, and `finalizePayment` runs it only when the selected method's `allowCartPayment === true`. Switching to a non-cart-payment method must not charge the card. In multistep checkout the processor + `isCanFinalizePayment` state survives the Billing-step unmount so "Place order" on Review succeeds. The GA4 `purchase` event fires exactly once (from `useCheckout`, not the payment component).
+- **Verify:** Select an `allowCartPayment` method on `/cart` → inline form, URL stays `/cart`, network shows `initializeCartPayment`; switch to a manual method then place order → no charge to the card; multistep Billing→Review→Place order → paid order, not "Payment Required"; exactly one GA4 `purchase`.
+- **Violation signal:** Redirect to `/checkout/payment` for an `allowCartPayment` method; card charged after switching methods (stale processor); order left "Payment Required" after multistep (state lost on unmount); double or zero GA4 `purchase`; `initializePayment` called instead of `initializeCartPayment`.
+- **Agents:** qa-frontend-expert
+- **Source:** VCST-5162 PR vc-frontend#2309 + VCST-5009 (Skyflow); `payment.vue`, `payment-processing-authorize-net.vue` (`isActive` guard, register-after-init), `useCheckout.ts` (`allowCartPayment` finalize guard); suite 040a/040b PAY-AN-010/011/015/016/017.
+- **Promoted:** 2026-06-15.
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.

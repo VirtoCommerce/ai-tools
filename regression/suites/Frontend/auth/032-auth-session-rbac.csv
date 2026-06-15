@@ -300,3 +300,82 @@ BuildRight admin (ORG-003 maintainer) is signed in. TECHFLOW_BUYER is a member o
 [STATE] TECHFLOW_BUYER not discoverable in BuildRight admin's member list
 [NETWORK] POST /graphql lockOrganizationContact returns errors[] non-empty for cross-org attempt (AC4)
 [API] GET {{BACK_URL}}/api/members/@td(TECHFLOW_BUYER.platform_id) — isLockedOut unchanged after unauthorized attempt (no state corruption)","[API] Confirm @td(TECHFLOW_BUYER.platform_id) isLockedOut unchanged after cross-org lock attempt","TECHFLOW_BUYER visible in BuildRight member list (org isolation regression in UI); cross-org lockOrganizationContact succeeds (AC4 RBAC regression); TechFlow member lock state changes from unauthorized call","none — rejection flow, no state change expected","VCST-5028; BL-B2B-005; BL-AUTH-003; AC4; PRF-GQL-070; B2C-MBR-022; Synced: VCST-5028 (2026-06-15)","Draft"
+"AUTH-067","[VCST-5028] Multi-Org Member Lived Experience: TechFlow Maintainer -> Switch BuildRight Employee -> Permission Isolation -> Block in BuildRight -> TechFlow Unaffected -> Unblock Restore","Auth > Session > Org-Scoped RBAC [JOURNEY]","Critical","BL-B2B-007; BL-B2B-008; BL-AUTH-012; BL-AUTH-013; BL-B2B-001; BL-B2B-005; BL-AUTH-003","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
+Logged out. Fixture: @td(MULTI_ORG_TF_BR.email) belongs to BOTH TechFlow (org-maintainer) and BuildRight (org-employee).
+Both memberships must be in clean/unlocked state at start of run.
+NOTE [BUG-A]: Storefront write operations on /company/members currently broken (GetPageContext.user.permissions
+returns [] after org-switch). Org-switch and permission isolation screens remain observable even with BUG-A.
+NOTE [DEPLOY-1]: lockOrganizationContact mutation returns MISSING_METHOD on current deployed PR#135.
+Block/unblock steps use REST endpoints as canonical path until full mutations ship.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email=@td(MULTI_ORG_TF_BR.email); user_password=@td(MULTI_ORG_TF_BR.password); member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_buildright_id=@td(MULTI_ORG_TF_BR.org_buildright_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id)","--- SCREEN: Login into TechFlow (Org A - Maintainer) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
+[ACT] Click [data-test-id=login-button]
+[WAIT] Org-selector appears (two orgs -- TechFlow and BuildRight)
+[ACT] Select TechFlow organization from org-selector
+[WAIT] Header shows TechFlow as active org; session fully initialized
+[ASSERT] [DOM] Active org indicator shows TechFlow
+[ASSERT] [DOM] Company Members link visible in navigation (org-maintainer feature access -- BL-B2B-007)
+--- SCREEN: TechFlow Permission Verification ---
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[WAIT] Members page renders
+[ASSERT] [DOM] Invite button visible OR per-row action menus present (maintainer permissions); if absent: BUG-A signal -- permissions[] empty after org-switch
+--- SCREEN: Switch to BuildRight (Org B - Employee) ---
+[PRE:CLEAR_SESSION]
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
+[ACT] Click [data-test-id=login-button]
+[WAIT] Org-selector appears
+[ACT] Select BuildRight organization
+[WAIT] Header shows BuildRight as active org
+[ASSERT] [DOM] Active org indicator shows BuildRight
+--- SCREEN: BuildRight Permission Isolation ---
+[NAV] Navigate to {{FRONT_URL}}/company/members (if accessible as employee)
+[ASSERT] [DOM] Invite button ABSENT for org-employee role (BL-B2B-005 - maintainer-only) OR /company/members shows read-only view
+[ASSERT] [STATE] Per-row action menus (role-change, block) absent for org-employee in BuildRight (BL-B2B-008)
+--- SCREEN: Block in BuildRight (REST direct org-lock) ---
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/lock
+[ASSERT] [STATUS] 200
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body: {userId: @td(MULTI_ORG_TF_BR.userId)}
+[ASSERT] [BODY] BuildRight membership (organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)) isLocked=true
+[ASSERT] [BODY] TechFlow membership (organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)) isLocked=false (BL-AUTH-012 cross-org isolation)
+[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
+[ASSERT] [BODY] {locked: false} -- global ApplicationUser NOT locked (BL-AUTH-012 critical guard)
+--- SCREEN: BuildRight Login Attempt While Blocked ---
+[PRE:CLEAR_SESSION]
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
+[ACT] Click [data-test-id=login-button]
+[WAIT] Org-selector appears OR error appears
+[ACT] Select BuildRight organization (if org-selector shown)
+[ASSERT] [DOM] Org-scoped lockout error: Your access to this organization has been blocked. Please contact your organization administrator [contact the site administrator]. (BL-AUTH-013)
+--- SCREEN: TechFlow Access Unaffected ---
+[PRE:CLEAR_SESSION]
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
+[ACT] Click [data-test-id=login-button]
+[WAIT] Org-selector appears
+[ACT] Select TechFlow organization
+[WAIT] TechFlow session active -- header shows TechFlow
+[ASSERT] [DOM] TechFlow session established; no lockout error (BL-AUTH-003 -- org-B lock does not prevent org-A login)
+[ASSERT] [DOM] Company Members accessible for TechFlow maintainer role
+--- SCREEN: Unblock BuildRight (Restore Fixture) ---
+[PRE:CLEAR_SESSION]
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock
+[ASSERT] [STATUS] 200
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body: {userId: @td(MULTI_ORG_TF_BR.userId)}
+[ASSERT] [BODY] BuildRight membership isLocked=false (fixture restored)","[DOM] TechFlow session: active org shows TechFlow; Company Members accessible with write actions (or BUG-A signal if absent)
+[DOM] BuildRight session: active org shows BuildRight; write actions absent (org-employee)
+[STATUS] BuildRight lock: POST .../lock returns 200; search confirms isLocked=true
+[BODY] Cross-org isolation: TechFlow membership isLocked=false while BuildRight locked (BL-B2B-008)
+[BODY] Global account guard: GET .../locked returns {locked: false} at every stage (BL-AUTH-012)
+[DOM] BuildRight login while locked: org-scoped error displayed (BL-AUTH-013)
+[DOM] TechFlow login after BuildRight block: succeeds without error (BL-AUTH-003)
+[STATUS] BuildRight unlock: POST .../unlock returns 200; isLocked=false","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} - at block screen: BuildRight isLocked=true, TechFlow isLocked=false
+[API] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked - at every HTTP step: must return {locked: false}
+[API] At unblock screen: search again - BuildRight isLocked=false","Global account locked when org-B membership locked (BL-AUTH-012 violation -- critical); TechFlow login fails after BuildRight block (BL-AUTH-003 org-scope violation); org-scoped error shows generic global-lockout message instead of org-specific text (BL-AUTH-013 regression); BuildRight write actions visible for org-employee (BL-B2B-008 violation); BUG-A signal: TechFlow Company Members shows no Invite button (expected current build)","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- ensure BuildRight membership unlocked
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock -- defensive unlock for TechFlow
+[PRE:CLEAR_SESSION]","VCST-5028; BA-2026-06-15; BL-B2B-001; BL-AUTH-003; BL-AUTH-012; BL-AUTH-013; BL-B2B-007; BL-B2B-008; Technique: State Transition (TechFlow-active>BuildRight-active>BuildRight-locked>TechFlow-unaffected>restored)","Draft"

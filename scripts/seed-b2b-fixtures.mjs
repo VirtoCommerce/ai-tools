@@ -21,10 +21,11 @@
  *   baseline    — 4 base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + 10 contacts (CON-001..011)
  *   imp         — IMP-049 supporting orgs (ORG-009..019) + impersonation target contacts (CON-020..022)
  *   memberships — Org-scoped role memberships (VCST-5028) from organization-memberships.csv:
- *                 ensures a contact + storefront login (security account) per user_email, an
- *                 optional account-level GLOBAL platform role (the `global_role` column — JIRA
- *                 Test1's "global role + org roles" setup), then creates one OrganizationMembership
- *                 per (user, org) with its org-scoped `role_id`.
+ *                 ensures a contact + storefront login (security account) per user_email, then
+ *                 creates/RECONCILES one OrganizationMembership per (user, org) with its org-scoped
+ *                 `role_id`. Roles live ONLY at the org-membership level — NO global platform role
+ *                 is assigned, and any previously-seeded global org role is stripped on run
+ *                 (per VCST-5028: per-org roles replace the old global ApplicationUser role).
  *                 Seeds the cross-org test fixture (one member in N orgs with distinct roles).
  *   full        — baseline + imp + memberships (default — recommended for post-restore recovery)
  *   teardown    — Delete every org/contact whose name starts with "AGENT-TEST-", plus the
@@ -43,6 +44,7 @@
  * reference_organization_membership_api_contract memory):
  *   - Security account: POST /api/platform/security/users/create  ( .../users → 405 )
  *   - Org membership:   POST   /api/customer/organization-memberships   body = full OrganizationMembership
+ *                       PUT    /api/customer/organization-memberships/{id}   body = full OrganizationMembership (role reconcile)
  *                       POST   /api/customer/organization-memberships/search   body = { userId }
  *                       DELETE /api/customer/organization-memberships?ids=<id>&ids=<id>
  *     Body FK is `userId` (security-account id, NOT contact memberId); roles = [{ roleId, roleName }].
@@ -426,26 +428,26 @@ async function ensureSecurityAccount(email, password, contactId) {
   return id;
 }
 
-// Ensure a GLOBAL platform role (e.g. org-maintainer) is on the security account's roles[] —
-// distinct from the org-scoped OrganizationMembership roles. Mirrors JIRA Test1 (global role + org roles).
-async function ensureGlobalRole(email, roleId) {
-  if (!roleId) return;
-  if (DRY_RUN) { if (VERBOSE) console.log(`    [DRY RUN] ensure global role ${roleId} on ${email}`); return; }
+// VCST-5028: roles are org-scoped (OrganizationMembership), NEVER global. This strips any
+// previously-seeded org role (org-maintainer/org-employee) from the security account's global
+// roles[] so the fixture demonstrates the per-org model cleanly. Idempotent — only touches the
+// known org-role ids, leaves any genuine platform role intact.
+async function stripSeededGlobalRoles(email) {
+  if (DRY_RUN) { if (VERBOSE) console.log(`    [DRY RUN] strip global org role(s) on ${email}`); return; }
   const found = await findUserByEmail(email);
   if (!found?.id) return;
   // Always operate on the FULL user record (search hits omit roles[]).
   const user = await getUserById(found.id) || found;
-  if ((user.roles || []).some(r => r.id === roleId || r.name === roleId)) {
-    if (VERBOSE) console.log(`    ↻ global role ${roleId} already on ${email}`);
+  const orgRoleIds = new Set(Object.keys(STATIC_ROLE_NAMES)); // org-maintainer, org-employee
+  const before = user.roles || [];
+  const kept = before.filter(r => !orgRoleIds.has(r.id) && !orgRoleIds.has(r.name));
+  if (kept.length === before.length) {
+    if (VERBOSE) console.log(`    ↻ no global org role on ${email}`);
     return;
   }
-  // roles/search matches by NAME, not id — so fetch the catalog and resolve by id|name ourselves.
-  const rs = await api('POST', '/api/platform/security/roles/search', { take: 1000 });
-  const role = (rs?.results || []).find(r => r.id === roleId || r.name === roleId);
-  if (!role) { console.warn(`    ⚠ global role "${roleId}" not found — skipping`); return; }
-  user.roles = [...(user.roles || []), role];
+  user.roles = kept;
   await api('PUT', '/api/platform/security/users', user, { expectStatus: [200, 204] });
-  console.log(`    ✓ global role ${role.id} → ${email}`);
+  console.log(`    ✓ stripped ${before.length - kept.length} global org role(s) from ${email}`);
 }
 
 async function searchMemberships(userId) {
@@ -456,12 +458,24 @@ async function searchMemberships(userId) {
 
 // Idempotent: one OrganizationMembership per (user, org). Returns the membership id.
 async function ensureOrgMembership(userId, orgId, orgName, roleId, existing) {
+  const roleName = await resolveRoleName(roleId);
   const found = (existing || []).find(m => m.organizationId === orgId);
   if (found) {
-    if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName})`);
+    const currentRoleIds = (found.roles || []).map(r => r.roleId || r.id);
+    const matches = currentRoleIds.length === 1 && currentRoleIds[0] === roleId;
+    if (matches) {
+      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName} → ${roleName})`);
+      return found.id;
+    }
+    // Reconcile: the CSV role_id is the role oracle — enforce it on an existing membership rather
+    // than leaving drift (e.g. a membership reseeded with the wrong role by another run).
+    if (!DRY_RUN) {
+      found.roles = [{ roleId, roleName }];
+      await api('PUT', `/api/customer/organization-memberships/${encodeURIComponent(found.id)}`, found, { expectStatus: [200, 204] });
+    }
+    console.log(`    ✓ reconcile membership ${found.id} (${orgName} → ${roleName}) [was: ${currentRoleIds.join(',') || 'none'}]`);
     return found.id;
   }
-  const roleName = await resolveRoleName(roleId);
   const body = {
     userId, organizationId: orgId, organizationName: orgName,
     roles: [{ roleId, roleName }],
@@ -500,9 +514,8 @@ async function seedMemberships() {
     const first = memberRows[0];
     const contactId = await ensureMembershipContact(email, first.first_name, first.last_name, orgs.map(o => o.orgId));
     const userId = await ensureSecurityAccount(email, first.password || 'Password1!', contactId);
-    // Optional account-level (global) platform role from the CSV's global_role column.
-    const globalRole = memberRows.map(r => r.global_role).find(Boolean);
-    await ensureGlobalRole(email, globalRole);
+    // VCST-5028: roles are org-scoped only — strip any previously-seeded global org role.
+    await stripSeededGlobalRoles(email);
     const existing = await searchMemberships(userId);
 
     for (const { row, orgId } of orgs) {
