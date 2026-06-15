@@ -1,0 +1,51 @@
+{
+  "runId": "TLC-2026-06-15-1213",
+  "inputType": "change-source",
+  "source": "VCST-5028",
+  "date": "2026-06-15",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1037.0",
+    "theme": "2.51.0-pr-2315",
+    "modules": {
+      "VirtoCommerce.Customer": "3.1010.0-pr-300",
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1008.0-pr-135"
+    }
+  },
+  "linkedPRs": [
+    "VirtoCommerce/vc-module-customer#300",
+    "VirtoCommerce/vc-module-profile-experience-api#135",
+    "VirtoCommerce/vc-frontend#2315"
+  ],
+  "changedModules": ["Customer", "ProfileExperienceApi", "vc-frontend"],
+  "changedLayers": ["backend", "graphql", "admin-spa", "storefront", "auth"],
+  "affectedSuites": ["008", "031", "032", "020", "027", "050d"],
+  "casesAnalyzed": 145,
+  "casesSynced": 10,
+  "casesGenerated": 15,
+  "casesReviewed": 25,
+  "casesVerified": 3,
+  "filesModified": [
+    "regression/suites/Frontend/b2c/008-b2c-members.csv",
+    "regression/suites/Frontend/auth/031-auth-login-register.csv",
+    "regression/suites/Frontend/auth/032-auth-session-rbac.csv",
+    "regression/suites/Backend/customer/027-customer-orgs-invites.csv",
+    "regression/suites/Backend/platform/020-platform-users-roles-settings.csv",
+    "regression/suites/Backend/graphql/050d-graphql-xprofile.csv"
+  ],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS",
+    "G6": "PASS", "G7": "PASS", "G8": "PASS", "G9": "PASS"
+  },
+  "warnings": [
+    "Cross-org cases (B2C-MBR-019/020, PRF-GQL-067) need multi-org user enrolled in a 2nd org (not in BuildRight) — seed before regression",
+    "CUST-086 POST payload shape to confirm against OrganizationMembership model"
+  ],
+  "graphqlContractNotes": {
+    "changeOrganizationContactRole": "command: { memberId: String!, roleIds: [String!] } — orgId derived from session",
+    "lockOrganizationContact": "command: { memberId: String! } — orgId from session (InputLockUnlockOrganizationContactType)",
+    "unlockOrganizationContact": "command: { memberId: String! } — orgId from session",
+    "restRoute": "/api/customer/organization-memberships (hyphenated)"
+  },
+  "blProposals": null
+}

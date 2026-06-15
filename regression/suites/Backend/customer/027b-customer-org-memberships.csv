@@ -1,0 +1,517 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORGM-001","changeOrganizationContactRole — Company-membership role (maintainer changes member to purchasing-agent)","Org Memberships > changeOrganizationContactRole > Company-Membership Role","Critical","BL-AUTH-005,BL-AUTH-006,BL-B2B-001","ECL-7.3","Runner-native. Admin-scoped JWT: ADMIN_DEFAULT. AGENT-TEST member with TechFlow org-membership (org-employee role) created in Preconditions via SETUP block.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); fixture_user_id=@td(MULTI_ORG_TF_BR.userId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRoleChg"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm001@yopmail.com"", ""email"": ""AGENT-TEST-orgm001@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC create_account]
+[REST-CAPTURE create_account.body.id → NEW_USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{NEW_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP change_role]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS change_role] {""command"": {""memberId"": ""{{MEMBER_ID}}"", ""roleIds"": [""purchasing-agent""]}}
+[GQL-EXEC change_role]
+[REST-OP verify_role]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{NEW_USER_ID}}""}
+[REST-EXEC verify_role]","[DATA label=change_role path=data.changeOrganizationContactRole.succeeded equals=true]
+[ERRORS label=change_role path=data.changeOrganizationContactRole.errors empty=true]
+[DATA label=verify_role path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].roles[0].id equals=purchasing-agent]","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":""{{NEW_USER_ID}}""} → 200, roles contain purchasing-agent for TechFlow (BL-B2B-001: no cross-org bleed)","change_role.succeeded=false; errors[] non-empty; verify_role still shows org-employee; HTTP 403 Forbidden on mutation","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-002","changeOrganizationContactRole — Global role actor (store-admin changes member) should succeed via Admin path","Org Memberships > changeOrganizationContactRole > Global Role","High","BL-AUTH-005,BL-AUTH-006","ECL-7.3","Runner-native. Admin-scoped JWT: ADMIN_DEFAULT (platform admin — global role, not in member dropdown). AGENT-TEST member with TechFlow org-membership created in SETUP block.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_member2]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalRoleActor"", ""memberType"": ""Contact""}
+[REST-EXEC create_member2]
+[REST-CAPTURE create_member2.body.id → MEMBER_ID2]
+[REST-OP create_account2]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm002@yopmail.com"", ""email"": ""AGENT-TEST-orgm002@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID2}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC create_account2]
+[REST-CAPTURE create_account2.body.id → NEW_USER_ID2]
+[REST-OP create_membership2]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{NEW_USER_ID2}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership2]
+[REST-CAPTURE create_membership2.body.id → MEMBERSHIP_ID2]
+[GQL-OP change_role_global]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS change_role_global] {""command"": {""memberId"": ""{{MEMBER_ID2}}"", ""roleIds"": [""org-maintainer""]}}
+[GQL-EXEC change_role_global]
+[REST-OP verify_role2]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{NEW_USER_ID2}}""}
+[REST-EXEC verify_role2]","[DATA label=change_role_global path=data.changeOrganizationContactRole.succeeded equals=true]
+[ERRORS label=change_role_global path=data.changeOrganizationContactRole.errors empty=true]
+[DATA label=verify_role2 path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].roles[0].id equals=org-maintainer]","[REST] Verify new role persisted: POST /search → roles[0].id = org-maintainer. Verify global-role assignment (store-admin/store-manager) was NOT silently applied as org-membership role — roles list should contain exactly org-maintainer","change_role_global returns Forbidden despite platform-admin JWT; succeeded=false; roles not updated; store-admin stored as org-membership role (role type contamination)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{MEMBERSHIP_ID2}}]
+[REST DELETE /api/members/{{MEMBER_ID2}}]","VCST-5028","Automated"
+"ORGM-003","changeOrganizationContactRole — Org-employee actor is rejected (unauthorized)","Org Memberships > changeOrganizationContactRole > Company-Membership Role","High","BL-AUTH-005,BL-AUTH-006","ECL-7.3","Runner-native. MULTI_ORG_TF_BR authenticated as BuildRight org-employee (no xapi:my_organization:edit permission). AGENT-TEST target member exists in BuildRight org.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_target]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""RoleChangeTarget"", ""memberType"": ""Contact""}
+[REST-EXEC create_target]
+[REST-CAPTURE create_target.body.id → TARGET_MEMBER_ID]
+[REST-OP create_target_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm003@yopmail.com"", ""email"": ""AGENT-TEST-orgm003@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{TARGET_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC create_target_account]
+[REST-CAPTURE create_target_account.body.id → TARGET_USER_ID]
+[REST-OP create_target_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{TARGET_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_target_membership]
+[REST-CAPTURE create_target_membership.body.id → TARGET_MEMBERSHIP_ID]
+[AUTH role=MULTI_ORG_TF_BR_EMPLOYEE]
+[GQL-OP change_role_unauth]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS change_role_unauth] {""command"": {""memberId"": ""{{TARGET_MEMBER_ID}}"", ""roleIds"": [""org-maintainer""]}}
+[GQL-EXEC change_role_unauth]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_unchanged]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{TARGET_USER_ID}}""}
+[REST-EXEC verify_unchanged]","[ERRORS label=change_role_unauth path=data.changeOrganizationContactRole.errors empty=false]
+[DATA label=change_role_unauth path=data.changeOrganizationContactRole.succeeded equals=false]
+[DATA label=verify_unchanged path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)].roles[0].id equals=org-employee]","[REST] Confirm target role unchanged after unauthorized attempt: POST /search → still org-employee (BL-AUTH-005: permission gate enforced, no side-effect)","errors[] empty on unauthorized attempt (role change silently accepted); target role changed to org-maintainer despite employee actor; HTTP 200 with succeeded=true for unauthorized caller","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{TARGET_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{TARGET_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-004","changeOrganizationContactRole — Org-scope isolation: TechFlow role change does not affect BuildRight membership","Org Memberships > changeOrganizationContactRole > Company-Membership Role","High","BL-B2B-001","ECL-7.3","Runner-native. ADMIN_DEFAULT actor. AGENT-TEST member belongs to BOTH TechFlow (org-employee) and BuildRight (org-employee). Role change targets TechFlow only.","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_br_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_dual_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""DualOrgRoleIso"", ""memberType"": ""Contact""}
+[REST-EXEC create_dual_member]
+[REST-CAPTURE create_dual_member.body.id → DUAL_MEMBER_ID]
+[REST-OP create_dual_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm004@yopmail.com"", ""email"": ""AGENT-TEST-orgm004@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{DUAL_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC create_dual_account]
+[REST-CAPTURE create_dual_account.body.id → DUAL_USER_ID]
+[REST-OP create_tf_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{DUAL_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_tf_membership]
+[REST-CAPTURE create_tf_membership.body.id → TF_MEMBERSHIP_ID]
+[REST-OP create_br_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{DUAL_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_br_membership]
+[REST-CAPTURE create_br_membership.body.id → BR_MEMBERSHIP_ID]
+[GQL-OP change_tf_role]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS change_tf_role] {""command"": {""memberId"": ""{{DUAL_MEMBER_ID}}"", ""roleIds"": [""org-maintainer""]}}
+[GQL-EXEC change_tf_role]
+[REST-OP verify_isolation]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{DUAL_USER_ID}}""}
+[REST-EXEC verify_isolation]","[DATA label=change_tf_role path=data.changeOrganizationContactRole.succeeded equals=true]
+[DATA label=verify_isolation path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].roles[0].id equals=org-maintainer]
+[DATA label=verify_isolation path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)].roles[0].id equals=org-employee]","[REST] Dual-org search confirms TechFlow=org-maintainer AND BuildRight=org-employee after TechFlow-only role change — no cross-org bleed (BL-B2B-001)","BuildRight role also changed to org-maintainer (org isolation broken); totalCount drops below 2 (membership deleted on role update); both orgs show same new role","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{BR_MEMBERSHIP_ID}}]
+[REST DELETE /api/customer/organization-memberships/{{TF_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{DUAL_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-005","lockOrganizationContact — Company-membership role: maintainer locks member in one org via Admin SPA widget","Org Memberships > lockOrganizationContact > Company-Membership Role","Critical","BL-AUTH-003,BL-B2B-001","ECL-7.1","Admin logged in to {{BACK_URL}}. AGENT-TEST member belonging to TechFlow org is pre-created (REST SETUP). Admin SPA widget used for lock action (Browser-mode case).","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_lock_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""LockTFMbr"", ""memberType"": ""Contact""}
+[REST-EXEC setup_lock_member]
+[REST-CAPTURE setup_lock_member.body.id → LOCK_MEMBER_ID]
+[REST-OP setup_lock_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm005@yopmail.com"", ""email"": ""AGENT-TEST-orgm005@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_lock_account]
+[REST-CAPTURE setup_lock_account.body.id → LOCK_USER_ID]
+[REST-OP setup_lock_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{LOCK_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_lock_membership]
+[REST-CAPTURE setup_lock_membership.body.id → LOCK_MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts
+[ACT] Search for and open the AGENT-TEST-LockTFMbr contact blade
+[ACT] Locate the Organization memberships widget on the contact blade
+[ACT] Find the TechFlow row in the Organization memberships widget
+[ACT] Click the Lock action button on the TechFlow membership row
+[WAIT] Wait for the widget to refresh and show updated lock status
+[ASSERT] Verify the TechFlow membership row now shows Locked status in the widget
+[REST-OP verify_lock_search]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{LOCK_USER_ID}}""}
+[REST-EXEC verify_lock_search]
+[REST-OP verify_global_not_locked]
+GET {{BACK_URL}}/api/platform/security/users/{{LOCK_USER_ID}}/locked
+[REST-EXEC verify_global_not_locked]","[BLADE] TechFlow membership row in Organization memberships widget shows Locked status
+[STATE] Admin widget displays locked indicator for TechFlow; no locked indicator for BuildRight (if present)
+[DATA label=verify_lock_search path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLocked equals=true]
+[DATA label=verify_global_not_locked path=body.locked equals=false]","[REST] POST /search confirms isLocked=true for TechFlow membership. GET /api/platform/security/users/{userId}/locked confirms global account locked=false (BL-AUTH-003 critical guard)","Widget does not update after lock action; REST search still shows isLocked=false; global locked=true (BL-AUTH-003 violation — org lock escalated to global)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/customer/organization-memberships/{{LOCK_MEMBERSHIP_ID}}/unlock]
+[REST DELETE /api/customer/organization-memberships/{{LOCK_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{LOCK_MEMBER_ID}}]","VCST-5028","Semi-Automated"
+"ORGM-006","lockOrganizationContact — Global-role actor (platform admin JWT) locks via REST; global account NOT locked","Org Memberships > lockOrganizationContact > Global Role","Critical","BL-AUTH-003,BL-B2B-001,BL-AUTH-006","ECL-7.1","Runner-native. ADMIN_DEFAULT actor (platform admin — global role). AGENT-TEST member with TechFlow + BuildRight memberships created in SETUP.","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_br_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_g6_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalLockTgt"", ""memberType"": ""Contact""}
+[REST-EXEC setup_g6_member]
+[REST-CAPTURE setup_g6_member.body.id → G6_MEMBER_ID]
+[REST-OP setup_g6_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm006@yopmail.com"", ""email"": ""AGENT-TEST-orgm006@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G6_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_g6_account]
+[REST-CAPTURE setup_g6_account.body.id → G6_USER_ID]
+[REST-OP create_g6_tf_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{G6_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_g6_tf_membership]
+[REST-CAPTURE create_g6_tf_membership.body.id → G6_TF_MEMBERSHIP_ID]
+[REST-OP create_g6_br_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{G6_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_g6_br_membership]
+[REST-CAPTURE create_g6_br_membership.body.id → G6_BR_MEMBERSHIP_ID]
+[REST POST /api/customer/organization-memberships/{{G6_TF_MEMBERSHIP_ID}}/lock]
+[REST-OP search_after_lock]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{G6_USER_ID}}""}
+[REST-EXEC search_after_lock]
+[REST-OP global_lock_check]
+GET {{BACK_URL}}/api/platform/security/users/{{G6_USER_ID}}/locked
+[REST-EXEC global_lock_check]","[DATA label=search_after_lock path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLocked equals=true]
+[DATA label=search_after_lock path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)].isLocked equals=false]
+[DATA label=global_lock_check path=body.locked equals=false]","[REST] POST /search dual-org isolation check: TechFlow isLocked=true, BuildRight isLocked=false. GET /locked confirms global account NOT locked. This is the BL-AUTH-003 regression guard introduced by VCST-5028.","TechFlow isLocked=false (lock did not persist); BuildRight also shows isLocked=true (cross-org bleed — BL-B2B-001 violation); global_lock_check returns locked=true (BL-AUTH-003 violation — most critical failure signal)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/customer/organization-memberships/{{G6_TF_MEMBERSHIP_ID}}/unlock]
+[REST DELETE /api/customer/organization-memberships/{{G6_BR_MEMBERSHIP_ID}}]
+[REST DELETE /api/customer/organization-memberships/{{G6_TF_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{G6_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-007","lockOrganizationContact — Org-employee actor cannot lock (unauthorized)","Org Memberships > lockOrganizationContact > Company-Membership Role","High","BL-AUTH-005","ECL-7.1","Runner-native. Employee-scoped JWT (MULTI_ORG_TF_BR as BuildRight org-employee). AGENT-TEST target member in BuildRight exists. Employee attempts lock via GraphQL mutation.","back_url={{BACK_URL}}; org_br_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_lock7_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""LockUnauthorizedTgt"", ""memberType"": ""Contact""}
+[REST-EXEC setup_lock7_member]
+[REST-CAPTURE setup_lock7_member.body.id → LOCK7_MEMBER_ID]
+[REST-OP setup_lock7_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm007@yopmail.com"", ""email"": ""AGENT-TEST-orgm007@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK7_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_lock7_account]
+[REST-CAPTURE setup_lock7_account.body.id → LOCK7_USER_ID]
+[REST-OP setup_lock7_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{LOCK7_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_lock7_membership]
+[REST-CAPTURE setup_lock7_membership.body.id → LOCK7_MEMBERSHIP_ID]
+[AUTH role=MULTI_ORG_TF_BR_EMPLOYEE]
+[GQL-OP lock_unauth]
+mutation LockOrgContact($command: InputLockUnlockOrganizationContactType!) {
+  lockOrganizationContact(command: $command) {
+    id
+    firstName
+    lastName
+  }
+}
+[GQL-VARS lock_unauth] {""command"": {""memberId"": ""{{LOCK7_MEMBER_ID}}""}}
+[GQL-EXEC lock_unauth]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_still_unlocked]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{LOCK7_USER_ID}}""}
+[REST-EXEC verify_still_unlocked]","[ERRORS label=lock_unauth path=errors empty=false]
+[DATA label=verify_still_unlocked path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)].isLocked equals=false]","[REST] POST /search confirms isLocked=false after unauthorized lock attempt — no side-effect persisted (BL-AUTH-005)","errors[] empty for employee lock attempt (authorization bypass); isLocked=true in REST search (lock silently applied); HTTP 200 with populated contact data despite missing permission","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{LOCK7_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{LOCK7_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-008","unlockOrganizationContact — Company-membership role: unlock restores access; global account stays unlocked","Org Memberships > unlockOrganizationContact > Company-Membership Role","Critical","BL-AUTH-003,BL-B2B-001","ECL-7.1","Runner-native. ADMIN_DEFAULT actor. AGENT-TEST member locked in TechFlow (SETUP block). Unlock via GraphQL mutation. Verify via REST search + global lock check.","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_unlock_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""UnlockTFMbr"", ""memberType"": ""Contact""}
+[REST-EXEC setup_unlock_member]
+[REST-CAPTURE setup_unlock_member.body.id → UNLOCK_MEMBER_ID]
+[REST-OP setup_unlock_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm008@yopmail.com"", ""email"": ""AGENT-TEST-orgm008@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{UNLOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_unlock_account]
+[REST-CAPTURE setup_unlock_account.body.id → UNLOCK_USER_ID]
+[REST-OP setup_unlock_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{UNLOCK_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_unlock_membership]
+[REST-CAPTURE setup_unlock_membership.body.id → UNLOCK_MEMBERSHIP_ID]
+[REST POST /api/customer/organization-memberships/{{UNLOCK_MEMBERSHIP_ID}}/lock]
+[GQL-OP unlock_contact]
+mutation UnlockOrgContact($command: InputLockUnlockOrganizationContactType!) {
+  unlockOrganizationContact(command: $command) {
+    id
+    firstName
+    lastName
+  }
+}
+[GQL-VARS unlock_contact] {""command"": {""memberId"": ""{{UNLOCK_MEMBER_ID}}""}}
+[GQL-EXEC unlock_contact]
+[REST-OP verify_unlock_search]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{UNLOCK_USER_ID}}""}
+[REST-EXEC verify_unlock_search]
+[REST-OP verify_global_after_unlock]
+GET {{BACK_URL}}/api/platform/security/users/{{UNLOCK_USER_ID}}/locked
+[REST-EXEC verify_global_after_unlock]","[DATA label=unlock_contact path=data.unlockOrganizationContact.id notNull=true]
+[ERRORS label=unlock_contact path=errors empty=true]
+[DATA label=verify_unlock_search path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLocked equals=false]
+[DATA label=verify_global_after_unlock path=body.locked equals=false]","[REST] POST /search confirms isLocked=false after unlock. GET /locked confirms global account locked=false throughout the entire lock/unlock cycle — global lockout was never touched (BL-AUTH-003)","errors[] non-empty on unlock; isLocked=true after unlock attempt (unlock failed silently); global locked=true even after unlock (BL-AUTH-003 violation)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{UNLOCK_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{UNLOCK_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-009","unlockOrganizationContact — Global role actor (platform admin) unlocks; verifies org-scope + global account intact","Org Memberships > unlockOrganizationContact > Global Role","High","BL-AUTH-003,BL-B2B-001","ECL-7.1","Runner-native. ADMIN_DEFAULT (platform admin global role). AGENT-TEST member locked in BuildRight only (SETUP). Unlock BuildRight; TechFlow unaffected throughout.","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_br_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_g9_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalUnlockTgt"", ""memberType"": ""Contact""}
+[REST-EXEC setup_g9_member]
+[REST-CAPTURE setup_g9_member.body.id → G9_MEMBER_ID]
+[REST-OP setup_g9_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm009@yopmail.com"", ""email"": ""AGENT-TEST-orgm009@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G9_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_g9_account]
+[REST-CAPTURE setup_g9_account.body.id → G9_USER_ID]
+[REST-OP create_g9_tf_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{G9_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_g9_tf_membership]
+[REST-CAPTURE create_g9_tf_membership.body.id → G9_TF_MEMBERSHIP_ID]
+[REST-OP create_g9_br_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{G9_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_g9_br_membership]
+[REST-CAPTURE create_g9_br_membership.body.id → G9_BR_MEMBERSHIP_ID]
+[REST POST /api/customer/organization-memberships/{{G9_BR_MEMBERSHIP_ID}}/lock]
+[GQL-OP unlock_br]
+mutation UnlockOrgContact($command: InputLockUnlockOrganizationContactType!) {
+  unlockOrganizationContact(command: $command) {
+    id
+    firstName
+    lastName
+  }
+}
+[GQL-VARS unlock_br] {""command"": {""memberId"": ""{{G9_MEMBER_ID}}""}}
+[GQL-EXEC unlock_br]
+[REST-OP verify_g9_search]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""userId"": ""{{G9_USER_ID}}""}
+[REST-EXEC verify_g9_search]
+[REST-OP verify_g9_global]
+GET {{BACK_URL}}/api/platform/security/users/{{G9_USER_ID}}/locked
+[REST-EXEC verify_g9_global]","[DATA label=unlock_br path=data.unlockOrganizationContact.id notNull=true]
+[ERRORS label=unlock_br path=errors empty=true]
+[DATA label=verify_g9_search path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)].isLocked equals=false]
+[DATA label=verify_g9_search path=body.items[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLocked equals=false]
+[DATA label=verify_g9_global path=body.locked equals=false]","[REST] Both orgs isLocked=false after unlock. GET /locked = false. Confirms global-role admin can unlock without touching the global account (BL-AUTH-003) and without touching the other org (BL-B2B-001)","TechFlow also shows isLocked after unlock call (wrong-org bleed); global locked=true; unlock mutations return Forbidden for platform admin","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{G9_BR_MEMBERSHIP_ID}}]
+[REST DELETE /api/customer/organization-memberships/{{G9_TF_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{G9_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-010","inviteUser — Company-membership role (org-maintainer context): invite with org-employee role succeeds","Org Memberships > inviteUser > Company-Membership Role","Critical","BL-AUTH-005,BL-B2B-005","ECL-7.3","Admin logged in to {{BACK_URL}}. Admin SPA invite flow from Organization blade toolbar (company-membership role context). Org-employee role selected in invite form.","back_url={{BACK_URL}}; store_id=B2B-store; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[NAV] Navigate to {{BACK_URL}} Customer module > Organizations
+[ACT] Search for and open the TechFlow organization blade (id: @td(MULTI_ORG_TF_BR.org_techflow_id))
+[ACT] Click the Invite customers button in the organization blade toolbar
+[WAIT] Wait for the Invite blade to open
+[ASSERT] Verify the Invite blade shows Store, Language, Organization, Role, Emails, and Message fields
+[ASSERT] Verify the Organization field is pre-filled with TechFlow
+[ACT] Select B2B-store in the Store dropdown if not already selected
+[ACT] Select Organization employee in the Role dropdown
+[ACT] Enter AGENT-TEST-orgm010@yopmail.com in the Emails field
+[ACT] Click the Invite button
+[WAIT] Wait for the invite response (toast or blade update)","[TOAST] Success notification shown after clicking Invite (e.g., Invitation sent or similar confirmation)
+[BLADE] No error message visible in Invite blade after submission
+[STATE] Network request POST /api/members/customers/invite fired with correct payload (organizationId, role, email, storeId)","[REST] Verify POST {{BACK_URL}}/api/members/customers/invite returns 200 or 204; payload includes organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id), roles=[org-employee], email=AGENT-TEST-orgm010@yopmail.com","Invite blade shows validation error; no toast after submit; POST /api/members/customers/invite returns 4xx; org field not pre-filled when inviting from org blade context","[AUTH role=ADMIN_DEFAULT]
+[REST-OP find_invited]
+POST {{BACK_URL}}/api/members/search
+{""keyword"": ""AGENT-TEST-orgm010@yopmail.com"", ""memberType"": ""Contact""}
+[REST-EXEC find_invited]
+[REST-CAPTURE find_invited.body.results[0].id → INVITED_CONTACT_ID]
+[REST DELETE /api/members/{{INVITED_CONTACT_ID}}]","VCST-5028","Semi-Automated"
+"ORGM-011","inviteUser — Global role (store-admin) invites WITHOUT org pre-fill; role not in member dropdown","Org Memberships > inviteUser > Global Role","High","BL-AUTH-005,BL-B2B-005","ECL-7.3","Runner-native. ADMIN_DEFAULT actor. inviteUser mutation called with storeId and email only — no organizationId. Verifies that global roles (store-admin, store-manager) are NOT presented as selectable B2B org-membership roles in the mutation interface.","back_url={{BACK_URL}}; store_id=B2B-store","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP invite_global]
+mutation InviteUser($command: InputInviteUserType!) {
+  inviteUser(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS invite_global] {""command"": {""storeId"": ""B2B-store"", ""emails"": [""AGENT-TEST-orgm011@yopmail.com""], ""message"": ""AGENT-TEST invite via store-admin global role""}}
+[GQL-EXEC invite_global]
+[REST-OP search_invited_global]
+POST {{BACK_URL}}/api/members/search
+{""keyword"": ""AGENT-TEST-orgm011@yopmail.com"", ""memberType"": ""Contact""}
+[REST-EXEC search_invited_global]","[DATA label=invite_global path=data.inviteUser.succeeded equals=true]
+[ERRORS label=invite_global path=data.inviteUser.errors empty=true]
+[DATA label=search_invited_global path=body.totalCount greaterThan=0]","[REST] POST /members/search finds the invited contact with no org assignment — a no-org invite succeeds. Verify no store-admin or store-manager role was silently applied to the resulting membership (global roles must not appear in B2B org-membership context).","invite_global succeeded=false; errors non-empty for valid global-role invite without org; global role (store-admin/store-manager) stored as org-membership role on the resulting contact","[AUTH role=ADMIN_DEFAULT]
+[REST-OP cleanup_global_invite]
+POST {{BACK_URL}}/api/members/search
+{""keyword"": ""AGENT-TEST-orgm011@yopmail.com"", ""memberType"": ""Contact""}
+[REST-EXEC cleanup_global_invite]
+[REST-CAPTURE cleanup_global_invite.body.results[0].id → GLOBAL_INVITE_CONTACT_ID]
+[REST DELETE /api/members/{{GLOBAL_INVITE_CONTACT_ID}}]","VCST-5028","Automated"
+"ORGM-012","inviteUser — Org-employee actor cannot send invite (unauthorized)","Org Memberships > inviteUser > Company-Membership Role","High","BL-AUTH-005,BL-AUTH-006","ECL-7.3","Runner-native. MULTI_ORG_TF_BR authenticated as BuildRight org-employee (lacks storefront:user:invite permission). Attempt inviteUser GraphQL mutation.","back_url={{BACK_URL}}","[AUTH role=MULTI_ORG_TF_BR_EMPLOYEE]
+[GQL-OP invite_unauth]
+mutation InviteUser($command: InputInviteUserType!) {
+  inviteUser(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS invite_unauth] {""command"": {""storeId"": ""B2B-store"", ""emails"": [""AGENT-TEST-orgm012@yopmail.com""], ""message"": ""should not succeed""}}
+[GQL-EXEC invite_unauth]","[ERRORS label=invite_unauth path=errors empty=false]
+[DATA label=invite_unauth path=data.inviteUser.succeeded equals=false]","[REST] Optionally verify: POST /members/search for AGENT-TEST-orgm012@yopmail.com returns totalCount=0 — no contact was created (BL-AUTH-005 side-effect guard)","errors[] empty for unauthorized inviteUser call; succeeded=true for employee actor; contact created despite unauthorized caller","No cleanup required (no entities created on expected-reject path)","VCST-5028","Automated"
+"ORGM-013","inviteUser — Duplicate email rejected (existing user in org)","Org Memberships > inviteUser > Company-Membership Role","High","BL-AUTH-005","ECL-3.1","Runner-native. ADMIN_DEFAULT actor. Invite an email that already has an active membership in TechFlow. Expect error response with appropriate code.","back_url={{BACK_URL}}; existing_email=@td(MULTI_ORG_TF_BR.email)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP invite_duplicate]
+mutation InviteUser($command: InputInviteUserType!) {
+  inviteUser(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS invite_duplicate] {""command"": {""storeId"": ""B2B-store"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""emails"": [""@td(MULTI_ORG_TF_BR.email)""], ""message"": ""duplicate invite test""}}
+[GQL-EXEC invite_duplicate]","[DATA label=invite_duplicate path=data.inviteUser.succeeded equals=false]
+[ERRORS label=invite_duplicate path=data.inviteUser.errors empty=false]","[REST] Confirm MULTI_ORG_TF_BR fixture still has exactly its two memberships (no new membership created on duplicate invite): POST /search → totalCount=2","succeeded=true on duplicate invite (duplicate membership silently created); errors[] empty for duplicate; fixture membership count increases above 2","No data created on expected-reject path. Verify fixture integrity: POST /search {userId: @td(MULTI_ORG_TF_BR.userId)} → totalCount=2","VCST-5028","Automated"
+"ORGM-014","inviteUser — Invalid email format rejected","Org Memberships > inviteUser > Company-Membership Role","Medium","BL-AUTH-005","ECL-1.2","Runner-native. ADMIN_DEFAULT actor. Submit inviteUser with malformed email addresses. Expect validation errors.","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP invite_bad_email]
+mutation InviteUser($command: InputInviteUserType!) {
+  inviteUser(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS invite_bad_email] {""command"": {""storeId"": ""B2B-store"", ""emails"": [""not-an-email""], ""message"": ""invalid email test""}}
+[GQL-EXEC invite_bad_email]","[DATA label=invite_bad_email path=data.inviteUser.succeeded equals=false]
+[ERRORS label=invite_bad_email path=data.inviteUser.errors empty=false]","[REST] No new contact created: POST /members/search {keyword: ""not-an-email""} → totalCount=0","succeeded=true for malformed email; errors[] empty; contact created from invalid email format","No data created on expected-reject path","VCST-5028","Automated"
+"ORGM-015","REST create membership — Missing userId returns 400 (Finding #2 regression guard)","Org Memberships > REST Validation > Finding #2 Guard","High","BL-AUTH-005","ECL-3.2","Runner-native. ADMIN_DEFAULT actor. POST /api/customer/organization-memberships without userId field. Expected: 400. Regression guard for Finding #2 (currently returns 500 with DB error leak). Case pins EXPECTED correct behavior; failure here confirms Finding #2 is still unresolved.","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_missing_userid]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_missing_userid]","[STATUS label=create_missing_userid equals=400]
+[BODY label=create_missing_userid path=body notContains=vcst-qa-platform]","[REST] GET /api/customer/organization-memberships/search {organizationId: @td(MULTI_ORG_TF_BR.org_techflow_id)} — count unchanged, no orphan created. Confirm no DB name leaked in response body.","HTTP 500 instead of 400 (Finding #2 unresolved — fails this guard); response body contains DB name string; orphan membership created with empty userId","No cleanup required if 400 returned correctly. If 500 returned (Finding #2 still open): mark as FINDING, do not create cleanup record (no persistent data created at 500).","VCST-5028","Automated"
+"ORGM-016","REST create membership — Empty userId returns 400 (Finding #2 regression guard — orphan prevention)","Org Memberships > REST Validation > Finding #2 Guard","High","BL-AUTH-005","ECL-3.2","Runner-native. ADMIN_DEFAULT actor. POST /api/customer/organization-memberships with userId="""" (empty string). Expected: 400 validation error. Regression guard: currently returns 200 and creates orphan membership (Finding #2).","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP create_empty_userid]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": """", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_empty_userid]","[STATUS label=create_empty_userid equals=400]","[REST] If 400 returned: search confirms no orphan created. If 200 returned (Finding #2 still open): capture returned id and DELETE the orphan immediately as part of Cleanup — mark FINDING.","HTTP 200 instead of 400 (Finding #2 unresolved); orphan membership persisted with userId="""" and no roles (data integrity violation)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP check_orphan]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+{""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)""}
+[REST-EXEC check_orphan]","VCST-5028","Automated"
+"ORGM-017","changeOrganizationContactRole — Finding #1 regression guard (xAPI maintainer mutation)","Org Memberships > changeOrganizationContactRole > Finding #1 Guard","High","BL-AUTH-005,BL-AUTH-006","ECL-7.3","Runner-native. This case captures the EXPECTED correct behavior for Finding #1: a caller with xapi:my_organization:edit in their JWT should succeed with changeOrganizationContactRole. Currently BLOCKED by Finding #1 (maintainer Forbidden). Case is authored against the expected-correct behavior; failing result confirms Finding #1 is not yet resolved. AGENT-TEST member in TechFlow (org-employee) created in SETUP.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_f1_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""Finding1Guard"", ""memberType"": ""Contact""}
+[REST-EXEC setup_f1_member]
+[REST-CAPTURE setup_f1_member.body.id → F1_MEMBER_ID]
+[REST-OP setup_f1_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm017@yopmail.com"", ""email"": ""AGENT-TEST-orgm017@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_f1_account]
+[REST-CAPTURE setup_f1_account.body.id → F1_USER_ID]
+[REST-OP setup_f1_tf_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{F1_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_f1_tf_membership]
+[REST-CAPTURE setup_f1_tf_membership.body.id → F1_TF_MEMBERSHIP_ID]
+[AUTH role=MULTI_ORG_TF_BR_MAINTAINER]
+[GQL-OP change_role_f1]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors {
+      code
+      parameter
+      description
+    }
+  }
+}
+[GQL-VARS change_role_f1] {""command"": {""memberId"": ""{{F1_MEMBER_ID}}"", ""roleIds"": [""purchasing-agent""]}}
+[GQL-EXEC change_role_f1]","[DATA label=change_role_f1 path=data.changeOrganizationContactRole.succeeded equals=true]
+[ERRORS label=change_role_f1 path=data.changeOrganizationContactRole.errors empty=true]","[REST] POST /search after successful mutation confirms role=purchasing-agent for TechFlow membership. If this case FAILS with Forbidden: Finding #1 is confirmed unresolved — document in run report under Finding #1, do not file a new bug.","succeeded=false with Forbidden error (Finding #1 still unresolved); errors contain xapi:my_organization:edit missing permission message","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships/{{F1_TF_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{F1_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-018","lockOrganizationContact — Finding #1 regression guard (xAPI maintainer lock mutation)","Org Memberships > lockOrganizationContact > Finding #1 Guard","High","BL-AUTH-003,BL-AUTH-005","ECL-7.1","Runner-native. MULTI_ORG_TF_BR as TechFlow org-maintainer (JWT has xapi:my_organization:edit). Attempts lockOrganizationContact for an AGENT-TEST member in TechFlow. Expected: succeeds. Currently BLOCKED by Finding #1. Case authored against expected-correct behavior.","back_url={{BACK_URL}}; org_tf_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_f1b_member]
+POST {{BACK_URL}}/api/members
+{""firstName"": ""AGENT-TEST"", ""lastName"": ""Finding1LockGuard"", ""memberType"": ""Contact""}
+[REST-EXEC setup_f1b_member]
+[REST-CAPTURE setup_f1b_member.body.id → F1B_MEMBER_ID]
+[REST-OP setup_f1b_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+{""userName"": ""AGENT-TEST-orgm018@yopmail.com"", ""email"": ""AGENT-TEST-orgm018@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1B_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+[REST-EXEC setup_f1b_account]
+[REST-CAPTURE setup_f1b_account.body.id → F1B_USER_ID]
+[REST-OP setup_f1b_tf_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+{""userId"": ""{{F1B_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_f1b_tf_membership]
+[REST-CAPTURE setup_f1b_tf_membership.body.id → F1B_TF_MEMBERSHIP_ID]
+[AUTH role=MULTI_ORG_TF_BR_MAINTAINER]
+[GQL-OP lock_f1]
+mutation LockOrgContact($command: InputLockUnlockOrganizationContactType!) {
+  lockOrganizationContact(command: $command) {
+    id
+    firstName
+    lastName
+  }
+}
+[GQL-VARS lock_f1] {""command"": {""memberId"": ""{{F1B_MEMBER_ID}}""}}
+[GQL-EXEC lock_f1]","[DATA label=lock_f1 path=data.lockOrganizationContact.id notNull=true]
+[ERRORS label=lock_f1 path=errors empty=true]","[REST] POST /search confirms isLocked=true for TechFlow membership after maintainer lock. GET /locked confirms global account locked=false (BL-AUTH-003). If FAILS: Finding #1 unresolved — document, do not file new bug.","lock_f1 returns Forbidden (Finding #1 unresolved); errors non-empty; isLocked=false after attempt","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/customer/organization-memberships/{{F1B_TF_MEMBERSHIP_ID}}/unlock]
+[REST DELETE /api/customer/organization-memberships/{{F1B_TF_MEMBERSHIP_ID}}]
+[REST DELETE /api/members/{{F1B_MEMBER_ID}}]","VCST-5028","Automated"

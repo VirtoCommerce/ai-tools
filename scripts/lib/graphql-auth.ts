@@ -7,6 +7,7 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { TestDataResolver } from "./test-data-resolver.js";
 
 export interface RoleCredentials {
   role: string;
@@ -74,6 +75,29 @@ export function resolveRole(
     };
   }
 
+  // CSV-backed or direct-field alias (e.g. TECHFLOW_ADMIN → b2b/users.csv, or an
+  // _inline alias carrying literal `email`/`password`): resolve via the @td() resolver.
+  if (entry) {
+    try {
+      const resolver = new TestDataResolver(testDataDir);
+      const email = resolver.resolve(`@td(${role}.email)`);
+      const password = resolver.resolve(`@td(${role}.password)`);
+      // resolve() passes unresolved tokens through unchanged — treat that as "not found".
+      const resolved = (v: string, token: string) => v && v !== token;
+      if (
+        resolved(email, `@td(${role}.email)`) &&
+        resolved(password, `@td(${role}.password)`)
+      ) {
+        let storeId = process.env.STORE_ID;
+        const sid = resolver.resolve(`@td(${role}.store_id)`);
+        if (resolved(sid, `@td(${role}.store_id)`)) storeId = sid;
+        return { role, email, password, storeId };
+      }
+    } catch {
+      // fall through to env-var pattern
+    }
+  }
+
   // Fallback: direct env var pattern
   const emailKey = `${role.toUpperCase()}_EMAIL`;
   const pwdKey = `${role.toUpperCase()}_PASSWORD`;
@@ -82,7 +106,7 @@ export function resolveRole(
 
   if (!email || !password) {
     throw new Error(
-      `Cannot resolve role "${role}": no alias in aliases.json and no ${emailKey}/${pwdKey} in .env`
+      `Cannot resolve role "${role}": no _inline email_env alias, no @td(${role}.email/.password) alias field, and no ${emailKey}/${pwdKey} in .env`
     );
   }
 

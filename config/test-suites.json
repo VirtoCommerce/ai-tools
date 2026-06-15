@@ -608,6 +608,34 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "027b",
+      "name": "Customer Org Memberships (per-org roles & lockout)",
+      "file": "regression/suites/Backend/customer/027b-customer-org-memberships.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "customer",
+        "organizations",
+        "org-memberships",
+        "rbac",
+        "lockout",
+        "invites",
+        "admin",
+        "sprint",
+        "VCST-5028"
+      ],
+      "requiresModules": [
+        "customer"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
       "id": "028",
       "name": "Cart Core",
       "file": "regression/suites/Frontend/cart/028-cart-core.csv",

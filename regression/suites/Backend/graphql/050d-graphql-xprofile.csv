@@ -606,3 +606,122 @@ PRF-GQL-065,"[VCST-5001] currentOrganizationAddresses — countryCodes ISO-3 Fil
 [ERRORS label=org_nonexist_country] errors[] empty — unknown countryCodes value is silently filtered to empty (not a server error)
 [COUNT label=org_nonexist_country] data.currentOrganizationAddresses.totalCount = 0","[EVIDENCE] Any items returned by org_us_addrs must have countryCode = ""USA"" (ISO-3 three-letter code, not ISO-2 ""US""). regionId may be non-null for USA addresses (state-level) — assert field is present in schema, not specific value. isFavorite is storefront-xAPI-only Boolean field — must be present in schema response (DV-009 guard).
 [ROUNDTRIP] runner-manual: re-run org_us_addrs without countryCodes filter (PRF-GQL-052 path) — totalCount should be >= USA-filtered totalCount","org_us_addrs errors[] non-empty (resolver rejects countryCodes arg — DV-008 regression); items with countryCode != ""USA"" returned despite filter; org_nonexist_country errors[] non-empty (invalid country code crashes resolver instead of returning empty); isFavorite field missing (schema drift)","none — pure read","VCST-5001; xAPI; BL-B2B-001; Sprint 26-10 GAP-17; Technique: EP (filtered org-address partition); Address-data convention: ISO-3 countryCode; reference_address_data_conventions",Draft
+PRF-GQL-066,"[VCST-5028] changeOrganizationContactRole — Happy Path (Role Change to Employee)","GraphQL > xProfile > OrganizationMembership > Role",Critical,"BL-B2B-005; BL-GQL-001","ECL-2.1; ECL-10.2","Runner-native (executes via scripts/graphql-runner.ts — no browser). TECHFLOW_ADMIN authenticated (org maintainer for TechFlow). Fixture: MULTI_ORG_TF_BR — cross-org member seeded with TechFlow role=org-maintainer. Test changes TechFlow role to org-employee (a real change from oracle initial state). Cleanup restores to org-maintainer.","target_member_id=@td(MULTI_ORG_TF_BR.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP change_role]
+  mutation {
+    changeOrganizationContactRole(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+      roleIds: [""org-employee""]
+    }) {
+      succeeded
+      errors {
+        code
+        description
+      }
+    }
+  }
+[GQL-EXEC change_role]","[ERRORS label=change_role] errors[] empty
+[DATA label=change_role] data.changeOrganizationContactRole.succeeded = true","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} — confirm TechFlow membership roles updated to org-employee (AC2: role change visible immediately, AC5 REST guard)","change_role errors[] non-empty (mutation rejected — VCST-5028 regression); succeeded = false; 403 for authenticated org-maintainer caller (AC5 violation)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP restore_role]
+  mutation {
+    changeOrganizationContactRole(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+      roleIds: [""org-maintainer""]
+    }) {
+      succeeded
+      errors {
+        code
+        description
+      }
+    }
+  }
+[GQL-EXEC restore_role]","VCST-5028; xAPI; BL-B2B-005; AC2; Synced: VCST-5028 (2026-06-15)",Draft
+PRF-GQL-067,"[VCST-5028] changeOrganizationContactRole — Org-Scope Guard (Role in Org A Does Not Affect Org B)","GraphQL > xProfile > OrganizationMembership > Scope",Critical,"BL-B2B-005; BL-B2B-001; BL-GQL-001","ECL-3.1; ECL-10.2","Runner-native. TECHFLOW_ADMIN authenticated (TechFlow org context via JWT). Dedicated seeded cross-org fixture: @td(MULTI_ORG_TF_BR.id) belongs to BOTH TechFlow (@td(MULTI_ORG_TF_BR.org_techflow_id)) and BuildRight (@td(MULTI_ORG_TF_BR.org_buildright_id)) with DISTINCT roles (AC1 oracle: TechFlow=org-maintainer, BuildRight=org-employee). Test changes TechFlow role to org-employee then asserts via REST that BuildRight role is unchanged. Restore returns TechFlow to org-maintainer.","target_member_id=@td(MULTI_ORG_TF_BR.id); techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id); user_id=@td(MULTI_ORG_TF_BR.userId)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP change_role_techflow]
+  mutation {
+    changeOrganizationContactRole(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+      roleIds: [""org-employee""]
+    }) {
+      succeeded
+      errors {
+        code
+        description
+      }
+    }
+  }
+[GQL-EXEC change_role_techflow]
+[REST-OP search_memberships]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"":""@td(MULTI_ORG_TF_BR.userId)""}
+[REST-EXEC search_memberships]
+[REST-CAPTURE search_memberships.body.results[?(@.organizationId==""@td(MULTI_ORG_TF_BR.org_techflow_id)"")].roles[0].id → TECHFLOW_ROLE_AFTER]
+[REST-CAPTURE search_memberships.body.results[?(@.organizationId==""@td(MULTI_ORG_TF_BR.org_buildright_id)"")].roles[0].id → BUILDRIGHT_ROLE_AFTER]","[ERRORS label=change_role_techflow] errors[] empty
+[DATA label=change_role_techflow] data.changeOrganizationContactRole.succeeded = true
+[DATA label=search_memberships] TECHFLOW_ROLE_AFTER = org-employee
+[DATA label=search_memberships] BUILDRIGHT_ROLE_AFTER = @td(MULTI_ORG_TF_BR.buildright_role)","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} — verify TechFlow membership now = org-employee and BuildRight membership still = org-employee (unchanged); AC1 confirmed when BuildRight role is NOT reflected in TechFlow change","change_role_techflow errors[] non-empty (mutation rejected); succeeded = false; BuildRight membership role changed when only TechFlow org was in JWT context (org-isolation regression — AC1 violation)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP restore_role]
+  mutation {
+    changeOrganizationContactRole(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+      roleIds: [""org-maintainer""]
+    }) {
+      succeeded
+      errors {
+        code
+        description
+      }
+    }
+  }
+[GQL-EXEC restore_role]","VCST-5028; xAPI; BL-B2B-005; BL-B2B-001; AC1; Synced: VCST-5028 (2026-06-15)",Draft
+PRF-GQL-068,"[VCST-5028] lockOrganizationContact — Happy Path (Org-Scoped Lock)","GraphQL > xProfile > OrganizationMembership > Lock",Critical,"BL-AUTH-003; BL-B2B-005; BL-GQL-001","ECL-2.1; ECL-10.2","Runner-native. TECHFLOW_ADMIN authenticated (org maintainer). Fixture: MULTI_ORG_TF_BR — seeded cross-org member, not locked in TechFlow at start of test. Restore in Cleanup via unlockOrganizationContact.","target_member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_id=@td(ORG_TECHFLOW.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP lock_contact]
+  mutation {
+    lockOrganizationContact(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+    }) {
+      id
+    }
+  }
+[GQL-EXEC lock_contact]","[ERRORS label=lock_contact] errors[] empty
+[DATA label=lock_contact] data.lockOrganizationContact.id = ""@td(MULTI_ORG_TF_BR.id)""","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} — verify TechFlow membership status = Locked after mutation (AC3: org-scoped lock persisted); verify GET {{BACK_URL}}/api/members/@td(MULTI_ORG_TF_BR.id) isLockedOut = false (platform lock UNCHANGED — org lock is independent)","lock_contact errors[] non-empty (mutation rejected — VCST-5028 regression); id absent from response; 403 for authenticated org-maintainer caller","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP unlock_contact]
+  mutation {
+    unlockOrganizationContact(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+    }) {
+      id
+    }
+  }
+[GQL-EXEC unlock_contact]","VCST-5028; xAPI; BL-AUTH-003; BL-B2B-005; AC3; PLAT-084; Synced: VCST-5028 (2026-06-15)",Draft
+PRF-GQL-069,"[VCST-5028] unlockOrganizationContact — Happy Path (Org-Scoped Unlock)","GraphQL > xProfile > OrganizationMembership > Unlock",High,"BL-AUTH-003; BL-B2B-005; BL-GQL-001","ECL-2.1; ECL-10.2","Runner-native. TECHFLOW_ADMIN authenticated. Fixture: MULTI_ORG_TF_BR — pre-locked via a Steps setup mutation (self-contained — no dependency on PRF-GQL-068 run order). Net state after pre_lock + unlock = MULTI_ORG_TF_BR unlocked in TechFlow org (same as start).","target_member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_id=@td(ORG_TECHFLOW.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP pre_lock]
+  mutation {
+    lockOrganizationContact(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+    }) {
+      id
+    }
+  }
+[GQL-EXEC pre_lock]
+[GQL-OP unlock_contact]
+  mutation {
+    unlockOrganizationContact(command: {
+      memberId: ""@td(MULTI_ORG_TF_BR.id)""
+    }) {
+      id
+    }
+  }
+[GQL-EXEC unlock_contact]","[ERRORS label=unlock_contact] errors[] empty
+[DATA label=unlock_contact] data.unlockOrganizationContact.id = ""@td(MULTI_ORG_TF_BR.id)""","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} — verify TechFlow membership status = Active after unlock (AC3: user can re-access org); verify GET {{BACK_URL}}/api/members/@td(MULTI_ORG_TF_BR.id) isLockedOut unchanged (org unlock does not alter platform lock state)","unlock_contact errors[] non-empty; 403 for authenticated org-maintainer caller; platform isLockedOut changed by org-unlock (scope bleed — BL-AUTH-003 violation)","none — pre_lock + unlock_contact leaves MULTI_ORG_TF_BR in net-zero unlocked state","VCST-5028; xAPI; BL-AUTH-003; BL-B2B-005; AC3; Synced: VCST-5028 (2026-06-15)",Draft
+PRF-GQL-070,"[VCST-5028] lockOrganizationContact — Non-Maintainer Unauthorized (AC4)","GraphQL > xProfile > OrganizationMembership > RBAC",Critical,"BL-B2B-005; BL-AUTH-003; BL-GQL-001","ECL-3.1; ECL-10.2","Runner-native. TECHFLOW_BUYER authenticated (org-employee role — not a maintainer). Attempt to lock another contact in TechFlow org — must be rejected.","actor_id=@td(TECHFLOW_BUYER.platform_id); target_id=@td(TECHFLOW_ADMIN.platform_id); org_id=@td(ORG_TECHFLOW.id)","[AUTH role=TECHFLOW_BUYER]
+[GQL-OP lock_unauthorized]
+  mutation {
+    lockOrganizationContact(command: {
+      memberId: ""@td(TECHFLOW_ADMIN.platform_id)""
+    }) {
+      id
+    }
+  }
+[GQL-EXEC lock_unauthorized]","[ERRORS label=lock_unauthorized] errors[] non-empty — unauthorized caller gets GraphQL error (not 200 success)","[REST] GET {{BACK_URL}}/api/members/@td(TECHFLOW_ADMIN.platform_id) — verify platform-level isLockedOut unchanged (unauthorized lock attempt must NOT persist any state change)","lock_unauthorized errors[] empty (non-maintainer successfully locks another member — AC4 RBAC regression); isLockedOut toggled by unauthorized caller (state corruption)","none — no state change expected (error response)","VCST-5028; xAPI; BL-B2B-005; BL-AUTH-003; AC4; Synced: VCST-5028 (2026-06-15)",Draft
