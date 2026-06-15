@@ -1,0 +1,95 @@
+{
+  "suiteId": "040b",
+  "suiteName": "Payment — Authorize.Net",
+  "runId": "REG-2026-06-15-1845",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-15T18:45:00Z",
+  "completedAt": "2026-06-15T19:55:00Z",
+  "totalCases": 20,
+  "passed": 9,
+  "failed": 1,
+  "blocked": 1,
+  "skipped": 9,
+  "passRate": "81.8%",
+  "testCases": [
+    {"id": "PAY-AN-001", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-002", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-003", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-004", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-005", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-006", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-007", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-008", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-009", "status": "SKIPPED", "notes": "deprecated (old /checkout/payment redirect flow)"},
+    {"id": "PAY-AN-010", "status": "PASS"},
+    {"id": "PAY-AN-011", "status": "PASS"},
+    {
+      "id": "PAY-AN-012",
+      "status": "FAIL",
+      "title": "AN — Client-Side Luhn Validation: Invalid Card Number Rejected",
+      "section": "Authorize.Net > Validation",
+      "priority": "High",
+      "businessRule": "BL-PAY-001",
+      "edgeCaseRefs": "ECL-1.1",
+      "failedAssertion": "[STATE] 'Place order' button enabled with Luhn-invalid card 1234567890123456 (all other fields filled); no inline error on card number field after blur; clicking Place Order created order c92e2e8f-9a15-4353-a8c7-3706c6d1e08b and redirected to /checkout/payment instead of blocking on /cart",
+      "screenshot": "reports/regression/REG-2026-06-15-1845/PAY-AN-012-FAIL-luhn-no-client-validation.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Accept.js (jstest.authorize.net) did NOT perform client-side Luhn validation before enabling Place Order or before allowing createOrderFromCart. Luhn-invalid card 1234567890123456 with valid expiry 12/29, CVV 123, and cardholder name: Place Order button became enabled; clicking it fired GA4 place_order event, created order c92e2e8f-9a15-4353-a8c7-3706c6d1e08b, and redirected to /checkout/payment (fallback path). No api2.authorize.net POST (tokenization blocked by AN library), but order was created before tokenization could succeed. GA4 sequence: begin_checkout → add_payment_info(AuthorizeNetPaymentMethod) → place_order — no purchase event (correct). Expected: Place Order stays disabled or shows inline error while Luhn-invalid card is present. Actual: Button enabled, order created, redirect to /checkout/payment."
+    },
+    {"id": "PAY-AN-013", "status": "PASS"},
+    {
+      "id": "PAY-AN-014",
+      "status": "PASS",
+      "notes": "Successful charge: order CO260615-00003 created at /checkout/completed. Card 4007000000027, expiry 12/29, CVV 900. Cart cleared after order. Order link: /account/orders/00171556-ad68-4e15-ad0f-38e0cc52598a."
+    },
+    {
+      "id": "PAY-AN-015",
+      "status": "BLOCKED",
+      "title": "AN — CDN Block Graceful Degradation",
+      "section": "Authorize.Net > Resilience",
+      "priority": "Medium",
+      "notes": "CDN block simulation requires network route interception (page.route()) which is a programmatic bypass, not a real-user action. Playwright MCP browser tooling cannot block specific script CDN URLs via real-user interaction. Infrastructure-limited BLOCKED."
+    },
+    {
+      "id": "PAY-AN-016",
+      "status": "PASS",
+      "notes": "GA4 purchase event verified: exactly 1 'purchase' event in dataLayer with transaction_id=29bf146f-3bf0-478d-ac8d-c619a1a78e1f, currency=USD, value=200, items[0].item_id=ALCE0128. Event sequence: begin_checkout → add_shipping_info → add_payment_info(AuthorizeNetPaymentMethod) → place_order → purchase. Order CO260615-00004 created. No duplicate purchase events."
+    },
+    {
+      "id": "PAY-AN-017",
+      "status": "PASS",
+      "notes": "Navigating to /checkout/review redirected immediately to /cart — confirms AllowCartPayment=true cart-embedded flow is active, no multistep review page exists. By design per VCST-5162."
+    },
+    {"id": "PAY-AN-018", "status": "PASS"},
+    {
+      "id": "PAY-AN-019",
+      "status": "PASS",
+      "notes": "Per-field negative validation + recovery: expired date → 'Expiration date must be in the future'; month 13 → 'Provide a valid expiration month'; CVV 2-digit → 'Security code must be at least 3 characters'; non-numeric CVV 'abc' → silently filtered (field empty) → 'This field is required'; recovery (all valid) → no errors, Place Order enabled."
+    },
+    {
+      "id": "PAY-AN-020",
+      "status": "PASS",
+      "notes": "BVA expiry year: 1-digit '12/3' → 'Year must be exactly 2 characters', disabled; 2-digit expired '12/20' → 'Expiration date must be in the future', disabled; 2-digit future '12/29' → no error, Place Order enabled."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_040b_001",
+      "title": "AN Accept.js: No client-side Luhn validation — invalid card enables Place Order and creates order",
+      "severity": "High",
+      "testCaseId": "PAY-AN-012",
+      "businessRule": "BL-PAY-001",
+      "edgeCaseRef": "ECL-1.1",
+      "failedAssertion": "[STATE] Place order button remains disabled with Luhn-invalid card",
+      "stepsToReproduce": "1. Login as agent slot 3, add item to cart\n2. Select 'Bank card (Authorize.Net)' payment method\n3. Fill card number with Luhn-invalid '1234 5678 9012 3456', expiry '12/29', CVV '123', cardholder 'John Smith'\n4. Observe Place Order button state — ENABLED (expected: disabled or showing Luhn error)\n5. Click Place Order — order is created (GA4 place_order event fired with transaction_id c92e2e8f-...), page redirects to /checkout/payment",
+      "expected": "Place Order button remains disabled while a Luhn-invalid card number is entered, OR an inline error appears on the card number field after blur. Accept.js should reject the card client-side before any order is created.",
+      "actual": "Place Order button becomes enabled after filling Luhn-invalid card number plus all other fields. Clicking Place Order calls createOrderFromCart (order created), fires GA4 place_order event, and redirects user to /checkout/payment as a fallback (since Accept.js tokenization returns error for invalid card). No inline Luhn error shown. No api2.authorize.net POST (tokenization not sent), but order already exists in platform.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}
