@@ -28,11 +28,11 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Customers** | — | 026, 027 | Contacts → Organizations, Members | `/api/contacts/`, `/api/members/` | xProfile |
 | **Inventory** | — | 056 | Inventory → Fulfillment Centers, Stock | `/api/inventory/` | — |
 | **Notifications** | — | 057, 058 | Notifications → Templates, Layouts | `/api/notifications/` | — |
-| **Push Messages** | — | 068 | Notifications → Push | `/api/notifications/` | — |
+| **Push Messages** | — | 068, 050l | Notifications → Push | `/api/push-message` | pushMessages |
 | **CMS / Page Builder** | — | 059, 060 | Content → Pages, Menus, Blog | `/api/content/` | xCMS |
 | **Platform Core** | — | 020, 021, 063 | Settings → Users, Roles, Permissions | `/api/platform/` | — |
 | **Platform API** | — | 049 | — | `/api/*` | — |
-| **GraphQL xAPI** | — | 050 | — | `/graphql` | xCart, xCatalog, xOrder, xCMS, xProfile|
+| **GraphQL xAPI** | — | 050 | — | `/graphql` | xCart, xCatalog, xOrder, xCMS, xProfile, pushMessages|
 | **Store** | — | 034, 035 | Stores → Configuration, Rounding | `/api/stores/` | — |
 | **Assets** | — | 062 | Assets → Blob Storage | `/api/assets/` | — |
 | **Import/Export** | — | 064 | Data Import/Export pages | `/api/bulk/` | — |
