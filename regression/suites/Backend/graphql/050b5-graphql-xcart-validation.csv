@@ -5,7 +5,7 @@ CVAL-GQL-001,"xCart — per-line validationErrors non-empty after over-stock cha
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -24,7 +24,7 @@ CVAL-GQL-001,"xCart — per-line validationErrors non-empty after over-stock cha
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id sku productId quantity }
     }
@@ -48,7 +48,7 @@ CVAL-GQL-001,"xCart — per-line validationErrors non-empty after over-stock cha
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_back]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items {
         id
@@ -61,7 +61,7 @@ CVAL-GQL-001,"xCart — per-line validationErrors non-empty after over-stock cha
   }
 [GQL-EXEC read_back]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -79,7 +79,7 @@ CVAL-GQL-002,"xCart — cart-level validationErrors(ruleSet:default) stays clean
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -98,7 +98,7 @@ CVAL-GQL-002,"xCart — cart-level validationErrors(ruleSet:default) stays clean
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -122,7 +122,7 @@ CVAL-GQL-002,"xCart — cart-level validationErrors(ruleSet:default) stays clean
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_default_ruleset]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""default"") {
         errorCode
@@ -134,7 +134,7 @@ CVAL-GQL-002,"xCart — cart-level validationErrors(ruleSet:default) stays clean
   }
 [GQL-EXEC read_default_ruleset]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -150,7 +150,7 @@ CVAL-GQL-003,"xCart — validationErrors(ruleSet:shipments) does NOT bleed defau
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -169,7 +169,7 @@ CVAL-GQL-003,"xCart — validationErrors(ruleSet:shipments) does NOT bleed defau
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -193,7 +193,7 @@ CVAL-GQL-003,"xCart — validationErrors(ruleSet:shipments) does NOT bleed defau
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_shipments_ruleset]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""shipments"") {
         errorCode
@@ -205,7 +205,7 @@ CVAL-GQL-003,"xCart — validationErrors(ruleSet:shipments) does NOT bleed defau
   }
 [GQL-EXEC read_shipments_ruleset]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -219,7 +219,7 @@ CVAL-GQL-004,"xCart — validationErrors(ruleSet:*) wildcard returns union inclu
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -238,7 +238,7 @@ CVAL-GQL-004,"xCart — validationErrors(ruleSet:*) wildcard returns union inclu
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -262,7 +262,7 @@ CVAL-GQL-004,"xCart — validationErrors(ruleSet:*) wildcard returns union inclu
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_wildcard_ruleset]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""*"") {
         errorCode
@@ -274,7 +274,7 @@ CVAL-GQL-004,"xCart — validationErrors(ruleSet:*) wildcard returns union inclu
   }
 [GQL-EXEC read_wildcard_ruleset]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -290,7 +290,7 @@ CVAL-GQL-005,"xCart — stale validation errors cleared after corrective mutatio
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -309,7 +309,7 @@ CVAL-GQL-005,"xCart — stale validation errors cleared after corrective mutatio
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -348,7 +348,7 @@ CVAL-GQL-005,"xCart — stale validation errors cleared after corrective mutatio
 [GQL-EXEC correct_qty]
 [GQL-OP read_after_correction]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""default"") {
         errorCode
@@ -365,7 +365,7 @@ CVAL-GQL-005,"xCart — stale validation errors cleared after corrective mutatio
   }
 [GQL-EXEC read_after_correction]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -384,7 +384,7 @@ CVAL-GQL-006,"xCart — cart-level validationErrors(ruleSet:items) surfaces the 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -403,7 +403,7 @@ CVAL-GQL-006,"xCart — cart-level validationErrors(ruleSet:items) surfaces the 
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -427,7 +427,7 @@ CVAL-GQL-006,"xCart — cart-level validationErrors(ruleSet:items) surfaces the 
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_items_ruleset]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""items"") {
         errorCode
@@ -439,7 +439,7 @@ CVAL-GQL-006,"xCart — cart-level validationErrors(ruleSet:items) surfaces the 
   }
 [GQL-EXEC read_items_ruleset]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -455,7 +455,7 @@ CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not con
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover]
   query {
@@ -482,7 +482,7 @@ CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not con
 [GQL-EXEC add_b]
 [GQL-OP get_line_ids]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -498,14 +498,14 @@ CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not con
 [GQL-EXEC change_b_overstock]
 [GQL-OP read_back]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity isValid validationErrors { errorCode objectType errorMessage } }
     }
   }
 [GQL-EXEC read_back]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=discover] errors[] empty
 [COUNT label=discover] data.products.items.length >= 2
 [ERRORS label=add_a] errors[] empty
@@ -528,7 +528,7 @@ CVAL-GQL-008,"xCart — within-request ruleSet cache isolation: ruleSet:* resolv
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -547,7 +547,7 @@ CVAL-GQL-008,"xCart — within-request ruleSet cache isolation: ruleSet:* resolv
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -571,7 +571,7 @@ CVAL-GQL-008,"xCart — within-request ruleSet cache isolation: ruleSet:* resolv
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_aliased]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       allErrors:      validationErrors(ruleSet: ""*"")         { errorCode objectId objectType errorMessage }
       shippingErrors: validationErrors(ruleSet: ""shipments"") { errorCode objectId objectType errorMessage }
@@ -579,7 +579,7 @@ CVAL-GQL-008,"xCart — within-request ruleSet cache isolation: ruleSet:* resolv
   }
 [GQL-EXEC read_aliased]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -596,7 +596,7 @@ CVAL-GQL-009,"xCart — within-request ruleSet cache isolation: unknown ruleSet:
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -615,7 +615,7 @@ CVAL-GQL-009,"xCart — within-request ruleSet cache isolation: unknown ruleSet:
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -639,7 +639,7 @@ CVAL-GQL-009,"xCart — within-request ruleSet cache isolation: unknown ruleSet:
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_aliased]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       fooErrors: validationErrors(ruleSet: ""foo"") { errorCode objectId objectType errorMessage }
       allErrors:  validationErrors(ruleSet: ""*"")  { errorCode objectId objectType errorMessage }
@@ -647,7 +647,7 @@ CVAL-GQL-009,"xCart — within-request ruleSet cache isolation: unknown ruleSet:
   }
 [GQL-EXEC read_aliased]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -664,7 +664,7 @@ CVAL-GQL-010,"xCart — cross-request ruleSet cache isolation: ruleSet:* in req1
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -683,7 +683,7 @@ CVAL-GQL-010,"xCart — cross-request ruleSet cache isolation: ruleSet:* in req1
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -707,7 +707,7 @@ CVAL-GQL-010,"xCart — cross-request ruleSet cache isolation: ruleSet:* in req1
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_wildcard]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""*"") {
         errorCode
@@ -720,7 +720,7 @@ CVAL-GQL-010,"xCart — cross-request ruleSet cache isolation: ruleSet:* in req1
 [GQL-EXEC read_wildcard]
 [GQL-OP read_shipments]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""shipments"") {
         errorCode
@@ -732,7 +732,7 @@ CVAL-GQL-010,"xCart — cross-request ruleSet cache isolation: ruleSet:* in req1
   }
 [GQL-EXEC read_shipments]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty
@@ -751,7 +751,7 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
   mutation {
@@ -770,7 +770,7 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
 [GQL-EXEC add_item]
 [GQL-OP get_line_id]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       items { id productId quantity }
     }
@@ -794,7 +794,7 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
 [GQL-EXEC change_to_overstock]
 [GQL-OP read_foo]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""foo"") {
         errorCode
@@ -807,7 +807,7 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
 [GQL-EXEC read_foo]
 [GQL-OP read_wildcard]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       itemsCount
       validationErrors(ruleSet: ""*"") {
         errorCode
@@ -819,7 +819,7 @@ CVAL-GQL-011,"xCart — cross-request ruleSet cache isolation: unknown ruleSet:f
   }
 [GQL-EXEC read_wildcard]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=get_line_id] errors[] empty

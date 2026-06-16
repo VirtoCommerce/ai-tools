@@ -7,15 +7,15 @@ CRI-GQL-057,"createOrderFromCart — Org Member Happy Path (B2B)","GraphQL > xCa
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-CAPTURE setup_me.data.me.contact.organizationId → ORG_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
   mutation {
-    addOrUpdateCartShipment(command: {
+    addOrUpdateCartShipment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
@@ -31,7 +31,7 @@ CRI-GQL-057,"createOrderFromCart — Org Member Happy Path (B2B)","GraphQL > xCa
 [GQL-EXEC set_shipment]
 [GQL-OP set_payment]
   mutation {
-    addOrUpdateCartPayment(command: {
+    addOrUpdateCartPayment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
     }) { id }
@@ -51,10 +51,10 @@ CRI-GQL-061,"xCart — unSelectCartItems Unselects One of Multiple Items","Graph
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_one]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
 [GQL-EXEC add_one]
 [GQL-OP unselect_all]
   mutation {
@@ -75,7 +75,7 @@ CRI-GQL-061,"xCart — unSelectCartItems Unselects One of Multiple Items","Graph
   }
 [GQL-EXEC select_one]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=unselect_all] errors[] empty
 [DATA label=unselect_all] data.unSelectAllCartItems.items.0.selectedForCheckout = false
 [ERRORS label=select_one] errors[] empty
@@ -86,10 +86,10 @@ CRI-GQL-062,"xCart — selectCartItems Re-selects a Previously Unselected Item",
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_one]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
 [GQL-EXEC add_one]
 [GQL-OP unselect_all]
   mutation {
@@ -110,7 +110,7 @@ CRI-GQL-062,"xCart — selectCartItems Re-selects a Previously Unselected Item",
   }
 [GQL-EXEC reselect]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=unselect_all] errors[] empty
 [DATA label=unselect_all] data.unSelectAllCartItems.items.0.selectedForCheckout = false
 [ERRORS label=reselect] errors[] empty
@@ -121,10 +121,10 @@ CRI-GQL-063,"xCart — unSelectCartItems with Invalid lineItemId — Graceful No
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_one]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
 [GQL-EXEC add_one]
 [GQL-OP unselect_to_capture]
   mutation {
@@ -151,7 +151,7 @@ CRI-GQL-063,"xCart — unSelectCartItems with Invalid lineItemId — Graceful No
   }
 [GQL-EXEC unselect_bogus]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=unselect_bogus] errors[] empty
 [DATA label=unselect_bogus] data.unSelectCartItems.items[?id={{REAL_LINE_ID}}].selectedForCheckout = true","[EVIDENCE] Real item preserved (selectedForCheckout=true) after unselect with bogus ID. No HTTP 500 or bulk unselect.","HTTP 500; real item gets unselected by invalid ID (P0 corruption); stack trace leaks; item flips to selectedForCheckout=false","none — clearCart at end","xAPI; graphql-schema.md — Mutation.unSelectCartItems error contract; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
 CRI-GQL-064,"xCart — selectCartItems Idempotent on Already-Selected Item","GraphQL > xCart > selectCartItems",High,BL-GQL-001,ECL-10.2; ECL-10.2,"Runner-native. addItem (BUYABLE_NO_MIN_QTY), capture LINE_ITEM_ID via unSelectAllCartItems response (synchronous — avoids cart-query eventual consistency), then re-select via selectCartItems. Item was unselected immediately before, so re-select returns it to true; calling selectCartItems on a selected item must not flip it to false (idempotence contract). Verify selectedForCheckout=true after re-select.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
@@ -160,10 +160,10 @@ CRI-GQL-064,"xCart — selectCartItems Idempotent on Already-Selected Item","Gra
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_one]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
 [GQL-EXEC add_one]
 [GQL-OP unselect_all]
   mutation {
@@ -182,7 +182,7 @@ CRI-GQL-064,"xCart — selectCartItems Idempotent on Already-Selected Item","Gra
   }
 [GQL-EXEC select_idempotent]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=select_idempotent] errors[] empty
 [DATA label=select_idempotent] data.selectCartItems.items[?id={{LINE_ITEM_ID}}].selectedForCheckout = true","[EVIDENCE] LINE_ITEM_ID selectedForCheckout=true after re-select (no flip to false — idempotence contract)","errors[] non-empty; item flipped to selectedForCheckout=false (should be true after re-select)","none — clearCart at end","xAPI; graphql-schema.md — Mutation.selectCartItems idempotence; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
 CRI-GQL-065,"xCart — unSelectAllCartItems Unselects Every Item + Zeroes Subtotals","GraphQL > xCart > selectAllCartItems",Critical,BL-GQL-001; BL-GQL-003,ECL-10.2; ECL-2.1,"Runner-native. Add item, call unSelectAllCartItems, verify subTotal drops to 0. B2B-store may consolidate identical productIds; assert on subTotal=0 (BL-GQL-003 canonical signal), not itemsCount.","—","[AUTH role=ORG_USER]
@@ -195,10 +195,10 @@ CRI-GQL-065,"xCart — unSelectAllCartItems Unselects Every Item + Zeroes Subtot
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_1]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_first]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id subTotal { amount } itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id subTotal { amount } itemsCount } }
 [GQL-EXEC add_first]
 [GQL-OP unselect_all]
   mutation {
@@ -208,7 +208,7 @@ CRI-GQL-065,"xCart — unSelectAllCartItems Unselects Every Item + Zeroes Subtot
   }
 [GQL-EXEC unselect_all]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=unselect_all] errors[] empty
 [DATA label=unselect_all] data.unSelectAllCartItems.id is non-null
 [DATA label=unselect_all] data.unSelectAllCartItems.subTotal.amount = 0","[EVIDENCE] All items[].selectedForCheckout=false post-unselect; itemsCount >= 1 (raw item count unaffected by selection). subTotal=0 is the canonical signal that unselection was applied to checkout computation.","errors[] non-empty; subTotal.amount > 0 after unSelectAll (selection not applied to totals); any item still selectedForCheckout=true","none — clearCart at end","xAPI; graphql-schema.md — Mutation.unSelectAllCartItems; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
@@ -218,10 +218,10 @@ CRI-GQL-066,"xCart — selectAllCartItems After Unselect All Restores Selection"
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_first]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id subTotal { amount } itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_1}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id subTotal { amount } itemsCount } }
 [GQL-EXEC add_first]
 [GQL-OP unselect_all]
   mutation { unSelectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
@@ -234,7 +234,7 @@ CRI-GQL-066,"xCart — selectAllCartItems After Unselect All Restores Selection"
   }
 [GQL-EXEC select_all]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=select_all] errors[] empty
 [DATA label=select_all] data.selectAllCartItems.id is non-null
 [DATA label=select_all] data.selectAllCartItems.subTotal.amount > 0","[EVIDENCE] After selectAll: every items[].selectedForCheckout=true; subTotal.amount > 0 restores to pre-unselect total (runner-manual). itemsCount >= 1.","errors[] non-empty; subTotal.amount = 0 after selectAll (selection not restored); any item still unselected","none — clearCart at end","xAPI; graphql-schema.md — Mutation.selectAllCartItems; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
@@ -248,10 +248,10 @@ CRI-GQL-067,"xCart — Checkout Blocked When All Items Unselected","GraphQL > xC
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_one]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC add_one]
 [GQL-CAPTURE add_one.data.addItem.id → CART_ID]
 [GQL-OP unselect_all]
@@ -259,7 +259,7 @@ CRI-GQL-067,"xCart — Checkout Blocked When All Items Unselected","GraphQL > xC
 [GQL-EXEC unselect_all]
 [GQL-OP set_shipment]
   mutation {
-    addOrUpdateCartShipment(command: {
+    addOrUpdateCartShipment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
@@ -270,7 +270,7 @@ CRI-GQL-067,"xCart — Checkout Blocked When All Items Unselected","GraphQL > xC
 [GQL-EXEC set_shipment]
 [GQL-OP set_payment]
   mutation {
-    addOrUpdateCartPayment(command: {
+    addOrUpdateCartPayment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" }
     }) { id }
@@ -280,7 +280,7 @@ CRI-GQL-067,"xCart — Checkout Blocked When All Items Unselected","GraphQL > xC
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number status } }
 [GQL-EXEC create_order]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=create_order] errors[] non-empty","[EVIDENCE] errors[].message should reference empty cart or no selected items (BL-CHK-001). No HTTP 500. No real order created.","Order created with real items despite all unselected (P0: BL-CHK-001 violation); errors[] empty (mutation succeeds when it should fail); HTTP 500",Cancel any order accidentally created via Admin API,"xAPI; graphql-schema.md; BL-CHK-001 validation; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
 CRI-GQL-068,"xCart — removeCoupon Removes Applied Coupon","GraphQL > xCart > removeCoupon",High,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Add item, apply COUPON_10PCT, removeCoupon by code, verify coupons[] no longer contains it and discountTotal returns to 0.","coupon_code=@td(COUPON_10PCT.code)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
@@ -292,24 +292,24 @@ CRI-GQL-068,"xCart — removeCoupon Removes Applied Coupon","GraphQL > xCart > r
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-OP apply_coupon]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""@td(COUPON_10PCT.code)"" }) { id coupons { code isAppliedSuccessfully } } }
+  mutation { addCoupon(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""@td(COUPON_10PCT.code)"" }) { id coupons { code isAppliedSuccessfully } } }
 [GQL-EXEC apply_coupon]
 [GQL-OP remove_coupon]
   mutation {
-    removeCoupon(command: {
+    removeCoupon(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       couponCode: ""@td(COUPON_10PCT.code)""
     }) { id coupons { code } discountTotal { amount } }
   }
 [GQL-EXEC remove_coupon]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=remove_coupon] errors[] empty
 [DATA label=remove_coupon] data.removeCoupon.id is non-null","[EVIDENCE] Verify coupons[] no longer contains @td(COUPON_10PCT.code). discountTotal.amount = 0 post-remove (runner-manual).","errors[] non-empty; coupons[] still contains removed code; discountTotal unchanged after remove",none — clearCart at end,xAPI; graphql-schema.md — Mutation.removeCoupon,Automated
 CRI-GQL-069,"xCart — removeCoupon Silent No-Op on Non-Existent Coupon","GraphQL > xCart > removeCoupon",High,BL-GQL-001,ECL-10.2; ECL-10.2,"Runner-native. Calls removeCoupon with a code that was never applied. Should succeed gracefully (silent no-op, not error).","bogus_coupon=BADCODE_NEVER_APPLIED_99999","[AUTH role=ORG_USER]
@@ -319,7 +319,7 @@ CRI-GQL-069,"xCart — removeCoupon Silent No-Op on Non-Existent Coupon","GraphQ
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP remove_nonexistent]
   mutation {
-    removeCoupon(command: {
+    removeCoupon(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       couponCode: ""BADCODE_NEVER_APPLIED_99999""
     }) { id coupons { code } }
@@ -333,10 +333,10 @@ CRI-GQL-090,"xCart — validateCoupon Query Returns true for Valid Coupon","Grap
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 currencyCode: ""USD"" cultureName: ""en-US"" }) { id itemsCount } }
 [GQL-EXEC add_item]
 [GQL-OP validate]
   query {
@@ -350,7 +350,7 @@ CRI-GQL-090,"xCart — validateCoupon Query Returns true for Valid Coupon","Grap
   }
 [GQL-EXEC validate]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=validate] errors[] empty
 [DATA label=validate] data.validateCoupon = true","[EVIDENCE] validateCoupon returns Boolean true with non-empty cart and valid coupon (top-level Boolean, no sub-selection — DV-010 would fire on sub-selection)","errors[] non-empty; validateCoupon returns false for known-valid coupon on non-empty cart; HTTP 500","none — clearCart in Steps","xAPI; graphql-schema.md — Query.validateCoupon; Fixed authoring debt (TLC-2026-05-15-2316, 2026-05-15)",synced
 CRI-GQL-091,"xCart — validateCoupon Query Returns false for Invalid Coupon","GraphQL > xCart > validateCoupon",High,BL-GQL-001,ECL-10.2; ECL-10.2,"Runner-native. Passes an invalid coupon code to validateCoupon — expects false, not a crash.","bogus_coupon=BADCODE_NOT_VALID_99999","[AUTH role=ORG_USER]
@@ -375,7 +375,7 @@ CRI-GQL-092,changeCartConfigurationItemSelected — TRUE→FALSE→TRUE Round-Tr
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP get_def]
   query { productConfiguration(configurableProductId: """"@td(CFG_LAPTOP.id)"""" storeId: """"{{STORE_ID}}"""") { configurationSections { id type options { product { id } } } } }
@@ -387,7 +387,7 @@ CRI-GQL-092,changeCartConfigurationItemSelected — TRUE→FALSE→TRUE Round-Tr
 [GQL-OP add_item]
 [GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
   mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
-    addItem(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_LAPTOP.id)"""" quantity: 1 configurationSections: $configurationSections }) {
+    addItem(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_LAPTOP.id)"""" quantity: 1 configurationSections: $configurationSections }) {
       id items { id productId listPrice { amount } configurationItems { sectionId selectedForCheckout } }
     }
   }
@@ -412,7 +412,7 @@ CRI-GQL-092,changeCartConfigurationItemSelected — TRUE→FALSE→TRUE Round-Tr
   }
 [GQL-EXEC flip_true]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
 [ERRORS label=flip_false] errors[] empty
@@ -428,7 +428,7 @@ CRI-GQL-093,unSelectAllCartConfigurationItems + selectAllCartConfigurationItems 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP get_def]
   query { productConfiguration(configurableProductId: """"@td(CFG_LAPTOP.id)"""" storeId: """"{{STORE_ID}}"""") { configurationSections { id type options { product { id } } } } }
@@ -440,7 +440,7 @@ CRI-GQL-093,unSelectAllCartConfigurationItems + selectAllCartConfigurationItems 
 [GQL-OP add_item]
 [GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
   mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
-    addItem(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_LAPTOP.id)"""" quantity: 1 configurationSections: $configurationSections }) {
+    addItem(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" productId: """"@td(CFG_LAPTOP.id)"""" quantity: 1 configurationSections: $configurationSections }) {
       id items { id productId listPrice { amount } configurationItems { sectionId selectedForCheckout } }
     }
   }
@@ -463,7 +463,7 @@ CRI-GQL-093,unSelectAllCartConfigurationItems + selectAllCartConfigurationItems 
   }
 [GQL-EXEC select_all]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: """"{{STORE_ID}}"""" userId: """"{{USER_ID}}"""" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=unselect_all] errors[] empty
 [DATA label=unselect_all] data.unSelectAllCartConfigurationItems.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
 [DATA label=unselect_all] data.unSelectAllCartConfigurationItems.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = false
