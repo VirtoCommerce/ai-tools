@@ -230,7 +230,7 @@ CRB-GQL-046,"xCart — updateCartQuantity Single Item Happy Path","GraphQL > xCa
 [GQL-OP bulk_update]
   mutation {
     updateCartQuantity(command: {
-      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       items: [{ productId: ""{{product_id}}"" quantity: 3 }]
     }) {
       id itemsCount items { productId quantity }
@@ -262,7 +262,7 @@ CRB-GQL-047,"xCart — updateCartQuantity Bulk Updates Multiple Items","GraphQL 
 [GQL-OP bulk_update]
   mutation {
     updateCartQuantity(command: {
-      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       items: [
         { productId: ""{{product_id}}"" quantity: 4 }
       ]
@@ -295,7 +295,7 @@ CRB-GQL-048,"xCart — updateCartQuantity quantity=0 Removes Item","GraphQL > xC
 [GQL-OP set_zero]
   mutation {
     updateCartQuantity(command: {
-      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       items: [{ productId: ""{{product_id}}"" quantity: 0 }]
     }) {
       id itemsCount items { productId quantity }
@@ -344,7 +344,7 @@ CRB-GQL-051,"xCart — updateCartQuantity Totals Recalculated After Bulk Update"
 [GQL-OP bulk_update]
   mutation {
     updateCartQuantity(command: {
-      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
+      storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
       items: [
         { productId: ""{{product_id}}"" quantity: 5 }
       ]
