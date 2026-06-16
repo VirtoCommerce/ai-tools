@@ -1,0 +1,44 @@
+{
+  "runId": "TLC-2026-06-15-1817",
+  "inputType": "change-source",
+  "source": "VCST-5162",
+  "linkedPRs": ["vc-frontend#2309"],
+  "date": "2026-06-15",
+  "verdict": "APPROVED WITH WARNINGS",
+  "platform": "3.1037.0",
+  "theme": "2.51.0-pr-2315-3425",
+  "changedModules": ["Payment (vc-frontend storefront)", "AuthorizeNetPayment"],
+  "affectedSuites": ["040b"],
+  "casesAnalyzed": 19,
+  "casesSynced": 3,
+  "casesGenerated": 1,
+  "casesReviewed": 11,
+  "casesVerified": 6,
+  "filesModified": [
+    "regression/suites/Frontend/payment/040b-payment-authorizenet.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "PASS",
+    "G5": "PASS",
+    "G6": "PASS",
+    "G7": "PASS",
+    "G8": "PASS",
+    "G9": "PASS"
+  },
+  "environmentVerification": {
+    "pr2309Live": true,
+    "verified": 5,
+    "changed": 1,
+    "broken": 0,
+    "blocked": 0
+  },
+  "blProposals": {"new": [], "stale": []},
+  "warnings": [
+    "PAY-AN-020 in Draft — awaiting Draft→Reviewed promotion gate",
+    "Playwright-MCP stale-cache deep-link 404 (env quirk, not a defect) — clear cache before next run"
+  ]
+}

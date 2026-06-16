@@ -12,15 +12,19 @@ Products in cart","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/cart
 [CONSOLE] No errors on delivery option selection","Delivery option not selectable; address form does not appear after selection","none","VCST-4499","Automated"
 "CHK-002","Checkout - Enter Shipping Address","Checkout > Shipping","High","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Delivery selected at checkout, user has no saved addresses","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart and proceed to checkout
+Products in cart; new shipping address entered via the Add New dialog (runnable regardless of whether the user already has saved addresses)","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
 [ACT] click 'Shipping' delivery-option button
-[ACT] Fill 'Street' field with valid street address
-[ACT] Fill 'City' field with valid city
-[ACT] Fill 'State' field with valid state
-[ACT] Fill 'ZIP' field with valid postal code
-[ACT] Fill 'Country' field with valid country
-[ACT] click 'Continue' or 'Save Address'
-[ASSERT] Verify address saved and displayed in summary","[DOM] All address fields accept text input
+[WAIT] Wait for address section to render
+[ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
+[ACT] click 'Add New' to open the new-address form
+[ACT] Select Country = 'United States of America'
+[ACT] Fill First name, Last name, and Email with valid values
+[ACT] Fill 'Address' field with a valid street address
+[ACT] Fill 'City' field with a valid city
+[ACT] Select 'State'
+[ACT] Fill 'ZIP / Postal code' field with a valid postal code for the country
+[ACT] click 'Create' to save the new address
+[ASSERT] Verify the new address is saved and displayed in the Shipping Details summary","[DOM] All address fields accept text input
 [STATE] Validation passes on all fields (no error states)
 [STATE] Address displayed in shipping summary section
 [DOM] Continue/Next step button becomes active","[API] POST address payload contains all required fields
@@ -332,7 +336,7 @@ password={{USER_PASSWORD}}","[NAV] proceed to checkout payment step and trigger 
 [NETWORK] no 4xx/5xx on state reload","address reset to empty after decline; shipping method reset; cart items changed; ghost order created and visible in order history","Clear test cart; remove any ghost orders","Coverage Gap Analysis","Manual"
 "CHK-054","Minimum Order Amount - Checkout Blocked When Below Minimum","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > General > MinOrderTotal (e.g., $50.00). QA environment does not have this configured by default. Admin step: navigate to Stores > [Store Name] > edit > set MinOrderTotal = 50.00 and save. Then verify {{TEST_SKU}} price is below $50 (e.g., single item < $5).","url={{FRONT_URL}}
+SKIP: automated runners must SKIP (not BLOCK) this case — store admin config (MinOrderTotal) is not present in QA by default. ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > General > MinOrderTotal (e.g., $50.00). QA environment does not have this configured by default. Admin step: navigate to Stores > [Store Name] > edit > set MinOrderTotal = 50.00 and save. Then verify {{TEST_SKU}} price is below $50 (e.g., single item < $5).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item to cart (total below minimum order amount)
@@ -349,7 +353,7 @@ min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} and add a low-value item
 [NETWORK] no 4xx/5xx (validation should be graceful)","checkout proceeds despite cart being below minimum; no message shown; vague error message without minimum amount or shortfall; 500 error instead of validation message","Remove test items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-055","Minimum Order Amount - Checkout Unblocked After Adding Items","Checkout > Validation > Minimum Order","High","BL-CHK-007","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-ADMIN-CONFIG REQUIRED: Same as CHK-054 — MinOrderTotal must be set to $50.00 in Admin > Stores. Run CHK-054 setup steps first. DEPENDENCY: CHK-054 must be run or equivalent setup performed.","url={{FRONT_URL}}
+SKIP: automated runners must SKIP (not BLOCK) this case — store admin config (MinOrderTotal) is not present in QA by default. ADMIN-CONFIG REQUIRED: Same as CHK-054 — MinOrderTotal must be set to $50.00 in Admin > Stores. Run CHK-054 setup steps first. DEPENDENCY: CHK-054 must be run or equivalent setup performed.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}
 min_order_amount=$50.00","[NAV] log in to {{FRONT_URL}} with cart total below minimum (from CHK-054 or fresh setup)
@@ -462,7 +466,7 @@ password={{ORG_USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and proceed to ch
 [NETWORK] no 4xx/5xx on address pagination request","'Show more' or pagination absent despite 22 addresses; clicking pagination causes full page refresh or error; duplicate addresses across pages; addresses not selectable after loading next page","No cleanup required","Coverage Gap Analysis, Synced: VCST-4710 (2026-04-23) — pagination now server-side via cursor","Reviewed"
 "CHK-061","Session Timeout During Checkout - Cart Preserved After Re-authentication","Checkout > Session > Timeout","Medium",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TOOL-LIMITATION: Natural session timeout in QA environment is too long for automated testing. Use cookie-clearing approach: MCP browser_evaluate to delete access_token and refresh_token cookies, then proceed. This simulates session expiry without waiting for timeout. NOTE: Real-user-interaction rule applies — use browser_evaluate only for cookie manipulation (not for UI interactions).","url={{FRONT_URL}}
+MANUAL-ONLY: Simulating session expiry requires deleting the access_token/refresh_token cookies. browser_evaluate is blocked by the real-user-interaction enforcement hook, so automated runners must SKIP (not BLOCK) this case. Manual execution: clear the auth cookies via the browser's DevTools > Application > Cookies panel (a real-user action), or wait for the natural session timeout, then proceed.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} and add items to cart; proceed to checkout payment step
 [ASSERT] note cart contents (item names, quantities, total)
@@ -650,7 +654,7 @@ admin_url={{ADMIN_URL}}","[NAV] complete checkout and note order total and order
 [NETWORK] no 4xx/5xx","admin total differs from storefront; line item prices mismatch; tax calculated differently in admin; order not found in admin","Cancel test order via admin","Coverage Gap Analysis","Manual"
 "CHK-084","Minimum Order Amount - Cart Below Minimum Blocks Checkout","Checkout > Minimum Order","High","BL-CHK-007","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > MinOrderTotal (e.g., $50). QA environment does not have this configured by default. Duplicate of CHK-054 scope — these two cases should be consolidated. NOTE: CHK-084 focuses on cart-page block; CHK-054 focuses on checkout-step block.","url={{FRONT_URL}}
+SKIP: automated runners must SKIP (not BLOCK) this case — store admin config (MinOrderTotal) is not present in QA by default. ADMIN-CONFIG REQUIRED: Store must have minimum order amount configured in Admin > Stores > MinOrderTotal (e.g., $50). QA environment does not have this configured by default. Duplicate of CHK-054 scope — these two cases should be consolidated. NOTE: CHK-084 focuses on cart-page block; CHK-054 focuses on checkout-step block.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [ACT] add a low-priced product to cart (total below minimum order amount)
@@ -665,7 +669,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} and log in
 [NETWORK] no 5xx","checkout proceeds below minimum; no warning message; button enabled despite below-minimum total; generic error without specifying minimum amount","Remove items from cart; reset MinOrderTotal to 0 in Admin","Coverage Gap Analysis","Manual"
 "CHK-085","Minimum Order Amount - Adding Items to Exceed Minimum Unblocks","Checkout > Minimum Order","Medium","BL-CHK-007","ECL-1.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-ADMIN-CONFIG REQUIRED: MinOrderTotal must be set in Admin > Stores. DEPENDENCY: Run CHK-084 first to establish below-minimum state. Duplicate of CHK-055 scope.","url={{FRONT_URL}}
+SKIP: automated runners must SKIP (not BLOCK) this case — store admin config (MinOrderTotal) is not present in QA by default. ADMIN-CONFIG REQUIRED: MinOrderTotal must be set in Admin > Stores. DEPENDENCY: Run CHK-084 first to establish below-minimum state. Duplicate of CHK-055 scope.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with below-minimum total
 [ASSERT] verify minimum order warning is shown and checkout is blocked

@@ -66,8 +66,9 @@ Determine testing strategy: load knowledge, query docs, and route agents.
 - **business-logic.md** — find all `BL-*` invariants for the affected domains. These become mandatory verification points.
 - **e-commerce-edge-cases-library.md** — find `ECL-*` patterns for the domains.
 - **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via `/qa-checklist`) — identify checklist items for the domains.
+- **`.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`** — map the ticket/feature to its `E2E-*` scenario(s) (105 scenarios across 18 domains). Record the matching scenario IDs and their pre-mapped regression suites — this is the suite-traceability backbone the Write step (Step 3) folds into the checklist.
 
-**Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected feature's domain (e.g., `"cart xAPI mutations"`, `"order processing workflow"`) with `tokens: 8000`. Pass findings to agents in Step 4.
+**VirtoOZ docs query** (via the `/vc-docs` skill) — query the affected feature's domain against the topic-scoped VirtoOZ MCP tool that fits (e.g., `StorefrontDeveloperGuide` for `"cart xAPI mutations"`, `PlatformDeveloperGuide` for `"order processing workflow"`). VirtoOZ is the primary Virto Commerce documentation source; fall back to Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only if VirtoOZ returns nothing. Pass findings to agents in Step 4.
 
 **Agent routing table:**
 
@@ -91,13 +92,16 @@ Determine testing strategy: load knowledge, query docs, and route agents.
 
 **Always** dispatch `test-management-specialist` to produce a testing checklist or test cases before execution. This step must complete before Step 4.
 
-1. **Check for existing test cases** — look in `regression/suites/` for suites that cover the affected domains.
+The specialist follows the **`/qa-plan` methodology scoped to this ticket** — consult `e2e-scenario-catalog.md` for the `E2E-*` scenarios identified in Step 2 and inherit their regression-suite mappings — but the **output is the lightweight scoped `testing-checklist.md` below, NOT a full `/qa-plan` test plan / RTM / TestRail CSV.** Use the catalog for scenario coverage and suite traceability; do not run the full test-planning ceremony (SBTM/test-design/peer-review/Draft→Reviewed promotion) here — Step 5 owns exploratory, and full case authoring belongs to a standalone `/qa-plan` run.
+
+1. **Check for existing test cases** — look in `regression/suites/` for suites that cover the affected domains (start from the `E2E-*` → suite mappings recorded in Step 2).
 2. **If test cases exist** → generate a **testing checklist** scoped to the ticket/PR:
    - Map ACs to existing suite test cases
+   - Fold in the matching `E2E-*` scenario(s) from the catalog so cross-screen/journey coverage isn't missed
    - Add checklist items for `BL-*` rules and `ECL-*` edge cases not covered by existing suites
    - Flag gaps where no existing test case covers an AC
 3. **If no test cases exist** → generate **new test cases** using `/qa-test-cases-generator` methodology:
-   - Derive cases from ACs, `BL-*` invariants, `ECL-*` patterns, and domain checklists
+   - Derive cases from ACs, `E2E-*` scenarios, `BL-*` invariants, `ECL-*` patterns, and domain checklists
    - Write cases to `tests/{SPRINT}/VCST-XXXX/test-cases.csv`
 4. **Output:** `tests/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
 
@@ -292,6 +296,7 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 - Always load `business-logic.md` for the affected domains — agents must know what rules to verify
 - Always query Context7 in Step 2 — pass findings to agents so they test against current module behavior
 - `test-management-specialist` (Step 3) must complete before dispatching execution agents (Step 4)
+- Steps 2–3 reuse the `/qa-plan` scenario catalog (`.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`) for `E2E-*` scenario coverage + regression-suite traceability, but produce the scoped `testing-checklist.md` — **not** a full `/qa-plan` test plan / RTM / TestRail CSV. Full case authoring + peer-review promotion belongs to a standalone `/qa-plan` run, not `/qa-test`
 - Exploratory session (Step 5) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
 - If `qa-testing-expert` is already dispatched in Step 4, combine exploratory charter into that agent's prompt rather than spawning a second instance
 - App Insights correlation (Step 6a) reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the test window — **no separate live-repro phase** (the execution agents already exercised the feature). Resolve resources from `APPINSIGHTS_*`, never hardcode; skip gracefully (don't block the verdict) when App Insights is unconfigured

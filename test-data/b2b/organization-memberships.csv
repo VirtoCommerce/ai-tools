@@ -1,0 +1,3 @@
+membership_id,user_email,first_name,last_name,password,org_name,role_id,notes
+MOM-001,agent-test-multiorg-20260615@yopmail.com,AgentTest,MultiOrg,Password1!,AGENT-TEST-Org-TechFlow-20260310,org-maintainer,VCST-5028 cross-org member — TechFlow leg (org-maintainer); roles are org-scoped only (no global role)
+MOM-002,agent-test-multiorg-20260615@yopmail.com,AgentTest,MultiOrg,Password1!,AGENT-TEST-Org-BuildRight-20260310,org-employee,VCST-5028 cross-org member — BuildRight leg (org-employee)

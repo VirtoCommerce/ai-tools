@@ -56,22 +56,27 @@ Organization exists",,"1. Open Organization > Verify user groups field
 5. Verify the response includes the about field with the correct value
 6. Update the About field in admin and re-query via xAPI
 7. Verify the updated value is returned",,,,,"C343694",
-"CUST-063","Role Assignment in Customer Module","Customer > Organization Management > Roles","High",,,"Admin logged in to Backend (${BACK_URL}), an organization with at least one contact member exists, roles are defined in the system",,"1. Navigate to Customer module > Organizations
-2. Open an organization
-3. Navigate to the Members tab
-4. Select a contact member
-5. Locate the role assignment section
-6. Assign an available role to the contact within this organization
-7. Save the assignment
-8. Verify the role is listed on the contact within the organization",,,,,"",
-"CUST-064","Multi-Org Contact Hierarchy","Customer > Organization Management > Hierarchy","High",,,"Admin logged in to Backend (${BACK_URL}), two separate organizations exist, a contact is a member of one organization only",,"1. Navigate to Customer module > Contacts
+"CUST-063","Role Assignment in Customer Module — Org-Scoped (VCST-5028)","Customer > Organization Management > Roles","High","BL-B2B-005",,"Admin logged in to Backend ({{BACK_URL}}), an organization (e.g. TechFlow) with at least one contact member exists, roles are defined in the system","back_url={{BACK_URL}}","[NAV] Navigate to Customer module at {{BACK_URL}}
+[ACT] Open an organization (e.g. TechFlow)
+[ACT] Navigate to the Members tab within the organization blade
+[ACT] Select a contact member from the list
+[ACT] In the member detail, locate the Role/Membership section
+[ACT] Click to edit or assign a role for this member WITHIN THIS ORG
+[ACT] Select an available role (e.g. Organization maintainer)
+[SAVE] Click Save
+[ASSERT] Verify role assignment is saved and displayed for this org membership","[BLADE] Member blade shows the assigned role for this organization
+[STATE] Role assignment is scoped to the specific organization (not global)
+[DOM] Success confirmation shown (toast or inline)","[API] GET {{BACK_URL}}/api/members/{memberId} confirms org membership contains updated role","Role not saved; role shown globally instead of per-org; 500 on save","Revert role to original via Admin","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
+"CUST-064","Multi-Org Contact Hierarchy","Customer > Organization Management > Hierarchy","High","BL-B2B-001",,"Admin logged in to Backend ({{BACK_URL}}), two separate organizations exist (e.g. TechFlow and BuildRight), a contact is a member of one organization only","back_url={{BACK_URL}}","1. Navigate to Customer module > Contacts
 2. Locate a contact assigned to Organization A
 3. Verify the contact appears in Organization A member list
 4. Navigate to Organization B
 5. Verify the contact does not appear in Organization B member list
 6. Add the contact to Organization B via the member management UI
 7. Verify the contact now appears in both Organization A and B
-8. Remove the contact from Organization A and verify they remain in Organization B only",,,,,"",
+8. Remove the contact from Organization A and verify they remain in Organization B only","[BLADE] Contact appears in both orgs after multi-org assignment
+[STATE] Contact org memberships are independent per-org entries
+[STATE] Removing from one org does not remove from other org","[API] GET {{BACK_URL}}/api/members/{contactId} confirms organizations array reflects current memberships","Contact disappears from both orgs on removal from one (global delete bug); contact not showing in org B after assignment","Restore original org membership","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
 "CUST-065","Invite customer from Contacts toolbar — full flow","Customer > Invite Customers","Critical",,,"Admin logged in to Backend (${BACK_URL}), at least one store configured, email service operational",,"1. Navigate to Customer module > Contacts
 2. Locate and click 'Invite customers' button in the toolbar
 3. Verify the Invite blade opens with fields: Store (dropdown), Language (dropdown), Organization (dropdown), Role (dropdown), Emails (text input), Message (textarea)
@@ -230,3 +235,110 @@ Organization exists",,"1. Open Organization > Verify user groups field
 5. Verify the invited user is associated with the specified order (check via order API or admin)
 6. Execute with invalid customerOrderId > Verify error handling
 7. Note: customerOrderId field is available in GraphQL but NOT exposed in the Admin UI Invite blade",,,,,"",
+"CUST-085","Organization Memberships Widget — View Per-Org Roles (VCST-5028)","Customer > Organization Memberships","High","BL-B2B-005",,"Admin logged in to Backend ({{BACK_URL}}); dedicated cross-org contact @td(MULTI_ORG_TF_BR.email) is seeded with DISTINCT roles in TechFlow (org-maintainer) and BuildRight (org-employee)","back_url={{BACK_URL}},contact_email=@td(MULTI_ORG_TF_BR.email)","[NAV] Navigate to Customer module > Contacts at {{BACK_URL}}
+[ACT] Search for contact @td(MULTI_ORG_TF_BR.email) and open the contact blade
+[ACT] Locate the 'Organization memberships' widget on the contact blade (NOTE: this is DISTINCT from the legacy 'Member of company(ies)' field — the widget has grid columns Organization / Roles / Status)
+[ASSERT] Verify widget lists two membership rows: one for TechFlow, one for BuildRight
+[ASSERT] Verify TechFlow row shows role 'Organization maintainer'
+[ASSERT] Verify BuildRight row shows role 'Organization employee'
+[ASSERT] Verify roles differ per org (AC1 oracle: TechFlow=org-maintainer, BuildRight=org-employee)","[BLADE] 'Organization memberships' widget visible on contact blade (separate from 'Member of company(ies)' legacy field)
+[STATE] Each org membership row shows the org-specific role (BL-B2B-005)
+[STATE] Roles differ per-org: TechFlow=Organization maintainer, BuildRight=Organization employee
+[DOM] Widget grid has columns Organization / Roles / Status","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} confirms per-org role data","Widget missing or conflated with 'Member of company(ies)' field; both memberships show same role; widget shows global role instead of per-org role","none","VCST-5028","Draft"
+"CUST-086","OrganizationMembership REST API — Create Membership (AC5)","Customer > Organization Memberships > REST API","High","BL-B2B-005",,"Admin logged in to Backend ({{BACK_URL}}); valid OAuth2 token obtained; @td(MULTI_ORG_TF_BR.email) exists but does NOT yet have a BuildRight membership (pre-condition must be established before running)","back_url={{BACK_URL}},target_user_id=@td(MULTI_ORG_TF_BR.userId),buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships with payload { ""userId"": ""@td(MULTI_ORG_TF_BR.userId)"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", ""organizationName"": ""BuildRight"", ""roles"": [{ ""roleId"": ""org-employee"", ""roleName"": ""Organization employee"" }] }
+[WAIT] Observe HTTP response
+[STATUS] Verify 200 or 201
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search with body { ""userId"": ""@td(MULTI_ORG_TF_BR.userId)"" }
+[BODY] Verify read-back response contains a membership entry with organizationId = @td(MULTI_ORG_TF_BR.org_buildright_id)","[STATUS] HTTP 200 or 201 on membership create
+[BODY] Response body contains userId matching @td(MULTI_ORG_TF_BR.userId)
+[BODY] Response body contains organizationId matching @td(MULTI_ORG_TF_BR.org_buildright_id)
+[STATE] OrganizationMembershipController accessible to admin (AC5)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""@td(MULTI_ORG_TF_BR.userId)""} confirms BuildRight membership created with org-employee role","400 or 422 on valid payload; membership not created; 403 for admin user (AC5 violation); roles array not persisted","DELETE the created membership: DELETE {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id) (or capture id from create response and delete by id)","VCST-5028","Draft"
+"CUST-087","OrganizationMembership REST API — RBAC Unauthorized Denied","Customer > Organization Memberships > REST API","High","BL-B2B-005",,"Backend URL accessible; no auth token","back_url={{BACK_URL}}","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships WITHOUT Authorization header with payload { ""userId"": ""test"", ""organizationId"": ""test"" }
+[WAIT] Observe HTTP response
+[STATUS] Verify 401 Unauthorized","[STATUS] HTTP 401 returned for unauthenticated request
+[STATE] OrganizationMembership endpoint requires authentication (AC5 RBAC)","[API] No membership created for unauthenticated call","200 returned without auth (P0 security defect); 500 instead of 401","none","VCST-5028","Draft"
+"CUST-088","[VCST-5028] Admin/Support Org-Membership Remediation: Unlock One-Org Membership via Admin SPA Widget -> REST Verify -> Global Account Untouched","Customer > Org Management > Organization Memberships [E2E]","Critical","BL-AUTH-012; BL-AUTH-013; BL-AUTH-003; BL-B2B-005","ECL-2.1; ECL-10.2","Admin logged into Backend ({{BACK_URL}}).
+Fixture: @td(MULTI_ORG_TF_BR.email) has TWO org memberships -- TechFlow (org-maintainer) and BuildRight (org-employee).
+BuildRight membership is PRE-LOCKED via REST before this case runs (Setup step below sets the locked state).
+PLAT-084 covers the distinct-mechanism check; this case extends it to the full Admin SPA unlock flow and cross-layer REST + global-account verification.","back_url={{BACK_URL}}; member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); user_email=@td(MULTI_ORG_TF_BR.email); techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id)","--- LAYER: Setup (pre-lock BuildRight membership via REST) ---
+[SETUP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/lock (admin token)
+[STATUS] 200 -- BuildRight membership pre-locked
+[SETUP] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} -- verify BuildRight isLocked=true
+--- LAYER: Admin SPA Widget ---
+[NAV] Navigate to {{BACK_URL}} > Customers > Contacts
+[BLADE] Contacts blade open
+[ACT] Search for @td(MULTI_ORG_TF_BR.email) in contacts search field
+[ACT] Open contact detail blade for @td(MULTI_ORG_TF_BR.email)
+[BLADE] Contact detail blade open
+[ACT] Scroll to Organization Memberships widget (VCST-5028)
+[ASSERT] [BLADE] Organization Memberships widget visible with two rows: TechFlow and BuildRight
+[ASSERT] [GRID] BuildRight row shows locked/blocked status indicator
+[ASSERT] [GRID] TechFlow row shows active/unlocked status (org-isolation -- lock is org-specific)
+[ACT] Locate the BuildRight membership row in the widget
+[ACT] Click Unlock / Unblock action for the BuildRight row
+[WAIT] Success toast or row state update
+[ASSERT] [GRID] BuildRight row status changes to Active/Unlocked in the widget
+[ASSERT] [GRID] TechFlow row status unchanged (still Active)
+--- LAYER: REST Verification ---
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)}
+[STATUS] 200
+[BODY] BuildRight membership (organizationId=@td(MULTI_ORG_TF_BR.org_buildright_id)) isLocked=false
+[BODY] TechFlow membership (organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)) isLocked=false
+--- LAYER: Global Account Guard ---
+[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
+[STATUS] 200
+[BODY] {locked: false} -- ApplicationUser global account NOT locked at any point in this flow (BL-AUTH-012: org-lock and org-unlock MUST NOT modify ApplicationUser.LockoutEnd)","[BLADE] Organization Memberships widget shows two rows with correct org names
+[GRID] BuildRight row: locked status before unlock; active status after unlock
+[GRID] TechFlow row: active/unlocked throughout (not affected by BuildRight lock/unlock)
+[STATUS] REST search: BuildRight isLocked=false after Admin SPA unlock (AC3 propagation)
+[BODY] TechFlow isLocked=false (cross-org isolation preserved)
+[BODY] Global account guard: GET .../locked returns {locked: false} (BL-AUTH-012)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} -> TechFlow isLocked=false, BuildRight isLocked=false after Admin SPA unlock
+[API] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked -> {locked: false} (global ApplicationUser unaffected throughout)
+[VERIFY] Admin SPA Organization Memberships widget state matches REST search response (no stale widget cache)","Organization Memberships widget absent in Admin SPA contact blade (VCST-5028 widget not rendered -- regression); unlock action missing for BuildRight row (widget shows locked state but no unlock affordance); Admin SPA unlock sets ApplicationUser.LockoutEnd=9999 instead of org-scoped IsLocked=false (BL-AUTH-012 violation -- critical); TechFlow row shows locked after only BuildRight was locked (org-isolation regression); REST search still shows BuildRight isLocked=true after Admin SPA unlock (propagation failure)","[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- restore BuildRight membership to unlocked state if test did not complete
+[SAVE] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock -- defensive unlock for TechFlow","VCST-5028; BA-2026-06-15; BL-AUTH-003; BL-AUTH-012; PLAT-084; CUST-085; Technique: Error Guessing (admin-SPA-unlock triggers global-lock regression)","Draft"
+"CUST-089","[VCST-5028] Invite-to-Active Onboarding: Maintainer Invites New User with Org Role -> Appears in /company/members -> REST + xAPI Confirm OrganizationMembership","Customer > Org Management > Invite Onboarding [E2E]","High","BL-B2B-009; BL-B2B-007; BL-B2B-005; BL-AUTH-001","ECL-4.1; ECL-10.2","Admin logged into Backend ({{BACK_URL}}) for pre-flight verification.
+TechFlow org-maintainer session available on storefront ({{FRONT_URL}}) as @td(MULTI_ORG_TF_BR.email).
+NOTE [BUG-A]: Storefront invite via /company/members is currently broken (BUG-A).
+Invite step performed via Admin SPA (Customer > Contacts > Invite) or REST POST /api/customer/organization-memberships as fallback until BUG-A is resolved.
+NOTE [DEPLOY-1]: Full org-membership mutations return MISSING_METHOD on current PR#135. Invite-creation path uses REST fallback.
+Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in Cleanup.","back_url={{BACK_URL}}; front_url={{FRONT_URL}}; maintainer_email=@td(MULTI_ORG_TF_BR.email); maintainer_password=@td(MULTI_ORG_TF_BR.password); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_techflow_name=@td(ORG_TECHFLOW.name); invite_email=AGENT-TEST-onboard-5028@yopmail.com; invite_password=Password1!","--- LAYER: Invite via Admin SPA (fallback for BUG-A) ---
+[NAV] Navigate to {{BACK_URL}} > Customers > Contacts
+[BLADE] Contacts blade open
+[ACT] Click Invite Contact or New Contact action
+[WAIT] Invite/create contact form opens
+[ACT] Fill email: AGENT-TEST-onboard-5028@yopmail.com
+[ACT] Fill first name: Agent and last name: Test5028
+[ACT] Set Organization to @td(ORG_TECHFLOW.name) (TechFlow)
+[ACT] Set org role to Organization employee (org-employee)
+[ACT] Click Send Invite or Save
+[WAIT] Success toast or confirmation
+[ASSERT] [BLADE] Contact AGENT-TEST-onboard-5028@yopmail.com appears in contacts list
+--- LAYER: REST Verify OrganizationMembership Created ---
+[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: @td(MULTI_ORG_TF_BR.org_techflow_id)}
+[STATUS] 200
+[BODY] totalCount >= 1 -- OrganizationMembership row created for invited user in TechFlow
+[BODY] membership for AGENT-TEST-onboard-5028 has organizationId = @td(MULTI_ORG_TF_BR.org_techflow_id)
+[BODY] membership.roles[0].id = org-employee (org-scoped role -- BL-B2B-009)
+[BODY] membership.isLocked = false (new invitation not locked -- BL-AUTH-012)
+--- LAYER: Storefront -- Invited User Appears in /company/members ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in as @td(MULTI_ORG_TF_BR.email) / @td(MULTI_ORG_TF_BR.password)
+[ACT] Select TechFlow org from org-selector
+[NAV] Navigate to {{FRONT_URL}}/company/members
+[WAIT] Members list renders
+[ASSERT] [DOM] AGENT-TEST-onboard-5028@yopmail.com appears in the members list (pending or active row)
+[ASSERT] [DOM] Row shows role label corresponding to org-employee
+--- LAYER: xAPI Verify (GraphQL) ---
+[HTTP POST] {{BACK_URL}}/graphql (authenticated with platform admin Bearer)
+[NOTE] Query: { contact(id: <new_contact_id>) { organizationMemberships { organizationId roles { id name } isLocked } } }
+[ASSERT] [BODY] organizationMemberships contains entry for @td(MULTI_ORG_TF_BR.org_techflow_id)
+[ASSERT] [BODY] roles[0].id = org-employee (org-scoped role -- BL-B2B-009)
+[ASSERT] [BODY] isLocked = false
+[ASSERT] [BODY] errors[] empty or absent (query executes without GraphQL errors)","[BLADE] Invited contact appears in Contacts list in Admin SPA
+[BODY] REST search: OrganizationMembership row created with organizationId=TechFlow and role=org-employee
+[BODY] REST search: isLocked=false on new membership
+[DOM] Storefront /company/members: invited user visible with org-employee role label
+[BODY] GraphQL contact.organizationMemberships: membership entry exists with correct org and role
+[BODY] GraphQL errors[] empty or absent","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {organizationId: @td(MULTI_ORG_TF_BR.org_techflow_id)} -> invited user membership present with role=org-employee and isLocked=false
+[API] GraphQL contact.organizationMemberships -> entry for TechFlow org with correct role (confirms xAPI/REST round-trip: BL-B2B-009)
+[DOM] Storefront /company/members list shows invited user row (confirms frontend consumes OrganizationMembership data, not global roles)","Invite via Admin SPA fails (widget absent or save returns error); REST membership search returns totalCount=0 after invite (membership not created -- BL-B2B-009 violation); membership created with global role instead of org-scoped role (role scope regression); invited user absent from /company/members on storefront (storefront does not consume OrganizationMembership data); GraphQL errors[] non-empty (organizationMemberships field not resolvable -- DEPLOY-1 remnant); membership.isLocked=true on newly created membership (unexpected lock state)","[SAVE] DELETE invited contact AGENT-TEST-onboard-5028@yopmail.com via REST: POST {{BACK_URL}}/api/customer/organization-memberships/search to get membershipId -> DELETE {{BACK_URL}}/api/customer/organization-memberships/{id} -> DELETE {{BACK_URL}}/api/members/{contactId} to remove contact record
+[PRE:CLEAR_SESSION] -- end with logged-out state","VCST-5028; BA-2026-06-15; BL-B2B-005; BL-B2B-009; CUST-086; Technique: Error Guessing (invite-path creates global-role not org-scoped membership)","Draft"

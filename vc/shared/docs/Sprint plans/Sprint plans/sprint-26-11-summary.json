@@ -1,0 +1,28 @@
+{
+  "sprint": "Sprint26-11",
+  "startDate": "2026-06-08",
+  "endDate": "2026-06-13",
+  "doneCounts": {"stories": 4, "bugs": 12, "tasks": 22, "techDebt": 1, "spikes": 1, "reviewTasks": 3, "total": 43},
+  "testRelevantCount": 15,
+  "mergedFrontendPRs": 4,
+  "mergedModulePRs": 5,
+  "domains": [
+    {"name": "Payment — Cart-Inline", "score": 20, "level": "Critical"},
+    {"name": "Marketing / Coupons", "score": 16, "level": "Critical"},
+    {"name": "Checkout Initialization", "score": 15, "level": "High"},
+    {"name": "UI-Kit Date Picker A11y", "score": 12, "level": "High"},
+    {"name": "Loyalty Mixed Cart", "score": 12, "level": "High"},
+    {"name": "Platform / API + Settings + Notifications", "score": 12, "level": "High"},
+    {"name": "Search Indexing Admin", "score": 9, "level": "Medium"},
+    {"name": "Backup & Restore / Catalog", "score": 9, "level": "Medium"},
+    {"name": "B2B Org Switcher A11y", "score": 8, "level": "Medium"},
+    {"name": "Frontend Dependencies", "score": 6, "level": "Medium"},
+    {"name": "Customer Admin Dead-Code", "score": 2, "level": "Low"},
+    {"name": "Push Messages Token Pruning", "score": 2, "level": "Low"}
+  ],
+  "suitesActivated": ["042", "078", "040b", "040a", "041", "039", "011", "012", "013", "028", "029", "050b1", "050b2", "050b4", "075", "083", "050j", "077", "077b", "025", "023", "079", "049", "020", "063", "057", "058", "061", "045", "033", "006", "027", "027b", "050l", "068", "064"],
+  "newCasesEstimate": "59-68",
+  "criticalTickets": ["VCST-5162", "VCST-5009", "VCST-5022", "VCST-5233", "VCST-5212", "VCST-5164"],
+  "outOfScopeCount": 20,
+  "artifacts": "vc/shared/docs/Sprint plans/"
+}

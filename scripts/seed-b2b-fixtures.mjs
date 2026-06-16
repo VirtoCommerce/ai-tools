@@ -18,18 +18,36 @@
  *   node scripts/seed-b2b-fixtures.mjs [profile] [--dry-run] [--verbose] [--teardown]
  *
  * Profiles:
- *   baseline   — 4 base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + 10 contacts (CON-001..011)
- *   imp        — IMP-049 supporting orgs (ORG-009..019) + impersonation target contacts (CON-020..022)
- *   full       — Both (default — recommended for post-restore recovery)
- *   teardown   — Delete every org/contact whose name starts with "AGENT-TEST-"
+ *   baseline    — 4 base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + 10 contacts (CON-001..011)
+ *   imp         — IMP-049 supporting orgs (ORG-009..019) + impersonation target contacts (CON-020..022)
+ *   memberships — Org-scoped role memberships (VCST-5028) from organization-memberships.csv:
+ *                 ensures a contact + storefront login (security account) per user_email, then
+ *                 creates/RECONCILES one OrganizationMembership per (user, org) with its org-scoped
+ *                 `role_id`. Roles live ONLY at the org-membership level — NO global platform role
+ *                 is assigned, and any previously-seeded global org role is stripped on run
+ *                 (per VCST-5028: per-org roles replace the old global ApplicationUser role).
+ *                 Seeds the cross-org test fixture (one member in N orgs with distinct roles).
+ *   full        — baseline + imp + memberships (default — recommended for post-restore recovery)
+ *   teardown    — Delete every org/contact whose name starts with "AGENT-TEST-", plus the
+ *                 security accounts + org-memberships listed in organization-memberships.csv.
  *
  * Safety:
  *   - ENV_RISK gate — blocks ENV_RISK=production (override --allow-admin-writes-on-prod); runs on dev/test/staging/localhost.
  *   - --dry-run prints the plan, no writes.
  *   - Idempotent: re-running finds existing entities by name/email and reuses them.
  *
- * NOTE: This does NOT re-create platform users (USR-001..) — they survived the wipe.
- * It only re-links them to the new contact platform_ids.
+ * NOTE: For baseline/imp this does NOT re-create platform users (USR-001..) — they survived the
+ * wipe; it only re-links them. The `memberships` profile DOES create security accounts (logins)
+ * for its members, because those test users are provisioned fresh.
+ *
+ * API contracts used by `memberships` (verified live 2026-06-15, VCST-5028 PR #300 — see
+ * reference_organization_membership_api_contract memory):
+ *   - Security account: POST /api/platform/security/users/create  ( .../users → 405 )
+ *   - Org membership:   POST   /api/customer/organization-memberships   body = full OrganizationMembership
+ *                       PUT    /api/customer/organization-memberships/{id}   body = full OrganizationMembership (role reconcile)
+ *                       POST   /api/customer/organization-memberships/search   body = { userId }
+ *                       DELETE /api/customer/organization-memberships?ids=<id>&ids=<id>
+ *     Body FK is `userId` (security-account id, NOT contact memberId); roles = [{ roleId, roleName }].
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -54,7 +72,7 @@ const RESULTS_FILE = join(ROOT, `test-data/b2b/_seed-results-orgs-${DATE}.json`)
 
 // --- CLI ---
 const args = process.argv.slice(2);
-const profile = ['baseline', 'imp', 'full', 'teardown'].find(p => args.includes(p)) || 'full';
+const profile = ['baseline', 'imp', 'memberships', 'full', 'teardown'].find(p => args.includes(p)) || 'full';
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 
@@ -158,9 +176,31 @@ async function findOrgByName(name) {
 }
 
 async function findUserByEmail(email) {
+  // Search FIRST — the GET-by-username endpoint is cache-flaky (returns 200 with an empty/stale
+  // body, or misses an existing user), which caused duplicate account+contact creation across
+  // re-seeds. The search endpoint is the reliable existence check.
   try {
-    return await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
-  } catch (e) {
+    const s = await api('POST', '/api/platform/security/users/search', { keyword: email, take: 10 });
+    const hit = (s?.results || []).find(u =>
+      (u.userName || '').toLowerCase() === email.toLowerCase() ||
+      (u.email || '').toLowerCase() === email.toLowerCase());
+    if (hit?.id) return hit;
+  } catch { /* fall through to GET */ }
+  try {
+    const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+    return u?.id ? u : null; // GET can return 200 with an empty body for a deleted user
+  } catch {
+    return null;
+  }
+}
+
+// Full user record by id (reliable) — needed before any PUT so we never write back a partial object.
+async function getUserById(id) {
+  if (!id) return null;
+  try {
+    const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+    return u?.id ? u : null;
+  } catch {
     return null;
   }
 }
@@ -308,7 +348,213 @@ async function relinkUsersToContacts(contactMap) {
   console.log(`  Linked: ${linked}, skipped: ${skipped}`);
 }
 
+// --- Org-scoped memberships (VCST-5028) ---
+const MEMBERSHIPS_CSV = join(ROOT, 'test-data/b2b/organization-memberships.csv');
+const STATIC_ROLE_NAMES = {
+  'org-maintainer': 'Organization maintainer',
+  'org-employee': 'Organization employee',
+};
+const _roleNameCache = {};
+async function resolveRoleName(roleId) {
+  if (STATIC_ROLE_NAMES[roleId]) return STATIC_ROLE_NAMES[roleId];
+  if (_roleNameCache[roleId]) return _roleNameCache[roleId];
+  const r = await api('GET', `/api/platform/security/roles/${encodeURIComponent(roleId)}`, null, { expectStatus: [200, 404] });
+  const name = r?.name || roleId;
+  _roleNameCache[roleId] = name;
+  return name;
+}
+
+async function findContactByEmail(email) {
+  const r = await api('POST', '/api/members/search', { memberType: 'Contact', keyword: email, take: 20 });
+  return (r?.results || []).find(m => (m.emails || []).some(e => e?.toLowerCase() === email.toLowerCase()));
+}
+
+// Ensure the contact exists and is a member of every org listed for this email; returns its platform id.
+async function ensureMembershipContact(email, firstName, lastName, orgPlatformIds) {
+  const user = await findUserByEmail(email);
+  let contact = user?.memberId ? await findContactById(user.memberId) : null;
+  if (!contact) contact = await findContactByEmail(email);
+
+  if (contact) {
+    const current = new Set(contact.organizations || []);
+    const missing = orgPlatformIds.filter(id => !current.has(id));
+    if (missing.length && !DRY_RUN) {
+      contact.organizations = [...current, ...missing];
+      await api('PUT', '/api/members', contact, { expectStatus: [200, 204] });
+      if (VERBOSE) console.log(`    ↻ link contact ${contact.id} → +${missing.length} org(s)`);
+    }
+    return contact.id;
+  }
+  const body = {
+    memberType: 'Contact', firstName, lastName,
+    fullName: `${firstName} ${lastName}`, name: `${firstName} ${lastName}`,
+    emails: [email], organizations: orgPlatformIds, status: 'Approved',
+    timeZone: 'America/New_York', defaultLanguage: 'en-US', currencyCode: 'USD',
+  };
+  const created = await api('POST', '/api/members', body);
+  const id = created?.id || `dry-contact-${email}`;
+  console.log(`    ✓ create contact ${id} (${email})`);
+  return id;
+}
+
+// Ensure a storefront login exists for the contact; returns the security-account user id.
+async function ensureSecurityAccount(email, password, contactId) {
+  const existing = await findUserByEmail(email);
+  if (existing?.id) {
+    if (!DRY_RUN && contactId && existing.memberId !== contactId) {
+      // Relink against the FULL record (search hits are partial — PUTting one would drop fields).
+      const full = await getUserById(existing.id) || existing;
+      full.memberId = contactId;
+      await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
+    }
+    if (VERBOSE) console.log(`    ↻ reuse  user ${existing.id} (${email})`);
+    return existing.id;
+  }
+  const body = {
+    userName: email, email, password, memberId: contactId, storeId: STORE_ID,
+    userType: 'Customer', isAdministrator: false, emailConfirmed: true,
+    lockoutEnabled: false, status: 'Approved',
+  };
+  const result = await api('POST', '/api/platform/security/users/create', body);
+  if (result && result.succeeded === false) {
+    throw new Error(`security/users/create failed for ${email}: ${JSON.stringify(result.errors)}`);
+  }
+  if (DRY_RUN) { console.log(`    ✓ create user  (dry) (${email})`); return `dry-user-${email}`; }
+  // /users/create returns a SecurityResult { succeeded, errors } — NOT the user. Fetch the new id.
+  const fresh = await findUserByEmail(email);
+  const id = fresh?.id;
+  if (!id) throw new Error(`created user ${email} but could not resolve its id via GET`);
+  console.log(`    ✓ create user  ${id} (${email})`);
+  return id;
+}
+
+// VCST-5028: roles are org-scoped (OrganizationMembership), NEVER global. This strips any
+// previously-seeded org role (org-maintainer/org-employee) from the security account's global
+// roles[] so the fixture demonstrates the per-org model cleanly. Idempotent — only touches the
+// known org-role ids, leaves any genuine platform role intact.
+async function stripSeededGlobalRoles(email) {
+  if (DRY_RUN) { if (VERBOSE) console.log(`    [DRY RUN] strip global org role(s) on ${email}`); return; }
+  const found = await findUserByEmail(email);
+  if (!found?.id) return;
+  // Always operate on the FULL user record (search hits omit roles[]).
+  const user = await getUserById(found.id) || found;
+  const orgRoleIds = new Set(Object.keys(STATIC_ROLE_NAMES)); // org-maintainer, org-employee
+  const before = user.roles || [];
+  const kept = before.filter(r => !orgRoleIds.has(r.id) && !orgRoleIds.has(r.name));
+  if (kept.length === before.length) {
+    if (VERBOSE) console.log(`    ↻ no global org role on ${email}`);
+    return;
+  }
+  user.roles = kept;
+  await api('PUT', '/api/platform/security/users', user, { expectStatus: [200, 204] });
+  console.log(`    ✓ stripped ${before.length - kept.length} global org role(s) from ${email}`);
+}
+
+async function searchMemberships(userId) {
+  if (DRY_RUN && userId?.startsWith?.('dry-')) return [];
+  const r = await api('POST', '/api/customer/organization-memberships/search', { userId, take: 100 });
+  return r?.results || [];
+}
+
+// Idempotent: one OrganizationMembership per (user, org). Returns the membership id.
+async function ensureOrgMembership(userId, orgId, orgName, roleId, existing) {
+  const roleName = await resolveRoleName(roleId);
+  const found = (existing || []).find(m => m.organizationId === orgId);
+  if (found) {
+    const currentRoleIds = (found.roles || []).map(r => r.roleId || r.id);
+    const matches = currentRoleIds.length === 1 && currentRoleIds[0] === roleId;
+    if (matches) {
+      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName} → ${roleName})`);
+      return found.id;
+    }
+    // Reconcile: the CSV role_id is the role oracle — enforce it on an existing membership rather
+    // than leaving drift (e.g. a membership reseeded with the wrong role by another run).
+    if (!DRY_RUN) {
+      found.roles = [{ roleId, roleName }];
+      await api('PUT', `/api/customer/organization-memberships/${encodeURIComponent(found.id)}`, found, { expectStatus: [200, 204] });
+    }
+    console.log(`    ✓ reconcile membership ${found.id} (${orgName} → ${roleName}) [was: ${currentRoleIds.join(',') || 'none'}]`);
+    return found.id;
+  }
+  const body = {
+    userId, organizationId: orgId, organizationName: orgName,
+    roles: [{ roleId, roleName }],
+  };
+  const created = await api('POST', '/api/customer/organization-memberships', body);
+  const id = created?.id || `dry-mom-${orgId}`;
+  console.log(`    ✓ create membership ${id} (${orgName} → ${roleName})`);
+  return id;
+}
+
+async function seedMemberships() {
+  let rows;
+  try {
+    rows = parseCsv(readFileSync(MEMBERSHIPS_CSV, 'utf-8')).filter(r => r.user_email && r.org_name);
+  } catch {
+    console.log('\n  Memberships: organization-memberships.csv not found — skipping.');
+    return [];
+  }
+  console.log(`\n  Seeding ${rows.length} org membership row(s)...`);
+
+  // Group rows by member (email) so we create the contact once with all its orgs.
+  const byEmail = {};
+  for (const r of rows) (byEmail[r.user_email] ||= []).push(r);
+
+  const out = [];
+  for (const [email, memberRows] of Object.entries(byEmail)) {
+    // Resolve all org platform ids for this member (orgs must already exist).
+    const orgs = [];
+    for (const r of memberRows) {
+      const org = await findOrgByName(r.org_name);
+      if (!org) { console.warn(`    ⚠ skip   ${r.membership_id}: org "${r.org_name}" not found (seed orgs first)`); continue; }
+      orgs.push({ row: r, orgId: org.id });
+    }
+    if (!orgs.length) continue;
+
+    const first = memberRows[0];
+    const contactId = await ensureMembershipContact(email, first.first_name, first.last_name, orgs.map(o => o.orgId));
+    const userId = await ensureSecurityAccount(email, first.password || 'Password1!', contactId);
+    // VCST-5028: roles are org-scoped only — strip any previously-seeded global org role.
+    await stripSeededGlobalRoles(email);
+    const existing = await searchMemberships(userId);
+
+    for (const { row, orgId } of orgs) {
+      const membershipId = await ensureOrgMembership(userId, orgId, row.org_name, row.role_id, existing);
+      out.push({
+        membership_id: row.membership_id, email, contact_id: contactId, user_id: userId,
+        org_name: row.org_name, org_id: orgId, role_id: row.role_id, platform_membership_id: membershipId,
+      });
+    }
+  }
+  return out;
+}
+
+async function teardownMemberships() {
+  let rows;
+  try {
+    rows = parseCsv(readFileSync(MEMBERSHIPS_CSV, 'utf-8')).filter(r => r.user_email);
+  } catch { return; }
+  const emails = [...new Set(rows.map(r => r.user_email))];
+  console.log(`\n  Teardown: ${emails.length} membership user(s) from organization-memberships.csv...`);
+  for (const email of emails) {
+    const user = await findUserByEmail(email);
+    if (!user?.id) { if (VERBOSE) console.log(`    – no user for ${email}`); continue; }
+    const memberships = await searchMemberships(user.id);
+    const ids = memberships.map(m => m.id).filter(Boolean);
+    if (ids.length) {
+      const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
+      await api('DELETE', `/api/customer/organization-memberships?${qs}`, null, { expectStatus: [200, 204, 404] });
+      console.log(`    ✗ deleted ${ids.length} membership(s) for ${email}`);
+    }
+    // NOTE: the security delete query param is `names` (NOT `userNames`); `?userNames=` binds an
+    // empty array and returns a vacuous { succeeded:true } without deleting anything.
+    await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
+    console.log(`    ✗ deleted security account ${email}`);
+  }
+}
+
 async function teardown() {
+  await teardownMemberships();
   console.log('\n  Teardown: scanning for AGENT-TEST-* members...');
   const res = await api('POST', '/api/members/search', { keyword: 'AGENT-TEST-', take: 500 });
   const items = res?.results || [];
@@ -316,7 +562,8 @@ async function teardown() {
   let deleted = 0;
   for (const m of items) {
     try {
-      await api('DELETE', `/api/members/${m.id}`, null, { expectStatus: [200, 204, 404] });
+      // members delete is a query-array endpoint (`?ids=`); `DELETE /api/members/{id}` returns 405.
+      await api('DELETE', `/api/members?ids=${encodeURIComponent(m.id)}`, null, { expectStatus: [200, 204, 404] });
       console.log(`    ✗ deleted ${m.memberType} ${m.name} (${m.id})`);
       deleted++;
     } catch (e) {
@@ -330,6 +577,21 @@ async function teardown() {
 async function main() {
   await authenticate();
   if (profile === 'teardown') { await teardown(); return; }
+
+  // memberships-only: orgs must already exist; just (re)create members + logins + org-scoped roles.
+  if (profile === 'memberships') {
+    const memberships = await seedMemberships();
+    if (!DRY_RUN) {
+      mkdirSync(dirname(RESULTS_FILE), { recursive: true });
+      writeFileSync(RESULTS_FILE, JSON.stringify({ seedDate: DATE, profile, platform: BACK_URL, storeId: STORE_ID, memberships }, null, 2));
+      console.log(`\nResults: ${RESULTS_FILE}`);
+    }
+    console.log(`\n✅ B2B seed complete (profile=memberships)\n`);
+    console.log('Next steps:');
+    console.log('  1. Register/refresh the @td() alias for each seeded member in test-data/aliases.json (id/userId/email/password/org ids + roles).');
+    console.log('  2. Trigger member index rebuild (optional): /api/search/indexes/index Member rebuild.');
+    return;
+  }
 
   const orgsAll = parseCsv(readFileSync(join(ROOT, 'test-data/b2b/organizations.csv'), 'utf-8'))
     .filter(r => r.platform_id && r.org_name); // skip rows without IDs
@@ -369,6 +631,10 @@ async function main() {
 
   await relinkUsersToContacts(contactMap);
 
+  // full profile also seeds org-scoped memberships (VCST-5028) on top of the base fixtures.
+  let memberships = [];
+  if (profile === 'full') memberships = await seedMemberships();
+
   // Write results
   if (!DRY_RUN) {
     const report = {
@@ -378,6 +644,7 @@ async function main() {
       storeId: STORE_ID,
       orgs: Object.values(orgMap),
       contacts: Object.values(contactMap),
+      memberships,
     };
     mkdirSync(dirname(RESULTS_FILE), { recursive: true });
     writeFileSync(RESULTS_FILE, JSON.stringify(report, null, 2));

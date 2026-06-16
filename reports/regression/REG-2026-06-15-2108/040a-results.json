@@ -1,0 +1,156 @@
+{
+  "suiteId": "040a",
+  "suiteName": "Payment — Skyflow",
+  "runId": "REG-2026-06-15-2108",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-15T21:08:00.000Z",
+  "completedAt": "2026-06-15T22:24:54.000Z",
+  "totalCases": 27,
+  "passed": 16,
+  "failed": 3,
+  "blocked": 6,
+  "skipped": 1,
+  "passRate": "59.3%",
+  "testCases": [
+    {"id": "PAY-SKY-001", "status": "PASS"},
+    {"id": "PAY-SKY-002", "status": "PASS"},
+    {"id": "PAY-SKY-003", "status": "PASS"},
+    {"id": "PAY-SKY-004", "status": "PASS"},
+    {"id": "PAY-SKY-005", "status": "PASS"},
+    {"id": "PAY-SKY-006", "status": "PASS"},
+    {"id": "PAY-SKY-007", "status": "PASS"},
+    {"id": "PAY-SKY-008", "status": "PASS"},
+    {"id": "PAY-SKY-009", "status": "PASS"},
+    {"id": "PAY-SKY-010", "status": "PASS"},
+    {"id": "PAY-SKY-011", "status": "PASS"},
+    {"id": "PAY-SKY-012", "status": "PASS"},
+    {
+      "id": "PAY-SKY-013",
+      "status": "FAIL",
+      "title": "Declined transaction retry recovers successfully",
+      "section": "Decline Handling",
+      "priority": "High",
+      "businessRule": "BL-PAY-SKY-003",
+      "failedAssertion": "After CVV 902 decline and retry with CVV 900, order should complete — actual: /checkout/payment/failure on retry (dup-transaction window collision; order CO260615-00012)",
+      "screenshot": "test-results\\edge\\PAY-SKY-019-FAIL-retry-failure.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "CVV 902 triggered decline → /checkout/payment/failure. Waited 180s (dup-transaction window). Retry with CVV 900 → still /checkout/payment/failure. Likely sandbox dup-transaction window exceeded 3-minute boundary or order state not recoverable."
+    },
+    {
+      "id": "PAY-SKY-014",
+      "status": "FAIL",
+      "title": "Amex card accepted with 4-digit CVV",
+      "section": "Card Type Coverage",
+      "priority": "High",
+      "businessRule": "BL-PAY-SKY-002",
+      "failedAssertion": "[DOM] CVV iframe placeholder shows '1111' for Amex (4-digit) — actual: placeholder shows '111' (3-digit); Place order enables with only 3 CVV digits",
+      "screenshot": "test-results\\edge\\page-2026-06-15T20-04-49-649Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "VCST-5202: Amex CVV field placeholder does not update from '111' to '1111' when Amex card number entered. Card form accepts 3-digit CVV for Amex, violating 4-digit CVV requirement."
+    },
+    {
+      "id": "PAY-SKY-015",
+      "status": "FAIL",
+      "title": "Amex CVV field enforces 4-digit input",
+      "section": "Card Validation",
+      "priority": "High",
+      "businessRule": "BL-PAY-SKY-002",
+      "failedAssertion": "[DOM] CVV field placeholder = '1111' for Amex and Place order disabled with 3-digit CVV — actual: placeholder '111', Place order enabled with 3 digits",
+      "screenshot": "test-results\\edge\\page-2026-06-15T20-04-49-649Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "VCST-5202: Skyflow CVV iframe does not detect Amex card type and does not update placeholder or min-length to 4 digits. A 3-digit CVV (e.g. '900') incorrectly enables Place order for Amex cards."
+    },
+    {
+      "id": "PAY-SKY-016",
+      "status": "SKIPPED",
+      "notes": "Automation_Status = Draft — excluded per run policy"
+    },
+    {
+      "id": "PAY-SKY-017",
+      "status": "BLOCKED",
+      "title": "Saved card selection shows correct card when multiple saved",
+      "notes": "Precondition requires ≥2 saved cards. USER_DEFAULT (qa-agent-slot3) has only 1 saved card at run time. Cannot seed additional cards without violating test isolation constraints."
+    },
+    {"id": "PAY-SKY-018", "status": "PASS"},
+    {
+      "id": "PAY-SKY-019",
+      "status": "FAIL",
+      "title": "Saved card decline and retry recovers",
+      "section": "Saved Card — Decline Handling",
+      "priority": "High",
+      "businessRule": "BL-PAY-SKY-004",
+      "failedAssertion": "After CVV 904 decline with saved card and retry with CVV 900, order should complete — actual: /checkout/payment/failure on retry (order CO260615-00015)",
+      "screenshot": "test-results\\edge\\PAY-SKY-019-FAIL-retry-failure.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "CVV 904 triggered decline → /checkout/payment/failure. Waited 180s. Retry with CVV 900 → still /checkout/payment/failure. Same dup-transaction window issue as PAY-SKY-013."
+    },
+    {
+      "id": "PAY-SKY-020",
+      "status": "BLOCKED",
+      "title": "Delete surplus saved card reduces count by 1",
+      "notes": "Precondition requires ≥2 saved cards. USER_DEFAULT has only 1 saved card. Cannot test deletion without reaching the required card count."
+    },
+    {"id": "PAY-SKTOK-001", "status": "PASS"},
+    {"id": "PAY-SAVED-001", "status": "PASS"},
+    {"id": "PAY-SAVED-002", "status": "PASS"},
+    {"id": "PAY-SAVED-003", "status": "PASS"},
+    {
+      "id": "PAY-SAVED-004",
+      "status": "BLOCKED",
+      "title": "Delete one of multiple saved cards leaves others intact",
+      "notes": "Precondition requires ≥2 saved cards. USER_DEFAULT has only 1 saved card at run time."
+    },
+    {
+      "id": "PAY-SAVED-005",
+      "status": "BLOCKED",
+      "title": "Saved cards consistent across /cart and /account/saved-credit-cards",
+      "notes": "Precondition requires ≥2 saved cards to validate cross-surface consistency. USER_DEFAULT has only 1 saved card."
+    },
+    {
+      "id": "PAY-SAVED-006",
+      "status": "BLOCKED",
+      "title": "Empty saved cards state shows correct empty state UI",
+      "notes": "Cannot reach empty saved-cards state without deleting the single canonical test card (•••• 0015), which would break subsequent test runs. Blocked by test data preservation constraint."
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_040a_001",
+      "title": "Skyflow CVV iframe does not enforce 4-digit CVV for Amex cards",
+      "severity": "High",
+      "testCaseId": "PAY-SKY-015",
+      "businessRule": "BL-PAY-SKY-002",
+      "edgeCaseRef": "ECL-7.3",
+      "failedAssertion": "CVV placeholder shows '1111' and Place order disabled with <4 digits for Amex",
+      "stepsToReproduce": "1. Navigate to /cart with item in cart. 2. Select payment method 'Bank card (Skyflow)'. 3. Enter Amex card number 378282246310005. 4. Observe CVV field placeholder and enable state of Place order button with only 3 CVV digits entered.",
+      "expected": "CVV iframe detects Amex card type, updates placeholder to '1111' (4-digit), and keeps Place order disabled until 4 digits entered.",
+      "actual": "CVV placeholder remains '111' (3-digit). Place order button becomes enabled after entering only 3 CVV digits (e.g. '900'). Amex cards can be submitted with invalid 3-digit CVV.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "references": "VCST-5202",
+      "confirmed": false
+    },
+    {
+      "id": "BUG_040a_002",
+      "title": "Decline retry flow fails — /checkout/payment/failure on second attempt after 180s wait",
+      "severity": "High",
+      "testCaseId": "PAY-SKY-013",
+      "businessRule": "BL-PAY-SKY-003",
+      "edgeCaseRef": "ECL-9.1",
+      "failedAssertion": "After CVV 902 decline, retry with valid CVV 900 after 180s produces order confirmation",
+      "stepsToReproduce": "1. Add item to cart, select Skyflow payment, enter MC 5424000000000015 with CVV 902. 2. Click Place order — gets declined, lands on /checkout/payment/failure. 3. Click back/retry, wait 180s, re-enter CVV 900. 4. Click Place order again.",
+      "expected": "Order placed successfully after retry with valid CVV 900.",
+      "actual": "Second attempt also lands on /checkout/payment/failure. Order CO260615-00012 created but not confirmed.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "May be sandbox dup-transaction window issue (same cart/order ID reused). Applies to both fresh card (PAY-SKY-013) and saved card (PAY-SKY-019, order CO260615-00015) retry flows.",
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

@@ -209,13 +209,13 @@
 [STATE] Login with correct credentials fails during lockout period
 [STATE] Login succeeds after lockout timeout expires","[NETWORK] POST /connect/token returns 4xx during lockout
 [CONSOLE] no TypeError or JS errors","No lockout after 5 failures; lockout persists beyond timeout; correct password accepted during lockout; console TypeError","none","regression-qa-theme-26.csv","Manual"
-"AUTH-021","Login - Admin Blocked User","Login > Security","Medium","BL-B2B-002","","User blocked by admin in platform","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Fill 'Email' with blocked user email
+"AUTH-021","Login - Org-Blocked User (VCST-5028)","Login > Security","Medium","BL-B2B-002; BL-AUTH-003","","User blocked by org admin in their primary org (org-scoped block via lockOrganizationContact). NOTE: With VCST-5028 'blocked' means org-scoped. This case tests blocking within the user's primary org.","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email' with blocked user email (blocked in their org by org admin)
 [ACT] Fill 'Password' with blocked user password
-[ACT] Click 'Sign In'
-[WAIT] Wait for response","[DOM] Error message: 'Account is locked' or 'contact admin' shown
-[STATE] Login denied for blocked user","[NETWORK] POST /connect/token returns 4xx
-[CONSOLE] no TypeError or JS errors","Blocked user can log in; generic error without admin contact info; console TypeError","none","regression-qa-theme-26.csv","Manual"
+[ACT] Click 'Sign In' while org context is the org in which the user is blocked
+[WAIT] Wait for response","[DOM] Error message: 'Account is locked' or 'contact admin' or 'unavailable in this organization' shown
+[STATE] Login denied for blocked user in their blocked org","[NETWORK] POST /connect/token returns 4xx
+[CONSOLE] no TypeError or JS errors","Blocked user can log in; generic error without admin contact info; console TypeError","none","regression-qa-theme-26.csv; Synced: VCST-5028 (2026-06-15)","Manual"
 "AUTH-025","SSO - Entra ID Enabled","SSO > Azure","Medium","BL-AUTH-005","","Entra ID SSO configured in admin; login page accessible","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ASSERT] 'Sign in with Microsoft' button visible
 [ACT] Click 'Sign in with Microsoft'

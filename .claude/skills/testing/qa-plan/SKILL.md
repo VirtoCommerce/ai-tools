@@ -73,3 +73,7 @@ Create test plans and detailed test cases using the comprehensive E2E scenario c
 - Each test case must have at least 1 negative/error scenario
 - Map every test case to its parent regression suite for traceability
 - Use TestRail CSV format for import compatibility
+
+## Reused by `/qa-test`
+
+`/qa-test` (Steps 2–3) reuses this skill's `e2e-scenario-catalog.md` for `E2E-*` scenario coverage + regression-suite traceability, but produces only its scoped `testing-checklist.md` — **not** the full test plan / RTM / TestRail CSV this skill generates. Full case authoring + the peer-review `Draft → Reviewed` promotion gate belong to a standalone `/qa-plan` run, never to a `/qa-test` verdict pass.

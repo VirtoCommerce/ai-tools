@@ -213,7 +213,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 18,
+      "testCount": 19,
+      "testCount": 19,
       "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -591,7 +592,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 33,
+      "testCount": 35,
+      "testCount": 35,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -600,6 +602,34 @@
         "invites",
         "admin",
         "sprint"
+      ],
+      "requiresModules": [
+        "customer"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "027b",
+      "name": "Customer Org Memberships (per-org roles & lockout)",
+      "file": "regression/suites/Backend/customer/027b-customer-org-memberships.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 18,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "customer",
+        "organizations",
+        "org-memberships",
+        "rbac",
+        "lockout",
+        "invites",
+        "admin",
+        "sprint",
+        "VCST-5028"
       ],
       "requiresModules": [
         "customer"
@@ -693,7 +723,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 13,
+      "testCount": 13,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -887,7 +918,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 19,
+      "testCount": 10,
+      "testCount": 14,
       "estimatedMinutes": 12,
       "agent": "qa-frontend-expert",
       "tags": [

@@ -1,0 +1,25 @@
+{
+  "runId": "REG-2026-06-15-1845",
+  "selection": "040b",
+  "env": "vcst-qa",
+  "build": {
+    "platform": "3.1037.0",
+    "theme": "2.51.0-pr-2315-3425",
+    "authorizeNet": "3.1002.0"
+  },
+  "startedAt": "2026-06-15T18:45:00Z",
+  "suites": {
+    "040b": {
+      "name": "Payment - Authorize.Net",
+      "browser": "playwright-edge",
+      "status": "completed",
+      "activeCases": 11,
+      "passed": 9,
+      "failed": 1,
+      "blocked": 1,
+      "skipped": 9,
+      "passRate": "81.8%"
+    }
+  },
+  "completedAt": "2026-06-15T19:23:00Z"
+}

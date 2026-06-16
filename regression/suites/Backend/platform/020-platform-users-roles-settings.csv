@@ -56,22 +56,22 @@
 [STATE] User cannot login","[API] GET {{BACK_URL}}/api/platform/security/users - verify user absent from response
 [CONSOLE] No errors on delete
 [NETWORK] DELETE returns 204","User remains in list after delete; user can still login after deletion","none (user is deleted as cleanup target)","C172800","Katalon"
-"PLAT-009","Lock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798)","username=user_1; storefront_url={{FRONT_URL}}","[NAV] Navigate to Security > Users at {{BACK_URL}}
+"PLAT-009","Lock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798). NOTE: PLAT-009 tests platform-level global lock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped lock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.","username=user_1; storefront_url={{FRONT_URL}}","[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user 'user_1'
 [ACT] Click 'Lock Account' button
 [ACT] Save changes
 [NAV] Navigate to storefront {{FRONT_URL}} and attempt login as locked user","[STATE] Account status changed to 'Locked'
 [DOM] Login attempt displays: 'This account has been locked out, please try again later.'","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=true
 [CONSOLE] No errors on lock
-[ADMIN] Audit log records lock action","Lock not reflected in UI; locked user can still login at storefront","unlock user account via Admin","C179518","Katalon"
-"PLAT-010","Unlock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Locked user account exists (C179518)","username=user_1 (locked); storefront_url={{FRONT_URL}}","[NAV] Navigate to Backend > Security at {{BACK_URL}}
+[ADMIN] Audit log records lock action","Lock not reflected in UI; locked user can still login at storefront","unlock user account via Admin","C179518; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global","Katalon"
+"PLAT-010","Unlock User Account","Platform > User Management","High","BL-PLAT-002","ECL-2.1","Locked user account exists (C179518). NOTE: PLAT-010 tests platform-level global unlock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped unlock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.","username=user_1 (locked); storefront_url={{FRONT_URL}}","[NAV] Navigate to Backend > Security at {{BACK_URL}}
 [ACT] Find locked user from preconditions
 [ACT] Click 'Unlock account'
 [ACT] Save changes
 [NAV] Go to storefront {{FRONT_URL}} and login as the user","[STATE] Account status changed from 'Locked' to 'Unlocked'
 [STATE] User can successfully login at storefront","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=false
 [CONSOLE] No errors on unlock
-[ADMIN] Audit log records unlock action","Unlock button missing; account remains locked after unlock; storefront login still rejected","none","C179519","Katalon"
+[ADMIN] Audit log records unlock action","Unlock button missing; account remains locked after unlock; storefront login still rejected","none","C179519; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global","Katalon"
 "PLAT-011","Add API Key","Platform > API Keys","Critical","BL-PLAT-002","ECL-2.1","Admin logged into backend ({{BACK_URL}}), user account exists","api_key_name=apikey_test_001","[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open user account
 [NAV] Navigate to API Keys widget
@@ -445,3 +445,22 @@
 [STATE] Manager account locked after 5 failed attempts (not exempt from lockout)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} for Manager-type user after 5 failures
 [NETWORK] POST {{BACK_URL}}/connect/token attempt 6 with correct Manager password returns 400/401 (lockout enforced; not 200)
 [CONSOLE] No JavaScript errors","Manager account remains Unlocked after 5 failed attempts (VCST-4999 regression — Manager-type exempt from lockout); attempt 6 with correct Manager password returns 200 (lockout not applied to Manager); GET .../locked returns {locked: false}","[SAVE] Unlock Manager account: click Unlock in Admin SPA; delete AGENT-TEST- user","VCST-4999, VCST-5149","Draft"
+"PLAT-084","Global Lock vs Org-Scoped Lock — Distinct Mechanisms (VCST-5028)","Platform > User Management > Lockout","High","BL-AUTH-003","ECL-2.1","Admin logged into Backend ({{BACK_URL}}); a test user exists who is a member of at least one org (use @td(TECHFLOW_BUYER.email))","back_url={{BACK_URL}}; user_email=@td(TECHFLOW_BUYER.email)","[NAV] Navigate to {{BACK_URL}} > Security > Users
+[BLADE] Users blade open
+[ACT] Search for @td(TECHFLOW_BUYER.email) and open user detail blade
+[ASSERT] Note current platform lock state (ApplicationUser.IsLockedOut) — should be Unlocked
+[ACT] Click Lock button in Admin SPA (platform-level global lock)
+[SAVE] Confirm lock action
+[ASSERT] User detail blade shows Locked state
+[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id)
+[STATUS] 200
+[BODY] Check field isLockedOut = true (platform-level global lock applied)
+[NAV] Navigate to Customer module > Members — find the same user @td(TECHFLOW_BUYER.email)
+[BLADE] Open user's Organization Memberships widget (VCST-5028)
+[ASSERT] OrganizationMembership.IsLocked field for TechFlow membership is false — org-scoped lock is INDEPENDENT of platform lock
+[ASSERT] Platform lock (isLockedOut=true) and org lock (IsLocked=false) coexist simultaneously — they are distinct mechanisms
+[ACT] Return to Security > Users; click Unlock for @td(TECHFLOW_BUYER.email) to restore platform lock state","[FORM] Platform-level lock (ApplicationUser.IsLockedOut) reflects Locked after Admin SPA lock action
+[API] GET ...users/{id} returns isLockedOut=true after platform lock
+[FORM] Organization Memberships widget shows org-scoped IsLocked = false (unchanged by platform lock) — mechanisms are independent
+[ASSERT] Both lock fields coexist without interfering: platform isLockedOut=true, org IsLocked=false in same user state","[API] GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id) — verify isLockedOut field before and after lock action
+[VERIFY] Customer module org-memberships endpoint confirms org-scoped lock field is unaffected by platform lock action","Platform lock and org-scoped lock appear to be the same mechanism (regression: locking platform also sets org IsLocked=true); org lock widget absent (VCST-5028 widget not rendered); GET isLockedOut returns null or missing","[ACT] Unlock @td(TECHFLOW_BUYER.email) via Admin SPA after test to restore original state","VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15)","Draft"

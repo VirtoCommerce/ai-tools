@@ -28,13 +28,13 @@ Node seeders in [`scripts/`](../../../../scripts/) read CSVs from [`test-data/`]
 | [`seed-bopis.mjs`](../../../../scripts/seed-bopis.mjs) | BOPIS pickup locations from `test-data/stores/bopis-locations.csv` (vc-module-shipping; linked to an existing FFC) | `npm run seed:bopis` (`[--only LOC-001] [--teardown]`) | `_seed-results-bopis-{date}.json` |
 | [`seed-catalog-properties.mjs`](../../../../scripts/seed-catalog-properties.mjs) | Catalog/variation property definitions + dictionary values from `test-data/catalogs/properties.csv` | `npm run seed:properties` (`[--only PROP-001] [--teardown]`) | `_seed-results-properties-{date}.json` |
 | [`seed-white-labeling.mjs`](../../../../scripts/seed-white-labeling.mjs) | Menu link lists + white-labeling org config + users from `test-data/white-labeling/*.csv` | `npm run seed:white-labeling` (`[--skip-users] [--teardown]`) | `_seed-results-wl-{date}.json` |
-| [`seed-b2b-fixtures.mjs`](../../../../scripts/seed-b2b-fixtures.mjs) | B2B orgs + contacts + addresses from `test-data/b2b/*.csv` (this is the real `b2b` seeder) | `node scripts/seed-b2b-fixtures.mjs` | `_seed-results-orgs-{date}.json` |
+| [`seed-b2b-fixtures.mjs`](../../../../scripts/seed-b2b-fixtures.mjs) | B2B orgs + contacts + addresses from `test-data/b2b/*.csv` (the real `b2b` seeder). Profiles: `baseline` / `imp` / `memberships` / `full` / `teardown`. The `memberships` profile (VCST-5028) reads `test-data/b2b/organization-memberships.csv` and creates a contact + storefront login (security account) + **org-scoped `OrganizationMembership` role** per (user, org) — seeds cross-org members (one user in N orgs with distinct roles). | `npm run seed:b2b` / `seed:b2b:memberships` / `seed:b2b:teardown` (also `node scripts/seed-b2b-fixtures.mjs [profile] [--dry-run]`) | `_seed-results-orgs-{date}.json` / `_seed-results-vcst5028-multiorg.json` |
 | [`seed-impersonation-targets.mjs`](../../../../scripts/seed-impersonation-targets.mjs) | 11 orgs + users for IMP-048/049 (suite 082) | `node scripts/seed-impersonation-targets.mjs` | `reports/seed/seed-impersonation-targets-{date}.json` |
 | [`refresh-product-guids.mjs`](../../../../scripts/refresh-product-guids.mjs) | Refreshes product GUIDs in `test-data/` after a reseed | `npm run refresh-product-guids` | updates `test-data/` CSVs + `aliases.json` |
 
 `seed-test-data.js` covers only `minimal/catalog/full/teardown` — **B2B is `seed-b2b-fixtures.mjs`**, and pricing is folded into the `catalog`/`full` profiles. The CFG `.mjs` seeders are phased (Phase 1+2 → conditional → default-option → bike) and share catalog/category/pricelist/ffc/virtual-catalog wiring.
 
-The newer seeders (`seed-promotions`, `seed-bopis`, `seed-catalog-properties`, `seed-white-labeling`) share [`scripts/lib/seed-common.mjs`](../../../../scripts/lib/seed-common.mjs) — the common env-load / host-allowlist / auth / `api()` / CSV / write-back helper — and all support `--dry-run` (reads only, never writes), `--verbose`, `--only <id>`, and `--teardown` (deletes exactly the rows they seed). **Reference-only `test-data/` (payment cards, search queries, security payloads, uploads, GraphQL query library) and discovered/pre-existing infra (FFCs, stores, languages) intentionally have no seeder.** Known remaining gaps with no script: `test-data/b2b/roles.csv` (its permission strings are abstract and don't map to real VC permission keys — would create empty roles) and standalone B2B user-account creation (partially covered by `seed-impersonation-targets.mjs`).
+The newer seeders (`seed-promotions`, `seed-bopis`, `seed-catalog-properties`, `seed-white-labeling`) share [`scripts/lib/seed-common.mjs`](../../../../scripts/lib/seed-common.mjs) — the common env-load / host-allowlist / auth / `api()` / CSV / write-back helper — and all support `--dry-run` (reads only, never writes), `--verbose`, `--only <id>`, and `--teardown` (deletes exactly the rows they seed). **Reference-only `test-data/` (payment cards, search queries, security payloads, uploads, GraphQL query library) and discovered/pre-existing infra (FFCs, stores, languages) intentionally have no seeder.** Standalone B2B user-account (storefront login) creation is now covered by `seed-b2b-fixtures.mjs memberships` (creates the security account + org-scoped membership) and `seed-impersonation-targets.mjs`. `test-data/b2b/roles.csv` needs no seeder — it now mirrors the real storefront roles (vc-frontend `core/constants/security.ts` `ALL_ROLES` + real `permissions.enum.ts` keys; the 3 `member_dropdown=yes` rows are `B2B_ROLES`, the Company-Members "Change role" options). Those role IDs (`org-maintainer`/`org-employee`/`purchasing-agent`/`store-admin`/`store-manager`) are platform built-ins that already exist — the `memberships` seeder references them by id.
 
 ### Path B — Postman MCP (collection-driven)
 
@@ -54,7 +54,7 @@ Read **before** executing:
 |----------|-------------|----------------------|
 | `minimal` | 1 catalog + 1 category + 1 product + price + inventory | `npm run seed:minimal` |
 | `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory | `npm run seed:catalog` |
-| `b2b` | Organization + users + roles + contacts + addresses | `node scripts/seed-b2b-fixtures.mjs` |
+| `b2b` | Organizations + contacts + addresses, plus storefront logins + org-scoped role memberships (VCST-5028, `full` profile includes the `memberships` step) | `npm run seed:b2b` (memberships only: `npm run seed:b2b:memberships`) |
 | `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency | folded into `seed:catalog` / `seed:full` (Postman path for standalone) |
 | `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. | `npm run seed:full` + the specialized CFG/B2B `.mjs` seeders |
 | `teardown` | Delete ephemeral seeded entities. Script path: `npm run seed:teardown` sweeps all prior `AGENT-TEST-SEED-*` runs (+ legacy `SEED-*`). Postman path: sweeps the broader `AGENT-TEST-*` set. See the prefix note above. | `npm run seed:teardown` (script) |
@@ -174,13 +174,15 @@ Rich catalog for search/filter/browse testing:
 - Inventory across 2 FFCs (varied stock levels)
 
 ### `b2b`
-B2B organization with user hierarchy:
-- 1 organization with addresses, phones, emails
-- 3 contacts: org admin, buyer, viewer
-- 3 user accounts linked to contacts
-- 1 custom role (read-only for RBAC testing)
-- Role assignments per user
-- Addresses on each contact (shipping + billing)
+B2B organization with user hierarchy (`seed-b2b-fixtures.mjs`):
+- Base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + contacts + addresses from `test-data/b2b/*.csv` (`baseline`/`imp`/`full` profiles)
+- Contacts re-linked to surviving platform users
+
+**`memberships` profile (VCST-5028)** — org-scoped roles & per-org access, from `test-data/b2b/organization-memberships.csv`:
+- Ensures a contact + storefront login (security account) per `user_email`
+- Creates one `OrganizationMembership` per (user, org) with its `role_id` → seeds **cross-org members** (same user in N orgs with distinct roles, e.g. TechFlow=maintainer + BuildRight=employee)
+- Idempotent (reuses existing user/memberships); included in `full`; teardown removes the seeded logins + memberships
+- API contract: REST body uses `userId` + `roles:[{roleId,roleName}]` (NOT `memberId`/`roleIds`) — see `reference_organization_membership_api_contract` memory
 
 ### `pricing`
 Pricing module deep test:

@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.16",
-    "updated": "2026-06-12",
+    "version": "1.5.17",
+    "updated": "2026-06-15",
+    "changelog_1_5_17": "VCST-5028 cross-org fixture: added MULTI_ORG_TF_BR inline alias — a single AGENT-TEST member (agent-test-multiorg-20260615@yopmail.com, password Password1!) that belongs to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 isolation has a clear oracle: TechFlow (6fb516c1-…) = org-maintainer, BuildRight (fba51391-…) = org-employee. Provisioned on vcst-qa 2026-06-15: contact via POST /api/members (id 57389d49-aae0-4cce-a4b1-8e67352310e1, organizations=[TechFlow,BuildRight]); security account via POST /api/platform/security/users/create (userId 631063d0-cf9c-4a29-ac48-c015e78b9cc6, userType=Customer, storeId=B2B-store, emailConfirmed=true); two org-memberships via the NEW PR #300 route POST /api/customer/organization-memberships (hyphenated, plural). KEY LESSON: the OrganizationMembership create-body key is `userId` (the SECURITY-ACCOUNT user id, NOT the contact/member id) and roles is `roles:[{roleId,roleName}]` (NOT a flat roleIds[]). Storefront login confirmed (account menu shows TechFlow / member name). AGENT-TEST- prefix → teardown-swept. Membership ids: TechFlow eff31ad2375641548ef86449ceb9372a, BuildRight 3219a007f7fb432fb3f0b99208a4b90c.",
     "changelog_1_5_16": "Coupon-code alphanumeric migration 2026-06-12: COUPONS.expiredCode EXPIRED-TEST → EXPIREDTEST; COUPONS.usedUpCode QA-MAXED → QAMAXED. Platform now enforces ^[a-zA-Z0-9]+$ on /api/marketing/promotions/coupons/add. COUPON_EXPIRED and COUPON_E2E aliases are CSV-backed (file+filter) — they auto-resolve from the updated coupons.csv rows, no change needed here.",
     "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
     "changelog_1_5_9": "Added LOCKOUT_TEST_USERS inline alias (5 dedicated AGENT-TEST lockout accounts created on vcst-qa 2026-05-29 via POST /api/platform/security/users/create): sf (Customer, 71b4ca11…, suite 031 AUTH-070), admin (Administrator, 6e9987d1…, 020 PLAT-081), unlock (Administrator, af55646a…, 020 PLAT-082), manager (Manager, 44a2978b…, 020 PLAT-083 / VCST-4999), target (Administrator, 1d90a31b…, 049 API-036). Self-provisioned throwaway accounts, teardown-swept by AGENT-TEST prefix; passwords set by SETUP blocks (not stored in aliases). Verified lock/unlock contract: admin /lock -> lockoutEnd 9999-12-31 sentinel + /locked{locked:true}; /unlock -> lockoutEnd 0001-01-01 + /locked{locked:false}; failed-login (5x bad token) auto-lock -> finite timed lockoutEnd + accessFailedCount reset to 0. See alias _comment for full contract.",
@@ -2724,6 +2725,33 @@
       "group": "group"
     },
     "_notes": "Customer-type storefront user provisioned 2026-05-29 for LOY-029 (per-customer-group loyalty factor). Member groups=['VIP']; storefront auth confirmed (storeId=B2B-store). AGENT-TEST- prefix so /qa-seed-data teardown sweeps it (delete security account 1dba59a3-… then member 2fae41c3-…). qa-vip@virtocommerce.com did NOT exist on vcst-qa, so a dedicated AGENT-TEST-vip user was created instead. email_env/password_env added 2026-06-09 to support [AUTH role=LOYALTY_VIP_USER] in runner-native GQL cases (VCST-5101). NOTE: password field retained in fields map for @td(LOYALTY_VIP_USER.password) used in 075-loyalty.csv LOY-029 step text — that use is storefront/API-call text, not the runner resolveRole path."
+  },
+  "MULTI_ORG_TF_BR": {
+    "_inline": true,
+    "id": "6ac04636-e816-48b3-b456-2dc202301187",
+    "userId": "4159875a-dcd6-4d3b-9e0e-8775bfb45f41",
+    "email": "agent-test-multiorg-20260615@yopmail.com",
+    "password": "Password1!",
+    "org_techflow_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_buildright_id": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
+    "techflow_role": "org-maintainer",
+    "buildright_role": "org-employee",
+    "techflow_membership_id": "c172543de8a949ec9971006379c39456",
+    "buildright_membership_id": "4dfa75e0f9464b6db07800025cac50c8",
+    "fields": {
+      "id": "id",
+      "userId": "userId",
+      "email": "email",
+      "password": "password",
+      "org_techflow_id": "org_techflow_id",
+      "org_buildright_id": "org_buildright_id",
+      "techflow_role": "techflow_role",
+      "buildright_role": "buildright_role",
+      "techflow_membership_id": "techflow_membership_id",
+      "buildright_membership_id": "buildright_membership_id"
+    },
+    "_comment": "VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password Password1!. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
+    "_notes": "Membership create payload shape that worked: POST /api/customer/organization-memberships  body {\"userId\":\"631063d0-…\",\"organizationId\":\"<orgId>\",\"organizationName\":\"<name>\",\"roles\":[{\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\"}]} → 200. Read back via POST /api/customer/organization-memberships/search {\"userId\":\"631063d0-…\"} → totalCount 2."
   },
   "VIRTUAL_CATALOG_B2B": {
     "_inline": true,

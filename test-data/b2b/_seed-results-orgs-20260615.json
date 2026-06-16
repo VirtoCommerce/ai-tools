@@ -1,0 +1,28 @@
+{
+  "seedDate": "20260615",
+  "profile": "memberships",
+  "platform": "https://vcst-qa.govirto.com",
+  "storeId": "B2B-store",
+  "memberships": [
+    {
+      "membership_id": "MOM-001",
+      "email": "agent-test-multiorg-20260615@yopmail.com",
+      "contact_id": "6ac04636-e816-48b3-b456-2dc202301187",
+      "user_id": "4159875a-dcd6-4d3b-9e0e-8775bfb45f41",
+      "org_name": "AGENT-TEST-Org-TechFlow-20260310",
+      "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+      "role_id": "org-maintainer",
+      "platform_membership_id": "c172543de8a949ec9971006379c39456"
+    },
+    {
+      "membership_id": "MOM-002",
+      "email": "agent-test-multiorg-20260615@yopmail.com",
+      "contact_id": "6ac04636-e816-48b3-b456-2dc202301187",
+      "user_id": "4159875a-dcd6-4d3b-9e0e-8775bfb45f41",
+      "org_name": "AGENT-TEST-Org-BuildRight-20260310",
+      "org_id": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
+      "role_id": "org-employee",
+      "platform_membership_id": "4dfa75e0f9464b6db07800025cac50c8"
+    }
+  ]
+}

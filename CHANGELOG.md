@@ -27,6 +27,7 @@ Forward-looking work on top of v0.3.0. Pin to v0.3.0 for stability; this branch 
 
 - **`regression/suites/Backend/graphql/050j-graphql-xmarketing.csv`** — +7 cases (13 → 20): VCST-5022 `promotionCoupons` sort coverage — 3 regression guards (endDate/name honored, `;` multi-field separator, silently-ignored syntaxes) + lifecycle sync. Manifest `testCount` updated.
 - **`regression/suites/Backend/customer/026-customer-contacts.csv`** — CUST-055 updated for the new `va-filter-panel` contacts filter UI (VCST-5148, PR #24).
+- **`.claude/commands/qa-test.md`** — `/qa-test` Plan + Write steps now reuse the `/qa-plan` E2E scenario catalog (`.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`): Step 2 maps the ticket to its `E2E-*` scenario(s) and inherits their regression-suite traceability; Step 3 folds those scenarios into the scoped `testing-checklist.md`. Closes the gap where `/qa-test` never consulted the 105-scenario catalog. Stays lightweight — produces the scoped checklist, **not** a full `/qa-plan` test plan / RTM / TestRail CSV (full case authoring + peer-review promotion remains a standalone `/qa-plan` run).
 - **`ci/lib/repo-router.ts`** — marketing-xAPI routing fixed (`vc-module-x-marketing` resolution); .NET build hardening in the fix cycle.
 - **`.gitignore`** — auto-fix transient state ignored: `.fix-workspace/` (cloned product repos), `ci/config/.module-registry.cache.json`, heavy artifacts under `reports/fixes/FIX-*/` (png/har/jpg; fix-report.md + summary.json stay tracked).
 
