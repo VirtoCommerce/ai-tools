@@ -50,15 +50,15 @@ CRX-GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","Graph
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
   mutation {
-    addOrUpdateCartShipment(command: {
+    addOrUpdateCartShipment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
@@ -68,7 +68,7 @@ CRX-GQL-024,"xOrder — createOrderFromCart Idempotency (Duplicate Call)","Graph
   }
 [GQL-EXEC set_shipment]
 [GQL-OP set_payment]
-  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+  mutation { addOrUpdateCartPayment(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
 [GQL-EXEC set_payment]
 [GQL-OP create_first]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
@@ -83,15 +83,15 @@ CRX-GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","G
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
   mutation {
-    addOrUpdateCartShipment(command: {
+    addOrUpdateCartShipment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
@@ -101,7 +101,7 @@ CRX-GQL-025,"xOrder — Second createOrderFromCart Returns Graceful Response","G
   }
 [GQL-EXEC set_shipment]
 [GQL-OP set_payment]
-  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+  mutation { addOrUpdateCartPayment(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
 [GQL-EXEC set_payment]
 [GQL-OP create_first]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
@@ -118,15 +118,15 @@ CRX-GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart >
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.id → CART_ID]
 [GQL-OP set_shipment]
   mutation {
-    addOrUpdateCartShipment(command: {
+    addOrUpdateCartShipment(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       shipment: {
         shipmentMethodCode: ""FixedRate"" shipmentMethodOption: ""Ground"" price: 150
@@ -136,14 +136,14 @@ CRX-GQL-026,"xCart — Cart Invalidated After Order Creation","GraphQL > xCart >
   }
 [GQL-EXEC set_shipment]
 [GQL-OP set_payment]
-  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+  mutation { addOrUpdateCartPayment(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
 [GQL-EXEC set_payment]
 [GQL-OP create_order]
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id } }
 [GQL-EXEC create_order]
 [GQL-OP add_after_convert]
   mutation {
-    addItem(command: {
+    addItem(command: { cartName: ""default"" 
       storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}""
       cartId: ""{{CART_ID}}""
       productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1
@@ -161,7 +161,7 @@ CRX-GQL-053,"xOrder — createOrderFromCart with Empty Cart","GraphQL > xOrder >
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-CAPTURE pre_clear.data.clearCart.id → CART_ID]
 [GQL-OP create_empty]
@@ -187,7 +187,7 @@ CRX-GQL-096,"xCart — CartType Full-Field Schema Coverage","GraphQL > xCart > S
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cart_full]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
       id name status storeId customerId customerName organizationId
       itemsCount itemsQuantity type
       total { amount currency { code } }
@@ -239,14 +239,14 @@ CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-OP cart_items_full]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") {
       items {
         id productId sku name quantity
         currencyCode
@@ -268,7 +268,7 @@ CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart
   }
 [GQL-EXEC cart_items_full]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=cart_items_full] errors[] empty
 [DATA label=cart_items_full] data.cart.items is non-null
 [DATA label=cart_items_full] data.cart.items.0.currencyCode is non-null","[EVIDENCE] Every LineItemType field present in graphql-schema.md resolves including currencyCode; no schema drift","Any LineItemType field renamed/removed (DV-009); MoneyType drift; currencyCode missing from items (VCST-5101 Mixed Cart schema regression)",none — clearCart at end,"xAPI; graphql-schema.md — LineItemType full coverage; Synced: VCST-5101 (2026-06-09)",Automated
@@ -280,11 +280,11 @@ CRX-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_plain]
   mutation {
-    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HOODIE.id)"" quantity: 1 }) {
+    addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HOODIE.id)"" quantity: 1 }) {
       id itemsCount items { id productId configurationItems { id sectionId } }
     }
   }
@@ -299,7 +299,7 @@ CRX-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean 
   }
 [GQL-EXEC change_on_plain]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_plain] errors[] empty
 [DATA label=add_plain] data.addItem.itemsCount = 1
 [ERRORS label=change_on_plain] errors[] empty
@@ -310,28 +310,28 @@ CRX-GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equa
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_1]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
 [GQL-EXEC add_1]
 [GQL-OP add_2]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
 [GQL-EXEC add_2]
 [GQL-OP add_3]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
 [GQL-EXEC add_3]
 [GQL-OP add_4]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
 [GQL-EXEC add_4]
 [GQL-OP add_5]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount validationErrors { errorCode errorMessage } } }
 [GQL-EXEC add_5]
 [GQL-OP read_back]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount itemsQuantity items { id productId sku quantity } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount itemsQuantity items { id productId sku quantity } } }
 [GQL-EXEC read_back]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_5] errors[] empty
 [DATA label=add_5] data.addItem.itemsCount = 1
 [ERRORS label=read_back] errors[] empty
@@ -343,20 +343,20 @@ CRX-GQL-020,"[VCST-5083] removeCartItem Immediately After addItem — Cart Reach
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id itemsCount } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { id productId sku quantity } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id itemsCount items { id productId sku quantity } } }
 [GQL-EXEC add_item]
 [GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
 [GQL-OP remove_item]
-  mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" }) { id itemsCount items { id productId quantity } } }
+  mutation { removeCartItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" }) { id itemsCount items { id productId quantity } } }
 [GQL-EXEC remove_item]
 [GQL-OP read_back]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id productId } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id itemsCount items { id productId } } }
 [GQL-EXEC read_back]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=remove_item] errors[] empty
@@ -369,7 +369,7 @@ GQL-MC-002,"Mixed Cart — cartTotals Returns Per-Currency Breakdown With Exactl
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query {
@@ -381,14 +381,14 @@ GQL-MC-002,"Mixed Cart — cartTotals Returns Per-Currency Breakdown With Exactl
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP query_mixed_cart]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       id itemsCount
       extendedPriceTotal { amount currency { code } }
       cartTotals {
@@ -403,7 +403,7 @@ GQL-MC-002,"Mixed Cart — cartTotals Returns Per-Currency Breakdown With Exactl
   }
 [GQL-EXEC query_mixed_cart]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=query_mixed_cart] errors[] empty
 [COUNT label=query_mixed_cart] data.cart.itemsCount = 2
 [COUNT label=query_mixed_cart] data.cart.cartTotals = 2
@@ -417,7 +417,7 @@ GQL-MC-003,"Mixed Cart — extendedPriceTotal Covers USD-Currency Lines Only (Ex
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query {
@@ -429,14 +429,14 @@ GQL-MC-003,"Mixed Cart — extendedPriceTotal Covers USD-Currency Lines Only (Ex
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item_a]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 2 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 2 }) { id } }
 [GQL-EXEC add_usd_item_a]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP query_ext_price]
   query {
-    cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
       id itemsCount
       extendedPriceTotal { amount currency { code } }
       extendedPriceTotalWithTax { amount }
@@ -448,7 +448,7 @@ GQL-MC-003,"Mixed Cart — extendedPriceTotal Covers USD-Currency Lines Only (Ex
   }
 [GQL-EXEC query_ext_price]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=query_ext_price] errors[] empty
 [COUNT label=query_ext_price] data.cart.itemsCount = 2
 [DATA label=query_ext_price] data.cart.extendedPriceTotal.currency.code is non-null
@@ -461,7 +461,7 @@ GQL-MC-005,"Mixed Cart — changeCartItemQuantity Targets PTS Line Item via line
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query {
@@ -473,20 +473,20 @@ GQL-MC-005,"Mixed Cart — changeCartItemQuantity Targets PTS Line Item via line
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id productId currencyCode } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id productId currencyCode } } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id items { id productId currencyCode } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id items { id productId currencyCode } } }
 [GQL-EXEC add_pts_item]
 [GQL-OP read_after_add]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { items { id currencyCode productId quantity } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"") { items { id currencyCode productId quantity } } }
 [GQL-EXEC read_after_add]
 [GQL-CAPTURE read_after_add.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
 [GQL-OP update_pts_qty]
-  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" quantity: 3 }) { id items { id currencyCode quantity } } }
+  mutation { changeCartItemQuantity(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" quantity: 3 }) { id items { id currencyCode quantity } } }
 [GQL-EXEC update_pts_qty]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=update_pts_qty] errors[] empty
 [COUNT label=update_pts_qty] data.changeCartItemQuantity.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].quantity = 3
 [COUNT label=update_pts_qty] data.changeCartItemQuantity.items[?currencyCode=USD].quantity = 1","[EVIDENCE] changeCartItemQuantity targets the PTS line item by lineItemId; USD line is unaffected. The two currency lines are independent.","update_pts_qty errors[] non-empty (lineItemId not found — Mixed Cart isolation bug); PTS quantity not updated (wrong line targeted); USD line quantity changed instead of PTS",cleanup_post inline,"VCST-5101; BL-CART-002; xCart changeCartItemQuantity Mixed Cart currency isolation; vc-module-x-cart PR #120",Reviewed
@@ -496,38 +496,38 @@ GQL-MC-006,Mixed Cart — cart-% coupon discounts primary-currency lines only (P
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP apply_coupon]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+  mutation { addCoupon(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
 [GQL-EXEC apply_coupon]
 [GQL-OP cart_usd_only]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } coupons { code } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } coupons { code } } }
 [GQL-EXEC cart_usd_only]
 [GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_BASE]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP cart_mixed_q1]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode discountTotal { amount } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode discountTotal { amount } } } }
 [GQL-EXEC cart_mixed_q1]
 [GQL-CAPTURE cart_mixed_q1.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX1]
 [GQL-OP bump_pts_qty]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 2 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 2 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC bump_pts_qty]
 [GQL-OP cart_mixed_q3]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
 [GQL-EXEC cart_mixed_q3]
 [GQL-CAPTURE cart_mixed_q3.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → COUPON_DISC_MIX3]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
 [DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount is non-null
 [ERRORS label=cart_mixed_q1] errors[] empty
@@ -541,33 +541,33 @@ GQL-MC-007,Mixed Cart — fixed-$ coupon (FIXED5) is flat in USD bucket and inva
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP apply_coupon]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.fixedAmountCode)"" }) { id } }
+  mutation { addCoupon(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.fixedAmountCode)"" }) { id } }
 [GQL-EXEC apply_coupon]
 [GQL-OP cart_usd_only]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } coupons { code } items { currencyCode discountTotal { amount } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } coupons { code } items { currencyCode discountTotal { amount } } } }
 [GQL-EXEC cart_usd_only]
 [GQL-CAPTURE cart_usd_only.data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount → DISC_USD_ONLY]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP cart_mixed]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode discountTotal { amount } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode discountTotal { amount } } } }
 [GQL-EXEC cart_mixed]
 [GQL-CAPTURE cart_mixed.data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount → DISC_MIXED]
 [GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount → PTS_LINE_DISC]
 [GQL-CAPTURE cart_mixed.data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount → PTS_BUCKET_DISC]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=cart_usd_only] errors[] empty
 [DATA label=cart_usd_only] data.cart.coupons[?code=@td(COUPONS.fixedAmountCode)].code is non-null
 [DATA label=cart_usd_only] data.cart.discounts[?coupon=@td(COUPONS.fixedAmountCode)].amount is non-null
@@ -581,20 +581,20 @@ GQL-MC-008,Mixed Cart — automatic promo scopes to USD line only (PTS line + PT
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP cart_mixed]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode listTotal { amount } extendedPrice { amount } discountTotal { amount } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { cartTotals { isDefaultTotalCurrency discountTotal { amount } } items { currencyCode listTotal { amount } extendedPrice { amount } discountTotal { amount } } } }
 [GQL-EXEC cart_mixed]
 [GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=USD].listTotal.amount → USD_LIST_TOTAL]
 [GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=USD].extendedPrice.amount → USD_EXT]
@@ -602,7 +602,7 @@ GQL-MC-008,Mixed Cart — automatic promo scopes to USD line only (PTS line + PT
 [GQL-CAPTURE cart_mixed.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].discountTotal.amount → PTS_LINE_DISC]
 [GQL-CAPTURE cart_mixed.data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount → PTS_BUCKET_DISC]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=cart_mixed] errors[] empty
 [DATA label=cart_mixed] data.cart.items[?currencyCode=USD].discountTotal.amount > 0
 [DATA label=cart_mixed] data.cart.items[?currencyCode=USD].listTotal.amount > data.cart.items[?currencyCode=USD].extendedPrice.amount
@@ -614,7 +614,7 @@ GQL-MC-009,Mixed Cart — mergeCart (secondCartId) preserves both currency bucke
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP cleanup_src_pre]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{src_cart_name}}"" }) { id } }
@@ -624,10 +624,10 @@ GQL-MC-009,Mixed Cart — mergeCart (secondCartId) preserves both currency bucke
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP build_src_cart]
   mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""{{src_cart_name}}"" productId: ""@td(PROD_VARIATION_PARENT_SALE.id)"" quantity: 1 }) { id itemsCount } }
@@ -640,11 +640,11 @@ GQL-MC-009,Mixed Cart — mergeCart (secondCartId) preserves both currency bucke
   mutation { mergeCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" secondCartId: ""{{SRC_CART_ID}}"" deleteAfterMerge: true }) { id } }
 [GQL-EXEC do_merge]
 [GQL-OP read_merged]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { currencyCode productId } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { currency { code } } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { currencyCode productId } cartTotals { isDefaultTotalCurrency discountTotal { amount } total { currency { code } } } } }
 [GQL-EXEC read_merged]
 [GQL-CAPTURE read_merged.data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount → PTS_BUCKET_DISC]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=build_src_cart] errors[] empty
 [ERRORS label=do_merge] errors[] empty
 [ERRORS label=read_merged] errors[] empty
@@ -660,23 +660,23 @@ GQL-MC-010,Mixed Cart — cart-% coupon base scoped to selected USD lines (unsel
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
 [GQL-EXEC add_usd_item]
 [GQL-OP apply_coupon]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+  mutation { addCoupon(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
 [GQL-EXEC apply_coupon]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP read_all_selected]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { id currencyCode selectedForCheckout } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } items { id currencyCode selectedForCheckout } } }
 [GQL-EXEC read_all_selected]
 [GQL-CAPTURE read_all_selected.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_ALL]
 [GQL-CAPTURE read_all_selected.data.cart.items[?currencyCode=USD].id → USD_LINE_ID]
@@ -685,7 +685,7 @@ GQL-MC-010,Mixed Cart — cart-% coupon base scoped to selected USD lines (unsel
   mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{PTS_LINE_ID}}"" }) { id } }
 [GQL-EXEC unselect_pts]
 [GQL-OP read_pts_unsel]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
 [GQL-EXEC read_pts_unsel]
 [GQL-CAPTURE read_pts_unsel.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_USD_ONLY]
 [GQL-OP reselect_pts]
@@ -695,17 +695,17 @@ GQL-MC-010,Mixed Cart — cart-% coupon base scoped to selected USD lines (unsel
   mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{USD_LINE_ID}}"" }) { id } }
 [GQL-EXEC unselect_usd]
 [GQL-OP read_only_pts]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
 [GQL-EXEC read_only_pts]
 [GQL-OP reselect_all]
   mutation { selectAllCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC reselect_all]
 [GQL-OP read_reselected]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { discounts { amount coupon } } }
 [GQL-EXEC read_reselected]
 [GQL-CAPTURE read_reselected.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_RESELECT_ALL]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=read_all_selected] errors[] empty
 [ERRORS label=read_pts_unsel] errors[] empty
 [ERRORS label=read_only_pts] errors[] empty
@@ -720,37 +720,37 @@ GQL-MC-011,Mixed Cart — deleting the PTS line must not change the USD coupon d
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_usd_item]
 [GQL-OP apply_coupon]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
+  mutation { addCoupon(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" couponCode: ""@td(COUPONS.percentageCode)"" }) { id } }
 [GQL-EXEC apply_coupon]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP cart_before]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency total { amount } } items { id currencyCode } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency total { amount } } items { id currencyCode } } }
 [GQL-EXEC cart_before]
 [GQL-CAPTURE cart_before.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_BEFORE]
 [GQL-CAPTURE cart_before.data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount → USD_TOTAL_BEFORE]
 [GQL-CAPTURE cart_before.data.cart.items[?currencyCode=@td(LOYALTY_SETTINGS.currency_code)].id → PTS_LINE_ID]
 [GQL-OP remove_pts]
-  mutation { removeCartItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" }) { id itemsCount } }
+  mutation { removeCartItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PTS_LINE_ID}}"" }) { id itemsCount } }
 [GQL-EXEC remove_pts]
 [GQL-OP cart_after]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency total { amount currency { code } } } } }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount discounts { amount coupon } cartTotals { isDefaultTotalCurrency total { amount currency { code } } } } }
 [GQL-EXEC cart_after]
 [GQL-CAPTURE cart_after.data.cart.discounts[?coupon=@td(COUPONS.percentageCode)].amount → DISC_AFTER]
 [GQL-CAPTURE cart_after.data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount → USD_TOTAL_AFTER]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=cart_before] errors[] empty
 [ERRORS label=remove_pts] errors[] empty
 [ERRORS label=cart_after] errors[] empty
@@ -777,20 +777,20 @@ DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP cleanup_pre]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP discover_pts_product]
   query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
 [GQL-EXEC discover_pts_product]
 [GQL-CAPTURE discover_pts_product.data.products.items.0.id → PTS_PRODUCT_ID]
 [GQL-OP add_usd_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id items { id currencyCode } } }
 [GQL-EXEC add_usd_item]
 [GQL-OP add_pts_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
 [GQL-EXEC add_pts_item]
 [GQL-OP read_pre]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
     itemsCount
     total { amount currency { code } } subTotal { amount } taxTotal { amount }
     shippingPrice { amount } shippingTotal { amount }
@@ -805,10 +805,10 @@ DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal
 [GQL-CAPTURE read_pre.data.cart.availableShippingMethods[?optionName=Ground].optionName → SHIP_OPTION]
 [GQL-CAPTURE read_pre.data.cart.availableShippingMethods[?optionName=Ground].price.amount → SHIP_PRICE]
 [GQL-OP add_shipment]
-  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" } } }) { id } }
+  mutation { addOrUpdateCartShipment(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { city: ""New York"" countryCode: ""US"" countryName: ""United States"" firstName: ""Test"" lastName: ""User"" line1: ""123 Test St"" postalCode: ""10001"" } } }) { id } }
 [GQL-EXEC add_shipment]
 [GQL-OP read_with_ship]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
     total { amount } subTotal { amount } taxTotal { amount } shippingTotal { amount }
     cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }
     shipments { id shipmentMethodCode price { amount } }
@@ -821,7 +821,7 @@ DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal
   mutation { unSelectCartItems(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemIds: ""{{PTS_LINE_ID}}"" }) { id } }
 [GQL-EXEC unselect_pts]
 [GQL-OP read_unsel]
-  query { cart(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
     itemsCount
     total { amount currency { code } } subTotal { amount } taxTotal { amount }
     shippingPrice { amount } shippingTotal { amount }
@@ -830,7 +830,7 @@ DECISIVE GUARDS (will FAIL until DefaultShoppingCartTotalsCalculator / CartTotal
   } }
 [GQL-EXEC read_unsel]
 [GQL-OP cleanup_post]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=discover_pts_product] errors[] empty
 [ERRORS label=add_usd_item] errors[] empty
 [ERRORS label=add_pts_item] errors[] empty

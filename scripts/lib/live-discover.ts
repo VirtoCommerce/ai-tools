@@ -20,6 +20,7 @@
 
 import { TokenCache } from "./graphql-auth.js";
 import { executeOperation, type GraphQLResponse } from "./graphql-executor.js";
+import { TestDataResolver } from "./test-data-resolver.js";
 
 /** Context shared across discovery calls within one run. */
 export interface DiscoverContext {
@@ -30,6 +31,13 @@ export interface DiscoverContext {
   userId?: string;
   token?: string; // bearer token; omit for anonymous queries
   timeoutMs?: number;
+  /**
+   * Pinned catalog/category root for product discovery. When set, the
+   * `hasParent`-based auto-discovery is skipped entirely. `contextFromEnv`
+   * resolves it from the `VIRTUAL_CATALOG_B2B` alias so storefront product
+   * queries scope to the active B2B virtual catalog instead of guessing.
+   */
+  catalogRootId?: string;
 }
 
 export interface DiscoveredProduct {
@@ -76,7 +84,23 @@ export function contextFromEnv(overrides: Partial<DiscoverContext> = {}): Discov
     userId: overrides.userId ?? process.env.USER_ID,
     token: overrides.token,
     timeoutMs: overrides.timeoutMs,
+    catalogRootId: overrides.catalogRootId ?? resolveB2bCatalogRoot(),
   };
+}
+
+/**
+ * Best-effort resolution of the active B2B virtual catalog root from the
+ * `VIRTUAL_CATALOG_B2B` alias. Returns `undefined` (not a thrown error or an
+ * unresolved `@td(...)` token) when the alias is missing, so callers fall back
+ * to live `hasParent`-based discovery.
+ */
+function resolveB2bCatalogRoot(testDataDir = "test-data"): string | undefined {
+  try {
+    const resolved = new TestDataResolver(testDataDir).resolve("@td(VIRTUAL_CATALOG_B2B.id)");
+    return resolved && !resolved.includes("@td(") ? resolved : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -120,9 +144,13 @@ function firstItem<T>(r: GraphQLResponse, path: string[]): T | null {
 
 /* ───────────────────────── Catalog ───────────────────────── */
 
+// NOTE: `name` on CategoryType requires `cultureName`; omitting it makes the
+// platform raise ARGUMENT_NULL per item, which (because `name` is non-nullable)
+// nulls out EVERY item — `categories.items` comes back as `[null, null, ...]`.
+// Always pass cultureName.
 const Q_VIRTUAL_CATALOG_ROOT = `
-  query($storeId: String!, $first: Int) {
-    categories(storeId: $storeId, first: $first) {
+  query($storeId: String!, $cultureName: String, $first: Int) {
+    categories(storeId: $storeId, cultureName: $cultureName, first: $first) {
       items { id name hasParent }
     }
   }
@@ -131,28 +159,39 @@ const Q_VIRTUAL_CATALOG_ROOT = `
 /**
  * Returns the active root category ID for the store's catalog.
  * Solves the recurring catalog-root-migration pain: the storefront-visible
- * root category drifts when catalogs are re-seeded. Hardcoded IDs go stale;
- * this query always returns whatever the live xAPI says is current.
+ * root category drifts when catalogs are re-seeded. Hardcoded IDs go stale.
  *
- * Returns `null` if the store has no categories.
+ * Resolution order:
+ *  1. `ctx.catalogRootId` (pinned from the `VIRTUAL_CATALOG_B2B` alias) — preferred.
+ *  2. Live `categories` query, picking the first top-level (`hasParent === false`)
+ *     category. Null entries (from per-item resolver errors) are skipped so a
+ *     partial response never throws.
+ *
+ * Returns `null` if the store has no resolvable categories.
  */
 export async function discoverVirtualCatalogRoot(
   ctx: DiscoverContext
 ): Promise<string | null> {
+  if (ctx.catalogRootId) return ctx.catalogRootId;
   const r = await exec(ctx, Q_VIRTUAL_CATALOG_ROOT, {
     storeId: ctx.storeId,
+    cultureName: ctx.cultureName,
     first: 50,
   });
   const items =
-    (r.data as { categories?: { items?: Array<{ id: string; hasParent?: boolean }> } } | null)
+    (r.data as { categories?: { items?: Array<{ id: string; hasParent?: boolean } | null> } } | null)
       ?.categories?.items ?? [];
-  const root = items.find((c) => c.hasParent === false) ?? items[0];
+  // Guard against null entries (partial resolver errors) — never deref `c.hasParent` on null.
+  const root = items.find((c) => c?.hasParent === false) ?? items.find((c) => c != null) ?? null;
   return root?.id ?? null;
 }
 
+// `name` on ProductType is likewise culture-dependent, and prices require
+// currencyCode + userId for the buyer's context — pass all three so discovered
+// products match what the cart actually sees.
 const Q_FIRST_AVAILABLE_PRODUCT = `
-  query($storeId: String!, $filter: String, $first: Int) {
-    products(storeId: $storeId, filter: $filter, first: $first) {
+  query($storeId: String!, $userId: String, $currencyCode: String, $cultureName: String, $filter: String, $first: Int) {
+    products(storeId: $storeId, userId: $userId, currencyCode: $currencyCode, cultureName: $cultureName, filter: $filter, first: $first) {
       items { id code name slug }
     }
   }
@@ -181,6 +220,9 @@ export async function discoverFirstAvailableProduct(
   if (opts.extraFilter) clauses.push(opts.extraFilter);
   const r = await exec(ctx, Q_FIRST_AVAILABLE_PRODUCT, {
     storeId: ctx.storeId,
+    userId: ctx.userId,
+    currencyCode: ctx.currencyCode,
+    cultureName: ctx.cultureName,
     filter: clauses.join(" "),
     first: 1,
   });
@@ -192,8 +234,8 @@ export async function discoverFirstAvailableProduct(
 }
 
 const Q_PRODUCT_BY_SKU = `
-  query($storeId: String!, $filter: String!) {
-    products(storeId: $storeId, filter: $filter, first: 1) {
+  query($storeId: String!, $userId: String, $currencyCode: String, $cultureName: String, $filter: String!) {
+    products(storeId: $storeId, userId: $userId, currencyCode: $currencyCode, cultureName: $cultureName, filter: $filter, first: 1) {
       items { id code name slug }
     }
   }
@@ -209,6 +251,9 @@ export async function discoverProductBySku(
 ): Promise<DiscoveredProduct | null> {
   const r = await exec(ctx, Q_PRODUCT_BY_SKU, {
     storeId: ctx.storeId,
+    userId: ctx.userId,
+    currencyCode: ctx.currencyCode,
+    cultureName: ctx.cultureName,
     filter: `code:"${sku}"`,
   });
   const item = firstItem<{ id: string; code: string; name: string; slug: string }>(r, [

@@ -143,28 +143,32 @@ Random picks make failures non-reproducible without a record of what was picked.
 
 Use when you're authoring a row under `regression/suites/Backend/graphql/`. The runner already supports discovery via `[GQL-OP]` + `[GQL-CAPTURE]` — no new tags are needed. See [`graphql-test-cases-runner.md`](graphql-test-cases-runner.md) for the full tag grammar.
 
-### Recipe 1 — discover the virtual-catalog root, then query products under it
+### Recipe 1 — pin the virtual-catalog root, then query products under it
+
+**Pin the root via `@td(VIRTUAL_CATALOG_B2B.id)`; do NOT discover it via `categories → hasParent`.**
+That guess is unreliable on a multi-catalog store: verified live on B2B-store 2026-06-16,
+`categories(storeId)` returns the *first top-level category* (`d6019d4d…`), **not** the active B2B
+virtual-catalog root (`fc596540…`). Products under the wrong root are outside the B2B-mixed catalog,
+so a later `addItem` is rejected with `PRODUCT_PRICE_INVALID`. The alias is the single source of
+truth and follows root migrations (update only the alias's `id`).
+
+> Separate trap if you *do* select `name` on the discovery query: `name` on CategoryType/ProductType
+> is culture-dependent — **always pass `cultureName`**. Omitting it raises `ARGUMENT_NULL` per item,
+> and because `name` is non-nullable the platform nulls out the *entire* item (`items` comes back
+> `[null, null, …]`). This is the bug that broke `scripts/lib/live-discover.ts` on 2026-06-16.
 
 `Steps` cell:
 
 ```text
 [AUTH role=USER_DEFAULT]
 
-[GQL-OP findRoot]
-query($storeId: String!) {
-  categories(storeId: $storeId, first: 50) { items { id hasParent } }
-}
-[GQL-VARS findRoot] {"storeId": "{{STORE_ID}}"}
-[GQL-EXEC findRoot]
-[GQL-CAPTURE findRoot.categories.items[?hasParent=false].id → CAT_ROOT]
-
 [GQL-OP listProducts]
-query($storeId: String!, $filter: String!) {
-  products(storeId: $storeId, filter: $filter, first: 5) {
+query($storeId: String!, $cur: String, $cul: String, $filter: String!) {
+  products(storeId: $storeId, currencyCode: $cur, cultureName: $cul, filter: $filter, first: 5) {
     items { id code name }
   }
 }
-[GQL-VARS listProducts] {"storeId": "{{STORE_ID}}", "filter": "category.subtree:{{CAT_ROOT}}"}
+[GQL-VARS listProducts] {"storeId": "{{STORE_ID}}", "cur": "USD", "cul": "en-US", "filter": "category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)"}
 [GQL-EXEC listProducts]
 ```
 
@@ -175,28 +179,29 @@ query($storeId: String!, $filter: String!) {
 [DATA data.products.items[0].id != null]
 ```
 
-**Why this works**: the root ID gets resolved against the live catalog every run. On 2026-04-30 the root migrated from `fc596540…` to `9238c387…`; the same case kept passing because nothing was hardcoded.
+**Why this works**: the root is pinned to the alias, which is updated in one place when the catalog
+re-seeds (the root migrated `fc596540…` → `9238c387…` on 2026-04-30, then back on the 2026-05-15
+restore). The `price.USD:(0 TO)` clause keeps the result set to priced products.
 
 ### Recipe 2 — pick the first available product and add it to a cart
 
-```text
-[AUTH role=USER_DEFAULT]
+Only the **product** needs live discovery (it drifts between seeds); the **root** is pinned via
+`@td(VIRTUAL_CATALOG_B2B.id)` — so there's no `findRoot` step. The product query passes
+`userId`/`currencyCode`/`cultureName` (the buyer context the cart will use) and gates on
+`price.USD:(0 TO)`, so the discovered product is one `addItem` actually accepts — not merely one that
+exists in catalog browse. (Cart buyability = placed + indexed in the B2B-mixed catalog with a valid
+price, which is stricter than "appears in `products()`"; see `project_vcstqa_cart_price_invalid_blocker`.)
 
-[GQL-OP rootQuery]
-query($storeId: String!) {
-  categories(storeId: $storeId, first: 1) { items { id } }
-}
-[GQL-VARS rootQuery] {"storeId": "{{STORE_ID}}"}
-[GQL-EXEC rootQuery]
-[GQL-CAPTURE rootQuery.categories.items.0.id → CAT_ROOT]
+```text
+[AUTH role=ORG_USER]
 
 [GQL-OP pickProduct]
-query($storeId: String!, $filter: String!) {
-  products(storeId: $storeId, filter: $filter, first: 1) {
+query($storeId: String!, $userId: String, $cur: String, $cul: String, $filter: String!) {
+  products(storeId: $storeId, userId: $userId, currencyCode: $cur, cultureName: $cul, filter: $filter, first: 1) {
     items { id code }
   }
 }
-[GQL-VARS pickProduct] {"storeId": "{{STORE_ID}}", "filter": "category.subtree:{{CAT_ROOT}}"}
+[GQL-VARS pickProduct] {"storeId": "{{STORE_ID}}", "userId": "@td(ORG_USER.id)", "cur": "USD", "cul": "en-US", "filter": "category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)"}
 [GQL-EXEC pickProduct]
 [GQL-CAPTURE pickProduct.products.items.0.id → PRODUCT_ID]
 
@@ -204,7 +209,7 @@ query($storeId: String!, $filter: String!) {
 mutation($command: InputAddItemType!) {
   addItem(command: $command) { id itemsCount }
 }
-[GQL-VARS addToCart] {"command": {"storeId": "{{STORE_ID}}", "currencyCode": "USD", "userId": "@td(USER_DEFAULT.id)", "productId": "{{PRODUCT_ID}}", "quantity": 1}}
+[GQL-VARS addToCart] {"command": {"storeId": "{{STORE_ID}}", "currencyCode": "USD", "cultureName": "en-US", "userId": "@td(ORG_USER.id)", "productId": "{{PRODUCT_ID}}", "quantity": 1}}
 [GQL-EXEC addToCart]
 ```
 
