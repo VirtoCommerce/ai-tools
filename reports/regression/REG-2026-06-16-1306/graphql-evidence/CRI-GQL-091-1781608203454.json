@@ -1,0 +1,88 @@
+{
+  "caseId": "CRI-GQL-091",
+  "title": "xCart — validateCoupon Query Returns false for Invalid Coupon",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:10:03.452Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:10:02.698Z",
+      "expiresAt": "2026-06-16T11:40:01.698Z"
+    }
+  ],
+  "variables": {
+    "bogus_coupon": "BADCODE_NOT_VALID_99999",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 153
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "validate_bogus",
+      "query": "query {\n    validateCoupon(\n      storeId: \"B2B-store\"\n      userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      currencyCode: \"USD\"\n      coupon: \"BADCODE_NOT_VALID_99999\"\n    )\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "validateCoupon": false
+        },
+        "errors": [],
+        "elapsed_ms": 590
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=validate_bogus] errors[] empty",
+      "label": "validate_bogus",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=validate_bogus] data.validateCoupon = false",
+      "label": "validate_bogus",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.validateCoupon = false",
+      "actual": "data.validateCoupon = false"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Server does not crash or return HTTP 500 on invalid coupon; returns Boolean false",
+      "layer": "EVIDENCE",
+      "note": "Server does not crash or return HTTP 500 on invalid coupon; returns Boolean false",
+      "resolved": "Server does not crash or return HTTP 500 on invalid coupon; returns Boolean false"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only query",
+    "blocks": []
+  }
+}

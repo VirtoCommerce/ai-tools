@@ -1,0 +1,194 @@
+{
+  "caseId": "CRI-GQL-057",
+  "title": "createOrderFromCart — Org Member Happy Path (B2B)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:09:21.746Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:12.368Z",
+      "expiresAt": "2026-06-16T11:39:12.368Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "ORG_ID": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "CART_ID": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id contact { organizationId } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+            "contact": {
+              "organizationId": "6fb516c1-07f3-4af4-be5e-35961e3f7993"
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 172
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 222
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1474
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" currencyCode: \"USD\" cultureName: \"en-US\"\n      shipment: {\n        shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150\n        deliveryAddress: {\n          city: \"New York\" countryCode: \"USA\" countryName: \"United States\"\n          firstName: \"Test\" lastName: \"User\"\n          line1: \"123 Test St\" postalCode: \"10001\"\n          regionId: \"NY\" regionName: \"New York\"\n        }\n      }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 737
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_payment",
+      "query": "mutation {\n    addOrUpdateCartPayment(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" currencyCode: \"USD\" cultureName: \"en-US\"\n      payment: { paymentGatewayCode: \"DefaultManualPaymentMethod\" }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartPayment": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1259
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_order",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"95e62b6d-9924-490e-80e6-70e22f80cb1e\" }) { id number status organizationId } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": {
+            "id": "e227add4-8d02-4073-80e5-82e482665146",
+            "number": "CO260616-00019",
+            "status": "New",
+            "organizationId": "6fb516c1-07f3-4af4-be5e-35961e3f7993"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 5502
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_order] errors[] empty",
+      "label": "create_order",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=create_order] data.createOrderFromCart.id is non-empty GUID",
+      "label": "create_order",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart.id is non-empty GUID",
+      "actual": "data.createOrderFromCart.id = \"e227add4-8d02-4073-80e5-82e482665146\""
+    },
+    {
+      "raw": "[DATA label=create_order] data.createOrderFromCart.number is non-null",
+      "label": "create_order",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart.number is non-null",
+      "actual": "data.createOrderFromCart.number = \"CO260616-00019\""
+    },
+    {
+      "raw": "[DATA label=create_order] data.createOrderFromCart.status is non-null",
+      "label": "create_order",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart.status is non-null",
+      "actual": "data.createOrderFromCart.status = \"New\""
+    },
+    {
+      "raw": "[DATA label=create_order] data.createOrderFromCart.organizationId is non-null",
+      "label": "create_order",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart.organizationId is non-null",
+      "actual": "data.createOrderFromCart.organizationId = \"6fb516c1-07f3-4af4-be5e-35961e3f7993\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] verify data.createOrderFromCart.organizationId matches me.contact.organizationId (orgId persisted on order)",
+      "layer": "EVIDENCE",
+      "note": "verify data.createOrderFromCart.organizationId matches me.contact.organizationId (orgId persisted on order)",
+      "resolved": "verify data.createOrderFromCart.organizationId matches me.contact.organizationId (orgId persisted on order)"
+    }
+  ],
+  "cleanup": {
+    "raw": "Creates real order — cancel via Admin API if needed",
+    "blocks": []
+  }
+}

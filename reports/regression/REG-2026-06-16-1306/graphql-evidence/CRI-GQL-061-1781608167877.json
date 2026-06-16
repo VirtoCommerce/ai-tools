@@ -1,0 +1,186 @@
+{
+  "caseId": "CRI-GQL-061",
+  "title": "xCart — unSelectCartItems Unselects One of Multiple Items",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:09:27.876Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:23.981Z",
+      "expiresAt": "2026-06-16T11:39:23.981Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "LINE_ITEM_1": ""
+  },
+  "nullCaptures": [
+    "unselect_all.data.unSelectAllCartItems.items.0.id → LINE_ITEM_1 (undefined)"
+  ],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 134
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1423
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_one",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e",
+            "itemsCount": 1
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1607
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_all",
+      "query": "mutation {\n    unSelectAllCartItems(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) {\n      id itemsCount items { id productId selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectAllCartItems": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "itemsCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 269
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "select_one",
+      "query": "mutation {\n    selectCartItems(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      lineItemIds: [\"\"]\n    }) {\n      id itemsCount items { id selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectCartItems": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "itemsCount": 0,
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 197
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 251
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=unselect_all] errors[] empty",
+      "label": "unselect_all",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=unselect_all] data.unSelectAllCartItems.items.0.selectedForCheckout = false",
+      "label": "unselect_all",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.unSelectAllCartItems.items.0.selectedForCheckout = false",
+      "actual": "data.unSelectAllCartItems.items.0.selectedForCheckout = undefined"
+    },
+    {
+      "raw": "[ERRORS label=select_one] errors[] empty",
+      "label": "select_one",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=select_one] data.selectCartItems.items[?id={{LINE_ITEM_1}}].selectedForCheckout = true",
+      "label": "select_one",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.selectCartItems.items[?id=].selectedForCheckout = true",
+      "actual": "data.selectCartItems.items[?id=].selectedForCheckout = undefined"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions.",
+      "layer": "EVIDENCE",
+      "note": "LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions.",
+      "resolved": "LINE_ITEM_1: unSelectAll → selectedForCheckout=false; selectOne → selectedForCheckout=true. Roundtrip validates both directions."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

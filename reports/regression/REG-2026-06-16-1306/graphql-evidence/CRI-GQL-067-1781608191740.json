@@ -1,0 +1,215 @@
+{
+  "caseId": "CRI-GQL-067",
+  "title": "xCart — Checkout Blocked When All Items Unselected",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:09:51.739Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:48.068Z",
+      "expiresAt": "2026-06-16T11:39:48.068Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "PRODUCT_ID": "914b13c7-f20c-40cb-80ee-c65fcac4308c",
+    "CART_ID": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 135
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "914b13c7-f20c-40cb-80ee-c65fcac4308c"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 208
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 213
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_one",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"914b13c7-f20c-40cb-80ee-c65fcac4308c\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 332
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_all",
+      "query": "mutation { unSelectAllCartItems(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectAllCartItems": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 277
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" currencyCode: \"USD\" cultureName: \"en-US\"\n      shipment: {\n        shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150\n        deliveryAddress: { city: \"New York\" countryCode: \"USA\" countryName: \"United States\" firstName: \"Test\" lastName: \"User\" line1: \"123 Test St\" postalCode: \"10001\" regionId: \"NY\" regionName: \"New York\" }\n      }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1019
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_payment",
+      "query": "mutation {\n    addOrUpdateCartPayment(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" currencyCode: \"USD\" cultureName: \"en-US\"\n      payment: { paymentGatewayCode: \"DefaultManualPaymentMethod\" }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartPayment": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 296
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_order",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"95e62b6d-9924-490e-80e6-70e22f80cb1e\" }) { id number status } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": {
+            "id": "a3016774-6fc6-49e6-871a-b7f9ba69b7ab",
+            "number": "CO260616-00020",
+            "status": "New"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 688
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 489
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_order] errors[] non-empty",
+      "label": "create_order",
+      "kind": "ERRORS",
+      "passed": false,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] empty"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] errors[].message should reference empty cart or no selected items (BL-CHK-001). No HTTP 500. No real order created.",
+      "layer": "EVIDENCE",
+      "note": "errors[].message should reference empty cart or no selected items (BL-CHK-001). No HTTP 500. No real order created.",
+      "resolved": "errors[].message should reference empty cart or no selected items (BL-CHK-001). No HTTP 500. No real order created."
+    }
+  ],
+  "cleanup": {
+    "raw": "Cancel any order accidentally created via Admin API",
+    "blocks": []
+  }
+}

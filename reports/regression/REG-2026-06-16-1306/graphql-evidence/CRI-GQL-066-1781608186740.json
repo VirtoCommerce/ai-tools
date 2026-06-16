@@ -1,0 +1,179 @@
+{
+  "caseId": "CRI-GQL-066",
+  "title": "xCart — selectAllCartItems After Unselect All Restores Selection",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:09:46.740Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:44.483Z",
+      "expiresAt": "2026-06-16T11:39:43.483Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_1": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 140
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 274
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_first",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 currencyCode: \"USD\" cultureName: \"en-US\" }) { id subTotal { amount } itemsCount } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e",
+            "subTotal": {
+              "amount": 1493
+            },
+            "itemsCount": 2
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 360
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_all",
+      "query": "mutation { unSelectAllCartItems(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectAllCartItems": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 995
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "select_all",
+      "query": "mutation {\n    selectAllCartItems(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) {\n      id itemsCount subTotal { amount } items { id selectedForCheckout }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectAllCartItems": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "itemsCount": 0,
+            "subTotal": {
+              "amount": 0
+            },
+            "items": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 294
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 180
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=select_all] errors[] empty",
+      "label": "select_all",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=select_all] data.selectAllCartItems.id is non-null",
+      "label": "select_all",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.selectAllCartItems.id is non-null",
+      "actual": "data.selectAllCartItems.id = \"9dbb2878-1180-4c66-916e-754fc48b12ee\""
+    },
+    {
+      "raw": "[DATA label=select_all] data.selectAllCartItems.subTotal.amount > 0",
+      "label": "select_all",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.selectAllCartItems.subTotal.amount > 0",
+      "actual": "data.selectAllCartItems.subTotal.amount = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] After selectAll: every items[].selectedForCheckout=true; subTotal.amount > 0 restores to pre-unselect total (runner-manual). itemsCount >= 1.",
+      "layer": "EVIDENCE",
+      "note": "After selectAll: every items[].selectedForCheckout=true; subTotal.amount > 0 restores to pre-unselect total (runner-manual). itemsCount >= 1.",
+      "resolved": "After selectAll: every items[].selectedForCheckout=true; subTotal.amount > 0 restores to pre-unselect total (runner-manual). itemsCount >= 1."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

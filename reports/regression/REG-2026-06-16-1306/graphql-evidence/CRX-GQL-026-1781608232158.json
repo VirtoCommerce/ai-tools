@@ -1,0 +1,208 @@
+{
+  "caseId": "CRX-GQL-026",
+  "title": "xCart — Cart Invalidated After Order Creation",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:10:32.157Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:10:30.260Z",
+      "expiresAt": "2026-06-16T11:40:30.260Z"
+    }
+  ],
+  "variables": {
+    "PRODUCT_ID": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "CART_ID": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 147
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 298
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 325
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_shipment",
+      "query": "mutation {\n    addOrUpdateCartShipment(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      shipment: {\n        shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150\n        deliveryAddress: { city: \"New York\" countryCode: \"USA\" countryName: \"United States\" firstName: \"Test\" lastName: \"User\" line1: \"123 Test St\" postalCode: \"10001\" regionId: \"NY\" regionName: \"New York\" }\n      }\n    }) { id }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 305
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "set_payment",
+      "query": "mutation { addOrUpdateCartPayment(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" payment: { paymentGatewayCode: \"DefaultManualPaymentMethod\" } }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartPayment": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 202
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_order",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"9dbb2878-1180-4c66-916e-754fc48b12ee\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "The cart has validation errors",
+            "locations": [
+              {
+                "line": 1,
+                "column": 12
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ValidationError",
+              "codes": [
+                "ValidationError"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 332
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_after_convert",
+      "query": "mutation {\n    addItem(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      cartId: \"9dbb2878-1180-4c66-916e-754fc48b12ee\"\n      productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1\n    }) { id itemsCount status }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "itemsCount": 0,
+            "status": null
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 274
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_order] errors[] empty",
+      "label": "create_order",
+      "kind": "ERRORS",
+      "passed": false,
+      "expected": "errors[] empty",
+      "actual": "errors[] has 1 entry: [{\"message\":\"The cart has validation errors\",\"locations\":[{\"line\":1,\"column\":12}],\"path\":[\"createOrderFromCart\"],\"extensions\":{\"code\":\"ValidationError\",\"codes\":[\"ValidationError\"]}}]"
+    },
+    {
+      "raw": "[DATA label=create_order] data.createOrderFromCart.id is non-null",
+      "label": "create_order",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.createOrderFromCart.id is non-null",
+      "actual": "data.createOrderFromCart.id is null"
+    },
+    {
+      "raw": "[COUNT label=add_after_convert] data.addItem.itemsCount <= 1",
+      "label": "add_after_convert",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addItem.itemsCount <= 1",
+      "actual": "data.addItem.itemsCount = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] add_after_convert: cart must NOT grow beyond the pre-conversion state (itemsCount<=1 — the original item remains, no new item is appended). Either errors[] non-empty rejecting the addItem OR itemsCount stays at 1 (silent no-op). NO HTTP 500. Silent acceptance (itemsCount=2) is a P0 bug — duplicate inventory decrement after order.",
+      "layer": "EVIDENCE",
+      "note": "add_after_convert: cart must NOT grow beyond the pre-conversion state (itemsCount<=1 — the original item remains, no new item is appended). Either errors[] non-empty rejecting the addItem OR itemsCount stays at 1 (silent no-op). NO HTTP 500. Silent acceptance (itemsCount=2) is a P0 bug — duplicate inventory decrement after order.",
+      "resolved": "add_after_convert: cart must NOT grow beyond the pre-conversion state (itemsCount<=1 — the original item remains, no new item is appended). Either errors[] non-empty rejecting the addItem OR itemsCount stays at 1 (silent no-op). NO HTTP 500. Silent acceptance (itemsCount=2) is a P0 bug — duplicate inventory decrement after order."
+    }
+  ],
+  "cleanup": {
+    "raw": "Creates real order",
+    "blocks": []
+  }
+}

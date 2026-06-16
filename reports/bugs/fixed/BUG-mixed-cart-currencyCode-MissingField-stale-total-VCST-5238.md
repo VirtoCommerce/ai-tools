@@ -1,6 +1,6 @@
 # BUG — Loyalty Mixed Cart: Apollo `currencyCode` MissingFieldError on every cart write → console-error storm + stale Order Summary total `[Medium / cart cache integrity]`
 
-## Status: CONFIRMED — filed as VCST-5238
+## Status: FIXED — verified VCST-5238 (2026-06-16)
 
 **JIRA:** VCST-5238 (Bug, Medium, project VCST; filed 2026-06-10, Relates to VCST-5101)
 **Env:** vcst-qa storefront @ theme `2.51.0-pr-2310-eb35` · Platform 3.1035.0 · XCart 3.1018.0-pr-120 · store B2B-store · loyalty mode "Mixed Cart" (PTS) · user `@td(LOYALTY_VIP_USER)` · Browser: Edge (playwright-edge)
@@ -74,3 +74,11 @@ Medium — pervasive cart **cache** defect: a console error on **every** add/sel
 - **Component / module:** Apollo cart cache — optimistic line-item writers vs. `currencyCode` read selection (loyalty Mixed Cart)
 - **RCA anchors:** `client-app/core/api/graphql/config/links/utils.ts` → `handleOptimisticResponseUpdateCartQuantity` (`ItemResultType` omits `currencyCode`); `client-app/shared/cart/composables/useCart.ts` → `updateSelectionCache` / `CartItemsSelectionFragment`; `client-app/core/api/graphql/config/cache.ts` → `CartType.items { merge: false }`. Console: Apollo code 13 `"Can't find field 'currencyCode'"`.
 - **Routing confidence:** HIGH — layer proven by Layer-3 capture; the add-path optimistic builder's object shape matches the error payload exactly. (Source read against `dev`; deployed `pr-2310` adds the `currencyCode` read selection that surfaces it — the fix must align all three write/read sites.)
+
+## Resolution
+- **Fixed in:** vc-frontend PR [#2333](https://github.com/VirtoCommerce/vc-frontend/pull/2333) "fix(VCST-5238): apollo missing field" — theme `2.51.0-pr-2333-57c2` (confirmed live on vcst-qa).
+- **Change:** added `currencyCode` to `handleOptimisticResponseUpdateCartQuantity()` in `client-app/core/api/graphql/config/links/utils.ts` (both the existing-item map path and the new-item path, falling back to the cart currency code) so the optimistic `LineItemType` write matches the active read selection.
+- **Verified:** 2026-06-16, qa-frontend-expert on playwright-edge, vcst-qa. STR 3/3 clean; checklist 10/10; **0** Apollo `MissingFieldError` "currencyCode" (code 13) across all 3 add runs + cart-page qty update + unselect/select cycle. Network: `UpdateShortCartItemQuantity` → 200, both line items carry `currencyCode` (USD/PTS).
+- **Symptom B (stale total):** the unselect/select cycle was exercised live — totals now reconcile (USD $132 ↔ $0; PTS independent), so the user-visible stale-Total symptom is resolved. Note: PR #2333 touched only `utils.ts`, not the `useCart.ts` / `CartItemsSelectionFragment` selection writer originally flagged as a second site; live verification shows the unselect path is nonetheless clean, so either it didn't require the change or was resolved independently. No residual `currencyCode` errors observed.
+- **JIRA:** VCST-5238 → Tested (Ready for test → Testing → Tested). Left at TESTED for the dev/merge owner; not moved to Done while PR #2333 is still open.
+- **Evidence:** `tests/Sprint26-11/VCST-5238/` (verification-report.md + screenshots; HAR in `test-results/edge/har/`).

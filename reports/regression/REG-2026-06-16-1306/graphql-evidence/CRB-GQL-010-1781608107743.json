@@ -1,0 +1,243 @@
+{
+  "caseId": "CRB-GQL-010",
+  "title": "xCart — addCoupon Applies Valid and Rejects Invalid",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:08:27.742Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:08:25.546Z",
+      "expiresAt": "2026-06-16T11:38:24.546Z"
+    }
+  ],
+  "variables": {
+    "valid_coupon": "QA10OFF",
+    "invalid_coupon": "BADCODE_NOPE_99999",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "PRODUCT_ID": "4b405873-2e16-4d73-96da-feb5598dbf13"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 136
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "4b405873-2e16-4d73-96da-feb5598dbf13"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 229
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 247
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"4b405873-2e16-4d73-96da-feb5598dbf13\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 318
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_valid",
+      "query": "mutation {\n    addCoupon(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" couponCode: \"QA10OFF\" }) {\n      id coupons { code isAppliedSuccessfully } discountTotal { amount }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "coupons": [
+              {
+                "code": "QA10OFF",
+                "isAppliedSuccessfully": false
+              }
+            ],
+            "discountTotal": {
+              "amount": 0
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 247
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_invalid",
+      "query": "mutation {\n    addCoupon(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" couponCode: \"BADCODE_NOPE_99999\" }) {\n      id coupons { code isAppliedSuccessfully }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "coupons": [
+              {
+                "code": "QA10OFF",
+                "isAppliedSuccessfully": false
+              },
+              {
+                "code": "BADCODE_NOPE_99999",
+                "isAppliedSuccessfully": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 746
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 263
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=apply_valid] errors[] empty",
+      "label": "apply_valid",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=apply_valid] data.addCoupon.coupons is non-null",
+      "label": "apply_valid",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addCoupon.coupons is non-null",
+      "actual": "data.addCoupon.coupons = [{\"code\":\"QA10OFF\",\"isAppliedSuccessfully\":false}]"
+    },
+    {
+      "raw": "[COUNT label=apply_valid] data.addCoupon.coupons.length >= 1",
+      "label": "apply_valid",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.addCoupon.coupons.length >= 1",
+      "actual": "data.addCoupon.coupons.length = 1"
+    },
+    {
+      "raw": "[DATA label=apply_valid] data.addCoupon.discountTotal.amount > 0",
+      "label": "apply_valid",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.addCoupon.discountTotal.amount > 0",
+      "actual": "data.addCoupon.discountTotal.amount = 0"
+    },
+    {
+      "raw": "[ERRORS label=apply_invalid] errors[] empty",
+      "label": "apply_invalid",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=apply_invalid] data.addCoupon.coupons is non-null",
+      "label": "apply_invalid",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.addCoupon.coupons is non-null",
+      "actual": "data.addCoupon.coupons = [{\"code\":\"QA10OFF\",\"isAppliedSuccessfully\":false},{\"code\":\"BADCODE_NOPE_99999\",\"isAppliedSuccessfully\":false}]"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true (verify exact code matches alias); discountTotal.amount > 0 means coupon produced a real discount.",
+      "layer": "EVIDENCE",
+      "note": "apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true (verify exact code matches alias); discountTotal.amount > 0 means coupon produced a real discount.",
+      "resolved": "apply_valid: at least one entry in coupons[] has isAppliedSuccessfully=true (verify exact code matches alias); discountTotal.amount > 0 means coupon produced a real discount."
+    },
+    {
+      "raw": "[EVIDENCE] apply_invalid: xAPI contract — invalid codes ARE returned in coupons[] with isAppliedSuccessfully=false rather than via top-level errors[] (see CRI-GQL-091 pattern). Silent no-op via empty errors[] is acceptable here; assertion verifies the response shape is structured.",
+      "layer": "EVIDENCE",
+      "note": "apply_invalid: xAPI contract — invalid codes ARE returned in coupons[] with isAppliedSuccessfully=false rather than via top-level errors[] (see CRI-GQL-091 pattern). Silent no-op via empty errors[] is acceptable here; assertion verifies the response shape is structured.",
+      "resolved": "apply_invalid: xAPI contract — invalid codes ARE returned in coupons[] with isAppliedSuccessfully=false rather than via top-level errors[] (see CRI-GQL-091 pattern). Silent no-op via empty errors[] is acceptable here; assertion verifies the response shape is structured."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

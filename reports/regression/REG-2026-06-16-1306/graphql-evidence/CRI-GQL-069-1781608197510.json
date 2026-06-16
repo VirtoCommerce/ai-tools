@@ -1,0 +1,99 @@
+{
+  "caseId": "CRI-GQL-069",
+  "title": "xCart — removeCoupon Silent No-Op on Non-Existent Coupon",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:09:57.510Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:56.950Z",
+      "expiresAt": "2026-06-16T11:39:56.950Z"
+    }
+  ],
+  "variables": {
+    "bogus_coupon": "BADCODE_NEVER_APPLIED_99999",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 138
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "remove_nonexistent",
+      "query": "mutation {\n    removeCoupon(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      couponCode: \"BADCODE_NEVER_APPLIED_99999\"\n    }) { id coupons { code } }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "removeCoupon": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "coupons": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 412
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=remove_nonexistent] errors[] empty",
+      "label": "remove_nonexistent",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=remove_nonexistent] data.removeCoupon.id is non-null",
+      "label": "remove_nonexistent",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.removeCoupon.id is non-null",
+      "actual": "data.removeCoupon.id = \"9dbb2878-1180-4c66-916e-754fc48b12ee\""
+    },
+    {
+      "raw": "[COUNT label=remove_nonexistent] data.removeCoupon.coupons.length == 0",
+      "label": "remove_nonexistent",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.removeCoupon.coupons.length == 0",
+      "actual": "data.removeCoupon.coupons.length = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Silent no-op contract: errors[] empty, cart unchanged (coupons[] still empty since BADCODE_NEVER_APPLIED_99999 was never applied). NO HTTP 500.",
+      "layer": "EVIDENCE",
+      "note": "Silent no-op contract: errors[] empty, cart unchanged (coupons[] still empty since BADCODE_NEVER_APPLIED_99999 was never applied). NO HTTP 500.",
+      "resolved": "Silent no-op contract: errors[] empty, cart unchanged (coupons[] still empty since BADCODE_NEVER_APPLIED_99999 was never applied). NO HTTP 500."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — cart not modified",
+    "blocks": []
+  }
+}

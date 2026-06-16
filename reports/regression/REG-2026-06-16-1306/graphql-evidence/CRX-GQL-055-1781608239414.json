@@ -1,0 +1,80 @@
+{
+  "caseId": "CRX-GQL-055",
+  "title": "xOrder — createOrderFromCart Without Auth",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:10:39.414Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [],
+  "variables": {},
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "create_noauth",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"00000000-0000-0000-0000-000000000002\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "Error trying to resolve field 'createOrderFromCart'.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 12
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ARGUMENT",
+              "codes": [
+                "ARGUMENT"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 227
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_noauth] errors[] non-empty — Unauthorized (BL-GQL-004)",
+      "label": "create_noauth",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] has 1 entry"
+    },
+    {
+      "raw": "[DATA label=create_noauth] data.createOrderFromCart is null",
+      "label": "create_noauth",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart is null",
+      "actual": "data.createOrderFromCart is null"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] errors[].extensions.code = Unauthorized. No sensitive info in messages.",
+      "layer": "EVIDENCE",
+      "note": "errors[].extensions.code = Unauthorized. No sensitive info in messages.",
+      "resolved": "errors[].extensions.code = Unauthorized. No sensitive info in messages."
+    }
+  ],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

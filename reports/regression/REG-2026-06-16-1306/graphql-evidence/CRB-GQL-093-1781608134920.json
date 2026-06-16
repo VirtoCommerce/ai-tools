@@ -1,0 +1,127 @@
+{
+  "caseId": "CRB-GQL-093",
+  "title": "xCart — carts Query Lists User Carts with Pagination",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b1-graphql-xcart-basic.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:08:54.919Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:08:53.760Z",
+      "expiresAt": "2026-06-16T11:38:52.760Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 146
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "list_carts",
+      "query": "query {\n    carts(storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" first: 5) {\n      totalCount\n      items { id name itemsCount }\n    }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "carts": {
+            "totalCount": 4,
+            "items": [
+              {
+                "id": "7503e0f1-83ab-49c7-a3e7-d8b2279d4634",
+                "name": "Team Supplies",
+                "itemsCount": 2
+              },
+              {
+                "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+                "name": "default",
+                "itemsCount": 0
+              },
+              {
+                "id": "a191979f-7976-4bd1-b77d-06428c37519e",
+                "name": "default",
+                "itemsCount": 1
+              },
+              {
+                "id": "95e62b6d-9924-490e-80e6-70e22f80cb1e",
+                "name": "default",
+                "itemsCount": 0
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1006
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=list_carts] errors[] empty",
+      "label": "list_carts",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=list_carts] data.carts is non-null",
+      "label": "list_carts",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.carts is non-null",
+      "actual": "data.carts = {\"totalCount\":4,\"items\":[{\"id\":\"7503e0f1-83ab-49c7-a3e7-d8b2279d4634\",\"name\":\"Team Supplies\",\"itemsCount\":2},{\"id\":\"9dbb2878-1180-4c66-916e-754fc48b12ee\",\"name\":\"default\",\"itemsCount\":0},{\"id\":\"a19197…"
+    },
+    {
+      "raw": "[COUNT label=list_carts] data.carts.totalCount >= 0",
+      "label": "list_carts",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.carts.totalCount >= 0",
+      "actual": "data.carts.totalCount = 4"
+    },
+    {
+      "raw": "[DATA label=list_carts] data.carts.items is non-null",
+      "label": "list_carts",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.carts.items is non-null",
+      "actual": "data.carts.items = [{\"id\":\"7503e0f1-83ab-49c7-a3e7-d8b2279d4634\",\"name\":\"Team Supplies\",\"itemsCount\":2},{\"id\":\"9dbb2878-1180-4c66-916e-754fc48b12ee\",\"name\":\"default\",\"itemsCount\":0},{\"id\":\"a191979f-7976-4bd1-b77d-06428c…"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[ROUNDTRIP label=list_carts] query is deterministic — re-execution returns same totalCount",
+      "layer": "ROUNDTRIP",
+      "note": "query is deterministic — re-execution returns same totalCount",
+      "resolved": "query is deterministic — re-execution returns same totalCount"
+    }
+  ],
+  "cleanup": {
+    "raw": "none — read-only",
+    "blocks": []
+  }
+}

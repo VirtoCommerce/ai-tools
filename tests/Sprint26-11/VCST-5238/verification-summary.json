@@ -1,0 +1,26 @@
+{
+  "ticket": "VCST-5238",
+  "verdict": "VERIFIED",
+  "date": "2026-06-16",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1035.0",
+    "theme": "2.51.0-pr-2333-57c2",
+    "relevant_modules": { "XCart": "3.1018.0" },
+    "pr_build": "vc-theme-b2b-vue-2.51.0-pr-2333-57c2-57c28af5 (PR #2333, confirmed live)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-edge",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "currencyCode_error_count": 0,
+  "regression_issues": [],
+  "side_effects": ["2 pre-existing benign image 404s (GC952104 .webp), unrelated to the fix"],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CART (cart total == sum of line items; line-item currency consistent)"],
+  "jira_transition": "Ready for test -> Testing -> Tested",
+  "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2333",
+  "artifacts": "tests/Sprint26-11/VCST-5238/"
+}

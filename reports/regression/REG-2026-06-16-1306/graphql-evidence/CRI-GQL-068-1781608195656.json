@@ -1,0 +1,195 @@
+{
+  "caseId": "CRI-GQL-068",
+  "title": "xCart — removeCoupon Removes Applied Coupon",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b2-graphql-xcart-items.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:09:55.655Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:09:53.061Z",
+      "expiresAt": "2026-06-16T11:39:53.061Z"
+    }
+  ],
+  "variables": {
+    "coupon_code": "QA10OFF",
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "PRODUCT_ID": "a8c1da6d-f611-49e0-abaa-a3d738c33e13"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 131
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "setup_prod",
+      "query": "query { products(storeId: \"B2B-store\" currencyCode: \"USD\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.USD:(0 TO) inStock_variations:true\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "a8c1da6d-f611-49e0-abaa-a3d738c33e13"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 203
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 213
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" productId: \"a8c1da6d-f611-49e0-abaa-a3d738c33e13\" quantity: 1 }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1424
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_coupon",
+      "query": "mutation { addCoupon(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" couponCode: \"QA10OFF\" }) { id coupons { code isAppliedSuccessfully } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "coupons": [
+              {
+                "code": "QA10OFF",
+                "isAppliedSuccessfully": false
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 232
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "remove_coupon",
+      "query": "mutation {\n    removeCoupon(command: {\n      storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\"\n      couponCode: \"QA10OFF\"\n    }) { id coupons { code } discountTotal { amount } }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "removeCoupon": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee",
+            "coupons": [],
+            "discountTotal": {
+              "amount": 0
+            }
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 196
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 178
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=remove_coupon] errors[] empty",
+      "label": "remove_coupon",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=remove_coupon] data.removeCoupon.id is non-null",
+      "label": "remove_coupon",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.removeCoupon.id is non-null",
+      "actual": "data.removeCoupon.id = \"9dbb2878-1180-4c66-916e-754fc48b12ee\""
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Verify coupons[] no longer contains QA10OFF. discountTotal.amount = 0 post-remove (runner-manual).",
+      "layer": "EVIDENCE",
+      "note": "Verify coupons[] no longer contains QA10OFF. discountTotal.amount = 0 post-remove (runner-manual).",
+      "resolved": "Verify coupons[] no longer contains QA10OFF. discountTotal.amount = 0 post-remove (runner-manual)."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — clearCart at end",
+    "blocks": []
+  }
+}

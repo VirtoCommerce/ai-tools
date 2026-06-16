@@ -1,0 +1,125 @@
+{
+  "caseId": "CRX-GQL-053",
+  "title": "xOrder — createOrderFromCart with Empty Cart",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:10:36.730Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:10:36.034Z",
+      "expiresAt": "2026-06-16T11:40:36.034Z"
+    }
+  ],
+  "variables": {
+    "USER_ID": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d",
+    "CART_ID": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 140
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "pre_clear",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"e3764a66-5aa5-47c4-85f6-4078d99f5a4d\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "9dbb2878-1180-4c66-916e-754fc48b12ee"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 328
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "create_empty",
+      "query": "mutation { createOrderFromCart(command: { cartId: \"9dbb2878-1180-4c66-916e-754fc48b12ee\" }) { id number status } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "The cart has validation errors",
+            "locations": [
+              {
+                "line": 1,
+                "column": 12
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ValidationError",
+              "codes": [
+                "ValidationError"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 218
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_empty] errors[] non-empty",
+      "label": "create_empty",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] has 1 entry"
+    },
+    {
+      "raw": "[DATA label=create_empty] data.createOrderFromCart is null",
+      "label": "create_empty",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart is null",
+      "actual": "data.createOrderFromCart is null"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] create_empty: errors[] non-empty with empty-cart/validation message AND data.createOrderFromCart is null. NO HTTP 500 or server crash. Order must NOT be created. Silent no-op (200 + null data + errors[] empty) is a P0 bug — fail the test.",
+      "layer": "EVIDENCE",
+      "note": "create_empty: errors[] non-empty with empty-cart/validation message AND data.createOrderFromCart is null. NO HTTP 500 or server crash. Order must NOT be created. Silent no-op (200 + null data + errors[] empty) is a P0 bug — fail the test.",
+      "resolved": "create_empty: errors[] non-empty with empty-cart/validation message AND data.createOrderFromCart is null. NO HTTP 500 or server crash. Order must NOT be created. Silent no-op (200 + null data + errors[] empty) is a P0 bug — fail the test."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — cart already empty",
+    "blocks": []
+  }
+}

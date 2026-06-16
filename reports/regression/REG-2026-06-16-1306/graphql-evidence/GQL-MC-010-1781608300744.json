@@ -1,0 +1,407 @@
+{
+  "caseId": "GQL-MC-010",
+  "title": "Mixed Cart — cart-% coupon base scoped to selected USD lines (unselecting PTS must not change the discount)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "FAIL",
+  "executedAt": "2026-06-16T11:11:40.743Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "LOYALTY_VIP_USER",
+      "acquiredAt": "2026-06-16T11:11:36.499Z",
+      "expiresAt": "2026-06-16T11:41:35.499Z"
+    }
+  ],
+  "variables": {
+    "storeId": "{{STORE_ID}}",
+    "usd_product": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "coupon": "QA10OFF",
+    "loyalty_currency": "PTS",
+    "USER_ID": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
+    "PTS_PRODUCT_ID": "d8ebf158-1e4c-4ebb-b906-af4f69b350fe",
+    "DISC_ALL": "",
+    "USD_LINE_ID": "c774747c-4e8d-4134-8859-a12ef1df696e",
+    "PTS_LINE_ID": "eb6c141b-4de8-4982-81e3-baea762f7d0a",
+    "DISC_USD_ONLY": "",
+    "DISC_RESELECT_ALL": ""
+  },
+  "nullCaptures": [
+    "read_all_selected.data.cart.discounts[?coupon=QA10OFF].amount → DISC_ALL (undefined)",
+    "read_pts_unsel.data.cart.discounts[?coupon=QA10OFF].amount → DISC_USD_ONLY (undefined)",
+    "read_reselected.data.cart.discounts[?coupon=QA10OFF].amount → DISC_RESELECT_ALL (undefined)"
+  ],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "1dba59a3-7658-4b3f-9517-6549aebbf5b1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 130
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 355
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "discover_pts_product",
+      "query": "query { products(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"PTS\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.PTS:(0 TO)\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "d8ebf158-1e4c-4ebb-b906-af4f69b350fe"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 165
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_usd_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 }) { id items { id currencyCode } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf",
+            "items": [
+              {
+                "id": "c774747c-4e8d-4134-8859-a12ef1df696e",
+                "currencyCode": "USD"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 229
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "apply_coupon",
+      "query": "mutation { addCoupon(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" cultureName: \"en-US\" couponCode: \"QA10OFF\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addCoupon": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 210
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_pts_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" productId: \"d8ebf158-1e4c-4ebb-b906-af4f69b350fe\" quantity: 1 itemCurrencyCode: \"PTS\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 334
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_all_selected",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { discounts { amount coupon } items { id currencyCode selectedForCheckout } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "discounts": [],
+            "items": [
+              {
+                "id": "eb6c141b-4de8-4982-81e3-baea762f7d0a",
+                "currencyCode": "PTS",
+                "selectedForCheckout": true
+              },
+              {
+                "id": "c774747c-4e8d-4134-8859-a12ef1df696e",
+                "currencyCode": "USD",
+                "selectedForCheckout": true
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 222
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_pts",
+      "query": "mutation { unSelectCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" lineItemIds: \"eb6c141b-4de8-4982-81e3-baea762f7d0a\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 247
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_pts_unsel",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { discounts { amount coupon } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "discounts": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 187
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "reselect_pts",
+      "query": "mutation { selectCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" lineItemIds: \"eb6c141b-4de8-4982-81e3-baea762f7d0a\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 853
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_usd",
+      "query": "mutation { unSelectCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" lineItemIds: \"c774747c-4e8d-4134-8859-a12ef1df696e\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 265
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_only_pts",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { discounts { amount coupon } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "discounts": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 206
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "reselect_all",
+      "query": "mutation { selectAllCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "selectAllCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 247
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_reselected",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") { discounts { amount coupon } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "discounts": []
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 255
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 320
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=read_all_selected] errors[] empty",
+      "label": "read_all_selected",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_pts_unsel] errors[] empty",
+      "label": "read_pts_unsel",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_only_pts] errors[] empty",
+      "label": "read_only_pts",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_reselected] errors[] empty",
+      "label": "read_reselected",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[DATA label=read_all_selected] data.cart.discounts[?coupon=QA10OFF].amount is non-null",
+      "label": "read_all_selected",
+      "kind": "DATA",
+      "passed": false,
+      "expected": "data.cart.discounts[?coupon=QA10OFF].amount is non-null",
+      "actual": "data.cart.discounts[?coupon=QA10OFF].amount is null"
+    },
+    {
+      "raw": "[VAR] {{DISC_ALL}} = {{DISC_USD_ONLY}}",
+      "label": "_default",
+      "kind": "VAR",
+      "passed": true,
+      "expected": " = ",
+      "actual": " = "
+    },
+    {
+      "raw": "[VAR] {{DISC_RESELECT_ALL}} = {{DISC_USD_ONLY}}",
+      "label": "_default",
+      "kind": "VAR",
+      "passed": true,
+      "expected": " = ",
+      "actual": " = "
+    },
+    {
+      "raw": "[COUNT label=read_only_pts] data.cart.discounts = 0",
+      "label": "read_only_pts",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cart.discounts = 0",
+      "actual": "data.cart.discounts = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[API] POST-FIX: coupon discount with ALL lines selected (DISC_ALL) must equal the USD-only base (DISC_USD_ONLY, captured with PTS unselected). Re-select-all returns to that value. With only the PTS line selected, discounts[] is empty (no primary-currency base). RED today: DISC_ALL leaks the PTS value -> DISC_ALL != DISC_USD_ONLY.",
+      "layer": "API",
+      "note": "POST-FIX: coupon discount with ALL lines selected (DISC_ALL) must equal the USD-only base (DISC_USD_ONLY, captured with PTS unselected). Re-select-all returns to that value. With only the PTS line selected, discounts[] is empty (no primary-currency base). RED today: DISC_ALL leaks the PTS value -> DISC_ALL != DISC_USD_ONLY.",
+      "resolved": "POST-FIX: coupon discount with ALL lines selected (DISC_ALL) must equal the USD-only base (DISC_USD_ONLY, captured with PTS unselected). Re-select-all returns to that value. With only the PTS line selected, discounts[] is empty (no primary-currency base). RED today: DISC_ALL leaks the PTS value -> DISC_ALL != DISC_USD_ONLY."
+    }
+  ],
+  "cleanup": {
+    "raw": "cleanup_post inline",
+    "blocks": []
+  }
+}

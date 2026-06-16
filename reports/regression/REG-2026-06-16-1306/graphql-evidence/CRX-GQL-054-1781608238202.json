@@ -1,0 +1,88 @@
+{
+  "caseId": "CRX-GQL-054",
+  "title": "xOrder — createOrderFromCart with Invalid cartId",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:10:38.201Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "ORG_USER",
+      "acquiredAt": "2026-06-16T11:10:38.046Z",
+      "expiresAt": "2026-06-16T11:40:38.046Z"
+    }
+  ],
+  "variables": {
+    "bogus_cart": "00000000-0000-0000-0000-000000000001"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "create_bogus",
+      "query": "mutation {\n    createOrderFromCart(command: { cartId: \"00000000-0000-0000-0000-000000000001\" }) { id number status }\n  }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "createOrderFromCart": null
+        },
+        "errors": [
+          {
+            "message": "Error trying to resolve field 'createOrderFromCart'.",
+            "locations": [
+              {
+                "line": 2,
+                "column": 5
+              }
+            ],
+            "path": [
+              "createOrderFromCart"
+            ],
+            "extensions": {
+              "code": "ARGUMENT",
+              "codes": [
+                "ARGUMENT"
+              ]
+            }
+          }
+        ],
+        "elapsed_ms": 147
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=create_bogus] errors[] non-empty — cart not found (BL-GQL-001)",
+      "label": "create_bogus",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] non-empty",
+      "actual": "errors[] has 1 entry"
+    },
+    {
+      "raw": "[DATA label=create_bogus] data.createOrderFromCart is null",
+      "label": "create_bogus",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.createOrderFromCart is null",
+      "actual": "data.createOrderFromCart is null"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path.",
+      "layer": "EVIDENCE",
+      "note": "Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path.",
+      "resolved": "Error messages don't leak stack traces or internal paths. Well-formed GraphQL error with message + path."
+    }
+  ],
+  "cleanup": {
+    "raw": "none",
+    "blocks": []
+  }
+}

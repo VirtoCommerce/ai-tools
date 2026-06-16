@@ -1,0 +1,732 @@
+{
+  "caseId": "GQL-MC-012",
+  "title": "Mixed Cart — unselect ALL line items: ALL cartTotals[] buckets must zero (totals not selection-gated in cartTotals[] projection — REGRESSION GUARD)",
+  "source": "C:\\Users\\mutyk\\My Projects\\vc-mcp-testing-module\\regression\\suites\\Backend\\graphql\\050b4-graphql-xcart-cross-domain.csv",
+  "verdict": "PASS",
+  "executedAt": "2026-06-16T11:11:52.896Z",
+  "backUrl": "https://vcst-qa.govirto.com",
+  "tokens": [
+    {
+      "role": "LOYALTY_VIP_USER",
+      "acquiredAt": "2026-06-16T11:11:46.704Z",
+      "expiresAt": "2026-06-16T11:41:45.704Z"
+    }
+  ],
+  "variables": {
+    "storeId": "{{STORE_ID}}",
+    "loyalty_currency": "PTS",
+    "USER_ID": "1dba59a3-7658-4b3f-9517-6549aebbf5b1",
+    "PTS_PRODUCT_ID": "d8ebf158-1e4c-4ebb-b906-af4f69b350fe",
+    "USD_LINE_ID": "865a2ce6-8c21-4bdf-8f58-5ce5014df732",
+    "PTS_LINE_ID": "5db503f4-120f-45a8-aab6-0613dbc76bd9",
+    "SHIP_CODE": "FixedRate",
+    "SHIP_OPTION": "Ground",
+    "SHIP_PRICE": "150"
+  },
+  "nullCaptures": [],
+  "schemaRefreshed": false,
+  "operations": [
+    {
+      "label": "setup_me",
+      "query": "query { me { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "me": {
+            "id": "1dba59a3-7658-4b3f-9517-6549aebbf5b1"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 139
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_pre",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 306
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "discover_pts_product",
+      "query": "query { products(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"PTS\" first: 1 filter: \"category.subtree:fc596540864a41bf8ab78734ee7353a3 price.PTS:(0 TO)\") { items { id } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "products": {
+            "items": [
+              {
+                "id": "d8ebf158-1e4c-4ebb-b906-af4f69b350fe"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 142
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_usd_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\" productId: \"0b6297e8-d100-4419-ac54-8bf240777271\" quantity: 1 }) { id items { id currencyCode } } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf",
+            "items": [
+              {
+                "id": "865a2ce6-8c21-4bdf-8f58-5ce5014df732",
+                "currencyCode": "USD"
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 1149
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_pts_item",
+      "query": "mutation { addItem(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\" productId: \"d8ebf158-1e4c-4ebb-b906-af4f69b350fe\" quantity: 1 itemCurrencyCode: \"PTS\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addItem": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 398
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_pre",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") {\n    itemsCount\n    total { amount currency { code } } subTotal { amount } taxTotal { amount }\n    shippingPrice { amount } shippingTotal { amount }\n    items { id currencyCode selectedForCheckout }\n    availableShippingMethods { code name optionName price { amount currency { code } } }\n    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }\n  } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "itemsCount": 2,
+            "total": {
+              "amount": 240,
+              "currency": {
+                "code": "USD"
+              }
+            },
+            "subTotal": {
+              "amount": 200
+            },
+            "taxTotal": {
+              "amount": 40
+            },
+            "shippingPrice": {
+              "amount": 0
+            },
+            "shippingTotal": {
+              "amount": 0
+            },
+            "items": [
+              {
+                "id": "5db503f4-120f-45a8-aab6-0613dbc76bd9",
+                "currencyCode": "PTS",
+                "selectedForCheckout": true
+              },
+              {
+                "id": "865a2ce6-8c21-4bdf-8f58-5ce5014df732",
+                "currencyCode": "USD",
+                "selectedForCheckout": true
+              }
+            ],
+            "availableShippingMethods": [
+              {
+                "code": "BuyOnlinePickupInStore",
+                "name": "Buy Online Pickup In Store",
+                "optionName": "Pickup",
+                "price": {
+                  "amount": 0,
+                  "currency": {
+                    "code": "USD"
+                  }
+                }
+              },
+              {
+                "code": "FixedRate",
+                "name": "Fixed shipping rate",
+                "optionName": "Ground",
+                "price": {
+                  "amount": 150,
+                  "currency": {
+                    "code": "USD"
+                  }
+                }
+              },
+              {
+                "code": "FixedRate",
+                "name": "Fixed shipping rate",
+                "optionName": "Air",
+                "price": {
+                  "amount": 250,
+                  "currency": {
+                    "code": "USD"
+                  }
+                }
+              }
+            ],
+            "cartTotals": [
+              {
+                "isDefaultTotalCurrency": true,
+                "total": {
+                  "amount": 240,
+                  "currency": {
+                    "code": "USD"
+                  }
+                },
+                "subTotal": {
+                  "amount": 200
+                },
+                "taxTotal": {
+                  "amount": 40
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              },
+              {
+                "isDefaultTotalCurrency": false,
+                "total": {
+                  "amount": 150,
+                  "currency": {
+                    "code": "PTS"
+                  }
+                },
+                "subTotal": {
+                  "amount": 150
+                },
+                "taxTotal": {
+                  "amount": 0
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 360
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "add_shipment",
+      "query": "mutation { addOrUpdateCartShipment(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\" shipment: { shipmentMethodCode: \"FixedRate\" shipmentMethodOption: \"Ground\" price: 150 deliveryAddress: { city: \"New York\" countryCode: \"US\" countryName: \"United States\" firstName: \"Test\" lastName: \"User\" line1: \"123 Test St\" postalCode: \"10001\" } } }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "addOrUpdateCartShipment": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 537
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_with_ship",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") {\n    total { amount } subTotal { amount } taxTotal { amount } shippingTotal { amount }\n    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }\n    shipments { id shipmentMethodCode price { amount } }\n  } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "total": {
+              "amount": 420
+            },
+            "subTotal": {
+              "amount": 200
+            },
+            "taxTotal": {
+              "amount": 70
+            },
+            "shippingTotal": {
+              "amount": 150
+            },
+            "cartTotals": [
+              {
+                "isDefaultTotalCurrency": true,
+                "total": {
+                  "amount": 420,
+                  "currency": {
+                    "code": "USD"
+                  }
+                },
+                "subTotal": {
+                  "amount": 200
+                },
+                "taxTotal": {
+                  "amount": 70
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              },
+              {
+                "isDefaultTotalCurrency": false,
+                "total": {
+                  "amount": 150,
+                  "currency": {
+                    "code": "PTS"
+                  }
+                },
+                "subTotal": {
+                  "amount": 150
+                },
+                "taxTotal": {
+                  "amount": 0
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              }
+            ],
+            "shipments": [
+              {
+                "id": "42cce71a-915f-4c4f-9291-bb0ad3ed5675",
+                "shipmentMethodCode": "FixedRate",
+                "price": {
+                  "amount": 150
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 272
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_usd",
+      "query": "mutation { unSelectCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" lineItemIds: \"865a2ce6-8c21-4bdf-8f58-5ce5014df732\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 258
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "unselect_pts",
+      "query": "mutation { unSelectCartItems(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" lineItemIds: \"5db503f4-120f-45a8-aab6-0613dbc76bd9\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "unSelectCartItems": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 2174
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "read_unsel",
+      "query": "query { cart(storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" currencyCode: \"USD\" cultureName: \"en-US\") {\n    itemsCount\n    total { amount currency { code } } subTotal { amount } taxTotal { amount }\n    shippingPrice { amount } shippingTotal { amount }\n    items { id currencyCode selectedForCheckout }\n    cartTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } }\n  } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "cart": {
+            "itemsCount": 2,
+            "total": {
+              "amount": 0,
+              "currency": {
+                "code": "USD"
+              }
+            },
+            "subTotal": {
+              "amount": 0
+            },
+            "taxTotal": {
+              "amount": 0
+            },
+            "shippingPrice": {
+              "amount": 0
+            },
+            "shippingTotal": {
+              "amount": 0
+            },
+            "items": [
+              {
+                "id": "5db503f4-120f-45a8-aab6-0613dbc76bd9",
+                "currencyCode": "PTS",
+                "selectedForCheckout": false
+              },
+              {
+                "id": "865a2ce6-8c21-4bdf-8f58-5ce5014df732",
+                "currencyCode": "USD",
+                "selectedForCheckout": false
+              }
+            ],
+            "cartTotals": [
+              {
+                "isDefaultTotalCurrency": true,
+                "total": {
+                  "amount": 0,
+                  "currency": {
+                    "code": "USD"
+                  }
+                },
+                "subTotal": {
+                  "amount": 0
+                },
+                "taxTotal": {
+                  "amount": 0
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              },
+              {
+                "isDefaultTotalCurrency": false,
+                "total": {
+                  "amount": 0,
+                  "currency": {
+                    "code": "PTS"
+                  }
+                },
+                "subTotal": {
+                  "amount": 0
+                },
+                "taxTotal": {
+                  "amount": 0
+                },
+                "discountTotal": {
+                  "amount": 0
+                }
+              }
+            ]
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 193
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    },
+    {
+      "label": "cleanup_post",
+      "query": "mutation { clearCart(command: { storeId: \"B2B-store\" userId: \"1dba59a3-7658-4b3f-9517-6549aebbf5b1\" }) { id } }",
+      "variables": {},
+      "response": {
+        "status": 200,
+        "ok": true,
+        "data": {
+          "clearCart": {
+            "id": "184e9a35-3fbb-4883-ae51-e8c72104f0bf"
+          }
+        },
+        "errors": [],
+        "elapsed_ms": 242
+      },
+      "schemaValid": true,
+      "schemaErrors": []
+    }
+  ],
+  "assertions": [
+    {
+      "raw": "[ERRORS label=discover_pts_product] errors[] empty",
+      "label": "discover_pts_product",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=add_usd_item] errors[] empty",
+      "label": "add_usd_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=add_pts_item] errors[] empty",
+      "label": "add_pts_item",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_pre] errors[] empty",
+      "label": "read_pre",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=add_shipment] errors[] empty",
+      "label": "add_shipment",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_with_ship] errors[] empty",
+      "label": "read_with_ship",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=unselect_usd] errors[] empty",
+      "label": "unselect_usd",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=unselect_pts] errors[] empty",
+      "label": "unselect_pts",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[ERRORS label=read_unsel] errors[] empty",
+      "label": "read_unsel",
+      "kind": "ERRORS",
+      "passed": true,
+      "expected": "errors[] empty",
+      "actual": "errors[] empty"
+    },
+    {
+      "raw": "[COUNT label=read_pre] data.cart.items >= 2",
+      "label": "read_pre",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cart.items >= 2",
+      "actual": "data.cart.items = 2"
+    },
+    {
+      "raw": "[COUNT label=read_pre] data.cart.cartTotals = 2",
+      "label": "read_pre",
+      "kind": "COUNT",
+      "passed": true,
+      "expected": "data.cart.cartTotals = 2",
+      "actual": "data.cart.cartTotals = 2"
+    },
+    {
+      "raw": "[DATA label=read_with_ship] data.cart.shippingTotal.amount > 0",
+      "label": "read_with_ship",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.shippingTotal.amount > 0",
+      "actual": "data.cart.shippingTotal.amount = 150"
+    },
+    {
+      "raw": "[DATA label=read_with_ship] data.cart.total.amount > 0",
+      "label": "read_with_ship",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.total.amount > 0",
+      "actual": "data.cart.total.amount = 420"
+    },
+    {
+      "raw": "[DATA label=read_with_ship] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount > 0",
+      "label": "read_with_ship",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount > 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 420"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.items[?id={{USD_LINE_ID}}].selectedForCheckout = false",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items[?id=865a2ce6-8c21-4bdf-8f58-5ce5014df732].selectedForCheckout = false",
+      "actual": "data.cart.items[?id=865a2ce6-8c21-4bdf-8f58-5ce5014df732].selectedForCheckout = false"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.items[?id={{PTS_LINE_ID}}].selectedForCheckout = false",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.items[?id=5db503f4-120f-45a8-aab6-0613dbc76bd9].selectedForCheckout = false",
+      "actual": "data.cart.items[?id=5db503f4-120f-45a8-aab6-0613dbc76bd9].selectedForCheckout = false"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.subTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.subTotal.amount = 0",
+      "actual": "data.cart.subTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.taxTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.taxTotal.amount = 0",
+      "actual": "data.cart.taxTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.shippingTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.shippingTotal.amount = 0",
+      "actual": "data.cart.shippingTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.shippingPrice.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.shippingPrice.amount = 0",
+      "actual": "data.cart.shippingPrice.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.total.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.total.amount = 0",
+      "actual": "data.cart.total.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=true].total.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].subTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=true].subTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=true].subTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=true].taxTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=true].discountTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].total.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=false].total.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=false].total.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=false].subTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=false].taxTotal.amount = 0"
+    },
+    {
+      "raw": "[DATA label=read_unsel] data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0",
+      "label": "read_unsel",
+      "kind": "DATA",
+      "passed": true,
+      "expected": "data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0",
+      "actual": "data.cart.cartTotals[?isDefaultTotalCurrency=false].discountTotal.amount = 0"
+    }
+  ],
+  "infoAssertions": [],
+  "crossLayerChecks": [
+    {
+      "raw": "[EVIDENCE] DECISIVE BACKEND GUARD — no Apollo cache in path. PRE: 2 items selected + Ground shipment; cartTotals[] 2 buckets non-zero. WITH_SHIP: confirms USD bucket total > 0 (shipping applied). UNSEL: flat fields all = 0 (PASS today); cartTotals[] USD bucket total/taxTotal = 0 (FAILS today: 180/30 leak). PTS bucket total = 0 (PASS today). FAIL on cartTotals[?isDefaultTotalCurrency=true].total/taxTotal guards = active backend bug confirmed. PASS on all guards = fix verified (CartTotals projection now selection-gated). [ADMIN] After the fix, the Admin order-creation flow for a cart with all items deselected should show $0.00 grand total.",
+      "layer": "EVIDENCE",
+      "note": "DECISIVE BACKEND GUARD — no Apollo cache in path. PRE: 2 items selected + Ground shipment; cartTotals[] 2 buckets non-zero. WITH_SHIP: confirms USD bucket total > 0 (shipping applied). UNSEL: flat fields all = 0 (PASS today); cartTotals[] USD bucket total/taxTotal = 0 (FAILS today: 180/30 leak). PTS bucket total = 0 (PASS today). FAIL on cartTotals[?isDefaultTotalCurrency=true].total/taxTotal guards = active backend bug confirmed. PASS on all guards = fix verified (CartTotals projection now selection-gated). [ADMIN] After the fix, the Admin order-creation flow for a cart with all items deselected should show $0.00 grand total.",
+      "resolved": "DECISIVE BACKEND GUARD — no Apollo cache in path. PRE: 2 items selected + Ground shipment; cartTotals[] 2 buckets non-zero. WITH_SHIP: confirms USD bucket total > 0 (shipping applied). UNSEL: flat fields all = 0 (PASS today); cartTotals[] USD bucket total/taxTotal = 0 (FAILS today: 180/30 leak). PTS bucket total = 0 (PASS today). FAIL on cartTotals[?isDefaultTotalCurrency=true].total/taxTotal guards = active backend bug confirmed. PASS on all guards = fix verified (CartTotals projection now selection-gated). [ADMIN] After the fix, the Admin order-creation flow for a cart with all items deselected should show $0.00 grand total."
+    }
+  ],
+  "cleanup": {
+    "raw": "none — cleanup_post clears the default cart inline in Steps",
+    "blocks": []
+  }
+}
