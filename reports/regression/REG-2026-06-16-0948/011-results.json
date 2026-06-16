@@ -9,7 +9,7 @@
   "totalCases": 71,
   "passed": 21,
   "failed": 2,
-  "blocked": 7,
+  "blocked": 8,
   "skipped": 0,
   "passRate": "29.6%",
   "testCases": [
@@ -94,6 +94,13 @@
     { "id": "CHK-058", "status": "PASS", "notes": "Default address '123 Main Street, New York, New York, 10001, United States of America' pre-selected in Shipping Details on /cart load — no manual selection required. Full address fields visible. Billing also shows same address (Same as shipping checked). No console errors." },
     { "id": "CHK-059", "status": "PASS", "notes": "TechFlow B2B user (John Mitchell). Searched 'Toronto' in address popup — filtered to 2 matches (Toronto, Quebec M5V 3A8 + Toronto, Ontario). Selected Toronto, Quebec M5V 3A8 (100 King Street West, Suite 4500). Address appeared in Shipping Details section. No console errors." },
     { "id": "CHK-060", "status": "PASS", "notes": "TechFlow B2B (John Mitchell). 22-address org. Cleared search filter — full address list loaded. Page 1 showed 6 rows (San Francisco, Glasgow, Edinburgh, Ottawa, Manchester, Los Angeles). Numbered pagination buttons 1-5 + Previous(disabled)/Next confirmed present. Clicked page 2 — loaded 6 new rows (Calgary, Houston, Toronto, Phoenix, Budapest, Philadelphia). Zero overlap with page 1. No full-page refresh (URL unchanged on /cart). All page 2 rows selectable. No console errors." },
+    {
+      "id": "CHK-061", "status": "BLOCKED",
+      "title": "Session Timeout During Checkout - Cart Preserved After Re-authentication",
+      "section": "Checkout > Session > Timeout",
+      "priority": "Medium",
+      "notes": "TOOL LIMITATION: browser_evaluate blocked by real-user enforcement hook. Cookie-clearing approach specified in case precondition cannot be executed — cookie manipulation is not in the hook's allowlist exceptions (GraphiQL JWT insertText, GA4 dataLayer/gtag(), payment-iframe inspection, layout measurement). Cannot simulate session expiry without extending the allowlist."
+    },
     {
       "id": "CHK-084", "status": "BLOCKED",
       "title": "Minimum Order Amount - Cart Below Minimum Blocks Checkout",
