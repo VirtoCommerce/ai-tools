@@ -1,28 +1,32 @@
 {
-  "run_id": "REG-2026-06-16-1550",
+  "run_id": "REG-2026-06-16-2030",
   "selection": "050b1",
-  "started": "2026-06-16T15:50:25Z",
-  "completed": "2026-06-16T16:05:00Z",
+  "started": "2026-06-16T20:30:00Z",
+  "completed": "2026-06-16T20:55:00Z",
   "env": "vcst-qa",
+  "front_url": "https://vcst-qa-storefront.govirto.com",
+  "back_url": "https://vcst-qa.govirto.com",
   "store_id": "B2B-store",
-  "executor": "scripts/graphql-runner.ts",
+  "mode": "runner-native (scripts/graphql-runner.ts)",
   "suites": {
     "050b1": {
-      "name": "GraphQL xCart — Basic CRUD & Quantity",
-      "prio": "P1",
-      "agent": "qa-backend-expert",
-      "browser": "graphql-runner",
-      "status": "done",
-      "runnable": 19,
-      "pass": 8,
-      "fail": 11,
-      "skipped": 1,
+      "name": "GraphQL xCart Basic",
+      "prio": "P0",
+      "status": "completed",
       "total": 20,
-      "root_cause": "PRODUCT_PRICE_INVALID — BUYABLE_PRICED_PRODUCT (Canon MF232W 08c33cfc) not priced in the B2B-mixed virtual catalog the B2B-store reads from; single env/fixture cause, no product or test-logic defects",
-      "passes": ["CRB-GQL-005","CRB-GQL-009","CRB-GQL-050","CRB-GQL-059","CRB-GQL-060","CRB-GQL-093","GQL-MC-001","GQL-MC-004"],
-      "failures": ["CRB-GQL-006","CRB-GQL-007","CRB-GQL-008","CRB-GQL-010","CRB-GQL-017","CRB-GQL-021","CRB-GQL-046","CRB-GQL-047","CRB-GQL-048","CRB-GQL-051","CRB-GQL-132"],
-      "skipped_cases": ["CRB-GQL-049"]
+      "passed": 14,
+      "failed": 5,
+      "error": 1,
+      "verdict": "no product defects — 5 stale/fixture-drift cases; cart contamination resolved via removeCart",
+      "failures": {
+        "CRB-GQL-046": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
+        "CRB-GQL-047": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
+        "CRB-GQL-048": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
+        "CRB-GQL-051": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
+        "CRB-GQL-049": "Draft + same stale updateCartQuantity shape (runner ERROR)",
+        "CRB-GQL-010": "fixture/promotion drift: addCoupon accepted but discountTotal.amount=0"
+      }
     }
   },
-  "report": "reports/regression/REG-2026-06-16-1550/regression-2026-06-16.md"
+  "report": "reports/regression/REG-2026-06-16-2030/regression-2026-06-16.md"
 }
