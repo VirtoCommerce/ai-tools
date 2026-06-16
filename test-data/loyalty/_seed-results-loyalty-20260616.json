@@ -1,0 +1,10 @@
+{
+  "seededAt": "2026-06-16T14:28:48.059Z",
+  "storeId": "B2B-store",
+  "program": {
+    "id": "0bcebdbc-1ad8-4c96-944a-b81d3b727a1c",
+    "name": "AGENT-TEST Product Points",
+    "type": "ProductPoints"
+  },
+  "clonedFrom": "53bfe61f-8795-4370-953e-8f8251ada119"
+}

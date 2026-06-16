@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.17",
-    "updated": "2026-06-15",
+    "version": "1.5.18",
+    "updated": "2026-06-16",
+    "changelog_1_5_18": "Added PUSH_MSG_SEED inline alias — single source of truth for the Push Messages seed contract shared by suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI). No static recipient fixture by design (messages self-seed per run via POST /api/push-message with AGENT-TEST- topic prefix; recipients env-resolved {{ORG_USER_ID}}/{{TEST_USER_ID}} or live-discovered me.id). Captures stable contract values the suites repeated literally: endpoint, topic_prefix, sent/draft status, broadcast_group ('Registered'), epoch/future startDate, plus _notes documenting targeting field names (memberIds/targetOrganizationIds/userGroups/cultureName) and 4 model facts (status-in-body not /send, DELETE-Sent->500 known defect PUSH-034, async per-recipient inbox projection PUSH-027/028, no dedicated link field PUSH-037). Existing suites left unchanged (validated/automated); alias is available for future authoring + as the documented contract reference.",
     "changelog_1_5_17": "VCST-5028 cross-org fixture: added MULTI_ORG_TF_BR inline alias — a single AGENT-TEST member (agent-test-multiorg-20260615@yopmail.com, password Password1!) that belongs to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 isolation has a clear oracle: TechFlow (6fb516c1-…) = org-maintainer, BuildRight (fba51391-…) = org-employee. Provisioned on vcst-qa 2026-06-15: contact via POST /api/members (id 57389d49-aae0-4cce-a4b1-8e67352310e1, organizations=[TechFlow,BuildRight]); security account via POST /api/platform/security/users/create (userId 631063d0-cf9c-4a29-ac48-c015e78b9cc6, userType=Customer, storeId=B2B-store, emailConfirmed=true); two org-memberships via the NEW PR #300 route POST /api/customer/organization-memberships (hyphenated, plural). KEY LESSON: the OrganizationMembership create-body key is `userId` (the SECURITY-ACCOUNT user id, NOT the contact/member id) and roles is `roles:[{roleId,roleName}]` (NOT a flat roleIds[]). Storefront login confirmed (account menu shows TechFlow / member name). AGENT-TEST- prefix → teardown-swept. Membership ids: TechFlow eff31ad2375641548ef86449ceb9372a, BuildRight 3219a007f7fb432fb3f0b99208a4b90c.",
     "changelog_1_5_16": "Coupon-code alphanumeric migration 2026-06-12: COUPONS.expiredCode EXPIRED-TEST → EXPIREDTEST; COUPONS.usedUpCode QA-MAXED → QAMAXED. Platform now enforces ^[a-zA-Z0-9]+$ on /api/marketing/promotions/coupons/add. COUPON_EXPIRED and COUPON_E2E aliases are CSV-backed (file+filter) — they auto-resolve from the updated coupons.csv rows, no change needed here.",
     "changelog_1_5_11": "Loyalty per-customer-group (VCST-5023 / suite 075 LOY-029): added USER_GROUP_VIP inline alias (name=VIP — the Loyalty 'User group is ...' condition group, verified selectable on vcst-qa alongside Wholesaler/contract-contract2) and LOYALTY_VIP_USER inline alias (AGENT-TEST-vip@test.virtocommerce.com, memberId 2fae41c3-3b22-4482-821a-c216a6f540bb, security account 1dba59a3-7658-4b3f-9517-6549aebbf5b1, group VIP). qa-vip@virtocommerce.com did NOT exist, so a dedicated Customer-type member was provisioned via POST /api/members then POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); member groups=['VIP'] and storefront auth both confirmed. AGENT-TEST- prefix → teardown-swept. LOY-029 now resolves the VIP user via @td(LOYALTY_VIP_USER.email) and the group via @td(USER_GROUP_VIP.name).",
@@ -3010,5 +3011,25 @@
     "password_env_var": "ADMIN_PASSWORD",
     "role_alias": "ADMIN_ROLE_TESTER",
     "user_type": "Administrator"
+  },
+  "PUSH_MSG_SEED": {
+    "_inline": true,
+    "endpoint": "/api/push-message",
+    "topic_prefix": "AGENT-TEST-",
+    "sent_status": "Sent",
+    "draft_status": "Draft",
+    "broadcast_group": "Registered",
+    "epoch_start_date": "2026-01-01T00:00:00Z",
+    "future_start_date": "2099-01-01T00:00:00Z",
+    "fields": {
+      "endpoint": "endpoint",
+      "topic_prefix": "topic_prefix",
+      "sent_status": "sent_status",
+      "draft_status": "draft_status",
+      "broadcast_group": "broadcast_group",
+      "epoch_start_date": "epoch_start_date",
+      "future_start_date": "future_start_date"
+    },
+    "_notes": "Push Messages seed contract — single source of truth for the values suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI) repeat literally when they self-seed messages. NO static recipient fixture exists by design: messages are created fresh per run via POST {{BACK_URL}}/api/push-message with an AGENT-TEST- topic prefix (teardown-swept); recipients are env-resolved ({{ORG_USER_ID}} / {{TEST_USER_ID}}) or live-discovered (xAPI me.id -> RCPT_MEMBER_ID). Canonical Sent seed body: {topic:'@td(PUSH_MSG_SEED.topic_prefix)<case>', shortMessage:'...', status:'@td(PUSH_MSG_SEED.sent_status)', startDate:'@td(PUSH_MSG_SEED.epoch_start_date)', memberIds:['{{ORG_USER_ID}}']}. TARGETING field names (verified live, PUSH-031): memberIds[] (member ids), targetOrganizationIds[] (org scope), userGroups[] (e.g. 'Registered' = broadcast_group), cultureName (per-culture probe, PUSH-038). MODEL NOTES: (1) status='Sent' is set IN the create body — there is no /send subendpoint. (2) DELETE of a Sent message returns HTTP 500 (known defect, PUSH-034 — should be 4xx); Sent seeds are intentionally left in the system (AGENT-TEST- prefix). (3) Per-recipient inbox projection is ASYNC — a just-created Sent message is not synchronously in the recipient xAPI inbox (poll before asserting; PUSH-027/028 are needs-review for this reason). (4) Push-message model has NO dedicated link field — a clickable link requires an <a> anchor embedded in shortMessage (PUSH-037). These are contract values under test, not catalog data — update only if the module's API contract changes."
   }
 }

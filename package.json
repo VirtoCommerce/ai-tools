@@ -36,6 +36,8 @@
     "seed:pricing:teardown": "node scripts/seed-pricing.mjs --teardown",
     "seed:inventory": "node scripts/seed-inventory.mjs",
     "seed:inventory:teardown": "node scripts/seed-inventory.mjs --teardown",
+    "seed:loyalty": "node scripts/seed-loyalty.mjs",
+    "seed:loyalty:teardown": "node scripts/seed-loyalty.mjs --teardown",
     "seed:promotions": "node scripts/seed-promotions.mjs",
     "seed:bopis": "node scripts/seed-bopis.mjs",
     "seed:properties": "node scripts/seed-catalog-properties.mjs",

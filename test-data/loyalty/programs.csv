@@ -1,0 +1,2 @@
+program_id,name,program_type,is_active,store_id,priority,test_purpose
+LOY-001,AGENT-TEST Product Points,ProductPoints,true,B2B-store,10,Active product-points loyalty program for loyalty suites (075/083) + mixed-cart (VCST-5101)

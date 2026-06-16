@@ -1,0 +1,4 @@
+page_id,permalink,title,description,culture,status,content,test_purpose
+CMS-001,/agent-test-about,AGENT-TEST About Page,Seeded test page for CMS suites,en-US,Published,"<h1>About AGENT-TEST</h1><p>Seeded content page for CMS regression (059/060).</p>",Basic published content page — visibility + render
+CMS-002,/agent-test-landing,AGENT-TEST Landing Page,Seeded landing page,en-US,Published,"<section><h2>Landing</h2><p>Seeded landing content.</p></section>",Landing page — design/content suite
+CMS-003,/agent-test-draft,AGENT-TEST Draft Page,Seeded draft (unpublished) page,en-US,Draft,"<p>Draft — should not be publicly visible.</p>",Draft visibility — unpublished page must not render publicly
