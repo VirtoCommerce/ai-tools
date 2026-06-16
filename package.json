@@ -34,6 +34,8 @@
     "seed:b2b:teardown": "node scripts/seed-b2b-fixtures.mjs teardown",
     "seed:pricing": "node scripts/seed-pricing.mjs",
     "seed:pricing:teardown": "node scripts/seed-pricing.mjs --teardown",
+    "seed:inventory": "node scripts/seed-inventory.mjs",
+    "seed:inventory:teardown": "node scripts/seed-inventory.mjs --teardown",
     "seed:promotions": "node scripts/seed-promotions.mjs",
     "seed:bopis": "node scripts/seed-bopis.mjs",
     "seed:properties": "node scripts/seed-catalog-properties.mjs",

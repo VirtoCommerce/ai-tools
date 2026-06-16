@@ -87,12 +87,14 @@ async function seed() {
     log(`Created pricelist ${plName} (${pricelist.id})`);
   }
 
-  // 2. Assignment → store (high priority so the cart evaluator prefers it).
-  const assignName = `${plName} → ${TARGET_STORE}`;
+  // 2. Assignment → CATALOG (VC pricelist assignments are catalog-scoped; `catalogId` is the
+  // binding field. A storeId-only assignment never binds to the catalog, so the cart finds no
+  // valid price for catalog products → PRODUCT_PRICE_INVALID. Assign to the B2B-mixed catalog.)
+  const assignName = `${plName} → ${CATALOG_ID}`;
   if (!DRY_RUN) {
     try {
-      await api('POST', '/api/pricing/assignments', { name: assignName, pricelistId: pricelist.id, storeId: TARGET_STORE, priority: 1000 }, { expectStatus: [200, 201] });
-      log(`Assigned ${plName} → ${TARGET_STORE} (priority 1000)`);
+      await api('POST', '/api/pricing/assignments', { name: assignName, catalogId: CATALOG_ID, pricelistId: pricelist.id, priority: 1000 }, { expectStatus: [200, 201] });
+      log(`Assigned ${plName} → catalog ${CATALOG_ID} (priority 1000)`);
     } catch (e) {
       log(`⚠ Assignment may already exist or failed: ${String(e.message).slice(0, 140)}`);
     }
@@ -118,6 +120,19 @@ async function seed() {
     verbose(`  priced ${priced}/${payload.length}`);
   }
   log(`✓ Set ${CURRENCY} prices for ${priced} product(s) in ${plName}`);
+
+  // Storefront/cart price comes from the search index, so a pricing change is invisible
+  // to the cart until CatalogProduct is reindexed (mirrors seed-test-data.js triggerReindex).
+  // NOTE: a scoped (ids) reindex may be insufficient on some envs — a full rebuild
+  // (POST /api/search/indexes/index [{documentType:"CatalogProduct", rebuild:true}]) may be
+  // required, and it is async (Hangfire). Verify buyability after the job completes.
+  try {
+    const idsToIndex = products.map((p) => p.id);
+    await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', ids: idsToIndex }], { expectStatus: [200, 201, 202, 204] });
+    log(`Queued CatalogProduct reindex for ${idsToIndex.length} product(s) — async; allow time before cart use`);
+  } catch (e) {
+    log(`⚠ reindex trigger failed (${String(e.message).slice(0, 100)}) — run a CatalogProduct reindex manually before cart tests`);
+  }
 
   writeResults(`test-data/pricing/_seed-results-pricing-${DATE_STAMP}.json`, {
     seededAt: new Date().toISOString(), catalogId: CATALOG_ID, storeId: TARGET_STORE,

@@ -2765,15 +2765,15 @@
   },
   "BUYABLE_PRICED_PRODUCT": {
     "_inline": true,
-    "id": "08c33cfc9f664426a52fac8882da2df0",
-    "name": "Canon Imageclass WiFi MF232W Monochrome",
-    "sku": "566903892",
+    "id": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "name": "Animal Crossing New Horizons (Nintendo Switch) — STD-001",
+    "sku": "ALCE0128",
     "fields": {
       "id": "id",
       "name": "name",
       "sku": "sku"
     },
-    "_notes": "Stable buyable B2B-catalog product for cart/checkout/xCart tests. Physical product in VIRTUAL_CATALOG_B2B (fc596540…) with a valid USD price resolved via /api/pricing/evaluate (list 99.99). REQUIRES the AGENT-TEST-PRICING-USD pricelist seeded by `npm run seed:pricing` — post-2026-05-15 catalog restore the bulk of fc596540 products have NO valid pricelist coverage (addItem → PRODUCT_PRICE_INVALID), so cart tests must target a known-priced product rather than index-discover a random one (the search index reports stale price.USD that the cart rejects). Once the team's full catalog+pricelist reseed lands, tests can revert to pure live-discover. Re-seed before xCart/cart/checkout runs; update this id if seed:pricing prices a different product set."
+    "_notes": "Verified cart-buyable B2B-mixed fixture for cart/checkout/xCart tests — adds to cart cleanly (GQL-MC-001 PASS, 6/6, 2026-06-16). Same product as BUYABLE_NO_MIN_QTY (STD-001). IMPORTANT: cart buyability comes from the product being properly PLACED + INDEXED in the B2B-mixed virtual catalog (fc596540…), NOT from a pricelist-API price — `/api/pricing/evaluate` returns [] for this product yet the cart accepts it, while a product with a pricelist-API price but no B2B-mixed placement (e.g. Canon MF232W 08c33cfc) is rejected with PRODUCT_PRICE_INVALID. So pick fixtures the cart actually accepts (mirror BUYABLE_NO_MIN_QTY's catalog placement), not ones that merely resolve a price. See project_vcstqa_cart_price_invalid_blocker."
   },
   "CFG_WITH_DEFAULT": {
     "file": "products/configurable-products",

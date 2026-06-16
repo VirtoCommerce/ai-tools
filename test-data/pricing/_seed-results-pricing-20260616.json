@@ -1,5 +1,5 @@
 {
-  "seededAt": "2026-06-16T13:09:32.729Z",
+  "seededAt": "2026-06-16T13:58:29.163Z",
   "catalogId": "fc596540864a41bf8ab78734ee7353a3",
   "storeId": "B2B-store",
   "currency": "USD",
@@ -12,8 +12,8 @@
     "prices": null,
     "assignments": [
       {
-        "catalogId": null,
-        "storeId": "B2B-store",
+        "catalogId": "fc596540864a41bf8ab78734ee7353a3",
+        "storeId": null,
         "pricelistId": null,
         "pricelist": null,
         "name": "AGENT-TEST-PRICING-USD-20260616 → B2B-store",
@@ -28,6 +28,24 @@
         "createdBy": null,
         "modifiedBy": null,
         "id": "d443ce20-5502-48f8-957e-abc0ff95c558"
+      },
+      {
+        "catalogId": "fc596540864a41bf8ab78734ee7353a3",
+        "storeId": null,
+        "pricelistId": null,
+        "pricelist": null,
+        "name": "AGENT-TEST-PRICING-USD-20260616 → B2B-store",
+        "description": null,
+        "priority": 1000,
+        "startDate": null,
+        "endDate": null,
+        "dynamicExpression": null,
+        "outerId": null,
+        "createdDate": "0001-01-01T00:00:00Z",
+        "modifiedDate": null,
+        "createdBy": null,
+        "modifiedBy": null,
+        "id": "eb3f426c-6cea-47dd-b7c2-593c4a8a00ac"
       }
     ],
     "createdDate": "2026-06-16T13:08:53.6230122Z",

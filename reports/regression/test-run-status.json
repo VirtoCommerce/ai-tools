@@ -1,82 +1,28 @@
 {
-  "run_id": "REG-2026-06-15-1307",
-  "selection": "008,032,031,027,020,050d",
-  "started": "2026-06-15T13:07:42Z",
+  "run_id": "REG-2026-06-16-1550",
+  "selection": "050b1",
+  "started": "2026-06-16T15:50:25Z",
+  "completed": "2026-06-16T16:05:00Z",
   "env": "vcst-qa",
-  "build": {
-    "platform": "3.1037.0",
-    "customer": "3.1010.0-pr-300-fa2a",
-    "profileXapi": "3.1008.0-pr-135-cb12",
-    "theme": "2.51.0-pr-2315-c85b"
-  },
+  "store_id": "B2B-store",
+  "executor": "scripts/graphql-runner.ts",
   "suites": {
-    "031": {
-      "name": "Auth Login & Register",
-      "prio": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome",
-      "tests": 32,
-      "status": "done",
-      "batch": 1,
-      "pass": 27,
-      "fail": 1,
-      "blocked": 6,
-      "total": 34
-    },
-    "027": {
-      "name": "Customer Orgs & Invites",
-      "prio": "P1",
-      "agent": "qa-backend-expert",
-      "browser": "playwright-firefox",
-      "tests": 33,
-      "status": "done",
-      "batch": 1,
-      "pass": 8,
-      "fail": 4,
-      "blocked": 21,
-      "total": 33,
-      "note": "firefox launch failed→edge fallback→SPA reset loop"
-    },
-    "020": {
-      "name": "Platform Users Roles & Settings",
-      "prio": "P1",
-      "agent": "qa-backend-expert",
-      "browser": "playwright-edge",
-      "tests": 41,
-      "status": "done",
-      "batch": 1,
-      "pass": 24,
-      "fail": 0,
-      "blocked": 15,
-      "skipped": 6,
-      "total": 45
-    },
-    "008": {
-      "name": "B2C Members",
-      "prio": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome",
-      "tests": 18,
-      "status": "pending",
-      "batch": 2
-    },
-    "032": {
-      "name": "Auth Session & RBAC",
-      "prio": "P1",
-      "agent": "qa-frontend-expert",
-      "browser": "playwright-firefox",
-      "tests": 12,
-      "status": "pending",
-      "batch": 2
-    },
-    "050d": {
-      "name": "GraphQL xProfile",
+    "050b1": {
+      "name": "GraphQL xCart — Basic CRUD & Quantity",
       "prio": "P1",
       "agent": "qa-backend-expert",
       "browser": "graphql-runner",
-      "tests": 29,
-      "status": "pending",
-      "batch": 2
+      "status": "done",
+      "runnable": 19,
+      "pass": 8,
+      "fail": 11,
+      "skipped": 1,
+      "total": 20,
+      "root_cause": "PRODUCT_PRICE_INVALID — BUYABLE_PRICED_PRODUCT (Canon MF232W 08c33cfc) not priced in the B2B-mixed virtual catalog the B2B-store reads from; single env/fixture cause, no product or test-logic defects",
+      "passes": ["CRB-GQL-005","CRB-GQL-009","CRB-GQL-050","CRB-GQL-059","CRB-GQL-060","CRB-GQL-093","GQL-MC-001","GQL-MC-004"],
+      "failures": ["CRB-GQL-006","CRB-GQL-007","CRB-GQL-008","CRB-GQL-010","CRB-GQL-017","CRB-GQL-021","CRB-GQL-046","CRB-GQL-047","CRB-GQL-048","CRB-GQL-051","CRB-GQL-132"],
+      "skipped_cases": ["CRB-GQL-049"]
     }
-  }
+  },
+  "report": "reports/regression/REG-2026-06-16-1550/regression-2026-06-16.md"
 }
