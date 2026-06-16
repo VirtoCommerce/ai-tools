@@ -2763,6 +2763,18 @@
     },
     "_notes": "Active B2B virtual catalog root for storefront product queries. Verified 2026-05-18 via store(storeId:\"B2B-store\") { catalogId }. The 2026-04-30 migration to 9238c387-d779-40cb-b27d-5496a670a924 was rolled back by the 2026-05-15 catalog restore. Use @td(VIRTUAL_CATALOG_B2B.id) inside GraphQL filter strings: filter: \"category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO)\". If B2B-store rebinds again, only this one value needs updating."
   },
+  "BUYABLE_PRICED_PRODUCT": {
+    "_inline": true,
+    "id": "08c33cfc9f664426a52fac8882da2df0",
+    "name": "Canon Imageclass WiFi MF232W Monochrome",
+    "sku": "566903892",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "sku": "sku"
+    },
+    "_notes": "Stable buyable B2B-catalog product for cart/checkout/xCart tests. Physical product in VIRTUAL_CATALOG_B2B (fc596540…) with a valid USD price resolved via /api/pricing/evaluate (list 99.99). REQUIRES the AGENT-TEST-PRICING-USD pricelist seeded by `npm run seed:pricing` — post-2026-05-15 catalog restore the bulk of fc596540 products have NO valid pricelist coverage (addItem → PRODUCT_PRICE_INVALID), so cart tests must target a known-priced product rather than index-discover a random one (the search index reports stale price.USD that the cart rejects). Once the team's full catalog+pricelist reseed lands, tests can revert to pure live-discover. Re-seed before xCart/cart/checkout runs; update this id if seed:pricing prices a different product set."
+  },
   "CFG_WITH_DEFAULT": {
     "file": "products/configurable-products",
     "filter": {
