@@ -1,0 +1,116 @@
+{
+  "suiteId": "012",
+  "suiteName": "Checkout Guest",
+  "runId": "REG-2026-06-16-0948",
+  "browser": "playwright-edge",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-16T09:48:00Z",
+  "completedAt": "2026-06-16T10:25:00Z",
+  "totalCases": 12,
+  "passed": 6,
+  "failed": 2,
+  "blocked": 4,
+  "skipped": 0,
+  "passRate": "50.0%",
+  "testCases": [
+    { "id": "CHK-014", "status": "PASS" },
+    { "id": "CHK-015", "status": "PASS" },
+    {
+      "id": "CHK-016",
+      "status": "BLOCKED",
+      "title": "Guest Checkout - Track Order",
+      "section": "Orders > Guest Tracking",
+      "priority": "High",
+      "businessRule": "BL-ORD-001",
+      "notes": "Precondition: FEATURE NOT IMPLEMENTED — guest order tracking page does not exist in current storefront. /orders/track returns 404."
+    },
+    {
+      "id": "CHK-017",
+      "status": "FAIL",
+      "title": "Guest Checkout - Prompt Registration After Purchase",
+      "section": "Checkout > Guest > Post-Purchase",
+      "priority": "Medium",
+      "businessRule": "BL-CHK-005",
+      "failedAssertion": "[DOM] Create Account prompt visible on confirmation page",
+      "screenshot": "test-results/edge/page-2026-06-16T07-59-04-808Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Order confirmation page /checkout/completed shows only 'SHOW ORDER' and 'HOME PAGE' buttons. No 'Create Account' prompt or banner referencing order linking is present for guest users after order placement."
+    },
+    {
+      "id": "CHK-018",
+      "status": "BLOCKED",
+      "title": "Guest Checkout - Apply Valid Coupon Code",
+      "section": "Checkout > Guest > Discounts",
+      "priority": "Medium",
+      "businessRule": "BL-PROMO-001",
+      "notes": "Precondition failure: coupon code {{VALID_COUPON_CODE}}='QA' rejected with 'This code is not valid' for guest session. Discount & coupons widget is accessible (sidebar renders, code entry available), but the fixture coupon is not valid for this context. Seed not provisioned for guest/anonymous cart. Screenshot: test-results/edge/page-2026-06-16T08-00-38-537Z.png"
+    },
+    { "id": "CHK-019", "status": "PASS" },
+    {
+      "id": "CHK-020",
+      "status": "BLOCKED",
+      "title": "Guest Checkout - Register After Purchase and Order Linked",
+      "section": "Checkout > Guest > Post-Purchase",
+      "priority": "High",
+      "businessRule": "BL-CHK-005",
+      "notes": "Blocked: 'Create Account' prompt absent from confirmation page (CHK-017 FAIL). Cannot proceed to registration flow without the prompt being present."
+    },
+    {
+      "id": "CHK-021",
+      "status": "BLOCKED",
+      "title": "Guest Checkout - Disabled When Anonymous Users Not Allowed",
+      "section": "Checkout > Guest > Access Control",
+      "priority": "Critical",
+      "businessRule": "BL-CHK-005",
+      "notes": "Precondition: FEATURE NOT APPLICABLE IN QA — store always configured with anonymousUsersAllowed=true; anonymousUsersAllowed=false variant cannot be tested in shared QA environment without store reconfiguration."
+    },
+    {
+      "id": "CHK-029G",
+      "status": "FAIL",
+      "title": "Guest Checkout - Validate Email Format in Address Form",
+      "section": "Checkout > Guest > Validation",
+      "priority": "Medium",
+      "businessRule": "BL-CHK-003",
+      "failedAssertion": "[DOM] Email format error rendered for each invalid pattern — 'user@domain' (no TLD) did not trigger validation error",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "Patterns 1 ('notanemail') and 2 ('user@') correctly show error 'Enter a valid email address'. Pattern 3 ('user@domain' — no TLD) shows NO validation error; the form field accepts it as valid. HTML5 email validator in Edge/Chromium accepts 'user@domain' without TLD, so client-side validation does not fire for this pattern. The assertion requires an error for all three invalid patterns."
+    },
+    { "id": "CHK-066", "status": "PASS" },
+    { "id": "CHK-067", "status": "PASS" },
+    { "id": "CHK-068", "status": "PASS" }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_012_001",
+      "title": "No 'Create Account' prompt shown on guest checkout confirmation page",
+      "severity": "Medium",
+      "testCaseId": "CHK-017",
+      "businessRule": "BL-CHK-005",
+      "failedAssertion": "[DOM] Create Account prompt visible on confirmation page",
+      "stepsToReproduce": "1. Navigate to storefront as guest (not logged in). 2. Add a product to cart. 3. Fill shipping address, select delivery method and payment method. 4. Place order. 5. Observe /checkout/completed page.",
+      "expected": "A 'Create Account' prompt or banner is displayed on the confirmation page, offering the guest the option to register and link the order to a new account.",
+      "actual": "Confirmation page shows only 'SHOW ORDER' and 'HOME PAGE' buttons. No 'Create Account' or registration prompt is present for guest users after order placement.",
+      "screenshot": "test-results/edge/page-2026-06-16T07-59-04-808Z.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_012_002",
+      "title": "Guest address email field accepts 'user@domain' (no TLD) as valid — no validation error shown",
+      "severity": "Low",
+      "testCaseId": "CHK-029G",
+      "businessRule": "BL-CHK-003",
+      "failedAssertion": "[DOM] Email format error rendered for 'user@domain' (no TLD) pattern",
+      "stepsToReproduce": "1. Navigate to /cart as guest. 2. Click 'select a shipping address'. 3. In the 'New address' dialog, enter 'user@domain' in the Email field. 4. Tab out of the field. 5. Observe whether a validation error appears.",
+      "expected": "An error message such as 'Enter a valid email address' is shown for 'user@domain' (no top-level domain).",
+      "actual": "No validation error is rendered. The form accepts 'user@domain' as a valid email format. The HTML5 browser validator in Edge/Chromium does not reject addresses without a TLD.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    }
+  ],
+  "errors": []
+}

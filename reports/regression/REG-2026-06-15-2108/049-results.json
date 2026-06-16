@@ -1,0 +1,298 @@
+{
+  "suiteId": "049",
+  "suiteName": "Platform REST API",
+  "runId": "REG-2026-06-15-2108",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa.govirto.com",
+  "startedAt": "2026-06-15T21:08:00.000Z",
+  "completedAt": "2026-06-15T22:16:00.000Z",
+  "totalCases": 37,
+  "passed": 19,
+  "failed": 9,
+  "blocked": 5,
+  "skipped": 4,
+  "passRate": "57.6%",
+  "testCases": [
+    { "id": "API-001", "status": "PASS" },
+    { "id": "API-002", "status": "PASS" },
+    {
+      "id": "API-003",
+      "status": "FAIL",
+      "title": "Catalog Search Returns Filtered Results by Keyword",
+      "section": "Catalog",
+      "priority": "High",
+      "businessRule": "BL-CAT-001",
+      "failedAssertion": "[ASSERT] response body totalCount = 0 for nonexistent keyword",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/search/products → 200 but totalCount=9165 (same as no filter)"],
+      "notes": "POST /api/catalog/search/products with keyword=nonexistent_xyz_qqq returns HTTP 200 totalCount=9165, identical to a valid keyword search for 'laptop'. The keyword filter parameter appears to be ignored — search returns all catalog products regardless of keyword value."
+    },
+    { "id": "API-004", "status": "PASS" },
+    { "id": "API-005", "status": "PASS" },
+    { "id": "API-006", "status": "PASS" },
+    {
+      "id": "API-007",
+      "status": "BLOCKED",
+      "title": "Inventory Reserve Endpoint Available",
+      "section": "Inventory",
+      "priority": "Medium",
+      "failedAssertion": "Endpoint exists and responds",
+      "networkErrors": ["GET /api/inventory/products/{id}/reserve → 404 Not Found"],
+      "notes": "Endpoint /api/inventory/products/{productId}/reserve does not exist (404). The documented reserve endpoint is not present in Platform 3.1037.0. Inventory availability queries work via GET /api/inventory/products/{productId} but reserve is not available via REST."
+    },
+    { "id": "API-008", "status": "PASS" },
+    { "id": "API-009", "status": "PASS" },
+    {
+      "id": "API-010",
+      "status": "BLOCKED",
+      "title": "Cart REST API — Add Item to Cart",
+      "section": "Cart",
+      "priority": "Medium",
+      "failedAssertion": "POST /api/cart/carts endpoint exists",
+      "networkErrors": ["GET /api/cart/carts → 404 Not Found"],
+      "notes": "Cart REST API does not exist in this deployment. Cart operations are GraphQL-only via /graphql (addItem mutation). All cart-related REST endpoints (API-010, API-020, API-021, API-022) are BLOCKED for the same reason."
+    },
+    { "id": "API-011", "status": "PASS" },
+    { "id": "API-012", "status": "PASS" },
+    { "id": "API-013", "status": "PASS" },
+    { "id": "API-014", "status": "PASS" },
+    { "id": "API-015", "status": "PASS" },
+    { "id": "API-016", "status": "PASS" },
+    { "id": "API-017", "status": "PASS" },
+    { "id": "API-018", "status": "PASS" },
+    { "id": "API-019", "status": "PASS" },
+    {
+      "id": "API-020",
+      "status": "BLOCKED",
+      "title": "Cart REST API — Update Cart Item Quantity",
+      "section": "Cart",
+      "priority": "Medium",
+      "failedAssertion": "PUT /api/cart/carts/{id}/items endpoint exists",
+      "networkErrors": ["Cart REST API not available — GraphQL-only"],
+      "notes": "Same root cause as API-010: Cart REST API does not exist. Operations require GraphQL."
+    },
+    {
+      "id": "API-021",
+      "status": "BLOCKED",
+      "title": "Cart REST API — Remove Item from Cart",
+      "section": "Cart",
+      "priority": "Medium",
+      "failedAssertion": "DELETE /api/cart/carts/{id}/items/{itemId} endpoint exists",
+      "networkErrors": ["Cart REST API not available — GraphQL-only"],
+      "notes": "Same root cause as API-010: Cart REST API does not exist. Operations require GraphQL."
+    },
+    {
+      "id": "API-022",
+      "status": "BLOCKED",
+      "title": "Cart REST API — Get Cart Contents",
+      "section": "Cart",
+      "priority": "Medium",
+      "failedAssertion": "GET /api/cart/carts/{id} endpoint exists",
+      "networkErrors": ["Cart REST API not available — GraphQL-only"],
+      "notes": "Same root cause as API-010: Cart REST API does not exist. Operations require GraphQL."
+    },
+    {
+      "id": "API-023",
+      "status": "FAIL",
+      "title": "Order API Returns 404 for Nonexistent Order",
+      "section": "Orders",
+      "priority": "High",
+      "businessRule": "BL-ORD-001",
+      "failedAssertion": "[ASSERT] HTTP 404 for nonexistent order ID",
+      "consoleErrors": [],
+      "networkErrors": ["GET /api/order/customerOrders/nonexistent-id-xyz → 200 body:null (expected 404)"],
+      "notes": "GET /api/order/customerOrders/nonexistent-id-xyz returns HTTP 200 with body null instead of 404 Not Found. The platform silently returns null for unknown order IDs rather than a proper not-found error response."
+    },
+    {
+      "id": "API-024",
+      "status": "FAIL",
+      "title": "Catalog Product Create Returns 400 for Invalid Body",
+      "section": "Catalog",
+      "priority": "High",
+      "businessRule": "BL-CAT-002",
+      "failedAssertion": "[ASSERT] HTTP 400 with validation errors for empty product body",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/products with {} → 500 Internal Server Error (expected 400)"],
+      "notes": "POST /api/catalog/products with empty body {} returns HTTP 500 with message 'Validation failed: -- CatalogId must not be empty...'. Should return HTTP 400 Bad Request with structured validation errors, not 500. Stacktrace is null but status code is incorrect."
+    },
+    { "id": "API-025", "status": "PASS" },
+    { "id": "API-026", "status": "PASS" },
+    {
+      "id": "API-027",
+      "status": "FAIL",
+      "title": "Pagination — Negative Skip Returns 400",
+      "section": "Pagination",
+      "priority": "Medium",
+      "businessRule": "BL-PAGINATION-001",
+      "failedAssertion": "[ASSERT] HTTP 400 for skip=-1",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/search/products with skip=-1 → 500 Internal Server Error (expected 400)"],
+      "notes": "POST /api/catalog/search/products with {skip:-1, take:10} returns HTTP 500 with Elasticsearch error: 'illegal_argument_exception: [from] parameter cannot be negative'. Should return HTTP 400 with validation error before hitting the search backend."
+    },
+    {
+      "id": "API-028",
+      "status": "FAIL",
+      "title": "Pagination — Skip Beyond ES Window Returns 400",
+      "section": "Pagination",
+      "priority": "Medium",
+      "failedAssertion": "[ASSERT] HTTP 400 or graceful error for skip beyond ES 10000 limit",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/search/products with skip=999999 → 500 Internal Server Error"],
+      "notes": "POST /api/catalog/search/products with {skip:999999, take:10} returns HTTP 500: 'Result window is too large, from + size must be less than or equal to: [10000]'. The Elasticsearch 10000-result window limit is exposed directly as a 500 to the client without graceful handling."
+    },
+    {
+      "id": "API-029",
+      "status": "FAIL",
+      "title": "Pagination — Non-Numeric / Invalid Params Return 400",
+      "section": "Pagination",
+      "priority": "Medium",
+      "failedAssertion": "[ASSERT] HTTP 400 for non-numeric pagination parameters",
+      "consoleErrors": [],
+      "networkErrors": [
+        "POST /api/catalog/search/products with skip=-999,take=-1 → 500",
+        "POST /api/catalog/search/products with skip=abc,take=xyz → 500 'Object reference not set to an instance of an object.'"
+      ],
+      "notes": "All invalid pagination parameter combinations return HTTP 500. Negative values trigger Elasticsearch errors; non-numeric values cause a NullReferenceException. None return the expected HTTP 400 with structured validation messages."
+    },
+    {
+      "id": "API-030",
+      "status": "FAIL",
+      "title": "Large Batch Request Returns 400 or Partial Results (Not 5xx)",
+      "section": "Pagination",
+      "priority": "High",
+      "businessRule": "BL-PAGINATION-002",
+      "failedAssertion": "[ASSERT] take=10000 returns 400 or bounded response, not 5xx",
+      "consoleErrors": [],
+      "networkErrors": [
+        "POST /api/catalog/search/products with take=10000 → 502 Bad Gateway (Cloudflare)",
+        "POST /api/order/customerOrders/search with take=5000 → 524 Connection Timeout (Cloudflare)"
+      ],
+      "notes": "Requests with very large take values result in gateway-level errors (502/524) from Cloudflare rather than application-level 400s. take=1000 succeeds (200, 1000 items). take=10000 hits the ES result window limit and results in a 502. Orders with take=5000 causes a connection timeout (524). Platform should validate and cap take parameter before forwarding to backend."
+    },
+    {
+      "id": "API-031",
+      "status": "FAIL",
+      "title": "OPTIONS Preflight Returns 200 with CORS Headers",
+      "section": "CORS",
+      "priority": "Medium",
+      "businessRule": "BL-CORS-001",
+      "failedAssertion": "[ASSERT] OPTIONS /api/catalog/products returns 200 or 204 with Access-Control-Allow-Origin",
+      "consoleErrors": [],
+      "networkErrors": ["OPTIONS /api/catalog/products → 405 Method Not Allowed (no CORS headers)"],
+      "notes": "OPTIONS preflight request to /api/catalog/products returns HTTP 405 Method Not Allowed. No Access-Control-Allow-Origin header is present. CORS is handled at CDN (Cloudflare) level — the cross-origin-resource-policy: cross-origin header is set but standard CORS preflight flow is not supported at the app layer. Browser-based cross-origin requests from the storefront rely on CDN-level CORS pass-through, not app-level OPTIONS handling."
+    },
+    { "id": "API-032", "status": "PASS" },
+    {
+      "id": "API-033",
+      "status": "FAIL",
+      "title": "CORS Preflight on Auth Endpoint",
+      "section": "CORS",
+      "priority": "Medium",
+      "failedAssertion": "[ASSERT] OPTIONS /connect/token returns 200 with CORS headers",
+      "consoleErrors": [],
+      "networkErrors": ["OPTIONS /connect/token → 400 Bad Request (no CORS headers, expected 200/204 preflight)"],
+      "notes": "OPTIONS request to /connect/token returns 400 Bad Request instead of a proper preflight 200/204 response with CORS headers. Same root cause as API-031: CORS is handled at CDN level, not at application layer. /connect/token treats OPTIONS as a malformed token request."
+    },
+    {
+      "id": "API-034",
+      "status": "SKIPPED",
+      "notes": "Draft status — excluded from run"
+    },
+    {
+      "id": "API-035",
+      "status": "SKIPPED",
+      "notes": "Draft status — excluded from run"
+    },
+    {
+      "id": "API-036",
+      "status": "SKIPPED",
+      "notes": "Draft status — excluded from run"
+    },
+    {
+      "id": "API-037",
+      "status": "SKIPPED",
+      "notes": "Draft status — excluded from run"
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_049_001",
+      "title": "Catalog keyword search ignores keyword parameter — returns all products regardless of input",
+      "severity": "High",
+      "testCaseId": "API-003",
+      "businessRule": "BL-CAT-001",
+      "failedAssertion": "totalCount = 0 for nonexistent keyword",
+      "stepsToReproduce": "1. Obtain admin token via POST /connect/token. 2. POST /api/catalog/search/products with body {\"keyword\":\"nonexistent_xyz_qqq\",\"take\":10}. 3. Check response totalCount.",
+      "expected": "totalCount = 0, items = []",
+      "actual": "HTTP 200, totalCount = 9165, items = 10 products (identical to search with no keyword filter)",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/search/products → 200 totalCount=9165 for nonexistent keyword"],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_049_002",
+      "title": "Order GET by nonexistent ID returns HTTP 200 null instead of 404",
+      "severity": "Medium",
+      "testCaseId": "API-023",
+      "businessRule": "BL-ORD-001",
+      "failedAssertion": "HTTP 404 for nonexistent order ID",
+      "stepsToReproduce": "1. Obtain admin token. 2. GET /api/order/customerOrders/nonexistent-id-xyz. 3. Check response status.",
+      "expected": "HTTP 404 Not Found",
+      "actual": "HTTP 200, response body: null",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_049_003",
+      "title": "Catalog product create with invalid body returns HTTP 500 instead of 400",
+      "severity": "High",
+      "testCaseId": "API-024",
+      "businessRule": "BL-CAT-002",
+      "failedAssertion": "HTTP 400 with structured validation errors",
+      "stepsToReproduce": "1. Obtain admin token. 2. POST /api/catalog/products with body {}. 3. Check response status.",
+      "expected": "HTTP 400 Bad Request with JSON validation error array",
+      "actual": "HTTP 500 Internal Server Error, body: {\"message\":\"Validation failed: -- CatalogId must not be empty...\",\"stackTrace\":null}",
+      "consoleErrors": [],
+      "networkErrors": ["POST /api/catalog/products → 500"],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_049_004",
+      "title": "Pagination validation not enforced — invalid/negative/out-of-range values cause HTTP 500",
+      "severity": "High",
+      "testCaseId": "API-027",
+      "edgeCaseRefs": "API-027, API-028, API-029, API-030",
+      "failedAssertion": "HTTP 400 for invalid pagination parameters",
+      "stepsToReproduce": "1. Obtain admin token. 2. POST /api/catalog/search/products with any of: {skip:-1,take:10}, {skip:999999,take:10}, {skip:-999,take:-1}, {skip:\"abc\",take:\"xyz\"}, {take:10000}. 3. Check response status.",
+      "expected": "HTTP 400 Bad Request with validation message before reaching Elasticsearch",
+      "actual": "HTTP 500 (ES illegal_argument_exception for negative skip; ES result window exceeded for large skip; NullReferenceException for non-numeric; 502/524 gateway errors for extreme take values)",
+      "consoleErrors": [],
+      "networkErrors": [
+        "POST /api/catalog/search/products skip=-1 → 500",
+        "POST /api/catalog/search/products skip=999999 → 500",
+        "POST /api/catalog/search/products skip=-999,take=-1 → 500",
+        "POST /api/catalog/search/products skip=abc → 500",
+        "POST /api/catalog/search/products take=10000 → 502",
+        "POST /api/order/customerOrders/search take=5000 → 524"
+      ],
+      "confirmed": false
+    },
+    {
+      "id": "BUG_049_005",
+      "title": "OPTIONS preflight returns 405 — CORS not handled at app layer",
+      "severity": "Medium",
+      "testCaseId": "API-031",
+      "edgeCaseRefs": "API-031, API-033",
+      "failedAssertion": "OPTIONS returns 200/204 with Access-Control-Allow-Origin",
+      "stepsToReproduce": "1. Send OPTIONS /api/catalog/products with Origin: https://vcst-qa-storefront.govirto.com, Access-Control-Request-Method: GET. 2. Check response status and CORS headers.",
+      "expected": "HTTP 200 or 204 with Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers",
+      "actual": "HTTP 405 Method Not Allowed; no CORS headers. CORS is handled by Cloudflare CDN (cross-origin-resource-policy: cross-origin present) but OPTIONS preflight is not handled by the platform application.",
+      "consoleErrors": [],
+      "networkErrors": ["OPTIONS /api/catalog/products → 405"],
+      "confirmed": false,
+      "notes": "May be by-design if CORS is fully delegated to the CDN. Needs architecture review before confirming."
+    }
+  ],
+  "errors": []
+}

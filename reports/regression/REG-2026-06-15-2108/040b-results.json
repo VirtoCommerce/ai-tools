@@ -1,0 +1,92 @@
+{
+  "suiteId": "040b",
+  "suiteName": "Payment — Authorize.Net",
+  "runId": "REG-2026-06-15-2108",
+  "browser": "playwright-chrome",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "startedAt": "2026-06-15T21:08:00.000Z",
+  "completedAt": "2026-06-15T21:49:30.000Z",
+  "totalCases": 10,
+  "passed": 7,
+  "failed": 2,
+  "blocked": 1,
+  "skipped": 0,
+  "passRate": "70.0%",
+  "testCases": [
+    { "id": "PAY-AN-010", "status": "PASS" },
+    { "id": "PAY-AN-011", "status": "PASS", "notes": "Cleanup: order CO260615-00005 (Manual payment) needs admin cancel" },
+    {
+      "id": "PAY-AN-012",
+      "status": "FAIL",
+      "title": "Luhn-invalid card number accepted — ghost order created",
+      "section": "Negative Validation",
+      "priority": "Medium",
+      "businessRule": "BL-PAY-AN-002",
+      "failedAssertion": "Place order disabled OR client-side rejection for Luhn-invalid card 1234567890123456",
+      "screenshot": "PAY-AN-012-FAIL-ghost-order-checkout-payment.png",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "notes": "KNOWN/BY-DESIGN. Ghost order 1957c7cc-60b7-4aa5-999e-b8fe11e090ea created, redirected to /checkout/payment. Accept.js defers Luhn to tokenization."
+    },
+    { "id": "PAY-AN-013", "status": "PASS" },
+    { "id": "PAY-AN-014", "status": "PASS", "notes": "Order CO260615-00008 (ab09ebe3-fb35-43e9-92c0-907560e40586). POST to apitest.authorize.net confirmed. Cleanup: cancel via admin." },
+    {
+      "id": "PAY-AN-016",
+      "status": "FAIL",
+      "title": "GA4 purchase event fires twice on AN cart payment completion",
+      "section": "GA4 Tracking",
+      "priority": "High",
+      "businessRule": "BL-GA4-001",
+      "failedAssertion": "GA4 purchase event fires exactly once on /checkout/completed",
+      "consoleErrors": [],
+      "networkErrors": ["POST /g/collect en=purchase fired TWICE (requests 159 and 167) with same transaction_id 74706bd9-8298-47bf-9e58-7cb798e8761a"],
+      "notes": "NEW FAIL. Network log shows 2 purchase events sent to region1.google-analytics.com with identical transaction_id 74706bd9-8298-47bf-9e58-7cb798e8761a and _s=10 sequence. Both returned 204. Also 2 place_order events. GTM tag appears to fire twice. Order CO260615-00009 confirmed. Cleanup: cancel order via admin."
+    },
+    {
+      "id": "PAY-AN-017",
+      "status": "BLOCKED",
+      "title": "Authorize.Net — Multi-Step Checkout Review Page",
+      "section": "Authorize.Net > Checkout Flow",
+      "priority": "Medium",
+      "notes": "BLOCKED: checkout_multistep_enabled config flag is OFF on vcst-qa. Navigating to /checkout/review redirected back to /cart within 2 seconds. Precondition requires flag=true. Cannot execute this case without flag change."
+    },
+    { "id": "PAY-AN-018", "status": "PASS", "notes": "Validation-only. Place order disabled with empty form; enabled after all 4 fields validly filled (4007000000027/John Smith/12/29/900). No validation errors shown. No POST to authorize.net during fill. VCST-5162 PR #2309 fix verified working for happy-path." },
+    { "id": "PAY-AN-019", "status": "PASS", "notes": "Validation-only. All 4 negative scenarios passed: (1) expired date 01/20 → 'Expiration date must be in the future'; (2) month 13/29 → 'Provide a valid expiration month'; (3) CVV 2-digits → 'Security code must be at least 3 characters'; (4) non-numeric CVV 'abc' → filtered/rejected, 'This field is required'. Recovery: valid data clears all errors, Place order enabled. No payment network calls during any invalid state. VCST-5162 PR #2309 fix confirmed." },
+    { "id": "PAY-AN-020", "status": "PASS", "notes": "BVA validation-only. BVA 1 (empty): 'This field is required' on blur, Place order disabled. BVA 2 (1-digit year '12/2'): 'Year must be exactly 2 characters' LENGTH error. BVA 3 (2-digit expired '01/20'): 'Expiration date must be in the future' expiry error (distinct from BVA 2). BVA 4 (2-digit future '12/29'): error clears, Place order enabled. No payment network calls during any BVA step." }
+  ],
+  "bugs": [
+    {
+      "id": "BUG_040b_001",
+      "title": "Authorize.Net: Luhn-invalid card number accepted — ghost order created before tokenization",
+      "severity": "Medium",
+      "testCaseId": "PAY-AN-012",
+      "businessRule": "BL-PAY-AN-002",
+      "edgeCaseRef": "ECL-4.1",
+      "failedAssertion": "Client-side Luhn validation should block submission of card 1234567890123456",
+      "stepsToReproduce": "1. Sign in as qa-agent-slot1@virtocommerce.com. 2. Add product to cart. 3. Select Fixed Rate (Ground) + Authorize.Net payment. 4. Enter card 1234567890123456, expiry 12/29, CVV 900, name John Smith. 5. Click Place order.",
+      "expected": "Place order disabled OR inline error 'Invalid card number' — no order created.",
+      "actual": "Place order enabled. Order 1957c7cc-60b7-4aa5-999e-b8fe11e090ea created, redirected to /checkout/payment. No client-side Luhn check.",
+      "consoleErrors": [],
+      "networkErrors": [],
+      "confirmed": false,
+      "notes": "KNOWN/BY-DESIGN — Accept.js defers Luhn to tokenization. Documented as by-design per BUG-AN-cart-card-number-no-luhn-ghost-order."
+    },
+    {
+      "id": "BUG_040b_002",
+      "title": "GA4 purchase event fires twice on Authorize.Net cart payment completion",
+      "severity": "High",
+      "testCaseId": "PAY-AN-016",
+      "businessRule": "BL-GA4-001",
+      "edgeCaseRef": "",
+      "failedAssertion": "GA4 purchase event fires exactly once on order completion",
+      "stepsToReproduce": "1. Sign in as qa-agent-slot1@virtocommerce.com. 2. Add Animal Crossing (ALCE0128) to cart. 3. Select Fixed Rate (Ground) + Authorize.Net. 4. Fill valid card 4007000000027 / John Smith / 12/29 / 900. 5. Click Place order. 6. Monitor network requests to region1.google-analytics.com.",
+      "expected": "Exactly 1 POST to /g/collect with en=purchase for the transaction.",
+      "actual": "2 identical purchase events fired with same transaction_id 74706bd9-8298-47bf-9e58-7cb798e8761a (_s=10 on both). Both returned 204. Also 2 place_order events. Double-counting revenue in GA4.",
+      "consoleErrors": [],
+      "networkErrors": ["POST /g/collect en=purchase ×2 (same transaction_id)"],
+      "confirmed": false,
+      "notes": "NEW — not previously documented. Both events sent from dl=.../cart (same page context _p=1781551485922), same _s=10 sequence counter. GTM tag triggering twice. Affects revenue reporting accuracy."
+    }
+  ],
+  "errors": []
+}

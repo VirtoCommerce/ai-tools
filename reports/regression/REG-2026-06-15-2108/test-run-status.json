@@ -1,0 +1,66 @@
+{
+  "runId": "REG-2026-06-15-2108",
+  "selection": "sprint:26-11 → P0 gate (7 suites)",
+  "env": "vcst-qa",
+  "build": {
+    "platform": "3.1037.0",
+    "theme": "2.51.0-pr-2315-3425"
+  },
+  "browserPlan": "payment suites (039,040a,040b,041) on chrome/edge only; firefox = smoke/API",
+  "suites": {
+    "042": {
+      "name": "Smoke",
+      "priority": "P0",
+      "browser": "playwright-firefox",
+      "status": "not-dispatched (batches 2-3 paused)"
+    },
+    "078": {
+      "name": "Backend Smoke",
+      "priority": "P0",
+      "browser": "playwright-firefox",
+      "status": "not-dispatched (batches 2-3 paused)"
+    },
+    "039": {
+      "name": "Payment CyberSource",
+      "priority": "P0",
+      "browser": "playwright-chrome",
+      "status": "not-dispatched (batches 2-3 paused)"
+    },
+    "040a": {
+      "name": "Payment Skyflow",
+      "priority": "P0",
+      "browser": "playwright-edge",
+      "status": "completed",
+      "passed": 16,
+      "failed": 3,
+      "blocked": 6,
+      "skipped": 1,
+      "passRate": "59%",
+      "note": "PAY-SKY-014/015 known VCST-5202; PAY-SKY-013/019 decline-retry (BUG_040a_002); 6 BLOCKED need >=2 saved cards"
+    },
+    "040b": {
+      "name": "Payment Authorize.Net",
+      "priority": "P0",
+      "browser": "playwright-chrome",
+      "status": "completed",
+      "passed": 7,
+      "failed": 2,
+      "blocked": 1,
+      "passRate": "70%",
+      "note": "PAY-AN-012 FAIL by-design; PAY-AN-016 FAIL new GA4 double-fire (BUG_040b_002); PAY-AN-017 BLOCKED multistep-off"
+    },
+    "041": {
+      "name": "Payment Cross-Cutting",
+      "priority": "P0",
+      "browser": "playwright-edge",
+      "status": "not-dispatched (batches 2-3 paused)"
+    },
+    "049": {
+      "name": "Platform API",
+      "priority": "P0",
+      "browser": "playwright-chrome",
+      "status": "not-dispatched (batches 2-3 paused)"
+    }
+  },
+  "status": "PAUSED (awaiting user decision: deprecated-case correction + unsanctioned commits)"
+}

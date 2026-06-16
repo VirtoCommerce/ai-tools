@@ -1,0 +1,51 @@
+{
+  "runId": "MONITOR-2026-06-16-0850",
+  "date": "2026-06-16T08:50:00Z",
+  "env": "vcst",
+  "windowMinutes": 1440,
+  "layers": ["backend", "storefront"],
+  "access": "azure-mcp monitor_resource_log_query (AAD)",
+  "counts": { "distinctSignatures": 24, "new": 24, "spiking": 0, "needsReview": 3, "dismissed": 21, "deferred": 0 },
+  "confirmed": [],
+  "needsReview": [
+    {
+      "id": "vcst5028-org-membership",
+      "layer": "backend",
+      "class": "NEEDS_REVIEW",
+      "signatures": [
+        "System.MissingMethodException @ Unlock/Lock/ChangeOrganizationContactRole/InviteUser.AssignUserRoles",
+        "System.InvalidOperationException @ Lock/UnlockOrganizationContactCommandHandler",
+        "PlatformException @ NotificationMessageService.SaveNotificationMessages (inviteUser)",
+        "500 graphql InviteUser/UnlockOrganizationContact/OrganizationMembership.Create/GetOrganizationContacts/GetOrganizationAddresses"
+      ],
+      "firstSeen": "2026-06-15T11:01:00Z",
+      "lastSeen": "2026-06-15T15:00:00Z",
+      "hypothesis": "Mid-deploy/binary version skew while VCST-5028 (branch test/VCST-5028, commit 17a91cd) is under active test; MissingMethodException = runtime method mismatch.",
+      "action": "Human to verify against current deployed VCST-5028 build."
+    },
+    {
+      "id": "companyinfo-storefront-typeerror",
+      "layer": "storefront",
+      "class": "NEEDS_REVIEW",
+      "signatures": ["TypeError reading 'status' @ Rve.fn x5 (CompanyInfo)", "SyntaxError: 26 @ TC x6 (CompanyInfo)"],
+      "firstSeen": "2026-06-15T09:48:00Z",
+      "lastSeen": "2026-06-15T13:26:18Z",
+      "hypothesis": "Downstream of org-membership 500s; possible missing null-guard on failed response.",
+      "action": "Confirm independently before filing."
+    },
+    {
+      "id": "es400-searchproducts",
+      "layer": "backend",
+      "class": "NEEDS_REVIEW",
+      "signatures": ["HTTP essearch-es-http...:9200 400 x7", "500 CatalogModuleIndexedSearch/SearchProducts x4"],
+      "firstSeen": "2026-06-15T13:10:01Z",
+      "lastSeen": "2026-06-15T22:23:27Z",
+      "hypothesis": "Malformed ES query; likely test-induced (bracketed by 22:00 smoke session).",
+      "action": "Clean repro needed to rule out query-builder defect."
+    }
+  ],
+  "dismissed": 21,
+  "jiraFiled": false,
+  "fixAttempted": false,
+  "teamsNotified": false
+}

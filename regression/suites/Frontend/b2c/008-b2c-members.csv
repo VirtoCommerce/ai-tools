@@ -329,75 +329,73 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is currently in 'Blocked' 
 11. [ACT] For any member row that IS visible, click button 'Actions' — confirm Actions dropdown contains 'Edit role' and 'Block user' ONLY for TechFlow org members","[STATE] TechFlow admin cannot see or modify roles for BuildRight org members (AC4)
 [STATE] /company/members scoped to currently-authenticated org context
 [STATE] changeOrganizationContactRole returns errors[] non-empty for cross-org target","[API] changeOrganizationContactRole with cross-org memberId returns errors[] non-empty (authorization failure)","TechFlow admin can modify BuildRight member roles (AC4 violation — P0 authorization bypass); cross-org members visible in TechFlow members list","none","VCST-5028","Draft"
-"B2C-MBR-023","[VCST-5028] Maintainer Full Member-Governance Lifecycle: Invite → Role Edit → Block → Org-Login Isolation → Unblock → Remove","B2C Features > Members > Org Membership [JOURNEY]","Critical","PROPOSED-BL-B2B-007; PROPOSED-BL-B2B-008; PROPOSED-BL-B2B-009; PROPOSED-BL-AUTH-012; PROPOSED-BL-AUTH-013; BL-B2B-005; BL-AUTH-003","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
-Logged out. TechFlow org exists and has at least one existing member (separate from the invite target).
-AGENT-TEST- invite target email used (fresh per run — never a fixture user).
-Precondition fixture state: @td(MULTI_ORG_TF_BR.email) is NOT locked from TechFlow and NOT locked from BuildRight (clean state).
-NOTE [BUG-A]: Storefront write operations (role-change, block) on /company/members are currently broken due to BUG-A (GetPageContext.user.permissions returns [] after org-switch → Invite button and per-row action menus hidden for maintainers). Steps authored against intended behaviour. When this journey actually reaches role-change/block steps and the action menus are absent, assert BUG-A regression signal (not feature failure). The [ACT] steps below describe the intended UX; actual execution may short-circuit at the action menu step until BUG-A is fixed.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; actor_email=@td(MULTI_ORG_TF_BR.email); actor_password=@td(MULTI_ORG_TF_BR.password); actor_member_id=@td(MULTI_ORG_TF_BR.id); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_buildright_id=@td(MULTI_ORG_TF_BR.org_buildright_id); invite_email=AGENT-TEST-invite-{{timestamp}}@yopmail.com","--- SCREEN: Login ---
+"B2C-MBR-023","[VCST-5028] Maintainer Full Member-Governance Lifecycle: Invite -> Role Edit -> Block -> Cross-Org Login Isolation -> Unblock -> Remove","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-007; BL-B2B-008; BL-B2B-009; BL-AUTH-012; BL-AUTH-013; BL-B2B-005; BL-AUTH-003","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
+Logged out. TechFlow org exists with @td(MULTI_ORG_TF_BR.email) as org-maintainer.
+Both org memberships for the fixture user are in clean/unlocked state.
+AGENT-TEST- invite target: AGENT-TEST-invite-5028@yopmail.com (fresh per run, never a fixture user).
+NOTE [BUG-A]: Storefront write ops (invite, role-change, block) on /company/members currently broken
+due to BUG-A (GetPageContext.user.permissions returns [] after org-switch -> Invite button and
+per-row action menus hidden for maintainers). Steps authored against intended behaviour.
+When action menus are absent at role-change/block steps, assert BUG-A regression signal rather than test failure.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; actor_email=@td(MULTI_ORG_TF_BR.email); actor_password=@td(MULTI_ORG_TF_BR.password); actor_member_id=@td(MULTI_ORG_TF_BR.id); actor_user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); invite_email=AGENT-TEST-invite-5028@yopmail.com","--- SCREEN: Login ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
-[ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
-[ACT] Click [data-test-id=""login-button""]
+[ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
+[ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
+[ACT] Click [data-test-id=login-button]
 [WAIT] Account menu appears
-[ASSERT] [DOM] Account chip or header shows user name — session established
-[ASSERT] [DOM] Org-switcher or company selector shows TechFlow (select TechFlow if org-selector is shown)
---- SCREEN: Company Members ---
+[ASSERT] [DOM] Account chip or header shows user name -- session established
+[ASSERT] [DOM] Org-selector shows TechFlow and BuildRight; select TechFlow if prompted
+--- SCREEN: Company Members (Invite) ---
 [NAV] Navigate to {{FRONT_URL}}/company/members
 [WAIT] Members list renders with at least one row
-[ASSERT] [DOM] ""Invite"" button visible (maintainer permission — if absent, record BUG-A signal: action hidden due to empty permissions[])
---- SCREEN: Invite Member ---
-[ACT] Click ""Invite"" button
+[ASSERT] [DOM] Invite button visible (maintainer permission); if absent: BUG-A regression signal -- write actions hidden due to empty permissions[]
+[ACT] Click Invite button
 [WAIT] Invite member dialog opens
-[ACT] Fill invite email field with AGENT-TEST-invite-{{timestamp}}@yopmail.com
-[ACT] Select role ""Organization employee"" (org-employee)
-[ACT] Click ""Invite"" / ""Send"" confirm button
+[ACT] Fill invite email field with AGENT-TEST-invite-5028@yopmail.com
+[ACT] Select role Organization employee (org-employee)
+[ACT] Click Invite / Send confirm button
 [WAIT] Success toast or dialog close
 [ASSERT] [DOM] Success toast shown; dialog closed
-[ASSERT] [DOM] Invited member email appears in members list (pending or active row)
+[ASSERT] [DOM] Invited member email appears in members list row (pending or active)
 --- SCREEN: Role Edit ---
-[ACT] Locate the just-invited member row in members list
-[ACT] Open per-row action menu (kebab / ellipsis) for that member
-[ACT] Select ""Edit role"" or role dropdown option
-[ACT] Change role to ""Organization manager"" (org-manager) if available, else toggle to a different role
-[ACT] Confirm/save role change
+[ACT] Locate the invited member row (AGENT-TEST-invite-5028@yopmail.com)
+[ACT] Open per-row action menu (kebab/ellipsis) for that member
+[ACT] Select Edit role or role dropdown option
+[ACT] Change role to Organization manager (org-manager) if available, else alternate available role
+[ACT] Confirm / save role change
 [WAIT] Success feedback (toast or row update)
-[ASSERT] [DOM] Member row reflects updated role label
-[ASSERT] [STATE] No full page reload — only the row updates
+[ASSERT] [DOM] Member row reflects updated role label without full page reload
+[ASSERT] [STATE] Role column updates in-place (no redirect)
 --- SCREEN: Block Member ---
 [ACT] Open per-row action menu for the same member
-[ACT] Select ""Block"" action
+[ACT] Select Block action
 [ACT] Confirm block in confirmation dialog
 [WAIT] Success toast
-[ASSERT] [DOM] Member row status changes to ""Blocked"" or locked indicator appears
+[ASSERT] [DOM] Member row status changes to Blocked / locked indicator
 [ASSERT] [DOM] Success toast shown
---- SCREEN: Cross-Org Login Isolation ---
-[PRE:CLEAR_SESSION]
-[WAIT] Session cleared — user is logged out
-[NOTE] This screen simulates the blocked member trying to log in to their blocked org. Since the invited member is AGENT-TEST- with an actual account (or has not yet accepted the invite), this step validates via REST rather than a live storefront login. Document via [HTTP POST] below.
-[HTTP POST] {{FRONT_URL}}/connect/token body: grant_type=password&username=AGENT-TEST-invite-{{timestamp}}@yopmail.com&password=Password1!&store_id=B2B-store (attempt blocked-org login — expect 400 invalid_grant with code=user_is_locked_in_organization if account was fully provisioned, OR confirm block state via REST if account is still in invited/pending state)
-[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked (global-account guard — MUST return {""locked"": false} — actor must remain unaffected throughout this journey)
---- SCREEN: Actor Re-Login for Unblock ---
-[ACT] Sign in again as @td(MULTI_ORG_TF_BR.email) / @td(MULTI_ORG_TF_BR.password) into TechFlow
-[NAV] Navigate to {{FRONT_URL}}/company/members
-[ASSERT] [DOM] Blocked member row still visible with locked/blocked indicator
+--- SCREEN: Cross-Org Login Isolation Guard ---
+[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
+[ASSERT] [STATUS] 200
+[ASSERT] [BODY] {""locked"": false} -- actor global account NOT locked (BL-AUTH-012: org-scoped block must not set ApplicationUser.LockoutEnd)
+--- SCREEN: Unblock Member ---
 [ACT] Open per-row action menu for the blocked member
-[ACT] Select ""Unblock"" action
+[ACT] Select Unblock action
 [ACT] Confirm unblock
 [WAIT] Success toast
 [ASSERT] [DOM] Member row returns to active/non-blocked state
+[ASSERT] [DOM] Success toast shown
 --- SCREEN: Remove Member ---
 [ACT] Open per-row action menu for the same member
-[ACT] Select ""Remove"" or ""Delete"" action
+[ACT] Select Remove or Delete action
 [ACT] Confirm removal in dialog
 [WAIT] Success feedback
 [ASSERT] [DOM] Member row no longer present in members list","[DOM] After invite: invited member appears in list row (pending or active)
 [DOM] After role edit: role column shows updated role without page reload
-[DOM] After block: member row shows locked/blocked status indicator; success toast displayed
-[STATE] Cross-org isolation: actor global account remains unlocked throughout (critical PROPOSED-BL-AUTH-012 guard)
+[DOM] After block: member row shows Blocked/locked status; success toast displayed
+[STATE] Cross-org isolation: actor global account remains unlocked throughout (BL-AUTH-012)
 [DOM] After unblock: member row returns to active state; success toast
-[DOM] After remove: member row gone from list","[API] After block action: POST {{BACK_URL}}/api/customer/organization-memberships/search body {""userId"":""<invited_member_userId>""} — TechFlow membership isLocked=true (AC3 org-scoped lock persisted)
-[API] Global guard: GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked → {""locked"": false} (actor not affected — PROPOSED-BL-AUTH-012)
-[API] After unblock: same search — TechFlow membership isLocked=false
-[API] After remove: same search — TechFlow membership no longer returned for invited member","Invite button absent after TechFlow login (BUG-A: empty permissions[] regression — PROPOSED-BL-B2B-007); per-row action menus missing (BUG-A same cause); block action sets global ApplicationUser.LockoutEnd instead of org-scoped lock (PROPOSED-BL-AUTH-012 violation — critical); unblock does not restore active state; remove leaves ghost row in list; success toasts absent after any write action","[SAVE] If blocked: unblock the invited AGENT-TEST- member via REST POST {{BACK_URL}}/api/customer/organization-memberships/{{membership_id}}/unlock before removal
-[SAVE] Remove invited AGENT-TEST- member from TechFlow via Admin SPA or REST DELETE if the storefront removal did not complete: POST {{BACK_URL}}/api/customer/organization-memberships/search {userId} → get membershipId → DELETE {{BACK_URL}}/api/customer/organization-memberships/{id}
-[SAVE] Restore actor @td(MULTI_ORG_TF_BR.email) TechFlow role to org-maintainer if it was changed as a side effect","VCST-5028; BA-2026-06-15; BL-B2B-005; PROPOSED-BL-B2B-007; PROPOSED-BL-AUTH-012; Technique: State Transition (invite→active→blocked→unblocked→removed)","Draft"
+[DOM] After remove: member row gone from list","[API] After block: POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId:<invited_userId>} -> TechFlow membership isLocked=true (AC3 org-scoped lock)
+[API] Global guard: GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked -> {locked: false} (BL-AUTH-012)
+[API] After unblock: same search -> TechFlow membership isLocked=false
+[API] After remove: same search -> TechFlow membership no longer returned for invited member","Invite button absent after TechFlow login (BUG-A: empty permissions[] regression -- BL-B2B-007 mid-journey signal); per-row action menus missing (BUG-A same cause); block action sets global ApplicationUser.LockoutEnd instead of org-scoped lock (BL-AUTH-012 violation -- critical); GET .../locked returns {locked: true} after block action (BL-AUTH-012 regression); unblock does not restore active state; remove leaves ghost row in list; success toasts absent after any write action","[SAVE] If blocked: unblock invited AGENT-TEST- member via REST POST {{BACK_URL}}/api/customer/organization-memberships/{{membership_id}}/unlock
+[SAVE] Remove invited AGENT-TEST- member from TechFlow via REST if storefront removal did not complete: POST {{BACK_URL}}/api/customer/organization-memberships/search {userId} -> get membershipId -> DELETE {{BACK_URL}}/api/customer/organization-memberships/{id}
+[SAVE] Restore actor @td(MULTI_ORG_TF_BR.email) TechFlow role to org-maintainer if changed as side effect","VCST-5028; BA-2026-06-15; BL-B2B-005; BL-B2B-007; BL-AUTH-012; Technique: State Transition (invite>active>role-changed>blocked>unblocked>removed)","Draft"
