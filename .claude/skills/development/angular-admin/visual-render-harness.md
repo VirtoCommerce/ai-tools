@@ -143,15 +143,51 @@ render still showed the ~27 px overlap because the grid kept its old top offset)
 
 So when the bug is **toolbar/header overlap on a blade whose `.blade-content` hosts a `ui-grid`**, you have two
 honest options — never report a static green as proof:
-1. **Drive a real Angular relayout in the harness.** After swapping/rendering, run a `$digest` and force the
-   grid to re-measure, e.g. `angular.element(grid).scope().$apply()` then
-   `gridApi.core.handleWindowResize()` (or trigger a window `resize`), and only then screenshot. This works
-   only if the harness actually bootstraps Angular + ui-grid (not a static `setContent`).
-2. **Route to deploy verification.** If you can't drive a faithful relayout, prove the toolbar-internal layout
-   in the harness, **validate the fix pattern by reference** (render or inspect a canonical sibling blade that
-   already uses the same `searchrow`+`ui-grid` pattern correctly — e.g. `vc-module-pricing` `pricelist-list` /
-   `assignment-list`), and label the PR **"needs deploy/visual verification"** so G6 closes it post-deploy.
-   This is the right call rather than a false green.
+
+### Option 1 — Drive a real Angular relayout in the harness
+
+Only works if the harness **bootstraps Angular + ui-grid** and renders the **real blade chrome** (`.blade-static`
+then `.blade-content` in normal document flow) — *not* a static `setContent` and *not* an in-browser swap on the
+live admin (there `.blade-content`'s `top` was already pinned by the platform's blade controller at load, so a
+swap won't move it). Two things must recompute after the fix renders: the **blade layout** (so `.blade-content`
+starts below the auto-sized `.blade-static`) and the **grid viewport** (so ui-grid re-measures). Force both, then
+screenshot:
+
+```js
+// inside the Angular-bootstrapped harness page, after the fixed blade has compiled
+const inj   = angular.element(document.body).injector();
+const $root = inj.get('$rootScope');
+
+// 1) the blade template binds a ui-grid; capture its gridApi when ui-grid emits it.
+//    In the harness controller's setGridOptions stub, keep a ref:
+//      $scope.gridOptions = { ..., onRegisterApi: api => (window.__harnessGridApi = api) };
+$root.$applyAsync();                              // flush the digest so .blade-static gets its real height
+
+// 2) let layout settle one frame, then make ui-grid re-measure the (now shorter) toolbar
+requestAnimationFrame(() => {
+  window.dispatchEvent(new Event('resize'));      // ui-grid-auto-resize listens for this
+  const api = window.__harnessGridApi;
+  if (api && api.core && api.core.handleWindowResize) api.core.handleWindowResize();
+  $root.$applyAsync();
+  // screenshot on the NEXT frame, after the grid has repositioned below the toolbar
+  requestAnimationFrame(() => { window.__harnessReady = true; });
+});
+```
+
+Then in the browser driver, wait for `window.__harnessReady === true` (or a fixed ~500 ms settle) before
+`page.screenshot()`. If `onRegisterApi` isn't wired, the bare `window.dispatchEvent(new Event('resize'))` inside
+an `$apply` is usually enough for `ui-grid-auto-resize` blades. Verify the green is real: the grid `<thead>` top
+must now be **≥** the toolbar's bottom (no overlap) — assert the geometry, don't eyeball it.
+
+### Option 2 — Validate the pattern by reference + route to deploy verification
+
+If you can't bootstrap a faithful Angular+ui-grid relayout, prove the **toolbar-internal** layout in the harness,
+then **validate the fix pattern by reference**: render or inspect a canonical sibling blade that already uses the
+same `searchrow`+`ui-grid` pattern correctly and confirm it has **zero** toolbar↔header overlap in production
+(`vc-module-pricing` `pricelist-list` / `assignment-list` — verified 0 px overlap / 20 px gap on live QA,
+2026-06-17, vs the buggy export blade's ~27 px). Same pattern + same runtime ui-grid + no overlap ⇒ the fix
+pattern is sound; label the PR **"needs deploy/visual verification"** so G6 closes it post-deploy. This is the
+right call rather than a false green.
 
 ## Heavy fallback — full local platform run
 
