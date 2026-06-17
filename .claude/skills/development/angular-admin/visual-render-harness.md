@@ -38,9 +38,14 @@ _scratch/VCST-XXXX/
 
 ## `render.html` recipe
 
-1. **Pull the real platform CSS.** Either the live QA stylesheet (`{BACK_URL}` → the platform's
-   `css/platform.css`) or the compiled `platform.css` from the cloned `vc-platform` checkout. Reference it
-   with a `<link>` so the render is pixel-faithful to production.
+1. **Pull the real platform CSS.** Either the live QA stylesheet (`{BACK_URL}/css/platform.css`) or the
+   compiled `platform.css` from the cloned `vc-platform` checkout. Reference it with a `<link>` so the render
+   is pixel-faithful to production. **Gotcha — icon fonts / relative assets:** `platform.css` references its
+   Font Awesome glyph font (and some background images) via **relative** URLs; when you link the CSS from a
+   remote host but serve `render.html` from `localhost`, those assets resolve against *localhost* and 404, so
+   `fa fa-*` icons render blank (verified on VCST-5276 — the clear-`×`/pencil were invisible until fixed). If
+   the fix involves icons, also load the matching **Font Awesome from a CDN** (VC Admin uses FA4 `fa fa-*`
+   names → `font-awesome/4.7.0/css/font-awesome.min.css`), or serve a local copy of the font next to the CSS.
 2. **Load AngularJS** (the same major used by the SPA — 1.x; a CDN build is fine for the harness).
 3. **Inline (or fetch) the real blade `.tpl.html`** from the module checkout into an `ng-template` /
    container so you render the **actual** markup you changed — never a hand-retyped copy.
