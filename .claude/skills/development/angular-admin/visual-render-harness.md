@@ -131,6 +131,28 @@ service), **escalate** to the heavy fallback below rather than skipping the proo
 
 ---
 
+## Limitation: ui-grid blades (toolbar-over-grid overlaps)
+
+The harness renders the **toolbar's own** layout faithfully, but it can't prove that a **`ui-grid`** below the
+toolbar repositions correctly. ui-grid anchors its header viewport to the top of `.blade-content` and only
+re-measures the `.blade-static` toolbar height during an AngularJS layout pass
+(`gridApi.core.handleWindowResize()` after a `$digest`). A detached/static render — or an in-browser DOM swap
+of the toolbar markup on the live admin — does **not** trigger that recompute, so a genuine toolbar↔grid-header
+overlap looks **unchanged** even when the fix is correct (verified on VCST-5276, 2026-06-17: the static green
+render still showed the ~27 px overlap because the grid kept its old top offset).
+
+So when the bug is **toolbar/header overlap on a blade whose `.blade-content` hosts a `ui-grid`**, you have two
+honest options — never report a static green as proof:
+1. **Drive a real Angular relayout in the harness.** After swapping/rendering, run a `$digest` and force the
+   grid to re-measure, e.g. `angular.element(grid).scope().$apply()` then
+   `gridApi.core.handleWindowResize()` (or trigger a window `resize`), and only then screenshot. This works
+   only if the harness actually bootstraps Angular + ui-grid (not a static `setContent`).
+2. **Route to deploy verification.** If you can't drive a faithful relayout, prove the toolbar-internal layout
+   in the harness, **validate the fix pattern by reference** (render or inspect a canonical sibling blade that
+   already uses the same `searchrow`+`ui-grid` pattern correctly — e.g. `vc-module-pricing` `pricelist-list` /
+   `assignment-list`), and label the PR **"needs deploy/visual verification"** so G6 closes it post-deploy.
+   This is the right call rather than a false green.
+
 ## Heavy fallback — full local platform run
 
 When the render harness can't reproduce the bug, run the real Admin SPA: a local `vc-platform` (with the
