@@ -27,7 +27,8 @@ toolbar was built with absolute positioning + fixed pixels.
   </div>
 </div>
 
-<!-- AFTER (fixed): searchrow flex + column-half + filter-edit; let blade-static auto-size -->
+<!-- AFTER (fixed): searchrow flex + column-half + filter-edit. NOTE: blade-static is fixed-height (70px) —
+     this fits because it's ONE row. If you also show a note above the searchrow, see Recipe 2 (reserve height). -->
 <div class="blade-static">
   <div class="form-group searchrow">
     <div class="form-input __search column-half">
@@ -49,24 +50,45 @@ Canonical reference to mirror: `vc-module-pricing/.../Scripts/blades/assignment-
 
 ---
 
-## Recipe 2 — Blade clips content / fixed height
+## Recipe 2 — Toolbar overflows / overlaps the grid header (the REAL VCST-5276 cause)
 
-**Symptom:** content cut off or a gap below a toolbar because a `blade-static` height was hardcoded.
+**Symptom:** a search/filter toolbar sits **on top of** the grid header (`<thead>`) when an info note is also
+shown. **Root cause:** `.blade-static` is **fixed-height (70px), NOT auto-sizing**, with `overflow: visible`,
+and `.blade-content` (the grid) flows in at that fixed 70px bottom. A one-row searchrow fits 70px — but a
+`.__note` stacked **above** the searchrow makes the content ~136px, so the searchrow spills past the box and
+lands on the grid header. (Measured live, VCST-5276.)
+
+**Do NOT just delete the height** (that was the failed PR #101 attempt — removing `ng-style="{'height':'140px'}"`
+collapsed blade-static back to 70px and re-broke it). The height reservation was the *right idea*; only the
+inline `ng-style` magic-number was wrong. Two correct fixes:
 
 ```html
-<!-- BEFORE -->  <div class="blade-static" ng-style="{'height':'140px'}"> … </div>
-<!-- AFTER  -->  <div class="blade-static"> … </div>      <!-- auto-sizes -->
-```
-
-If an optional row (e.g. a warning) caused the height reservation, gate the row with `ng-if` instead of
-reserving fixed height:
-
-```html
+<!-- OPTION A (cleanest): move the non-toolbar note OUT of blade-static, into the content area above the grid.
+     blade-static then holds only the searchrow → fits 70px → no overflow. -->
 <div class="blade-static">
+  <div class="form-group searchrow"> …search + filter + pencil… </div>
+</div>
+<div class="blade-content …">
+  <div class="blade-inner">
+    <div class="inner-block">
+      <p class="text __note" ng-if="blade.warn">…Important!…</p>   <!-- note lives here now -->
+      <div class="table-wrapper"><div ui-grid="gridOptions" …></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- OPTION B: keep the note pinned in the toolbar, but RESERVE the extra height with a class (not inline ng-style):
+     __expanded bumps blade-static taller so note+searchrow fit and blade-content flows below. -->
+<div class="blade-static" ng-class="{'__expanded': blade.warn}">
+  <p class="text __note" ng-if="blade.warn">…Important!…</p>
   <div class="form-group searchrow"> … </div>
 </div>
-<div class="inner-block" ng-if="blade.warn">{{ 'module.warnings.x' | translate }}</div>
 ```
+
+> `ng-if` on the note removes it when absent (good — single row, 70px fits), but when the note IS present you
+> still need the room — that's what Option A (move it out) or Option B (`__expanded`) provides. Verify with the
+> measurement script (Recipe 0 / `admin-spa-ui-conventions.md` §4): `thead.top` must be **≥** the searchrow's
+> `bottom`.
 
 ---
 

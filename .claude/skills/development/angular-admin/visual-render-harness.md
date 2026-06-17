@@ -155,8 +155,10 @@ Only works if the harness **bootstraps Angular + ui-grid** and renders the **rea
 then `.blade-content` in normal document flow) — *not* a static `setContent` and *not* an in-browser swap on the
 live admin (there `.blade-content`'s `top` was already pinned by the platform's blade controller at load, so a
 swap won't move it). Two things must recompute after the fix renders: the **blade layout** (so `.blade-content`
-starts below the auto-sized `.blade-static`) and the **grid viewport** (so ui-grid re-measures). Force both, then
-screenshot:
+starts below the `.blade-static` at its reserved height — recall `.blade-static` is fixed-height, so a
+multi-row toolbar must use `__expanded`/reserve height, see `admin-spa-ui-conventions.md` §2.1) and the **grid
+viewport** (so ui-grid re-measures). Force both, then **measure** (don't just screenshot — assert
+`searchrow.bottom <= gridHeader.top`, §4 of the conventions doc):
 
 ```js
 // inside the Angular-bootstrapped harness page, after the fixed blade has compiled

@@ -9,8 +9,10 @@ entry here, then **mirror a canonical sibling blade** rather than inventing layo
 > **Why this file exists.** [vc-module-export PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101)
 > took 5 commits + a dismissed review to fix one toolbar bug because the fixer didn't know these classes
 > existed and reinvented layout with `style="position:absolute; left:220px; width:190px"` +
-> `ng-style="{'height':'140px'}"`. The correct fix was three platform classes (`searchrow`, `column-half`,
-> `filter-edit`) + letting `blade-static` auto-size. **Discover-first, mirror, never inline-position.**
+> `ng-style="{'height':'140px'}"`. The correct fix uses platform classes (`searchrow`, `column-half`,
+> `filter-edit`) for the toolbar AND **reserves enough `blade-static` height for the note** (it is
+> fixed-height — see §2.1; the original height reservation was right, only doing it inline was wrong).
+> **Discover-first, mirror, MEASURE the result (§4) — never inline-position, never guess geometry.**
 
 Used by `/angular-admin`, `fullstack-backend`, `backend-reviewer`, and `qa-backend-expert`. Pair with
 `vc-module-architecture.md` §2 (Admin UI ships in the module repo) and the `/angular-admin`
@@ -64,7 +66,7 @@ Every blade is: an optional fixed top `blade-static` (search/filter), an optiona
 (create / ok-cancel / pager), and the scrollable `blade-content → blade-inner → inner-block`.
 
 ```html
-<div class="blade-static">                         <!-- fixed top: search / filters; AUTO-SIZES -->
+<div class="blade-static">                         <!-- fixed top: search/filters. FIXED height 70px (NOT auto) -->
     <div class="form-group searchrow"> … </div>
 </div>
 <div class="blade-static __bottom"                  <!-- fixed bottom: actions / pager -->
@@ -80,15 +82,27 @@ Every blade is: an optional fixed top `blade-static` (search/filter), an optiona
 
 - **Size modifiers** on `blade-content` (mutually exclusive, omit for normal width): `__medium-wide`,
   `__large-wide`, `__xlarge-wide`. Use a wider blade for multi-column grids.
-- **Auto-sizing:** `blade-static` sizes to its content. **Never** `ng-style="{'height':'140px'}"` — that was
-  the PR #101 bug (a fixed height clipped/overlapped the grid below). Let it auto-size; gate optional rows
-  with `ng-if` instead of reserving height.
+- **`blade-static` is FIXED-height, NOT auto-sizing** (default `height: 70px`, `overflow: visible`) — and
+  `blade-content` flows in directly at that fixed bottom. So its content must FIT in the reserved height; if
+  it doesn't, the content **overflows and overlaps the grid/content below**. This is the real
+  [VCST-5276 / PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101) cause (verified by live
+  DevTools measurement 2026-06-17): a one-row toolbar fits 70px, but an `.__note` message stacked **above**
+  the `searchrow` needed ~136px → the searchrow spilled past the 70px box onto the grid header.
+  - **One toolbar row** (just a `searchrow`) → the default 70px is correct; do nothing.
+  - **More than one row** (e.g. an info note above the searchrow, or a multi-row filter) → you MUST give
+    `blade-static` enough height. Reserve it with a **class**, not inline `ng-style`: conditionally apply
+    `__expanded` (`ng-class="{'__expanded': blade.someCondition}"`) — or, cleanest, **move the non-toolbar
+    content (an info note) out of `blade-static` into the top of `blade-content`/`blade-inner`** so the
+    toolbar stays one row. (The original PR #101 instinct — reserve height — was right; doing it via inline
+    `ng-style="{'height':'140px'}"` was the only wrong part. Removing the reservation entirely re-broke it.)
 - **Bottom toolbar** is an `ng-include` of a shared template — `create.tpl.html` (single Create),
   `ok-cancel2.tpl.html` (Cancel + OK), `ok.tpl.html`. Don't hand-roll the buttons.
-- Reference: `vc-module-pricing/.../Scripts/blades/pricelist-list.tpl.html` (list),
-  `pricelist-detail.tpl.html` (detail).
-- **Anti-pattern:** fixed `ng-style` height on `blade-static`; omitting the `blade-inner → inner-block` wrapper;
-  hardcoded pixel widths instead of a `__*-wide` modifier.
+- Reference: `vc-module-pricing/.../Scripts/blades/pricelist-list.tpl.html` (list — a single-row toolbar that
+  fits the default 70px and shows no note), `pricelist-detail.tpl.html` (detail).
+- **Anti-pattern:** **inline `ng-style="{'height':'…px'}"`** with a magic number (use the `__expanded` class
+  or move content out instead); cramming a note **plus** a searchrow into the default 70px `blade-static`
+  (overflow → overlap); omitting the `blade-inner → inner-block` wrapper; hardcoded pixel widths instead of a
+  `__*-wide` modifier.
 
 ### 2.2 Search box
 
@@ -310,22 +324,58 @@ in the same or a sibling module rather than inventing a container.
    Prefer a sibling blade in the **same module**; fall back to `vc-module-pricing` (richest canonical set) or
    `vc-platform` core blades.
 4. **Mirror** that structure into the file you're fixing; reuse the classes verbatim.
-5. **Audit your own diff** for the §0 anti-patterns (inline `position`, fixed px, `ng-style` height) before
-   handing off.
+5. **Audit your own diff** for the §0 anti-patterns (inline `position`, fixed px, inline `ng-style` height).
+6. **MEASURE the result (§4)** — never declare a layout fix done on a screenshot or a guess; require the
+   numeric overlap/alignment assertion to pass.
 
 There is **no Storybook/component gallery** for the Admin SPA — this catalog plus the canonical reference
 blades are the style guide.
 
 ---
 
-## 4. Verifying a layout/CSS fix (you have no browser)
+## 4. Verifying a layout/CSS fix — MEASURE, don't eyeball
 
-The Node scratch harness (`/angular-admin` `scratch-harness-patterns.md`) proves **logic**, not layout — it
-can't render CSS. For layout/CSS fixes, build a **visual render harness** (`/angular-admin`
-`visual-render-harness.md`): a throwaway HTML page that loads the real blade `.tpl.html` against the real
-`platform.css`, served locally and screenshotted by `qa-backend-expert` (who has a browser) **before the PR
-is opened** — broken render (red) vs fixed render (green), evidence pasted into the PR body. This replaces the
-old "visual = trivial-skip, confirm after deploy" gap.
+**A screenshot can lie.** On VCST-5276 a render-harness screenshot reported PASS while the live blade still
+overlapped (the harness rendered a no-note case; ui-grid never re-laid-out). Eyeballing a thumbnail also
+missed a 24px overlap. So a layout/CSS fix is **not** "done" until the geometry is **measured** and the
+overlap/alignment assertion passes numerically.
+
+**Step 1 — measure the live blade in a browser (read-only; allowed by the real-user hook).** Run this in
+Chrome DevTools (`evaluate_script`) or a Playwright `browser_evaluate` — it uses only `getBoundingClientRect`
+/ `getComputedStyle`, the read-only operations the hook permits:
+
+```js
+() => {
+  const blade = [...document.querySelectorAll('.blade')]
+    .find(b => /<blade header text>/.test(b.textContent)) || document.querySelector('.blade');
+  const box = el => el && Object.assign(
+    { cls: el.className, cssHeight: getComputedStyle(el).height, overflow: getComputedStyle(el).overflowY },
+    (r => ({ top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height) }))(el.getBoundingClientRect()));
+  const q = s => blade.querySelector(s);
+  const staticEl = q('.blade-static:not(.__bottom)'),
+        searchrow = q('.searchrow'),
+        note = q('.text.__note'),
+        header = q('.ui-grid-header') || q('.ui-grid-header-viewport') || q('thead');
+  const sb = searchrow && searchrow.getBoundingClientRect().bottom;
+  const ht = header && header.getBoundingClientRect().top;
+  return {
+    bladeStatic: box(staticEl), searchrow: box(searchrow), note: box(note), gridHeader: box(header),
+    // THE assertion: the toolbar's real bottom must sit ABOVE the grid header's top.
+    overlapPx: (sb != null && ht != null) ? Math.max(0, Math.round(sb - ht)) : null,
+    PASS: (sb != null && ht != null) ? sb <= ht : null,
+  };
+}
+```
+
+**Step 2 — the assertion that defines "fixed":** `searchrow.bottom <= gridHeader.top` → `overlapPx === 0`.
+Measure the **failing** state first (you should see `overlapPx > 0`, e.g. ~24px), apply the fix, re-measure,
+require `overlapPx === 0`. Watch the trap that bit VCST-5276: `.blade-static` is fixed-height, so compare the
+**searchrow's** real bottom (it can overflow the box), NOT `blade-static.bottom`.
+
+**Step 3 — visual render harness (`visual-render-harness.md`)** for the before/after picture + the ui-grid
+relayout caveat. The screenshot is supporting evidence; **the numeric measurement is the gate.** Both go in
+the PR body. For a deployed fix, re-measure live (DevTools) post-deploy to close G6 — that is the only check
+that proved VCST-5276 either way.
 
 ---
 

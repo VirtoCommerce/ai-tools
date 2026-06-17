@@ -45,14 +45,18 @@ Either way the harness is throwaway — only its evidence (output / screenshots)
    style guide.
 2. **Mirror a canonical sibling blade** — `Grep` `*.tpl.html` for the element's class (`searchrow`,
    `ui-select`, `table-wrapper`, `vc-checkbox`, …), prefer the same module, else `vc-module-pricing`. Copy
-   its structure. **Never** add inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or
-   `ng-style` height hacks. Recipes: `css-layout-patterns.md`.
-3. **Prove it before the PR** — build the **visual render harness** (`visual-render-harness.md`): a throwaway
-   `render.html` loading the real blade `.tpl.html` against the real `platform.css`; `qa-backend-expert`
-   serves + screenshots **HEAD (red) vs fixed (green)**. Iterate dev↔QA ≤2× and squash. Screenshots go in the
-   PR body. (If the bug needs live data / cross-blade context the harness can't stub, escalate to the full
-   local-platform fallback documented in `visual-render-harness.md` — don't skip the proof.)
-4. **Gate** (build + Gate 4) as in the logic path below, then hand off with the render-harness screenshots.
+   its structure. **Never** add inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or inline
+   `ng-style` height. Note `blade-static` is **fixed-height** — a multi-row toolbar (e.g. a note above the
+   searchrow) must reserve height via `__expanded` or move the note into content (conventions §2.1).
+   Recipes: `css-layout-patterns.md`.
+3. **MEASURE, then prove it before the PR** — the gate is a **numeric geometry assertion**, not a screenshot
+   (a screenshot gave a false PASS on VCST-5276). Run the read-only measurement script (conventions §4) in a
+   browser: capture the **failing** geometry (`overlapPx > 0`), apply the fix, re-measure, require
+   `searchrow.bottom <= gridHeader.top` (`overlapPx === 0`). Then build the **visual render harness**
+   (`visual-render-harness.md`) for the red→green picture; `qa-backend-expert` runs both. Iterate dev↔QA ≤2×
+   and squash. **Measurement numbers + screenshots** go in the PR body. (Harness can't stub it → escalate to
+   the full local-platform fallback; don't skip the proof.)
+4. **Gate** (build + Gate 4) as in the logic path below, then hand off with the measurement + screenshots.
 
 ## Steps (logic-bug path)
 1. **Locate** the blade / widget / controller / service / template under `Web/Scripts/` (`Grep`/`Glob`
