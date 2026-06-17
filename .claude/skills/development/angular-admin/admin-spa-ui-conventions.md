@@ -340,37 +340,27 @@ overlapped (the harness rendered a no-note case; ui-grid never re-laid-out). Eye
 missed a 24px overlap. So a layout/CSS fix is **not** "done" until the geometry is **measured** and the
 overlap/alignment assertion passes numerically.
 
-**Step 1 — measure the live blade in a browser (read-only; allowed by the real-user hook).** Run this in
-Chrome DevTools (`evaluate_script`) or a Playwright `browser_evaluate` — it uses only `getBoundingClientRect`
-/ `getComputedStyle`, the read-only operations the hook permits:
+**Step 1 — measure the live blade in a browser (read-only; allowed by the real-user hook).** Use the shared,
+**generic** helper `bladeStaticOverflowSnippet()` from
+[`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) (don't hand-roll a one-off — it
+works for any module's blade, not just export/catalog). Get the snippet string, pass it verbatim to Chrome
+DevTools `evaluate_script` or Playwright `browser_evaluate` (it uses only `getBoundingClientRect` /
+`getComputedStyle`, the read-only ops the hook permits), then classify with `classifyBladeStaticOverflow`:
 
-```js
-() => {
-  const blade = [...document.querySelectorAll('.blade')]
-    .find(b => /<blade header text>/.test(b.textContent)) || document.querySelector('.blade');
-  const box = el => el && Object.assign(
-    { cls: el.className, cssHeight: getComputedStyle(el).height, overflow: getComputedStyle(el).overflowY },
-    (r => ({ top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height) }))(el.getBoundingClientRect()));
-  const q = s => blade.querySelector(s);
-  const staticEl = q('.blade-static:not(.__bottom)'),
-        searchrow = q('.searchrow'),
-        note = q('.text.__note'),
-        header = q('.ui-grid-header') || q('.ui-grid-header-viewport') || q('thead');
-  const sb = searchrow && searchrow.getBoundingClientRect().bottom;
-  const ht = header && header.getBoundingClientRect().top;
-  return {
-    bladeStatic: box(staticEl), searchrow: box(searchrow), note: box(note), gridHeader: box(header),
-    // THE assertion: the toolbar's real bottom must sit ABOVE the grid header's top.
-    overlapPx: (sb != null && ht != null) ? Math.max(0, Math.round(sb - ht)) : null,
-    PASS: (sb != null && ht != null) ? sb <= ht : null,
-  };
-}
+```ts
+import { bladeStaticOverflowSnippet, classifyBladeStaticOverflow } from "scripts/lib/measure-layout";
+// optional: pass a blade-header substring to target a specific blade; omit to auto-pick
+const result = await browser_evaluate(bladeStaticOverflowSnippet("Select data to export"));
+const finding = classifyBladeStaticOverflow(result);   // PASS | FAIL with overflowPx + offender
 ```
 
-**Step 2 — the assertion that defines "fixed":** `searchrow.bottom <= gridHeader.top` → `overlapPx === 0`.
-Measure the **failing** state first (you should see `overlapPx > 0`, e.g. ~24px), apply the fix, re-measure,
-require `overlapPx === 0`. Watch the trap that bit VCST-5276: `.blade-static` is fixed-height, so compare the
-**searchrow's** real bottom (it can overflow the box), NOT `blade-static.bottom`.
+**Step 2 — the universal assertion** (works for any toolbar shape — searchrow, multi-row filter, note):
+`bladeStaticContentBottom <= bladeContentTop` → `overflowPx === 0`, i.e. the **real content bottom of the
+fixed-height `.blade-static`** must sit above `.blade-content`'s top. Measure the **failing** state first
+(expect `overflowPx > 0`, e.g. ~24px; `offender` names the spilling element), apply the fix, re-measure,
+require `overflowPx === 0`. The trap that bit VCST-5276: `.blade-static` is fixed-height with
+`overflow: visible`, so the assertion compares its **content's** real bottom — NOT `blade-static.bottom`, the
+fixed-box edge that falsely read "no overlap".
 
 **Step 3 — visual render harness (`visual-render-harness.md`)** for the before/after picture + the ui-grid
 relayout caveat. The screenshot is supporting evidence; **the numeric measurement is the gate.** Both go in

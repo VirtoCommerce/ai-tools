@@ -856,6 +856,115 @@ export function imageAspectAuditSnippet(selector: string = 'img'): string {
 }
 
 // ---------------------------------------------------------------------------
+// Admin SPA blade layout (back-office Manager) — toolbar ↔ grid-header overlap
+// ---------------------------------------------------------------------------
+
+export interface BladeStaticOverflowResult {
+  bladeFound: boolean;
+  /** Header text used to locate the blade (empty = auto-picked). */
+  bladeHeader: string;
+  bladeStatic: { cls: string; cssHeight: string; overflowY: string; top: number; bottom: number; height: number } | null;
+  /** The blade-static BOX bottom (its fixed-height edge — can be misleading). */
+  bladeStaticBoxBottom: number | null;
+  /** The REAL bottom of blade-static's content (max descendant bottom) — overflows the box when content > height. */
+  bladeStaticContentBottom: number | null;
+  /** Top of .blade-content (the scrollable region — grid/form/list flows in here). */
+  bladeContentTop: number | null;
+  /** The deepest-overflowing descendant of blade-static (the element spilling onto content), if any. */
+  offender: { tag: string; cls: string; bottom: number } | null;
+  /** Optional context when present: the searchrow + the first content header/row + a note. */
+  searchrow: { top: number; bottom: number; height: number } | null;
+  contentHeader: { top: number; bottom: number; height: number } | null;
+  noteVisible: boolean;
+  /** max(0, bladeStaticContentBottom − bladeContentTop). 0 = clean. */
+  overflowPx: number | null;
+  /** bladeStaticContentBottom <= bladeContentTop. */
+  PASS: boolean | null;
+  note_: string;
+}
+
+/**
+ * GENERIC Admin-SPA blade layout check: does the content of the fixed-height
+ * `.blade-static` (top toolbar region) overflow past the top of `.blade-content`
+ * (the scrollable grid/form/list)? Works for ANY module's blade — not just the
+ * export/catalog one — and any toolbar shape (searchrow, multi-row filter,
+ * info note, custom controls).
+ *
+ * WHY this beats a searchrow-specific or occlusion check: `.blade-static` is
+ * FIXED-height (default 70px, `overflow: visible`); `.blade-content` flows in at
+ * that fixed bottom. Anything inside blade-static that needs more than the
+ * reserved height (e.g. a `.__note` stacked above the toolbar — the VCST-5276
+ * case) spills out of the box and lands on the content below. The universal
+ * assertion is therefore **blade-static's real content bottom (max descendant
+ * bottom) ≤ blade-content's top** — NOT `blade-static.bottom` (the fixed-box edge
+ * that hid the bug), and NOT tied to `.searchrow`/`.ui-grid-header` specifically.
+ *
+ * Read-only (`getBoundingClientRect`/`getComputedStyle`) → permitted by the
+ * enforce-real-user hook. Pass verbatim to Chrome DevTools `evaluate_script`
+ * or Playwright `browser_evaluate`.
+ *
+ * @param bladeHeaderText substring of the target blade's header (e.g.
+ *   "Select data to export"). Omit to auto-pick a blade that has both a
+ *   `.blade-static` and a `.blade-content`.
+ *
+ * Gate: measure the FAILING state (expect `overflowPx > 0`), apply the fix,
+ * re-measure, require `PASS === true` (`overflowPx === 0`).
+ */
+export function bladeStaticOverflowSnippet(bladeHeaderText = ""): string {
+  return `
+(() => {
+  const HDR = ${JSON.stringify(bladeHeaderText)};
+  const blades = [...document.querySelectorAll('.blade, [class*="blade-container"]')];
+  const hasParts = b => b.querySelector('.blade-static:not(.__bottom)') && b.querySelector('.blade-content');
+  let blade = HDR ? blades.find(b => (b.textContent || '').includes(HDR) && hasParts(b)) || blades.find(b => (b.textContent || '').includes(HDR))
+                  : blades.find(hasParts);
+  if (!blade) blade = blades.find(b => b.querySelector('.blade-static')) || blades[blades.length - 1] || document.body;
+  const q = s => blade.querySelector(s);
+  const rect = el => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height) }; };
+  const staticEl = q('.blade-static:not(.__bottom)');
+  const contentEl = q('.blade-content');
+  if (!staticEl || !contentEl) {
+    return { bladeFound: false, bladeHeader: HDR, bladeStatic: null, bladeStaticBoxBottom: null, bladeStaticContentBottom: null,
+      bladeContentTop: null, offender: null, searchrow: null, contentHeader: null, noteVisible: false, overflowPx: null, PASS: null,
+      note_: 'no .blade-static + .blade-content in the located blade — open the target blade first' };
+  }
+  // Real content extent of the fixed-height blade-static = the lowest visible descendant bottom.
+  let maxBottom = staticEl.getBoundingClientRect().top, offender = null;
+  for (const el of staticEl.querySelectorAll('*')) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (r.bottom > maxBottom) { maxBottom = r.bottom; offender = el; }
+  }
+  maxBottom = Math.round(maxBottom);
+  const contentTop = Math.round(contentEl.getBoundingClientRect().top);
+  const overflowPx = Math.max(0, maxBottom - contentTop);
+  const searchrow = q('.searchrow');
+  const note = q('.text.__note') || q('.__note');
+  const header = contentEl.querySelector('.ui-grid-header') || contentEl.querySelector('.ui-grid-header-viewport')
+              || contentEl.querySelector('thead') || contentEl.querySelector('.inner-block > *');
+  const clsStr = el => (el && typeof el.className === 'string') ? el.className : (el ? String(el.getAttribute('class') || '') : '');
+  return {
+    bladeFound: blade !== document.body,
+    bladeHeader: HDR,
+    bladeStatic: Object.assign({ cls: clsStr(staticEl), cssHeight: getComputedStyle(staticEl).height, overflowY: getComputedStyle(staticEl).overflowY }, rect(staticEl)),
+    bladeStaticBoxBottom: rect(staticEl).bottom,
+    bladeStaticContentBottom: maxBottom,
+    bladeContentTop: contentTop,
+    offender: offender ? { tag: offender.tagName.toLowerCase(), cls: clsStr(offender).split(/\\s+/).slice(0, 3).join('.'), bottom: Math.round(offender.getBoundingClientRect().bottom) } : null,
+    searchrow: searchrow ? rect(searchrow) : null,
+    contentHeader: header ? rect(header) : null,
+    noteVisible: !!note && note.getBoundingClientRect().height > 0,
+    overflowPx,
+    PASS: maxBottom <= contentTop,
+    note_: overflowPx > 0
+      ? ('OVERFLOW ' + overflowPx + 'px: blade-static content bottom (' + maxBottom + ') spills below blade-content top (' + contentTop + ')')
+      : 'clean: blade-static content sits above blade-content'
+  };
+})()
+`.trim();
+}
+
+// ---------------------------------------------------------------------------
 // Analyzers — classify raw evaluate() results into PASS / WARN / FAIL findings
 // ---------------------------------------------------------------------------
 
@@ -872,7 +981,8 @@ export interface LayoutFinding {
     | "BL-UI-007"
     | "BL-UI-008"
     | "BL-UI-009"
-    | "BL-UI-010";
+    | "BL-UI-010"
+    | "ADMIN-BLADE-OVERLAP";
   severity: Severity;
   message: string;
   evidence: unknown;
@@ -1076,6 +1186,34 @@ export function classifyImageAspect(
   };
 }
 
+export function classifyBladeStaticOverflow(
+  result: BladeStaticOverflowResult,
+): LayoutFinding {
+  if (result.overflowPx == null || result.PASS == null) {
+    return {
+      invariant: "ADMIN-BLADE-OVERLAP",
+      severity: "WARN",
+      message: `Could not measure (no blade-static + blade-content located) — open the target blade first`,
+      evidence: result,
+    };
+  }
+  if (result.PASS) {
+    return {
+      invariant: "ADMIN-BLADE-OVERLAP",
+      severity: "PASS",
+      message: `blade-static content sits above blade-content (overflow ${result.overflowPx} px)`,
+      evidence: result,
+    };
+  }
+  const off = result.offender ? ` (offender: ${result.offender.tag}.${result.offender.cls})` : "";
+  return {
+    invariant: "ADMIN-BLADE-OVERLAP",
+    severity: "FAIL",
+    message: `Fixed-height blade-static content overflows onto blade-content by ${result.overflowPx} px${off}${result.noteVisible ? " — note shown above the toolbar; reserve height via __expanded or move the note into content" : " — reserve toolbar height via __expanded or move overflow content out"}`,
+    evidence: result,
+  };
+}
+
 export function compareRectSnapshots(
   before: RectSnapshot,
   after: RectSnapshot,
@@ -1112,6 +1250,7 @@ export interface LayoutAuditBundle {
   contrast?: ContrastAuditResult;
   focusIndicator?: FocusIndicatorAuditResult;
   imageAspect?: ImageAspectAuditResult;
+  bladeOverflow?: BladeStaticOverflowResult;
 }
 
 /**
@@ -1131,6 +1270,7 @@ export function analyzeLayoutResults(
   if (bundle.contrast) findings.push(classifyContrast(bundle.contrast));
   if (bundle.focusIndicator) findings.push(classifyFocusIndicator(bundle.focusIndicator));
   if (bundle.imageAspect) findings.push(classifyImageAspect(bundle.imageAspect));
+  if (bundle.bladeOverflow) findings.push(classifyBladeStaticOverflow(bundle.bladeOverflow));
   if (bundle.shifts) {
     for (const s of bundle.shifts) {
       findings.push(compareRectSnapshots(s.before, s.after));
