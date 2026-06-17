@@ -1,6 +1,6 @@
 ---
 name: angular-admin
-description: "[Development] Fix a Virto Commerce module's Admin SPA (AngularJS) UI that ships inside the module's own vc-module-* repo — blade/widget/service anatomy, idiomatic AngularJS 1.x, red→green proof via a throwaway Node scratch harness (module repos have NO JS test harness). Used by the fullstack-backend developer agent in /qa-fix when the owning layer is the module Admin UI (still single-repo)."
+description: "[Development] Fix a Virto Commerce module's Admin SPA (AngularJS) UI that ships inside the module's own vc-module-* repo — blade/widget/service anatomy + idiomatic AngularJS 1.x. Two proof paths, because module repos have NO JS test harness and there is NO Storybook: logic bugs (save/payload, computed value, wrong endpoint) are proven red→green with a throwaway Node scratch harness; layout/CSS/visual bugs (overlap, misalignment, wrong width, clipping) are fixed by mirroring the platform's canonical UI classes (catalog bundled in this skill) and proven in a browser BEFORE the PR via a visual render harness — never inline position/fixed-px. Used by the fullstack-backend developer agent in /qa-fix when the owning layer is the module Admin UI (still single-repo)."
 ---
 
 # /angular-admin — Fix a module's Admin SPA UI
@@ -16,11 +16,17 @@ The Scripts area is **hand-written AngularJS 1.x served as static assets** — n
 There is no in-repo JS test command to run, and you must NOT scaffold one (no `package.json`,
 `karma.conf.js`, or spec files committed to the module — that's framework churn, an instant G4 fail).
 
-Gate 2 (red→green proof) is instead satisfied by a **scratch harness**: a throwaway Node script in
-`.fix-workspace/_scratch/VCST-XXXX/` (gitignored, never committed, never in the PR diff) that loads
-the real blade/service file with a stubbed `angular` global, drives the buggy seam, and asserts the
-expected behavior. Red before the fix, green after — evidence (both runs' output) pasted into the PR
-body. Recipe + verified stub: `scratch-harness-patterns.md`.
+So Gate 2 (red→green proof) is satisfied by a throwaway harness outside the repo — and **which harness
+depends on the bug** (see *Two fix paths* below):
+- **Logic** bugs → a **Node scratch harness**: a script in `.fix-workspace/_scratch/VCST-XXXX/`
+  (gitignored, never committed, never in the PR diff) that loads the real blade/service file with a stubbed
+  `angular` global, drives the buggy seam, and asserts the expected behavior. Red before, green after —
+  both runs' output pasted into the PR body. Recipe + verified stub: `scratch-harness-patterns.md`.
+- **Layout/CSS** bugs → a **visual render harness** (the Node harness can't render CSS): renders the real
+  blade against the real `platform.css` in a browser, red→green screenshots before the PR. See the
+  Layout/CSS path below + `visual-render-harness.md`.
+
+Either way the harness is throwaway — only its evidence (output / screenshots) ships, in the PR body.
 
 ## When to use
 - The `/qa-bug` owning layer is **Layer 2 — Backend Admin (Admin SPA)** AND the responsible code is in
