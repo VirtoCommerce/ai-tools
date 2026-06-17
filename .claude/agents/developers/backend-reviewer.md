@@ -30,6 +30,11 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    matches the bug, not a tautology.
 4. **Minimal & idiomatic** — no refactors, no formatting churn, no dep bumps, no unrelated files;
    .NET 10 / Angular idioms match the repo (`dotnet10-best-practices.md`, `angular-patterns.md`).
+4b. **Admin SPA blade markup (layout/CSS)** — if the diff touches a `*.tpl.html` layout/style: it uses
+   platform classes (`/angular-admin` `admin-spa-ui-conventions.md`) mirroring a canonical sibling blade, and
+   contains **NO** inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or `ng-style` height
+   hacks → otherwise REQUEST_CHANGES (this was the PR #101 failure). A layout/CSS change must also carry the
+   **visual render-harness red→green screenshots** in the PR body; missing → REQUEST_CHANGES.
 5. **No breaking changes** — no public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any → REQUEST_CHANGES (Gate 0 boundary).
 6. **BL-* preserved** — the fix doesn't violate a `business-logic.md` invariant or re-introduce a

@@ -71,8 +71,11 @@ module.manifest                 # id, version, Dependencies[] (resolve as NuGet 
   / Karma / specs under `Web/Scripts/` — org-wide survey 2026-06). Red→green is proven via an
   uncommitted Node scratch harness in `.fix-workspace/_scratch/VCST-XXXX/` (stub `angular`, require
   the real blade/service file, assert the seam); evidence goes in the PR body. Never scaffold a JS
-  test harness into the module. See `/angular-admin` `scratch-harness-patterns.md`. Visual-only bugs:
-  trivial-skip with manual verification steps noted.
+  test harness into the module. See `/angular-admin` `scratch-harness-patterns.md`. **Layout/CSS/visual
+  bugs:** mirror the platform's canonical classes (`/angular-admin` `admin-spa-ui-conventions.md` — there is
+  NO Storybook for the Admin SPA) and prove the fix **before the PR** with the visual render harness
+  (`/angular-admin` `visual-render-harness.md`): `qa-backend-expert` renders the real blade against the real
+  `platform.css` and screenshots red→green. Never inline `position:absolute`/fixed-px/`ng-style` height.
 - **vc-frontend (Vue/vitest):** `*.spec.ts` with `@vue/test-utils` for components, pure functions for
   composables.
 - **Never modify or delete an existing test** to make it pass — only ADD (Gate 3). An existing test

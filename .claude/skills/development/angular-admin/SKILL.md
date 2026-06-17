@@ -27,7 +27,28 @@ body. Recipe + verified stub: `scratch-harness-patterns.md`.
   the routed module's `Web/Scripts/`. (A storefront/`vc-frontend` Vue bug is out of `/qa-fix` backend
   scope — that's the CI frontend agent's lane.)
 
-## Steps
+## Two fix paths
+- **Logic bug** (save/payload, computed value, wrong endpoint, binding condition) → the **Node scratch
+  harness** path (Steps 1–5 below): red→green proof in `scratch-harness-patterns.md`.
+- **Layout / CSS / visual bug** (overlap, misalignment, wrong width, clipping, spacing, control in the
+  wrong place) → the **Layout/CSS path** below. A bug with both uses both harnesses.
+
+### Layout/CSS path
+1. **Read `admin-spa-ui-conventions.md`** (in this skill) — the platform's canonical class vocabulary +
+   per-element snippets + reference blades. There is NO Storybook; that catalog + real blades are the
+   style guide.
+2. **Mirror a canonical sibling blade** — `Grep` `*.tpl.html` for the element's class (`searchrow`,
+   `ui-select`, `table-wrapper`, `vc-checkbox`, …), prefer the same module, else `vc-module-pricing`. Copy
+   its structure. **Never** add inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or
+   `ng-style` height hacks. Recipes: `css-layout-patterns.md`.
+3. **Prove it before the PR** — build the **visual render harness** (`visual-render-harness.md`): a throwaway
+   `render.html` loading the real blade `.tpl.html` against the real `platform.css`; `qa-backend-expert`
+   serves + screenshots **HEAD (red) vs fixed (green)**. Iterate dev↔QA ≤2× and squash. Screenshots go in the
+   PR body. (If the bug needs live data / cross-blade context the harness can't stub, escalate to the full
+   local-platform fallback documented in `visual-render-harness.md` — don't skip the proof.)
+4. **Gate** (build + Gate 4) as in the logic path below, then hand off with the render-harness screenshots.
+
+## Steps (logic-bug path)
 1. **Locate** the blade / widget / controller / service / template under `Web/Scripts/` (`Grep`/`Glob`
    on blade ids, template text, controller names, settings keys). See `angular-patterns.md` for the
    anatomy (module.js registration → blades/ → widgets/ → resources/).
@@ -40,9 +61,9 @@ body. Recipe + verified stub: `scratch-harness-patterns.md`.
 3. **Fix (green):** smallest correct change to the blade/service/template; idiomatic AngularJS,
    matching the file's existing conventions (controllerAs vs `$scope`, `$q`, DI-array style).
    `node repro.cjs` now exits 0. Capture both outputs for the PR body.
-4. **Template-only changes** (binding typo, label, missing attribute) that have no assertable logic:
-   use the trivial-skip clause instead — justify in the PR body and list the manual verification
-   steps (which blade, which state, what to look for).
+4. **Non-visual template-only changes** (binding typo, label, missing attribute) with no assertable logic
+   AND no layout impact: use the trivial-skip clause — justify in the PR body. (Anything that changes
+   *appearance* goes the Layout/CSS path above and must be proven with the render harness, not skipped.)
 5. **Gate:** `dotnet build -c Debug -p:NuGetAudit=false` still green (Scripts are content files — the
    C# build embeds them; make sure nothing broke). Hand the diff to `backend-reviewer` (Gate 4) with
    the scratch-harness evidence in the summary.
@@ -53,11 +74,16 @@ body. Recipe + verified stub: `scratch-harness-patterns.md`.
   only the fix. No new build steps, no `package.json`, no framework/version changes in the repo.
 - **Minimal diff**; never touch secrets/lockfiles/CI config.
 - Match the module's existing AngularJS conventions; don't restyle, restructure, or "modernize".
-- Visual-only aspects (layout, CSS) can't be proven by the harness — note in the PR body that they
-  need human/Storybook confirmation.
+- **Layout/CSS fixes use only platform classes** (`admin-spa-ui-conventions.md`) — never inline
+  `position:absolute|fixed`, fixed-px sizing, or `ng-style` height hacks — and are **proven before the PR**
+  with the visual render harness (`visual-render-harness.md`), not deferred to post-deploy.
 - Same gate ladder and **no-auto-merge** as the C# path — `.claude/rules/quality-gates.md`.
 
 ## References
-- `scratch-harness-patterns.md` — verified Node stub for `angular`, worked red→green example
+- `admin-spa-ui-conventions.md` — canonical platform UI class catalog (blades, search, filters, dropdowns,
+  inputs, buttons, grids, checkboxes, dialogs, lists) + discovery recipe — **read before any layout/CSS fix**
+- `css-layout-patterns.md` — before/after layout fix recipes
+- `visual-render-harness.md` — pre-PR browser proof for layout/CSS fixes
+- `scratch-harness-patterns.md` — verified Node stub for `angular`, worked red→green example (logic bugs)
 - `angular-patterns.md` — VC Admin SPA blade/widget/service anatomy
 - `.claude/agents/knowledge/vc-module-architecture.md` §2 (Admin UI ships in the module repo)
