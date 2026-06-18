@@ -126,6 +126,44 @@ service), **escalate** to the heavy fallback below rather than skipping the proo
 
 ---
 
+## Live in-browser verification (pre-PR) — when the fix changes document flow
+
+The render harness is a *standalone* page. A stronger pre-PR proof — when available — is to verify the fix
+on the **real, deployed admin** by applying the change as a transient DOM edit and re-measuring. This is
+**authoritative only when the fix alters document flow** (e.g. moving a node into `blade-content`'s normal
+flow, removing/adding a stacked element) so the browser genuinely relays out. For a **toolbar-height-only**
+change that relies on ui-grid re-measuring its pinned top, a live DOM swap will NOT relayout — use the
+harness Option 1 / reference path below instead (see §Limitation).
+
+`qa-backend-expert` (has the browser) drives it; `fullstack-backend` does not. Steps:
+
+1. **Navigate** to the real blade on QA (`{BACK_URL}`), reproduce the exact state that shows the bug
+   (e.g. the data source with `restrictDataSelectivity=true`).
+2. **Measure red** — read-only `getBoundingClientRect` on the failing elements; record `overlapPx > 0`.
+   (This is the §4 measurement gate, run against the *real* app — the strongest possible red.)
+3. **Apply the fix as a DOM edit** via the `@allow-eval` opt-in (`/* @allow-eval: <VCST-XXXX UI-FIX> */`
+   — the only sanctioned use of `browser_evaluate` for mutation; it is NOT for test runs). Mirror the exact
+   markup change from the diff (move/remove/add the real nodes — never a hand-retyped approximation).
+4. **Force a relayout** so geometry settles: `angular.element(document.body).injector().get('$rootScope').$applyAsync()`
+   + `window.dispatchEvent(new Event('resize'))` (+ `gridApi.core.handleWindowResize()` if you hold the api).
+5. **Measure green** — re-run the same `getBoundingClientRect`; assert `overlapPx === 0` (e.g.
+   `gridHeader.top >= searchRow.bottom`) and that moved nodes landed where the fix intends. Screenshot.
+6. AngularJS re-compiles its template on the next `$digest` and will **revert** the manual DOM edit — that
+   is expected (the edit is transient; only the committed `.tpl.html` change is permanent). Re-measure
+   immediately after step 4, before any further digest.
+
+> **Guard:** a live green is real ONLY if the relayout actually happened — verify the dependent element
+> moved (e.g. the grid header's `top` increased), don't just trust the swap. If it didn't move, the fix is
+> a pinned-top toolbar case → fall back to the harness (Option 1) or reference validation (Option 2).
+> Verified on VCST-5276 (2026-06-18): moving the note into `blade-content` flow drove a real relayout
+> (grid header 258→320px), overlap 65→0 — a stronger proof than the static harness.
+
+Put the red/green screenshots + the two `overlapPx` numbers in the PR body alongside (or instead of) the
+harness screenshots. This does **not** replace post-deploy **G6**, but it is the most faithful pre-PR proof
+when the fix changes flow.
+
+---
+
 ## Loop & gate
 
 - Iterate **dev ↔ qa-backend-expert ≤ 2 times** locally (fix → re-render → re-screenshot) **before** opening
@@ -146,8 +184,14 @@ of the toolbar markup on the live admin — does **not** trigger that recompute,
 overlap looks **unchanged** even when the fix is correct (verified on VCST-5276, 2026-06-17: the static green
 render still showed the ~27 px overlap because the grid kept its old top offset).
 
-So when the bug is **toolbar/header overlap on a blade whose `.blade-content` hosts a `ui-grid`**, you have two
-honest options — never report a static green as proof:
+> **Distinction (don't over-apply this limitation):** it bites only **toolbar-height** fixes that need
+> ui-grid to re-measure its pinned top. A fix that changes **document flow** — e.g. moving the note **out**
+> of the toolbar into `.blade-content` — *does* relayout on a live DOM swap (the grid is pushed down in
+> normal flow), and is a valid live pre-PR proof. See §Live in-browser verification. VCST-5276's accepted
+> fix was the flow kind: live swap drove a real relayout (grid header 258→320 px), overlap 65→0.
+
+So when the bug is **toolbar/header overlap that depends on ui-grid re-measuring its pinned top** (a
+toolbar-height change, not a flow change), you have two honest options — never report a static green as proof:
 
 ### Option 1 — Drive a real Angular relayout in the harness
 
