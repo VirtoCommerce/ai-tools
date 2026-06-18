@@ -58,7 +58,12 @@ fix doesn't re-introduce a historical VC failure pattern.
 Invoke the development skills:
 - `/dotnet-unit-test` — reproduce as a failing xUnit test (red).
 - `/dotnet-fix` — minimal idiomatic .NET 10 fix → green; build + test gate.
-- `/angular-admin` — when the owning layer is the module's Admin SPA UI (red→green via uncommitted Node scratch harness — modules have no JS test harness).
+- `/angular-admin` — when the owning layer is the module's Admin SPA UI. **Logic** bugs: red→green via the
+  uncommitted Node scratch harness (modules have no JS test harness). **Layout/CSS/visual** bugs: read the
+  skill's `admin-spa-ui-conventions.md` (platform class catalog — there is NO Storybook), **mirror a
+  canonical sibling blade** instead of inventing layout (never inline `position:absolute`/fixed-px/`ng-style`
+  height), then scaffold the **visual render harness** (`visual-render-harness.md`) and hand it to
+  `qa-backend-expert` for a browser red→green screenshot **before opening the PR** (you have no browser).
 
 **Workflow (mirrors `ci/agents/fix-backend-agent.md`):**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
@@ -67,9 +72,13 @@ Invoke the development skills:
    `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
-   only for one-line guards/typos (note in PR body).
+   only for one-line guards/typos (note in PR body). **Admin SPA layout/CSS bug:** instead, scaffold the
+   visual render harness (`/angular-admin` `visual-render-harness.md`) and have `qa-backend-expert` capture
+   the BROKEN render (red).
 5. **Fix (green)** — smallest correct change to production code; re-run until green; **existing tests
-   untouched & still green**.
+   untouched & still green**. **Admin SPA layout/CSS:** mirror the canonical platform classes
+   (`admin-spa-ui-conventions.md`), then have `qa-backend-expert` re-render → green screenshot (iterate ≤2×,
+   squash) **before** the PR — both screenshots go in the PR body.
 6. **Gate** — `dotnet build -c Debug` + `dotnet test --nologo` (+ JS test cmd if Admin UI). All clean.
    The repo's PR CI also runs a **SonarCloud quality gate** (G5) — keep the changed lines clean (no new
    bug/vuln/unreviewed hotspot) and cover the new code so **new-code** thresholds hold; self-review the
@@ -105,7 +114,9 @@ Invoke the development skills:
 | PR open + CI status | `gh pr create`, `gh pr checks`, `mcp__github__get_pull_request_status` |
 
 **FORBIDDEN:** `mcp__github__merge_pull_request`, `gh pr merge` (human-only). Remote-edit tools
-(`create_or_update_file`, `push_files`) are NOT used — commits go via local `git push`. **No browser.**
+(`create_or_update_file`, `push_files`) are NOT used — commits go via local `git push`. **No browser** —
+for Admin SPA layout/CSS proof you *scaffold* the render harness (`/angular-admin` `visual-render-harness.md`)
+and delegate the browser render/screenshot to `qa-backend-expert`.
 
 ### Hard rules
 Single repo · never modify existing tests (ADD only) · minimal diff · no breaking changes (contract /

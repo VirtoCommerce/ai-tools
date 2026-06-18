@@ -29,7 +29,7 @@ Pick exactly one repo from the allowed list:
 
 - **Storefront UI / UX / CLS / a11y / checkout-flow / cart-UI / theme** → `VirtoCommerce/vc-frontend`
 - **xAPI / GraphQL resolver behavior** → the matching `vc-module-x-*` (cart/catalog/order)
-- **Admin / API / business logic** (pricing, marketing/coupons, inventory, orders, catalog, customer) → the matching `vc-module-*`
+- **Admin / API / business logic** (pricing, marketing/coupons, inventory, orders, catalog, customer) → the matching `vc-module-*`. **Admin SPA UI layout/CSS** (a module blade with overlapping/misaligned/clipped controls, usually from inline `position:absolute`/fixed-px styling — the [PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101) class) is **code-fixable** (mirror the platform classes + visual render-harness proof) → GO to that `vc-module-*`. BAIL only if the visual bug needs live data / cross-blade interaction that can't be reproduced in a render harness.
 - **Security / RBAC / users / dynamic properties / platform settings** → `VirtoCommerce/vc-platform`
 
 Use the bug report's **Component** line and any "Fixed in <repo> PR #" hints as the strongest signal. Prefer the heuristic guess only if it agrees with the ticket evidence.

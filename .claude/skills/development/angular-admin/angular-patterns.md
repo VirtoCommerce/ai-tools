@@ -34,3 +34,19 @@ assets the platform serves directly. Red→green proof happens in a scratch harn
 - **Permission-gated UI**: keys come from the module's C# `*.Core` permissions — reuse, don't hardcode.
 - Keep AngularJS idioms consistent with the file (controllerAs vs `$scope`, `$q`, `angular.module`).
 - Don't introduce a new build step or framework version.
+
+## Layout & CSS (template/visual bugs)
+The Admin SPA has **no Storybook/component gallery** — the platform stylesheet is the only style guide.
+For any `*.tpl.html` layout/CSS bug (overlap, misalignment, wrong width, clipping, spacing, a control in
+the wrong place):
+- **Read `admin-spa-ui-conventions.md` (this skill) first** — the canonical class vocabulary
+  (`blade-static`/`blade-content`/`inner-block`, `searchrow` + `column-half`/`column-third`,
+  `form-input.__*`, `btn`/`__cancel`/`__other`, `filter-edit`, `va-filter-panel`, `ui-grid`/`table-wrapper`,
+  `vc-checkbox`, `list`/`__info`), per-element snippets, and reference blades.
+- **Mirror a canonical sibling blade** — `Grep` `*.tpl.html` for the element's class (`searchrow`,
+  `ui-select`, `table-wrapper`, …), prefer one in the same module, else `vc-module-pricing`.
+- **Never** add inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or
+  `ng-style="{'height':'…px'}"` — that was the [PR #101](https://github.com/VirtoCommerce/vc-module-export/pull/101)
+  bug. See `css-layout-patterns.md` for before/after recipes.
+- **Prove it before the PR** with `visual-render-harness.md` (render the real blade against the real
+  `platform.css`; `qa-backend-expert` screenshots red→green) — not "trivial-skip, confirm after deploy".
