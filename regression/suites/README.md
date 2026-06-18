@@ -18,7 +18,7 @@ The master release suite `080` is defined in the manifest (`_release/080-full-re
 | Module | Suites |
 |--------|--------|
 | `auth/` | 031 Login & Register (P1) · 032 Session & RBAC (P1) · 033 Company & Account Menu (P1) · 082 Impersonation / Login-on-Behalf (P1) |
-| `b2c/` | 006 Organization (P1) · 007 Lists & Shared (P1) · 008 Members (P1) · 009 Variations & Configs (P1) · 010 Bulk / Ship / Dashboard (P1) |
+| `b2b/` | 006 Organization (P1) · 007 Lists & Shared (P1) · 008 Members (P1) · 009 Variations & Configs (P1) · 010 Bulk / Ship / Dashboard (P1) |
 | `bopis/` | 036 Store Selector (P1) · 037 Cart (P1) · 038 Checkout (P1) |
 | `cart/` | 028 Core (P1) · 029 Validation & Persistence (P1) · 030 Merge (P1) |
 | `catalog/` | 001 Navigation (P1) · 002 Product Detail (P1) · 003 Filters (P1) |
@@ -94,7 +94,7 @@ Authoritative definitions live in the manifest's `selections` block. Regenerate 
 
 ### Module / feature groups
 
-`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`,
+`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`,
 `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty` — see the manifest's `selections`
 for the exact suite lists.
 

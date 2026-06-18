@@ -22,7 +22,7 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression 01,04,06                    # Specific suite IDs
 /qa-regression critical --autonomous       # Agent Teams mode (failure recovery + JIRA)
 /qa-regression full --autonomous           # Full regression with autonomous orchestration
-/qa-regression b2c --seed=b2b              # Seed B2B data before b2c suites
+/qa-regression b2b --seed=b2b              # Seed B2B data before b2b suites
 /qa-regression purchase-flow --seed=full --teardown   # Seed full, run, then teardown
 /qa-regression marketing --seed=pricing    # Seed price lists before marketing suites
 ```
@@ -49,7 +49,7 @@ When `--autonomous` is specified, delegate to `autonomous-regression-orchestrato
 | `smoke`, `042` | _(none)_ | Infra/login only — seeding wastes time |
 | `critical` | `minimal` (optional) | P0 gate; seed only if env is known-empty |
 | `catalog`, `search` | `catalog` | Products, categories, multi-currency fixtures |
-| `b2c`, `auth` | `b2b` | Orgs, contacts, role-based users |
+| `b2b`, `auth` | `b2b` | Orgs, contacts, role-based users |
 | `orders`, `purchase-flow`, `checkout` | `full` | Needs catalog + b2b + pricing together |
 | `marketing` | `pricing` | Price lists / tiers for promo evaluation |
 | `sprint`, `full` | `full` | Broad coverage — seed everything once upfront |
