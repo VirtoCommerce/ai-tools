@@ -1,9 +1,25 @@
 # BUG — Org-scoped maintainer permissions reach the JWT but are not honored by xAPI (member-management blocked) `[High / P1]`
 
-## Status: CONFIRMED
+## Status: FIXED
 
-**Env:** vcst-qa @ Platform 3.1037.0 · ProfileExperienceApi `3.1008.0-pr-135-cb12` (PR#135) · Customer `3.1010.0-pr-300-fa2a` (PR#300) · theme `2.51.0-pr-2315-c85b` (PR#2315)
-**Feature:** VCST-5028 — per-organization roles & access control. **Related:** VP-9137 (Feature Bug, In Progress — likely already tracks this), VCST-5239.
+**Originally reproduced on:** vcst-qa @ Platform 3.1037.0 · ProfileExperienceApi `3.1008.0-pr-135-cb12` (PR#135, stale/schema-only) · Customer `3.1010.0-pr-300-fa2a` · theme `2.51.0-pr-2315-c85b`.
+**Feature:** VCST-5028 — per-organization roles & access control. **Related:** VP-9137 (Feature Bug), VCST-5239.
+
+## Resolution
+- **Fixed in:** PR #135 (vc-module-profile-experience-api) — verified on build `ProfileExperienceApiModule 3.1008.0-pr-135-402e` + `Customer 3.1010.0-alpha.995-vcst-5028` deployed to vcst-qa. **PR #135 is not yet merged** (open against `dev`); this verifies the fix on the deployed prerelease build.
+- **JIRA:** VCST-5028
+- **Verified:** 2026-06-19
+- **Verification method:** live storefront re-repro with a fresh single-org maintainer (`/qa-bug` re-test; see Re-test below).
+- **Code fixes (PR #135):** `UserType.permissions` now resolves from JWT permission claims; `GetUserQueryHandler.ApplyOrganizationRolesAsync` merges the org-membership roles into the user; `ProfileSchema.CheckAuthAsync` authorizes against the JWT principal (not the DB-reconstructed one).
+
+## Re-test — 2026-06-19 (FIXED, build `pr-135-402e` / Customer `alpha.995-vcst-5028`)
+Re-reproduced with a **freshly created company owner** — `AGENT-TEST-owner-20260619@yopmail.com`, single-org **org-maintainer** of `AGENT-TEST-Org-Owner-20260619` (`d0e4ef82-…`). Storefront build `2.52.0-pr-2315-059c`. **BUG-A no longer reproduces** — all three criteria met:
+- **JWT** carries the perms incl. `xapi:my_organization:edit`, `xapi:my_organization:user:invite`, `xapi:my_organization:order:view` (+ the `storefront:*` set). ✅
+- **`GetPageContext.user.permissions` is now NON-empty** (verbatim): `["storefront:user:view","storefront:user:create","storefront:user:delete","storefront:organization:edit","storefront:user:edit","storefront:user:invite","storefront:user:organization:view","xapi:my_organization:edit","xapi:my_organization:user:invite","xapi:my_organization:order:view"]`; `user.roles = [{name:"Organization maintainer"}]` — was `[]`/`[]`. ✅ (this was the crux)
+- **`/company/members` UI:** the **"Invite members" button renders** and the member-row action machinery (Active block/unblock toggle, actions column) renders for the maintainer. ✅
+- Evidence: `tests/Sprint-current/VCST-5028/screenshots/BUGA-RETEST-company-members.png`, `…/BUGA-RETEST-invite-button-and-row.png`. No mutation performed (read-only).
+
+> Note: the sibling defect **BUG-B** (`BUG-org-membership-create-no-input-validation-VCST-5028.md`) was re-tested on the same `402e`/`alpha.995` build and **still reproduces** — it lives in the Customer module and is unaffected by this xProfile fix.
 
 ## Summary
 An organization maintainer's per-org role grants `xapi:my_organization:edit`, and this permission **is correctly injected into the storefront JWT** (`OrganizationIdClaimProvider` works — AC1 verified). But the xAPI permission *resolution* does not derive permissions from the user's `OrganizationMembership` role: the `me`/`GetPageContext` projection returns `permissions: []` for an org-active maintainer, and the xAPI authorization handler rejects the org-management mutations as `Forbidden`. Net effect: **an org maintainer cannot govern their organization** — neither from the storefront UI nor via the API. This breaks the ticket's primary user story (AC2).
