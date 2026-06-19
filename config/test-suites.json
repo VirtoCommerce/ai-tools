@@ -280,8 +280,8 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 18,
-      "estimatedMinutes": 102,
+      "testCount": 23,
+      "estimatedMinutes": 130,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2b",

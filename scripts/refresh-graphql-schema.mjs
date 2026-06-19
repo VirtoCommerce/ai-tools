@@ -60,6 +60,15 @@ function formatField(f) {
   return f.name;
 }
 
+// Render a GraphQL type reference to standard notation, unwrapping NON_NULL (`!`)
+// and LIST (`[...]`) so e.g. emails: [String!]! renders faithfully (not `String`).
+function renderType(t) {
+  if (!t) return '?';
+  if (t.kind === 'NON_NULL') return `${renderType(t.ofType)}!`;
+  if (t.kind === 'LIST') return `[${renderType(t.ofType)}]`;
+  return t.name || '?';
+}
+
 async function introspectQueries() {
   const data = await gql(`{
     __schema {
@@ -79,11 +88,13 @@ async function introspectMutations() {
 }
 
 async function introspectType(typeName) {
+  // Nest ofType 3 deep so wrapped types like [String!]! (NON_NULL→LIST→NON_NULL→SCALAR) resolve fully.
+  const typeRef = `name kind ofType { name kind ofType { name kind ofType { name kind } } }`;
   const data = await gql(`{
     __type(name: "${typeName}") {
       kind
-      fields { name type { name kind ofType { name kind } } }
-      inputFields { name type { name kind ofType { name kind } } }
+      fields { name type { ${typeRef} } }
+      inputFields { name type { ${typeRef} } }
     }
   }`);
   return data.__type;
@@ -151,6 +162,9 @@ async function main() {
     // Payment initialization/authorization (VCST-5009)
     'InputInitializeCartPaymentType', 'InputInitializePaymentType',
     'InputAuthorizePaymentType',
+    // VCST-5028: per-organization roles & access control
+    'InputInviteUserType', 'InputChangeOrganizationContactRoleType',
+    'InputLockUnlockOrganizationContactType',
   ];
 
   const typeResults = {};
@@ -241,12 +255,7 @@ async function main() {
     const fields = t.inputFields || t.fields;
     if (!fields) continue;
     md += `### ${name}\n\n`;
-    md += `Fields: \`${fields.map(f => {
-      const ft = f.type;
-      const tn = ft.name || (ft.ofType && ft.ofType.name) || '?';
-      const req = ft.kind === 'NON_NULL' ? ' (required)' : '';
-      return `${f.name}: ${tn}${req}`;
-    }).join('`, `')}\`\n\n`;
+    md += `Fields: \`${fields.map(f => `${f.name}: ${renderType(f.type)}`).join('`, `')}\`\n\n`;
   }
 
   // Common patterns

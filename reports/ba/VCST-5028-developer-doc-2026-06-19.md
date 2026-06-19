@@ -8,8 +8,6 @@
 | vc-module-profile-experience-api | [#135](https://github.com/VirtoCommerce/vc-module-profile-experience-api/pull/135) | `402ef8e` | `…ProfileExperienceApiModule_3.1008.0-pr-135-402e` |
 | vc-frontend | [#2315](https://github.com/VirtoCommerce/vc-frontend/pull/2315) | `059c36f` | `vc-theme-b2b-vue-2.52.0-pr-2315-059c` |
 
-> ⚠️ The QA defect **BUG-A** was observed on the older `pr-135-**cb12**` build. The current branch (`402e`, pushed 2026-06-18) contains targeted fixes for all three BUG-A symptoms (see §9). Re-verify on `402e`+.
-
 ---
 
 ## 1. What changed (old → new)
@@ -142,9 +140,11 @@ Route `api/customer/organization-memberships`, class-level `[Authorize]`. Permis
 
 **Verified working (live, `pr-300-b446` / `cb12`):** REST CRUD + lock/unlock (CUST-088 PASS), Admin SPA "Organization memberships" widget, per-org JWT isolation, org-scoped lockout error + global-account guard.
 
+**Fixed & verified:**
+- **BUG-A (was High on `cb12`): FIXED & VERIFIED on `pr-135-402e` (402e re-test, 2026-06-19).** §6 documents the three targeted fixes (`UserType.permissions` from JWT, `GetUserQueryHandler` role merge, `CheckAuthAsync` JWT principal) + the claim-mint path; the prior failure no longer reproduces. Standing regression guard: suite 011b `COMP-E2E-021`.
+
 **Open / needs action:**
-- **BUG-A (was High on `cb12`): code-fixed on the current branch.** §6 shows the three targeted fixes (`UserType.permissions` from JWT, `GetUserQueryHandler` role merge, `CheckAuthAsync` JWT principal) + the claim-mint path. **Re-verify on `pr-135-402e`+** — the prior failure should no longer reproduce.
-- **BUG-B (Med–High): still present** — `OrganizationMembershipController.Create` has no `userId`/`organizationId` validation (500 + DB-name leak / orphan). Add a guard returning 400.
+- **BUG-B (Med–High, tracked as VCST-5314): still present** — `OrganizationMembershipController.Create` has no `userId`/`organizationId` validation (500 + DB-name leak / orphan). Add a guard returning 400. Regression guard: suite 011b `COMP-E2E-022` (`[needs-review]` until fixed).
 - **API gaps:** `PUT /{id}` returns the request echo, not a re-fetch; `Search` lacks an `organizationId` filter; xAPI lock has no timed-lock parity with REST.
 
 - Full BA analysis: `reports/ba/ba-report-VCST-5028-2026-06-15.md`

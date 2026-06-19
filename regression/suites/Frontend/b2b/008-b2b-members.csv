@@ -1,5 +1,5 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"B2C-MBR-001","View Company Members List","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-001","View Company Members List","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user logged in; organization has at least 3 members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as organization admin
 2. [NAV] Navigate to /company/members or Company > Members
@@ -9,7 +9,7 @@ Org admin user logged in; organization has at least 3 members","url={{FRONT_URL}
 [DOM] At least 3 members visible
 [FORMAT] Role labels are readable (e.g. Admin or Purchaser or Approver)","[API] organization members query returns member data
 [CONSOLE] no uncaught JS errors","Members page returns 404; empty list when members exist; missing columns in member data","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-002","Search Members by Name or Email","B2C Features > Members","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-002","Search Members by Name or Email","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user logged in; organization has 5+ members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ACT] Type a member name in search input
 3. [ASSERT] Verify filtered results show matching members
@@ -28,7 +28,7 @@ Org admin user; organization has >10 members","url={{FRONT_URL}},org_user={{ORG_
 [DOM] Additional members loaded after action
 [DOM] No duplicate entries across pages
 [STATE] Total visible members matches org member count","[CONSOLE] no uncaught JS errors","Members truncated with no pagination; duplicate members after loading more; pagination control missing","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-004","Invite Member - Open Form","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-004","Invite Member - Open Form","B2C Features > Members","High","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user logged in","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ACT] Click the 'Invite members' button (top-right, next to Filters)
 3. [ASSERT] Verify the 'Invite member' dialog opens (heading level 2)
@@ -42,28 +42,29 @@ Org admin user logged in","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_pas
 [DOM] Optional Message textbox visible
 [DOM] Cancel and Send buttons present; Send disabled until required fields are filled
 [STATE] No First name and no Last name fields exist on the invite form (invitees provide their name at registration)","[CONSOLE] no uncaught JS errors","'Invite members' button missing; dialog does not open; Role / multi-email / Message fields missing. (Do NOT fail on the absence of first/last name fields — they are intentionally not collected.)","Click Cancel to close the dialog (no invite sent)","Coverage Gap Analysis; vc-frontend invite_member_modal","Draft"
-"B2C-MBR-005","Invite Member - Submit Invitation","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-005","Invite Member - Submit Invitation","B2C Features > Members","High","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user; invite form open","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},invite_email=invite+$TS_SUFFIX@example.com","1. [SETUP] Generate timestamp suffix: smk-{epoch_ms} — capture as $TS_SUFFIX
 2. [NAV] Navigate to /company/members
-3. [ACT] Click Invite Member
-4. [ACT] Fill email: invite+$TS_SUFFIX@example.com
-5. [ACT] Fill first name: Invited
-6. [ACT] Fill last name: Member
-7. [ACT] Select role: Purchaser
-8. [ACT] Click Send Invitation or Submit
-9. [ASSERT] Verify success message displayed
-10. [ASSERT] Verify invited member appears in members list with Invited or Pending status","[DOM] Success toast or confirmation message after sending invitation
+3. [ACT] Click 'Invite members' button (top-right, next to Filters)
+4. [WAIT] 'Invite member' dialog opens
+5. [ACT] Fill invite email textbox with invite+$TS_SUFFIX@example.com
+Note: the invite form has NO first name or last name fields — email and role only (per VCST-5028 customer-doc; invitees provide name at registration)
+6. [ACT] Select role: Organization employee (the default; or change to Purchasing agent)
+7. [ACT] Click 'SEND' or 'Send' button
+8. [ASSERT] Success toast or confirmation message displayed
+9. [ASSERT] Invited member appears in members list with 'Invited' or 'Pending' status","[DOM] Success toast or confirmation message after sending invitation
 [DOM] New member appears in list with pending/invited status
-[STATE] Invitation sent to specified email","[API] invite member mutation succeeds
+[STATE] Invitation sent to specified email (email field only — no first/last name collected on invite form)
+[STATE] Role selection persisted in invitation","[API] invite member mutation succeeds
 [CONSOLE] no uncaught JS errors","Invitation fails with error; no success message; invited member not appearing in list; wrong status shown","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-006","Invite Member - Email Notification Sent","B2C Features > Members","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-006","Invite Member - Email Notification Sent","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user; invitation just submitted","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ACT] Send invitation to a test email
 3. [ASSERT] Verify success confirmation
 4. [ASSERT] Check that invitation notification was triggered (via API or notification log)","[STATE] Email invitation triggered after submission
 [DOM] Success message references email being sent","[API] notification or email sending event triggered
 [CONSOLE] no uncaught JS errors","No email sent; invitation recorded but notification not triggered; email to wrong address","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-007","Invite Member - New Member Sign-In via Invitation Link","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-007","Invite Member - New Member Sign-In via Invitation Link","B2C Features > Members","High","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Invitation sent; invitation link/email available","url={{FRONT_URL}},invite_email=invite+$TS_SUFFIX@example.com,password={{USER_PASSWORD}}","1. [SETUP] Resolve $TS_SUFFIX from the invitation sent in MBR-005 (same epoch suffix)
 2. [NAV] Navigate to the invitation acceptance link (from email)
 3. [ASSERT] Verify registration or password setup form loads
@@ -75,7 +76,7 @@ Invitation sent; invitation link/email available","url={{FRONT_URL}},invite_emai
 [STATE] New member can sign in after setting password
 [DOM] Member status updated in members list to Active","[API] member status updated after acceptance
 [CONSOLE] no uncaught JS errors","Invitation link expired or invalid; password setup fails; member status not updating to Active","delete test member","Coverage Gap Analysis","Draft"
-"B2C-MBR-008","Edit Member Role — Org-Scoped (VCST-5028)","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-008","Edit Member Role — Org-Scoped (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 TechFlow org admin logged in; member exists with Organization employee role; member is also a member of BuildRight org","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
@@ -100,7 +101,7 @@ TechFlow org admin logged in; member exists with Organization employee role; mem
 [STATE] Role change is scoped to the currently-authenticated org context only — BuildRight row unaffected
 [DOM] Members list reflects 'Organization maintainer' in TechFlow after update","[API] changeOrganizationContactRole mutation succeeds (errors[] empty)
 [CONSOLE] no uncaught JS errors","Role change not saving; Actions dropdown missing 'Edit role' option; wrong role shown after update; role change reflects in BuildRight org (cross-org scope violation)","Navigate back to TechFlow org context; open Actions → Edit role for the same member; revert to 'Organization employee'; click Save","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
-"B2C-MBR-009","Admin vs Purchaser Access Differences","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-009","Admin vs Purchaser Access Differences","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Both admin and purchaser are members of TechFlow org specifically; two accounts: TechFlow org admin and TechFlow org purchaser","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
 2. [NAV] Navigate to /company/members
@@ -112,7 +113,7 @@ Both admin and purchaser are members of TechFlow org specifically; two accounts:
 8. [ASSERT] Verify purchaser cannot edit member roles","[DOM] Admin: Invite Member button visible; role editing available
 [DOM] Purchaser: Invite Member button hidden; role editing disabled or hidden
 [STATE] Access differences enforce role-based permissions","[CONSOLE] no uncaught JS errors","Purchaser can invite members (privilege escalation); purchaser can edit roles; no access difference between admin and purchaser","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
-"B2C-MBR-010","Block Member - Org-Scoped Block (VCST-5028)","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-010","Block Member - Org-Scoped Block (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 TechFlow org admin logged in; active member to be blocked who is ALSO a member of BuildRight org; test member email known","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email={{MULTI_ORG_USER_EMAIL}},multi_org_user_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
@@ -129,7 +130,7 @@ TechFlow org admin logged in; active member to be blocked who is ALSO a member o
 13. [ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
 14. [ACT] Fill [data-test-id=""password-input""] with {{MULTI_ORG_USER_PASSWORD}}
 15. [ACT] Click [data-test-id=""login-button""]
-16. [ASSERT] Sign-in to TechFlow org context is REJECTED — error message visible (account blocked or unavailable in this organization)
+16. [ASSERT] Sign-in to TechFlow org context is REJECTED — error message visible verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) — NOT a generic account-locked message
 17. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""] (if partially authenticated) or remain on sign-in page
 18. [NAV] Navigate to {{FRONT_URL}}/sign-in; select BuildRight org context on login
 19. [ACT] Fill [data-test-id=""email-input""] with {{MULTI_ORG_USER_EMAIL}}
@@ -137,11 +138,11 @@ TechFlow org admin logged in; active member to be blocked who is ALSO a member o
 21. [ACT] Click [data-test-id=""login-button""]
 22. [ASSERT] Sign-in to BuildRight org context SUCCEEDS — user lands on account/storefront (blocking is per-org only; no global lock)","[DOM] 'Company members' table Active column: button 'Active' → button 'Blocked' after block action
 [STATE] Actions dropdown per row contains 'Block user' button (not 'Edit role')
-[STATE] Blocked member login attempt to TechFlow org is rejected with blocked message
+[STATE] Blocked member login attempt to TechFlow org is rejected with verbatim message: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013)
 [STATE] SAME member CAN sign in to BuildRight org (per-org scope) — AC3 confirmed
-[DOM] Error message visible when blocked org login attempted","[API] lockOrganizationContact mutation succeeds (errors[] empty)
+[DOM] Error message visible when blocked org login attempted: verbatim text matches customer-doc (BL-AUTH-013)","[API] lockOrganizationContact mutation succeeds (errors[] empty)
 [CONSOLE] no uncaught JS errors","Blocked member can still sign in to TechFlow (AC3 violation); Active column does not change after block; Actions dropdown missing 'Block user'; Blocked member ALSO cannot sign in to BuildRight (global block when should be org-scoped)","Sign in as TechFlow org admin; navigate to /company/members; locate blocked member; click button 'Actions' → click 'Unblock user' (or click button 'Blocked' in Active column to toggle back to Active)","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
-"B2C-MBR-011","Unblock Member - Org-Scoped Restore (VCST-5028)","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-011","Unblock Member - Org-Scoped Restore (VCST-5028)","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 TechFlow org admin logged in; target member is currently in 'Blocked' state for TechFlow org (state from B2C-MBR-010 or pre-blocked via setup)","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},multi_org_user_email={{MULTI_ORG_USER_EMAIL}},multi_org_user_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
@@ -163,7 +164,7 @@ TechFlow org admin logged in; target member is currently in 'Blocked' state for 
 [STATE] Unblocked member can sign in to TechFlow org after unblock (unlockOrganizationContact scoped to TechFlow)
 [STATE] Unblocking in TechFlow does not affect membership status in other orgs","[API] unlockOrganizationContact mutation succeeds (errors[] empty)
 [CONSOLE] no uncaught JS errors","Unblocked member still cannot sign in to TechFlow; Active column stuck at 'Blocked' after unblock; unblock action fails silently; 'Unblock user' missing from Actions dropdown","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
-"B2C-MBR-012","Blocked Member Status Visible in List","B2C Features > Members","Medium","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-012","Blocked Member Status Visible in List","B2C Features > Members","Medium","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Org admin for TechFlow org; at least one blocked-in-TechFlow member exists","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
 2. [NAV] Navigate to /company/members
@@ -172,7 +173,7 @@ Org admin for TechFlow org; at least one blocked-in-TechFlow member exists","url
 5. [ASSERT] Verify active members have Active status","[DOM] Blocked members have visible Blocked or Inactive status badge
 [DOM] Active members have Active status badge
 [FORMAT] Status indicators use distinct colors or styling","[CONSOLE] no uncaught JS errors","No status differentiation between active and blocked members; status column missing; same styling for all statuses","none","Coverage Gap Analysis; Synced: VCST-5028 (2026-06-15)","Draft"
-"B2C-MBR-013","Delegated Purchasing - Purchaser Order Goes to Approval","B2C Features > Members","Critical","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-013","Delegated Purchasing - Purchaser Order Goes to Approval","B2C Features > Members","Critical","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Org with approval workflow enabled; purchaser account with order amount threshold","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
 2. [ACT] Add products to cart exceeding approval threshold
@@ -183,7 +184,7 @@ Org with approval workflow enabled; purchaser account with order amount threshol
 [DOM] Order status label shows Pending Approval or equivalent
 [DOM] Order visible in purchaser's orders list","[API] order query returns status PendingApproval
 [CONSOLE] no uncaught JS errors","Order auto-confirmed without approval; wrong status shown; order not visible in purchaser's list","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-014","Delegated Purchasing - Approver Sees Pending Orders","B2C Features > Members","Critical","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-014","Delegated Purchasing - Approver Sees Pending Orders","B2C Features > Members","Critical","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org approver account; at least one order pending approval","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
 2. [NAV] Navigate to pending approvals or orders requiring approval
 3. [ASSERT] Verify pending order(s) are listed
@@ -192,7 +193,7 @@ Org approver account; at least one order pending approval","url={{FRONT_URL}},or
 [DOM] Purchaser name visible on pending order
 [FORMAT] Order amount displayed correctly","[API] pending approvals query returns orders
 [CONSOLE] no uncaught JS errors","No pending orders visible to approver; approvals page missing; order details incomplete","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-015","Delegated Purchasing - Approve Order","B2C Features > Members","Critical","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-015","Delegated Purchasing - Approve Order","B2C Features > Members","Critical","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org approver; pending order exists","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
 2. [NAV] Navigate to pending approvals
 3. [ACT] Click Approve on a pending order
@@ -203,7 +204,7 @@ Org approver; pending order exists","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL
 [DOM] Approval success message displayed
 [DOM] Purchaser sees updated order status","[API] order approval mutation succeeds
 [CONSOLE] no uncaught JS errors","Approval action fails; order status unchanged; purchaser not notified; wrong status after approval","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-016","Delegated Purchasing - Reject Order","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-016","Delegated Purchasing - Reject Order","B2C Features > Members","High","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org approver; pending order exists","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org approver
 2. [NAV] Navigate to pending approvals
 3. [ACT] Click Reject on a pending order
@@ -215,7 +216,7 @@ Org approver; pending order exists","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL
 [DOM] Rejection success message displayed
 [DOM] Purchaser sees Rejected status on order","[API] order rejection mutation succeeds
 [CONSOLE] no uncaught JS errors","Rejection action fails; order still shows Pending; purchaser not seeing rejection; rejection reason lost","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-017","Delegated Purchasing - Amount Threshold Triggers Approval","B2C Features > Members","High","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-017","Delegated Purchasing - Amount Threshold Triggers Approval","B2C Features > Members","High","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 Org with approval threshold; purchaser account","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},sku={{TEST_SKU}}","1. [NAV] Log in as org purchaser
 2. [ACT] Add products to cart totaling BELOW threshold
@@ -227,14 +228,14 @@ Org with approval threshold; purchaser account","url={{FRONT_URL}},org_user={{OR
 [STATE] Above-threshold order: requires approval
 [MATH] Threshold boundary correctly applied","[API] below-threshold order status is Confirmed; above-threshold is PendingApproval
 [CONSOLE] no uncaught JS errors","All orders go to approval regardless of amount; threshold not enforced; below-threshold order stuck in pending","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-018","Company Members Count Display","B2C Features > Members","Medium","BL-B2B-005",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-MBR-018","Company Members Count Display","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin; organization has known number of members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Log in as org admin
 2. [NAV] Navigate to /company/members
 3. [ASSERT] Verify member count is displayed
 4. [ASSERT] Verify count matches actual visible members","[DOM] Member count shown on page (header or footer)
 [MATH] Displayed count matches number of members in list
 [FORMAT] Count formatted properly","[CONSOLE] no uncaught JS errors","Member count missing; count does not match actual members; count not updating after invite/block","none","Coverage Gap Analysis","Draft"
-"B2C-MBR-019","Change Role - Per-Org Scope Verified (AC1)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-019","Change Role - Per-Org Scope Verified (AC1)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa with DISTINCT per-org roles: TechFlow org (@td(MULTI_ORG_TF_BR.org_techflow_id)) = 'Organization maintainer'; BuildRight org (@td(MULTI_ORG_TF_BR.org_buildright_id)) = 'Organization employee'. These are the AC1 oracle values. TechFlow admin (TECHFLOW_ADMIN) is the maintainer performing the role change.","url={{FRONT_URL}},org_admin={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email)","--- SCREEN: TechFlow Org ---
 1. [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -259,7 +260,7 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa with 
 19. [ASSERT] Role column for @td(MULTI_ORG_TF_BR.email) still shows 'Organization employee' — this was already the seeded BuildRight role and must be unchanged by the TechFlow role change (per-org scope confirmed; AC1)","[STATE] Role change in TechFlow does not propagate to BuildRight — AC1 org-isolation confirmed
 [STATE] changeOrganizationContactRole is scoped to the JWT org context (BL-B2B-005)
 [DOM] 'Company members' Role column reflects org-specific assignment in each org context","[API] changeOrganizationContactRole mutation uses org from JWT; no organizationId in mutation args","Role change in TechFlow reflects in BuildRight (global scope leak — AC1 violation); role not saved; success toast absent; Role column does not update after Save","Sign in as TechFlow admin; navigate to /company/members; locate @td(MULTI_ORG_TF_BR.email); click button 'Actions' → 'Edit role'; restore to 'Organization maintainer'; click Save (restores AC1 oracle)","VCST-5028","Draft"
-"B2C-MBR-020","Block Member - Org-Scoped (AC3 - blocked in org B can login to org A)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005; BL-AUTH-003",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-020","Block Member - Org-Scoped (AC3 - blocked in org B can login to org A)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005; BL-AUTH-003","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa; member is ACTIVE in both TechFlow (@td(MULTI_ORG_TF_BR.org_techflow_id)) and BuildRight (@td(MULTI_ORG_TF_BR.org_buildright_id)) orgs at start of test. TechFlow admin (TECHFLOW_ADMIN) performs the block.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email),target_member_password=@td(MULTI_ORG_TF_BR.password)","--- SCREEN: TechFlow Admin blocks member ---
 1. [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -289,11 +290,11 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa; memb
 23. [ACT] Click [data-test-id=""login-button""]
 24. [WAIT] Org-switcher or org selection shown
 25. [ACT] Select TechFlow org
-26. [ASSERT] Sign-in to TechFlow is REJECTED — error message visible (account blocked or unavailable in this organization)","[STATE] Member blocked in TechFlow: login to TechFlow rejected
+26. [ASSERT] Sign-in to TechFlow is REJECTED — error message visible verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) — NOT a generic account-locked message","[STATE] Member blocked in TechFlow: login to TechFlow rejected
 [STATE] Same member ACTIVE in BuildRight: login to BuildRight succeeds (AC3)
-[DOM] Error message visible when blocked org login attempted: account blocked or unavailable in this organization
+[DOM] Error message visible when blocked org login attempted: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013)
 [STATE] lockOrganizationContact is org-scoped (BL-AUTH-003)","[API] lockOrganizationContact mutation errors[] empty","Member blocked globally (cannot login to any org — AC3 violation); blocked message missing; blocking fails silently","Sign in as TechFlow admin; navigate to /company/members; locate @td(MULTI_ORG_TF_BR.email); click button 'Actions' → click 'Unblock user' (or click inline button 'Blocked' in Active column)","VCST-5028","Draft"
-"B2C-MBR-021","Unblock Member - Org-Scoped Restore","B2C Features > Members","High","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-021","Unblock Member - Org-Scoped Restore","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is currently in 'Blocked' state for TechFlow org (state from B2C-MBR-020 or pre-blocked via setup). Member remains Active in BuildRight org.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email),target_member_password=@td(MULTI_ORG_TF_BR.password)","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
@@ -315,7 +316,7 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is currently in 'Blocked' 
 [STATE] 'Unblock user' option present in Actions dropdown for a blocked member
 [STATE] Unblocked member can login to TechFlow org after unblock (unlockOrganizationContact scoped to TechFlow)
 [STATE] Unblocking in TechFlow does not affect membership status in other orgs","[API] unlockOrganizationContact mutation errors[] empty","Unblocked member still cannot sign in to TechFlow; Active column stuck at 'Blocked'; unblock action fails silently; 'Unblock user' missing from Actions dropdown","none","VCST-5028","Draft"
-"B2C-MBR-022","Cross-Org Role Change Denied (AC4)","B2C Features > Members","Critical","BL-B2B-005",,"[PRE:CLEAR_SESSION]
+"B2C-MBR-022","Cross-Org Role Change Denied (AC4)","B2C Features > Members","Critical","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
 2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
 3. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
