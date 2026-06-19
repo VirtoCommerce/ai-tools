@@ -165,8 +165,8 @@
     },
     {
       "id": "006",
-      "name": "B2C Organization",
-      "file": "regression/suites/Frontend/b2c/006-b2c-organization.csv",
+      "name": "B2B Organization",
+      "file": "regression/suites/Frontend/b2b/006-b2b-organization.csv",
       "domain": "customer-b2b",
       "layer": "frontend",
       "concern": "functional",
@@ -175,7 +175,7 @@
       "estimatedMinutes": 28,
       "agent": "qa-frontend-expert",
       "tags": [
-        "b2c",
+        "b2b",
         "organization",
         "company",
         "sprint"
@@ -188,8 +188,8 @@
     },
     {
       "id": "007",
-      "name": "B2C Lists & Shared",
-      "file": "regression/suites/Frontend/b2c/007-b2c-lists-shared.csv",
+      "name": "B2B Lists & Shared",
+      "file": "regression/suites/Frontend/b2b/007-b2b-lists-shared.csv",
       "domain": "customer-b2b",
       "layer": "frontend",
       "concern": "functional",
@@ -198,7 +198,7 @@
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
-        "b2c",
+        "b2b",
         "wishlists",
         "shared-lists",
         "sprint"
@@ -207,8 +207,8 @@
     },
     {
       "id": "008",
-      "name": "B2C Members",
-      "file": "regression/suites/Frontend/b2c/008-b2c-members.csv",
+      "name": "B2B Members",
+      "file": "regression/suites/Frontend/b2b/008-b2b-members.csv",
       "domain": "customer-b2b",
       "layer": "frontend",
       "concern": "functional",
@@ -218,7 +218,7 @@
       "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
-        "b2c",
+        "b2b",
         "members",
         "roles",
         "sprint"
@@ -231,8 +231,8 @@
     },
     {
       "id": "009",
-      "name": "B2C Variations & Configs",
-      "file": "regression/suites/Frontend/b2c/009-b2c-variations-configs.csv",
+      "name": "B2B Variations & Configs",
+      "file": "regression/suites/Frontend/b2b/009-b2b-variations-configs.csv",
       "domain": "customer-b2b",
       "layer": "frontend",
       "concern": "functional",
@@ -241,7 +241,7 @@
       "estimatedMinutes": 22,
       "agent": "qa-frontend-expert",
       "tags": [
-        "b2c",
+        "b2b",
         "variations",
         "configurations",
         "sprint"
@@ -250,8 +250,8 @@
     },
     {
       "id": "010",
-      "name": "B2C Bulk Ship Dashboard",
-      "file": "regression/suites/Frontend/b2c/010-b2c-bulk-ship-dashboard.csv",
+      "name": "B2B Bulk Ship Dashboard",
+      "file": "regression/suites/Frontend/b2b/010-b2b-bulk-ship-dashboard.csv",
       "domain": "customer-b2b",
       "layer": "frontend",
       "concern": "functional",
@@ -260,10 +260,34 @@
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
-        "b2c",
+        "b2b",
         "ship-to",
         "dashboard",
         "bulk-order",
+        "sprint"
+      ],
+      "storefrontProfile": [
+        "b2b",
+        "hybrid"
+      ],
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "011b",
+      "name": "B2B Company E2E",
+      "file": "regression/suites/Frontend/b2b/011b-b2b-company-e2e.csv",
+      "domain": "customer-b2b",
+      "layer": "frontend",
+      "concern": "e2e",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 130,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "b2b",
+        "company",
+        "e2e",
+        "org-membership",
         "sprint"
       ],
       "storefrontProfile": [
@@ -2455,9 +2479,9 @@
         "domain": "marketing"
       }
     },
-    "b2c": {
+    "b2b": {
       "where": {
-        "tag": "b2c"
+        "tag": "b2b"
       }
     },
     "bopis": {

@@ -20,7 +20,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Payment** | 039, 040a, 040b, 040c, 041 | — | Orders → Payments | `/api/payments/` | — |
 | **BOPIS/Shipping** | 036, 037, 038 | 065 | Shipping → Methods, BOPIS | `/api/shipping/` | — |
 | **Authentication** | 031, 032, 033 | — | Settings → Security, OAuth | `/connect/token` | — |
-| **B2C Features** | 006-010 | — | — (wishlists, variations, orgs) | — | — |
+| **B2B Features** | 006-010 | — | — (wishlists, variations, orgs) | — | — |
 | **Configurable Products** | 072, 072b, 072c | 052 | Catalog → Configurable Products | — | — |
 | **White Labeling** | 070, 071 | 067 | Settings → Branding, Themes | — | — |
 | **Marketing** | 077 | 023, 024, 025 | Marketing → Promotions, Coupons, Content | `/api/marketing/` | — |
@@ -60,7 +60,7 @@ Use these in `/qa-regression <group>` or CI `SUITE_SELECTION`:
 | `search` | 004-005, 061 | Search frontend + admin |
 | `orders` | 014-019 | Orders frontend + admin |
 | `auth` | 031-033 | Authentication |
-| `b2c` | 006-010 | B2C features |
+| `b2b` | 006-010 | B2B features |
 | `marketing` | 023-025, 077 | Marketing admin + storefront |
 | `platform` | 020-021, 049, 063 | Platform core + API |
 | `bopis` | 036-038 | BOPIS/pickup |

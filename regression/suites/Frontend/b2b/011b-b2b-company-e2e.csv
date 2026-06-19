@@ -1,0 +1,1031 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"COMP-E2E-001","Full Member Lifecycle — Invite to Role Assignment to Removal","Company E2E > Member Lifecycle > [JOURNEY]","Critical","BL-B2B-005, BL-B2B-009, BL-B2B-008, BL-AUTH-012","ECL-7.1, ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TechFlow org exists with TECHFLOW_ADMIN having org-admin role.
+2. An invitation email slot is available (email service reachable).
+3. No prior invite pending for AGENT-TEST- invite address.
+NOTE: invite acceptance needs the invite link from the mailbox — if no mailbox tool is wired, treat the accept-invite segment as a documented manual/BLOCKED step, not a FAIL.","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password)","--- SCREEN: Company Members ---
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] Members list loads with at least 1 existing member
+[ACT] click 'Invite members' button
+[WAIT] invite modal / form opens
+
+--- SCREEN: Invite Modal ---
+[ACT] fill 'Email' field with a fresh AGENT-TEST- address (e.g. AGENT-TEST-invite-{{RUN_ID}}@yopmail.com)
+[ACT] select role 'Buyer' from role dropdown
+[ACT] click 'Send'
+[WAIT] success toast visible OR invite appears as pending in list
+[ASSERT] newly invited member row visible in members list with 'Invited' status badge
+
+--- SCREEN: Accept Invite (new tab / new session) ---
+[PRE:CLEAR_SESSION]
+[NAV] use invite link from email OR navigate to storefront registration with invite token
+[WAIT] registration / confirm-account form loads
+[ACT] complete registration; set the new account password to {{USER_PASSWORD}}
+[WAIT] redirect to storefront home after acceptance
+
+--- SCREEN: Verify Roster (org-admin session) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] newly accepted member row visible with active (non-Invited) status
+
+--- SCREEN: Assign Role ---
+[ACT] click on the newly accepted member row (or 'Edit role' action)
+[WAIT] member edit blade / modal opens
+[ACT] change role to 'Manager' (or available elevated role)
+[ACT] click 'Save' or 'Update role' confirm button
+[WAIT] success notification visible
+
+--- SCREEN: Verify Permission Context (member session) ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': AGENT-TEST-invite-{{RUN_ID}}@yopmail.com
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] login completes; storefront home loads
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page loads
+[ASSERT] member management page is accessible (Manager role grants this)
+
+--- SCREEN: Remove Member (org-admin session) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] locate the AGENT-TEST- invite user row
+[ACT] click 'Remove' or 'Delete' action on that row
+[WAIT] confirmation dialog appears
+[ACT] click confirm ('Remove member' or 'Yes' button)
+[WAIT] success toast and member removed from list
+
+--- SCREEN: Verify Access Revoked (removed member session) ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': AGENT-TEST-invite-{{RUN_ID}}@yopmail.com
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] login completes; storefront home loads
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page load settles","[DOM] Invited member row appears in roster with a status indicator showing 'Invited' after invite is sent
+[DOM] After acceptance: member row status changes from 'Invited' to active (no 'Invited' badge)
+[DOM] After role change: member row shows updated role label (e.g., 'Manager')
+[DOM] After role elevation: member can reach /company/members without 403 redirect
+[DOM] After removal: AGENT-TEST- member row is absent from the members list
+[STATE] Removed member cannot access /company/members — page redirects or shows access-denied
+[NAV] Removed member attempting /company/members is redirected away from member management","[API] Invite mutation/REST response errors[] empty; HTTP 200/201 on invite send
+[API] POST /api/customer/organization-memberships response shows org-scoped role assignment (not global role)
+[CONSOLE] No TypeError or JS errors during invite flow
+[CONSOLE] No TypeError or JS errors during role change
+[NETWORK] No 4xx/5xx on /company/members page loads for authorized sessions
+[ADMIN] Removed user's membership record no longer appears in POST /api/customer/organization-memberships/search {userId} for TechFlow org","Invite modal fails to open, 4xx on invite send, spinner visible >8s after invite submission, member row stays 'Invited' after 60s, role save yields 4xx, member management page returns 403 for elevated member, removal confirmation dialog does not appear, removed member still sees /company/members after removal","[PRE:CLEAR_SESSION]
+Remove AGENT-TEST- invited user from TechFlow org if test did not complete removal step (use Admin SPA or POST /api/customer/organization-memberships/{id}/delete or UI Remove).
+Sign out of all sessions.","VCST-5028 | paths: /company/members,/sign-up [P5:BLOCKED-login]","Draft"
+"COMP-E2E-002","Role-Gated Capabilities — Org Admin vs Restricted Member","Company E2E > Role Gating > [JOURNEY]","Critical","BL-B2B-005, BL-B2B-007, BL-AUTH-005","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+1. MULTI_ORG_TF_BR user exists: org-maintainer in TechFlow, org-employee in BuildRight (see aliases.json MULTI_ORG_TF_BR).
+2. Both TechFlow and BuildRight orgs exist on the environment.","front_url={{FRONT_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- SCREEN: TechFlow org (org-maintainer role) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] company members page loads
+[ASSERT] 'Invite members' button visible (maintainer can manage members)
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company info fields are editable (maintainer can edit org info)
+
+--- SCREEN: Switch to BuildRight (org-employee role) ---
+[ACT] open org-switcher in header (click company name or org-switcher control)
+[WAIT] org list dropdown / panel opens
+[ACT] click 'BuildRight' in the org list
+[WAIT] page reloads or context switches; org indicator in header shows BuildRight name
+
+--- SCREEN: BuildRight org (org-employee role) ---
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page load settles
+[ASSERT] 'Invite members' button is absent OR page redirects away (employee cannot manage members)
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] page load settles
+[ASSERT] company info fields are read-only or page is inaccessible (employee cannot edit org info)","[DOM] On TechFlow (maintainer): 'Invite members' button present and enabled on /company/members
+[DOM] On TechFlow (maintainer): company info form fields are editable (not disabled)
+[STATE] After org switch: header org indicator shows BuildRight (not TechFlow)
+[DOM] On BuildRight (employee): 'Invite members' button absent or member management actions hidden
+[DOM] On BuildRight (employee): company info fields disabled / page shows read-only state or access denied
+[STATE] pageContext.user.permissions for TechFlow session includes xapi:my_organization:edit and xapi:my_organization:user:invite and xapi:my_organization:order:view; for BuildRight session includes none of these permissions (employee role has empty permission set per XApiPermissions.ORGANIZATION_EMPLOYEE=[]) — assertable via network inspection of GetPageContext/me query response","[API] JWT decoded after TechFlow switch carries org-maintainer permission set (xapi:my_organization:edit, xapi:my_organization:user:invite, xapi:my_organization:order:view); after BuildRight switch carries org-employee set only (empty — ORGANIZATION_EMPLOYEE=[]) (BL-B2B-007)
+[API] me query after each switch: user.permissions list matches the permission set described above — confirms BUG-A fix (permissions resolved from JWT claims, not DB roles)
+[CONSOLE] No TypeError or JS errors during org switch
+[NETWORK] No 4xx on /company/members for TechFlow session; 403 or redirect expected for BuildRight employee session attempting member management
+[API] GetPageContext (me query) response user.permissions differs between TechFlow and BuildRight sessions confirming org-scoped permission isolation","Spinner >8s after org switch, header still shows TechFlow after switching to BuildRight, 'Invite members' visible for BuildRight employee, no permission change observable in network responses after org switch","[PRE:CLEAR_SESSION]
+Sign out. No org data was modified so no additional cleanup required.","VCST-5028 | paths: /company/members,/company/info,org-switcher [P5:VERIFIED]","Draft"
+"COMP-E2E-003","Multi-Org Context Isolation — Cart Addresses Lists after Org Switch","Company E2E > Multi-Org Isolation > [JOURNEY]","Critical","BL-B2B-001, BL-CART-005, BL-CROSS-008","ECL-7.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+[PRE:RESET_CART]
+1. MULTI_ORG_TF_BR user is org-maintainer in TechFlow and org-employee in BuildRight.
+2. At least one buyable product is available in the B2B virtual catalog.
+3. Both TechFlow and BuildRight orgs exist.","front_url={{FRONT_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), test_sku={{TEST_SKU}}","--- SCREEN: TechFlow cart setup ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+[NAV] {{FRONT_URL}}
+[WAIT] storefront loads with TechFlow org context (org name visible in header)
+[ACT] navigate to any available product and add 1 unit to cart
+[WAIT] cart badge increments or success toast appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] cart contains at least 1 item (TechFlow cart)
+
+--- SCREEN: Switch to BuildRight ---
+[ACT] open org-switcher in header
+[WAIT] org list opens
+[ACT] click 'BuildRight'
+[WAIT] context switch completes; header shows BuildRight
+
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] cart is empty (BuildRight has its own separate cart) OR shows BuildRight-specific items, NOT TechFlow's items
+
+--- SCREEN: Switch back to TechFlow ---
+[ACT] open org-switcher in header
+[ACT] click 'TechFlow'
+[WAIT] context switch completes; header shows TechFlow
+
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ASSERT] TechFlow cart restored with the item added earlier","[STATE] After switching to BuildRight: cart does not contain items added under TechFlow org
+[STATE] After switching back to TechFlow: original cart items are restored (server-side cart preservation)
+[MATH] BuildRight cart item count = 0 (or independent BuildRight cart items only)
+[MATH] TechFlow cart restored item count ≥ 1 after switch-back","[API] xAPI cart query with BuildRight org context returns different cartId than TechFlow context
+[CONSOLE] No JS errors during org switch or cart page load
+[NETWORK] No 4xx/5xx on cart load for either org context
+[API] addItem mutation during TechFlow session uses TechFlow org context (distinct cartId verifiable in request payload)","Spinner >8s after org switch, cart badge shows TechFlow item count immediately after switching to BuildRight, item count stays non-zero for BuildRight cart before any items added, cart fails to restore TechFlow items on switch-back, 4xx on cart load","[PRE:RESET_CART]
+[PRE:CLEAR_SESSION]
+Remove items from TechFlow cart (clear cart on both org contexts if needed).","VCST-5028 | paths: /cart,org-switcher [P5:VERIFIED]","Draft"
+"COMP-E2E-004","Multi-Org Switch — Active Org Context Reflected Across All Screens","Company E2E > Multi-Org Isolation > [JOURNEY]","High","BL-CROSS-008, BL-B2B-001, BL-B2B-007","ECL-7.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_USER_EMAIL]
+1. MULTI_ORG_USER_EMAIL ({{MULTI_ORG_USER_EMAIL}}) belongs to ≥2 orgs.
+2. Storefront accessible at {{FRONT_URL}}.","front_url={{FRONT_URL}}, multi_org_email={{MULTI_ORG_USER_EMAIL}}, multi_org_password={{MULTI_ORG_USER_PASSWORD}}","--- SCREEN: Initial org context ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}
+[WAIT] storefront loads
+[ACT] sign in as {{MULTI_ORG_USER_EMAIL}} with {{MULTI_ORG_USER_PASSWORD}}
+[WAIT] login completes; header shows org name
+[ASSERT] org indicator visible in header showing the currently active org name
+
+--- SCREEN: Record org-1 context ---
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company name on /company/info matches the header org indicator
+
+--- SCREEN: Switch to second org ---
+[ACT] open org-switcher in header
+[WAIT] dropdown / panel shows list of available orgs (≥2 entries)
+[ACT] click any org that is different from the currently active one
+[WAIT] context switch completes
+
+--- SCREEN: Verify context propagated ---
+[ASSERT] header org indicator shows the newly selected org (different from org-1)
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company name on /company/info matches the new org (different from org-1 value)
+
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] members list is scoped to the new org (member count and names may differ from org-1)
+
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders page loads
+[ASSERT] no 500 or JS error; page renders order history for the active org context","[STATE] After org switch: header org indicator label changes to newly selected org name
+[DOM] /company/info company name field shows the new org's name (distinct from org-1)
+[DOM] /company/members page renders without error under new org context
+[DOM] /account/orders renders without error under new org context
+[STATE] All three pages reflect the SAME active org — no page shows the previous org's name","[API] GetPageContext response user.contact.organization.name matches the header org indicator after switch
+[CONSOLE] No TypeError during org switch or cross-page navigation
+[NETWORK] No 5xx on any page load after org switch
+[API] xAPI me query after switch returns organizationId matching newly selected org","Spinner >8s on org switch, header still shows org-1 after clicking org-2, /company/info still shows org-1 name after switch, 5xx on any page load after switch, JS TypeError in console during switch","[PRE:CLEAR_SESSION]
+Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,/account/orders [P5:VERIFIED]","Draft"
+"COMP-E2E-005","Org-Scoped Lockout — Locked Membership Blocks Org Login; Other Orgs Unaffected","Company E2E > Org-Scoped Lockout > [JOURNEY]","Critical","BL-AUTH-012, BL-AUTH-013, BL-B2B-005","ECL-7.3","[PRE:CLEAR_SESSION]
+1. MULTI_ORG_TF_BR user exists: maintainer in TechFlow, employee in BuildRight.
+2. Admin credentials available for REST API call to lock/unlock membership.
+3. TechFlow membership id: @td(MULTI_ORG_TF_BR.techflow_membership_id).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- LAYER: API (lock TechFlow membership) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/lock
+Authorization: Bearer <admin token>
+[WAIT] HTTP 200 response
+[ASSERT] response body indicates locked=true for this membership
+
+--- LAYER: API (verify global account NOT locked) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
+[ASSERT] response body {locked: false} — global account remains unlocked
+
+--- SCREEN: Attempt storefront login into TechFlow org ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form loads
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] click 'Sign in' button
+[WAIT] login response settles
+
+[ASSERT] login is denied OR org-selector auto-picks TechFlow and shows org-specific lock message
+[ASSERT] error message is org-specific (references this organization being blocked), NOT a generic account-locked message
+
+--- SCREEN: Login into BuildRight org (unlocked membership) ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form loads
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] click 'Sign in' button
+[WAIT] login response settles; org-selector may appear
+[ACT] if org-selector appears, click 'BuildRight'
+[WAIT] storefront home loads with BuildRight context
+[ASSERT] user is signed in successfully under BuildRight
+
+--- LAYER: API (cleanup: unlock TechFlow membership) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+Authorization: Bearer <admin token>
+[WAIT] HTTP 200","[STATE] After lock: global account remains accessible (/api/platform/security/users/{id}/locked returns {locked:false})
+[DOM] TechFlow login attempt shows verbatim error: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (not a generic account-locked message) — BL-AUTH-013
+[STATE] BuildRight login succeeds — user reaches storefront home with BuildRight org context
+[DOM] After BuildRight login: header shows BuildRight org name; no lock-state indicator for BuildRight
+[STATE] After cleanup unlock: subsequent TechFlow login attempt succeeds (regression guard)","[API] POST /lock returns 200; /api/platform/security/users/{userId}/locked returns {locked:false} confirming BL-AUTH-012 preserved
+[API] /connect/token with organization_id=TechFlow after lock returns HTTP 400, code=user_is_locked_in_organization (BL-AUTH-013) — session revoked immediately on lock (not at token expiry; RevokeTokenOrganizationMembershipChangedEventHandler calls TerminateAllUserSessions on lock)
+[API] /connect/token with organization_id=BuildRight after lock returns HTTP 200 (cross-org isolation confirmed)
+[CONSOLE] No unhandled JS errors during lock/unlock flow
+[NETWORK] No 5xx on storefront sign-in page during either org attempt","Lock REST endpoint returns 4xx, global locked=true after org lock (BL-AUTH-012 violation — critical), BuildRight login fails after TechFlow lock (cross-org contamination), org-specific error copy absent (shows generic lockout message), 5xx on /sign-in during locked-org attempt","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+Ensure TechFlow membership is unlocked after test regardless of pass/fail outcome.
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-in,REST:memberships/lock [P5:login-VERIFIED;REST-NX]","Draft"
+"COMP-E2E-006","Company Info Edit — Changes Reflected Across Account and Checkout Contexts","Company E2E > Company Info > [JOURNEY]","High","BL-B2B-005, BL-CROSS-008","ECL-7.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TECHFLOW_ADMIN has org-admin role allowing company info edits.
+2. TechFlow org exists with an editable company name/description.","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password)","--- SCREEN: Company Info ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company name field is visible and populated
+
+[ACT] click 'Edit' or click directly on the company name field to enable editing
+[WAIT] field becomes editable
+[ACT] clear current company description / secondary field and enter a new value with AGENT-TEST- prefix (e.g. 'AGENT-TEST-description-updated')
+[ACT] click the inline save icon (enabled only after the company-name field is edited)
+[WAIT] success notification visible
+
+--- SCREEN: Verify on Account Pages ---
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page reloads
+[ASSERT] updated description value appears on /company/info
+
+--- SCREEN: Verify in Account Menu Context ---
+[NAV] {{FRONT_URL}}
+[WAIT] homepage loads
+[ASSERT] header/account menu area reflects the org context (org name in org indicator unchanged — name was not edited, only description)
+
+--- SCREEN: Verify Checkout Context ---
+[PRE:RESET_CART]
+[ACT] navigate to a buyable product and add to cart
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads
+[ACT] proceed to checkout (click 'Checkout' or 'Place order' button)
+[WAIT] checkout page loads
+[ASSERT] no JS errors or 5xx during checkout load; org context is intact (user is still signed in under TechFlow)","[DOM] After save: updated description/field value appears on /company/info without requiring re-login
+[DOM] Header org indicator still shows TechFlow after info edit (org name unchanged)
+[STATE] User remains authenticated in TechFlow context after info edit (no logout side-effect)
+[STATE] Checkout page loads without error; org context preserved (no unexpected sign-out or org-reset)","[API] PUT/PATCH company info REST or GraphQL mutation returns 200, errors[] empty
+[CONSOLE] No JS errors during info edit save
+[NETWORK] No 4xx/5xx on /company/info page after save
+[API] GET /api/members/{orgId} after edit returns the updated description field","Info edit form not editable (read-only for admin — check role), save returns 4xx, success toast absent after save, /company/info still shows old value after save and page refresh, checkout page shows 500 or logs user out","Revert the company description to original value via a second edit.
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /company/info,/cart [P5:BLOCKED-login]","Draft"
+"COMP-E2E-007","Org Address Book — Add Company Address and Use at Checkout Ship-To","Company E2E > Org Addresses > [JOURNEY]","High","BL-B2B-001, BL-CHK-003, BL-CROSS-008","ECL-7.1, ECL-4.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[PRE:RESET_CART]
+1. TECHFLOW_ADMIN has org-admin role.
+2. At least one buyable product in catalog (alias BUYABLE_NO_MIN_QTY must resolve; see aliases.json).
+3. US address data available.","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), addr_street=@td(ADDR_LA.street), addr_city=@td(ADDR_LA.city), addr_state=@td(ADDR_LA.state), addr_zip=@td(ADDR_LA.zip), addr_country=@td(ADDR_LA.country), addr_firstname=@td(ADDR_LA.first_name), addr_lastname=@td(ADDR_LA.last_name), sku=@td(BUYABLE_NO_MIN_QTY.code)","--- SCREEN: Company Info / Addresses ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ACT] locate the Addresses section and click 'Add new address'
+[WAIT] address form / modal opens
+[ACT] fill 'First name': @td(ADDR_LA.first_name)
+[ACT] fill 'Last name': @td(ADDR_LA.last_name)
+[ACT] fill 'Address line 1': @td(ADDR_LA.street)
+[ACT] fill 'City': @td(ADDR_LA.city)
+[ACT] select 'Country': @td(ADDR_LA.country)
+[ACT] select or fill 'State': @td(ADDR_LA.state)
+[ACT] fill 'Zip/Postal code': @td(ADDR_LA.zip)
+[ACT] click 'Save' or the address-form confirm button
+[WAIT] success toast or address appears in the list
+
+--- SCREEN: Verify Address in Roster ---
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] newly added address (matching @td(ADDR_LA.city) and @td(ADDR_LA.state)) appears in org address list
+
+--- SCREEN: Add Product to Cart ---
+[NAV] {{FRONT_URL}}
+[WAIT] homepage loads
+[ACT] search or navigate to product with sku @td(BUYABLE_NO_MIN_QTY.code) and add to cart
+[WAIT] cart badge increments
+
+--- SCREEN: Checkout Ship-To ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart loads with item
+[ACT] click 'Checkout' button
+[WAIT] checkout page loads (shipping address step)
+[ACT] if ship-to popup or address selector available, click 'Select shipping address' or 'Change address'
+[WAIT] address selector opens
+[ASSERT] the org address added in earlier step is available in the address list (matching city/state)
+[ACT] select the org address from the list
+[WAIT] address selected; checkout shipping step shows selected address
+[ASSERT] selected address details (city, state) match @td(ADDR_LA.city) and @td(ADDR_LA.state)","[DOM] New org address appears in /company/info address list after save with matching city/state values
+[STATE] Org address is visible in checkout ship-to address selector (not just personal addresses)
+[DOM] Checkout shipping step shows the org address details after selection
+[FORMAT] Address fields display in expected format (City, State ZIP, Country)","[API] Address save mutation/REST returns 200, errors[] empty
+[API] GET /api/members/{orgId} after add returns addresses[] containing the new entry
+[CONSOLE] No JS errors during address add or checkout load
+[NETWORK] No 4xx/5xx on /company/info address save or checkout page load","Address form does not open from /company/info, address save yields 4xx, success toast absent, address not in org list after page refresh, address absent from checkout ship-to selector (shows only personal addresses), 4xx on checkout load","Remove the AGENT-TEST LA address from org address book via /company/info UI or Admin SPA.
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /company/info,checkout-ship-to [P5:BLOCKED-login]","Draft"
+"COMP-E2E-008","Org-Scoped Role Change Does Not Affect Global Account or Other Org","Company E2E > Role Isolation > [JOURNEY]","High","BL-B2B-008, BL-AUTH-012, BL-B2B-009","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. MULTI_ORG_TF_BR user exists: TechFlow=org-maintainer, BuildRight=org-employee.
+2. TECHFLOW_ADMIN can manage TechFlow members.
+3. Admin API credentials available.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_userId=@td(MULTI_ORG_TF_BR.userId), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- SCREEN: Change TechFlow role via storefront ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] locate MULTI_ORG_TF_BR user row (email: @td(MULTI_ORG_TF_BR.email))
+[ACT] click on that member row or its 'Edit role' action
+[WAIT] member detail / edit modal opens
+[ACT] change role to a different available role (e.g., if currently 'Maintainer', switch to 'Buyer'; if 'Buyer', switch to 'Manager')
+[ACT] click 'Save' confirm button
+[WAIT] success toast
+
+--- LAYER: API (verify TechFlow membership updated) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '@td(MULTI_ORG_TF_BR.userId)'}
+Note: POST /search filters by userId only — organizationId is NOT a supported filter; filter results client-side by organizationId field
+[ASSERT] response results[] contains entry with organizationId = @td(MULTI_ORG_TF_BR.org_techflow_id) showing the updated role value
+
+--- LAYER: API (verify BuildRight membership unchanged) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '@td(MULTI_ORG_TF_BR.userId)'}
+[ASSERT] response results[] contains entry with organizationId = @td(MULTI_ORG_TF_BR.org_buildright_id) still showing 'org-employee' (original value — unchanged by TechFlow role edit)
+
+--- LAYER: API (verify global account roles unchanged) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)
+[ASSERT] global roles[] array is unchanged (no org-specific role written to global account)
+
+--- SCREEN: Restore TechFlow role ---
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] locate MULTI_ORG_TF_BR user and restore original role (org-maintainer)
+[ACT] click 'Save'
+[WAIT] success toast","[STATE] TechFlow membership role is updated after save (API confirms new role value — verified by filtering userId search results by organizationId client-side)
+[STATE] BuildRight membership role is unchanged (still org-employee) — cross-org isolation preserved (BL-B2B-008)
+[STATE] Global account roles[] unchanged — role change writes only to org-membership, not global account
+[DOM] Success toast appears after role change and after restore","[API] POST /api/customer/organization-memberships/search {userId} returns all memberships; TechFlow entry has updated role; BuildRight entry unchanged (search supports userId filter only — organizationId must be applied client-side on response)
+[API] GET /api/platform/security/users/{userId} global roles[] array unchanged
+[CONSOLE] No JS errors during member role edit
+[NETWORK] No 4xx on role save","Member row not found in TechFlow list, role edit modal does not open, save returns 4xx, success toast absent, BuildRight role changed after TechFlow edit (cross-org contamination — BL-B2B-008 violation), global account roles mutated (BL-AUTH-012 scope violation)","Restore MULTI_ORG_TF_BR TechFlow role to 'org-maintainer' (done in last step above).
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /company/members,REST:memberships [P5:BLOCKED-login]","Draft"
+"COMP-E2E-009","Company Self-Service Onboarding — Register Company Account and First Admin Can Manage Org","Company E2E > Onboarding > [JOURNEY]","Medium","BL-B2B-005, BL-B2B-009, BL-AUTH-002","ECL-7.1, ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNOUT]
+1. Store permits new company registration (company registration feature enabled).
+2. Email service available for verification if emailVerificationRequired=true.
+3. No prior AGENT-TEST- company with the test name exists.","front_url={{FRONT_URL}}","--- SCREEN: Registration ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/sign-up
+[WAIT] sign-up form loads (cleared session — /sign-up redirects to /catalog if already authenticated)
+[ACT] select 'Company account' (radio button)
+[WAIT] organization-specific fields appear
+[ASSERT] 'Company Name' field visible
+[ACT] fill 'Company Name': 'AGENT-TEST-Company-{{RUN_ID}}'
+[ACT] fill 'First Name': 'AgentTest'
+[ACT] fill 'Last Name': 'RegUser009'
+[ACT] fill 'Email': 'AGENT-TEST-reg009-{{RUN_ID}}@yopmail.com'
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] check terms/conditions checkbox (if present)
+[ACT] click 'Sign up'
+[WAIT] redirect or confirmation message
+
+--- SCREEN: Post-Registration State ---
+[ASSERT] registration success: redirect to storefront home OR email verification prompt displayed
+[WAIT] if email verification required: verification link delivered (simulate or skip to next step)
+
+--- SCREEN: First Login and Org Navigation ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': 'AGENT-TEST-reg009-{{RUN_ID}}@yopmail.com'
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] login completes; storefront home loads with new org context
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company info page shows the registered company name containing 'AGENT-TEST-Company'
+
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] at least one member row exists (the registrant is first admin)
+[ASSERT] no 'Invite members' button absent (first admin can manage members)","[STATE] Registration completes without 500 error
+[DOM] Post-registration: either redirected to storefront home or email verification prompt shown (not a blank page or 404)
+[DOM] /company/info shows company name matching 'AGENT-TEST-Company' prefix
+[DOM] /company/members loads with at least 1 member (the first admin)
+[DOM] 'Invite members' button present (first admin has member-management rights)","[API] Company registration REST/GraphQL call returns 200, errors[] empty
+[API] POST /api/customer/organization-memberships/search for new user returns membership record with org-admin role
+[CONSOLE] No JS errors during registration or first login
+[NETWORK] No 4xx/5xx on registration submit or /company routes after first login","Registration form missing or route returns 404 (company registration may be disabled — mark BLOCKED with note), 500 on registration submit, redirect to error page, /company/info returns 404, /company/members returns 403 for first admin","Delete the AGENT-TEST-Company-* org via Admin SPA (Customers > Organizations > find by name > Delete).
+Delete the AGENT-TEST- user account via Admin SPA (Platform > Security > Users).
+[PRE:CLEAR_SESSION]","BL-B2B-005 | paths: /sign-up(Company-acct) [P5:VERIFIED]","Draft"
+"COMP-E2E-010","Org-Admin Cannot See Addresses Sidebar Link; Personal Account User Can","Company E2E > Account Navigation > Addresses Sidebar","Medium","BL-B2B-005","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TECHFLOW_ADMIN is an org/B2B user (has org membership).
+2. {{USER_EMAIL}} is a personal/non-org account user.
+Note: 'Addresses' sidebar link in /account is hidden for org/B2B users by design — this is NOT a bug (see vc-bug-catalog VC-B2B-001 and memory).","front_url={{FRONT_URL}}, org_email=@td(TECHFLOW_ADMIN.email), org_password=@td(TECHFLOW_ADMIN.password), personal_email={{USER_EMAIL}}, personal_password={{USER_PASSWORD}}","--- SCREEN: Org/B2B user account sidebar ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page loads with sidebar navigation
+[ASSERT] sidebar does NOT contain an 'Addresses' link (B2B users manage addresses via /company/info, not /account)
+
+--- SCREEN: Personal account user sidebar ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page loads with sidebar navigation
+[ASSERT] sidebar DOES contain an 'Addresses' link (personal account users manage personal addresses here)","[DOM] For TECHFLOW_ADMIN (B2B org user): 'Addresses' navigation link absent from /account sidebar
+[DOM] For {{USER_EMAIL}} (personal account): 'Addresses' navigation link present in /account sidebar
+[STATE] Both users can access their respective account pages without error","[CONSOLE] No JS errors for either user on /account load
+[NETWORK] No 4xx/5xx on /account for either user","'Addresses' link visible for org/B2B user (BL-B2B-005 scope violation — would expose personal address management to B2B users), 'Addresses' link absent for personal account user (feature missing), 404 on /account for either user","[PRE:CLEAR_SESSION]
+Sign out. No data modified.","BL-B2B-005 | paths: /account [P5:org-VERIFIED;personal-NX]","Draft"
+"COMP-E2E-011","Org-Scoped Permissions — Restricted Employee Cannot Reach Member Management or Company Settings","Company E2E > Permission Gating","High","BL-B2B-005, BL-B2B-007, BL-AUTH-005","ECL-7.3, ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:BUILDRIGHT]
+1. MULTI_ORG_TF_BR user has org-employee role in BuildRight (no member-management or company-settings permissions).
+2. BuildRight org exists.","front_url={{FRONT_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:BUILDRIGHT]
+[WAIT] storefront loads with BuildRight context (header shows BuildRight)
+
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page load settles (up to 5s)
+[ASSERT] either: page redirects away from /company/members OR page renders without 'Invite members' / 'Remove' / 'Edit role' action controls
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] page load settles
+[ASSERT] either: company info fields are all read-only (no editable inputs) OR page shows view-only mode with no Edit button accessible to employee role
+
+[NAV] {{FRONT_URL}}/account
+[WAIT] account sidebar loads
+[ASSERT] account page renders without error and shows order history / profile for the active BuildRight context","[STATE] Employee-role user cannot trigger member management actions on /company/members
+[DOM] /company/members either redirects or renders without 'Invite members', 'Remove member', 'Edit role' controls
+[DOM] /company/info either renders read-only or shows no 'Edit' / 'Save' controls for employee role
+[DOM] /account loads normally — employee still has access to their own account","[API] GetPageContext for BuildRight session returns user.permissions scoped to employee role only (no member-management permissions)
+[CONSOLE] No JS unhandled errors on /company/members or /company/info load for employee
+[NETWORK] No 500 on /company pages for employee role","Employee sees 'Invite members' on /company/members (permission leak), employee can edit company info fields on /company/info, GetPageContext returns maintainer permissions for BuildRight employee session, 5xx on /company routes for employee","[PRE:CLEAR_SESSION]
+No data modified.","VCST-5028 | paths: /company/members,/company/info,/account [P5:VERIFIED]","Draft"
+"COMP-E2E-012","Deactivated Member Cannot Access Company Pages — Active Members Unaffected","Company E2E > Member Deactivation","High","BL-B2B-005, BL-AUTH-012","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. MULTI_ORG_TF_BR user is active in TechFlow as org-maintainer.
+2. TECHFLOW_ADMIN can deactivate/remove members.
+3. Test will lock (deactivate) TechFlow membership for MULTI_ORG_TF_BR and verify, then restore.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), tf_br_userId=@td(MULTI_ORG_TF_BR.userId), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id)","--- SCREEN: Lock membership via Admin ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] locate MULTI_ORG_TF_BR user row
+[ACT] click 'Deactivate' or 'Block' action on that row (if available in UI)
+OR
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/lock
+Authorization: Bearer <admin token>
+[WAIT] deactivation confirmed (toast or 200 response)
+
+--- SCREEN: Verify deactivated member cannot sign in to TechFlow ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form loads
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] click 'Sign in'
+[WAIT] response settles
+[ASSERT] sign-in to TechFlow org is denied with verbatim message: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" — NOT a generic account-locked message (BL-AUTH-013)
+Note: lock revokes existing sessions immediately (TerminateAllUserSessions called on IsCurrentlyLocked membership change)
+
+--- SCREEN: Verify TECHFLOW_ADMIN still active and can manage members ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] members list loads normally; TECHFLOW_ADMIN can still see and manage members (admin was not affected by deactivating another member)
+[ASSERT] deactivated member row visible with locked/deactivated status indicator
+
+--- LAYER: API (cleanup: unlock TechFlow membership) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+Authorization: Bearer <admin token>
+[WAIT] HTTP 200","[STATE] After lock: MULTI_ORG_TF_BR cannot sign into TechFlow org; error message is verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013)
+[STATE] Lock revokes active sessions immediately — user is denied even if a valid token was previously issued for TechFlow
+[STATE] After lock: TECHFLOW_ADMIN can still access /company/members (deactivation of one member does not affect admin)
+[DOM] Deactivated member row shows a locked/deactivated status indicator in the members list
+[STATE] After unlock: MULTI_ORG_TF_BR can sign into TechFlow org again (regression guard)
+[STATE] After unlock: global account (/api/platform/security/users/{userId}/locked) returns {locked:false} throughout (BL-AUTH-012)","[API] /api/platform/security/users/{userId}/locked returns {locked:false} throughout (BL-AUTH-012 — org lock must not touch global account)
+[API] /connect/token with TechFlow org after lock returns HTTP 400, error=invalid_grant, code=user_is_locked_in_organization — error_description matches verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013)
+[CONSOLE] No JS errors during admin deactivation flow
+[NETWORK] No 5xx on /company/members for TECHFLOW_ADMIN after deactivating another member","Deactivation returns 4xx, global account shows locked=true after org membership lock (BL-AUTH-012 violation), TECHFLOW_ADMIN session disrupted by locking another member, unlock endpoint returns 4xx, org-specific error message not shown on TechFlow sign-in attempt","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+Ensure TechFlow membership is restored to active regardless of test outcome.
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /company/members,/sign-in,REST:lock [P5:login-VERIFIED;admin-BLOCKED]","Draft"
+"COMP-E2E-013","Self-Service Company Registration — Storefront Flow then Backend Contact+Org+Membership Verification","Company E2E > Onboarding > Registration Cross-Layer > [JOURNEY]","Critical","BL-B2B-010, BL-B2B-005, BL-AUTH-002","ECL-7.1, ECL-3.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNOUT]
+1. Company registration feature is enabled on the store.
+2. No prior AGENT-TEST- company/user with this run's suffix exists.
+3. Admin REST API credentials available to verify backend records (Bearer token from {{ADMIN_EMAIL}} + {{ADMIN_PASSWORD}}).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_api_email={{ADMIN_EMAIL}}, admin_api_password={{ADMIN_PASSWORD}}","--- SCREEN: Storefront Registration ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNOUT]
+[NAV] {{FRONT_URL}}/sign-up
+[WAIT] sign-up form loads (cleared session — /sign-up redirects to /catalog if already authenticated; if /sign-up itself 404s, mark BLOCKED)
+[ACT] select 'Company account' (radio button)
+[WAIT] organization-specific fields appear
+[ASSERT] 'Company Name' field visible
+[ACT] fill 'Company Name': 'AGENT-TEST-Corp-E2E-{{RUN_ID}}'
+[ACT] fill 'First Name': 'AgentTest'
+[ACT] fill 'Last Name': 'RegUser013'
+[ACT] fill 'Email': 'AGENT-TEST-reg-{{RUN_ID}}@yopmail.com'
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Confirm Password': {{USER_PASSWORD}}
+[ACT] check terms/conditions checkbox (if present)
+[ACT] click 'Sign up' submit button
+[WAIT] registration response settles (≤10s)
+[ASSERT] success state: redirect to storefront home OR email-verification prompt displayed; no 500 page
+
+--- SCREEN: First Login ---
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form loads
+[ACT] fill 'Email': AGENT-TEST-reg-{{RUN_ID}}@yopmail.com
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] storefront home loads with org context
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] company name shows 'AGENT-TEST-Corp-E2E-{{RUN_ID}}'
+
+--- LAYER: REST API (verify organization record) ---
+[HTTP] GET {{BACK_URL}}/api/members?memberId=<org_id_from_registration>
+(Resolve org_id via: POST {{BACK_URL}}/api/members/search with filter {name: 'AGENT-TEST-Corp-E2E-{{RUN_ID}}', memberType: 'Organization'})
+[ASSERT] organization record exists with name 'AGENT-TEST-Corp-E2E-{{RUN_ID}}'
+[ASSERT] organization record has a non-empty contacts[] or members[] list containing the registrant's contact
+
+--- LAYER: REST API (verify contact + user record) ---
+[HTTP] GET {{BACK_URL}}/api/members?memberId=<contact_id>
+[ASSERT] contact record exists with email 'AGENT-TEST-reg-{{RUN_ID}}@yopmail.com'
+[ASSERT] contact's organizations[] contains the AGENT-TEST-Corp-E2E-{{RUN_ID}} org id
+
+--- LAYER: REST API (verify org-membership record) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '<userId resolved from security users lookup above>'}
+Note: POST /search supports userId filter only — userEmail and organizationId are NOT supported filters; filter results client-side by organizationId
+[ASSERT] results[] contains entry with organizationId = <org_id> and roles[] non-empty (at least one org role, e.g., org-maintainer)
+[ASSERT] matched membership IsLocked=false (active)
+
+--- LAYER: REST API (verify NO global platform roles granted) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users?loginType=Storefront&keyword=AGENT-TEST-reg-{{RUN_ID}}@yopmail.com
+[ASSERT] user account exists
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<userId>
+[ASSERT] user.roles[] is empty or contains only default storefront roles (no platform admin roles granted by the registration flow)
+[ASSERT] org-membership roles[] is non-empty while user.roles[] carries no platform-level roles — registration grants org-scoped membership roles only, not global platform roles","[STATE] Storefront registration completes without 500 (redirect or email-verify prompt shown)
+[DOM] After first login: /company/info shows company name 'AGENT-TEST-Corp-E2E-{{RUN_ID}}'
+[STATE] REST: Organization record exists with name matching registered company
+[STATE] REST: Contact record exists linked to the org
+[STATE] REST: Org-membership record exists with roles[] non-empty for the registrant
+[STATE] REST: User global roles[] is empty / contains no platform admin roles (BL-B2B-010: self-service registration grants org-membership roles only — never global platform roles)
+[STATE] Org-membership roles[] non-empty while global user.roles[] empty — explicit isolation confirmed","[API] POST /api/customer/organization-memberships/search returns membership with roles[] non-empty
+[API] GET /api/platform/security/users/{userId} roles[] is empty (no global roles granted by registration)
+[CONSOLE] No TypeError or JS errors during registration or first login
+[NETWORK] No 5xx on registration submit or /company/info load
+[ADMIN] Platform Admin SPA: Customers > Organizations > search 'AGENT-TEST-Corp-E2E-{{RUN_ID}}' shows the org with the registrant as a member","Registration route returns 404 (BLOCKED — feature disabled), 500 on registration submit, /company/info does not show company name, org-membership record absent after registration, global user.roles[] non-empty after registration (BL-B2B-010 violation), 4xx on any REST verification call","[HTTP] DELETE or deactivate: POST {{BACK_URL}}/api/members/delete with org id for 'AGENT-TEST-Corp-E2E-{{RUN_ID}}'
+[HTTP] DELETE user account for AGENT-TEST-reg-{{RUN_ID}}@yopmail.com via Admin SPA (Platform > Security > Users > search > Delete)
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-up(Company-acct),REST:members [P5:VERIFIED]","Draft"
+"COMP-E2E-014","Member Invite from Storefront — Cross-Layer Verification (Storefront Initiates, Backend Confirms)","Company E2E > Member Lifecycle > Invite Cross-Layer > [JOURNEY]","Critical","BL-B2B-009, BL-B2B-005, BL-AUTH-002","ECL-7.1, ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TECHFLOW_ADMIN has org-maintainer role in TechFlow org.
+2. No prior AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com user/membership exists.
+3. Admin REST API available.
+NOTE: invite acceptance needs the invite link from the mailbox — if no mailbox tool is wired, treat the accept-invite segment as a documented manual/BLOCKED step, not a FAIL.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), invite_email=AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com","--- SCREEN: Storefront — Send Invite ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ACT] click 'Invite members' button
+[WAIT] invite modal opens
+[ACT] fill 'Email': AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com
+[ACT] select role 'Buyer' (or 'Purchasing agent') from role dropdown
+[ACT] click 'Send'
+[WAIT] success toast visible OR invited member row appears in list with 'Invited' status
+
+[ASSERT] invited member row visible with status indicator showing 'Invited' (or 'Pending')
+
+--- LAYER: REST API (verify invitation and membership record created) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users?keyword=AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com (resolve userId)
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '<resolved userId>'}
+Note: POST /search supports userId only; filter results client-side by organizationId = @td(MULTI_ORG_TF_BR.org_techflow_id)
+[ASSERT] matching membership entry exists with status indicating pending/invited
+[ASSERT] matching entry roles[] contains the invited role (Buyer or purchasing-agent equivalent)
+
+--- LAYER: REST API (verify NO global platform roles on invite) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users?keyword=AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com
+[ASSERT] if user account exists already: user.roles[] is empty (invite must not grant global roles — BL-B2B-009)
+
+--- SCREEN: Storefront — Accept Invite (new session) ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}} (use invite link from email if available; otherwise proceed with direct registration route carrying invite token)
+[ACT] complete account confirmation / password-set flow if prompted
+[WAIT] redirect to storefront home after acceptance
+
+--- SCREEN: Verify roster updated (org-admin session) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com appears in roster with active (non-Invited) status
+
+--- LAYER: REST API (post-acceptance: membership active, roles present, global roles absent) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '<resolved userId>'}
+(Filter results client-side: entry where organizationId = @td(MULTI_ORG_TF_BR.org_techflow_id))
+[ASSERT] matched membership IsLocked=false and roles[] non-empty
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<userId>
+[ASSERT] user.roles[] empty or contains no platform admin roles (BL-B2B-009)","[DOM] Invited member row shows 'Invited' status on /company/members immediately after invite
+[STATE] REST (pre-acceptance): org-membership record exists with pending/invited status, roles[] matching invited role
+[STATE] REST (pre-acceptance): invited user account has no global platform roles
+[DOM] After acceptance: roster row shows active status (no 'Invited' badge)
+[STATE] REST (post-acceptance): membership isActive=true, roles[] non-empty, global user.roles[] still empty","[API] POST /api/customer/organization-memberships/search {userId} returns results including pending TechFlow membership immediately after storefront invite (search by userId only; filter results client-side by organizationId)
+[API] POST invite endpoint returns 200, errors[] empty
+[CONSOLE] No JS errors during invite flow or acceptance
+[NETWORK] No 4xx/5xx on /company/members during invite
+[API] Post-acceptance: GET /api/platform/security/users/{userId} roles[] is empty (global role isolation)","Invite button absent (check role — maintainer required), invite returns 4xx, membership record absent after invite, membership record shows global role assigned (BL-B2B-009 violation), roster does not update after acceptance, 4xx on REST verification calls","[HTTP] Delete org-membership for AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com from TechFlow org
+[HTTP] Delete user account for AGENT-TEST-sf-invite-{{RUN_ID}}@yopmail.com via Admin SPA
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /company/members(invite-modal) [P5:VERIFIED]","Draft"
+"COMP-E2E-015","Member Invite from Backend (Admin SPA + REST API) — Storefront Acceptance Verification","Company E2E > Member Lifecycle > Backend-Initiated Invite > [JOURNEY]","High","BL-B2B-009, BL-B2B-005","ECL-7.1, ECL-7.3","[PRE:CLEAR_SESSION]
+1. Admin REST API available with credentials {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}.
+2. TechFlow org exists: org_id = @td(MULTI_ORG_TF_BR.org_techflow_id).
+3. No prior AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com user/membership exists.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","--- LAYER: REST API (create membership from backend — correct contract) ---
+Note: OrganizationMembership REST contract per reference_organization_membership_api_contract:
+  - Body fields: userId (NOT memberId) + roles[{roleId, roleName}] (NOT roleIds)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users?loginType=Storefront&keyword=AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com
+(If user does not exist: first create via POST {{BACK_URL}}/api/platform/security/users with email AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com, password {{USER_PASSWORD}}, Status=Approved)
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships
+body: {
+  userId: '<userId for AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com>',
+  organizationId: '@td(MULTI_ORG_TF_BR.org_techflow_id)',
+  roles: [{roleId: 'org-employee', roleName: 'Organization employee'}]
+}
+[ASSERT] HTTP 200/201, errors[] empty
+[ASSERT] response body contains memberId
+
+--- LAYER: REST API (verify membership created with correct role scope) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search
+body: {userId: '<userId from prior GET>'}
+Note: POST /search supports userId filter only — userEmail and organizationId are NOT supported filters; filter client-side by organizationId
+[ASSERT] results[] contains entry with organizationId = '@td(MULTI_ORG_TF_BR.org_techflow_id)' and roles[0].roleId = 'org-employee'
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<userId>
+[ASSERT] user.roles[] empty or no platform admin roles (backend-initiated invite also must not grant global roles — BL-B2B-009)
+
+--- SCREEN: Storefront — Accept and Verify ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] sign-in form loads
+[ACT] sign in as AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com with {{USER_PASSWORD}}
+[WAIT] login completes; storefront home loads
+
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads
+[ASSERT] AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com appears in TechFlow roster with active status
+[ASSERT] no 403 or redirect — org-employee role grants read-access to /company/members
+
+[NAV] {{FRONT_URL}}/company/info
+[WAIT] company info page loads
+[ASSERT] page loads without error; company name shows TechFlow org name
+[ASSERT] company info fields are read-only (org-employee cannot edit)","[STATE] REST: POST /api/customer/organization-memberships returns 200/201 with body containing memberId (confirms correct userId+roles contract — NOT memberId/roleIds)
+[STATE] REST: membership record roles[] contains org-employee; no global platform roles on user account
+[DOM] After storefront login: /company/members shows AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com with active status
+[DOM] /company/info is accessible and read-only for org-employee role","[API] POST /api/customer/organization-memberships with userId+roles[{roleId,roleName}] succeeds (200/201)
+[API] POST with incorrect contract (memberId or roleIds instead of userId + roles[]) would return 400 — the passing assertion here confirms the correct contract
+[CONSOLE] No JS errors after backend-provisioned user logs in
+[NETWORK] No 4xx on /company/members or /company/info for org-employee
+[API] GET /api/platform/security/users/{userId} roles[] empty after backend membership creation","POST /api/customer/organization-memberships returns 400 (wrong contract — check userId vs memberId), membership record absent after POST, user.roles[] non-empty (global role granted — BL-B2B-009 violation), storefront login fails for backend-provisioned user, /company/members returns 403 for org-employee","[HTTP] Delete org-membership for AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com from TechFlow org
+[HTTP] Delete user account AGENT-TEST-be-invite-{{RUN_ID}}@yopmail.com via Admin SPA
+[PRE:CLEAR_SESSION]","VCST-5028, reference_organization_membership_api_contract | paths: /company/members,REST:memberships [P5:pages-VERIFIED;REST-NX]","Draft"
+"COMP-E2E-016","Member Roster Search — Find Member by Name and Email","Company E2E > Roster Search + Filters","High","BL-B2B-005","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TECHFLOW_ADMIN is signed in to TechFlow org with at least 2 members visible on /company/members.
+2. MULTI_ORG_TF_BR user is an active member of TechFlow org (name: AgentTest MultiOrg; email: @td(MULTI_ORG_TF_BR.email)).","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), search_email=@td(MULTI_ORG_TF_BR.email), search_name=AgentTest MultiOrg","--- SCREEN: Search by email ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] full members list loads (≥2 rows visible)
+[ACT] locate search / filter input on the members page
+[ACT] type @td(MULTI_ORG_TF_BR.email) into the search field
+[WAIT] roster updates (≤5s) or debounce settles
+[ASSERT] roster narrows: only rows containing @td(MULTI_ORG_TF_BR.email) in the email column are visible
+[ASSERT] at least 1 result row shown
+
+--- SCREEN: Clear search and search by name ---
+[ACT] clear the search field (click X or select-all+delete)
+[WAIT] full roster restores
+[ACT] type 'AgentTest' into the search field (partial name match)
+[WAIT] roster updates
+[ASSERT] roster shows rows with name containing 'AgentTest'
+[ASSERT] rows NOT matching 'AgentTest' are absent
+
+--- SCREEN: Clear search restores full roster ---
+[ACT] clear the search field
+[WAIT] full roster restores
+[ASSERT] roster row count ≥ the count before search was applied (full list restored)","[DOM] After email search: only matching email row(s) visible; non-matching rows absent
+[DOM] After name search: only rows with matching name fragment visible
+[DOM] After clear: full roster restored (row count ≥ pre-search count)
+[FORMAT] Search is case-insensitive or matches substring (either is acceptable; assert presence of known member, not exact count)","[CONSOLE] No JS errors during search input or roster updates
+[NETWORK] No 4xx on roster search request
+[NETWORK] Search triggers a filtered API request (GET /company/members?keyword= or GraphQL equivalent with filter param)","Search input absent on /company/members page, roster not narrowing after search input, clearing search does not restore full roster, 4xx on filtered API request, no match shown for @td(MULTI_ORG_TF_BR.email) even though user is active member","[ACT] Clear search field to restore full roster
+[PRE:CLEAR_SESSION]
+No data modified.","VCST-5028 | paths: /company/members(search) [P5:VERIFIED]","Draft"
+"COMP-E2E-017","Member Roster Filter by Role — Narrows and Resets Correctly","Company E2E > Roster Search + Filters","High","BL-B2B-005, BL-B2B-007","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TechFlow org has members with at least 2 distinct roles visible on /company/members (e.g., org-maintainer and org-employee/purchasing-agent).
+2. MULTI_ORG_TF_BR has techflow_role = @td(MULTI_ORG_TF_BR.techflow_role) (org-maintainer) in TechFlow.","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password), target_role=@td(MULTI_ORG_TF_BR.techflow_role)","--- SCREEN: Open role filter ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] full members list loads
+[ACT] click the 'Filters' button to open the 'Members filters' panel
+[ACT] locate the 'Role' filter within the 'Members filters' panel
+[WAIT] role filter dropdown / popover opens with available role options
+
+--- SCREEN: Set role filter value ---
+[ACT] select '@td(MULTI_ORG_TF_BR.techflow_role)' (org-maintainer) from the role filter list
+[ACT] click 'Apply' or confirm button (if filter uses explicit Apply; otherwise wait for auto-apply after selection)
+[WAIT] roster updates (≤5s)
+[ASSERT] all visible roster rows show role column value matching '@td(MULTI_ORG_TF_BR.techflow_role)' (org-maintainer)
+[ASSERT] rows with other roles are absent from the filtered view
+
+--- SCREEN: Reset filter ---
+[ACT] click 'Reset', 'Clear', or deselect the active role filter value
+[WAIT] full roster restores
+[ASSERT] roster contains members with multiple distinct roles again (not filtered to one role)","[DOM] After role filter applied: all visible rows have role = @td(MULTI_ORG_TF_BR.techflow_role)
+[DOM] Rows with other roles absent from filtered view
+[DOM] MULTI_ORG_TF_BR member row is present in filtered view (known org-maintainer in TechFlow)
+[DOM] After reset: members with different roles reappear (full roster restored)","[CONSOLE] No JS errors during filter open or apply
+[NETWORK] No 4xx on filtered API request (filter by role triggers scoped API call)
+[NETWORK] Role filter triggers a request with role param in query or GraphQL variable","Role filter control absent, filter popover does not close on Apply, roster not narrowing after role filter applied, non-matching-role rows still visible after filter, reset does not restore full roster, 4xx on filtered API call","[ACT] Reset role filter to restore full roster
+[PRE:CLEAR_SESSION]
+No data modified.","VCST-5028 | paths: /company/members(Filters>Role) [P5:VERIFIED]","Draft"
+"COMP-E2E-018","Member Roster Filter by Status — Active vs Locked vs Pending; Clears Correctly","Company E2E > Roster Search + Filters","High","BL-B2B-005, BL-AUTH-012, BL-AUTH-013","ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+1. TechFlow org has at least 2 active members (TECHFLOW_ADMIN + MULTI_ORG_TF_BR).
+2. A locked/blocked member exists in TechFlow (lock one via POST {{BACK_URL}}/api/customer/organization-memberships/{id}/lock if none present); if none can be arranged, the locked-status step is SKIPPED with a note.","front_url={{FRONT_URL}}, admin_email=@td(TECHFLOW_ADMIN.email), admin_password=@td(TECHFLOW_ADMIN.password)","--- SCREEN: Filter by Active status ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] full members list loads
+[ACT] click the 'Filters' button to open the 'Members filters' panel
+[ACT] locate the 'Status' filter within the 'Members filters' panel
+[WAIT] status filter dropdown / popover opens
+[ACT] select 'Active' (or equivalent active status value) from the status list
+[ACT] click 'Apply' or confirm button (if filter uses explicit Apply)
+[WAIT] roster updates
+[ASSERT] all visible roster rows show Active status indicator
+[ASSERT] TECHFLOW_ADMIN and MULTI_ORG_TF_BR rows are present (both are active members)
+
+--- SCREEN: Filter by Invited/Pending status (if applicable) ---
+[ACT] open Status filter control again
+[ACT] select 'Invited' or 'Pending' status option (if present in the dropdown)
+[ACT] click 'Apply' or confirm (if explicit Apply used)
+[WAIT] roster updates
+[ASSERT] if invited members exist: only rows with 'Invited'/'Pending' status badge visible
+[ASSERT] TECHFLOW_ADMIN (active) is absent from the Invited-filtered view
+
+--- SCREEN: Reset filter ---
+[ACT] click 'Reset', 'Clear', or deselect the active status filter
+[WAIT] full roster restores
+[ASSERT] both Active and other-status rows appear (TECHFLOW_ADMIN row visible again if it was absent)","[DOM] After Active filter applied: all visible rows have active status indicator
+[DOM] TECHFLOW_ADMIN row visible in Active-filtered view
+[DOM] After Invited filter applied (if option present): only Invited/Pending rows visible; Active members absent
+[DOM] After reset: full roster restored with both Active and other-status members","[CONSOLE] No JS errors during filter open, apply, or reset
+[NETWORK] No 4xx on status-filtered API call
+[NETWORK] Status filter triggers scoped API request with status param","Status filter control absent, filter popover not closing on Apply, Active-filtered view shows locked/pending rows, Invited filter shows active members, reset does not restore full roster, 4xx on filtered API call","[ACT] Reset status filter to restore full roster
+[PRE:CLEAR_SESSION]
+No data modified.","VCST-5028 | paths: /company/members(Filters>Status) [P5:VERIFIED]","Draft"
+"COMP-E2E-019","Timed Org Lock — lockoutEnd Auto-Expiry Restores Access Without Explicit Unlock","Company E2E > Org-Scoped Lockout > Timed Lock","High","BL-AUTH-012, BL-AUTH-013","ECL-7.3","[PRE:CLEAR_SESSION]
+1. Admin REST API available.
+2. MULTI_ORG_TF_BR user exists; techflow_membership_id: @td(MULTI_ORG_TF_BR.techflow_membership_id).
+3. Test applies a timed lock with a short lockoutEnd (10s in future), waits for expiry, then confirms auto-unlock.
+NOTE: xAPI lockOrganizationContact has NO lockoutEnd parameter — timed lock is REST-only (documented API gap). Do not attempt via GraphQL.","back_url={{BACK_URL}}, techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id), tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","--- LAYER: API (apply timed lock with short expiry) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/lock
+Authorization: Bearer <admin token>
+body: {lockoutEnd: '<UTC timestamp 10 seconds from now, ISO 8601>'}
+[WAIT] HTTP 200
+[ASSERT] response indicates membership is locked (IsLocked=true, LockoutEnd is set)
+
+--- LAYER: API (verify locked — token endpoint fails immediately) ---
+[HTTP] POST {{BACK_URL}}/connect/token
+body: grant_type=password, username=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id)
+[ASSERT] HTTP 400, error=invalid_grant
+[ASSERT] error_description contains ""Your access to organization"" and ""has been blocked""
+
+--- LAYER: API (wait for lockoutEnd to pass, then verify auto-unlock) ---
+[WAIT] 15 seconds for lockoutEnd to expire
+[HTTP] POST {{BACK_URL}}/connect/token
+body: grant_type=password, username=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id)
+[ASSERT] HTTP 200 — access restored automatically (IsCurrentlyLocked = IsLocked && LockoutEnd > UtcNow evaluates false)
+
+--- LAYER: API (verify IsCurrentlyLocked=false via membership GET) ---
+[HTTP] GET {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)
+[ASSERT] IsLocked=true (flag unchanged), LockoutEnd is set AND in the past — effectively unlocked without explicit /unlock call
+
+--- LAYER: API (cleanup: explicit unlock to clear IsLocked flag) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+[WAIT] HTTP 200","[STATE] During lock window: /connect/token with TechFlow org returns HTTP 400 (membership IsCurrentlyLocked=true)
+[STATE] After lockoutEnd passes: /connect/token with TechFlow org returns HTTP 200 (timed expiry auto-unlocked)
+[STATE] GET /{id} shows IsLocked=true, LockoutEnd in the past — IsCurrentlyLocked=false (computed from IsLocked && LockoutEnd > UtcNow)
+[STATE] No explicit /unlock call needed for auto-unlock — timed expiry is server-enforced","[API] First /connect/token (during lock window): HTTP 400, code=invalid_grant, error_description matches verbatim lockout message (BL-AUTH-013)
+[API] Second /connect/token (after lockoutEnd): HTTP 200 — timed expiry confirmed
+[API] GET /{id}: IsLocked=true, LockoutEnd < UtcNow — IsCurrentlyLocked=false (BL-AUTH-012: global account never touched)
+Note: xAPI lockOrganizationContact has no lockoutEnd param — timed lock REST-only (documented gap per developer-doc §10)","First /connect/token returns 200 during lock window (lockoutEnd body ignored), second /connect/token returns 400 after expiry (auto-unlock not working), GET /{id} shows LockoutEnd absent (lockoutEnd body field rejected), 5xx on POST /lock with lockoutEnd body, global account locked after org timed lock (BL-AUTH-012 violation)","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+Ensure TechFlow membership fully unlocked (IsLocked=false) after test regardless of outcome.
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: REST:memberships/lock(lockoutEnd) [P5:REST-NX]","Draft"
+"COMP-E2E-020","Invite Authorization — Employee Without xapi:my_organization:user:invite Cannot Send Invite","Company E2E > Permission Gating > Invite","High","BL-B2B-005, BL-B2B-009","ECL-7.3, ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:BUILDRIGHT]
+1. MULTI_ORG_TF_BR has org-employee role in BuildRight — ORGANIZATION_EMPLOYEE=[] (no permissions).
+2. inviteUser mutation now requires xapi:my_organization:user:invite (breaking change in VCST-5028 — was previously effectively unauthenticated).
+3. BuildRight org exists.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- SCREEN: Employee attempts invite via UI ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:BUILDRIGHT]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members list loads with BuildRight context (header shows BuildRight)
+[ASSERT] 'Invite members' button is ABSENT or disabled on /company/members (employee role lacks xapi:my_organization:user:invite — UI must hide the button, not just block on submit)
+
+--- LAYER: API (direct GraphQL inviteUser attempt — negative case) ---
+Note: use BuildRight session JWT (minted with BuildRight org context)
+[GQL] POST {{BACK_URL}}/graphql
+Authorization: Bearer <BuildRight session token for MULTI_ORG_TF_BR>
+mutation { inviteUser(command: {storeId: ""{{STORE_ID}}"", organizationId: ""@td(MULTI_ORG_TF_BR.org_buildright_id)"", emails: [""AGENT-TEST-noperm-{{RUN_ID}}@yopmail.com""]}) { succeeded errors { code description } } }
+(InputInviteUserType — locked via live introspection 2026-06-19: REQUIRED storeId: String! + emails: [String!]!; OPTIONAL organizationId, urlSuffix, message, roleIds: [String!], customerOrderId. There is NO singular 'email' and NO 'urls' field. The command above is schema-valid so rejection is an AUTHORIZATION result, not coercion.)
+[ASSERT] mutation is rejected by AUTHORIZATION — errors[] non-empty AND errors[0] is an authorization/forbidden error (extensions/code indicate unauthorized; message references the missing xapi:my_organization:user:invite permission)
+[ASSERT] HTTP 200 (GraphQL transport standard); a field/coercion/required-arg validation error is NOT valid evidence of the permission gate — it means the probe is malformed: fix the query against the schema and re-run","[DOM] 'Invite members' button absent or disabled on BuildRight /company/members for org-employee (permission-gated UI — BL-B2B-005)
+[STATE] GraphQL inviteUser mutation rejected for BuildRight employee session — errors[] non-empty
+[STATE] No invitation record created (verify AGENT-TEST-noperm-{{RUN_ID}}@yopmail.com absent from BuildRight roster)","[NETWORK] 'Invite members' button generates no API call (hidden, not just rejected post-click)
+[API] inviteUser mutation returns errors[] citing authorization failure when called with BuildRight employee JWT
+[API] me.permissions for BuildRight employee session does NOT include xapi:my_organization:user:invite (assertable via GetPageContext)
+[CONSOLE] No unhandled JS errors on /company/members for employee","'Invite members' button visible for BuildRight employee (permission leak), inviteUser mutation succeeds for employee session (authorization bypass — BL-B2B-009 violation), errors[] empty on inviteUser with employee token","[PRE:CLEAR_SESSION]
+No data modified (invite rejected).
+Verify AGENT-TEST-noperm-{{RUN_ID}}@yopmail.com absent from BuildRight roster.","VCST-5028 | paths: /company/members(invite-button),GraphQL:inviteUser [P5:UI-NX;GQL-NX]","Draft"
+"COMP-E2E-021","JWT Org-Scoped Permissions in me Query Reflect Active Org After Switch — BUG-A Regression Guard","Company E2E > JWT + Permissions > [JOURNEY]","Critical","BL-B2B-007, BL-B2B-008","ECL-7.1, ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+1. MULTI_ORG_TF_BR: org-maintainer in TechFlow (xapi:my_organization:edit, xapi:my_organization:user:invite, xapi:my_organization:order:view); org-employee in BuildRight (empty — ORGANIZATION_EMPLOYEE=[]).
+2. BUG-A (previously HIGH on cb12): me.permissions resolved from DB roles instead of JWT claims. Fix in pr-135-402e: UserType.permissions now resolves from JWT PermissionClaimType, falling back to DB only for internal calls.
+3. BUG-A FIXED & VERIFIED on pr-135-402e (402e re-test, 2026-06-19). This is the standing BUG-A regression guard — it must continue to PASS; a failure here = BUG-A regression.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- SCREEN: TechFlow session — capture me.permissions ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[PRE:SWITCH_ORG:TECHFLOW]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page loads; TechFlow context active (header shows TechFlow)
+[ASSERT] 'Invite members' button visible (confirms xapi:my_organization:user:invite in JWT)
+
+[GQL] Execute me query with TechFlow session token:
+  query { me { permissions } }
+  Authorization: Bearer <current TechFlow session token>
+[ASSERT] me.permissions includes xapi:my_organization:edit
+[ASSERT] me.permissions includes xapi:my_organization:user:invite
+[ASSERT] me.permissions includes xapi:my_organization:order:view
+
+--- SCREEN: Switch to BuildRight — verify permissions change ---
+[ACT] open org-switcher in header
+[WAIT] org list opens
+[ACT] click 'BuildRight'
+[WAIT] context switch completes; header shows BuildRight
+
+[GQL] Execute me query with BuildRight session token:
+  query { me { permissions } }
+  Authorization: Bearer <current BuildRight session token>
+[ASSERT] me.permissions does NOT include xapi:my_organization:edit
+[ASSERT] me.permissions does NOT include xapi:my_organization:user:invite
+[ASSERT] me.permissions does NOT include xapi:my_organization:order:view
+
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] page loads (BuildRight context)
+[ASSERT] 'Invite members' button ABSENT (permission-driven UI matches BuildRight employee empty permissions)
+
+--- SCREEN: Switch back to TechFlow — verify permissions restored ---
+[ACT] open org-switcher; click 'TechFlow'
+[WAIT] context switch completes; header shows TechFlow
+[GQL] Re-execute me query with TechFlow token
+[ASSERT] xapi:my_organization:edit present again (TechFlow maintainer permissions fully restored after round-trip)","[STATE] TechFlow me.permissions: contains xapi:my_organization:edit, xapi:my_organization:user:invite, xapi:my_organization:order:view — resolved from JWT org-scoped claims (BUG-A fix confirmed)
+[STATE] BuildRight me.permissions: contains NONE of the three xapi:my_organization:* permissions (empty employee set)
+[DOM] TechFlow: 'Invite members' visible; BuildRight: 'Invite members' absent — UI gating correctly reflects JWT permissions
+[STATE] After switch-back to TechFlow: all three org-maintainer permissions restored (round-trip confirmed)","[API] TechFlow me.permissions (JWT): includes all three xapi:my_organization:* permissions
+[API] BuildRight me.permissions (JWT): excludes all three xapi:my_organization:* permissions (employee role = empty)
+[API] Both responses confirm permissions from JWT org-scoped claims, not DB global roles (BUG-A fix area)
+[NETWORK] GetPageContext/me query fires after each org switch; distinct permission sets observable in payloads
+[CONSOLE] No JS errors during org switch or me query","TechFlow me.permissions missing xapi:my_organization:edit (BUG-A regression), BuildRight me.permissions contains maintainer permissions (cross-org permission leak — BL-B2B-007 violation), me.permissions identical for both orgs (BUG-A not fixed — DB-role resolution still used), 'Invite members' visible on BuildRight (UI mismatch), 5xx on me query after org switch","[PRE:CLEAR_SESSION]
+No data modified.","VCST-5028 (BUG-A fixed 402e 2026-06-19) | paths: /company/members,GraphQL:me.permissions [P5:VERIFIED]","Draft"
+"COMP-E2E-022","REST Create Membership — Missing userId Must Return 400 Not 500 (BUG-B Known-Failing)","Company E2E > REST API > Negative > [needs-review]","High","BL-B2B-009","ECL-3.2","[PRE:CLEAR_SESSION]
+Admin REST API available with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}.
+NOTE: BUG-B is OPEN as of 2026-06-19 — POST /api/customer/organization-memberships with missing userId currently returns HTTP 500 + DB error with DB-name leak. This case asserts the EXPECTED 400. Mark result needs-review until BUG-B is fixed. Do NOT assert the buggy 500 as correct.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, techflow_org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","--- LAYER: API (negative: missing userId field) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships
+Authorization: Bearer <admin token>
+body: {
+  organizationId: '@td(MULTI_ORG_TF_BR.org_techflow_id)',
+  roles: [{roleId: 'org-employee', roleName: 'Organization employee'}]
+}
+(userId field intentionally absent)
+[ASSERT] HTTP 400 (EXPECTED: server validates userId presence before DB write)
+[ASSERT] response body contains a structured validation error message
+[ASSERT] response body does NOT contain any DB server name, schema name, or SQL stack trace (no DB-name leak)
+
+--- LAYER: API (negative: empty string userId) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships
+Authorization: Bearer <admin token>
+body: {
+  userId: '',
+  organizationId: '@td(MULTI_ORG_TF_BR.org_techflow_id)',
+  roles: [{roleId: 'org-employee', roleName: 'Organization employee'}]
+}
+(userId is empty string)
+[ASSERT] HTTP 400 (EXPECTED) — NOT a 200 creating an orphan record
+[ASSERT] If any memberId is returned: verify GET /api/customer/organization-memberships/{id} returns 404 (no orphan persisted)","[STATE] POST with missing userId: HTTP 400 returned (input validation active — BUG-B fixed)
+[STATE] Response body on 400: structured validation error, NOT raw DB exception or SQL stack trace
+[STATE] POST with empty userId: HTTP 400 — no orphan membership record created","[API] POST without userId returns 400 (not 500) — BUG-B is fixed
+[API] Response body: descriptive validation message, no DB internals exposed
+[API] No membership persisted for either bad request (verify via GET on any returned id returns 404)","HTTP 200 for missing userId (orphan created — BUG-B unfixed), HTTP 500 returned (DB-name leak still present — BUG-B still open), response body contains SQL stack trace or DB server name (security concern), membership record exists after failed POST","[HTTP] If any test membership accidentally created (200 orphan), delete: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=<id>
+[PRE:CLEAR_SESSION]","VCST-5028 BUG-B (open 2026-06-19) | paths: REST:memberships/create [P5:REST-NX]","Draft"
+"COMP-E2E-023","Admin SPA — Operator Views Organization Memberships Widget and Locks/Unlocks Contact","Company E2E > Admin SPA > Organization Memberships Widget","High","BL-B2B-007, BL-B2B-008, BL-AUTH-012","ECL-7.3","[PRE:CLEAR_SESSION]
+1. Admin SPA accessible at {{BACK_URL}}.
+2. Operator account ({{ADMIN_EMAIL}}) has customer:organization-membership:read and :update permissions.
+3. MULTI_ORG_TF_BR contact has seeded OrganizationMembership records (techflow_membership_id + buildright_membership_id from aliases.json).
+NOTE: Pre-existing org members without a membership row show count=0 in the widget (back-fill limitation, per BA admin-doc). If MULTI_ORG_TF_BR shows count=0 on this env, FIRST create the TechFlow membership via POST {{BACK_URL}}/api/customer/organization-memberships (body: userId + roles[{roleId,roleName}], per reference_organization_membership_api_contract), then re-open the widget. If creation is not possible, mark this case BLOCKED (back-fill pending) — do NOT FAIL.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, contact_email=@td(MULTI_ORG_TF_BR.email), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id)","--- SCREEN: Admin SPA — navigate to contact ---
+[PRE:CLEAR_SESSION]
+[NAV] {{BACK_URL}}
+[WAIT] Admin SPA loads
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] Admin SPA home blade loads
+
+[ACT] click 'Contacts' in the main menu (left sidebar)
+[WAIT] 'Companies and contacts' blade opens
+[ACT] type @td(MULTI_ORG_TF_BR.email) into 'Search keyword...' field
+[ACT] press Enter or click search icon
+[WAIT] filtered list shows the matching contact row
+[ACT] click the contact's name row
+[WAIT] Contact detail blade opens
+
+--- SCREEN: Organization memberships widget ---
+[ASSERT] 'Organization memberships' widget visible in contact detail blade
+[ASSERT] widget shows count ≥ 1 (after seeding if needed — see precondition NOTE; count=0 with no seed path available = BLOCKED, not FAIL)
+[ACT] click the 'Organization memberships' widget
+[WAIT] 'Organization memberships' blade opens to the right
+[ASSERT] blade columns visible: Organization, Roles, Status
+[ASSERT] at least one row visible with a non-empty Organization value
+[ASSERT] TechFlow row Status shows 'Active'
+
+--- SCREEN: Lock the TechFlow membership via Admin blade ---
+[ACT] click the TechFlow membership row
+[WAIT] membership detail blade opens
+[ASSERT] toolbar contains 'Lock' and 'Unlock' buttons (and optionally a lock expiry date field)
+[ACT] click 'Lock' in the toolbar
+[WAIT] status updates
+[ASSERT] Status column in memberships list shows 'Locked' for TechFlow row
+
+--- SCREEN: Unlock the TechFlow membership ---
+[ACT] click the TechFlow membership row (still open or re-open)
+[ACT] click 'Unlock' in the toolbar
+[WAIT] unlock applied
+[ACT] click 'Save' in the toolbar if Save is required after Unlock
+[WAIT] Status column updates
+[ASSERT] Status shows 'Active' for TechFlow row (unlocked)
+
+--- LAYER: API (verify global account unaffected) ---
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)
+[ASSERT] user account is NOT globally locked (BL-AUTH-012)","[DOM] 'Organization memberships' widget present in contact detail blade with count ≥ 1
+[DOM] Widget blade shows Organization / Roles / Status columns
+[STATE] TechFlow membership Status = 'Active' initially
+[STATE] After Lock click: Status column updates to 'Locked' for TechFlow row
+[STATE] After Unlock + Save: Status returns to 'Active' for TechFlow row
+[STATE] BuildRight membership Status unchanged throughout (only TechFlow was locked/unlocked)
+[STATE] Global user account NOT locked after org-level lock (BL-AUTH-012)","[API] POST /api/customer/organization-memberships/{techflow_membership_id}/lock HTTP 200 (triggered by Admin blade Lock click)
+[API] POST /api/customer/organization-memberships/{techflow_membership_id}/unlock HTTP 200 (triggered by Unlock click)
+[API] GET /api/platform/security/users/{userId}: LockoutEnd null (global account untouched) — BL-AUTH-012
+[CONSOLE] No JS errors in Admin SPA during widget open, lock, unlock
+[NETWORK] No 4xx/5xx on widget blade open or lock/unlock actions","'Organization memberships' widget absent from contact blade (not deployed), widget count = 0 even AFTER seeding the membership (genuine back-fill/widget defect — count=0 with no seed attempted is BLOCKED, not a failure), Lock click triggers 4xx, Status not updating after lock, global account locked after org lock (BL-AUTH-012 violation), Unlock fails (Status stuck at Locked)","Ensure TechFlow membership is unlocked (Status=Active) after test regardless of outcome:
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: AdminSPA:Contacts>OrganizationMemberships-widget,REST:lock/unlock [P5:admin-NX]","Draft"

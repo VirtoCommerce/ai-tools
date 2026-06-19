@@ -29,7 +29,7 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 | AUTH, SESSION, RBAC | auth-security | `auth` | 031-033, 044, 049, 050d, 082 |
 | CATALOG, SEARCH, FILTERS, COMPARE, CONFIGURABLE | catalog-search | `catalog`, `search`, `configurable-products` | 001-005, 050a, 050i, 051-053, 061, 072, 072b/c/d |
 | CART, CHECKOUT, PAYMENT, ORDERS, BOPIS, PRICING, INVENTORY, SHIPPING, RETURNS | purchase-flow | `purchase-flow`, `payment`, `bopis`, `orders` | 011-015, 017-019, 028-030, 036-041, 050b1/b2/b3/b4, 050c, 050k, 054-056, 065, 073 |
-| B2B-ORG, B2B-MEMBERS, LISTS, DASHBOARD, WISHLIST, CONTRACTS, LOYALTY | customer-b2b | `b2c` | 006-010, 026-027, 050h, 074-075 |
+| B2B-ORG, B2B-MEMBERS, LISTS, DASHBOARD, WISHLIST, CONTRACTS, LOYALTY | customer-b2b | `b2b` | 006-010, 026-027, 050h, 074-075 |
 | PROMOTIONS, COUPONS, CONTENT | marketing | `marketing` | 023-025, 050j, 077, 079 |
 | NOTIFICATIONS, PUSH MESSAGES | communication | — | 057-058, 068 |
 | CMS, ASSETS, IMAGE TOOLS | content-cms | — | 050f, 059-060, 062, 069 |
@@ -187,7 +187,7 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | BOPIS checkout | 038 | Covered |
 
 ### B2B-ORG — Multi-Organization
-**Domain:** `customer-b2b` | **Selection:** `b2c` | **Suites:** 006, 027
+**Domain:** `customer-b2b` | **Selection:** `b2b` | **Suites:** 006, 027
 
 | Feature | Suites | Status |
 |---------|--------|--------|
@@ -199,7 +199,7 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Org admin (create, manage) | 027 | Covered |
 
 ### B2B-MEMBERS — Company Members & Roles
-**Domain:** `customer-b2b` | **Selection:** `b2c` | **Suites:** 008, 026, 027
+**Domain:** `customer-b2b` | **Selection:** `b2b` | **Suites:** 008, 026, 027
 
 | Feature | Suites | Status |
 |---------|--------|--------|
@@ -210,7 +210,7 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Delegated purchasing (approval) | 013 | Partial — B2B checkout covers some approval, no dedicated delegation flow |
 
 ### LISTS — Lists & Quick Order
-**Domain:** `customer-b2b` | **Selection:** `b2c` | **Suites:** 007, 010
+**Domain:** `customer-b2b` | **Selection:** `b2b` | **Suites:** 007, 010
 
 | Feature | Suites | Status |
 |---------|--------|--------|
@@ -221,7 +221,7 @@ The legacy "Suite 050" has been split into 11 focused sub-suites. Route GraphQL 
 | Quick order by SKU | 010 | Partial — covered implicitly in bulk order, not isolated |
 
 ### DASHBOARD — Account Dashboard
-**Domain:** `customer-b2b` | **Selection:** `b2c` | **Suites:** 010
+**Domain:** `customer-b2b` | **Selection:** `b2b` | **Suites:** 010
 
 | Feature | Suites | Status |
 |---------|--------|--------|

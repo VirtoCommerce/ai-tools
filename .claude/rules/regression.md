@@ -37,7 +37,7 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
 - **Suite definitions**: 101 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2c`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
+- **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
@@ -56,7 +56,7 @@ Central configuration for regression orchestration. Defines:
 | `Frontend/orders/` | 014-015 | 97 | Orders frontend, quotes |
 | `Frontend/payment/` | 039, 040a-040c, 041 | 84 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
 | `Frontend/bopis/` | 036-038 | 88 | Store selector, cart, checkout |
-| `Frontend/b2c/` | 006-010 | 166 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
+| `Frontend/b2b/` | 006-010 | 166 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
 | `Frontend/configurable-products/` | 072, 072b, 072c | 139 | UI, E2E scenarios, cross-cutting |
 | `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
 | `Frontend/marketing/` | 077 | 54 | Coupons & promotions storefront |
@@ -99,7 +99,7 @@ Central configuration for regression orchestration. Defines:
 | `search` | 004-005, 061 | Search module (frontend + admin) |
 | `orders` | 014-019 | Orders & quotes (frontend + admin) |
 | `auth` | 031-033 | Authentication module |
-| `b2c` | 006-010 | B2C features |
+| `b2b` | 006-010 | B2B features |
 | `marketing` | 023-025, 077 | Marketing module (admin + storefront) |
 | `platform` | 020-021, 049, 063 | Platform module |
 | `frontend` | All Frontend/ suites (40) | Frontend-only regression |

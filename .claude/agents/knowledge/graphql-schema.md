@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-06-09)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-06-19)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -445,23 +445,23 @@ Fields: `key`, `value`
 
 ### InputAddItemType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `productId: String (required)`, `quantity: Int (required)`, `price: Decimal`, `itemCurrencyCode: String`, `comment: String`, `dynamicProperties: InputDynamicPropertyValueType`, `configurationSections: ConfigurationSectionInput`, `createdDate: DateTime`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `productId: String!`, `quantity: Int!`, `price: Decimal`, `itemCurrencyCode: String`, `comment: String`, `dynamicProperties: [InputDynamicPropertyValueType]`, `configurationSections: [ConfigurationSectionInput]`, `createdDate: DateTime`
 
 ### InputRemoveItemType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `lineItemId: String (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `lineItemId: String!`
 
 ### InputChangeCartItemQuantityType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `lineItemId: String (required)`, `quantity: Int (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `lineItemId: String!`, `quantity: Int!`
 
 ### InputAddCouponType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `couponCode: String (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `couponCode: String!`
 
 ### InputRemoveCouponType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `couponCode: String`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `couponCode: String`
 
 ### InputCreateOrderFromCartType
 
@@ -469,55 +469,55 @@ Fields: `cartId: String`
 
 ### InputChangeCartCurrencyType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `newCurrencyCode: String (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `newCurrencyCode: String!`
 
 ### InputAddOrUpdateCartShipmentType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `shipment: InputShipmentType (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `shipment: InputShipmentType!`
 
 ### InputAddOrUpdateCartPaymentType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `payment: InputPaymentType (required)`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`, `payment: InputPaymentType!`
 
 ### InputCreateOrganizationType
 
-Fields: `name: String`, `addresses: InputMemberAddressType`, `dynamicProperties: InputDynamicPropertyValueType`
+Fields: `name: String`, `addresses: [InputMemberAddressType]`, `dynamicProperties: [InputDynamicPropertyValueType]`
 
 ### InputUpdateContactType
 
-Fields: `id: String (required)`, `name: String`, `memberType: String`, `addresses: InputMemberAddressType`, `phones: String`, `emails: String`, `groups: String`, `dynamicProperties: InputDynamicPropertyValueType`, `fullName: String`, `firstName: String (required)`, `lastName: String (required)`, `middleName: String`, `salutation: String`, `photoUrl: String`, `timeZone: String`, `defaultLanguage: String`, `currencyCode: String`, `about: String`, `selectedAddressId: String`, `organizations: String`
+Fields: `id: String!`, `name: String`, `memberType: String`, `addresses: [InputMemberAddressType]`, `phones: [String]`, `emails: [String]`, `groups: [String]`, `dynamicProperties: [InputDynamicPropertyValueType]`, `fullName: String`, `firstName: String!`, `lastName: String!`, `middleName: String`, `salutation: String`, `photoUrl: String`, `timeZone: String`, `defaultLanguage: String`, `currencyCode: String`, `about: String`, `selectedAddressId: String`, `organizations: [String]`
 
 ### InputCreateContactType
 
-Fields: `id: String`, `name: String`, `memberType: String`, `addresses: InputMemberAddressType`, `phones: String`, `emails: String`, `groups: String`, `dynamicProperties: InputDynamicPropertyValueType`, `fullName: String`, `firstName: String (required)`, `lastName: String (required)`, `middleName: String`, `salutation: String`, `photoUrl: String`, `timeZone: String`, `defaultLanguage: String`, `currencyCode: String`, `about: String`, `selectedAddressId: String`, `organizations: String`
+Fields: `id: String`, `name: String`, `memberType: String`, `addresses: [InputMemberAddressType]`, `phones: [String]`, `emails: [String]`, `groups: [String]`, `dynamicProperties: [InputDynamicPropertyValueType]`, `fullName: String`, `firstName: String!`, `lastName: String!`, `middleName: String`, `salutation: String`, `photoUrl: String`, `timeZone: String`, `defaultLanguage: String`, `currencyCode: String`, `about: String`, `selectedAddressId: String`, `organizations: [String]`
 
 ### InputUpdatePersonalDataType
 
-Fields: `personalData: InputPersonalDataType (required)`
+Fields: `personalData: InputPersonalDataType!`
 
 ### InputUpdateMemberAddressType
 
-Fields: `memberId: String (required)`, `addresses: ? (required)`
+Fields: `memberId: String!`, `addresses: [InputMemberAddressType]!`
 
 ### InputRemoveCartType
 
-Fields: `cartId: String (required)`, `userId: String (required)`
+Fields: `cartId: String!`, `userId: String!`
 
 ### InputClearCartType
 
-Fields: `cartId: String`, `storeId: String (required)`, `cartName: String`, `userId: String (required)`, `currencyCode: String`, `cultureName: String`, `cartType: String`
+Fields: `cartId: String`, `storeId: String!`, `cartName: String`, `userId: String!`, `currencyCode: String`, `cultureName: String`, `cartType: String`
 
 ### InputShipmentType
 
-Fields: `id: OptionalString`, `fulfillmentCenterId: OptionalString`, `height: OptionalNullableDecimal`, `length: OptionalNullableDecimal`, `measureUnit: OptionalString`, `shipmentMethodCode: OptionalString`, `shipmentMethodOption: OptionalString`, `volumetricWeight: OptionalNullableDecimal`, `weight: OptionalNullableDecimal`, `weightUnit: OptionalString`, `width: OptionalNullableDecimal`, `deliveryAddress: InputAddressType`, `currency: OptionalString`, `price: OptionalDecimal`, `vendorId: OptionalString`, `comment: OptionalString`, `pickupLocationId: OptionalString`, `dynamicProperties: InputDynamicPropertyValueType`
+Fields: `id: OptionalString`, `fulfillmentCenterId: OptionalString`, `height: OptionalNullableDecimal`, `length: OptionalNullableDecimal`, `measureUnit: OptionalString`, `shipmentMethodCode: OptionalString`, `shipmentMethodOption: OptionalString`, `volumetricWeight: OptionalNullableDecimal`, `weight: OptionalNullableDecimal`, `weightUnit: OptionalString`, `width: OptionalNullableDecimal`, `deliveryAddress: InputAddressType`, `currency: OptionalString`, `price: OptionalDecimal`, `vendorId: OptionalString`, `comment: OptionalString`, `pickupLocationId: OptionalString`, `dynamicProperties: [InputDynamicPropertyValueType]`
 
 ### InputPaymentType
 
-Fields: `id: OptionalString`, `outerId: OptionalString`, `paymentGatewayCode: OptionalString`, `billingAddress: InputAddressType`, `purpose: OptionalString`, `currency: OptionalString`, `price: OptionalDecimal`, `amount: OptionalDecimal`, `vendorId: OptionalString`, `comment: OptionalString`, `dynamicProperties: InputDynamicPropertyValueType`
+Fields: `id: OptionalString`, `outerId: OptionalString`, `paymentGatewayCode: OptionalString`, `billingAddress: InputAddressType`, `purpose: OptionalString`, `currency: OptionalString`, `price: OptionalDecimal`, `amount: OptionalDecimal`, `vendorId: OptionalString`, `comment: OptionalString`, `dynamicProperties: [InputDynamicPropertyValueType]`
 
 ### InputMemberAddressType
 
-Fields: `id: String`, `city: String (required)`, `countryCode: String (required)`, `countryName: String`, `email: String`, `firstName: String`, `key: String`, `lastName: String`, `line1: String (required)`, `line2: String`, `middleName: String`, `name: String`, `organization: String`, `phone: String`, `postalCode: String (required)`, `regionId: String`, `regionName: String`, `zip: String`, `outerId: String`, `description: String`, `addressType: Int`
+Fields: `id: String`, `city: String!`, `countryCode: String!`, `countryName: String`, `email: String`, `firstName: String`, `key: String`, `lastName: String`, `line1: String!`, `line2: String`, `middleName: String`, `name: String`, `organization: String`, `phone: String`, `postalCode: String!`, `regionId: String`, `regionName: String`, `zip: String`, `outerId: String`, `description: String`, `addressType: Int`
 
 ### InputPersonalDataType
 
@@ -525,15 +525,27 @@ Fields: `email: String`, `fullName: String`, `firstName: String`, `lastName: Str
 
 ### InputInitializeCartPaymentType
 
-Fields: `cartId: String (required)`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`
+Fields: `cartId: String!`, `paymentId: String!`, `storeId: String`, `cultureName: String`
 
 ### InputInitializePaymentType
 
-Fields: `orderId: String`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`, `parameters: InputKeyValueType`
+Fields: `orderId: String`, `paymentId: String!`, `storeId: String`, `cultureName: String`, `parameters: [InputKeyValueType]`
 
 ### InputAuthorizePaymentType
 
-Fields: `orderId: String`, `paymentId: String (required)`, `storeId: String`, `cultureName: String`, `parameters: InputKeyValueType`
+Fields: `orderId: String`, `paymentId: String!`, `storeId: String`, `cultureName: String`, `parameters: [InputKeyValueType]`
+
+### InputInviteUserType
+
+Fields: `storeId: String!`, `organizationId: String`, `urlSuffix: String`, `emails: [String!]!`, `message: String`, `roleIds: [String!]`, `customerOrderId: String`
+
+### InputChangeOrganizationContactRoleType
+
+Fields: `memberId: String!`, `roleIds: [String!]`
+
+### InputLockUnlockOrganizationContactType
+
+Fields: `memberId: String!`
 
 ---
 
