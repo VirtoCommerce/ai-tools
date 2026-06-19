@@ -333,10 +333,11 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is currently in 'Blocked' 
 Logged out. TechFlow org exists with @td(MULTI_ORG_TF_BR.email) as org-maintainer.
 Both org memberships for the fixture user are in clean/unlocked state.
 AGENT-TEST- invite target: AGENT-TEST-invite-5028@yopmail.com (fresh per run, never a fixture user).
-NOTE [BUG-A]: Storefront write ops (invite, role-change, block) on /company/members currently broken
-due to BUG-A (GetPageContext.user.permissions returns [] after org-switch -> Invite button and
-per-row action menus hidden for maintainers). Steps authored against intended behaviour.
-When action menus are absent at role-change/block steps, assert BUG-A regression signal rather than test failure.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; actor_email=@td(MULTI_ORG_TF_BR.email); actor_password=@td(MULTI_ORG_TF_BR.password); actor_member_id=@td(MULTI_ORG_TF_BR.id); actor_user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); invite_email=AGENT-TEST-invite-5028@yopmail.com","--- SCREEN: Login ---
+NOTE [BUG-A FIXED in pr-135-402e]: The empty-permissions-after-org-switch defect (Invite button + per-row
+action menus hidden for maintainers) was code-fixed in PR#135 (UserType.permissions from JWT claims;
+GetUserQueryHandler merges org-membership roles; CheckAuthAsync uses the JWT principal). On build pr-135-402e+ /
+customer pr-300-b446 / vc-frontend 2.52.0-pr-2315-059c the maintainer write UI MUST render. Absent Invite button
+or action menus = a REGRESSION of the VCST-5028 fix (fail the case), not an expected state. Re-verify live on 402e+.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; actor_email=@td(MULTI_ORG_TF_BR.email); actor_password=@td(MULTI_ORG_TF_BR.password); actor_member_id=@td(MULTI_ORG_TF_BR.id); actor_user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); invite_email=AGENT-TEST-invite-5028@yopmail.com","--- SCREEN: Login ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
 [ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
