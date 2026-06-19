@@ -1,6 +1,6 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-06-11T08:45:55.758Z
+**Validated at:** 2026-06-19T13:40:55.503Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
 **Total:** 67 fixtures — 66 passed, 1 failed
 

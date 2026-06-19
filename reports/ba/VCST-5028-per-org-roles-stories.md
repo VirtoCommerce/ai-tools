@@ -22,6 +22,9 @@
 | EPIC-5028-07 | Org-scoped lockout error UX at sign-in and org-switch | S | High |
 | EPIC-5028-08 | Org maintainer removes a member from the organization | XS | Medium |
 | EPIC-5028-09 | Org employee sees read-only company member view | XS | Medium |
+| EPIC-5028-10 | Locked-membership orgs excluded from header org switcher | S | High |
+
+> **Gap added 2026-06-19:** EPIC-5028-10 closes a coverage gap flagged during AC review. Stories 01–09 cover the full per-org membership lifecycle, and 05/07 govern the *sign-in/selection* path when a locked org is chosen — but none required the header org switcher to *exclude* a locked org from its list in the first place. The `SearchOrganizationsQuery` UserId scoping shipped in PR #135 implements this, but had no AC, no regression home, and no specified edge-case behavior (expired timed lock, all-locked state, cross-principal isolation). EPIC-5028-10 formalizes it.
 
 ## Epic Acceptance Criteria
 
@@ -968,6 +971,157 @@ And no state change is persisted in any org (BL-AUTH-005 server-side enforcement
 | Employee page access | org-employee sign-in → `/company/members` | Page loads; member table visible; own row present | E2E | null |
 | No management UI | Same session, inspect page | No "Invite members" button; no actions column | E2E | null |
 | Mutation escalation blocked | org-employee sends `changeOrganizationContactRole` | `errors[]` non-empty, Forbidden; no state change | GraphQL (runner-native) | ECL-7.2 |
+
+---
+
+## EPIC-5028-10: Org Switcher Lists Only Currently-Unlocked Organizations for the Authenticated User
+
+**[VCST-5028 | EPIC-5028-10] Exclude locked-membership organizations from the header org-switcher list**
+**Type:** Feature
+**Module:** B2B / Organization — Header Org Switcher
+**Priority:** High
+**Effort:** S (1–3 days — backend resolver scoping shipped in PR #135; story formalizes the requirement, UX edge cases, and regression coverage)
+**Sprint:** Sprint26-11
+**Business_Rule:** BL-AUTH-012, BL-AUTH-013, BL-B2B-001
+**Edge_Case_Refs:** ECL-7.2
+**proposed_bl:**
+- proposedId: PROPOSED-BL-B2B-011
+- rule: "The org-switcher list (powered by the `organizations` xAPI query / `GetOrganizations` operation) MUST enumerate only organizations where the requesting principal's `OrganizationMembership.IsCurrentlyLocked` is `false` at query time. `IsCurrentlyLocked` is defined as `IsLocked == true AND (!LockoutEnd.HasValue OR LockoutEnd > UtcNow)`. An organization whose timed lock has expired (LockoutEnd in the past) MUST reappear in the list without any manual intervention. The exclusion is principal-scoped: locking user X in Org A MUST NOT alter which organizations appear in user Y's switcher."
+- source: AC-1, AC-3, AC-5; implementation confirmed in vc-module-profile-experience-api PR #135 (`SearchOrganizationsQuery` UserId scoping)
+
+### Story Statement
+
+As a registered B2B user who belongs to multiple organizations,
+I want the organization switcher in the storefront header to show only the organizations where my membership is currently active,
+So that I cannot accidentally attempt to switch into an organization I am locked out of — removing a confusing dead-end flow and ensuring the switcher list is a truthful representation of my accessible organizations.
+
+### Background / Context
+
+The header org switcher (top-right account menu) is powered by the `GetOrganizations` xAPI operation, which calls the `organizations(after, first, searchPhrase, sort)` query. Before the `OrganizationMembership` entity was introduced, this query returned every org the user belonged to regardless of lock state, because there was no per-membership lock — only the global `ApplicationUser.LockoutEnd`. Now that per-membership locks exist, the switcher list must be filtered at the resolver level: `SearchOrganizationsQuery` in vc-module-profile-experience-api PR #135 sets `UserId` from the authenticated principal so that the server returns only memberships where `IsCurrentlyLocked` is false. This story formalizes that contract as a testable requirement and specifies the two edge cases the implementation must handle: an expired timed lock (which must allow the org back into the list automatically) and the all-memberships-locked state (which must produce a defined UX rather than crashing or showing an empty switcher without explanation).
+
+EPIC-5028-05 and EPIC-5028-07 govern what happens on the *sign-in path* when a locked org is selected; this story governs the *enumeration path* in the switcher. The two behaviors must be consistent: an org that cannot be switched into (05/07) must also not appear in the switch list (this story).
+
+### Acceptance Criteria
+
+**AC-1: Happy path — locked membership org is absent from the switcher list**
+Given the user `@td(MULTI_ORG_TF_BR.email)` is authenticated in a TechFlow session and their BuildRight membership has been locked in SETUP via `POST /api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/lock`,
+When the user opens the org-switcher dropdown in the header account menu,
+Then the TechFlow organization entry is present in the list,
+And the BuildRight organization entry is absent from the list,
+And the count of organizations displayed equals the count of the user's memberships where `IsCurrentlyLocked = false`.
+
+**AC-2: Resolver scoping — `GetOrganizations` returns only currently-unlocked orgs for the principal**
+Given the same setup as AC-1 (BuildRight locked, TechFlow unlocked),
+When the `organizations` xAPI query is executed with the user's JWT (operation `GetOrganizations`),
+Then `data.organizations.items[]` does not contain any entry whose `id` equals `@td(MULTI_ORG_TF_BR.org_buildright_id)`,
+And `data.organizations.items[]` contains an entry whose `id` equals `@td(MULTI_ORG_TF_BR.org_techflow_id)`,
+And `errors[]` is empty.
+
+**AC-3: Expired timed lock — org reappears in switcher automatically**
+Given a membership has `IsLocked = true` and a `LockoutEnd` timestamp that is in the past (the lock has expired),
+When the user opens the org-switcher dropdown,
+Then that organization IS present in the switcher list (the `IsCurrentlyLocked` predicate evaluates to false because `LockoutEnd <= UtcNow`),
+And no manual intervention (explicit unlock call) is required for it to reappear.
+
+**AC-4: Consistency with sign-in path — switcher exclusion and sign-in rejection agree**
+Given the user is currently signed into a TechFlow session and BuildRight membership is locked,
+When the user opens the header org-switcher,
+Then BuildRight does not appear in the switcher list (this story, AC-1),
+And if the user navigates directly to the org-switch flow for BuildRight (e.g., via a bookmarked URL or stale client state), the token request for BuildRight still returns `400 invalid_grant` with `code: "user_is_locked_in_organization"` (EPIC-5028-05, EPIC-5028-07 — the two enforcement layers agree),
+And the storefront surfaces the org-specific lockout copy rather than silently failing.
+
+**AC-5: Negative — locking user X in Org A does not affect user Y's switcher**
+Given user `@td(MULTI_ORG_TF_BR.email)` is locked out of BuildRight,
+When a different authenticated user who also belongs to BuildRight (with an unlocked membership) opens their org-switcher,
+Then BuildRight appears normally in that user's switcher list (BL-B2B-001 strict cross-principal isolation),
+And the count of switchable orgs for that second user is unchanged from before user X was locked.
+
+**AC-6: All-memberships-locked edge — switcher shows empty or hidden state with no crash**
+Given every organization membership for the authenticated user has `IsCurrentlyLocked = true`,
+When the user opens the header account menu,
+Then the org-switcher control either: (a) is hidden entirely, or (b) renders with an empty list and an appropriate empty-state message referencing that no organizations are currently accessible,
+And the storefront does not throw a JavaScript exception or render a broken UI,
+And the user remains authenticated at the global-account level with access to account-level pages (`/account/orders`, `/account/profile`).
+
+### Out of Scope
+
+- The sign-in org-selection dropdown at `/sign-in` (separate from the post-login header switcher; its filtering behavior is covered by EPIC-5028-05 and EPIC-5028-07)
+- Admin SPA — the Admin SPA org widget is not affected by this story (that surface is governed by EPIC-5028-06)
+- What UX the product team ultimately chooses for the all-memberships-locked state (AC-6 specifies the acceptable range; the exact design is a product decision to confirm)
+- Automatic lock-expiry notifications or countdown timers in the switcher
+
+### Dependencies
+
+**Depends on:** vc-module-profile-experience-api PR #135 (`SearchOrganizationsQuery` UserId scoping), vc-frontend PR #2315
+**Cross-references:** EPIC-5028-05 (other-org access retained after lock), EPIC-5028-07 (org-scoped lockout error UX — the sign-in-path enforcement layer this story must be consistent with)
+**Enables:** Full regression coverage of the switcher enumeration path; product sign-off on AC-6 UX edge case
+
+### Definition of Done
+
+- [ ] Feature works in Chrome, Firefox, and Edge
+- [ ] Switcher dropdown renders correctly at 1920px desktop; account menu at 375px mobile (hamburger panel — confirm BuildRight absent in mobile switcher too, per `feedback_mobile_hamburger_inventory.md`)
+- [ ] `organizations` xAPI query verified against live schema — `after: Int`, `first: Int`, `searchPhrase: String`, `sort: String` argument names used exactly as in `graphql-schema.md` line 124; no paraphrased field names
+- [ ] GraphQL runner test case added to `regression/suites/Backend/graphql/050d-graphql-xprofile.csv` covering AC-2 (runner-native `[ERRORS]` empty + `[DATA] data.organizations.items[].id` does not contain BuildRight id)
+- [ ] E2E test case added to `regression/suites/Frontend/b2b/006-b2b-organization.csv` covering AC-1 happy path (SMK-020 smoke must remain green)
+- [ ] SETUP/CLEANUP lock/unlock steps use `POST /api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/lock` and `.../unlock`; no persistent fixture mutation
+- [ ] AC-6 UX decision confirmed with product before test is written (test author uses confirmed behavior, not assumption)
+- [ ] No new console errors or warnings introduced
+- [ ] All visible strings use i18n keys (empty-state message for AC-6)
+- [ ] BA sign-off; BL-AUTH-012, BL-AUTH-013, BL-B2B-001 mapping recorded; PROPOSED-BL-B2B-011 noted as pending promotion approval
+
+### UI/UX Notes
+
+**Layout:** The org-switcher is the organization dropdown in the top-right header account menu, populated by a `GetOrganizations` search-as-you-type call. On mobile (width <= 500px) the header controls re-mount inside the hamburger panel — the switcher must be verified absent/present there as well.
+
+**States to handle:**
+- Default (multiple unlocked memberships): dropdown lists all unlocked orgs; search filters within the unlocked set only
+- One locked, others unlocked: dropdown is shorter by the locked org(s); no visual indicator that orgs are "missing" (from the user's perspective, this is their accessible org list)
+- All locked (AC-6): either (a) switcher control not rendered, or (b) dropdown open with an empty-state message such as "No organizations available" — product decision required
+- Loading: search-as-you-type shows a loading indicator while `GetOrganizations` is in-flight; same UX as today
+
+**Interaction details:**
+- The switcher's search input filters only the orgs that the resolver already returned (already-filtered unlocked set); no client-side re-filtering for lock state is needed or acceptable
+- Switching into an org that appears in the list must succeed without hitting the `user_is_locked_in_organization` error (if an org appears in the list, the token request for it must succeed — consistency guarantee of this story)
+- No lock-status badge or tooltip is shown on orgs in the list (they are all unlocked by construction)
+
+**Existing component:** The org-switcher composable is `useOrganizationSwitcher.ts`; `switchOrganization()` in `useUser.ts` returns boolean. No new component is needed — the fix is in the data layer (`GetOrganizations` resolver) with this story covering the regression requirement.
+
+### Technical Notes
+
+**xAPI query surface:**
+- Operation name: `GetOrganizations` (confirmed in `vc/shared/reports/bugs/closed/BUG-Organization-Search-Not-Filtering.md`)
+- Schema signature: `organizations(after: Int, first: Int, searchPhrase: String, sort: String)` — exact argument names from `graphql-schema.md` line 124
+- The resolver's `UserId` scoping (vc-module-profile-experience-api PR #135) performs the filtering server-side inside `SearchOrganizationsQuery`; the frontend composable does not apply any additional lock-state filter
+
+**Lock model precision:**
+- `IsCurrentlyLocked` is the compound predicate: `IsLocked == true AND (!LockoutEnd.HasValue OR LockoutEnd > UtcNow)`. The resolver must use this predicate, not the raw `IsLocked` flag, so that expired timed locks do not permanently suppress an org from the list.
+- `IsLocked` alone (without the `LockoutEnd` check) is insufficient and would cause AC-3 to fail.
+
+**REST endpoints for SETUP/CLEANUP:**
+- Lock: `POST /api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/lock`
+- Unlock: `POST /api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock`
+- Verify lock state: `GET /api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)` — check `isLocked: true`, `isCurrentlyLocked: true`
+
+**GraphQL fixture:** No existing `GetOrganizations.graphql` fixture in `test-data/graphql/queries/` as of 2026-06-15. QA team must add `test-data/graphql/queries/GetOrganizations.graphql` and a corresponding `index.json` entry before authoring the runner-native AC-2 test case.
+
+**BL-AUTH-013 cross-reference:** That invariant's `Verify` step includes "storefront `/sign-in` or org-switch into the locked org → assert org-specific copy." This story's AC-4 is the *switcher-side* complement: the org must not appear in the list at all, making the org-switch-into-locked path unreachable under normal conditions. The two together close the full enforcement surface.
+
+**VC modules affected:** vc-module-profile-experience-api PR #135 (resolver, already merged), vc-frontend PR #2315 (org-switcher composable, already merged) — this story adds test coverage, not new code.
+
+**Known defect (do not regress):** BUG-1 (`GetPageContext.user.permissions` returns `[]` after org-switch) is distinct from this story — it affects management affordances on `/company/members`, not the `GetOrganizations` query or switcher list contents. This story's test is not blocked by BUG-1.
+
+### Test Scenarios
+
+| Scenario | Input | Expected Output | Test Type | ECL Ref |
+|----------|-------|-----------------|-----------|---------|
+| Happy path — locked org absent from list | SETUP: lock `@td(MULTI_ORG_TF_BR.buildright_membership_id)`; open header switcher | BuildRight absent; TechFlow present; listed count = unlocked membership count | E2E | null |
+| Resolver scoping — `GetOrganizations` excludes locked org | Execute `GetOrganizations` with `@td(MULTI_ORG_TF_BR.email)` JWT (BuildRight locked) | `errors[]` empty; `data.organizations.items[].id` does not contain `@td(MULTI_ORG_TF_BR.org_buildright_id)` | GraphQL (runner-native) | ECL-7.2 |
+| Expired timed lock — org reappears | Membership has `IsLocked=true`, `LockoutEnd` in the past | Org IS present in switcher; no explicit unlock needed | Integration | null |
+| Cross-path consistency | BuildRight locked; user attempts org-switch to BuildRight via stale URL | BuildRight not in switcher list; token request still returns `400 user_is_locked_in_organization` if attempted directly | E2E | ECL-7.2 |
+| Cross-principal isolation | User X locked from BuildRight; User Y (different account, unlocked BuildRight membership) opens switcher | BuildRight present in User Y's switcher; User Y's list unchanged | E2E | ECL-7.2 |
+| All memberships locked | All user memberships set `IsCurrentlyLocked = true` | Switcher hidden or shows empty-state; no JS exception; account-level pages remain accessible | E2E | null |
+| Unlock restores org to list | CLEANUP unlock `@td(MULTI_ORG_TF_BR.buildright_membership_id)` → open switcher | BuildRight reappears in list | E2E | null |
+| Mobile hamburger — locked org absent | Same as happy path at 375px viewport, hamburger open | BuildRight absent from mobile switcher panel | E2E | null |
 
 ---
 

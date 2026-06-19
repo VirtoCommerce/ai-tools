@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-06-09",
-    "totalSuites": 104,
+    "generated": "2026-06-19",
+    "totalSuites": 107,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -214,7 +214,6 @@
       "concern": "functional",
       "priority": "P1",
       "testCount": 19,
-      "testCount": 19,
       "estimatedMinutes": 13,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -273,6 +272,26 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "011",
+      "name": "Checkout Flow",
+      "file": "regression/suites/Frontend/checkout/011-checkout-flow.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 64,
+      "estimatedMinutes": 37,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "checkout",
+        "flow",
+        "revenue-critical",
+        "sprint"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
+    },
+    {
       "id": "011b",
       "name": "B2B Company E2E",
       "file": "regression/suites/Frontend/b2b/011b-b2b-company-e2e.csv",
@@ -295,26 +314,6 @@
         "hybrid"
       ],
       "customerApplicability": "reference"
-    },
-    {
-      "id": "011",
-      "name": "Checkout Flow",
-      "file": "regression/suites/Frontend/checkout/011-checkout-flow.csv",
-      "domain": "purchase-flow",
-      "layer": "frontend",
-      "concern": "functional",
-      "priority": "P1",
-      "testCount": 64,
-      "estimatedMinutes": 37,
-      "agent": "qa-frontend-expert",
-      "tags": [
-        "checkout",
-        "flow",
-        "revenue-critical",
-        "sprint"
-      ],
-      "envRiskGate": "staging",
-      "customerApplicability": "universal"
     },
     {
       "id": "012",
@@ -617,7 +616,6 @@
       "concern": "admin",
       "priority": "P1",
       "testCount": 35,
-      "testCount": 35,
       "estimatedMinutes": 23,
       "agent": "qa-backend-expert",
       "tags": [
@@ -747,7 +745,6 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 13,
       "testCount": 13,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
@@ -942,7 +939,6 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 10,
       "testCount": 14,
       "estimatedMinutes": 12,
       "agent": "qa-frontend-expert",
