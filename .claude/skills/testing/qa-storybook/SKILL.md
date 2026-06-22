@@ -62,3 +62,4 @@ Test Storybook components for visual regression, responsive behavior, and state 
 - `/qa-storybook` — a11y addon **inside stories** (component-isolated, axe rules per component).
 - `/qa-accessibility` — full-page audits on storefront/admin (keyboard journeys, landmarks, page-level contrast).
 - If a finding reproduces in a story, it belongs here. If it only appears once composed into a page, it belongs to `/qa-accessibility`.
+- When you need a **programmatic** axe run on a rendered story (outside the addon — e.g. asserting against a specific story iframe), use the shared `axeRunSnippet()` + `classifyAxeResults()` from `scripts/lib/axe-runner.ts` so severity mapping and the "axe-unavailable ⇒ inconclusive, not clean" rule stay identical to `/qa-accessibility`. Visual pixel-diff stays with Chromatic / Playwright `toHaveScreenshot()` (the agent owns the "intentional change?" verdict); there is no JS-snippet differ.

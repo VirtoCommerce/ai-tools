@@ -76,7 +76,11 @@ Definition of Done: every gap has `manifestDomain`, `applicableLayers[]`, `targe
    - Explicit assertions (predicate-driven, no "verify it looks correct")
    - Happy path → critical error paths → edge cases (boundary, negative, cross-domain)
    - Priority mapping: P0 = Critical, P1 = High, P2 = Medium
-7. **Append** cases to the target suite CSVs resolved in Cycle 1.
+7. **Append** cases to the target suite CSVs resolved in Cycle 1 **via the safe writer** —
+   `npm run suites:append -- <target-suite.csv> --rows <new-rows.csv>` (`scripts/append-test-cases-to-suite.ts`).
+   Never hand-roll the append: the writer enforces the 15-column schema, escapes commas/newlines, guarantees
+   the boundary newline, dedup-checks (so step 5's dedup is also enforced in code), and round-trip-verifies.
+   Use `--dry-run` in Cycle 4's quality gate to confirm a clean append before committing.
 8. If no existing suite matches, mark `blocked:needs-suite` and surface in the report — never auto-create suite files.
 
 Definition of Done: every generated case conforms to the template, references at least one `BL-*` invariant (or `ECL-*`), and `npx tsx scripts/validate-td-refs.ts` passes against all modified CSVs.

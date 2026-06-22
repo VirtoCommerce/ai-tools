@@ -330,3 +330,8 @@ Generated test cases route to the correct executing agent by layer:
 - **Cases leave this skill as `Draft`** — peer review via `/qa-review-tests` + human approval promotes to `Reviewed`. Only `Reviewed`+ cases enter regression selections
 - **ID stability** — never reuse or renumber IDs. Deleted cases leave gaps in numbering
 - **Ask before writing** — present generated cases for review before appending to any suite CSV file
+- **Append via the safe writer, never hand-rolled** — once approved, append with
+  `npm run suites:append -- <target-suite.csv> --rows <new-rows.csv>` (`scripts/append-test-cases-to-suite.ts`).
+  It validates the 15-column schema, escapes commas/newlines in Steps/Assertions, guarantees the boundary
+  newline, dedup-checks by ID + Title+Section, and round-trip-verifies the append (the corruption from a
+  hand-rolled `appendFileSync` — merged 29-field rows — is what prompted this). Use `--dry-run` to preview.

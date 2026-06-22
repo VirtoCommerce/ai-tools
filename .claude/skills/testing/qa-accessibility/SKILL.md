@@ -39,9 +39,9 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
    - For multi-browser parity: re-run keyboard walk on `playwright-firefox` and `playwright-edge`
 
 4. **Run the four-layer scan per route:**
-   - **Layer A — axe-core (programmatic):** Inject `axe.min.js` via `evaluate_script`, then `axe.run({ runOnly: { type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22a','wcag22aa'] } })`. Filter out `best-practice` rules — only WCAG-tagged rules count as conformance failures.
+   - **Layer A — axe-core (programmatic):** Use the canonical `axeRunSnippet()` from `scripts/lib/axe-runner.ts` — pass it verbatim to `evaluate_script` (it self-loads axe if absent, runs WCAG A/AA tags only, trims the result). **Await it** (returns a Promise), then `classifyAxeResults()` maps impact→severity and surfaces `incomplete` as WARN-for-manual-review (best-practice already excluded). **If `axeAvailable === false` (CSP blocked the load) the result is INCONCLUSIVE — never report it as clean.** Don't hand-roll the injection — the extracted snippet is the single source.
    - **Layer B — Lighthouse a11y category:** Call `lighthouse_audit` MCP and read the accessibility category. Lighthouse runs a subset of axe (~50 rules) — use for trend score, **never** as the only signal.
-   - **Layer C — keyboard walk:** Press Tab through the page, capture `document.activeElement` after each step, assert focus order matches visual reading order. Verify Escape closes modals and focus returns to the trigger.
+   - **Layer C — keyboard walk:** Press Tab through the page; after each press capture `document.activeElement` with `ACTIVE_ELEMENT_SNIPPET` (from `scripts/lib/axe-runner.ts`) into an ordered trail, then `classifyKeyboardTrail(trail)` flags traps (P0), off-screen focus (FAIL), and non-monotonic order (WARN). Verify Escape closes modals and focus returns to the trigger.
    - **Layer D — dynamic rescans:** Re-run Layer A after each significant state change (modal open, accordion expand, form error displayed, toast shown, mega-menu opened, async route load). Scanning only the initial DOM is the #1 cause of missed real bugs.
 
 5. **POUR checklist (per WCAG 2.2 AA):**
