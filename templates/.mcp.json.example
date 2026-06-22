@@ -1,0 +1,99 @@
+{
+  "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly.",
+
+  "mcpServers": {
+    "playwright-chrome": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--config",
+        "config/mcp-playwright-chrome.config.json"
+      ]
+    },
+    "playwright-firefox": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--config",
+        "config/mcp-playwright-firefox.config.json"
+      ]
+    },
+    "playwright-edge": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--config",
+        "config/mcp-playwright-edge.config.json"
+      ]
+    },
+    "Chrome DevTools": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
+    },
+    "postman": {
+      "type": "http",
+      "url": "https://mcp.postman.com/minimal",
+      "headers": {
+        "Authorization": "Bearer <POSTMAN_API_KEY>"
+      }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<GITHUB_PERSONAL_ACCESS_TOKEN>"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "env": {
+        "CONTEXT7_API_KEY": "<CONTEXT7_API_KEY>"
+      }
+    },
+    "azure-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@azure/mcp@latest",
+        "server",
+        "start"
+      ]
+    },
+    "figma-remote-mcp": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp",
+      "env": {
+        "FIGMA_API_KEY": "<FIGMA_API_KEY>"
+      }
+    },
+    "atlassian": {
+      "type": "sse",
+      "url": "https://mcp.atlassian.com/v1/sse"
+    }
+  }
+}
