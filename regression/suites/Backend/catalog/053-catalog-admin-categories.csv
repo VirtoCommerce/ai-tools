@@ -209,3 +209,64 @@
 [STATE] Stale links from deleted associations are not shown
 [STATE] No errors appear when viewing the Links tab","[API] GET /api/catalog/categories/{id}/links — verify links array
 [CONSOLE] No errors","Stale links shown after reassignment; broken link navigation; links tab errors","none","","Not Automated"
+"CAT-054","Move Category Across Catalogs - Cascade CatalogId to Subcategories","Catalog > Categories > Move","High","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+[ACT] Create category parentCat in srcCatalog root
+[ACT] Open parentCat > create subcategory childCat inside it
+[ASSERT] Both parentCat and childCat report CatalogId = srcCatalog
+[ACT] Select parentCat > Cut (toolbar or right-click)
+[NAV] Open dstCatalog
+[ACT] Paste parentCat into dstCatalog root
+[WAIT] Wait for move operation to complete
+[ASSERT] parentCat now appears under dstCatalog tree","[STATE] Move completes without error
+[STATE] parentCat CatalogId updated to dstCatalog
+[STATE] childCat (descendant) CatalogId cascaded to dstCatalog
+[STATE] No descendant left referencing the source catalog
+[DOM] parentCat and childCat appear under dstCatalog tree, absent from srcCatalog","[NETWORK] POST /api/catalog/listentries/move returns 200 (request body catalog == dstCatalog id)
+[API] GET /api/catalog/categories/{parentCatId} — verify catalogId == dstCatalog id
+[API] GET /api/catalog/categories/{childCatId} — verify catalogId == dstCatalog id (cascade)
+[CONSOLE] No errors during move","childCat retains source catalogId after move (PR #882 regression); descendant orphaned across catalogs; parentCat moved but subcategories left in source catalog; move returns 500 or times out","delete parentCat (cascades childCat) from dstCatalog via Admin","PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
+"CAT-055","Move Category Across Catalogs - Cascade CatalogId to Products","Catalog > Categories > Move","High","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; prodInParent=AGENT-TEST-MOVE-PRODA-{run}; prodInChild=AGENT-TEST-MOVE-PRODB-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+[ACT] Create category parentCat in srcCatalog root and subcategory childCat inside it
+[ACT] Create physical product prodInParent inside parentCat
+[ACT] Create physical product prodInChild inside childCat
+[ASSERT] Both products report CatalogId = srcCatalog
+[ACT] Select parentCat > Cut
+[NAV] Open dstCatalog
+[ACT] Paste parentCat into dstCatalog root
+[WAIT] Wait for move operation to complete","[STATE] Move completes without error
+[STATE] prodInParent CatalogId cascaded to dstCatalog
+[STATE] prodInChild (product under moved subcategory) CatalogId cascaded to dstCatalog
+[STATE] Products remain attached to their original categories within the moved subtree
+[DOM] Both products are listed under dstCatalog, not srcCatalog","[NETWORK] POST /api/catalog/listentries/move returns 200 (request body catalog == dstCatalog id)
+[API] GET /api/catalog/products/{prodInParentId} — verify catalogId == dstCatalog id
+[API] GET /api/catalog/products/{prodInChildId} — verify catalogId == dstCatalog id (cascade through subcategory)
+[CONSOLE] No errors during move","Product retains source catalogId after move (PR #882 regression) — product becomes mis-indexed / invisible / orphaned; products under nested subcategories not updated; move returns 500","delete parentCat (cascades childCat and both products) from dstCatalog via Admin","PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
+"CAT-056","Move Category Within Same Catalog - CatalogId Unchanged","Catalog > Categories > Move","Medium","BL-CAT-002","ECL-5.1","Admin logged in; at least one physical catalog exists","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); parentCat=AGENT-TEST-MOVE-INTRA-{run}; childCat=AGENT-TEST-MOVE-INTRACHILD-{run}; targetCat=AGENT-TEST-MOVE-TARGET-{run}; prodInChild=AGENT-TEST-MOVE-INTRAPROD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
+[ACT] Create category targetCat in srcCatalog root
+[ACT] Create category parentCat in srcCatalog root with subcategory childCat and product prodInChild inside childCat
+[ASSERT] parentCat, childCat and prodInChild report CatalogId = srcCatalog
+[ACT] Select parentCat > Cut
+[ACT] Open targetCat (same srcCatalog) > Paste parentCat into it
+[WAIT] Wait for move operation to complete
+[ASSERT] parentCat now nested under targetCat within srcCatalog","[STATE] Intra-catalog move completes without error
+[STATE] parentCat CatalogId remains srcCatalog (unchanged)
+[STATE] childCat CatalogId remains srcCatalog (no spurious cascade)
+[STATE] prodInChild CatalogId remains srcCatalog
+[DOM] Subtree relocated under targetCat but still within srcCatalog tree","[NETWORK] POST /api/catalog/listentries/move returns 200 (request body catalog == srcCatalog id)
+[API] GET /api/catalog/categories/{parentCatId} and {childCatId} — verify catalogId == srcCatalog id (unchanged)
+[API] GET /api/catalog/products/{prodInChildId} — verify catalogId == srcCatalog id (unchanged)
+[CONSOLE] No errors during move","CatalogId changed on intra-catalog move (over-eager cascade from PR #882 fix); subtree dropped or duplicated; move fails for same-catalog reparent","delete parentCat and targetCat from srcCatalog via Admin","PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"
+"CAT-057","Move Category Across Catalogs - Linked Product Not Cascaded","Catalog > Categories > Move","Medium","BL-CAT-002","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs (source + destination) exist; a third physical catalog owns a product","srcCatalog=physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; ownerCatalog=a third physical catalog (isVirtual=false, distinct from src/dst); linkedProduct=AGENT-TEST-LINK-PROD-{run} created in ownerCatalog; movingCat=AGENT-TEST-LINK-CAT-{run} in srcCatalog; adminUrl={{BACK_URL}}","[NAV] Open Catalog module
+[ACT] Create physical product linkedProduct in ownerCatalog (its CatalogId = ownerCatalog)
+[ACT] Create category movingCat in srcCatalog
+[ACT] Link linkedProduct into movingCat (Admin: open movingCat > add existing product as link; API equivalent POST /api/catalog/listentrylinks with entryId=linkedProduct, categoryId=movingCat, catalogId=srcCatalog)
+[ASSERT] linkedProduct CatalogId = ownerCatalog before the move
+[ACT] Select movingCat > Cut
+[NAV] Open dstCatalog
+[ACT] Paste movingCat into dstCatalog root
+[WAIT] Wait for move operation to complete","[STATE] Move completes; movingCat CatalogId updated to dstCatalog
+[STATE] linkedProduct CatalogId UNCHANGED (remains ownerCatalog) — cascade updates only products physically owned by the moved subtree, never linked (non-owned) products
+[STATE] linkedProduct is not relocated, duplicated, or deleted by the move
+[DOM] linkedProduct still resolves under ownerCatalog","[API] GET /api/catalog/categories/{movingCatId} — verify catalogId == dstCatalog id
+[API] GET /api/catalog/products/{linkedProductId} — verify catalogId == ownerCatalog id (NOT dstCatalog)
+[CONSOLE] No errors during move","Linked (non-owned) product CatalogId rewritten to destination catalog (cascade over-reach corrupting a foreign-catalog product); linked product deleted or duplicated by the move; move returns 500","delete movingCat from dstCatalog and linkedProduct from ownerCatalog via Admin","PR #882 (VirtoCommerce/vc-module-catalog), Catalog 3.1029.0","Not Automated"

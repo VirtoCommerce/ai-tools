@@ -1570,8 +1570,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 17,
-      "estimatedMinutes": 12,
+      "testCount": 21,
+      "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
         "catalog",
