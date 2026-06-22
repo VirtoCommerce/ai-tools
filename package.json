@@ -68,6 +68,9 @@
     "report:regression:portable": "npx tsx scripts/generate-regression-html-report.ts --embed-images",
     "suites:sync": "npx tsx scripts/sync-test-suites.ts",
     "suites:lint": "npx tsx scripts/sync-test-suites.ts --check",
+    "suites:append": "npx tsx scripts/append-test-cases-to-suite.ts",
+    "suites:review": "npx tsx scripts/lint-test-cases.ts",
+    "metrics:compute": "npx tsx scripts/compute-metrics.ts",
     "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts",
     "verify:multi-env": "npx tsx scripts/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report"

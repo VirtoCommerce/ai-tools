@@ -40,6 +40,17 @@ Review test cases against quality criteria to catch issues before regression run
 
 Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 requires `--verify` flag and delegates to `qa-testing-expert` agent for live browser verification.
 
+> **Run the deterministic linter first.** `npm run suites:review -- <csv>` (`scripts/lint-test-cases.ts`)
+> mechanises the rule-based core of dimensions **1–7 and 9** — S-/D-/C-/T-/DV-/BL-/REQ-/DUP-/TC- checks
+> as exact rules, with `--json` for machine consumption and a `--fail-on` severity gate. It is the single
+> source for these rules; DV-013 still runs via `validate-td-refs.ts` and DV-019 via `graphql:lint-labels`
+> (the linter footer reminds you). Start every review by running it, then spend LLM effort only on what it
+> can't decide: **Dimension 8** (live env, `--verify`), the fuzzy-edge calls it flags (C-008 order-vs-state
+> nuance, DV-016 exact-value judgment, DUP near-duplicate intent), and the schema-aware DV-006…012 / BL-002 /
+> BL-004/005 coverage rules that need knowledge-file cross-reference. The manual checklists in Step 3 below
+> remain the reference for those judgment rules and as a fallback if the linter can't parse the file (it
+> reports S-007 in that case).
+
 ## Execution
 
 ### Step 0: Load References

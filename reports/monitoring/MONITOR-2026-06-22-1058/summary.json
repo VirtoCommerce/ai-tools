@@ -1,0 +1,34 @@
+{
+  "runId": "MONITOR-2026-06-22-1058",
+  "date": "2026-06-22",
+  "env": "vcst",
+  "layers": ["backend", "frontend"],
+  "windowHours": 1,
+  "access": "azure-mcp monitor_resource_log_query via AAD (no API keys; REST twin n/a)",
+  "teamsNotified": false,
+  "signatures": { "seen": 4, "new": 4, "spiking": 0, "triaged": 4, "deferred": 0 },
+  "telemetrySanity": {
+    "storefront": { "itemsPerHour": 261, "browserExceptions": 0, "failedAjax": 0 },
+    "backend": { "requestsPerHour": 420, "failed": 4 }
+  },
+  "confirmed": [
+    {
+      "severity": "High",
+      "layer": "backend",
+      "rootCause": "Skyflow OAuth token endpoint manage.skyflowapis.com returns 401 -> Failed to get bearer token -> INVALID_OPERATION on GetSkyflowCards / InitializeCartPayment. Missing/invalid Skyflow appsettings credentials.",
+      "signatures": [
+        "500 POST graphql/GetSkyflowCards",
+        "500 POST graphql/InitializeCartPayment",
+        "InvalidOperationException @ SkyflowClient.GetBearerTokenInternal",
+        "HTTP manage.skyflowapis.com 401"
+      ],
+      "jira": "VCST-5329",
+      "status": "already-filed-this-session"
+    }
+  ],
+  "needsReview": [],
+  "dismissed": [],
+  "caveat": "Skyflow signals coincide with this session's own QA reproduction traffic for VCST-5269/VCST-5329; largely self-induced. Underlying 401 is real.",
+  "jiraFiledByThisRun": [],
+  "fixAttempted": false
+}

@@ -167,6 +167,10 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `scripts/lib/random-data.ts` | **B** | Zero-dep random generators — generic. |
 | `scripts/validate-td-refs.ts` | **B** | Generic validator. |
 | `scripts/graphql-runner.ts` | **B** | Runner-native GraphQL execution — generic for any GraphQL endpoint. |
+| `scripts/lib/axe-runner.ts` | **A** | `axeRunSnippet()` + `classifyAxeResults()` + keyboard-trail classifier. WCAG axe run + severity mapping — universal. Consumed by `qa-accessibility` (A) and `qa-storybook` (B). |
+| `scripts/compute-metrics.ts` | **A** | Deterministic source for every formula/gate in `quality-metrics-catalog.md` + `quality-gates.md`. Consumed by `qa-metrics` (A). Generic computation; open-P0/P1 counts injected via flags. |
+| `scripts/append-test-cases-to-suite.ts` | **A** | Safe writer enforcing the **15-column enriched-CSV org standard** (schema + escaping + boundary newline + dedup + round-trip). Consumed by `qa-test-cases-generator` (A), `qa-api` (B), `qa-coverage-gap` (B). Tier-A because it enforces the A-tier format contract. |
+| `scripts/lint-test-cases.ts` | **B** | Mechanises the rule-based core of `qa-review-tests` dimensions 1–7/9 (`--json`, `--fail-on`). Generic rule engine; the BL/DV cross-reference rules lean on C knowledge files but the linter itself is B. Consumed by `qa-review-tests` (B), `qa-api` (B). |
 | `ci/run-regression.ts` | **B** | Orchestration shape generic; agent definitions in `ci/agents/` are C. |
 | `ci/run-full-cycle.ts` | **B** | Generic phased pipeline. |
 | `ci/notify-teams.ts` | **A** | Generic Teams webhook adapter. |
@@ -202,6 +206,7 @@ These don't exist yet and must be created to ship the plugin to VC customers:
 | JIRA project key parameterization | `JIRA_PROJECT_KEY` env var; `qa-bug` skill reads it instead of vcst-default. | `.claude/skills/testing/qa-bug/` + env |
 | PII / secret scanner | Lints `aliases.json` for real-looking emails/phones; scrubs HAR / screenshots before they land in `reports/`. | `scripts/lint-aliases-pii.ts`, `scripts/lib/evidence-sanitizer.ts` |
 | Distribution decision | Claude Code plugin (agents/skills/commands/knowledge) + npm package (scripts/ci) — confirmed in Phase 2. | `docs/distribution.md` |
+| **Skill→script dependency manifest** | Skills now hard-depend on `scripts/` helpers via `npm run` aliases (`suites:append`, `suites:review`, `metrics:compute`, plus `scripts/lib/axe-runner.ts` imported into snippets). These calls **cross the plugin↔npm-package boundary** — a customer who installs the plugin but not the npm package gets a skill that references a command that doesn't exist. Need: (a) an enumerated list of which `npm run` aliases each skill requires, validated in CI; (b) a graceful-degradation or hard-fail message in each skill when the alias is absent; (c) the bootstrap/install step verifies the npm package is present. | `docs/distribution.md` + `bootstrap/install.ts` |
 | Support runbook | Who answers customer questions, SLA, escalation, upgrade guide. | `docs/support-runbook.md` |
 | Versioning + changelog policy | Semver for Tier A (breaking changes forbidden post-v1.0), changelog mandatory on each release. | `CHANGELOG.md` + `docs/versioning.md` |
 
@@ -227,5 +232,6 @@ Phases 2–4: See `~/.claude/plans/functional-singing-cosmos.md`.
 - **Reviewing a PR that touches a Tier A file?** Higher bar — every customer using the plugin gets this change.
 - **Refactoring a Tier B file?** Look for vcst-qa-specific values that should become env vars or `aliases.json` entries.
 - **Adding customer-variable behavior to a Tier A/B file?** Stop. Either parameterize via env, or push to a Tier C file the customer can override.
+- **Adding a `npm run` / `scripts/` call to a skill?** The script must be classified here and tier **≥ its highest-tier consumer** (a Tier A skill must not depend on a Tier C script — that violates upward-pointing dependencies and won't ship in the org-wide package). Keep shared helpers in `scripts/` + `scripts/lib/`, invoked through a stable `npm run` alias — **don't co-locate scripts inside a skill folder** unless the script is private to exactly one skill and has no other consumer (the lone precedent is `run-vc-mcp-testing-module/driver.mjs`). Register the new alias in the skill→script dependency manifest (Tier D).
 
 The single design rule: **dependencies point upward** — Tier C may reference Tier A and B; Tier A and B must never reference Tier C.

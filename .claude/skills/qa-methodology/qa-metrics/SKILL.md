@@ -24,6 +24,16 @@ Measure test effectiveness and enforce quality gates for sprint releases, full r
 
 ## Execution
 
+> **Compute the numbers deterministically — don't do the arithmetic by hand.**
+> `npm run metrics:compute -- --history reports/regression/history.json [--gate smoke|sprint|release|hotfix]
+> [--suite <id>] [--since <ISO>] [--p0-bugs N] [--p1-bugs N] [--json]` (`scripts/compute-metrics.ts`) is the
+> single source for every formula in `quality-metrics-catalog.md` (pass/fail/blocked/skip rate, velocity,
+> defect density) and every trend (sprint-over-sprint delta, rolling average, consecutive drops, flakiness),
+> plus the gate verdict per `quality-gates.md` §9 (PASS/FAIL or APPROVED / WITH CONDITIONS / BLOCKED). It
+> exits non-zero on BLOCKED/FAIL so it can gate CI. Pass-rate criteria are computed from the run history;
+> open-P0/P1 bug counts come from JIRA, so supply them via `--p0-bugs`/`--p1-bugs` (default 0). The skill's
+> job is to run this, then write the narrative around the numbers — never to recompute them.
+
 1. **Determine the context:**
    - `metrics` → Read `quality-metrics-catalog.md`, list all metric definitions
    - `gates` → Read `quality-gates.md`, show gate thresholds for the relevant release type

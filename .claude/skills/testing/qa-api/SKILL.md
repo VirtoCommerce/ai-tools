@@ -147,6 +147,9 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 5. **Apply coverage checklist** from `api-test-case-patterns.md` for the requested scope
 6. **Output test cases** in enriched CSV columns:
    `ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status`
+7. **Append via the safe writer** (after review) — `npm run suites:append -- <suite.csv> --rows <new.csv>`
+   (`scripts/append-test-cases-to-suite.ts`): schema + boundary-newline + dedup + round-trip verified. Never
+   hand-roll the append. Review the generated rows first with `npm run suites:review -- <new.csv>`.
 
 **Key rules for API test cases:**
 - Every mutation test MUST include `[API] errors[] is empty` in `Cross_Layer_Checks`
