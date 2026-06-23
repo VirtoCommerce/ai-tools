@@ -2134,7 +2134,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 25,
+      "testCount": 30,
       "estimatedMinutes": 22,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2142,6 +2142,31 @@
         "rewards",
         "conditions",
         "store-settings",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "075b",
+      "name": "Loyalty Mixed Cart Order",
+      "file": "regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 7,
+      "estimatedMinutes": 9,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "loyalty",
+        "mixed-cart",
+        "graphql",
+        "order-totals",
+        "multi-currency",
         "sprint"
       ],
       "requiresModules": [
@@ -2348,6 +2373,26 @@
         "catalog",
         "route-guard",
         "currency-override",
+        "sprint"
+      ],
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "083b",
+      "name": "Loyalty Mixed Cart Order",
+      "file": "regression/suites/Frontend/loyalty/083b-loyalty-mixed-cart-order.csv",
+      "domain": "customer-b2b",
+      "layer": "frontend",
+      "concern": "e2e",
+      "priority": "P1",
+      "testCount": 5,
+      "estimatedMinutes": 11,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "loyalty",
+        "mixed-cart",
+        "checkout",
+        "multi-currency",
         "sprint"
       ],
       "customerApplicability": "reference"
@@ -2608,7 +2653,9 @@
     "loyalty": {
       "include": [
         "075",
-        "083"
+        "075b",
+        "083",
+        "083b"
       ]
     }
   }
