@@ -1,32 +1,24 @@
 {
-  "run_id": "REG-2026-06-16-2030",
-  "selection": "050b1",
-  "started": "2026-06-16T20:30:00Z",
-  "completed": "2026-06-16T20:55:00Z",
+  "run_id": "REG-2026-06-23-1024",
+  "selection": "loyalty (075, 083 + unregistered 075b, 083b)",
+  "started": "2026-06-23T10:24:00Z",
+  "completed": "2026-06-23T11:05:00Z",
+  "status": "completed",
+  "totals": { "pass": 60, "fail": 1, "blocked": 12, "skipped": 1, "total": 74, "pass_rate_executed": "98.4%" },
+  "quality_gate": "PASS — no critical failures; VCST-5104 mixed-cart flow validated. 2 candidate bugs (LOY-018 Medium, CreateOrderFromCart 500 Low-Med); not filed",
+  "appinsights": { "window": "08:20-09:05Z", "storefront": "clean", "platform": "1 signal: 500 graphql/CreateOrderFromCart ExecutionError @08:35Z (corr. MCO-E2E-006)" },
   "env": "vcst-qa",
+  "env_risk": "dev",
   "front_url": "https://vcst-qa-storefront.govirto.com",
   "back_url": "https://vcst-qa.govirto.com",
   "store_id": "B2B-store",
-  "mode": "runner-native (scripts/graphql-runner.ts)",
+  "batch": "1 of 1 (3 browser + 1 runner-native, all concurrent)",
   "suites": {
-    "050b1": {
-      "name": "GraphQL xCart Basic",
-      "prio": "P0",
-      "status": "completed",
-      "total": 20,
-      "passed": 14,
-      "failed": 5,
-      "error": 1,
-      "verdict": "no product defects — 5 stale/fixture-drift cases; cart contamination resolved via removeCart",
-      "failures": {
-        "CRB-GQL-046": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
-        "CRB-GQL-047": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
-        "CRB-GQL-048": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
-        "CRB-GQL-051": "stale: updateCartQuantity command missing currencyCode/cultureName → ARGUMENT_NULL",
-        "CRB-GQL-049": "Draft + same stale updateCartQuantity shape (runner ERROR)",
-        "CRB-GQL-010": "fixture/promotion drift: addCoupon accepted but discountTotal.amount=0"
-      }
-    }
+    "075": { "name": "Loyalty (admin CRUD)", "layer": "backend", "mode": "browser", "browser": "playwright-edge", "agent": "qa-backend-expert", "prio": "P1", "status": "completed", "total": 30, "passed": 28, "failed": 1, "blocked": 1, "skipped": 0, "verdict": "Loyalty admin CRUD/conditions/rewards/store-settings all PASS. 1 FAIL: LOY-018 negative points accepted/persisted (Medium). 1 BLOCKED: LOY-029 runtime half (VIP-factor product not in B2B virtual catalog)" },
+    "075b": { "name": "Loyalty Mixed-Cart Order (xOrder/xCart GraphQL)", "layer": "backend", "mode": "runner-native", "browser": "none", "agent": "qa-backend-expert", "prio": "Critical", "status": "completed", "total": 11, "passed": 7, "failed": 0, "blocked": 3, "skipped": 1, "verdict": "VCST-5104 orderTotals + per-line-currency contract HOLDS (7/7 executable PASS); 3 BLOCKED on fixture gaps, 1 SKIPPED (browser admin case)" },
+    "083": { "name": "Loyalty Catalog Browsing", "layer": "frontend", "mode": "browser", "browser": "playwright-firefox", "agent": "qa-frontend-expert", "prio": "P1", "status": "completed", "total": 26, "passed": 17, "failed": 0, "blocked": 9, "skipped": 0, "verdict": "Currency-override (PTS) verified end-to-end; no defects. 7 BLOCKED on setting-toggle gap (shared env), 2 (LOYF-025/026) BLOCKED on Firefox click-stability quirk → re-running on Chrome" },
+    "083-recovery": { "name": "083 LOYF-025/026 Chrome re-run", "layer": "frontend", "mode": "browser", "browser": "playwright-chrome", "agent": "loy-083b-e2e", "prio": "P1", "status": "completed", "total": 2, "passed": 2, "failed": 0, "blocked": 0, "verdict": "Both Firefox-blocked cases PASS on Chrome. LOYF-026 confirms cartTotals[] unselect-all regression (Grand Total $180/Tax $30) is FIXED on 2.52.0-pr-2335. Effective 083 totals: 19 PASS / 7 BLOCKED / 0 FAIL" },
+    "083b": { "name": "Loyalty Mixed-Cart Order E2E [JOURNEY]", "layer": "frontend", "mode": "browser", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "prio": "Critical", "status": "completed", "total": 7, "passed": 6, "failed": 0, "blocked": 1, "skipped": 0, "verdict": "VCST-5104 mixed-cart order journey WORKS e2e on theme 2.52.0-pr-2335 (real order CO260623-00005, currency split + balance decrement confirmed). 1 PASS-with-note (generic error toast on PTS-only cart instead of localized LOYALTY_ONLY message), 1 BLOCKED (insufficient-balance not UI-testable; LOYALTY_NOBAL_USER unprovisioned)" }
   },
-  "report": "reports/regression/REG-2026-06-16-2030/regression-2026-06-16.md"
+  "report": "reports/regression/REG-2026-06-23-1024/regression-2026-06-23.md"
 }

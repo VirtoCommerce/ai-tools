@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.18",
-    "updated": "2026-06-16",
+    "version": "1.5.19",
+    "updated": "2026-06-22",
+    "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
     "changelog_1_5_18": "Added PUSH_MSG_SEED inline alias — single source of truth for the Push Messages seed contract shared by suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI). No static recipient fixture by design (messages self-seed per run via POST /api/push-message with AGENT-TEST- topic prefix; recipients env-resolved {{ORG_USER_ID}}/{{TEST_USER_ID}} or live-discovered me.id). Captures stable contract values the suites repeated literally: endpoint, topic_prefix, sent/draft status, broadcast_group ('Registered'), epoch/future startDate, plus _notes documenting targeting field names (memberIds/targetOrganizationIds/userGroups/cultureName) and 4 model facts (status-in-body not /send, DELETE-Sent->500 known defect PUSH-034, async per-recipient inbox projection PUSH-027/028, no dedicated link field PUSH-037). Existing suites left unchanged (validated/automated); alias is available for future authoring + as the documented contract reference.",
     "changelog_1_5_17": "VCST-5028 cross-org fixture: added MULTI_ORG_TF_BR inline alias — a single AGENT-TEST member (agent-test-multiorg-20260615@yopmail.com, password Password1!) that belongs to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 isolation has a clear oracle: TechFlow (6fb516c1-…) = org-maintainer, BuildRight (fba51391-…) = org-employee. Provisioned on vcst-qa 2026-06-15: contact via POST /api/members (id 57389d49-aae0-4cce-a4b1-8e67352310e1, organizations=[TechFlow,BuildRight]); security account via POST /api/platform/security/users/create (userId 631063d0-cf9c-4a29-ac48-c015e78b9cc6, userType=Customer, storeId=B2B-store, emailConfirmed=true); two org-memberships via the NEW PR #300 route POST /api/customer/organization-memberships (hyphenated, plural). KEY LESSON: the OrganizationMembership create-body key is `userId` (the SECURITY-ACCOUNT user id, NOT the contact/member id) and roles is `roles:[{roleId,roleName}]` (NOT a flat roleIds[]). Storefront login confirmed (account menu shows TechFlow / member name). AGENT-TEST- prefix → teardown-swept. Membership ids: TechFlow eff31ad2375641548ef86449ceb9372a, BuildRight 3219a007f7fb432fb3f0b99208a4b90c.",
     "changelog_1_5_16": "Coupon-code alphanumeric migration 2026-06-12: COUPONS.expiredCode EXPIRED-TEST → EXPIREDTEST; COUPONS.usedUpCode QA-MAXED → QAMAXED. Platform now enforces ^[a-zA-Z0-9]+$ on /api/marketing/promotions/coupons/add. COUPON_EXPIRED and COUPON_E2E aliases are CSV-backed (file+filter) — they auto-resolve from the updated coupons.csv rows, no change needed here.",
@@ -2725,7 +2726,21 @@
       "memberId": "memberId",
       "group": "group"
     },
-    "_notes": "Customer-type storefront user provisioned 2026-05-29 for LOY-029 (per-customer-group loyalty factor). Member groups=['VIP']; storefront auth confirmed (storeId=B2B-store). AGENT-TEST- prefix so /qa-seed-data teardown sweeps it (delete security account 1dba59a3-… then member 2fae41c3-…). qa-vip@virtocommerce.com did NOT exist on vcst-qa, so a dedicated AGENT-TEST-vip user was created instead. email_env/password_env added 2026-06-09 to support [AUTH role=LOYALTY_VIP_USER] in runner-native GQL cases (VCST-5101). NOTE: password field retained in fields map for @td(LOYALTY_VIP_USER.password) used in 075-loyalty.csv LOY-029 step text — that use is storefront/API-call text, not the runner resolveRole path."
+    "_notes": "Customer-type storefront user provisioned 2026-05-29 for LOY-029 (per-customer-group loyalty factor). Member groups=['VIP']; storefront auth confirmed (storeId=B2B-store). AGENT-TEST- prefix so /qa-seed-data teardown sweeps it (delete security account 1dba59a3-… then member 2fae41c3-…). qa-vip@virtocommerce.com did NOT exist on vcst-qa, so a dedicated AGENT-TEST-vip user was created instead. email_env/password_env added 2026-06-09 to support [AUTH role=LOYALTY_VIP_USER] in runner-native GQL cases (VCST-5101). NOTE: password field retained in fields map for @td(LOYALTY_VIP_USER.password) used in 075-loyalty.csv LOY-029 step text — that use is storefront/API-call text, not the runner resolveRole path. NOTE 2026-06-22: after seeding the VIP balance to ~4.87M PTS for MCO-GQL-001/003/004, this user can no longer trigger LOYALTY_INSUFFICIENT_BALANCE with a finite qty — use LOYALTY_NOBAL_USER for MCO-GQL-005."
+  },
+  "LOYALTY_NOBAL_USER": {
+    "_inline": true,
+    "email": "AGENT-TEST-nobal@test.virtocommerce.com",
+    "email_env": "LOYALTY_NOBAL_USER_EMAIL",
+    "password_env": "LOYALTY_NOBAL_USER_PASSWORD",
+    "group": "VIP",
+    "account_type": "Customer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "group": "group"
+    },
+    "_notes": "VCST-5104 MCO-GQL-005 fixture — a VIP-group Customer storefront user whose loyalty balance is zero (or very low — below any single PTS product price). Required for LOYALTY_INSUFFICIENT_BALANCE validation testing: LOYALTY_VIP_USER has ~4.87M PTS after the 2026-06-22 balance seed and can no longer trigger insufficient-balance with a finite cart quantity. FIXTURE-SEEDING REQUIRED before first MCO-GQL-005 run: (1) POST /api/members to create a Customer contact (AGENT-TEST-nobal@test.virtocommerce.com, groups=['VIP']); (2) POST /api/platform/security/users/create (userType=Customer, storeId=B2B-store, emailConfirmed=true); (3) do NOT seed any loyalty balance — leave at 0. AGENT-TEST- prefix so /qa-seed-data teardown sweeps it. email_env/password_env must be set in .env.local for the runner to resolve [AUTH role=LOYALTY_NOBAL_USER]. If provisioning is deferred, mark MCO-GQL-005 as BLOCKED in the test-run until the fixture exists."
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,

@@ -82,12 +82,51 @@ This runs the canonical smoke suite (Frontend/smoke/042 + Backend smoke). Both s
 
 If `ENV_RISK=production`, the orchestrator will auto-skip admin-write suites — that's normal, not a failure.
 
-### Step 5 — Brief tour of what's installed
+### Step 5 — Learn how to drive the plugin (hands-on)
 
-After smoke, summarize what the customer now has:
+Before listing the toolkit, teach the interaction model **by doing** — the customer just ran a real
+command in Step 4, so use that as the live example, then demonstrate the contrast.
+
+**a. Name what just happened.** Tell the customer:
 
 ```
-You're set up. Here's what's now available:
+You just ran `/qa-smoke` — that's a COMMAND: you typed a slash and a testing workflow ran.
+That's how you drive almost everything here.
+```
+
+**b. Show the contrast live.** Run ONE read-only tool so the difference is observable, not just
+described:
+
+```
+/qa-status
+```
+
+Then narrate:
+
+```
+Notice you could also have just *asked* — "show me the QA dashboard" would have run that, because
+`/qa-status` is read-only and safe to auto-trigger. You could NOT have done that for `/qa-smoke`:
+anything that runs tests, files bugs, or changes code has a guard and must be typed as a slash.
+```
+
+(If `/vc-docs` is available, optionally also run `/vc-docs cart` to show a **skill** — same slash
+invocation, but it pulls in reference knowledge rather than executing a test.)
+
+**c. State the mental model in three lines:**
+
+```
+• Command — you type a slash, a test workflow runs now (/qa-smoke, /qa-regression, /qa-test, /qa-bug)
+• Skill   — methodology/knowledge Claude pulls in; some run, some just inform (/qa-checklist, /vc-docs)
+• Natural language only auto-runs the read-only three: /qa-status, /qa-env-check, /vc-docs.
+  Everything with side effects you must type.
+
+Full explanation + how to read an `argument-hint`: docs/using-commands-and-skills.md
+```
+
+**d. Show the toolkit.** Now summarize what the customer has:
+
+```
+Here's everything that's now available:
 
 Test execution
   /qa-smoke                 — 5-minute health check (~$1 in tokens)
@@ -109,6 +148,9 @@ Multi-env workflow
                               suites refuse to run without --allow-admin-writes-on-prod
 
 Knowledge surfaces
+  docs/using-commands-and-skills.md  — how to drive the plugin: command vs skill, slash vs
+                                        natural language, reading argument-hints (start here)
+  .claude/ROUTING.md                 — "I want to…" decision tree: which tool for which intent
   .claude/agents/README.md           — what each agent does + when to use it
   .claude/skills/README.md           — 20 skills cross-referenced by purpose
   docs/onboarding.md                 — this flow in long-form, troubleshooting
@@ -144,7 +186,7 @@ End with a short summary the user can paste into their team channel:
    Both surfaces healthy. Smoke run: X/Y pass.
    Bugs filed: ${count} (JIRA project: ${JIRA_PROJECT_KEY})
    Next: /qa-regression critical OR /qa-test <your sprint ticket>
-   Docs: docs/onboarding.md
+   Docs: docs/onboarding.md · docs/using-commands-and-skills.md (how to drive the plugin)
 ```
 
 ---
@@ -153,7 +195,10 @@ End with a short summary the user can paste into their team channel:
 
 ### `tour` (no execution)
 
-For users who want to see what's available without running anything. Skip Steps 1, 2, 4, 6. Show Step 5 (the tour content) only.
+For users who want to see what's available without running anything. Skip Steps 1, 2, 4, 6. From
+Step 5, skip the live demo (5b runs `/qa-status`) — instead present the **three-line mental model**
+(5c) and the **toolkit menu** (5d), and point prominently at `docs/using-commands-and-skills.md` for
+the worked example and how to read an `argument-hint`.
 
 ### `smoke` (skip checks)
 
