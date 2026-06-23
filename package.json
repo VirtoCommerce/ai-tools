@@ -73,7 +73,8 @@
     "metrics:compute": "npx tsx scripts/compute-metrics.ts",
     "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts",
     "verify:multi-env": "npx tsx scripts/verify-multi-env-filters.ts",
-    "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report"
+    "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report",
+    "bundle:check": "npx tsx scripts/bundle-version-check.ts"
   },
   "repository": {
     "type": "git",
