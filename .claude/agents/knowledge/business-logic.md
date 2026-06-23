@@ -508,6 +508,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Storefront shows stock from only one FFC; total doesn't match sum; decrement applied to wrong FFC; stock goes negative in one FFC while another has units.
 - **Agents:** qa-backend-expert (inventory API, FFC management), qa-frontend-expert (stock display)
 
+### BL-CAT-008: Unit-of-measure CRUD integrity `[P2-ux]`
+- **Rule:** Creating, renaming, or deleting a unit-of-measure group or unit in the Catalog module persists atomically and leaves no orphaned data. Deleting a group removes its units; a deleted group/unit no longer appears in the list or in product UoM dropdowns; group integrity is preserved after a unit delete.
+- **Verify:** Create UoM group → appears in list; rename → list reflects new name; delete group → group and its units absent (`GET /api/catalog/measureunits`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measureunits/{groupId}`).
+- **Violation signal:** Group/unit not created; edit not persisted; delete leaves orphaned units or stale API data; group integrity broken after a unit deletion.
+- **Agents:** qa-backend-expert (Admin SPA + REST `/api/catalog/measureunits`)
+
 ---
 
 ## Domain 8: Cross-Domain Invariants (BL-CROSS)

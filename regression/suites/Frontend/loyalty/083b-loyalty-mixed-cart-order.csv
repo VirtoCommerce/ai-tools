@@ -1,0 +1,83 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+MCO-E2E-001,"Mixed-cart loyalty order — place order end-to-end, balance decrements, order-details splits by currency [JOURNEY]","Loyalty > Mixed Cart > Order Journey > [JOURNEY]",Critical,BL-LOY-003; BL-LOY-005; BL-ORD-001,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+NOT FULLY ON LIVE BUILD YET — order-details/order-summary per-currency split ships in vc-frontend PR #2335 (theme 2.52.0-pr-2335). Backend contracts confirmed deployed 2026-06-22: vc-module-x-order#43 (orderTotals), vc-module-loyalty#10 (balance decrement + LoyaltyCartValidator), vc-module-order#497 (CustomerOrder.OrderTotals). Store @td(STORE_PRIMARY.id) in Mixed Cart mode, Loyalty.Currency=@td(LOYALTY_SETTINGS.currency_code). VIP user has a loyalty balance >= the PTS line total. Note current balance before starting (read /account or loyaltyPointsHistory).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"--- STOREFRONT ---
+[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card (PTS prices)
+[ACT] click '+' (Add to Cart) on the first product card to add a PTS loyalty line
+[WAIT] cart badge increments OR 'Item added' toast appears
+--- SCREEN: standard catalog ---
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] standard catalog product grid loaded with at least 1 product card (USD prices)
+[ACT] click '+' (Add to Cart) on the first product card to add a USD cash line
+[WAIT] cart badge shows 2 OR 'Item added' toast appears
+--- SCREEN: cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with 2 line items visible
+[ASSERT] order summary shows a default-currency total block AND a 'Total in @td(LOYALTY_SETTINGS.currency_code)' block
+[ACT] select any available fixed-rate delivery method (not BOPIS/Pickup)
+[WAIT] order summary updates; Grand Total > 0
+[ACT] proceed to checkout / place order following the store's checkout flow (fill required shipping + select a payment method)
+[WAIT] order confirmation page loads with an order number
+--- SCREEN: order details ---
+[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders list loaded
+[ACT] open the just-placed order (top of the list)
+[WAIT] order details page loaded","[DOM] order confirmation shows an order number after Place Order
+[DOM] order-details main list contains the USD (cash) line item
+[DOM] order-details shows a separate 'Products in @td(LOYALTY_SETTINGS.currency_code)' group (common.labels.products_in_currency) containing the PTS line
+[DOM] order-summary shows a default-currency total block AND a 'Total in @td(LOYALTY_SETTINGS.currency_code)' block (common.labels.total_in_currency) with the correct PTS amount
+[STATE] order persisted under {{LOYALTY_VIP_USER}} account","[API] order query orderTotals[] has 2 elements (one isDefaultTotalCurrency=true USD); cross-ref MCO-GQL-001
+[API] loyaltyPointsHistory shows a Redeemed op (PTS order total) + an Earned op (cash line points) after placement; cross-ref MCO-GQL-004
+[ADMIN] order appears in admin with the Currency column populated per line; cross-ref MCO-ADM-001
+[CONSOLE] no unhandled JS errors during checkout
+[NETWORK] no 4xx/5xx on createOrderFromCart","Cart badge drops to 0 after navigating between catalogs (state loss mid-journey); 'Products in PTS' group missing on order-details; 'Total in PTS' block absent from order-summary; no order number after Place Order; balance not decremented; createOrderFromCart errors[] non-empty; PR #2335/#43/#10 not deployed (split UI / orderTotals / balance absent)","Cancel the created order via admin if the store does not auto-clear it; remove any leftover cart items; sign out","VCST-5104; vc-frontend#2335 (order-details.vue, order-summary.vue); vc-module-x-order#43; vc-module-loyalty#10",Draft
+MCO-E2E-003,"Order-summary per-currency total blocks render correct amounts (default block + one block per other currency)","Loyalty > Mixed Cart > Order Summary",High,BL-LOY-003,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+NOT ON LIVE BUILD YET — order-summary.vue per-currency blocks ship in vc-frontend PR #2335. Store in Mixed Cart mode. Cart will hold 1 USD line + 1 PTS line.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded
+[ACT] add the first PTS product to cart
+[WAIT] cart badge increments
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] standard catalog grid loaded
+[ACT] add the first USD product to cart
+[WAIT] cart badge shows 2
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page + order summary loaded","[DOM] order summary shows a default-currency total block in {{CURRENCY_CODE}} (USD)
+[DOM] order summary shows exactly one additional 'Total in @td(LOYALTY_SETTINGS.currency_code)' block (common.labels.total_in_currency)
+[MATH] the default block total reflects only USD lines; the PTS block total reflects only PTS lines (no cross-currency contamination)
+[FORMAT] each block displays its own currency symbol/code with a numeric value","[API] cart query cartTotals[] has 2 elements feeding the two summary blocks (uses cartTotals/orderTotals per PR #2335); cross-ref MCO-GQL-001
+[CONSOLE] no JS errors","Only one total block on a mixed cart (split not rendered); PTS amount folded into the USD block; raw i18n key shown; amounts swapped between blocks","Remove items from cart; sign out","VCST-5104; vc-frontend#2335 (order-summary.vue); BL-LOY-003",Draft
+MCO-E2E-004,"Orders list Total column shows the primary-currency total first, then each other-currency total","Loyalty > Mixed Cart > Orders List",High,BL-LOY-003; BL-ORD-001,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+NOT ON LIVE BUILD YET — orders.vue getDisplayTotals (multi-currency Total column) ships in vc-frontend PR #2335. The VIP account has at least one previously-placed mixed-currency order (USD + PTS). If none exists, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders list loaded with at least 1 order row","[DOM] the mixed-currency order's Total column shows the primary-currency ({{CURRENCY_CODE}}) total FIRST
+[DOM] the same Total cell then shows the @td(LOYALTY_SETTINGS.currency_code) (PTS) total as a second value
+[FORMAT] both totals show their own currency indicator; primary precedes other-currency
+[STATE] a single-currency order in the same list shows only its one currency total (no spurious PTS block)","[API] orders query items[].orderTotals[] backs the Total column values; cross-ref MCO-GQL-001
+[CONSOLE] no JS errors","Total column shows only one currency for a multi-currency order; other-currency total listed before primary; PTS total shown on a single-currency order; raw amount with no currency indicator","none","VCST-5104; vc-frontend#2335 (orders.vue getDisplayTotals); BL-LOY-003",Draft
+MCO-E2E-005,"Order-details main list holds cash lines; PTS lines appear under 'Products in {currency}' group","Loyalty > Mixed Cart > Order Details",High,BL-LOY-002; BL-ORD-001,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+NOT ON LIVE BUILD YET — order-details.vue currency grouping ships in vc-frontend PR #2335. The VIP account has a mixed-currency order (USD + PTS). If none, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
+[WAIT] orders list loaded
+[ACT] open the mixed-currency order
+[WAIT] order details page loaded","[DOM] the main line-items list contains the cash (USD) line item(s)
+[DOM] a separate 'Products in @td(LOYALTY_SETTINGS.currency_code)' group (common.labels.products_in_currency) contains the PTS line item(s)
+[DOM] each PTS line in that group displays its price in @td(LOYALTY_SETTINGS.currency_code), not {{CURRENCY_CODE}}
+[STATE] no PTS line leaks into the main USD list and vice versa","[API] order query items[].currency resolves per line (PTS lines PTS, cash lines USD); cross-ref MCO-GQL-003
+[CONSOLE] no JS errors","PTS line shown in the main USD list (grouping broken); 'Products in {currency}' group missing or empty; PTS line priced in USD; raw i18n key for the group heading","none","VCST-5104; vc-frontend#2335 (order-details.vue common.labels.products_in_currency); BL-LOY-002",Draft
+MCO-E2E-007,"/account/points-history shows Redeemed entry (PTS order total) + Earned entry (cash line product points) after a mixed-cart order","Loyalty > Mixed Cart > Points History",High,BL-LOY-005,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+Does NOT depend on vc-frontend PR #2335 — points-history page ships independently. Depends on vc-module-loyalty#10 (ProcessOrdersAsync earn + redeem handlers), confirmed deployed 2026-06-22. Required state: the VIP user has at least one mixed-currency order placed (USD + PTS lines). If none exists, place one via MCO-E2E-001 happy path or MCO-GQL-004 runner flow first (state precondition, NOT execution dependency).",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] points history page loads (list or table of transactions visible)
+[ACT] identify the most recent Redeemed entry (operationType=Redeemed) — this is the PTS amount spent on the loyalty line of the last mixed-cart order
+[ACT] identify the most recent Earned entry (operationType=Earned) — this is the product points earned on the cash line of the last mixed-cart order","[DOM] a Redeemed row is visible — shows a negative (outgoing) PTS amount matching the PTS order line total
+[DOM] an Earned row is visible — shows a positive (incoming) PTS amount earned on the cash line
+[DOM] the running balance shown on the Redeemed row is lower than the balance before the order was placed
+[FORMAT] amounts and balance values display in @td(LOYALTY_SETTINGS.currency_code) (PTS), not in the store default currency
+[STATE] entries are sorted newest-first; the order-related entries appear at the top","[API] loyaltyPointsHistory(userId, first:5, sort:'createdDate:desc') items[?operationType=Redeemed].amount.amount > 0; cross-ref MCO-GQL-004 balance_after assertion
+[API] loyaltyPointsHistory items[?operationType=Earned].amount.amount > 0
+[CONSOLE] no JS errors
+[NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order; balance not updated","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",Draft

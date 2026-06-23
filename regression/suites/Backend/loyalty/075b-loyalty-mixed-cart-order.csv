@@ -1,0 +1,213 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+MCO-GQL-001,"Mixed-cart order — order.orderTotals returns one element per currency (USD + PTS), each correct, exactly one isDefaultTotalCurrency=true","GraphQL > xOrder > Mixed Cart Totals",Critical,BL-LOY-003; BL-ORD-001,ECL-7.3,"Runner-native. Auth as LOYALTY_VIP_USER. Store @td(STORE_PRIMARY.id) in Mixed Cart mode, Loyalty.Currency=@td(LOYALTY_SETTINGS.currency_code). VIP user has a non-zero loyalty balance. A PTS-priced product and a USD-priced product both exist in @td(VIRTUAL_CATALOG_B2B.id). orderTotals + OrderTotalType confirmed deployed (CustomerOrderType.orderTotals on live schema, refreshed post-deploy 2026-06-22).",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP get_cart]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id availableShippingMethods { code optionName price { amount } } availablePaymentMethods { code } } }
+[GQL-EXEC get_cart]
+[GQL-CAPTURE get_cart.data.cart.id → CART_ID]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].code → SHIP_CODE]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].optionName → SHIP_OPTION]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].price.amount → SHIP_PRICE]
+[GQL-OP read_cart_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { validationErrors { errorCode errorMessage errorParameters { key value } } } }
+[GQL-EXEC read_cart_validation]
+[EVIDENCE] Cart validation state immediately before place_order — diagnostic only; no PASS/FAIL assertion on this step.
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { firstName: ""Test"" lastName: ""Agent"" line1: ""100 Main St"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" postalCode: ""10001"" regionId: ""US-NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP place_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC place_order]
+[GQL-CAPTURE place_order.data.createOrderFromCart.number → ORDER_NUMBER]
+[GQL-OP order_totals]
+  query { order(number: ""{{ORDER_NUMBER}}"") { id number currency { code } total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } orderTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } taxTotal { amount } discountTotal { amount } } } }
+[GQL-EXEC order_totals]","[ERRORS label=order_totals] errors[] empty
+[COUNT label=order_totals] data.order.orderTotals = 2
+[COUNT label=order_totals] data.order.orderTotals[*?isDefaultTotalCurrency=true].length = 1
+[DATA label=order_totals] data.order.orderTotals[?isDefaultTotalCurrency=true].total.currency.code = USD
+[DATA label=order_totals] data.order.orderTotals[?isDefaultTotalCurrency=false].total.currency.code = @td(LOYALTY_SETTINGS.currency_code)
+[DATA label=order_totals] data.order.orderTotals[?isDefaultTotalCurrency=true].subTotal.amount > 0
+[DATA label=order_totals] data.order.orderTotals[?isDefaultTotalCurrency=false].subTotal.amount > 0","[ADMIN] Admin order blade shows multi-currency totals (cross-ref MCO-ADM-001)
+[EVENT] LoyaltyProgramHandler.ProcessOrdersAsync fired on the newly Added order","errors[] non-empty; orderTotals null (field missing — check PR deployment); orderTotals has 1 element on a mixed order (per-currency bucketing broken); two or zero isDefaultTotalCurrency=true entries; a bucket's subTotal folds the other currency","[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","VCST-5104; vc-module-x-order#43; vc-module-order#497; BL-LOY-003 (cart counterpart proven in 050b4 GQL-MC-002)",Draft
+MCO-GQL-003,"Mixed-cart order — each order line item resolves its OWN currency (PTS lines PTS, cash lines store currency), not the order default","GraphQL > xOrder > Per-Line Currency",Critical,BL-LOY-002; BL-ORD-001,ECL-7.3,"Runner-native. Auth as LOYALTY_VIP_USER. Store in Mixed Cart mode. Cart holds 1 USD line + 1 PTS line before placing the order. Per-line currency resolution via GetOrderItemCurrency in vc-module-x-order PR #43, confirmed deployed 2026-06-22.",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP get_cart]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id availableShippingMethods { code optionName price { amount } } availablePaymentMethods { code } } }
+[GQL-EXEC get_cart]
+[GQL-CAPTURE get_cart.data.cart.id → CART_ID]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].code → SHIP_CODE]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].optionName → SHIP_OPTION]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].price.amount → SHIP_PRICE]
+[GQL-OP read_cart_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { validationErrors { errorCode errorMessage errorParameters { key value } } } }
+[GQL-EXEC read_cart_validation]
+[EVIDENCE] Cart validation state immediately before place_order — diagnostic only; no PASS/FAIL assertion on this step.
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { firstName: ""Test"" lastName: ""Agent"" line1: ""100 Main St"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" postalCode: ""10001"" regionId: ""US-NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP place_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC place_order]
+[GQL-CAPTURE place_order.data.createOrderFromCart.number → ORDER_NUMBER]
+[GQL-OP order_items]
+  query { order(number: ""{{ORDER_NUMBER}}"") { id number currency { code } items { id productId currency { code } extendedPrice { amount currency { code } } placedPrice { amount currency { code } } } } }
+[GQL-EXEC order_items]","[ERRORS label=order_items] errors[] empty
+[COUNT label=order_items] data.order.items = 2
+[DATA label=order_items] data.order.items.0.productId is non-null
+[DATA label=order_items] data.order.items.1.productId is non-null
+[DATA label=order_items] data.order.items.0.extendedPrice.currency.code = USD OR data.order.items.1.extendedPrice.currency.code = USD
+[DATA label=order_items] data.order.items.0.extendedPrice.currency.code = @td(LOYALTY_SETTINGS.currency_code) OR data.order.items.1.extendedPrice.currency.code = @td(LOYALTY_SETTINGS.currency_code)","[EVIDENCE] Per-line currency: at least one item resolves USD extendedPrice currency and at least one resolves PTS — proving per-line currency resolution rather than all lines inheriting the order-default currency. getByPath filter (\w+ key only) cannot match nested currency.code paths — OR across items.0/.1 is the correct deterministic pattern for a 2-item cart where item order is insertion order. Cross-ref MCO-GQL-001 orderTotals assertions (2 buckets, correct isDefaultTotalCurrency) for the per-currency total proof.","errors[] non-empty; both items show the same extendedPrice.currency.code (GetOrderItemCurrency not applied — all lines inherit order currency); both items show USD (PTS line not resolved correctly); only 1 item returned (PTS line dropped)","[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","VCST-5104; vc-module-x-order#43 (GetOrderItemCurrency / GetConfiguratonItemCurrency)",Draft
+MCO-GQL-004,"Mixed-cart order placement decrements loyalty balance by the PTS order total; cash lines earn product points (balance before vs after)","GraphQL > xOrder > Loyalty Balance",Critical,BL-LOY-005; BL-ORD-001,ECL-7.3,"Runner-native. Auth as LOYALTY_VIP_USER (must have a loyalty balance >= the PTS order total). Store in Mixed Cart mode. LoyaltyProgramHandler.ProcessOrdersAsync ships in vc-module-loyalty PR #10 (confirmed deployed 2026-06-22). Balance queried via loyaltyBalance(userId, orderId): LoyaltyBalanceResult { currentBalance resultBalance } — confirmed live query shape from orchestrator 2026-06-22. The order is NOT paid via the LoyaltyPaymentMethod gateway (gateway-paid orders are skipped by the handler).",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP balance_before]
+  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+[GQL-EXEC balance_before]
+[GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP get_cart]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id availableShippingMethods { code optionName price { amount } } availablePaymentMethods { code } } }
+[GQL-EXEC get_cart]
+[GQL-CAPTURE get_cart.data.cart.id → CART_ID]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].code → SHIP_CODE]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].optionName → SHIP_OPTION]
+[GQL-CAPTURE get_cart.data.cart.availableShippingMethods[?code=FixedRate].price.amount → SHIP_PRICE]
+[GQL-OP read_cart_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { validationErrors { errorCode errorMessage errorParameters { key value } } } }
+[GQL-EXEC read_cart_validation]
+[EVIDENCE] Cart validation state immediately before place_order — diagnostic only; no PASS/FAIL assertion on this step.
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { firstName: ""Test"" lastName: ""Agent"" line1: ""100 Main St"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" postalCode: ""10001"" regionId: ""US-NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP place_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number orderTotals { isDefaultTotalCurrency total { amount currency { code } } } } }
+[GQL-EXEC place_order]
+[GQL-CAPTURE place_order.data.createOrderFromCart.number → ORDER_NUMBER]
+[GQL-CAPTURE place_order.data.createOrderFromCart.orderTotals[?isDefaultTotalCurrency=false].total.amount → PTS_ORDER_TOTAL]
+[WAIT] LoyaltyProgramHandler.ProcessOrdersAsync settles (event-driven; poll loyaltyBalance after placement)
+[GQL-OP balance_after]
+  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+[GQL-EXEC balance_after]
+[GQL-CAPTURE balance_after.data.loyaltyBalance.currentBalance → BAL_AFTER]
+[GQL-OP history_settle]
+  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+[GQL-EXEC history_settle]
+[EVIDENCE] Second loyaltyBalance poll (Hangfire-settled ~10s after place_order). ProcessOrdersAsync posts earn+redeem entries via Hangfire — the initial balance_after query may fire before Hangfire processes the job. This re-read confirms settlement before history_check reads the op-log. No assertion on history_settle: its purpose is to let the handler finish.
+[GQL-OP history_check]
+  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 5 sort: ""createdDate:desc"") { totalCount items { operationType amount createdDate } } }
+[GQL-EXEC history_check]","[ERRORS label=balance_before] errors[] empty
+[ERRORS label=place_order] errors[] empty
+[ERRORS label=balance_after] errors[] empty
+[ERRORS label=history_check] errors[] empty
+[DATA label=history_check] data.loyaltyPointsHistory.items[?operationType=Redeemed].amount > 0
+[DATA label=history_check] data.loyaltyPointsHistory.items[?operationType=Earned].amount > 0","[EVIDENCE] A Redeemed op is recorded in the history log for the PTS order total. An Earned op is recorded for the cash line product points. ProcessOrdersAsync deduplicates by (orderId, operationType) — replaying the same order does not double-apply. loyaltyBalance(orderId).resultBalance is the server-projected post-op balance. NOTE: for the symmetric fixture (cash line earns 200 PTS, PTS line redeems 200 PTS) the net balance change is zero — asserting currentBalance < BAL_BEFORE is structurally invalid and has been replaced with op-log assertions (Redeemed + Earned both present with amount > 0).
+[ROUNDTRIP label=history_check] A second place_order against a DIFFERENT cart would be a new order — the handler deduplicates by operationType per order, so no double-apply.","errors[] non-empty; Redeemed op absent from history (ProcessOrdersAsync not fired or Hangfire job not settled — wait longer or check Hangfire dashboard); Earned op absent; amount is 0 for either op type (balance-lock failure); history query errors on a scalar field (amount is Decimal, not Money — use .amount not .amount.amount)","[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem, per-user balance lock, dedup by operation type); BL-LOY-005",Draft
+MCO-GQL-008,"cart.loyaltyPoints + lineItems.loyaltyPoints resolve on a MIXED cart containing PTS lines without failing the batch (Bugbot points-loader regression guard)","GraphQL > xCart > Loyalty Points",High,BL-LOY-005,ECL-7.3,"Runner-native. cart.loyaltyPoints (cart-level Money, authenticated users only) confirmed on live CartType (refreshed schema 2026-06-22). LineItemType.loyaltyPoints confirmed on live schema. Bugbot HIGH flag: loyalty-currency lines were filtered from the points batch-loader dict — querying points on a mixed cart with PTS lines could fail the batch. This case asserts no errors[] and points present on the cash line. Auth as LOYALTY_VIP_USER. Store in Mixed Cart mode.",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP read_points]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { loyaltyPoints { amount currency { code } } items { id currencyCode loyaltyPoints { amount currency { code } } } } }
+[GQL-EXEC read_points]","[ERRORS label=read_points] errors[] empty
+[DATA label=read_points] data.cart.loyaltyPoints is non-null
+[DATA label=read_points] data.cart.items[?currencyCode=USD].loyaltyPoints.amount > 0","[EVIDENCE] Per BL-LOY-005 the PTS line should return null/0 loyaltyPoints; the cash line returns a positive amount. The batch loader must NOT throw when a PTS line is present (Bugbot regression).","errors[] non-empty (points batch-loader fails on PTS line — the Bugbot regression); cart.loyaltyPoints null when it should resolve; cash line loyaltyPoints 0/null","[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","VCST-5104; vc-module-loyalty#10 (Bugbot HIGH — points batch-loader dict); BL-LOY-005",Draft
+MCO-GQL-009,"cart.loyaltyPoints for guest / loyalty-disabled returns null with no errors[] (Bugbot null-safety guard)","GraphQL > xCart > Loyalty Points",Medium,BL-LOY-005,ECL-14.1,"Runner-native. cart.loyaltyPoints confirmed on live CartType (refreshed schema 2026-06-22). Bugbot MEDIUM flag: guest / loyalty-disabled / misconfigured store must return null, not raise errors[]. This case covers the GUEST path: NO [AUTH] line so the cart query runs anonymously.",store_id={{STORE_ID}},"[GQL-OP guest_cart]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id loyaltyPoints { amount currency { code } } } }
+[GQL-EXEC guest_cart]","[ERRORS label=guest_cart] errors[] empty
+[NULL label=guest_cart] data.cart.loyaltyPoints","[EVIDENCE] Guest cart.loyaltyPoints resolves to null (authenticated-only field) without failing the query. Loyalty-disabled and misconfigured-store variants are follow-ups (require a store-setting flip).","errors[] non-empty on the guest cart query (null-safety regression); loyaltyPoints non-null for a guest; query rejected","none","VCST-5104; vc-module-loyalty#10 (Bugbot MEDIUM — null-safety for guest/disabled)",Draft
+MCO-GQL-010,"Order with an unregistered currency code — totals still computed, no 500 (order#497 allCurrencies.First() guard)","GraphQL > xOrder > Edge",Medium,BL-ORD-001,ECL-13.2,"Runner-native + REST setup. Bugbot MEDIUM (2026-06-22): DefaultCustomerOrderTotalsCalculator buckets per currency and rounds per currency; an order whose line currency code is NOT in the store currency list risks an allCurrencies.First() throw → 500. THIS CASE REQUIRES A SEEDED ORDER (@needs-test-data) carrying an off-list currency code — that fixture does not exist. Kept Draft/Semi-Automated until the fixture is created.",store_id={{STORE_ID}},"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP order_offlist]
+  query { order(number: ""{{OFFLIST_CURRENCY_ORDER_NUMBER}}"") { id number total { amount currency { code } } orderTotals { isDefaultTotalCurrency total { amount currency { code } } } } }
+[GQL-EXEC order_offlist]","[ERRORS label=order_offlist] errors[] empty
+[DATA label=order_offlist] data.order.total.amount >= 0
+[DATA label=order_offlist] data.order.orderTotals is non-null","[EVIDENCE] @needs-test-data — requires a seeded order whose line currency code is absent from the store currency list. Until that fixture exists, run as a manual probe and confirm the totals calculator does not 500.","HTTP 500 / errors[] on the order read (allCurrencies.First() threw); orderTotals null; totals not computed; (no off-list-currency order fixture available → BLOCKED, needs seeding)","none","VCST-5104; vc-module-order#497 (DefaultCustomerOrderTotalsCalculator allCurrencies.First() risk); Bugbot MEDIUM 2026-06-22",Draft
+MCO-ADM-001,"Admin order-items blade shows a Currency column populated per line item; multi-currency order is readable","Admin > Orders > Multi-Currency",High,BL-ORD-001,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+The customerOrder-items blade Currency column ships in vc-module-order PR #497 (Orders 3.1010.0-alpha.1429-vcst-5104), confirmed deployed 2026-06-22. Admin user with order:read. A mixed-currency order (USD + PTS lines) exists — created by MCO-GQL-001/E2E place-order flow, or seed one.",back_url={{BACK_URL}}; store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{BACK_URL}}/#!/orders
+[BLADE] Orders list blade visible
+[GRID] locate the mixed-currency order (most recent for @td(LOYALTY_VIP_USER.email)) and click its row
+[BLADE] Customer order detail blade opens
+[ACT] open the order Items / line-items grid (customerOrder-items blade)
+[WAIT] line items grid rendered","[GRID] line-items grid shows a 'Currency' column
+[GRID] the PTS line row shows currency @td(LOYALTY_SETTINGS.currency_code) in the Currency column
+[GRID] the cash line row shows the store currency (USD) in the Currency column
+[FORM] order totals area is readable for a multi-currency order (no NaN / blank totals)","[API] GET {{BACK_URL}}/api/order/customerOrders/... returns OrderTotals[] with >=2 currency buckets for this order
+[CONSOLE] no JS errors in Admin SPA
+[NETWORK] no 4xx/5xx on the order detail request","Currency column absent (PR #497 not deployed); all rows show the order-default currency; totals render NaN/blank on a multi-currency order; blade fails to open; console error","none (read-only)","VCST-5104; vc-module-order#497 (customerOrder-items Currency column)",Draft

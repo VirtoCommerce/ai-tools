@@ -1,0 +1,38 @@
+{
+  "runId": "TLC-2026-06-23-1329",
+  "inputType": "direct-scope",
+  "source": "053 review",
+  "date": "2026-06-23",
+  "verdict": "NEEDS FIXES",
+  "mode": "review-only",
+  "platform": "3.1039.0",
+  "catalogModule": "3.1029.0",
+  "affectedSuites": ["053"],
+  "casesAnalyzed": 21,
+  "casesSynced": 0,
+  "casesGenerated": 0,
+  "casesReviewed": 21,
+  "casesVerified": 0,
+  "findings": { "blocker": 0, "critical": 9, "high": 31, "medium": 18, "low": 0, "total": 58 },
+  "autoFixable": 18,
+  "manualRemaining": 40,
+  "duplicatePairs": [
+    { "caseA": "CAT-014", "caseB": "CAT-036", "overlap": "~75% image upload", "recommendation": "merge; CAT-036 -> negative case" },
+    { "caseA": "CAT-015", "caseB": "CAT-037", "overlap": "~80% SEO config", "recommendation": "keep CAT-015; CAT-037 -> duplicate-slug negative case" },
+    { "caseA": "CAT-009", "caseB": "CAT-038", "overlap": "~40% visible toggle", "recommendation": "remove toggle from CAT-009 scope" }
+  ],
+  "autoFixesApplied": 12,
+  "filesModified": ["regression/suites/Backend/catalog/053-catalog-admin-categories.csv"],
+  "gateResults": {
+    "G1": "PASS", "G2": "FAIL", "G3": "FAIL", "G4": "PASS", "G5": "PASS",
+    "G6": "WARN", "G7": "WARN", "G8": "SKIP", "G9": "SKIP"
+  },
+  "postRemediation": {
+    "date": "2026-06-23",
+    "verdict": "APPROVED",
+    "gateResults": { "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS", "G6": "PASS", "G7": "PASS", "G8": "SKIP", "G9": "SKIP" },
+    "resolved": ["CAT-054-057 References += VCST-5082", "CAT-040/041/044 References = provenance (coverage-gap, no ticket)", "CAT-040/041 Business_Rule = BL-CAT-008", "BL-CAT-008 approved + promoted to business-logic.md (body only)", "CAT-008-018 Automation_Status Katalon -> Automated"],
+    "stillOpenNonBlocking": ["CAT-008-018 retain legacy C-/VP- refs (REQ-001 minor)", "BL-CAT-003/004 new coverage cases", "Phase 5 live env verification not run (review-only)"],
+    "blPromoted": [{ "id": "BL-CAT-008", "severity": "P2-ux", "title": "Unit-of-measure CRUD integrity", "promotedTo": ".claude/agents/knowledge/business-logic.md", "tableUpdated": false }]
+  }
+}

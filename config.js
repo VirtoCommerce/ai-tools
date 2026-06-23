@@ -44,7 +44,7 @@ for (const [key, value] of Object.entries(process.env)) {
 // ENV_RISK: safety-by-config (not by env name). Production-risk envs block
 // admin-write suites by default; opt-in via --allow-admin-writes-on-prod.
 // Values: dev | test | staging | production. Defaults to 'dev' for backwards-compat.
-const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
+const ENV_RISK = (process.env.ENV_RISK || 'test').toLowerCase();
 if (!['dev', 'test', 'staging', 'production'].includes(ENV_RISK)) {
     console.error(`[config] Invalid ENV_RISK="${ENV_RISK}". Must be one of: dev, test, staging, production.`);
     process.exit(1);
