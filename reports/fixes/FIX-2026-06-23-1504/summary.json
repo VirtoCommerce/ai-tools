@@ -1,0 +1,35 @@
+{
+  "runId": "FIX-2026-06-23-1504",
+  "ticket": "VCST-5202",
+  "severity": "Low/P3-ux",
+  "repo": "VirtoCommerce/vc-frontend",
+  "repoKind": "frontend",
+  "branch": "claude/qa-autofix/VCST-5202",
+  "commit": "493a2e25",
+  "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2349",
+  "prNumber": 2349,
+  "developerAgent": "fullstack-frontend",
+  "reviewerAgent": "frontend-reviewer",
+  "filesChanged": 5,
+  "diffStat": "+158/-26",
+  "gates": {
+    "G0_eligibility": "PASS",
+    "G1_single_repo": "PASS",
+    "G2_reproduce_red": "PASS",
+    "G3_fix_green": "PASS",
+    "G4_review": "PASS (1 blocking finding fixed iter 1, then APPROVE)",
+    "G5_ci": "PASS (ci, SonarCloud QG, auto-tests x3, deploy, license/cla all green)",
+    "G6_e2e": "DEFERRED (live verification opted out; closes post-merge via /qa-verify-fix)",
+    "G7_human_review": "STOP - PR open, not merged"
+  },
+  "jira": {
+    "from": "To do",
+    "transitions": ["Take to development -> In progress", "Go to review -> In review"],
+    "current": "In review",
+    "pendingTransition": "In review -> Ready for test (awaiting user confirmation)"
+  },
+  "merged": false,
+  "confidence": "HIGH",
+  "siblingBugDraft": "reports/bugs/open/BUG-bankcard-authnet-cvv-no-per-brand-validation.md",
+  "followUp": "/qa-verify-fix VCST-5202 (post-deploy live: new + saved Amex CVV, PAY-SKY-015)"
+}
