@@ -39,7 +39,7 @@ memory** — ground it in a tool result and cite the source.
 ## The four documentation audiences
 
 The BA team writes for four distinct audiences, each with its own Virto style. The canonical skeletons,
-voice rules, and signature elements live in **`.claude/agents/knowledge/virto-doc-style.md` — read it
+voice rules, and signature elements live in **`.claude/agents/knowledge/ba/virto-doc-style.md` — read it
 before authoring any doc.**
 
 | Audience | Style source | Owned by |
@@ -68,7 +68,7 @@ Never hardcode GUIDs, SKUs, prices, emails, coupon codes, or URL hosts. Full rul
 ## Business-invariant proposals are advisory only
 
 `ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never modify
-`.claude/agents/knowledge/business-logic.md`.** Proposals are staged to `reports/ba/bl-proposals-{date}.md`
+`.claude/agents/knowledge/oracles/business-logic.md`.** Proposals are staged to `reports/ba/bl-proposals-{date}.md`
 for **explicit per-entry user approval**. Every proposal must cite a source (VirtoOZ/Context7 quote,
 GitHub `file:line`, VC docs §, or UI screenshot path); drop unsourced entries. See `/ba-analyze` Step 4.5.
 
@@ -93,13 +93,13 @@ orchestrator owns index generation across runs — do not write your own `README
 
 | File | When |
 |------|------|
-| `knowledge/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons |
-| `knowledge/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
-| `knowledge/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
-| `knowledge/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
-| `knowledge/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |
-| `knowledge/graphql-test-cases-runner.md` | When recommending GraphQL test coverage downstream |
-| `knowledge/module-suite-map.md` | Mapping VC modules → existing regression suites |
+| `knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons |
+| `knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
+| `knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
+| `knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
+| `knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |
+| `knowledge/api/graphql-test-cases-runner.md` | When recommending GraphQL test coverage downstream |
+| `knowledge/execution/module-suite-map.md` | Mapping VC modules → existing regression suites |
 | `test-data/aliases.json` + `test-data/graphql/index.json` | Resolving example values & golden-set fixtures |
 
 ## Browser assignments (max 3 concurrent, never WebKit on Windows)

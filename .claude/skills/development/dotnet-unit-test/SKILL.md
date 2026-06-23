@@ -29,7 +29,7 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
    **never add or bump a test package** (and never to FluentAssertions 8+ — paid license).
 3. **Locate the seam.** From the RCA, `Grep`/`Glob` the responsible service / handler / policy /
    controller / resolver in `VirtoCommerce.<Name>.Core` / `.Data` / `.Web` (see
-   `.claude/agents/knowledge/vc-module-architecture.md` §2). Verify the actual contract/field names —
+   `.claude/agents/knowledge/architecture/vc-module-architecture.md` §2). Verify the actual contract/field names —
    VC has many "wrong field name silently no-ops" traps.
 4. **Restore — with the audit opt-out.** VC modules set `TreatWarningsAsErrors=true`, so NuGet-audit
    warnings (NU1903 vulnerable transitive package) **fail a vanilla `dotnet restore` even on the
@@ -71,6 +71,6 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
 
 ## References
 - `xunit-patterns.md` — verified test stack + xUnit/Moq recipes for VC services/handlers/resolvers
-- `.claude/agents/knowledge/vc-module-architecture.md` — repo layout, build/test profiles
+- `.claude/agents/knowledge/architecture/vc-module-architecture.md` — repo layout, build/test profiles
 - `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
 - Build/test commands: `REPO_PROFILES` in `ci/lib/repo-router.ts`

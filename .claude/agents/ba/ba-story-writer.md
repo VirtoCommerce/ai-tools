@@ -25,12 +25,12 @@ You are a **Senior Business Analyst** subagent specialized in writing high-quali
 
 Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Skim `reports/ba/` for prior stories on the same feature to avoid contradicting earlier ACs. Knowledge files to consult before writing ACs/test scenarios:
 
-- `.claude/agents/knowledge/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
-- `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
-- `.claude/agents/knowledge/sitemap.md` — full storefront URL map (use for navigation language in ACs).
-- `.claude/agents/knowledge/products.md` — product-type vocabulary for catalog/PDP stories.
-- `.claude/agents/knowledge/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
-- `.claude/agents/knowledge/graphql-test-cases-runner.md` — runner-native test format; AC for GraphQL behavior must be falsifiable as `[ERRORS]` / `[DATA]` / `[COUNT]` predicates.
+- `.claude/agents/knowledge/oracles/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
+- `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
+- `.claude/agents/knowledge/domain/sitemap.md` — full storefront URL map (use for navigation language in ACs).
+- `.claude/agents/knowledge/domain/products.md` — product-type vocabulary for catalog/PDP stories.
+- `.claude/agents/knowledge/api/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
+- `.claude/agents/knowledge/api/graphql-test-cases-runner.md` — runner-native test format; AC for GraphQL behavior must be falsifiable as `[ERRORS]` / `[DATA]` / `[COUNT]` predicates.
 - `test-data/aliases.json` + `test-data/README.md` — `@td(ALIAS.field)` resolver registry. Use these aliases (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`) in ACs and test scenarios instead of hardcoding GUIDs/SKUs/emails/prices/coupon codes.
 - `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — golden-set xAPI fixtures (63 ops). When a story touches a GraphQL operation that already has a fixture (`me`, `currentOrganizationAddresses`, `addItem`, `createOrderFromCart`, etc.), reference the fixture name in Technical Notes so QA reuses it rather than authoring a new one. If the story introduces a new mutation/query, call out in Technical Notes that the QA team will need to add `test-data/graphql/{queries|mutations}/<opName>.graphql` and an `index.json` entry.
 
@@ -199,8 +199,8 @@ Security considerations:
 ```
 
 When the story touches **GraphQL xAPI** queries/mutations:
-- Reference exact field/argument names from `.claude/agents/knowledge/graphql-schema.md` (live introspection snapshot) — not paraphrased names
-- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql-runner.ts`) — see `.claude/agents/knowledge/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
+- Reference exact field/argument names from `.claude/agents/knowledge/api/graphql-schema.md` (live introspection snapshot) — not paraphrased names
+- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql-runner.ts`) — see `.claude/agents/knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
 
 ### 10. Test Scenarios
 Complement ACs with a test scenario matrix:
@@ -215,7 +215,7 @@ Complement ACs with a test scenario matrix:
 | GraphQL mutation success | Valid input | `errors[] empty`, expected field values | GraphQL (runner-native) |
 | GraphQL mutation invalid input | Missing required field | `errors[] non-empty` with descriptive message | GraphQL (runner-native) |
 
-**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql-runner.ts` using the contract in `.claude/agents/knowledge/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly — it's faster, schema-validated, and produces structured evidence.
+**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql-runner.ts` using the contract in `.claude/agents/knowledge/api/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly — it's faster, schema-validated, and produces structured evidence.
 
 ---
 

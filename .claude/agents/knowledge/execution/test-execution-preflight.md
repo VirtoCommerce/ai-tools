@@ -314,7 +314,7 @@ Do not use these tags in CSVs yet — they have no runner support. Until then, e
 
 ## Cross-References
 
-- `.claude/agents/knowledge/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
+- `.claude/agents/knowledge/execution/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
 - `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` — Preconditions column spec and when to use `[PRE:*]`
 - `.claude/agents/qa/test-runner-agent.md` — Phase 2 step 2 triggers this protocol
 - `.claude/agents/qa/autonomous-test-runner.md` — Phase 2 step 2 triggers this protocol

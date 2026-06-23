@@ -141,7 +141,7 @@ Random picks make failures non-reproducible without a record of what was picked.
 
 ## CSV runner recipes — for runner-native GraphQL test cases
 
-Use when you're authoring a row under `regression/suites/Backend/graphql/`. The runner already supports discovery via `[GQL-OP]` + `[GQL-CAPTURE]` — no new tags are needed. See [`graphql-test-cases-runner.md`](graphql-test-cases-runner.md) for the full tag grammar.
+Use when you're authoring a row under `regression/suites/Backend/graphql/`. The runner already supports discovery via `[GQL-OP]` + `[GQL-CAPTURE]` — no new tags are needed. See [`graphql-test-cases-runner.md`](../api/graphql-test-cases-runner.md) for the full tag grammar.
 
 ### Recipe 1 — pin the virtual-catalog root, then query products under it
 
@@ -306,5 +306,5 @@ When a test fails on discovered data, the diff between "what we asked for" and "
 - [`scripts/lib/graphql-auth.ts`](../../../scripts/lib/graphql-auth.ts) — `TokenCache` (called by `tokenForRole`)
 - [`scripts/lib/graphql-executor.ts`](../../../scripts/lib/graphql-executor.ts) — `executeOperation` (called by every `discover*`)
 - [`scripts/lib/graphql-case-parser.ts`](../../../scripts/lib/graphql-case-parser.ts) — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
-- [`.claude/agents/knowledge/graphql-schema.md`](graphql-schema.md) — schema reference; consult before writing new discovery queries
+- [`.claude/agents/knowledge/api/graphql-schema.md`](../api/graphql-schema.md) — schema reference; consult before writing new discovery queries
 - [`test-data/aliases.json`](../../../test-data/aliases.json) — registry for `@td()` references (the other half of the data layer)

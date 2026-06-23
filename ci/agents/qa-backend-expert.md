@@ -56,12 +56,12 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `.claude/agents/knowledge/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
-| `.claude/agents/knowledge/api-auth.md` | OAuth2 token endpoint, credentials, headers |
-| `.claude/agents/knowledge/platform-patterns.md` | Module lifecycle, blade system, Admin SPA patterns |
-| `.claude/agents/knowledge/module-suite-map.md` | Module dependencies, impact analysis |
-| `.claude/agents/knowledge/products.md` | Product types, xAPI fields, catalog structure |
-| `.claude/agents/knowledge/graphiql-interaction.md` | GraphiQL UI interaction guide (CodeMirror editor) |
+| `.claude/agents/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `.claude/agents/knowledge/api/api-auth.md` | OAuth2 token endpoint, credentials, headers |
+| `.claude/agents/knowledge/api/platform-patterns.md` | Module lifecycle, blade system, Admin SPA patterns |
+| `.claude/agents/knowledge/execution/module-suite-map.md` | Module dependencies, impact analysis |
+| `.claude/agents/knowledge/domain/products.md` | Product types, xAPI fields, catalog structure |
+| `.claude/agents/knowledge/api/graphiql-interaction.md` | GraphiQL UI interaction guide (CodeMirror editor) |
 | `test-data/` | Test users, addresses, payment cards, products |
 
 Read these on-demand, not upfront — saves context for test execution.

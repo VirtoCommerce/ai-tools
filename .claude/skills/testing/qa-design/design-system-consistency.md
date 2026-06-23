@@ -1,6 +1,6 @@
 # Design System Consistency — Coffee Theme
 
-> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../../agents/knowledge/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../../agents/knowledge/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts). Canonical suite: [`048b-layout-stability.csv`](../../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
+> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../../agents/knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../../agents/knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts). Canonical suite: [`048b-layout-stability.csv`](../../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
 
 ---
 
@@ -68,7 +68,7 @@ Audit at multiple viewports — some breakpoints introduce token overrides.
 
 **Violation pattern:** `background-color: #0066CC` or `color: rgb(40, 167, 69)` in computed styles — should be a `var(--…)` reference. Test by toggling the theme preset: if a literal hex doesn't change but everything else does, the literal is hardcoded.
 
-**Cross-check against [storefront-config-flags.md](../../../agents/knowledge/storefront-config-flags.md)** for active preset → expected token shifts.
+**Cross-check against [storefront-config-flags.md](../../../agents/knowledge/automation/storefront-config-flags.md)** for active preset → expected token shifts.
 
 ---
 
@@ -124,7 +124,7 @@ Coffee uses a consistent icon library (likely from vc-frontend). Audit:
 | Duration | `--duration-fast` (≈ 150 ms), `--duration-normal` (≈ 300 ms), `--duration-slow` (≈ 500 ms) — or the literal values from `:root` |
 | Easing | `--easing-standard` (ease-in-out), `--easing-decelerate` (ease-out), `--easing-accelerate` (ease-in) |
 
-**Violation pattern:** `transition: all 247ms cubic-bezier(0.12, 0.34, ...)` — off-token. Theme switch FOUC (flicker) on transitions = also flag (see [BL-UI-001](../../../agents/knowledge/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux)).
+**Violation pattern:** `transition: all 247ms cubic-bezier(0.12, 0.34, ...)` — off-token. Theme switch FOUC (flicker) on transitions = also flag (see [BL-UI-001](../../../agents/knowledge/oracles/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux)).
 
 ---
 
@@ -134,7 +134,7 @@ A single design-system audit produces 0–N findings. Decision tree for what to 
 
 1. **One component, one violation** → file individual bug via [/qa-bug](../../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN`.
 2. **One component, multiple violations** → file ONE bug per component listing all violations (don't fragment).
-3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference [BL-UI-002](../../../agents/knowledge/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) or whichever invariant.
+3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference [BL-UI-002](../../../agents/knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) or whichever invariant.
 4. **Token itself is wrong** (e.g. theme switch broke `--color-primary` resolution) → P1 bug, the design system is broken, not the components.
 
 ---

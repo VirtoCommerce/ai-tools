@@ -19,7 +19,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
 
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
@@ -34,7 +34,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ### Cross-Layer Patterns
 
-> **Reference:** `.claude/agents/knowledge/platform-patterns.md`
+> **Reference:** `.claude/agents/knowledge/api/platform-patterns.md`
 
 - Cart state desync between localStorage and server after Admin price changes
 - Admin blade memory leaks on repeated open/close — watch Angular console errors
@@ -54,7 +54,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 Key providers: Skyflow, CyberSource, Authorize.Net, Datatrance. CyberSource shows form on cart page. All others → Place Order → `/checkout/payment` redirect.
 Test cards in `.env`: Skyflow (`SKYFLOW_VISA/MASTERCARD/EXPIRY/CVV`), Datatrance (card + `DATATRANCE_OTP` for 3DS).
-Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
+Full payment matrix: `.claude/agents/knowledge/api/order-creation-matrix.md`
 
 ### Key Testing Domains (priority order)
 
@@ -69,15 +69,15 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `.claude/agents/knowledge/business-logic.md` |
-| Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` — console patterns, network signatures, common false positives |
-| Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` — per-browser rendering/behavior differences |
-| Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` — LCP, CLS, TTI, API response budgets |
-| Platform Patterns | `.claude/agents/knowledge/platform-patterns.md` — known desync, cache, reindex behaviors |
-| Product Types & Properties | `.claude/agents/knowledge/products.md` — product types, xAPI fields, configurable sections |
-| Storefront Sitemap | `.claude/agents/knowledge/sitemap.md` — full URL map for navigation |
-| Payment Matrix | `.claude/agents/knowledge/order-creation-matrix.md` — 15 payment × shipping combinations |
-| Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
+| Business invariants (108 rules) | `.claude/agents/knowledge/oracles/business-logic.md` |
+| Debugging Signals | `.claude/agents/knowledge/execution/debugging-signals.md` — console patterns, network signatures, common false positives |
+| Browser Quirks | `.claude/agents/knowledge/automation/browser-quirks.md` — per-browser rendering/behavior differences |
+| Performance Thresholds | `.claude/agents/knowledge/execution/performance-thresholds.md` — LCP, CLS, TTI, API response budgets |
+| Platform Patterns | `.claude/agents/knowledge/api/platform-patterns.md` — known desync, cache, reindex behaviors |
+| Product Types & Properties | `.claude/agents/knowledge/domain/products.md` — product types, xAPI fields, configurable sections |
+| Storefront Sitemap | `.claude/agents/knowledge/domain/sitemap.md` — full URL map for navigation |
+| Payment Matrix | `.claude/agents/knowledge/api/order-creation-matrix.md` — 15 payment × shipping combinations |
+| Edge Cases Library | `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 
 ---
 
@@ -102,7 +102,7 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 
 ### Console & Network Debugging
 
-> **Reference:** `.claude/agents/knowledge/debugging-signals.md` — read before debugging sessions.
+> **Reference:** `.claude/agents/knowledge/execution/debugging-signals.md` — read before debugging sessions.
 
 **Console** (after EVERY significant action):
 - Check `browser_console_messages` — filter errors/warnings, ignore `extension://`
@@ -156,10 +156,10 @@ Full payment matrix: `.claude/agents/knowledge/order-creation-matrix.md`
 | Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
 | Figma comparison | `/qa-design` | `design-system-consistency.md` |
 | API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
-| GraphQL interaction (GraphiQL UI) | — | `.claude/agents/knowledge/graphiql-interaction.md` |
-| **Runner-native GraphQL test cases** | — | **`.claude/agents/knowledge/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
-| **Live discovery + random inputs** | — | **`.claude/agents/knowledge/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
-| Live xAPI schema | — | `.claude/agents/knowledge/graphql-schema.md` |
+| GraphQL interaction (GraphiQL UI) | — | `.claude/agents/knowledge/api/graphiql-interaction.md` |
+| **Runner-native GraphQL test cases** | — | **`.claude/agents/knowledge/api/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
+| **Live discovery + random inputs** | — | **`.claude/agents/knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
+| Live xAPI schema | — | `.claude/agents/knowledge/api/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 
 ---

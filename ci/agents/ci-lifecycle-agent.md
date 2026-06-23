@@ -41,8 +41,8 @@ For each suite CSV, evaluate every test case against these dimensions:
 - Test_Data references actual test data files or valid values
 
 ### Dimension 6 — BL/ECL Coverage
-- Business_Rule column references valid BL-* IDs from `.claude/agents/knowledge/business-logic.md`
-- Edge_Case_Refs references valid ECL-* IDs from `.claude/agents/knowledge/e-commerce-edge-cases-library.md`
+- Business_Rule column references valid BL-* IDs from `.claude/agents/knowledge/oracles/business-logic.md`
+- Edge_Case_Refs references valid ECL-* IDs from `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md`
 - P0/P1 cases should have at least one BL-* reference
 
 ### Dimension 7 — Duplication
@@ -81,8 +81,8 @@ Do NOT auto-fix:
 ## Knowledge Files
 
 Read on-demand:
-- `.claude/agents/knowledge/business-logic.md` — validate BL-* references
-- `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — validate ECL-* references
+- `.claude/agents/knowledge/oracles/business-logic.md` — validate BL-* references
+- `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` — validate ECL-* references
 - `.claude/skills/testing/qa-review-tests/review-criteria.md` — full review methodology
 - `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` — CSV column spec
 

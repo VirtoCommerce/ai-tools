@@ -1,6 +1,6 @@
 # Pairwise — Product Toggle Combinations (8 factors)
 
-Source: `knowledge/products.md` sections 1, 3, 6 + `test-data/products/configurable-products.csv`
+Source: `knowledge/domain/products.md` sections 1, 3, 6 + `test-data/products/configurable-products.csv`
 
 ## Factors
 

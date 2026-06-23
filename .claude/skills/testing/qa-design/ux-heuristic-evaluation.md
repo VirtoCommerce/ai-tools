@@ -1,6 +1,6 @@
 # UX Heuristic Evaluation Guide
 
-> Reference file for ui-ux-expert agent. Read when performing UX evaluations. Heuristic findings should be cross-referenced against [BL-* invariants](../../../agents/knowledge/business-logic.md) and the [edge case library](../../../agents/knowledge/e-commerce-edge-cases-library.md) — many UX issues map to a concrete invariant or ECL pattern, and citing the link makes the finding filable as a bug instead of a vague complaint.
+> Reference file for ui-ux-expert agent. Read when performing UX evaluations. Heuristic findings should be cross-referenced against [BL-* invariants](../../../agents/knowledge/oracles/business-logic.md) and the [edge case library](../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md) — many UX issues map to a concrete invariant or ECL pattern, and citing the link makes the finding filable as a bug instead of a vague complaint.
 
 ## Severity rubric (Nielsen 0–4 scale)
 
@@ -20,15 +20,15 @@ Use this table to translate a vague "UX issue" into a citable rule. If a heurist
 
 | Heuristic | Maps to | Notes |
 |-----------|---------|-------|
-| #1 Visibility of system status | [BL-UI-001](../../../agents/knowledge/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux) (no layout shift hides "what changed"), [BL-CART-002](../../../agents/knowledge/business-logic.md) (stock-mid-session), [BL-ORD-*](../../../agents/knowledge/business-logic.md) (status feedback) | Missing loading state on Place Order = #1 violation AND BL-ORD risk |
-| #2 Match real world | [B2B terminology](../../../agents/knowledge/platform-patterns.md) (PO number, net terms) | VC-specific: "Quote" vs "Order", "Account" vs "Organization" |
-| #3 User control | [BL-CART-*](../../../agents/knowledge/business-logic.md) (cart edit, remove), [BL-CHK-*](../../../agents/knowledge/business-logic.md) (back/edit during checkout) | "Cannot edit shipping after picking method" = #3 + BL-CHK |
-| #4 Consistency | [BL-UI-002](../../../agents/knowledge/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux), [BL-UI-005](../../../agents/knowledge/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) | Spacing grid drift, alignment drift, color-meaning drift across pages |
-| #5 Error prevention | [BL-CART-001](../../../agents/knowledge/business-logic.md) (max qty), [BL-CHK-*](../../../agents/knowledge/business-logic.md), [ECL-2.*](../../../agents/knowledge/e-commerce-edge-cases-library.md) (input validation edges) | Accepts negative qty = #5 + BL-CART |
+| #1 Visibility of system status | [BL-UI-001](../../../agents/knowledge/oracles/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux) (no layout shift hides "what changed"), [BL-CART-002](../../../agents/knowledge/oracles/business-logic.md) (stock-mid-session), [BL-ORD-*](../../../agents/knowledge/oracles/business-logic.md) (status feedback) | Missing loading state on Place Order = #1 violation AND BL-ORD risk |
+| #2 Match real world | [B2B terminology](../../../agents/knowledge/api/platform-patterns.md) (PO number, net terms) | VC-specific: "Quote" vs "Order", "Account" vs "Organization" |
+| #3 User control | [BL-CART-*](../../../agents/knowledge/oracles/business-logic.md) (cart edit, remove), [BL-CHK-*](../../../agents/knowledge/oracles/business-logic.md) (back/edit during checkout) | "Cannot edit shipping after picking method" = #3 + BL-CHK |
+| #4 Consistency | [BL-UI-002](../../../agents/knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux), [BL-UI-005](../../../agents/knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) | Spacing grid drift, alignment drift, color-meaning drift across pages |
+| #5 Error prevention | [BL-CART-001](../../../agents/knowledge/oracles/business-logic.md) (max qty), [BL-CHK-*](../../../agents/knowledge/oracles/business-logic.md), [ECL-2.*](../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md) (input validation edges) | Accepts negative qty = #5 + BL-CART |
 | #6 Recognition over recall | ECL-3.* (state visibility) | Cart not visible during checkout |
 | #7 Flexibility | B2B power-user patterns: quick order paste, saved addresses, reorder, keyboard shortcuts. See [feedback_qty_stepper_as_add_to_cart](../../../../memory/feedback_qty_stepper_as_add_to_cart.md) — on B2B store the stepper IS the add-to-cart entry; treat that as the by-design flex pattern, not a bug |
-| #8 Aesthetic / minimal | [BL-UI-004](../../../agents/knowledge/business-logic.md#bl-ui-004-content-boundary-p2-ux) (overflow), [BL-UI-005](../../../agents/knowledge/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) (hierarchy implies alignment) | Two competing CTAs, overflowing modals |
-| #9 Error recovery | WCAG 3.3.1 (error identification), WCAG 3.3.3 (error suggestion), [ECL-2.*](../../../agents/knowledge/e-commerce-edge-cases-library.md) | "Invalid input" without specifics = #9 + WCAG 3.3.1 |
+| #8 Aesthetic / minimal | [BL-UI-004](../../../agents/knowledge/oracles/business-logic.md#bl-ui-004-content-boundary-p2-ux) (overflow), [BL-UI-005](../../../agents/knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux) (hierarchy implies alignment) | Two competing CTAs, overflowing modals |
+| #9 Error recovery | WCAG 3.3.1 (error identification), WCAG 3.3.3 (error suggestion), [ECL-2.*](../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md) | "Invalid input" without specifics = #9 + WCAG 3.3.1 |
 | #10 Help / docs | None canonical — pure UX. File as P2/P3 UX improvement unless on revenue-critical surface |
 
 ## Nielsen's 10 Usability Heuristics

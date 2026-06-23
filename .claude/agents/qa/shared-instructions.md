@@ -27,7 +27,7 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
 
 When a test result is ambiguous, check business-logic.md before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 
@@ -70,7 +70,7 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 
 **This does NOT lower the bar for what counts as a bug.** The Live-Verification Policy below still governs filing: a disabled control is validation working (not a bug), an API-only repro is not a UI-layer defect, and by-design / config-gated behavior is verified at the source before filing. Notice everything; **verify before you file.** Continuous observation widens what you *look at* — it does not widen what you *call a defect*.
 
-**Discovery pass — ticket / feature / PR testing only (NOT bulk regression).** When testing a ticket, feature, or PR (i.e. not executing a pre-built regression suite), spend a short focused block — ~5–10 min — on active discovery beyond the scripted cases: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the existing cases don't cover. Bulk-regression runs (`test-runner-agent` / `autonomous-test-runner` executing a CSV suite) skip this timed pass and rely on the continuous-observation reflex above. Full methodology: `/qa-exploratory` (discovery-first command) and `/qa-sbtm` (charters, CRISP/SFDPOT, Whittaker tours, personas). Read the VC bug catalog (`knowledge/vc-bug-catalog.md`) to avoid re-discovering known patterns.
+**Discovery pass — ticket / feature / PR testing only (NOT bulk regression).** When testing a ticket, feature, or PR (i.e. not executing a pre-built regression suite), spend a short focused block — ~5–10 min — on active discovery beyond the scripted cases: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the existing cases don't cover. Bulk-regression runs (`test-runner-agent` / `autonomous-test-runner` executing a CSV suite) skip this timed pass and rely on the continuous-observation reflex above. Full methodology: `/qa-exploratory` (discovery-first command) and `/qa-sbtm` (charters, CRISP/SFDPOT, Whittaker tours, personas). Read the VC bug catalog (`knowledge/oracles/vc-bug-catalog.md`) to avoid re-discovering known patterns.
 
 ## Evidence Collection Standards
 
@@ -99,20 +99,20 @@ Reference files — read on-demand before each testing area, not all upfront:
 
 | Area | File |
 |------|------|
-| Business Logic Invariants | `.claude/agents/knowledge/business-logic.md` |
-| Platform Patterns | `.claude/agents/knowledge/platform-patterns.md` |
-| Performance Thresholds | `.claude/agents/knowledge/performance-thresholds.md` |
-| Browser Quirks | `.claude/agents/knowledge/browser-quirks.md` |
-| Debugging Signals | `.claude/agents/knowledge/debugging-signals.md` |
-| Catalog Reference | `.claude/agents/knowledge/catalog.md` |
-| Products (types, xAPI fields, configurable sections) | `.claude/agents/knowledge/products.md` |
-| Storefront Sitemap (URLs, nav, categories, account pages) | `.claude/agents/knowledge/sitemap.md` |
-| Store Settings | `.claude/agents/knowledge/store-settings.md` |
-| White Labeling | `.claude/agents/knowledge/white-labeling.md` |
+| Business Logic Invariants | `.claude/agents/knowledge/oracles/business-logic.md` |
+| Platform Patterns | `.claude/agents/knowledge/api/platform-patterns.md` |
+| Performance Thresholds | `.claude/agents/knowledge/execution/performance-thresholds.md` |
+| Browser Quirks | `.claude/agents/knowledge/automation/browser-quirks.md` |
+| Debugging Signals | `.claude/agents/knowledge/execution/debugging-signals.md` |
+| Catalog Reference | `.claude/agents/knowledge/domain/catalog.md` |
+| Products (types, xAPI fields, configurable sections) | `.claude/agents/knowledge/domain/products.md` |
+| Storefront Sitemap (URLs, nav, categories, account pages) | `.claude/agents/knowledge/domain/sitemap.md` |
+| Store Settings | `.claude/agents/knowledge/domain/store-settings.md` |
+| White Labeling | `.claude/agents/knowledge/domain/white-labeling.md` |
 | Test Data Generation | `.claude/agents/knowledge/test-data-generation.md` |
-| GraphQL xAPI Schema | `.claude/agents/knowledge/graphql-schema.md` |
-| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` |
-| **Live Test-Data Discovery** | `.claude/agents/knowledge/live-discovery.md` |
+| GraphQL xAPI Schema | `.claude/agents/knowledge/api/graphql-schema.md` |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/api/graphql-test-cases-runner.md` |
+| **Live Test-Data Discovery** | `.claude/agents/knowledge/execution/live-discovery.md` |
 
 **Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
 
@@ -133,19 +133,19 @@ Pick the right layer for each data role:
 
 **Cardinal rule:** random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants (`isNumber`, `> 0`, currency-formatted).
 
-Full decision tree, JS recipes, and CSV-runner recipes: `.claude/agents/knowledge/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
+Full decision tree, JS recipes, and CSV-runner recipes: `.claude/agents/knowledge/execution/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
 
 ### 2. Validate GraphQL against the live schema
 
 Before authoring or reviewing any query/mutation:
-- Consult `.claude/agents/knowledge/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
+- Consult `.claude/agents/knowledge/api/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
 - For ad-hoc inline checks: `npx tsx scripts/graphql-runner.ts --query "<inline>"`.
 - Schema is refreshed via `npm run schema:refresh`; fixtures are bumped/renamed via `npm run graphql:fixtures:update`; CI gate is `npm run graphql:fixtures:validate`.
 - The canonical runner is `scripts/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
 
 ### 3. Verify selectors & state against the live UI
 
-Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `.claude/agents/knowledge/test-execution-preflight.md` and `.claude/agents/knowledge/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
+Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `.claude/agents/knowledge/execution/test-execution-preflight.md` and `.claude/agents/knowledge/automation/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
 
 ### 4. Verify source data and design intent before filing a bug
 
@@ -215,7 +215,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
 | VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
-| Module mapping | `agents/knowledge/module-suite-map.md` | direct file reference |
+| Module mapping | `agents/knowledge/execution/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
 ## Environment Variables (read via process.env)

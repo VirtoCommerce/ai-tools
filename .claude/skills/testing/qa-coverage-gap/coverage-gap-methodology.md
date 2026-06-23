@@ -68,7 +68,7 @@ Even when test cases exist, assess depth:
 ### Format Contract
 Every generated case MUST conform to [`test-case-template.md`](../../qa-methodology/qa-test-cases-generator/test-case-template.md) — the 15-column enriched CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status).
 
-**For Backend/graphql/* suites (`050a`–`050k`):** authoring contract is [`graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) — runner-native tags only (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP|EXEC|CAPTURE]/[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are invalid in these suites.
+**For Backend/graphql/* suites (`050a`–`050k`):** authoring contract is [`graphql-test-cases-runner.md`](../../../agents/knowledge/api/graphql-test-cases-runner.md) — runner-native tags only (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP|EXEC|CAPTURE]/[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are invalid in these suites.
 
 ### ID Assignment
 - Use domain prefix + sequential number: `{DOMAIN}-{NNN}`
@@ -153,4 +153,4 @@ Per `.claude/rules/test-data.md`:
 | `live-discover` | `scripts/lib/live-discover.ts` or `[GQL-OP]+[GQL-CAPTURE]` | Drifting entities — assert shape, not exact values |
 | `random-data` | `scripts/lib/random-data.ts` | Unique inputs (emails, org names, comments) — `AGENT-TEST-` prefix by default |
 
-The decision tree is in [`.claude/agents/knowledge/live-discovery.md`](../../../agents/knowledge/live-discovery.md) — consult before authoring any case that touches a product, address, cart, coupon, or user entity.
+The decision tree is in [`.claude/agents/knowledge/execution/live-discovery.md`](../../../agents/knowledge/execution/live-discovery.md) — consult before authoring any case that touches a product, address, cart, coupon, or user entity.

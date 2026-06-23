@@ -96,4 +96,4 @@ GOOD: Resolve via @td(CFG_LAPTOP.id) and @td(CFG_LAPTOP.price) at authoring time
 Catalog data drifts. Hardcoded IDs silently break. See [test-data-fixtures.md](test-data-fixtures.md).
 
 ### Mistake 15: Writing GraphQL Without Schema Verification
-Field names you remember from a previous project or the docs are not authoritative. VC xAPI ships fields that aren't always documented and renames others between versions. Run introspection or consult [`graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) before writing any GraphQL request — see [graphql-authoring.md](graphql-authoring.md).
+Field names you remember from a previous project or the docs are not authoritative. VC xAPI ships fields that aren't always documented and renames others between versions. Run introspection or consult [`graphql-schema.md`](../../../agents/knowledge/api/graphql-schema.md) before writing any GraphQL request — see [graphql-authoring.md](graphql-authoring.md).

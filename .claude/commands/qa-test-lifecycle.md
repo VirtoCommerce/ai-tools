@@ -81,7 +81,7 @@ Before starting the pipeline:
 2. **Duplicate check** — scan `reports/test-lifecycle/` for a `TLC-*` run on the same scope in the last 24 hours. If found, warn user and show previous verdict.
 3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain(s) with `tokens: 8000`. Pass findings to `test-management-specialist`.
 4. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):
-   - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `.claude/agents/knowledge/graphql-schema.md`
+   - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `.claude/agents/knowledge/api/graphql-schema.md`
    - Pass `graphql-schema.md` as a reference to `test-management-specialist` in the delegation payload
 
 ---
@@ -113,7 +113,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 4. Map JIRA components to VC modules
 
 **Module (`module <name>`):**
-1. Match `<name>` against module names in `.claude/agents/knowledge/module-suite-map.md`
+1. Match `<name>` against module names in `.claude/agents/knowledge/execution/module-suite-map.md`
 2. Query Context7 (`/virtocommerce/vc-docs`) for the module's latest documentation
 3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
@@ -186,11 +186,11 @@ Dispatch `test-management-specialist` with the change inventory to assess and up
 
 #### 2a. Map Changes to Cases
 
-Use `.claude/agents/knowledge/module-suite-map.md` to route changes to specific test cases:
+Use `.claude/agents/knowledge/execution/module-suite-map.md` to route changes to specific test cases:
 
 1. **Direct mapping** — for each changed module, look up "Must Run" suites
 2. **Dependency mapping** — look up "Should Run" suites (downstream dependencies)
-3. **Page mapping** — cross-reference `.claude/agents/knowledge/sitemap.md`
+3. **Page mapping** — cross-reference `.claude/agents/knowledge/domain/sitemap.md`
 4. **API mapping** — find cases exercising affected API endpoints
 5. **Layer filtering** — if `--layer` flag is set, filter to matching layer
 
@@ -305,7 +305,7 @@ Instead of full gap detection, perform change impact analysis:
 4. Apply **minimum effective set** principle: clear bug hypothesis, happy path + most likely negative + known edge cases
 5. Use layer-specific tags from `test-case-template.md`
 6. **GraphQL schema validation** (mandatory for GraphQL cases):
-   - Read `agents/knowledge/graphql-schema.md`
+   - Read `agents/knowledge/api/graphql-schema.md`
    - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
 7. **BL proposal drafting (when `--update-bl` is set):**
@@ -502,7 +502,7 @@ Write to `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/`:
 ```markdown
 # Business Logic Proposals — {RUN_ID}
 
-These are drafts. They are NOT applied to `.claude/agents/knowledge/business-logic.md`.
+These are drafts. They are NOT applied to `.claude/agents/knowledge/oracles/business-logic.md`.
 Review, edit as needed, assign final `BL-*` IDs, and commit manually.
 
 ## New Invariants Proposed
@@ -632,16 +632,16 @@ Input:
     - regression/suites/ (target CSV files)
     - .claude/skills/testing/qa-review-tests/review-criteria.md
     - .claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md
-    - .claude/agents/knowledge/business-logic.md
-    - .claude/agents/knowledge/e-commerce-edge-cases-library.md
-    - .claude/agents/knowledge/products.md
-    - .claude/agents/knowledge/module-suite-map.md
-    - .claude/agents/knowledge/sitemap.md
+    - .claude/agents/knowledge/oracles/business-logic.md
+    - .claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md
+    - .claude/agents/knowledge/domain/products.md
+    - .claude/agents/knowledge/execution/module-suite-map.md
+    - .claude/agents/knowledge/domain/sitemap.md
     - .claude/skills/testing/qa-checklist/domain-checklists.md
     - .claude/skills/testing/qa-checklist/backend-admin-checklists.md
     - .claude/skills/testing/qa-checklist/graphql-checklist.md
     - .claude/skills/testing/qa-coverage-gap/feature-domain-map.md
-    - .claude/agents/knowledge/graphql-schema.md (for GraphQL scopes)
+    - .claude/agents/knowledge/api/graphql-schema.md (for GraphQL scopes)
   - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
 
 Output: structured JSON with:
@@ -713,4 +713,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL proposals are advisory only** — `--update-bl` drafts proposals to `reports/test-lifecycle/TLC-*/bl-proposals.md`. Never write to `.claude/agents/knowledge/business-logic.md` automatically; every entry requires human review and manual application. Every proposed entry must cite a source (JIRA AC, Context7 quote, changelog, PR).
+- **BL proposals are advisory only** — `--update-bl` drafts proposals to `reports/test-lifecycle/TLC-*/bl-proposals.md`. Never write to `.claude/agents/knowledge/oracles/business-logic.md` automatically; every entry requires human review and manual application. Every proposed entry must cite a source (JIRA AC, Context7 quote, changelog, PR).

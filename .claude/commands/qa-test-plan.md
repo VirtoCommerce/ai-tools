@@ -90,7 +90,7 @@ Use GitHub MCP (`mcp__github__list_pull_requests` + `mcp__github__get_pull_reque
 
 **Primary repo:** `VirtoCommerce/vc-frontend` — list PRs with `state: closed`, filter by `mergedAt` within window.
 
-**Secondary repos** (skip if `--frontend`): For each unique JIRA component touched by Done items, search the matching `vc-module-*` repo. Use `.claude/agents/knowledge/module-suite-map.md` for component → module mapping. List merged PRs in the window.
+**Secondary repos** (skip if `--frontend`): For each unique JIRA component touched by Done items, search the matching `vc-module-*` repo. Use `.claude/agents/knowledge/execution/module-suite-map.md` for component → module mapping. List merged PRs in the window.
 
 For each merged PR, capture:
 - Number, title, mergedAt, author, base/head branches
@@ -192,9 +192,9 @@ Input:
 
 References (read these):
   - config/test-suites.json (suite definitions + selection groups)
-  - .claude/agents/knowledge/business-logic.md (BL-* invariants per domain)
-  - .claude/agents/knowledge/e-commerce-edge-cases-library.md (ECL-* patterns)
-  - .claude/agents/knowledge/module-suite-map.md (module → suite mapping)
+  - .claude/agents/knowledge/oracles/business-logic.md (BL-* invariants per domain)
+  - .claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md (ECL-* patterns)
+  - .claude/agents/knowledge/execution/module-suite-map.md (module → suite mapping)
   - .claude/skills/testing/qa-coverage-gap/feature-domain-map.md
   - .claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md
   - .claude/skills/qa-methodology/qa-test-design/test-design-techniques.md

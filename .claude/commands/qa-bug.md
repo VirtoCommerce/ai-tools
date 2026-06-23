@@ -67,13 +67,13 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 - **Signal:** Admin-visible mismatch points at module data/logic or stale index. Admin-OK but storefront-broken points at xAPI/frontend.
 
 ### Layer 3 — GraphQL xAPI
-- **Where:** `{BACK_URL}/graphql` (POST runtime) — GraphiQL UI at `{BACK_URL}/ui/graphiql`. Consult `.claude/agents/knowledge/graphql-schema.md` for schema and `.claude/agents/knowledge/graphiql-interaction.md` for interaction steps
+- **Where:** `{BACK_URL}/graphql` (POST runtime) — GraphiQL UI at `{BACK_URL}/ui/graphiql`. Consult `.claude/agents/knowledge/api/graphql-schema.md` for schema and `.claude/agents/knowledge/api/graphiql-interaction.md` for interaction steps
 - **Tool:** qa-backend-expert via `playwright-edge` + GraphiQL, or Postman MCP
 - **Verify:** re-run the query/mutation the storefront executed (copy operation name + variables from Layer 1 network capture). Compare the raw response to what the UI rendered. Introspect field names/types before writing ad-hoc queries (`feedback_graphql_introspection`).
 - **Signal:** xAPI returns wrong data = xAPI resolver/aggregation bug. xAPI returns correct data but UI shows wrong = frontend rendering bug.
 
 ### Layer 4 — Platform REST API
-- **Where:** `{BACK_URL}/api/...` — see `.claude/agents/knowledge/api-auth.md` for OAuth2 token flow
+- **Where:** `{BACK_URL}/api/...` — see `.claude/agents/knowledge/api/api-auth.md` for OAuth2 token flow
 - **Tool:** qa-backend-expert via Postman MCP (`/qa-postman`) or direct HTTP
 - **Verify:** call the underlying Platform REST endpoint (e.g., `/api/catalog/products/{id}`, `/api/order/customerOrders/{id}`, `/api/pricing/prices/search`). Compare response to GraphQL/Admin/UI.
 - **Signal:** REST wrong = module/DB/seeding issue (lowest layer). REST right + GraphQL wrong = xAPI bug. REST + GraphQL right + UI wrong = frontend bug.
@@ -123,7 +123,7 @@ After reproducing the bug, research the root cause before writing the report:
 Step 2 gave you the `repoKind` and a layer. Now name the **one** concrete repo so the bug report carries a
 ready-to-route target. Resolve it deterministically (do **not** free-guess):
 
-1. **Map the domain → module** via [`.claude/agents/knowledge/module-suite-map.md`](../agents/knowledge/module-suite-map.md)
+1. **Map the domain → module** via [`.claude/agents/knowledge/execution/module-suite-map.md`](../agents/knowledge/execution/module-suite-map.md)
    (the *Module → REST API Path → xAPI Module* table). The failing REST path (`/api/pricing/…` → `vc-module-pricing`)
    or the xAPI module name (xCatalog → `vc-module-x-catalog`) from your Layer 3/4 capture is the strongest signal.
 2. **Cross-check against the routing hints** in [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
@@ -273,4 +273,4 @@ Report the ticket key back to the user.
 - **Keep the routing vocabulary in sync with one source of truth:** `repoKind` and the allowed-repo set
   come from [`ci/lib/repo-router.ts`](../../ci/lib/repo-router.ts) + [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
   (the same files `/qa-fix` uses). Resolve the exact module via
-  [`module-suite-map.md`](../agents/knowledge/module-suite-map.md). Never invent a parallel naming scheme.
+  [`module-suite-map.md`](../agents/knowledge/execution/module-suite-map.md). Never invent a parallel naming scheme.

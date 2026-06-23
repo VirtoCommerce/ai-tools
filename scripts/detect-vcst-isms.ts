@@ -51,8 +51,8 @@ const PATTERNS: Pattern[] = [
     allowListSubstrings: [
       "memory/",
       "MEMORY.md",
-      "knowledge/vc-bug-catalog.md",
-      "knowledge/sitemap.md",       // educational refs that explicitly say "vcst-qa value, customer differs"
+      "knowledge/oracles/vc-bug-catalog.md",
+      "knowledge/domain/sitemap.md",       // educational refs that explicitly say "vcst-qa value, customer differs"
       ".env.vcst",                   // intentional env file
       "test-data/aliases.json",      // the alias DEFINES the GUID — by definition
       "vc/vcst-qa/archive/",
@@ -78,7 +78,7 @@ const PATTERNS: Pattern[] = [
     allowListSubstrings: [
       "memory/",
       "MEMORY.md",
-      "knowledge/vc-bug-catalog.md",
+      "knowledge/oracles/vc-bug-catalog.md",
       "test-data/",                  // test-data CSVs DEFINE TechFlow (it's the subject of the alias)
       "test-data/aliases.json",
       "vc/vcst-qa/archive/",
@@ -99,7 +99,7 @@ const PATTERNS: Pattern[] = [
     allowListSubstrings: [
       "memory/",
       "MEMORY.md",
-      "knowledge/vc-bug-catalog.md",
+      "knowledge/oracles/vc-bug-catalog.md",
       "test-data/",
       "vc/vcst-qa/archive/",
       "vc/shared/docs/Sprint plans/",

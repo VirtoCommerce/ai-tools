@@ -7,7 +7,7 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 **Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` parses it and fails the build if any covered cell points at a test ID that doesn't exist in any regression suite CSV.
 
-> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts), [048b suite](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
+> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts), [048b suite](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
 >
 > **Owner agent:** [ui-ux-expert](../qa/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions per [feedback_business_logic_promotion](../../../memory)).
 
@@ -70,7 +70,7 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 
 ## Render-location map
 
-Every audit MUST exercise the component on its real render surface. Selectors come from [storefront-selectors.md](storefront-selectors.md) — never duplicate them here, just reference.
+Every audit MUST exercise the component on its real render surface. Selectors come from [storefront-selectors.md](../automation/storefront-selectors.md) — never duplicate them here, just reference.
 
 | Component | Primary live URL | Secondary URL(s) | Trigger to render |
 |-----------|------------------|------------------|-------------------|

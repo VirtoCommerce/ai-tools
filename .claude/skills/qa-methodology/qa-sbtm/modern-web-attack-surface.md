@@ -319,6 +319,6 @@ mcp__Chrome_DevTools__list_console_messages
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Heuristics framework these probes plug into
 - [personas.md](personas.md) — Malicious User + Session-Corrupted User personas use most of these probes
 - [charter-library.md](charter-library.md) — "Cache & State Drift" and "Performance & Resource Stress" charters explicitly use these probes
-- [../../../agents/knowledge/vc-bug-catalog.md](../../../agents/knowledge/vc-bug-catalog.md) — VC-specific historical bugs, many of which were found via these probes
-- [../../../agents/knowledge/business-logic.md](../../../agents/knowledge/business-logic.md) — BL-UI-001..006 layout-stability invariants relevant to zoom/print/dark-mode probes
+- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../../agents/knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bugs, many of which were found via these probes
+- [../../../agents/knowledge/oracles/business-logic.md](../../../agents/knowledge/oracles/business-logic.md) — BL-UI-001..006 layout-stability invariants relevant to zoom/print/dark-mode probes
 - [../../../rules/mcp-browsers.md](../../../rules/mcp-browsers.md) — Chrome DevTools MCP + Playwright MCP setup

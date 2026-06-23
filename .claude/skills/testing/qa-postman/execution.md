@@ -37,7 +37,7 @@ getCollection({ collectionId: "<owner-uid>", model: "full" })
 - [ ] Every request has a `test` event with at least one status-code assertion
 - [ ] No hardcoded URLs, credentials, or entity IDs — only `{{variable}}` references (see [test-data-fixtures.md](test-data-fixtures.md))
 - [ ] All chained entity IDs (e.g. `{{catalogId}}`) are written by an earlier request's test script
-- [ ] GraphQL requests verified against [`graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) (see [graphql-authoring.md](graphql-authoring.md))
+- [ ] GraphQL requests verified against [`graphql-schema.md`](../../../agents/knowledge/api/graphql-schema.md) (see [graphql-authoring.md](graphql-authoring.md))
 
 ---
 

@@ -71,9 +71,9 @@ time and erodes trust in the pipeline; a BAIL just leaves the bug for a human. E
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
 | Module→repo resolution, `isAllowedRepo`, `checkoutForFix`, `REPO_PROFILES` (build/test cmds) | `ci/lib/repo-router.ts` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
-| BL-* invariants the fix must preserve | `.claude/agents/knowledge/business-logic.md` (cite the ID) |
-| Historical VC failure patterns | `.claude/agents/knowledge/vc-bug-catalog.md` |
-| VC module repo anatomy + .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/vc-module-architecture.md` |
-| vc-frontend storefront anatomy + Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/vc-frontend-architecture.md` |
+| BL-* invariants the fix must preserve | `.claude/agents/knowledge/oracles/business-logic.md` (cite the ID) |
+| Historical VC failure patterns | `.claude/agents/knowledge/oracles/vc-bug-catalog.md` |
+| VC module repo anatomy + .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/architecture/vc-module-architecture.md` |
+| vc-frontend storefront anatomy + Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` |
 | JIRA transitions | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` |
 | Reports policy + size caps | `.claude/rules/reports.md` |

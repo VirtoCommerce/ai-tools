@@ -48,7 +48,7 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 | `References` | JIRA tickets, docs, source links | `JIRA: MYCO-1234; spec: docs/gift-wrap-flow.md` |
 | `Automation_Status` | `Draft`, `Ready`, `Stable`, `Flaky`, `Quarantined` | `Draft` (until proven) |
 
-**Tag reference for `Steps` and `Assertions`:** see `.claude/agents/knowledge/test-runner-tags.md` (shipped with the plugin). Common tags:
+**Tag reference for `Steps` and `Assertions`:** see `.claude/agents/knowledge/execution/test-runner-tags.md` (shipped with the plugin). Common tags:
 - Steps: `[NAV]` navigate, `[ACT]` interact, `[WAIT]` wait for condition, `[ASSERT]` inline check, `[SETUP]` precondition action
 - Assertions: `[DOM]` DOM state, `[FORMAT]` formatted value match, `[STATE]` derived state, `[API]` REST/GraphQL response, `[CONSOLE]` console log/error
 
@@ -123,7 +123,7 @@ Use the same `BL-{DOMAIN}-{NNN}` ID convention as VC, but **namespace your BL ID
 
 Document your BLs in your own knowledge file (suggested: `regression/suites/customer/business-logic.md` or as inline comments in suite CSVs via the `Business_Rule` column).
 
-VC's BLs in `.claude/agents/knowledge/business-logic.md` are the standard for VC platform behavior — don't modify or override them. If you think VC's BL is wrong on your deployment, that's a discussion with VC support, not a local override.
+VC's BLs in `.claude/agents/knowledge/oracles/business-logic.md` are the standard for VC platform behavior — don't modify or override them. If you think VC's BL is wrong on your deployment, that's a discussion with VC support, not a local override.
 
 ## Section 5 — Register Your Suite in `config/test-suites.json`
 
@@ -289,7 +289,7 @@ These are LLM token costs only — GitHub Actions minutes are separate (and free
 - Test-data resolver rule: [`../.claude/rules/test-data.md`](../.claude/rules/test-data.md)
 - Report standards: [`../.claude/rules/reports.md`](../.claude/rules/reports.md)
 - Enriched CSV template + 15-column spec: [`../.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md`](../.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md)
-- Tag reference for Steps/Assertions: [`../.claude/agents/knowledge/test-runner-tags.md`](../.claude/agents/knowledge/test-runner-tags.md)
+- Tag reference for Steps/Assertions: [`../.claude/agents/knowledge/execution/test-runner-tags.md`](../.claude/agents/knowledge/execution/test-runner-tags.md)
 - Stability contract: [`./versioning.md`](versioning.md)
 - Marketing one-pager (high-level positioning): [`./marketing-onepager.md`](marketing-onepager.md)
 - Customer CI template: [`../.github/workflows/customer-template.yml`](../.github/workflows/customer-template.yml)

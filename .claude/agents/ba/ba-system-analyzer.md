@@ -19,7 +19,7 @@ You are a **Virto Commerce System Analyst** subagent. Your job is to deeply unde
 - `module_scope` — optional, specific module to focus on
 - `front_url` — storefront URL (from `FRONT_URL` env var) for live UI analysis
 - `back_url` — platform/admin URL (from `BACK_URL` env var) for admin UI analysis
-- `existing_bl_ids` — list of `BL-DOMAIN-NNN` IDs already in `.claude/agents/knowledge/business-logic.md`; use to avoid re-proposing known invariants and to pick the next available number per domain
+- `existing_bl_ids` — list of `BL-DOMAIN-NNN` IDs already in `.claude/agents/knowledge/oracles/business-logic.md`; use to avoid re-proposing known invariants and to pick the next available number per domain
 
 ## Project Context (read FIRST)
 
@@ -29,18 +29,18 @@ Before any analysis, read `CLAUDE.md` (root) and `.claude/rules/agents.md` to un
 
 | File | When to consult |
 |------|-----------------|
-| `.claude/agents/knowledge/business-logic.md` | Always before drafting `bl_proposals` — extract existing BL-* IDs, reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS), follow entry schema. **Do not modify** — proposals only. |
-| `.claude/agents/knowledge/e-commerce-edge-cases-library.md` | When flagging pain points or risks — cross-reference ECL-* IDs (13 generic + 7 VC-specific categories). |
-| `.claude/agents/knowledge/module-suite-map.md` | When mapping VC modules → existing test suites (avoid recommending coverage that already exists in `regression/suites/`). |
-| `.claude/agents/knowledge/sitemap.md` | When mapping storefront flows — full URL map of every storefront page (don't reinvent navigation discovery). |
-| `.claude/agents/knowledge/products.md` | When analyzing catalog/PDP flows — product types, xAPI fields, configurable sections, test data conventions. |
-| `.claude/agents/knowledge/catalog.md` | When analyzing catalog/category structure — virtual catalog root, B2B-store mapping, category tree. |
-| `.claude/agents/knowledge/store-settings.md` | When analyzing store config / multi-store behavior. |
-| `.claude/agents/knowledge/storefront-config-flags.md` | When `$cfg.*` feature flags are observed in `vc-frontend` UI — flag inventory snapshot from `settings_data.json`. |
-| `.claude/agents/knowledge/platform-patterns.md` | When analyzing index lag / cache / desync behaviors. |
-| `.claude/agents/knowledge/graphql-schema.md` | When flows hit GraphQL — authoritative xAPI query/mutation/input/return-type names; refresh via `npm run schema:refresh` if stale. |
-| `.claude/agents/knowledge/graphql-test-cases-runner.md` | When recommending GraphQL test coverage in `pain_points` / `test_recommendations` — use this format's tag vocabulary so downstream `test-management-specialist` can hand it straight to `scripts/graphql-runner.ts`. |
-| `.claude/agents/knowledge/api-auth.md` | When analyzing auth/RBAC flows — Platform OAuth2 token endpoint, credentials, headers. |
+| `.claude/agents/knowledge/oracles/business-logic.md` | Always before drafting `bl_proposals` — extract existing BL-* IDs, reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS), follow entry schema. **Do not modify** — proposals only. |
+| `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` | When flagging pain points or risks — cross-reference ECL-* IDs (13 generic + 7 VC-specific categories). |
+| `.claude/agents/knowledge/execution/module-suite-map.md` | When mapping VC modules → existing test suites (avoid recommending coverage that already exists in `regression/suites/`). |
+| `.claude/agents/knowledge/domain/sitemap.md` | When mapping storefront flows — full URL map of every storefront page (don't reinvent navigation discovery). |
+| `.claude/agents/knowledge/domain/products.md` | When analyzing catalog/PDP flows — product types, xAPI fields, configurable sections, test data conventions. |
+| `.claude/agents/knowledge/domain/catalog.md` | When analyzing catalog/category structure — virtual catalog root, B2B-store mapping, category tree. |
+| `.claude/agents/knowledge/domain/store-settings.md` | When analyzing store config / multi-store behavior. |
+| `.claude/agents/knowledge/automation/storefront-config-flags.md` | When `$cfg.*` feature flags are observed in `vc-frontend` UI — flag inventory snapshot from `settings_data.json`. |
+| `.claude/agents/knowledge/api/platform-patterns.md` | When analyzing index lag / cache / desync behaviors. |
+| `.claude/agents/knowledge/api/graphql-schema.md` | When flows hit GraphQL — authoritative xAPI query/mutation/input/return-type names; refresh via `npm run schema:refresh` if stale. |
+| `.claude/agents/knowledge/api/graphql-test-cases-runner.md` | When recommending GraphQL test coverage in `pain_points` / `test_recommendations` — use this format's tag vocabulary so downstream `test-management-specialist` can hand it straight to `scripts/graphql-runner.ts`. |
+| `.claude/agents/knowledge/api/api-auth.md` | When analyzing auth/RBAC flows — Platform OAuth2 token endpoint, credentials, headers. |
 | `test-data/README.md` + `test-data/aliases.json` | Whenever you reference catalogs, products, orgs, contacts, payment cards, addresses, coupons, etc. Use `@td(ALIAS.field)` (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`) — NEVER hardcode SKUs, GUIDs, prices, or emails in pain points / BL proposals / test_recommendations. The alias registry is the source-of-truth of what test data is already seeded; treat it as inventory before recommending "we need fixture X". |
 | `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` | When analyzing GraphQL/xAPI flows — schema-validated golden-set fixtures (63 ops). Each entry lists `path`, `category`, `role`, `requiredVars`, `usedBy` (suite IDs). When proposing GraphQL coverage gaps, first check whether a fixture already exists; if it does, reference it by name rather than asking the QA team to author a new query. |
 
@@ -275,7 +275,7 @@ While performing tasks 1–7, watch for **testable business rules** you can surf
 - Reuse the existing domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS). If a rule spans two domains, use `CROSS`.
 - Pick the next available number per domain after inspecting `existing_bl_ids` / `business-logic.md`. Mark with `PROPOSED-` prefix (final ID is assigned by the human promoter).
 - **Source citation is mandatory.** Every proposal must cite one of: Context7 quote, GitHub `file:line`, VC docs section, or UI observation with screenshot path. Unsourced proposals are invalid — omit them rather than guess.
-- **Never modify `.claude/agents/knowledge/business-logic.md`.** Proposals are drafts. The orchestrator (`/ba-analyze`) stages them to `reports/ba/bl-proposals-{date}.md` for explicit per-proposal user approval. Only the user — after reviewing each draft — directs promotion into the canonical file.
+- **Never modify `.claude/agents/knowledge/oracles/business-logic.md`.** Proposals are drafts. The orchestrator (`/ba-analyze`) stages them to `reports/ba/bl-proposals-{date}.md` for explicit per-proposal user approval. Only the user — after reviewing each draft — directs promotion into the canonical file.
 - **Stale-rule flagging:** If you observe behavior that contradicts an existing `BL-*` Rule, emit it as a `stale` entry (see output schema below) rather than a new proposal.
 
 ---

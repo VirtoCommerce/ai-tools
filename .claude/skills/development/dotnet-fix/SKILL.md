@@ -14,7 +14,7 @@ pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`
 
 ## Steps
 1. **Understand the seam** (controller → service → domain → repo → events). Confirm the real
-   root cause, not a symptom. See `.claude/agents/knowledge/vc-module-architecture.md`.
+   root cause, not a symptom. See `.claude/agents/knowledge/architecture/vc-module-architecture.md`.
 2. **Implement the smallest correct change** to production code only. See `fix-patterns.md` and
    `dotnet10-best-practices.md`. Match the repo's existing style. Two build-hygiene facts that bite:
    - `TreatWarningsAsErrors=true` in every module's `Directory.Build.props` — a new warning in your
@@ -53,4 +53,4 @@ pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`
 - `fix-patterns.md` — common VC fix shapes (null-guard, mapping, cascade, RBAC, async)
 - `dotnet10-best-practices.md` — modern C# idioms + build hygiene within a minimal diff
 - `.claude/rules/quality-gates.md` — G3 (green), G4 (review), G5 (build/CI), G7 (no auto-merge)
-- `.claude/agents/knowledge/vc-bug-catalog.md` — don't re-introduce a historical failure pattern
+- `.claude/agents/knowledge/oracles/vc-bug-catalog.md` — don't re-introduce a historical failure pattern

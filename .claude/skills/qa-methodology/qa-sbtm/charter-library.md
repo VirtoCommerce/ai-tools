@@ -2,7 +2,7 @@
 
 Ready-to-use charters for common Virto Commerce exploratory scenarios. Each follows the SBTM charter template from `session-based-testing.md` § 2 and includes 8–10 starter test ideas.
 
-To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-risk`, replace placeholder env vars with `{{FRONT_URL}}` / `{{BACK_URL}}` from `.env`. Resolve test data per the [live-discovery decision tree](../../../agents/knowledge/live-discovery.md) — `@td(ALIAS.field)` for specific assertion targets, `live-discover` for "any product / any address" navigation, `random-data` for unique throwaway inputs. Project-wide policy in [`.claude/rules/test-data.md`](../../../rules/test-data.md) — never hardcode IDs/SKUs/prices.
+To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-risk`, replace placeholder env vars with `{{FRONT_URL}}` / `{{BACK_URL}}` from `.env`. Resolve test data per the [live-discovery decision tree](../../../agents/knowledge/execution/live-discovery.md) — `@td(ALIAS.field)` for specific assertion targets, `live-discover` for "any product / any address" navigation, `random-data` for unique throwaway inputs. Project-wide policy in [`.claude/rules/test-data.md`](../../../rules/test-data.md) — never hardcode IDs/SKUs/prices.
 
 | # | Charter | Domain | Risk | Recommended persona |
 |---|---------|--------|------|---------------------|
@@ -383,6 +383,6 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Whittaker tours, FAILURE, Soap Opera, HICCUPPS-F referenced by these charters
 - [personas.md](personas.md) — Personas referenced in each charter
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Probe library used by Charters F, G, K
-- [../../../agents/knowledge/vc-bug-catalog.md](../../../agents/knowledge/vc-bug-catalog.md) — VC historical bugs; many charters reference specific entries
+- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../../agents/knowledge/oracles/vc-bug-catalog.md) — VC historical bugs; many charters reference specific entries
 - [../../../rules/test-data.md](../../../rules/test-data.md) — `@td()` resolver policy; charters must resolve test data, not hardcode
-- [../../../agents/knowledge/live-discovery.md](../../../agents/knowledge/live-discovery.md) — Decision tree + JS recipes for `live-discover` / `random-data` / `@td()`; required reading when a charter needs runtime data resolution
+- [../../../agents/knowledge/execution/live-discovery.md](../../../agents/knowledge/execution/live-discovery.md) — Decision tree + JS recipes for `live-discover` / `random-data` / `@td()`; required reading when a charter needs runtime data resolution
