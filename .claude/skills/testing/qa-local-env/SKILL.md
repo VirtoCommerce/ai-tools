@@ -27,7 +27,9 @@ health-checks the result.
 - **Docker Desktop** running, **PowerShell 7** (`pwsh`), **.NET SDK** + **vc-build**
   (`dotnet tool install VirtoCommerce.GlobalTool -g`), ~5 GB free disk.
 - Node 18+ (for the two `.mjs` helpers). No extra npm deps.
-- Files land in a gitignored working dir: `<repo>/.local-env/`.
+- Files land in a gitignored working dir: `<repo>/.local-env/`. The **only** write outside it is
+  `ADMIN_PASSWORD_LOCALHOST` upserted into the gitignored `<repo>/.env.local` (so the QA tooling can
+  authenticate) — by design, never a tracked file.
 
 ## The pipeline
 
@@ -87,6 +89,13 @@ Merge rules: released → `GithubReleases` source; PR build → `AzureBlob` (vc3
 with the Id removed from `GithubReleases` (no duplicate). `--require`/`--platform` only ever raise,
 never lower. Offline? `--baseline-file <path>`. Other env? `--branch <deploy-branch>`.
 
+> **Version-switch tests:** the `vcptcore-demo` baseline usually already tracks the **latest** release
+> of every module + platform, so `--require <Id>=<higher>` is typically a no-op (there's nothing higher).
+> For a deterministic switch use **`--set <Id>=<exact version>`** (raises *or* lowers). Switch a **leaf**
+> module (no dependents — e.g. a payment/shipping provider like `VirtoCommerce.Datatrans`); switching a
+> module that others depend on *below* their requirement builds fine but leaves the platform 503
+> ("Some modules have errors").
+
 ### 3. Provision (PowerShell + Docker)
 
 ```powershell
@@ -105,14 +114,22 @@ so provision always brings the stack `down` before starting. Endpoints: storefro
 ### 4. Health-check (+ task field probe)
 
 ```bash
-node .claude/skills/testing/qa-local-env/healthcheck.mjs --token --password 'Password1!'
+node .claude/skills/testing/qa-local-env/healthcheck.mjs --token   # password auto-resolves (see below)
 # task probe (VCST-5173): confirm the redesign fields exist in the live schema (no data/token needed)
 node .claude/skills/testing/qa-local-env/healthcheck.mjs \
   --graphql '{ __type(name: "CartConfigurationItemType") { fields { name } } }'
 # verify a pinned pre-release is ACTUALLY loaded (resolve-task prints the exact flags)
-node .claude/skills/testing/qa-local-env/healthcheck.mjs --token --password 'Password1!' \
+node .claude/skills/testing/qa-local-env/healthcheck.mjs --token \
   --expect-module VirtoCommerce.XCart=3.1022.0-pr-122-972d
+# name any module that failed to load/validate (the cause of a 503 /health after a bad version switch)
+node .claude/skills/testing/qa-local-env/healthcheck.mjs --token --module-errors
 ```
+**Password:** `--password` is optional now — it defaults to `$ADMIN_PASSWORD`, else
+`ADMIN_PASSWORD_LOCALHOST` from `.env.local` (written by init-admin), else the local convention
+`Password1!`. (Schema/introspection probes need no token at all.) **Fast-fail:** the `/health` wait
+gives up early on a persistent **503** (service up but unhealthy — e.g. module errors) instead of
+burning the full `--timeout`. **`--module-errors`** lists modules with load/validation errors —
+provision runs it automatically after start (`Test-ModuleHealth`).
 Required checks: `/health` + storefront. OAuth + GraphQL are advisory unless a query is given.
 **Verify the pin loaded — don't trust the build log.** `--expect-module Id=Version` queries
 `/api/platform/modules` and compares. A pre-release artifact's `module.manifest` is **often not
@@ -194,13 +211,17 @@ To exercise it against real data — after seeding and configuring a product int
   (`Test-PinnedModules`) and flags this loudly; the real confirmation that the PR code is loaded is a
   behaviour/schema `--graphql` probe, not the version. resolve-task prints both the `--expect-module`
   flags and a reminder to probe the schema.
-- **Re-running a task over a PRESERVED DB locks the admin account.** start-local's post-start
-  "Checking installed modules" probe authenticates with the seed `store`; once a prior init-admin
-  rotated admin to `Password1!`, those failures trip Identity lockout (15-min, `Lockout` in
-  appsettings) AND the platform caches the locked user — so init-admin then fails with the *correct*
-  password. provision self-heals (`Initialize-Admin` on a non-fresh DB): clear `LockoutEnd`/
-  `AccessFailedCount` in `vc-db`, `docker restart` the platform to flush the cache, retry once.
-  Clearing the lockout in the DB alone is not enough — the cache requires the restart.
+- **Re-running over a PRESERVED DB used to lock the admin account — now prevented.** start-local's
+  post-start "Checking installed modules" probe authenticates with the seed `store`; once a prior
+  init-admin rotated admin to `Password1!`, those failures tripped Identity lockout (15-min, `Lockout`
+  in appsettings) AND the platform cached the locked user, so init-admin then failed with the *correct*
+  password. **Prevention (current):** provision patches the probe (`check-installed-modules.ps1`) to
+  honour `$env:VC_MODULECHECK_PASSWORD` and sets it to the password the probe will actually meet
+  (`store` on a fresh DB, `Password1!` on a preserved one) — so the probe succeeds and never locks,
+  and re-runs skip the costly restart. **Fallback (kept):** if a lock still happens (e.g. an
+  externally-created DB with a different admin password), `Initialize-Admin` on a non-fresh DB clears
+  `LockoutEnd`/`AccessFailedCount` in `vc-db`, `docker restart`s the platform to flush the cache, and
+  retries once (clearing the DB alone is not enough — the cache requires the restart).
 - **start-local refuses to start if a port is busy**, and the OS can lag freeing a just-removed
   container's port (seen on ES `:9200`) right after `down` → a spurious start failure. provision waits
   the ports out (`Wait-PortsFree`) before starting.

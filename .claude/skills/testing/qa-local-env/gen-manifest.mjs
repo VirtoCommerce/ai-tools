@@ -28,10 +28,15 @@
 //     --platform   3.1034.0 \
 //     --out .local-env/packages.custom.json --print
 //
-//   --module Id=Version        set/add a RELEASED version in the GithubReleases source
+//   --module Id=Version        set an EXACT released version in GithubReleases — raises OR LOWERS
+//   --set Id=Version           alias of --module (exact set; use this for a version-switch test,
+//                              e.g. --set VirtoCommerce.Datatrans=3.1001.0 to downgrade a leaf module)
 //   --module Id=Version@blob   shorthand for --prerelease
 //   --prerelease Id=Version    pin a PR build in the AzureBlob (vc3prerelease) source
 //   --require Id=minVersion    raise to minVersion ONLY if the baseline is lower (no-op if already ≥)
+//                              NB: the vcptcore-demo baseline usually already tracks the LATEST
+//                              release, so --require rarely changes anything; for a deterministic
+//                              version switch use --set (exact) or --prerelease (PR build).
 //   --platform X.Y.Z           raise PlatformVersion to X.Y.Z if the baseline is lower
 //   --branch <deploy-branch>   deploy branch in vc-deploy-dev (default vcptcore-demo)
 //   --baseline-url <url>       explicit baseline manifest URL (overrides --branch)
@@ -85,7 +90,7 @@ function parseArgs(argv) {
     else if (a === "--baseline-url") o.baselineUrl = next();
     else if (a === "--baseline-file") o.baselineFile = next();
     else if (a === "--platform") o.platform = next();
-    else if (a === "--module") o.modules.push(next());
+    else if (a === "--module" || a === "--set") o.modules.push(next());
     else if (a === "--prerelease") o.prereleases.push(next());
     else if (a === "--require") o.requires.push(next());
     else if (a === "--out") o.out = resolve(next());
@@ -202,7 +207,9 @@ async function main() {
     }
   }
 
-  // 3. --module: force a released version in GithubReleases (+ ensure not duplicated in blob).
+  // 3. --module / --set: set an EXACT released version in GithubReleases (raises OR lowers; +
+  //    ensure not duplicated in blob). Unlike --require this is unconditional — the right tool
+  //    for a deterministic version-switch test when the baseline already tracks latest.
   for (const raw of o.modules) {
     const { id, version, blob: toBlob } = parsePair(raw);
     if (toBlob) { o.prereleases.push(`${id}=${version}`); continue; }

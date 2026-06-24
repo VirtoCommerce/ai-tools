@@ -225,6 +225,38 @@ function Clear-AdminLockout {
   } catch { Write-Warning "  lockout clear failed: $($_.Exception.Message)" }
 }
 
+# PREVENT the admin lockout at its source. start-local's post-start "Checking installed modules" probe
+# (scripts/check-installed-modules.ps1) authenticates with a hardcoded default password "store". On a
+# PRESERVED DB whose admin was already rotated to Password1!, that probe fails repeatedly and trips
+# Identity lockout — which is why Initialize-Admin then needs the (expensive) clear-lockout + restart
+# self-heal on every re-run. We patch the probe's DEFAULT password to read $env:VC_MODULECHECK_PASSWORD
+# (idempotent; falls back to "store" when the env var is unset), then set that env to the password the
+# probe will actually meet. The self-heal below stays as a safety net for any case this doesn't cover
+# (e.g. an externally-created DB with a different admin password). Touching a start-local script is
+# deliberate and minimal: a guarded one-line regex that no-ops if upstream changes the file.
+function Set-ModuleCheckPassword {
+  $script = Join-Path $WorkDir "$SolutionName/scripts/check-installed-modules.ps1"
+  if (-not (Test-Path $script)) { return }
+  $raw = Get-Content $script -Raw
+  if ($raw -match '\$Password\s*=\s*\$\(if \(\$env:VC_MODULECHECK_PASSWORD\)') { return }  # already patched
+  $patched = $raw -replace '(\$Password\s*=\s*)"store"', '$1$(if ($env:VC_MODULECHECK_PASSWORD) { $env:VC_MODULECHECK_PASSWORD } else { "store" })'
+  if ($patched -ne $raw) {
+    Set-Content -Path $script -Value $patched -NoNewline
+    Write-Host "  Patched check-installed-modules.ps1 to honour `$env:VC_MODULECHECK_PASSWORD (avoids admin lockout)." -ForegroundColor DarkGray
+  }
+}
+
+# Module-health gate (advisory): after the platform is up, name any module that failed to load/validate.
+# A version-incompatible manifest (e.g. a switched/pinned module other modules depend on) BUILDS and the
+# platform STARTS, but those modules stay broken → /health flips to 503. Test-PinnedModules only checks
+# the pins; this catches the broader "some modules have errors" case (which bit the Customer-downgrade
+# test). Best-effort: warn loudly, never throw.
+function Test-ModuleHealth {
+  Write-Step "Check module health (load/validation errors)"
+  & node (Join-Path $SkillDir "healthcheck.mjs") --back "http://localhost:8090" --token --password "Password1!" --no-front --module-errors
+  if ($LASTEXITCODE -ne 0) { Write-Warning "Module-health check flagged an issue (exit $LASTEXITCODE) — see the module(s) named above; a broken module breaks /health." }
+}
+
 # Verify each AzureBlob (pre-release) module pinned in the manifest is ACTUALLY loaded — never trust
 # the build log / artifact filename. Delegates to healthcheck.mjs --expect-module (a version mismatch
 # is a loud advisory, since pre-release artifacts are often not version-bumped in module.manifest;
@@ -288,6 +320,10 @@ function Invoke-Start {
   Stop-Stack                                   # free ports + drop old containers (keeps volumes)
   if ($Clean) { Clear-DataVolumes }
   Wait-PortsFree                               # OS can lag freeing a just-removed container's port
+  # Tell start-local's module-check probe the password it will actually meet, so it doesn't lock admin:
+  # a fresh DB still has the seed 'store'; a preserved DB was rotated to Password1! by a prior init-admin.
+  Set-ModuleCheckPassword
+  $env:VC_MODULECHECK_PASSWORD = if ($wasFresh) { "store" } else { "Password1!" }
   # ALWAYS skip start-local's built-in sample-data (hardcodes admin/store → fails post-rotation);
   # when -WithSampleData we import it ourselves below, before the password change.
   Invoke-Lifecycle "start-VC-solution.ps1" @{ solutionFolder = $SolutionName; skipSampleData = $true } -AllowFail $true
@@ -297,6 +333,7 @@ function Invoke-Start {
   if ($wasFresh -and $WithSampleData) { Install-SampleData }
   Initialize-Admin $wasFresh
   Test-PinnedModules   # confirm pinned pre-release module(s) actually loaded (not silently the release)
+  Test-ModuleHealth    # surface any module that failed to load/validate (broken manifest → /health 503)
   Show-Status
 }
 

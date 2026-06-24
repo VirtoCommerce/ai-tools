@@ -26,7 +26,8 @@
 //   --timeout <sec>     overall wait budget per endpoint (default 600)
 //   --interval <sec>    poll interval (default 10)
 //   --admin <user>      OAuth username (default $ADMIN or "admin")
-//   --password <pass>   OAuth password (default $ADMIN_PASSWORD or "store")
+//   --password <pass>   OAuth password (default $ADMIN_PASSWORD, else ADMIN_PASSWORD_LOCALHOST
+//                       from .env.local, else the local convention "Password1!")
 //   --token             attempt the OAuth token step even without a GraphQL probe
 //   --graphql <query>   inline GraphQL query to probe
 //   --graphql-file <p>  read the GraphQL query from a file
@@ -37,6 +38,10 @@
 //                       filename), so a version MISMATCH is a loud advisory, not a hard fail —
 //                       confirm the PR code by behaviour/schema (--graphql), not the version number.
 //                       A MISSING module is a hard failure.
+//   --module-errors     report ANY installed module that has load/validation errors (advisory).
+//                       A manifest with incompatible module versions BUILDS and the platform
+//                       STARTS, but such modules fail to initialise → /health flips to 503
+//                       ("Some modules have errors"). This surfaces the culprit by name.
 //   --no-front          skip the storefront check (admin-only bring-up)
 //
 // Exit 0 if every REQUIRED check passed (back + front unless --no-front). The
@@ -45,8 +50,28 @@
 //
 // Zero dependencies, Node 18+ (global fetch).
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+
+// Default admin password resolution (no --password / $ADMIN_PASSWORD given):
+// after provision's init-admin the local admin is Password1! and that value is written to
+// .env.local as ADMIN_PASSWORD_LOCALHOST. Read it so the OAuth/probe steps "just work";
+// fall back to the documented local convention Password1! (NOT the seed "store", which is
+// only valid on a brand-new DB before init-admin runs).
+function defaultPassword() {
+  if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
+  try {
+    const f = resolve(REPO, ".env.local");
+    if (existsSync(f)) {
+      const m = readFileSync(f, "utf8").match(/^\s*ADMIN_PASSWORD_LOCALHOST\s*=\s*(.+?)\s*$/m);
+      if (m) return m[1];
+    }
+  } catch { /* ignore — fall through to convention */ }
+  return "Password1!";
+}
 
 function parseArgs(argv) {
   const o = {
@@ -54,13 +79,13 @@ function parseArgs(argv) {
     front: process.env.FRONT_URL || "http://localhost",
     timeout: 600, interval: 10,
     admin: process.env.ADMIN || "admin",
-    password: process.env.ADMIN_PASSWORD || "store",
+    password: defaultPassword(),
     // start-local's local platform issues the password grant with NO client_id;
     // sending client_id=internal-frontend (the remote-QA client) returns invalid_client.
     // Leave empty to omit; pass --client-id for environments that require a registered client.
     clientId: process.env.OAUTH_CLIENT_ID || "",
     token: false, graphql: null, graphqlFile: null, noFront: false,
-    expectModules: [],
+    expectModules: [], moduleErrors: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -80,6 +105,7 @@ function parseArgs(argv) {
       if (eq < 1) { console.error(`--expect-module wants Id=Version, got "${v}"`); process.exit(2); }
       o.expectModules.push({ id: v.slice(0, eq), version: v.slice(eq + 1) });
     }
+    else if (a === "--module-errors") o.moduleErrors = true;
     else if (a === "--no-front") o.noFront = true;
     else if (a === "-h" || a === "--help") { console.log("see header of healthcheck.mjs"); process.exit(0); }
     else { console.error(`Unknown arg: ${a}`); process.exit(2); }
@@ -101,15 +127,24 @@ async function tryFetch(url, init) {
 }
 
 // Poll until predicate(status) is true or the budget runs out.
-async function waitFor(label, url, predicate, o, init) {
+// bail503: if > 0, give up early after that many CONSECUTIVE HTTP 503s. A 503 means the app is
+// UP but reporting itself unhealthy (e.g. "Some modules have errors") — unlike a connection error
+// during startup, that state rarely self-heals, so polling the full timeout just wastes minutes.
+async function waitFor(label, url, predicate, o, init, bail503 = 0) {
   const deadline = Date.now() + o.timeout * 1000;
-  let last = "";
+  let last = "", c503 = 0;
   process.stdout.write(`▶ ${label} … `);
   // Date.now() is fine here — this is a CLI tool, not a replayable workflow script.
   for (;;) {
     const r = await tryFetch(url, init);
     last = r.ok ? `HTTP ${r.status}` : `ERR ${r.error}`;
     if (r.ok && predicate(r.status)) { console.log(`UP (${last})`); return { up: true, ...r }; }
+    c503 = (r.ok && r.status === 503) ? c503 + 1 : 0;
+    if (bail503 && c503 >= bail503) {
+      console.log(`UNHEALTHY (HTTP 503 ×${c503} — service up but reporting errors; not waiting out the ${o.timeout}s budget)`);
+      console.log(`  ↳ likely module load/validation errors — run: healthcheck.mjs --token --module-errors`);
+      return { up: false, ...r };
+    }
     if (Date.now() >= deadline) { console.log(`DOWN (last: ${last}, ${o.timeout}s budget exhausted)`); return { up: false, ...r }; }
     await sleep(o.interval * 1000);
   }
@@ -154,8 +189,8 @@ async function main() {
 
   const results = [];
 
-  // 1. Platform health (required).
-  const health = await waitFor("platform /health", `${o.back}/health`, (s) => s === 200, o);
+  // 1. Platform health (required). Bail early on persistent 503 (up-but-unhealthy ≠ still starting).
+  const health = await waitFor("platform /health", `${o.back}/health`, (s) => s === 200, o, undefined, 6);
   results.push({ name: "platform /health", required: true, up: health.up });
 
   // 2. Storefront (required unless --no-front).
@@ -166,7 +201,7 @@ async function main() {
 
   // 3. OAuth token (advisory; also needed for the GraphQL probe + module verification).
   let token = null;
-  if (o.token || query || o.expectModules.length) {
+  if (o.token || query || o.expectModules.length || o.moduleErrors) {
     process.stdout.write(`▶ OAuth /connect/token … `);
     const t = await getToken(o);
     token = t.ok ? t.token : null;
@@ -215,6 +250,30 @@ async function main() {
         // Advisory (not a hard fail): the build is likely the PR code, just mislabelled.
         results.push({ name: `module ${em.id} (version)`, required: false, up: false });
       }
+    }
+  }
+
+  // 6. Module-error scan (advisory): name any installed module that failed to load/validate.
+  //    A version-incompatible manifest builds + starts but leaves such modules broken → /health 503.
+  if (o.moduleErrors) {
+    process.stdout.write(`▶ module errors … `);
+    const mods = token ? await getModules(o, token) : null;
+    if (!mods) {
+      console.log("SKIPPED (no token / modules API unreachable)");
+    } else {
+      const broken = mods
+        .map((m) => ({ id: m.id || m.moduleName || "(unknown)", errs: [].concat(m.errors || [], m.validationErrors || []).filter(Boolean) }))
+        .filter((m) => m.errs.length);
+      if (!broken.length) {
+        console.log(`none (${mods.length} modules, all OK)`);
+      } else {
+        console.log(`${broken.length} module(s) with errors ⚠️`);
+        for (const b of broken) console.log(`     ✖ ${b.id}: ${b.errs.join("; ").slice(0, 200)}`);
+        console.log("     ⚠ These break /health (503). Usually an incompatible pinned/switched version —");
+        console.log("       check the manifest's version for the module(s) above.");
+      }
+      // Advisory: surfaces the culprit but does not by itself flip the exit code.
+      results.push({ name: "module errors", required: false, up: broken.length === 0 });
     }
   }
 
