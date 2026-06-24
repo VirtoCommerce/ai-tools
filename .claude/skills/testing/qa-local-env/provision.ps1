@@ -175,9 +175,17 @@ function Invoke-ChildPiped([string]$ScriptRel, [string[]]$ScriptArgs, [string]$S
   if ($code -ne 0) { throw "Child script '$ScriptRel' failed with exit code $code (see .provision-$Phase.log)" }
 }
 
-# NON-PROMPTING lifecycle scripts (start/stop): in-process via `&` + splatting so a typed
-# [bool] like -skipSampleData $false binds (a "0"/"1" string via -File would NOT).
-function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowFail = $false) {
+# NON-PROMPTING lifecycle scripts (start/stop): via `&` + splatting so a typed [bool] like
+# -skipSampleData $false binds (a "0"/"1" string via -File would NOT).
+#   • No -Phase  → legacy in-process call (kept for one-shot/quiet callers like 'remove').
+#   • -Phase X   → QUIET path: the (very noisy) compose/start chatter — teardown's per-container
+#                  "Stopping/Removing" lines, start's 60× "Try to open … Attempt #N" + raw ANSI — is
+#                  routed to .provision-<phase>.log; the main stream gets only a command echo, a
+#                  heartbeat every $HeartbeatSec, and (on a real failure) the log tail. This both
+#                  declutters the output AND lets `-Action monitor` see the live phase (it keys off
+#                  the freshest .provision-*.log). Mirrors Invoke-ChildPiped, but runs inside a thread
+#                  job with & + splat (not -File) so the typed [bool] params still bind.
+function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowFail = $false, [string]$Phase = "") {
   Push-Location $WorkDir
   try {
     $scriptPath = Join-Path $WorkDir "$SolutionName/$ScriptName"
@@ -186,9 +194,38 @@ function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowF
       if ($AllowFail) { Write-Host "  $ScriptName not present (nothing bootstrapped) — skipping." -ForegroundColor DarkGray; return }
       throw "Not bootstrapped: $scriptPath missing (run -Action bootstrap)."
     }
-    Write-Host "  > (cwd=$WorkDir) & $ScriptName $(($Params.GetEnumerator() | ForEach-Object { "-$($_.Key) $($_.Value)" }) -join ' ')" -ForegroundColor DarkGray
-    & $scriptPath @Params
-    $code = $LASTEXITCODE
+    $argEcho = ($Params.GetEnumerator() | ForEach-Object { "-$($_.Key) $($_.Value)" }) -join ' '
+    if (-not $Phase) {
+      Write-Host "  > (cwd=$WorkDir) & $ScriptName $argEcho" -ForegroundColor DarkGray
+      & $scriptPath @Params
+      $code = $LASTEXITCODE
+    }
+    else {
+      $log = Join-Path $WorkDir ".provision-$Phase.log"
+      Remove-Item -Force -ErrorAction SilentlyContinue $log
+      Write-Host "  > (cwd=$WorkDir) & $ScriptName $argEcho  [log: .provision-$Phase.log]" -ForegroundColor DarkGray
+      $start = [DateTime]::UtcNow
+      $tj = Start-ThreadJob -ScriptBlock {
+        Set-Location $using:WorkDir
+        $p = $using:Params
+        & $using:scriptPath @p *> $using:log
+        $LASTEXITCODE
+      }
+      if ($HeartbeatSec -gt 0) {
+        while ($tj.State -eq 'Running') {
+          Start-Sleep -Seconds $HeartbeatSec
+          if ($tj.State -ne 'Running') { break }
+          Write-Heartbeat $Phase $start $log
+        }
+      }
+      $code = (Receive-Job $tj -Wait -AutoRemoveJob | Select-Object -Last 1)
+      if ($null -eq $code) { $code = 0 }
+      Write-Host ("  {0} finished in {1:hh\:mm\:ss} (exit {2})" -f $Phase, ([DateTime]::UtcNow - $start), $code) -ForegroundColor DarkGray
+      if ($code -ne 0 -and -not $AllowFail -and (Test-Path $log)) {
+        Write-Host "  --- last 25 log lines ($log) ---" -ForegroundColor DarkGray
+        Get-Content $log -Tail 25 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+      }
+    }
   } finally { Pop-Location }
   if ($code -ne 0 -and -not $AllowFail) { throw "Lifecycle script '$ScriptName' failed with exit code $code" }
 }
@@ -285,7 +322,7 @@ function Invoke-BuildIfChanged {
   Write-Pass "Images built (vc-platform + vc-frontend) and manifest recorded"
 }
 
-function Stop-Stack { Invoke-Lifecycle "stop-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true }
+function Stop-Stack { Invoke-Lifecycle "stop-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true -Phase "stop" }
 
 function Clear-DataVolumes {
   Write-Step "Clean — wiping ALL data volumes (fresh DB + search index + cache)"
@@ -405,7 +442,7 @@ function Invoke-Start {
   # it authenticates successfully and never trips Identity lockout before init-admin rotates the pwd.
   Set-ModuleCheckPassword
   $env:VC_MODULECHECK_PASSWORD = "store"
-  Invoke-Lifecycle "start-VC-solution.ps1" @{ solutionFolder = $SolutionName; skipSampleData = $true } -AllowFail $true
+  Invoke-Lifecycle "start-VC-solution.ps1" @{ solutionFolder = $SolutionName; skipSampleData = $true } -AllowFail $true -Phase "start"
   Wait-PlatformReady   # start-local's seed-password module probe can exit 1; gate on real /health instead
   Initialize-Admin     # rotate the fresh DB's seed 'store' → Password1! + write .env.local
   Test-PinnedModules   # confirm pinned pre-release module(s) actually loaded (not silently the release)
@@ -463,7 +500,7 @@ function Show-Monitor {
     $phase = ($cur.Name -replace '^\.provision-', '' -replace '\.log$', '')
     $age = [DateTime]::Now - $cur.LastWriteTime
     if ($age.TotalSeconds -lt 30) { $fresh = "⏱ ACTIVE"; $fc = "Green" } else { $fresh = "idle $([int]$age.TotalSeconds)s"; $fc = "DarkGray" }
-    Write-Host ("   phase    {0,-9}" -f $phase) -ForegroundColor White -NoNewline
+    Write-Host ("   phase    {0,-10} " -f $phase) -ForegroundColor White -NoNewline
     Write-Host ("{0} · updated {1:HH:mm:ss}" -f $fresh, $cur.LastWriteTime) -ForegroundColor $fc
     $last = Get-Content $cur.FullName -Tail 60 -ErrorAction SilentlyContinue |
       ForEach-Object { ($_ -replace '\x1b\[[0-9;]*m', '').Trim() } |
