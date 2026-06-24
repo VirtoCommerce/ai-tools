@@ -1,55 +1,62 @@
-# BUG: Bank card form has no per-brand CVV length validation — 3-digit CVV on Amex enables Place order (Authorize.Net) `[Low / P3-ux]`
+# BUG: Shared bank-card form (Authorize.Net) has no per-brand CVV validation — 3-digit CVV on Amex enables Place order `[Low / P3-ux]`
 
-## Status: DRAFT (not filed)
-**JIRA:** none yet — draft for `/qa-bug` → `/qa-fix`. Sibling of VCST-5202 (Skyflow), different code site.
+## Status: READY_TO_SUBMIT
+**JIRA:** VCST-5344 (filed 2026-06-23)
 
-**Env:** vcst-qa @ vc-frontend `dev` (Authorize.Net cart-embedded AllowCartPayment flow / VCST-5162)
+**Env:** vcst-qa @ Theme 2.52.0-pr-2335-f5b1-f5b11db6 (Authorize.Net AllowCartPayment / VCST-5162 cart-embedded flow). Browser: Edge.
 
 ## Summary
-The shared manual-entry card form `bank-card-form.vue` (used by the Authorize.Net processor) validates the security code with a brand-agnostic rule `min(3).max(4)` and has **no card-brand detection at all**. A 3-digit CVV on an American Express card (which requires 4 digits) passes client validation and enables Place order; the malformed CVV is only rejected later by Accept.js tokenization (error `E_WC_15`). Mirror asymmetry: a 4-digit CVV on Visa/Mastercard (which require 3) also passes. This is the same class of defect as VCST-5202 (Skyflow), but a separate component and mechanism.
+The shared manual card form `client-app/shared/payment/components/bank-card-form.vue` (used by Authorize.Net via `BankCardForm`) validates the CVV with a brand-agnostic rule `securityCode: yup.string().required().min(3).max(4)` plus `minlength=3 / maxlength=4` and mask `"####"`, and does **no card-brand detection at all**. A 3-digit CVV on an American Express card (which requires 4) passes client validation and enables **Place order**; the malformed CVV is only caught later by Accept.js. Mirror asymmetry: a 4-digit CVV on Visa/Mastercard (which need 3) also passes. Same defect *class* as VCST-5202 (Skyflow) but a different component and mechanism — Skyflow at least detects the brand for display; this shared form has zero brand awareness (no card icon, CVV placeholder stays `"111"`, generic 4-4-4-4 grouping even for Amex).
 
-## STR (cart-embedded Authorize.Net form, signed in, 1 item in cart)
-1. /cart → payment method `Bank card (Authorize.Net)` → manual card form renders (`bank-card-form.vue`)
-2. Card number: Amex test card `@td(AUTHNET_AMEX.number)` (Amex prefix 34/37)
-3. Cardholder: any; Expiration: a valid future date; Security code: **`123`** (3 digits)
-4. Observe field state and `Place order` button
-5. (optional) Click `Place order` → Accept.js returns `E_WC_15` (invalid CVV) inline
+## STR (Authorize.Net cart-embedded form, signed in, 1 item in cart)
+1. Sign in as `{{USER_EMAIL}}`; add an in-stock item; go to `/cart`.
+2. Payment method → **Bank card (Authorize.Net)** → inline VcInput card form renders on `/cart` (not an iframe).
+3. Card number: Amex `@td(AUTHORIZENET_AMEX.number)` (`370000000000002`); Cardholder: `Maria Garcia`; Expiration: `06 / 30`; Security code: **`123`** (3 digits).
+4. Observe the Security code field state and the **Place order** button.
+5. Click **Place order**.
 
 ## Expected vs Actual
-- **Expected:** Security code marks invalid for an Amex card with a 3-digit CVV; `Place order` stays disabled. CVV input reflects the detected brand (4-digit for Amex).
-- **Actual:** field shows valid (`min(3)` satisfied), `Place order` ENABLES; the malformed CVV is only caught server-side by Accept.js at tokenization. 4-digit CVV on Visa/MC also passes client validation.
+- **Expected:** Security code field is invalid for an Amex card with a 3-digit CVV ("Amex security code is 4 digits"); **Place order** stays disabled. The CVV constraints (mask/maxlength/placeholder) reflect the detected brand.
+- **Actual:** field shows **valid**, **Place order ENABLES**; clicking pre-creates an unpaid order and only then does Accept.js load and reject the malformed CVV (`E_WC_15`). Repro left ghost order **CO260623-00011** (`d61bc267-…`, status "Payment required"). 4-digit CVV on Visa `4007000000027` also passes validation + enables Place order (mirror asymmetry).
+
+## Evidence (live repro 2026-06-23, real-user UI interaction)
+- `reports/bugs/screenshots/BUG-AN-cvv-brand-amex-3digit-enabled.png` — Amex + 3-digit CVV valid, Place order enabled (core proof)
+- `reports/bugs/screenshots/BUG-AN-cvv-brand-visa-4digit-enabled.png` — Visa + 4-digit CVV valid + enabled (mirror)
+- `reports/bugs/screenshots/BUG-AN-cvv-brand-ghost-order-payment.png` — `/checkout/payment` after submit, exposing the pre-created order
+- Accept.js (`jstest.authorize.net/v1/AcceptCore.js`) loads **only after** Place order is clicked → confirms the client form forwarded the malformed CVV downstream. The `E_WC_15` toast was transient before the redirect; the ghost order is the stronger downstream proof.
 
 ## Layer Validation
 | Layer | Result | Evidence |
 |-------|--------|----------|
-| 1. Storefront Frontend | FAIL | `bank-card-form.vue` accepts 3–4 digit CVV regardless of brand; button enables |
-| 2. Backend Admin | N/A | not admin-visible |
-| 3. GraphQL xAPI | N/A | tokenization is Accept.js client→processor |
-| 4. Platform REST API | N/A | processor-side (E_WC_15) behaves correctly |
+| 1. Storefront Frontend | FAIL | 3-digit CVV + Amex passes client validation; Place order enables; no brand detection |
+| 2. Backend Admin | N/A | order shows unpaid — not the defect locus |
+| 3. GraphQL xAPI | N/A | `createOrderFromCart` behaves as designed |
+| 4. Platform REST / Accept.js | PASS | Accept.js correctly rejects the malformed CVV (`E_WC_15`) — downstream, after the order exists |
 
-**Owning layer:** Layer 1 — Storefront (client-side validation, no brand detection)
+**Owning layer:** Layer 1 — Storefront (client-side validation in the shared card form)
 
 ## Root Cause Analysis
-`client-app/shared/payment/components/bank-card-form.vue` validates the CVV with:
-```js
-securityCode: yup.string().required().min(3).max(4).label(labels.value.securityCode)
+`client-app/shared/payment/components/bank-card-form.vue`:
 ```
-plus the `VcInput` has `minlength="3" maxlength="4"` and `securityCodeMaskOptions = { mask: "####" }`. The rule is static and brand-agnostic. Crucially, **this form does no card-brand detection** — the card number is only masked + length-checked (`min(12).max(19)`); there is no `cardType` to condition the CVV rule on. The component is imported only by `payment-processing-authorize-net.vue` (via `BankCardForm`), so the live impact is the Authorize.Net flow.
+const securityCodeMaskOptions = { mask: "####" };           // 4-digit mask, brand-agnostic
+securityCode: yup.string().required().min(3).max(4)...      // accepts 3 OR 4 for ANY brand
+// VcInput: minlength="3" maxlength="4" placeholder="111"   // static, never brand-conditional
+```
+The component has **no BIN/IIN brand detection** — it never derives the required CVV length from the card number. So Amex (needs 4) accepts 3, and Visa/Mastercard (need 3) accept 4. Card-number Luhn is likewise delegated downstream (see sibling `BUG-AN-cart-card-number-no-luhn-ghost-order.md`). Combined with the VCST-5162 cart flow (`createOrderFromCart` runs before tokenization), each validation miss also yields an unpaid ghost order.
 
-**Fix (larger than VCST-5202):** Because there is no SDK supplying the brand here, the fix must (1) add card-brand detection from the entered card number (BIN/IIN prefix — Amex `34`/`37` → 4-digit CVV; others → 3-digit), then (2) make the `securityCode` yup rule conditional on the detected brand (Amex → exactly 4, else exactly 3) and adjust the input `maxlength`/mask/placeholder accordingly. The existing `bank-card-form.test.ts` must stay green (add a brand-conditional case alongside).
+**Fix direction (for `/qa-fix` Gate 0 to weigh):** add brand detection from the card-number prefix (Amex `34`/`37` → 4-digit CVV, all others → 3) and make the `securityCode` yup rule + mask + `maxlength`/`placeholder` brand-conditional. Note: unlike VCST-5202 there is **no SDK** here supplying the brand — the fix must introduce the detection itself.
 
-## Difference from VCST-5202 (why this is a separate ticket)
-- VCST-5202 = `payment-processing-skyflow.vue`, brand supplied by the Skyflow SDK; fixed by swapping the SDK element's validation via `update()`.
-- This bug = `bank-card-form.vue`, **no brand source** — requires adding brand detection, so it is a distinct, slightly larger fix in a different component. Bundling it into VCST-5202 would break the "minimal & localized" gate.
+## Regression coverage
+Suite `040b-payment-authorizenet.csv` has the cart-embedded cases (PAY-AN-010…013) but **no per-brand CVV case** (gap analogous to Skyflow's PAY-SKY-015). Add `PAY-AN-0xx` asserting per-brand CVV gating once fixed. Existing component test `bank-card-form.test.ts` covers card-number + expiry only — no CVV tests, so coverage can be added without touching it.
 
-## Other processors (checked, for completeness)
-- **CyberSource** (`payment-processing-cyber-source.vue`): CVV validity comes from the Microform SDK (`data.valid`); likely brand-aware — verify live before filing.
-- **Datatrans Secure Fields** (`payment-processing-datatrans-secure-fields.vue`): CVV validity owned by the SecureFields SDK; almost certainly brand-aware — no code rule on our side.
+## Notes
+- Ghost order **CO260623-00011** is an orphan unpaid order from this repro — cancel in the orphan-order sweep.
+- Credential var is `USER_PASSWORD` (not `USER_PASSWORD_VCST`).
 
 ## Fix Routing (→ /qa-fix)
 - **Owning layer:** Layer 1 — Storefront
 - **Suggested repo:** VirtoCommerce/vc-frontend
 - **repoKind:** frontend
-- **Component / module:** shared bank card form (`client-app/shared/payment/components/bank-card-form.vue`); consumer `payment-processing-authorize-net.vue`
-- **RCA anchor:** `securityCode: yup.string().required().min(3).max(4)` in bank-card-form.vue (+ `minlength`/`maxlength`/mask) + absence of brand detection
-- **Routing confidence:** HIGH (root cause), MEDIUM on Gate-0 simplicity (adds brand detection — confirm it stays minimal/localized before auto-fixing)
+- **Component / module:** shared payment form `client-app/shared/payment/components/bank-card-form.vue` (used by Authorize.Net `BankCardForm`)
+- **RCA anchor:** `securityCode: yup.string().required().min(3).max(4)` + `securityCodeMaskOptions = { mask: "####" }` + the absence of any card-brand detection in `bank-card-form.vue`
+- **Routing confidence:** HIGH — repo + exact locus confirmed against `dev`. Gate-0 caveat: the fix is *additive* (introduce brand detection), not a one-line tweak — `/qa-fix` must judge whether it stays minimal/localized enough to auto-fix.
