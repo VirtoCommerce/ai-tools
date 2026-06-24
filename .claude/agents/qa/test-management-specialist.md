@@ -175,6 +175,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | Test Case Generator Skill | `.claude/skills/qa-methodology/qa-test-cases-generator/SKILL.md` |
 | xAPI & REST API Reference | `.claude/skills/testing/qa-api/xapi-query-ref.md` — ready-to-use query/mutation signatures for Steps column |
 | API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
+| Test Data Combination Design | `.claude/skills/testing/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. |
 | Test Data Seeding | `.claude/skills/testing/qa-seed-data/SKILL.md` |
 | E2E Scenario Catalog (105) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
 | Module → Suite Mapping | `.claude/agents/knowledge/execution/module-suite-map.md` |
@@ -213,7 +214,17 @@ BLOCKED ❌ → escalate to qa-lead
    | Storefront | Yes/No | N | qa-frontend-expert | `Frontend/<area>/*` |
    | E2E | Yes/No | N | frontend + backend | feature suite |
    ```
-6. **Generate test cases per layer** — use the right tool per layer, applying test conditions from step 4:
+5b. **Prepare test-data combinations (MANDATORY before generating data-dependent cases)** — run
+   `/qa-generate-data <feature>` to DESIGN the cross-entity combinations the scenarios need (products ×
+   loyalty × promotions × pricing × inventory × B2B). It learns the live variant space, builds the
+   pairwise matrix, reuses existing fixtures, authors only the gaps as ready-to-seed fixtures, and wires
+   one `@td()` **combination alias per Combo ID**. Consume the returned matrix to map cases → Combo IDs
+   in step 6. Then provision via `/qa-seed-data <domains>` (step 8). Skip only for cases that need no
+   seeded entities (pure-UI/copy/validation). This is WHERE the `@td()` values in step 6 come from —
+   don't invent ad-hoc data.
+6. **Generate test cases per layer** — use the right tool per layer, applying test conditions from step 4.
+   **Each data-dependent case's `Test_Data` column references the prepared combination by alias —
+   `@td(COMBO_ALIAS.field)` (from step 5b) — never an ad-hoc literal; map ≥1 case per Combo ID:**
    - **REST API layer**: `/qa-api cases REST <module>` — reads `api-test-case-patterns.md` for coverage checklist + `xapi-query-ref.md` for endpoint signatures
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
@@ -229,7 +240,10 @@ BLOCKED ❌ → escalate to qa-lead
    3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`
    4. **You do NOT self-promote** — only after `qa-lead-orchestrator` explicit approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`)
    5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
-8. **Ensure test data** — Missing data? Use `/qa-seed-data`. Document `{{VAR}}` bindings in Test_Data column
+8. **Ensure test data** — provision the combinations prepared in step 5b: `/qa-seed-data <domains>`
+   seeds the gap fixtures (they are `seeded=false` templates until then) and writes real IDs back so
+   `@td(COMBO_ALIAS.field)` resolves. Document `{{VAR}}` bindings + the `@td()` combination aliases in
+   the Test_Data column. (Step 5b designs + authors the data; this step provisions it.)
 9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`, Storefront→`Frontend/<area>/*`, E2E→feature suite. `Draft` cases live in `tests/Sprint-current/VCST-XXXX/` until promoted
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches

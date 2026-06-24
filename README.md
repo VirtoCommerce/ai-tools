@@ -96,7 +96,7 @@ Five pipelines, each with an interactive + headless-CI twin:
 Full reference: [`.claude/rules/skills-commands.md`](.claude/rules/skills-commands.md).
 
 - **19 slash commands** — `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-onboarding`, `/ba-analyze`, `/ba-stories`, …
-- **26 skills** in [`.claude/skills/`](.claude/skills/) (VC knowledge, testing, QA methodology, development).
+- **27 skills** in [`.claude/skills/`](.claude/skills/) (VC knowledge, testing, QA methodology, development).
 - **18 agents** in [`.claude/agents/`](.claude/agents/) across three teams (QA 10, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
@@ -121,7 +121,7 @@ vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
 ├── .claude/
 │   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (27 reference files)
-│   ├── skills/           # 26 skills (4 categories)
+│   ├── skills/           # 27 skills (4 categories)
 │   ├── commands/         # 19 slash commands
 │   └── rules/            # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
 ├── config/               # Playwright browser configs + test-suites.json manifest

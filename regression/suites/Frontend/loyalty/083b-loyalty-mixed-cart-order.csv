@@ -2,7 +2,7 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 MCO-E2E-001,"Mixed-cart loyalty order — place order end-to-end, balance decrements, order-details splits by currency [JOURNEY]","Loyalty > Mixed Cart > Order Journey > [JOURNEY]",Critical,BL-LOY-003; BL-LOY-005; BL-ORD-001; BL-ORD-010; BL-LOY-007,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
-NOT FULLY ON LIVE BUILD YET — order-details/order-summary per-currency split ships in vc-frontend PR #2335 (theme 2.52.0-pr-2335). Backend contracts confirmed deployed 2026-06-22: vc-module-x-order#43 (orderTotals), vc-module-loyalty#10 (balance decrement + LoyaltyCartValidator), vc-module-order#497 (CustomerOrder.OrderTotals). Store @td(STORE_PRIMARY.id) in Mixed Cart mode, Loyalty.Currency=@td(LOYALTY_SETTINGS.currency_code). VIP user has a loyalty balance >= the PTS line total. Note current balance before starting (read /account or loyaltyPointsHistory).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"--- STOREFRONT ---
+Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24). Backend contracts confirmed deployed 2026-06-22: vc-module-x-order#43 (orderTotals), vc-module-loyalty#10 (balance decrement + LoyaltyCartValidator), vc-module-order#497 (CustomerOrder.OrderTotals). Store @td(STORE_PRIMARY.id) in Mixed Cart mode, Loyalty.Currency=@td(LOYALTY_SETTINGS.currency_code). VIP user has a loyalty balance >= the PTS line total. Note current balance before starting (read /account or loyaltyPointsHistory).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"--- STOREFRONT ---
 [NAV] {{FRONT_URL}}/loyalty-catalog
 [WAIT] product grid loaded with at least 1 product card (PTS prices)
 [ACT] click '+' (Add to Cart) on the first product card to add a PTS loyalty line
@@ -32,11 +32,11 @@ NOT FULLY ON LIVE BUILD YET — order-details/order-summary per-currency split s
 [API] loyaltyPointsHistory shows a Redeemed op (PTS order total) + an Earned op (cash line points) after placement; cross-ref MCO-GQL-004
 [ADMIN] order appears in admin with the Currency column populated per line; cross-ref MCO-ADM-001
 [CONSOLE] no unhandled JS errors during checkout
-[NETWORK] no 4xx/5xx on createOrderFromCart","Cart badge drops to 0 after navigating between catalogs (state loss mid-journey); 'Products in PTS' group missing on order-details; 'Total in PTS' block absent from order-summary; no order number after Place Order; balance not decremented; createOrderFromCart errors[] non-empty; PR #2335/#43/#10 not deployed (split UI / orderTotals / balance absent)","Cancel the created order via admin if the store does not auto-clear it; remove any leftover cart items; sign out","VCST-5104; vc-frontend#2335 (order-details.vue, order-summary.vue); vc-module-x-order#43; vc-module-loyalty#10",Draft
+[NETWORK] no 4xx/5xx on createOrderFromCart","Cart badge drops to 0 after navigating between catalogs (state loss mid-journey); 'Products in PTS' group missing on order-details; 'Total in PTS' block absent from order-summary; no order number after Place Order; balance not decremented; createOrderFromCart errors[] non-empty; order-details 'Products in PTS' section missing despite PR #2335 deployed (theme regression)","Cancel the created order via admin if the store does not auto-clear it; remove any leftover cart items; sign out","VCST-5104; vc-frontend#2335 (order-details.vue, order-summary.vue); vc-module-x-order#43; vc-module-loyalty#10; Reviewed/synced: TLC-2026-06-24 (PR #2335 live)",automated
 MCO-E2E-003,"Order-summary per-currency total blocks render correct amounts (default block + one block per other currency)","Loyalty > Mixed Cart > Order Summary",High,BL-LOY-003; BL-ORD-010,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
-NOT ON LIVE BUILD YET — order-summary.vue per-currency blocks ship in vc-frontend PR #2335. Store in Mixed Cart mode. Cart will hold 1 USD line + 1 PTS line.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
+Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24). Store in Mixed Cart mode. Cart will hold 1 USD line + 1 PTS line.",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/loyalty-catalog
 [WAIT] product grid loaded
 [ACT] add the first PTS product to cart
 [WAIT] cart badge increments
@@ -50,25 +50,25 @@ NOT ON LIVE BUILD YET — order-summary.vue per-currency blocks ship in vc-front
 [MATH] the default block total reflects only USD lines; the PTS block total reflects only PTS lines (no cross-currency contamination)
 [FORMAT] each block displays its own currency symbol/code with a numeric value
 [DOM] the 'Total in @td(LOYALTY_SETTINGS.currency_code)' block displays a non-zero numeric amount in @td(LOYALTY_SETTINGS.currency_code) (not in {{CURRENCY_CODE}}) — confirming no USD↔PTS cross-currency contamination in the rendered total","[API] cart query cartTotals[] has 2 elements feeding the two summary blocks (uses cartTotals/orderTotals per PR #2335); cross-ref MCO-GQL-001
-[CONSOLE] no JS errors","Only one total block on a mixed cart (split not rendered); PTS amount folded into the USD block; raw i18n key shown; amounts swapped between blocks","Remove items from cart; sign out","VCST-5104; vc-frontend#2335 (order-summary.vue); BL-LOY-003",Draft
+[CONSOLE] no JS errors","Only one total block on a mixed cart (split not rendered); PTS amount folded into the USD block; raw i18n key shown; amounts swapped between blocks","Remove items from cart; sign out","VCST-5104; vc-frontend#2335 (order-summary.vue); BL-LOY-003; Reviewed/synced: TLC-2026-06-24 (PR #2335 live)",automated
 MCO-E2E-004,"Orders list Total column shows the primary-currency total first, then each other-currency total","Loyalty > Mixed Cart > Orders List",High,BL-LOY-003; BL-ORD-001; BL-ORD-010,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
-NOT ON LIVE BUILD YET — orders.vue getDisplayTotals (multi-currency Total column) ships in vc-frontend PR #2335. The VIP account has at least one previously-placed mixed-currency order (USD + PTS). If none exists, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
+Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24). The VIP account has at least one previously-placed mixed-currency order (USD + PTS). If none exists, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
 [WAIT] orders list loaded with at least 1 order row","[DOM] the mixed-currency order's Total column shows the primary-currency ({{CURRENCY_CODE}}) total FIRST
 [DOM] the same Total cell then shows the @td(LOYALTY_SETTINGS.currency_code) (PTS) total as a second value
 [FORMAT] both totals show their own currency indicator; primary precedes other-currency
 [STATE] a single-currency order in the same list shows only its one currency total (no spurious PTS block)","[API] orders query items[].orderTotals[] backs the Total column values; cross-ref MCO-GQL-001
-[CONSOLE] no JS errors","Total column shows only one currency for a multi-currency order; other-currency total listed before primary; PTS total shown on a single-currency order; raw amount with no currency indicator","none","VCST-5104; vc-frontend#2335 (orders.vue getDisplayTotals); BL-LOY-003",Draft
+[CONSOLE] no JS errors","Total column shows only one currency for a multi-currency order; other-currency total listed before primary; PTS total shown on a single-currency order; raw amount with no currency indicator","none","VCST-5104; vc-frontend#2335 (orders.vue getDisplayTotals); BL-LOY-003; Reviewed/synced: TLC-2026-06-24 (PR #2335 live)",automated
 MCO-E2E-005,"Order-details main list holds cash lines; PTS lines appear under 'Products in {currency}' group","Loyalty > Mixed Cart > Order Details",High,BL-LOY-002; BL-ORD-001; PROPOSED-BL-ORD-011,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
-NOT ON LIVE BUILD YET — order-details.vue currency grouping ships in vc-frontend PR #2335. The VIP account has a mixed-currency order (USD + PTS). If none, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
+Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24). The VIP account has a mixed-currency order (USD + PTS). If none, place one first via MCO-E2E-001 flow (state, not execution dependency).",front_url={{FRONT_URL}}; currency_code={{CURRENCY_CODE}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/orders
 [WAIT] orders list loaded
 [ACT] open the mixed-currency order
 [WAIT] order details page loaded","[DOM] the main line-items list contains the cash (USD) line item(s)
 [DOM] a separate 'Products in @td(LOYALTY_SETTINGS.currency_code)' group (common.labels.products_in_currency) contains the PTS line item(s)
 [DOM] each PTS line in that group displays its price in @td(LOYALTY_SETTINGS.currency_code), not {{CURRENCY_CODE}}
 [STATE] no PTS line leaks into the main USD list and vice versa","[API] order query items[].currency resolves per line (PTS lines PTS, cash lines USD); cross-ref MCO-GQL-003
-[CONSOLE] no JS errors","PTS line shown in the main USD list (grouping broken); 'Products in {currency}' group missing or empty; PTS line priced in USD; raw i18n key for the group heading","none","VCST-5104; vc-frontend#2335 (order-details.vue common.labels.products_in_currency); BL-LOY-002",Draft
+[CONSOLE] no JS errors","PTS line shown in the main USD list (grouping broken); 'Products in {currency}' group missing or empty; PTS line priced in USD; raw i18n key for the group heading","none","VCST-5104; vc-frontend#2335 (order-details.vue common.labels.products_in_currency); BL-LOY-002; Reviewed/synced: TLC-2026-06-24 (PR #2335 live)",automated
 MCO-E2E-007,"/account/points-history shows Redeemed entry (PTS order total) + Earned entry (cash line product points) after a mixed-cart order","Loyalty > Mixed Cart > Points History",High,BL-LOY-005; BL-LOY-007; BL-LOY-009,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 Does NOT depend on vc-frontend PR #2335 — points-history page ships independently. Depends on vc-module-loyalty#10 (ProcessOrdersAsync earn + redeem handlers), confirmed deployed 2026-06-22. Required state: the VIP user has at least one mixed-currency order placed (USD + PTS lines). If none exists, place one via MCO-E2E-001 happy path or MCO-GQL-004 runner flow first (state precondition, NOT execution dependency).",front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[NAV] {{FRONT_URL}}/account/points-history
@@ -81,52 +81,66 @@ Does NOT depend on vc-frontend PR #2335 — points-history page ships independen
 [STATE] entries are sorted newest-first; the order-related entries appear at the top","[API] loyaltyPointsHistory(userId, first:5, sort:'createdDate:desc') items[?operationType=Redeemed].amount.amount > 0; cross-ref MCO-GQL-004 balance_after assertion
 [API] loyaltyPointsHistory items[?operationType=Earned].amount.amount > 0
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order; balance not updated","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",Draft
-"MCO-E2E-002","Cart UI — insufficient loyalty balance shows a blocking error and removing the loyalty line clears it [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Insufficient Balance > [VALIDATION]","Critical","BL-LOY-008","ECL-13.2; ECL-7.3","[PRE:CLEAR_SESSION]
+[NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order; balance not updated","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",automated
+"MCO-E2E-002","Cart/checkout UI — insufficient loyalty balance blocks order placement (through real payment), removing the loyalty line lets a valid checkout complete [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Insufficient Balance > [VALIDATION]","Critical","BL-LOY-008","ECL-13.2; ECL-7.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_NOBAL_USER]
 [PRE:RESET_CART]
-Storefront surfacing of LOYALTY_INSUFFICIENT_BALANCE ships in vc-frontend PR #2335 (theme 2.52.0-pr-2335, i18n loyalty_insufficient_balance). LOYALTY_NOBAL_USER is a VIP-group Customer with ZERO loyalty balance (seeded 2026-06-24 via scripts/seed-loyalty-users.mjs). Store in Mixed Cart mode. Backend contract proven by MCO-GQL-005 (075b). This case proves the CUSTOMER sees the error in /cart, checkout is blocked, and removing the loyalty line restores a valid cart.","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog ---
+Live on theme 2.52.0-pr-2335 (PR #2335 deployed 2026-06-24; i18n loyalty_insufficient_balance active). LOYALTY_NOBAL_USER is a VIP-group Customer whose loyalty balance is BELOW the PTS line total (seeded low via scripts/seed-loyalty-users.mjs; verified live 2026-06-24 at 85 PTS — re-seed to 0 to restore a pristine zero-balance state). Store in Mixed Cart mode. Backend contract proven by MCO-GQL-005 (075b). NOTE (verified live 2026-06-24, TLC): the insufficient-balance check is SERVER-SIDE at Place-Order time — /cart shows NO pre-emptive banner and Place Order stays enabled; the localized message surfaces as a toast/alert AFTER clicking Place Order (createOrderFromCart returns a GraphQL business error in a 200, not a 5xx). This case drives the REAL checkout (select payment, fill payment form, Place Order) to prove the block holds, and that removing the loyalty line restores a checkout-able cart.","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog ---
 [NAV] {{FRONT_URL}}/loyalty-catalog
-[WAIT] product grid loaded with at least 1 product card (PTS prices)
-[ACT] add the first PTS-priced product to cart (its PTS total exceeds the user's 0 balance)
-[WAIT] cart badge increments OR 'Item added' toast
+[WAIT] product grid loaded with at least 1 PTS-priced product card
+[ACT] add the first PTS-priced product to cart (pick one whose PTS total exceeds the user's current loyalty balance)
+[WAIT] cart badge increments
 --- SCREEN: standard catalog ---
 [NAV] {{FRONT_URL}}/catalog
 [WAIT] standard catalog grid loaded
-[ACT] add the first USD cash product to cart (so the cart is a valid mixed shape; only the balance is short)
+[ACT] add the first USD cash product to cart (valid mixed shape; only the balance is short)
 [WAIT] cart badge shows 2
 --- SCREEN: cart ---
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with 2 line items
-[ASSERT] an insufficient-balance validation message is shown (i18n loyalty_insufficient_balance), referencing the required vs available points
-[ACT] attempt to proceed to checkout / Place Order
-[WAIT] checkout does NOT proceed (Place Order blocked / disabled or the cart error prevents order creation)
---- remove-to-clear (the AC affordance) ---
-[ACT] remove the PTS loyalty line item from the cart
-[WAIT] cart updates to 1 line item","[DOM] /cart shows the localized loyalty_insufficient_balance message while the PTS line is present (with required/available points)
-[ASSERT] Place Order is blocked while the shortfall exists — no order confirmation / order number is produced
-[DOM] after removing the PTS loyalty line, the insufficient-balance message is gone and checkout is available again
-[STATE] no order was created during the blocked attempt","[API] cart.validationErrors contains LOYALTY_INSUFFICIENT_BALANCE with errorParameters required/available while the PTS line is present — cross-ref MCO-GQL-005 (075b)
-[NETWORK] no successful createOrderFromCart (no 200 with an order number) during the blocked attempt","No insufficient-balance message shown in /cart despite a shortfall; Place Order succeeds and an order is created despite balance < required; a GENERIC error toast appears instead of the localized loyalty_insufficient_balance message; removing the loyalty line does NOT clear the error; theme 2.52.0-pr-2335 not deployed (no i18n surfacing)","Remove any leftover cart items; sign out. (No order should exist; if one was created that is the bug.)","VCST-5103; BL-LOY-008; vc-frontend#2335 (loyalty_insufficient_balance i18n); backend contract MCO-GQL-005 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 4)","Draft"
-"MCO-E2E-006","Cart UI — a points-only cart is rejected (needs a cash line); known place-order 500 surfaces a generic toast [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Points-Only Cart > [VALIDATION]","High","BL-LOY-010","ECL-13.2","[PRE:CLEAR_SESSION]
+[ASSERT] /cart renders NO pre-emptive insufficient-balance banner and checkout/Place Order is NOT disabled (the check is server-side at placement — verified live 2026-06-24)
+--- full checkout attempt (the block must hold through real payment) ---
+[ACT] proceed to checkout; set shipping + billing addresses as required
+[ACT] select an available payment method, and if it renders a card form (CyberSource/Skyflow/Authorize.Net — allowCartPayment) fill it with the matching SANDBOX card env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}; never hardcode); if a manual method (DefaultManualPaymentMethod) is offered, no card is needed
+[ACT] click 'Place Order'
+[WAIT] observe the result — NO order is created; the localized insufficient-balance message (i18n loyalty_insufficient_balance) surfaces as a toast/alert referencing required vs available points (e.g. 'Not enough loyalty points to place the order. Required: N, available: M'), and the flow stays on /cart (or the checkout step)
+--- remove-to-clear (the AC affordance) then complete a valid checkout ---
+[NAV] {{FRONT_URL}}/cart
+[ACT] remove the PTS loyalty line item
+[WAIT] cart updates to 1 line item (no PTS line remains)
+[ACT] proceed to checkout; set shipping + billing; select an available payment method, and if it renders a card form (CyberSource/Skyflow/Authorize.Net — allowCartPayment) fill it with the matching SANDBOX card env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}; never hardcode); if a manual method (DefaultManualPaymentMethod) is offered, no card is needed
+[ACT] click 'Place Order'
+[WAIT] order confirmation page loads with an order number","[DOM] on the Place Order attempt, the localized loyalty_insufficient_balance message surfaces (toast/alert) referencing required vs available points (e.g. 'Not enough loyalty points to place the order. Required: N, available: M') — NOT a pre-emptive /cart banner
+[ASSERT] with the payment form fully filled and 'Place Order' clicked, NO order is created (no confirmation page / order number) — the loyalty validation blocks placement
+[DOM] after removing the PTS loyalty line, a re-attempted Place Order is no longer blocked by the loyalty validation (no insufficient-balance message)
+[ASSERT] the valid post-removal cart completes the full checkout (select payment -> fill form -> Place Order) and produces an order number
+[STATE] exactly one order is created (from the valid cart); none from the blocked attempt","[API] cart.validationErrors contains LOYALTY_INSUFFICIENT_BALANCE with errorParameters required/available while the PTS line is present — cross-ref MCO-GQL-005 (075b)
+[NETWORK] no successful createOrderFromCart (200 + order number) during the blocked attempt; the valid post-removal attempt returns a 200 with an order number","Order is created despite balance < required (the block failed); no insufficient-balance message on the Place Order attempt despite the shortfall; a GENERIC error toast instead of the localized loyalty_insufficient_balance message; removing the loyalty line does NOT unblock placement; valid post-removal cart cannot complete checkout","Cancel/clean up the order created from the valid post-removal cart if the store does not auto-clear it; remove leftover cart items; sign out.","VCST-5103; BL-LOY-008; vc-frontend#2335 (loyalty_insufficient_balance i18n); backend contract MCO-GQL-005 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 4); Reviewed/synced: TLC-2026-06-24 (PR #2335 live; insufficient-balance retimed to place-order, verified live)","automated"
+"MCO-E2E-006","Cart/checkout UI — a points-only cart is rejected at order placement (needs a cash line); known place-order 500 surfaces a generic toast [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Points-Only Cart > [VALIDATION]","High","BL-LOY-010","ECL-13.2","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOYALTY_VIP_USER]
 [PRE:RESET_CART]
-Store in Mixed Cart mode. LOYALTY_VIP_USER has a balance (so this isolates the points-only rule, not balance). Backend contract proven by MCO-GQL-006 (075b). KNOWN FINDING (2026-06-23, App Insights-corroborated): the place-order path throws a GraphQL.ExecutionError -> HTTP 500 in CreateOrderFromCartCommandHandler.ValidateCart instead of a typed LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED userError, so the storefront shows a GENERIC 'error creating order' toast. The add-to-cart / cart-read path returns clean validationErrors (MCO-GQL-006). This case asserts the cart-level surfacing + remove-affordance, and documents the place-order 500 as a known issue (not a fresh bug).","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog ---
+Store in Mixed Cart mode. LOYALTY_VIP_USER has a balance (so this isolates the points-only rule, not balance). Backend contract proven by MCO-GQL-006 (075b). KNOWN FINDING (2026-06-23, App Insights-corroborated): the place-order path throws a GraphQL.ExecutionError -> HTTP 500 in CreateOrderFromCartCommandHandler.ValidateCart instead of a typed LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED userError, so the storefront shows a GENERIC 'error creating order' toast. The cart-read path returns clean validationErrors (MCO-GQL-006). This case drives the real checkout to confirm placement is rejected and documents the 500 (not a fresh bug).","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog (points-only) ---
 [NAV] {{FRONT_URL}}/loyalty-catalog
-[WAIT] product grid loaded with at least 1 product card (PTS prices)
+[WAIT] product grid loaded with at least 1 PTS-priced product card
 [ACT] add ONE PTS-priced product to cart (no cash product)
 [WAIT] cart badge shows 1
 --- SCREEN: cart (points-only) ---
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with the single PTS line
 [ASSERT] the cart surfaces the points-only validation error (LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED message) AND/OR Place Order is blocked
-[ACT] (known issue probe) attempt Place Order on the points-only cart
-[WAIT] observe the result (expected: generic 'error creating order' toast — the place-order 500, see Preconditions)
---- add a cash line to clear ---
+--- full checkout probe (known-issue: place-order 500) ---
+[ACT] proceed to checkout; set shipping + billing; select an available payment method, and if it renders a card form (CyberSource/Skyflow/Authorize.Net — allowCartPayment) fill it with the matching SANDBOX card env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}; never hardcode); if a manual method (DefaultManualPaymentMethod) is offered, no card is needed
+[ACT] click 'Place Order'
+[WAIT] observe the result — expected: order NOT created; storefront shows a generic 'error creating order' toast (the documented place-order 500)
+--- add a cash line, then complete a valid checkout ---
 [NAV] {{FRONT_URL}}/catalog
 [ACT] add the first USD cash product to cart
 [NAV] {{FRONT_URL}}/cart
-[WAIT] cart shows 2 line items","[DOM] the points-only cart surfaces the LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED validation message (or Place Order is blocked) while no cash line is present
-[ASSERT] no order is created from the points-only cart
-[DOM] after adding a cash line, the points-only error is gone and the cart is valid (no other rule firing)","[API] cart.validationErrors contains LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED on the points-only cart and is empty after the cash line is added — cross-ref MCO-GQL-006 (075b)
-[CONSOLE] note any 500 on createOrderFromCart during the place-order probe (known issue, not a fresh defect)","Points-only cart is allowed to check out (order created); no validation message AND no block; place-order returns a NEW unexplained error (distinct from the documented 500 generic-toast); adding a cash line does not clear the error","Remove any leftover cart items; sign out.","VCST-5103; BL-LOY-010; backend contract MCO-GQL-006 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 2); known place-order 500 (REG-2026-06-23 MCO-E2E-006 finding)","Draft"
+[WAIT] cart shows 2 line items; the points-only error is gone
+[ACT] proceed to checkout; set shipping + billing; select an available payment method, and if it renders a card form (CyberSource/Skyflow/Authorize.Net — allowCartPayment) fill it with the matching SANDBOX card env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}; never hardcode); if a manual method (DefaultManualPaymentMethod) is offered, no card is needed
+[ACT] click 'Place Order'
+[WAIT] order confirmation page loads with an order number","[DOM] the points-only cart surfaces the LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED validation message (or Place Order is blocked) while no cash line is present
+[ASSERT] no order is created from the points-only cart even after a full checkout attempt
+[DOM] after adding a cash line, the points-only error is gone and the cart is valid
+[ASSERT] the valid mixed cart completes the full checkout (select payment -> fill form -> Place Order) and produces an order number","[API] cart.validationErrors contains LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED on the points-only cart and is empty after the cash line is added — cross-ref MCO-GQL-006 (075b)
+[CONSOLE] note the 500 on createOrderFromCart during the points-only place-order probe (KNOWN issue — generic toast, not a fresh defect)","Points-only cart is allowed to check out (order created); no validation message AND no block; place-order returns a NEW unexplained error (distinct from the documented 500 generic-toast); adding a cash line does not clear the error; valid mixed cart cannot complete checkout","Cancel/clean up the order created from the valid mixed cart if the store does not auto-clear it; remove leftover cart items; sign out.","VCST-5103; BL-LOY-010; backend contract MCO-GQL-006 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 2); known place-order 500 (REG-2026-06-23 MCO-E2E-006 finding)","automated"

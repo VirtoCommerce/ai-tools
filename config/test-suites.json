@@ -2134,8 +2134,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 30,
-      "estimatedMinutes": 22,
+      "testCount": 37,
+      "estimatedMinutes": 28,
       "agent": "qa-backend-expert",
       "tags": [
         "loyalty",
@@ -2158,8 +2158,8 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 7,
-      "estimatedMinutes": 9,
+      "testCount": 11,
+      "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
         "loyalty",
@@ -2385,8 +2385,8 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 5,
-      "estimatedMinutes": 11,
+      "testCount": 7,
+      "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
         "loyalty",

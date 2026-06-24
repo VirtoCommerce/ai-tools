@@ -1,0 +1,14 @@
+program_id,sku,factor,test_purpose
+LOY-010,LT-001,500,Single high-value product factor — the happy-path earn.
+LOY-011,LT-001,500,Multi-SKU basket — laptop line factor.
+LOY-011,WH-001,50,Multi-SKU basket — headphones line factor (different value).
+LOY-011,QA-TIER-001,25,Multi-SKU basket — third line factor (smallest value).
+LOY-012,WH-001,100,VIP-exclusive earn on headphones (only VIP group accrues).
+LOY-013,LT-001,250,Wholesaler-tier earn on laptop (group-differentiated rate vs LOY-010/017).
+LOY-014,WH-001,75,Future-window program factor — present but must not accrue until +7d.
+LOY-015,WH-001,75,Expired-window program factor — present but must not accrue (ended -7d).
+LOY-016,LT-001,500,Inactive program factor — present but gated off by isActive=false.
+LOY-017,LT-001,999,High-priority competing factor on LT-001 (pairs with LOY-010 for stacking).
+LOY-018,QA-OOS-001,0,Zero-points boundary (BVA) — a configured-but-zero reward.
+LOY-019,QA-PACK-001,10,Localized multi-product program — pack-size line factor.
+LOY-019,QA-LOW-001,10,Localized multi-product program — low-stock line factor.

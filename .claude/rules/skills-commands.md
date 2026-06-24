@@ -25,7 +25,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 
-## Skills (26) — `.claude/skills/` (grouped by category)
+## Skills (27) — `.claude/skills/` (grouped by category)
 
 Skills are slash commands with supporting reference files, organized into 3 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference.
 
@@ -35,7 +35,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
 
-**`testing/` — Testing (10) — manual invocation:**
+**`testing/` — Testing (11) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -48,6 +48,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-coverage-gap` | `analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Autonomous test coverage gap analysis and generation (4-cycle pipeline) | `coverage-gap-methodology.md`, `feature-domain-map.md` |
 | `/qa-postman` | `create <purpose> \| env <profile> \| verify <collection> \| export <collection> \| list \| examples` | Postman MCP collections — create, configure, verify, and export (MCP doesn't execute — Newman/Postman CLI does) | `mcp-tools.md`, `variables-and-environments.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md`, `common-mistakes.md`, `examples.md` |
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Seed/teardown all test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products — via repo seed scripts (`npm run seed*`) or Postman MCP | `test-data-generation.md` (knowledge file) |
+| `/qa-generate-data` | `<domain> [count]` — e.g. `products 20 \| addresses us 10 \| b2b-orgs 5` | **Author** realistic test-data fixtures from scratch into `test-data/` (offline): generate believable domain CSV/JSON rows (safe-default → single-field overrides), wire `@td()` aliases in `aliases.json`, validate resolution. Provisioning companion to `/qa-seed-data` (generate → seed) | `SKILL.md` (generation model + rules + domain quick-map) |
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 
 **`qa-methodology/` — QA Methodology (10) — manual invocation:**

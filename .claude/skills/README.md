@@ -1,6 +1,6 @@
 # .claude/skills/ — Skill Directory
 
-> 26 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
+> 27 skills organized in 4 category groups (vc-knowledge, testing, qa-methodology, development). Each skill has a `SKILL.md` with YAML frontmatter and optional supporting reference files.
 
 ## Directory Structure
 
@@ -10,7 +10,7 @@
 │   └── vc-docs/
 │       └── SKILL.md                 # Documentation lookup via Context7
 │
-├── testing/                         # Testing (10) — manual invocation
+├── testing/                         # Testing (11) — manual invocation
 │   ├── qa-storybook/
 │   │   ├── SKILL.md                 # Storybook visual regression
 │   │   ├── visual-regression-testing.md
@@ -53,6 +53,8 @@
 │   ├── qa-seed-data/
 │   │   ├── SKILL.md                 # Test data generation via Postman MCP
 │   │   └── test-data-generation.md  # Data generation methodology and Postman collection reference
+│   ├── qa-generate-data/
+│   │   └── SKILL.md                 # Author test-data fixtures from scratch into test-data/ (offline) + wire @td() aliases + validate
 │   └── qa-review-tests/
 │       ├── SKILL.md                 # Test case quality review (8-dimension analysis)
 │       └── review-criteria.md       # 8-dimension review criteria reference
@@ -118,7 +120,7 @@ Auto-invocable, read-only reference skills. No side effects.
 
 > **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product type reference (`products.md`) are now in `.claude/agents/knowledge/` and accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) is now in `testing/qa-api/` — use `/qa-api ref <module>` to look up queries.
 
-## Testing (10) — `testing/`
+## Testing (11) — `testing/`
 
 Manual invocation, delegates to specialist agents.
 
@@ -133,6 +135,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
 | `/qa-seed-data` | qa-backend-expert | `knowledge/test-data-generation.md` (agent knowledge file) |
+| `/qa-generate-data` | test-management-specialist | SKILL.md (generation model + no-hardcode rules + domain quick-map) |
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 
 ## QA Methodology (10) — `qa-methodology/`

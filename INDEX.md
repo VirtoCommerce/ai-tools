@@ -4,7 +4,7 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-06-12): 18 agents · 26 skills (+1 repo-tooling) · 19 commands ·
+> **Authoritative counts** (verified 2026-06-24): 18 agents · 27 skills (+1 repo-tooling) · 19 commands ·
 > 27 knowledge files · 104 regression suites (~3,790 cases). Single sources of truth:
 > [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
 
@@ -39,7 +39,7 @@ vc-mcp-testing-module/
 ├── .claude/
 │   ├── agents/                     # 18 agents — qa/ (10) + ba/ (4) + developers/ (4), each w/ shared-instructions.md
 │   │   └── knowledge/              # 27 shared reference files (business-logic, graphql-schema, sitemap, …)
-│   ├── skills/                     # 26 skills in 4 groups (vc-knowledge, testing, qa-methodology, development) + 1 repo-tooling
+│   ├── skills/                     # 27 skills in 4 groups (vc-knowledge, testing, qa-methodology, development) + 1 repo-tooling
 │   ├── commands/                   # 19 slash commands
 │   └── rules/                      # agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports
 │
@@ -125,7 +125,7 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gate
 ## Commands & Skills
 
 - **19 slash commands** — [.claude/commands/](.claude/commands/), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
-- **26 skills** in 4 groups (+1 repo-tooling) — [.claude/skills/README.md](.claude/skills/README.md).
+- **27 skills** in 4 groups (+1 repo-tooling) — [.claude/skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers
 

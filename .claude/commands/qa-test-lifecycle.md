@@ -30,6 +30,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 |------|--------|
 | `--skip-sync` | Skip Phase 2 (Sync) — assume cases are current, go straight to gap analysis |
 | `--skip-generate` | Skip Phases 2-3 (Sync + Analyze/Generate) — start at Phase 4 Review |
+| `--skip-data` | Skip the Phase 3 data-prep step (`/qa-generate-data`) — author cases against existing fixtures only, don't design/author new combinations |
 | `--skip-verify` | Skip Phase 5 (Environment Verification) — no browser needed |
 | `--auto-fix` | Apply auto-fixable updates without asking for each one (still shows diff summary) |
 | `--layer <name>` | Scope to a specific layer: `api`, `graphql`, `admin`, `storefront`, `e2e` |
@@ -63,7 +64,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 |-------|-------|---------|---------|
 | 1. Scope | Orchestrator (you) | Not needed | Parse input, resolve affected suites, build change inventory |
 | 2. Sync & Update | `test-management-specialist` | Not needed | Assess staleness via Context7, update stale/broken cases |
-| 3. Analyze & Generate | `test-management-specialist` | Not needed | Coverage gap detection, test case creation |
+| 3. Analyze & Generate | `test-management-specialist` | Not needed | Coverage gap detection, data-prep via `/qa-generate-data` (combination design + gap fixtures), test case creation |
 | 4. Review & Fix | `test-management-specialist` | Not needed | 7-dimension quality review, auto-fix, manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment browser verification |
 | 6. Approve | Orchestrator (you) | Not needed | Quality gate evaluation, final verdict, report |
@@ -297,9 +298,23 @@ Instead of full gap detection, perform change impact analysis:
 
 **Gate:** If 0 gaps found and 0 NEW_NEEDED → skip generation, proceed to Phase 4.
 
-#### 3b. Generate Test Cases
+#### 3b. Prepare Test Data (Combinations)
+
+**Runs when:** Gaps/NEW_NEEDED exist and `--skip-data` is not set. Skipped in `--report-only` mode (no fixtures authored).
+
+Before authoring any case, prepare the data each gap needs so cases reference *prepared* combinations, not ad-hoc values. `test-management-specialist` (continuing delegation) invokes the **[`/qa-generate-data`](../skills/testing/qa-generate-data/SKILL.md)** skill, scoped to the feature/flow behind the gaps (or the JIRA ticket for change sources):
+
+1. The skill scopes scenarios → learns live variant space → designs the **combination matrix** (pairwise/all-pairs) → resolves each cell **reuse-first**, authoring only true gaps as `seeded=false` fixtures + `@td()` combination aliases, then runs `validate-td-refs.ts` (green gate).
+2. It returns the **combination matrix inline** (Combo IDs + scenario-covered + reuse-vs-gap breakdown) — the on-disk output is the gap fixtures (`test-data/<domain>/*.csv`) + aliases (`aliases.json`). No stray files (honors `.claude/rules/reports.md`).
+3. Map each gap (and NEW_NEEDED item) to one or more **Combo IDs** — this mapping drives 3c (one case / case-group per combination).
+4. If gap fixtures were authored (`seeded=false`), note in the Phase 6 report that **`/qa-seed-data <domains>` must run before these cases execute live** (reused cells already exist). The skill never provisions.
+
+> Data-prep is **design + author fixtures only** — never provisioning, never editing suite CSVs (the `/qa-generate-data` boundary). Cases written in 3c consume the combinations via `@td(COMBO_ALIAS.field)`.
+
+#### 3c. Generate Test Cases
 
 1. **Deduplication pre-check** — read target suite CSV and related suites. Skip if existing case covers the gap.
+   - For each gap, author one case (or case group) **per Combo ID** from 3b; set the `Test_Data` column to `@td(COMBO_ALIAS.field)` — never hardcode the prepared values (`.claude/rules/test-data.md`).
 2. **Query Context7** for domain-specific details: API field names, validation rules, GraphQL signatures
 3. Generate test cases in enriched 15-column CSV format (1-3 cases per gap)
 4. Apply **minimum effective set** principle: clear bug hypothesis, happy path + most likely negative + known edge cases

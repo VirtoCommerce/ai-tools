@@ -1,0 +1,126 @@
+{
+  "seededAt": "2026-06-24T14:24:24.326Z",
+  "storeId": "B2B-store",
+  "created": [
+    {
+      "program_id": "LOY-010",
+      "id": "64eb9b1f-9d94-4f97-b131-96cea359c564",
+      "name": "AGENT-TEST PP Single-SKU Laptop",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 10,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-011",
+      "id": "c7de75fe-7b85-4dab-b290-9ff287fa1cb6",
+      "name": "AGENT-TEST PP Multi-SKU Basket",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 10,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 3
+    },
+    {
+      "program_id": "LOY-012",
+      "id": "d1c0229a-a10e-428d-849d-62cf31e6604e",
+      "name": "AGENT-TEST PP VIP Exclusive",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 20,
+      "group": "VIP",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-013",
+      "id": "545a6160-9d76-4682-8607-98b0f54669ad",
+      "name": "AGENT-TEST PP Wholesaler Tier",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 15,
+      "group": "Wholesaler",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-014",
+      "id": "c1fb54f3-2053-4c42-b858-12a8bf8ef4a7",
+      "name": "AGENT-TEST PP Future Window",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 10,
+      "group": "all",
+      "startDate": "2026-07-01T14:24:21.222Z",
+      "endDate": "2026-07-31T14:24:21.222Z",
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-015",
+      "id": "53903e7b-61aa-43c7-97bd-22310b39d0cc",
+      "name": "AGENT-TEST PP Expired Window",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 10,
+      "group": "all",
+      "startDate": "2026-05-18T14:24:21.657Z",
+      "endDate": "2026-06-17T14:24:21.657Z",
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-016",
+      "id": "567b9d51-cb8a-4412-9bf5-7033fe1fac34",
+      "name": "AGENT-TEST PP Inactive With Factors",
+      "type": "ProductPoints",
+      "active": false,
+      "priority": 10,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-017",
+      "id": "5ebe1292-1a13-484e-a33c-b973cb3e3fcf",
+      "name": "AGENT-TEST PP Priority High",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 100,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-018",
+      "id": "f2adf107-6477-41e5-9292-58069dec1a33",
+      "name": "AGENT-TEST PP Zero Points BVA",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 5,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 1
+    },
+    {
+      "program_id": "LOY-019",
+      "id": "f82bcd35-a57e-4d91-972c-72323e8907d1",
+      "name": "AGENT-TEST PP Multi Localized",
+      "type": "ProductPoints",
+      "active": true,
+      "priority": 8,
+      "group": "all",
+      "startDate": null,
+      "endDate": null,
+      "factors": 2
+    }
+  ]
+}

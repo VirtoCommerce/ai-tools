@@ -174,6 +174,17 @@ Do NOT generate a case for every possible transition — only those where reject
 
 ---
 
+### Step 3.7: Prepare test-data combinations first (data-dependent cases)
+
+Before populating any `Test_Data` column, **delegate combination design to
+[`/qa-generate-data <feature>`](../../testing/qa-generate-data/SKILL.md)** — it learns the live variant
+space, builds the pairwise matrix, reuses existing fixtures, authors only the gaps, and wires one
+`@td()` **combination alias per Combo ID**. This makes the *source* of every `@td()` value explicit:
+the prepared combinations, not invented data. Then **map one case (or case group) per Combo ID** so the
+matrix and the suite stay traceable. The combination matrix it returns is your input to Step 4's
+`Test_Data` column. Skip only for cases that touch no seeded entities (pure UI/copy/validation).
+This composes with — does not replace — the no-hardcode rule enforced in Step 5.
+
 ### Step 4: Write Each Test Case
 
 For every test case, populate all 15 columns following the template:
@@ -302,6 +313,7 @@ Generated test cases route to the correct executing agent by layer:
 |-------|-------------|
 | `/qa-checklist` | Checklists are input — each item becomes 1-3 test cases |
 | `/qa-test-design` | Techniques (EP, BVA, decision tables) drive case derivation |
+| `/qa-generate-data` | **Prepare data first (Step 3.7)** — designs the cross-entity combinations + `@td()` combination aliases each data-dependent case references; map ≥1 case per Combo ID |
 | `/qa-risk` | Risk level determines priority assignment and case count |
 | `/qa-coverage-gap` | Gap analysis identifies where new cases are needed most |
 | `/qa-plan` | Generated cases feed into test plans |

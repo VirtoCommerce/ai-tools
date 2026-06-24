@@ -1,0 +1,60 @@
+{
+  "runId": "TLC-2026-06-24-1121",
+  "inputType": "change-source",
+  "source": "VCST-5103 (read prs)",
+  "date": "2026-06-24",
+  "verdict": "APPROVED",
+  "platform": "3.1039.0",
+  "moduleBuilds": {
+    "loyalty": "3.1004.0-pr-10",
+    "xcart": "3.1022.0-pr-125",
+    "xorder": "3.1006.0-pr-43",
+    "orders": "3.1010.0-alpha.1429-vcst-5104"
+  },
+  "linkedPRs": ["vc-module-x-cart#125", "vc-module-loyalty#10"],
+  "affectedSuites": ["075b"],
+  "casesAnalyzed": 7,
+  "casesSynced": 0,
+  "casesGenerated": 4,
+  "casesReviewed": 11,
+  "casesVerifiedLive": 3,
+  "filesModified": [
+    "regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv",
+    "config/test-suites.json",
+    "scripts/seed-loyalty-users.mjs",
+    "test-data/aliases.json",
+    ".env.local"
+  ],
+  "fixtureSeeded": {
+    "alias": "LOYALTY_NOBAL_USER",
+    "memberId": "f2d8ede1-93f5-4530-ba35-8728107d63f6",
+    "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1",
+    "group": "VIP",
+    "balance": 0,
+    "seeder": "scripts/seed-loyalty-users.mjs"
+  },
+  "generatedCases": [
+    { "id": "MCO-GQL-005", "errorCode": "LOYALTY_INSUFFICIENT_BALANCE", "bl": "BL-LOY-008", "status": "Draft", "phase5": "PASS_9_OF_9" },
+    { "id": "MCO-GQL-006", "errorCode": "LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED", "bl": null, "status": "Draft", "phase5": "PASS_5_OF_5" },
+    { "id": "MCO-GQL-007", "errorCode": "LOYALTY_POINT_PRODUCTS_NOT_ALLOWED", "bl": null, "status": "Semi-Automated", "phase5": "DEFERRED_MODE_FLIP" },
+    { "id": "MCO-GQL-011", "errorCode": "LOYALTY_PAYMENT_METHOD_NOT_ALLOWED", "bl": null, "status": "Draft", "phase5": "PASS_3_OF_3" }
+  ],
+  "uncoveredRules": [],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS",
+    "G6": "WARN", "G7": "PASS", "G8": "PASS", "G9": "PASS"
+  },
+  "blProposals": {
+    "new": [
+      { "proposedId": "PROPOSED-BL-LOY-010", "title": "Points-only cart rejected; cash line required (rule 2)", "source": "LoyaltyCartValidator.cs rule 2; loyalty#10", "liveVerified": true },
+      { "proposedId": "PROPOSED-BL-LOY-011", "title": "Points products only in Mixed Cart mode (rule 1)", "source": "LoyaltyCartValidator.cs rule 1; loyalty#10", "liveVerified": false },
+      { "proposedId": "PROPOSED-BL-LOY-012", "title": "Loyalty payment gateway only in Payment Method mode (rule 3)", "source": "LoyaltyCartValidator.cs rule 3; loyalty#10", "liveVerified": true }
+    ],
+    "stale": []
+  },
+  "awaitingApproval": "3 BL proposals in bl-proposals.md (per-entry approval before promotion to business-logic.md)",
+  "remaining": [
+    "Per-entry approval of the 3 BL-LOY proposals",
+    "One mode-flip run of MCO-GQL-007 to live-verify rule 1"
+  ]
+}

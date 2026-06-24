@@ -1,8 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.19",
-    "updated": "2026-06-22",
+    "version": "1.5.22",
+    "updated": "GENERATED",
     "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
     "changelog_1_5_18": "Added PUSH_MSG_SEED inline alias — single source of truth for the Push Messages seed contract shared by suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI). No static recipient fixture by design (messages self-seed per run via POST /api/push-message with AGENT-TEST- topic prefix; recipients env-resolved {{ORG_USER_ID}}/{{TEST_USER_ID}} or live-discovered me.id). Captures stable contract values the suites repeated literally: endpoint, topic_prefix, sent/draft status, broadcast_group ('Registered'), epoch/future startDate, plus _notes documenting targeting field names (memberIds/targetOrganizationIds/userGroups/cultureName) and 4 model facts (status-in-body not /send, DELETE-Sent->500 known defect PUSH-034, async per-recipient inbox projection PUSH-027/028, no dedicated link field PUSH-037). Existing suites left unchanged (validated/automated); alias is available for future authoring + as the documented contract reference.",
     "changelog_1_5_17": "VCST-5028 cross-org fixture: added MULTI_ORG_TF_BR inline alias — a single AGENT-TEST member (agent-test-multiorg-20260615@yopmail.com, password Password1!) that belongs to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 isolation has a clear oracle: TechFlow (6fb516c1-…) = org-maintainer, BuildRight (fba51391-…) = org-employee. Provisioned on vcst-qa 2026-06-15: contact via POST /api/members (id 57389d49-aae0-4cce-a4b1-8e67352310e1, organizations=[TechFlow,BuildRight]); security account via POST /api/platform/security/users/create (userId 631063d0-cf9c-4a29-ac48-c015e78b9cc6, userType=Customer, storeId=B2B-store, emailConfirmed=true); two org-memberships via the NEW PR #300 route POST /api/customer/organization-memberships (hyphenated, plural). KEY LESSON: the OrganizationMembership create-body key is `userId` (the SECURITY-ACCOUNT user id, NOT the contact/member id) and roles is `roles:[{roleId,roleName}]` (NOT a flat roleIds[]). Storefront login confirmed (account menu shows TechFlow / member name). AGENT-TEST- prefix → teardown-swept. Membership ids: TechFlow eff31ad2375641548ef86449ceb9372a, BuildRight 3219a007f7fb432fb3f0b99208a4b90c.",
@@ -26,7 +26,11 @@
     "changelog_1_5_0": "Post-restore (2026-05-15) status flags applied to CFG_* aliases. Affected: 28 CFG entries got _status field (shape-drift / weak-match / needs-reseed / new-survivor / unchanged). Added 3 new aliases for restored-env survivors (CFG_BED c7205a92…, CFG_BIKE_TEXT 05a8b8a5…, CFG_WEDDING_CAKE_VINTAGE c94d730a…) — these are inline (no CSV row) since they were not in the original test data. Catalog root reverted to fc596540864a41bf8ab78734ee7353a3 (the 2026-04-30 migration to 9238c387… rolled back by restore). The BOPIS testProductCatalogId reference to 9238c387… is now STALE and should be updated to fc596540… in a follow-up. 5 CFG products fully alive with matching GUIDs (Hat 38dbe95c, T-shirt 50529b79, Vintage Hoodie 4b1de1b0, Bike with options f16d3e8f, Off-Road Bike 958d0762) — 4 with shape drift (sections differ from CSV spec). 24 CFG products gone — needs-reseed flag indicates which need a fresh seed PR (Laptop, Ring, Giftbox, conditional cascades CFG-022..029). Full mapping rationale: tests/reseed-2026-05-18/cfg-alias-mapping-proposal.md.",
     "changelog_1_5_2": "Phase 1 CFG reseed complete: CFG-012/014/015/016/018 now have working products in vcst-qa with new GUIDs (da3f85bb, ae791be7, 3b0052b9, 37d2f9ae, 03f6007c respectively). All have configurations with 1 Product-type section + 2-4 options. Parent products linked into VIRTUAL_CATALOG_B2B and storefront-visible (isAvailable=true, isBuyable=true). Child option products have inventory in ffc-acme-eur-berlin-de with status=Enabled. Aliases that reference these 5 CFGs now resolve correctly. Pricelist SEED-20260518-Configurables-USD assigned to B2B-store. Aliases touched: . Phase 2 (multi-section CFG-006/013/020/021) and Phase 3 (conditional cascades CFG-022..029) deferred to follow-up PR.",
     "changelog_1_5_15": "Added COUPON_SUPER alias (COU-024 — code='super', stored lowercase, promo 'Test 100%', no endDate, no threshold). Used by CPN-015 (updated) and CPN-062 (new) as the canonical lowercase-stored coupon for VCST-5233 regression guard: coupon-item.vue toUpperCase() bug forces display/clipboard to 'SUPER' instead of stored 'super'; ValidateCoupon is case-sensitive — 'SUPER' validates false, 'super' validates true.",
-    "changelog_1_5_12": "qa-seed-data full seed 2026-06-01: added SEED_20260529_OOS (OOS-PRODUCT-001 / 3c2b9e0c-2a1d-4757-96db-a6905efbfb9a), SEED_20260529_LOW_STOCK (no explicit low-stock row in 20260529 results — added PROD_VARIATION_PARENT_SALE for variation/sale-price tests; added SEED_20260601_PL_USD inline alias mapping priceListId to AGENT-TEST-PL-USD-20260601 for tier-price test lookup). OOS_SKU env var repointed to OOS-PRODUCT-001, TIER_PRICED_SKU to CISCO-SW24-001, PACK_SIZE_SKU to BULK-PAPER-001. VC Seed - Full collection (15325423-2b27f8bf) updated: added ID-chaining test scripts, inventoryStatus=Enabled, B2B virtual-catalog link, tiered pricing, low-stock product (AGENT-TEST-LOWSTK-20260601 SKU), EUR price list with B2B-EU-store assignment."
+    "changelog_1_5_12": "qa-seed-data full seed 2026-06-01: added SEED_20260529_OOS (OOS-PRODUCT-001 / 3c2b9e0c-2a1d-4757-96db-a6905efbfb9a), SEED_20260529_LOW_STOCK (no explicit low-stock row in 20260529 results — added PROD_VARIATION_PARENT_SALE for variation/sale-price tests; added SEED_20260601_PL_USD inline alias mapping priceListId to AGENT-TEST-PL-USD-20260601 for tier-price test lookup). OOS_SKU env var repointed to OOS-PRODUCT-001, TIER_PRICED_SKU to CISCO-SW24-001, PACK_SIZE_SKU to BULK-PAPER-001. VC Seed - Full collection (15325423-2b27f8bf) updated: added ID-chaining test scripts, inventoryStatus=Enabled, B2B virtual-catalog link, tiered pricing, low-stock product (AGENT-TEST-LOWSTK-20260601 SKU), EUR price list with B2B-EU-store assignment.",
+    "changelog_1_5_20": "/qa-generate-data (loyalty-mixed-cart): added 10 alias(es) [AGENT_TEST_UNPRICED_PRODUCT, LOY_MIX_01, LOY_MIX_02, LOY_MIX_03, LOY_MIX_04, LOY_MIX_05, LOY_MIX_06, LOY_MIX_07, LOY_MIX_08, LOY_MIX_09] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
+    "changelog_1_5_21": "/qa-generate-data (loyalty-product-points): added 5 alias(es) [LOY_PP_BASELINE, LOY_PP_ALL, LOY_PP_VIP, LOY_PP_WHOLESALE, LOY_PP_VIP_INACTIVE] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
+    "changelog_1_5_22": "VCST-5135 ProductPoints program fixtures: programs.csv updated with seeded=true + platform_ids for LOY-010..013 (seeded 2026-06-24 via seed-loyalty.mjs). LOY_PP_* alias notes updated to reflect live IDs. Added 5 VCST-5135 combination aliases [LOY_PP_5135_01..05] covering: all-customers earn (LOY-010), VIP-only earn (LOY-011 + LOYALTY_VIP_USER), VIP-only blocked (non-VIP user — LOYALTY_NOBAL_USER has no Wholesaler group so serves as non-VIP), wholesaler earn (LOY-012), inactive program blocked (LOY-013). VCST-5135 programs are already provisioned — no /qa-seed-data step needed for programs.",
+    "changelog_1_5_23": "VCST-5135 ProductPoints fixtures REWORKED 2026-06-24: the original LOY-010..013 were eligibility-only clones with ZERO product factors (functionally hollow — earned no points). Discovered live in Admin (qa-backend-expert) that a ProductPoints program's earn rule lives in a SEPARATE sub-resource (LoyaltyProgramProductFactor = {loyaltyProgramId, productId, factor-points}, PUT /api/loyalty-program-product-factors/factors), NOT on the program entity. Replaced LOY-010..013 with a 10-program set LOY-010..019 that varies REAL mechanics: single-SKU earn (LOY-010), multi-SKU summation (LOY-011), VIP-exclusive earn (LOY-012), wholesaler tier (LOY-013), future/expired windows (LOY-014/015, new start_offset_days/end_offset_days CSV cols → ISO dates), inactive-with-factors (LOY-016), priority stacking (LOY-017), zero-points BVA (LOY-018), localized+multi (LOY-019). New fixture program-factors.csv (program_id,sku,factor) holds the per-product point values; seeder resolves SKU→productId at runtime via POST /api/catalog/search/products searchPhrase 'code:\"<SKU>\"' (no hardcoded GUIDs). seed-loyalty.mjs rebuilt to construct from GET /api/loyalty-programs/new/{type} skeleton (not brittle clone), set dates/store/localizedName/eligibility, then PUT factors. Aliases reworked: LOY_PP_ALL/VIP/WHOLESALE repointed, LOY_PP_VIP_INACTIVE→LOY_PP_INACTIVE, added LOY_PP_MULTI/FUTURE/EXPIRED/PRIORITY/ZERO/LOCALIZED. All seeded=false pending /qa-seed-data (or node scripts/seed-loyalty.mjs)."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -3049,5 +3053,355 @@
       "future_start_date": "future_start_date"
     },
     "_notes": "Push Messages seed contract — single source of truth for the values suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI) repeat literally when they self-seed messages. NO static recipient fixture exists by design: messages are created fresh per run via POST {{BACK_URL}}/api/push-message with an AGENT-TEST- topic prefix (teardown-swept); recipients are env-resolved ({{ORG_USER_ID}} / {{TEST_USER_ID}}) or live-discovered (xAPI me.id -> RCPT_MEMBER_ID). Canonical Sent seed body: {topic:'@td(PUSH_MSG_SEED.topic_prefix)<case>', shortMessage:'...', status:'@td(PUSH_MSG_SEED.sent_status)', startDate:'@td(PUSH_MSG_SEED.epoch_start_date)', memberIds:['{{ORG_USER_ID}}']}. TARGETING field names (verified live, PUSH-031): memberIds[] (member ids), targetOrganizationIds[] (org scope), userGroups[] (e.g. 'Registered' = broadcast_group), cultureName (per-culture probe, PUSH-038). MODEL NOTES: (1) status='Sent' is set IN the create body — there is no /send subendpoint. (2) DELETE of a Sent message returns HTTP 500 (known defect, PUSH-034 — should be 4xx); Sent seeds are intentionally left in the system (AGENT-TEST- prefix). (3) Per-recipient inbox projection is ASYNC — a just-created Sent message is not synchronously in the recipient xAPI inbox (poll before asserting; PUSH-027/028 are needs-review for this reason). (4) Push-message model has NO dedicated link field — a clickable link requires an <a> anchor embedded in shortMessage (PUSH-037). These are contract values under test, not catalog data — update only if the module's API contract changes."
+  },
+  "AGENT_TEST_UNPRICED_PRODUCT": {
+    "file": "products/standard",
+    "filter": {
+      "product_code": "AGENT-TEST-UNPRICED-01"
+    },
+    "fields": {
+      "sku": "product_code",
+      "name": "product_name",
+      "slug": "product_slug"
+    },
+    "notes": "Gap fixture for LOY-MIX-02/08 (unpriced line in a mixed cart (does it still earn? how does burn treat it?)). Generated by /qa-generate-data; seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_MIX_01": {
+    "_inline": true,
+    "combo": "LOY-MIX-01",
+    "program_type": "ProductPoints",
+    "loyalty_balance": "above",
+    "cart_composition": "single_priced",
+    "promotion": "none",
+    "product": "BUYABLE_PRICED_PRODUCT",
+    "loyalty_user": "LOYALTY_VIP_USER",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user"
+    },
+    "_notes": "Baseline earn: ProductPoints, ample balance, single priced line, no promo."
+  },
+  "LOY_MIX_02": {
+    "_inline": true,
+    "combo": "LOY-MIX-02",
+    "program_type": "ProductPoints",
+    "loyalty_balance": "exact",
+    "cart_composition": "mixed_priced_unpriced",
+    "promotion": "auto",
+    "product": "BUYABLE_PRICED_PRODUCT + AGENT-TEST-UNPRICED-01",
+    "loyalty_user": "set balance == cart total at setup",
+    "promotion_name": "Auto Gift (no coupon)",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user",
+      "promotion_name": "promotion_name"
+    },
+    "_notes": "Boundary burn + unpriced line + auto promo: points accrue on post-discount total; unpriced line earn behavior."
+  },
+  "LOY_MIX_03": {
+    "_inline": true,
+    "combo": "LOY-MIX-03",
+    "program_type": "ProductPoints",
+    "loyalty_balance": "below",
+    "cart_composition": "with_oos_line",
+    "promotion": "none",
+    "product": "BUYABLE_PRICED_PRODUCT + SEED_20260529_OOS",
+    "loyalty_user": "LOYALTY_NOBAL_USER",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user"
+    },
+    "_notes": "Insufficient balance + OOS line: burn rejected, OOS line handling."
+  },
+  "LOY_MIX_04": {
+    "_inline": true,
+    "combo": "LOY-MIX-04",
+    "program_type": "Default",
+    "loyalty_balance": "above",
+    "cart_composition": "mixed_priced_unpriced",
+    "promotion": "none",
+    "product": "BUYABLE_PRICED_PRODUCT + AGENT-TEST-UNPRICED-01",
+    "loyalty_user": "LOYALTY_VIP_USER",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user"
+    },
+    "_notes": "Default program type with unpriced line, ample balance."
+  },
+  "LOY_MIX_05": {
+    "_inline": true,
+    "combo": "LOY-MIX-05",
+    "program_type": "Default",
+    "loyalty_balance": "exact",
+    "cart_composition": "single_priced",
+    "promotion": "auto",
+    "product": "BUYABLE_PRICED_PRODUCT",
+    "loyalty_user": "set balance == cart total at setup",
+    "promotion_name": "Auto Gift (no coupon)",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user",
+      "promotion_name": "promotion_name"
+    },
+    "_notes": "Default type, boundary burn, single line, auto promo."
+  },
+  "LOY_MIX_06": {
+    "_inline": true,
+    "combo": "LOY-MIX-06",
+    "program_type": "Default",
+    "loyalty_balance": "below",
+    "cart_composition": "single_priced",
+    "promotion": "auto",
+    "product": "BUYABLE_PRICED_PRODUCT",
+    "loyalty_user": "LOYALTY_NOBAL_USER",
+    "promotion_name": "Auto Gift (no coupon)",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user",
+      "promotion_name": "promotion_name"
+    },
+    "_notes": "Insufficient balance with auto promo on single line."
+  },
+  "LOY_MIX_07": {
+    "_inline": true,
+    "combo": "LOY-MIX-07",
+    "program_type": "Default",
+    "loyalty_balance": "above",
+    "cart_composition": "with_oos_line",
+    "promotion": "auto",
+    "product": "BUYABLE_PRICED_PRODUCT + SEED_20260529_OOS",
+    "loyalty_user": "LOYALTY_VIP_USER",
+    "promotion_name": "Auto Gift (no coupon)",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user",
+      "promotion_name": "promotion_name"
+    },
+    "_notes": "OOS line + auto promo + ample balance, Default type."
+  },
+  "LOY_MIX_08": {
+    "_inline": true,
+    "combo": "LOY-MIX-08",
+    "program_type": "ProductPoints",
+    "loyalty_balance": "exact",
+    "cart_composition": "with_oos_line",
+    "promotion": "none",
+    "product": "BUYABLE_PRICED_PRODUCT + SEED_20260529_OOS",
+    "loyalty_user": "set balance == cart total at setup",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user"
+    },
+    "_notes": "Boundary burn with an OOS line present, ProductPoints."
+  },
+  "LOY_MIX_09": {
+    "_inline": true,
+    "combo": "LOY-MIX-09",
+    "program_type": "ProductPoints",
+    "loyalty_balance": "below",
+    "cart_composition": "mixed_priced_unpriced",
+    "promotion": "none",
+    "product": "BUYABLE_PRICED_PRODUCT + AGENT-TEST-UNPRICED-01",
+    "loyalty_user": "LOYALTY_NOBAL_USER",
+    "fields": {
+      "program_type": "program_type",
+      "loyalty_balance": "loyalty_balance",
+      "cart_composition": "cart_composition",
+      "promotion": "promotion",
+      "product": "product",
+      "loyalty_user": "loyalty_user"
+    },
+    "_notes": "Insufficient balance + unpriced line, ProductPoints."
+  },
+  "LOY_PP_BASELINE": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-001"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "Baseline ProductPoints program (VIP eligibility). Pre-existing; seeded=true. Used by suites 075/083 + VCST-5101."
+  },
+  "LOY_PP_ALL": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-010"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 happy path: ALL customers earn on ONE product (factor LT-001=500). Proves a product factor actually grants points. Factors in program-factors.csv. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_MULTI": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-011"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 multi-SKU summation: 3 factors with DIFFERENT values (LT-001=500 / WH-001=50 / QA-TIER-001=25). seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_VIP": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-012"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 eligibility WITH real earning: only VIP group earns on WH-001 (factor=100); non-VIP earns nothing. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_WHOLESALE": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-013"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 group-differentiated rate: Wholesaler group earns LT-001=250 (vs all/VIP rates on same SKU). seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_FUTURE": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-014"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority",
+      "start_offset_days": "start_offset_days",
+      "end_offset_days": "end_offset_days"
+    },
+    "notes": "VCST-5135 lifecycle: start date +7d (future window). Active + factor (WH-001=75) present but must NOT accrue until window opens. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_EXPIRED": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-015"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority",
+      "start_offset_days": "start_offset_days",
+      "end_offset_days": "end_offset_days"
+    },
+    "notes": "VCST-5135 lifecycle: end date -7d (expired window). Factor (WH-001=75) present but must NOT accrue. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_INACTIVE": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-016"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 negative: isActive=false WITH a real factor (LT-001=500). Active flag gates earning even when factors exist. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_PRIORITY": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-017"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 stacking: priority=100 program on LT-001 (factor=999); pair with LOY_PP_ALL (priority 10, LT-001=500) to test which wins / stacking. seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_ZERO": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-018"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority"
+    },
+    "notes": "VCST-5135 boundary (BVA): a factor explicitly set to 0 points (QA-OOS-001=0). seeded=false — provision via /qa-seed-data."
+  },
+  "LOY_PP_LOCALIZED": {
+    "file": "loyalty/programs",
+    "filter": {
+      "program_id": "LOY-019"
+    },
+    "fields": {
+      "name": "name",
+      "type": "program_type",
+      "group": "customer_group",
+      "active": "is_active",
+      "priority": "priority",
+      "localized_name_es": "localized_name_es"
+    },
+    "notes": "VCST-5135 localization + multi-factor: es-ES localized name + 2 factors (QA-PACK-001=10 / QA-LOW-001=10). seeded=false — provision via /qa-seed-data."
   }
 }

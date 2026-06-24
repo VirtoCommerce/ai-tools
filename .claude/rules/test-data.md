@@ -44,6 +44,7 @@ The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/k
 | [`/qa-postman`](../skills/testing/qa-postman/SKILL.md) | [`test-data-fixtures.md`](../skills/testing/qa-postman/test-data-fixtures.md) + Mistake #14 in [`common-mistakes.md`](../skills/testing/qa-postman/common-mistakes.md) |
 | [`/qa-api`](../skills/testing/qa-api/SKILL.md) | "Test Data — Resolve via `@td()`, Don't Hardcode" section |
 | [`/qa-seed-data`](../skills/testing/qa-seed-data/SKILL.md) | Seed runs write IDs back into `test-data/` so downstream `@td()` references resolve |
+| [`/qa-generate-data`](../skills/testing/qa-generate-data/SKILL.md) | Authors fixtures from scratch with no system GUIDs (blank `*_guid`/`platform_id`, `seeded=false`), business-key aliases, `AGENT-TEST-` prefix; ends on a mandatory `validate-td-refs.ts` green gate |
 | Regression suite CSVs | `Test_Data` columns use `{{VAR}}` and `@td()` exclusively |
 | `scripts/graphql-runner.ts` | Resolves `@td()` natively before sending GraphQL ops; rejects unresolved tokens at lint time |
 
