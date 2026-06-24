@@ -82,3 +82,51 @@ Does NOT depend on vc-frontend PR #2335 — points-history page ships independen
 [API] loyaltyPointsHistory items[?operationType=Earned].amount.amount > 0
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on the points-history query","History page empty or unreachable; Redeemed entry absent (LoyaltyProgramHandler not running); Earned entry absent; amounts displayed in USD instead of PTS; rows in wrong order; balance not updated","Sign out","VCST-5104; vc-module-loyalty#10 (ProcessOrdersAsync earn+redeem per order); BL-LOY-005",Draft
+"MCO-E2E-002","Cart UI — insufficient loyalty balance shows a blocking error and removing the loyalty line clears it [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Insufficient Balance > [VALIDATION]","Critical","BL-LOY-008","ECL-13.2; ECL-7.3","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_NOBAL_USER]
+[PRE:RESET_CART]
+Storefront surfacing of LOYALTY_INSUFFICIENT_BALANCE ships in vc-frontend PR #2335 (theme 2.52.0-pr-2335, i18n loyalty_insufficient_balance). LOYALTY_NOBAL_USER is a VIP-group Customer with ZERO loyalty balance (seeded 2026-06-24 via scripts/seed-loyalty-users.mjs). Store in Mixed Cart mode. Backend contract proven by MCO-GQL-005 (075b). This case proves the CUSTOMER sees the error in /cart, checkout is blocked, and removing the loyalty line restores a valid cart.","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog ---
+[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card (PTS prices)
+[ACT] add the first PTS-priced product to cart (its PTS total exceeds the user's 0 balance)
+[WAIT] cart badge increments OR 'Item added' toast
+--- SCREEN: standard catalog ---
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] standard catalog grid loaded
+[ACT] add the first USD cash product to cart (so the cart is a valid mixed shape; only the balance is short)
+[WAIT] cart badge shows 2
+--- SCREEN: cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with 2 line items
+[ASSERT] an insufficient-balance validation message is shown (i18n loyalty_insufficient_balance), referencing the required vs available points
+[ACT] attempt to proceed to checkout / Place Order
+[WAIT] checkout does NOT proceed (Place Order blocked / disabled or the cart error prevents order creation)
+--- remove-to-clear (the AC affordance) ---
+[ACT] remove the PTS loyalty line item from the cart
+[WAIT] cart updates to 1 line item","[DOM] /cart shows the localized loyalty_insufficient_balance message while the PTS line is present (with required/available points)
+[ASSERT] Place Order is blocked while the shortfall exists — no order confirmation / order number is produced
+[DOM] after removing the PTS loyalty line, the insufficient-balance message is gone and checkout is available again
+[STATE] no order was created during the blocked attempt","[API] cart.validationErrors contains LOYALTY_INSUFFICIENT_BALANCE with errorParameters required/available while the PTS line is present — cross-ref MCO-GQL-005 (075b)
+[NETWORK] no successful createOrderFromCart (no 200 with an order number) during the blocked attempt","No insufficient-balance message shown in /cart despite a shortfall; Place Order succeeds and an order is created despite balance < required; a GENERIC error toast appears instead of the localized loyalty_insufficient_balance message; removing the loyalty line does NOT clear the error; theme 2.52.0-pr-2335 not deployed (no i18n surfacing)","Remove any leftover cart items; sign out. (No order should exist; if one was created that is the bug.)","VCST-5103; BL-LOY-008; vc-frontend#2335 (loyalty_insufficient_balance i18n); backend contract MCO-GQL-005 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 4)","Draft"
+"MCO-E2E-006","Cart UI — a points-only cart is rejected (needs a cash line); known place-order 500 surfaces a generic toast [VALIDATION]","Loyalty > Mixed Cart > Cart Validation > Points-Only Cart > [VALIDATION]","High","BL-LOY-010","ECL-13.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOYALTY_VIP_USER]
+[PRE:RESET_CART]
+Store in Mixed Cart mode. LOYALTY_VIP_USER has a balance (so this isolates the points-only rule, not balance). Backend contract proven by MCO-GQL-006 (075b). KNOWN FINDING (2026-06-23, App Insights-corroborated): the place-order path throws a GraphQL.ExecutionError -> HTTP 500 in CreateOrderFromCartCommandHandler.ValidateCart instead of a typed LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED userError, so the storefront shows a GENERIC 'error creating order' toast. The add-to-cart / cart-read path returns clean validationErrors (MCO-GQL-006). This case asserts the cart-level surfacing + remove-affordance, and documents the place-order 500 as a known issue (not a fresh bug).","front_url={{FRONT_URL}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","--- SCREEN: loyalty catalog ---
+[NAV] {{FRONT_URL}}/loyalty-catalog
+[WAIT] product grid loaded with at least 1 product card (PTS prices)
+[ACT] add ONE PTS-priced product to cart (no cash product)
+[WAIT] cart badge shows 1
+--- SCREEN: cart (points-only) ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart page loads with the single PTS line
+[ASSERT] the cart surfaces the points-only validation error (LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED message) AND/OR Place Order is blocked
+[ACT] (known issue probe) attempt Place Order on the points-only cart
+[WAIT] observe the result (expected: generic 'error creating order' toast — the place-order 500, see Preconditions)
+--- add a cash line to clear ---
+[NAV] {{FRONT_URL}}/catalog
+[ACT] add the first USD cash product to cart
+[NAV] {{FRONT_URL}}/cart
+[WAIT] cart shows 2 line items","[DOM] the points-only cart surfaces the LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED validation message (or Place Order is blocked) while no cash line is present
+[ASSERT] no order is created from the points-only cart
+[DOM] after adding a cash line, the points-only error is gone and the cart is valid (no other rule firing)","[API] cart.validationErrors contains LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED on the points-only cart and is empty after the cash line is added — cross-ref MCO-GQL-006 (075b)
+[CONSOLE] note any 500 on createOrderFromCart during the place-order probe (known issue, not a fresh defect)","Points-only cart is allowed to check out (order created); no validation message AND no block; place-order returns a NEW unexplained error (distinct from the documented 500 generic-toast); adding a cash line does not clear the error","Remove any leftover cart items; sign out.","VCST-5103; BL-LOY-010; backend contract MCO-GQL-006 (075b); vc-module-loyalty#10 (LoyaltyCartValidator rule 2); known place-order 500 (REG-2026-06-23 MCO-E2E-006 finding)","Draft"

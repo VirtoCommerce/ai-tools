@@ -1,0 +1,11 @@
+{
+  "seededAt": "2026-06-24T09:49:26.278Z",
+  "storeId": "B2B-store",
+  "nobalUser": {
+    "email": "AGENT-TEST-nobal@test.virtocommerce.com",
+    "memberId": "f2d8ede1-93f5-4530-ba35-8728107d63f6",
+    "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1",
+    "group": "VIP",
+    "balance": 0
+  }
+}

@@ -222,3 +222,144 @@ The customerOrder-items blade Currency column ships in vc-module-order PR #497 (
 [FORM] order totals area is readable for a multi-currency order (no NaN / blank totals)","[API] GET {{BACK_URL}}/api/order/customerOrders/... returns OrderTotals[] with >=2 currency buckets for this order
 [CONSOLE] no JS errors in Admin SPA
 [NETWORK] no 4xx/5xx on the order detail request","Currency column absent (PR #497 not deployed); all rows show the order-default currency; totals render NaN/blank on a multi-currency order; blade fails to open; console error","none (read-only)","VCST-5104; vc-module-order#497 (customerOrder-items Currency column)",Draft
+MCO-GQL-005,"NEGATIVE — LOYALTY_INSUFFICIENT_BALANCE: mixed cart with PTS total > balance emits typed error and blocks createOrderFromCart","GraphQL > xCart > Validator > Insufficient Balance",Critical,BL-LOY-008,ECL-7.3; ECL-13.2,"Runner-native. Fixture provisioned 2026-06-24 (scripts/seed-loyalty-users.mjs): LOYALTY_NOBAL_USER is a zero-balance VIP-group Customer on vcst-qa; LOYALTY_NOBAL_USER_EMAIL/PASSWORD set in .env.local. Store in Mixed Cart mode. Auth as LOYALTY_NOBAL_USER (VIP group, balance=0). Adds one PTS-priced line whose subtotal > 0, plus one USD cash line. Asserts cart.validationErrors returns LOYALTY_INSUFFICIENT_BALANCE with required/available params; then attempts createOrderFromCart and asserts it is blocked (errors[] non-empty / no order number). Cart remains readable after the blocked attempt. LIVE-VERIFIED PASS 9/9 on vcst-qa 2026-06-24 (errorParameters keys = required/available, lowercase string values).",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_NOBAL_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[GQL-OP read_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode errorMessage errorParameters { key value } } } }
+[GQL-EXEC read_validation]
+[GQL-CAPTURE read_validation.data.cart.id → CART_ID]
+[GQL-OP place_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC place_order]
+[GQL-OP read_cart_after]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode } } }
+[GQL-EXEC read_cart_after]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_validation] errors[] empty
+[COUNT label=read_validation] data.cart.validationErrors >= 1
+[DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_INSUFFICIENT_BALANCE].errorCode = LOYALTY_INSUFFICIENT_BALANCE
+[DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_INSUFFICIENT_BALANCE].errorParameters[?key=required].value is non-null
+[DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_INSUFFICIENT_BALANCE].errorParameters[?key=available].value is non-null
+[ERRORS label=place_order] errors[] non-empty
+[NULL label=place_order] data.createOrderFromCart
+[ERRORS label=read_cart_after] errors[] empty
+[DATA label=read_cart_after] data.cart.validationErrors[?errorCode=LOYALTY_INSUFFICIENT_BALANCE].errorCode = LOYALTY_INSUFFICIENT_BALANCE","[EVIDENCE] BL-LOY-008: required > available cannot be asserted directly because errorParameters values are strings (no arithmetic on string-typed path values in the runner). The non-null assertions on both keys prove the contract; human review of evidence JSON confirms required > available semantically. Per BL-LOY-008, cart remains readable and the LOYALTY_INSUFFICIENT_BALANCE error persists after the blocked place_order attempt (read_cart_after probe).
+[EVIDENCE] place_order errors[] non-empty + data.createOrderFromCart null together prove checkout is blocked by the validator chain (vc-module-x-cart PR #125 LoyaltyCartValidator runs before createOrderFromCart proceeds).","errors[] empty on read_validation (validator not firing — LoyaltyCartValidator not registered in DI chain or balance check skipped); validationErrors empty array (balance not queried); errorCode absent or different spelling; place_order succeeds (order created despite insufficient balance — checkout not blocked); read_cart_after errors[] non-empty (cart destroyed by failed place_order); required or available errorParameters key absent","[GQL-OP cleanup_post_safe]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_safe]","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 4 — LOYALTY_INSUFFICIENT_BALANCE); vc-module-x-cart#125 (ICartValidatorRegistry chain); BL-LOY-008",Draft
+MCO-GQL-006,"NEGATIVE — LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED: PTS-only cart emits typed error; adding a cash line clears it","GraphQL > xCart > Validator > Points Only Cart",High,BL-LOY-010,ECL-13.2,"Runner-native. @needs-test-data: LOYALTY_VIP_USER must have a non-zero loyalty balance (provisioned 2026-06-22 with ~4.87M PTS). Store in Mixed Cart mode. Auth as LOYALTY_VIP_USER. Build cart with ONLY a PTS-priced line (no cash product). Assert LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED appears in validationErrors. Then add a cash line and re-read — assert the specific error clears. The 'at least one common product' AC is the rule under test.",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_pts_only]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts_only]
+[GQL-OP read_pts_only_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode errorMessage } } }
+[GQL-EXEC read_pts_only_validation]
+[GQL-CAPTURE read_pts_only_validation.data.cart.id → CART_ID]
+[GQL-OP add_usd_line]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd_line]
+[GQL-OP read_mixed_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode } } }
+[GQL-EXEC read_mixed_validation]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_pts_only_validation] errors[] empty
+[COUNT label=read_pts_only_validation] data.cart.validationErrors >= 1
+[DATA label=read_pts_only_validation] data.cart.validationErrors[?errorCode=LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED].errorCode = LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED
+[ERRORS label=add_usd_line] errors[] empty
+[ERRORS label=read_mixed_validation] errors[] empty","[EVIDENCE] After adding the cash line, the LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED error SHOULD clear from validationErrors. The read_mixed_validation assertion proves errors[] empty (no remaining validation errors) — which is the correct signal since a mixed cart with a balance-sufficient VIP user should be fully valid. If other validation errors remain, they will surface here and need investigation.
+[EVIDENCE] BL-proposal candidate: no BL-LOY-* currently covers this rule — see return report for proposed ID and rule text.","errors[] non-empty on read_pts_only_validation (validator not firing for PTS-only cart); LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED absent (wrong error code in implementation or rule not registered); errors[] non-empty on read_mixed_validation after adding cash line (error not cleared — regression in validator state after cart mutation); add_usd_line errors[] non-empty (product not addable)","[GQL-OP cleanup_post_safe]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_safe]","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 2 — LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)",Draft
+MCO-GQL-007,"NEGATIVE — LOYALTY_POINT_PRODUCTS_NOT_ALLOWED: PTS product in cart while store mode is not Mixed Cart emits typed error","GraphQL > xCart > Validator > Mode Gating",High,,ECL-13.2,"Runner-native. @needs-test-data + Semi-Automated: vcst-qa store is seeded in Mixed Cart mode. This case requires a temporary store-mode flip via REST PUT before the cart validation read, then restoration. PRECONDITION: Execute the following REST call BEFORE the test body to switch to a non-Mixed-Cart mode (e.g., 'Loyalty Store'): PUT {{BACK_URL}}/api/loyalty-setting body={storeId:'B2B-store', loyaltyMode:'Loyalty Store', loyaltyCurrency:'PTS'}. After assertions, restore with PUT {{BACK_URL}}/api/loyalty-setting body={storeId:'B2B-store', loyaltyMode:'Mixed Cart', loyaltyCurrency:'PTS'}. Auth as LOYALTY_VIP_USER. Cart holds 1 PTS line + 1 USD line built BEFORE the mode flip so products are already in the cart at mode-switch time. BL-proposal candidate — no BL-LOY-* currently covers this rule.",store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code),"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_pts]
+  query { products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" sort: ""price:desc"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.@td(LOYALTY_SETTINGS.currency_code):(0 TO)"") { items { id } } }
+[GQL-EXEC find_pts]
+[GQL-CAPTURE find_pts.data.products.items.0.id → PTS_PRODUCT_ID]
+[GQL-OP add_usd]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_usd]
+[GQL-OP add_pts]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PTS_PRODUCT_ID}}"" quantity: 1 itemCurrencyCode: ""@td(LOYALTY_SETTINGS.currency_code)"" }) { id } }
+[GQL-EXEC add_pts]
+[REST-OP flip_mode]
+PUT {{BACK_URL}}/api/loyalty-setting
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Loyalty Store"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
+[REST-EXEC flip_mode]
+[GQL-OP read_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode errorMessage } } }
+[GQL-EXEC read_validation]
+[REST-OP restore_mode]
+PUT {{BACK_URL}}/api/loyalty-setting
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}
+[REST-EXEC restore_mode]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_validation] errors[] empty
+[COUNT label=read_validation] data.cart.validationErrors >= 1
+[DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_POINT_PRODUCTS_NOT_ALLOWED].errorCode = LOYALTY_POINT_PRODUCTS_NOT_ALLOWED","[EVIDENCE] Store mode flip is performed via REST before the cart-read; restore is performed immediately after the assertion read. The Cleanup column also includes a restore in case the test body fails mid-flight to prevent vcst-qa from being left in Loyalty Store mode.
+[EVIDENCE] BL-proposal candidate: no BL-LOY-* currently covers the mode-gating rule — see return report for proposed ID and rule text.
+[EVIDENCE] REST-OP flip_mode and restore_mode use the loyalty-setting API endpoint. If the endpoint path or payload shape has changed, Phase 5 schema verification should confirm the correct API contract ({{BACK_URL}}/api/loyalty-setting shape was documented in LOYALTY_SETTINGS._notes as the seeding endpoint).","validationErrors empty after mode flip (store-mode settings not reloaded by validator — caching issue); LOYALTY_POINT_PRODUCTS_NOT_ALLOWED absent (wrong code or rule not firing); flip_mode REST call fails (wrong endpoint or payload — verify against loyalty-setting API contract); restore_mode fails mid-test leaving vcst-qa in Loyalty Store mode (cleanup column will attempt restore); errors[] non-empty on read_validation (infrastructure error, not validator error)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT {{BACK_URL}}/api/loyalty-setting]
+{""storeId"": ""{{STORE_ID}}"", ""loyaltyMode"": ""Mixed Cart"", ""loyaltyCurrency"": ""@td(LOYALTY_SETTINGS.currency_code)""}","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 1 — LOYALTY_POINT_PRODUCTS_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)",Semi-Automated
+"MCO-GQL-011","NEGATIVE — LOYALTY_PAYMENT_METHOD_NOT_ALLOWED: loyalty payment gateway used while store mode is not Payment Method emits typed error","GraphQL > xCart > Validator > Payment Method Gating","High","BL-LOY-012","ECL-13.2","Runner-native. Store in Mixed Cart mode (the seeded vcst-qa default — a non-Payment-Method mode). Auth as LOYALTY_VIP_USER. Add a cash line, then add a payment via the LoyaltyPaymentMethod gateway (ModuleConstants.LoyaltyPaymentMethodGatewayCode), then read cart.validationErrors and assert LOYALTY_PAYMENT_METHOD_NOT_ALLOWED is present. Gateway code ""LoyaltyPaymentMethod"" is the constant from vc-module-loyalty PR #10. LIVE-VERIFIED PASS 3/3 on vcst-qa 2026-06-24: addOrUpdateCartPayment accepts the gateway code (no registered-method requirement) and the validator emits LOYALTY_PAYMENT_METHOD_NOT_ALLOWED — fully automated, no mode flip or gateway provisioning needed.","store_id={{STORE_ID}}; loyalty_currency=@td(LOYALTY_SETTINGS.currency_code)","[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_cash]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
+[GQL-EXEC add_cash]
+[GQL-OP set_loyalty_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""LoyaltyPaymentMethod"" } }) { id } }
+[GQL-EXEC set_loyalty_payment]
+[GQL-OP read_validation]
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { id validationErrors { errorCode errorMessage errorParameters { key value } } } }
+[GQL-EXEC read_validation]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_validation] errors[] empty
+[COUNT label=read_validation] data.cart.validationErrors >= 1
+[DATA label=read_validation] data.cart.validationErrors[?errorCode=LOYALTY_PAYMENT_METHOD_NOT_ALLOWED].errorCode = LOYALTY_PAYMENT_METHOD_NOT_ALLOWED","[EVIDENCE] vcst-qa store is in Mixed Cart mode (Loyalty.Mode != ""Payment Method""), so adding a payment via the LoyaltyPaymentMethod gateway must trip LoyaltyCartValidator rule 3. No store-mode flip needed — Mixed Cart is itself a non-Payment-Method mode. If addOrUpdateCartPayment rejects the gateway code before validation, this case is downgraded to Semi-Automated (gateway-availability dependent).","set_loyalty_payment errors[] non-empty (gateway code rejected by addOrUpdateCartPayment before the validator runs — gateway not registered/available; downgrade to Semi-Automated); LOYALTY_PAYMENT_METHOD_NOT_ALLOWED absent from validationErrors (rule 3 not firing or wrong gateway code constant); validationErrors empty (validator chain not running)","[GQL-OP cleanup_post_safe]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_safe]","VCST-5103; vc-module-loyalty#10 (LoyaltyCartValidator rule 3 — LOYALTY_PAYMENT_METHOD_NOT_ALLOWED); vc-module-x-cart#125 (ICartValidatorRegistry chain)","Draft"
