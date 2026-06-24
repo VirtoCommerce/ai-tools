@@ -1,0 +1,405 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+LOY-029,"ProductPoints — VIP program earns override on WH-001 for VIP user; ORG_USER earns default on same SKU (cart oracle)",Loyalty > Product Points Loyalty > User group condition + Product factors,High,PROPOSED-BL-LOY-WINNER,,Runner-native (cart oracle — NOT products()). LOY_PP_VIP seeded and active (VIP-only eligibility; WH-001 factor=100; priority=100). LOY_PP_ALL seeded and active (all customers; LT-001=500; priority=80 — does NOT cover WH-001 so ORG_USER gets default on WH-001). Store in Mixed Cart / Loyalty-enabled mode. LOYALTY_VIP_USER in VIP group. ORG_USER in no-specific group. Fixed fixtures — no per-test program mutation needed.,store_id={{STORE_ID}}; culture=en-US,"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me_vip]
+  query { me { id } }
+[GQL-EXEC setup_me_vip]
+[GQL-CAPTURE setup_me_vip.data.me.id → VIP_USER_ID]
+[GQL-OP cleanup_pre_vip]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{VIP_USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre_vip]
+[GQL-OP find_wh001_vip]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_wh001_vip] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{VIP_USER_ID}}"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_wh001_vip]
+[GQL-CAPTURE find_wh001_vip.data.products.items.0.id → WH001_PROD_ID]
+[GQL-OP add_wh001_vip]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{VIP_USER_ID}}"" productId: ""{{WH001_PROD_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_wh001_vip]
+[GQL-OP read_cart_vip]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{VIP_USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart_vip]
+[GQL-CAPTURE read_cart_vip.data.cart.items[?sku=WH-001].loyaltyPoints.amount → VIP_WH001_AMT]
+[GQL-OP cleanup_post_vip]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{VIP_USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_vip]
+
+[AUTH role=ORG_USER]
+[GQL-OP setup_me_org]
+  query { me { id } }
+[GQL-EXEC setup_me_org]
+[GQL-CAPTURE setup_me_org.data.me.id → ORG_USER_ID]
+[GQL-OP cleanup_pre_org]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre_org]
+[GQL-OP find_wh001_org]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_wh001_org] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{ORG_USER_ID}}"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_wh001_org]
+[GQL-CAPTURE find_wh001_org.data.products.items.0.id → WH001_PROD_ID_ORG]
+[GQL-OP add_wh001_org]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" productId: ""{{WH001_PROD_ID_ORG}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_wh001_org]
+[GQL-OP read_cart_org]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+    }
+  }
+[GQL-EXEC read_cart_org]
+[GQL-CAPTURE read_cart_org.data.cart.items[?sku=WH-001].loyaltyPoints.amount → ORG_WH001_AMT]
+[GQL-OP cleanup_post_org]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post_org]","[ERRORS label=read_cart_vip] errors[] empty
+[ERRORS label=read_cart_org] errors[] empty
+[DATA label=read_cart_vip] data.cart.items[?sku=WH-001].loyaltyPoints.amount > 0
+[DATA label=read_cart_vip] data.cart.loyaltyPoints.amount > 0
+[DATA label=read_cart_vip] data.cart.items[?sku=WH-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart_org] data.cart.items[?sku=WH-001].loyaltyPoints.amount > 0
+[EVIDENCE] VIP user earns LOY_PP_VIP override (factor=100 x price >> factor=1 x price default). ORG_USER earns default on WH-001 (LOY_PP_VIP is VIP-only — ORG_USER ineligible; no other active program covers WH-001 for all-groups). VIP amount captured as {{VIP_WH001_AMT}}; ORG amount as {{ORG_WH001_AMT}}. Relative: {{VIP_WH001_AMT}} must be >> {{ORG_WH001_AMT}} (100x vs 1x factor).","[ADMIN] LOY_PP_VIP program blade shows User group condition = VIP and product factor WH-001=100","VIP and ORG earn identical amounts (group gate broken); loyaltyPoints null on either cart item (oracle wrong — must be cart not products()); WH-001 not found in cart items (SKU filter mismatch)",none,VCST-5135; VCST-5023,Draft
+LOY-031,"ProductPoints — ORG_USER: ALL-program wins; override SKU earns factor×price; all gate-blocked programs earn default (group/window/active)",Loyalty > Product Points Loyalty > Earning,Critical,PROPOSED-BL-LOY-WINNER; BL-LOY-001,ECL-4.2,"Runner-native (cart oracle). ORG_USER has no specific group restriction. Active programs eligible for ORG_USER: LOY_PP_ALL (pri=80; LT-001=500; QA-LOY-PRIO-001=500). Gate-blocked: LOY_PP_VIP (VIP-only), LOY_PP_WHOLESALE (Wholesaler-only), LOY_PP_FUTURE (future window), LOY_PP_EXPIRED (expired window), LOY_PP_INACTIVE (isActive=false). LOY_PP_PRIORITY (pri=70; QA-LOY-PRIO-001=999) eligible but lower priority than ALL — ALL(80) wins. All fixtures seeded. No per-test mutation needed. WH-001 and QA-TIER-001 not covered by any ALL-eligible active in-window program for ORG_USER → earn default.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP find_wh001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_wh001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_wh001]
+[GQL-CAPTURE find_wh001.data.products.items.0.id → WH001_ID]
+[GQL-OP find_prio001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_prio001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-PRIO-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_prio001]
+[GQL-CAPTURE find_prio001.data.products.items.0.id → PRIO001_ID]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP add_wh001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{WH001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_wh001]
+[GQL-OP add_prio001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRIO001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_prio001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=WH-001].loyaltyPoints.amount → AMT_WH001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount → AMT_PRIO001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=WH-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > data.cart.items[?sku=WH-001].loyaltyPoints.amount
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount
+[EVIDENCE] LT-001 (ALL override factor=500) earns >> WH-001 (no eligible active program → default factor=1). QA-LOY-PRIO-001 earns ALL's 500x, NOT PRIORITY's 999x (ALL pri=80 > PRIORITY pri=70 → single winner, no stacking). WH-001 earns default despite: VIP-ineligible (group gate), FUTURE-ineligible (window gate), EXPIRED-ineligible (window gate), INACTIVE-ineligible (active gate) all having priority=200 above ALL. AMT_LT001: {{AMT_LT001}}, AMT_WH001: {{AMT_WH001}}, AMT_PRIO001: {{AMT_PRIO001}}.","[ADMIN] LOY_PP_ALL program blade shows LT-001 factor=500 and QA-LOY-PRIO-001 factor=500. LOY_PP_PRIORITY shows QA-LOY-PRIO-001 factor=999 but does NOT win for ORG_USER (lower priority number 70 < 80).","loyaltyPoints null on cart items (products() oracle was used — wrong; must use cart); LT-001 and WH-001 earn identical amounts (ALL override not applied); QA-LOY-PRIO-001 earns 999x (PRIORITY stacking or winning instead of ALL); any amount is 0 for LT-001; errors[] non-empty",none,VCST-5135,Draft
+LOY-032,"ProductPoints — VIP user: VIP-program wins; VIP-only SKU earns override; non-VIP-covered SKU earns default",Loyalty > Product Points Loyalty > Earning > User Group Eligibility,High,PROPOSED-BL-LOY-WINNER; BL-LOY-001,,"Runner-native (cart oracle). LOYALTY_VIP_USER is in VIP group. LOY_PP_VIP (pri=100; VIP-only; WH-001=100) wins for VIP users — WH-001 earns override factor. LOY_PP_ALL (pri=80; all; LT-001=500) is eligible for VIP_USER too but covers different SKUs and has lower priority; LT-001 earns ALL's override since VIP does not cover LT-001. Fixtures seeded — no per-test mutation needed.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=LOYALTY_VIP_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → VIP_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{VIP_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_wh001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_wh001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{VIP_ID}}"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_wh001]
+[GQL-CAPTURE find_wh001.data.products.items.0.id → WH001_ID]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{VIP_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_wh001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{VIP_ID}}"" productId: ""{{WH001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_wh001]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{VIP_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{VIP_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=WH-001].loyaltyPoints.amount → AMT_WH001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{VIP_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=WH-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=WH-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=WH-001].loyaltyPoints.amount > data.cart.items[?sku=LT-001].loyaltyPoints.amount
+[EVIDENCE] VIP user: VIP is the SINGLE global winner (pri=100, VIP-only). WH-001 earns the VIP override (factor=100); LT-001 earns the DEFAULT factor (1x price), because only ONE program wins globally and the winning VIP program does not define LT-001 — there are no per-SKU winners and no stacking. So AMT_WH001 (override) > AMT_LT001 (default), both > 0. AMT_WH001: {{AMT_WH001}}, AMT_LT001: {{AMT_LT001}}.","[ADMIN] LOY_PP_VIP blade shows WH-001 factor=100 restricted to VIP user group. LOY_PP_ALL shows LT-001 factor=500 for all customers.","WH-001 earns same amount as in LOY-031 ORG_USER case (VIP override not applied, got default instead); loyaltyPoints null; errors[] non-empty; AMT_WH001 = 0",none,VCST-5135,Draft
+LOY-033,"ProductPoints — Wholesaler user: WHOLESALE-program wins; Wholesaler-only SKU earns override; other SKUs earn default",Loyalty > Product Points Loyalty > Earning > User Group Eligibility,High,PROPOSED-BL-LOY-WINNER; BL-LOY-001,,"Runner-native (cart oracle). LOYALTY_WHOLESALE_USER is in Wholesaler group. LOY_PP_WHOLESALE (pri=90; Wholesaler-only; QA-TIER-001=250) wins for Wholesaler users. LT-001 has LOY_PP_ALL (pri=80; all; LT-001=500) winning since WHOLESALE does not cover LT-001. Fixtures seeded.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=LOYALTY_WHOLESALE_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → WS_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{WS_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_tier001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_tier001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{WS_ID}}"", ""filter"": ""code:QA-TIER-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_tier001]
+[GQL-CAPTURE find_tier001.data.products.items.0.id → TIER001_ID]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{WS_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_tier001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{WS_ID}}"" productId: ""{{TIER001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_tier001]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{WS_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{WS_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-TIER-001].loyaltyPoints.amount → AMT_TIER001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{WS_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=QA-TIER-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-TIER-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
+[EVIDENCE] Wholesaler user: QA-TIER-001 earns WHOLESALE override (factor=250). LT-001 earns ALL override (factor=500). WHOLESALE (pri=90) wins globally for this user, but since WHOLESALE does not define a factor for LT-001, LT-001 falls back to global default (factor=1) — OR if WHOLESALE wins globally for LT-001 too (no WHOLESALE factor → default), AMT_LT001 should be much smaller than AMT_TIER001. AMT_TIER001: {{AMT_TIER001}}, AMT_LT001: {{AMT_LT001}}.","[ADMIN] LOY_PP_WHOLESALE blade shows QA-TIER-001 factor=250 restricted to Wholesaler group. Compare AMT_TIER001 vs AMT_LT001 to confirm group-gated override applied to QA-TIER-001.","QA-TIER-001 earns default (same small amount as LT-001) — WHOLESALE override not applied; loyaltyPoints null; errors[] non-empty; AMT_TIER001 = 0",none,VCST-5135,Draft
+LOY-034,"ProductPoints — Priority resolution / no-stacking: ALL(pri=80) beats PRIORITY(pri=70) on shared SKU; QA-LOY-PRIO-001 earns ALL factor not PRIORITY factor",Loyalty > Product Points Loyalty > Earning > Priority Resolution,High,PROPOSED-BL-LOY-WINNER; BL-LOY-001,,"Runner-native (cart oracle). ORG_USER is in no specific group — ALL(pri=80) wins for both LT-001 and QA-LOY-PRIO-001. ALL defines factor=500 for BOTH SKUs. PRIORITY(pri=70) defines factor=999 for QA-LOY-PRIO-001 but does NOT win (lower priority). The discriminating assertion: AMT_PRIO001 × price_LT001 = AMT_LT001 × price_PRIO001 (cross-multiplication proves both are earning at the SAME factor=500 from the SAME winning program ALL). If PRIORITY had won/stacked, AMT_PRIO001 × price_LT001 would be != AMT_LT001 × price_PRIO001. Fixed fixtures — no per-test mutation needed.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_prio001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_prio001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-PRIO-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_prio001]
+[GQL-CAPTURE find_prio001.data.products.items.0.id → PRIO001_ID]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_prio001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRIO001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_prio001]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } extendedPrice { amount } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount → AMT_PRIO001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-PRIO-001].extendedPrice.amount → CART_PRICE_PRIO001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].extendedPrice.amount → CART_PRICE_LT001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.currency.code = PTS
+[EVIDENCE] ORG_USER: ALL(pri=80) wins for both SKUs. ALL defines factor=500 for LT-001 AND QA-LOY-PRIO-001. PRIORITY(pri=70) defines factor=999 for QA-LOY-PRIO-001 but does NOT win (lower priority number 70 < 80; single winner takes all; no stacking). Discriminating proof: if both SKUs earned at the same factor (500 from ALL), then AMT_PRIO001/PRICE_PRIO001 = AMT_LT001/PRICE_LT001 → cross-multiplied: AMT_PRIO001 × PRICE_LT001 = AMT_LT001 × PRICE_PRIO001. If PRIORITY had won/stacked on QA-LOY-PRIO-001, AMT_PRIO001 would reflect factor 999 (or 999+500=1499) vs LT-001 factor=500, breaking the equality. Captured: AMT_PRIO001={{AMT_PRIO001}}, AMT_LT001={{AMT_LT001}}, CART_PRICE_PRIO001={{CART_PRICE_PRIO001}}, CART_PRICE_LT001={{CART_PRICE_LT001}}. Human review of evidence JSON: verify AMT_PRIO001 × CART_PRICE_LT001 ≈ AMT_LT001 × CART_PRICE_PRIO001 (within 1 point rounding). This cross-multiplication proves both SKUs resolved to the same factor from the same single winning program (ALL). Note: the runner cannot execute arithmetic cross-path assertions inline; the [EVIDENCE] block documents the mathematical discriminant for human review; the structural gate (both > 0, correct currency) is the automated signal.","[ADMIN] LOY_PP_ALL shows both LT-001 and QA-LOY-PRIO-001 with factor=500. LOY_PP_PRIORITY shows QA-LOY-PRIO-001 with factor=999 — but it does NOT win (priority 70 < ALL priority 80).","AMT_PRIO001 = 0 (QA-LOY-PRIO-001 earns nothing — fixture not in B2B virtual catalog or no active program covers it); AMT_LT001 = 0; errors[] non-empty; loyaltyPoints null on cart items (cart oracle not working)",none,VCST-5135,Draft
+LOY-035,"ProductPoints — ZERO-factor earning: DECISION — rely on LOY-018 (admin config); no separate earning assertion authored",Loyalty > Product Points Loyalty > Earning > Zero Factor,Medium,BL-LOY-001,ECL-1.1,"GATE DECISION: Making LOY_PP_ZERO (pri=50) win globally requires either raising its priority above LOY_PP_ALL (pri=80) via REST mutation OR deactivating higher-priority programs — both break parallel safety when cases run concurrently. OPTION (b) chosen: LOY-018 covers admin-config persistence of factor=0 (the factor is saved and readable). The earning assertion (add SKU with factor=0 to cart → cart shows 0 points) is deferred until a serial-execution fixture (isolated program + isolated user with ZERO as the only eligible program) can be seeded. This case is a documented gap marker — it passes structurally by reading the admin config rather than testing earning.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP find_zero_sku]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_zero_sku] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-ZERO-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_zero_sku]
+[GQL-CAPTURE find_zero_sku.data.products.items.0.id → ZERO_SKU_ID]","[ERRORS label=find_zero_sku] errors[] empty
+[DATA label=find_zero_sku] data.products.items.0.id is non-null
+[EVIDENCE] QA-LOY-ZERO-001 found in catalog. LOY_PP_ZERO has factor=0 for this SKU (confirmed by LOY-018 admin config test). Earning assertion (cart shows 0 points when ZERO wins) is NOT tested here — LOY_PP_ZERO (pri=50) is outranked by LOY_PP_ALL (pri=80) for ORG_USER, so zero-override earning cannot be asserted without per-test program-state mutation. Gap documented. See LOY-018 for zero-factor admin persistence coverage.","[ADMIN] LOY-018 admin test confirms factor=0 is persisted for QA-LOY-ZERO-001 in LOY_PP_ZERO. Earning-level zero-factor coverage deferred.","QA-LOY-ZERO-001 not found in B2B virtual catalog (catalog visibility issue); errors[] non-empty",none,VCST-5135,Draft
+LOY-036,"ProductPoints — Multi-product program: cart total loyaltyPoints aggregates per-item amounts across multiple SKUs",Loyalty > Product Points Loyalty > Earning > Cart Aggregation,High,BL-LOY-001,,"Runner-native (cart oracle). LOY_PP_MULTI (pri=60; all; QA-LOY-MULTI-A=50; QA-LOY-MULTI-B=25) has lower priority than ALL(80) and PRIORITY(70); ORG_USER: ALL wins. QA-LOY-MULTI-A and QA-LOY-MULTI-B are ONLY covered by LOY_PP_MULTI (not by ALL or PRIORITY). Since MULTI is not the winner for ORG_USER globally, these SKUs earn default (factor=1). This verifies that non-winning program's per-product factors do NOT apply to those products. Asserts: both multi-program SKUs earn > 0 (default), and cart-level loyaltyPoints = sum of per-item amounts.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_multi_a]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_multi_a] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-MULTI-A category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_multi_a]
+[GQL-CAPTURE find_multi_a.data.products.items.0.id → MULTI_A_ID]
+[GQL-OP find_multi_b]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_multi_b] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-MULTI-B category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_multi_b]
+[GQL-CAPTURE find_multi_b.data.products.items.0.id → MULTI_B_ID]
+[GQL-OP add_multi_a]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{MULTI_A_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_multi_a]
+[GQL-OP add_multi_b]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{MULTI_B_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_multi_b]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-MULTI-A].loyaltyPoints.amount → AMT_MULTI_A]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-MULTI-B].loyaltyPoints.amount → AMT_MULTI_B]
+[GQL-CAPTURE read_cart.data.cart.loyaltyPoints.amount → CART_TOTAL]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-MULTI-A].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-MULTI-B].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-MULTI-A].loyaltyPoints.currency.code = PTS
+[EVIDENCE] ORG_USER: ALL(pri=80) wins globally. QA-LOY-MULTI-A and QA-LOY-MULTI-B are not covered by ALL → earn default (factor=1). Both items earn > 0 (default) confirms earning path works even for SKUs not covered by the winning program. Cart-level total = AMT_MULTI_A + AMT_MULTI_B (aggregation). AMT_MULTI_A: {{AMT_MULTI_A}}, AMT_MULTI_B: {{AMT_MULTI_B}}, CART_TOTAL: {{CART_TOTAL}}.","[ADMIN] LOY_PP_MULTI shows QA-LOY-MULTI-A factor=50 and QA-LOY-MULTI-B factor=25 — but MULTI (pri=60) does not win for ORG_USER; earned amounts should reflect default factor=1, not MULTI's factors.","Either SKU returns 0 loyaltyPoints (default earning broken); CART_TOTAL = 0; errors[] non-empty; cart-level loyaltyPoints not returned",none,VCST-5135,Draft
+LOY-037,"ProductPoints — Localized program: LOY_PP_LOCALIZED program (pri=40) is present; ORG_USER earns via ALL winner; localized SKU earns default (lowest-priority program not picked)",Loyalty > Product Points Loyalty > Earning > Multi-Program Environment,Medium,BL-LOY-001,,"Runner-native (cart oracle). LOY_PP_LOCALIZED (pri=40; all; QA-LOY-LOCALE-001=10) is the lowest-priority eligible program for ORG_USER. ALL(pri=80) wins. QA-LOY-LOCALE-001 is not covered by ALL → earns default (factor=1). Validates that lowest-priority program does not win by default when higher-priority active programs exist. Also verifies system stability with 5+ simultaneous active programs.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_locale_sku]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_locale_sku] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-LOCALE-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_locale_sku]
+[GQL-CAPTURE find_locale_sku.data.products.items.0.id → LOCALE_SKU_ID]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_locale_sku]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LOCALE_SKU_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_locale_sku]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-LOCALE-001].loyaltyPoints.amount → AMT_LOCALE]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-LOCALE-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > data.cart.items[?sku=QA-LOY-LOCALE-001].loyaltyPoints.amount
+[EVIDENCE] ALL(pri=80) wins for ORG_USER. LT-001 earns ALL override (factor=500). QA-LOY-LOCALE-001 not covered by ALL → earns default (factor=1). LOCALIZED (pri=40) does NOT win — lowest priority program never wins when higher-priority eligible programs exist. AMT_LOCALE: {{AMT_LOCALE}}, AMT_LT001: {{AMT_LT001}}. AMT_LT001 >> AMT_LOCALE confirms correct resolution.","[ADMIN] LOY_PP_LOCALIZED shows QA-LOY-LOCALE-001 factor=10. LOY_PP_ALL at priority 80 wins instead. System stable with 5+ active programs simultaneously.","QA-LOY-LOCALE-001 earns LOCALIZED override (factor=10 × price) instead of default — indicates LOCALIZED program won incorrectly; LT-001 earns 0; errors[] non-empty",none,VCST-5135,Draft

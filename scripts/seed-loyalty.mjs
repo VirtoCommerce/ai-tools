@@ -86,7 +86,21 @@ async function resolveSku(sku) {
   return id;
 }
 
-/** Apply the program's product factors (PUT replaces the whole set → idempotent). */
+/** Delete any existing factor rows for a program (PUT /factors is insert-only — it 500s on a
+ *  duplicate (programId,productId), so a reseed must clear first to stay idempotent). */
+async function clearFactors(programId) {
+  const r = await api('POST', '/api/loyalty-program-product-factors/search', { loyaltyProgramId: programId, take: 100 }, { expectStatus: [200, 201] });
+  const ids = (r?.results || r?.items || []).map((f) => f.id).filter(Boolean);
+  if (ids.length) {
+    // NOTE: this API only honors REPEATED query params (ids=a&ids=b); a comma-joined
+    // ids=a,b silently no-ops (returns 204 but deletes nothing). Verified live 2026-06-24.
+    const qs = ids.map((i) => `ids=${encodeURIComponent(i)}`).join('&');
+    await api('DELETE', `/api/loyalty-program-product-factors?${qs}`, null, { expectStatus: [200, 204, 404] });
+  }
+  return ids.length;
+}
+
+/** Apply the program's product factors. Clears existing rows first → idempotent reseed. */
 async function applyFactors(programId, factorRows, label) {
   if (!factorRows.length) return 0;
   const factors = [];
@@ -97,6 +111,7 @@ async function applyFactors(programId, factorRows, label) {
   }
   if (!factors.length) return 0;
   if (DRY_RUN) { log(`    [DRY] would set ${factors.length} factor(s)`); return factors.length; }
+  await clearFactors(programId);
   await api('PUT', '/api/loyalty-program-product-factors/factors', factors, { expectStatus: [200, 201, 204] });
   return factors.length;
 }
@@ -122,11 +137,24 @@ async function seed() {
     const startDate = isoFromOffset(row.start_offset_days);
     const endDate = isoFromOffset(row.end_offset_days);
 
-    // Idempotent: reuse if a program with this name already exists, but still (re)apply factors.
+    // Idempotent + declarative: reuse if a program with this name exists, but UPDATE its
+    // mutable fields (priority / active / window / localized name / eligibility) from the CSV
+    // and re-apply factors — so editing programs.csv and re-running converges the live state.
     const existing = live.find((p) => p.name === targetName);
     if (existing) {
+      if (!DRY_RUN) {
+        const full = await api('GET', `/api/loyalty-programs/${existing.id}`, null, { expectStatus: [200] });
+        full.isActive = csvBool(row.is_active, true);
+        full.priority = Number(row.priority) || 0;
+        full.startDate = startDate;
+        full.endDate = endDate;
+        if (row.localized_name_es) full.localizedName = { values: { 'es-ES': row.localized_name_es } };
+        setEligibility(full.dynamicExpression, group);
+        await api('PUT', '/api/loyalty-programs', full, { expectStatus: [200, 201, 204] });
+      }
       const n = await applyFactors(existing.id, factorRows, row.program_id);
-      log(`Reusing ${targetName} (${existing.id})${n ? ` — re-applied ${n} factor(s)` : ''}`);
+      log(`Updated ${targetName} (${existing.id}) [pri=${row.priority}, active=${row.is_active}, ${groupLabel}` +
+        `${startDate ? `, start=${startDate.slice(0, 10)}` : ''}${endDate ? `, end=${endDate.slice(0, 10)}` : ''}] — ${n} factor(s)`);
       continue;
     }
 
@@ -174,7 +202,9 @@ async function teardown() {
   const ids = programs.filter((p) => (p.name || '').startsWith(NAME_PREFIX)).map((p) => p.id);
   if (!ids.length) { log('  none to delete'); return; }
   if (DRY_RUN) { log(`  [DRY] would delete ${ids.length}`); return; }
-  await api('DELETE', `/api/loyalty-programs?ids=${ids.join(',')}`, null, { expectStatus: [200, 204, 404] });
+  // Repeated ids= params (comma-joined silently no-ops on this API — see clearFactors).
+  const qs = ids.map((i) => `ids=${encodeURIComponent(i)}`).join('&');
+  await api('DELETE', `/api/loyalty-programs?${qs}`, null, { expectStatus: [200, 204, 404] });
   log(`  ✓ deleted ${ids.length} loyalty program(s)`);
 }
 

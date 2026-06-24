@@ -1,24 +1,37 @@
 ---
-description: "Generate Agile user stories with full BDD acceptance criteria, DoD, and test scenarios for a feature or JIRA epic."
-argument-hint: "feature name | VCST-XXXX"
+description: "Generate Agile user stories with full BDD acceptance criteria — or review an existing story for weak/missing ACs and AC↔implementation drift."
+argument-hint: "feature name | VCST-XXXX | --review VCST-XXXX"
 disable-model-invocation: true
 ---
 
-# /ba-stories — Generate User Stories
+# /ba-stories — Generate or Review User Stories
 
-Generate Agile user stories with full BDD acceptance criteria for a specific feature, flow, or JIRA epic. This is a shortcut to the ba-story-writer agent.
+Generate Agile user stories with full BDD acceptance criteria for a specific feature, flow, or JIRA epic — **or**, with `--review`, critique an *existing* story for weak ACs, missing ACs, and drift between its ACs and the implementation. Both are shortcuts to the `ba-story-writer` agent (Mode A = write, Mode B = review).
 
 ## Usage
 ```
-/ba-stories checkout              # Stories for the checkout flow
-/ba-stories BOPIS                 # Stories for Buy Online Pickup In Store
-/ba-stories VCST-1234             # Stories from a JIRA ticket/epic
-/ba-stories "product configurator" # Stories for a specific feature
+/ba-stories checkout                # Stories for the checkout flow (write)
+/ba-stories BOPIS                   # Stories for Buy Online Pickup In Store (write)
+/ba-stories VCST-1234               # Stories from a JIRA ticket/epic (write)
+/ba-stories "product configurator"  # Stories for a specific feature (write)
+/ba-stories --review VCST-1234      # Review the existing story's ACs — weak sides, gaps, AC↔impl drift
 ```
 
 ---
 
-## Execution
+## Review mode (`--review VCST-XXXX`)
+
+Backlog-grooming / pre-test entry to `ba-story-writer` **Mode B**. Use it to harden a story's ACs before development or before `/qa-test` (which calls the same review inline at its Step 1b).
+
+1. Fetch the ticket via Atlassian MCP (`getJiraIssue`) — summary, description, ACs, components, linked PR. If Atlassian MCP is unavailable, ask the user to paste the story + ACs.
+2. Identify the affected domain(s) → pass as `domains` so the BA loads the right `BL-*`/`ECL-*` sets.
+3. If a PR is linked, fetch its changed files (`get_pull_request_files`) and pass as `implementation: { pr_diff }` so the review compares each AC against what was built. (No PR → review ACs + gaps only; AC↔impl coverage is marked "no diff available".)
+4. Dispatch `ba-story-writer` in review mode (`existing_story`, `jira_ref`, `domains`, `implementation`) — **analyze only, no JIRA/GitHub writes, no replacement story.**
+5. Save the review to `reports/ba/{VCST-XXXX}-ac-review.md` and output the scorecard, weak sides, gap-ACs, and AC↔implementation findings to the user. Offer (don't auto-apply) to raise the gap-ACs / clarifications with the story author.
+
+---
+
+## Execution (write mode)
 
 ### Step 1 — Understand the Scope
 

@@ -2134,8 +2134,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 37,
-      "estimatedMinutes": 28,
+      "testCount": 29,
+      "estimatedMinutes": 22,
       "agent": "qa-backend-expert",
       "tags": [
         "loyalty",
@@ -2167,6 +2167,30 @@
         "graphql",
         "order-totals",
         "multi-currency",
+        "sprint"
+      ],
+      "requiresModules": [
+        "loyalty"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "075c",
+      "name": "Loyalty Product Points Earning",
+      "file": "regression/suites/Backend/loyalty/075c-loyalty-product-points-earning.csv",
+      "domain": "customer-b2b",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 8,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "loyalty",
+        "product-points",
+        "graphql",
+        "earning",
         "sprint"
       ],
       "requiresModules": [
@@ -2654,6 +2678,7 @@
       "include": [
         "075",
         "075b",
+        "075c",
         "083",
         "083b"
       ]

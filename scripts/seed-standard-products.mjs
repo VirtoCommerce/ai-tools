@@ -121,6 +121,58 @@ const STD_SPECS = [
     ],
     notes: 'PROD_TIER_PRICED — tier pricing: 1-9 std, 10-19 -10%, 20+ -20%.',
   },
+  // --- VCST-5135 loyalty ProductPoints: dedicated single-program SKUs so each
+  // program's earning behavior is cleanly observable in cart.items[].loyaltyPoints
+  // (no SKU shared by two programs active for the same user → no masked gates).
+  // All in-stock & priced so addItem(qty:1) succeeds and factor×price is observable.
+  {
+    csvId: 'PROD-201',
+    name: 'AGENT-TEST-Loy-Inactive',
+    code: 'QA-LOY-INACT-001',
+    listPrice: 50.0,
+    stock: 100,
+    notes: 'LOY_PP_INACTIVE dedicated SKU — inactive-program earning gate (in-stock so it is addable).',
+  },
+  {
+    csvId: 'PROD-202',
+    name: 'AGENT-TEST-Loy-Zero',
+    code: 'QA-LOY-ZERO-001',
+    listPrice: 50.0,
+    stock: 100,
+    notes: 'LOY_PP_ZERO dedicated SKU — factor=0 BVA earning.',
+  },
+  {
+    csvId: 'PROD-203',
+    name: 'AGENT-TEST-Loy-Multi-A',
+    code: 'QA-LOY-MULTI-A',
+    listPrice: 40.0,
+    stock: 100,
+    notes: 'LOY_PP_MULTI dedicated SKU #1 — multi-SKU summation (factor 50).',
+  },
+  {
+    csvId: 'PROD-204',
+    name: 'AGENT-TEST-Loy-Multi-B',
+    code: 'QA-LOY-MULTI-B',
+    listPrice: 80.0,
+    stock: 100,
+    notes: 'LOY_PP_MULTI dedicated SKU #2 — multi-SKU summation (factor 25, distinct from A).',
+  },
+  {
+    csvId: 'PROD-205',
+    name: 'AGENT-TEST-Loy-Priority',
+    code: 'QA-LOY-PRIO-001',
+    listPrice: 60.0,
+    stock: 100,
+    notes: 'LOY_PP_PRIORITY + LOY_PP_ALL both target this SKU — priority-stacking observation.',
+  },
+  {
+    csvId: 'PROD-206',
+    name: 'AGENT-TEST-Loy-Localized',
+    code: 'QA-LOY-LOCALE-001',
+    listPrice: 30.0,
+    stock: 100,
+    notes: 'LOY_PP_LOCALIZED dedicated SKU — localized-name program earning.',
+  },
 ];
 
 const filterSpecs = ONLY ? STD_SPECS.filter(s => s.csvId === ONLY) : STD_SPECS;

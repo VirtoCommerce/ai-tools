@@ -18,7 +18,7 @@ Analyze scope, dispatch specialist agents, collect results, and produce a verdic
 
 ---
 
-## Pipeline: Analyze → Plan → Write → Execute → Explore → Report
+## Pipeline: Analyze → Analyze Story (BA) → Plan → Write → Execute → Explore → Report
 
 ### Step 1 — Analyze
 
@@ -58,6 +58,30 @@ Agents to dispatch: [list]
 
 ---
 
+### Step 1b — Analyze the Story (BA gap & implementation review)
+
+A strong test run starts from strong ACs. Before writing a single test case, the story under test gets critiqued — and its ACs compared against what was actually built. **Advisory, never blocking.**
+
+Runs when scope is a JIRA ticket/story **with acceptance criteria**. Skip (with a one-line note) for a bare feature name or a PR with no governing story.
+
+Dispatch **`ba-story-writer` in review mode (Mode B)** — analyze only, do NOT write a new story, do NOT touch JIRA. Pass:
+- `existing_story` — the summary + description + ACs fetched in Step 1
+- `jira_ref` + `domains` (from Step 1)
+- `implementation: { pr_diff }` — the linked PR's changed files + diff already fetched in Step 1 (`get_pull_request_files`). This is the **static** AC↔code comparison; the **live** comparison happens later in Step 6b.
+
+The BA returns (see `ba-story-writer` Mode B):
+- **AC Quality Scorecard** — each existing AC: testable? / clarity / smells / KEEP·REWRITE·SPLIT (+ rewrite for each weak one)
+- **Weak sides** — concrete rewrites for ambiguous / non-falsifiable / happy-path-only ACs
+- **AC ↔ Implementation coverage** — per AC: SATISFIED / DRIFT / NOT-FOUND / CONTRADICTS against the diff, plus **unspecified implementation** (code changes no AC governs)
+- **Gap analysis** — missing ACs (error paths, boundaries, guest/B2B variants, NFRs, integration boundaries), each mapped to a `BL-*`/`ECL-*` and phrased as a gap-AC
+- **AC → Test traceability seed** — the merged table of atomic testable conditions (story ACs + gap-ACs), each carrying its `Impl verdict`
+
+**Surface to the user inline:** the weak ACs, the DRIFT/CONTRADICTS/scope-creep findings, and the gap-ACs. Then **proceed** — fold the **gap-ACs into the test scope** alongside the story's own ACs, and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify **live** (a static-diff finding is a suspicion, not a defect).
+
+**Output:** write the AC traceability table to `tests/{SPRINT}/VCST-XXXX/ac-analysis.md`. It is the spine for Step 3 (test cases) and Step 6 (verdict + live reconciliation).
+
+---
+
 ### Step 2 — Plan
 
 Determine testing strategy: load knowledge, query docs, and route agents.
@@ -94,14 +118,16 @@ Determine testing strategy: load knowledge, query docs, and route agents.
 
 The specialist follows the **`/qa-plan` methodology scoped to this ticket** — consult `e2e-scenario-catalog.md` for the `E2E-*` scenarios identified in Step 2 and inherit their regression-suite mappings — but the **output is the lightweight scoped `testing-checklist.md` below, NOT a full `/qa-plan` test plan / RTM / TestRail CSV.** Use the catalog for scenario coverage and suite traceability; do not run the full test-planning ceremony (SBTM/test-design/peer-review/Draft→Reviewed promotion) here — Step 5 owns exploratory, and full case authoring belongs to a standalone `/qa-plan` run.
 
+**Consume the Step 1b AC traceability table** (`ac-analysis.md`) as the coverage spine — one row per atomic condition, covering both the story's own ACs and the BA-discovered gap-ACs. Conditions flagged DRIFT / NOT-FOUND / CONTRADICTS get an explicit checklist item to verify them live.
+
 1. **Check for existing test cases** — look in `regression/suites/` for suites that cover the affected domains (start from the `E2E-*` → suite mappings recorded in Step 2).
 2. **If test cases exist** → generate a **testing checklist** scoped to the ticket/PR:
-   - Map ACs to existing suite test cases
+   - Map **each atomic condition** from the Step 1b AC table (story ACs + gap-ACs) to existing suite test cases
    - Fold in the matching `E2E-*` scenario(s) from the catalog so cross-screen/journey coverage isn't missed
    - Add checklist items for `BL-*` rules and `ECL-*` edge cases not covered by existing suites
-   - Flag gaps where no existing test case covers an AC
+   - Flag gaps where no existing test case covers a condition
 3. **If no test cases exist** → generate **new test cases** using `/qa-test-cases-generator` methodology:
-   - Derive cases from ACs, `E2E-*` scenarios, `BL-*` invariants, `ECL-*` patterns, and domain checklists
+   - Derive cases from the Step 1b AC conditions (story + gap-ACs), `E2E-*` scenarios, `BL-*` invariants, `ECL-*` patterns, and domain checklists
    - Write cases to `tests/{SPRINT}/VCST-XXXX/test-cases.csv`
 4. **Output:** `tests/{SPRINT}/VCST-XXXX/testing-checklist.md` — used by execution agents in Step 4 as their test plan.
 
@@ -199,9 +225,20 @@ Catch backend errors the UI test *triggered but didn't surface* — 5xx, failed 
 1. **Pre-flight.** Confirm App Insights access the same way `/qa-monitoring` Phase 0 does (Azure MCP `applicationinsights`, **or** `APPINSIGHTS_APP_ID_*` + `APPINSIGHTS_API_KEY_*` set). If neither is configured → **skip this sub-step with a one-line note** ("App Insights not configured — log correlation skipped"); never block the verdict on it.
 2. **Query the window.** For each affected layer (frontend → storefront resource, backend → platform resource; resolve from `APPINSIGHTS_*` env vars, never hardcode), run the probe queries from `ci/monitoring/queries/` scoped to the Step 4 window — a relative `ago()` window covering execution start through now, +2 min buffer.
 3. **Dedup + triage.** Classify signatures against `reports/monitoring/.seen-fingerprints.json` (read-only here — do not persist; a narrow test window must still surface SEEN-stable errors if they fired during it). Delegate interpretation to `qa-backend-expert` using `ci/agents/monitor-triage-agent.md`: each signal → `REAL_BUG | KNOWN_ISSUE | NOISE | CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence. When ambiguous, prefer NEEDS_REVIEW over REAL_BUG.
-4. **Fold into the verdict.** A HIGH-confidence `REAL_BUG` correlated to the test window is failing evidence (see 6c) — the error fired while the agents exercised this feature, so it is already reproduced. Attach the signature + telemetry portal link as evidence; do NOT draft a separate `BUG-AI-*` monitoring report (the test's own bug filing in 6d owns it). NEEDS_REVIEW / NOISE / KNOWN_ISSUE → note in the report, don't fail on them.
+4. **Fold into the verdict.** A HIGH-confidence `REAL_BUG` correlated to the test window is failing evidence (see 6d) — the error fired while the agents exercised this feature, so it is already reproduced. Attach the signature + telemetry portal link as evidence; do NOT draft a separate `BUG-AI-*` monitoring report (the test's own bug filing in 6e owns it). NEEDS_REVIEW / NOISE / KNOWN_ISSUE → note in the report, don't fail on them.
 
-**6b. Validate evidence quality:**
+**6b. Reconcile ACs against live behavior (AC ↔ implementation):**
+
+Step 1b compared each AC against the PR *diff* — a hypothesis. Now close it against what the execution agents actually observed **live**; this is the authoritative AC↔implementation check. For each condition in `ac-analysis.md`:
+
+- **SATISFIED live** — agents confirmed the feature does what the AC says.
+- **DRIFT / CONTRADICTS confirmed live** — filing-grade: the implementation diverges from the AC. Fold into the verdict (6d) as a failure; file via 6e. CONTRADICTS-live is the highest-priority finding — surface it explicitly.
+- **NOT-FOUND** — agents observed no such behavior → the AC is unbuilt or the path went untested; mark untested and flag.
+- **Static suspicion cleared** — a Step 1b DRIFT/NOT-FOUND that agents observed working correctly → resolved; note it (the diff was stale, not the behavior).
+
+Write the reconciled `Impl verdict` back into `ac-analysis.md`. A diff-only finding never becomes a verdict input until confirmed (or cleared) here.
+
+**6c. Validate evidence quality:**
 
 | Check | Action if Missing |
 |---|---|
@@ -210,19 +247,21 @@ Catch backend errors the UI test *triggered but didn't surface* — 5xx, failed 
 | Critical revenue flow (checkout, payment, cart) not explicitly tested | Flag as incomplete coverage |
 | Bugs found but no JIRA tickets mentioned | Ask user if bugs should be filed via `/qa-bug` |
 | Business rule `BL-*` listed in prompt but not mentioned in results | Flag as untested — request verification |
+| **AC condition in the Step 1b table (story AC or gap-AC) has no PASS/FAIL evidence** | Flag as untested — verdict cannot be PASS until covered or explicitly waived |
+| **AC marked DRIFT/CONTRADICTS at Step 1b but not reconciled live (6b)** | Flag — resolve the AC↔implementation status before verdict |
 | Exploratory session skipped for P0/P1 ticket | Flag as incomplete — exploratory coverage required |
 | HIGH-confidence `REAL_BUG` in the App Insights window (6a) but not reflected in agent results | Surface it — the UI test missed a backend error; fold into verdict |
 
-**6c. Decide verdict:**
+**6d. Decide verdict:**
 
 | Decision | Criteria |
 |---|---|
-| **PASS** | All ACs met, all `BL-*` rules verified, no P0/P1 bugs, exploratory session clean, no correlated HIGH-confidence `REAL_BUG` in the test window (6a) |
-| **PASS WITH NOTES** | ACs met, minor P2/P3 issues tracked in JIRA, exploratory observations logged, only NEEDS_REVIEW/NOISE/KNOWN_ISSUE in the log window |
-| **FAIL** | Any AC not met, any `BL-*` rule violated, P0/P1 bug found, or a HIGH-confidence `REAL_BUG` correlated to the test window (6a) |
+| **PASS** | **Every atomic condition in the Step 1b AC table (story ACs + folded gap-ACs) carries PASS evidence**, all conditions reconciled SATISFIED-live (6b), all `BL-*` rules verified, no P0/P1 bugs, exploratory session clean, no correlated HIGH-confidence `REAL_BUG` in the test window (6a) |
+| **PASS WITH NOTES** | All conditions met & reconciled, minor P2/P3 issues tracked in JIRA, exploratory observations logged, only NEEDS_REVIEW/NOISE/KNOWN_ISSUE in the log window |
+| **FAIL** | Any AC condition not met, any AC confirmed DRIFT/CONTRADICTS live (6b), any `BL-*` rule violated, P0/P1 bug found, or a HIGH-confidence `REAL_BUG` correlated to the test window (6a) |
 | **BLOCKED** | Environment down, missing test data, unresolved dependency |
 
-**6d. JIRA transition (with confirmation):**
+**6e. JIRA transition (with confirmation):**
 
 Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 
@@ -234,6 +273,7 @@ Ask the user before transitioning. Skip if Atlassian MCP is not configured.
 Add a JIRA comment with:
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
+AC review: [N] story ACs ([weak]/[ok]), [M] gap-ACs added; AC↔impl: [satisfied]/[drift]/[contradicts]/[not-found].
 Exploratory: [N] findings ([bugs/observations/risks]).
 App Insights (test window): [N] correlated signals — [confirmed/needs-review/none].
 Business rules verified: [BL-* list].
@@ -241,7 +281,7 @@ Bugs: [list or None]. Decision: [verdict].
 Artifacts: tests/{SPRINT}/VCST-XXXX/
 ```
 
-**6e. Deliver summary:**
+**6f. Deliver summary:**
 
 Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
 ```json
@@ -255,7 +295,16 @@ Write `tests/{SPRINT}/VCST-XXXX/summary.json`:
     "theme": "{theme version}",
     "relevant_modules": {"module-name": "version"}
   },
-  "agents_dispatched": ["qa-frontend-expert", "qa-backend-expert"],
+  "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": { "satisfied": 0, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "conditions_total": 0,
+    "conditions_with_evidence": 0,
+    "artifact": "tests/{SPRINT}/VCST-XXXX/ac-analysis.md"
+  },
   "total_cases": 0,
   "passed": 0,
   "failed": 0,
@@ -296,8 +345,12 @@ Output to the user: verdict, coverage summary, business rules verified, explorat
 - Always load `business-logic.md` for the affected domains — agents must know what rules to verify
 - Always query Context7 in Step 2 — pass findings to agents so they test against current module behavior
 - `test-management-specialist` (Step 3) must complete before dispatching execution agents (Step 4)
+- Step 1b BA story review (`ba-story-writer` Mode B) runs for any JIRA ticket with ACs — it is **advisory, never blocking**: surface weak ACs / gaps / implementation drift, fold gap-ACs into scope, and keep testing. Skip with a note for a bare feature name or PR with no governing story
+- A Step 1b AC↔implementation finding from the PR diff is a **suspicion to verify live** (Step 6b), never a confirmed defect on its own — only a live-confirmed CONTRADICTS/DRIFT fails the verdict (mirrors the no-diff-only-bug rule)
+- The Step 1b AC traceability table (`ac-analysis.md`) is the verdict spine: a PASS requires PASS evidence for **every** atomic condition (story ACs + folded gap-ACs), all reconciled SATISFIED-live in Step 6b
+- `ba-story-writer` in review mode must not write to JIRA/GitHub or author a replacement story — it returns the review only
 - Steps 2–3 reuse the `/qa-plan` scenario catalog (`.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`) for `E2E-*` scenario coverage + regression-suite traceability, but produce the scoped `testing-checklist.md` — **not** a full `/qa-plan` test plan / RTM / TestRail CSV. Full case authoring + peer-review promotion belongs to a standalone `/qa-plan` run, not `/qa-test`
 - Exploratory session (Step 5) is mandatory for P0/P1 tickets and critical revenue flows — skip only for P2/P3 if user explicitly opts out
 - If `qa-testing-expert` is already dispatched in Step 4, combine exploratory charter into that agent's prompt rather than spawning a second instance
 - App Insights correlation (Step 6a) reuses `/qa-monitoring`'s query + dedup + triage machinery (`ci/monitoring/queries/*.kql`, `reports/monitoring/.seen-fingerprints.json` read-only, `ci/agents/monitor-triage-agent.md`) scoped to the test window — **no separate live-repro phase** (the execution agents already exercised the feature). Resolve resources from `APPINSIGHTS_*`, never hardcode; skip gracefully (don't block the verdict) when App Insights is unconfigured
-- A correlated error does NOT get its own `BUG-AI-*` monitoring draft — the test's own bug filing (`/qa-bug` in 6d) owns it, to avoid duplicate reports
+- A correlated error does NOT get its own `BUG-AI-*` monitoring draft — the test's own bug filing (`/qa-bug` in 6e) owns it, to avoid duplicate reports

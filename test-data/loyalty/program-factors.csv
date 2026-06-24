@@ -1,14 +1,13 @@
 program_id,sku,factor,test_purpose
-LOY-010,LT-001,500,Single high-value product factor — the happy-path earn.
-LOY-011,LT-001,500,Multi-SKU basket — laptop line factor.
-LOY-011,WH-001,50,Multi-SKU basket — headphones line factor (different value).
-LOY-011,QA-TIER-001,25,Multi-SKU basket — third line factor (smallest value).
-LOY-012,WH-001,100,VIP-exclusive earn on headphones (only VIP group accrues).
-LOY-013,LT-001,250,Wholesaler-tier earn on laptop (group-differentiated rate vs LOY-010/017).
-LOY-014,WH-001,75,Future-window program factor — present but must not accrue until +7d.
-LOY-015,WH-001,75,Expired-window program factor — present but must not accrue (ended -7d).
-LOY-016,LT-001,500,Inactive program factor — present but gated off by isActive=false.
-LOY-017,LT-001,999,High-priority competing factor on LT-001 (pairs with LOY-010 for stacking).
-LOY-018,QA-OOS-001,0,Zero-points boundary (BVA) — a configured-but-zero reward.
-LOY-019,QA-PACK-001,10,Localized multi-product program — pack-size line factor.
-LOY-019,QA-LOW-001,10,Localized multi-product program — low-stock line factor.
+LOY-010,LT-001,500,ALL program — single-SKU happy path (ORG_USER earns 500xprice on LT-001).
+LOY-010,QA-LOY-PRIO-001,500,ALL program — low-priority (10) control on the priority-stacking SKU.
+LOY-011,QA-LOY-MULTI-A,50,MULTI program — dedicated SKU #1 for multi-SKU summation.
+LOY-011,QA-LOY-MULTI-B,25,MULTI program — dedicated SKU #2 (distinct factor) for multi-SKU summation.
+LOY-012,WH-001,100,VIP program — VIP-only; eligibility gate (non-VIP earns 0 on WH-001).
+LOY-013,QA-TIER-001,250,WHOLESALE program — Wholesaler-only; group gate (non-wholesaler earns 0).
+LOY-014,QA-PACK-001,75,FUTURE program — dedicated SKU; future-window gate (earns 0 until start +7d). Note: QA-PACK-001 MOQ=6.
+LOY-015,QA-LOW-001,75,EXPIRED program — dedicated SKU; expired-window gate (earns 0; ended -7d).
+LOY-016,QA-LOY-INACT-001,500,INACTIVE program — dedicated in-stock SKU; isActive=false gate (factor present, earns 0).
+LOY-017,QA-LOY-PRIO-001,999,PRIORITY program — high-priority (100) competitor on the shared stacking SKU (vs ALL 500/pri 10).
+LOY-018,QA-LOY-ZERO-001,0,ZERO program — dedicated SKU; factor=0 lower-boundary (BVA), earns 0 without error.
+LOY-019,QA-LOY-LOCALE-001,10,LOCALIZED program — dedicated SKU; localized-name program earning.

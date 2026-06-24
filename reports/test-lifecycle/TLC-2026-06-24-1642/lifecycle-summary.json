@@ -1,0 +1,46 @@
+{
+  "runId": "TLC-2026-06-24-1642",
+  "inputType": "change-source",
+  "source": "VCST-5135",
+  "date": "2026-06-24",
+  "verdict": "NEEDS FIXES",
+  "build": { "platform": "3.1039.0", "theme": "2.52.0-pr-2335", "modules": { "Loyalty": "3.1004.0-pr-10" } },
+  "affectedSuites": ["075"],
+  "casesAnalyzed": 30,
+  "casesSynced": 0,
+  "casesGenerated": 7,
+  "casesReviewed": 37,
+  "casesVerified": 1,
+  "generatedCases": [
+    { "id": "LOY-031", "gap": "single-SKU happy path", "priority": "Critical", "phase5": "FAIL_WRONG_ORACLE" },
+    { "id": "LOY-032", "gap": "multi-SKU per-product", "priority": "High", "phase5": "NOT_RUN" },
+    { "id": "LOY-033", "gap": "future-window gate", "priority": "High", "phase5": "NOT_RUN" },
+    { "id": "LOY-034", "gap": "expired-window gate", "priority": "High", "phase5": "NOT_RUN" },
+    { "id": "LOY-035", "gap": "inactive gate", "priority": "High", "phase5": "NOT_RUN" },
+    { "id": "LOY-036", "gap": "priority stacking", "priority": "High", "phase5": "NOT_RUN" },
+    { "id": "LOY-037", "gap": "zero-factor BVA", "priority": "Medium", "phase5": "NOT_RUN" }
+  ],
+  "phase5Findings": {
+    "earningConfirmedLive": true,
+    "correctOracle": "cart.items[].loyaltyPoints.amount",
+    "wrongOracleUsed": "products().loyaltyPoints",
+    "ltbalanceObserved": { "sku": "LT-001", "cartLineLoyaltyPoints": 1298690, "currency": "PTS", "note": "factor 500 x price ~2597.38; price-multiplier semantics; only priority-10 program applied, no stacking" }
+  },
+  "gateResults": {
+    "G1_Structure": "PASS", "G2_Determinism": "PASS", "G3_Completeness": "PASS", "G4_Testability": "PASS",
+    "G5_DataValidity": "PASS", "G6_Coverage": "PASS", "G7_Duplication": "PASS",
+    "G8_Environment": "FAIL", "G9_Sync": "PASS"
+  },
+  "mustFix": [
+    "LOY-031..037: rework oracle from products().loyaltyPoints to cart.items[].loyaltyPoints (clearCart->addItem->cart query), per verified 075b pattern; use >0/relative assertions (factor is a price multiplier)"
+  ],
+  "shouldFix": [
+    "LOY-029 (existing): same latent products().loyaltyPoints oracle error",
+    "Provision LOYALTY_WHOLESALE_USER alias for wholesaler-group earning coverage",
+    "Confirm QA-OOS-001 catalog/cart visibility for LOY-037"
+  ],
+  "filesModified": [
+    "regression/suites/Backend/loyalty/075-loyalty.csv",
+    "config/test-suites.json"
+  ]
+}

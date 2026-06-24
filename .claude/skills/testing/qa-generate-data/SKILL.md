@@ -97,9 +97,10 @@ For every entity a combination needs, in order:
    at it — author nothing.
 2. **Author the gap** — only when no existing entity covers the state. Build the fixture row using the
    **safe-default → single-field override** model (§Generation model): no system GUIDs, `seeded=false`,
-   `AGENT-TEST-` prefix, and **tag the row** — set `test_purpose` to the scenario and `used_by` to the
-   Combo ID (these columns already exist in the loyalty/promotions/pricing/inventory CSVs) so each
-   prepared row is traceable back to the combination it serves.
+   `AGENT-TEST-` prefix, and **tag the row** — `author-fixtures.ts` stamps whichever provenance column
+   the target CSV actually has: `test_purpose` ← scenario (loyalty / pricing / inventory / promotions
+   CSVs), `used_by` ← Combo ID (promotions CSVs only), with `notes` as the fallback (e.g.
+   `products/standard`) — so each prepared row is traceable back to the combination it serves.
 
 ### 6. Author the gaps + aliases + validate (one script)
 Hand the resolved plan (cells marked reuse-vs-gap) to the author helper. It writes only the gap rows,
@@ -153,7 +154,7 @@ data; it never provisions.
 
 ## Generation model for gap fixtures — safe default + override (Test Data Builder)
 
-When step 4 must author a new fixture, do it the way a **Test Data Builder** constructs objects (Pryce —
+When step 5 must author a new fixture, do it the way a **Test Data Builder** constructs objects (Pryce —
 verified industry practice), not the way an Object Mother does. Author **one canonical valid row first**
 (every field a safe, realistic default that resolves and passes base validation), then **derive each
 variant by overriding only the field that combination exercises** — never re-author a full row per cell.

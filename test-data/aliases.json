@@ -2740,14 +2740,14 @@
     "group": "VIP",
     "account_type": "Customer",
     "store_id": "B2B-store",
-    "memberId": "f2d8ede1-93f5-4530-ba35-8728107d63f6",
+    "memberId": "31399071-7589-42a8-9013-75f805dfd48b",
     "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1",
     "fields": {
       "email": "email",
       "group": "group",
       "memberId": "memberId"
     },
-    "_notes": "VCST-5103 MCO-GQL-005 fixture — a VIP-group Customer storefront user whose loyalty balance is zero. Required for LOYALTY_INSUFFICIENT_BALANCE validation testing: LOYALTY_VIP_USER has ~4.87M PTS after the 2026-06-22 balance seed and can no longer trigger insufficient-balance with a finite cart quantity. PROVISIONED 2026-06-24 via scripts/seed-loyalty-users.mjs (idempotent; --teardown removes it) — member f2d8ede1-93f5-4530-ba35-8728107d63f6, security account 5a216728-c49f-4c4b-b611-227757f071c1, groups=['VIP'], userType=Customer, storeId=B2B-store, emailConfirmed=true, NO loyalty balance (0 PTS). Creds set in .env.local: LOYALTY_NOBAL_USER_EMAIL / LOYALTY_NOBAL_USER_PASSWORD. AGENT-TEST- prefix so /qa-seed-data teardown sweeps it. MCO-GQL-005 live-verified PASS 9/9 on vcst-qa 2026-06-24: validator emits LOYALTY_INSUFFICIENT_BALANCE with errorParameters keys required/available (lowercase, string values) and blocks createOrderFromCart (BL-LOY-008)."
+    "_notes": "VCST-5103 MCO-GQL-005 fixture — a VIP-group Customer storefront user intended to hold a ZERO loyalty balance for LOYALTY_INSUFFICIENT_BALANCE testing (LOYALTY_VIP_USER has ~4.87M PTS and cannot trigger insufficient-balance at finite cart quantity). RESEEDED 2026-06-24 via scripts/seed-loyalty-users.mjs --teardown && (re-seed): new member 31399071-7589-42a8-9013-75f805dfd48b; security account 5a216728-c49f-4c4b-b611-227757f071c1 is REUSED (deterministic by email), groups=['VIP'], userType=Customer, storeId=B2B-store. Creds in .env.local: LOYALTY_NOBAL_USER_EMAIL / LOYALTY_NOBAL_USER_PASSWORD. AGENT-TEST- prefix → /qa-seed-data teardown sweeps it. ⚠ BALANCE RE-DRIFTS AND THE SEEDER CANNOT RE-ZERO IT: the loyalty balance is the sum of loyalty-program operation-log entries keyed on the SECURITY-ACCOUNT userId (5a216728…), which the module exposes READ-ONLY (GET /api/loyalty-program-operation-log/balance/{userId}, POST .../search) — there is NO operation-log write/delete and NO balance set/debit API anywhere in vc-module-loyalty. seed-loyalty-users.mjs deletes+recreates the member/account but REUSES the same security-account id, so prior Earned entries survive and the balance is NOT reset (verified 2026-06-24: after teardown+reseed the balance was still 404 PTS, accrued from earned points on E2E/test orders CO260624-00020/21 + others). Whenever the loyalty E2E suite earns points on this user the balance grows again. CONSEQUENCE: MCO-GQL-005 as-written (PTS subtotal fixed at 200) only blocks when the live balance < 200; at balance 404 it (correctly) does NOT block and the order places — a fixture-drift FAIL, not a product defect. DURABLE FIXES (pick one): (a) make MCO-GQL-005's PTS quantity balance-relative — read loyaltyBalance(me.id) then add the 1-PTS divisor product LOY_SKU_PTS_UNIT at qty = balance+1 (suite-CSV edit, owner test-mgmt); or (b) add a balance-reset capability to vc-module-loyalty (operation-log purge / balance-set endpoint — code change). The equal-boundary behaviour (== balance allowed, +1 blocked, required>available strict) was live-verified 2026-06-24 using LOY_SKU_PTS_UNIT at qty 404 (allowed) / 405 (LOYALTY_INSUFFICIENT_BALANCE, required=405, available=404.0000) — this is the authoritative BL-LOY-008 proof."
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,
@@ -3402,6 +3402,25 @@
       "priority": "priority",
       "localized_name_es": "localized_name_es"
     },
-    "notes": "VCST-5135 localization + multi-factor: es-ES localized name + 2 factors (QA-PACK-001=10 / QA-LOW-001=10). seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 localization: es-ES localized name + dedicated SKU QA-LOY-LOCALE-001 (factor 10). seeded=true (provisioned 2026-06-24)."
+  },
+  "LOY_SKU_PRIORITY": { "_inline": true, "sku": "QA-LOY-PRIO-001", "listPrice": 60.0, "_notes": "VCST-5135 dedicated SKU shared by LOY_PP_ALL(500/pri10) + LOY_PP_PRIORITY(999/pri100) — priority-resolution oracle. ORG_USER: PRIORITY wins -> 999xprice." },
+  "LOY_SKU_INACTIVE": { "_inline": true, "sku": "QA-LOY-INACT-001", "listPrice": 50.0, "_notes": "VCST-5135 dedicated in-stock SKU for LOY_PP_INACTIVE (factor 500, isActive=false)." },
+  "LOY_SKU_ZERO": { "_inline": true, "sku": "QA-LOY-ZERO-001", "listPrice": 50.0, "_notes": "VCST-5135 dedicated SKU for LOY_PP_ZERO (factor 0 — when ZERO wins, earns 0)." },
+  "LOY_SKU_MULTI_A": { "_inline": true, "sku": "QA-LOY-MULTI-A", "listPrice": 40.0, "_notes": "VCST-5135 LOY_PP_MULTI SKU #1 (factor 50)." },
+  "LOY_SKU_MULTI_B": { "_inline": true, "sku": "QA-LOY-MULTI-B", "listPrice": 80.0, "_notes": "VCST-5135 LOY_PP_MULTI SKU #2 (factor 25)." },
+  "LOY_SKU_LOCALIZED": { "_inline": true, "sku": "QA-LOY-LOCALE-001", "listPrice": 30.0, "_notes": "VCST-5135 dedicated SKU for LOY_PP_LOCALIZED (factor 10)." },
+  "USER_GROUP_WHOLESALE": { "_inline": true, "name": "Wholesaler", "_notes": "VCST-5135 — the 'Wholesaler' customer group used by LOY_PP_WHOLESALE eligibility. Verified selectable in the Loyalty user-group condition alongside VIP." },
+  "LOYALTY_WHOLESALE_USER": {
+    "_inline": true,
+    "email": "AGENT-TEST-wholesale@test.virtocommerce.com",
+    "email_env": "LOYALTY_WHOLESALE_USER_EMAIL",
+    "password_env": "LOYALTY_WHOLESALE_USER_PASSWORD",
+    "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
+    "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3",
+    "group": "Wholesaler",
+    "account_type": "Customer",
+    "store_id": "B2B-store",
+    "_notes": "VCST-5135 Wholesaler-group Customer storefront user (provisioned 2026-06-24 on vcst-qa). For LOY_PP_WHOLESALE earning eligibility: when WHOLESALE is the winning program, this user earns 250xprice on QA-TIER-001 where a non-wholesaler earns the default. Creds in .env.local (LOYALTY_WHOLESALE_USER_EMAIL/PASSWORD). AGENT-TEST- prefix -> teardown sweeps it (delete security account 3aaada1a then member 47db2112)."
   }
 }
