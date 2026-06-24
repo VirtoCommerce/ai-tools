@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (18) — `.claude/commands/`
+## Slash Commands (19) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -16,6 +16,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
+| `/qa-local-env` | `[VCST-XXXX] [--clean] [--rebuild] [--with-sample-data] [--branch <deploy-branch>] [--db <provider>]` | No | Spin up a full local VC stack via VirtoCommerce **start-local** (Docker), pinned to the actual deployed manifest (`vc-deploy-dev @ vcptcore-demo`). With a `VCST-XXXX` arg, augment the baseline with the module/PR pre-release versions the task needs (released bumps in `GithubReleases`, PR builds via the `AzureBlob` source's `BlobName`). Rebuilds iff the manifest changed; DB persists unless `--clean`; admin → `Password1!`. Backed by the [`/qa-local-env` skill](../skills/testing/qa-local-env/SKILL.md) (gen-manifest → provision → healthcheck). |
 | `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | Orchestrated parallel coverage generation across domain batches with CI support |
 | `/qa-test-lifecycle` | `suite <ID> \| domain <name> \| VCST-XXXX \| PR #NNN \| module <name> \| diff \| changelog <ver>` | No | Unified test case pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve. Handles change-driven sync and direct scope quality review. Delegates to test-management-specialist + qa-testing-expert |
 | `/qa-test-plan` | `Sprint26-08 \| 26-08 \| current \| last` | No | Build a sprint test plan: pull JIRA Done Stories/Bugs + merged vc-frontend PRs in the sprint window, score risk per domain, map to regression suites, and write `tests/SprintXX-XX/sprint-XX-XX-test-plan.md`. Delegates Sections 5.2 + 6 to test-management-specialist |
@@ -35,7 +36,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 |-------|-----------|---------|-----------------|
 | `/vc-docs` | `topic \| module \| concept` | Documentation lookup via Context7 | — (uses Context7 MCP) |
 
-**`testing/` — Testing (10) — manual invocation:**
+**`testing/` — Testing (11) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -49,6 +50,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-postman` | `create <purpose> \| env <profile> \| verify <collection> \| export <collection> \| list \| examples` | Postman MCP collections — create, configure, verify, and export (MCP doesn't execute — Newman/Postman CLI does) | `mcp-tools.md`, `variables-and-environments.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md`, `common-mistakes.md`, `examples.md` |
 | `/qa-seed-data` | `minimal \| catalog \| b2b \| pricing \| full \| teardown` | Seed/teardown all test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products — via repo seed scripts (`npm run seed*`) or Postman MCP | `test-data-generation.md` (knowledge file) |
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
+| `/qa-local-env` | `[VCST-XXXX] [--clean] [--rebuild] [--with-sample-data] [--branch <b>] [--db <provider>]` | Bring up a local VC stack (start-local + Docker) pinned to the actual deployed `vcptcore-demo` manifest; with a task arg, augment it with the modules/PR pre-release builds the task needs. Rebuild-iff-changed; DB persists unless `--clean`; admin→`Password1!`. resolve-task (JIRA+GitHub REST) → gen-manifest → provision (PowerShell) → init-admin → healthcheck | `resolve-task.mjs`, `gen-manifest.mjs`, `provision.ps1`, `healthcheck.mjs`, `init-admin.mjs` |
 
 **`qa-methodology/` — QA Methodology (10) — manual invocation:**
 

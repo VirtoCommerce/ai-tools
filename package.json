@@ -74,7 +74,9 @@
     "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts",
     "verify:multi-env": "npx tsx scripts/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report",
-    "bundle:check": "npx tsx scripts/bundle-version-check.ts"
+    "bundle:check": "npx tsx scripts/bundle-version-check.ts",
+    "local:manifest": "node .claude/skills/testing/qa-local-env/gen-manifest.mjs",
+    "local:health": "node .claude/skills/testing/qa-local-env/healthcheck.mjs"
   },
   "repository": {
     "type": "git",

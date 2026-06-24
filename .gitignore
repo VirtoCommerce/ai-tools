@@ -54,6 +54,10 @@ tests/screenshots/**/*.png
 /*.yml
 /*.yaml
 
+# Local environment (qa-local-env / start-local) — Docker checkout + generated
+# manifest are transient working state, never committed.
+.local-env/
+
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
