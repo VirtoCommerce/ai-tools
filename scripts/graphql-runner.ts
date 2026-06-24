@@ -51,6 +51,7 @@ import {
 import {
   parseAssertions,
   evaluateAssertion,
+  Assertion,
   AssertionResult,
   InfoAssertion,
   getByPath,
@@ -989,6 +990,92 @@ async function executeBlock(
       if (!result.ok) {
         throw new Error(
           `[REST ${block.method} ${path}] returned HTTP ${result.status}`
+        );
+      }
+      return;
+    }
+
+    case "WAIT": {
+      const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+      if (block.mode === "sleep") {
+        if (ctx.args.dryRun) {
+          console.log(`• [WAIT] --dry-run — skipping ${block.seconds}s sleep`);
+          return;
+        }
+        console.log(`\n• [WAIT] sleeping ${block.seconds}s (fixed) ...`);
+        await sleep(block.seconds * 1000);
+        return;
+      }
+
+      // poll mode: re-execute [GQL-OP <label>] until the predicate holds or timeout.
+      const op = ctx.operations.get(block.label!);
+      if (!op || !op.query) {
+        throw new Error(
+          `[WAIT until=${block.label}] has no matching [GQL-OP ${block.label}] with a query body`
+        );
+      }
+      if (ctx.args.dryRun) {
+        console.log(`• [WAIT until=${block.label}] --dry-run — skipping poll`);
+        return;
+      }
+
+      const assertion: Assertion = {
+        raw: block.raw,
+        kind: "DATA",
+        label: block.label!,
+        predicate: block.predicate || "",
+      };
+      console.log(
+        `\n• [WAIT until=${block.label}] poll every ${block.intervalSec}s up to ${block.timeoutSec}s — condition: ${block.predicate}`
+      );
+      const deadline = Date.now() + block.timeoutSec * 1000;
+      let attempt = 0;
+      let settled = false;
+      let response: GraphQLResponse | undefined;
+      while (true) {
+        attempt++;
+        const token = getToken();
+        response = await executeOperation(op.query, op.variables, {
+          backUrl: ctx.backUrl,
+          token,
+        });
+        // Replace the stored response so downstream [GQL-CAPTURE]/[DATA] on this
+        // label see the freshest (settled) value.
+        ctx.responses.set(block.label!, response);
+        const r = evaluateAssertion(assertion, ctx.responses, ctx.variables);
+        console.log(
+          `  poll #${attempt}: ${response.status} ${response.ok ? "OK" : "ERR"} — condition ${r.passed ? "MET" : "not yet"} (${r.actual})`
+        );
+        if (r.passed) {
+          settled = true;
+          break;
+        }
+        if (Date.now() >= deadline) break;
+        await sleep(block.intervalSec * 1000);
+      }
+      if (response) {
+        ctx.evidenceOps.push({
+          label: block.label!,
+          query: op.query,
+          variables: op.variables,
+          response: {
+            status: response.status,
+            ok: response.ok,
+            data: response.data,
+            errors: response.errors,
+            elapsed_ms: response.elapsed_ms,
+          },
+          schemaValid: true,
+          schemaErrors: [],
+        });
+      }
+      if (settled) {
+        console.log(`  ✓ [WAIT] settled after ${attempt} poll(s)`);
+      } else {
+        console.log(
+          `  ⚠ [WAIT until=${block.label}] TIMED OUT after ${attempt} poll(s) / ${block.timeoutSec}s — ` +
+            `condition not met; latest response left for downstream assertions to judge`
         );
       }
       return;

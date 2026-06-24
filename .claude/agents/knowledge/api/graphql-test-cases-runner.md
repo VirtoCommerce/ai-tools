@@ -75,8 +75,10 @@ The `Steps` cell is parsed line-by-line by `parseSteps()`. Recognized tags (case
 | `[REST-EXEC <label>]` | Fire the named REST-OP, store response under `<label>` | none |
 | `[REST-CAPTURE <label>.<path> → <VAR>]` | Extract value from REST response body | none |
 | `[REST <METHOD> <path>]` | One-shot REST request (no separate OP/EXEC) | optional multi-line body (JSON) |
+| `[WAIT until=<label> …] <predicate>` | Poll an op until an async backend job settles (see §3.10) | none — predicate follows the `]` |
+| `[WAIT seconds=<n>]` / `[WAIT] <freetext>` | Fixed delay (sleep) — legacy bare form sleeps 12s | none |
 
-Other tags (`[WAIT]`, `[SETUP]`, `[TEARDOWN]`) are recognized as step-tag boundaries but skipped at execution time. Anything not on this list is silently dropped from execution but recorded in evidence as `UNKNOWN`.
+Other tags (`[SETUP]`, `[TEARDOWN]`) are recognized as step-tag boundaries but skipped at execution time. Anything not on this list is silently dropped from execution but recorded in evidence as `UNKNOWN`.
 
 ### 3.1 `[AUTH role=<alias>]`
 
@@ -267,6 +269,39 @@ query($storeId: String!) {
 Then use `{{CAT_ROOT}}` in downstream filters. This pattern survives catalog re-seeding — when the storefront-visible root migrated on 2026-04-30 (`fc596540…` → `9238c387…`), cases that used discovery kept passing while hardcoded ones silently returned zero items.
 
 **Canonical recipes** (root discovery, first-available product, any active coupon, plus the JS equivalents for interactive agents): [`live-discovery.md`](../execution/live-discovery.md). Authoring checklist item: prefer discovery over hardcoded IDs whenever the test doesn't depend on which specific entity is used.
+
+### 3.10 `[WAIT]` — synchronize on async backend settlement
+
+Some backend effects land **after** the mutation returns: e.g. `LoyaltyProgramHandler.ProcessOrdersAsync` posts loyalty earn/redeem op-log entries via Hangfire ~10s **after** `createOrderFromCart`. A read fired immediately after placement gets **stale pre-settle state** — so a naive `[DATA] balance_after > balance_before` false-FAILs and `[DATA] Earned amount > 0` false-PASSes on a *prior* order's op.
+
+**Poll mode** re-executes a named op until a condition holds:
+
+```text
+[WAIT until=<op-label> timeout=<sec> interval=<sec>] <DATA-style predicate>
+```
+
+- Re-executes `[GQL-OP <op-label>]` every `interval`s (default **3**, min 1) until the predicate is satisfied or `timeout`s (default **30**, cap 300) elapses.
+- The predicate uses the **exact `[DATA]` grammar** (paths, `>`/`=`/`is null`, JSONPath filters, `{{VAR}}`) and is evaluated against each fresh response.
+- The latest response **replaces** the stored one for `<op-label>`, so a downstream `[GQL-CAPTURE]`/`[DATA label=<op-label>]` reads the **settled** value.
+- On timeout it does **not** fail by itself — it leaves the freshest response in place so your real `[DATA]` assertion is the verdict (clean composition, no hidden pass).
+
+```text
+[GQL-OP bal]
+  query { loyaltyBalance(userId: "{{USER_ID}}") { currentBalance } }
+[GQL-EXEC bal]
+[WAIT until=bal timeout=30 interval=3] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}
+...
+[DATA label=bal] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}   # now a real, settled assertion
+```
+
+**Sleep mode** — fixed delay when there's no pollable condition:
+
+```text
+[WAIT seconds=10]
+[WAIT] <freetext>     # legacy bare form — sleeps 12s (was a silent no-op before 2026-06-24)
+```
+
+Use poll mode for loyalty earn/redeem post-order verification; it is the durable way to assert preview==award (see suite `075c` LOY-038 / `075b` MCO-GQL-004). `--dry-run` skips the wait entirely.
 
 ---
 

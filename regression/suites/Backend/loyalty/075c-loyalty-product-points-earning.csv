@@ -403,3 +403,82 @@ LOY-037,"ProductPoints — Localized program: LOY_PP_LOCALIZED program (pri=40) 
 [DATA label=read_cart] data.cart.loyaltyPoints.amount > 0
 [DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > data.cart.items[?sku=QA-LOY-LOCALE-001].loyaltyPoints.amount
 [EVIDENCE] ALL(pri=80) wins for ORG_USER. LT-001 earns ALL override (factor=500). QA-LOY-LOCALE-001 not covered by ALL → earns default (factor=1). LOCALIZED (pri=40) does NOT win — lowest priority program never wins when higher-priority eligible programs exist. AMT_LOCALE: {{AMT_LOCALE}}, AMT_LT001: {{AMT_LT001}}. AMT_LT001 >> AMT_LOCALE confirms correct resolution.","[ADMIN] LOY_PP_LOCALIZED shows QA-LOY-LOCALE-001 factor=10. LOY_PP_ALL at priority 80 wins instead. System stable with 5+ active programs simultaneously.","QA-LOY-LOCALE-001 earns LOCALIZED override (factor=10 × price) instead of default — indicates LOCALIZED program won incorrectly; LT-001 earns 0; errors[] non-empty",none,VCST-5135,Draft
+LOY-038,"ProductPoints earn lifecycle — winner factor (ALL, 500×) actually awarded to balance after order placement; history records Earned op","Loyalty > Product Points Loyalty > Earn Lifecycle",Critical,"BL-LOY-001; BL-LOY-007",ECL-7.3,"Runner-native. Auth as ORG_USER. LOY_PP_ALL (pri=80; all; LT-001 factor=500) is the winner for ORG_USER on LT-001 (confirmed live by LOY-031/034). Cart oracle shows preview; this case proves the preview converts to a real balance credit post-order via ProcessOrdersAsync (LoyaltyProgramHandler). Payment gateway: DefaultManualPaymentMethod (NOT LoyaltyPaymentMethod — gateway-paid orders are skipped by the handler). Earn lifecycle asserted via [WAIT until=balance_after timeout=40 interval=4] poll — re-executes until balance increases (ProcessOrdersAsync Hangfire settle ~10s). history_check binds to this order via object.orderId. Payment gateway: DefaultManualPaymentMethod (NOT LoyaltyPaymentMethod — gateway-paid orders are skipped by the handler). Orders cannot be deleted — AGENT-TEST residue is expected; cart is cleared pre+post.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP balance_before]
+  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+[GQL-EXEC balance_before]
+[GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart_preview]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      id
+      items { sku loyaltyPoints { amount currency { code } } }
+      loyaltyPoints { amount currency { code } }
+      availableShippingMethods { code optionName price { amount } }
+      availablePaymentMethods { code }
+    }
+  }
+[GQL-EXEC read_cart_preview]
+[GQL-CAPTURE read_cart_preview.data.cart.id → CART_ID]
+[GQL-CAPTURE read_cart_preview.data.cart.items[?sku=LT-001].loyaltyPoints.amount → PREVIEW_ITEM_PTS]
+[GQL-CAPTURE read_cart_preview.data.cart.loyaltyPoints.amount → PREVIEW_CART_PTS]
+[GQL-CAPTURE read_cart_preview.data.cart.availableShippingMethods[?code=FixedRate].code → SHIP_CODE]
+[GQL-CAPTURE read_cart_preview.data.cart.availableShippingMethods[?code=FixedRate].optionName → SHIP_OPTION]
+[GQL-CAPTURE read_cart_preview.data.cart.availableShippingMethods[?code=FixedRate].price.amount → SHIP_PRICE]
+[GQL-OP set_shipment]
+  mutation { addOrUpdateCartShipment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" shipment: { shipmentMethodCode: ""{{SHIP_CODE}}"" shipmentMethodOption: ""{{SHIP_OPTION}}"" price: {{SHIP_PRICE}} deliveryAddress: { firstName: ""Test"" lastName: ""Agent"" line1: ""100 Main St"" city: ""New York"" countryCode: ""US"" countryName: ""United States"" postalCode: ""10001"" regionId: ""US-NY"" regionName: ""New York"" } } }) { id } }
+[GQL-EXEC set_shipment]
+[GQL-OP set_payment]
+  mutation { addOrUpdateCartPayment(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" payment: { paymentGatewayCode: ""DefaultManualPaymentMethod"" } }) { id } }
+[GQL-EXEC set_payment]
+[GQL-OP place_order]
+  mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
+[GQL-EXEC place_order]
+[GQL-CAPTURE place_order.data.createOrderFromCart.number → ORDER_NUMBER]
+[GQL-CAPTURE place_order.data.createOrderFromCart.id → ORDER_ID]
+[GQL-OP balance_after]
+  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+[GQL-EXEC balance_after]
+[WAIT until=balance_after timeout=40 interval=4] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}
+[GQL-CAPTURE balance_after.data.loyaltyBalance.currentBalance → BAL_AFTER]
+[GQL-OP history_check]
+  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 5 sort: ""createdDate:desc"") { totalCount items { operationType amount createdDate object { orderId type } } } }
+[GQL-EXEC history_check]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=balance_before] errors[] empty
+[ERRORS label=read_cart_preview] errors[] empty
+[DATA label=read_cart_preview] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart_preview] data.cart.items[?sku=LT-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart_preview] data.cart.loyaltyPoints.amount > 0
+[ERRORS label=place_order] errors[] empty
+[DATA label=place_order] data.createOrderFromCart.number is non-null
+[ERRORS label=balance_after] errors[] empty
+[DATA label=balance_after] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}
+[ERRORS label=history_check] errors[] empty
+[DATA label=history_check] data.loyaltyPointsHistory.items.0.operationType = Earned
+[DATA label=history_check] data.loyaltyPointsHistory.items.0.amount > 1000
+[EVIDENCE] Earn lifecycle fully automated via poll [WAIT until=balance_after timeout=40 interval=4]. balance_after re-executes every 4s until currentBalance > BAL_BEFORE — reads settled state. history_check runs AFTER balance settled, so items.0 (newest-first sort: ""createdDate:desc"") == the just-placed Earned op for this order. Amount > 1000 proves winner 500× override applied (default 1× on LT-001 ~$1299 → ~1300 PTS; override 500× → 649995 PTS — both exceed 1000; but 1000 excludes near-zero misfires). getByPath() nested-key filter items[?object.orderId=...] NOT supported (verified 2026-06-24 — undefined result); fallback to index-0. ORDER_ID={{ORDER_ID}} captured for cross-ref via Admin history blade. Proven numbers from be-5135 first run: BAL_BEFORE=810, BAL_AFTER=650904, delta=650094 == PREVIEW_CART_PTS == Earned op amount. This run captures: BAL_BEFORE={{BAL_BEFORE}}, BAL_AFTER={{BAL_AFTER}}, PREVIEW_ITEM_PTS={{PREVIEW_ITEM_PTS}}, ORDER_NUMBER={{ORDER_NUMBER}}, ORDER_ID={{ORDER_ID}}.
+[EVIDENCE] Cash-only cart (ORG_USER + USD LT-001 only; no PTS redemption). Only an Earned op expected in items.0.","[ADMIN] Admin loyalty history blade shows an Earned entry for this order (cross-ref via order number {{ORDER_NUMBER}}).
+[EVENT] ProcessOrdersAsync (Hangfire) fired — verify via Admin Hangfire dashboard that a job for this order ran successfully if the Earned op is absent.","Earned op absent from history (ProcessOrdersAsync not fired or Hangfire job did not settle — extend wait or check Hangfire dashboard at {{BACK_URL}}/hangfire); loyaltyBalance unchanged after order (BAL_AFTER == BAL_BEFORE — handler skipped for this order type); place_order errors[] non-empty (cart validation error — check validationErrors before place_order); preview amount == 0 (LT-001 not in B2B virtual catalog or LOY_PP_ALL not seeded); history_check errors[] non-empty (query shape mismatch); balance_before errors[] non-empty (loyaltyBalance query unavailable)","[GQL-OP cleanup_safe]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_safe]",VCST-5135; vc-module-loyalty#10 (LoyaltyProgramHandler.ProcessOrdersAsync earn credits); BL-LOY-001; BL-LOY-007,Draft

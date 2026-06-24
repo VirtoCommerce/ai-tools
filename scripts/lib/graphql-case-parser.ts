@@ -20,6 +20,7 @@ export type StepBlock =
   | RestOpStep
   | RestExecStep
   | RestCaptureStep
+  | WaitStep
   | UnknownStep;
 
 export interface AuthStep {
@@ -85,6 +86,31 @@ export interface RestCaptureStep {
   label: string;
   path: string;
   variable: string;
+  raw: string;
+}
+
+/**
+ * Synchronization step for async backend settlement (e.g. Hangfire jobs that
+ * post loyalty earn/redeem ops ~seconds after createOrderFromCart).
+ *
+ *   [WAIT until=<op-label> timeout=30 interval=3] <DATA-style predicate>
+ *      → poll mode: re-execute [GQL-OP <op-label>] every `interval`s until the
+ *        predicate holds (same grammar as a [DATA] assertion, evaluated against
+ *        the fresh response) or `timeout`s elapses. The latest response replaces
+ *        the stored one for <op-label>, so downstream [GQL-CAPTURE]/[DATA] see
+ *        the settled value. timeout default 30 (cap 300), interval default 3.
+ *   [WAIT seconds=10]  → sleep mode: fixed delay.
+ *   [WAIT] <freetext>  → legacy bare form: fixed delay (default 12s) — was a
+ *        silent no-op before; now sleeps so async settles.
+ */
+export interface WaitStep {
+  kind: "WAIT";
+  mode: "poll" | "sleep";
+  label?: string; // poll: op-label to re-execute
+  predicate?: string; // poll: DATA-style condition to satisfy
+  timeoutSec: number; // poll only
+  intervalSec: number; // poll only
+  seconds: number; // sleep only
   raw: string;
 }
 
@@ -280,6 +306,43 @@ export function parseSteps(cell: string): StepBlock[] {
         body: body || undefined,
         raw,
       });
+      continue;
+    }
+
+    // [WAIT …] — params live inside the brackets (like [DATA label=…]); the
+    // poll predicate follows AFTER the `]` so it may contain `]` (JSONPath
+    // filters such as items[?sku=X]).
+    const waitMatch = line.match(/^\[WAIT\b([^\]]*)\]\s*(.*)$/i);
+    if (waitMatch) {
+      const params = waitMatch[1] || "";
+      const predicateText = waitMatch[2].trim();
+      const until = params.match(/\buntil=([\w-]+)/i);
+      const timeout = params.match(/\btimeout=(\d+)/i);
+      const interval = params.match(/\binterval=(\d+)/i);
+      const seconds = params.match(/\bseconds=(\d+)/i);
+      if (until) {
+        blocks.push({
+          kind: "WAIT",
+          mode: "poll",
+          label: until[1],
+          predicate: predicateText,
+          timeoutSec: timeout ? Math.min(parseInt(timeout[1], 10), 300) : 30,
+          intervalSec: interval ? Math.max(parseInt(interval[1], 10), 1) : 3,
+          seconds: 0,
+          raw,
+        });
+      } else {
+        // sleep mode: [WAIT seconds=N] or bare [WAIT] (legacy free-text)
+        blocks.push({
+          kind: "WAIT",
+          mode: "sleep",
+          timeoutSec: 0,
+          intervalSec: 0,
+          seconds: seconds ? Math.min(parseInt(seconds[1], 10), 300) : 12,
+          raw,
+        });
+      }
+      i++;
       continue;
     }
 
