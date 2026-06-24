@@ -48,6 +48,22 @@
     "_status": "reseeded-20260518-phase2",
     "_status_note": "Phase 2 reseed via scripts/seed-configurable-products.mjs. Parent GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72. Config 8514ef1e-…. 2 required Product sections (RAM 3 opts + Storage 3 opts). Base $999, price math intact."
   },
+  "CFG_FILE_UPLOAD": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-FILE"
+    },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "Single optional File section ('Design Upload'). Configure via ConfigurationSectionInput.fileUrls; configurationSection.type=File. Backs CFG-GQL-055b (VCST-5173 configurationSection on cart line items). Fills the documented CFG_TSHIRT File-section gap.",
+    "_status": "seeded-20260624",
+    "_status_note": "Seeded 2026-06-24 via scripts/seed-configurable-products.mjs --only CFG-FILE on vcst (GUID eba4f507-f7e6-4c67-a75a-d7c8bbc0ae87, config a5bbb3b2-…) AND vcptcore-qa1 (GUID 522b191f-…, config 24e1cb45-…, File section 75d3512f-…). type:File verified live on qa1 (PR x-cart#122 deploy)."
+  },
   "CFG_RING": {
     "file": "products/configurable-products",
     "filter": {
