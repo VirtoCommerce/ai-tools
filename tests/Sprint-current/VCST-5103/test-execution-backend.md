@@ -57,4 +57,32 @@ Balances are mutated only internally by `LoyaltyProgramHandler` earn/redeem on o
 
 **Outcome:** per the don't-force-it guidance, no workaround attempted. **The control probe (qty-5 → 1000 PTS > 204 → `LOYALTY_INSUFFICIENT_BALANCE` with non-null `required`/`available`, order blocked) stands as the authoritative AC1-3 proof.** The fixture needs a seed-side fix (add a balance-debit/reset capability, or make the case quantity balance-relative). MCO-GQL-005 as-written remains FAIL until the fixture is re-zeroed — not a product defect.
 
-**No JIRA filed, no external writes (read-only mandate honored).** Evidence: `reports/regression/graphql-evidence/MCO-GQL-005-*.json`, `MCO-GQL-006-*.json`, `DIAG-001-*.json`.
+## Fixture-hardening (2026-06-24) — equal-boundary proof + reseed limitation
+
+**Step A — equal-boundary proof (PASS, definitive).** Seeded a 1-PTS divisor product `AGENT-TEST-PTS-UNIT-001` (GUID `d53eddf2-6a00-487b-b983-007462814526`), priced 1 PTS in the **Loyalty PTS price list** (`3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894`; note `BoltsLoyalty` is currency=MOA, a red herring), linked into the B2B virtual catalog. Live balance re-read = **404 PTS** (drifted up from 204 after fe-5103's order). With the divisor at qty = balance:
+- **Σ(PTS)=404 == balance → ALLOWED** (`cart.validationErrors = []`).
+- **Σ(PTS)=405 == balance+1 → BLOCKED** (`LOYALTY_INSUFFICIENT_BALANCE`, `required="405"`, `available="404.0000"`).
+
+So the rule is `required > available` (strict): equal allowed, +1 blocked. Authoritative BL-LOY-008 ≤-vs-< proof.
+
+**Step B — reseed does NOT re-zero the balance (confirmed limitation).** `seed-loyalty-users.mjs --teardown` then re-seed: new member `31399071-7589-42a8-9013-75f805dfd48b`, but the **security account `5a216728…` is reused** (deterministic by email). The loyalty balance = sum of operation-log entries keyed on that userId, and **the op-log is READ-ONLY** (no write/delete, no balance set/debit anywhere in the module). Post-reseed balance was **still 404** (op-log had 5 surviving entries: 85+119+200+200 earned − 200 redeemed). The seeder's "balance 0" claim is false for a reused account.
+
+**Step C — MCO-GQL-005 still FAIL (2/9), and that is correct at balance 404.** The case's fixed 200-PTS subtotal is < 404, so no block fires and the order places. **Dynamic-userId confirmed:** the case resolves the user via `[AUTH role=LOYALTY_NOBAL_USER]` → `me.id` capture (got `5a216728…`), NOT a static `{{USER_ID}}` env var — robust to the reseed's new member ID. It will only PASS clean when live balance < 200, OR when the case is made balance-relative (add `LOY_SKU_PTS_UNIT` at qty = balance+1) — a suite-CSV edit owned by test-mgmt (not done here per the no-CSV-edit constraint).
+
+**Step D — test-data writes (done).** `aliases.json` v1.5.22 → **1.5.23**: registered `LOY_SKU_PTS_UNIT`; updated `LOYALTY_NOBAL_USER` (new memberId + the can't-re-zero warning); changelog added. `npx tsx scripts/validate-td-refs.ts` → **green (0 failed, no bare GUIDs).** 075b CSV untouched.
+
+**No JIRA filed, no external writes (read-only mandate honored).** Evidence: `reports/regression/graphql-evidence/MCO-GQL-005-*.json`, `MCO-GQL-006-*.json`, `DIAG-*.json`.
+
+## MCO-GQL-005 drift-proofed (2026-06-24)
+
+Suite CSV edit applied to `regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv`.
+
+**Approach chosen: large-fixed-qty (qty=999,999) via LOY_SKU_PTS_UNIT.**
+
+- `find_pts` discovery step removed. `add_pts` now uses `@td(LOY_SKU_PTS_UNIT.id)` directly at `qty=999999` (Test_Data: `pts_qty=999999`).
+- `qty=999,999` is the maximum that clears the store-level `LINE_ITEM_LIMIT` validator (qty≥1,000,000 triggers LINE_ITEM_LIMIT and the item is NOT added — verified 2026-06-24 live). At 1 PTS/unit this gives PTS subtotal = 999,999 PTS.
+- Current LOYALTY_NOBAL_USER balance = 604 PTS (2026-06-24). Headroom: 999,999 / 604 ≈ 1,660×.
+- Balance-relative approach (capture balance → qty=balance+1) was considered and rejected: the runner substitutes `{{VAR}}` as strings with no expression evaluator, so arithmetic on captured values at variable-assignment time is not supported.
+
+**Runner result: PASS 9/9** (`required="999999"`, `available="1004.0000"`, order blocked, cart readable post-attempt).
+`npx tsx scripts/validate-td-refs.ts` → 075b: 56/56 resolved (green).
