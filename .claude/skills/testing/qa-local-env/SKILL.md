@@ -51,7 +51,8 @@ the live baseline each run, so upstream version drift triggers a rebuild). **Eve
 — provision always wipes the data volumes (DB + search index + cache) so the env is deterministic;
 the expensive image build is still skipped when the manifest is unchanged. On the fresh DB the admin
 password is changed from the seed `store` to **`Password1!`** and written to `.env.local`. The only
-two inputs are the optional `VCST-XXXX` task and `--db postgres|mysql|sqlserver` (default postgres).
+two inputs are the optional `VCST-XXXX` task and the DB provider — a bare `postgres|mysql|sqlserver`
+token (default postgres; legacy `--db <provider>` still accepted).
 
 ### 1. Resolve the task (only with a task arg — deterministic)
 
