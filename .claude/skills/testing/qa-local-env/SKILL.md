@@ -38,7 +38,7 @@ health-checks the result.
    │
 gen-manifest ──► fetch baseline (vcptcore-demo) + merge requirements ──► .local-env/packages.custom.json
    │
-provision   ──► bootstrap → build IF manifest changed → down → [wipe data if -Clean] → start
+provision   ──► bootstrap → build IF manifest changed → down → wipe data (always) → start
    │            → init-admin (store→Password1!, writes .env.local)                  [PowerShell + Docker]
    │
 healthcheck ──► /health + storefront + OAuth (admin/Password1!) + optional GraphQL field probe
@@ -47,10 +47,11 @@ wire env    ──► TEST_ENV=localhost  (.env.localhost → local ports; ADMIN
 ```
 
 Behaviour contract: the stack is **rebuilt only when the manifest changed** (gen-manifest re-fetches
-the live baseline each run, so upstream version drift triggers a rebuild; `-Rebuild` forces one).
-**DB data persists by default** across runs; `-Clean` wipes all data volumes for a fresh DB. On a
-fresh DB the admin password is changed from the seed `store` to **`Password1!`** (idempotent on a
-preserved DB) and written to `.env.local`.
+the live baseline each run, so upstream version drift triggers a rebuild). **Every run is a fresh DB**
+— provision always wipes the data volumes (DB + search index + cache) so the env is deterministic;
+the expensive image build is still skipped when the manifest is unchanged. On the fresh DB the admin
+password is changed from the seed `store` to **`Password1!`** and written to `.env.local`. The only
+two inputs are the optional `VCST-XXXX` task and `--db postgres|mysql|sqlserver` (default postgres).
 
 ### 1. Resolve the task (only with a task arg — deterministic)
 
@@ -101,14 +102,28 @@ never lower. Offline? `--baseline-file <path>`. Other env? `--branch <deploy-bra
 ```powershell
 pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action up `
   -Manifest .local-env/packages.custom.json
-# fresh DB:  … -Action up -Manifest .local-env/packages.custom.json -Clean
-# lifecycle: -Action bootstrap | build | start | stop | clean | remove | status
-# options:   -Clean (wipe all data volumes)  -Rebuild (force build)  -WithSampleData (demo import, best-effort)
-#            -DbProvider postgres|mysql|sqlserver  -FrontendUrl <zip>
+# SQL Server:  … -Action up -Manifest .local-env/packages.custom.json -DbProvider sqlserver
+# lifecycle:   -Action bootstrap | build | start | stop | clean | remove | status | monitor
+# options:     -DbProvider postgres|mysql|sqlserver  -FrontendUrl <zip>  -HeartbeatSec <n>  (-Branch <start-local tooling branch>, internal)
 ```
-`up` = bootstrap (once) → build **iff manifest changed** → `down` (frees ports, keeps volumes) →
-`[wipe data if -Clean]` → start → init-admin. start-local refuses to start when its ports are busy,
-so provision always brings the stack `down` before starting. Endpoints: storefront
+**Visual status marks.** Every step prints a coloured mark — ✅ green (pass) · ⚠️ yellow (advisory) ·
+❌ red (fail) · `·` grey (info) — and `up`/`start`/`status` close with a **report banner**: overall
+verdict, the storefront + backend links, a per-container ✅/⚠️/❌ table, and the next wire-up step.
+(The script forces UTF-8 console output so the marks survive redirection to a log file.)
+
+**Progress heartbeat (no more `Downloading …MB` spam).** The long, otherwise-silent steps (the docker
+build, the post-start `/health` wait) route the child's thousands of raw download lines to a per-phase
+log file (`.local-env/.provision-<phase>.log`) and emit ONE concise status line — `⏱ [hh:mm:ss] <phase>:
+<signal>` — every `-HeartbeatSec` seconds (default **60**; `0` disables). On failure the log tail is
+printed inline. To poll an **in-flight** run from another shell (read-only, never touches the stack):
+```powershell
+pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action monitor
+# → visual snapshot: current phase + last log line, image presence, container marks, /health
+```
+`up` = bootstrap (once) → build **iff manifest changed** → `down` (frees ports) → **wipe data volumes
+(always — fresh DB)** → start → init-admin. start-local refuses to start when its ports are busy,
+so provision always brings the stack `down` before starting. A different `-DbProvider` than the env
+was bootstrapped with is detected and auto-re-bootstrapped for the new engine. Endpoints: storefront
 `http://localhost:80`, platform/Admin/xAPI `http://localhost:8090` (`admin`/`Password1!`).
 
 ### 4. Health-check (+ task field probe)
@@ -161,17 +176,15 @@ provision's init-admin step already wrote `ADMIN_PASSWORD_LOCALHOST=Password1!` 
 
 ### Seeding data
 
-The stack comes up **without catalog data** by default. Two ways to populate it:
+Every run comes up on a **fresh, empty DB** (no catalog data). Populate it with the **repo seeders**:
+`npm run seed:catalog` / `seed:configurable` / `seed:b2b` … (see `/qa-seed-data`). They create clean
+fixtures compatible with the pinned module versions and authenticate via `TEST_ENV=localhost`
+(`Password1!`). For VCST-5173's configurable product (Text/Product/File sections) use
+`npm run seed:configurable`.
 
-- **Repo seeders (reliable, recommended):** `npm run seed:catalog` / `seed:configurable` / `seed:b2b` …
-  (see `/qa-seed-data`). They create clean fixtures compatible with the pinned module versions and
-  authenticate via `TEST_ENV=localhost` (`Password1!`). For VCST-5173's configurable product
-  (Text/Product/File sections) use `npm run seed:configurable`.
-- **start-local demo import (opt-in, best-effort):** `provision.ps1 -Action up … -WithSampleData`.
-  Installs the full VC demo on a fresh DB, but the bundled demo can fail against newer module
-  versions — observed 2026-06-24: Catalog import rejects a sample product property named `NFC_`
-  (must start/end with a letter or digit), so the demo catalog does not fully land. provision warns
-  and continues. Prefer the repo seeders unless you specifically want the full demo store.
+> start-local's own demo importer was dropped from this skill — the bundled demo is unreliable against
+> newer pinned module versions (e.g. Catalog rejects the sample property name `NFC_`). Use the repo
+> seeders, which stay compatible.
 
 ## Worked example — VCST-5173 (`[Cart] Configurable products redesign`)
 
@@ -211,23 +224,18 @@ To exercise it against real data — after seeding and configuring a product int
   (`Test-PinnedModules`) and flags this loudly; the real confirmation that the PR code is loaded is a
   behaviour/schema `--graphql` probe, not the version. resolve-task prints both the `--expect-module`
   flags and a reminder to probe the schema.
-- **Re-running over a PRESERVED DB used to lock the admin account — now prevented.** start-local's
-  post-start "Checking installed modules" probe authenticates with the seed `store`; once a prior
-  init-admin rotated admin to `Password1!`, those failures tripped Identity lockout (15-min, `Lockout`
-  in appsettings) AND the platform cached the locked user, so init-admin then failed with the *correct*
-  password. **Prevention (current):** provision patches the probe (`check-installed-modules.ps1`) to
-  honour `$env:VC_MODULECHECK_PASSWORD` and sets it to the password the probe will actually meet
-  (`store` on a fresh DB, `Password1!` on a preserved one) — so the probe succeeds and never locks,
-  and re-runs skip the costly restart. **Fallback (kept):** if a lock still happens (e.g. an
-  externally-created DB with a different admin password), `Initialize-Admin` on a non-fresh DB clears
-  `LockoutEnd`/`AccessFailedCount` in `vc-db`, `docker restart`s the platform to flush the cache, and
-  retries once (clearing the DB alone is not enough — the cache requires the restart).
+- **Admin lockout from the module-check probe — prevented.** start-local's post-start "Checking
+  installed modules" probe authenticates with the seed `store`. Since every run starts on a fresh DB,
+  the seed password IS `store`, so the probe succeeds — but to be safe provision still patches the
+  probe (`check-installed-modules.ps1`) to honour `$env:VC_MODULECHECK_PASSWORD` and sets it to `store`
+  before start, so the probe never fails-and-locks before `init-admin` rotates the password to
+  `Password1!`. (The old preserved-DB lockout self-heal is gone — there are no preserved DBs anymore.)
 - **start-local refuses to start if a port is busy**, and the OS can lag freeing a just-removed
   container's port (seen on ES `:9200`) right after `down` → a spurious start failure. provision waits
   the ports out (`Wait-PortsFree`) before starting.
-- **start-VC-solution's exit code is not authoritative on a preserved DB** — its seed-password module
-  probe makes it exit 1 even when the platform is healthy. provision runs it `-AllowFail` and gates on
-  the real `/health` (`Wait-PlatformReady`) instead.
+- **start-VC-solution's exit code is not authoritative** — its seed-password module probe can make it
+  exit 1 even when the platform is healthy. provision runs it `-AllowFail` and gates on the real
+  `/health` (`Wait-PlatformReady`) instead.
 - **Everything lives in `<WorkDir>/VirtoLocal/`** (start-local's default basename). provision.ps1 runs
   all start-local scripts from `<WorkDir>` with the basename `VirtoLocal`, never a nested path — the
   docker compose project name resolves to `virtolocal` and the platform container is
@@ -249,6 +257,12 @@ To exercise it against real data — after seeding and configuring a product int
   module install + first start (DB migration) add a few more. Subsequent `start`/`stop` are fast.
 - **`.env.localhost`** is the local profile (`TEST_ENV=localhost`) — do NOT create `.env.localdocker`;
   `.env.local` is the gitignored secrets file, not an env profile.
+- **`-DbProvider` only binds at bootstrap.** start-local bakes the DB engine into the generated
+  `docker-compose.yml` + `.env`, so on an already-bootstrapped env a different `-DbProvider`/`--db` used
+  to be silently ignored (you'd stay on the original engine). provision now records the bootstrapped
+  engine in `.local-env/.bootstrapped-db.txt` (fallback: `DB_PROVIDER` in the generated `.env`) and
+  detects a switch: since every run wipes the DB anyway, a mismatch simply **auto-tears-down +
+  re-bootstraps** for the new engine. `-Action remove` clears the marker so the next `up` bootstraps fresh.
 
 ## Teardown
 
