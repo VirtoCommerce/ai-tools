@@ -41,7 +41,7 @@ Create top-down, delete bottom-up. Numbers indicate execution order.
 All endpoints require `Authorization: Bearer {{authToken}}`.
 Base: `{{baseUrl}}` = `BACK_URL` env variable.
 
-**Verify before using:** Check Swagger UI at `{{baseUrl}}/docs/index.html` for current endpoint signatures. For GraphQL verification requests (08-Verify folder), run introspection first — see [`../qa-postman/graphql-authoring.md`](../qa-postman/graphql-authoring.md) §3 (Schema Introspection) and the canonical `.claude/agents/knowledge/graphql-schema.md`.
+**Verify before using:** Check Swagger UI at `{{baseUrl}}/docs/index.html` for current endpoint signatures. For GraphQL verification requests (08-Verify folder), run introspection first — see [`../qa-postman/graphql-authoring.md`](../qa-postman/graphql-authoring.md) §3 (Schema Introspection) and the canonical `.claude/agents/knowledge/api/graphql-schema.md`.
 
 ### Authentication
 

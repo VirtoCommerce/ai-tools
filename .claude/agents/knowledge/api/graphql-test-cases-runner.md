@@ -19,7 +19,7 @@ Canonical reference for writing **runner-native GraphQL test cases** in suite CS
 - `scripts/lib/test-data-resolver.ts` — `@td()` resolver
 - `test-data/aliases.json` — alias registry
 - `regression/suites/Backend/graphql/050i-graphql-configurations.csv` — gold-standard examples (CFG-GQL-001…032)
-- `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema reference (consult BEFORE writing any query/mutation)
+- `.claude/agents/knowledge/api/graphql-schema.md` — live xAPI schema reference (consult BEFORE writing any query/mutation)
 
 ---
 
@@ -122,7 +122,7 @@ The body is everything between `[GQL-OP <label>]` and the next recognized tag. C
 
 **Field-selection rule (feedback memory `feedback_graphql_full_field_selection.md`):** happy-path tests use **full** field selection so the test exercises real-world response shape. Minimal selection (e.g., only `id`) is allowed only for explicit counter probes, idempotency roundtrips, or schema-coverage cases that say so in the Title.
 
-**Schema rule (feedback memory `feedback_graphql_schema_validation.md`):** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
+**Schema rule (feedback memory `feedback_graphql_schema_validation.md`):** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/api/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
 
 ### 3.3 `[GQL-VARS <label>]`
 
@@ -266,7 +266,7 @@ query($storeId: String!) {
 
 Then use `{{CAT_ROOT}}` in downstream filters. This pattern survives catalog re-seeding — when the storefront-visible root migrated on 2026-04-30 (`fc596540…` → `9238c387…`), cases that used discovery kept passing while hardcoded ones silently returned zero items.
 
-**Canonical recipes** (root discovery, first-available product, any active coupon, plus the JS equivalents for interactive agents): [`live-discovery.md`](live-discovery.md). Authoring checklist item: prefer discovery over hardcoded IDs whenever the test doesn't depend on which specific entity is used.
+**Canonical recipes** (root discovery, first-available product, any active coupon, plus the JS equivalents for interactive agents): [`live-discovery.md`](../execution/live-discovery.md). Authoring checklist item: prefer discovery over hardcoded IDs whenever the test doesn't depend on which specific entity is used.
 
 ---
 
@@ -449,7 +449,7 @@ If Cleanup is empty or literally `none`, runner skips this phase silently.
 | `Assertion references unknown label "X" — no [GQL-EXEC X] was run` | label mismatch between Steps and Assertions | rename one to match |
 | `variable {{X}} was never captured` | no `[GQL-CAPTURE … → X]` upstream | add the capture, or fix the path |
 | `[GQL-VARS X] body is not valid JSON` | typo / unescaped quote | run the JSON through a parser; remember CSV doubles quotes |
-| `SCHEMA INVALID — DV-008: Cannot query field "foo" on type "Bar"` | field doesn't exist in live schema | consult `knowledge/graphql-schema.md`; rerun introspection (`--refresh-schema`); fix the field |
+| `SCHEMA INVALID — DV-008: Cannot query field "foo" on type "Bar"` | field doesn't exist in live schema | consult `knowledge/api/graphql-schema.md`; rerun introspection (`--refresh-schema`); fix the field |
 | `Token acquisition failed for role="ORG_USER"` | bad creds in `.env` | run `npm run env:check` |
 | `Could not parse: "<predicate>"` | DATA predicate doesn't match any pattern in §4.2 | rewrite to one of the supported shapes |
 
@@ -468,7 +468,7 @@ Exit 0 = structurally valid. Exit 1 = at least one row has structural issues; fi
 When you write a new runner-native GraphQL case, walk this list:
 
 1. **Title + ID** stable, like `<MODULE>-GQL-<NN>`.
-2. **Schema check** — every query/mutation validated against live schema (introspection or `knowledge/graphql-schema.md`).
+2. **Schema check** — every query/mutation validated against live schema (introspection or `knowledge/api/graphql-schema.md`).
 3. **No hardcoded IDs/SKUs/emails/prices** — `@td()` or `[GQL-CAPTURE]`.
 4. **`[AUTH role=…]` if and only if the operation requires authentication** — leave out for PUBLIC queries.
 5. **One `[GQL-EXEC]` per `[GQL-OP]`** — same label.
@@ -528,12 +528,12 @@ Walks: AUTH → set up vars → declare op + vars + body → execute → capture
 
 | Context | Where to look |
 |---------|---------------|
-| What columns / tags exist | `knowledge/test-runner-tags.md` |
-| Which GraphQL types/fields are real | `knowledge/graphql-schema.md` (snapshot) + live introspection |
-| Auth contract (token endpoint, headers) | `knowledge/api-auth.md` |
-| Order/checkout flow matrix | `knowledge/order-creation-matrix.md` |
-| Business invariants (BL-*) | `knowledge/business-logic.md` |
-| Edge case taxonomy (ECL-*) | `knowledge/e-commerce-edge-cases-library.md` |
+| What columns / tags exist | `knowledge/execution/test-runner-tags.md` |
+| Which GraphQL types/fields are real | `knowledge/api/graphql-schema.md` (snapshot) + live introspection |
+| Auth contract (token endpoint, headers) | `knowledge/api/api-auth.md` |
+| Order/checkout flow matrix | `knowledge/api/order-creation-matrix.md` |
+| Business invariants (BL-*) | `knowledge/oracles/business-logic.md` |
+| Edge case taxonomy (ECL-*) | `knowledge/oracles/e-commerce-edge-cases-library.md` |
 | Test-data resolver (`@td()`) | `scripts/lib/test-data-resolver.ts` + memory `reference_test_data_resolver.md` |
 | Runner CLI usage | memory `feedback_use_canonical_graphql_runner.md` |
 | Gold-standard examples | `regression/suites/Backend/graphql/050i-graphql-configurations.csv` |

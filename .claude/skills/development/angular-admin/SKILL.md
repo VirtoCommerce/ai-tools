@@ -96,4 +96,4 @@ Either way the harness is throwaway — only its evidence (output / screenshots)
 - `visual-render-harness.md` — pre-PR browser proof for layout/CSS fixes
 - `scratch-harness-patterns.md` — verified Node stub for `angular`, worked red→green example (logic bugs)
 - `angular-patterns.md` — VC Admin SPA blade/widget/service anatomy
-- `.claude/agents/knowledge/vc-module-architecture.md` §2 (Admin UI ships in the module repo)
+- `.claude/agents/knowledge/architecture/vc-module-architecture.md` §2 (Admin UI ships in the module repo)

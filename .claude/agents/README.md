@@ -41,7 +41,7 @@ Team framework: `.claude/agents/ba/shared-instructions.md`.
 | **ba-system-analyzer** | sonnet | teal | Repo structure, modules, user flows, pain points |
 | **ba-api-specialist** | sonnet | cyan | API surface via Postman/Swagger, health assessment |
 | **ba-story-writer** | sonnet | yellow | Agile user stories with BDD acceptance criteria |
-| **ba-doc-writer** | sonnet | indigo | Audience-targeted docs — Customer / Admin / Developer / Sales (per `knowledge/virto-doc-style.md`) |
+| **ba-doc-writer** | sonnet | indigo | Audience-targeted docs — Customer / Admin / Developer / Sales (per `knowledge/ba/virto-doc-style.md`) |
 
 ### Developers Team (4 agents + shared-instructions)
 
@@ -189,7 +189,7 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 
 QA agents use a **four-layer prompt architecture**:
 
-1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/business-logic.md`
+1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/oracles/business-logic.md`
 2. **Domain Knowledge** (judgment) — what good implementation looks like
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries

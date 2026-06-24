@@ -118,7 +118,7 @@ For every test case row, evaluate:
 - [ ] All `{{VAR}}` tokens are from the known env variable set (see `test-case-template.md`)
 - [ ] No hardcoded URLs (e.g., `https://vcst-qa-storefront...`) — must use `{{FRONT_URL}}`
 - [ ] No hardcoded credentials — must use `{{USER_EMAIL}}`, `{{USER_PASSWORD}}`
-- [ ] **GraphQL suites (050, graphql-tagged)**: validate all queries/mutations against `agents/knowledge/graphql-schema.md`:
+- [ ] **GraphQL suites (050, graphql-tagged)**: validate all queries/mutations against `agents/knowledge/api/graphql-schema.md`:
   - [ ] Query/mutation names exist in schema (DV-006)
   - [ ] All mutations use `command: { ... }` wrapper (DV-007)
   - [ ] Argument names match schema signatures (DV-008)
@@ -135,12 +135,12 @@ For every test case row, evaluate:
   - [ ] No exact-value assertions on env-dependent data (DV-016) — assert structural invariants (math identity, ordering, relation, shape/regex) instead of literal prices, order numbers, slugs, titles, counts
   - [ ] No literal addresses / coupon codes / fixture values outside `test-data/` (DV-017)
   - [ ] No magic numbers without named-constant comment (DV-018)
-- [ ] **Exception — environment constants are allowed:** virtual-catalog root `fc596540...`, store ID, admin login, and other stable-across-deploys values documented in `knowledge/catalog.md` or `knowledge/store-settings.md`
+- [ ] **Exception — environment constants are allowed:** virtual-catalog root `fc596540...`, store ID, admin login, and other stable-across-deploys values documented in `knowledge/domain/catalog.md` or `knowledge/domain/store-settings.md`
 - [ ] **Runner-native GraphQL step structure** (DV-019) — run `npm run graphql:lint-labels -- <csv-path>` for every GraphQL suite that uses `[GQL-OP]`/`[GQL-EXEC]` tags. Must exit 0. Catches:
   - [ ] Every `[GQL-OP <L>]` paired with exactly one `[GQL-EXEC <L>]`
   - [ ] Every `[GQL-EXEC <L>]` has a matching `[GQL-OP <L>]`
   - [ ] Every `[GQL-VARS <L>]` / `[GQL-CAPTURE <L>.*]` refers to a declared op label
-- [ ] **Runner-native GraphQL authoring contract** — every runner-native row conforms to `.claude/agents/knowledge/graphql-test-cases-runner.md` (canonical `Steps`/`Assertions`/`Cleanup` grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, authoring checklist). Read this doc when in doubt about whether a tag, predicate, or path expression is supported by the runner.
+- [ ] **Runner-native GraphQL authoring contract** — every runner-native row conforms to `.claude/agents/knowledge/api/graphql-test-cases-runner.md` (canonical `Steps`/`Assertions`/`Cleanup` grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, authoring checklist). Read this doc when in doubt about whether a tag, predicate, or path expression is supported by the runner.
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)

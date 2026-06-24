@@ -27,8 +27,8 @@ gate ladder — never diverge from it.
 | Module→repo routing, `isAllowedRepo`, `checkoutForFix`, build/test `REPO_PROFILES` | `ci/lib/repo-router.ts` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
-| VC module repo anatomy, .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/vc-module-architecture.md` |
-| vc-frontend storefront anatomy, Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/vc-frontend-architecture.md` |
+| VC module repo anatomy, .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/architecture/vc-module-architecture.md` |
+| vc-frontend storefront anatomy, Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` |
 | BL-* invariants / historical failures | `business-logic.md`, `vc-bug-catalog.md` |
 | Workspace | `.fix-workspace/<repo>/` (gitignored) |
 | Branch | `claude/qa-autofix/VCST-XXXX` |

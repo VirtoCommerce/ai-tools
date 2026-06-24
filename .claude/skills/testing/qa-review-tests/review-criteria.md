@@ -194,10 +194,10 @@ Ensures all referenced data is valid and resolvable.
 
 ### DV-005: Stale admin URL pattern `[Medium]`
 - **Detection:** Admin navigation uses URL path that doesn't match current Admin SPA routes.
-- **Check:** Compare against known admin route patterns from `agents/knowledge/sitemap.md`.
+- **Check:** Compare against known admin route patterns from `agents/knowledge/domain/sitemap.md`.
 
 ### DV-006: Invalid GraphQL query/mutation name `[Blocker]`
-- **Detection:** (GraphQL suites only) Steps contain a query or mutation name that does not exist in the live schema. Reference: `agents/knowledge/graphql-schema.md`.
+- **Detection:** (GraphQL suites only) Steps contain a query or mutation name that does not exist in the live schema. Reference: `agents/knowledge/api/graphql-schema.md`.
 - **Bad:** `mutation { createCart(storeId: "...") { id } }` — `createCart` does not exist
 - **Good:** `query { cart(storeId: "..." currencyCode: "USD") { id } }` — `cart` query exists and auto-creates
 - **Auto-fixable:** No — requires understanding the correct alternative operation.
@@ -233,7 +233,7 @@ Ensures all referenced data is valid and resolvable.
 - **Auto-fixable:** Yes — replace `currencyCode` with `currency { code }`.
 
 ### DV-013: Hardcoded entity ID / GUID `[High]`
-- **Detection:** Steps, Assertions, Preconditions, or Test_Data contain a UUID/GUID literal (`[0-9a-f]{8}-[0-9a-f]{4}-...`) or numeric entity ID that refers to a product, catalog, category, user, organization, or order. Exception: documented **environment constants** in `.claude/agents/knowledge/catalog.md` or `knowledge/store-settings.md` (e.g., virtual-catalog root `fc596540...`, store ID `B2B-store`) are allowed because they are stable across deploys.
+- **Detection:** Steps, Assertions, Preconditions, or Test_Data contain a UUID/GUID literal (`[0-9a-f]{8}-[0-9a-f]{4}-...`) or numeric entity ID that refers to a product, catalog, category, user, organization, or order. Exception: documented **environment constants** in `.claude/agents/knowledge/domain/catalog.md` or `knowledge/domain/store-settings.md` (e.g., virtual-catalog root `fc596540...`, store ID `B2B-store`) are allowed because they are stable across deploys.
 - **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
 - **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
 - **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.

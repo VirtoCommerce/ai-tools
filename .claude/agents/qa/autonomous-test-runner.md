@@ -27,12 +27,12 @@ Execute a single suite as an Agent Teams teammate. Report via `SendMessage` to t
 
 **Consult on demand only** — do NOT pre-read:
 
-- `.claude/agents/knowledge/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
-- `.claude/agents/knowledge/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: tag grammar, predicate shapes, path/filter syntax, schema validation, common failure modes. Read this when triaging "why is GQL-XXX BLOCKED?" before retrying or escalating.
-- `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema for cross-checking DV-006…DV-011 schema-mismatch errors.
-- `.claude/agents/knowledge/live-discovery.md` — runtime data-resolution policy: before retrying a BLOCKED case as "fixture drift", check whether a `[GQL-OP]+[GQL-CAPTURE]` discovery step (CSV) or `scripts/lib/live-discover.ts` call (interactive) would resolve the missing entity at runtime instead of re-seeding. Covers the `AGENT-TEST-` prefix from `scripts/lib/random-data.ts` for sweep-friendly unique inputs.
+- `.claude/agents/knowledge/execution/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+- `.claude/agents/knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: tag grammar, predicate shapes, path/filter syntax, schema validation, common failure modes. Read this when triaging "why is GQL-XXX BLOCKED?" before retrying or escalating.
+- `.claude/agents/knowledge/api/graphql-schema.md` — live xAPI schema for cross-checking DV-006…DV-011 schema-mismatch errors.
+- `.claude/agents/knowledge/execution/live-discovery.md` — runtime data-resolution policy: before retrying a BLOCKED case as "fixture drift", check whether a `[GQL-OP]+[GQL-CAPTURE]` discovery step (CSV) or `scripts/lib/live-discover.ts` call (interactive) would resolve the missing entity at runtime instead of re-seeding. Covers the `AGENT-TEST-` prefix from `scripts/lib/random-data.ts` for sweep-friendly unique inputs.
 
-For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if ambiguous.
+For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if ambiguous.
 
 ## Isolation Protocol
 
@@ -145,7 +145,7 @@ SendMessage: to {{ORCHESTRATOR_NAME}}
      summary: "Suite {{SUITE_ID}}: running test N/TOTAL"
    ```
 2. **Preconditions**: Read the `Preconditions` column.
-   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED`.
+   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED`.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals** + common signals. **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = immediate-fail checkpoint.

@@ -15,8 +15,8 @@ Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Con
 | `Title` | Test name — announce before execution |
 | `Section` | Grouping only |
 | `Priority` | Critical/High/Medium/Low — determines failure severity |
-| `Business_Rule` | BL-* invariant(s). If observed behavior violates it, mark FAIL regardless of steps. Look up the specific BL-ID in `knowledge/business-logic.md` only if ambiguous |
-| `Edge_Case_Refs` | ECL-* sections to actively watch for. Look up in `knowledge/e-commerce-edge-cases-library.md` only if ambiguous |
+| `Business_Rule` | BL-* invariant(s). If observed behavior violates it, mark FAIL regardless of steps. Look up the specific BL-ID in `knowledge/oracles/business-logic.md` only if ambiguous |
+| `Edge_Case_Refs` | ECL-* sections to actively watch for. Look up in `knowledge/oracles/e-commerce-edge-cases-library.md` only if ambiguous |
 | `Preconditions` | Verify before executing; mark BLOCKED if unmet |
 | `Test_Data` | `{{VAR}}` and `@td()` bindings — see substitution below |
 | `Steps` | Typed action steps — see Step Tags |
@@ -29,7 +29,7 @@ Shared reference for `test-runner-agent.md` and `autonomous-test-runner.md`. Con
 
 ## Precondition Tags (`[PRE:*]`)
 
-`[PRE:*]` tags appear in the `Preconditions` column and specify **execution-time state-setup actions** that the runner performs via browser UI before executing the test's `Steps` block. They are imperative (runner acts) not merely declarative (runner verifies). Full protocol: `.claude/agents/knowledge/test-execution-preflight.md`.
+`[PRE:*]` tags appear in the `Preconditions` column and specify **execution-time state-setup actions** that the runner performs via browser UI before executing the test's `Steps` block. They are imperative (runner acts) not merely declarative (runner verifies). Full protocol: `.claude/agents/knowledge/execution/test-execution-preflight.md`.
 
 | Tag | Action |
 |-----|--------|

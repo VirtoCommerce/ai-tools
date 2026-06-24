@@ -11,11 +11,11 @@ Cross-skill rule for any test artifact authored in this repo (test cases, Postma
 | `live-discover` | [`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts) (xAPI at runtime) or CSV-runner `[GQL-OP]+[GQL-CAPTURE]` | **Any** entity, or one whose ID drifts between seeds: "first available product", "current virtual-catalog root", "first saved address", "any active coupon". Assert shape, not exact values. |
 | `random-data` | [`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts) (zero-dep) | **Unique inputs** you never assert exact values on: registration emails, org names, comments, BVA quantities. Defaults use `AGENT-TEST-` prefix so `/qa-seed-data teardown` sweeps them. |
 
-The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/knowledge/live-discovery.md`](../agents/knowledge/live-discovery.md) — agents authoring or reviewing test cases consult that file first.
+The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md) — agents authoring or reviewing test cases consult that file first.
 
 ## Canonical references (single sources of truth)
 
-- **[`.claude/agents/knowledge/live-discovery.md`](../agents/knowledge/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)
+- **[`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)
 - **[`.claude/skills/testing/qa-postman/test-data-fixtures.md`](../skills/testing/qa-postman/test-data-fixtures.md)** — `@td()` resolver contract, fixture directory layout, account/catalog/address conventions, integration patterns
 - **[`test-data/aliases.json`](../../test-data/aliases.json)** — alias registry (`_meta.version` is the contract version)
 - **[`test-data/README.md`](../../test-data/README.md)** — directory layout and seed-results index
@@ -23,8 +23,8 @@ The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/k
 - **[`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts)** — typed xAPI discovery primitives (catalog root, products, addresses, cart, coupons)
 - **[`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts)** — zero-dep random generators (emails, org names, SKUs, quantities, comments)
 - **[`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts)** — validation (`npx tsx scripts/validate-td-refs.ts` — verifies every `@td()` reference resolves)
-- **[`.claude/agents/knowledge/graphql-test-cases-runner.md`](../agents/knowledge/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
-- **[`.claude/agents/knowledge/graphql-schema.md`](../agents/knowledge/graphql-schema.md)** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
+- **[`.claude/agents/knowledge/api/graphql-test-cases-runner.md`](../agents/knowledge/api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
+- **[`.claude/agents/knowledge/api/graphql-schema.md`](../agents/knowledge/api/graphql-schema.md)** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
 
 ## Why hardcoded fixtures rot
 

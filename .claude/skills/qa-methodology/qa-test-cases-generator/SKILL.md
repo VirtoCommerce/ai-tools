@@ -84,15 +84,15 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 2. **Load business rules** — read `business-logic.md`, find all `BL-*` invariants relevant to the domain
 3. **Load edge cases** — read `e-commerce-edge-cases-library.md`, find all `ECL-*` patterns for the domain
 4. **Check existing coverage** — read the target suite CSV (if it exists) to avoid duplicating existing test cases
-5. **Get UI context** — read `agents/knowledge/sitemap.md` for page URLs, product types, navigation paths
+5. **Get UI context** — read `agents/knowledge/domain/sitemap.md` for page URLs, product types, navigation paths
 
 ### Step 2.5: GraphQL Schema Validation (Required for `--layer graphql` or GraphQL-related features)
 
 **MANDATORY** when generating GraphQL test cases. Skipping this step produces invalid queries/mutations.
 
-> **Authoring contract:** new GraphQL test cases MUST follow the runner-native format consumed by `scripts/graphql-runner.ts`. Read **`.claude/agents/knowledge/graphql-test-cases-runner.md`** before writing any GraphQL row — it defines the canonical `Steps`/`Assertions`/`Cleanup` grammar (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` + `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`), `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, and an authoring checklist. Gold-standard examples: `regression/suites/Backend/graphql/050i-graphql-configurations.csv` (CFG-GQL-001…032).
+> **Authoring contract:** new GraphQL test cases MUST follow the runner-native format consumed by `scripts/graphql-runner.ts`. Read **`.claude/agents/knowledge/api/graphql-test-cases-runner.md`** before writing any GraphQL row — it defines the canonical `Steps`/`Assertions`/`Cleanup` grammar (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` + `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`), `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, and an authoring checklist. Gold-standard examples: `regression/suites/Backend/graphql/050i-graphql-configurations.csv` (CFG-GQL-001…032).
 
-1. **Read schema reference** — read `agents/knowledge/graphql-schema.md` (introspected from live endpoint)
+1. **Read schema reference** — read `agents/knowledge/api/graphql-schema.md` (introspected from live endpoint)
 2. **Check schema freshness** — if the feature involves new/changed GraphQL operations, run `npm run schema:refresh` first to update the reference from live introspection
 3. **Validate every query/mutation** in the test case against the schema:
    - **Query/mutation name exists** in the schema (e.g., there is NO `createCart` mutation)
@@ -305,11 +305,11 @@ Generated test cases route to the correct executing agent by layer:
 | `/qa-risk` | Risk level determines priority assignment and case count |
 | `/qa-coverage-gap` | Gap analysis identifies where new cases are needed most |
 | `/qa-plan` | Generated cases feed into test plans |
-| `agents/knowledge/sitemap.md` | Sitemap provides URLs and navigation context for steps |
+| `agents/knowledge/domain/sitemap.md` | Sitemap provides URLs and navigation context for steps |
 | `/qa-api ref` | xAPI reference for Cross_Layer_Checks assertions |
 | `../testing/qa-postman/test-data-fixtures.md` | `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json) registry, fixture conventions — read before populating `Test_Data` or `Preconditions` columns with any entity-specific value |
-| `agents/knowledge/graphql-test-cases-runner.md` | Runner-native CSV authoring contract — read before writing any GraphQL test case (Step 2.5 enforces this) |
-| `agents/knowledge/graphql-schema.md` | Live introspection snapshot — verify every query/mutation name and field against this (Step 2.5 enforces this) |
+| `agents/knowledge/api/graphql-test-cases-runner.md` | Runner-native CSV authoring contract — read before writing any GraphQL test case (Step 2.5 enforces this) |
+| `agents/knowledge/api/graphql-schema.md` | Live introspection snapshot — verify every query/mutation name and field against this (Step 2.5 enforces this) |
 
 ## Rules
 

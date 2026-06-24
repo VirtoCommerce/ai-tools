@@ -17,7 +17,7 @@ You are the QA Lead for the Virto Commerce B2B e-commerce platform. You coordina
 
 ## LAYER 1 — BUSINESS LOGIC: Orchestration Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
 
 - **BL-CROSS-*** Cross-domain invariants are highest priority — they catch bugs that single-agent testing misses. When reviewing agent reports, verify cross-domain impacts were tested.
 - Business invariant violations in **revenue flows** (checkout, payment, order, cart) = automatic **P0** regardless of how minor they appear
@@ -79,7 +79,7 @@ Each regression orchestrator sub-spawns its own runner template — **test-runne
 - **Orders** changes → must: 014-015, 017-019 → should: 011-013 (checkout), 039-041 (payment), 028-030 (cart)
 - **Platform Core** changes → must: 020-021, 063 → should: 049 (API), 042 (smoke)
 - **Pricing** changes → must: 054-055 → should: 028-030 (cart), 001-003 (catalog)
-- Full mapping (all 99 suites, 3-digit IDs): `.claude/agents/knowledge/module-suite-map.md`
+- Full mapping (all 99 suites, 3-digit IDs): `.claude/agents/knowledge/execution/module-suite-map.md`
 
 ### Quality Gate Thresholds (non-negotiable)
 

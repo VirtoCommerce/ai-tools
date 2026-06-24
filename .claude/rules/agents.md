@@ -26,7 +26,7 @@ Team framework: `.claude/agents/ba/shared-instructions.md` (VirtoOZ-first sourci
 | **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points |
 | **ba-api-specialist** | sonnet | API surface via Postman/Swagger, GitHub module code, live Swagger UI, health assessment |
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
-| **ba-doc-writer** | sonnet | Audience-targeted documentation — **Customer / Admin / Developer / Sales** (per `knowledge/virto-doc-style.md`) + UX improvement specs |
+| **ba-doc-writer** | sonnet | Audience-targeted documentation — **Customer / Admin / Developer / Sales** (per `knowledge/ba/virto-doc-style.md`) + UX improvement specs |
 
 **BA agent tools:**
 - All BA agents use **GitHub MCP** to search VirtoCommerce module repos (`org:VirtoCommerce vc-module-*`) and **VirtoOZ MCP** (via `/vc-docs`) to ground terminology/voice

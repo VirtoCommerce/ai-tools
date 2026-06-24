@@ -30,7 +30,7 @@ Techniques and data tactics are the **toolbox you reach into after** answering #
 
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
 
 - Every **BL-*** invariant → at least one test case. **BL-CROSS-*** → cross-layer verification cases
 - When reviewing coverage: "Is every invariant covered?" Uncovered invariants = gaps to fill
@@ -66,16 +66,16 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `.claude/agents/knowledge/business-logic.md` |
-| Edge Cases Library | `.claude/agents/knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
+| Business invariants (108 rules) | `.claude/agents/knowledge/oracles/business-logic.md` |
+| Edge Cases Library | `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `.claude/skills/qa-methodology/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
 | Storefront Checklists (33 domains, 411 items) | `.claude/skills/testing/qa-checklist/domain-checklists.md` |
 | Backend & Admin Checklists (29 domains, 244 items) | `.claude/skills/testing/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
 | GraphQL xAPI Checklist (83 items) | `.claude/skills/testing/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
-| GraphiQL Interaction Guide | `.claude/agents/knowledge/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
-| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
-| **Live Discovery + Random Inputs** | `.claude/agents/knowledge/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Decision tree separating `{{VAR}}` (per-env) / `@td()` (assertion target) / `live-discover` (drift-resilient entity lookup) / `random-data` (unique inputs with `AGENT-TEST-` cleanup prefix). JS helpers: `scripts/lib/live-discover.ts`, `scripts/lib/random-data.ts`. CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`. Parallel-run isolation via the agent user pool. |
-| Live xAPI Schema Snapshot | `.claude/agents/knowledge/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql-runner.ts --query "<inline>"` for a live check). |
+| GraphiQL Interaction Guide | `.claude/agents/knowledge/api/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/agents/knowledge/api/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
+| **Live Discovery + Random Inputs** | `.claude/agents/knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Decision tree separating `{{VAR}}` (per-env) / `@td()` (assertion target) / `live-discover` (drift-resilient entity lookup) / `random-data` (unique inputs with `AGENT-TEST-` cleanup prefix). JS helpers: `scripts/lib/live-discover.ts`, `scripts/lib/random-data.ts`. CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`. Parallel-run isolation via the agent user pool. |
+| Live xAPI Schema Snapshot | `.claude/agents/knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql-runner.ts --query "<inline>"` for a live check). |
 | Test Case Template (15-col CSV) | `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` |
 
 ### What Makes Good VC Test Cases
@@ -177,8 +177,8 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | API Test Case Patterns | `.claude/skills/testing/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
 | Test Data Seeding | `.claude/skills/testing/qa-seed-data/SKILL.md` |
 | E2E Scenario Catalog (105) | `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` |
-| Module → Suite Mapping | `.claude/agents/knowledge/module-suite-map.md` |
-| Storefront Sitemap | `.claude/agents/knowledge/sitemap.md` |
+| Module → Suite Mapping | `.claude/agents/knowledge/execution/module-suite-map.md` |
+| Storefront Sitemap | `.claude/agents/knowledge/domain/sitemap.md` |
 
 ### Judge
 

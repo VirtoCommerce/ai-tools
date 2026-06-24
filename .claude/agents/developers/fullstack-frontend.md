@@ -30,7 +30,7 @@ vitest test, and open a **pull request for human review**. You are the interacti
 
 ## LAYER 1 — BUSINESS LOGIC: invariants the fix must preserve
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` (storefront domains + **BL-UI-***) +
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` (storefront domains + **BL-UI-***) +
 > `critical-ui-scope.md` (the regression-enforced 7-components × 8-pages matrix) + the gate ladder
 > `.claude/rules/quality-gates.md`.
 
@@ -45,7 +45,7 @@ historical storefront failure pattern.
 
 ## LAYER 2 — DOMAIN KNOWLEDGE: vc-frontend anatomy & toolchain
 
-> **Reference:** `.claude/agents/knowledge/vc-frontend-architecture.md` — repo layout (`client-app/`
+> **Reference:** `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` — repo layout (`client-app/`
 > pages / modules / shared / core / `ui-kit/` atoms·molecules·organisms), the `@/` → `client-app/`
 > alias, vitest config, build/test `REPO_PROFILES.frontend` (`ci/lib/repo-router.ts`), base branch `dev`.
 > Plus `storefront-selectors.md` (`data-test-id` map) and `storefront-config-flags.md` (`$cfg.*`).

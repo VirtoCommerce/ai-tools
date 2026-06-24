@@ -10,10 +10,10 @@ How to write GraphQL queries and mutations into Postman collection requests, plu
 
 | Reference | Purpose |
 |-----------|---------|
-| [`.claude/agents/knowledge/graphql-schema.md`](../../../agents/knowledge/graphql-schema.md) | **Canonical xAPI schema reference** — queries, mutations, input types, return types from live introspection. **MUST be consulted before writing or reviewing GraphQL.** |
-| [`.claude/agents/knowledge/graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) | Authoring contract for runner-native GraphQL test cases (CSV format consumed by `scripts/graphql-runner.ts`). Postman collections are an alternative; the runner is preferred for assertion-rich GraphQL test cases. |
-| [`.claude/agents/knowledge/order-creation-matrix.md`](../../../agents/knowledge/order-creation-matrix.md) | Order/cart/shipment mutation prerequisites — userId, shipment price matching, etc. |
-| [`.claude/agents/knowledge/api-auth.md`](../../../agents/knowledge/api-auth.md) | OAuth2 token endpoint and headers — same as REST. |
+| [`.claude/agents/knowledge/api/graphql-schema.md`](../../../agents/knowledge/api/graphql-schema.md) | **Canonical xAPI schema reference** — queries, mutations, input types, return types from live introspection. **MUST be consulted before writing or reviewing GraphQL.** |
+| [`.claude/agents/knowledge/api/graphql-test-cases-runner.md`](../../../agents/knowledge/api/graphql-test-cases-runner.md) | Authoring contract for runner-native GraphQL test cases (CSV format consumed by `scripts/graphql-runner.ts`). Postman collections are an alternative; the runner is preferred for assertion-rich GraphQL test cases. |
+| [`.claude/agents/knowledge/api/order-creation-matrix.md`](../../../agents/knowledge/api/order-creation-matrix.md) | Order/cart/shipment mutation prerequisites — userId, shipment price matching, etc. |
+| [`.claude/agents/knowledge/api/api-auth.md`](../../../agents/knowledge/api/api-auth.md) | OAuth2 token endpoint and headers — same as REST. |
 
 ### When to use Postman vs. the GraphQL Runner
 

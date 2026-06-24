@@ -25,12 +25,12 @@ Execute a single regression test suite against Virto Commerce. Run autonomously 
 
 **Consult on demand only** — do NOT pre-read:
 
-- `.claude/agents/knowledge/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
-- `.claude/agents/knowledge/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` step grammar, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]` assertion grammar, `getByPath` filter syntax, schema validation, capture chaining, gold-standard examples (050i). Read this before debugging "why didn't my GraphQL case run?" or filing a "runner bug".
-- `.claude/agents/knowledge/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
-- `.claude/agents/knowledge/live-discovery.md` — runtime data-resolution policy: when a step needs "any product / current catalog root / first address / any active coupon", do NOT hardcode — use `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or import from `scripts/lib/live-discover.ts` (interactive). For unique inputs not asserted against, use `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix → `/qa-seed-data teardown` sweeps them). Consult before claiming a BLOCKED verdict is "fixture drift" — discovery may resolve it without re-seeding.
+- `.claude/agents/knowledge/execution/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
+- `.claude/agents/knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` step grammar, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]` assertion grammar, `getByPath` filter syntax, schema validation, capture chaining, gold-standard examples (050i). Read this before debugging "why didn't my GraphQL case run?" or filing a "runner bug".
+- `.claude/agents/knowledge/api/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
+- `.claude/agents/knowledge/execution/live-discovery.md` — runtime data-resolution policy: when a step needs "any product / current catalog root / first address / any active coupon", do NOT hardcode — use `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or import from `scripts/lib/live-discover.ts` (interactive). For unique inputs not asserted against, use `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix → `/qa-seed-data teardown` sweeps them). Consult before claiming a BLOCKED verdict is "fixture drift" — discovery may resolve it without re-seeding.
 
-For BL-* / ECL-* IDs, look up the specific ID in `knowledge/business-logic.md` or `knowledge/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
+For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
 ## Phase 0: Mode Detection
 
@@ -114,7 +114,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 
 1. **Announce** (mandatory): `▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title> [<BL-*>] | Watching: <ECL-*>`
 2. **Preconditions**: Read the `Preconditions` column.
-   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED` immediately.
+   - If `[PRE:*]` tags are present: consult `.claude/agents/knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure (except `[PRE:RESET_CART]`) → mark test `BLOCKED` immediately.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).

@@ -59,12 +59,12 @@ Gap analysis runs once in the orchestrator. Sub-agents consume the inventory; th
 1. **Current regression coverage** — every suite CSV referenced in `config/test-suites.json` (`suites[*].file`). Routing fields: `domain`, `layer`, `concern`, `priority`.
 2. **Baseline TestRail exports** — `test-suites ( export from Test-rail )/` (Frontend26-02, frontend-26-01, suites/, Backend (admin site)/, E2E/) — flag `MIGRATION_GAP` / `SHALLOW_MIGRATION` per `coverage-gap-methodology.md` §1b.
 3. **Feature inventory** — all of:
-   - `.claude/agents/knowledge/business-logic.md` (`BL-*` invariants)
-   - `.claude/agents/knowledge/e-commerce-edge-cases-library.md` (`ECL-*`)
-   - `.claude/agents/knowledge/sitemap.md`
-   - `.claude/agents/knowledge/module-suite-map.md`
-   - `.claude/agents/knowledge/graphql-schema.md`
-   - `.claude/agents/knowledge/products.md`, `catalog.md`, `store-settings.md`
+   - `.claude/agents/knowledge/oracles/business-logic.md` (`BL-*` invariants)
+   - `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` (`ECL-*`)
+   - `.claude/agents/knowledge/domain/sitemap.md`
+   - `.claude/agents/knowledge/execution/module-suite-map.md`
+   - `.claude/agents/knowledge/api/graphql-schema.md`
+   - `.claude/agents/knowledge/domain/products.md`, `catalog.md`, `store-settings.md`
    - `.claude/skills/testing/qa-plan/e2e-scenario-catalog.md` (105 E2E scenarios)
    - `.claude/skills/testing/qa-checklist/domain-checklists.md` (UI/UX)
    - `.claude/skills/testing/qa-checklist/backend-admin-checklists.md`
@@ -172,7 +172,7 @@ Each dispatch follows `.claude/templates/agent-dispatch.md` § Agent Prompt Stru
 - Filtered gap inventory for that batch's manifest domains
 - Target-suite mapping resolved from manifest (Step 2)
 - Format contract: `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md`
-- **For Backend/graphql/ suites (050a–050k):** authoring contract is `.claude/agents/knowledge/graphql-test-cases-runner.md` (runner-native tags: `[AUTH]`, `[GQL-OP]`, `[GQL-VARS]`, `[GQL-EXEC]`, `[GQL-CAPTURE]`, `[REST-OP/EXEC/CAPTURE]`, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are **not** valid in these suites.
+- **For Backend/graphql/ suites (050a–050k):** authoring contract is `.claude/agents/knowledge/api/graphql-test-cases-runner.md` (runner-native tags: `[AUTH]`, `[GQL-OP]`, `[GQL-VARS]`, `[GQL-EXEC]`, `[GQL-CAPTURE]`, `[REST-OP/EXEC/CAPTURE]`, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are **not** valid in these suites.
 - **Test-data contract** (mandatory, per `.claude/rules/test-data.md`): generated cases MUST resolve test data via `{{VAR}}`, `@td()`, `live-discover`, or `random-data`. Literal IDs/SKUs/emails/prices/order-numbers/paths are review failures.
 - Context7 findings from Step 1.4 for the batch's domains
 - Output file path: `reports/coverage/{RUN_ID}/batch-{A|B|C}-results.json`
@@ -204,7 +204,7 @@ After all generator batches return, launch one validation agent per batch **in a
 1. Reads the new `needs-review` cases from its batch's `suitesModified` set.
 2. Executes the P0 cases (or P0 + P1 if budget allows) via its assigned browser slot.
 3. Updates `Automation_Status` in the CSV: `validated` (pass), `needs-review` (inconclusive), or flags the case for revision (fail signals authoring defect — return to `test-management-specialist`).
-4. Cleans up created test data using the `AGENT-TEST-` prefix convention (see `.claude/agents/knowledge/live-discovery.md` § Cleanup) — `/qa-seed-data teardown` reclaims it post-run.
+4. Cleans up created test data using the `AGENT-TEST-` prefix convention (see `.claude/agents/knowledge/execution/live-discovery.md` § Cleanup) — `/qa-seed-data teardown` reclaims it post-run.
 5. Appends a `validation` block to `batch-{X}-results.json`:
    ```json
    "validation": { "agent": "qa-frontend-expert", "validated": 38, "needsReview": 4, "revisionRequested": 2, "durationMinutes": 18 }
@@ -406,7 +406,7 @@ When `domain <name>` is requested, this command delegates directly to `/qa-cover
 
 **Format & data:**
 - All generated cases follow `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` (15-column enriched CSV).
-- Backend/graphql/* cases follow the **runner-native** authoring contract in `.claude/agents/knowledge/graphql-test-cases-runner.md`. Never use browser-mode `[GQL]` tags inside those suites.
+- Backend/graphql/* cases follow the **runner-native** authoring contract in `.claude/agents/knowledge/api/graphql-test-cases-runner.md`. Never use browser-mode `[GQL]` tags inside those suites.
 - Test data is **never** hardcoded — use `{{VAR}}` / `@td()` / `live-discover` / `random-data` per `.claude/rules/test-data.md`. Sub-agents that emit literal IDs/SKUs/prices fail review.
 - `validate-td-refs` MUST pass before Step 7 completes.
 - Use `AGENT-TEST-` prefix for any new test data so `/qa-seed-data teardown` reclaims it.

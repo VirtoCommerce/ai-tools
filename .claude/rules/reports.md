@@ -107,5 +107,5 @@ Reports:
 | HAR files | `test-results/{browser}/har/` | "HAR: `checkout-2026-05-21.har`" |
 | Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
 | Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
-| BL/ECL invariants | `.claude/agents/knowledge/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
+| BL/ECL invariants | `.claude/agents/knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
 | Prior runs | `reports/regression/REG-*` | Link by run ID, don't recap |

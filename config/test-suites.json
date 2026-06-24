@@ -1153,7 +1153,7 @@
       "estimatedMinutes": 73,
       "agent": "ui-ux-expert",
       "preferredBrowser": "playwright-chrome",
-      "browserRequirementReason": "PerformanceObserver layout-shift entries + getBoundingClientRect measurements work most reliably in Chromium; uses scripts/lib/measure-layout.ts snippets via browser_evaluate. Selectors verified live against vcst-qa B2B-store (see .claude/agents/knowledge/storefront-selectors.md). Scope (8 components, 9 pages) enforced by .claude/agents/knowledge/critical-ui-scope.md and npm run scope:validate.",
+      "browserRequirementReason": "PerformanceObserver layout-shift entries + getBoundingClientRect measurements work most reliably in Chromium; uses scripts/lib/measure-layout.ts snippets via browser_evaluate. Selectors verified live against vcst-qa B2B-store (see .claude/agents/knowledge/automation/storefront-selectors.md). Scope (8 components, 9 pages) enforced by .claude/agents/knowledge/oracles/critical-ui-scope.md and npm run scope:validate.",
       "tags": [
         "layout",
         "cls",

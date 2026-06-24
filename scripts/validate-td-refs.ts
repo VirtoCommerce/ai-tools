@@ -31,7 +31,7 @@ const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 const HEX32_RE = /\b[0-9a-f]{32}\b/gi;
 // Sentinel/empty GUIDs (00000000-…-0000/0001/0002) are null-id placeholders, not entity refs.
 const SENTINEL_RE = /^0{8}-0{4}-0{4}-0{4}-0{11}[0-9a-fA-F]$/;
-// Stable environment constants (documented in knowledge/catalog.md & store-settings.md) — allowed.
+// Stable environment constants (documented in knowledge/domain/catalog.md & store-settings.md) — allowed.
 // Keep tiny; everything else must be @td() or runtime-resolved.
 const ALLOWED_IDS = new Set<string>([
   "fc596540864a41bf8ab78734ee7353a3", // active B2B virtual-catalog root (stable across deploys)

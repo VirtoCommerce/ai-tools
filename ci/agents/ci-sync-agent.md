@@ -42,7 +42,7 @@ gh pr diff NNN --name-only
 Classify changed files in this testing repo and map to suites.
 
 **If `module <name>` (manual trigger):**
-- Read `.claude/agents/knowledge/module-suite-map.md`
+- Read `.claude/agents/knowledge/execution/module-suite-map.md`
 - Find the module's "Must Run" and "Should Run" suites
 
 **If `changelog <version>` (after platform release):**
@@ -52,7 +52,7 @@ Classify changed files in this testing repo and map to suites.
 
 ### Step 2 — Map to Suites
 
-Read `.claude/agents/knowledge/module-suite-map.md` and use the Impact Analysis Guide:
+Read `.claude/agents/knowledge/execution/module-suite-map.md` and use the Impact Analysis Guide:
 
 | Changed Module | Must Run | Should Run |
 |---------------|----------|------------|
@@ -88,9 +88,9 @@ If cases were added/removed, update `config/test-suites.json` testCount.
 ## Knowledge Files
 
 Read on-demand:
-- `.claude/agents/knowledge/module-suite-map.md` — module → suite mapping + dependencies
-- `.claude/agents/knowledge/business-logic.md` — BL-* invariants for correct assertions
-- `.claude/agents/knowledge/products.md` — product types and test data
+- `.claude/agents/knowledge/execution/module-suite-map.md` — module → suite mapping + dependencies
+- `.claude/agents/knowledge/oracles/business-logic.md` — BL-* invariants for correct assertions
+- `.claude/agents/knowledge/domain/products.md` — product types and test data
 - `.claude/skills/testing/qa-coverage-gap/feature-domain-map.md` — expected coverage per domain
 
 ## Output Format

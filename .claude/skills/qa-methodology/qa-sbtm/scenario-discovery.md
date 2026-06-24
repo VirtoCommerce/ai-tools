@@ -2,7 +2,7 @@
 
 **Exploratory testing's primary job is to discover scenarios our existing coverage misses.** Running known patterns against known soft spots is *re-validation* (still useful, but not the point). This file collects techniques specifically aimed at gap-finding.
 
-Use this as the **default lens** for `/qa-exploratory`. The other files in this skill — `adversarial-heuristics.md`, `personas.md`, `modern-web-attack-surface.md`, `charter-library.md` — and the [vc-bug-catalog](../../../agents/knowledge/vc-bug-catalog.md) act as **filters**: they help you spot familiar problems faster and avoid re-discovering known ones, freeing attention for genuinely new scenarios.
+Use this as the **default lens** for `/qa-exploratory`. The other files in this skill — `adversarial-heuristics.md`, `personas.md`, `modern-web-attack-surface.md`, `charter-library.md` — and the [vc-bug-catalog](../../../agents/knowledge/oracles/vc-bug-catalog.md) act as **filters**: they help you spot familiar problems faster and avoid re-discovering known ones, freeing attention for genuinely new scenarios.
 
 ---
 
@@ -11,7 +11,7 @@ Use this as the **default lens** for `/qa-exploratory`. The other files in this 
 Every exploratory session ends with at least one **net-new scenario** — something that:
 
 1. Is not covered by any CSV suite in [`regression/suites/`](../../../../regression/suites/)
-2. Is not in the [VC bug catalog](../../../agents/knowledge/vc-bug-catalog.md) or ECL
+2. Is not in the [VC bug catalog](../../../agents/knowledge/oracles/vc-bug-catalog.md) or ECL
 3. The charter author would not have predicted before the session
 
 If you can't name a net-new scenario at debrief, the session **was not exploratory** — it was re-validation. Both are valid uses of time, but call the session what it is and update the coverage matrix honestly.
@@ -24,7 +24,7 @@ The fastest way to find gaps: compare what *exists in the product* against what'
 
 ### 1.1 Suite vs codebase
 
-**Probe:** Pick a module (e.g., `vc-module-marketing`). Open the [module-suite-map](../../../agents/knowledge/module-suite-map.md) to find its suite(s). Open the suite CSV(s). Then scan the module's GitHub source via `mcp__github__search_code` for handlers, endpoints, or commands that don't appear in the suite.
+**Probe:** Pick a module (e.g., `vc-module-marketing`). Open the [module-suite-map](../../../agents/knowledge/execution/module-suite-map.md) to find its suite(s). Open the suite CSV(s). Then scan the module's GitHub source via `mcp__github__search_code` for handlers, endpoints, or commands that don't appear in the suite.
 
 **Output:** A list of code-level features with no corresponding test. Each is a discovery candidate.
 
@@ -237,7 +237,7 @@ A 3-month look-back on the coverage matrix should show mostly `[EXP]` — if it'
 
 ## Test data during discovery sessions
 
-Discovery sessions hit a moving target: catalogs drift, orgs get reseeded, cart IDs change. Hardcoding values during exploration causes false negatives (404 on a known ID) that mask the real discovery. Use the decision tree in [live-discovery.md](../../../agents/knowledge/live-discovery.md):
+Discovery sessions hit a moving target: catalogs drift, orgs get reseeded, cart IDs change. Hardcoding values during exploration causes false negatives (404 on a known ID) that mask the real discovery. Use the decision tree in [live-discovery.md](../../../agents/knowledge/execution/live-discovery.md):
 
 - **Need any product / address / cart / coupon for navigation** → `live-discover` (e.g., galumphing § 6, feature-pair matrix § 2 — pick *any* product matching a shape, not a specific GUID)
 - **Need a unique input (registration email, org name, comment)** → `random-data` (most surprise-seeking probes need throwaway inputs)
@@ -254,7 +254,7 @@ Cross-ref: [../../../rules/test-data.md](../../../rules/test-data.md) is the pro
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Apply these as a *filter* (familiar-problems oracle) during discovery sessions, not as the primary checklist
 - [personas.md](personas.md) — Persona lens helps surface scenarios a different user type would hit
 - [charter-library.md](charter-library.md) — Pre-built charters; use as starting points, then galumph or hostile-interview to discover what they miss
-- [../../../agents/knowledge/vc-bug-catalog.md](../../../agents/knowledge/vc-bug-catalog.md) — Read first to AVOID re-discovering known patterns
-- [../../../agents/knowledge/live-discovery.md](../../../agents/knowledge/live-discovery.md) — Decision tree + JS recipes for resolving test data at runtime (`live-discover` / `random-data` / `@td()`); essential for galumphing, feature-pair matrix, and any session that needs to pick "any product / any address"
-- [../../../agents/knowledge/module-suite-map.md](../../../agents/knowledge/module-suite-map.md) — Source for coverage-diff hunting (§ 1.1)
+- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../../agents/knowledge/oracles/vc-bug-catalog.md) — Read first to AVOID re-discovering known patterns
+- [../../../agents/knowledge/execution/live-discovery.md](../../../agents/knowledge/execution/live-discovery.md) — Decision tree + JS recipes for resolving test data at runtime (`live-discover` / `random-data` / `@td()`); essential for galumphing, feature-pair matrix, and any session that needs to pick "any product / any address"
+- [../../../agents/knowledge/execution/module-suite-map.md](../../../agents/knowledge/execution/module-suite-map.md) — Source for coverage-diff hunting (§ 1.1)
 - [../../testing/qa-coverage-gap/SKILL.md](../../testing/qa-coverage-gap/SKILL.md) — Programmatic coverage-gap analysis (complementary to manual exploratory discovery)

@@ -19,7 +19,7 @@ You are a senior UI/UX QA specialist for the Virto Commerce B2B e-commerce platf
 
 ## LAYER 1 — BUSINESS LOGIC: UI Display Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md`
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md`
 
 - **BL-PRICE-003** Rounding display: prices must display consistently rounded (2 decimal places) — $10.00 not $10, $9.99 not $9.994
 - **BL-CAT-002** Sold-out UI: when `availableQuantity = 0`, show "Out of Stock" and disable "Add to Cart" — silent availability = bug
@@ -152,7 +152,7 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 
 **Canonical helper:** `scripts/lib/measure-layout.ts` — exports `LAYOUT_SNIPPETS.installClsObserver`, `LAYOUT_SNIPPETS.readCls`, `LAYOUT_SNIPPETS.overflowAudit`, `LAYOUT_SNIPPETS.touchTargetAudit`, plus `spacingAuditSnippet(selector)`, `alignmentAuditSnippet(selector)`, `rectSnapshotSnippet(selector)`, and the analyzers `classifyCls`, `classifySpacing`, `classifyAlignment`, `classifyOverflow`, `classifyTouchTargets`, `compareRectSnapshots`, `analyzeLayoutResults`, `summarize`. **Always use these — do not hand-roll measurement snippets.** Pass the snippet strings verbatim to `browser_evaluate`; parse the returned JSON with the matching `classify*` function to get a severity-tagged finding.
 
-**Canonical scope:** [`.claude/agents/knowledge/critical-ui-scope.md`](../knowledge/critical-ui-scope.md) — the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`). Two machine-readable coverage matrices map every applicable (component × invariant) and (page × invariant) cell to a covering test ID. Use this file to decide what to audit before any free-form UI work. `npm run scope:validate` enforces that every cell points at a real test ID.
+**Canonical scope:** [`.claude/agents/knowledge/oracles/critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) — the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`). Two machine-readable coverage matrices map every applicable (component × invariant) and (page × invariant) cell to a covering test ID. Use this file to decide what to audit before any free-form UI work. `npm run scope:validate` enforces that every cell points at a real test ID.
 
 **Canonical regression suite:** [`regression/suites/Frontend/cross-cutting/048b-layout-stability.csv`](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv) (suite id `048b`, selection group `layout-stability`) — 35 cases covering CLS on home/PDP/cart/checkout/account/company pages, spacing-grid audits, row alignment, mobile overflow + viewport sweep, hover/badge/validation/skeleton state-shifts, theme FOUC + font-swap, mobile touch targets, plus 10 component-isolated tests (VcButton spacing, VcTable spacing/alignment/sort-shift, VcDialog scroll-lock + mobile close, Popover open + mobile, VcSidebar, VcLineItem stepper-shift). Run via `npm run ci:regression` with `SUITE_SELECTION=layout-stability` or directly as part of `frontend` / `full`.
 
@@ -276,7 +276,7 @@ el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'
 | Visual Regression Testing | `.claude/skills/testing/qa-storybook/visual-regression-testing.md` |
 | UX Heuristic Evaluation | `.claude/skills/testing/qa-design/ux-heuristic-evaluation.md` |
 | Responsive Component Testing | `.claude/skills/testing/qa-storybook/responsive-component-testing.md` |
-| **Critical UI scope (regression-enforced)** | `.claude/agents/knowledge/critical-ui-scope.md` — 7 components + 8 pages with applicability matrices and per-component audit protocols. `npm run scope:validate` gates the build. |
+| **Critical UI scope (regression-enforced)** | `.claude/agents/knowledge/oracles/critical-ui-scope.md` — 7 components + 8 pages with applicability matrices and per-component audit protocols. `npm run scope:validate` gates the build. |
 | **Layout measurement helper** | `scripts/lib/measure-layout.ts` (CLS observer, spacing audit, alignment audit, overflow audit, touch-target audit, FOUC snippet, rect-snapshot, analyzers) |
 | **Layout regression suite** | `regression/suites/Frontend/cross-cutting/048b-layout-stability.csv` (suite id `048b`, selection `layout-stability`) — 35 cases on the live storefront |
 

@@ -24,7 +24,7 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 2. **Locate the seam.** From the RCA, `Grep`/`Glob` the responsible component (`.vue`), composable
    (`use*`), store, util, or GraphQL operation — search on the component name, `data-test-id`
    (`storefront-selectors.md`), route name, or i18n key. See
-   `.claude/agents/knowledge/vc-frontend-architecture.md` §3. Verify the actual GraphQL field names —
+   `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` §3. Verify the actual GraphQL field names —
    the storefront has "wrong field name silently returns undefined" traps.
 3. **Install once** — `yarn install --frozen-lockfile || npm ci` (per `REPO_PROFILES.frontend`).
 4. **Decide the test level:**
@@ -67,7 +67,7 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 
 ## References
 - `vitest-patterns.md` — mount/composable recipes + stubbing i18n/router/Pinia/`$cfg`/GraphQL for VC storefront
-- `.claude/agents/knowledge/vc-frontend-architecture.md` — repo layout, seams, build/test profile
-- `.claude/agents/knowledge/storefront-selectors.md` — `data-test-id` map to find the component
+- `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` — repo layout, seams, build/test profile
+- `.claude/agents/knowledge/automation/storefront-selectors.md` — `data-test-id` map to find the component
 - `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
 - Build/test commands: `REPO_PROFILES.frontend` in `ci/lib/repo-router.ts`

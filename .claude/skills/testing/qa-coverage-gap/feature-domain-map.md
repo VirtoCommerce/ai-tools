@@ -37,7 +37,7 @@ Feature domains in this file map to `domain` field values in `config/test-suites
 | WHITE LABELING, SEO | branding | `whitelabeling` | 066-067, 070-071 |
 | SMOKE, GA4, SECURITY, A11Y, I18N, PERFORMANCE, BROWSER COMPAT, GQL CROSS-CUTTING | cross-cutting | `smoke`, `critical` | 042-048, 048b, 050g, 078, 080 |
 
-> **Layer routing:** `/qa-test-cases-generator --layer <name>` and the orchestrated `/qa-coverage-generation` map gaps to suites by combining `manifestDomain` + `layer` + `concern`. Backend GraphQL suites (`050a`–`050k`) follow the **runner-native** authoring contract in [`graphql-test-cases-runner.md`](../../../agents/knowledge/graphql-test-cases-runner.md) — they are not browser-mode suites. See [`SKILL.md`](SKILL.md) § "Manifest-Domain Routing" for the target-suite resolution rule.
+> **Layer routing:** `/qa-test-cases-generator --layer <name>` and the orchestrated `/qa-coverage-generation` map gaps to suites by combining `manifestDomain` + `layer` + `concern`. Backend GraphQL suites (`050a`–`050k`) follow the **runner-native** authoring contract in [`graphql-test-cases-runner.md`](../../../agents/knowledge/api/graphql-test-cases-runner.md) — they are not browser-mode suites. See [`SKILL.md`](SKILL.md) § "Manifest-Domain Routing" for the target-suite resolution rule.
 
 ### Backend/graphql/* Sub-Suite Breakdown (runner-native)
 

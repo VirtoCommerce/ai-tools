@@ -143,7 +143,7 @@ CSV suites in enriched agent-native format, organized under `Frontend/<module>/`
 
 P0 suites: 042 (Smoke), 078 (Smoke companion), 039 (CyberSource payment), 044 (Security), 049 (Platform REST API).
 
-Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/agents/knowledge/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/agents/knowledge/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)).
+Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/agents/knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/agents/knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)).
 
 ## Notes
 

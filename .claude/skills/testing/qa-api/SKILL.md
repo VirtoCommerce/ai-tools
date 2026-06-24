@@ -33,8 +33,8 @@ Three modes in one skill: look up API reference, execute tests, or write test ca
 - **xapi-query-ref.md** — Ready-to-use GraphQL queries, mutations, and REST request templates for all xAPI modules (xCart, xCatalog, xOrder, xCMS, xProfile, xFrontend) plus store settings and authentication.
 - **test-cases-api-graphql.md** — Existing REST API (Suite 14) and GraphQL xAPI (Suite 15) test cases with validations and execution patterns.
 - **api-test-case-patterns.md** — Coverage checklists and writing guide for generating new test cases in enriched CSV format. Read this when in `cases` mode.
-- **`.claude/agents/knowledge/graphql-schema.md`** — **Authoritative** live introspection snapshot of the GraphQL schema. Lists all queries, mutations, input types, return types, and key rules. Consult this FIRST when writing or reviewing any GraphQL test case.
-- **`.claude/agents/knowledge/graphql-test-cases-runner.md`** — **Authoritative** authoring contract for runner-native GraphQL test cases (the format consumed by `scripts/graphql-runner.ts`): full `Steps` / `Assertions` / `Cleanup` tag grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, authoring checklist, worked example. Read this BEFORE writing ANY GraphQL test case; gold-standard reference suite is `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
+- **`.claude/agents/knowledge/api/graphql-schema.md`** — **Authoritative** live introspection snapshot of the GraphQL schema. Lists all queries, mutations, input types, return types, and key rules. Consult this FIRST when writing or reviewing any GraphQL test case.
+- **`.claude/agents/knowledge/api/graphql-test-cases-runner.md`** — **Authoritative** authoring contract for runner-native GraphQL test cases (the format consumed by `scripts/graphql-runner.ts`): full `Steps` / `Assertions` / `Cleanup` tag grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, authoring checklist, worked example. Read this BEFORE writing ANY GraphQL test case; gold-standard reference suite is `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 - **`.claude/skills/testing/qa-postman/test-data-fixtures.md`** — `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json) registry, and fixture conventions. Read this BEFORE writing entity IDs, SKUs, prices, emails, addresses, or test-card numbers into request bodies — resolve at authoring time, never hardcode.
 - **`.claude/skills/testing/qa-postman/SKILL.md`** — Postman MCP entry point (modes, workflow, sub-guide index). The Postman MCP **authors** collections; it does **not** execute them — execution happens via Newman/Postman CLI/Postman Monitor (see `qa-postman/execution.md`).
 
@@ -52,7 +52,7 @@ Before writing ANY GraphQL test case:
 3. **Use Context7** (`/virtocommerce/vc-docs`) for any operations not in the local ref
 4. **If introspection and ref disagree, trust introspection** — the ref may be stale
 
-**Schema reference:** Consult `.claude/agents/knowledge/graphql-schema.md` — live introspection snapshot with all queries, mutations, input types, and return types. Key rules from the schema:
+**Schema reference:** Consult `.claude/agents/knowledge/api/graphql-schema.md` — live introspection snapshot with all queries, mutations, input types, and return types. Key rules from the schema:
 - `CartType` has **flat** money fields (`subTotal`, `total`, `discountTotal`) — NOT nested under `totals`
 - The field is `total` — there is **NO `grandTotal`**
 - Products search uses `query` arg — NOT `keyword` (only `brands` uses `keyword`)
@@ -167,7 +167,7 @@ Generate test cases in **enriched CSV format** for `test-management-specialist`.
 - There is NO `grandTotal` — the field is `total`
 - Products search uses `query` arg — NOT `keyword`
 - Use correct mutation names per schema (e.g., `removeCartItem` not `removeItem`, `changeCartItemQuantity` not `changeItemQuantity`)
-- Consult `.claude/agents/knowledge/graphql-schema.md` for authoritative field names and types
+- Consult `.claude/agents/knowledge/api/graphql-schema.md` for authoritative field names and types
 - Verify every query/mutation name and input type via introspection before writing
 - **Happy-path field selection (mandatory):** every happy-path query/mutation test MUST request the **full field selection set** of the return type — all non-deprecated scalar fields plus at least one level of expansion for every nested object (`{ amount currency { code } }`, not just `{ amount }`). Null checks, type correctness, and nested resolver correctness are only observable when fields are in the selection set. Minimal selection (`{ id }`, `{ totalCount }`) is allowed ONLY for: (a) counter/invariant probes before/after a mutation, (b) cross-layer roundtrips that match a write, (c) the dedicated "minimal selection" schema-coverage test (one per operation, per the tier rule in `graphql-checklist.md:141-144`). When using a minimal selection, add a comment in Steps naming the role.
 

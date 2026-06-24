@@ -19,7 +19,7 @@ You are a senior Frontend QA agent for the Virto Commerce B2B e-commerce platfor
 
 ## LAYER 1 — BUSINESS LOGIC: Key Storefront Invariants
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
 
 - **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
@@ -42,7 +42,7 @@ You are a senior Frontend QA agent for the Virto Commerce B2B e-commerce platfor
 
 CyberSource shows form on **cart page**. All others (Skyflow, Authorize.Net, Datatrance) → Place Order → `/checkout/payment` redirect.
 Test cards in `.env`: Skyflow (`SKYFLOW_VISA/MASTERCARD/EXPIRY/CVV`), Datatrance (card + `DATATRANCE_OTP` for 3DS).
-Full payment matrix: `knowledge/order-creation-matrix.md`
+Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### UX Heuristics
 
@@ -57,18 +57,18 @@ Full payment matrix: `knowledge/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/business-logic.md` |
-| Storefront Sitemap | `knowledge/sitemap.md` — full URL map for navigation |
-| Product Types & Properties | `knowledge/products.md` — types, xAPI fields, configurable sections |
-| Browser Quirks | `knowledge/browser-quirks.md` — per-browser rendering differences |
-| Performance Thresholds | `knowledge/performance-thresholds.md` — LCP, CLS, TTI budgets |
-| Debugging Signals | `knowledge/debugging-signals.md` — console patterns, false positives |
-| Platform Patterns | `knowledge/platform-patterns.md` — desync, cache, reindex behaviors |
-| Edge Cases Library | `knowledge/e-commerce-edge-cases-library.md` — ECL-* IDs |
-| Payment Matrix | `knowledge/order-creation-matrix.md` — 15 payment × shipping combos |
-| Live xAPI Schema | `knowledge/graphql-schema.md` — types/fields/inputs from live introspection |
-| **Runner-native GraphQL test cases** | `knowledge/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
-| **Live discovery + random inputs** | `knowledge/live-discovery.md` — decision tree for `{{VAR}}` vs `@td()` vs `live-discover` (any product / catalog root / first address) vs `random-data` (unique emails/orgs with `AGENT-TEST-` prefix). JS recipes via `scripts/lib/live-discover.ts` + `random-data.ts`; CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`; parallel-run isolation via agent user pool. Consult before authoring any test that mentions a product/address/cart/coupon entity that may drift between seeds. |
+| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
+| Product Types & Properties | `knowledge/domain/products.md` — types, xAPI fields, configurable sections |
+| Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering differences |
+| Performance Thresholds | `knowledge/execution/performance-thresholds.md` — LCP, CLS, TTI budgets |
+| Debugging Signals | `knowledge/execution/debugging-signals.md` — console patterns, false positives |
+| Platform Patterns | `knowledge/api/platform-patterns.md` — desync, cache, reindex behaviors |
+| Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
+| Payment Matrix | `knowledge/api/order-creation-matrix.md` — 15 payment × shipping combos |
+| Live xAPI Schema | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection |
+| **Runner-native GraphQL test cases** | `knowledge/api/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
+| **Live discovery + random inputs** | `knowledge/execution/live-discovery.md` — decision tree for `{{VAR}}` vs `@td()` vs `live-discover` (any product / catalog root / first address) vs `random-data` (unique emails/orgs with `AGENT-TEST-` prefix). JS recipes via `scripts/lib/live-discover.ts` + `random-data.ts`; CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`; parallel-run isolation via agent user pool. Consult before authoring any test that mentions a product/address/cart/coupon entity that may drift between seeds. |
 
 > All paths relative to `.claude/agents/`
 

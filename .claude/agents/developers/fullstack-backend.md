@@ -28,7 +28,7 @@ Admin UI).
 
 ## LAYER 1 — BUSINESS LOGIC: invariants the fix must preserve
 
-> **Reference:** `.claude/agents/knowledge/business-logic.md` (17 domains, 108 rules) + the gate
+> **Reference:** `.claude/agents/knowledge/oracles/business-logic.md` (17 domains, 108 rules) + the gate
 > ladder `.claude/rules/quality-gates.md`.
 
 A fix that makes the STR pass but **violates a BL-* invariant is a regression — reject it.** Key ones
@@ -41,7 +41,7 @@ fix doesn't re-introduce a historical VC failure pattern.
 
 ## LAYER 2 — DOMAIN KNOWLEDGE: VC module anatomy & toolchain
 
-> **Reference:** `.claude/agents/knowledge/vc-module-architecture.md` — repo layout (`*.Core` →
+> **Reference:** `.claude/agents/knowledge/architecture/vc-module-architecture.md` — repo layout (`*.Core` →
 > `*.Data` → `*.Web` (+ `Web/Scripts/` Admin Angular UI) → `*.Tests`), build/test `REPO_PROFILES`
 > (`ci/lib/repo-router.ts`), .NET 10 idioms, xUnit conventions, dependency boundary.
 

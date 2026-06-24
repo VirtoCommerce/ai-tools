@@ -155,7 +155,7 @@ npm run ci:notify        # Teams notification
 - [README.md](README.md) — Setup & quick-start
 - [config/test-suites.json](config/test-suites.json) — Regression orchestration manifest (source of truth)
 - [regression/suites/README.md](regression/suites/README.md) — Per-module suite index
-- [.claude/agents/knowledge/sitemap.md](.claude/agents/knowledge/sitemap.md) — Storefront sitemap
-- [.claude/agents/knowledge/products.md](.claude/agents/knowledge/products.md) — Product types, xAPI fields, configurable sections
+- [.claude/agents/knowledge/domain/sitemap.md](.claude/agents/knowledge/domain/sitemap.md) — Storefront sitemap
+- [.claude/agents/knowledge/domain/products.md](.claude/agents/knowledge/domain/products.md) — Product types, xAPI fields, configurable sections
 - [test-data/README.md](test-data/README.md) — `@td()` resolver + fixture catalog
 - [vc/README.md](vc/README.md) — Layer 2 (VC internal per-env data) layout

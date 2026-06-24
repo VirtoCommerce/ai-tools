@@ -65,4 +65,4 @@ If a finding is reproducible in a story, it belongs to qa-storybook. If it only 
 - Storybook URLs: `STORYBOOK_URL` (QA), `STORYBOOK_DEV_URL` (dev).
 - 55 components total, Atomic Design tiers (atoms / molecules / organisms).
 - Coffee is the only A11y-compliant theme (memory: `feedback_a11y_coffee_only`) — gate a11y assertions on Coffee, treat other themes as visual-only.
-- Critical UI scope (regression-enforced): VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar — see `.claude/agents/knowledge/critical-ui-scope.md`.
+- Critical UI scope (regression-enforced): VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar — see `.claude/agents/knowledge/oracles/critical-ui-scope.md`.
