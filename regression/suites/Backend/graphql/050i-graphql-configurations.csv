@@ -1245,7 +1245,7 @@ CFG-GQL-029,changeCartConfigurationItemSelected — File Section End-to-End: Upl
 [DATA label=flip_file_back] data.changeCartConfigurationItemSelected.items.0.configurationItems[?type=File].selectedForCheckout = true
 [DATA label=flip_file_back] data.changeCartConfigurationItemSelected.items.0.listPrice.amount = {{BASE_LIST_PRICE}}
 [DATA label=flip_file_back] data.changeCartConfigurationItemSelected.subTotal.amount = {{BASE_CART_SUBTOTAL}}","[EVIDENCE] File section flips successfully without option field — confirms (sectionId, type) discrimination for File type identical to Text. Round-trip parity: flag flips OFF then back ON; cart subTotal/total restore to BASE values exactly. Cascade verified: extendedPrice = listPrice × quantity at every step; cart subTotal/total recalculate atomically. Uploaded asset stays attached to configurationItem.fileUrls regardless of selectedForCheckout flag (selection mutation does not delete the file association). Upload endpoint /api/files/product-configuration verified live 2026-05-06 (runner-manual)","REST upload response[0].succeeded=false (would mean asset endpoint contract changed or scope='product-configuration' rejected); HTTP != 200 on upload (would mean endpoint moved); errors[] non-empty for valid File-section flip; mutation rejects missing option field for File type (would mean schema requires option for File, contradicting PR #114 design); selectedForCheckout still true post-flip; round-trip parity broken (listPrice or cart subTotal != BASE after flip back to true); UPLOADED_FILE_SCOPE != 'product-configuration' (would mean wrong asset folder routing)","cleanup_post inline; uploaded asset (UPLOADED_FILE_URL, scope=product-configuration, id=UPLOADED_FILE_ID) intentionally retained — tests are non-destructive on storage. If asset cleanup is needed, runner can DELETE {{BACK_URL}}/api/files/product-configuration/{{UPLOADED_FILE_ID}} (verify endpoint contract before adding)",xAPI; graphql-schema.md — Mutation.changeCartConfigurationItemSelected; PR #114 — File/Text discrimination; CFG-004 (CFG_FILE_HOODIE); UPLOAD_FIXTURES.primary; UPLOAD_FIXTURES.uploadEndpoint (POST /api/files/product-configuration verified 2026-05-06),Automated
-CFG-GQL-030,changeCartConfigurationItemSelected — REQUIRED File Section Deselect On Sale-Priced Product (OSW-31158373) + List/Sale Discrimination,GraphQL > Configurable Products > Mutation,Critical,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-014,ECL-7.1; ECL-9.1,"Runner-native. ORG_USER. CFG_REQUIRED_FILE_HOODIE (OSW-31158373) — single REQUIRED File section, ACTIVE SALE: list $300 / sale $250 / -17%. Mirrors CFG-GQL-027/028 (REQUIRED Product/Text deselect contract) for File type AND adds list/sale-price discrimination. Pre-step uploads @td(UPLOAD_FIXTURES.primary.path) via /api/files/product-configuration. Verifies: (a) committed lineItem.listPrice = sale price ($250) NOT list price ($300); (b) REQUIRED File deselect succeeds without errors[]; (c) round-trip parity (currently FAILS per BUG-PR114-B).","configurable_id=@td(CFG_REQUIRED_FILE_HOODIE.productId); file_section_id=@td(CFG_REQUIRED_FILE_HOODIE.fileSectionId); expected_sale=@td(CFG_REQUIRED_FILE_HOODIE.salePrice); expected_list=@td(CFG_REQUIRED_FILE_HOODIE.listPrice); upload_path=@td(UPLOAD_FIXTURES.primary.path)","[AUTH role=ORG_USER]
+CFG-GQL-030,changeCartConfigurationItemSelected — REQUIRED File Section Deselect On Sale-Priced Product (OSW-31158373) + List/Sale Discrimination,GraphQL > Configurable Products > Mutation,Critical,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-014,ECL-7.1; ECL-9.1,"Runner-native. ORG_USER. CFG_REQUIRED_FILE_HOODIE (OSW-31158373) — single REQUIRED File section, ACTIVE SALE: list $300 / sale $250 / -17%. Mirrors CFG-GQL-027/028 (REQUIRED Product/Text deselect contract) for File type AND adds list/sale-price discrimination. Pre-step uploads @td(UPLOAD_FIXTURES.primary.path) via /api/files/product-configuration. Verifies: (a) committed lineItem.listPrice = sale price ($250) NOT list price ($300); (b) REQUIRED File deselect succeeds without errors[]; (c) round-trip parity (currently FAILS per BUG-PR114-B).",configurable_id=@td(CFG_REQUIRED_FILE_HOODIE.productId); file_section_id=@td(CFG_REQUIRED_FILE_HOODIE.fileSectionId); expected_sale=@td(CFG_REQUIRED_FILE_HOODIE.salePrice); expected_list=@td(CFG_REQUIRED_FILE_HOODIE.listPrice); upload_path=@td(UPLOAD_FIXTURES.primary.path),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1293,8 +1293,8 @@ CFG-GQL-030,changeCartConfigurationItemSelected — REQUIRED File Section Desele
 [DATA label=add_item] data.addItem.items.0.extendedPrice.amount = data.addItem.items.0.placedPrice.amount * data.addItem.items.0.quantity
 [ERRORS label=deselect_required_file] errors[] empty
 [DATA label=deselect_required_file] data.changeCartConfigurationItemSelected.items.0.configurationItems[?type=File].selectedForCheckout = false
-[DATA label=deselect_required_file] data.changeCartConfigurationItemSelected.items.0.extendedPrice.amount = data.changeCartConfigurationItemSelected.items.0.placedPrice.amount * data.changeCartConfigurationItemSelected.items.0.quantity","[EVIDENCE] Verified live 2026-05-06: listPrice=$250 (sale) not $300 (list) confirms sale-aware reprice. REQUIRED File deselect succeeds at mutation layer (storefront UI/checkout enforces required-guard). Cascade fires on flip-OFF (runner-manual)","listPrice=300 (sale ignored); errors[] non-empty for REQUIRED File deselect; preview/commit listPrice mismatch; cart total cascade missing",cleanup_post inline,xAPI; PR #114 — REQUIRED File deselect; PROPOSED-BL-CART-CFG-005; list/sale-aware reprice; OSW-31158373,Automated
-CFG-GQL-031,selectCartConfigurationItems — Optional Product + Required Text Mixed Batch (INN-69077289 Off-Road Bike),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-014,ECL-2.1; ECL-7.1,"Runner-native. ORG_USER. CFG_OFFROAD_BIKE (INN-69077289, $650 base) — 2 sections: Product (OPTIONAL, 4 opts $0-$55, None-allowed) + Text (REQUIRED, maxLen=5 boundary, has presets). Differs from CFG_LAPTOP (both REQUIRED Products) and CFG_TEXT_DRIVEN_COND (Text-as-driver). Tests Optional-Product + Required-Text mixed batch and tight maxLen=5 boundary.","configurable_id=@td(CFG_OFFROAD_BIKE.productId); sample_text=AB (section ids are captured at runtime via the get_def query — SECTION_PROD_ID / SECTION_TEXT_ID)","[AUTH role=ORG_USER]
+[DATA label=deselect_required_file] data.changeCartConfigurationItemSelected.items.0.extendedPrice.amount = data.changeCartConfigurationItemSelected.items.0.placedPrice.amount * data.changeCartConfigurationItemSelected.items.0.quantity",[EVIDENCE] Verified live 2026-05-06: listPrice=$250 (sale) not $300 (list) confirms sale-aware reprice. REQUIRED File deselect succeeds at mutation layer (storefront UI/checkout enforces required-guard). Cascade fires on flip-OFF (runner-manual),listPrice=300 (sale ignored); errors[] non-empty for REQUIRED File deselect; preview/commit listPrice mismatch; cart total cascade missing,cleanup_post inline,xAPI; PR #114 — REQUIRED File deselect; PROPOSED-BL-CART-CFG-005; list/sale-aware reprice; OSW-31158373,Automated
+CFG-GQL-031,selectCartConfigurationItems — Optional Product + Required Text Mixed Batch (INN-69077289 Off-Road Bike),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-014,ECL-2.1; ECL-7.1,"Runner-native. ORG_USER. CFG_OFFROAD_BIKE (INN-69077289, $650 base) — 2 sections: Product (OPTIONAL, 4 opts $0-$55, None-allowed) + Text (REQUIRED, maxLen=5 boundary, has presets). Differs from CFG_LAPTOP (both REQUIRED Products) and CFG_TEXT_DRIVEN_COND (Text-as-driver). Tests Optional-Product + Required-Text mixed batch and tight maxLen=5 boundary.",configurable_id=@td(CFG_OFFROAD_BIKE.productId); sample_text=AB (section ids are captured at runtime via the get_def query — SECTION_PROD_ID / SECTION_TEXT_ID),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1340,8 +1340,8 @@ CFG-GQL-031,selectCartConfigurationItems — Optional Product + Required Text Mi
 [DATA label=add_item] data.addItem.items.0.listPrice.amount = {{PREVIEW_LIST_PRICE}}
 [ERRORS label=mixed_batch_select] errors[] empty
 [DATA label=mixed_batch_select] data.selectCartConfigurationItems.items.0.configurationItems[?sectionId={{SECTION_PROD_ID}}].selectedForCheckout = true
-[DATA label=mixed_batch_select] data.selectCartConfigurationItems.items.0.configurationItems[?sectionId={{SECTION_TEXT_ID}}].selectedForCheckout = true","[EVIDENCE] Single batch mixes Product (with option.productId) + Text (no option) — both types matched in the same call. Optional-Product/Required-Text combo not previously covered (CFG-GQL-024 is Text+2 Products). Round-trip listPrice restoration currently FAILS per BUG-PR114-B (runner-manual)","one type silently dropped from batch; errors[] non-empty for valid mixed payload; mutation rejects Text without option field",cleanup_post inline,xAPI; PR #114 — Optional Product + Required Text mixed batch; INN-69077289,Automated
-CFG-GQL-032,unSelectAllCartConfigurationItems — All-4-Section-Types Wedding Cake With Conditional Cascade (YOC-85609878),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-012,ECL-2.1; ECL-7.1; ECL-14.1,"Runner-native. ORG_USER. CFG_WEDDING_CAKE_CONDITIONS (YOC-85609878, $79) — richest CFG product: 5 sections covering ALL 4 types with 4-level dependency chain. addItem with all 5 sections, then unSelectAllCartConfigurationItems flips ALL configurationItems to false in single call. Verifies: (a) all-flip operates uniformly across mixed types in one product; (b) selectedForCheckout independent from dependsOnSectionId visibility.","configurable_id=@td(CFG_WEDDING_CAKE_CONDITIONS.productId); upload_path=@td(UPLOAD_FIXTURES.primary.path); sample_text=Happy Birthday","[AUTH role=ORG_USER]
+[DATA label=mixed_batch_select] data.selectCartConfigurationItems.items.0.configurationItems[?sectionId={{SECTION_TEXT_ID}}].selectedForCheckout = true",[EVIDENCE] Single batch mixes Product (with option.productId) + Text (no option) — both types matched in the same call. Optional-Product/Required-Text combo not previously covered (CFG-GQL-024 is Text+2 Products). Round-trip listPrice restoration currently FAILS per BUG-PR114-B (runner-manual),one type silently dropped from batch; errors[] non-empty for valid mixed payload; mutation rejects Text without option field,cleanup_post inline,xAPI; PR #114 — Optional Product + Required Text mixed batch; INN-69077289,Automated
+CFG-GQL-032,unSelectAllCartConfigurationItems — All-4-Section-Types Wedding Cake With Conditional Cascade (YOC-85609878),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-PRICE-001; BL-CART-010; BL-CART-012,ECL-2.1; ECL-7.1; ECL-14.1,"Runner-native. ORG_USER. CFG_WEDDING_CAKE_CONDITIONS (YOC-85609878, $79) — richest CFG product: 5 sections covering ALL 4 types with 4-level dependency chain. addItem with all 5 sections, then unSelectAllCartConfigurationItems flips ALL configurationItems to false in single call. Verifies: (a) all-flip operates uniformly across mixed types in one product; (b) selectedForCheckout independent from dependsOnSectionId visibility.",configurable_id=@td(CFG_WEDDING_CAKE_CONDITIONS.productId); upload_path=@td(UPLOAD_FIXTURES.primary.path); sample_text=Happy Birthday,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1393,7 +1393,7 @@ CFG-GQL-032,unSelectAllCartConfigurationItems — All-4-Section-Types Wedding Ca
 [COUNT label=unselect_all_mixed] data.unSelectAllCartConfigurationItems.items.0.configurationItems.length = 5
 [COUNT label=unselect_all_mixed] data.unSelectAllCartConfigurationItems.items.0.configurationItems[*?selectedForCheckout=false].length = 5
 [COUNT label=unselect_all_mixed] data.unSelectAllCartConfigurationItems.items.0.configurationItems[*?selectedForCheckout=true].length = 0
-[DATA label=unselect_all_mixed] data.unSelectAllCartConfigurationItems.items.0.listPrice.amount < {{BASE_LIST_PRICE}}","[EVIDENCE] Wedding cake exercises ALL 4 section types in single product. unSelectAll flips every type uniformly. Validates selectedForCheckout independent from dependsOnSectionId visibility (runner-manual)","one section type silently skipped by all-flip; configurationItems count drops below 5; errors[] non-empty for valid 5-section payload",cleanup_post inline,xAPI; PR #114 — all-flip across all 4 types in conditional product; YOC-85609878,Automated
+[DATA label=unselect_all_mixed] data.unSelectAllCartConfigurationItems.items.0.listPrice.amount < {{BASE_LIST_PRICE}}",[EVIDENCE] Wedding cake exercises ALL 4 section types in single product. unSelectAll flips every type uniformly. Validates selectedForCheckout independent from dependsOnSectionId visibility (runner-manual),one section type silently skipped by all-flip; configurationItems count drops below 5; errors[] non-empty for valid 5-section payload,cleanup_post inline,xAPI; PR #114 — all-flip across all 4 types in conditional product; YOC-85609878,Automated
 CFG-GQL-022,unSelectCartConfigurationItems — Unmatched sectionId Is No-Op,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001; BL-CART-011,ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. CFG_LAPTOP. addItem (capture BASE_LIST_PRICE), then unSelectCartConfigurationItems with a sectionId that doesn't exist on the lineItem. Per PR #114 PROPOSED-BL-CART-CFG-003 (unmatched-key no-op), no error, no state change, no reprice — listPrice IDENTICAL to BASE_LIST_PRICE.",configurable_id=@td(CFG_LAPTOP.id); bogus_section=NONEXISTENT-SECTION-ID-XXXXX,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -1557,7 +1557,7 @@ CFG-GQL-036,"changeCartConfigurationItemSelected — Variation Section Flip With
 [ERRORS label=flip_var] errors[] empty
 [DATA label=flip_var] data.changeCartConfigurationItemSelected.items.0.configurationItems[?sectionId={{SECTION_VARIATION_ID}}].selectedForCheckout = false
 [DATA label=flip_var] data.changeCartConfigurationItemSelected.subTotal.amount < {{BASE_SUB_TOTAL}}","[EVIDENCE] Variation deselect drops the variation contribution from listPrice; subTotal cascade fires; Variation matched by (sectionId, type, option.productId) — verifies the Product-shaped key for Variation type vs Text/File no-option discrimination",errors[] non-empty for valid Variation flip; subTotal unchanged after flip (cascade did NOT fire); selectedForCheckout did not flip,cleanup_post inline,xAPI; Mutations.changeCartConfigurationItemSelected; PROPOSED-BL-CART-CFG-001 (NCS short-circuit); CFG_VARIATION_CAKE alias,Automated
-CFG-GQL-037,"changeCartConfiguredItem — Invalid sectionId (All-Zeros GUID) Rejected (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix: addItem(CFG_LAPTOP) with valid sections, then call changeCartConfiguredItem with a fabricated all-zeros sectionId (00000000-0000-0000-0000-000000000000). Post-fix: validationErrors[] must be non-empty; original configurationItems must be UNCHANGED. Pre-fix behavior (3.1007.0): silently accepted, returned validationErrors: [], regenerated configItems. Fix shipped in XCart 3.1013.0 via PR #113/#110.","configurable_id=@td(CFG_LAPTOP.id); bogus_section_id=00000000-0000-0000-0000-000000000000","[AUTH role=ORG_USER]
+CFG-GQL-037,changeCartConfiguredItem — Invalid sectionId (All-Zeros GUID) Rejected (VCST-4960),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. Verify VCST-4960 fix: addItem(CFG_LAPTOP) with valid sections, then call changeCartConfiguredItem with a fabricated all-zeros sectionId (00000000-0000-0000-0000-000000000000). Post-fix: validationErrors[] must be non-empty; original configurationItems must be UNCHANGED. Pre-fix behavior (3.1007.0): silently accepted, returned validationErrors: [], regenerated configItems. Fix shipped in XCart 3.1013.0 via PR #113/#110.",configurable_id=@td(CFG_LAPTOP.id); bogus_section_id=00000000-0000-0000-0000-000000000000,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1603,8 +1603,8 @@ CFG-GQL-037,"changeCartConfiguredItem — Invalid sectionId (All-Zeros GUID) Rej
 [ERRORS label=read_back] errors[] empty
 [COUNT label=read_back] data.configurationItems.configurationItems.length = 2
 [DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
-[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] errorCode value in validationErrors.0 — look for INVALID_SECTION_ID or CONFIGURATION_SECTION_NOT_FOUND (exact code TBD from PR #113 source; record observed value in evidence for permanent documentation). read_back confirms original configItems unchanged after rejection.","validationErrors[] empty (fix not deployed or regression); configItems regenerated with bogus section (pre-fix behavior persists); errors[] non-empty at HTTP level (mutation should still HTTP-200); HTTP 500; read_back length != 2",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
-CFG-GQL-038,"changeCartConfiguredItem — Section Type Mismatch Rejected (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix covers type mismatch: addItem(CFG_LAPTOP) with valid Product sections, then call changeCartConfiguredItem providing the correct sectionId for RAM section but with type=Text (mismatch against the catalog definition). Post-fix: validationErrors[] non-empty. Original configItems preserved. NOTE: If validationErrors[] empty observed, classify NEEDS-INVESTIGATION (not FAIL) — type-mismatch validation may not be in scope for VCST-4960 fix; file follow-up to clarify.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}",[EVIDENCE] errorCode value in validationErrors.0 — look for INVALID_SECTION_ID or CONFIGURATION_SECTION_NOT_FOUND (exact code TBD from PR #113 source; record observed value in evidence for permanent documentation). read_back confirms original configItems unchanged after rejection.,validationErrors[] empty (fix not deployed or regression); configItems regenerated with bogus section (pre-fix behavior persists); errors[] non-empty at HTTP level (mutation should still HTTP-200); HTTP 500; read_back length != 2,cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001,Draft
+CFG-GQL-038,changeCartConfiguredItem — Section Type Mismatch Rejected (VCST-4960),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. Verify VCST-4960 fix covers type mismatch: addItem(CFG_LAPTOP) with valid Product sections, then call changeCartConfiguredItem providing the correct sectionId for RAM section but with type=Text (mismatch against the catalog definition). Post-fix: validationErrors[] non-empty. Original configItems preserved. NOTE: If validationErrors[] empty observed, classify NEEDS-INVESTIGATION (not FAIL) — type-mismatch validation may not be in scope for VCST-4960 fix; file follow-up to clarify.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1649,8 +1649,8 @@ CFG-GQL-038,"changeCartConfiguredItem — Section Type Mismatch Rejected (VCST-4
 [ERRORS label=read_back] errors[] empty
 [COUNT label=read_back] data.configurationItems.configurationItems.length = 2
 [DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
-[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] RAM section catalog type is Product; sending type=Text with valid sectionId is a type mismatch. Post-fix validation must reject this. Record actual errorCode.","validationErrors[] empty (NEEDS-INVESTIGATION — may indicate type-mismatch not in VCST-4960 fix scope); configItems wiped/regenerated after rejection; HTTP 500; errors[] non-empty at transport level",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+",Draft
-CFG-GQL-039,"changeCartConfiguredItem — State Preserved on Validation Failure (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. State-integrity regression for VCST-4960 fix: addItem(CFG_LAPTOP) with UPGRADE options for both sections (different from BASE), then call changeCartConfiguredItem with all-zeros sectionId. Post-fix: both configItems must still reference the UPGRADE productIds after rejection — no regeneration from defaults, no reset to BASE. Tests that CartAggregate.ChangeCartConfiguredItem rolls back or does not commit the regeneration on validation error.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}",[EVIDENCE] RAM section catalog type is Product; sending type=Text with valid sectionId is a type mismatch. Post-fix validation must reject this. Record actual errorCode.,validationErrors[] empty (NEEDS-INVESTIGATION — may indicate type-mismatch not in VCST-4960 fix scope); configItems wiped/regenerated after rejection; HTTP 500; errors[] non-empty at transport level,cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+,Draft
+CFG-GQL-039,changeCartConfiguredItem — State Preserved on Validation Failure (VCST-4960),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. State-integrity regression for VCST-4960 fix: addItem(CFG_LAPTOP) with UPGRADE options for both sections (different from BASE), then call changeCartConfiguredItem with all-zeros sectionId. Post-fix: both configItems must still reference the UPGRADE productIds after rejection — no regeneration from defaults, no reset to BASE. Tests that CartAggregate.ChangeCartConfiguredItem rolls back or does not commit the regeneration on validation error.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1697,8 +1697,8 @@ CFG-GQL-039,"changeCartConfiguredItem — State Preserved on Validation Failure 
 [ERRORS label=read_back] errors[] empty
 [COUNT label=read_back] data.configurationItems.configurationItems.length = 2
 [DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
-[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] UPGRADE productIds still present in configItems after rejection — confirms CartAggregate does NOT commit regeneration on validation error. extendedPrice from reject_bogus response items (if returned) should match UPGRADE_EXTENDED_PRICE, not BASE price.","configItems reset to BASE after rejection (regeneration committed despite validation error — pre-fix VCST-4960 behavior); configItems length changed from 2; read_back finds OPT_RAM_BASE_ID instead of UPGRADE (state clobbered); HTTP 500",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
-CFG-GQL-040,"changeCartConfiguredItem — Mixed Valid/Invalid Sections All-or-Nothing Rejection (VCST-4960)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Verify VCST-4960 fix enforces all-or-nothing atomicity: addItem(CFG_LAPTOP) with both sections at BASE. Call changeCartConfiguredItem with one valid sectionId (RAM section → UPGRADE option) AND one invalid sectionId (all-zeros). Entire mutation must be rejected — RAM section must NOT be partially updated to UPGRADE even though it was valid. configItems preserved at BASE for both sections.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] UPGRADE productIds still present in configItems after rejection — confirms CartAggregate does NOT commit regeneration on validation error. extendedPrice from reject_bogus response items (if returned) should match UPGRADE_EXTENDED_PRICE, not BASE price.",configItems reset to BASE after rejection (regeneration committed despite validation error — pre-fix VCST-4960 behavior); configItems length changed from 2; read_back finds OPT_RAM_BASE_ID instead of UPGRADE (state clobbered); HTTP 500,cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001,Draft
+CFG-GQL-040,changeCartConfiguredItem — Mixed Valid/Invalid Sections All-or-Nothing Rejection (VCST-4960),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-9.1; ECL-14.1,Runner-native. ORG_USER. Verify VCST-4960 fix enforces all-or-nothing atomicity: addItem(CFG_LAPTOP) with both sections at BASE. Call changeCartConfiguredItem with one valid sectionId (RAM section → UPGRADE option) AND one invalid sectionId (all-zeros). Entire mutation must be rejected — RAM section must NOT be partially updated to UPGRADE even though it was valid. configItems preserved at BASE for both sections.,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1744,8 +1744,8 @@ CFG-GQL-040,"changeCartConfiguredItem — Mixed Valid/Invalid Sections All-or-No
 [ERRORS label=read_back] errors[] empty
 [COUNT label=read_back] data.configurationItems.configurationItems.length = 2
 [DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_BASE_ID}}
-[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}","[EVIDENCE] RAM section stays at BASE despite having a valid entry in the payload — confirms all-or-nothing rejection. Partial-apply would show OPT_RAM_UPGRADE_ID in read_back which would be a bug.","RAM section updated to UPGRADE despite mixed payload (partial-apply — all-or-nothing broken); validationErrors[] empty (only invalid section silently skipped); read_back length != 2; HTTP 500",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001",Draft
-CFG-GQL-041,"changeCartConfiguredItem — sectionId Format Variants All Rejected (EP, VCST-4960)","GraphQL > Configurable Products > Mutation",Medium,"BL-GQL-001; BL-CART-001","ECL-9.1; ECL-14.1","Runner-native. ORG_USER. Equivalence partitioning across sectionId format variants: (1) all-zeros GUID, (2) random non-GUID string 'NOT-A-VALID-SECTION-ID'. Both are invalid sectionIds; both must produce validationErrors[] non-empty. Each call is a separate op; cleanup_pre before each. Verifies that the validation path is not tied specifically to the zero-GUID pattern but to any sectionId that does not match the product's catalog definition. NOTE: empty-string variant intentionally omitted from this case (covered conceptually by non-GUID pattern); add as separate op if author wants third variant.","configurable_id=@td(CFG_LAPTOP.id); bogus_guid=00000000-0000-0000-0000-000000000000; nonguid_sid=NOT-A-VALID-SECTION-ID","[AUTH role=ORG_USER]
+[DATA label=read_back] data.configurationItems.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_BASE_ID}}",[EVIDENCE] RAM section stays at BASE despite having a valid entry in the payload — confirms all-or-nothing rejection. Partial-apply would show OPT_RAM_UPGRADE_ID in read_back which would be a bug.,RAM section updated to UPGRADE despite mixed payload (partial-apply — all-or-nothing broken); validationErrors[] empty (only invalid section silently skipped); read_back length != 2; HTTP 500,cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; BL-CART-001,Draft
+CFG-GQL-041,"changeCartConfiguredItem — sectionId Format Variants All Rejected (EP, VCST-4960)",GraphQL > Configurable Products > Mutation,Medium,BL-GQL-001; BL-CART-001,ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. Equivalence partitioning across sectionId format variants: (1) all-zeros GUID, (2) random non-GUID string 'NOT-A-VALID-SECTION-ID'. Both are invalid sectionIds; both must produce validationErrors[] non-empty. Each call is a separate op; cleanup_pre before each. Verifies that the validation path is not tied specifically to the zero-GUID pattern but to any sectionId that does not match the product's catalog definition. NOTE: empty-string variant intentionally omitted from this case (covered conceptually by non-GUID pattern); add as separate op if author wants third variant.",configurable_id=@td(CFG_LAPTOP.id); bogus_guid=00000000-0000-0000-0000-000000000000; nonguid_sid=NOT-A-VALID-SECTION-ID,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1804,8 +1804,8 @@ CFG-GQL-041,"changeCartConfiguredItem — sectionId Format Variants All Rejected
 [COUNT label=reject_zeros] data.changeCartConfiguredItem.validationErrors.length >= 1
 [ERRORS label=add_item_b] errors[] empty
 [ERRORS label=reject_nonguid] errors[] empty
-[COUNT label=reject_nonguid] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] All invalid sectionId formats (all-zeros GUID, non-GUID string) produce consistent validationErrors[] non-empty. Record errorCode for each variant to confirm identical error semantics.","Either variant returns validationErrors[] empty (validation tied to GUID-parse only, not catalog lookup); HTTP 500 on non-GUID string (format rejection before catalog check); inconsistent errorCode between variants",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; EP technique (format-based partitioning)",Draft
-CFG-GQL-042,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength boundary accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix: Text section customText at exactly maxLength chars MUST NOT trigger validation error. Uses CFG_TEXT_DRIVEN_COND (CFG-024). BVA: at-boundary value.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[COUNT label=reject_nonguid] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] All invalid sectionId formats (all-zeros GUID, non-GUID string) produce consistent validationErrors[] non-empty. Record errorCode for each variant to confirm identical error semantics.","Either variant returns validationErrors[] empty (validation tied to GUID-parse only, not catalog lookup); HTTP 500 on non-GUID string (format rejection before catalog check); inconsistent errorCode between variants",cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4960; PR #113 (vc-module-x-cart) or PR #110; XCart 3.1013.0+; EP technique (format-based partitioning),Draft
+CFG-GQL-042,[VCST-4987] changeCartConfiguredItem — Text customText at maxLength boundary accepted,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-014,ECL-7.1; ECL-9.1,Runner-native. ORG_USER. VCST-4987 fix: Text section customText at exactly maxLength chars MUST NOT trigger validation error. Uses CFG_TEXT_DRIVEN_COND (CFG-024). BVA: at-boundary value.,configurable_id=@td(CFG_TEXT_DRIVEN_COND.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1842,8 +1842,8 @@ CFG-GQL-042,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLeng
 [COUNT label=add_item] data.addItem.validationErrors.length = 0
 [DATA label=add_item] data.addItem.itemsCount = 1
 [ERRORS label=change_at_max] errors[] empty
-[COUNT label=change_at_max] data.changeCartConfiguredItem.validationErrors.length = 0","[EVIDENCE] customText at maxLength boundary accepted — no validationErrors[] (BVA at-boundary pass). Record actual TEXT_MAX_LENGTH captured for traceability.","validationErrors[] non-empty for at-boundary input (pre-fix VCST-4987 over-trigger); addItem itemsCount=0; change_at_max returns errors despite valid length",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA (at-boundary); BL-CART-014",Draft
-CFG-GQL-043,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLength+1 rejected with validationErrors","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-7.1; ECL-9.1","Runner-native. ORG_USER. VCST-4987 fix counterpart: Text customText EXCEEDING maxLength by 1 char MUST be rejected with validationErrors[] non-empty. BVA past-boundary negative.","configurable_id=@td(CFG_TEXT_DRIVEN_COND.id)","[AUTH role=ORG_USER]
+[COUNT label=change_at_max] data.changeCartConfiguredItem.validationErrors.length = 0",[EVIDENCE] customText at maxLength boundary accepted — no validationErrors[] (BVA at-boundary pass). Record actual TEXT_MAX_LENGTH captured for traceability.,validationErrors[] non-empty for at-boundary input (pre-fix VCST-4987 over-trigger); addItem itemsCount=0; change_at_max returns errors despite valid length,cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA (at-boundary); BL-CART-014,Draft
+CFG-GQL-043,[VCST-4987] changeCartConfiguredItem — Text customText at maxLength+1 rejected with validationErrors,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-014,ECL-7.1; ECL-9.1,Runner-native. ORG_USER. VCST-4987 fix counterpart: Text customText EXCEEDING maxLength by 1 char MUST be rejected with validationErrors[] non-empty. BVA past-boundary negative.,configurable_id=@td(CFG_TEXT_DRIVEN_COND.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1878,8 +1878,8 @@ CFG-GQL-043,"[VCST-4987] changeCartConfiguredItem — Text customText at maxLeng
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item_valid] errors[] empty
 [DATA label=add_item_valid] data.addItem.itemsCount = 1
 [ERRORS label=change_over_max] errors[] empty
-[COUNT label=change_over_max] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Over-limit input rejected via validationErrors[]; record errorCode and actual TEXT_MAX_LENGTH from get_def.","validationErrors[] empty for over-limit input (maxLength enforcement broken)",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA past-boundary",Draft
-CFG-GQL-045,"[VCST-4987] changeCartConfiguredItem — Empty customText on optional Text section accepted","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-014","ECL-9.1","Runner-native. ORG_USER. VCST-4987 edge: empty customText on a non-required Text section MUST NOT trigger maxLength error. Uses CFG_VARIATION_CAKE (textSectionIsRequired=false).","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId)","[AUTH role=ORG_USER]
+[COUNT label=change_over_max] data.changeCartConfiguredItem.validationErrors.length >= 1",[EVIDENCE] Over-limit input rejected via validationErrors[]; record errorCode and actual TEXT_MAX_LENGTH from get_def.,validationErrors[] empty for over-limit input (maxLength enforcement broken),cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; VCST-4987; BVA past-boundary,Draft
+CFG-GQL-045,[VCST-4987] changeCartConfiguredItem — Empty customText on optional Text section accepted,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-014,ECL-9.1,Runner-native. ORG_USER. VCST-4987 edge: empty customText on a non-required Text section MUST NOT trigger maxLength error. Uses CFG_VARIATION_CAKE (textSectionIsRequired=false).,configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -1900,8 +1900,8 @@ CFG-GQL-045,"[VCST-4987] changeCartConfiguredItem — Empty customText on option
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
 [COUNT label=add_item] data.addItem.validationErrors.length = 0
-[DATA label=add_item] data.addItem.itemsCount = 1","[EVIDENCE] Empty customText on optional Text section accepted — maxLength validator does NOT fire for empty string on non-required section.","validationErrors[] non-empty for empty customText on optional section",cleanup_post inline,"xAPI; Mutation.addItem; VCST-4987; CFG_VARIATION_CAKE optional Text section; BL-CART-014",Draft
-CFG-GQL-046,"[VCST-5053] mergeCart — configurable Product sections preserved after merge (ORG_USER ← USER2)","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-012","ECL-2.1; ECL-14.1","Runner-native. VCST-5053 fix: cart merge MUST preserve configurable line item configuration. USER2 adds CFG_LAPTOP with UPGRADE RAM + UPGRADE Storage; ORG_USER calls mergeCart. Post-merge: configurationItems intact.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=USER2]
+[DATA label=add_item] data.addItem.itemsCount = 1",[EVIDENCE] Empty customText on optional Text section accepted — maxLength validator does NOT fire for empty string on non-required section.,validationErrors[] non-empty for empty customText on optional section,cleanup_post inline,xAPI; Mutation.addItem; VCST-4987; CFG_VARIATION_CAKE optional Text section; BL-CART-014,Draft
+CFG-GQL-046,[VCST-5053] mergeCart — configurable Product sections preserved after merge (ORG_USER ← USER2),GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-012,ECL-2.1; ECL-14.1,Runner-native. VCST-5053 fix: cart merge MUST preserve configurable line item configuration. USER2 adds CFG_LAPTOP with UPGRADE RAM + UPGRADE Storage; ORG_USER calls mergeCart. Post-merge: configurationItems intact.,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=USER2]
 [GQL-OP setup_user2]
   query { me { id } }
 [GQL-EXEC setup_user2]
@@ -1958,8 +1958,8 @@ CFG-GQL-046,"[VCST-5053] mergeCart — configurable Product sections preserved a
 [DATA label=merge] data.mergeCart.itemsCount >= 1
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].productId = {{OPT_RAM_UPGRADE_ID}}
-[DATA label=read_back] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}","[EVIDENCE] Both UPGRADE configItems survive merge intact. Pre-fix VCST-5053 symptom: configurationItems[] is empty or reset to defaults after merge.","configurationItems[] empty after merge (pre-fix VCST-5053 regression); configItems present but pointing to BASE options; merge errors[] non-empty; HTTP 500",cleanup_post inline,"xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012",Draft
-CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after merge","GraphQL > Configurable Products > Mutation",High,"BL-GQL-001; BL-CART-012","ECL-2.1","Runner-native. VCST-5053 fix: cart merge MUST preserve Text-section customText. USER2 adds CFG_VARIATION_CAKE with non-empty customText in optional Text section; merge to ORG_USER; assert customText survives.","configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId); custom_text=HelloMerge","[AUTH role=USER2]
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].productId = {{OPT_STORAGE_UPGRADE_ID}}",[EVIDENCE] Both UPGRADE configItems survive merge intact. Pre-fix VCST-5053 symptom: configurationItems[] is empty or reset to defaults after merge.,configurationItems[] empty after merge (pre-fix VCST-5053 regression); configItems present but pointing to BASE options; merge errors[] non-empty; HTTP 500,cleanup_post inline,xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012,Draft
+CFG-GQL-047,[VCST-5053] mergeCart — Text section customText preserved after merge,GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-012,ECL-2.1,Runner-native. VCST-5053 fix: cart merge MUST preserve Text-section customText. USER2 adds CFG_VARIATION_CAKE with non-empty customText in optional Text section; merge to ORG_USER; assert customText survives.,configurable_id=@td(CFG_VARIATION_CAKE.productId); text_section_id=@td(CFG_VARIATION_CAKE.textSectionId); custom_text=HelloMerge,"[AUTH role=USER2]
 [GQL-OP setup_user2]
   query { me { id } }
 [GQL-EXEC setup_user2]
@@ -2008,8 +2008,8 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [ERRORS label=merge] errors[] empty
 [DATA label=merge] data.mergeCart.itemsCount >= 1
 [ERRORS label=read_back] errors[] empty
-[DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge","[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.","customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart",cleanup_post inline,"xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012",Draft
-"CFG-GQL-VCST4961-A","changeCartConfiguredItem — selectedForCheckout=TRUE preserved across Edit-Configuration re-edit (VCST-4961)","GraphQL > Configurable Products > Mutation","Critical","BL-GQL-001; BL-CART-001; BL-PRICE-001","ECL-2.1; ECL-14.1","Runner-native. ORG_USER. VCST-4961 fix verification: addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE) — both configurationItems default selectedForCheckout=true. Then changeCartConfiguredItem with RAM swapped to UPGRADE option (Storage unchanged) — simulates user Edit-Configuration → Update Cart flow. PR #119 adds PreserveSelectedForCheckoutFromOldConfiguration in ChangeCartConfiguredLineItemCommandHandler. Expected post-fix: both configurationItems still have selectedForCheckout=true (preserved) AND listPrice reflects the new RAM option pricing (> BASE_LIST_PRICE). Final nochange_short re-issues identical sections → BL-CART-013 no-change short-circuit, listPrice unchanged from reedit.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=read_back] data.cart.items[?productId=@td(CFG_VARIATION_CAKE.productId)].configurationItems[?sectionId=@td(CFG_VARIATION_CAKE.textSectionId)].customText = HelloMerge",[EVIDENCE] customText survives merge. Pre-fix VCST-5053 symptom: customText null or absent from merged configItems.,customText null after merge; configurationItems[] empty; merge errors[] non-empty; item missing from merged cart,cleanup_post inline,xAPI; Mutation.mergeCart; VCST-5053; BL-CART-012,Draft
+CFG-GQL-VCST4961-A,changeCartConfiguredItem — selectedForCheckout=TRUE preserved across Edit-Configuration re-edit (VCST-4961),GraphQL > Configurable Products > Mutation,Critical,BL-GQL-001; BL-CART-001; BL-PRICE-001,ECL-2.1; ECL-14.1,"Runner-native. ORG_USER. VCST-4961 fix verification: addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE) — both configurationItems default selectedForCheckout=true. Then changeCartConfiguredItem with RAM swapped to UPGRADE option (Storage unchanged) — simulates user Edit-Configuration → Update Cart flow. PR #119 adds PreserveSelectedForCheckoutFromOldConfiguration in ChangeCartConfiguredLineItemCommandHandler. Expected post-fix: both configurationItems still have selectedForCheckout=true (preserved) AND listPrice reflects the new RAM option pricing (> BASE_LIST_PRICE). Final nochange_short re-issues identical sections → BL-CART-013 no-change short-circuit, listPrice unchanged from reedit.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -2066,8 +2066,8 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [ERRORS label=nochange_short] errors[] empty
 [DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = true
 [DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
-[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}","[EVIDENCE] Pre-fix VCST-4961 symptom: after Edit-Configuration re-submission, selectedForCheckout silently reset to true even when previously set; new fix preserves prior flag value via PreserveSelectedForCheckoutFromOldConfiguration. This case asserts the trivial direction (both flags were true and remain true) + the reprice math (RAM upgrade contributes higher listPrice).","reedit_swap_ram returns selectedForCheckout=false on RAM (silent reset to false); listPrice unchanged after RAM swap (regen path skipped); errors[] non-empty; nochange_short listPrice differs from reedit listPrice (no-change short-circuit broken)","cleanup_post inline","xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961","Automated"
-"CFG-GQL-VCST4961-B","changeCartConfiguredItem — selectedForCheckout=FALSE preserved across Edit-Configuration re-edit (VCST-4961, primary fix path)","GraphQL > Configurable Products > Mutation","Critical","BL-GQL-001; BL-CART-001; BL-CART-010; BL-CART-013; BL-PRICE-001","ECL-2.1; ECL-9.1; ECL-14.1","Runner-native. ORG_USER. PRIMARY VCST-4961 fix path. addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE). Use changeCartConfigurationItemSelected to flip RAM selectedForCheckout=false (capture LISTPRICE_AFTER_DESELECT — BL-CART-010 reprice down). Then changeCartConfiguredItem with RAM swapped to UPGRADE option — pre-fix would silently re-enable RAM (selectedForCheckout=true after rebuild); post-fix PreserveSelectedForCheckoutFromOldConfiguration retains the false flag. Expected: RAM selectedForCheckout STILL false, Storage still true, listPrice equals LISTPRICE_AFTER_DESELECT exactly (RAM deselected — UPGRADE option does NOT contribute to price). Final nochange_short = same sections again → BL-CART-013 short-circuit, listPrice unchanged.","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}","[EVIDENCE] Pre-fix VCST-4961 symptom: after Edit-Configuration re-submission, selectedForCheckout silently reset to true even when previously set; new fix preserves prior flag value via PreserveSelectedForCheckoutFromOldConfiguration. This case asserts the trivial direction (both flags were true and remain true) + the reprice math (RAM upgrade contributes higher listPrice).",reedit_swap_ram returns selectedForCheckout=false on RAM (silent reset to false); listPrice unchanged after RAM swap (regen path skipped); errors[] non-empty; nochange_short listPrice differs from reedit listPrice (no-change short-circuit broken),cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961,Automated
+CFG-GQL-VCST4961-B,"changeCartConfiguredItem — selectedForCheckout=FALSE preserved across Edit-Configuration re-edit (VCST-4961, primary fix path)",GraphQL > Configurable Products > Mutation,Critical,BL-GQL-001; BL-CART-001; BL-CART-010; BL-CART-013; BL-PRICE-001,ECL-2.1; ECL-9.1; ECL-14.1,"Runner-native. ORG_USER. PRIMARY VCST-4961 fix path. addItem(CFG_LAPTOP, RAM=BASE + Storage=BASE). Use changeCartConfigurationItemSelected to flip RAM selectedForCheckout=false (capture LISTPRICE_AFTER_DESELECT — BL-CART-010 reprice down). Then changeCartConfiguredItem with RAM swapped to UPGRADE option — pre-fix would silently re-enable RAM (selectedForCheckout=true after rebuild); post-fix PreserveSelectedForCheckoutFromOldConfiguration retains the false flag. Expected: RAM selectedForCheckout STILL false, Storage still true, listPrice equals LISTPRICE_AFTER_DESELECT exactly (RAM deselected — UPGRADE option does NOT contribute to price). Final nochange_short = same sections again → BL-CART-013 short-circuit, listPrice unchanged.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -2136,8 +2136,8 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [ERRORS label=nochange_short] errors[] empty
 [DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
 [DATA label=nochange_short] data.changeCartConfiguredItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true
-[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}","[EVIDENCE] Pre-fix VCST-4961 contract violation: deselect-then-edit silently re-enables the section; BUG impact: user explicit deselect lost on any subsequent edit; user-perceived as wrong total at checkout. Post-fix listPrice should equal LISTPRICE_AFTER_DESELECT because deselected RAM contributes $0 regardless of which RAM option is chosen.","reedit_swap_ram RAM selectedForCheckout=true (FIX_INCOMPLETE — silently re-enabled); reedit_swap_ram listPrice > LISTPRICE_AFTER_DESELECT (re-enable + reprice up — confirms pre-fix behavior still present); errors[] non-empty; nochange_short listPrice not equal to reedit listPrice (no-change short-circuit broken)","cleanup_post inline","xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961 primary fix path","Automated"
-"CFG-GQL-VCST4961-C","addItem — option.selectedForCheckout=false honored at first add (Issue-A new-section path, VCST-4961)","GraphQL > Configurable Products > Mutation","High","BL-GQL-001; BL-CART-001","ECL-2.1","Runner-native. ORG_USER. Issue-A regression: PR #119 also touches CreateConfiguredLineItemHandler → AddProductSectionLineItem(selectedForCheckout: …) so the input selectedForCheckout on a section the cart never had before is no longer silently ignored. addItem(CFG_LAPTOP) passing RAM section with option.selectedForCheckout=false on the FIRST add (cart had no prior config item for this section). Storage section uses default. Expected: RAM configurationItem.selectedForCheckout=false; Storage configurationItem.selectedForCheckout=true (default).","configurable_id=@td(CFG_LAPTOP.id)","[AUTH role=ORG_USER]
+[DATA label=nochange_short] data.changeCartConfiguredItem.items.0.listPrice.amount = {{LISTPRICE_AFTER_REEDIT}}",[EVIDENCE] Pre-fix VCST-4961 contract violation: deselect-then-edit silently re-enables the section; BUG impact: user explicit deselect lost on any subsequent edit; user-perceived as wrong total at checkout. Post-fix listPrice should equal LISTPRICE_AFTER_DESELECT because deselected RAM contributes $0 regardless of which RAM option is chosen.,reedit_swap_ram RAM selectedForCheckout=true (FIX_INCOMPLETE — silently re-enabled); reedit_swap_ram listPrice > LISTPRICE_AFTER_DESELECT (re-enable + reprice up — confirms pre-fix behavior still present); errors[] non-empty; nochange_short listPrice not equal to reedit listPrice (no-change short-circuit broken),cleanup_post inline,xAPI; Mutation.changeCartConfiguredItem; PR #119 vc-module-x-cart 3.1015.0-pr-119-6a09; VCST-4961 primary fix path,Automated
+CFG-GQL-VCST4961-C,"addItem — option.selectedForCheckout=false honored at first add (Issue-A new-section path, VCST-4961)",GraphQL > Configurable Products > Mutation,High,BL-GQL-001; BL-CART-001,ECL-2.1,Runner-native. ORG_USER. Issue-A regression: PR #119 also touches CreateConfiguredLineItemHandler → AddProductSectionLineItem(selectedForCheckout: …) so the input selectedForCheckout on a section the cart never had before is no longer silently ignored. addItem(CFG_LAPTOP) passing RAM section with option.selectedForCheckout=false on the FIRST add (cart had no prior config item for this section). Storage section uses default. Expected: RAM configurationItem.selectedForCheckout=false; Storage configurationItem.selectedForCheckout=true (default).,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -2166,7 +2166,7 @@ CFG-GQL-047,"[VCST-5053] mergeCart — Text section customText preserved after m
 [GQL-EXEC cleanup_post]","[ERRORS label=add_item_with_false] errors[] empty
 [DATA label=add_item_with_false] data.addItem.itemsCount = 1
 [DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].selectedForCheckout = false
-[DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true","[EVIDENCE] Pre-fix Issue-A: option.selectedForCheckout on input was ignored at addItem time; section always defaulted to true. Post-fix honors the input flag. Distinct code path from CASE A/B (which exercise changeCartConfiguredItem re-edit handler).","add_item_with_false RAM selectedForCheckout=true (Issue-A regression — input ignored); errors[] non-empty; configurationItems missing the RAM entry entirely","cleanup_post inline","xAPI; Mutation.addItem; ConfigurableProductOptionInput.selectedForCheckout; PR #119 CreateConfiguredLineItemHandler; VCST-4961","Automated"
+[DATA label=add_item_with_false] data.addItem.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].selectedForCheckout = true",[EVIDENCE] Pre-fix Issue-A: option.selectedForCheckout on input was ignored at addItem time; section always defaulted to true. Post-fix honors the input flag. Distinct code path from CASE A/B (which exercise changeCartConfiguredItem re-edit handler).,add_item_with_false RAM selectedForCheckout=true (Issue-A regression — input ignored); errors[] non-empty; configurationItems missing the RAM entry entirely,cleanup_post inline,xAPI; Mutation.addItem; ConfigurableProductOptionInput.selectedForCheckout; PR #119 CreateConfiguredLineItemHandler; VCST-4961,Automated
 CFG-GQL-048,productConfiguration — isDefault Field Returned Per Option (VCST-4715),GraphQL > Configurable Products > Query,Critical,BL-GQL-001; BL-CAT-006,ECL-7.1; ECL-2.1,Runner-native. PUBLIC. CFG_WITH_DEFAULT (CFG-030) has a Product-type section with exactly one option marked isDefault=true (Carbon). Verify: (1) productConfiguration response includes isDefault field on each option object; (2) exactly one option per section has isDefault=true; (3) non-default options have isDefault=false. Schema coverage gate — storefront pre-selection relies on this field.,configurable_id=@td(CFG_WITH_DEFAULT.id),"[GQL-OP get_defaults]
   query {
     productConfiguration(
@@ -2209,3 +2209,366 @@ Body: {""configurableProductId"": ""@td(CFG_WITH_DEFAULT.id)"", ""sections"": [{
 [COUNT label=verify_normalization] data.productConfiguration.configurationSections.0.options[*?isDefault=true].length = 1",[EVIDENCE] Server picks first isDefault=true and clears the rest. Normalization prevents storefront from seeing ambiguous pre-selection state (would default to first option if both true).,errors[] non-empty on POST (reject instead of normalize); 2 options still isDefault=true after POST (normalization not applied); HTTP 500; productConfiguration returns 0 options after malformed POST,"[AUTH role=ADMIN_DEFAULT]
 [REST POST {{BACK_URL}}/api/catalog/products/configurations]
 {""configurableProductId"": ""@td(CFG_WITH_DEFAULT.id)"", ""sections"": [{""sectionId"": ""@td(CFG_WITH_DEFAULT.default_section_id)"", ""isActive"": true, ""name"": ""Frame Material"", ""type"": ""Product"", ""isRequired"": true, ""options"": [{""productId"": ""@td(CFG_WITH_DEFAULT.default_option_id)"", ""quantity"": 1, ""isDefault"": true, ""sortOrder"": 0}]}]}",VCST-4715,Draft
+CFG-GQL-050,cart configurationSection — section metadata returned per configurationItem,GraphQL > Configurable Products > Cart > configurationSection,Critical,BL-GQL-001; BL-CART-001; BL-CAT-006,ECL-2.1,"Runner-native. ORG_USER. CFG_LAPTOP (CFG-013) — two required Product sections (RAM, Storage). Captures section IDs from productConfiguration, adds configured item to cart, then reads configurationSection.id/name/type/isRequired from cart configurationItems. Verifies the new VCST-5173 DataLoader-resolved field. Field confirmed live on vcptcore-qa1 2026-06-24.",configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type isRequired options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP read_section]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId type
+          configurationSection { id name type isRequired }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_section]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.items.0.productId = @td(CFG_LAPTOP.id)
+[ERRORS label=read_section] errors[] empty
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.id = {{SECTION_RAM_ID}}
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.type = Product
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.isRequired = true
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.id = {{SECTION_STORAGE_ID}}
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.type = Product
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.isRequired = true",[EVIDENCE] Each configurationItem.configurationSection.id equals its sectionId — DataLoader resolved the correct section per item (runner-manual),configurationSection null for known Product sections (DataLoader not wired); configurationSection.id != sectionId (wrong section returned — cross-product leakage); errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-051,cart configurationSection — options full graph (product + salePrice) returned,GraphQL > Configurable Products > Cart > configurationSection,Critical,BL-GQL-001; BL-CART-001; BL-CAT-006,ECL-2.1,Runner-native. ORG_USER. CFG_LAPTOP (CFG-013) — two required Product sections. Reads configurationSection including options { id product { id name } salePrice { amount } } to verify the full response graph (options + pricing). VCST-5173 DataLoader batches a GetProductConfigurationQuery per distinct configurable product; requesting options escalates response group to Options. Verified live vcptcore-qa1 2026-06-24.,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_options]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId
+          configurationSection {
+            id
+            options { id product { id name } salePrice { amount } }
+          }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_options]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_options] errors[] empty
+[DATA label=read_options] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options is non-null
+[COUNT label=read_options] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options.length > 0
+[DATA label=read_options] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options.0.product.id is non-null
+[DATA label=read_options] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options.0.salePrice.amount is non-null
+[DATA label=read_options] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.options is non-null",[EVIDENCE] options.0.product.id is non-null and salePrice.amount is present on RAM section — full graph loaded when options sub-fields requested (runner-manual),options[] empty or null for known Product sections; options.0.product.id null (product not joined); salePrice.amount null for Product-type section (pricing not resolved in cart context); errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-052,cart configurationSection — metadata-only (id/name/type) without options does not error,GraphQL > Configurable Products > Cart > configurationSection,High,BL-GQL-001; BL-CART-001,ECL-2.1,Runner-native. ORG_USER. CFG_LAPTOP. Requests configurationSection { id name type } WITHOUT options sub-fields. Validates the Sections-only response group path (VCST-5173: response-group escalation — requesting only metadata fields does NOT load option products). The guarantee that options are NOT loaded is internal and is covered by the PR xUnit test GetResponseGroup mapping — NOT a falsifiable GraphQL assertion beyond absence of the options field in the response.,configurable_id=@td(CFG_LAPTOP.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_metadata]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId
+          configurationSection { id name type }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_metadata]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_metadata] errors[] empty
+[DATA label=read_metadata] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.id = {{SECTION_RAM_ID}}
+[DATA label=read_metadata] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.name is non-null
+[DATA label=read_metadata] data.cart.items.0.configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.type = Product
+[DATA label=read_metadata] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.id = {{SECTION_STORAGE_ID}}
+[DATA label=read_metadata] data.cart.items.0.configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.type = Product",[EVIDENCE] Metadata fields (id/name/type) present and correct; options field absent from response (metadata-only path — option products NOT loaded/priced). Internal guarantee covered by PR xUnit tests GetResponseGroup mapping; not a falsifiable GraphQL-response assertion beyond field absence (runner-manual).,configurationSection null when only metadata fields requested; name null for known section; type null or wrong; errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-053,cart configurationSection — only cart-referenced sections resolve (subset of product sections),GraphQL > Configurable Products > Cart > configurationSection,High,BL-GQL-001; BL-CART-001; BL-CAT-006,ECL-2.1; ECL-9.1,Runner-native. ORG_USER. CFG_CONDITIONAL_BIKE (CFG-022) has 4 sections (A/B/C/D conditional chain). Configure only root section A. Cart read verifies that only the configured section resolves its configurationSection. EVIDENCE note: non-referenced sections are not priced (internal guarantee covered by PR unit test BuildsOnlyRequestedSections — not a falsifiable GraphQL response assertion beyond absence from configurationItems).,configurable_id=@td(CFG_CONDITIONAL_BIKE.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_CONDITIONAL_BIKE.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id dependsOnSectionId options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections[?dependsOnSectionId=null].id → SECTION_ROOT_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections[?dependsOnSectionId=null].options.0.product.id → OPT_ROOT_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_ROOT_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_ROOT_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_CONDITIONAL_BIKE.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_section]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId
+          configurationSection { id type }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_section]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_section] errors[] empty
+[COUNT label=read_section] data.cart.items.0.configurationItems.length = 1
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_ROOT_ID}}].configurationSection.id = {{SECTION_ROOT_ID}}
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_ROOT_ID}}].configurationSection.type = Product",[EVIDENCE] Only 1 configurationItem in cart (root section A); configurationSection.id=sectionId confirmed. Non-referenced sections B/C/D absent from configurationItems. Non-referenced sections not priced is internal — covered by PR unit test BuildsOnlyRequestedSections; not a falsifiable GraphQL assertion (runner-manual).,configurationItems.length > 1 (phantom sections appearing for non-configured conditional sections); configurationSection null for configured root; configurationSection.id != SECTION_ROOT_ID; errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; CFG-022; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-054,cart configurationSection — multi-product cart no cross-product section leakage,GraphQL > Configurable Products > Cart > configurationSection,Critical,BL-GQL-001; BL-CART-001; BL-CAT-006,ECL-2.1; ECL-9.1,Runner-native. ORG_USER. Two configurable products: CFG_LAPTOP (Product sections) and CFG_RING (Text section) in the same cart. Verifies each item resolves ONLY its own product sections via the DataLoader SectionIds-per-product filter. Verified live vcptcore-qa1 2026-06-24: laptop configItems had Product sections; ring configItem had Text section; no mixing.,laptop_id=@td(CFG_LAPTOP.id); ring_id=@td(CFG_RING.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_laptop_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_laptop_def]
+[GQL-CAPTURE get_laptop_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_laptop_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_laptop_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_laptop_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP get_ring_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_RING.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type maxLength } } }
+[GQL-EXEC get_ring_def]
+[GQL-CAPTURE get_ring_def.data.productConfiguration.configurationSections.0.id → SECTION_TEXT_ID]
+[GQL-OP add_laptop]
+[GQL-VARS add_laptop] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddLaptop($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId type } }
+    }
+  }
+[GQL-EXEC add_laptop]
+[GQL-OP add_ring]
+[GQL-VARS add_ring] {""configurationSections"": [{""sectionId"": ""{{SECTION_TEXT_ID}}"", ""type"": ""Text"", ""option"": {""customText"": ""Engraving Text""}}]}
+  mutation AddRing($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_RING.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId type } }
+    }
+  }
+[GQL-EXEC add_ring]
+[GQL-OP read_cart]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId type
+          configurationSection { id type }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_laptop] errors[] empty
+[ERRORS label=add_ring] errors[] empty
+[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.type = Product
+[DATA label=read_cart] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_STORAGE_ID}}].configurationSection.type = Product
+[DATA label=read_cart] data.cart.items[?productId=@td(CFG_RING.id)].configurationItems[?sectionId={{SECTION_TEXT_ID}}].configurationSection.type = Text",[EVIDENCE] Laptop item: RAM and Storage sections both type=Product; Ring item: Text section type=Text. No cross-product leakage — DataLoader SectionIds filter per product confirmed correct (runner-manual).,Laptop item has a Text section (ring section leaked into laptop); Ring item has a Product section (laptop section leaked into ring); configurationSection.type mismatched with configurationItem.type; errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-055,cart configurationItems — regular non-configurable line item has empty configurationItems,GraphQL > Configurable Products > Cart > configurationSection,High,BL-GQL-001; BL-CART-001,ECL-9.1,Runner-native. ORG_USER. CFG_HOODIE (CFG-003) is a plain Physical product (no configuration sections). Adds it to cart. Verifies configurationItems is empty and configurationSection is absent for non-configurable items — the DataLoader skip path. NOTE: The File-type section sub-case is split out as CFG-GQL-055b (Draft/data-blocked — no File-section configurable fixture on current QA data).,hoodie_id=@td(CFG_HOODIE.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP add_hoodie]
+  mutation {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HOODIE.id)"" quantity: 1 }) {
+      id items { id productId configurationItems { id sectionId configurationSection { id } } }
+    }
+  }
+[GQL-EXEC add_hoodie]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_hoodie] errors[] empty
+[DATA label=add_hoodie] data.addItem.items[?productId=@td(CFG_HOODIE.id)].productId = @td(CFG_HOODIE.id)
+[COUNT label=add_hoodie] data.addItem.items[?productId=@td(CFG_HOODIE.id)].configurationItems.length = 0",[EVIDENCE] configurationItems array is empty for plain Physical product; configurationSection absent; no errors. Confirms the DataLoader skip path for non-configurable items (runner-manual).,configurationItems non-empty for plain product; configurationSection returns a non-null object for a non-configurable item; errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; CFG-003 Physical baseline; verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-055b,cart configurationSection — File-type section resolves type=File on cart line item,GraphQL > Configurable Products > Cart > configurationSection,High,BL-GQL-001; BL-CART-001; BL-CAT-006,ECL-9.1,"Runner-native. ORG_USER. Requires the CFG_FILE_UPLOAD fixture (single optional File section ""Design Upload"") seeded via scripts/seed-configurable-products.mjs --only CFG-FILE. Field configurationSection is live since XCart PR x-cart#122 (VCST-5173) — verify the target env has it (npm run schema:refresh). The File section is optional; configure it with fileUrls so the cart carries a File-type configurationItem. configurationSection.type=File verified live on vcptcore-qa1 2026-06-24. NOTE: files[] populates only when a REAL file is uploaded via POST {{BACK_URL}}/api/files/product-configuration and its returned URL is passed in fileUrls; a placeholder URL yields files[] resolving to an empty array (no error) — assert on type, not file count.",configurable_id=@td(CFG_FILE_UPLOAD.id),"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_FILE_UPLOAD.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id name type } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_FILE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_FILE_ID}}"", ""type"": ""File"", ""fileUrls"": [""https://example.com/agent-test-design.pdf""]}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_FILE_UPLOAD.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id itemsCount items { id configurationItems { id sectionId type } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-CAPTURE add_item.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP read_section]
+  query { cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") { items { id configurationItems { id sectionId type files { name url } configurationSection { id name type } } } } }
+[GQL-EXEC read_section]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[DATA label=add_item] data.addItem.itemsCount = 1
+[ERRORS label=read_section] errors[] empty
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_FILE_ID}}].type = File
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_FILE_ID}}].configurationSection.type = File
+[DATA label=read_section] data.cart.items.0.configurationItems[?sectionId={{SECTION_FILE_ID}}].configurationSection.id = {{SECTION_FILE_ID}}",[EVIDENCE] configItem.type==File AND configurationSection.type==File AND configurationSection.id==sectionId; files[] resolves as an array (no error). files[] is populated only with a genuinely uploaded product-configuration file.,configurationSection null for a File configItem; configurationSection.type != File; configItem.type != File; HTTP 500; files[] raises an error instead of resolving.,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; CFG_FILE_UPLOAD alias; fixture seeded 2026-06-24 (vcst eba4f507 / qa1 522b191f); verified live vcptcore-qa1 2026-06-24,Automated
+CFG-GQL-056,cart configurationSection options — salePrice.currency matches requested currencyCode,GraphQL > Configurable Products > Cart > configurationSection,High,BL-GQL-001; BL-CART-001; BL-PRICE-001,ECL-2.1,"Runner-native. ORG_USER. CFG_LAPTOP. Requests cart with cultureName=en-US currencyCode=USD. Asserts configurationSection options[].salePrice.currency.code=USD and section name non-null. NOTE: USD/en-US verified live on vcptcore-qa1 2026-06-24. EUR is NOT supported on the B2B-store on the QA env (cart query with currencyCode=EUR returned no data). Non-USD branch is ENV-DEPENDENT — requires multi-currency store with EUR price list (annotated in Preconditions, not asserted here).",configurable_id=@td(CFG_LAPTOP.id); currency=USD; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"" currencyCode: ""USD"") { configurationSections { id options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_BASE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_BASE_ID]
+[GQL-OP add_item]
+[GQL-VARS add_item] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_BASE_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_BASE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
+      id items { id productId configurationItems { id sectionId } }
+    }
+  }
+[GQL-EXEC add_item]
+[GQL-OP read_currency]
+  query {
+    cart(storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" cultureName: ""en-US"" currencyCode: ""USD"") {
+      items {
+        id productId
+        configurationItems {
+          id sectionId
+          configurationSection {
+            id name
+            options { id product { id name } salePrice { amount currency { code } } }
+          }
+        }
+      }
+    }
+  }
+[GQL-EXEC read_currency]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=add_item] errors[] empty
+[ERRORS label=read_currency] errors[] empty
+[DATA label=read_currency] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.name is non-null
+[DATA label=read_currency] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options.0.salePrice.amount > 0
+[DATA label=read_currency] data.cart.items[?productId=@td(CFG_LAPTOP.id)].configurationItems[?sectionId={{SECTION_RAM_ID}}].configurationSection.options.0.salePrice.currency.code = USD",[EVIDENCE] salePrice.currency.code=USD matches requested currencyCode; section name non-null for en-US culture. EUR branch ENV-DEPENDENT — requires multi-currency store with EUR price list (not available on vcst-qa / vcptcore-qa1 B2B store; re-enable if EUR store provisioned via /qa-seed-data) (runner-manual).,salePrice.currency.code != USD; salePrice.amount null/zero for Product-type option; section name null (localization not resolved); errors[] non-empty; HTTP 500,cleanup_post clears cart inline,VCST-5173; PR vc-module-x-cart#122; verified live vcptcore-qa1 2026-06-24; EUR branch env-dependent,Automated
+CFG-GQL-057,productConfiguration — backward-compat regression guard: standalone query returns full sections+options after VCST-5173,GraphQL > Configurable Products > Query,Critical,BL-GQL-001; BL-CAT-006,ECL-2.1,"Runner-native. PUBLIC. Regression guard for the VCST-5173 PR GetResponseGroup change: the standalone productConfiguration query MUST continue returning ALL sections with full options/products/pricing (Full response group; no IncludeFields context). Explicitly distinct from CFG-GQL-001 — that tests nominal structure; THIS case specifically guards the no-IncludeFields code path post-PR. If this regresses, the storefront PDP loses section and option data.",configurable_id=@td(CFG_LAPTOP.id),"[GQL-OP get_full]
+  query {
+    productConfiguration(
+      configurableProductId: ""@td(CFG_LAPTOP.id)""
+      storeId: ""{{STORE_ID}}""
+      cultureName: ""en-US""
+      currencyCode: ""USD""
+    ) {
+      configurationSections {
+        id name type isRequired maxLength
+        options {
+          id text
+          product { id name }
+          salePrice { amount currency { code } }
+        }
+      }
+    }
+  }
+[GQL-EXEC get_full]","[ERRORS label=get_full] errors[] empty
+[DATA label=get_full] data.productConfiguration is non-null
+[COUNT label=get_full] data.productConfiguration.configurationSections.length = 2
+[DATA label=get_full] data.productConfiguration.configurationSections.0.type = Product
+[DATA label=get_full] data.productConfiguration.configurationSections.0.isRequired = true
+[COUNT label=get_full] data.productConfiguration.configurationSections.0.options.length > 0
+[DATA label=get_full] data.productConfiguration.configurationSections.0.options.0.product.id is non-null
+[DATA label=get_full] data.productConfiguration.configurationSections.0.options.0.salePrice.amount > 0
+[DATA label=get_full] data.productConfiguration.configurationSections.1.options.0.product.id is non-null",[EVIDENCE] Standalone productConfiguration returns full sections + options including product.id and salePrice.amount — no regression from VCST-5173 GetResponseGroup change. CFG-GQL-001 covers nominal shape; this case guards the full-graph path specifically post-PR (runner-manual).,configurationSections empty or returned without options (GetResponseGroup regression to Sections-only for standalone query); options.0.product.id null; salePrice.amount null/zero; errors[] non-empty; HTTP 500,none — read-only query,VCST-5173; PR vc-module-x-cart#122; CFG-013; guards GetResponseGroup regression on standalone path; verified live vcptcore-qa1 2026-06-24,Automated
