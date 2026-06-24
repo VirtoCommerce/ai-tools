@@ -11,36 +11,39 @@
   Behaviour (per the skill's contract):
     • Default modules come from the manifest you pass (-Manifest), produced by gen-manifest.mjs
       from vc-deploy-dev@vcptcore-demo; with a task, that manifest is augmented upstream.
-    • REBUILD-IF-CHANGED: the backend/frontend images are rebuilt only when the manifest differs
-      from the last built one (or images are missing). gen-manifest is run fresh by the caller each
-      time, so upstream version drift is picked up automatically.
-    • FRESH DB EVERY RUN: every start wipes ALL data volumes (DB + search index + cache) so the env
-      is deterministic — no migration of stale data against a rebuilt image. (Cleaning the DB is cheap;
-      the expensive image build is still skipped when the manifest is unchanged.) Seed fixtures after
-      with `npm run seed:*`.
-    • ADMIN PASSWORD: after start, init-admin.mjs ensures admin == Password1! (changes the seed
-      'store' on the fresh DB) and writes ADMIN_PASSWORD_LOCALHOST to .env.local.
+    • REBUILD-IF-CHANGED + PER-MANIFEST IMAGE CACHE: the backend/frontend images are rebuilt only
+      when the manifest (or frontend ZIP) differs from the last built one. Every successful build is
+      ALSO snapshotted under a manifest-hash cache tag (vc-platform:cache-<hash>). When you switch
+      back to a manifest you already built (e.g. baseline↔task), the cached image is retagged live
+      instead of rebuilt — no multi-minute restore. gen-manifest is run fresh by the caller, so
+      upstream version drift is still picked up automatically.
+    • FRESH DB by default; WARM DB opt-in: every start wipes ALL data volumes (DB + search index +
+      cache) so the env is deterministic — no migration of stale data against a rebuilt image.
+      `-KeepData` reuses the existing volumes for a fast warm restart, but ONLY when the live image
+      is unchanged; any rebuild/cache-retag forces a wipe regardless (schema + module-DLL safety).
+    • KEEP DB PROVIDER: -DbProvider is honoured only when you pass it explicitly. On an already
+      bootstrapped env with no explicit provider, the existing engine is kept (no needless
+      re-bootstrap). postgres is the default only for a brand-new env.
+    • ADMIN PASSWORD: after start, init-admin.mjs ensures admin == Password1! and writes
+      ADMIN_PASSWORD_LOCALHOST to .env.local.
 
   Layout (verified): everything lives under <WorkDir>/VirtoLocal (start-local's default basename).
-  All start-local scripts run from <WorkDir> with the basename "VirtoLocal" (never a nested path)
-  so the docker compose project is "virtolocal" and the platform container is
-  "virtolocal-vc-platform-web-1". start-VC-solution refuses to start if its ports are in use, so we
-  always 'down' first (frees ports + lets a rebuilt image take effect).
+  The docker compose project is "virtolocal"; platform container "virtolocal-vc-platform-web-1".
 
-.PARAMETER Action  up (default) | bootstrap | build | start | stop | clean | remove | status
+.PARAMETER Action  up (default) | bootstrap | build | start | stop | clean | remove | status | monitor
 .PARAMETER Manifest        Custom packages.json (from gen-manifest.mjs). Required for build/up.
 .PARAMETER WorkDir         start-local checkout dir. Default: <repo>/.local-env (gitignored).
-.PARAMETER DbProvider      postgres (default) | mysql | sqlserver. Only applied at bootstrap; on an
-                           already-bootstrapped env a DIFFERENT provider is a switch — since every run
-                           wipes the DB (see below), a mismatch just triggers an automatic re-bootstrap
-                           for the new engine (no flag needed).
+.PARAMETER DbProvider      postgres (default for a NEW env) | mysql | sqlserver. Honoured only when
+                           passed explicitly; otherwise the already-bootstrapped engine is kept.
+.PARAMETER KeepData        Reuse existing data volumes (warm DB) for a fast restart. Honoured ONLY
+                           when the live image is unchanged; any rebuild/cache-retag forces a wipe.
 .PARAMETER FrontendUrl     Optional storefront ZIP override (e.g. a frontend PR build).
-.PARAMETER Branch          start-local TOOLING repo branch to bootstrap from (default: dev) — the
-                           bootstrap scripts/Dockerfiles/compose, NOT the VC backend versions (those
-                           come from the gen-manifest baseline, vc-deploy-dev@vcptcore-demo). Internal.
+.PARAMETER Branch          start-local TOOLING repo branch to bootstrap from (default: dev). Internal.
+.PARAMETER HeartbeatSec    Progress cadence (s) for long, otherwise-silent steps (build, /health wait).
 
 .EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json
 .EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json -DbProvider sqlserver
+.EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json -KeepData
 #>
 [CmdletBinding()]
 param(
@@ -50,53 +53,75 @@ param(
   [string]$WorkDir,
   [ValidateSet("postgres", "mysql", "sqlserver")]
   [string]$DbProvider = "postgres",
+  [switch]$KeepData,
   [string]$FrontendUrl = "",
   [string]$Branch = "dev",
-  # Heartbeat cadence (seconds) for the long, otherwise-silent steps (build, /health wait). The noisy
-  # child output (docker's thousands of "Downloading …MB" lines) is routed to a per-phase log file in
-  # $WorkDir and ONE concise status line is emitted every $HeartbeatSec instead. 0 disables the heartbeat.
   [int]$HeartbeatSec = 60
 )
 
 $ErrorActionPreference = "Stop"
-# Force UTF-8 console output so the status marks (✅ ⚠️ ❌) and box-drawing survive redirection to a
-# pipe/file (the harness captures provision output to a file; without this they degrade to '?' under the
-# OEM codepage). Guarded: no-op when there is no console handle.
+# Force UTF-8 console output so the status marks (✅ ⚠️ ❌) and box-drawing survive redirection.
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $OutputEncoding = [System.Text.Encoding]::UTF8
+
+# Was -DbProvider passed explicitly? (Used to KEEP the bootstrapped engine when it was not.)
+$script:DbExplicit = $PSBoundParameters.ContainsKey('DbProvider')
+# Did this run change the live image (build or cache-retag)? Drives the warm-DB safety guard.
+# Default false so a bare `-Action start` honours -KeepData; Invoke-BuildIfChanged sets it in all branches.
+$script:ImageChanged = $false
+# Numbered-step state (see Begin-Step/End-Step).
+$script:StepNum = -1
+$script:StepVerdict = 'ok'
+$script:StepStart = [DateTime]::UtcNow
+
 $SkillDir = $PSScriptRoot
 $RepoRoot = (Resolve-Path "$PSScriptRoot/../../../..").Path
 if (-not $WorkDir) { $WorkDir = Join-Path $RepoRoot ".local-env" }
 $SolutionName = "VirtoLocal"
 $ProjectName  = "virtolocal"
 $PlatformImage = "vc-platform:local-latest"
+$FrontendImage = "vc-frontend:local-latest"
 $LastManifest = Join-Path $WorkDir ".last-built-manifest.json"
 $LastFrontend = Join-Path $WorkDir ".last-built-frontend.txt"
-# Records the DB provider the env was bootstrapped with. -DbProvider only takes effect at bootstrap
-# (it shapes the generated docker-compose.yml + .env), so we persist it here to detect a later
-# provider switch instead of silently honouring the originally-bootstrapped engine.
 $DbMarker     = Join-Path $WorkDir ".bootstrapped-db.txt"
 $BootstrapScript = "VirtoLocal_create_local_files.ps1"
 $BootstrapUrl = "https://raw.githubusercontent.com/VirtoCommerce/start-local/$Branch/$BootstrapScript"
-# All named data volumes (compose declares them with the virto_ prefix).
 $DataVolumes = @(
   "virto_postgres_data", "virto_mysql_data", "virto_mssql_data",
   "virto_esdata01", "virto_redisdata", "virto_cms-content-data", "virto_modules-data"
 )
-# Ports start-local checks before it will start (it refuses to start if any is busy).
 $RequiredPorts = @(80, 8090, 9200, 5601, 6379, 5432)
 
 # ── Visual vocabulary ─────────────────────────────────────────────────────────
-# Consistent status marks across every step: ✅ green = pass, ⚠️ yellow = advisory,
-# ❌ red = fail, · grey = info. Emoji are placed at line-start (never inside aligned
-# columns) so their cell-width never breaks layout.
+# Numbered steps with a colored completion verdict; ✅ green = pass, ⚠️ yellow = advisory,
+# ❌ red = fail, · grey = info, • sub-action. The step verdict auto-escalates to the worst
+# inner mark (a Write-Warn makes the step yellow; a Write-Fail makes it red).
 $Bar      = "─" * 62
 $BarHeavy = "═" * 62
-function Write-Step($m) { Write-Host ""; Write-Host "▸ $m" -ForegroundColor Cyan }
 function Write-Pass($m) { Write-Host "  ✅ $m" -ForegroundColor Green }
-function Write-Warn($m) { Write-Host "  ⚠️  $m" -ForegroundColor Yellow }
-function Write-Fail($m) { Write-Host "  ❌ $m" -ForegroundColor Red }
+function Write-Warn($m) { Write-Host "  ⚠️  $m" -ForegroundColor Yellow; if ($script:StepVerdict -eq 'ok') { $script:StepVerdict = 'warn' } }
+function Write-Fail($m) { Write-Host "  ❌ $m" -ForegroundColor Red; $script:StepVerdict = 'fail' }
 function Write-Note($m) { Write-Host "  ·  $m" -ForegroundColor DarkGray }
+function Write-Sub($m)  { Write-Host "  • $m" -ForegroundColor Gray }
+
+# Open a numbered step: prints a header bar, resets the verdict, starts the timer.
+function Begin-Step([string]$Title) {
+  $script:StepNum++
+  $script:StepVerdict = 'ok'
+  $script:StepStart = [DateTime]::UtcNow
+  Write-Host ""
+  Write-Host (("━━ Step {0} · {1} " -f $script:StepNum, $Title).PadRight(64, [char]0x2501)) -ForegroundColor Cyan
+}
+# Close the current step: colored ✅/⚠️/❌ verdict + elapsed (mm:ss).
+function End-Step {
+  $dur = "{0:mm\:ss}" -f ([DateTime]::UtcNow - $script:StepStart)
+  switch ($script:StepVerdict) {
+    'fail' { $i = "❌"; $c = "Red" }
+    'warn' { $i = "⚠️"; $c = "Yellow" }
+    default { $i = "✅"; $c = "Green" }
+  }
+  Write-Host ("  {0} Step {1} done · {2}" -f $i, $script:StepNum, $dur) -ForegroundColor $c
+}
 
 # Map a `docker ps` status string to a (icon, color) pair: Up→✅, unhealthy→⚠️, else→❌.
 function Get-StatusMark([string]$Status) {
@@ -105,8 +130,7 @@ function Get-StatusMark([string]$Status) {
   else                                   { return @("❌", "Red") }
 }
 
-# Print the project's containers as marked rows (shared by Show-Summary + Show-Monitor).
-# Returns the count of running containers. Names are shown without the project prefix.
+# Print the project's containers as marked rows. Returns the count of running containers.
 function Write-ContainerRows([string]$Indent = "     ") {
   $rows = @(docker ps -a --filter "name=$ProjectName" --format "{{.Names}}|{{.Status}}" 2>$null)
   foreach ($row in $rows) {
@@ -118,9 +142,36 @@ function Write-ContainerRows([string]$Indent = "     ") {
   return @($rows | Where-Object { ($_ -split '\|', 2)[1] -match '^Up' }).Count
 }
 
-# One concise progress line for an otherwise-silent long step. Signal preference: running containers
-# (start phase) → else the last meaningful, ANSI-stripped line of the phase log (build phase) → else
-# a generic "working…". Read-only + best-effort: never throws, never blocks.
+# Best progress signal from a phase log: download size (X / Y) → buildkit stage [n/total] → last
+# meaningful line. Read-only + best-effort; never throws. This is what makes a >1-min step report
+# WHAT it is doing (process + how much downloaded / which stage), not just "working…".
+function Get-ProgressSignal([string]$Log) {
+  if (-not $Log -or -not (Test-Path $Log)) { return "" }
+  try {
+    $tail = Get-Content $Log -Tail 200 -ErrorAction SilentlyContinue |
+      ForEach-Object { ($_ -replace '\x1b\[[0-9;]*m', '').Trim() } | Where-Object { $_ }
+    if (-not $tail) { return "" }
+    # 1) download progress: "50.3MB / 120.5MB"
+    $dl = $tail | Where-Object { $_ -match '(\d+(?:\.\d+)?\s*[KMG]B)\s*/\s*(\d+(?:\.\d+)?\s*[KMG]B)' } | Select-Object -Last 1
+    if ($dl -and ($dl -match '(\d+(?:\.\d+)?\s*[KMG]B)\s*/\s*(\d+(?:\.\d+)?\s*[KMG]B)')) {
+      return "downloading $($Matches[1]) / $($Matches[2])"
+    }
+    # 2) buildkit stage: "[4/9] RUN dotnet restore"
+    $stage = $tail | Where-Object { $_ -match '\[(\d+)/(\d+)\]' } | Select-Object -Last 1
+    if ($stage -and ($stage -match '\[(\d+)/(\d+)\]')) {
+      $desc = ($stage -replace '^.*\[\d+/\d+\]\s*', '')
+      if ($desc.Length -gt 48) { $desc = $desc.Substring(0, 48) + "…" }
+      return "build stage $($Matches[1])/$($Matches[2]) — $desc"
+    }
+    # 3) fallback: last non-noise line
+    $last = $tail | Where-Object { $_ -notmatch '^(Downloading|Extracting|Waiting)\s' } | Select-Object -Last 1
+    if ($last) { if ($last.Length -gt 80) { $last = $last.Substring(0, 80) + "…" }; return $last }
+  } catch {}
+  return ""
+}
+
+# One concise progress line for an otherwise-silent long step (fires every $HeartbeatSec).
+# Signal: running containers (start phase) → else Get-ProgressSignal (build/pull phase) → else "working…".
 function Write-Heartbeat([string]$Phase, [DateTime]$Start, [string]$Log) {
   $elapsed = "{0:hh\:mm\:ss}" -f ([DateTime]::UtcNow - $Start)
   $signal = ""
@@ -128,23 +179,14 @@ function Write-Heartbeat([string]$Phase, [DateTime]$Start, [string]$Log) {
     $up = @(docker ps --filter "name=$ProjectName" -q 2>$null).Count
     if ($up -gt 0) { $signal = "$up container(s) up" }
   } catch {}
-  if (-not $signal -and $Log -and (Test-Path $Log)) {
-    try {
-      $last = Get-Content $Log -Tail 60 -ErrorAction SilentlyContinue |
-        ForEach-Object { ($_ -replace '\x1b\[[0-9;]*m', '').Trim() } |
-        Where-Object { $_ -and ($_ -notmatch '^Downloading\s') } | Select-Object -Last 1
-      if ($last) { if ($last.Length -gt 90) { $last = $last.Substring(0, 90) + "…" }; $signal = $last }
-    } catch {}
-  }
+  if (-not $signal) { $signal = Get-ProgressSignal $Log }
   if (-not $signal) { $signal = "working…" }
   Write-Host ("  ⏱ [{0}] {1}: {2}" -f $elapsed, $Phase, $signal) -ForegroundColor DarkCyan
 }
 
-# PROMPTING scripts (bootstrap, build): child pwsh process with stdin answers piped. No [bool] args.
-# The child's (very noisy) output is routed to <WorkDir>/.provision-<Phase>.log; the main stream gets
-# the command echo, a heartbeat line every $HeartbeatSec, and on failure the log tail. The exact
-# `$Stdin | pwsh -File …` mechanism (verified working) is preserved inside a thread job so the main
-# thread is free to emit the heartbeat.
+# PROMPTING scripts (bootstrap, build): child pwsh process with stdin answers piped. The (noisy)
+# child output is routed to <WorkDir>/.provision-<Phase>.log; the main stream gets the command echo,
+# a heartbeat every $HeartbeatSec, and on failure the log tail.
 function Invoke-ChildPiped([string]$ScriptRel, [string[]]$ScriptArgs, [string]$Stdin, [string]$Phase = "child") {
   Push-Location $WorkDir
   try {
@@ -175,22 +217,12 @@ function Invoke-ChildPiped([string]$ScriptRel, [string[]]$ScriptArgs, [string]$S
   if ($code -ne 0) { throw "Child script '$ScriptRel' failed with exit code $code (see .provision-$Phase.log)" }
 }
 
-# NON-PROMPTING lifecycle scripts (start/stop): via `&` + splatting so a typed [bool] like
-# -skipSampleData $false binds (a "0"/"1" string via -File would NOT).
-#   • No -Phase  → legacy in-process call (kept for one-shot/quiet callers like 'remove').
-#   • -Phase X   → QUIET path: the (very noisy) compose/start chatter — teardown's per-container
-#                  "Stopping/Removing" lines, start's 60× "Try to open … Attempt #N" + raw ANSI — is
-#                  routed to .provision-<phase>.log; the main stream gets only a command echo, a
-#                  heartbeat every $HeartbeatSec, and (on a real failure) the log tail. This both
-#                  declutters the output AND lets `-Action monitor` see the live phase (it keys off
-#                  the freshest .provision-*.log). Mirrors Invoke-ChildPiped, but runs inside a thread
-#                  job with & + splat (not -File) so the typed [bool] params still bind.
+# NON-PROMPTING lifecycle scripts (start/stop): via `&` + splatting so a typed [bool] binds.
 function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowFail = $false, [string]$Phase = "") {
   Push-Location $WorkDir
   try {
     $scriptPath = Join-Path $WorkDir "$SolutionName/$ScriptName"
     if (-not (Test-Path $scriptPath)) {
-      # Nothing bootstrapped. For the idempotent teardown actions (-AllowFail) this is a no-op, not an error.
       if ($AllowFail) { Write-Host "  $ScriptName not present (nothing bootstrapped) — skipping." -ForegroundColor DarkGray; return }
       throw "Not bootstrapped: $scriptPath missing (run -Action bootstrap)."
     }
@@ -231,7 +263,6 @@ function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowF
 }
 
 function Test-Preflight {
-  Write-Step "Preflight — toolchain & Docker daemon"
   $ok = $true
   if ($PSVersionTable.PSVersion.Major -lt 7) { Write-Fail "PowerShell 7+ required (have $($PSVersionTable.PSVersion))"; $ok = $false }
   else { Write-Pass "PowerShell $($PSVersionTable.PSVersion)" }
@@ -246,9 +277,8 @@ function Test-Preflight {
   if (-not $ok) { throw "Preflight failed — fix the ❌ items above and retry." }
 }
 
-# Which DB engine the env is currently bootstrapped with. Prefers the marker written at bootstrap;
-# falls back to the authoritative source start-local itself reads — DB_PROVIDER in the generated .env
-# (for envs bootstrapped before the marker existed). Returns $null when it cannot be determined.
+# Which DB engine the env is currently bootstrapped with. Prefers the marker; falls back to
+# DB_PROVIDER in the generated .env. Returns $null when it cannot be determined.
 function Get-BootstrappedDbProvider {
   if (Test-Path $DbMarker) { return (Get-Content $DbMarker -Raw).Trim() }
   $envFile = Join-Path $WorkDir "$SolutionName/.env"
@@ -260,16 +290,14 @@ function Get-BootstrappedDbProvider {
 }
 
 function Initialize-Bootstrap {
-  Write-Step "Bootstrap start-local → $WorkDir/$SolutionName (branch: $Branch, db: $DbProvider)"
   New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
   if (Test-Path (Join-Path $WorkDir "$SolutionName/docker-compose.yml")) {
-    # -DbProvider is consumed ONLY at bootstrap; an already-bootstrapped env keeps its original engine.
-    # Detect a requested switch instead of silently ignoring it.
     $current = Get-BootstrappedDbProvider
+    # KEEP the bootstrapped engine unless the caller passed -DbProvider explicitly.
+    if ($current -and -not $script:DbExplicit) { $DbProvider = $current }
     if ($current -and $current -ne $DbProvider) {
-      # Provider switch. Every run wipes the DB anyway, so just re-bootstrap for the new engine
-      # (the per-provider compose/.env must be regenerated). Images + last-manifest survive in $WorkDir.
-      Write-Warn "DB provider switch '$current' → '$DbProvider': tearing down + re-bootstrapping for '$DbProvider'"
+      # Explicit provider switch. Every run wipes the DB anyway, so re-bootstrap for the new engine.
+      Write-Warn "DB provider switch '$current' → '$DbProvider' (explicit): tearing down + re-bootstrapping"
       $env:COMPOSE_PROJECT_NAME = $ProjectName
       Stop-Stack
       Clear-DataVolumes
@@ -282,50 +310,87 @@ function Initialize-Bootstrap {
       return
     }
   }
+  Write-Sub "Bootstrapping start-local (branch: $Branch, db: $DbProvider)"
   $local = Join-Path $WorkDir $BootstrapScript
   if (-not (Test-Path $local)) {
     Write-Note "Downloading $BootstrapScript …"
     Invoke-WebRequest -Uri $BootstrapUrl -UseBasicParsing -OutFile $local
   }
-  # Downloads management scripts + Dockerfiles + .env, then prompts (vc-build update / proceed
-  # build) → both answered "n" (we build separately with the custom manifest).
   Invoke-ChildPiped $BootstrapScript @("-targetFolder", $SolutionName, "-dbProvider", $DbProvider) "n`nn`n" "bootstrap"
-  Set-Content -Path $DbMarker -Value $DbProvider -NoNewline   # record the engine for later switch detection
+  Set-Content -Path $DbMarker -Value $DbProvider -NoNewline
   Write-Pass "Bootstrapped start-local for db: $DbProvider"
 }
 
 function Test-ImageExists($tag) { docker image inspect $tag *> $null; return ($LASTEXITCODE -eq 0) }
 
+# Deterministic 12-hex cache key from the manifest content + frontend URL (the two real build inputs).
+function Get-BuildHash([string]$ManifestPath, [string]$Frontend) {
+  $content = (Get-Content $ManifestPath -Raw) + "`n--frontend--`n" + $Frontend.Trim()
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+  $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+  return (-join ($hash[0..5] | ForEach-Object { $_.ToString('x2') }))
+}
+
+# Keep only the $Keep most-recent cache-* tags per repo (images of different manifests mostly differ
+# in the module-restore layer, but trim anyway to bound disk use).
+function Limit-ImageCache([int]$Keep = 4) {
+  foreach ($repo in @("vc-platform", "vc-frontend")) {
+    $tags = @(docker images $repo --format "{{.Tag}}|{{.CreatedAt}}" 2>$null |
+      Where-Object { $_ -match '^cache-' } |
+      Sort-Object { ($_ -split '\|', 2)[1] } -Descending |
+      ForEach-Object { ($_ -split '\|', 2)[0] })
+    if ($tags.Count -gt $Keep) {
+      foreach ($t in $tags[$Keep..($tags.Count - 1)]) { docker rmi "${repo}:$t" *> $null }
+    }
+  }
+}
+
 function Invoke-BuildIfChanged {
-  Write-Step "Build (rebuild-if-manifest-changed)"
   if (-not $Manifest) { throw "-Manifest is required for build/up. Generate one with gen-manifest.mjs." }
   $manifestPath = (Resolve-Path $Manifest).Path
-  $imgOk = (Test-ImageExists $PlatformImage) -and (Test-ImageExists "vc-frontend:local-latest")
+  $hash = Get-BuildHash $manifestPath $FrontendUrl
+  $platCache  = "vc-platform:cache-$hash"
+  $frontCache = "vc-frontend:cache-$hash"
+  $liveOk = (Test-ImageExists $PlatformImage) -and (Test-ImageExists $FrontendImage)
   $manifestSame = (Test-Path $LastManifest) -and ((Get-Content $manifestPath -Raw) -eq (Get-Content $LastManifest -Raw))
-  # The frontend ZIP (-FrontendUrl) is a build input too, but it is NOT in the manifest — track it
-  # separately so a frontend-only task (changed PR theme, same backend) still triggers a rebuild.
   $frontendSame = ((Test-Path $LastFrontend) ? ((Get-Content $LastFrontend -Raw) ?? "").Trim() : "") -eq $FrontendUrl.Trim()
-  if ($imgOk -and $manifestSame -and $frontendSame) {
-    Write-Pass "Manifest + frontend unchanged and images present → skipping rebuild"
+
+  # (a) Live image already matches this manifest → no rebuild, warm DB is safe.
+  if ($liveOk -and $manifestSame -and $frontendSame) {
+    $script:ImageChanged = $false
+    Write-Pass "Live image already matches this manifest (cache-$hash) → no rebuild"
     return
   }
-  $reason = if (-not $imgOk) { "image missing" } elseif (-not (Test-Path $LastManifest)) { "no prior build recorded" } elseif (-not $manifestSame) { "manifest changed" } else { "frontend URL changed" }
-  Write-Warn "Rebuilding — reason: $reason"
+  # (b) A previously built image for THIS exact manifest+frontend exists → retag it live (no rebuild).
+  if ((Test-ImageExists $platCache) -and (Test-ImageExists $frontCache)) {
+    Write-Sub "Reusing cached image for this manifest (cache-$hash)"
+    docker tag $platCache $PlatformImage *> $null
+    docker tag $frontCache $FrontendImage *> $null
+    Copy-Item $manifestPath $LastManifest -Force
+    Set-Content -Path $LastFrontend -Value $FrontendUrl -NoNewline
+    $script:ImageChanged = $true
+    Write-Pass "Cached image retagged live (cache-$hash) → no rebuild"
+    return
+  }
+  # (c) No usable image → rebuild, then snapshot under the cache tag for next time.
+  $reason = if (-not $liveOk) { "image missing" } elseif (-not (Test-Path $LastManifest)) { "no prior build recorded" } elseif (-not $manifestSame) { "manifest changed" } else { "frontend URL changed" }
+  Write-Warn "Rebuilding — reason: $reason  (cache-$hash)"
   Write-Note "manifest: $manifestPath"
-  # -customFrontendUrl always passed (empty = latest release) so the script never prompts;
-  # trailing "proceed with running?" answered "n" — we start explicitly afterwards.
   $buildArgs = @("-targetFolder", $SolutionName, "-vcSolutionVersion", "custom",
     "-customPackagesJson", $manifestPath, "-customFrontendUrl", $FrontendUrl)
   Invoke-ChildPiped "$SolutionName/build-VC-solution.ps1" $buildArgs "n`n" "build"
   Copy-Item $manifestPath $LastManifest -Force
   Set-Content -Path $LastFrontend -Value $FrontendUrl -NoNewline
-  Write-Pass "Images built (vc-platform + vc-frontend) and manifest recorded"
+  docker tag $PlatformImage $platCache *> $null
+  docker tag $FrontendImage $frontCache *> $null
+  Limit-ImageCache
+  $script:ImageChanged = $true
+  Write-Pass "Images built + cached (cache-$hash); manifest recorded"
 }
 
 function Stop-Stack { Invoke-Lifecycle "stop-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true -Phase "stop" }
 
 function Clear-DataVolumes {
-  Write-Step "Clean — wiping ALL data volumes (fresh DB + search index + cache)"
   $n = 0
   foreach ($v in $DataVolumes) {
     docker volume inspect $v *> $null
@@ -335,8 +400,7 @@ function Clear-DataVolumes {
 }
 
 # start-VC-solution.ps1's trailing "Checking installed modules" step authenticates with the seed
-# password 'store' and can exit 1 even when the platform is fully up. We run that lifecycle call with
-# -AllowFail and assert platform reachability ourselves via /health.
+# password 'store' and can exit 1 even when the platform is fully up. Gate on real /health instead.
 function Wait-PlatformReady([int]$TimeoutSec = 180) {
   Write-Host "  Waiting for platform /health …" -ForegroundColor DarkGray
   $start = [DateTime]::UtcNow
@@ -356,9 +420,8 @@ function Wait-PlatformReady([int]$TimeoutSec = 180) {
   throw "Platform did not become reachable at http://localhost:8090/health within $TimeoutSec s — the stack failed to start."
 }
 
-# start-local refuses to start if any of its ports is busy. After a 'down', the OS can lag releasing a
-# just-removed container's port (observed on ES :9200), which makes the next start fail spuriously.
-# Wait the ports out before starting.
+# start-local refuses to start if any of its ports is busy. After a 'down', the OS can lag releasing
+# a just-removed container's port; wait the ports out before starting.
 function Wait-PortsFree([int]$TimeoutSec = 45) {
   $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSec)
   do {
@@ -370,20 +433,13 @@ function Wait-PortsFree([int]$TimeoutSec = 45) {
   Write-Warn "Ports still busy after $TimeoutSec s: $($busy -join ', '). start-local may refuse to start."
 }
 
-# PREVENT the admin lockout at its source. start-local's post-start "Checking installed modules" probe
-# (scripts/check-installed-modules.ps1) authenticates with a hardcoded default password "store". On a
-# PRESERVED DB whose admin was already rotated to Password1!, that probe fails repeatedly and trips
-# Identity lockout — which is why Initialize-Admin then needs the (expensive) clear-lockout + restart
-# self-heal on every re-run. We patch the probe's DEFAULT password to read $env:VC_MODULECHECK_PASSWORD
-# (idempotent; falls back to "store" when the env var is unset), then set that env to the password the
-# probe will actually meet. The self-heal below stays as a safety net for any case this doesn't cover
-# (e.g. an externally-created DB with a different admin password). Touching a start-local script is
-# deliberate and minimal: a guarded one-line regex that no-ops if upstream changes the file.
+# Patch start-local's module-check probe so it authenticates with $env:VC_MODULECHECK_PASSWORD
+# (avoids the admin lockout on a preserved DB). Idempotent; no-ops if upstream changes the file.
 function Set-ModuleCheckPassword {
   $script = Join-Path $WorkDir "$SolutionName/scripts/check-installed-modules.ps1"
   if (-not (Test-Path $script)) { return }
   $raw = Get-Content $script -Raw
-  if ($raw -match '\$Password\s*=\s*\$\(if \(\$env:VC_MODULECHECK_PASSWORD\)') { return }  # already patched
+  if ($raw -match '\$Password\s*=\s*\$\(if \(\$env:VC_MODULECHECK_PASSWORD\)') { return }
   $patched = $raw -replace '(\$Password\s*=\s*)"store"', '$1$(if ($env:VC_MODULECHECK_PASSWORD) { $env:VC_MODULECHECK_PASSWORD } else { "store" })'
   if ($patched -ne $raw) {
     Set-Content -Path $script -Value $patched -NoNewline
@@ -391,22 +447,15 @@ function Set-ModuleCheckPassword {
   }
 }
 
-# Module-health gate (advisory): after the platform is up, name any module that failed to load/validate.
-# A version-incompatible manifest (e.g. a switched/pinned module other modules depend on) BUILDS and the
-# platform STARTS, but those modules stay broken → /health flips to 503. Test-PinnedModules only checks
-# the pins; this catches the broader "some modules have errors" case (which bit the Customer-downgrade
-# test). Best-effort: warn loudly, never throw.
+# Module-health gate (advisory): name any module that failed to load/validate. Best-effort.
 function Test-ModuleHealth {
-  Write-Step "Check module health (load/validation errors)"
+  Write-Sub "Module health (load/validation errors)"
   & node (Join-Path $SkillDir "healthcheck.mjs") --back "http://localhost:8090" --token --password "Password1!" --no-front --module-errors
-  if ($LASTEXITCODE -ne 0) { Write-Warn "Module-health check flagged an issue (exit $LASTEXITCODE) — see the module(s) named above; a broken module breaks /health" }
+  if ($LASTEXITCODE -ne 0) { Write-Warn "Module-health check flagged an issue (exit $LASTEXITCODE) — a broken module breaks /health" }
   else { Write-Pass "All modules loaded — no load/validation errors" }
 }
 
-# Verify each AzureBlob (pre-release) module pinned in the manifest is ACTUALLY loaded — never trust
-# the build log / artifact filename. Delegates to healthcheck.mjs --expect-module (a version mismatch
-# is a loud advisory, since pre-release artifacts are often not version-bumped in module.manifest;
-# a MISSING module is the real failure). Best-effort: warn, don't throw.
+# Verify each AzureBlob (pre-release) module pinned in the manifest is ACTUALLY loaded. Best-effort.
 function Test-PinnedModules {
   $mf = if ($Manifest -and (Test-Path $Manifest)) { (Resolve-Path $Manifest).Path } elseif (Test-Path $LastManifest) { $LastManifest } else { return }
   $expect = @()
@@ -417,58 +466,61 @@ function Test-PinnedModules {
     }
   } catch { return }
   if ($expect.Count -eq 0) { return }
-  Write-Step "Verify pinned pre-release module(s) actually loaded"
+  Write-Sub "Verify pinned pre-release module(s) actually loaded"
   & node (Join-Path $SkillDir "healthcheck.mjs") --back "http://localhost:8090" --token --password "Password1!" --no-front @expect
-  if ($LASTEXITCODE -ne 0) { Write-Warn "Pinned-module verification flagged an issue (exit $LASTEXITCODE) — a MISSING module is serious; a version mismatch is the known pre-release labelling quirk (confirm the PR by behaviour/schema)" }
+  if ($LASTEXITCODE -ne 0) { Write-Warn "Pinned-module verification flagged an issue (exit $LASTEXITCODE) — a MISSING module is serious; a version mismatch is the known pre-release labelling quirk" }
   else { Write-Pass "Pinned pre-release module(s) confirmed loaded" }
 }
 
 function Initialize-Admin {
-  Write-Step "Set admin password (fresh DB: store → Password1!) + write .env.local"
+  Write-Sub "Set admin password (store → Password1!) + write .env.local"
   & node (Join-Path $SkillDir "init-admin.mjs") --back "http://localhost:8090"
   if ($LASTEXITCODE -ne 0) { Write-Warn "init-admin reported a problem (exit $LASTEXITCODE) — check the platform is fully up" }
   else { Write-Pass "admin / Password1! ready; ADMIN_PASSWORD_LOCALHOST written to .env.local" }
 }
 
-function Invoke-Start {
+# Bring the stack up. Wipes data volumes (fresh DB) UNLESS -KeepData AND the live image is unchanged.
+function Invoke-StartStack {
   $env:COMPOSE_PROJECT_NAME = $ProjectName
-  # Every run is a fresh DB (deterministic env). Cleaning the volumes is cheap; the heavy image
-  # build is still skipped when the manifest is unchanged (handled in Invoke-BuildIfChanged).
-  Write-Step "Start stack (project: $ProjectName, fresh DB — data volumes wiped; seed via npm run seed:*)"
   Stop-Stack                                   # free ports + drop old containers
-  Clear-DataVolumes                            # always wipe → from-scratch DB + search index + cache
+  if ($KeepData -and -not $script:ImageChanged) {
+    Write-Warn "KeepData: reusing existing DB + search index + cache (warm start — NOT deterministic)"
+  }
+  else {
+    if ($KeepData) { Write-Warn "KeepData ignored — image changed; wiping volumes for schema/module-DLL safety" }
+    Clear-DataVolumes                          # from-scratch DB + search index + cache
+  }
   Wait-PortsFree                               # OS can lag freeing a just-removed container's port
-  # The fresh DB still has the seed admin password 'store'; tell start-local's module-check probe so
-  # it authenticates successfully and never trips Identity lockout before init-admin rotates the pwd.
-  Set-ModuleCheckPassword
+  Set-ModuleCheckPassword                      # tell start-local's module-check probe the seed password
   $env:VC_MODULECHECK_PASSWORD = "store"
   Invoke-Lifecycle "start-VC-solution.ps1" @{ solutionFolder = $SolutionName; skipSampleData = $true } -AllowFail $true -Phase "start"
-  Wait-PlatformReady   # start-local's seed-password module probe can exit 1; gate on real /health instead
-  Initialize-Admin     # rotate the fresh DB's seed 'store' → Password1! + write .env.local
-  Test-PinnedModules   # confirm pinned pre-release module(s) actually loaded (not silently the release)
-  Test-ModuleHealth    # surface any module that failed to load/validate (broken manifest → /health 503)
-  Show-Summary
+  Wait-PlatformReady                           # gate on real /health (seed-password probe can exit 1)
 }
 
-function Show-Status { Show-Summary }
+# Post-start: rotate admin pwd, verify pins, surface module-load errors.
+function Invoke-PostStart {
+  Initialize-Admin
+  Test-PinnedModules
+  Test-ModuleHealth
+}
 
-# Final report banner: overall verdict (✅/⚠️/❌), the storefront + backend links, per-container marks,
-# and the next step to wire the QA tooling. Used as the closing report of `up`/`start`/`status`.
+# Final report banner: overall verdict, links, per-container marks, DB mode, next step.
 function Show-Summary {
   $db = Get-BootstrappedDbProvider; if (-not $db) { $db = $DbProvider }
+  $dbMode = if ($KeepData -and -not $script:ImageChanged) { "warm (kept)" } else { "fresh" }
   $up = 0
   $healthOk = $false
   try { $r = Invoke-WebRequest -Uri "http://localhost:8090/health" -UseBasicParsing -TimeoutSec 4; $healthOk = ($r.StatusCode -eq 200) } catch {}
   if (Get-Command docker -ErrorAction SilentlyContinue) { $up = @(docker ps --filter "name=$ProjectName" -q 2>$null).Count }
 
-  if ($healthOk -and $up -ge 1)      { $icon = "✅"; $verdict = "LOCAL VC ENVIRONMENT IS UP";       $c = "Green" }
+  if ($healthOk -and $up -ge 1)      { $icon = "✅"; $verdict = "LOCAL VC ENVIRONMENT IS UP";          $c = "Green" }
   elseif ($up -ge 1)                 { $icon = "⚠️"; $verdict = "STACK RUNNING — /health NOT 200 yet"; $c = "Yellow" }
-  else                               { $icon = "❌"; $verdict = "STACK IS DOWN";                     $c = "Red" }
+  else                               { $icon = "❌"; $verdict = "STACK IS DOWN";                       $c = "Red" }
 
   Write-Host ""
   Write-Host "  $BarHeavy" -ForegroundColor $c
   Write-Host ("   {0}  {1}" -f $icon, $verdict) -ForegroundColor $c
-  Write-Host ("       db: {0}  ·  {1} container(s) up" -f $db, $up) -ForegroundColor DarkGray
+  Write-Host ("       db: {0} ({1})  ·  {2} container(s) up" -f $db, $dbMode, $up) -ForegroundColor DarkGray
   Write-Host "  $BarHeavy" -ForegroundColor $c
   $hStr = if ($healthOk) { "→ 200" } else { "→ not up yet" }
   Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "http://localhost:80"
@@ -486,14 +538,9 @@ function Show-Summary {
   Write-Host "  $BarHeavy" -ForegroundColor $c
 }
 
-# One-shot progress snapshot for polling an in-flight provision from ANOTHER shell (the up/build run
-# loaded provision.ps1 already; this read-only action never touches the running stack). Shows the most
-# recent phase log's tail + elapsed, running containers, local image presence, and /health.
+# One-shot progress snapshot for polling an in-flight provision from ANOTHER shell.
 function Show-Monitor {
-  Write-Step "Monitor — local VC stack (one-shot snapshot)"
   Write-Host "  $Bar" -ForegroundColor DarkGray
-
-  # — current phase (from the freshest .provision-*.log) —
   $logs = @(Get-ChildItem -Path $WorkDir -Filter ".provision-*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime)
   if ($logs.Count -gt 0) {
     $cur = $logs[-1]
@@ -502,29 +549,23 @@ function Show-Monitor {
     if ($age.TotalSeconds -lt 30) { $fresh = "⏱ ACTIVE"; $fc = "Green" } else { $fresh = "idle $([int]$age.TotalSeconds)s"; $fc = "DarkGray" }
     Write-Host ("   phase    {0,-10} " -f $phase) -ForegroundColor White -NoNewline
     Write-Host ("{0} · updated {1:HH:mm:ss}" -f $fresh, $cur.LastWriteTime) -ForegroundColor $fc
-    $last = Get-Content $cur.FullName -Tail 60 -ErrorAction SilentlyContinue |
-      ForEach-Object { ($_ -replace '\x1b\[[0-9;]*m', '').Trim() } |
-      Where-Object { $_ -and ($_ -notmatch '^Downloading\s') } | Select-Object -Last 1
-    if ($last) { if ($last.Length -gt 80) { $last = $last.Substring(0, 80) + "…" }; Write-Host "            └ $last" -ForegroundColor DarkGray }
+    $sig = Get-ProgressSignal $cur.FullName
+    if ($sig) { Write-Host "            └ $sig" -ForegroundColor DarkGray }
   }
   else { Write-Note "phase    no .provision-*.log yet — bootstrap not started" }
 
-  # — images —
   if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Host "  $Bar" -ForegroundColor DarkGray
     Write-Host "   images" -ForegroundColor White
-    foreach ($img in @($PlatformImage, "vc-frontend:local-latest")) {
+    foreach ($img in @($PlatformImage, $FrontendImage)) {
       if (Test-ImageExists $img) { Write-Pass $img } else { Write-Warn "$img  (building / absent)" }
     }
-
-    # — containers —
     Write-Host "  $Bar" -ForegroundColor DarkGray
     Write-Host "   containers" -ForegroundColor White
     $up = Write-ContainerRows "   "
     if ($up -eq 0) { Write-Note "no containers up yet" }
   }
 
-  # — health —
   Write-Host "  $Bar" -ForegroundColor DarkGray
   try {
     $r = Invoke-WebRequest -Uri "http://localhost:8090/health" -UseBasicParsing -TimeoutSec 4
@@ -534,18 +575,31 @@ function Show-Monitor {
 
 # ---- dispatch ----------------------------------------------------------------
 switch ($Action) {
-  "bootstrap" { Test-Preflight; Initialize-Bootstrap }
-  "build"     { Test-Preflight; Initialize-Bootstrap; Invoke-BuildIfChanged }
-  "start"     { Invoke-Start }
-  "stop"      { Write-Step "Stop (containers down, volumes kept)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack }
-  "clean"     { $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack; Clear-DataVolumes; Write-Host "Data volumes wiped. Next start re-seeds a fresh DB." -ForegroundColor Cyan }
-  "remove"    { Write-Step "Remove (containers + volumes + images + $SolutionName folder)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Invoke-Lifecycle "remove-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true; Remove-Item -Force -ErrorAction SilentlyContinue $LastManifest, $LastFrontend, $DbMarker }
-  "status"    { Show-Status }
-  "monitor"   { Show-Monitor }
+  "bootstrap" {
+    Begin-Step "Preconditions"; Test-Preflight; End-Step
+    Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+  }
+  "build" {
+    Begin-Step "Preconditions"; Test-Preflight; End-Step
+    Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+    Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
+  }
+  "start" {
+    Begin-Step "Start stack"; Invoke-StartStack; End-Step
+    Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
+    Show-Summary
+  }
+  "stop"    { Begin-Step "Stop (containers down, volumes kept)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack; End-Step }
+  "clean"   { Begin-Step "Clean (wipe data volumes)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack; Clear-DataVolumes; End-Step }
+  "remove"  { Begin-Step "Remove (containers + volumes + images + $SolutionName)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Invoke-Lifecycle "remove-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true; Remove-Item -Force -ErrorAction SilentlyContinue $LastManifest, $LastFrontend, $DbMarker; End-Step }
+  "status"  { Show-Summary }
+  "monitor" { Begin-Step "Monitor — local VC stack (one-shot snapshot)"; Show-Monitor; End-Step }
   "up" {
-    Test-Preflight
-    Initialize-Bootstrap
-    Invoke-BuildIfChanged
-    Invoke-Start          # ends with the Show-Summary report banner (links + verdict + next step)
+    Begin-Step "Preconditions";                         Test-Preflight;        End-Step
+    Begin-Step "Bootstrap start-local";                 Initialize-Bootstrap;  End-Step
+    Begin-Step "Platform image (build / reuse cache)";  Invoke-BuildIfChanged; End-Step
+    Begin-Step "Start stack (fresh DB · seed via npm run seed:*)"; Invoke-StartStack; End-Step
+    Begin-Step "Admin & module health";                 Invoke-PostStart;      End-Step
+    Show-Summary    # final report banner (links + verdict + next step)
   }
 }

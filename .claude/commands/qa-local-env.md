@@ -14,15 +14,19 @@ Methodology + helper scripts: the [`/qa-local-env` skill](../skills/testing/qa-l
 ```
 /qa-local-env                          # reproduce the deployed env (vcptcore-demo baseline)
 /qa-local-env VCST-5173                # baseline + the modules/PR builds the task needs
-/qa-local-env VCST-5173 sqlserver      # same, on SQL Server (default postgres; also mysql)
+/qa-local-env VCST-5173 sqlserver      # same, on SQL Server (postgres only for a NEW env; also mysql)
 /qa-local-env sqlserver                # baseline on SQL Server
 ```
-**DB provider** is just a bare word — `postgres` (default) | `mysql` | `sqlserver` — in any position;
-the legacy `--db <provider>` form is still accepted. Anything matching `VCST-\d+` is the task; the rest
-is the provider.
-**Every run is a fresh DB** — provision always wipes the data volumes, so the env is deterministic
-(no stale data migrated against a rebuilt image). Seed fixtures with `npm run seed:*`. The expensive
-image build is still skipped when the manifest is unchanged; admin is always **`Password1!`**.
+**DB provider** is just a bare word — `postgres` (default for a NEW env) | `mysql` | `sqlserver` — in
+any position; the legacy `--db <provider>` form is still accepted. Anything matching `VCST-\d+` is the
+task; the rest is the provider. **The provider is kept** across runs: on an already-bootstrapped env it
+is honoured only when you pass it explicitly, so a bare re-run never re-bootstraps just to flip engines.
+**Fresh DB by default** — provision wipes the data volumes, so the env is deterministic (no stale data
+migrated against a rebuilt image). Seed fixtures with `npm run seed:*`. **Image build is skipped when
+the manifest is unchanged, and reused from a per-manifest cache** when you switch back to a manifest you
+already built (baseline↔task) — no multi-minute rebuild. Pass `-KeepData` for a fast **warm restart**
+(reuses the existing DB) — honoured only when the live image is unchanged; any rebuild forces a wipe.
+Admin is always **`Password1!`**.
 
 ## What to do when invoked
 
@@ -38,10 +42,12 @@ image build is still skipped when the manifest is unchanged; admin is always **`
 3. **Provision** (run via background mode — heavy) —
    `pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action up -Manifest .local-env/packages.custom.json`
    (map the DB provider — a bare `postgres|mysql|sqlserver` token, or the legacy `--db <provider>` — to
-   `-DbProvider`; add `-FrontendUrl "<url>"` from step 2 if the task had a frontend PR build).
-   provision rebuilds iff the manifest changed, brings the stack `down`, **always wipes the data
-   volumes** (fresh DB every run), starts, then runs `init-admin.mjs` LAST (admin → `Password1!`,
-   writes `.env.local`). Comes up **without catalog data** — seed via `npm run seed:*`.
+   `-DbProvider` only if switching engines; add `-FrontendUrl "<url>"` from step 2 if the task had a
+   frontend PR build; add `-KeepData` only for a deliberate warm restart).
+   provision rebuilds iff the manifest changed (else reuses the per-manifest image cache), brings the
+   stack `down`, wipes the data volumes (fresh DB unless `-KeepData` + unchanged image), starts, then
+   runs `init-admin.mjs` LAST (admin → `Password1!`, writes `.env.local`). Comes up **without catalog
+   data** — seed via `npm run seed:*`.
 4. **Health-check** —
    `node .claude/skills/testing/qa-local-env/healthcheck.mjs --token --password 'Password1!'`; for a
    task, add a `--graphql` schema probe of the task's new field. Report UP/DOWN per endpoint.

@@ -38,7 +38,8 @@ health-checks the result.
    │
 gen-manifest ──► fetch baseline (vcptcore-demo) + merge requirements ──► .local-env/packages.custom.json
    │
-provision   ──► bootstrap → build IF manifest changed → down → wipe data (always) → start
+provision   ──► bootstrap → build IF manifest changed (else reuse per-manifest image cache) → down
+   │            → wipe data (unless -KeepData + unchanged image) → start
    │            → init-admin (store→Password1!, writes .env.local)                  [PowerShell + Docker]
    │
 healthcheck ──► /health + storefront + OAuth (admin/Password1!) + optional GraphQL field probe
@@ -46,13 +47,18 @@ healthcheck ──► /health + storefront + OAuth (admin/Password1!) + optional
 wire env    ──► TEST_ENV=localhost  (.env.localhost → local ports; ADMIN_PASSWORD_LOCALHOST in .env.local)
 ```
 
-Behaviour contract: the stack is **rebuilt only when the manifest changed** (gen-manifest re-fetches
-the live baseline each run, so upstream version drift triggers a rebuild). **Every run is a fresh DB**
-— provision always wipes the data volumes (DB + search index + cache) so the env is deterministic;
-the expensive image build is still skipped when the manifest is unchanged. On the fresh DB the admin
-password is changed from the seed `store` to **`Password1!`** and written to `.env.local`. The only
-two inputs are the optional `VCST-XXXX` task and the DB provider — a bare `postgres|mysql|sqlserver`
-token (default postgres; legacy `--db <provider>` still accepted).
+Behaviour contract: the stack is **rebuilt only when the manifest (or frontend ZIP) changed**
+(gen-manifest re-fetches the live baseline each run, so upstream version drift triggers a rebuild).
+Each successful build is snapshotted under a **per-manifest cache tag** (`vc-platform:cache-<hash>`);
+switching back to a manifest you already built (baseline↔task) **retags the cached image live instead
+of rebuilding** — no multi-minute restore. **Fresh DB by default** — provision wipes the data volumes
+(DB + search index + cache) so the env is deterministic; pass **`-KeepData`** for a fast warm restart
+that reuses the existing DB, honoured **only when the live image is unchanged** (any rebuild/cache-retag
+forces a wipe, for schema + module-DLL safety). On a fresh DB the admin password is changed from the
+seed `store` to **`Password1!`** and written to `.env.local`. The inputs are the optional `VCST-XXXX`
+task and the DB provider — a bare `postgres|mysql|sqlserver` token (default postgres **only for a new
+env**; the bootstrapped engine is **kept** on re-runs unless you pass a provider explicitly; legacy
+`--db <provider>` still accepted).
 
 ### 1. Resolve the task (only with a task arg — deterministic)
 
@@ -104,25 +110,31 @@ never lower. Offline? `--baseline-file <path>`. Other env? `--branch <deploy-bra
 pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action up `
   -Manifest .local-env/packages.custom.json
 # SQL Server:  … -Action up -Manifest .local-env/packages.custom.json -DbProvider sqlserver
+# warm restart: … -Action up -Manifest .local-env/packages.custom.json -KeepData
 # lifecycle:   -Action bootstrap | build | start | stop | clean | remove | status | monitor
-# options:     -DbProvider postgres|mysql|sqlserver  -FrontendUrl <zip>  -HeartbeatSec <n>  (-Branch <start-local tooling branch>, internal)
+# options:     -DbProvider postgres|mysql|sqlserver  -KeepData  -FrontendUrl <zip>  -HeartbeatSec <n>  (-Branch <start-local tooling branch>, internal)
 ```
-**Visual status marks.** Every step prints a coloured mark — ✅ green (pass) · ⚠️ yellow (advisory) ·
-❌ red (fail) · `·` grey (info) — and `up`/`start`/`status` close with a **report banner**: overall
-verdict, the storefront + backend links, a per-container ✅/⚠️/❌ table, and the next wire-up step.
-(The script forces UTF-8 console output so the marks survive redirection to a log file.)
+**Numbered steps + per-step verdict.** Each phase prints a numbered header (`━━ Step N · <title>`) and
+closes with a coloured verdict + elapsed (`✅/⚠️/❌ Step N done · mm:ss`). The verdict auto-escalates to
+the worst inner mark — a single ⚠️ makes the whole step yellow, a ❌ makes it red. Inner marks: ✅ green
+(pass) · ⚠️ yellow (advisory) · ❌ red (fail) · `·` grey (info) · `•` sub-action. `up`/`start`/`status`
+close with a **report banner**: overall verdict, the storefront + backend links, a per-container table,
+the DB mode (fresh/warm), and the next wire-up step. (UTF-8 console output is forced so the marks
+survive redirection to a log file.)
 
-**Progress heartbeat (no more `Downloading …MB` spam).** The long, otherwise-silent steps (the docker
-build, the post-start `/health` wait) route the child's thousands of raw download lines to a per-phase
-log file (`.local-env/.provision-<phase>.log`) and emit ONE concise status line — `⏱ [hh:mm:ss] <phase>:
-<signal>` — every `-HeartbeatSec` seconds (default **60**; `0` disables). On failure the log tail is
-printed inline. To poll an **in-flight** run from another shell (read-only, never touches the stack):
+**Progress monitoring on long steps.** The long, otherwise-silent steps (the docker build, the
+post-start `/health` wait) route the child's thousands of raw download lines to a per-phase log file
+(`.local-env/.provision-<phase>.log`) and emit ONE concise status line — `⏱ [hh:mm:ss] <phase>: <signal>`
+— every `-HeartbeatSec` seconds (default **60**; `0` disables). The signal names what's happening:
+running-container count (start phase) → **download size `X / Y`** or **buildkit stage `[n/total]`**
+(build/pull phase) → last meaningful log line. On failure the log tail is printed inline. To poll an **in-flight** run from another shell (read-only, never touches the stack):
 ```powershell
 pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action monitor
 # → visual snapshot: current phase + last log line, image presence, container marks, /health
 ```
-`up` = bootstrap (once) → build **iff manifest changed** → `down` (frees ports) → **wipe data volumes
-(always — fresh DB)** → start → init-admin. start-local refuses to start when its ports are busy,
+`up` = bootstrap (once) → build **iff manifest changed** (else reuse the per-manifest image cache) →
+`down` (frees ports) → **wipe data volumes** (fresh DB; skipped only with `-KeepData` + unchanged image)
+→ start → init-admin. start-local refuses to start when its ports are busy,
 so provision always brings the stack `down` before starting. A different `-DbProvider` than the env
 was bootstrapped with is detected and auto-re-bootstrapped for the new engine. Endpoints: storefront
 `http://localhost:80`, platform/Admin/xAPI `http://localhost:8090` (`admin`/`Password1!`).
@@ -256,14 +268,19 @@ To exercise it against real data — after seeding and configuring a product int
   manifest section). The vc3prerelease blob is anonymous-readable; no Azure token needed.
 - **First build is heavy** (~2.3 GB platform image, `docker build --no-cache`, several minutes);
   module install + first start (DB migration) add a few more. Subsequent `start`/`stop` are fast.
+  **Why a re-run can still rebuild:** switching baseline↔task (or task↔task) changes module versions
+  → a different manifest → a legitimate rebuild. The **per-manifest image cache** (`*:cache-<hash>`,
+  newest 4 kept per repo) avoids this on the *second* visit to a manifest — it retags the prior image
+  live instead of rebuilding. The big *recurring* cost is the **fresh-DB migration** on every start
+  (83-module init); use `-KeepData` (warm DB, same-image only) when you don't need a pristine DB.
 - **`.env.localhost`** is the local profile (`TEST_ENV=localhost`) — do NOT create `.env.localdocker`;
   `.env.local` is the gitignored secrets file, not an env profile.
-- **`-DbProvider` only binds at bootstrap.** start-local bakes the DB engine into the generated
-  `docker-compose.yml` + `.env`, so on an already-bootstrapped env a different `-DbProvider`/`--db` used
-  to be silently ignored (you'd stay on the original engine). provision now records the bootstrapped
-  engine in `.local-env/.bootstrapped-db.txt` (fallback: `DB_PROVIDER` in the generated `.env`) and
-  detects a switch: since every run wipes the DB anyway, a mismatch simply **auto-tears-down +
-  re-bootstraps** for the new engine. `-Action remove` clears the marker so the next `up` bootstraps fresh.
+- **`-DbProvider` only binds at bootstrap, and is kept on re-runs.** start-local bakes the DB engine
+  into the generated `docker-compose.yml` + `.env`. provision records the bootstrapped engine in
+  `.local-env/.bootstrapped-db.txt` (fallback: `DB_PROVIDER` in the generated `.env`). On a re-run it
+  **keeps that engine unless you pass `-DbProvider` explicitly** (so a bare re-run never re-bootstraps
+  just to honour the `postgres` default). An *explicit* switch auto-tears-down + re-bootstraps for the
+  new engine (the DB is wiped anyway). `-Action remove` clears the marker so the next `up` bootstraps fresh.
 
 ## Teardown
 
