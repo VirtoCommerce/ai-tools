@@ -13,6 +13,16 @@ exact module set a task needs.
 - **With a task arg** (`VCST-XXXX`) → take that baseline and **augment** it with the versions
   the task requires (released bumps + per-PR pre-release builds), then bring it up.
 
+**Launch modes** (mutually exclusive; default = full stack):
+
+| Mode | Bare word | Brings up | Health | Use for |
+|------|-----------|-----------|--------|---------|
+| **full** (default) | — | platform + db + es + redis + kibana + frontend | /health + storefront | Full local reproduction |
+| **backend** | `backend-only` | platform + db + es + redis (kibana OFF unless `-IncludeKibana`); **no frontend** | /health + OAuth token | API / Admin / module work — lighter |
+| **frontend** | `frontend-only` | **only** the vc-frontend container; nginx proxied to a **remote** env | storefront 200 + proxied `/graphql` returns the env's data + **theme build-marker** | Storefront/theme (the fix) against real remote data — the Gate-6 hybrid |
+
+`frontend-only` is the hybrid from the `local-frontend-proxied-to-qa-backend` memory, productised: local theme (the fix) + a remote env's real data/config. The repo stays clean — the WorkDir and vc-build's `.nuke` live under a stable temp path (`%TEMP%/vc-local-env`, override `-BaseTempDir`), not the git tree.
+
 Engine: VirtoCommerce **start-local** (Docker Compose + PowerShell 7). This skill never
 re-implements it — it generates the manifest, drives start-local non-interactively, and
 health-checks the result.
@@ -111,9 +121,31 @@ pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action up `
   -Manifest .local-env/packages.custom.json
 # SQL Server:  … -Action up -Manifest .local-env/packages.custom.json -DbProvider sqlserver
 # warm restart: … -Action up -Manifest .local-env/packages.custom.json -KeepData
+# backend-only: … -Action up -Manifest .local-env/packages.custom.json -Mode backend [-IncludeKibana]
+# frontend-only: -Action up -Mode frontend -BindBackendUrl https://vcst-qa.govirto.com [-FrontendUrl <zip>] [-BindStoreId B2B-store]
 # lifecycle:   -Action bootstrap | build | start | stop | clean | remove | status | monitor
-# options:     -DbProvider postgres|mysql|sqlserver  -KeepData  -FrontendUrl <zip>  -HeartbeatSec <n>  (-Branch <start-local tooling branch>, internal)
+# options:     -DbProvider postgres|mysql|sqlserver  -KeepData  -FrontendUrl <zip>  -Mode full|backend|frontend
+#              -IncludeKibana  -BindBackendUrl <url>  -BindStoreId <id>  -BaseTempDir <path>  -HeartbeatSec <n>  (-Branch <start-local tooling branch>, internal)
 ```
+
+**Launch modes (see the table above).** `-Mode` is mutually exclusive; the command maps the bare
+words `backend-only`/`frontend-only` to it. **backend-only** starts platform + db + es + redis only
+(no frontend container; kibana off unless `-IncludeKibana`) and reuses the same build + fresh-DB +
+init-admin path as full. **frontend-only** runs ONLY the vc-frontend container with a **generated**
+nginx config (no manual `sed`): `location /` + static stay local (= the theme), while `/graphql`,
+`/connect/token`, `/files`, `/cms-content`, `/revoke/token`, `/api/files`, `/hub/` are proxied to
+`-BindBackendUrl` (https targets get a rewritten `Host` + `proxy_ssl_server_name on`; a `localhost`
+backend is reached via `host.docker.internal`). The config is generated on the host and bind-mounted
+read-only into a standalone container (`virtolocal-frontend-only`), then validated with `nginx -t`.
+
+- **Bind target**: the agent asks which env to bind to and resolves `BACK_URL`+`STORE_ID` from the
+  `.env.*` profiles (see step 0 below). `-BindBackendUrl` is REQUIRED to start a frontend-only env.
+- **Theme** (priority): `-FrontendUrl <zip>` explicit → the task's PR theme (`VCST-XXXX`) → **latest
+  vc-frontend GitHub release** (start-local's native default). The build is frontend-only — it skips
+  the heavy platform build and reuses a per-theme image cache (`vc-frontend:cache-fe-<hash>`).
+- **Theme build-marker**: the generated nginx adds an `X-VC-Local-Theme: fe-<hash>` header on `/`;
+  healthcheck asserts it — a match proves `/` is the LOCAL theme of the expected build (not the
+  remote storefront), while the proxied `/graphql` proves the API is the bound remote env.
 **Numbered steps + per-step verdict.** Each phase prints a numbered header (`━━ Step N · <title>`) and
 closes with a coloured verdict + elapsed (`✅/⚠️/❌ Step N done · mm:ss`). The verdict auto-escalates to
 the worst inner mark — a single ⚠️ makes the whole step yellow, a ❌ makes it red. Inner marks: ✅ green
@@ -285,6 +317,15 @@ To exercise it against real data — after seeding and configuring a product int
 ## Teardown
 
 ```powershell
-pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action stop     # pause, keep data
-pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action remove   # destroy containers + volumes
+pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action stop     # pause: containers down, files + cache kept
+pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action clean    # stop + wipe data volumes (fresh DB next start)
+pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action remove   # destroy containers + volumes + temp files
 ```
+- **stop** = pause. Containers down, data volumes + temp files + image cache untouched. Also removes
+  the standalone `virtolocal-frontend-only` container when present.
+- **remove** = full teardown of the *run*: removes containers + volumes, deletes the temp WorkDir and
+  any stray `.nuke`, but **KEEPS** the per-manifest/per-theme image cache (`vc-platform`/`vc-frontend:cache-*`)
+  so the next `up` rebuilds fast. (To reclaim that disk, `docker image prune` the `cache-*` tags manually.)
+- The WorkDir + `.nuke` default to `%TEMP%/vc-local-env` (override `-BaseTempDir`) — nothing is written
+  into the repo. The OS may clear `%TEMP%` on reboot, losing only the rebuild-skip fingerprints (Docker
+  images survive → at most one extra rebuild); use `-BaseTempDir ~/.vc-local-env` if you need it to persist.

@@ -1,6 +1,6 @@
 ---
-description: "Spin up a local Virto Commerce stack via start-local, pinned to the actual deployed manifest (vc-deploy-dev @ vcptcore-demo). With a VCST-XXXX arg, augment the baseline with the module/PR versions the task needs. Backed by the /qa-local-env skill."
-argument-hint: "[VCST-XXXX] [postgres|mysql|sqlserver]"
+description: "Spin up a local Virto Commerce stack via start-local, pinned to the actual deployed manifest (vc-deploy-dev @ vcptcore-demo). With a VCST-XXXX arg, augment the baseline with the module/PR versions the task needs. backend-only / frontend-only modes supported. Backed by the /qa-local-env skill."
+argument-hint: "[VCST-XXXX] [postgres|mysql|sqlserver] [backend-only|frontend-only]"
 disable-model-invocation: true
 ---
 
@@ -12,15 +12,25 @@ Methodology + helper scripts: the [`/qa-local-env` skill](../skills/testing/qa-l
 
 ## Usage
 ```
-/qa-local-env                          # reproduce the deployed env (vcptcore-demo baseline)
+/qa-local-env                          # reproduce the deployed env (vcptcore-demo baseline) — FULL stack
 /qa-local-env VCST-5173                # baseline + the modules/PR builds the task needs
 /qa-local-env VCST-5173 sqlserver      # same, on SQL Server (postgres only for a NEW env; also mysql)
 /qa-local-env sqlserver                # baseline on SQL Server
+/qa-local-env backend-only             # platform + db + es + redis only (no frontend, no kibana)
+/qa-local-env frontend-only            # ONLY vc-frontend, proxied to a remote env (asks which one)
+/qa-local-env VCST-5344 frontend-only  # local theme from the task's PR, API → chosen remote env
 ```
 **DB provider** is just a bare word — `postgres` (default for a NEW env) | `mysql` | `sqlserver` — in
 any position; the legacy `--db <provider>` form is still accepted. Anything matching `VCST-\d+` is the
 task; the rest is the provider. **The provider is kept** across runs: on an already-bootstrapped env it
 is honoured only when you pass it explicitly, so a bare re-run never re-bootstraps just to flip engines.
+
+**Launch mode** is a bare word too — `backend-only` | `frontend-only` (mutually exclusive; default =
+full stack). Map it to provision's `-Mode backend|frontend`. **backend-only** = platform + db + es +
+redis (no frontend container; kibana off unless `-IncludeKibana`); same build + fresh-DB + admin path
+as full. **frontend-only** = ONLY the vc-frontend container with a generated nginx config (local theme
++ API proxied to a remote env); needs a bind target (next section). The repo stays clean — WorkDir +
+vc-build's `.nuke` live under `%TEMP%/vc-local-env` (override provision's `-BaseTempDir`).
 **Fresh DB by default** — provision wipes the data volumes, so the env is deterministic (no stale data
 migrated against a rebuilt image). Seed fixtures with `npm run seed:*`. **Image build is skipped when
 the manifest is unchanged, and reused from a per-manifest cache** when you switch back to a manifest you
@@ -29,6 +39,10 @@ already built (baseline↔task) — no multi-minute rebuild. Pass `-KeepData` fo
 Admin is always **`Password1!`**.
 
 ## What to do when invoked
+
+> **Mode routing first.** If the args contain `frontend-only` → jump to the **frontend-only flow**
+> below (no manifest, no platform build). If `backend-only` → run the normal flow with provision
+> `-Mode backend` (skip the storefront in step 4; nothing else changes). Otherwise = full stack.
 
 1. **Preconditions** — confirm Docker is running + `pwsh` (PowerShell 7) + `vc-build` exist
    (`provision.ps1` runs this preflight too). Bail with the install hint if missing.
@@ -54,6 +68,29 @@ Admin is always **`Password1!`**.
 5. **Wire env** — set `TEST_ENV=localhost` (the committed `.env.localhost` profile targets the local
    ports; `ADMIN_PASSWORD_LOCALHOST=Password1!` was already written to `.env.local` by init-admin).
    Offer `npm run seed:configurable` if the task needs a configurable product.
+
+## Frontend-only flow (`frontend-only`)
+
+Brings up ONLY the vc-frontend container, proxied to a remote env — local theme (the fix) + real
+remote data/config. No manifest, no platform/db/es build.
+
+1. **Pick the bind target** — build the menu **automatically from the `.env.*` profiles that define a
+   `BACK_URL`** (`.env.vcst`, `.env.vcptcore`, `.env.virtostart`, `.env.vcptcore_qa1`). Exclude
+   `.env.localhost`, but offer a **"custom BACK_URL"** option (for binding to a local `backend-only`
+   stack → `http://localhost:8090`). Ask the user via the question tool. From the chosen profile read
+   **`BACK_URL`** (→ `-BindBackendUrl`) and **`STORE_ID`** (→ `-BindStoreId`) so the theme's store id
+   matches the remote.
+2. **Resolve the theme** (priority): explicit `-FrontendUrl <zip>` → with `VCST-XXXX`, the task's PR
+   theme (`resolve-task.mjs VCST-XXXX` → its `-FrontendUrl`) → else the latest vc-frontend GitHub
+   release (provision's default; nothing to pass).
+3. **Provision** (background — the theme image build can take a minute) —
+   `pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action up -Mode frontend -BindBackendUrl "<BACK_URL>" -BindStoreId "<STORE_ID>" [-FrontendUrl "<zip>"]`.
+   provision generates the nginx config (local `/` + static, remote API), runs `virtolocal-frontend-only`
+   on port 80, validates `nginx -t`, then health-checks (storefront 200 + proxied `/graphql` returns
+   the remote env's data + the `X-VC-Local-Theme` build-marker matches).
+4. **Verify + hand off** — report the storefront link (`http://localhost`) and the bound backend.
+   Run the STR against the local theme with `qa-frontend-expert`. Teardown: `-Action stop` (the
+   frontend-only container is removed; nothing else is touched).
 
 ## Rules
 - This command has side effects (Docker build + containers) — it never runs automatically.

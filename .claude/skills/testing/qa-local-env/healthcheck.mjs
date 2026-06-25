@@ -43,6 +43,15 @@
 //                       STARTS, but such modules fail to initialise → /health flips to 503
 //                       ("Some modules have errors"). This surfaces the culprit by name.
 //   --no-front          skip the storefront check (admin-only bring-up)
+//   --front-only        FRONTEND-ONLY mode: skip the platform /health check entirely (there is no
+//                       local platform). Required checks become the storefront + (if given) the
+//                       proxied GraphQL probe. Used by provision -Mode frontend, where `/` is the
+//                       local theme and the API is proxied to a remote env.
+//   --expect-theme <s>  (front-only) assert the served storefront `/` carries the X-VC-Local-Theme
+//                       response header equal to <s>. provision injects this header into the
+//                       generated nginx and passes the same build marker here — a match proves `/`
+//                       is served by the LOCAL theme of the expected build (not the remote
+//                       storefront), while the proxied GraphQL probe proves the API is the remote env.
 //
 // Exit 0 if every REQUIRED check passed (back + front unless --no-front). The
 // token/GraphQL probes are advisory: a failure is reported but does not flip exit
@@ -86,6 +95,7 @@ function parseArgs(argv) {
     clientId: process.env.OAUTH_CLIENT_ID || "",
     token: false, graphql: null, graphqlFile: null, noFront: false,
     expectModules: [], moduleErrors: false,
+    frontOnly: false, expectTheme: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -107,6 +117,8 @@ function parseArgs(argv) {
     }
     else if (a === "--module-errors") o.moduleErrors = true;
     else if (a === "--no-front") o.noFront = true;
+    else if (a === "--front-only") o.frontOnly = true;
+    else if (a === "--expect-theme") o.expectTheme = next();
     else if (a === "-h" || a === "--help") { console.log("see header of healthcheck.mjs"); process.exit(0); }
     else { console.error(`Unknown arg: ${a}`); process.exit(2); }
   }
@@ -189,19 +201,35 @@ async function main() {
 
   const results = [];
 
-  // 1. Platform health (required). Bail early on persistent 503 (up-but-unhealthy ≠ still starting).
-  const health = await waitFor("platform /health", `${o.back}/health`, (s) => s === 200, o, undefined, 6);
-  results.push({ name: "platform /health", required: true, up: health.up });
+  // 1. Platform health (required) — SKIPPED in --front-only mode (no local platform).
+  if (!o.frontOnly) {
+    // Bail early on persistent 503 (up-but-unhealthy ≠ still starting).
+    const health = await waitFor("platform /health", `${o.back}/health`, (s) => s === 200, o, undefined, 6);
+    results.push({ name: "platform /health", required: true, up: health.up });
+  }
 
-  // 2. Storefront (required unless --no-front).
-  if (!o.noFront) {
+  // 2. Storefront (required unless --no-front; always required in --front-only).
+  if (!o.noFront || o.frontOnly) {
     const front = await waitFor("storefront", o.front, (s) => s === 200 || (s >= 300 && s < 400), o);
     results.push({ name: "storefront", required: true, up: front.up });
+
+    // 2b. Theme build-marker (front-only): the served `/` must carry X-VC-Local-Theme = expected.
+    if (o.frontOnly && o.expectTheme) {
+      process.stdout.write(`▶ theme marker (X-VC-Local-Theme=${o.expectTheme}) … `);
+      const r = await tryFetch(o.front, { method: "GET" });
+      const got = r.ok ? (r.res.headers.get("x-vc-local-theme") || "") : "";
+      const match = got === o.expectTheme;
+      console.log(match ? "OK (local theme of expected build)" : `MISMATCH (got "${got || "(none)"}")`);
+      if (!match) console.log("     ⚠ `/` is not served by the expected local theme build — check the frontend image / nginx conf.");
+      results.push({ name: "theme marker", required: true, up: match });
+    }
   }
 
   // 3. OAuth token (advisory; also needed for the GraphQL probe + module verification).
+  //    Skipped in --front-only: the storefront proxies /connect/token to the REMOTE env, whose admin
+  //    password is not the local Password1!, and the front-only GraphQL probe is anonymous anyway.
   let token = null;
-  if (o.token || query || o.expectModules.length || o.moduleErrors) {
+  if (!o.frontOnly && (o.token || query || o.expectModules.length || o.moduleErrors)) {
     process.stdout.write(`▶ OAuth /connect/token … `);
     const t = await getToken(o);
     token = t.ok ? t.token : null;

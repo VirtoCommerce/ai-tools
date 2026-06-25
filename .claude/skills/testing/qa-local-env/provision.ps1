@@ -8,6 +8,20 @@
   Wraps start-local's interactive PowerShell + Docker Compose scripts and drives them
   non-interactively with the correct paths. Verified end-to-end on 2026-06-24.
 
+  LAUNCH MODES (-Mode, mutually exclusive; default = full stack — unchanged behaviour):
+    • full      — platform + db + es + redis + kibana + frontend (the original behaviour).
+    • backend   — platform + db + es + redis only (kibana OFF unless -IncludeKibana; NO frontend
+                  container). Health = /health + OAuth token. Lighter than full for API/admin work.
+    • frontend  — ONLY the vc-frontend container, with its nginx proxied to a REMOTE environment
+                  (-BindBackendUrl). No local db/es/redis/platform. The theme is local (the fix);
+                  data/config come from the remote env. Health = storefront 200 + proxied /graphql
+                  returns the remote env's data + an optional theme build-marker check.
+
+  WORKDIR LIVES OUTSIDE THE REPO: the working dir + vc-build's .nuke default to a stable temp path
+  (-BaseTempDir, default %TEMP%/vc-local-env) so the repo stays clean and rebuild-skip fingerprints
+  survive between runs. Running vc-build from there keeps .nuke out of the git tree. `remove` deletes
+  the temp files; the per-manifest image cache tags (vc-platform/vc-frontend:cache-*) are KEPT.
+
   Behaviour (per the skill's contract):
     • Default modules come from the manifest you pass (-Manifest), produced by gen-manifest.mjs
       from vc-deploy-dev@vcptcore-demo; with a task, that manifest is augmented upstream.
@@ -37,13 +51,26 @@
                            passed explicitly; otherwise the already-bootstrapped engine is kept.
 .PARAMETER KeepData        Reuse existing data volumes (warm DB) for a fast restart. Honoured ONLY
                            when the live image is unchanged; any rebuild/cache-retag forces a wipe.
-.PARAMETER FrontendUrl     Optional storefront ZIP override (e.g. a frontend PR build).
+.PARAMETER FrontendUrl     Optional storefront ZIP override (e.g. a frontend PR build). In -Mode
+                           frontend this IS the theme; when empty the latest vc-frontend GitHub
+                           release is used (start-local's native default).
+.PARAMETER Mode            full (default) | backend | frontend. See LAUNCH MODES above. Mutually exclusive.
+.PARAMETER IncludeKibana   -Mode backend only: also start kibana (off by default for a lighter stack).
+.PARAMETER BindBackendUrl  -Mode frontend only (REQUIRED to start): the REMOTE backend the local
+                           frontend's nginx proxies API calls to (e.g. https://vcst-qa.govirto.com,
+                           or http://localhost:8090 for a local backend-only stack).
+.PARAMETER BindStoreId     -Mode frontend only: store id baked into the generated nginx static
+                           locations (default B2B-store; take it from the bound env's profile).
+.PARAMETER BaseTempDir     Base temp dir for the WorkDir + .nuke (default %TEMP%/vc-local-env). Kept
+                           between runs (fingerprints); only `remove` deletes it.
 .PARAMETER Branch          start-local TOOLING repo branch to bootstrap from (default: dev). Internal.
 .PARAMETER HeartbeatSec    Progress cadence (s) for long, otherwise-silent steps (build, /health wait).
 
 .EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json
 .EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json -DbProvider sqlserver
 .EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json -KeepData
+.EXAMPLE  pwsh -File provision.ps1 -Action up -Manifest .local-env/packages.custom.json -Mode backend
+.EXAMPLE  pwsh -File provision.ps1 -Action up -Mode frontend -BindBackendUrl https://vcst-qa.govirto.com
 #>
 [CmdletBinding()]
 param(
@@ -55,6 +82,12 @@ param(
   [string]$DbProvider = "postgres",
   [switch]$KeepData,
   [string]$FrontendUrl = "",
+  [ValidateSet("full", "backend", "frontend")]
+  [string]$Mode = "full",
+  [switch]$IncludeKibana,
+  [string]$BindBackendUrl = "",
+  [string]$BindStoreId = "B2B-store",
+  [string]$BaseTempDir = "",
   [string]$Branch = "dev",
   [int]$HeartbeatSec = 60
 )
@@ -69,6 +102,8 @@ $script:DbExplicit = $PSBoundParameters.ContainsKey('DbProvider')
 # Did this run change the live image (build or cache-retag)? Drives the warm-DB safety guard.
 # Default false so a bare `-Action start` honours -KeepData; Invoke-BuildIfChanged sets it in all branches.
 $script:ImageChanged = $false
+# -Mode frontend: the resolved theme ZIP URL (set lazily by Get-FrontendTheme), reused for the marker.
+$script:FrontendTheme = ""
 # Numbered-step state (see Begin-Step/End-Step).
 $script:StepNum = -1
 $script:StepVerdict = 'ok'
@@ -76,13 +111,21 @@ $script:StepStart = [DateTime]::UtcNow
 
 $SkillDir = $PSScriptRoot
 $RepoRoot = (Resolve-Path "$PSScriptRoot/../../../..").Path
-if (-not $WorkDir) { $WorkDir = Join-Path $RepoRoot ".local-env" }
+# WorkDir lives OUTSIDE the repo (stable temp path) so the repo stays clean and vc-build's .nuke
+# (which Nuke anchors to the nearest .git ancestor) lands in temp instead of the git tree.
+if (-not $BaseTempDir) {
+  $BaseTempDir = if ($env:TEMP) { Join-Path $env:TEMP "vc-local-env" } else { Join-Path $RepoRoot ".local-env-tmp" }
+}
+if (-not $WorkDir) { $WorkDir = Join-Path $BaseTempDir ".local-env" }
 $SolutionName = "VirtoLocal"
 $ProjectName  = "virtolocal"
 $PlatformImage = "vc-platform:local-latest"
 $FrontendImage = "vc-frontend:local-latest"
+$FrontendOnlyContainer = "$ProjectName-frontend-only"   # -Mode frontend standalone container
+$FrontendNginxConf     = Join-Path $WorkDir "frontend-only.default.conf"
 $LastManifest = Join-Path $WorkDir ".last-built-manifest.json"
 $LastFrontend = Join-Path $WorkDir ".last-built-frontend.txt"
+$LastFeImage  = Join-Path $WorkDir ".last-built-fe-image.txt"   # -Mode frontend: theme URL of the live fe image
 $DbMarker     = Join-Path $WorkDir ".bootstrapped-db.txt"
 $BootstrapScript = "VirtoLocal_create_local_files.ps1"
 $BootstrapUrl = "https://raw.githubusercontent.com/VirtoCommerce/start-local/$Branch/$BootstrapScript"
@@ -422,10 +465,11 @@ function Wait-PlatformReady([int]$TimeoutSec = 180) {
 
 # start-local refuses to start if any of its ports is busy. After a 'down', the OS can lag releasing
 # a just-removed container's port; wait the ports out before starting.
-function Wait-PortsFree([int]$TimeoutSec = 45) {
+function Wait-PortsFree([int]$TimeoutSec = 45, [int[]]$Ports) {
+  if (-not $Ports) { $Ports = $RequiredPorts }
   $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSec)
   do {
-    $busy = @($RequiredPorts | Where-Object { Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue })
+    $busy = @($Ports | Where-Object { Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue })
     if ($busy.Count -eq 0) { return }
     Write-Note "Waiting for ports to free: $($busy -join ', ') …"
     Start-Sleep -Seconds 3
@@ -523,7 +567,11 @@ function Show-Summary {
   Write-Host ("       db: {0} ({1})  ·  {2} container(s) up" -f $db, $dbMode, $up) -ForegroundColor DarkGray
   Write-Host "  $BarHeavy" -ForegroundColor $c
   $hStr = if ($healthOk) { "→ 200" } else { "→ not up yet" }
-  Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "http://localhost:80"
+  if ($Mode -ne "backend") {
+    Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "http://localhost:80"
+  } else {
+    Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "(none — backend-only mode)" -ForegroundColor DarkGray
+  }
   Write-Host "   🔧  Platform API  " -ForegroundColor White -NoNewline; Write-Host "http://localhost:8090"
   Write-Host "   🛠  Admin SPA     " -ForegroundColor White -NoNewline; Write-Host "http://localhost:8090   (admin / Password1!)"
   Write-Host "   ❤  Health        " -ForegroundColor White -NoNewline; Write-Host "http://localhost:8090/health   $hStr"
@@ -535,6 +583,27 @@ function Show-Summary {
   Write-Host "  $Bar" -ForegroundColor DarkGray
   Write-Host '   next   ' -ForegroundColor DarkGray -NoNewline
   Write-Host '$env:TEST_ENV = "localhost"   ·   npm run seed:*   ·   healthcheck.mjs --token'
+  Write-Host "  $BarHeavy" -ForegroundColor $c
+}
+
+# Final report banner for -Mode frontend: storefront link + the remote backend it is bound to.
+function Show-SummaryFrontend {
+  $up = $false; $front200 = $false
+  try { $up = [bool](docker ps --filter "name=$FrontendOnlyContainer" -q 2>$null) } catch {}
+  try { $r = Invoke-WebRequest -Uri "http://localhost" -UseBasicParsing -TimeoutSec 4 -MaximumRedirection 0 -ErrorAction SilentlyContinue; $front200 = ($r.StatusCode -ge 200 -and $r.StatusCode -lt 400) } catch { $front200 = $true } # 3xx throws on older pwsh; treat reachable as ok
+  if ($up -and $front200) { $icon = "✅"; $verdict = "LOCAL FRONTEND IS UP (theme local · API → remote)"; $c = "Green" }
+  elseif ($up)            { $icon = "⚠️"; $verdict = "FRONTEND RUNNING — storefront not 200 yet";        $c = "Yellow" }
+  else                    { $icon = "❌"; $verdict = "FRONTEND IS DOWN";                                  $c = "Red" }
+  Write-Host ""
+  Write-Host "  $BarHeavy" -ForegroundColor $c
+  Write-Host ("   {0}  {1}" -f $icon, $verdict) -ForegroundColor $c
+  Write-Host ("       theme: {0}  ·  store: {1}" -f ($(if ($FrontendUrl) { "pinned ZIP" } else { "latest release" }), $BindStoreId)) -ForegroundColor DarkGray
+  Write-Host "  $BarHeavy" -ForegroundColor $c
+  Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "http://localhost   (local theme = the fix)"
+  Write-Host "   🔌  API proxied   " -ForegroundColor White -NoNewline; Write-Host "$BindBackendUrl   (real data/config)"
+  Write-Host "  $Bar" -ForegroundColor DarkGray
+  Write-Host '   next   ' -ForegroundColor DarkGray -NoNewline
+  Write-Host 'open http://localhost  ·  run the STR with qa-frontend-expert against the local theme'
   Write-Host "  $BarHeavy" -ForegroundColor $c
 }
 
@@ -573,7 +642,274 @@ function Show-Monitor {
   } catch { Write-Note "/health → not up yet" }
 }
 
+# ── Mode helpers ──────────────────────────────────────────────────────────────
+
+# Reject incompatible flag combinations early with a clear message (cheap; before any clone/build).
+function Test-ModeArgs {
+  $starting = $Action -in @("up", "start")
+  if ($Mode -eq "frontend") {
+    if ($KeepData)               { Write-Warn "-KeepData ignored in -Mode frontend (no local DB)" }
+    if ($Manifest)               { Write-Note "-Manifest ignored in -Mode frontend (no backend build)" }
+    if ($IncludeKibana)          { Write-Warn "-IncludeKibana ignored in -Mode frontend" }
+    if ($starting -and -not $BindBackendUrl) {
+      throw "-Mode frontend needs -BindBackendUrl <remote backend> (e.g. https://vcst-qa.govirto.com, or http://localhost:8090 for a local backend-only stack). The local frontend has no backend of its own."
+    }
+  }
+  elseif ($Mode -eq "backend") {
+    if ($BindBackendUrl)         { Write-Warn "-BindBackendUrl ignored in -Mode backend (it runs its own platform)" }
+  }
+  else { # full
+    if ($BindBackendUrl)         { Write-Warn "-BindBackendUrl ignored in -Mode full" }
+    if ($IncludeKibana)          { Write-Note "-IncludeKibana is a no-op in -Mode full (kibana always on)" }
+  }
+}
+
+# Deterministic 12-hex cache key from an arbitrary string (used for the frontend-only theme URL).
+function Get-StringHash([string]$Value) {
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value.Trim())
+  $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+  return (-join ($hash[0..5] | ForEach-Object { $_.ToString('x2') }))
+}
+
+# Default theme for -Mode frontend when no -FrontendUrl is given: the latest vc-frontend GitHub
+# release asset — start-local's own native default (build-VC-solution.ps1). Deterministic, no extra infra.
+function Resolve-DefaultTheme {
+  try {
+    $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/VirtoCommerce/vc-frontend/releases/latest" `
+      -Headers @{ "User-Agent" = "vc-qa-local-env" }
+    $asset = @($rel.assets | Where-Object { $_.browser_download_url -match '\.zip$' }) | Select-Object -First 1
+    if (-not $asset) { $asset = @($rel.assets) | Select-Object -First 1 }
+    if ($asset.browser_download_url) {
+      Write-Note "default theme → latest vc-frontend release: $($rel.tag_name) ($($asset.name))"
+      return $asset.browser_download_url
+    }
+  } catch { Write-Warn "Could not resolve latest vc-frontend release ($($_.Exception.Message))" }
+  return ""
+}
+
+# Build ONLY the vc-frontend image from a theme ZIP — mirrors the frontend half of
+# build-VC-solution.ps1 (download → extract → docker build -f frontend/Dockerfile) without the heavy
+# platform build. Per-URL image cache (vc-frontend:cache-fe-<hash>) so a re-run with the same theme
+# retags instead of rebuilding. Sets $script:ImageChanged. Needs bootstrap (frontend/Dockerfile).
+function Build-FrontendImageOnly([string]$ThemeUrl) {
+  $hash = Get-StringHash $ThemeUrl
+  $feCache = "vc-frontend:cache-fe-$hash"
+  $liveOk = Test-ImageExists $FrontendImage
+  $same = ((Test-Path $LastFeImage) ? ((Get-Content $LastFeImage -Raw) ?? "").Trim() : "") -eq $ThemeUrl.Trim()
+  if ($liveOk -and $same) {
+    $script:ImageChanged = $false
+    Write-Pass "Live frontend image already matches this theme (cache-fe-$hash) → no rebuild"
+    return
+  }
+  if (Test-ImageExists $feCache) {
+    docker tag $feCache $FrontendImage *> $null
+    Set-Content -Path $LastFeImage -Value $ThemeUrl -NoNewline
+    $script:ImageChanged = $true
+    Write-Pass "Cached frontend image retagged live (cache-fe-$hash) → no rebuild"
+    return
+  }
+  $frontendDir = Join-Path $WorkDir "$SolutionName/frontend"
+  $dockerfile = Join-Path $frontendDir "Dockerfile"
+  if (-not (Test-Path $dockerfile)) { throw "Frontend Dockerfile missing ($dockerfile) — run -Action bootstrap first." }
+  Write-Warn "Building frontend image — theme: $ThemeUrl  (cache-fe-$hash)"
+  $artifact = Join-Path $frontendDir "artifact"
+  $zip = Join-Path $frontendDir "frontend.zip"
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $artifact, $zip
+  Write-Sub "Downloading theme ZIP"
+  Invoke-WebRequest -Uri $ThemeUrl -OutFile $zip -UseBasicParsing
+  Write-Sub "Extracting theme"
+  Expand-Archive -Path $zip -DestinationPath $artifact -Force
+  Remove-Item -Force -ErrorAction SilentlyContinue $zip
+  Write-Sub "docker build vc-frontend:local-latest"
+  Push-Location $frontendDir
+  try { docker build -t $FrontendImage -f $dockerfile $frontendDir; $code = $LASTEXITCODE }
+  finally { Pop-Location }
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $artifact
+  if ($code -ne 0) { throw "Frontend image build failed (exit $code)" }
+  docker tag $FrontendImage $feCache *> $null
+  Limit-ImageCache
+  Set-Content -Path $LastFeImage -Value $ThemeUrl -NoNewline
+  $script:ImageChanged = $true
+  Write-Pass "Frontend image built + cached (cache-fe-$hash)"
+}
+
+# Generate a COMPLETE nginx default.conf that keeps `/` + static (.js/.json) local (= the theme) but
+# proxies the API locations to a REMOTE backend. No in-container sed — the file is generated on the
+# host and bind-mounted read-only into the container. https targets get proxy_ssl_server_name on +
+# a rewritten Host header; a localhost backend is reached via host.docker.internal.
+function New-FrontendNginxConf([string]$BackendUrl, [string]$StoreId, [string]$ThemeMarker) {
+  $u = [System.Uri]$BackendUrl
+  $isHttps = $u.Scheme -eq "https"
+  $hostHeader = if ($u.IsDefaultPort) { $u.Host } else { "$($u.Host):$($u.Port)" }
+  # A localhost backend (a local backend-only stack) is not reachable as "localhost" from inside the
+  # container — use the Docker host gateway. Remote hosts pass through unchanged.
+  if ($u.Host -in @("localhost", "127.0.0.1")) {
+    $port = if ($u.IsDefaultPort) { 80 } else { $u.Port }
+    $proxyTarget = "http://host.docker.internal:$port"
+  } else {
+    $proxyTarget = if ($u.IsDefaultPort) { "$($u.Scheme)://$($u.Host)" } else { "$($u.Scheme)://$($u.Host):$($u.Port)" }
+  }
+  $sslLine = if ($isHttps) { "        proxy_ssl_server_name on;`n" } else { "" }
+  $proxied = @("/files", "/connect/token", "/graphql", "/revoke/token", "/api/files", "/cms-content")
+  $locations = ""
+  foreach ($loc in $proxied) {
+    $locations += @"
+    location $loc {
+        proxy_pass   $proxyTarget;
+        proxy_set_header Host $hostHeader;
+        proxy_set_header X-Real-IP `$remote_addr;
+        proxy_set_header X-Forwarded-For `$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto `$scheme;
+        proxy_method `$request_method;
+$sslLine    }
+
+"@
+  }
+  $conf = @"
+# GENERATED by qa-local-env provision.ps1 (-Mode frontend) — local theme + remote backend.
+# Backend bound to: $BackendUrl  (proxy_pass $proxyTarget, Host $hostHeader)
+server {
+    listen       80;
+    server_name  localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files `$uri `$uri/ /index.html;
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'X-VC-Local-Theme' '$ThemeMarker' always;
+    }
+
+    location ~* \.(json|png|ico|gif|jpg|jpeg|css|js|xml|txt)`$ {
+        try_files `$uri /assets/stores/$StoreId`$uri /Themes/$StoreId/default`$uri =404;
+        root /usr/share/nginx/html;
+        add_header Cache-Control "no-cache, must-revalidate, proxy-revalidate";
+        error_page 404 = @static_404;
+    }
+    location @static_404 {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
+        return 404;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html { root /usr/share/nginx/html; }
+
+    proxy_buffer_size   128k;
+    proxy_buffers   4 256k;
+    proxy_busy_buffers_size   256k;
+    proxy_connect_timeout 600;
+    proxy_send_timeout 600;
+    proxy_read_timeout 600;
+
+$locations    location /hub/ {
+        proxy_pass $proxyTarget;
+        proxy_set_header Host $hostHeader;
+$sslLine        proxy_http_version 1.1;
+        proxy_set_header Upgrade `$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+"@
+  New-Item -ItemType Directory -Force -Path (Split-Path $FrontendNginxConf) | Out-Null
+  Set-Content -Path $FrontendNginxConf -Value $conf -NoNewline
+  Write-Pass "Generated nginx conf → $FrontendNginxConf (backend $hostHeader, store $StoreId)"
+}
+
+# Compose -f args for the bootstrapped engine (base + provider override).
+function Get-ComposeFiles {
+  $db = Get-BootstrappedDbProvider; if (-not $db) { $db = $DbProvider }
+  return @("-f", (Join-Path $WorkDir "$SolutionName/docker-compose.yml"),
+           "-f", (Join-Path $WorkDir "$SolutionName/docker-compose.$db.yml"))
+}
+
+# -Mode backend: bring up only redis + es + platform (+ kibana when -IncludeKibana); no frontend.
+function Invoke-StartBackendOnly {
+  $env:COMPOSE_PROJECT_NAME = $ProjectName
+  Stop-Stack
+  if ($KeepData -and -not $script:ImageChanged) {
+    Write-Warn "KeepData: reusing existing DB + search index + cache (warm start — NOT deterministic)"
+  } else {
+    if ($KeepData) { Write-Warn "KeepData ignored — image changed; wiping volumes for schema/module-DLL safety" }
+    Clear-DataVolumes
+  }
+  Wait-PortsFree
+  $services = @("redis", "es", "vc-platform-web")
+  if ($IncludeKibana) { $services += "kibana" }
+  $files = Get-ComposeFiles
+  Write-Sub "docker compose up -d $($services -join ', ')  (backend-only, no frontend)"
+  Push-Location $WorkDir
+  try { docker compose @files up -d @services; $code = $LASTEXITCODE } finally { Pop-Location }
+  if ($code -ne 0) { throw "docker compose up (backend-only) failed (exit $code)" }
+  Wait-PlatformReady
+}
+
+# Stop + remove the standalone frontend-only container (best-effort).
+function Stop-FrontendOnly {
+  docker rm -f $FrontendOnlyContainer *> $null
+}
+
+# -Mode frontend: run ONLY the vc-frontend container with the generated nginx conf bind-mounted,
+# proxying the API to the bound remote backend. No local backend touched.
+function Invoke-StartFrontendOnly {
+  $null = Get-FrontendTheme   # ensure $script:FrontendTheme is resolved (for the build marker)
+  Stop-FrontendOnly
+  New-FrontendNginxConf $BindBackendUrl $BindStoreId (Get-ThemeMarker)
+  Wait-PortsFree 30 @(80)
+  Write-Sub "docker run $FrontendOnlyContainer (port 80 → local theme, API → $BindBackendUrl)"
+  docker run -d --name $FrontendOnlyContainer `
+    --add-host "host.docker.internal:host-gateway" `
+    -p 80:80 `
+    -v "${FrontendNginxConf}:/etc/nginx/conf.d/default.conf:ro" `
+    $FrontendImage *> $null
+  if ($LASTEXITCODE -ne 0) { throw "docker run (frontend-only) failed" }
+  # Validate the generated nginx config inside the running container; surface errors loudly.
+  docker exec $FrontendOnlyContainer nginx -t *> $null
+  if ($LASTEXITCODE -ne 0) {
+    docker logs $FrontendOnlyContainer --tail 20 2>&1 | ForEach-Object { Write-Note $_ }
+    throw "Generated nginx config failed 'nginx -t' inside the container."
+  }
+  Write-Pass "frontend-only container up (nginx config valid)"
+}
+
+# Build marker for the served theme: identifies the locally-built theme image deterministically.
+# Same value is injected into the generated nginx (X-VC-Local-Theme header) AND asserted by the
+# health check — a match proves `/` is served by OUR local theme of the EXPECTED build (not the
+# remote storefront), while the proxied /graphql proves the API is the bound remote env.
+function Get-ThemeMarker { return "fe-$(Get-StringHash $script:FrontendTheme)" }
+
+# -Mode frontend health: storefront 200 + proxied /graphql returns the remote env's data +
+# the served theme carries the expected local build marker.
+function Test-FrontendOnly {
+  Write-Sub "Frontend-only health (storefront + proxied /graphql → $BindBackendUrl + theme marker)"
+  $probe = "{ products(storeId: `"$BindStoreId`", first: 1) { totalCount } }"
+  & node (Join-Path $SkillDir "healthcheck.mjs") --front-only --front "http://localhost" `
+    --back "http://localhost" --graphql $probe --expect-theme (Get-ThemeMarker)
+  if ($LASTEXITCODE -ne 0) { Write-Fail "Frontend-only health failed (storefront / proxied /graphql / theme marker)" }
+  else { Write-Pass "Storefront up · proxied /graphql returned remote env data · theme marker matched" }
+}
+
+# In -Mode frontend the only build input is the theme ZIP: -FrontendUrl if given, else latest release.
+# Resolved ONCE and cached in $script:FrontendTheme (also used to derive the build marker).
+function Get-FrontendTheme {
+  if (-not $script:FrontendTheme) {
+    $script:FrontendTheme = if ($FrontendUrl) { $FrontendUrl } else { Resolve-DefaultTheme }
+    if (-not $script:FrontendTheme) {
+      throw "No frontend theme: pass -FrontendUrl <zip>, or ensure the latest vc-frontend GitHub release is reachable."
+    }
+  }
+  return $script:FrontendTheme
+}
+
+# Tear down temp working files (WorkDir + any stray repo-root .nuke). Keeps cache-* images.
+function Remove-TempFiles {
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $WorkDir
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $RepoRoot ".nuke")
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $BaseTempDir ".nuke")
+  Write-Pass "Removed temp files (WorkDir + .nuke); cache-* images kept for fast rebuilds"
+}
+
 # ---- dispatch ----------------------------------------------------------------
+Test-ModeArgs
 switch ($Action) {
   "bootstrap" {
     Begin-Step "Preconditions"; Test-Preflight; End-Step
@@ -581,25 +917,61 @@ switch ($Action) {
   }
   "build" {
     Begin-Step "Preconditions"; Test-Preflight; End-Step
-    Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
-    Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
+    if ($Mode -eq "frontend") {
+      Begin-Step "Bootstrap start-local (frontend scaffolding)"; Initialize-Bootstrap; End-Step
+      Begin-Step "Frontend image (build / reuse cache)"; Build-FrontendImageOnly (Get-FrontendTheme); End-Step
+    } else {
+      Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
+    }
   }
   "start" {
-    Begin-Step "Start stack"; Invoke-StartStack; End-Step
-    Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
-    Show-Summary
+    if ($Mode -eq "frontend") {
+      Begin-Step "Start frontend (local theme · API → $BindBackendUrl)"; Invoke-StartFrontendOnly; End-Step
+      Begin-Step "Frontend health"; Test-FrontendOnly; End-Step
+      Show-SummaryFrontend
+    } elseif ($Mode -eq "backend") {
+      Begin-Step "Start backend (no frontend)"; Invoke-StartBackendOnly; End-Step
+      Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
+      Show-Summary
+    } else {
+      Begin-Step "Start stack"; Invoke-StartStack; End-Step
+      Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
+      Show-Summary
+    }
   }
-  "stop"    { Begin-Step "Stop (containers down, volumes kept)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack; End-Step }
-  "clean"   { Begin-Step "Clean (wipe data volumes)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-Stack; Clear-DataVolumes; End-Step }
-  "remove"  { Begin-Step "Remove (containers + volumes + images + $SolutionName)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Invoke-Lifecycle "remove-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true; Remove-Item -Force -ErrorAction SilentlyContinue $LastManifest, $LastFrontend, $DbMarker; End-Step }
-  "status"  { Show-Summary }
+  "stop"    { Begin-Step "Stop (containers down, volumes kept)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-FrontendOnly; Stop-Stack; End-Step }
+  "clean"   { Begin-Step "Clean (wipe data volumes)"; $env:COMPOSE_PROJECT_NAME = $ProjectName; Stop-FrontendOnly; Stop-Stack; Clear-DataVolumes; End-Step }
+  "remove"  {
+    Begin-Step "Remove (containers + volumes + temp files; cache images kept)"
+    $env:COMPOSE_PROJECT_NAME = $ProjectName
+    Stop-FrontendOnly
+    Invoke-Lifecycle "remove-VC-solution.ps1" @{ solutionFolder = $SolutionName } -AllowFail $true
+    Remove-TempFiles
+    End-Step
+  }
+  "status"  { if ($Mode -eq "frontend") { Show-SummaryFrontend } else { Show-Summary } }
   "monitor" { Begin-Step "Monitor — local VC stack (one-shot snapshot)"; Show-Monitor; End-Step }
   "up" {
-    Begin-Step "Preconditions";                         Test-Preflight;        End-Step
-    Begin-Step "Bootstrap start-local";                 Initialize-Bootstrap;  End-Step
-    Begin-Step "Platform image (build / reuse cache)";  Invoke-BuildIfChanged; End-Step
-    Begin-Step "Start stack (fresh DB · seed via npm run seed:*)"; Invoke-StartStack; End-Step
-    Begin-Step "Admin & module health";                 Invoke-PostStart;      End-Step
-    Show-Summary    # final report banner (links + verdict + next step)
+    Begin-Step "Preconditions"; Test-Preflight; End-Step
+    if ($Mode -eq "frontend") {
+      Begin-Step "Bootstrap start-local (frontend scaffolding)"; Initialize-Bootstrap; End-Step
+      Begin-Step "Frontend image (build / reuse cache)"; Build-FrontendImageOnly (Get-FrontendTheme); End-Step
+      Begin-Step "Start frontend (local theme · API → $BindBackendUrl)"; Invoke-StartFrontendOnly; End-Step
+      Begin-Step "Frontend health"; Test-FrontendOnly; End-Step
+      Show-SummaryFrontend
+    } elseif ($Mode -eq "backend") {
+      Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
+      Begin-Step "Start backend (fresh DB · no frontend · seed via npm run seed:*)"; Invoke-StartBackendOnly; End-Step
+      Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
+      Show-Summary
+    } else {
+      Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
+      Begin-Step "Start stack (fresh DB · seed via npm run seed:*)"; Invoke-StartStack; End-Step
+      Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
+      Show-Summary
+    }
   }
 }
