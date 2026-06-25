@@ -30,6 +30,14 @@ loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
 
+// Promote TEST_ENV-suffixed secrets (e.g. ADMIN_PASSWORD_VCPTCORE_QA1) to their base
+// names, mirroring config.js. Lets .env.local carry per-env password variants so this
+// seeder authenticates against non-default envs (vcptcore_qa1, …) without clobbering.
+const ENV_SUFFIX = `_${(process.env.TEST_ENV || 'vcst').toUpperCase().replace(/[^A-Z0-9_]/g, '_')}`;
+for (const [k, v] of Object.entries(process.env)) {
+  if (k.endsWith(ENV_SUFFIX) && v) process.env[k.slice(0, -ENV_SUFFIX.length)] = v;
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
@@ -302,6 +310,23 @@ const CFG_SPECS = [
         isRequired: false,
         allowCustomText: true,
         maxLength: 100,
+      },
+    ],
+  },
+  {
+    // File-attachment section fixture — backs CFG-GQL-055b (VCST-5173 configurationSection
+    // type:"File" on cart line items). File sections carry no product/text options.
+    csvId: 'CFG-FILE',
+    name: `AGENT-TEST-Config-FileUpload-${DATE}`,
+    code: `AGENT-TEST-CFG-FILE-${DATE}`,
+    basePrice: 80,
+    isActive: true,
+    sections: [
+      {
+        name: 'Design Upload',
+        type: 'File',
+        isRequired: false,
+        allowCustomText: false,
       },
     ],
   },
