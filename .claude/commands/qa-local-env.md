@@ -89,8 +89,9 @@ remote data/config. No manifest, no platform/db/es build.
    on port 80, validates `nginx -t`, then health-checks (storefront 200 + proxied `/graphql` returns
    the remote env's data + the `X-VC-Local-Theme` build-marker matches).
 4. **Verify + hand off** — report the storefront link (`http://localhost`) and the bound backend.
-   Run the STR against the local theme with `qa-frontend-expert`. Teardown: `-Action stop` (the
-   frontend-only container is removed; nothing else is touched).
+   Run the STR against the local theme with `qa-frontend-expert`. Teardown: `-Action stop` (removes
+   the `virtolocal-frontend-only` container **and** brings down the main stack if one is up — `stop`
+   always runs both, so it also tears down a `backend-only` env you may have bound to).
 
 ## Rules
 - This command has side effects (Docker build + containers) — it never runs automatically.

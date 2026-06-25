@@ -321,8 +321,11 @@ pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action stop     # 
 pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action clean    # stop + wipe data volumes (fresh DB next start)
 pwsh -File .claude/skills/testing/qa-local-env/provision.ps1 -Action remove   # destroy containers + volumes + temp files
 ```
-- **stop** = pause. Containers down, data volumes + temp files + image cache untouched. Also removes
-  the standalone `virtolocal-frontend-only` container when present.
+- **stop** = pause. Data volumes + temp files + image cache untouched. Brings **both** down: the main
+  compose stack (`stop-VC-solution`) **and** the standalone `virtolocal-frontend-only` container when
+  present — `stop` always runs both, so a `frontend-only` env bound to a live local `backend-only` stack
+  tears down the backend too. Stop only the frontend by removing its container directly
+  (`docker rm -f virtolocal-frontend-only`) if you need to keep the backend up.
 - **remove** = full teardown of the *run*: removes containers + volumes, deletes the temp WorkDir and
   any stray `.nuke`, but **KEEPS** the per-manifest/per-theme image cache (`vc-platform`/`vc-frontend:cache-*`)
   so the next `up` rebuilds fast. (To reclaim that disk, `docker image prune` the `cache-*` tags manually.)

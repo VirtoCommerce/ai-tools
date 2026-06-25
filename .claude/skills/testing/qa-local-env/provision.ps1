@@ -262,6 +262,12 @@ function Invoke-ChildPiped([string]$ScriptRel, [string[]]$ScriptArgs, [string]$S
 
 # NON-PROMPTING lifecycle scripts (start/stop): via `&` + splatting so a typed [bool] binds.
 function Invoke-Lifecycle([string]$ScriptName, [hashtable]$Params, [bool]$AllowFail = $false, [string]$Phase = "") {
+  # The WorkDir may already be gone (e.g. a second `remove`, or `stop` after `remove`). Guard the
+  # Push-Location so an idempotent teardown doesn't throw on a non-existent path.
+  if (-not (Test-Path $WorkDir)) {
+    if ($AllowFail) { Write-Host "  WorkDir already gone ($WorkDir) — nothing to do for $ScriptName, skipping." -ForegroundColor DarkGray; return }
+    throw "WorkDir missing: $WorkDir (run -Action up / -Action bootstrap first)."
+  }
   Push-Location $WorkDir
   try {
     $scriptPath = Join-Path $WorkDir "$SolutionName/$ScriptName"
@@ -587,11 +593,17 @@ function Show-Summary {
 }
 
 # Final report banner for -Mode frontend: storefront link + the remote backend it is bound to.
+# Classify the frontend bind target so banners are accurate: a localhost / host.docker.internal
+# backend is a LOCAL backend-only stack; anything else is a remote env.
+function Test-BindIsLocal { return [bool]($BindBackendUrl -match '(?i)(localhost|127\.0\.0\.1|host\.docker\.internal)') }
+
 function Show-SummaryFrontend {
   $up = $false; $front200 = $false
+  $apiKind  = if (Test-BindIsLocal) { "local backend" } else { "remote" }
+  $dataKind = if (Test-BindIsLocal) { "local backend data" } else { "real remote data/config" }
   try { $up = [bool](docker ps --filter "name=$FrontendOnlyContainer" -q 2>$null) } catch {}
   try { $r = Invoke-WebRequest -Uri "http://localhost" -UseBasicParsing -TimeoutSec 4 -MaximumRedirection 0 -ErrorAction SilentlyContinue; $front200 = ($r.StatusCode -ge 200 -and $r.StatusCode -lt 400) } catch { $front200 = $true } # 3xx throws on older pwsh; treat reachable as ok
-  if ($up -and $front200) { $icon = "✅"; $verdict = "LOCAL FRONTEND IS UP (theme local · API → remote)"; $c = "Green" }
+  if ($up -and $front200) { $icon = "✅"; $verdict = "LOCAL FRONTEND IS UP (theme local · API → $apiKind)"; $c = "Green" }
   elseif ($up)            { $icon = "⚠️"; $verdict = "FRONTEND RUNNING — storefront not 200 yet";        $c = "Yellow" }
   else                    { $icon = "❌"; $verdict = "FRONTEND IS DOWN";                                  $c = "Red" }
   Write-Host ""
@@ -600,7 +612,7 @@ function Show-SummaryFrontend {
   Write-Host ("       theme: {0}  ·  store: {1}" -f ($(if ($FrontendUrl) { "pinned ZIP" } else { "latest release" }), $BindStoreId)) -ForegroundColor DarkGray
   Write-Host "  $BarHeavy" -ForegroundColor $c
   Write-Host "   🛍  Storefront    " -ForegroundColor White -NoNewline; Write-Host "http://localhost   (local theme = the fix)"
-  Write-Host "   🔌  API proxied   " -ForegroundColor White -NoNewline; Write-Host "$BindBackendUrl   (real data/config)"
+  Write-Host "   🔌  API proxied   " -ForegroundColor White -NoNewline; Write-Host "$BindBackendUrl   ($dataKind)"
   Write-Host "  $Bar" -ForegroundColor DarkGray
   Write-Host '   next   ' -ForegroundColor DarkGray -NoNewline
   Write-Host 'open http://localhost  ·  run the STR with qa-frontend-expert against the local theme'
@@ -885,7 +897,10 @@ function Test-FrontendOnly {
   & node (Join-Path $SkillDir "healthcheck.mjs") --front-only --front "http://localhost" `
     --back "http://localhost" --graphql $probe --expect-theme (Get-ThemeMarker)
   if ($LASTEXITCODE -ne 0) { Write-Fail "Frontend-only health failed (storefront / proxied /graphql / theme marker)" }
-  else { Write-Pass "Storefront up · proxied /graphql returned remote env data · theme marker matched" }
+  else {
+    $reached = if (Test-BindIsLocal) { "reached the local backend" } else { "returned remote env data" }
+    Write-Pass "Storefront up · proxied /graphql $reached · theme marker matched"
+  }
 }
 
 # In -Mode frontend the only build input is the theme ZIP: -FrontendUrl if given, else latest release.
@@ -905,6 +920,11 @@ function Remove-TempFiles {
   Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $WorkDir
   Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $RepoRoot ".nuke")
   Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $BaseTempDir ".nuke")
+  # Drop the BaseTempDir shell too, but ONLY if nothing else lives there — otherwise `remove` would
+  # leave a stray empty %TEMP%/vc-local-env behind (or clobber a shared dir the user pointed us at).
+  if ((Test-Path $BaseTempDir) -and -not (Get-ChildItem -Force -ErrorAction SilentlyContinue $BaseTempDir)) {
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $BaseTempDir
+  }
   Write-Pass "Removed temp files (WorkDir + .nuke); cache-* images kept for fast rebuilds"
 }
 

@@ -188,10 +188,15 @@ async function graphqlProbe(o, token, query) {
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify({ query }),
   });
-  if (!r.ok || r.status !== 200) return { ok: false, detail: r.ok ? `HTTP ${r.status}` : r.error };
-  const json = await r.res.json().catch(() => ({}));
-  if (json.errors?.length) return { ok: false, detail: json.errors.map((e) => e.message).join("; "), json };
-  return { ok: true, json };
+  if (!r.ok || r.status !== 200) return { ok: false, reached: false, detail: r.ok ? `HTTP ${r.status}` : r.error };
+  const json = await r.res.json().catch(() => null);
+  // `reached` = a well-formed GraphQL envelope came back (HTTP 200 + a `data`/`errors` key), which
+  // proves the request hit a real GraphQL backend. A broken proxy / wrong upstream yields a non-200,
+  // a network error, or a non-GraphQL body instead → reached:false.
+  if (!json || typeof json !== "object" || !("data" in json || "errors" in json))
+    return { ok: false, reached: false, detail: "non-GraphQL response (proxy/upstream returned no GraphQL envelope)", json };
+  if (json.errors?.length) return { ok: false, reached: true, detail: json.errors.map((e) => e.message).join("; "), json };
+  return { ok: true, reached: true, json };
 }
 
 async function main() {
@@ -241,9 +246,20 @@ async function main() {
   if (query) {
     process.stdout.write(`▶ GraphQL probe … `);
     const g = await graphqlProbe(o, token, query);
-    console.log(g.ok ? "OK (no errors)" : `FAIL (${g.detail})`);
-    results.push({ name: "GraphQL probe", required: true, up: g.ok });
-    if (g.ok && g.json) console.log("  data: " + JSON.stringify(g.json.data).slice(0, 300));
+    if (o.frontOnly && !g.ok && g.reached) {
+      // Front-only: the probe's job is to prove the nginx proxy reached the BOUND backend, not that
+      // the store is populated. A well-formed GraphQL envelope — even an empty-store / NULL_REFERENCE
+      // error — proves the proxy works. A fresh/empty local backend (e.g. bound to a `backend-only`
+      // stack) legitimately has no data, so that is PASS-with-advisory, not a hard fail. Only a
+      // transport failure (reached:false) fails the probe.
+      console.log("OK (proxy reached backend — no data: empty/fresh store, advisory)");
+      console.log(`     note: ${g.detail}`);
+      results.push({ name: "GraphQL probe (proxy reachability)", required: true, up: true });
+    } else {
+      console.log(g.ok ? "OK (no errors)" : `FAIL (${g.detail})`);
+      results.push({ name: "GraphQL probe", required: true, up: g.ok });
+      if (g.ok && g.json) console.log("  data: " + JSON.stringify(g.json.data).slice(0, 300));
+    }
   }
 
   // 5. Pinned-module verification (explicit; surfaces a pre-release that is mislabelled as the
