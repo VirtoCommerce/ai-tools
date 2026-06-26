@@ -183,13 +183,21 @@ async function seedCatalogs(rows) {
   log(`Creating ${rows.length} catalog(s)...`);
 
   for (const row of rows) {
+    const fullName = `${PREFIX}-${row.catalog_name}`;
+    // Idempotent: reuse an existing catalog with this exact name instead of duplicating it.
+    const existingCat = DRY_RUN ? null : await findCatalogByName(fullName);
+    if (existingCat) {
+      created.catalogs.push({ id: existingCat.id, csvId: row.catalog_id, csvName: row.catalog_name, name: fullName, isVirtual: existingCat.virtual ?? (row.catalog_type === 'Virtual') });
+      verbose(`  ↻ reuse Catalog: ${fullName} (${existingCat.id})`);
+      continue;
+    }
     const languages = row.languages.split(',').map((lc, i) => ({
       languageCode: lc.trim(),
       isDefault: lc.trim() === row.default_language,
     }));
 
     const body = {
-      name: `${PREFIX}-${row.catalog_name}`,
+      name: fullName,
       isVirtual: row.catalog_type === 'Virtual',
       languages,
     };
@@ -408,10 +416,14 @@ async function seedCategories(rows) {
       }],
     };
 
-    const result = await api('POST', '/api/catalog/categories', body, { expectStatus: [200, 201] });
-    const id = result?.id || `dry-${row.category_id}`;
+    let id, reused = false;
+    if (DRY_RUN) { id = `dry-${row.category_id}`; }
+    else {
+      const r = await createOrReuseCatalogEntity('category', '/api/catalog/categories', catalog.id, body.code, body);
+      id = r.entity?.id || `dry-${row.category_id}`; reused = r.reused;
+    }
     created.categories.push({ id, csvId: row.category_id, name: body.name });
-    verbose(`  ✓ Category: ${body.name} (${id})`);
+    verbose(`  ${reused ? '↻ reuse' : '✓'} Category: ${body.name} (${id})`);
   }
 
   log(`  ✓ Created ${created.categories.length} categories`);
@@ -464,10 +476,14 @@ async function seedProducts(rows) {
     if (!catalog) { verbose(`Skipping ${row.product_name} — no catalog`); continue; }
 
     const body = buildProductBody(row, catalog, category, null);
-    const result = await api('POST', '/api/catalog/products', body, { expectStatus: [200, 201] });
-    const id = result?.id || `dry-${row.product_id}`;
+    let id, reused = false;
+    if (DRY_RUN) { id = `dry-${row.product_id}`; }
+    else {
+      const r = await createOrReuseCatalogEntity('product', '/api/catalog/products', catalog.id, body.code, body);
+      id = r.entity?.id || `dry-${row.product_id}`; reused = r.reused;
+    }
     created.products.push({ id, csvId: row.product_id, sku: row.sku, name: body.name, isVariation: false });
-    verbose(`  ✓ Product: ${body.name} (${id})`);
+    verbose(`  ${reused ? '↻ reuse' : '✓'} Product: ${body.name} (${id})`);
   }
 
   // Create variations
@@ -478,13 +494,58 @@ async function seedProducts(rows) {
     if (!catalog || !parent) { verbose(`Skipping variation ${row.sku} — missing parent/catalog`); continue; }
 
     const body = buildProductBody(row, catalog, category, parent);
-    const result = await api('POST', '/api/catalog/products', body, { expectStatus: [200, 201] });
-    const id = result?.id || `dry-${row.product_id}`;
+    let id, reused = false;
+    if (DRY_RUN) { id = `dry-${row.product_id}`; }
+    else {
+      const r = await createOrReuseCatalogEntity('product', '/api/catalog/products', catalog.id, body.code, body);
+      id = r.entity?.id || `dry-${row.product_id}`; reused = r.reused;
+    }
     created.products.push({ id, csvId: row.product_id, sku: row.sku, name: body.name, isVariation: true, parentId: parent.id });
-    verbose(`  ✓ Variation: ${body.name} (${id})`);
+    verbose(`  ${reused ? '↻ reuse' : '✓'} Variation: ${body.name} (${id})`);
   }
 
   log(`  ✓ Created ${created.products.length} products total`);
+}
+
+// --- Idempotency helpers: find-or-create by name/code so re-running NEVER duplicates.
+// Catalogs use the DB-backed catalogs/search (reliable); categories/products use the catalog
+// index search (eventually-consistent — fine for across-run dedup, the duplication case). ---
+async function findCatalogByName(name) {
+  const r = await api('POST', '/api/catalog/catalogs/search', { keyword: name, take: 50 }, { expectStatus: [200, 201] });
+  return (r?.results || []).find(c => c.name === name);
+}
+async function findCategoryByCode(catalogId, code) {
+  try {
+    const r = await api('POST', '/api/catalog/search/categories', { catalogId, keyword: code, take: 100 }, { expectStatus: [200, 201] });
+    return (r?.results || r?.items || []).find(c => c.code === code);
+  } catch { return null; }
+}
+async function findProductByCode(catalogId, code) {
+  try {
+    const r = await api('POST', '/api/catalog/search/products', { catalogId, keyword: code, take: 50 }, { expectStatus: [200, 201] });
+    return (r?.results || r?.items || []).find(p => p.code === code);
+  } catch { return null; }
+}
+
+// Find-or-create for catalog entities with a unique code+catalog constraint (categories,
+// products). The index search is eventually-consistent, so a back-to-back re-run can miss an
+// entity that already exists → the create then 500s on the DB unique key. We treat that
+// duplicate-key 500 as "already exists" (idempotent), re-resolving the id after a short settle.
+async function createOrReuseCatalogEntity(kind, path, catalogId, code, body) {
+  const find = kind === 'category' ? findCategoryByCode : findProductByCode;
+  const existing = await find(catalogId, code);
+  if (existing) return { entity: existing, reused: true };
+  try {
+    return { entity: await api('POST', path, body, { expectStatus: [200, 201] }), reused: false };
+  } catch (e) {
+    if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) {
+      await new Promise(r => setTimeout(r, 2000)); // let the catalog index settle, then re-resolve
+      const found = await find(catalogId, code);
+      if (VERBOSE) console.log(`    ↻ ${kind} ${code} already existed (dup-key) → reused`);
+      return { entity: found || { id: null }, reused: true };
+    }
+    throw e;
+  }
 }
 
 function buildProductBody(row, catalog, category, parent) {

@@ -1,6 +1,6 @@
 ---
-description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products"
-argument-hint: "minimal | catalog | b2b | pricing | full | teardown"
+description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS"
+argument-hint: "minimal | catalog | b2b | pricing | loyalty | promotions | bopis | full | teardown"
 disable-model-invocation: true
 ---
 
@@ -13,8 +13,12 @@ Seed a complete test environment, or tear down previously created test data. Two
 /qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
 /qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
 /qa-seed-data b2b         # Organization + users with roles → node scripts/seed-b2b-fixtures.mjs
-/qa-seed-data pricing     # Price lists, tiers, multi-currency
-/qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B seeders
+/qa-seed-data pricing     # Price lists, tiers, multi-currency → npm run seed:pricing
+/qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
+/qa-seed-data promotions  # Marketing promotions + rewards + coupons → npm run seed:promotions
+/qa-seed-data bopis       # BOPIS pickup locations (linked to an existing FFC) → npm run seed:bopis
+/qa-seed-data users       # Personal storefront accounts (no org) from test-data/users/ → npm run seed:users
+/qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B + seed:users (personal accounts)
 /qa-seed-data teardown    # Delete ephemeral seeded entities (match teardown to the path that seeded)
 ```
 
