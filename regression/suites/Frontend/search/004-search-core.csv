@@ -25,18 +25,32 @@
 [DOM] Clear indication of search scope (e.g., within category label)
 [STATE] Products from outside the category not in results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with category scope
 [CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"SRCH-007","Search - Sorting Results","Search > Sorting","Medium","BL-CAT-005, BL-SRCH-001","","Search returns multiple products with varying prices","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
-[WAIT] Wait for results page
-[ACT] select 'Price: Low to High' from sort dropdown
-[WAIT] Wait for reorder
-[ASSERT] Verify ascending price order
-[ACT] select 'Relevance' from sort dropdown (if available)
-[WAIT] Wait for reorder
-[ASSERT] Verify relevance ordering","[DOM] Sort dropdown visible on search results page
-[STATE] Products reorder correctly for price sort
-[MATH] 'Price: Low to High' — first product price <= last product price
-[DOM] 'Relevance' sort option available","[NETWORK] no 4xx/5xx on sort change
-[CONSOLE] no TypeError or JS errors","Sort dropdown absent on search results; products not reordering; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"SRCH-007","Search - Sorting Results — Sort Dropdown Built from API sortings","Search > Sorting","Medium","BL-CAT-005, BL-SRCH-001","","Search returns multiple products with varying prices; storefront is on vc-frontend theme 2.52+ (sortings field in SearchProducts response)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
+[WAIT] Wait for results page with sort dropdown visible
+[ASSERT] Snapshot the sort dropdown and capture all visible option labels and codes (live-discover: read from rendered dropdown DOM, do not assume any fixed label list)
+[ASSERT] Verify the dropdown contains an option whose code is 'price-ascending' (or equivalent low-to-high label per current store config)
+[ACT] Click the combobox to open the sort dropdown (VcSelect: click the combobox to open, then click the option by accessible name — do NOT use native select-option)
+[ASSERT] Capture the ID of the first product card before changing sort → {first_id_before}
+[ACT] Click the price-ascending option by its live-discovered label
+[WAIT] Wait for results to reorder; verify ?sort=price-ascending appears in URL
+[ASSERT] Verify combobox accessible name = price-ascending option label (selection reflected in control)
+[ASSERT] Capture first product card ID → {first_id_asc}
+[ACT] Click the combobox to open the sort dropdown again
+[ACT] Click the price-descending option by its live-discovered label
+[WAIT] Wait for results to reorder; verify ?sort=price-descending appears in URL
+[ASSERT] Verify combobox accessible name = price-descending option label
+[ASSERT] Capture first product card ID → {first_id_desc}
+[ASSERT] Verify {first_id_asc} != {first_id_desc} (ascending and descending produce different first items — sort direction has observable effect)
+[ACT] Click the combobox and select the default sort option (isDefault=true, identified from snapshot above)
+[WAIT] Wait for results to reorder
+[ASSERT] Verify URL has no ?sort param (clean URL) after selecting the default option","[DOM] Sort dropdown combobox visible on search results page
+[DOM] Dropdown options are built from API sortings (at least 2 options present; no hardcoded sort labels assumed — options and default are store-configurable)
+[STATE] Combobox accessible name reflects the selected option after each selection
+[STATE] {first_id_asc} != {first_id_desc} — price-ascending and price-descending produce different first items (server-authoritative sort-direction oracle; do NOT assert monotonic price order — indexed price diverges from pack/variation-resolved price.actual)
+[STATE] Selecting the store-default option (isDefault=true) results in a clean URL with no ?sort param
+[NAV] URL contains ?sort=<code> for non-default selections; URL has no ?sort for the default selection","[NETWORK] no 4xx/5xx on sort change
+[NETWORK] POST /graphql (SearchProducts) includes sort parameter matching selected code
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name not updating on selection; native select-option action failing (VcSelect is not a native select); {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; default sort leaving ?sort in URL; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
 "SRCH-008","Search - History","Search > History","Low","BL-SRCH-002","","Previous searches performed in this session","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} (ensure prior searches exist in session)
 [ACT] Click search bar
 [ASSERT] Verify recent search history is displayed
@@ -146,22 +160,40 @@
 [DOM] List view: single-column format with products stacked
 [DOM] Grid view: multi-column layout
 [MATH] Product count consistent across view switches","[CONSOLE] no TypeError or JS errors during switching","Products lost on view switch; count changing between views; JS error on toggle; console TypeError","none","","Manual"
-"SRCH-NEW-011","Search Results - Sort Options Change Product Order","Search > Sorting","High","BL-CAT-005, BL-SRCH-001","","Navigate to /search?q=hoodie; multiple results with varying prices","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
-[WAIT] Wait for results
-[ASSERT] Note current sort dropdown value (default: 'Featured')
-[ACT] select 'Price: Low to High' from sort dropdown
-[WAIT] Wait for reorder; record product order
-[ACT] select 'Price: High to Low' from sort dropdown
+"SRCH-NEW-011","Search Results - Sort Options Change Product Order (API-driven sortings)","Search > Sorting","High","BL-CAT-005, BL-SRCH-001","","Navigate to /search?q=hoodie; multiple results with varying prices; storefront uses vc-frontend theme 2.52+ which builds sort dropdown from API sortings","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
+[WAIT] Wait for results and sort dropdown to render
+[ASSERT] Snapshot the sort dropdown and capture all visible option labels (live-discover from DOM — do NOT assume any fixed label or that 'Featured' is the default)
+[ASSERT] Identify the currently-selected default option — it must correspond to the sortings entry with isDefault=true returned by the API (do NOT assume a specific label; read it live from the dropdown); note its label as {default_label}
+[ASSERT] Verify the URL has no ?sort param in the initial (default) state
+[ASSERT] Capture first product card ID before sorting → {first_id_default}
+[ACT] Click the combobox to open the sort dropdown (VcSelect: click combobox to open, then click option by accessible name — do NOT use native select-option)
+[ACT] Click the price-ascending option by its live-discovered label
 [WAIT] Wait for reorder
-[ASSERT] Verify reversed price order
-[ACT] Select alphabetical sort option
+[ASSERT] Verify URL contains ?sort=price-ascending
+[ASSERT] Verify combobox accessible name = price-ascending option label
+[ASSERT] Capture first product card ID → {first_id_asc}
+[ACT] Click the combobox and click the price-descending option by its live-discovered label
 [WAIT] Wait for reorder
-[ASSERT] Verify A-Z ordering","[MATH] 'Price: Low to High': first product price <= last product price
-[MATH] 'Price: High to Low': first product price >= last product price
-[STATE] Alphabetical sort: products in A-Z name order
-[MATH] Product count unchanged after each sort
-[STATE] URL updates to reflect current sort selection","[NETWORK] no 4xx/5xx on sort change
-[CONSOLE] no TypeError or JS errors","Product order unchanged after sort selection; count changing after sort; URL not updating; console TypeError","none","SRCH-007","Manual"
+[ASSERT] Verify URL contains ?sort=price-descending
+[ASSERT] Verify combobox accessible name = price-descending option label
+[ASSERT] Capture first product card ID → {first_id_desc}
+[ASSERT] Verify {first_id_asc} != {first_id_desc} (ascending and descending produce different first items — server-authoritative direction oracle)
+[ACT] Click the combobox and click the name-ascending option (A-Z alphabetical) by its live-discovered label
+[WAIT] Wait for reorder
+[ASSERT] Verify products appear in A-Z order by name (name sort is deterministic — assert names[0] <= names[1])
+[ACT] Click the combobox and select the default option (identified as {default_label} above) to return to the initial state
+[WAIT] Wait for reorder
+[ASSERT] Verify URL has no ?sort param after selecting default","[DOM] Sort dropdown combobox visible and populated with options from API sortings (at least 6 options per current store configuration)
+[STATE] Initial sort is the API-configured store default (isDefault=true option); URL has no ?sort param
+[STATE] Combobox accessible name reflects each selected option (VcSelect — accessible name, not native select value)
+[STATE] {first_id_asc} != {first_id_desc} — price sort direction has observable effect (server-authoritative oracle; do NOT assert monotonic price order — indexed price diverges from pack/variation-resolved price.actual)
+[STATE] name-ascending sort: first product name <= next product name (A-Z; name sort is deterministic)
+[MATH] Product count unchanged after each sort change
+[STATE] URL updates to ?sort=<code> for each non-default selection
+[STATE] URL returns to clean (no ?sort) when default option selected
+[DOM] Drop-down renders blank during initial load before first API response (expected behavior per VCST-5177 design)","[NETWORK] no 4xx/5xx on sort change
+[NETWORK] POST /graphql (SearchProducts) response includes sortings[] with isDefault and selected flags
+[CONSOLE] no TypeError or JS errors","Sort combobox accessible name not updating on selection; native select-option failing (VcSelect is not a native select); product order unchanged after sort selection; {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; URL not clearing on default selection; console TypeError; dropdown rendering blank permanently (not just during load)","none","VCST-5177; SRCH-007; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
 "SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SRCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new tab and navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit)
 [WAIT] Wait for results page to load
 [ASSERT] Verify results page loaded correctly
@@ -286,23 +318,26 @@
 [DOM] 'Next' button visible and enabled when more pages exist","[NETWORK] POST /graphql (searchProducts) fires with updated offset or page on each navigation
 [NETWORK] no 4xx/5xx on pagination requests
 [CONSOLE] no TypeError or JS errors","'Previous' active on first page; 'Next' absent even when results span multiple pages; page indicator not updating; same products on both pages; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
-"SRCH-NEW-049","Sort Persists Across Search Pagination Pages","Search > Pagination","High","BL-SRCH-001, BL-CAT-005","","Search returns 2+ pages of results; sort options available on search results page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning 2+ pages
+"SRCH-NEW-049","Sort Persists After Infinite-Scroll Load-More (API-driven sortings)","Search > Infinite Scroll","High","BL-SRCH-001, BL-CAT-005","","Search returns enough products to trigger infinite scroll (broad term); sort options available; storefront uses vc-frontend theme 2.52+ with API-driven sortings. NOTE: storefront uses infinite scroll on /search — there is NO numbered pager and NO ?page URL param.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning many products (use a broad term like 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
-[ASSERT] Verify sort dropdown is present
-[ACT] Select 'Price: Low to High' from the sort dropdown
-[WAIT] Wait for products to reorder
-[ASSERT] Verify first product has lowest price in the visible set
-[ASSERT] Note the sort dropdown value shows 'Price: Low to High'
-[ACT] Click 'Next' or page 2 in pagination
-[WAIT] Wait for page 2 to load
-[ASSERT] Verify sort dropdown on page 2 still shows 'Price: Low to High'
-[ASSERT] Verify all products on page 2 have prices greater than or equal to the last product on page 1
-[ASSERT] Verify the URL contains both the sort parameter and the page parameter","[STATE] Sort selection 'Price: Low to High' persists when navigating to page 2
-[MATH] Prices on page 2 are >= the last price on page 1 confirming ascending order maintained across pages
-[DOM] Sort dropdown on page 2 reflects the same sort as page 1
-[NAV] URL on page 2 includes both sort and page parameters","[NETWORK] POST /graphql (searchProducts) on page 2 includes both sort and page/offset params
-[CONSOLE] no TypeError or JS errors","Sort dropdown resetting to default when moving to page 2; prices on page 2 not continuing the ascending order; URL losing sort param on pagination; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
+[ASSERT] Verify sort dropdown is present and populated with options from API sortings
+[ASSERT] Identify the price-ascending option by reading its label from the live dropdown (do NOT hardcode 'Price: Low to High' — the label comes from store configuration)
+[ACT] Click the combobox to open the sort dropdown (the control is VcSelect: click the combobox element to open, then click the option by its accessible name — do NOT use a native select-option action)
+[ACT] Click the price-ascending option by its live-discovered label
+[WAIT] Wait for products to reorder; verify ?sort=price-ascending in URL (no ?page param — infinite scroll does not add a page param)
+[ASSERT] Verify sort dropdown combobox shows the price-ascending option as its accessible name (selected state)
+[ASSERT] Capture the first 3 visible product cards as initial batch
+[ACT] Scroll to the bottom of the product grid to trigger infinite-scroll load-more
+[WAIT] Wait for the next batch of products to append (new cards appear below the initial batch; SearchProducts fires with withFacets:false and the same sort code using after-cursor)
+[ASSERT] Verify URL still contains ?sort=price-ascending after scroll-load (sort param not dropped)
+[ASSERT] Verify sort dropdown combobox still shows price-ascending as its accessible name after scroll-load (selection not reset)
+[NETWORK] Verify the scroll-triggered SearchProducts request includes sort=price-ascending and an after-cursor (not page/offset)","[STATE] sort dropdown combobox accessible name = price-ascending option label after selection
+[NAV] URL contains ?sort=price-ascending; no ?page param present at any point
+[STATE] Sort selection persists (combobox accessible name unchanged) after infinite-scroll load-more fires
+[NETWORK] Scroll-triggered SearchProducts uses after-cursor continuation with the same sort code
+[STATE] Sort label used for selection is live-discovered from the dropdown — guards against label drift between store environments","[NETWORK] POST /graphql (searchProducts) fires on scroll with withFacets:false and sort=price-ascending and after-cursor
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox accessible name resetting to default after scroll-load; ?sort param dropped from URL on scroll; scroll not triggering a new SearchProducts request; next batch not appending (stuck spinner); console TypeError; native select-option action failing on VcSelect combobox","none","VCST-5177; Coverage Gap Analysis; GAP-CS-22; Synced: VCST-5177 (2026-06-26); Corrected: infinite scroll model (2026-06-26)","synced"
 "SRCH-NEW-050","Search - Data-Driven Bulk Query Validation (Top Amazon)","Search > Data-Driven","Medium","BL-SRCH-001","ECL-14.2","Storefront accessible; catalog has indexed products","queries_file=test-data/search-queries/top-50-amazon.csv; url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [LOOP] For each row in test-data/search-queries/top-50-amazon.csv:
   [ACT] Click search input → clear → type the search_query value
@@ -392,6 +427,58 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 [DOM] Product card images correctly sized","[CONSOLE] No JS errors on results page at 375px
 [NETWORK] Search query returns HTTP 200","Horizontal scroll on results page; product cards overflow viewport; filter control missing at 375px; images misaligned","Restore viewport to default 1280px","VCST-2284","Reviewed"
 "SRCH-NEW-056","No-Results Suggestion Link Is Clickable and Navigates to Corrected Results","Search > No Results > Suggestions","Medium","BL-SRCH-002","ECL-3.1","DEPRECATED 2026-05-22: Did-you-mean / typo-correction suggestions are switched OFF on vcst-qa. This test depends on a UI element that the configured feature flag never renders. Reactivate this case (flip Automation_Status back to Draft) only when the typo-correction feature is enabled in the target environment. Until then the test cannot meaningfully PASS or FAIL — it would always be BLOCKED.","url={{FRONT_URL}}","[DEPRECATED] Steps preserved for re-activation. Original flow: type 'laptp' → assert 'Did you mean' link present → click it → assert corrected results.","[DEPRECATED] Original assertions preserved for re-activation.","[DEPRECATED]","[DEPRECATED]","none","GAP-S-03; ECL-3.1; BL-SRCH-002; deprecated when Did-you-mean OFF confirmed on vcst-qa 2026-05-22","Deprecated"
+"SRCH-NEW-057","Sort Dropdown Options Match API sortings (Order + Membership) and Default Shown on Clean URL (VCST-5177)","Search > Sorting > API-Driven","High","BL-CAT-005","ECL-2.1","Storefront uses vc-frontend 2.52+ theme with API-driven sortings. Store {{STORE_ID}} has at least one visible sort option configured. No ?sort param in the initial URL (clean URL → default sort selected).","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/search?q=a (broad search; no ?sort param)
+[WAIT] Wait for search results page to load
+[ASSERT] Verify sort dropdown combobox is present and visible in the toolbar (VcSelect: rendered as `<input role="combobox" readonly>` + a `role="listbox"` of `role="option"` items — not a native select)
+[ASSERT] Verify the combobox has a non-empty accessible name (the default option label)
+[ACT] Click the combobox to open the listbox, then read all available role="option" labels
+[ASSERT] Verify exactly one option appears as selected (the default option — no ?sort in URL); the selected option is reflected in the combobox accessible name
+[ASSERT] Verify the URL does NOT contain a ?sort parameter (clean URL for default)
+[NETWORK] Capture the POST /graphql searchProducts response and read the sortings[] array
+[ASSERT] Verify the number of options rendered in the dropdown equals the number of sortings entries returned by the API (membership match)
+[ASSERT] Verify the order of options in the dropdown matches the order of sortings[] in the API response","[DOM] Sort dropdown combobox visible and populated with >= 1 option (role="combobox" + role="listbox" + role="option" items — not a native select)
+[STATE] Combobox accessible name = default option label on clean URL (isDefault=true option selected)
+[NAV] URL contains no ?sort parameter on initial load
+[DOM] role="option" count in listbox equals sortings[].length from the API response
+[DOM] Option order in UI matches sortings array order in API response
+[STATE] No hardcoded option labels — all labels originate from API sortings[].name","[NETWORK] POST /graphql (searchProducts) with withFacets=true returns sortings[] array
+[NETWORK] sortings[].length matches the rendered dropdown option count","Sort dropdown empty or showing hardcoded options not from API; more or fewer options rendered than sortings[] returned; default option not selected on clean URL; ?sort param present on initial clean-URL load; dropdown order differs from API sortings order","none — read-only","VCST-5177; BL-CAT-005","Draft"
+"SRCH-NEW-058","Selecting Non-Default Sort Sets ?sort=<code> and Deep-Link Reloads Persist Sort (VCST-5177)","Search > Sorting > URL State","High","BL-CAT-005","ECL-2.1; ECL-14.1","Storefront uses vc-frontend 2.52+ theme. Store has price-ascending sort option configured and visible. Search returns 2+ products with distinct prices.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/search?q=a (clean URL, no ?sort)
+[WAIT] Wait for search results page
+[ASSERT] Verify URL has no ?sort parameter
+[ASSERT] Identify the price-ascending option by reading its live label from the sort dropdown (code: price-ascending; do NOT hardcode label)
+[ACT] Click the combobox to open the sort listbox (VcSelect: click combobox, then click option by accessible name — do NOT use native select-option)
+[ACT] Click the price-ascending option by its live-discovered label
+[WAIT] Wait for products to reorder
+[ASSERT] Verify URL now contains ?sort=price-ascending
+[ASSERT] Verify combobox accessible name = price-ascending option label (selection reflected)
+[ASSERT] Capture first and last visible product card IDs → {asc_first_id, asc_last_id} (do NOT assert monotonic price order — indexed price diverges from pack/variation-resolved price.actual)
+[NAV] Copy the current URL (includes ?sort=price-ascending) and navigate to it in a new tab (deep-link)
+[WAIT] Wait for page to load in the new tab
+[ASSERT] Verify combobox accessible name in the new tab = price-ascending option label (deep-link honored)
+[ASSERT] Verify sortings[] in the new-tab SearchProducts response has price-ascending with selected=true (API confirms deep-link honored)
+[ACT] Click the combobox and select the default sort option (isDefault=true — live-discover its label)
+[WAIT] Wait for products to reorder
+[ASSERT] Verify URL reverts to clean state — ?sort parameter is absent","[STATE] ?sort=price-ascending appears in URL after selecting price-ascending
+[STATE] ?sort absent from URL when default option is selected (clean URL contract)
+[STATE] Combobox accessible name reflects selected option after deep-link navigation (VcSelect accessible name, not native select value)
+[STATE] sortings[].price-ascending.selected=true in API response after deep-link navigation (server-authoritative confirmation)
+[NAV] Deep-link URL restores the sort selection on reload","[NETWORK] searchProducts response after deep-link includes sortings[] with price-ascending having selected=true
+[CONSOLE] no JS errors during sort selection or deep-link navigation","Combobox accessible name not updating on selection; native select-option failing on VcSelect; ?sort not appearing in URL on non-default selection; deep-link not honoring ?sort param (combobox reverts to default); default sort not clearing ?sort from URL; console TypeError on sort change","none — read-only","VCST-5177; BL-CAT-005; ECL-14.1; Corrected: VcSelect combobox interaction + no-monotonic-price oracle (2026-06-26)","Draft"
+"SRCH-NEW-059","Hidden or Unknown ?sort Code → Dropdown Renders Blank, Results Still Returned (VCST-5177)","Search > Sorting > Blank State > Negative","High","BL-CAT-005","ECL-10.2; ECL-3.1","Storefront uses vc-frontend 2.52+ theme. A manually-crafted URL with an unknown or hidden sort code is navigated to directly (no interaction-driven path). Expected: server returns results, dropdown shows blank (no default assumed), no JS error.","url={{FRONT_URL}}","[NAV] Navigate directly to {{FRONT_URL}}/search?q=a&sort=agent-test-nonexistent-sort-xyz (unknown sort code injected via URL)
+[WAIT] Wait for search results page to load
+[ASSERT] Verify search results are displayed (totalCount > 0 OR empty-state message — not a 404 or 500)
+[ASSERT] Verify the sort combobox is present (VcSelect: role="combobox" element)
+[ASSERT] Verify the combobox has NO accessible name (blank state — no guessed default; the combobox accessible name is empty/absent for an unknown sort code)
+[ASSERT] Verify the sort combobox is still populated with the configured sort options when opened (click combobox to open listbox; role="option" items present, just none in selected state)
+[CONSOLE] Verify no unhandled JS errors or TypeError in the console
+[ASSERT] Verify the URL still contains the ?sort=agent-test-nonexistent-sort-xyz parameter (not silently rewritten)","[STATE] Sort combobox accessible name is empty/absent for unknown sort code (blank state — VcSelect renders with no accessible name when no option matches)
+[DOM] Sort combobox role="option" items still present when listbox opened (options available, just none selected)
+[DOM] Results returned (totalCount > 0 or graceful empty state — not an error page)
+[NAV] URL retains the ?sort=agent-test-nonexistent-sort-xyz parameter
+[STATE] No guessed default applied — the unknown code must not cause the combobox to show the first option's label","[NETWORK] searchProducts fires with the unknown sort code (not rewritten by client)
+[NETWORK] sortings[] in response has no entry with selected=true
+[CONSOLE] no TypeError — blank-state rendering must be handled without JS errors","Sort dropdown selecting the first option (incorrect default applied to unknown code); 500 error on unknown sort code; JS TypeError on blank-state render; URL rewritten by client to remove the unknown code; sort dropdown completely hidden (should still render blank, not hidden)","none — read-only","VCST-5177; BL-CAT-005; error-guessing; ECL-10.2","Draft"
 "SRCH-JRNY-001","Buyer Journey - Progressive Autocomplete to PDP via Product Preview","Search > Buyer Journey > Autocomplete","Critical","BL-SRCH-002","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront accessible; product-preview-in-dropdown feature is ENABLED (Did-you-mean OFF is fine — this case asserts on product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
 [SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun, pick a random row → {picked_query}; record its query_id → {picked_query_id}
