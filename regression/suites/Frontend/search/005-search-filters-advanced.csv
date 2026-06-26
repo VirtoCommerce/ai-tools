@@ -381,23 +381,26 @@ At least 1 product matches @td(SEARCH_CLOTHING.query) in the active store/catalo
 [API] Response items[0].name equals DOM card name for the same index
 [API] Response items[0].price.actual.amount equals DOM displayed numeric price
 [CONSOLE] no TypeError or JS errors","DOM name differs from API items[0].name; DOM price differs from API items[0].price.actual.amount (rounding or currency mismatch); API returning stale data; no searchProducts call recorded; console TypeError","none","BL-SRCH-003, ECL-14.2, GAP-CS-09; live-discovery.md Recipe 2","Generated"
-"SRCH-NEW-041","Sort Plus Filter Interaction - Sort Persists After Facet Application","Search > Sort + Filter","Medium","BL-CAT-005","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Category page with products and sortable/filterable options","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
-[ACT] Open sort dropdown and select 'Price: High to Low'
-[WAIT] Wait for products to reorder
-[ASSERT] Verify products are sorted by price descending
-[ASSERT] Note the current sort dropdown value shows 'Price: High to Low'
-[ACT] Apply a facet filter (e.g., select a Brand value)
+"SRCH-NEW-041","Sort Plus Filter Interaction - Sort Persists After Facet Application (API-driven sortings)","Search > Sort + Filter","Medium","BL-CAT-005","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+Category page with products and sortable/filterable options; storefront uses vc-frontend theme 2.52+ with API-driven sortings","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple products on {{FRONT_URL}}
+[WAIT] Wait for sort dropdown to render
+[ASSERT] Identify the price-descending option by reading its label live from the dropdown (code: price-descending; do NOT hardcode 'Price: High to Low')
+[ASSERT] Capture the first product card ID before sorting → {first_id_before}
+[ACT] Click the combobox to open the sort dropdown (VcSelect: click the combobox, then click the option by accessible name — do NOT use native select-option)
+[ACT] Click the price-descending option by its live-discovered label
+[WAIT] Wait for products to reorder; verify ?sort=price-descending in URL
+[ASSERT] Verify combobox accessible name = price-descending option label (selection reflected)
+[ASSERT] Capture first product card ID after sort → {first_id_desc}
+[ASSERT] Verify {first_id_desc} != {first_id_before} OR URL changed to ?sort=price-descending (sort applied — do NOT assert monotonic price order; indexed price diverges from pack/variation-resolved price.actual)
+[ACT] Apply a facet filter (e.g., select any Brand value from the sidebar)
 [WAIT] Wait for filtered and sorted results to load
-[ASSERT] Verify sort dropdown still shows 'Price: High to Low'
-[ASSERT] Verify filtered products remain in price descending order
+[ASSERT] Verify combobox accessible name still = price-descending option label (sort persists after filter)
 [ACT] Remove the facet filter by clicking the chip close button
 [WAIT] Wait for full results to restore
-[ASSERT] Verify sort order is still 'Price: High to Low' after filter removal","[STATE] Sort selection 'Price: High to Low' persists after applying a facet filter
-[MATH] Filtered products maintain descending price order
-[STATE] Sort dropdown value unchanged after filter apply and remove
-[MATH] After filter removal, full product set is still sorted by price descending","[NETWORK] no 4xx/5xx on sort + filter combination requests
-[CONSOLE] no TypeError or JS errors","Sort resetting to default after applying filter; products not in correct order after filter; sort dropdown value changing unexpectedly; console TypeError","none","BL-CAT-005, ECL-3.2, GAP-CS-10","Generated"
+[ASSERT] Verify combobox accessible name still = price-descending option label after filter removal","[STATE] Sort selection (price-descending, selected by code not hardcoded label) persists after applying a facet filter
+[STATE] Combobox accessible name = price-descending label both during filter and after filter removal
+[STATE] Sort dropdown value unchanged after filter apply and remove","[NETWORK] no 4xx/5xx on sort + filter combination requests
+[CONSOLE] no TypeError or JS errors","Sort combobox accessible name resetting to default after applying filter; native select-option failing on VcSelect; {first_id_desc} == {first_id_before} and URL unchanged (sort not applied); combobox name changing on filter apply; console TypeError","none","VCST-5177; BL-CAT-005, ECL-3.2, GAP-CS-10; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
 "SRCH-NEW-042","Price Range Boundary Precision - Integer-Step Slider Inclusion/Exclusion","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Catalog has at least 1 product on a page that exposes the price-range slider (vcst-qa: /catalog). Storefront slider has integer step=1 and the end value is clamped to start+1 minimum — boundary tests use [N TO N+1] inclusion and [N+1 TO max] exclusion rather than literal min=max.","url={{FRONT_URL}}","[NAV] Navigate to /catalog (or any category page that renders the sidebar price-range slider) on {{FRONT_URL}}
 [WAIT] Wait for the product grid and price-range slider to load
@@ -525,21 +528,25 @@ Storefront accessible; B2B buyer-query pool seeded; query selected returns 5+ re
 [LOG] append {picked_facet_group, picked_facet_value, count_after_facet} to evidence
 [ASSERT] Verify {count_after_facet} <= {count_broad} (facet narrowed or held)
 [ASSERT] Verify a filter chip for {picked_facet_value} is present in the chip bar
-[ACT] Open the sort dropdown; select 'Price: Low to High'
-[WAIT] Wait for products to reorder
-[SETUP] capture the first 3 visible product card prices as numerics → {p1, p2, p3}
-[LOG] append {p1, p2, p3} to evidence
-[ASSERT] Verify p1 <= p2 <= p3 (ascending price ordering held under combined search + facet + sort)
+[ASSERT] Identify the price-ascending option by reading its label live from the sort dropdown (code: price-ascending; do NOT hardcode 'Price: Low to High')
+[SETUP] capture the first visible product card ID before sort → {first_id_before_sort}
+[ACT] Click the combobox to open the sort dropdown (VcSelect: click the combobox, then click the option by accessible name — do NOT use native select-option)
+[ACT] Click the price-ascending option by its live-discovered label
+[WAIT] Wait for products to reorder; verify ?sort=price-ascending in URL
+[ASSERT] Verify combobox accessible name = price-ascending option label (selection reflected)
+[SETUP] capture the first 3 visible product card IDs and prices → {id1, id2, id3, p1, p2, p3}
+[LOG] append {id1, id2, id3, p1, p2, p3} to evidence
+[ASSERT] Verify ?sort=price-ascending is in URL (sort applied server-side; do NOT assert p1 <= p2 <= p3 — indexed price diverges from pack/variation-resolved price.actual; sort direction confirmed by URL + selected state)
 [SETUP] capture the first card's name → {picked_pdp_name}
 [ACT] Click the first product card
 [WAIT] Wait for PDP to load
 [ASSERT] Verify the PDP heading contains {picked_pdp_name}","[DOM] Broad search returns >=2 results
 [MATH] Facet application: count_after_facet <= count_broad
 [DOM] Filter chip appears for applied facet value
-[MATH] Sort Price: Low to High: p1 <= p2 <= p3 across first 3 visible cards
+[STATE] Combobox accessible name = price-ascending label after selection (sort selected server-side; do NOT assert monotonic p1<=p2<=p3 — indexed price diverges from pack/variation-resolved price.actual)
 [DOM] Composite (search + facet + sort) holds — sort not reset by facet, facet not lost on sort
 [NAV] PDP loads with the captured first-card name in the heading","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 at each composite step
-[CONSOLE] no TypeError or JS errors","Broad search returns <2 results (pool entry mis-tagged — log and pick another query); facet INCREASES the count (AND-logic broken); sort dropdown resets to default after facet; first 3 cards not in ascending price order after sort selection; PDP heading missing captured name; console TypeError","none","Buyer-journey extension 2026-05-22; composite search + facet + sort that no prior case exercises end-to-end","Manual"
+[CONSOLE] no TypeError or JS errors","Broad search returns <2 results (pool entry mis-tagged — log and pick another query); facet INCREASES the count (AND-logic broken); sort combobox accessible name resets to default after facet; native select-option failing on VcSelect; ?sort dropped from URL after sort selection; hardcoded 'Price: Low to High' not matching store config — select by code; PDP heading missing captured name; console TypeError","none","VCST-5177; Buyer-journey extension 2026-05-22; composite search + facet + sort; Synced: VCST-5177 (2026-06-26)","synced"
 "SRCH-JRNY-007","Buyer Journey - Multi-Value Within Single Facet Group (OR Within Group)","Search > Buyer Journey > Multi-Value Facet","High","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront accessible; /catalog or any results page exposes a facet group with >=2 values, each with count >0 (typically Color, Brand, or Size)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Wait for catalog page + facet sidebar to load

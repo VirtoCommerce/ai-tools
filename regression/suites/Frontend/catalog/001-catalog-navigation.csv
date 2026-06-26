@@ -24,22 +24,32 @@
 [DOM] More detail visible per product compared to grid
 [DOM] Quantity stepper (+) accessible in list view","[NETWORK] no 4xx/5xx on layout toggle request
 [CONSOLE] no TypeError or JS errors","List layout not switching; products missing in list view; actions inaccessible; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-007","Category - Sorting Options","Catalog > Sorting","Medium","BL-CAT-005",,"Category with multiple products","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
-[ACT] Open sort dropdown
-[ASSERT] Verify sort options are present
-[ACT] select 'Price: Low to High' from sort dropdown
-[WAIT] Wait for products to reorder
-[ASSERT] Verify ascending price order
-[ACT] select 'Price: High to Low' from sort dropdown
-[WAIT] Wait for products to reorder
-[ASSERT] Verify descending price order
-[NAV] Click to page 2 of pagination
-[ASSERT] Verify sort order persists on page 2","[DOM] Sort dropdown visible with multiple options
-[STATE] Products reorder correctly for each sort selection
-[MATH] 'Price: Low to High' — first product price <= last product price
-[MATH] 'Price: High to Low' — first product price >= last product price
-[STATE] Sort state persists across pagination","[NETWORK] no 4xx/5xx on sort change request
-[CONSOLE] no TypeError or JS errors","Sort dropdown not rendering; products not reordering; sort not persisting on pagination; console TypeError","none","regression-qa-theme-26.csv","Automated"
+"CAT-007","Category - Sorting Options (API-driven sortings)","Catalog > Sorting","Medium","BL-CAT-005",,"Category with multiple products; storefront uses vc-frontend theme 2.52+ which builds sort dropdown from API sortings","url={{FRONT_URL}}","[NAV] Navigate to a category page on {{FRONT_URL}}
+[WAIT] Wait for sort dropdown to render
+[ASSERT] Snapshot the sort dropdown — capture all visible option labels (live-discover from DOM; do NOT assume specific label text)
+[ASSERT] Verify at least 2 sort options are present
+[ASSERT] Identify the price-ascending option by code match (code: price-ascending); note its live label as {price_asc_label}
+[ASSERT] Capture first product card ID before sorting → {first_id_default}
+[ACT] Click the combobox to open the sort dropdown (VcSelect: click the combobox to open, then click the option by accessible name — do NOT use native select-option)
+[ACT] Click the {price_asc_label} option by accessible name
+[WAIT] Wait for products to reorder; verify ?sort=price-ascending in URL
+[ASSERT] Verify combobox accessible name = {price_asc_label} (selection reflected)
+[ASSERT] Capture first product card ID → {first_id_asc}
+[ACT] Click the combobox and select the price-descending option (code: price-descending) by its live label
+[WAIT] Wait for products to reorder; verify ?sort=price-descending in URL
+[ASSERT] Verify combobox accessible name = price-descending label
+[ASSERT] Capture first product card ID → {first_id_desc}
+[ASSERT] Verify {first_id_asc} != {first_id_desc} (ascending and descending produce different first items — server-authoritative direction oracle; do NOT assert monotonic price order — indexed price diverges from pack/variation-resolved price.actual)
+[ACT] Scroll to the bottom of the product grid to trigger infinite-scroll load-more (storefront uses infinite scroll on category pages — no numbered pager)
+[WAIT] Wait for the next batch to append
+[ASSERT] Verify combobox accessible name still = price-descending label after scroll-load (sort persists)
+[ASSERT] Verify URL still contains ?sort=price-descending after scroll (no ?page param)","[DOM] Sort dropdown combobox visible with options sourced from API sortings (at least 2 options; no hardcoded label assumptions)
+[STATE] Combobox accessible name reflects the selected option after each selection
+[STATE] {first_id_asc} != {first_id_desc} — sort direction has observable effect on result order (server-authoritative oracle; no monotonic-price assertion)
+[STATE] Sort combobox accessible name persists after infinite-scroll load-more
+[NAV] URL contains ?sort=<code> for non-default selections; no ?page param (infinite scroll)","[NETWORK] no 4xx/5xx on sort change request
+[NETWORK] POST /graphql (products) includes sort parameter in request; scroll fires continuation with same sort code
+[CONSOLE] no TypeError or JS errors","Sort dropdown combobox not rendering; native select-option failing on VcSelect; combobox accessible name not updating on selection; {first_id_asc} == {first_id_desc} (sort direction not applied); combobox name resetting after infinite-scroll load-more; console TypeError","none","VCST-5177; regression-qa-theme-26.csv; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + infinite-scroll + no-monotonic-price oracle (2026-06-26)","synced"
 "CAT-035","Brands Page Loads","Catalog > Brands","Medium","BL-CAT-001",,"Store has brand data configured; brands page enabled","url={{FRONT_URL}}/Brands","[NAV] Navigate to {{FRONT_URL}}/Brands
 [WAIT] Wait for page to load completely
 [ASSERT] Verify brand list or grid is displayed
@@ -290,6 +300,112 @@ A configurable product with a Variation section exists in the B2B virtual catalo
 [STATE] Cart total > 0 and reflects the configured product's price","[NETWORK] POST /graphql (productConfiguration) returns correct variation data
 [NETWORK] POST add-to-cart returns HTTP 200
 [CONSOLE] no TypeError or JS errors","Variation section not showing options; price not updating on selection (stays at $0); wrong or empty SKU displayed; cart showing base product instead of configured variant; console TypeError","Remove configured product from cart after test","E2E-CAT-005, VCST-4765, GAP-CS-05","Draft"
+"CAT-064","Sort Reorder in Admin → Storefront Dropdown Order + DEFAULT Badge Shifts (VCST-5177)","Catalog > Sorting > Admin Cross-Layer","High","BL-CAT-005","ECL-2.1","[ADMIN_BROWSER_BLOCKED: Admin SPA storageState gap — automation blocked; run as Manual. API verification via GraphQL remains automated.] Admin access to Stores > Search configuration > Sorting blade for {{STORE_ID}}. At least 2 visible sort options configured. Storefront uses vc-frontend 2.52+ theme. xCatalog VCST-5177 build deployed.","store_id={{STORE_ID}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- LAYER: Admin (Manual — storageState blocked) ---
+[MANUAL] Sign in to {{BACK_URL}}/ui as admin
+[MANUAL] Navigate to Stores > {{STORE_ID}} > Search configuration > Sorting
+[MANUAL] Note the current order of visible sort options and which one has the DEFAULT badge (green pill)
+[MANUAL] Drag the second visible option to the top position (above the current first visible option)
+[MANUAL] Verify the DEFAULT badge automatically moves to the new first visible option (the one just moved to the top)
+[MANUAL] Save the configuration
+[WAIT] Wait 30-60 seconds for search index reorder to propagate to storefront
+--- LAYER: API verification (GraphQL automated) ---
+[AUTH role=PUBLIC]
+[GQL-OP verify_sort_order]
+  query VerifySortingsAfterReorder($storeId: String! $currencyCode: String $cultureName: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+      sortings { id name isDefault selected }
+    }
+  }
+[GQL-VARS verify_sort_order] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC verify_sort_order]
+--- LAYER: Storefront (Manual) ---
+[MANUAL] Navigate to {{FRONT_URL}}/catalog on storefront (hard refresh)
+[MANUAL] Open the sort dropdown
+[MANUAL] Verify the first option in the dropdown matches the option now at the top of the admin sorting blade
+[MANUAL] Verify the first option is shown as selected (no ?sort in URL — it is now the default)","[ADMIN] DEFAULT badge (green pill) moves to the new first visible option after drag-reorder
+[ADMIN] Save succeeds without error toast
+[DATA verify_sort_order] data.products.sortings[0].id = the id of the newly-reordered first option
+[COUNT verify_sort_order] data.products.sortings[?(@.isDefault==true)].length = 1
+[DATA verify_sort_order] data.products.sortings[?(@.isDefault==true)].id = the id of the new first visible option
+[DOM] Storefront sort dropdown first option matches admin-configured new first option
+[STATE] No ?sort param in storefront URL (new default selected)","[ADMIN] Save completed without error
+[NETWORK] sortings[0].id in API response matches the new top option
+[NETWORK] API errors[] empty after reorder","Admin save fails; DEFAULT badge does not shift to new top option; sortings[0] in API still points to old first option after 60s; storefront dropdown order not reflecting admin reorder","[MANUAL] Restore original sort order in Admin","VCST-5177; BL-CAT-005; Admin cross-layer; Live-verified PASS 2026-06-26 vcptcore-qa1 (reorder A-Z to top -> DEFAULT badge shifted -> storefront sortings[0]=name-ascending immediately)","Manual"
+"CAT-065","Hide Sort Option in Admin → Excluded from Storefront sortings[] But Code Still Resolves (VCST-5177)","Catalog > Sorting > Admin Cross-Layer","High","BL-CAT-005","ECL-2.1; ECL-10.2","[ADMIN_BROWSER_BLOCKED: Admin SPA storageState gap — automation blocked; run as Manual. API verification via GraphQL remains automated.] A non-default sort option is visible on the sorting blade. Hiding it must exclude it from storefront sortings[] but the code must still be accepted by the products query (hidden != invalid).","store_id={{STORE_ID}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- LAYER: Admin (Manual) ---
+[MANUAL] Sign in to {{BACK_URL}}/ui as admin
+[MANUAL] Navigate to Stores > {{STORE_ID}} > Search configuration > Sorting
+[MANUAL] Identify a non-default visible option and note its sort code (e.g. createddate-descending)
+[MANUAL] Toggle its visibility to Hidden (HIDDEN badge — grey solid pill appears)
+[MANUAL] Save the configuration
+[WAIT] Wait 30-60 seconds
+--- LAYER: API verification (GraphQL automated) ---
+[AUTH role=PUBLIC]
+[GQL-OP sortings_after_hide]
+  query SortingsAfterHide($storeId: String! $currencyCode: String $cultureName: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+      sortings { id name isDefault selected }
+    }
+  }
+[GQL-VARS sortings_after_hide] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC sortings_after_hide]
+[GQL-OP hidden_code_still_resolves]
+  query HiddenCodeResolves($storeId: String! $currencyCode: String $cultureName: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 3 sort: ""createddate-descending"" withFacets: true) {
+      totalCount
+      items { id }
+      sortings { id isDefault selected }
+    }
+  }
+[GQL-VARS hidden_code_still_resolves] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC hidden_code_still_resolves]","[ADMIN] HIDDEN badge appears on the toggled option; save succeeds
+[ERRORS label=sortings_after_hide] errors[] empty
+[DATA sortings_after_hide] data.products.sortings[?(@.id==""createddate-descending"")].length = 0 (hidden option excluded from sortings[])
+[ERRORS label=hidden_code_still_resolves] errors[] empty
+[DATA hidden_code_still_resolves] data.products.totalCount >= 0 (hidden code accepted — not an error)
+[COUNT hidden_code_still_resolves] data.products.sortings[?(@.selected==true)].length = 0 (hidden code: no option selected)
+[EVIDENCE] Hidden code is excluded from sortings[] visible list but the sort is still applied to results — record both sortings arrays as evidence","[ADMIN] Hidden option no longer appears in storefront dropdown (confirm by manual inspection)
+[NETWORK] API sortings[] does not include the hidden code id
+[NETWORK] Products query with hidden sort code returns results (no 500)","Admin save fails; hidden option still appears in API sortings[]; products query 500s on hidden code; any sortings entry has selected=true for the hidden code","[MANUAL] Re-enable (un-hide) the option after test","VCST-5177; BL-CAT-005; Admin cross-layer; error-guessing; Live-verified PASS 2026-06-26 vcptcore-qa1 (hid price-descending -> excluded from sortings[], ?sort=price-descending still sorted with selected=false)","Manual"
+"CAT-066","Add CUSTOM Sort Option in Admin → Appears in Storefront; Only CUSTOM Deletable (VCST-5177)","Catalog > Sorting > Admin Cross-Layer","Medium","BL-CAT-005","ECL-2.1","[ADMIN_BROWSER_BLOCKED: Admin SPA storageState gap — automation blocked; run as Manual.] Admin blade shows CUSTOM badge (grey outline, deletable) on user-added options. READ-ONLY badge shows on locked built-in options. CUSTOM option must appear in storefront sortings[] after save. Only CUSTOM options have a delete button (not READ-ONLY).","store_id={{STORE_ID}}; back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- LAYER: Admin (Manual) ---
+[MANUAL] Sign in to {{BACK_URL}}/ui as admin
+[MANUAL] Navigate to Stores > {{STORE_ID}} > Search configuration > Sorting
+[MANUAL] Click 'Add' to create a custom sort option
+[MANUAL] Enter a unique sort id (e.g. 'agent-test-custom-sort'), a name (e.g. 'Custom Test Sort'), and a sort expression
+[MANUAL] Save the configuration
+[MANUAL] Verify the new entry shows a CUSTOM badge (grey outline pill)
+[MANUAL] Verify the CUSTOM option has a delete/remove button visible in the row
+[MANUAL] Verify READ-ONLY built-in options (those locked by the module) have no delete button
+[WAIT] Wait 30-60 seconds
+--- LAYER: API verification (GraphQL automated) ---
+[AUTH role=PUBLIC]
+[GQL-OP sortings_custom]
+  query SortingsCustom($storeId: String! $currencyCode: String $cultureName: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: $cultureName first: 1 withFacets: true) {
+      sortings { id name isDefault selected }
+    }
+  }
+[GQL-VARS sortings_custom] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC sortings_custom]","[ADMIN] CUSTOM badge (grey outline) appears on the new option row
+[ADMIN] DELETE button visible on CUSTOM row; no DELETE button on READ-ONLY rows
+[ERRORS label=sortings_custom] errors[] empty
+[DATA sortings_custom] data.products.sortings[?(@.id==""agent-test-custom-sort"")].length = 1 (custom option present)
+[DATA sortings_custom] data.products.sortings[?(@.id==""agent-test-custom-sort"")].name = non-empty-string
+[EVIDENCE] Custom option appears in storefront sortings[]; built-in options remain present with READ-ONLY locking in admin","[ADMIN] CUSTOM vs READ-ONLY badge distinction visible
+[NETWORK] Custom sort id appears in sortings[] response","CUSTOM badge not appearing (shows no badge or wrong badge); CUSTOM option not in API sortings[] after save; DELETE button visible on READ-ONLY option (allow accidental deletion of built-in); 500 on sortings query after adding custom option","[MANUAL] Delete the custom option (click DELETE on the CUSTOM row) and save after test","VCST-5177; BL-CAT-005; Admin cross-layer; Live-verified PASS 2026-06-26 vcptcore-qa1 (added agent-test-custom priority:desc -> appeared in storefront, ?sort selected=true; delete control only on CUSTOM row, none on built-ins)","Manual"
+"CAT-067","Admin Sort Blade Badge Semantics — DEFAULT/HIDDEN/CUSTOM/READ-ONLY Visual Verification (VCST-5177)","Catalog > Sorting > Admin UI",Medium,BL-CAT-005,ECL-2.1,"[ADMIN_BROWSER_BLOCKED: Admin SPA storageState gap — automation blocked; run as Manual.] Purely visual/semantic verification of the four badge types on the Admin sorting blade. No API verification needed — this covers UI rendering only.","back_url={{BACK_URL}}","--- LAYER: Admin (Manual) ---
+[MANUAL] Sign in to {{BACK_URL}}/ui as admin
+[MANUAL] Navigate to Stores > {{STORE_ID}} > Search configuration > Sorting
+[MANUAL] Verify the DEFAULT badge: a single green pill on the first visible sort option
+[MANUAL] Verify if any option is hidden: it shows a HIDDEN badge (grey solid pill)
+[MANUAL] Verify if any CUSTOM option exists: it shows a CUSTOM badge (grey outline pill) with a delete button
+[MANUAL] Verify if any built-in options exist that are locked: they show a READ-ONLY badge (grey outline, no delete button)
+[MANUAL] Hide the DEFAULT option by toggling its visibility
+[MANUAL] Verify the DEFAULT badge moves to the next visible option (not the now-hidden one)
+[MANUAL] Restore the visibility of the original DEFAULT option","[ADMIN] DEFAULT badge: green pill, exactly one, follows the first visible option
+[ADMIN] HIDDEN badge: grey solid pill, only on hidden options
+[ADMIN] CUSTOM badge: grey outline pill, delete button present
+[ADMIN] READ-ONLY badge: grey outline pill, no delete button, expression input locked
+[ADMIN] DEFAULT badge shifts to next visible option when current DEFAULT is hidden","[EVIDENCE] Screenshot each badge type for evidence","DEFAULT badge not present on any option; DEFAULT badge on a hidden option; CUSTOM and READ-ONLY badges visually indistinct; delete button present on READ-ONLY row","[MANUAL] Restore original visibility after test","VCST-5177; BL-CAT-005; Admin UI; badge semantics; Live-verified 2026-06-26 vcptcore-qa1: DEFAULT/HIDDEN/CUSTOM badges all observed live; READ-ONLY n/a (no expression-locked orderings configured on B2B-store)","Manual"
 "CAT-063","Category Permalink Integrity — EN Locale Baseline Slug Capture","Catalog > Navigation > Locale Permalink","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 Storefront accessible at {{FRONT_URL}}; at least one top-level category visible in the main navigation; EN is the active locale (default)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads; at least one category card/link visible

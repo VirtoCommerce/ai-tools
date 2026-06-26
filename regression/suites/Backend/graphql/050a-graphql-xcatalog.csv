@@ -453,3 +453,243 @@ CAT-GQL-125,"xCatalog — loyaltyPoints is 0 or absent for product queried with 
 [DATA label=get_product_usd] data.product.id is non-null
 [DATA label=get_product_usd] data.product.price.actualPrice.currency.code = {{CURRENCY_CODE}}
 [EVIDENCE] loyaltyPoints (MoneyType) for USD query: if loyaltyPoints.amount is non-null and > 0, document the value — behavior under observation (per-design or a data leak); if loyaltyPoints resolves null, that confirms PTS-scope isolation","[EVIDENCE] USD price.actualPrice.currency.code must equal {{CURRENCY_CODE}} — confirms no PTS price leaked into the USD response","errors[] non-empty; actualPrice.currency.code = PTS instead of {{CURRENCY_CODE}} (loyalty currency leaking into USD query); 500 on product query","none — read-only","VCST-5023; xAPI; Query.product; loyalty currency scope",Draft
+CAT-GQL-126,"xCatalog — products.sortings Returns Visible Orderings Shape (VCST-5177)","GraphQL > xCatalog > Sorting",Critical,BL-CAT-005,ECL-2.1,"Runner-native. PUBLIC role. Store {{STORE_ID}} has at least one sorting option configured and visible. vc-module-x-catalog 3.1009.0-alpha.218-vcst-5177 or later deployed. withFacets=true required to include the sortings field (@include directive). Storefront theme 2.52+ deployed (sortings field added to SearchProducts query).","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP get_sortings]
+  query GetSortings($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 1
+      withFacets: true
+    ) {
+      totalCount
+      sortings {
+        id
+        name
+        isDefault
+        selected
+      }
+    }
+  }
+[GQL-VARS get_sortings] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC get_sortings]","[ERRORS label=get_sortings] errors[] empty
+[DATA label=get_sortings] data.products is non-null
+[COUNT label=get_sortings] data.products.sortings.length > 0
+[COUNT label=get_sortings] data.products.sortings[?(@.isDefault==true)].length = 1
+[DATA label=get_sortings] data.products.sortings[0].id is non-null
+[DATA label=get_sortings] data.products.sortings[0].id is non-empty-string
+[EVIDENCE] Capture sortings[].id list and note which entry has isDefault=true — do NOT assert the specific id value (store-configurable); assert shape only","[EVIDENCE] sortings shape: exactly one entry must have isDefault=true; all entries must have a non-empty id string; name may be null (optional) but must be present as a field","errors[] non-empty; data.products.sortings absent (field not deployed or withFacets=false); 0 sortings returned; more than one isDefault=true; any id is null or empty","none — read-only","VCST-5177; BL-CAT-005; xAPI; ProductConnection.sortings",Draft
+CAT-GQL-127,"xCatalog — No Sort Arg → isDefault Option Also Has selected=true (VCST-5177)","GraphQL > xCatalog > Sorting",High,BL-CAT-005,ECL-2.1,"Runner-native. PUBLIC role. Depends on CAT-GQL-126 precondition: sortings field available, withFacets=true. When no sort argument is passed the server must mark the default option as selected.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP no_sort]
+  query GetProductsNoSort($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 3
+      withFacets: true
+    ) {
+      totalCount
+      sortings {
+        id
+        name
+        isDefault
+        selected
+      }
+    }
+  }
+[GQL-VARS no_sort] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC no_sort]","[ERRORS label=no_sort] errors[] empty
+[DATA label=no_sort] data.products is non-null
+[COUNT label=no_sort] data.products.sortings[?(@.isDefault==true)].length = 1
+[COUNT label=no_sort] data.products.sortings[?(@.selected==true)].length = 1
+[DATA label=no_sort] data.products.sortings[?(@.isDefault==true && @.selected==true)].length = 1
+[EVIDENCE] The entry with isDefault=true must also have selected=true when no sort arg is supplied — both booleans must be true on the same item","[EVIDENCE] Record the id of the entry where isDefault=true to confirm selected aligns with it — assert structural match, not specific id value","errors[] non-empty; no entry with selected=true (sort not defaulting); multiple entries with selected=true; isDefault entry and selected entry are different items","none — read-only","VCST-5177; BL-CAT-005; xAPI; ProductConnection.sortings",Draft
+CAT-GQL-128,"xCatalog — Explicit sort=price-ascending → selected=true; Order Differs from Default and from price-descending (VCST-5177)","GraphQL > xCatalog > Sorting",High,BL-CAT-005; BL-GQL-002,ECL-2.1; ECL-9.1,"Runner-native. PUBLIC role. Uses built-in sort code price-ascending (stable, independent of store label config). withFacets=true to include sortings. NOTE: visible price.actual.amount is the storefront-resolved price (pack/variation-adjusted) which may NOT be monotonic under price-sort because the index sorts on the raw indexed price field (price_usd), not the resolved price. Do NOT assert monotonic price order on items[]. Use the server-authoritative oracle instead: selected=true + result order differs from no-sort + differs from price-descending.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP default_order]
+  query GetProductsDefault($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 5
+      withFacets: true
+    ) {
+      totalCount
+      items { id }
+      sortings { id isDefault selected }
+    }
+  }
+[GQL-VARS default_order] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC default_order]
+[GQL-CAPTURE default_order.data.products.items[0].id → DEFAULT_FIRST_ID]
+[GQL-OP sorted_asc]
+  query GetProductsPriceAsc($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 5
+      sort: ""price-ascending""
+      withFacets: true
+    ) {
+      totalCount
+      items {
+        id
+        price { actual { amount } }
+      }
+      sortings {
+        id
+        isDefault
+        selected
+      }
+    }
+  }
+[GQL-VARS sorted_asc] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC sorted_asc]
+[GQL-CAPTURE sorted_asc.data.products.items[0].id → ASC_FIRST_ID]
+[GQL-OP sorted_desc]
+  query GetProductsPriceDesc($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 5
+      sort: ""price-descending""
+      withFacets: true
+    ) {
+      totalCount
+      items { id }
+      sortings { id isDefault selected }
+    }
+  }
+[GQL-VARS sorted_desc] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC sorted_desc]
+[GQL-CAPTURE sorted_desc.data.products.items[0].id → DESC_FIRST_ID]","[ERRORS label=default_order] errors[] empty
+[ERRORS label=sorted_asc] errors[] empty
+[DATA label=sorted_asc] data.products is non-null
+[COUNT label=sorted_asc] data.products.sortings[?(@.id==""price-ascending"" && @.selected==true)].length = 1
+[COUNT label=sorted_asc] data.products.sortings[?(@.selected==true)].length = 1
+[ERRORS label=sorted_desc] errors[] empty
+[DATA label=sorted_desc] data.products.sortings[?(@.id==""price-descending"" && @.selected==true)].length = 1
+[VAR] {{ASC_FIRST_ID}} != {{DESC_FIRST_ID}}
+[EVIDENCE] Record DEFAULT_FIRST_ID, ASC_FIRST_ID, DESC_FIRST_ID and the price.actual.amount array from sorted_asc for evidence. Do NOT assert monotonic price order — the index sorts on raw price_usd which diverges from pack/variation-resolved price.actual.amount. Assert only: (a) price-ascending has selected=true, (b) ASC_FIRST_ID != DESC_FIRST_ID (the two directions produce different first items).","[ROUNDTRIP] Record all three first-item IDs; confirm ASC != DESC (sort direction has observable effect on result order)","errors[] on any query; price-ascending sortings entry has selected=false; ASC_FIRST_ID == DESC_FIRST_ID (sort direction not applied); multiple selected=true entries","none — read-only","VCST-5177; BL-CAT-005; BVA; xAPI; ProductConnection.sortings; Corrected: removed monotonic-price oracle (2026-06-26)",Draft
+CAT-GQL-129,"xCatalog — Unknown Sort Code → Results Returned but Nothing selected=true (VCST-5177)","GraphQL > xCatalog > Sorting > Negative",High,BL-CAT-005,ECL-10.2,"Runner-native. PUBLIC role. Passes an unrecognized sort code. Expected: server returns results (graceful degradation), sortings array present, but no option has selected=true because no option matches the unknown code. withFacets=true.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP unknown_sort]
+  query GetProductsUnknownSort($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 3
+      sort: ""agent-test-nonexistent-sort-xyz""
+      withFacets: true
+    ) {
+      totalCount
+      items { id }
+      sortings {
+        id
+        isDefault
+        selected
+      }
+    }
+  }
+[GQL-VARS unknown_sort] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC unknown_sort]","[ERRORS label=unknown_sort] errors[] empty
+[DATA label=unknown_sort] data.products is non-null
+[COUNT label=unknown_sort] data.products.sortings[?(@.selected==true)].length = 0
+[DATA label=unknown_sort] data.products.totalCount >= 0
+[EVIDENCE] No sortings entry should have selected=true for an unrecognized code — the dropdown must render blank (no guessed default). Record the sortings array for evidence.","[EVIDENCE] Confirm no 500 on unknown sort code; server gracefully returns results with unmatched sort","errors[] non-empty with HTTP 500 (sort code should never 500); data.products null; any sortings entry has selected=true (server incorrectly selecting a fallback option)","none — read-only","VCST-5177; BL-CAT-005; error-guessing; xAPI; ProductConnection.sortings",Draft
+CAT-GQL-130,"xCatalog — Raw Expression Sort Passthrough → Nothing selected (VCST-5177)","GraphQL > xCatalog > Sorting > Negative",Medium,BL-CAT-005,ECL-10.2,"Runner-native. PUBLIC role. Passes a raw Elasticsearch-style sort expression (name:asc). Expected: sort applied to results, but no configured sorting option has selected=true because the raw expression is not a recognized sort id code. withFacets=true.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP raw_sort]
+  query GetProductsRawSort($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 3
+      sort: ""name:asc""
+      withFacets: true
+    ) {
+      totalCount
+      items { id name }
+      sortings {
+        id
+        isDefault
+        selected
+      }
+    }
+  }
+[GQL-VARS raw_sort] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC raw_sort]","[ERRORS label=raw_sort] errors[] empty
+[DATA label=raw_sort] data.products is non-null
+[COUNT label=raw_sort] data.products.sortings[?(@.selected==true)].length = 0
+[DATA label=raw_sort] data.products.totalCount >= 0
+[EVIDENCE] Raw expression name:asc should sort products but not match any configured sort option — no entry selected=true. Record sortings array and first 3 product names for evidence.","[EVIDENCE] Sort passthrough: items should be ordered alphabetically (A-Z) by name if name:asc applied — record names to verify the expression was honored, not silently ignored","errors[] non-empty (raw expression should be passed through, not rejected); any sortings entry has selected=true (raw expression incorrectly matched to a configured option); 500 on raw sort expression","none — read-only","VCST-5177; BL-CAT-005; error-guessing; xAPI; ProductConnection.sortings",Draft
+CAT-GQL-131,"xCatalog — sortings name Localized per cultureName (VCST-5177)","GraphQL > xCatalog > Sorting > Localization",Medium,BL-CAT-005,ECL-2.1,"Runner-native. PUBLIC role. Two queries: one with cultureName=en-US and one with cultureName=de-DE (or another configured locale). Verifies sortings[].name is non-empty for the configured culture (localization applied) and that names differ between cultures when de-DE translations exist. If de-DE is not configured on the store, assert only that the en-US name is non-empty — the test documents the behavior without failing on missing translations.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}","[AUTH role=PUBLIC]
+[GQL-OP sortings_en]
+  query GetSortingsEN($storeId: String! $currencyCode: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: ""en-US"" first: 1 withFacets: true) {
+      sortings { id name isDefault }
+    }
+  }
+[GQL-VARS sortings_en] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}""}
+[GQL-EXEC sortings_en]
+[GQL-CAPTURE sortings_en.data.products.sortings[0].name → SORT_NAME_EN]
+[GQL-OP sortings_de]
+  query GetSortingsDE($storeId: String! $currencyCode: String) {
+    products(storeId: $storeId currencyCode: $currencyCode cultureName: ""de-DE"" first: 1 withFacets: true) {
+      sortings { id name isDefault }
+    }
+  }
+[GQL-VARS sortings_de] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}""}
+[GQL-EXEC sortings_de]
+[GQL-CAPTURE sortings_de.data.products.sortings[0].name → SORT_NAME_DE]","[ERRORS label=sortings_en] errors[] empty
+[DATA label=sortings_en] data.products.sortings[0].name is non-null OR is null
+[DATA label=sortings_en] {{SORT_NAME_EN}} is non-empty-string
+[ERRORS label=sortings_de] errors[] empty
+[DATA label=sortings_de] data.products is non-null
+[EVIDENCE] Record SORT_NAME_EN and SORT_NAME_DE — if de-DE translations exist they should differ; if de-DE returns the en-US fallback that is also acceptable (document both as evidence). Both queries must succeed (no 500 on cultureName=de-DE).","[EVIDENCE] Compare SORT_NAME_EN vs SORT_NAME_DE — document whether translation is applied or base fallback is used","errors[] on either query; 500 on cultureName=de-DE; SORT_NAME_EN null or empty; de-DE query returns a different sortings array structure","none — read-only","VCST-5177; BL-CAT-005; i18n; xAPI; ProductConnection.sortings",Draft
+CAT-GQL-132,"xCatalog — SearchProducts Without sortings Field Still Works — Additive Compat (VCST-5177)","GraphQL > xCatalog > Sorting > Backward Compat",High,BL-GQL-002,ECL-2.1,"Runner-native. PUBLIC role. Verifies that a SearchProducts query that does NOT request the sortings field continues to work correctly after the vc-module-x-catalog VCST-5177 upgrade — the field is additive and its absence must not affect existing query behavior. Regression guard: old theme (pre-2.52) omits sortings.","store_id={{STORE_ID}}; currency_code={{CURRENCY_CODE}}; culture_name={{CULTURE_NAME}}","[AUTH role=PUBLIC]
+[GQL-OP search_no_sortings]
+  query SearchProductsNoSortings($storeId: String! $currencyCode: String $cultureName: String) {
+    products(
+      storeId: $storeId
+      currencyCode: $currencyCode
+      cultureName: $cultureName
+      first: 5
+      sort: ""price-ascending""
+    ) {
+      totalCount
+      items {
+        id
+        name
+        price { actual { amount } }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+[GQL-VARS search_no_sortings] {""storeId"": ""{{STORE_ID}}"", ""currencyCode"": ""{{CURRENCY_CODE}}"", ""cultureName"": ""{{CULTURE_NAME}}""}
+[GQL-EXEC search_no_sortings]","[ERRORS label=search_no_sortings] errors[] empty
+[DATA label=search_no_sortings] data.products is non-null
+[COUNT label=search_no_sortings] data.products.totalCount > 0
+[COUNT label=search_no_sortings] data.products.items.length > 0
+[DATA label=search_no_sortings] data.products.pageInfo is non-null
+[EVIDENCE] Omitting sortings from the query must not cause errors or change response shape for existing fields — confirms additive-only, backward-compatible deployment","[EVIDENCE] Confirm totalCount and items are populated identically to a baseline search query — the new sortings field being absent must not alter existing field values","errors[] non-empty (regression: new field broke existing query path); totalCount = 0 (query returning no results after upgrade); items absent or null; pageInfo absent","none — read-only","VCST-5177; BL-GQL-002; backward-compat; xAPI; additive field",Draft
+  query GetProductUSD($productId: String! $storeId: String!) {
+    product(id: $productId storeId: $storeId currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") {
+      id
+      code
+      price {
+        listPrice { amount currency { code } }
+        actualPrice { amount currency { code } }
+      }
+      loyaltyPoints { amount formattedAmount currency { code } }
+    }
+  }
+[GQL-VARS get_product_usd] {""productId"": ""@td(BUYABLE_NO_MIN_QTY.id)"", ""storeId"": ""{{STORE_ID}}""}
+[GQL-EXEC get_product_usd]","[ERRORS label=get_product_usd] errors[] empty
+[DATA label=get_product_usd] data.product.id is non-null
+[DATA label=get_product_usd] data.product.price.actualPrice.currency.code = {{CURRENCY_CODE}}
+[EVIDENCE] loyaltyPoints (MoneyType) for USD query: if loyaltyPoints.amount is non-null and > 0, document the value — behavior under observation (per-design or a data leak); if loyaltyPoints resolves null, that confirms PTS-scope isolation","[EVIDENCE] USD price.actualPrice.currency.code must equal {{CURRENCY_CODE}} — confirms no PTS price leaked into the USD response","errors[] non-empty; actualPrice.currency.code = PTS instead of {{CURRENCY_CODE}} (loyalty currency leaking into USD query); 500 on product query","none — read-only","VCST-5023; xAPI; Query.product; loyalty currency scope",Draft
