@@ -70,8 +70,19 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", 
 // .env.local as ADMIN_PASSWORD_LOCALHOST. Read it so the OAuth/probe steps "just work";
 // fall back to the documented local convention Password1! (NOT the seed "store", which is
 // only valid on a brand-new DB before init-admin runs).
+// Read an env var, but treat an UNEXPANDED placeholder as unset. A shell/profile that references
+// a var it never set can leave the literal "${env:ADMIN}" / "${ADMIN_PASSWORD}" as the value;
+// sending that verbatim as username/password yields a 400 invalid_grant even though the local
+// credentials are fine. Such values are never legitimate, so collapse them to undefined.
+function cleanEnv(name) {
+  const v = process.env[name];
+  if (!v || /\$\{[^}]*\}/.test(v)) return undefined;
+  return v;
+}
+
 function defaultPassword() {
-  if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
+  const envPw = cleanEnv("ADMIN_PASSWORD");
+  if (envPw) return envPw;
   try {
     const f = resolve(REPO, ".env.local");
     if (existsSync(f)) {
@@ -87,12 +98,12 @@ function parseArgs(argv) {
     back: process.env.BACK_URL || "http://localhost:8090",
     front: process.env.FRONT_URL || "http://localhost",
     timeout: 600, interval: 10,
-    admin: process.env.ADMIN || "admin",
+    admin: cleanEnv("ADMIN") || "admin",
     password: defaultPassword(),
     // start-local's local platform issues the password grant with NO client_id;
     // sending client_id=internal-frontend (the remote-QA client) returns invalid_client.
     // Leave empty to omit; pass --client-id for environments that require a registered client.
-    clientId: process.env.OAUTH_CLIENT_ID || "",
+    clientId: cleanEnv("OAUTH_CLIENT_ID") || "",
     token: false, graphql: null, graphqlFile: null, noFront: false,
     expectModules: [], moduleErrors: false,
     frontOnly: false, expectTheme: null,

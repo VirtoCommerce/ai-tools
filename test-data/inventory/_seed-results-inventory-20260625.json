@@ -1,0 +1,31 @@
+{
+  "seededAt": "2026-06-25T18:19:51.813Z",
+  "mode": "fixtures",
+  "catalogId": null,
+  "stockedEntries": 68,
+  "fulfillmentCenters": [
+    {
+      "id": "019efffe-3160-7ab0-ab50-c6993cdd4da9"
+    },
+    {
+      "id": "019f0002-7f3b-7631-9e94-2ea132d62579",
+      "code": "FFC-EAST"
+    },
+    {
+      "id": "019f0002-7f41-749b-b0e0-107e51dcfb34",
+      "code": "FFC-WEST"
+    },
+    {
+      "id": "019f0002-7f46-7c04-b6fe-b685400232c2",
+      "code": "FFC-CENTRAL"
+    },
+    {
+      "id": "019f0002-7f4b-71e8-b2c1-68f3767a2a17",
+      "code": "FFC-EU"
+    },
+    {
+      "id": "019f0002-7f4f-7a46-8a2c-75e50d73f86a",
+      "code": "FFC-INACTIVE"
+    }
+  ]
+}

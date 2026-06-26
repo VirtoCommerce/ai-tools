@@ -209,18 +209,167 @@ async function seedCatalogs(rows) {
     log(`  ✓ Catalog: ${body.name} (${id})`);
   }
 
-  // Assign virtual catalog to store if one exists
+  // Ensure the store exists and points at the freshly seeded virtual catalog.
+  // On a fresh start-local DB there is NO store yet, so we CREATE it from
+  // test-data/stores/stores.csv (mapping the flag columns → store settings);
+  // on an env that already has the store we just re-point its catalog.
   const virtualCat = created.catalogs.find(c => c.isVirtual && !DRY_RUN);
-  if (virtualCat) {
-    log('Assigning catalog to store...');
-    const store = await api('GET', `/api/stores/${STORE_ID}`);
-    if (store) {
-      store.catalog = virtualCat.id;
-      await api('PUT', '/api/stores', store, { expectStatus: [200, 204] });
-      log(`  ✓ Store ${STORE_ID} → catalog ${virtualCat.name}`);
-    }
+  log('Ensuring store + catalog assignment...');
+  await ensureStore(virtualCat);
+}
 
+// Map a test-data/stores/stores.csv row's flag columns → VC store settings.
+// Booleans are kept even when false (e.g. email_verification_required=false is
+// meaningful). Env-specific keys (GA4 / Firebase / AppInsights / Maps / BuilderIO)
+// are intentionally NOT seeded here — those are per-env secrets set by the deploy
+// config, not test fixtures.
+function storeSettingsFromRow(row) {
+  const bool = v => /^true$/i.test(String(v ?? ''));
+  const out = [];
+  const addBool = (name, v) => out.push({ name, valueType: 'Boolean', value: bool(v) });
+  const addText = (name, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') out.push({ name, valueType: 'ShortText', value: String(v).trim() }); };
+  addBool('Stores.IsSpa', row.is_spa);
+  addBool('Stores.AllowAnonymousUsers', row.anonymous_users_allowed);
+  addBool('XOrder.CreateAnonymousOrderEnabled', row.create_anonymous_order_enabled);
+  addBool('Stores.EmailVerificationEnabled', row.email_verification_enabled);
+  addBool('Stores.EmailVerificationRequired', row.email_verification_required);
+  addBool('Quotes.EnableQuotes', row.quotes_enabled);
+  addBool('Subscription.EnableSubscriptions', row.subscription_enabled);
+  addBool('Stores.TaxCalculationEnabled', row.tax_calculation_enabled);
+  addText('Stores.SeoLinksType', row.seo_link_type);
+  addBool('Loyalty.Enable', row.loyalty_enabled);
+  addText('Loyalty.Mode', row.loyalty_mode);
+  addText('Loyalty.Currency', row.loyalty_currency);
+  addBool('WhiteLabeling.WhiteLabelingEnabled', row.whitelabeling_enabled);
+  addText('Customer.ContactDefaultStatus', row.contact_default_status);
+  addText('Customer.OrganizationDefaultStatus', row.org_default_status);
+  return out;
+}
+
+// Currency definitions (symbol / decimals / primary) from test-data/stores/currencies.csv.
+function loadCurrencyDefs() {
+  const defs = {};
+  for (const r of loadCsv('test-data/stores/currencies.csv')) {
+    defs[r.code] = {
+      code: r.code,
+      name: r.name || r.code,
+      symbol: r.symbol || r.code,
+      exchangeRate: Number(r.exchange_rate) || 1,
+      isPrimary: /^true$/i.test(r.is_primary || ''),
+      decimalDigits: Number.isFinite(+r.decimal_digits) ? +r.decimal_digits : 2,
+      ...(r.culture_name ? { cultureName: r.culture_name } : {}),
+    };
   }
+  return defs;
+}
+
+// Register the given currency codes as platform Currency entities (Core module,
+// POST /api/currencies). REQUIRED: a store can list currency codes, but unless each
+// is a registered Currency the storefront/admin show none ("I don't see currency").
+// Idempotent — skips codes already registered; the service enforces a single primary.
+async function ensureCurrencies(codes) {
+  if (DRY_RUN || !codes?.length) return;
+  const defs = loadCurrencyDefs();
+  const existing = (await api('GET', '/api/currencies')) || [];
+  const have = new Set(existing.map(c => c.code));
+  const missing = codes.filter(c => !have.has(c));
+  if (!missing.length) { verbose('currencies already registered'); return; }
+  const primaryHandled = existing.some(c => c.isPrimary) || missing.some(c => (defs[c] || {}).isPrimary);
+  for (const code of missing) {
+    const d = defs[code] || { code, name: code, symbol: code, exchangeRate: 1, isPrimary: false, decimalDigits: 2 };
+    await api('POST', '/api/currencies', d, { expectStatus: [200, 201, 204] });
+    // POST-create does not reliably persist a non-default decimalDigits (e.g. 0 for
+    // point currencies like PTS/XPT); a follow-up PUT enforces the exact value.
+    if (d.decimalDigits !== 2) await api('PUT', '/api/currencies', d, { expectStatus: [200, 201, 204] });
+  }
+  // Guarantee a primary exists (first registered code) if none was set anywhere.
+  if (!primaryHandled) {
+    const d = defs[missing[0]] || { code: missing[0], name: missing[0], symbol: missing[0], exchangeRate: 1, decimalDigits: 2 };
+    await api('PUT', '/api/currencies', { ...d, isPrimary: true }, { expectStatus: [200, 201, 204] });
+  }
+  log(`  ✓ Registered ${missing.length} currenc${missing.length === 1 ? 'y' : 'ies'}: ${missing.join(', ')}`);
+}
+
+// Resolve active fulfillment centers (matched to test-data/inventory/fulfillment-centers.csv
+// by name) and set the store's main / additional FFC fields. FFCs must already exist
+// (created by seed-inventory.mjs); if none are present this is a no-op. Mutates `store`
+// in place and returns true when anything changed.
+async function applyFulfillmentCenters(store) {
+  let ffcRows = [];
+  try { ffcRows = loadCsv('test-data/inventory/fulfillment-centers.csv'); } catch { /* optional */ }
+  const roleByName = {};
+  for (const r of ffcRows) roleByName[(r.ffc_name || '').trim().toLowerCase()] = (r.store_role || '').trim().toLowerCase();
+
+  const search = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 100 });
+  const ffcs = (search?.results || []).filter(f => f.isActive !== false);
+  if (!ffcs.length) { verbose('no active fulfillment centers to assign'); return false; }
+
+  const roleOf = (f) => {
+    const n = (f.name || '').toLowerCase();
+    for (const [name, role] of Object.entries(roleByName)) if (name && n.endsWith(name)) return role;
+    return '';
+  };
+  let main = ffcs.find(f => roleOf(f) === 'main') || ffcs[0];
+  const returns = ffcs.find(f => roleOf(f) === 'returns');
+  const roleAdditional = ffcs.filter(f => roleOf(f) === 'additional');
+  // Fallback (no role mapping): everything except main becomes additional.
+  const additionalIds = (roleAdditional.length ? roleAdditional : ffcs.filter(f => f.id !== main.id)).map(f => f.id);
+
+  let changed = false;
+  if (store.mainFulfillmentCenterId !== main.id) { store.mainFulfillmentCenterId = main.id; changed = true; }
+  const sortJoin = a => (a || []).slice().sort().join(',');
+  if (sortJoin(store.additionalFulfillmentCenterIds) !== sortJoin(additionalIds)) { store.additionalFulfillmentCenterIds = additionalIds; changed = true; }
+  if (returns && store.returnsFulfillmentCenterId !== returns.id) { store.returnsFulfillmentCenterId = returns.id; changed = true; }
+  if (changed) log(`  ✓ FFC assignment: main=${main.name}, +${additionalIds.length} additional${returns ? `, returns=${returns.name}` : ''}`);
+  return changed;
+}
+
+// Create the store from stores.csv when missing, else re-point its catalog.
+// Always registers the store's currencies first so they actually resolve.
+async function ensureStore(virtualCat) {
+  const row = loadCsv('test-data/stores/stores.csv').find(r => r.store_id === STORE_ID);
+  const list = s => (s || '').split(';').map(x => x.trim()).filter(Boolean);
+  const currencies = row ? list(row.available_currencies) : [];
+  if (!currencies.length) currencies.push(row?.default_currency || 'USD');
+
+  // Currencies are a prerequisite for both an existing and a new store.
+  await ensureCurrencies(currencies);
+
+  const desiredUrl = process.env.FRONT_URL || (row && row.store_url) || undefined;
+  const existing = await api('GET', `/api/stores/${STORE_ID}`);
+  if (existing) {
+    let changed = false;
+    if (virtualCat) { existing.catalog = virtualCat.id; changed = true; }
+    if (desiredUrl && existing.url !== desiredUrl) { existing.url = desiredUrl; changed = true; }
+    if (await applyFulfillmentCenters(existing)) changed = true;
+    if (changed) {
+      await api('PUT', '/api/stores', existing, { expectStatus: [200, 204] });
+      log(`  ✓ Store ${STORE_ID} updated (catalog ${virtualCat ? virtualCat.name : 'unchanged'}, url ${existing.url})`);
+    }
+    return;
+  }
+  // Store absent (fresh start-local DB). Build it from the CSV fixture.
+  if (!row) { log(`  ⚠ Store ${STORE_ID} missing and no matching stores.csv row — skipping store creation`); return; }
+  const catId = virtualCat?.id || created.catalogs[0]?.id;
+  if (!catId) { log(`  ⚠ Store ${STORE_ID} missing but no catalog seeded to bind — skipping store creation`); return; }
+  if (DRY_RUN) { log(`  [DRY RUN] would create store ${STORE_ID} from stores.csv`); return; }
+  const languages = list(row.available_languages); if (!languages.length) languages.push(row.default_language || 'en-US');
+  const settings = storeSettingsFromRow(row);
+  const storeBody = {
+    id: STORE_ID,
+    name: row.store_name || STORE_ID,
+    storeState: row.store_state || 'Open',
+    catalog: catId,
+    defaultLanguage: row.default_language || 'en-US',
+    languages,
+    defaultCurrency: row.default_currency || 'USD',
+    currencies,
+    url: process.env.FRONT_URL || row.store_url,
+    settings,
+  };
+  await applyFulfillmentCenters(storeBody);
+  await api('POST', '/api/stores', storeBody, { expectStatus: [200, 201, 204] });
+  log(`  ✓ Created store ${STORE_ID} from stores.csv (catalog ${virtualCat?.name || catId}, ${currencies.length} currencies, ${languages.length} languages, ${settings.length} settings)`);
 }
 
 async function seedCategories(rows) {

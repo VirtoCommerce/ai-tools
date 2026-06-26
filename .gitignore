@@ -58,6 +58,12 @@ tests/screenshots/**/*.png
 # manifest are transient working state, never committed.
 .local-env/
 
+# localhost alias override — auto-generated per fresh-DB seed (IDs drift each provision).
+test-data/aliases.localhost.json
+
+# NUKE build-tool working dir (transient build logs / temp from local-env provisioning)
+.nuke/
+
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)

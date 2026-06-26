@@ -447,3 +447,29 @@ Org Maintainer (operator) is logged in. Their assigned role includes StorefrontP
 [STATE] After silent flow: impersonation banner visible; header shows operator name + 'logged in as' + target name","[API] POST /connect/token with grant_type=impersonate returns HTTP 200 after Continue
 [NETWORK] No /connect/token call issued if Cancel is clicked (modal dismissed without side effects)
 [CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case)","Draft"
+"AUTH-071","Login — Temporary Lockout Detailed Message on Storefront (PasswordLogin DetailedErrors=true)","Login > Security > Lockout","Medium","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
+Storefront login page accessible; PasswordLogin__DetailedErrors=true and IdentityOptions__Lockout__MaxFailedAccessAttempts=5 configured (vc-deploy-dev infra/environments.yml @ vcst-qa)
+A DEDICATED AGENT-TEST lockout-test user exists (never use agent pool slot accounts)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; lockout_user_email=AGENT-TEST-lockout-msg@test.virtocommerce.com; lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] Login form visible
+[ACT] Fill 'Email': lockout_user_email
+[ACT] Fill 'Password': WrongPass1!
+[ACT] Click 'Sign In'
+[WAIT] Error banner visible (attempt 1)
+[ASSERT] Banner text shown after attempt 1
+[ACT] Repeat wrong-password sign-in for attempts 2, 3, 4 (same generic banner each time)
+[ACT] Fill 'Password': WrongPass1!; Click 'Sign In' — attempt 5 (threshold reached)
+[WAIT] Error banner updates","[DOM] Attempts 1-4 show the generic credential-failure banner: ""Login attempt failed. Check your credentials""
+[DOM] After the 5th attempt the banner switches to the temporary-lockout message: ""Your account has been temporarily locked. Please try again later.""
+[STATE] User remains unauthenticated on /sign-in throughout (no session established)","[NETWORK] POST {{BACK_URL}}/connect/token returns HTTP 400 error=invalid_grant; attempt 5 response body code=user_is_temporary_locked_out
+[CONSOLE] No TypeError or JS errors","5th attempt still shows the generic credential message (DetailedErrors off or lockout not triggered); lockout banner appears before the 5th attempt; storefront renders the raw error code instead of localized text; user becomes authenticated; console TypeError; 500 on any attempt","[SETUP] Create lockout_user_email via admin if not exists
+[TEARDOWN] Unlock via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149; vc-deploy-dev infra/environments.yml (PasswordLogin__DetailedErrors)","Draft"
+"AUTH-072","Login — Org User Temporary Lockout Shows Temporary Message, Not Permanent Block (VCST-5374 regression)","Login > Security > Lockout","High","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
+Storefront login accessible; an ORG-MEMBER account is available via {{ORG_USER_EMAIL}} (belongs to an organization)
+PasswordLogin__DetailedErrors=true and Lockout 5 attempts / 0:15:0 configured; VCST-5374 fix deployed (vc-module-customer >= the PR #303 build / its released version)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; org_user_email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] Login form visible
+[ACT] Fill 'Email': org_user_email
+[ACT] Fill 'Password': WrongPass1!
+[ACT] Click 'Sign In'; repeat for 5 total attempts
+[WAIT] Error banner updates after the 5th attempt","[DOM] After the 5th attempt the banner reads the TEMPORARY message: ""Your account has been temporarily locked. Please try again later."" — and NOT the permanent ""You have been blocked. You can not reach any information or create the order… contact the site administrator""
+[NETWORK] POST {{BACK_URL}}/connect/token attempt 5 → HTTP 400, code=user_is_temporary_locked_out (NOT user_is_locked_out) — VCST-5374 fix
+[STATE] User remains unauthenticated on /sign-in","[CONSOLE] No TypeError or JS errors","Banner shows the permanent ""You have been blocked… contact the site administrator"" message, or attempt-5 code is user_is_locked_out for an org user (VCST-5374 regression); lockout banner appears before the 5th attempt; user becomes authenticated; console TypeError","[TEARDOWN] Unlock org_user via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token","VCST-5374","Draft"

@@ -28,7 +28,7 @@
  * Writes test-data/_seed-results-properties-{DATE}.json
  */
 import {
-  assertSafeTarget, auth, api, loadCsv, loadAliases, writeResults, log, verbose, csvBool,
+  assertSafeTarget, auth, api, loadCsv, ensureVirtualCatalog, writeResults, log, verbose, csvBool,
   DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
 } from './lib/seed-common.mjs';
 
@@ -94,13 +94,13 @@ async function teardown(rows, catalogId) {
 
 async function main() {
   assertSafeTarget();
-  const aliases = loadAliases();
-  const defaultCatalogId = aliases?.VIRTUAL_CATALOG_B2B?.id;
-  if (!defaultCatalogId) { console.error('ABORT: VIRTUAL_CATALOG_B2B.id missing from test-data/aliases.json'); process.exit(2); }
 
   console.log(`\n🌱 Catalog-properties seed${DRY_RUN ? ' [DRY RUN]' : ''}${TEARDOWN ? ' [TEARDOWN]' : ''}`);
-  console.log(`   Target: ${BACK_URL} | Catalog: ${defaultCatalogId}\n`);
+  console.log(`   Target: ${BACK_URL}\n`);
   await auth();
+  // Default catalog = the store's virtual catalog, resolved/created at runtime (never a hardcoded GUID).
+  const defaultCatalogId = await ensureVirtualCatalog(api);
+  console.log(`   Catalog: ${defaultCatalogId}`);
 
   const all = loadCsv('test-data/catalogs/properties.csv');
   const rows = ONLY ? all.filter((r) => r.property_id === ONLY) : all;
@@ -109,37 +109,47 @@ async function main() {
   if (TEARDOWN) { await teardown(rows, defaultCatalogId); return; }
 
   const results = [];
+  let failed = 0;
   for (const row of rows) {
     const catalogId = isGuid(row.catalog_id) ? row.catalog_id.trim() : defaultCatalogId;
     const name = row.property_name;
-    let prop = await findProperty(catalogId, name);
-    if (prop) {
-      log(`↻ property: ${name} (${prop.id})`);
-    } else {
-      const body = {
-        isNew: true,
-        name,
-        catalogId,
-        type: mapType(row.property_type),
-        valueType: mapValueType(row.value_type),
-        dictionary: csvBool(row.is_dictionary),
-        required: csvBool(row.is_required),
-        multivalue: csvBool(row.is_multivalue),
-        multilanguage: false,
-      };
-      await api('POST', '/api/catalog/properties', body, { expectStatus: [200, 201, 204] });
-      // 204 carries no id — re-read the catalog (bypassing the stale cache) to resolve it.
-      invalidatePropCache(catalogId);
-      prop = DRY_RUN ? { id: `dry-${row.property_id}` } : await findProperty(catalogId, name);
-      log(`✓ property: ${name} (${prop?.id}) [${body.type}/${body.valueType}]`);
-    }
+    // Per-row isolation: a single rejected property (e.g. an invalid CSV name) must not
+    // abort the whole seeder — log it and continue so the valid properties still seed.
+    try {
+      let prop = await findProperty(catalogId, name);
+      if (prop) {
+        log(`↻ property: ${name} (${prop.id})`);
+      } else {
+        const body = {
+          isNew: true,
+          name,
+          catalogId,
+          type: mapType(row.property_type),
+          valueType: mapValueType(row.value_type),
+          dictionary: csvBool(row.is_dictionary),
+          required: csvBool(row.is_required),
+          multivalue: csvBool(row.is_multivalue),
+          multilanguage: false,
+        };
+        await api('POST', '/api/catalog/properties', body, { expectStatus: [200, 201, 204] });
+        // 204 carries no id — re-read the catalog (bypassing the stale cache) to resolve it.
+        invalidatePropCache(catalogId);
+        prop = DRY_RUN ? { id: `dry-${row.property_id}` } : await findProperty(catalogId, name);
+        log(`✓ property: ${name} (${prop?.id}) [${body.type}/${body.valueType}]`);
+      }
 
-    let dictAdded = 0;
-    if (csvBool(row.is_dictionary) && prop?.id && !String(prop.id).startsWith('dry-')) {
-      dictAdded = await seedDictionary(prop.id, row.dictionary_values);
+      let dictAdded = 0;
+      if (csvBool(row.is_dictionary) && prop?.id && !String(prop.id).startsWith('dry-')) {
+        dictAdded = await seedDictionary(prop.id, row.dictionary_values);
+      }
+      results.push({ propertyId: row.property_id, name, id: prop?.id, catalogId, dictAdded });
+    } catch (e) {
+      failed++;
+      log(`⚠ skipped property ${row.property_id} "${name}": ${String(e.message).slice(0, 160)}`);
+      results.push({ propertyId: row.property_id, name, catalogId, error: String(e.message).slice(0, 200) });
     }
-    results.push({ propertyId: row.property_id, name, id: prop?.id, catalogId, dictAdded });
   }
+  if (failed) log(`(${failed} propert${failed === 1 ? 'y' : 'ies'} skipped due to errors)`);
 
   writeResults(`test-data/_seed-results-properties-${DATE_STAMP}.json`, {
     seededAt: new Date().toISOString(), target: BACK_URL, properties: results,

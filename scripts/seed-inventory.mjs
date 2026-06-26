@@ -63,9 +63,14 @@ async function ensureFulfillmentCenters() {
     };
     if (DRY_RUN) { log(`[DRY] would create FFC ${row.ffc_code}`); out.push({ id: `dry-${row.ffc_code}`, code: row.ffc_code }); continue; }
     try {
-      const r = await api('POST', '/api/inventory/fulfillmentcenters', body, { expectStatus: [200, 201] });
-      out.push({ id: r.id, code: row.ffc_code, name: body.name, _created: true });
-      log(`Created FFC ${row.ffc_code} (${r.id})`);
+      // Create/update is PUT (POST /fulfillmentcenters is 405 — only /search,/plenty,/batch are POST).
+      let r = await api('PUT', '/api/inventory/fulfillmentcenters', body, { expectStatus: [200, 201, 204] });
+      if (!r?.id) {
+        const again = await listFfcs();
+        r = again.find((f) => f.code === row.ffc_code) || r;
+      }
+      out.push({ id: r?.id, code: row.ffc_code, name: body.name, _created: true });
+      log(`Created FFC ${row.ffc_code} (${r?.id})`);
     } catch (e) {
       log(`⚠ FFC create not available for ${row.ffc_code} (${String(e.message).slice(0, 80)}) — using existing FFCs`);
     }

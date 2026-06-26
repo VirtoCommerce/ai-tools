@@ -140,12 +140,28 @@ read-only into a standalone container (`virtolocal-frontend-only`), then validat
 
 - **Bind target**: the agent asks which env to bind to and resolves `BACK_URL`+`STORE_ID` from the
   `.env.*` profiles (see step 0 below). `-BindBackendUrl` is REQUIRED to start a frontend-only env.
-- **Theme** (priority): `-FrontendUrl <zip>` explicit → the task's PR theme (`VCST-XXXX`) → **latest
-  vc-frontend GitHub release** (start-local's native default). The build is frontend-only — it skips
-  the heavy platform build and reuses a per-theme image cache (`vc-frontend:cache-fe-<hash>`).
+- **Theme** (priority): `-FrontendUrl <zip>` explicit → the task's PR theme (`VCST-XXXX`) → a
+  **`latest`/`alpha` channel keyword** (see below) → **latest vc-frontend GitHub release**
+  (start-local's native default). The build is frontend-only — it skips the heavy platform build and
+  reuses a per-theme image cache (`vc-frontend:cache-fe-<hash>`).
 - **Theme build-marker**: the generated nginx adds an `X-VC-Local-Theme: fe-<hash>` header on `/`;
   healthcheck asserts it — a match proves `/` is the LOCAL theme of the expected build (not the
   remote storefront), while the proxied `/graphql` proves the API is the bound remote env.
+
+**Theme channels — `latest` / `alpha` (`resolve-theme.mjs`).** To install a release or grab the
+current dev build without hunting for a URL, resolve a channel keyword to a theme ZIP and pass it as
+`-FrontendUrl` (works in **both** full and frontend-only modes):
+```bash
+node .claude/skills/testing/qa-local-env/resolve-theme.mjs latest        # newest GA release (vc-theme-b2b-vue-x.y.z)
+node .claude/skills/testing/qa-local-env/resolve-theme.mjs alpha          # newest alpha (…-alpha.NNNN — what vcst-dev runs)
+node .claude/skills/testing/qa-local-env/resolve-theme.mjs pr 2350 --url  # newest build of a specific PR
+```
+All channels list the **vc3prerelease blob** (the anonymous `packages` container CI publishes every
+theme build to — modules, themes, storybook), exclude the `…-storybook-*` sub-family, and return the
+highest-version match (base version, then alpha/pr build number). `--url` prints only the ZIP URL for
+`$(…)` capture; `--json` for machine use. A `VCST-XXXX` task's own PR theme (`resolve-task.mjs`) takes
+precedence over a channel keyword. The blob is anonymous-listable **and** -readable, so no Azure token
+is needed.
 **Numbered steps + per-step verdict.** Each phase prints a numbered header (`━━ Step N · <title>`) and
 closes with a coloured verdict + elapsed (`✅/⚠️/❌ Step N done · mm:ss`). The verdict auto-escalates to
 the worst inner mark — a single ⚠️ makes the whole step yellow, a ❌ makes it red. Inner marks: ✅ green

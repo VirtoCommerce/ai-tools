@@ -54,6 +54,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
+import { ensureMemberIndex } from './lib/seed-common.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 loadDotenv({ path: '.env.defaults' });
@@ -576,6 +577,8 @@ async function teardown() {
 // --- Main ---
 async function main() {
   await authenticate();
+  // Fresh stacks have no ES Member index → /api/members/search 503s. Ensure it before any search.
+  await ensureMemberIndex(api);
   if (profile === 'teardown') { await teardown(); return; }
 
   // memberships-only: orgs must already exist; just (re)create members + logins + org-scoped roles.

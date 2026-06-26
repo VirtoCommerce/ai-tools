@@ -1,0 +1,10 @@
+code,name,symbol,decimal_digits,exchange_rate,is_primary,culture_name
+USD,US Dollar,$,2,1,true,en-US
+EUR,Euro,€,2,1,false,
+GBP,British Pound,£,2,1,false,en-GB
+AUD,Australian Dollar,$,2,1,false,
+CNY,Chinese Yuan,¥,2,1,false,
+CZK,Czech Koruna,Kč,2,1,false,
+GHS,Ghanaian Cedi,GH₵,2,1,false,
+PTS,Loyalty Points,PTS,0,1,false,
+XPT,Points,Pt.,0,1,false,
