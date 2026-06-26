@@ -7,91 +7,91 @@
     {
       "csv_id": "ORG-001",
       "name": "AGENT-TEST-Org-AcmeCorp-20260310",
-      "platform_id": "019f043b-e6e1-704d-a50d-00291b84b9b2",
+      "platform_id": "019f04b2-db87-7a95-ba39-e83bbc52ef15",
       "reused": false
     },
     {
       "csv_id": "ORG-002",
       "name": "AGENT-TEST-Org-TechFlow-20260310",
-      "platform_id": "019f043b-e729-7128-a210-23e202505ad2",
+      "platform_id": "019f04b2-db9a-7777-b86c-c960bf1008b2",
       "reused": false
     },
     {
       "csv_id": "ORG-003",
       "name": "AGENT-TEST-Org-BuildRight-20260310",
-      "platform_id": "019f043b-e73c-794d-97bf-3ef2ac6ef1ea",
+      "platform_id": "019f04b2-dba7-7c25-957d-5967260381b8",
       "reused": false
     },
     {
       "csv_id": "ORG-009",
       "name": "AGENT-TEST-Org-BMW-Group-20260514",
-      "platform_id": "019f043b-e74e-7905-9529-2aace9e8a1dc",
+      "platform_id": "019f04b2-dbb4-743e-97a3-99fcf28a11ad",
       "reused": false
     },
     {
       "csv_id": "ORG-010",
       "name": "AGENT-TEST-Org-Bence-and-Family-20260514",
-      "platform_id": "019f043b-e75e-7c91-98cb-dfe76c1ac04c",
+      "platform_id": "019f04b2-dbc0-776e-928b-f45abc057665",
       "reused": false
     },
     {
       "csv_id": "ORG-011",
       "name": "AGENT-TEST-Org-Brand-Specials-20260514",
-      "platform_id": "019f043b-e76e-7bfa-b51a-9e78e761bc27",
+      "platform_id": "019f04b2-dbcd-7864-9c48-fa1223ad2f1e",
       "reused": false
     },
     {
       "csv_id": "ORG-012",
       "name": "AGENT-TEST-Org-Cypress-Company-Kft-20260514",
-      "platform_id": "019f043b-e7b9-7141-8cfe-f77bcfb7a5d7",
+      "platform_id": "019f04b2-dbd9-7a62-9de4-97cf95c88e06",
       "reused": false
     },
     {
       "csv_id": "ORG-013",
       "name": "AGENT-TEST-Org-Elena-Company-20260514",
-      "platform_id": "019f043b-e7c9-7a05-a368-a4b08669eef7",
+      "platform_id": "019f04b2-dbe6-7bf1-bbe0-41989f6fe824",
       "reused": false
     },
     {
       "csv_id": "ORG-014",
       "name": "AGENT-TEST-Org-Fill-Fillips-Company-20260514",
-      "platform_id": "019f043b-e7d8-7f0b-8443-133b48555773",
+      "platform_id": "019f04b2-dbf2-792b-a074-265cbd937859",
       "reused": false
     },
     {
       "csv_id": "ORG-015",
       "name": "AGENT-TEST-Org-Graceland-Boots-Shoes-20260514",
-      "platform_id": "019f043b-e7e8-73c7-b3a3-25a8223dcb17",
+      "platform_id": "019f04b2-dbff-71c6-95f0-69e877bd9bd7",
       "reused": false
     },
     {
       "csv_id": "ORG-016",
       "name": "AGENT-TEST-Org-Hillcrest-Holdings-20260514",
-      "platform_id": "019f043b-e7f9-7977-9405-484b93b642d6",
+      "platform_id": "019f04b2-dc0b-7f62-bd35-658f782d341d",
       "reused": false
     },
     {
       "csv_id": "ORG-017",
       "name": "AGENT-TEST-Org-Ironwood-Industries-20260514",
-      "platform_id": "019f043b-e80a-744e-ab0f-68950203e56d",
+      "platform_id": "019f04b2-dc17-7274-930e-3843fddaa82f",
       "reused": false
     },
     {
       "csv_id": "ORG-018",
       "name": "AGENT-TEST-Org-Juniper-Junction-20260514",
-      "platform_id": "019f043b-e819-7995-bf9f-c66fc1343dc2",
+      "platform_id": "019f04b2-dc23-79eb-afdb-edd3e3358b97",
       "reused": false
     },
     {
       "csv_id": "ORG-019",
       "name": "AGENT-TEST-Org-Kingsbridge-Imports-20260514",
-      "platform_id": "019f043b-e829-7a03-9824-b3d0394b3471",
+      "platform_id": "019f04b2-dc2f-78f4-8d8a-25655b2fa439",
       "reused": false
     },
     {
       "csv_id": "ORG-004",
       "name": "AGENT-TEST-Org-AcmeWest-20260310",
-      "platform_id": "019f043b-e839-7108-a683-2ca5d2a9c524",
+      "platform_id": "019f04b2-dc3c-7c5a-b785-b502a1a8c779",
       "reused": false
     }
   ],
@@ -100,127 +100,135 @@
       "csv_id": "CON-001",
       "name": "John Mitchell",
       "email": "test-john.mitchell-20260310@test-agent.com",
-      "platform_id": "019f043b-e893-7f21-aa04-08bf90a9f8c6",
+      "platform_id": "019f04b2-dc54-7ee8-b04c-d694c3d5cae3",
       "reused": false,
-      "user_id": null
+      "user_id": "53bd6993-8d42-4da8-bc3b-9b63066133aa"
     },
     {
       "csv_id": "CON-002",
       "name": "Sarah Chen",
       "email": "test-sarah.chen-20260310@test-agent.com",
-      "platform_id": "019f043b-e8ce-7325-90de-f56e0b7e6816",
+      "platform_id": "019f04b2-dc66-7ce3-a9a1-4d92537c390d",
       "reused": false,
-      "user_id": null
+      "user_id": "13d162f9-a293-4523-ba70-70e35364569f"
     },
     {
       "csv_id": "CON-003",
       "name": "Mike Torres",
       "email": "test-mike.torres-20260310@test-agent.com",
-      "platform_id": "019f043b-e8dd-7275-99b7-6fcb7f214f4d",
+      "platform_id": "019f04b2-dc76-769d-b72e-961d2969f897",
       "reused": false,
-      "user_id": null
+      "user_id": "46d0bfc5-edd0-46fe-be1d-2a0901eec17e"
     },
     {
       "csv_id": "CON-004",
       "name": "Lisa Wang",
       "email": "test-lisa.wang-20260310@test-agent.com",
-      "platform_id": "019f043b-e8ed-74f3-b9dc-210a769809e4",
+      "platform_id": "019f04b2-dc86-7279-9e5a-2ddbd3602b7f",
       "reused": false,
-      "user_id": null
-    },
-    {
-      "csv_id": "CON-005",
-      "name": "James Brown",
-      "email": "james.brown@acme-industrial.test",
-      "platform_id": "019f043b-e8fa-769e-b9ea-aea3c4130622",
-      "reused": false,
-      "user_id": null
+      "user_id": "e6d9c4af-bae7-4b80-b49c-2ad6b3cac635"
     },
     {
       "csv_id": "CON-006",
       "name": "Emily Johnson",
       "email": "test-emily.johnson-20260310@test-agent.com",
-      "platform_id": "019f043b-e908-769c-9b42-e6f1feb72ff6",
+      "platform_id": "019f04b2-dc96-7c58-9cf5-b1ca202f16c9",
       "reused": false,
-      "user_id": null
+      "user_id": "418ca2a8-3dd7-49da-b9e5-520990388995"
     },
     {
       "csv_id": "CON-007",
       "name": "David Kim",
       "email": "test-david.kim-20260310@test-agent.com",
-      "platform_id": "019f043b-e918-7a8c-b8d0-1d78347e7f21",
+      "platform_id": "019f04b2-dca8-71c0-a89c-32d3f9e19e7e",
       "reused": false,
-      "user_id": null
+      "user_id": "628959f6-d3f1-420c-8ebc-d52298d22525"
     },
     {
       "csv_id": "CON-008",
       "name": "Carlos Rodriguez",
       "email": "test-carlos.rodriguez-20260310@test-agent.com",
-      "platform_id": "019f043b-e927-7a1e-8236-80a7def0a880",
+      "platform_id": "019f04b2-dcb9-70d3-985d-c871ec062c5c",
       "reused": false,
-      "user_id": null
+      "user_id": "29a41f6e-3ccf-4a8a-933a-c2726792c1b7"
     },
     {
       "csv_id": "CON-009",
       "name": "Angela Foster",
       "email": "test-angela.foster-20260310@test-agent.com",
-      "platform_id": "019f043b-e938-7921-aad6-21c0d1c26e89",
+      "platform_id": "019f04b2-dcc9-764a-863f-36ed71af6173",
       "reused": false,
-      "user_id": null
+      "user_id": "deeb8b45-102b-485c-80c1-88aa997b5532"
     },
     {
       "csv_id": "CON-010",
       "name": "Robert Lee",
       "email": "test-robert.lee-20260310@test-agent.com",
-      "platform_id": "019f043b-e948-71d3-912d-125284677045",
+      "platform_id": "019f04b2-dcda-7ee4-a79d-c18b0ba8e19c",
       "reused": false,
-      "user_id": null
+      "user_id": "872c2ed2-3b7d-430e-8214-8a992205d6bb"
     },
     {
       "csv_id": "CON-011",
       "name": "Hans Mueller",
       "email": "test-hans.mueller-20260310@test-agent.com",
-      "platform_id": "019f043b-e957-7392-bda5-929c35350ff5",
+      "platform_id": "019f04b2-dce9-7cac-a72b-af32a76abb66",
       "reused": false,
-      "user_id": null
+      "user_id": "b3d63492-aba8-4550-8e57-0e7f51f48bd5"
+    },
+    {
+      "csv_id": "CON-020",
+      "name": "Many Orgs",
+      "email": "AGENT-TEST-imp-target-many-orgs-20260514@test-agent.com",
+      "platform_id": "019f04b2-dcf8-7668-b680-4475c1bd2772",
+      "reused": false,
+      "user_id": "fde4ac1c-e8c6-404f-a90b-508ee3471e4c"
     },
     {
       "csv_id": "CON-021",
       "name": "Blocked User",
       "email": "AGENT-TEST-imp-target-blocked-20260514@test-agent.com",
-      "platform_id": "019f043b-e975-7afd-929b-af85890766cb",
+      "platform_id": "019f04b2-dd0a-77f8-aabb-46d0b064b36c",
       "reused": false,
-      "user_id": null
+      "user_id": "ac910498-1a89-434f-ae5a-b046c6b2e58d"
     },
     {
       "csv_id": "CON-022",
       "name": "Invited User",
       "email": "AGENT-TEST-imp-target-invited-20260514@test-agent.com",
-      "platform_id": "019f043b-e985-7945-9445-3cc1d49a6b68",
+      "platform_id": "019f04b2-dd1b-7387-bad2-263924f919dc",
       "reused": false,
-      "user_id": null
+      "user_id": "a8c28049-70f5-4d97-b401-8961685ffe68"
+    },
+    {
+      "csv_id": "CON-015",
+      "name": "Acme Store Maintainer",
+      "email": "acme_store_maintainer_1@acme.com",
+      "platform_id": "019f04b2-dd2a-7130-aa49-356ec3665466",
+      "reused": false,
+      "user_id": "722e0a3c-c738-4e4a-bf99-57073338578a"
     }
   ],
   "memberships": [
     {
       "membership_id": "MOM-001",
       "email": "agent-test-multiorg-20260615@yopmail.com",
-      "contact_id": "019f043b-e9a9-73c7-8ec4-4d07f8e943f9",
-      "user_id": "4097d2a9-ba9b-4b68-bc8b-edf0ea85c05c",
+      "contact_id": "019f04b2-df8b-7f4d-8cf8-cfa9235b101d",
+      "user_id": "198d8ded-109a-4552-ba19-43409b946918",
       "org_name": "AGENT-TEST-Org-TechFlow-20260310",
-      "org_id": "019f043b-e729-7128-a210-23e202505ad2",
+      "org_id": "019f04b2-db9a-7777-b86c-c960bf1008b2",
       "role_id": "org-maintainer",
-      "platform_membership_id": "888e856dbea44021b31cc1e55daa2ac6"
+      "platform_membership_id": "389efbe74d0543c2b3ff464e7f5e9285"
     },
     {
       "membership_id": "MOM-002",
       "email": "agent-test-multiorg-20260615@yopmail.com",
-      "contact_id": "019f043b-e9a9-73c7-8ec4-4d07f8e943f9",
-      "user_id": "4097d2a9-ba9b-4b68-bc8b-edf0ea85c05c",
+      "contact_id": "019f04b2-df8b-7f4d-8cf8-cfa9235b101d",
+      "user_id": "198d8ded-109a-4552-ba19-43409b946918",
       "org_name": "AGENT-TEST-Org-BuildRight-20260310",
-      "org_id": "019f043b-e73c-794d-97bf-3ef2ac6ef1ea",
+      "org_id": "019f04b2-dba7-7c25-957d-5967260381b8",
       "role_id": "org-employee",
-      "platform_membership_id": "d72e69c7e5004421a89e5866b2a676ae"
+      "platform_membership_id": "82dd442bceb04e64b390dcf3614e35e8"
     }
   ]
 }
