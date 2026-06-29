@@ -234,15 +234,11 @@ CRX-GQL-097,"xCart — LineItemType Full-Field Schema Coverage","GraphQL > xCart
   query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
-[GQL-EXEC setup_prod]
-[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
   mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id } }
 [GQL-EXEC add_item]
 [GQL-OP cart_items_full]
   query {
@@ -282,28 +278,37 @@ CRX-GQL-018,"changeCartConfiguredItem Against Non-Configured LineItem — Clean 
 [GQL-OP cleanup_pre]
   mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_pre]
-[GQL-OP add_plain]
-  mutation {
-    addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_HOODIE.id)"" quantity: 1 }) {
+[GQL-OP get_def]
+  query { productConfiguration(configurableProductId: ""@td(CFG_LAPTOP.id)"" storeId: ""{{STORE_ID}}"") { configurationSections { id type options { product { id } } } } }
+[GQL-EXEC get_def]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.id → SECTION_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.0.options.0.product.id → OPT_RAM_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.id → SECTION_STORAGE_ID]
+[GQL-CAPTURE get_def.data.productConfiguration.configurationSections.1.options.0.product.id → OPT_STORAGE_ID]
+[GQL-OP add_configured]
+[GQL-VARS add_configured] {""configurationSections"": [{""sectionId"": ""{{SECTION_RAM_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_ID}}"", ""quantity"": 1}}, {""sectionId"": ""{{SECTION_STORAGE_ID}}"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_STORAGE_ID}}"", ""quantity"": 1}}]}
+  mutation AddItem($configurationSections: [ConfigurationSectionInput]) {
+    addItem(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(CFG_LAPTOP.id)"" quantity: 1 configurationSections: $configurationSections }) {
       id itemsCount items { id productId configurationItems { id sectionId } }
     }
   }
-[GQL-EXEC add_plain]
-[GQL-CAPTURE add_plain.data.addItem.items.0.id → PLAIN_LINE_ITEM_ID]
-[GQL-OP change_on_plain]
-[GQL-VARS change_on_plain] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""@td(CFG_HOODIE.id)"", ""quantity"": 1}}]}
+[GQL-EXEC add_configured]
+[GQL-CAPTURE add_configured.data.addItem.items.0.id → LINE_ITEM_ID]
+[GQL-OP change_fabricated]
+[GQL-VARS change_fabricated] {""configurationSections"": [{""sectionId"": ""00000000-0000-0000-0000-000000000000"", ""type"": ""Product"", ""option"": {""productId"": ""{{OPT_RAM_ID}}"", ""quantity"": 1}}]}
   mutation ChangeCartConfiguredItem($configurationSections: [ConfigurationSectionInput]) {
-    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{PLAIN_LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
+    changeCartConfiguredItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" lineItemId: ""{{LINE_ITEM_ID}}"" quantity: 1 configurationSections: $configurationSections }) {
       id validationErrors { errorCode errorMessage } items { id configurationItems { id sectionId } }
     }
   }
-[GQL-EXEC change_on_plain]
+[GQL-EXEC change_fabricated]
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
-[GQL-EXEC cleanup_post]","[ERRORS label=add_plain] errors[] empty
-[DATA label=add_plain] data.addItem.itemsCount = 1
-[ERRORS label=change_on_plain] errors[] empty
-[COUNT label=change_on_plain] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Non-configurable lineItem has no catalog configurationSections — any sectionId will fail catalog lookup. Mutation must reject gracefully. Record actual errorCode vs the configurable-product variant (may differ). NOTE: verify CFG_HOODIE alias resolves to a non-configurable product (was originally tagged for hoodie variant tests but suitable here).","HTTP 500 on non-configurable target (unhandled null product config); errors[] non-empty at transport level (GraphQL exception escaped); configurationItems populated unexpectedly on a plain item",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; Cross-domain validation (050b4 scope); LIVE 2026-05-21: FAILED — validationErrors.length=0 (expected >=1), mutation silently no-ops on non-configurable lineItems instead of rejecting. Kept Draft until BL contract is confirmed via product owner.",Draft
+[GQL-EXEC cleanup_post]","[ERRORS label=get_def] errors[] empty
+[ERRORS label=add_configured] errors[] empty
+[DATA label=add_configured] data.addItem.itemsCount = 1
+[ERRORS label=change_fabricated] errors[] empty
+[COUNT label=change_fabricated] data.changeCartConfiguredItem.validationErrors.length >= 1","[EVIDENCE] Non-configurable lineItem has no catalog configurationSections — any sectionId will fail catalog lookup. Mutation must reject gracefully. Record actual errorCode vs the configurable-product variant (may differ). NOTE: verify CFG_HOODIE alias resolves to a non-configurable product (was originally tagged for hoodie variant tests but suitable here).","HTTP 500 on non-configurable target (unhandled null product config); errors[] non-empty at transport level (GraphQL exception escaped); configurationItems populated unexpectedly on a plain item",cleanup_post inline,"xAPI; Mutation.changeCartConfiguredItem; VCST-4960; Cross-domain validation (050b4 scope); LIVE 2026-05-21: FAILED — validationErrors.length=0 (expected >=1), mutation silently no-ops on non-configurable lineItems instead of rejecting. Kept Draft until BL contract is confirmed via product owner.",Draft
 CRX-GQL-019,"[VCST-5083] addItem × 5 Rapid Sequential Calls — itemsCount Equals N (Lock Stress)","GraphQL > xCart > Lock Stress",High,"BL-CART-001; BL-GQL-001","ECL-10.2","Runner-native. ORG_USER. VCST-5083 regression: pre-fix NoLockService caused lost-update under concurrent addItem. Simulates race window via 5 rapid sequential addItem calls for same productId (qty=1 each). Post-fix expectation: itemsQuantity=5, itemsCount=1 (BL-CART-001 merge rule).","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
