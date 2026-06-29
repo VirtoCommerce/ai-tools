@@ -1,7 +1,19 @@
 # BUG: Multistep checkout keeps the cart-inline payment form and blocks "Place Order" (should redirect to the payment page) `[High / P0-revenue path]`
 
-## Status: CONFIRMED
+## Status: FIXED
 **JIRA:** VCST-5369
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2353, final commit `6f3cf213` "disable cart payment in multistep checkout". `useCheckout.ts` now computes `allowCartPayment = !checkout_multistep_enabled && paymentMethod.allowCartPayment`, so in multistep the cart-inline card form is disabled for ALL processors; "Place Order" is no longer gated on inline finalize; payment is **deferred to the dedicated `/checkout/payment` step after the order is placed** (matches the original design intent). (`place-order.vue`, `billing-details-section.vue` updated to the same `allowCartPayment` flag.) Supersedes the earlier `:cart`-prop approach (commit `802c2b75`).
+- **Verified on:** 2026-06-29, vcst-qa theme `vc-theme-b2b-vue-2.52.0-pr-2353-6f3c` (deploy vc-deploy-dev #6076). Verdict VERIFIED_WITH_NOTES via `/qa-verify-fix` full re-test.
+- **Authorize.Net:** STR 3/3 PASS — paid orders CO260629-00014/00015/00016. Multistep is now a 5-step stepper (Shipping → Billing → Order review → Payment → Completed).
+- **CyberSource (previously broken):** FIXED — Place Order enabled on Review (original block gone), order placed (CO260629-00017), routed to `/checkout/payment`, and the `'container'` TypeError is GONE on Billing/Review. Gateway declined the automated card at the payment page (sandbox/cross-origin-Microform automation limit, not a fix issue).
+- **Skyflow:** flow correct (CO260629-00018, routed to payment); card stalls = known gateway-down infra. Datatrans (non-allowCartPayment) works (CO260629-00019). Checklist 10/10.
+- **Follow-up (out of scope):** `'container'` TypeError now appears on the Skyflow payment page when its down gateway stalls (never on the CyberSource path).
+- **Verification history:** the first c768-build pass (Authorize.Net 3/3) over-credited CyberSource as parity-only; the CyberSource block was caught on re-check, reopened, and resolved by commit `6f3cf213`.
+
+## v1 (superseded) note
+The original report below described the symptom + an early `:cart`-prop RCA. The shipped fix instead disables cart payment in multistep (deferred-payment model). Kept for history.
 
 **Env:** Local vc-frontend dev build — `https://localhost:3000` (backend `http://localhost:8090`, `STORE_ID=B2B-store`), `checkout_multistep_enabled = true`. (Default QA `vcst-qa-storefront` has multistep **OFF**, which is why this is not seen there.)
 
