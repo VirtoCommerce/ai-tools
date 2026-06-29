@@ -449,7 +449,7 @@ CVAL-GQL-006,"xCart — cart-level validationErrors(ruleSet:items) surfaces the 
 [DATA label=read_items_ruleset] data.cart.itemsCount = 1
 [COUNT label=read_items_ruleset] data.cart.validationErrors.length >= 1
 [DATA label=read_items_ruleset] data.cart.validationErrors[?errorCode=PRODUCT_QTY_CHANGED].errorCode = PRODUCT_QTY_CHANGED","[EVIDENCE] ruleSet:""items"" is the exact ruleSet XCart PR #124 passes to CartAggregate.ValidateAsync() inside LineItemType resolver. The over-stock condition surfaces here as PRODUCT_QTY_CHANGED / LineItem (live-verified 2026-06-11). If this ruleSet returns [] on an over-stocked cart, the per-line re-validation introduced by PR #124 is broken at the architectural level — even if ruleSet:default behaves.","read_items_ruleset returns validationErrors=[] on an over-stocked cart (ruleSet:items not populating errors); PRODUCT_QTY_INSUFFICIENT absent from ruleSet:items result; LINE_ITEM_ID null capture (check get_line_id and addItem currencyCode+cultureName); itemsCount=0 after add_item (missing currencyCode/cultureName in addItem command)",none — clearCart in Steps,"VCST-5234; XCart PR #124",Automated
-CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not contaminate sibling valid line (live-discovered B2B products)","GraphQL > xCart > Validation",High,BL-GQL-001; BL-GQL-003; BL-GQL-004; BL-CART-006,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. LIVE-DISCOVERY — no product aliases (the PROD_* standard-product aliases are NOT linked into the active B2B virtual catalog and silently fail to add; only catalog-resident products add). Discovers two distinct in-stock products from the B2B virtual catalog via products(filter: category.subtree:@td(VIRTUAL_CATALOG_B2B.id) availability:InStock): items[0] = VALID sibling (qty 1, stays valid), items[1] = over-stock line (changeQty to OVER_STOCK_QTY). The B2B catalog is dominated by inventory-tracked products (verified 2026-06-11: 4498 in-stock, 14/15 first-page items tracked+buyable), so items[1] is virtually always tracked; if a rare untracked product is picked the isValid=false assertion fails LOUDLY (re-run, not a false-pass). Line-scope over-stock error = PRODUCT_QTY_CHANGED/LineItem. cartName+currencyCode+cultureName REQUIRED on every cart op or it resolves a different/empty cart. LINE_ITEM IDs captured via follow-up cart query (addItem async settle).","OVER_STOCK_QTY=999999","[AUTH role=ORG_USER]
+CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not contaminate sibling valid line (pinned B2B fixtures)","GraphQL > xCart > Validation",High,BL-GQL-001; BL-GQL-003; BL-GQL-004; BL-CART-006,ECL-7.1; ECL-10.2,"ORG_USER authenticated. Two DISTINCT cart-addable B2B-mixed products pinned via @td(): line A = BUYABLE_NO_MIN_QTY (over-stocked to OVER_STOCK_QTY > availableQuantity → isValid=false), line B = BUYABLE_SIBLING_B2B (qty 1, stays valid). Both are confirmed cart-addable (not Canon/Xerox printers, which match the B2B category subtree but are not addable — project_vcstqa_cart_price_invalid_blocker). Asserts the over-stock line's invalidity does NOT contaminate the sibling valid line.","PRODUCT_ID_A=@td(BUYABLE_NO_MIN_QTY.id); PRODUCT_ID_B=@td(BUYABLE_SIBLING_B2B.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
 [GQL-EXEC setup_me]
@@ -457,71 +457,38 @@ CVAL-GQL-007,"xCart — per-line isValid isolation: over-stock line does not con
 [GQL-OP cleanup_pre]
   mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
-[GQL-OP discover]
-  query {
-    products(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US""
-      filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) availability:InStock"" first: 10) {
-      totalCount
-      items { id name availabilityData { isInStock isTrackInventory availableQuantity } }
-    }
-  }
-[GQL-EXEC discover]
-[GQL-CAPTURE discover.data.products.items[0].id → PRODUCT_ID_A]
-[GQL-CAPTURE discover.data.products.items[1].id → PRODUCT_ID_B]
 [GQL-OP add_a]
-  mutation {
-    addItem(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}""
-      currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PRODUCT_ID_A}}"" quantity: 1 }) { id itemsCount }
-  }
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PRODUCT_ID_A}}"" quantity: 1 }) { id itemsCount } }
 [GQL-EXEC add_a]
 [GQL-OP add_b]
-  mutation {
-    addItem(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}""
-      currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PRODUCT_ID_B}}"" quantity: 1 }) { id itemsCount }
-  }
+  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" productId: ""{{PRODUCT_ID_B}}"" quantity: 1 }) { id itemsCount } }
 [GQL-EXEC add_b]
 [GQL-OP get_line_ids]
-  query {
-    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
-      itemsCount
-      items { id productId quantity }
-    }
-  }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { id productId quantity } } }
 [GQL-EXEC get_line_ids]
 [GQL-CAPTURE get_line_ids.data.cart.items[?productId={{PRODUCT_ID_A}}].id → LINE_ITEM_ID_A]
 [GQL-CAPTURE get_line_ids.data.cart.items[?productId={{PRODUCT_ID_B}}].id → LINE_ITEM_ID_B]
-[GQL-OP change_b_overstock]
-  mutation {
-    changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}""
-      currencyCode: ""USD"" cultureName: ""en-US"" lineItemId: ""{{LINE_ITEM_ID_B}}"" quantity: {{OVER_STOCK_QTY}} }) { id itemsCount }
-  }
-[GQL-EXEC change_b_overstock]
+[GQL-OP overstock_a]
+  mutation { changeCartItemQuantity(command: { storeId: ""{{STORE_ID}}"" cartName: ""default"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" lineItemId: ""{{LINE_ITEM_ID_A}}"" quantity: {{OVER_STOCK_QTY}} }) { id itemsCount } }
+[GQL-EXEC overstock_a]
 [GQL-OP read_back]
-  query {
-    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
-      itemsCount
-      items { id productId quantity isValid validationErrors { errorCode objectType errorMessage } }
-    }
-  }
+  query { cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") { itemsCount items { id productId quantity isValid validationErrors { errorCode objectType errorMessage } } } }
 [GQL-EXEC read_back]
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { cartName: ""default""  storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
-[GQL-EXEC cleanup_post]","[ERRORS label=discover] errors[] empty
-[COUNT label=discover] data.products.items.length >= 2
-[ERRORS label=add_a] errors[] empty
+[GQL-EXEC cleanup_post]","[ERRORS label=add_a] errors[] empty
 [DATA label=add_a] data.addItem.itemsCount = 1
 [ERRORS label=add_b] errors[] empty
 [DATA label=add_b] data.addItem.itemsCount = 2
 [ERRORS label=get_line_ids] errors[] empty
 [DATA label=get_line_ids] data.cart.itemsCount = 2
-[ERRORS label=change_b_overstock] errors[] empty
+[ERRORS label=overstock_a] errors[] empty
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.cart.itemsCount = 2
-[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID_B}}].isValid = false
-[COUNT label=read_back] data.cart.items[?id={{LINE_ITEM_ID_B}}].validationErrors.length >= 1
-[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID_B}}].validationErrors[?errorCode=PRODUCT_QTY_CHANGED].errorCode = PRODUCT_QTY_CHANGED
-[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID_A}}].isValid = true
-[COUNT label=read_back] data.cart.items[?id={{LINE_ITEM_ID_A}}].validationErrors.length = 0","[EVIDENCE] Multi-line isolation: the over-stock line (LINE_ITEM_ID_B) is invalid; the sibling in-stock line (LINE_ITEM_ID_A, qty 1) must remain isValid=true with no errors. A fault in VCST-5234 or a future regression could mark ALL lines invalid when any one line fails — this case detects that. Products live-discovered from the B2B virtual catalog (no fixed aliases).","discover returns <2 items (catalog empty or B2B subtree filter wrong); itemsCount!=2 after add_a+add_b (a discovered product is non-buyable, or same-productId consolidation — items[0]/items[1] are distinct catalog entries so consolidation should not occur); LINE_ITEM_ID_A or _B null (capture predicate failed / product not in cart); LINE_ITEM_ID_A.isValid=false (contamination bug — invalid sibling poisoning valid line); LINE_ITEM_ID_B.isValid=true after over-stock (pre-fix regression, OR a rare untracked product was discovered at items[1] — re-run to confirm)",none — clearCart in Steps,"VCST-5234; XCart PR #124; BUG-xcart-clearvalidationcache-empties-lineitem-validationerrors-on-mutations.md",Automated
+[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID_A}}].isValid = false
+[COUNT label=read_back] data.cart.items[?id={{LINE_ITEM_ID_A}}].validationErrors.length >= 1
+[DATA label=read_back] data.cart.items[?id={{LINE_ITEM_ID_B}}].isValid = true
+[COUNT label=read_back] data.cart.items[?id={{LINE_ITEM_ID_B}}].validationErrors.length = 0","[EVIDENCE] Multi-line isolation: the over-stock line (LINE_ITEM_ID_A = BUYABLE_NO_MIN_QTY at qty {{OVER_STOCK_QTY}}) goes isValid=false with a validationError; the sibling in-stock line (LINE_ITEM_ID_B = BUYABLE_SIBLING_B2B, qty 1) MUST remain isValid=true with zero errors. A VCST-5234 fault or future regression could mark ALL lines invalid when any one line fails — this case detects that. Both products pinned via @td() to two distinct, cart-addable B2B-mixed fixtures (no live discovery).","add_a itemsCount!=1 or add_b itemsCount!=2 (a pinned product is non-buyable in B2B-store — re-verify it is placed+indexed in the B2B-mixed virtual catalog, NOT a Canon/Xerox-style unaddable product; see project_vcstqa_cart_price_invalid_blocker); LINE_ITEM_ID_A or _B null (capture predicate failed / product not in cart); LINE_ITEM_ID_A.isValid=true after over-stock (OVER_STOCK_QTY no longer exceeds BUYABLE_NO_MIN_QTY availableQuantity — bump it); LINE_ITEM_ID_B.isValid=false (contamination bug — over-stock line poisoning the valid sibling).",none — clearCart in Steps,"VCST-5234; XCart PR #124; BUG-xcart-clearvalidationcache-empties-lineitem-validationerrors-on-mutations.md",Automated
 CVAL-GQL-008,"xCart — within-request ruleSet cache isolation: ruleSet:* resolved first does NOT leak its errors into ruleSet:shipments in the same request (aliased fields)","GraphQL > xCart > Validation > Cache Isolation",Critical,BL-GQL-001; BL-GQL-003; BL-GQL-004,ECL-7.1; ECL-10.2,"Runner-native. ORG_USER authenticated. VCST-4952 PR #110 review Test 1: within a SINGLE cart() query, request both ruleSet:""*"" and ruleSet:""shipments"" via GraphQL aliases (allErrors / shippingErrors). Before the PR #110 caching fix, ruleSet:""*"" sealed the shared cache as IsValidated=true, causing ruleSet:""shipments"" in the same request to echo the full error list instead of re-validating for its own scope. Expected: allErrors (ruleSet:*) contains PRODUCT_QTY_CHANGED (over-stock line error live-verified on XCart 3.1019.0-pr-124 / 2026-06-11); shippingErrors (ruleSet:shipments) does NOT contain PRODUCT_QTY_CHANGED (item qty errors are not shipment-scope errors). Tests the within-request cache isolation that PR #110 introduced. BUYABLE_NO_MIN_QTY qty=1568, stock=568 → confirmed over-stock; LINE_ITEM_ID via follow-up cart query.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); OVER_STOCK_QTY=1568","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

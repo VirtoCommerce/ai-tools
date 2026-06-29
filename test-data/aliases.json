@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.23",
+    "version": "1.5.24",
     "updated": "GENERATED",
     "changelog_1_5_23": "VCST-5103 loyalty fixture hardening (2026-06-24). (1) Added LOY_SKU_PTS_UNIT inline alias — a 1-PTS divisor product (id d53eddf2-6a00-487b-b983-007462814526, SKU AGENT-TEST-PTS-UNIT-001) priced exactly 1 PTS in the 'Loyalty PTS price list' (currency=PTS, id 3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894), linked into the B2B virtual catalog, so a cart's PTS subtotal == addItem qty for ANY integer total. (2) Updated LOYALTY_NOBAL_USER: new memberId 31399071-7589-42a8-9013-75f805dfd48b after a teardown+reseed (security account 5a216728… reused). CRITICAL WARNING added to its _notes: the seeder CANNOT re-zero the balance — loyalty balance = sum of operation-log entries keyed on the reused security-account userId, and vc-module-loyalty exposes the op-log READ-ONLY (no write/delete, no balance set/debit API). After teardown+reseed the balance was still 404 PTS (earned on prior E2E orders). So insufficient-balance tests must be balance-RELATIVE (add LOY_SKU_PTS_UNIT at qty=balance+1), not a fixed PTS total. Equal-boundary (==balance allowed, +1 blocked, required>available strict) live-verified 2026-06-24 via LOY_SKU_PTS_UNIT @ 404/405.",
     "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
@@ -2831,6 +2831,16 @@
       "sku": "sku"
     },
     "_notes": "Verified cart-buyable B2B-mixed fixture for cart/checkout/xCart tests — adds to cart cleanly (GQL-MC-001 PASS, 6/6, 2026-06-16). Same product as BUYABLE_NO_MIN_QTY (STD-001). IMPORTANT: cart buyability comes from the product being properly PLACED + INDEXED in the B2B-mixed virtual catalog (fc596540…), NOT from a pricelist-API price — `/api/pricing/evaluate` returns [] for this product yet the cart accepts it, while a product with a pricelist-API price but no B2B-mixed placement (e.g. Canon MF232W 08c33cfc) is rejected with PRODUCT_PRICE_INVALID. So pick fixtures the cart actually accepts (mirror BUYABLE_NO_MIN_QTY's catalog placement), not ones that merely resolve a price. See project_vcstqa_cart_price_invalid_blocker."
+  },
+  "BUYABLE_SIBLING_B2B": {
+    "_inline": true,
+    "id": "eae298de-0997-44d2-8b35-88e5512dbbe2",
+    "name": "ASUS ROG 6D/6D Ultimate Smartphone",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    },
+    "_notes": "Second DISTINCT cart-addable B2B-mixed fixture (different productId from BUYABLE_NO_MIN_QTY) for multi-line cart tests that need two separate line items. Probe-verified addable 2026-06-29 (addItem qty=1 → itemsCount=1; availableQuantity 1062, trackInventory=true, properly placed in B2B-mixed virtual catalog fc596540…). Used as the VALID sibling line in 050b5 CVAL-GQL-007 per-line isValid isolation. NOTE: Canon MF232W (08c33cfc) and Xerox WorkCentre (4b729fae) match the B2B category-subtree query but are NOT cart-addable — do not use; see project_vcstqa_cart_price_invalid_blocker."
   },
   "CFG_WITH_DEFAULT": {
     "file": "products/configurable-products",
