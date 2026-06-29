@@ -1,0 +1,29 @@
+{
+  "sprint": "Sprint26-12",
+  "startDate": "2026-06-15",
+  "endDate": "2026-06-26",
+  "doneCounts": {"stories": 15, "bugs": 18, "tasks": 0, "techDebt": 8, "spikes": 0, "total": 33},
+  "sprintIssueTotal": 120,
+  "testRelevantCount": 33,
+  "mergedFrontendPRs": 12,
+  "mergedModulePRs": 6,
+  "domains": [
+    {"name": "Checkout — Multistep Place Order", "score": 20, "level": "Critical"},
+    {"name": "Cart — xCart Validation + Configurable Products", "score": 20, "level": "Critical"},
+    {"name": "Loyalty Mixed Cart & Product Points", "score": 12, "level": "High"},
+    {"name": "Marketing / Coupons", "score": 12, "level": "High"},
+    {"name": "B2B Org Roles & Lockout", "score": 12, "level": "High"},
+    {"name": "Catalog — Import/Export/Variations/Sorting", "score": 12, "level": "High"},
+    {"name": "UI Kit — Design Tokens & Reorg", "score": 12, "level": "High"},
+    {"name": "Orders — Async Snapshot & onX", "score": 9, "level": "Medium"},
+    {"name": "Search Indexing Admin", "score": 9, "level": "Medium"},
+    {"name": "Platform / Security", "score": 8, "level": "Medium"},
+    {"name": "BOPIS — Pickup Pagination", "score": 6, "level": "Medium"},
+    {"name": "Admin SPA Modules", "score": 6, "level": "Medium"}
+  ],
+  "suitesActivated": ["042", "078", "011", "012", "013", "081", "039", "040a", "040b", "041", "028", "029", "030", "050b1", "050b2", "050b4", "050b5", "072", "072b", "072c", "072d", "052", "050i", "075", "075b", "075c", "083", "083b", "077", "077b", "025", "023", "079", "050j", "006", "008", "032", "031", "033", "027", "027b", "050d", "049", "051", "053", "064", "056", "050a", "061", "001", "002", "003", "004", "005", "048b", "045", "044", "014", "017", "018", "050c", "055", "020", "063", "085", "084", "068", "036", "037", "038", "050k", "050h"],
+  "newCasesEstimate": "70-90",
+  "criticalTickets": ["VCST-5369", "VCST-5234", "VCST-5173", "VCST-5104", "VCST-5261", "VCST-5189"],
+  "outOfScopeCount": 79,
+  "artifacts": "vc/shared/docs/Sprint plans/Sprint plans/"
+}
