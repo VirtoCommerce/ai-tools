@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (19) — `.claude/commands/`
+## Slash Commands (20) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -14,6 +14,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-fix` | `VCST-XXXX` | No | Autonomous fix of an already-filed bug: triage (Gate 0) → root-cause + single-repo route (Gate 1) → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Never auto-merges. Interactive twin of `ci/run-fix-cycle.ts`; reuses `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`. Delegates to the `developers/` team by repo kind — `fullstack-backend` + `backend-reviewer` (module/platform) or `fullstack-frontend` + `frontend-reviewer` (vc-frontend). Gate ladder: `.claude/rules/quality-gates.md` |
 | `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | No | Online bug monitoring from Application Insights: query both layers → dedup by fingerprint → triage new/spiking signatures → reproduce HIGH-confidence bugs live → draft reports + Teams alert → STOP for human. Detect-and-report only (never files JIRA / auto-fixes). Interactive twin of `ci/run-monitor.ts`; shares `ci/monitoring/queries/*.kql` + `ci/agents/monitor-triage-agent.md` + the fingerprint store. |
 | `/qa-design` | `component \| page \| flow [--storefront-only]` | No | Dual Storybook + Storefront BL-UI audit for components (catches isolation-only vs integration-only bugs); storefront-only for pages/flows. Matrix-driven scope with heuristic fallback for off-matrix targets. Backed by the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md) — the command is the terminal entry; the skill holds the methodology |
+| `/qa-hotfix` | `VCST-XXXX [bundles] [--repo=<name>] [--pr=<ref>] [--dry-run]` | No | Release a HOTFIX of an already-merged-and-released fix into the bundles that are currently the latest stable (ASK which ones — the set changes; e.g. v12/v14): resolve task → linked PR → fix commit, verify MERGED + SHIPPED, then per bundle cherry-pick onto `support/<X.Y>` and trigger the repo's "Release hotfix" workflow. Read-only precheck (`npm run hotfix:precheck`) + gated writes (`npm run hotfix:release`); never auto-merges; STOPs when no support branch exists. Backed by the `/qa-hotfix` skill |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | Guided exploratory testing session with heuristics |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | **Yes** | Validate env vars, endpoints, MCP servers, test infra |
 | `/qa-local-env` | `[VCST-XXXX] [postgres\|mysql\|sqlserver]` | No | Spin up a full local VC stack via VirtoCommerce **start-local** (Docker), pinned to the actual deployed manifest (`vc-deploy-dev @ vcptcore-demo`). With a `VCST-XXXX` arg, augment the baseline with the module/PR pre-release versions the task needs (released bumps in `GithubReleases`, PR builds via the `AzureBlob` source's `BlobName`). Rebuilds iff the manifest changed; **every run is a fresh DB** (data volumes always wiped); admin → `Password1!`. Backed by the [`/qa-local-env` skill](../skills/testing/qa-local-env/SKILL.md) (gen-manifest → provision → healthcheck). |
@@ -53,7 +54,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-review-tests` | `suite <ID> \| file <path> \| diff \| all \| domain <name> \| --verify \| --fix` | Review test cases: 8-dimension quality analysis (structure, determinism, completeness, testability, data validity, BL/ECL coverage, duplication, env verification). Delegates live verification to qa-testing-expert | `review-criteria.md` |
 | `/qa-local-env` | `[VCST-XXXX] [postgres\|mysql\|sqlserver]` | Bring up a local VC stack (start-local + Docker) pinned to the actual deployed `vcptcore-demo` manifest; with a task arg, augment it with the modules/PR pre-release builds the task needs. Rebuild-iff-changed; **fresh DB every run** (data volumes always wiped); admin→`Password1!`. resolve-task (JIRA+GitHub REST) → gen-manifest → provision (PowerShell) → init-admin → healthcheck. Theme channels (`latest`/`alpha`/`pr`) via `resolve-theme.mjs` → `-FrontendUrl`. | `resolve-task.mjs`, `resolve-theme.mjs`, `gen-manifest.mjs`, `provision.ps1`, `healthcheck.mjs`, `init-admin.mjs` |
 
-**`qa-methodology/` — QA Methodology (10) — manual invocation:**
+**`qa-methodology/` — QA Methodology (11) — manual invocation:**
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
@@ -67,6 +68,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/qa-metrics` | `[metrics\|gates\|report\|trends]` | Quality metrics & gates: pass rate, defect density, DRE, coverage | `quality-metrics-catalog.md`, `quality-gates.md` |
 | `/qa-sbtm` | `domain \| charter type \| heuristic` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | `session-based-testing.md` |
 | `/qa-monitoring` | `[frontend\|backend\|both] [--since=MIN] [--dry-run]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only. Twin of `ci/run-monitor.ts` | `SKILL.md` (KQL probe library + triage taxonomy + dedup model) |
+| `/qa-hotfix` | `VCST-XXXX [bundles] [--repo=<name>] [--pr=<ref>] [--dry-run]` | Release a hotfix into the current latest-stable bundles (ASK which — set changes over time): task → linked PR → fix commit, verify merged + shipped, then per bundle cherry-pick onto `support/<X.Y>` + trigger the "Release hotfix" workflow. Deterministic core: `scripts/hotfix-precheck.ts` (read-only, incl. support-branch + code-apply + version-baseline checks) + `scripts/hotfix-release.ts` (gated write). Never auto-merges; STOPs when no support branch | `SKILL.md` (ask-bundles step + hotfix mechanics + PR-resolution order + gate ladder) |
 
 **`development/` — Development (5) — manual invocation (used by the `developers/` team in `/qa-fix`):**
 
