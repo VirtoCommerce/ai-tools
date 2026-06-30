@@ -1,11 +1,58 @@
 {
-  "runId": "REG-2026-06-24-1325",
-  "selection": "083b",
-  "startedAt": "2026-06-24T13:25:00Z",
-  "finishedAt": "2026-06-24T13:45:00Z",
+  "runId": "REG-2026-06-30-1200",
+  "selection": "006,008,033,027b (B2B org / members / account-menu / org-memberships)",
+  "startedAt": "2026-06-30T12:00:00Z",
   "env": "vcst-qa",
-  "build": { "platform": "3.1039.0", "theme": "2.52.0-pr-2335", "loyalty": "pr-10", "orders": "pr-497", "xorder": "pr-43" },
+  "build": {
+    "platform": "3.1039.0",
+    "theme": "2.52.0-alpha.2394"
+  },
+  "phase": "paused-auth-fix",
+  "totalPlanSuites": 4,
+  "windowStart": "2026-06-30T12:00:00Z",
+  "note": "Browser suites (006/008/033) blocked at [PRE:SIGNIN_AS]: Playwright MCP doesn't interpolate {{VAR}} and auto-mode classifier denies credential materialization. RESOLUTION (user-approved): storageState injection. Generated test-results/auth/<acct>.json via scripts/auth/save-storage-state.ts (in-process cred read, no transcript materialization). 6/7 accounts authed (TECHFLOW_ADMIN bounced; ORG_USER covers 008 admin). Wired contextOptions.storageState into the 3 MCP configs. AWAITING user MCP-server restart, then re-dispatch 006/008/033.",
+  "authStorageState": {
+    "chrome": "test-results/auth/MULTI_ORG_USER.json",
+    "firefox": "test-results/auth/ORG_USER.json",
+    "edge": "test-results/auth/USER.json",
+    "alsoAvailable": ["PERSONAL_USER_VIRTO", "MULTI_ORG_TF_BR", "BUILDRIGHT_ADMIN"]
+  },
   "suites": {
-    "083b": { "status": "passed", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "cases": 7, "passed": 7, "failed": 0, "blocked": 0, "attempt": 1 }
+    "006": { "status": "pending-redispatch", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "priority": "P1", "cases": 39 },
+    "008": {
+      "status": "pending-redispatch-CHROMIUM",
+      "browser": "MUST be edge/chrome (NOT firefox — members table's 7 perpetual 'Invited' spinners time out every in-table click on Firefox)",
+      "agent": "qa-frontend-expert",
+      "priority": "P1",
+      "cases": 19,
+      "provisionalCarryForward": {
+        "_caveat": "From the pre-restart suite008 agent; auth method UNVERIFIED (may have materialized creds against the hold) — re-confirm on clean storageState re-run before filing anything.",
+        "MBR-004": "FAIL (claimed product bug): 'Invite members' button ABSENT for maintainers; confirmed cross-browser (FF+Edge) + cross-maintainer (Emily/TechFlow + Carlos/BuildRight). NOT BUG-A empty-permissions (per-row Actions menus render+work). Regression of VCST-5028 maintainer write-UI. Blocks MBR-005/006/007 + invite step of 023. Evidence: MBR-004-members-header-no-invite.png. NEEDS INDEPENDENT CONFIRMATION.",
+        "passed": "MBR-019 (AC1 role-change scoped to TechFlow, BuildRight unchanged, UI+API), MBR-020/023 (AC3 org-scoped block: TF isLocked=true, BR=false, global /locked=false → BL-AUTH-012 preserved), MBR-021/011 (unblock)",
+        "minorFinding": "blocked-org login message reads 'Your access to THIS organization has been blocked...' (+contact-site-admin link), not the BL-AUTH-013 verbatim '...organization <name>...'. Intent satisfied; reconcile AC wording — not necessarily a bug.",
+        "blocked": "MBR-013–017 delegated-purchasing → config gap (org has no approver role/threshold), not a bug",
+        "cleanup": "fixture MULTI_ORG_TF_BR restored to AC1 oracle (API-verified); browsers closed"
+      }
+    },
+    "033": { "status": "pending-redispatch", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "cases": 14 },
+    "027b": {
+      "status": "blocked",
+      "browser": "none (runner-native)",
+      "agent": "qa-backend-expert",
+      "priority": "P1",
+      "cases": 18,
+      "passed": 0,
+      "failed": 0,
+      "blocked": 18,
+      "verdict": "BLOCKED — suite-authoring defect (runner-incompatible), NOT a product defect. VERIFIED vs canonical suites: (1) REST-OP bodies lack the required 'Body:' prefix (cf. 050l) -> bodyless POST -> 415 on every setup/verify -> captures undefined. (2) Assertions use inside-bracket grammar [DATA label=X path=Y equals=Z] + unsupported [STATUS]/[BODY] kinds; parser expects predicate OUTSIDE brackets (cf. 050i) -> 0 assertions parsed. Also 5 cases (003/007/012/017/018) hit the missing MULTI_ORG_TF_BR_EMPLOYEE/_MAINTAINER aliases. Suite has never validated VCST-5028. Finding #1 + #2 NOT re-verifiable this run.",
+      "productSignals": {
+        "ORGM-011": "needs-review (NOT filed): no-org inviteUser returned null + GraphQL PLATFORM error 'Error trying to resolve field inviteUser'; expected succeeded=true. Re-verify after suite re-authored.",
+        "ORGM-013": "product CORRECT (duplicate invite -> succeeded:false / DuplicateUserName+DuplicateEmail) — would PASS if assertions parsed",
+        "ORGM-014": "product CORRECT (bad email -> succeeded:false / InvalidEmail) — would PASS if assertions parsed"
+      },
+      "cleanup": "no orphans created (all REST-OP creates 415'd; inviteUser mutations returned succeeded:false/null)",
+      "recommendation": "Re-author 027b to canonical runner grammar (Body:-prefixed REST-OP + predicate-outside-brackets per graphql-test-cases-runner.md / 050l / 050i) AND add MULTI_ORG_TF_BR_EMPLOYEE/_MAINTAINER aliases to aliases.json.",
+      "reauthor": "ROUTED to /qa-test-lifecycle (test-management-specialist 'tlc027b') as a SEPARATE workstream (user choice 2026-06-30). In this REG report 027b stays BLOCKED (suite defect); its real execution results come from the lifecycle re-author + verification run, not this regression."
+    }
   }
 }

@@ -1,0 +1,18 @@
+{
+  "ticket": "VCST-5391",
+  "verdict": "VERIFIED",
+  "date": "2026-06-29",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {"theme": "2.52.0-pr-2353-fa77", "xcart": "3.1024.0-pr-132-175a (PR #132 central-fix build, deployed)", "pr": "vc-module-x-cart#132 (open, unmerged)"},
+  "agent_used": "qa-frontend-expert",
+  "paths_verified": {
+    "changeCartConfiguredItem_edit": "PASS 3/3 (errors[] empty, configurationItems populated, extendedPrice non-null)",
+    "moveFromSavedForLater": "PASS 3/3 (errors[] empty, configurationItems populated, extendedPrice non-null)"
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "ci": "PR #132 175acb6 — ci/SonarQG/auto-tests x3/swagger/cla all green",
+  "jira_transition": "PENDING USER APPROVAL (recommend -> Tested; hold Done until PR #132 is human-merged)",
+  "note": "Verified on the deployed PR build; PR #132 is OPEN/unmerged. Fix not shipped until merged; re-confirm post-merge via /qa-verify-fix.",
+  "artifacts": "tests/Sprint-current/VCST-5391/"
+}

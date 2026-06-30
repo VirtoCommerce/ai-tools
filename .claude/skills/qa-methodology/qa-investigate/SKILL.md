@@ -52,9 +52,14 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - P7: Duplicate GraphQL queries
    - P8: Hangfire job failure
 
-7. **Document and hand off:**
+7. **Dig into the source code — answer WHERE, then WHEN & WHY** (`bug-investigation-flow.md` §8). When browser/log evidence isn't enough to explain the behavior, read the actual code via GitHub MCP (read-only):
+   - **WHERE** (§8A backend `vc-module-*` / §8B frontend `vc-frontend`): `search_code` for the controller/service/resolver or page/composable/store, trace the logic chain, and decide by-design vs. defect.
+   - **WHEN & WHY** (§8C — regression archaeology): for any "used to work" / post-deploy / version-skew symptom, bracket the good→bad window (§1 + §9), walk `list_commits` on the suspect path, diff the method across good/bad refs, and open the introducing PR (`get_pull_request`) to recover what the change *intended*. Confirm the diff actually explains the symptom — correlation ≠ causation.
+
+8. **Document and hand off:**
    - Write bug report using templates in `.claude/skills/qa-methodology/qa-defect/defect-report-templates.md`
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
+   - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
    - Save to `reports/bugs/`
    - Optionally create JIRA ticket via Atlassian MCP
 
@@ -63,5 +68,6 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 - Never file a bug you cannot reproduce
 - Always capture evidence **and all logs** (browser + Hangfire + App Insights) before filing
 - Determine layer/module/frontend/platform precisely; carry it into the Fix Routing block
+- For any "used to work" / post-deploy / version-skew symptom, read the source (§8) to pin **where**, then do regression archaeology (§8C) to pin **when & why** — name the introducing commit/PR only when its diff actually explains the symptom (correlation ≠ causation)
 - If cannot reproduce after exhausting checklist, document the failed attempt and escalate
 - Distinguish flaky behavior from real bugs (see decision tree in supporting file)

@@ -25,9 +25,11 @@ BUG REPORTED / SUSPECTED
                                             │ SOURCE CODE │   │ APP INSIGHTS │
                                             │ (GitHub)    │   │ (Azure)      │
                                             └─────────────┘   └──────────────┘
-                                             §8: Search VC     §9: KQL queries,
-                                             module repos,     exceptions, deps,
-                                             trace logic       request traces
+                                             §8: WHERE +       §9: KQL queries,
+                                             WHEN/WHY broke    exceptions, deps,
+                                             (8A/B + 8C        request traces
+                                              regression
+                                              archaeology)
 ```
 
 **Key rules:**
@@ -500,6 +502,69 @@ When frontend source code investigation reveals the root cause:
 | `useRoute().query` parsed as string | Number comparison fails (`"1" !== 1`) |
 | Missing `<ClientOnly>` on browser-dependent code | SSR hydration mismatch error |
 | `emit('update:modelValue')` not declared in `defineEmits` | Event silently dropped in production |
+
+### 8C. When & Why the Code Broke — Regression Archaeology
+
+Sections 8A/8B tell you **where** the defect lives. This step answers **when** it was introduced and
+**why** the change broke it. A bug report that names the introducing commit/PR is far more actionable —
+it tells the fixer what the code *intended* to do, who to ask, and whether a revert is the safest fix.
+Do this whenever the symptom is a **regression** ("this used to work", "broke after the last release",
+a new exception spike in App Insights §9 after a deploy, or a version-skew P1).
+
+> QA agents are **read-only** on GitHub — use GitHub MCP (`list_commits`, `get_pull_request`,
+> `get_pull_request_files`, `search_issues`, `get_file_contents` at a ref). Never clone or `git blame`
+> a working tree (that's the `developers/` team's job during `/qa-fix`).
+
+### Step 1: Bracket the regression window
+
+Pin the two builds that bracket the break — the last known-good and the first known-bad:
+- **From the deploy timeline:** the platform/theme/module versions in the env header (§1) and §9's
+  before/after deploy comparison give you the bad build's date and version.
+- **A known-good reference:** the version on an env where it still works (P1 version skew — "works on
+  qa, fails on staging"), the last passing regression run for this suite, or the JIRA "affects version".
+
+### Step 2: Walk the commit history on the owning line of code
+
+Scope to the repo + path you isolated in 8A/8B, between the bracketing dates/tags:
+
+```
+# Commits touching the suspect file/area, newest first
+list_commits: repo=VirtoCommerce/vc-module-pricing  path=src/.../Services/PricingService.cs
+# (compare two release tags to narrow the set)
+get_file_contents: repo=... path=... ref=<good-tag>   # read the method as it was when it worked
+get_file_contents: repo=... path=... ref=<bad-tag>    # diff against current — what changed?
+```
+
+Read the diff of the method you flagged: the line that changed between good and bad **is** the "why".
+If the file has many commits in the window, bisect — check the file at the midpoint ref, decide which
+half holds the change, repeat.
+
+### Step 3: Read the introducing PR for intent
+
+Once you have the suspect commit, open its PR to recover *why* the change was made:
+
+```
+search_issues: repo=VirtoCommerce/vc-module-pricing  type:pr <commit-sha OR JIRA-key OR keyword>
+get_pull_request / get_pull_request_files: <PR number>
+```
+
+- The PR title/description + linked JIRA tell you the **intended** behavior change.
+- `get_pull_request_files` shows the full blast radius — was your symptom an unintended side effect of a
+  fix for something else? A renamed field, a tightened filter, a new null-guard that's too aggressive?
+- A regression here is usually **"fixed A, broke B"** — name both so the fixer doesn't reintroduce A.
+
+### Step 4: Document the when & why
+
+Add a **Regression** block to the bug report alongside the §8 root cause:
+- **Introduced in:** `VirtoCommerce/vc-module-{name}` commit `<sha>` (PR #NNN, "<title>", merged <date>)
+- **Shipped in:** module/platform/theme version `<ver>` — first bad build
+- **Last good:** version `<ver>` (still works on `<env>` / last green run `<REG-ID>`)
+- **Why it broke:** 1–2 sentences — what the PR intended vs. the side effect that became this bug
+- **Fix hint for `/qa-fix`:** revert-safe? or does the original PR's intent need preserving (fix-forward)?
+
+> **Correlation ≠ causation.** The introducing commit is a *hypothesis* until the diff plausibly explains
+> the symptom (Step 2) **and** it lands inside the regression window (Step 1). If the suspect change can't
+> explain the symptom, widen the window or reconsider the layer (§3) — don't name a commit on timing alone.
 
 ---
 

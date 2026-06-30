@@ -1,8 +1,9 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.24",
+    "version": "1.5.25",
     "updated": "GENERATED",
+    "changelog_1_5_25": "VCST-5028 suite 027b re-auth: added MULTI_ORG_TF_BR_EMPLOYEE and MULTI_ORG_TF_BR_MAINTAINER inline aliases. Both resolve to the same physical MULTI_ORG_TF_BR account (email/password/store_id identical) but are semantically distinct: EMPLOYEE = BuildRight org-employee context (no xapi:my_organization:edit → changeRole/lock/invite MUST reject); MAINTAINER = TechFlow org-maintainer context (should carry xapi:my_organization:edit → Finding #1 guard). Used by ORGM-003/007/012 and ORGM-017/018 respectively. resolveRole falls back to *_EMAIL/*_PASSWORD env vars; for these aliases the env vars are identical to MULTI_ORG_TF_BR_EMAIL/PASSWORD — no new .env entries needed beyond already-set MULTI_ORG_TF_BR_* vars.",
     "changelog_1_5_23": "VCST-5103 loyalty fixture hardening (2026-06-24). (1) Added LOY_SKU_PTS_UNIT inline alias — a 1-PTS divisor product (id d53eddf2-6a00-487b-b983-007462814526, SKU AGENT-TEST-PTS-UNIT-001) priced exactly 1 PTS in the 'Loyalty PTS price list' (currency=PTS, id 3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894), linked into the B2B virtual catalog, so a cart's PTS subtotal == addItem qty for ANY integer total. (2) Updated LOYALTY_NOBAL_USER: new memberId 31399071-7589-42a8-9013-75f805dfd48b after a teardown+reseed (security account 5a216728… reused). CRITICAL WARNING added to its _notes: the seeder CANNOT re-zero the balance — loyalty balance = sum of operation-log entries keyed on the reused security-account userId, and vc-module-loyalty exposes the op-log READ-ONLY (no write/delete, no balance set/debit API). After teardown+reseed the balance was still 404 PTS (earned on prior E2E orders). So insufficient-balance tests must be balance-RELATIVE (add LOY_SKU_PTS_UNIT at qty=balance+1), not a fixed PTS total. Equal-boundary (==balance allowed, +1 blocked, required>available strict) live-verified 2026-06-24 via LOY_SKU_PTS_UNIT @ 404/405.",
     "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
     "changelog_1_5_18": "Added PUSH_MSG_SEED inline alias — single source of truth for the Push Messages seed contract shared by suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI). No static recipient fixture by design (messages self-seed per run via POST /api/push-message with AGENT-TEST- topic prefix; recipients env-resolved {{ORG_USER_ID}}/{{TEST_USER_ID}} or live-discovered me.id). Captures stable contract values the suites repeated literally: endpoint, topic_prefix, sent/draft status, broadcast_group ('Registered'), epoch/future startDate, plus _notes documenting targeting field names (memberIds/targetOrganizationIds/userGroups/cultureName) and 4 model facts (status-in-body not /send, DELETE-Sent->500 known defect PUSH-034, async per-recipient inbox projection PUSH-027/028, no dedicated link field PUSH-037). Existing suites left unchanged (validated/automated); alias is available for future authoring + as the documented contract reference.",
@@ -2809,6 +2810,30 @@
     },
     "_comment": "VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password Password1!. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
     "_notes": "Membership create payload shape that worked: POST /api/customer/organization-memberships  body {\"userId\":\"631063d0-…\",\"organizationId\":\"<orgId>\",\"organizationName\":\"<name>\",\"roles\":[{\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\"}]} → 200. Read back via POST /api/customer/organization-memberships/search {\"userId\":\"631063d0-…\"} → totalCount 2."
+  },
+  "MULTI_ORG_TF_BR_EMPLOYEE": {
+    "_inline": true,
+    "email": "agent-test-multiorg-20260615@yopmail.com",
+    "password": "Password1!",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id"
+    },
+    "_notes": "VCST-5028 role-specific auth alias for MULTI_ORG_TF_BR account authenticated as BuildRight org-employee. Physical account is identical to MULTI_ORG_TF_BR (same email/password/storeId). This alias exists to make the test intent explicit: the caller has org-employee role in BuildRight — which lacks xapi:my_organization:edit permission, so changeOrganizationContactRole and inviteUser MUST reject this JWT. Cases: ORGM-003 (changeRole unauthorized), ORGM-007 (lockContact unauthorized), ORGM-012 (inviteUser unauthorized). resolveRole in scripts/lib/graphql-auth.ts resolves via email_env=MULTI_ORG_TF_BR_EMPLOYEE_EMAIL / password_env=MULTI_ORG_TF_BR_EMPLOYEE_PASSWORD with store_id fallback from this alias."
+  },
+  "MULTI_ORG_TF_BR_MAINTAINER": {
+    "_inline": true,
+    "email": "agent-test-multiorg-20260615@yopmail.com",
+    "password": "Password1!",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id"
+    },
+    "_notes": "VCST-5028 role-specific auth alias for MULTI_ORG_TF_BR account authenticated as TechFlow org-maintainer. Physical account is identical to MULTI_ORG_TF_BR (same email/password/storeId). This alias exists to make the test intent explicit: the caller holds org-maintainer role in TechFlow — which should carry xapi:my_organization:edit permission. Cases: ORGM-017 (changeRole Finding #1 guard — maintainer SHOULD succeed but currently returns Forbidden), ORGM-018 (lockContact Finding #1 guard). resolveRole in scripts/lib/graphql-auth.ts resolves via email_env=MULTI_ORG_TF_BR_MAINTAINER_EMAIL / password_env=MULTI_ORG_TF_BR_MAINTAINER_PASSWORD with store_id fallback from this alias."
   },
   "VIRTUAL_CATALOG_B2B": {
     "_inline": true,

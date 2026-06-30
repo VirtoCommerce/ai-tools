@@ -10,6 +10,7 @@
         "height": 1080
       },
       "locale": "en-US",
+      "storageState": "test-results/auth/ORG_USER.json",
       "recordHar": {
         "path": "./test-results/firefox/har",
         "omitContent": true
