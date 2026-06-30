@@ -677,19 +677,3 @@ CAT-GQL-132,"xCatalog — SearchProducts Without sortings Field Still Works — 
 [COUNT label=search_no_sortings] data.products.items.length > 0
 [DATA label=search_no_sortings] data.products.pageInfo is non-null
 [EVIDENCE] Omitting sortings from the query must not cause errors or change response shape for existing fields — confirms additive-only, backward-compatible deployment","[EVIDENCE] Confirm totalCount and items are populated identically to a baseline search query — the new sortings field being absent must not alter existing field values","errors[] non-empty (regression: new field broke existing query path); totalCount = 0 (query returning no results after upgrade); items absent or null; pageInfo absent","none — read-only","VCST-5177; BL-GQL-002; backward-compat; xAPI; additive field",Draft
-  query GetProductUSD($productId: String! $storeId: String!) {
-    product(id: $productId storeId: $storeId currencyCode: ""{{CURRENCY_CODE}}"" cultureName: ""en-US"") {
-      id
-      code
-      price {
-        listPrice { amount currency { code } }
-        actualPrice { amount currency { code } }
-      }
-      loyaltyPoints { amount formattedAmount currency { code } }
-    }
-  }
-[GQL-VARS get_product_usd] {""productId"": ""@td(BUYABLE_NO_MIN_QTY.id)"", ""storeId"": ""{{STORE_ID}}""}
-[GQL-EXEC get_product_usd]","[ERRORS label=get_product_usd] errors[] empty
-[DATA label=get_product_usd] data.product.id is non-null
-[DATA label=get_product_usd] data.product.price.actualPrice.currency.code = {{CURRENCY_CODE}}
-[EVIDENCE] loyaltyPoints (MoneyType) for USD query: if loyaltyPoints.amount is non-null and > 0, document the value — behavior under observation (per-design or a data leak); if loyaltyPoints resolves null, that confirms PTS-scope isolation","[EVIDENCE] USD price.actualPrice.currency.code must equal {{CURRENCY_CODE}} — confirms no PTS price leaked into the USD response","errors[] non-empty; actualPrice.currency.code = PTS instead of {{CURRENCY_CODE}} (loyalty currency leaking into USD query); 500 on product query","none — read-only","VCST-5023; xAPI; Query.product; loyalty currency scope",Draft
