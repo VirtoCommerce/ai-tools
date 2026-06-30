@@ -11,6 +11,7 @@
 import { execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join, resolve } from "path";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 
 export type RepoKind = "frontend" | "module" | "platform";
 
@@ -127,6 +128,41 @@ function repoName(repo: string): { owner: string | null; name: string } {
     : { owner: null, name: repo };
 }
 
+// --- Client repo awareness (from the deployment profile) ---------------------
+// A native-platform deployment has NO client repos, so CLIENT_ORG is "" and
+// repoOwnership() always returns "platform" ⇒ every function below behaves
+// exactly as before. Only a client deployment (project-init wrote a profile with
+// vcs.clientOrg + repos.client) activates the client branches. fix-repos.json is
+// untouched — platform routing is unchanged.
+const PROFILE = loadProjectProfile();
+/** GitHub/Azure org that owns the CLIENT's custom code ("" for native platform). */
+export const CLIENT_ORG: string = PROFILE.vcs.clientOrg || "";
+const CLIENT_REPOS = PROFILE.repos.client || [];
+
+export type RepoOwnership = "client" | "platform";
+
+const CLIENT_FULL = new Set<string>();
+const CLIENT_BARE = new Set<string>();
+const CLIENT_KINDS = new Map<string, RepoKind>();
+for (const r of CLIENT_REPOS) {
+  if (!r?.name) continue;
+  CLIENT_FULL.add(r.name);
+  CLIENT_BARE.add(repoName(r.name).name);
+  if (r.kind) CLIENT_KINDS.set(repoName(r.name).name, r.kind as RepoKind);
+}
+
+/**
+ * Does this repo belong to the CLIENT (custom modules / theme / storefront fork)
+ * or to the native VirtoCommerce PLATFORM? Drives the fix-vs-issue decision and
+ * which VCS a PR/issue targets. Always "platform" when no client is configured.
+ */
+export function repoOwnership(repo: string): RepoOwnership {
+  const { owner, name } = repoName(repo);
+  if (CLIENT_ORG && owner === CLIENT_ORG) return "client";
+  if (CLIENT_FULL.has(repo) || CLIENT_BARE.has(name)) return "client";
+  return "platform";
+}
+
 /**
  * Is the fix agent permitted to push branches / open PRs to this repo?
  * The triage agent's `ROUTE_REPO:` is validated against this — the safety gate.
@@ -135,6 +171,12 @@ function repoName(repo: string): { owner: string | null; name: string } {
  */
 export function isAllowedRepo(repo: string): boolean {
   const { owner, name } = repoName(repo);
+  // Client repos (from the profile) are allowed for their org / listed names,
+  // minus the deny patterns (no *-tests / sample / demo). With no client
+  // configured, repoOwnership() is always "platform" so this branch never runs.
+  if (repoOwnership(repo) === "client") {
+    return !CONFIG.denyPatterns.some((re) => re.test(name));
+  }
   if (owner !== null && owner !== REPO_ORG) return false;
   if (CONFIG.denyPatterns.some((re) => re.test(name))) return false;
   if (name in CONFIG.explicit) return true;
@@ -144,6 +186,12 @@ export function isAllowedRepo(repo: string): boolean {
 /** Classify a repo into a kind (drives the build/test profile). */
 export function repoKind(repo: string): RepoKind {
   const { name } = repoName(repo);
+  // Client repos: use the kind declared in the profile; else a name heuristic.
+  if (repoOwnership(repo) === "client") {
+    const declared = CLIENT_KINDS.get(name);
+    if (declared) return declared;
+    return /front|storefront|theme|vue|spa/i.test(name) ? "frontend" : "module";
+  }
   if (name in CONFIG.explicit) return CONFIG.explicit[name];
   return "module"; // anything matching the module pattern
 }
@@ -176,15 +224,25 @@ export function suggestRepo(text: string): string | null {
  */
 export function routingReference(): string {
   const common = ROUTING_TABLE.map((r) => `- ${r.repo}`).join("\n");
-  return [
-    `Allowed targets (org \`${REPO_ORG}\`):`,
+  const lines = [
+    `Allowed targets (platform org \`${REPO_ORG}\`):`,
     `- ${REPO_ORG}/vc-frontend (storefront, Vue/TS)`,
     `- ${REPO_ORG}/vc-platform (platform core, C#)`,
     `- ${REPO_ORG}/vc-module-<name> or ${REPO_ORG}/vc-module-x-<name> (any backend module, C#)`,
+  ];
+  if (CLIENT_REPOS.length) {
+    lines.push(
+      ``,
+      `Client-owned repos (custom modules / theme / storefront fork — fix & PR go HERE):`,
+      ...CLIENT_REPOS.map((r) => `- ${r.name}${r.kind ? ` (${r.kind})` : ""}`),
+    );
+  }
+  lines.push(
     ``,
     `Common domain → repo hints (pick the best fit; you are not limited to these):`,
     common,
-  ].join("\n");
+  );
+  return lines.join("\n");
 }
 
 export interface Checkout {

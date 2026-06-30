@@ -1,0 +1,48 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Deployment profile EXAMPLE. Describes what infrastructure this checkout of the QA plugin targets. Copy to project-profile.json (gitignored) and edit, OR let `/project-init` generate it for you. When project-profile.json is ABSENT, scripts/lib/project-profile.mjs returns platform/jira/github defaults = the original VirtoCommerce-internal behaviour, so omitting the file changes nothing.",
+    "generatedBy": "example"
+  },
+
+  "projectType": "client",
+  "operator": "ask",
+
+  "tracker": {
+    "kind": "jira",
+    "baseUrl": "https://your-org.atlassian.net",
+    "projectKey": "ABC",
+    "azure": {
+      "organization": "your-azure-org",
+      "project": "Your Project",
+      "team": "Your Team",
+      "stateMap": { "In Progress": "Active", "In Review": "Active", "Ready For Test": "Resolved" }
+    }
+  },
+
+  "vcs": {
+    "clientHost": "github",
+    "clientOrg": "your-company",
+    "azure": { "organization": "your-azure-org", "project": "Your Project" },
+    "auth": "gh-cli"
+  },
+
+  "upstream": {
+    "host": "github",
+    "org": "VirtoCommerce",
+    "fileIssues": true,
+    "contributionMode": "fork",
+    "clientGithubAccount": "your-github-login"
+  },
+
+  "repos": {
+    "client": [
+      { "name": "your-company/vc-module-custom-pricing", "kind": "module", "host": "github", "defaultBranch": "dev" },
+      { "name": "your-company/storefront-theme", "kind": "frontend", "host": "github", "defaultBranch": "main" }
+    ],
+    "platform": [
+      { "name": "VirtoCommerce/vc-platform", "kind": "platform" },
+      { "name": "VirtoCommerce/vc-module-cart", "kind": "module" }
+    ]
+  }
+}

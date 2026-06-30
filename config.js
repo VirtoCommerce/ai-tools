@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
+import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
@@ -166,6 +167,11 @@ const getEnvVar = (name, defaultValue = undefined) => {
     return value || defaultValue;
 };
 
+// Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
+// Safe + memoized; returns platform/jira/github defaults when the file is absent,
+// so this load is a no-op for the existing VirtoCommerce-internal setup.
+const profile = loadProjectProfile();
+
 // Export configuration object
 export const env = {
     // Multi-env metadata (per feature/qa-agentic-standardization)
@@ -272,7 +278,17 @@ export const env = {
     MULTI_ORG_USER_PASSWORD: getEnvVar('MULTI_ORG_USER_PASSWORD', ''),
     EUR_USER_EMAIL: getEnvVar('EUR_USER_EMAIL', ''),
     EUR_USER_PASSWORD: getEnvVar('EUR_USER_PASSWORD', ''),
-    ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', '')
+    ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', ''),
+
+    // --- Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
+    // Tells every skill WHICH infrastructure this checkout targets. When
+    // project-profile.json is absent these resolve to the pre-existing
+    // VirtoCommerce-internal defaults (platform / jira / github), so nothing changes.
+    PROJECT_TYPE: profile.projectType,            // platform | client
+    TRACKER_KIND: profile.tracker.kind,           // jira | azure
+    CLIENT_VCS_HOST: profile.vcs.clientHost,      // github | azure-repos
+    UPSTREAM_ORG: profile.upstream.org,           // GitHub org for platform issues/PRs (VirtoCommerce)
+    PROFILE: profile                              // full profile object for skills needing detail
 };
 
 // Optional: Export individual getters for sensitive data

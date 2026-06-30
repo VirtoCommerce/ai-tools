@@ -11,6 +11,7 @@ import {
   REPO_ORG,
 } from "./lib/repo-router.js";
 import { dependenciesOf, dependentsOf } from "./lib/module-registry.js";
+import { getTracker } from "./lib/trackers/index.js";
 
 /**
  * Auto-Fix CI Pipeline
@@ -47,12 +48,12 @@ const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
 const DRY_RUN = process.env.DRY_RUN === "true";
 const PHASE_TIMEOUT_MS = parseInt(process.env.PHASE_TIMEOUT_MS || "1800000", 10); // 30 min
 
-// JIRA REST (optional)
-const JIRA_BASE_URL = (process.env.JIRA_BASE_URL || "").replace(/\/$/, "");
-const JIRA_EMAIL = process.env.JIRA_EMAIL || "";
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN || "";
-const JIRA_TRANSITION = process.env.JIRA_TRANSITION || "In Review";
-const jiraEnabled = Boolean(JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN);
+// Tracker transition/state applied after a PR opens. For Jira this is a
+// transition name ("In Review"); for Azure Boards the adapter maps it to a
+// System.State via the profile stateMap. TRACKER_TRANSITION wins; JIRA_TRANSITION
+// is kept for back-compat.
+const TRACKER_TRANSITION =
+  process.env.TRACKER_TRANSITION || process.env.JIRA_TRANSITION || "In Review";
 
 const WORKSPACE_DIR = process.env.FIX_WORKSPACE || ".fix-workspace";
 
@@ -66,132 +67,13 @@ function log(msg: string) {
 }
 
 // ---------------------------------------------------------------------------
-// JIRA REST helpers (guarded — no-op when creds are absent)
+// Bug tracker (Jira | Azure Boards) — resolved from the deployment profile via
+// ci/lib/trackers. Defaults to Jira, so existing VirtoCommerce-internal runs are
+// unchanged. The four ops used below (getIssue / search / comment / transition)
+// behave identically to the former inline JIRA REST helpers.
 // ---------------------------------------------------------------------------
 
-function jiraAuthHeader(): string {
-  return "Basic " + Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString("base64");
-}
-
-interface JiraTicket {
-  key: string;
-  summary: string;
-  description: string;
-  status: string;
-  priority: string;
-  components: string[];
-  labels: string[];
-  assignee: string | null;
-  raw: unknown;
-}
-
-/** Flatten Atlassian Document Format (ADF) to plain text (best-effort). */
-function adfToText(node: unknown): string {
-  if (!node || typeof node !== "object") return "";
-  const n = node as { text?: string; content?: unknown[]; type?: string };
-  if (typeof n.text === "string") return n.text;
-  let out = "";
-  if (Array.isArray(n.content)) {
-    for (const child of n.content) out += adfToText(child);
-    if (["paragraph", "heading", "listItem", "blockquote"].includes(n.type || "")) out += "\n";
-  }
-  return out;
-}
-
-async function jiraGetIssue(key: string): Promise<JiraTicket | null> {
-  if (!jiraEnabled) return null;
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}`, {
-    headers: { Authorization: jiraAuthHeader(), Accept: "application/json" },
-  });
-  if (!res.ok) {
-    log(`JIRA: failed to fetch ${key} — ${res.status}`);
-    return null;
-  }
-  const data = (await res.json()) as any;
-  const f = data.fields || {};
-  return {
-    key: data.key,
-    summary: f.summary || "",
-    description: adfToText(f.description).trim(),
-    status: f.status?.name || "",
-    priority: f.priority?.name || "",
-    components: (f.components || []).map((c: any) => c.name),
-    labels: f.labels || [],
-    assignee: f.assignee?.displayName || null,
-    raw: data,
-  };
-}
-
-async function jiraSearch(jql: string, max: number): Promise<string[]> {
-  if (!jiraEnabled) return [];
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/search`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ jql, maxResults: max, fields: ["key"] }),
-  });
-  if (!res.ok) {
-    log(`JIRA: search failed — ${res.status}`);
-    return [];
-  }
-  const data = (await res.json()) as any;
-  return (data.issues || []).map((i: any) => i.key);
-}
-
-async function jiraComment(key: string, text: string): Promise<void> {
-  if (!jiraEnabled || DRY_RUN) {
-    log(`JIRA: (skipped${DRY_RUN ? " dry-run" : ""}) comment on ${key}`);
-    return;
-  }
-  const body = {
-    body: {
-      type: "doc",
-      version: 1,
-      content: [{ type: "paragraph", content: [{ type: "text", text }] }],
-    },
-  };
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/comment`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) log(`JIRA: comment on ${key} failed — ${res.status}`);
-}
-
-async function jiraTransition(key: string, transitionName: string): Promise<void> {
-  if (!jiraEnabled || DRY_RUN) {
-    log(`JIRA: (skipped${DRY_RUN ? " dry-run" : ""}) transition ${key} → ${transitionName}`);
-    return;
-  }
-  const tRes = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/transitions`, {
-    headers: { Authorization: jiraAuthHeader(), Accept: "application/json" },
-  });
-  if (!tRes.ok) return;
-  const tData = (await tRes.json()) as any;
-  const match = (tData.transitions || []).find(
-    (t: any) => t.name.toLowerCase() === transitionName.toLowerCase(),
-  );
-  if (!match) {
-    log(`JIRA: no transition "${transitionName}" available for ${key}`);
-    return;
-  }
-  await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/transitions`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ transition: { id: match.id } }),
-  });
-}
+const tracker = getTracker({ dryRun: DRY_RUN, log });
 
 // ---------------------------------------------------------------------------
 // Bug-report lookup (links the JIRA key to a local reports/bugs/*.md file)
@@ -332,7 +214,7 @@ async function processTicket(
   let spent = 0;
 
   // --- Gather context: JIRA ticket + linked bug report ---
-  const ticket = await jiraGetIssue(key);
+  const ticket = await tracker.getIssue(key);
   const bugReportPath = findBugReport(key);
   const bugReport = bugReportPath ? readFileSync(bugReportPath, "utf-8") : "";
 
@@ -389,7 +271,7 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
   const bailReason = marker(triage.result, "BAIL_REASON") || "Triage declined (no reason given)";
 
   if (verdict !== "GO") {
-    await jiraComment(
+    await tracker.comment(
       key,
       `[auto-fix] Skipped: ${bailReason} — left for human review. (run ${RUN_ID})`,
     );
@@ -501,7 +383,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
   const rootCause = marker(fix.result, "ROOT_CAUSE") || "";
 
   if (fixStatus !== "SUCCESS" || confidence === "LOW") {
-    await jiraComment(
+    await tracker.comment(
       key,
       `[auto-fix] Could not produce a confident fix (status=${fixStatus}, confidence=${confidence}). ${rootCause} Left for a human. (run ${RUN_ID})`,
     );
@@ -534,7 +416,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log(`[${key}] gh pr create failed: ${msg}`);
-      await jiraComment(
+      await tracker.comment(
         key,
         `[auto-fix] Fix pushed to branch ${checkout.workBranch} on ${routeRepo}, but draft PR creation failed: ${msg}. (run ${RUN_ID})`,
       );
@@ -543,11 +425,11 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
   }
 
   // --- Update JIRA ---
-  await jiraComment(
+  await tracker.comment(
     key,
     `[auto-fix] Draft PR opened: ${prUrl}\nRoot cause: ${rootCause}\nConfidence: ${confidence}. Please review & merge. (run ${RUN_ID})`,
   );
-  await jiraTransition(key, JIRA_TRANSITION);
+  await tracker.transition(key, TRACKER_TRANSITION);
 
   writeFileSync(
     join(ticketDir, "result.json"),
@@ -580,10 +462,10 @@ function validateEnv(): void {
       console.warn("Warning: `gh auth setup-git` failed — git push may not authenticate.");
     }
   }
-  if (!jiraEnabled) {
+  if (!tracker.enabled) {
     console.warn(
-      "Warning: JIRA REST not configured (JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN). " +
-        "Ticket discovery requires FIX_TICKETS; JIRA comments/transitions will be skipped.",
+      `Warning: tracker (${tracker.kind}) not configured. ` +
+        "Ticket discovery requires FIX_TICKETS; tracker comments/transitions will be skipped.",
     );
   }
 }
@@ -600,8 +482,8 @@ async function main() {
   if (FIX_TICKETS) {
     tickets = FIX_TICKETS.split(",").map((t) => t.trim()).filter(Boolean);
   } else {
-    log(`Discovering tickets via JQL: ${FIX_JQL}`);
-    tickets = await jiraSearch(FIX_JQL, MAX_TICKETS);
+    log(`Discovering tickets via query: ${FIX_JQL}`);
+    tickets = await tracker.search(FIX_JQL, MAX_TICKETS);
   }
   tickets = tickets.slice(0, MAX_TICKETS);
 
