@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (19) — `.claude/commands/`
+## Slash Commands (20) — `.claude/commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -25,6 +25,7 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/qa-seed-data` | `[minimal\|catalog\|b2b\|pricing\|loyalty\|promotions\|bopis\|full\|teardown]` | No | Seed/teardown all test data via repo seed scripts (`npm run seed*` + specialized `.mjs` seeders) or Postman MCP |
 | `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|ui\|module <name>]` | No | Business analysis with GitHub search + live UI (full/flows/api/docs/stories/ui/module) |
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
+| `/project-init` | `(no args — interactive) \| --check` | No | **Onboard this plugin onto a deployment.** Install deps; choose native-platform vs CLIENT project; pick bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos); capture test-env URL + browser-login/token auth (never passwords); discover the client/platform repo split; write `project-profile.json` + `.mcp.json`; verify access. The profile is what makes `/qa-fix` route each bug to the **right repo** (client custom code vs native VirtoCommerce platform) and the **right tracker**. Backed by the `/project-init` skill. |
 
 ## Skills (27) — `.claude/skills/` (grouped by category)
 
@@ -79,6 +80,13 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | `/vue-fix` | _(invoked by `fullstack-frontend`)_ | Implement a minimal, idiomatic Vue 3 / TS fix in vc-frontend → green; typecheck (`vue-tsc`) + lint + vitest + build gate | `vue-fix-patterns.md`, `vue3-best-practices.md` |
 
 > `/storybook-test` (UI-kit Storybook play-function interaction tests) is **planned/optional** — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent (vc-frontend has no play functions today).
+
+**Root-level skills (outside the 4 QA category groups):**
+
+| Skill | Arguments | Purpose | Supporting Files |
+|-------|-----------|---------|-----------------|
+| `/project-init` | `(no args — interactive) \| --check` | Onboard the plugin onto a deployment: native-platform vs client, bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discover the client/platform repo split, write `project-profile.json` + `.mcp.json`, verify access. The profile drives `/qa-fix` repo + tracker routing. | `gen-profile.mjs`, `discover-repos.mjs`, `gen-mcp.mjs`, `verify-access.mjs` |
+| `/run-vc-mcp-testing-module` | `(no args)` | Build / launch / smoke-test / health-check this tooling repo (env:check, `@td()` resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run). | `SKILL.md` |
 
 ## Usage
 

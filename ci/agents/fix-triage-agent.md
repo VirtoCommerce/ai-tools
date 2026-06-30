@@ -34,15 +34,27 @@ Pick exactly one repo from the allowed list:
 
 Use the bug report's **Component** line and any "Fixed in <repo> PR #" hints as the strongest signal. Prefer the heuristic guess only if it agrees with the ticket evidence.
 
-If the fix would clearly span multiple repos, BAIL (`BAIL_REASON: multi-repo fix, needs human coordination`).
+**Client-owned repos.** If the allowed-repos list includes a "Client-owned repos" section (a client deployment — custom modules / theme / storefront fork), the bug may live in CLIENT code rather than the native VirtoCommerce platform. Route to the client repo when the symptom is in a customization (a custom module's behavior, the client theme/storefront, a client field/flow); route to a `VirtoCommerce/*` platform repo when the symptom reproduces in stock platform behavior. When the routing reference shows no client section, every repo is platform-owned — route as usual.
+
+If the fix would clearly span multiple repos, BAIL with `BAIL_CLASS: multi-repo`.
+
+## Step 3 — Classify the ownership and (on BAIL) the reason
+
+- **OWNERSHIP** — is `ROUTE_REPO` a client repo (from the "Client-owned repos" section) or a native VirtoCommerce platform repo? Emit `client` or `platform`. (The pipeline re-derives this authoritatively from the repo, so this is your reading of it — but be accurate; it decides whether a PR is a direct/fork contribution and whether an unfixable bug can be filed as an upstream issue.)
+- **BAIL_CLASS** (only when VERDICT is BAIL) — pick one:
+  - `not-a-bug` — by-design / config-gated / env-data-drift / not-reproducible / API-only-repro / needs-human-judgment. **The default. Nothing is filed; the ticket is just left for a human.**
+  - `too-complex` — a *real* defect, but the fix is large / risky / needs refactoring / spans an unclear root cause. On a **platform** repo this is eligible to be filed as a GitHub Issue upstream for a human.
+  - `multi-repo` — a *real* defect whose fix clearly spans 2+ repos / a dependency. Also upstream-issue-eligible on a platform repo.
 
 ## Output — emit these markers, each on its own line, at the very end
 
 ```
 VERDICT: GO            # or BAIL
-ROUTE_REPO: VirtoCommerce/vc-frontend   # required when GO; must be from the allowed list
+ROUTE_REPO: VirtoCommerce/vc-frontend   # required when GO; the best-fit repo (also helpful on BAIL); must be from the allowed list
+OWNERSHIP: platform                     # or client — your reading of ROUTE_REPO's ownership
 COMPONENT: <component/area, short>
 BAIL_REASON: <one sentence>             # required when BAIL; omit or "n/a" when GO
+BAIL_CLASS: not-a-bug                   # required when BAIL: not-a-bug | too-complex | multi-repo
 CONFIDENCE: HIGH|MEDIUM|LOW
 ```
 

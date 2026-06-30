@@ -96,6 +96,11 @@ Invoke the development skills:
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
    origin claude/qa-autofix/VCST-XXXX` (with `-c credential.helper='!gh auth git-credential'`) →
    `gh pr create` (a normal PR for human review — **not** auto-merged). Write `PR_BODY.md` (template below).
+   **Target follows the repo's ownership** (see `shared-instructions.md` §Where the fix goes): a **client**
+   storefront fork / theme → PR on the client repo (GitHub or Azure Repos); the **platform** `vc-frontend`
+   with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`); platform + virto-engineer → direct
+   PR (default). With no `project-profile.json`, the direct `VirtoCommerce/vc-frontend` PR is unchanged.
+   When `gh auth status` shows an ambient write login (`vcs.auth: "gh-cli"`), drop the `GH_TOKEN=` prefix.
 9. **Verify CI (Gate 5) — don't assume green.** Poll the PR's checks (`gh pr checks`) until both
    **`Theme CI / ci`** (Build, SonarCloud Scan, Check Locales, **Unit Tests with Coverage** =
    `yarn test:coverage`, Typing Tests = `yarn test:typing`) and **`Theme CI / auto-tests`** (the shared

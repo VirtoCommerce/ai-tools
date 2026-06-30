@@ -34,6 +34,26 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Where the fix goes — ownership routing (client vs platform)
+A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
+modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when
+unfixable, an issue) goes. Ownership is **data, not guesswork**: `ci/lib/repo-router.ts` `repoOwnership(repo)`
+returns `client` or `platform` from `project-profile.json` (written by `/project-init`); `contributionPlan(repo)`
+returns `{ ownership, host, mode, forkOwner }`. **When no profile is present, every repo is `platform` /
+GitHub / `direct` — i.e. the original VirtoCommerce-internal behaviour, unchanged.**
+
+| Routed repo | Where the PR goes | How |
+|-------------|-------------------|-----|
+| **Client** repo (custom module / theme / storefront fork) | the **client** repo | push + PR on the client's host: GitHub (`gh pr create`) or **Azure Repos** (per `vcs.clientHost`) |
+| **Platform** repo, operator = **virto-engineer** | **direct** PR to `VirtoCommerce/<repo>` | push the work branch to the repo, `gh pr create` on it (today's behaviour) |
+| **Platform** repo, operator = **client** | **fork** PR to `VirtoCommerce/<repo>` | the fix branch lives on the client's fork (`upstream.clientGithubAccount`); PR head is `<forkOwner>:<branch>` |
+| **Platform** bug that is **real but NOT fixable** (too-complex / multi-repo per Gate 0/1) | a **GitHub Issue** on `VirtoCommerce/<repo>` | not a PR — the client can't fix complex platform internals, so hand it upstream (client just needs a GitHub account) |
+
+In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls `getVcs(ownership)` /
+`getUpstreamVcs()` and a fork-aware `checkoutForFix`). **You** (interactive) must apply the same matrix by
+hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
+no-auto-merge hard rules below are unchanged in every case.
+
 ## GitHub authentication (the write token)
 The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
 **cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write
@@ -52,6 +72,21 @@ GH_TOKEN="$FIX" gh pr create ...                                # PR
 The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is **required**: this
 host's default helper is the Windows credential manager, which would otherwise serve the wrong (read)
 token. `gh` commands need only the `GH_TOKEN=` prefix.
+
+### When `gh` is already logged in (browser login), or the host is Azure Repos
+The `GH_TOKEN=` prefix above is specific to a host whose **ambient** `gh` is the read-only GitHub MCP
+token. A client deployment configured by `/project-init` with `vcs.auth: "gh-cli"` instead runs
+`gh auth login` (browser), so the **ambient** `gh`/`git` session already has write scope — in that case
+**drop the `GH_TOKEN=` prefix and the explicit credential helper**; plain `gh`/`git` already authenticate
+(`gh auth status` confirms). Only fall back to the token-prefix form when `gh auth status` shows a
+read-only / wrong identity. Check `project-profile.json` → `vcs.auth` to know which you're on
+(`gh-cli` = ambient login; `pat` = a token in `.env.local`).
+
+For a **client repo on Azure Repos** (`vcs.clientHost: "azure-repos"`), GitHub auth doesn't apply: clone
+with the Azure Git URL `https://dev.azure.com/<org>/<project>/_git/<repo>` and authenticate with
+`ADO_PAT` (`.env.local`) or an `az login` session (`ADO_AUTH=az-login`) — **never a password**. Open the
+PR with the Azure DevOps REST `POST …/_apis/git/repositories/<repo>/pullrequests` (the headless twin's
+`AzureReposVcs` does exactly this). `gh pr create` is GitHub-only.
 
 ### Commit identity — author as the human, NOT a bot (CLA)
 Commits **must be authored by the human who owns the write token** (the GitHub account behind
@@ -153,6 +188,11 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 - Fix requires a migration / schema / contract change.
 - CI infra failure (not a code failure) — don't retry in a loop.
 - Ambiguous "expected result", security disclosure, or low confidence after ≤2 revise iterations.
+
+When you STOP on a **platform** repo for *too-complex* or *multi-repo* (not a by-design rejection), say so
+explicitly in your report — on a client deployment the orchestrator turns that into a **GitHub Issue on
+the VirtoCommerce upstream** (the client can't fix platform internals, so it's handed upstream for a
+human). You do **not** file the issue yourself; just report the class so the orchestrator can.
 
 ## Reporting discipline
 - Long transcripts / investigation logs go via SendMessage to the orchestrator (or the `reports/fixes/FIX-*/`

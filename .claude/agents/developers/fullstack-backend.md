@@ -88,7 +88,11 @@ Invoke the development skills:
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
    origin claude/qa-autofix/VCST-XXXX` → `gh pr create` (a normal PR for human review — **not**
-   auto-merged). Write `PR_BODY.md` (template below).
+   auto-merged). Write `PR_BODY.md` (template below). **Target follows the repo's ownership** (see
+   `shared-instructions.md` §Where the fix goes): a **client** module → PR on the client repo (GitHub or
+   Azure Repos); a **platform** module with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`);
+   platform + virto-engineer → direct PR (today's default). With no `project-profile.json` this is exactly
+   the direct `VirtoCommerce/*` PR, unchanged.
 9. **Verify CI (Gate 5) — don't assume green.** Poll the PR's checks (`gh pr checks`) until both
    **`Module CI / ci`** (Build = `vc-build Compile`, **Unit Tests** = `vc-build Test`, SonarCloud
    **Quality Gate**, and **Swagger validation** on PRs to `dev`) and **`Module CI / auto-tests`** (the
