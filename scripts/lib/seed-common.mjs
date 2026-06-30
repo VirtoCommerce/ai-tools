@@ -34,6 +34,19 @@ loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
 
+// Per-env override promotion (mirrors config.js): any key ending in
+// `_${TEST_ENV.toUpperCase()}` is promoted to its base name. Lets `.env.local`
+// carry per-env secret variants (e.g. ADMIN_PASSWORD_VCPTCORE1) so seeders run
+// against an env whose admin password differs from the shared base. Without this,
+// `.env.local`'s base ADMIN_PASSWORD (loaded last with override) clobbers any
+// inline override and auth fails with invalid_grant.
+const _ENV_SUFFIX = `_${_TEST_ENV.toUpperCase()}`;
+for (const [key, value] of Object.entries(process.env)) {
+  if (key.endsWith(_ENV_SUFFIX) && value) {
+    process.env[key.slice(0, -_ENV_SUFFIX.length)] = value;
+  }
+}
+
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // Strip trailing slash(es) — some envs set BACK_URL with one (e.g. vcptcore), which would
