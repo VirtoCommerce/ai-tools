@@ -57,8 +57,14 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 4. **Discover the matching App Insights resource** for this env (Section 9 — by matching the active
    `BACK_URL`/`FRONT_URL`, not by assuming a fixed name; some envs like `localhost`/fresh demos have none).
    Record what you found now so every KQL query in Section 9 targets the right resource.
-5. **Capture the build versions** for this env (`{BACK_URL}/#!/workspace/systeminfo` or the deploy repo's
-   `packages.json`/`artifact.json`) — needed for the Module Versions line in the report and for P1 version-skew.
+5. **Capture the deployed build versions** for this env — **authoritative source is the deploy repo
+   `VirtoCommerce/vc-deploy-dev`** via GitHub MCP `get_file_contents`, on the branch matching `TEST_ENV`
+   (`vcst-qa` default; `vcptcore` / `virtostart` for other envs):
+   - `backend/packages.json` → `PlatformVersion` + every module id with its version (P1 version-skew, §8C window anchor)
+   - `theme/artifact.json` → theme package version (from the artifact URL)
+   - `{BACK_URL}/#!/workspace/systeminfo` is a **live cross-check** of what's actually running — if it
+     disagrees with the manifest, the deploy didn't land (or a different branch is live); note the mismatch.
+   These versions are the anchor for the report header, P1, and the regression window in §8C.
 
 > Output of Section 1 is a one-line env header you carry into the report:
 > `Env: <TEST_ENV> — <FRONT_URL> / <BACK_URL> @ Platform <ver>, Theme <ver> (ENV_RISK=<level>)`
@@ -518,8 +524,11 @@ a new exception spike in App Insights §9 after a deploy, or a version-skew P1).
 ### Step 1: Bracket the regression window
 
 Pin the two builds that bracket the break — the last known-good and the first known-bad:
-- **From the deploy timeline:** the platform/theme/module versions in the env header (§1) and §9's
-  before/after deploy comparison give you the bad build's date and version.
+- **From the deploy timeline:** the platform/theme/module versions in the env header (§1, from
+  `vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`) and §9's before/after deploy comparison
+  give you the bad build's date and version. Walk `vc-deploy-dev`'s commit history on those manifest files
+  (`list_commits path=backend/packages.json`) to find **when the suspect module's version changed** — that
+  deploy commit dates the regression window.
 - **A known-good reference:** the version on an env where it still works (P1 version skew — "works on
   qa, fails on staging"), the last passing regression run for this suite, or the JIRA "affects version".
 

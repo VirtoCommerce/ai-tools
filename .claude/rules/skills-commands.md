@@ -58,7 +58,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
 | `/qa-process` | `[phase name \| analyze VCST-XXXX \| close sprint-XX \| gates]` | ISTQB 7-phase lifecycle | `test-process-lifecycle.md` |
-| `/qa-investigate` | `bug description \| VCST-XXXX` | Bug investigation (5 phases) and root cause analysis | `bug-investigation-flow.md` |
+| `/qa-investigate` | `bug description \| VCST-XXXX` | Bug investigation (5 phases) and root cause analysis; ordered evidence-capture pass + evidence-to-claim root-cause worksheet, scaffolded/gated by `scripts/bundle-evidence.ts` (PASS required before filing) | `bug-investigation-flow.md`, `evidence-and-root-cause.md` |
 | `/qa-evidence` | `[compact\|detailed\|signoff]` | Evidence capture & report formatting, output paths | `evidence-capture-policy.md`, `output-paths.md`, `sign-off-templates.md` |
 | `/qa-defect` | `triage VCST-XXXX \| verify VCST-XXXX \| classify \| workflow \| metrics` | Defect management lifecycle: JIRA Bug Workflow | `defect-lifecycle-workflow.md`, `defect-report-templates.md` |
 | `/qa-test-design` | `feature name \| technique \| VCST-XXXX` | Test case derivation: EP, BVA, decision tables, state transitions, pairwise | `test-design-techniques.md` |
