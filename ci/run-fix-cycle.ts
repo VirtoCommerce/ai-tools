@@ -4,7 +4,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 
 import { join } from "path";
 import {
   checkoutForFix,
+  contributionPlan,
   isAllowedRepo,
+  repoOwnership,
   repoProfile,
   routingReference,
   suggestRepo,
@@ -12,6 +14,8 @@ import {
 } from "./lib/repo-router.js";
 import { dependenciesOf, dependentsOf } from "./lib/module-registry.js";
 import { getTracker } from "./lib/trackers/index.js";
+import { getVcs, getUpstreamVcs } from "./lib/vcs/index.js";
+import { loadProjectProfile } from "../scripts/lib/project-profile.mjs";
 
 /**
  * Auto-Fix CI Pipeline
@@ -74,6 +78,24 @@ function log(msg: string) {
 // ---------------------------------------------------------------------------
 
 const tracker = getTracker({ dryRun: DRY_RUN, log });
+
+// ---------------------------------------------------------------------------
+// Code host (GitHub | Azure Repos) + upstream-issue policy — resolved from the
+// deployment profile via ci/lib/vcs. getVcs(ownership) picks where a fix-PR is
+// opened (client repo, possibly on Azure Repos; or the GitHub platform repo with
+// fork/direct mode); getUpstreamVcs() is always GitHub for filing issues.
+//
+// Issue-filing is a CLIENT-deployment feature: when a real platform bug is NOT
+// auto-fixable (too complex / multi-repo), the client can't fix it, so we open a
+// GitHub Issue on the VirtoCommerce upstream instead. A native-platform checkout
+// (no profile, projectType "platform") NEVER files issues ⇒ identical to before:
+// the ticket is just commented and left for a human.
+// ---------------------------------------------------------------------------
+
+const PROFILE = loadProjectProfile();
+const vcsDeps = { dryRun: DRY_RUN, log };
+const FILE_UPSTREAM_ISSUES =
+  PROFILE.projectType === "client" && PROFILE.upstream.fileIssues;
 
 // ---------------------------------------------------------------------------
 // Bug-report lookup (links the JIRA key to a local reports/bugs/*.md file)
@@ -191,6 +213,7 @@ function marker(text: string, key: string): string | null {
 
 type TicketOutcome =
   | "pr_opened"
+  | "issue_filed"
   | "bailed_by_design"
   | "fix_failed"
   | "low_confidence"
@@ -269,8 +292,52 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
   const verdict = (marker(triage.result, "VERDICT") || "").toUpperCase();
   const routeRepo = marker(triage.result, "ROUTE_REPO") || guess || "";
   const bailReason = marker(triage.result, "BAIL_REASON") || "Triage declined (no reason given)";
+  // BAIL_CLASS (not-a-bug | too-complex | multi-repo) decides whether a BAIL on a
+  // real-but-unfixable PLATFORM bug warrants an upstream GitHub Issue. Defaults to
+  // not-a-bug, which never files (preserves the old comment-and-leave behaviour).
+  const bailClass = (marker(triage.result, "BAIL_CLASS") || "not-a-bug").toLowerCase();
 
   if (verdict !== "GO") {
+    // A real-but-unfixable platform bug → file a GitHub Issue upstream so a human
+    // picks it up (client deployments only; gated by FILE_UPSTREAM_ISSUES). Any
+    // other BAIL (not-a-bug, no routable platform repo, native-platform checkout)
+    // → just comment and leave the ticket, exactly as before.
+    const issuable =
+      FILE_UPSTREAM_ISSUES &&
+      (bailClass === "too-complex" || bailClass === "multi-repo") &&
+      routeRepo &&
+      isAllowedRepo(routeRepo) &&
+      repoOwnership(routeRepo) === "platform";
+
+    if (issuable) {
+      const issueBodyPath = join(ticketDir, "ISSUE_BODY.md");
+      writeFileSync(
+        issueBodyPath,
+        `Reported by the QA auto-fix pipeline as a real defect that is **not auto-fixable** ` +
+          `(${bailClass}). Filed for human triage.\n\n` +
+          `- **Tracker key:** ${key}\n- **Summary:** ${ticket?.summary || "(see tracker)"}\n` +
+          `- **Reason not auto-fixed:** ${bailReason}\n\n` +
+          (bugReport ? `## Bug report\n\n${bugReport}\n` : `${ticket?.description || ""}\n`),
+      );
+      try {
+        const issueUrl = await getUpstreamVcs(vcsDeps).fileIssue({
+          repo: routeRepo,
+          title: `[QA] ${ticket?.summary || key} (${key})`,
+          bodyFile: issueBodyPath,
+          labels: [FIX_LABEL],
+        });
+        await tracker.comment(
+          key,
+          `[auto-fix] Not auto-fixable (${bailClass}): ${bailReason}. Filed upstream issue: ${issueUrl} (run ${RUN_ID})`,
+        );
+        return { key, outcome: "issue_filed", repo: routeRepo, prUrl: issueUrl, reason: bailReason, costUsd: spent };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log(`[${key}] upstream issue filing failed: ${msg}`);
+        // Fall through to the plain bail comment below.
+      }
+    }
+
     await tracker.comment(
       key,
       `[auto-fix] Skipped: ${bailReason} — left for human review. (run ${RUN_ID})`,
@@ -396,32 +463,35 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
     };
   }
 
-  // --- Open DRAFT PR (deterministic, via gh) ---
+  // --- Open DRAFT PR (deterministic, via the profile-routed VCS) ---
+  // getVcs(ownership) selects GitHub (platform, or a GitHub client repo) or Azure
+  // Repos (a client repo on Azure DevOps). For a platform fork-mode contribution
+  // the head ref is `<forkOwner>:<branch>`. With no profile this is the original
+  // `gh pr create --draft --head <branch>` on the platform repo, unchanged.
+  if (!existsSync(prBodyPath)) {
+    writeFileSync(prBodyPath, `Automated fix for ${key}.\n\nRoot cause: ${rootCause}\n`);
+  }
+  const plan = contributionPlan(routeRepo);
   let prUrl = "";
-  const prBody = existsSync(prBodyPath)
-    ? readFileSync(prBodyPath, "utf-8")
-    : `Automated fix for ${key}.\n\nRoot cause: ${rootCause}\n`;
-
-  if (DRY_RUN) {
-    log(`[${key}] (dry-run) would open draft PR on ${routeRepo}: ${prTitle}`);
-    prUrl = "(dry-run — no PR created)";
-  } else {
-    try {
-      prUrl = execSync(
-        `gh pr create --repo ${routeRepo} --draft --base ${checkout.baseBranch} ` +
-          `--head ${checkout.workBranch} --title ${JSON.stringify(prTitle)} ` +
-          `--body-file ${JSON.stringify(prBodyPath)} --label ${JSON.stringify(FIX_LABEL)}`,
-        { encoding: "utf-8" },
-      ).trim();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      log(`[${key}] gh pr create failed: ${msg}`);
-      await tracker.comment(
-        key,
-        `[auto-fix] Fix pushed to branch ${checkout.workBranch} on ${routeRepo}, but draft PR creation failed: ${msg}. (run ${RUN_ID})`,
-      );
-      return { key, outcome: "error", repo: routeRepo, reason: `PR creation failed: ${msg}`, costUsd: spent };
-    }
+  try {
+    prUrl = await getVcs(plan.ownership, vcsDeps).openPullRequest({
+      targetRepo: routeRepo,
+      baseBranch: checkout.baseBranch,
+      workBranch: checkout.workBranch,
+      forkOwner: plan.mode === "fork" ? plan.forkOwner : undefined,
+      title: prTitle,
+      bodyFile: prBodyPath,
+      draft: true,
+      labels: [FIX_LABEL],
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log(`[${key}] PR creation failed: ${msg}`);
+    await tracker.comment(
+      key,
+      `[auto-fix] Fix pushed to branch ${checkout.workBranch} on ${routeRepo}, but PR creation failed: ${msg}. (run ${RUN_ID})`,
+    );
+    return { key, outcome: "error", repo: routeRepo, reason: `PR creation failed: ${msg}`, costUsd: spent };
   }
 
   // --- Update JIRA ---
@@ -522,12 +592,14 @@ async function main() {
   // --- Consolidated report ---
   const totalCost = results.reduce((s, r) => s + r.costUsd, 0);
   const prs = results.filter((r) => r.outcome === "pr_opened");
+  const issues = results.filter((r) => r.outcome === "issue_filed");
   let report = `# Auto-Fix Cycle Report — ${RUN_ID}
 
 - **Date:** ${date}
 - **Model:** ${MODEL}
 - **Tickets processed:** ${results.length}
 - **Draft PRs opened:** ${prs.length}
+- **Upstream issues filed:** ${issues.length}
 - **Total cost:** $${totalCost.toFixed(2)}
 - **Dry run:** ${DRY_RUN}
 
@@ -545,12 +617,15 @@ async function main() {
   );
 
   log(`\n=== Done. Report: ${join(outputDir, "fix-report.md")} ===`);
-  log(`PRs opened: ${prs.length}/${results.length} | Cost: $${totalCost.toFixed(2)}`);
+  log(`PRs opened: ${prs.length}/${results.length} | Issues filed: ${issues.length} | Cost: $${totalCost.toFixed(2)}`);
 
-  // Exit codes: 0 = at least one PR or clean bail; 1 = hard errors; 2 = none actionable
+  // Exit codes: 0 = at least one PR/issue or clean bail; 1 = hard errors; 2 = none actionable
   const hadError = results.some((r) => r.outcome === "error");
   const anyProgress = results.some(
-    (r) => r.outcome === "pr_opened" || r.outcome === "bailed_by_design",
+    (r) =>
+      r.outcome === "pr_opened" ||
+      r.outcome === "issue_filed" ||
+      r.outcome === "bailed_by_design",
   );
   process.exit(hadError && !anyProgress ? 1 : anyProgress ? 0 : 2);
 }

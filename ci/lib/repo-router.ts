@@ -144,11 +144,16 @@ export type RepoOwnership = "client" | "platform";
 const CLIENT_FULL = new Set<string>();
 const CLIENT_BARE = new Set<string>();
 const CLIENT_KINDS = new Map<string, RepoKind>();
+const CLIENT_HOSTS = new Map<string, "github" | "azure-repos">();
+const CLIENT_BRANCHES = new Map<string, string>();
 for (const r of CLIENT_REPOS) {
   if (!r?.name) continue;
+  const bare = repoName(r.name).name;
   CLIENT_FULL.add(r.name);
-  CLIENT_BARE.add(repoName(r.name).name);
-  if (r.kind) CLIENT_KINDS.set(repoName(r.name).name, r.kind as RepoKind);
+  CLIENT_BARE.add(bare);
+  if (r.kind) CLIENT_KINDS.set(bare, r.kind as RepoKind);
+  if (r.host) CLIENT_HOSTS.set(bare, r.host);
+  if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
 }
 
 /**
@@ -199,6 +204,63 @@ export function repoKind(repo: string): RepoKind {
 export function repoProfile(repo: string): RepoProfile {
   if (!isAllowedRepo(repo)) throw new Error(`Repo not allowed: ${repo}`);
   return REPO_PROFILES[repoKind(repo)];
+}
+
+/**
+ * How a fix to this repo gets contributed back: where it lives (host), and
+ * whether we push directly to it or to a fork.
+ *
+ *  - **client** repo  → push directly; host is the client's (`github` or
+ *    `azure-repos`, per the repo entry / `vcs.clientHost`).
+ *  - **platform** repo → always GitHub. `direct` for a VirtoCommerce engineer
+ *    (and for any unconfigured / native-platform checkout), or `fork` when the
+ *    operator is a client contributing from their own GitHub account
+ *    (`upstream.contributionMode = "fork"` AND `upstream.clientGithubAccount`
+ *    set). With no profile, `clientGithubAccount` is "" ⇒ always `direct` ⇒
+ *    pre-existing behaviour.
+ */
+export interface ContributionPlan {
+  ownership: RepoOwnership;
+  host: "github" | "azure-repos";
+  mode: "direct" | "fork";
+  /** Fork owner when mode === "fork" (else ""). PR head = `${forkOwner}:${branch}`. */
+  forkOwner: string;
+  /** Azure DevOps org/project for an azure-repos host (else empty). */
+  azure: { organization: string; project: string };
+}
+
+export function contributionPlan(repo: string): ContributionPlan {
+  const ownership = repoOwnership(repo);
+  if (ownership === "client") {
+    const bare = repoName(repo).name;
+    const host = CLIENT_HOSTS.get(bare) || PROFILE.vcs.clientHost || "github";
+    return {
+      ownership,
+      host,
+      mode: "direct",
+      forkOwner: "",
+      azure: {
+        organization: PROFILE.vcs.azure?.organization || "",
+        project: PROFILE.vcs.azure?.project || "",
+      },
+    };
+  }
+  // platform — always GitHub. Fork mode requires BOTH an explicit fork contribution
+  // mode AND a configured account; otherwise direct (the native-platform default).
+  const u = PROFILE.upstream;
+  const fork = u.contributionMode === "fork" && Boolean(u.clientGithubAccount);
+  return {
+    ownership,
+    host: "github",
+    mode: fork ? "fork" : "direct",
+    forkOwner: fork ? u.clientGithubAccount : "",
+    azure: { organization: "", project: "" },
+  };
+}
+
+/** Default branch declared for a client repo in the profile (azure-repos has no `gh`). */
+function clientDefaultBranch(repo: string): string | undefined {
+  return CLIENT_BRANCHES.get(repoName(repo).name);
 }
 
 /**
@@ -253,6 +315,16 @@ export interface Checkout {
   /** The work branch created for the fix. */
   workBranch: string;
   repo: string;
+  /** Code host of this checkout ("github" | "azure-repos"). */
+  host?: "github" | "azure-repos";
+  /** client vs platform (drives PR target & whether an upstream issue is an option). */
+  ownership?: RepoOwnership;
+  /**
+   * The ref to use as the PR head: `${forkOwner}:${workBranch}` for a fork-mode
+   * platform PR, else just `workBranch`. The git remote `origin` is already set
+   * so the agent's `git push -u origin <branch>` reaches the right place.
+   */
+  headRef?: string;
 }
 
 function sh(cmd: string, cwd?: string): string {
@@ -268,9 +340,29 @@ function detectDefaultBranch(repo: string, fallback: string): string {
 }
 
 /**
+ * Build the Azure Repos clone/push URL. When ADO_PAT is present it is embedded so
+ * a later `git push` authenticates without a credential helper — the workspace
+ * (`.fix-workspace`) is gitignored and ephemeral. With `az login` (no PAT) we
+ * fall back to a plain URL and rely on the Git Credential Manager / `az` helper.
+ */
+function azureGitUrl(org: string, project: string, name: string): string {
+  const pat = process.env.ADO_PAT || "";
+  const cred = pat ? `${encodeURIComponent("x-token")}:${pat}@` : "";
+  return `https://${cred}dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(name)}`;
+}
+
+/**
  * Clone (or refresh) the target repo into `workspaceDir`, then cut a fresh work
  * branch from the default branch. Shallow clone keeps CI fast. Idempotent: an
  * existing checkout is fetched and hard-reset to the remote base.
+ *
+ * Routed by the deployment profile (see contributionPlan):
+ *  - **default** (platform direct / GitHub, or a client repo on GitHub): the
+ *    original `gh repo clone <repo>` path — UNCHANGED.
+ *  - **fork** (platform, operator = client): ensure the client's fork, clone it as
+ *    `origin`, add `upstream`, and branch from `upstream/<base>`. PR head is
+ *    `<forkOwner>:<branch>`.
+ *  - **azure-repos** (client on Azure DevOps): `git clone` the Azure Git URL.
  */
 export function checkoutForFix(
   repo: string,
@@ -284,14 +376,56 @@ export function checkoutForFix(
   const ws = resolve(workspaceDir);
   mkdirSync(ws, { recursive: true });
 
-  const name = repo.split("/")[1];
+  const name = repo.split("/").pop() || repo;
   const dest = join(ws, name);
-  const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
+  const plan = contributionPlan(repo);
   // `claude/`-prefixed so Claude Code Routines (scheduled cloud runs) can push it
   // without needing "Allow unrestricted branch pushes". The interactive /qa-fix and
   // the headless CI path share this convention.
   const workBranch = `claude/qa-autofix/${ticketKey}`;
 
+  // --- Azure Repos client checkout (clientHost = "azure-repos") ---
+  if (plan.host === "azure-repos") {
+    const baseBranch = clientDefaultBranch(repo) || "main";
+    const url = azureGitUrl(plan.azure.organization, plan.azure.project, name);
+    if (!existsSync(dest)) {
+      sh(`git clone --depth 1 --branch ${baseBranch} ${JSON.stringify(url)} "${dest}"`);
+    } else {
+      sh(`git fetch origin ${baseBranch} --depth 1`, dest);
+      sh(`git checkout ${baseBranch}`, dest);
+      sh(`git reset --hard origin/${baseBranch}`, dest);
+    }
+    sh(`git checkout -B ${workBranch}`, dest);
+    return {
+      path: dest, baseBranch, workBranch, repo,
+      host: "azure-repos", ownership: plan.ownership, headRef: workBranch,
+    };
+  }
+
+  // --- GitHub fork-mode checkout (client contributing to the VC upstream) ---
+  if (plan.mode === "fork") {
+    const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
+    const forkFull = `${plan.forkOwner}/${name}`;
+    sh(`gh repo fork ${repo} --clone=false`); // idempotent: succeeds if fork exists
+    if (!existsSync(dest)) {
+      sh(`gh repo clone ${forkFull} "${dest}"`);
+    }
+    // Branch from the UPSTREAM base (the fork may be stale).
+    try {
+      sh(`git remote add upstream https://github.com/${repo}.git`, dest);
+    } catch {
+      /* upstream remote already present */
+    }
+    sh(`git fetch upstream ${baseBranch} --depth 1`, dest);
+    sh(`git checkout -B ${workBranch} upstream/${baseBranch}`, dest);
+    return {
+      path: dest, baseBranch, workBranch, repo,
+      host: "github", ownership: plan.ownership, headRef: `${plan.forkOwner}:${workBranch}`,
+    };
+  }
+
+  // --- Default: direct GitHub clone (UNCHANGED from the original path) ---
+  const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
   if (!existsSync(dest)) {
     sh(`gh repo clone ${repo} "${dest}" -- --depth 1 --branch ${baseBranch}`);
   } else {
@@ -303,5 +437,8 @@ export function checkoutForFix(
   // Cut a clean work branch (re-create if a stale one exists).
   sh(`git checkout -B ${workBranch}`, dest);
 
-  return { path: dest, baseBranch, workBranch, repo };
+  return {
+    path: dest, baseBranch, workBranch, repo,
+    host: "github", ownership: plan.ownership, headRef: workBranch,
+  };
 }
