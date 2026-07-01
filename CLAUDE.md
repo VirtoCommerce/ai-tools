@@ -4,10 +4,13 @@
 
 **Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `vc/vcst-qa/docs/prompts/`.
 
+This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/plugin.json`, marketplace entry: `marketplace.json`). Customers install it via Claude Code's `/plugin install`, then run `npm run plugin:configure` for env setup. Distribution/onboarding docs live in `docs/distribution.md` + `docs/onboarding.md`; see also `/qa-onboarding`.
+
 ## Prerequisites
 
 - **IDE**: Cursor, Windsurf, or VS Code with Claude Code extension
 - **Node.js**: 18+
+- **Plugin install**: `/plugin install` (Claude Code) → `npm run plugin:configure` (env setup; `plugin:check` to verify). See `docs/onboarding.md`.
 - **MCP Servers**: `.mcp.json` (gitignored, create locally)
 - **New here?** See `.claude/ROUTING.md`
 
