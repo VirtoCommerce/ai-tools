@@ -29,17 +29,18 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 0. Preconditions — detect **and install** missing tooling: `gh` (required),
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
-2. Interview — **one uninterrupted pass, no mid-interview reconnaissance**:
-   topology (operator · project type · tracker · code host) in one question call,
-   then connection details **+ per-env URLs + secrets/tokens/API keys** in a second
-   call right after. Per-env URLs (`FRONT_URL`/`BACK_URL`/`STORE_ID`/`ENV_RISK`) are
-   asked only when standing up a *new* env (reuse an existing `.env.<env>` otherwise).
-   Every secret (`ADMIN_PASSWORD`/`USER_PASSWORD`, `GITHUB_FIX_BUGS_TOKEN`,
-   `JIRA_API_TOKEN`, `ADO_PAT`, optional `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) is
-   **asked with where-to-get-it guidance** — paste the token, use a browser login
-   (`gh auth login`, `az login`, Atlassian MCP), or skip. Use `AskUserQuestion` only
-   for the *method*; collect pasted **values** in a plain-chat turn (`KEY=value`
-   lines) — a labelled option carries no value. Never a raw account password.
+2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
+   project type · tracker · code host) in one `AskUserQuestion` call; (b) values
+   **one field = one question**, covering every field the topology needs (do NOT
+   cap the count). Offer option choices ONLY for predefined/enum fields (`ENV_RISK`,
+   `STOREFRONT_PROFILE`, topology); for unique/free-text fields (env name, URLs,
+   `STORE_ID`, emails, tracker base URL+key, passwords, tokens) ask for the value
+   directly — never invented options. Non-secret identifiers → `.env.<env>`/profile;
+   secrets (`ADMIN_PASSWORD`/`USER_PASSWORD`, `GITHUB_FIX_BUGS_TOKEN`,
+   `JIRA_API_TOKEN`, `ADO_PAT`, optional `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) →
+   `.env.local`; browser-login (`gh auth login`, `az login`, Atlassian MCP) = leave
+   the token unset. Reuse an existing `.env.<env>` by skipping the Environment-URL
+   questions. Never a raw account password.
 3. Write env files with `write-env.mjs` (JSON answer object on STDIN, no pause):
    non-secret URLs → `.env.<env>`, secrets → `.env.local` (per-env creds
    `_<ENV>`-suffixed, global tokens un-suffixed), idempotent, values never echoed.

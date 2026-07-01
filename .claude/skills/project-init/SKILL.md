@@ -80,15 +80,17 @@ must run before any generator/verify script — they import from `node_modules`.
 
 ## 2. Interview — ask everything in ONE pass, THEN run the scripts
 
-> **No pauses, no mid-interview reconnaissance.** Collect *every* answer below
-> before you run a single generator script. Do **not** read files, inspect the
-> `.mjs` scripts, or run any other Bash **between questions** — everything you
-> need is already in this skill. Ask the **topology** choices in one
-> `AskUserQuestion` call, then ask the **connection details + secrets** in a
-> second call **immediately after**, with **no other tool use in between**.
-> Branch the second call on the first call's answers (e.g. ask Jira details only
-> if `tracker=jira`; skip the code-host / client-org / repo questions for a
-> `platform` project). Two back-to-back question calls = no thinking pause.
+> **No pauses, no mid-interview reconnaissance.** Do **not** read files, inspect
+> the `.mjs` scripts, or run any other Bash **between** the interview steps —
+> everything you need is already in this skill. The interview has two parts:
+>   1. **Topology** — one `AskUserQuestion` call (categorical; step 2a).
+>   2. **Values** — **one field = one question** (step 2b): ask for every value the
+>      topology needs, one per question, and do **not** cap how many you ask.
+>
+> **Offer choices ONLY for fields with a predefined set** (`ENV_RISK`,
+> `STOREFRONT_PROFILE`, the topology fields). For a **unique / free-text** value
+> (env name, URLs, `STORE_ID`, emails, tracker base URL / project key, passwords,
+> tokens) present **just a value prompt — never invented option buttons**.
 
 ### 2a. Topology — first `AskUserQuestion` call (categorical)
 
@@ -102,78 +104,74 @@ must run before any generator/verify script — they import from `node_modules`.
    CLIENT's code lives + PRs open). Tracker and VCS are **independent** (Azure
    Boards + GitHub is fine). The platform upstream is **always** GitHub.
 
-### 2b. Connection details + per-env URLs — second call, branched (non-secret)
+### 2b. Values — per-field questions (one field = one question)
 
-**Environment (Bucket #2 → `.env.<env>`).** First check whether a `.env.<env>`
-already covers this deployment (e.g. the native `.env.vcst`). **If one exists and
-is correct, reuse it** — skip these questions and set `TEST_ENV` to that name. Only
-ask when standing up a *new* environment:
+Ask the operator for every value the chosen topology needs, **one field per
+question**, and **do not cap how many questions you ask** — cover all fields.
 
-- **env name** (`TEST_ENV`) — short id, **must match `[a-z0-9_]+`** (underscores, no
-  hyphens — hyphens break the `_<ENV>` secret suffix promotion). E.g. `acme_qa`.
-- **`ENV_RISK`** — `dev` | `test` | `staging` | `production` (production blocks
-  admin-write suites by default).
-- **`FRONT_URL`** (storefront) + **`BACK_URL`** (Admin SPA / platform) + **`STORE_ID`**
-  — the three that, with the two passwords, satisfy `config.js` core-required.
-- optional: `STOREFRONT_PROFILE` (`b2b`/`b2c`/`hybrid`), `MODULES_ENABLED` (CSV),
-  `STORYBOOK_URL`, and the non-secret identifiers `ADMIN` (admin login, usually
-  `admin`), `USER_EMAIL`, `JIRA_EMAIL` (Jira login email is an identifier, not a
-  secret → it lives in `.env.<env>`, NOT `.env.local`).
+**Two kinds of field:**
+- **Predefined / enum** — `ENV_RISK` (`dev`|`test`|`staging`|`production`),
+  `STOREFRONT_PROFILE` (`b2b`|`b2c`|`hybrid`), and the topology fields. Present the
+  allowed choices as options.
+- **Unique / free-text** — env name, `FRONT_URL`, `BACK_URL`, `STORE_ID`, `ADMIN`
+  login, `USER_EMAIL`, `JIRA_EMAIL`, tracker base URL / project key, and every
+  secret (passwords, tokens, API keys). Ask for the value **directly with a
+  one-line hint of what it is — do NOT fabricate option choices** for these.
 
-**Tracker / VCS connection:**
+**Mechanism.** `AskUserQuestion` requires ≥2 options per question (and caps at 4
+questions/call), so use it **only for the enum + topology fields**. Ask the
+free-text value fields **directly in the chat** — a numbered list, one field per
+line, each just a value prompt (that is how "just an input, no options" is
+honored). Skip a field only when its value is already known (pre-answered) or the
+env is being reused.
 
-- **Jira** → base URL (e.g. `https://acme.atlassian.net`) + project key (e.g. `ABC`).
-- **Azure Boards** → organization + project + optional transition state map
-  (e.g. `In Review → Active`).
-- **Client project** → client **org** (GitHub org, or Azure org/project) **and**
-  the **storefront/theme repo** (it is NOT in the modules API — the operator must
-  name it; it becomes a `frontend`-kind client repo).
-- **upstream GitHub account** (`upstream.clientGithubAccount`) — the login used to
-  file issues on + fork-and-PR the open VirtoCommerce platform repos. Needed even
-  for an Azure client (the platform is on GitHub). Confirm the contribution mode
-  (`fork` = client without write access; `direct` = Virto engineer with write
-  access). A normal GitHub account (`public_repo`) is enough to fork + file issues.
+**What each value is / where it goes:**
+- `ENV_NAME` must match `[a-z0-9_]+` (underscores, no hyphens — the `_<ENV>` secret
+  suffix promotion depends on it).
+- Non-secret identifiers (URLs, `STORE_ID`, `ADMIN` login, `USER_EMAIL`,
+  `JIRA_EMAIL`, tracker base URL / project key) → `.env.<env>` / the profile.
+- Secrets (`*_PASSWORD`, `*_TOKEN`, API keys) → `.env.local` (gitignored). Only app
+  **test-user** passwords + issued tokens — **never a raw account password**. Do
+  not echo pasted secret values back into chat, reports, or the profile.
+- Browser-login auth — leave that token unset; the operator runs the login
+  themselves (`gh auth login --web`, `az login`, Atlassian MCP OAuth). Record the
+  choice for the profile (`vcs.auth = gh-cli`, `ADO_AUTH=az-login`).
+- **Reusing an existing `.env.<env>`** (e.g. native `.env.vcst`)? Skip the
+  Environment-URL questions; ask only the tracker connection + secrets.
 
-### 2c. Secrets, tokens & API keys — same second call (ask, don't assume)
+**Fields by topology (ask the ones that apply):**
+- **always:** `ENV_NAME`, `ENV_RISK` *(enum)*, `FRONT_URL`, `BACK_URL`, `STORE_ID`,
+  `ADMIN`, `USER_EMAIL`, `ADMIN_PASSWORD`, `USER_PASSWORD` (+ optional
+  `STOREFRONT_PROFILE` *(enum)*, `MODULES_ENABLED`, `STORYBOOK_URL`).
+- **Jira:** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`
+  (unless Atlassian MCP OAuth).
+- **Azure Boards:** `ADO_ORG`, `ADO_PROJECT` (+ optional `In Review→Active` state
+  map) and `ADO_PAT` (unless `az login`).
+- **GitHub VCS:** `GITHUB_FIX_BUGS_TOKEN` (unless `gh` CLI login).
+- **Azure Repos:** covered by `ADO_PAT` / `az login`.
+- **client project:** `CLIENT_ORG`, the storefront/theme repo (kind `frontend`),
+  `UPSTREAM_ACCOUNT` + contribution mode.
+- **optional MCP:** `POSTMAN_API_KEY`, `CONTEXT7_API_KEY`.
 
-**Collect secrets as questions** — one per relevant service. Only ask for what the
-chosen tracker/VCS actually needs (no `ADO_PAT` for a Jira+GitHub setup). For
-**each** token, tell the operator **where to get it** and offer three choices:
-**paste the token**, **use browser login instead** (where available — then leave
-the token blank), or **skip** (feature stays unconfigured).
+**Where to get each token** (share the relevant rows when you ask):
 
-> **How to collect the actual values (important — a labelled `AskUserQuestion`
-> option does NOT carry a value).** Use `AskUserQuestion` only to pick the
-> **method** per secret (paste / browser-login / skip). When the operator picks
-> **paste**, collect the value **in the next plain-chat turn**: ask them to reply
-> with `KEY=value` lines (e.g. `ADMIN_PASSWORD=…`). One conversational message can
-> carry every pasted secret at once. Do **not** try to smuggle a secret through an
-> `AskUserQuestion` option label — the value is lost (only the label comes back).
-
-**Never ask for or store a raw account password** — only app **test-user**
-credentials and issued API tokens. Do not echo pasted secret values back to the
-operator, into reports, or into the profile. `write-env.mjs` (step 3) receives them
-over STDIN and prints key names only.
-
-| Secret (`.env.local` var) | Needed for | Browser-login alternative | Where to get the token |
-|---|---|---|---|
-| `ADMIN_PASSWORD` *(required)* | Admin / back-office login — every run | — | The deployment's admin **test** account (customer / ops). Local start-local stack: `Password1!` |
-| `USER_PASSWORD` *(required)* | Storefront test-user login | — | The deployment's storefront **test** account |
-| `GITHUB_FIX_BUGS_TOKEN` (fine-grained PAT) | `/qa-fix` PR + issue (GitHub) | `gh auth login --web` (leave token blank) | github.com → **Settings → Developer settings → Personal access tokens → Fine-grained tokens**. Perms: *Contents* + *Pull requests* = Read/Write (`public_repo` is enough to fork + file issues on VirtoCommerce) |
-| `JIRA_API_TOKEN` (+ `JIRA_EMAIL`) | Jira comments + transitions | Atlassian MCP OAuth (interactive) | **id.atlassian.com → Manage account → Security → API tokens → Create API token** |
-| `ADO_PAT` | Azure Boards + Repos | `az login` → set `ADO_AUTH=az-login` | **dev.azure.com → User settings → Personal access tokens**. Scopes: *Work Items* R/W, *Code* R/W |
-| `POSTMAN_API_KEY` *(optional)* | postman MCP | — | **postman.com → Settings → API keys** |
-| `CONTEXT7_API_KEY` *(optional)* | context7 MCP | — | **context7.com dashboard → API key** |
-
-Record every pasted value for step 3. If the operator chose a browser login,
-note it (e.g. `vcs.auth = gh-cli`, `ADO_AUTH=az-login`) instead of a token.
+| Token | Browser-login alternative | Where to get it |
+|---|---|---|
+| `GITHUB_FIX_BUGS_TOKEN` (fine-grained PAT) | `gh auth login --web` (leave unset) | github.com → **Settings → Developer settings → Personal access tokens → Fine-grained**. *Contents* + *Pull requests* = R/W (`public_repo` is enough to fork + file issues) |
+| `JIRA_API_TOKEN` (+ `JIRA_EMAIL`) | Atlassian MCP OAuth (interactive) | **id.atlassian.com → Security → API tokens → Create** |
+| `ADO_PAT` | `az login` → `ADO_AUTH=az-login` | **dev.azure.com → User settings → Personal access tokens** (*Work Items* R/W, *Code* R/W) |
+| `POSTMAN_API_KEY` *(optional)* | — | **postman.com → Settings → API keys** |
+| `CONTEXT7_API_KEY` *(optional)* | — | **context7.com dashboard → API key** |
 
 ## 3. Write the env files (`write-env.mjs`)
 
-Persist the interview answers with **`write-env.mjs`** — one call writes **both**
-buckets and needs **no interactive pause**. Pass the answers as a **JSON object on
-STDIN** (never as argv — that would leak secrets into the process list / shell
-history). The script:
+Collect the operator's per-field answers (step 2b) and split them into **non-secret
+identifiers** (`envVars`) and **secrets** (`*_PASSWORD`/`*_TOKEN`/API keys), setting
+aside the tracker connection values (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY` or `ADO_*`)
+for `gen-profile` in step 4.
+Then persist with **`write-env.mjs`** — one call writes **both** buckets and needs
+**no interactive pause**. Pass the answers as a **JSON object on STDIN** (never as
+argv — that would leak secrets into the process list / shell history). The script:
 
 - writes non-secret **`envVars`** → `.env.<env>` (Bucket #2, committed),
 - writes **`secrets`** → `.env.local` (Bucket #3, gitignored), auto-suffixing
