@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, asks whether it is a native-platform or a CLIENT project (custom modules/theme), picks the bug tracker (Jira / Azure Boards) and code host (GitHub / Azure Repos), captures the test-environment URL + auth (browser login or tokens, never passwords), discovers the client/platform repo split, writes project-profile.json + .mcp.json, and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer.
+description: Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, asks whether it is a native-platform or a CLIENT project (custom modules/theme), picks the bug tracker (Jira / Azure Boards) and code host (GitHub / Azure Repos), captures the test-environment URLs + auth (browser login or tokens + app test-user passwords, never raw account passwords), discovers the client/platform repo split, writes project-profile.json + .mcp.json (via write-env.mjs / gen-profile.mjs / gen-mcp.mjs), and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer.
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -21,16 +21,17 @@ platform) and to the correct bug tracker.
 | Artifact | Purpose |
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
-| `.env.<env>` + `.env.local` | env URLs (`.env.<env>`) + secrets/tokens/API keys (`.env.local`) — collected as interview questions (step 2c) and written in step 3; the guided `npm run plugin:configure` wizard remains an optional fallback |
+| `.env.<env>` + `.env.local` | env URLs (`.env.<env>`, Bucket #2) + secrets/tokens/API keys (`.env.local`, Bucket #3) — collected as interview questions (steps 2b/2c) and written non-interactively by `write-env.mjs` in step 3 (per-env creds get the `_<ENV>` suffix `config.js` promotes). The guided `npm run plugin:configure` wizard remains an optional fallback |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`) |
 
 ## Pipeline
 
 ```
 0 preconditions → 1 install → 2 interview (ONE uninterrupted pass:
-  topology · connection details · secrets/tokens/keys)
-→ 3 write env secrets (.env.local) → 4 write profile (gen-profile)
-→ 5 discover repos (client only) → 6 MCP (gen-mcp) → 7 verify (verify-access) → 8 done
+  topology · connection details + per-env URLs · secrets/tokens/keys)
+→ 3 write env files (write-env.mjs → .env.<env> + .env.local)
+→ 4 write profile (gen-profile) → 5 discover repos (client only)
+→ 6 MCP (gen-mcp) → 7 verify (verify-access) → 8 done
 ```
 
 All scripts live in `.claude/skills/project-init/` and are **non-interactive** —
@@ -101,7 +102,25 @@ must run before any generator/verify script — they import from `node_modules`.
    CLIENT's code lives + PRs open). Tracker and VCS are **independent** (Azure
    Boards + GitHub is fine). The platform upstream is **always** GitHub.
 
-### 2b. Connection details — second call, branched (non-secret)
+### 2b. Connection details + per-env URLs — second call, branched (non-secret)
+
+**Environment (Bucket #2 → `.env.<env>`).** First check whether a `.env.<env>`
+already covers this deployment (e.g. the native `.env.vcst`). **If one exists and
+is correct, reuse it** — skip these questions and set `TEST_ENV` to that name. Only
+ask when standing up a *new* environment:
+
+- **env name** (`TEST_ENV`) — short id, **must match `[a-z0-9_]+`** (underscores, no
+  hyphens — hyphens break the `_<ENV>` secret suffix promotion). E.g. `acme_qa`.
+- **`ENV_RISK`** — `dev` | `test` | `staging` | `production` (production blocks
+  admin-write suites by default).
+- **`FRONT_URL`** (storefront) + **`BACK_URL`** (Admin SPA / platform) + **`STORE_ID`**
+  — the three that, with the two passwords, satisfy `config.js` core-required.
+- optional: `STOREFRONT_PROFILE` (`b2b`/`b2c`/`hybrid`), `MODULES_ENABLED` (CSV),
+  `STORYBOOK_URL`, and the non-secret identifiers `ADMIN` (admin login, usually
+  `admin`), `USER_EMAIL`, `JIRA_EMAIL` (Jira login email is an identifier, not a
+  secret → it lives in `.env.<env>`, NOT `.env.local`).
+
+**Tracker / VCS connection:**
 
 - **Jira** → base URL (e.g. `https://acme.atlassian.net`) + project key (e.g. `ABC`).
 - **Azure Boards** → organization + project + optional transition state map
@@ -120,11 +139,21 @@ must run before any generator/verify script — they import from `node_modules`.
 **Collect secrets as questions** — one per relevant service. Only ask for what the
 chosen tracker/VCS actually needs (no `ADO_PAT` for a Jira+GitHub setup). For
 **each** token, tell the operator **where to get it** and offer three choices:
-**paste the token** (via the "Other" free-text option), **use browser login
-instead** (where available — then leave the token blank), or **skip** (feature
-stays unconfigured). **Never ask for or store a raw account password** — only app
-**test-user** credentials and issued API tokens. Do not echo pasted secret values
-back to the operator, into reports, or into the profile.
+**paste the token**, **use browser login instead** (where available — then leave
+the token blank), or **skip** (feature stays unconfigured).
+
+> **How to collect the actual values (important — a labelled `AskUserQuestion`
+> option does NOT carry a value).** Use `AskUserQuestion` only to pick the
+> **method** per secret (paste / browser-login / skip). When the operator picks
+> **paste**, collect the value **in the next plain-chat turn**: ask them to reply
+> with `KEY=value` lines (e.g. `ADMIN_PASSWORD=…`). One conversational message can
+> carry every pasted secret at once. Do **not** try to smuggle a secret through an
+> `AskUserQuestion` option label — the value is lost (only the label comes back).
+
+**Never ask for or store a raw account password** — only app **test-user**
+credentials and issued API tokens. Do not echo pasted secret values back to the
+operator, into reports, or into the profile. `write-env.mjs` (step 3) receives them
+over STDIN and prints key names only.
 
 | Secret (`.env.local` var) | Needed for | Browser-login alternative | Where to get the token |
 |---|---|---|---|
@@ -139,21 +168,59 @@ back to the operator, into reports, or into the profile.
 Record every pasted value for step 3. If the operator chose a browser login,
 note it (e.g. `vcs.auth = gh-cli`, `ADO_AUTH=az-login`) instead of a token.
 
-## 3. Write env secrets (`.env.local`)
+## 3. Write the env files (`write-env.mjs`)
 
-Write the collected secrets/tokens/keys from step 2c into `.env.local` (gitignored
-— create it if absent, update a key **in place** if present). This is
-question-driven so there is **no interactive wizard pause**. The non-secret env
-**URLs** (`FRONT_URL`, `BACK_URL`, `STORE_ID`) belong in `.env.<env>`; if they are
-not set yet, add them from the interview or run the guided wizard once:
+Persist the interview answers with **`write-env.mjs`** — one call writes **both**
+buckets and needs **no interactive pause**. Pass the answers as a **JSON object on
+STDIN** (never as argv — that would leak secrets into the process list / shell
+history). The script:
+
+- writes non-secret **`envVars`** → `.env.<env>` (Bucket #2, committed),
+- writes **`secrets`** → `.env.local` (Bucket #3, gitignored), auto-suffixing
+  per-env credentials to `KEY_<ENV>` (global tokens like `GITHUB_FIX_BUGS_TOKEN` /
+  `JIRA_API_TOKEN` / `ADO_PAT` / `POSTMAN_API_KEY` / `CONTEXT7_API_KEY` stay
+  un-suffixed),
+- updates each key **in place** (idempotent — safe to re-run), and prints **key
+  names only**, never values.
 
 ```bash
-npm run plugin:configure          # OPTIONAL — guided wizard for URLs + app creds
+# Build the JSON from the interview and pipe it in. `envVars` = non-secret
+# identifiers (→ .env.<env>); `secrets` = passwords + tokens (→ .env.local).
+# Emails (USER_EMAIL, JIRA_EMAIL, ADMIN login) are identifiers → put them in envVars.
+echo '{
+  "env": "acme_qa",
+  "suffixCreds": true,
+  "envVars": {
+    "FRONT_URL": "https://front.acme.com",
+    "BACK_URL": "https://back.acme.com",
+    "STORE_ID": "B2B-store",
+    "ENV_RISK": "test",
+    "STOREFRONT_PROFILE": "hybrid",
+    "ADMIN": "admin",
+    "USER_EMAIL": "qa-user@acme.com",
+    "JIRA_EMAIL": "jane@acme.com"
+  },
+  "secrets": {
+    "ADMIN_PASSWORD": "<pasted>",
+    "USER_PASSWORD": "<pasted>",
+    "GITHUB_FIX_BUGS_TOKEN": "<pasted-or-omit-if-gh-cli>",
+    "JIRA_API_TOKEN": "<pasted-or-omit-if-mcp-oauth>"
+  }
+}' | node .claude/skills/project-init/write-env.mjs --print
 ```
-Note the env name (e.g. `acme_qa`) — that's your `TEST_ENV`. For browser-login
-choices, remind the operator to run the login command themselves (via `!` in the
-prompt, e.g. `! gh auth login --web`) — you cannot complete an interactive login
-for them.
+
+- Reusing an existing `.env.<env>` (e.g. native `.env.vcst`)? Omit `envVars` (or
+  pass only the keys you're changing) and send just `secrets` — the URLs stay put.
+- Add `--dry-run` first to preview which keys land where without writing.
+- **Browser-login choices** (`gh auth login --web`, `az login`, Atlassian MCP
+  OAuth): don't put a token in `secrets`; instead remind the operator to run the
+  login themselves (via `!` in the prompt, e.g. `! gh auth login --web`) — you
+  cannot complete an interactive login for them. Record the choice in the profile
+  (`vcs.auth = gh-cli`, or `ADO_AUTH=az-login`).
+- The guided `npm run plugin:configure` wizard remains an optional fallback for
+  URLs + app creds (interactive; asks one env at a time).
+
+Note the env name (e.g. `acme_qa`) — that's your `TEST_ENV` for every later run.
 
 ## 4. Write the deployment profile
 
@@ -246,13 +313,15 @@ with just those flags + `--merge`.
 
 | Script | Role |
 |--------|------|
+| `write-env.mjs` | write `.env.<env>` (non-secret URLs) + `.env.local` (secrets, `_<ENV>`-suffixed) from a JSON answer object on STDIN; idempotent, values never echoed |
 | `gen-profile.mjs` | write/merge `project-profile.json` from interview flags |
 | `discover-repos.mjs` | Platform API → proposed client/platform repo split |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
 | `verify-access.mjs` | preflight: profile, env, GitHub/Azure/Jira auth, app URLs |
 
-> Secrets/tokens/API keys are collected as interview questions (step 2c) and
-> written to `.env.local` in step 3 — no interactive pause. Non-secret env URLs
-> live in `.env.<env>`; the existing `bootstrap/install.ts`
-> (`npm run plugin:configure`) wizard remains an optional fallback for URLs +
-> app creds.
+> Per-env URLs (Bucket #2 → `.env.<env>`) and secrets/tokens/API keys (Bucket #3 →
+> `.env.local`) are both collected as interview questions (steps 2b/2c) and written
+> non-interactively by `write-env.mjs` in step 3 — no pause. Secret **values** are
+> pasted in a plain-chat turn (not via `AskUserQuestion` labels) and reach the
+> script over STDIN. The existing `bootstrap/install.ts` (`npm run plugin:configure`)
+> wizard remains an optional interactive fallback.
