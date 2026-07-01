@@ -31,15 +31,15 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 1. Install deps (`npm install` + Playwright browsers).
 2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
    project type · tracker · code host) in one `AskUserQuestion` call; (b) the
-   **required non-secret values** in **one interactive `show_widget` form** (all at
-   once) — free-text fields are plain inputs (no options), only `ENV_RISK` is a
-   select; Submit returns them via `sendPrompt` (fallback: paste a `KEY=value` block
-   in chat). **No optional fields and NO secrets in the form.**
-3. Write env: (3a) `write-env.mjs` writes the non-secret values → `.env.<env>`; (3b)
-   `scaffold-secrets.mjs` writes a commented `.env.local` **template** (placeholder +
-   what/why/where per secret; per-env creds `_<ENV>`-suffixed, browser-login auth
-   emits no token line); (3c) tell the operator to fill `.env.local` and **pause** —
-   verify (step 7) checks it. Never a raw account password.
+   **environment name** only, asked as a normal question (it becomes `TEST_ENV` →
+   must match `[a-z0-9_]+`; normalise if needed). **No value form, no per-value
+   questions.**
+3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs` →
+   `.env.<env>` (non-secret URLs/identifiers/tracker placeholders); (3b)
+   `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
+   `_<ENV>`-suffixed, browser-login auth emits no token line); (3c) tell the operator
+   **two files were created — fill both** (inline comments say what/where), then
+   **pause** — verify (step 7) checks them. Never a raw account password.
 4. Write the profile (`gen-profile.mjs`).
 5. Discover the client/platform repo split (`discover-repos.mjs`, client only) → confirm.
 6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
