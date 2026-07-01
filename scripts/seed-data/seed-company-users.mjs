@@ -31,7 +31,7 @@ import {
   BACK_URL, ADMIN, ADMIN_PASSWORD, STORE_ID, ENV_RISK, ROOT, DATE,
   setFlags, authenticate, ensureMemberIndex, parseCsv,
   seedOrgs, seedContacts, relinkUsersToContacts, ensureRoles, provisionContactLogins, seedMemberships,
-  personalUsers, ensurePersonalAccount,
+  personalUsers, ensurePersonalAccount, adminUsers, ensureAdminAccount,
   deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, getApi,
 } from '../lib/user-provision.mjs';
 
@@ -85,7 +85,19 @@ async function seedPersonal(loyaltyOnly = false) {
   let created = 0, reused = 0;
   for (const u of users) { (await ensurePersonalAccount(u)) === 'created' ? created++ : reused++; }
   console.log(`  ✓ personal: ${created} created, ${reused} reused`);
-  return { personal: users.map(u => ({ email: u.email, source: u.source, group: u.group || null })) };
+  const report = { personal: users.map(u => ({ email: u.email, source: u.source, group: u.group || null })) };
+  // Provisionable admin env-roles (IMPERSONATION_ADMIN, …) — created by NO other path before this.
+  if (!loyaltyOnly) {
+    const admins = adminUsers();
+    if (admins.length) {
+      console.log(`\n  ${admins.length} admin account(s)...`);
+      let aC = 0, aR = 0;
+      for (const u of admins) { (await ensureAdminAccount(u)) === 'created' ? aC++ : aR++; }
+      console.log(`  ✓ admin: ${aC} created, ${aR} reused`);
+      report.admins = admins.map(u => ({ email: u.email, source: u.source }));
+    }
+  }
+  return report;
 }
 
 async function runTeardown() {

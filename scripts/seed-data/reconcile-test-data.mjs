@@ -76,6 +76,18 @@ async function findSecurityUser(login) {
     (u.email || '').toLowerCase() === login.toLowerCase()) || null;
 }
 
+// One password-grant attempt — the authoritative check for admin accounts, which don't reliably
+// surface in the member/customer search. On success no lockout accrues; a single failure is safe.
+async function tryLogin(username, password) {
+  try {
+    const res = await fetch(`${BACK_URL}/connect/token`, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'password', username, password, scope: 'offline_access' }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 async function checkUserRoles() {
   console.log('\n[2] User roles (.env.' + TEST_ENV + ' ↔ platform)');
   const roles = resolveAllRoles();
@@ -85,14 +97,20 @@ async function checkUserRoles() {
       if (r.required) fail(msg); else warn(`${msg} [optional]`);
       continue;
     }
+    // Admin-kind roles don't surface in the member search — a search miss used to be labelled
+    // "verified via auth" (a blind spot that hid a MISSING IMPERSONATION_ADMIN). Verify by actually
+    // logging in with the account's OWN credentials.
+    if (r.kind === 'admin') {
+      const okLogin = r.password ? await tryLogin(r.email, r.password) : false;
+      if (okLogin) ok(`${r.key} → ${r.email} (admin — login verified)`);
+      else if (r.required) fail(`${r.key} → ${r.email}: admin login FAILED (missing account or wrong creds)`);
+      else warn(`${r.key} → ${r.email}: admin login FAILED — reprovision via seed:company-users [optional]`);
+      continue;
+    }
     let user = null;
     try { user = await findSecurityUser(r.email); }
     catch (e) { warn(`${r.key}: probe error for ${r.email} — ${String(e.message).slice(0, 100)}`); continue; }
     if (user?.id) { ok(`${r.key} → ${r.email} (account exists)`); continue; }
-    // Admin-kind roles are the platform administrator, NOT a seedable Customer member — they don't
-    // surface in the customer/member search. Their existence is already proven by the successful
-    // auth() this reconcile ran, so a search miss is not a real failure.
-    if (r.kind === 'admin') { ok(`${r.key} → ${r.email} (platform admin — verified via auth, not seeded)`); continue; }
     if (r.required) fail(`${r.key} → ${r.email} has NO live account on ${TEST_ENV} (needs seed)`);
     else warn(`${r.key} → ${r.email} has no live account [optional — seed if the suite needs it]`);
   }

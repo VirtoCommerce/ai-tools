@@ -32,7 +32,7 @@
  * Prod is blocked by config (ENV_RISK=production), not hostname.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
@@ -138,6 +138,12 @@ export const getApi = () => api;
 export async function findOrgByName(name) {
   const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword: name, take: 50 });
   return (r?.results || []).find(m => m.name === name);
+}
+// Direct GET by platform id — INDEX-INDEPENDENT (unlike the member search, which lags right after a
+// teardown/reseed and would otherwise miss an existing org → create a duplicate with a fresh GUID).
+export async function findMemberById(id) {
+  if (!id) return null;
+  try { return await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] }); } catch { return null; }
 }
 export async function findUserByEmail(email) {
   // Search FIRST — the GET-by-username endpoint is cache-flaky (200 + empty/stale body), which
@@ -266,16 +272,28 @@ export async function resolveRoleName(roleId) {
   const r = await api('GET', `/api/platform/security/roles/${encodeURIComponent(roleId)}`, null, { expectStatus: [200, 404] });
   return (_roleNameCache[roleId] = r?.name || roleId);
 }
+// Reliable role existence check via SEARCH — GET /api/platform/security/roles/{id} is cache-flaky
+// (404s even when the role exists, same class as the findUserByEmail GET-by-username bug), so it
+// must not gate role writes.
+// The roles search matches on NAME, so look up by name and confirm the id — reliable, unlike the
+// cache-flaky GET /api/platform/security/roles/{id}.
+export async function findRole({ role_id, role_name }) {
+  if (!role_id && !role_name) return null;
+  const r = await api('POST', '/api/platform/security/roles/search', { keyword: role_name || role_id, take: 50 }, { expectStatus: [200] });
+  return (r?.results || []).find(role => role.id === role_id || role.name === role_name) || null;
+}
 export async function ensureRoles() {
   const defs = loadRoleDefs();
   if (!defs.length) return;
   console.log(`\n  Ensuring ${defs.length} platform role(s) from roles.csv...`);
   for (const d of defs) {
-    const ex = await api('GET', `/api/platform/security/roles/${encodeURIComponent(d.role_id)}`, null, { expectStatus: [200, 404] });
-    if (ex?.id) { if (VERBOSE) console.log(`    ↻ role ${d.role_id}`); continue; }
+    // Always upsert against the FIXED role_id — PUT is idempotent on that id, so it can never create
+    // a duplicate, and it keeps permissions in sync with roles.csv (the oracle) on every run. The
+    // search-based existence check is only for accurate create-vs-update logging.
+    const exists = await findRole(d);
     const permissions = (d.permissions || '').split(';').map(p => p.trim()).filter(Boolean).map(name => ({ name }));
     await api('PUT', '/api/platform/security/roles', { id: d.role_id, name: d.role_name, permissions }, { expectStatus: [200, 201, 204] });
-    console.log(`    ✓ role ${d.role_id} (${d.role_name})`);
+    console.log(`    ${exists ? '↻ update' : '✓ create'} role ${d.role_id} (${d.role_name}) — ${permissions.length} perm(s)`);
   }
 }
 
@@ -284,16 +302,27 @@ export async function seedOrgs(rows, parentMap = {}) {
   console.log(`\n  Seeding ${rows.length} organization(s)...`);
   const out = {};
   for (const row of rows) {
-    const existing = await findOrgByName(row.org_name);
+    // Reuse key #1: the platform_id cached in organizations.csv — a direct GET, so a stale member
+    // search index (common right after teardown/reseed) can't cause a duplicate org with a new GUID.
+    let existing = null;
+    if (row.platform_id) {
+      const byId = await findMemberById(row.platform_id);
+      if (byId?.id && byId.name === row.org_name) existing = byId;
+    }
+    // Reuse key #2 (fallback): search-by-name — covers a first-ever seed with no cached id.
+    if (!existing) existing = await findOrgByName(row.org_name);
     if (existing) {
       out[row.org_id] = { csv_id: row.org_id, name: row.org_name, platform_id: existing.id, reused: true };
       if (VERBOSE) console.log(`    ↻ reuse  ${row.org_id} ${row.org_name} (${existing.id})`);
       continue;
     }
     const body = orgBody(row);
+    // Pin the CSV platform_id on (re)create so a deleted org comes back with its STABLE id — this is
+    // what keeps @td(...org_id) aliases from drifting when an org is torn down and reseeded.
+    if (row.platform_id) body.id = row.platform_id;
     if (row.parent_org_id && parentMap[row.parent_org_id]) body.parentId = parentMap[row.parent_org_id];
     const created = await api('POST', '/api/members', body);
-    const platformId = created?.id || `dry-${row.org_id}`;
+    const platformId = created?.id || row.platform_id || `dry-${row.org_id}`;
     out[row.org_id] = { csv_id: row.org_id, name: row.org_name, platform_id: platformId, reused: false };
     console.log(`    ✓ create ${row.org_id} ${row.org_name} (${platformId})`);
   }
@@ -308,6 +337,14 @@ export async function seedContacts(rows, orgMap) {
     if (user?.memberId) {
       const contact = await findContactById(user.memberId);
       if (contact) {
+        // Reconcile currency on reuse — contacts.csv currency_code is the oracle, so a re-seed fixes
+        // a pre-existing contact stuck on the wrong currency (e.g. an EUR buyer created as USD).
+        const wantCcy = (row.currency_code || '').trim();
+        if (wantCcy && contact.currencyCode !== wantCcy && !DRY_RUN) {
+          contact.currencyCode = wantCcy;
+          await api('POST', '/api/members', contact, { expectStatus: [200, 201, 204] });
+          console.log(`    ↻ reuse  ${row.contact_id} ${row.full_name} — currencyCode → ${wantCcy}`);
+        }
         out[row.contact_id] = { csv_id: row.contact_id, name: row.full_name, email: row.email, platform_id: contact.id, reused: true, user_id: user.id };
         if (VERBOSE) console.log(`    ↻ reuse  ${row.contact_id} ${row.full_name} (${contact.id}) via user ${user.id}`);
         continue;
@@ -447,6 +484,29 @@ export async function ensureMembershipContact(email, firstName, lastName, orgPla
   return id;
 }
 
+// Write live security-account ids back into users.csv `platform_id` — the ROOT-CAUSE fix for suite
+// instability: teardown+reseed mints new account GUIDs, and @td(...userId) aliases resolve FROM this
+// column, so without write-back every reseed silently breaks impersonation/user suites. Rewrites only
+// field 2 per USR- row (regex-anchored), preserving all other columns/quoting.
+export function writeBackUserPlatformIds(idByEmail) {
+  const path = join(ROOT, USERS_CSV);
+  let text; try { text = readFileSync(path, 'utf-8'); } catch { return 0; }
+  const key = {};
+  for (const [e, i] of Object.entries(idByEmail)) if (e && i && !String(i).startsWith('dry-')) key[e.toLowerCase()] = i;
+  let n = 0;
+  const out = text.split(/\r?\n/).map((line) => {
+    if (!/^USR-[0-9]+,/.test(line)) return line;
+    const email = (parseCsvLine(line)[5] || '').toLowerCase();
+    const id = key[email];
+    const cur = line.match(/^USR-[0-9]+,([^,]*),/)?.[1];
+    if (!id || cur === id) return line;
+    n++;
+    return line.replace(/^(USR-[0-9]+),[^,]*,/, `$1,${id},`);
+  });
+  if (n) writeFileSync(path, out.join('\n'));
+  return n;
+}
+
 // Give each seeded contact a login + org-scoped membership (role + status from users.csv).
 export async function provisionContactLogins(contactMap, orgMap) {
   const userRows = readCsv(USERS_CSV);
@@ -454,6 +514,7 @@ export async function provisionContactLogins(contactMap, orgMap) {
   for (const u of userRows) if (u.contact_id) userByContact[u.contact_id] = u;
   console.log(`\n  Provisioning contact logins + org memberships...`);
   let nAcct = 0, nMem = 0;
+  const idByEmail = {};
   for (const [csvId, c] of Object.entries(contactMap)) {
     const u = userByContact[csvId];
     if (!u || (u.seeded || '').toLowerCase() === 'false') continue;
@@ -461,6 +522,7 @@ export async function provisionContactLogins(contactMap, orgMap) {
     if (!email.includes('@') || String(c.platform_id).startsWith('dry-')) continue;
 
     const userId = await ensureSecurityAccount(email, resolvePassword(u.password), c.platform_id, u.status || 'Approved');
+    idByEmail[email] = userId;
     await stripSeededGlobalRoles(email);
     nAcct++;
 
@@ -476,6 +538,10 @@ export async function provisionContactLogins(contactMap, orgMap) {
     }
   }
   console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
+  if (!DRY_RUN) {
+    const written = writeBackUserPlatformIds(idByEmail);
+    if (written) console.log(`  ✓ users.csv: refreshed ${written} platform_id(s) from live (keeps @td userId aliases stable)`);
+  }
   return { accounts: nAcct, memberships: nMem };
 }
 
@@ -518,16 +584,36 @@ export function roleUsers() {
   };
   return resolveAllRoles()
     .filter(r => r.kind === 'customer' && r.present)
-    .map(r => { const n = nameFromEmail(r.email); return { email: r.email, password: r.password, first: n.first, last: n.last, source: `env-role:${r.key}`, group: r.group || null }; });
+    .map(r => { const n = nameFromEmail(r.email); return { email: r.email, password: r.password, first: n.first, last: n.last, source: `env-role:${r.key}`, group: r.group || null, currency: r.currency || null }; });
+}
+// Admin-kind env-roles the seeder must CREATE (provision=true) — e.g. IMPERSONATION_ADMIN. The
+// bootstrap ADMIN has no `provision` flag, so it's never (re)created here.
+export function adminUsers() {
+  return resolveAllRoles()
+    .filter(r => r.kind === 'admin' && r.provision && r.present)
+    .map(r => ({ email: r.email, password: r.password, source: `env-role:${r.key}` }));
+}
+export async function ensureAdminAccount(u) {
+  const existing = await findUserByEmail(u.email);
+  if (existing?.id) { if (VERBOSE) console.log(`    ↻ reuse admin ${u.email}`); return 'reused'; }
+  if (DRY_RUN) { console.log(`    ✓ create admin (dry) ${u.email}`); return 'created'; }
+  const res = await api('POST', '/api/platform/security/users/create', {
+    userName: u.email, email: u.email, password: u.password, storeId: STORE_ID, userType: 'Manager', isAdministrator: true,
+  });
+  if (res && res.succeeded === false) throw new Error(`create admin ${u.email}: ${JSON.stringify(res.errors)}`);
+  const present = await verifyCreated(api, 'user', res?.id || u.email, { name: u.email });
+  if (!present && !DRY_RUN) throw new Error(`create admin ${u.email}: account not found after create`);
+  console.log(`    ✓ create admin ${u.email} [${u.source}]`);
+  return 'created';
 }
 export function personalUsers() {
   const out = []; const seen = new Set();
-  const add = (email, password, first, last, source, status = 'Active', group = null) => {
+  const add = (email, password, first, last, source, status = 'Active', group = null, currency = null) => {
     const e = (email || '').trim(); if (!e.includes('@')) return;
     const k = e.toLowerCase(); if (seen.has(k)) return; seen.add(k);
-    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active', group });
+    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active', group, currency });
   };
-  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group);
+  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group, u.currency);
   for (const r of readCsv('test-data/users/agent-user-pool.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
     if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, resolvePassword(r.personal_password), r.personal_first_name, r.personal_last_name, 'agent-pool');
@@ -541,10 +627,24 @@ export function personalUsers() {
 
 export async function ensurePersonalAccount(u) {
   const existing = await findUserByEmail(u.email);
-  if (existing?.id) { if (VERBOSE) console.log(`    ↻ reuse ${u.email}`); return 'reused'; }
+  if (existing?.id) {
+    // Reconcile the contact's currency on reuse — a create-only path would leave a pre-existing
+    // account stuck on the wrong currency (e.g. EUR_USER seeded as USD). The CSV/registry is the oracle.
+    if (u.currency && existing.memberId && !DRY_RUN) {
+      const contact = await findContactById(existing.memberId);
+      if (contact && contact.currencyCode !== u.currency) {
+        contact.currencyCode = u.currency;
+        await api('POST', '/api/members', contact, { expectStatus: [200, 201, 204] });
+        console.log(`    ↻ reuse ${u.email} — currencyCode → ${u.currency}`);
+        return 'reused';
+      }
+    }
+    if (VERBOSE) console.log(`    ↻ reuse ${u.email}`);
+    return 'reused';
+  }
   const contactBodyObj = {
     memberType: 'Contact', firstName: u.first, lastName: u.last, fullName: `${u.first} ${u.last}`, name: `${u.first} ${u.last}`,
-    emails: [u.email], status: 'Approved', timeZone: 'America/New_York', defaultLanguage: 'en-US', currencyCode: 'USD',
+    emails: [u.email], status: 'Approved', timeZone: 'America/New_York', defaultLanguage: 'en-US', currencyCode: u.currency || 'USD',
   };
   if (u.group) contactBodyObj.groups = [u.group];
   const contact = await api('POST', '/api/members', contactBodyObj);
@@ -556,7 +656,7 @@ export async function ensurePersonalAccount(u) {
   if (res && res.succeeded === false) throw new Error(`create ${u.email}: ${JSON.stringify(res.errors)}`);
   const present = await verifyCreated(api, 'user', res?.id || contactId, { name: u.email });
   if (!present && !DRY_RUN) throw new Error(`create ${u.email}: account not found after create (verify failed)`);
-  console.log(`    ✓ create ${u.email}${u.source?.startsWith('env-role') ? ` [${u.source}]` : ''}${u.group ? ` (group ${u.group})` : ''}`);
+  console.log(`    ✓ create ${u.email}${u.source?.startsWith('env-role') ? ` [${u.source}]` : ''}${u.group ? ` (group ${u.group})` : ''}${u.currency ? ` (${u.currency})` : ''}`);
   return 'created';
 }
 
