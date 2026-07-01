@@ -106,11 +106,20 @@ must run before any generator/verify script — they import from `node_modules`.
 
 ### 2b. Values — the 15-question block (one field = one question)
 
-Ask the operator this **numbered block of 15 questions** — one field per question,
-and do **not** collapse or cap it. Present the **enum** questions (Q2, Q8) with
-their choices; ask every other field as a **plain value prompt with no invented
-options**. Two conditional secret questions append after Q15 when the auth method
-needs a token. Renumber contiguously after you drop/add lines per topology.
+Ask these 15 fields as an interview — **each field is its OWN question**, asked via
+`AskUserQuestion` (you may batch up to the tool's 4-questions-per-call limit; that
+is still one field per question). Two conditional token questions follow Q15 when
+the auth method is token-based. Renumber contiguously after you drop/add per
+topology.
+
+- **Enum fields** — Q2 `ENV_RISK` and Q8 `STOREFRONT_PROFILE` — list their
+  **predefined choices** as the options.
+- **Free-text fields** — everything else — the operator types the value in the
+  question's built-in **free-text ("Other") input**. **Never fabricate example
+  values as options** (no guessed URLs / names / IDs). `AskUserQuestion` requires
+  ≥2 options, so supply only **neutral, non-value** options — the prompt/hint
+  itself, a real default where one truly exists (e.g. `ADMIN` → `admin`), and/or
+  `Skip` for optional fields — and let the free-text input carry the real value.
 
 **The block (native platform + Jira + GitHub, new env):**
 
