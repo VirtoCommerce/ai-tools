@@ -82,15 +82,19 @@ must run before any generator/verify script — they import from `node_modules`.
 
 > **No pauses, no mid-interview reconnaissance.** Do **not** read files, inspect
 > the `.mjs` scripts, or run any other Bash **between** the interview steps —
-> everything you need is already in this skill. The interview is tiny:
->   1. **Topology** — one `AskUserQuestion` call (categorical; step 2a).
->   2. **Env name** — one plain question (step 2b). That is **all** that is asked.
+> everything you need is already in this skill. The interview is tiny and lives in
+> **one `AskUserQuestion` block**: topology (operator · projectType · tracker) **+
+> the env name** together (step 2a/2b). Ask the env name **inside that question
+> block via `AskUserQuestion`** — never as a separate plain-chat prompt. `ENV_NAME`
+> is free-text, so the operator types it in the question's Other input.
 >
-> There is **no value form and no per-value questions**. Step 3 writes BOTH env
-> files (`.env.<env>` and `.env.local`) as commented templates; the operator fills
-> them in, then verify-access (step 7) checks them.
+> That is **all** that is asked. There is **no value form and no per-value
+> questions**. Step 3 writes BOTH env files (`.env.<env>` and `.env.local`) as
+> commented templates; the operator fills them, then verify-access (step 7) checks.
 
-### 2a. Topology — first `AskUserQuestion` call (categorical)
+### 2a. Topology + env name — one `AskUserQuestion` block
+
+Ask these **four** as a single `AskUserQuestion` call (max 4 questions/call):
 
 1. **operator** — `virto-engineer` (Virto staff, may have write access to
    VirtoCommerce repos → default contribution mode `direct`) or `client`
@@ -98,23 +102,22 @@ must run before any generator/verify script — they import from `node_modules`.
 2. **projectType** — `platform` (vanilla/native Virto) or `client` (custom
    modules / theme / storefront fork → unlocks step 5 + client routing).
 3. **tracker** — `jira` or `azure` (Azure Boards).
-4. **code host** (client projects only) — `github` or `azure-repos` (where the
-   CLIENT's code lives + PRs open). Tracker and VCS are **independent** (Azure
-   Boards + GitHub is fine). The platform upstream is **always** GitHub.
+4. **ENV_NAME** *(free-text — enter in Other)* — becomes `TEST_ENV`; **must match
+   `[a-z0-9_]+`** (lowercase/digits/underscores, no hyphens). Normalise mixed
+   case / spaces (e.g. `My QA` → `my_qa`) and tell the operator what you used.
 
-### 2b. Environment name — the only value question
+**Only for `projectType=client`**, ask **code host** (`github` or `azure-repos`)
+in a follow-up `AskUserQuestion` — where the CLIENT's code lives + PRs open.
+Tracker and VCS are **independent** (Azure Boards + GitHub is fine); the platform
+upstream is **always** GitHub. (For `platform`, code host is irrelevant.)
 
-Ask the operator for just the **environment name** (`ENV_NAME`) — a normal question
-(plain chat is fine). That name is all step 3 needs to create the two env-file
-templates. It becomes `TEST_ENV`, so it **must match `[a-z0-9_]+`** (lowercase,
-digits, underscores — no hyphens; the `_<ENV>` secret suffix promotion depends on
-it). If the operator gives mixed case or hyphens, **normalise it** (e.g. `My QA` →
-`my_qa`) and tell them what you used.
+### 2b. No further questions
 
-Do **not** ask for URLs, IDs, emails, passwords, or tokens — every value is a
-placeholder the operator fills into the two template files created in step 3.
-(Reusing an existing `.env.<env>` such as native `.env.vcst`? Use that name — step 3
-only adds any missing keys and never clobbers filled values.)
+`ENV_NAME` is already captured in the 2a block (via its Other input) — that's the
+only value asked. Do **not** ask for URLs, IDs, emails, passwords, or tokens: every
+value is a placeholder the operator fills into the two template files created in
+step 3. (Reusing an existing `.env.<env>` such as native `.env.vcst`? Use that name
+— step 3 only adds missing keys and never clobbers filled values.)
 
 ## 3. Scaffold the two env templates, then hand off for filling
 
