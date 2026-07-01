@@ -6,7 +6,7 @@
 Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
 
 ### 2. CI Regression via Claude Agent SDK
-`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, injects them into prompts with agent instructions from `ci/agents/` (3 CI-specific agent definitions: `qa-frontend-expert.md`, `qa-backend-expert.md`, `qa-testing-expert.md`), and runs suites in parallel batches (up to 3 concurrent, configurable via `MAX_PARALLEL`). Results are tracked in `reports/regression/history.json` (90-day rolling window). Teams notifications via `ci/notify-teams.ts`.
+`ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, injects them into prompts with the 3 regression agent definitions in `ci/agents/` (`qa-frontend-expert.md`, `qa-backend-expert.md`, `qa-testing-expert.md`), and runs suites in parallel batches (up to 3 concurrent, configurable via `MAX_PARALLEL`). Results are tracked in `reports/regression/history.json` (90-day rolling window). Teams notifications via `ci/notify-teams.ts`.
 
 **Note:** CI mode uses only `playwright-chrome` (single headless Chromium) for all suites. The 3-browser pool (chrome/firefox/edge) applies only to interactive mode. CI environment mapping: `qa` → `FRONT_URL`/`BACK_URL`, `staging` → `VIRTO_START_FRONT`/`VIRTO_START_BACK`.
 
@@ -36,52 +36,55 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 101 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`)
+- **Suite definitions**: 110 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: 36 groups — `smoke`, `critical`, `release`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `layout-stability`, `loyalty`, …)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-101 suites in `regression/suites/` organized by module under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,756 test cases**.
+110 suites in `regression/suites/` organized by module (44 directories) under `Frontend/` and `Backend/` + 1 release suite. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: ~3,480 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
 
-### Frontend Suites (42 suites, user-facing features & flows)
+### Frontend Suites (50 suites, ~1,630 tests — user-facing features & flows)
 
 | Directory | Suites | Tests | Description |
 |-----------|--------|-------|-------------|
-| `Frontend/auth/` | 031-033 | 68 | Login, registration, session, RBAC, company menu |
-| `Frontend/catalog/` | 001-003 | 70 | Navigation, product detail, filters |
-| `Frontend/search/` | 004-005 | 60 | Core search, filters & advanced |
-| `Frontend/cart/` | 028-030 | 77 | Core, validation/persistence, merge |
-| `Frontend/checkout/` | 011-013 | 64 | Flow, guest, B2B |
-| `Frontend/orders/` | 014-015 | 97 | Orders frontend, quotes |
-| `Frontend/payment/` | 039, 040a-040c, 041 | 84 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
+| `Frontend/auth/` | 031-033, 082 | 108 | Login, registration, session, RBAC, company menu |
+| `Frontend/catalog/` | 001-003 | 87 | Navigation, product detail, filters |
+| `Frontend/search/` | 004-005 | 79 | Core search, filters & advanced |
+| `Frontend/cart/` | 028-030 | 96 | Core, validation/persistence, merge |
+| `Frontend/checkout/` | 011-013, 081 | 118 | Flow, guest, B2B |
+| `Frontend/orders/` | 014-015 | 125 | Orders frontend, quotes |
+| `Frontend/payment/` | 039, 040a-040c, 041 | 89 | CyberSource, Skyflow, Authorize.Net, Datatrans, cross-cutting |
 | `Frontend/bopis/` | 036-038 | 88 | Store selector, cart, checkout |
-| `Frontend/b2b/` | 006-010 | 166 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
-| `Frontend/configurable-products/` | 072, 072b, 072c | 139 | UI, E2E scenarios, cross-cutting |
+| `Frontend/b2b/` | 006-010, 011b | 193 | Organization, lists, members, variations/configs, bulk/ship/dashboard |
+| `Frontend/configurable-products/` | 072, 072b-072d | 186 | UI, E2E scenarios, cross-cutting |
 | `Frontend/whitelabeling/` | 070-071 | 68 | Storefront, branding |
-| `Frontend/marketing/` | 077 | 54 | Coupons & promotions storefront |
-| `Frontend/cross-cutting/` | 042-048 | 172 | Smoke, GA4, security, a11y, i18n, performance, browser compat |
+| `Frontend/marketing/` | 077, 077b | 112 | Coupons & promotions storefront |
+| `Frontend/loyalty/` | 083, 083b | 33 | Loyalty storefront (earn/redeem, balance) |
+| `Frontend/cross-cutting/` | 043-048, 048b | 214 | GA4, security, a11y, i18n, performance, browser compat, layout stability |
+| `Frontend/smoke/` | 042 | 34 | Storefront smoke (P0) |
 
-### Backend Suites (38 suites, admin UI, modules & APIs)
+### Backend Suites (59 suites, ~1,752 tests — admin UI, modules & APIs)
 
 | Directory | Suites | Tests | Description |
 |-----------|--------|-------|-------------|
 | `Backend/platform/` | 020-021, 063 | 94 | Users/roles, dynamic properties, core settings |
 | `Backend/store/` | 034-035 | 65 | Management, rounding/email |
-| `Backend/catalog/` | 051, 053 | 63 | Products admin, categories admin |
-| `Backend/customer/` | 026-027 | 84 | Contacts, orgs & invites |
+| `Backend/catalog/` | 051, 053 | 67 | Products admin, categories admin |
+| `Backend/customer/` | 026, 027, 027b | 106 | Contacts, orgs & invites |
 | `Backend/pricing/` | 054-055 | 62 | Logic, management |
 | `Backend/inventory/` | 056 | 43 | Fulfillment centers, stock |
 | `Backend/marketing/` | 023-025 | 89 | Promotions, content, coupons/API |
 | `Backend/notifications/` | 057-058 | 53 | Templates, triggers |
-| `Backend/cms/` | 059-060 | 56 | Page management, design/content |
-| `Backend/orders/` | 017-019 | 90 | Management, payments, shipments admin |
-| `Backend/api/` | 049 | 33 | Platform REST API |
-| `Backend/graphql/` | 050 | 33 | GraphQL xAPI |
-| `Backend/search/` | 061 | 46 | Search indexing admin |
-| `Backend/configurable-products/` | 052 | 15 | Configurable products admin |
+| `Backend/cms/` | 059-060 | 153 | Page management, design/content |
+| `Backend/orders/` | 017-019 | 98 | Management, payments, shipments admin |
+| `Backend/api/` | 049 | 35 | Platform REST API |
+| `Backend/graphql/` | 050a, 050b1-050b5, 050c-050l | 337 | GraphQL xAPI (16 suites) |
+| `Backend/search/` | 061 | 47 | Search indexing admin |
+| `Backend/configurable-products/` | 052 | 29 | Configurable products admin |
 | `Backend/whitelabeling/` | 067 | 40 | White labeling admin |
-| Other modules | various | ~213 | assets, channels, contracts, image-tools, import-export, loyalty, push-messages, returns, seo, shipping, xmarketing |
+| `Backend/smoke/` | 078 | 114 | Backend/API smoke (P0) |
+| Other modules | 15 suites | ~320 | assets (062), channels (076), contracts (074), image-tools (069), import-export (064), loyalty (075/075b/075c), news (084), push-messages (068), returns (073), seo (066), shipping (065), task-management (085), xmarketing (079) |
 
 - **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
 - **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
@@ -102,11 +105,11 @@ Central configuration for regression orchestration. Defines:
 | `b2b` | 006-010 | B2B features |
 | `marketing` | 023-025, 077 | Marketing module (admin + storefront) |
 | `platform` | 020-021, 049, 063 | Platform module |
-| `frontend` | All Frontend/ suites (40) | Frontend-only regression |
-| `backend` | All Backend/ suites (38) | Backend-only regression |
+| `frontend` | All Frontend/ suites (50) | Frontend-only regression |
+| `backend` | All Backend/ suites (59) | Backend-only regression |
 | `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 101 suites | Before production release |
+| `full` | All 110 suites | Before production release |
 
 ## CI Regression Testing
 
@@ -128,7 +131,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
 - **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 101 suites ($80 budget)
+- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 110 suites ($80 budget)
 - **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
