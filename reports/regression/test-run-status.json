@@ -1,121 +1,74 @@
 {
-  "runId": "REG-2026-06-30-1200",
-  "selection": "006,008,033,027b,011b (B2B org / members / account-menu / org-memberships / company-e2e)",
-  "startedAt": "2026-06-30T12:00:00Z",
+  "runId": "REG-2026-07-01-1430",
+  "selection": "search (004, 005, 061)",
+  "startedAt": "2026-07-01T14:30:00+02:00",
   "env": "vcst-qa",
   "build": {
-    "platform": "3.1039.0",
-    "theme": "2.52.0-alpha.2394"
-  },
-  "phase": "011b-COMPLETE (incomplete-blocked): 4 PASS (002,011,020,021 firefox permission-first), 0 product FAIL, BUG-A NOT regressed, decisive headless permission audit. chrome+edge UI half blocked on auth fixtures. Report: reports/regression/REG-2026-06-30-1430/regression-2026-06-30.md",
-  "blockerDiagnosis": "STEP 0 auth failed on chrome(TECHFLOW_ADMIN) AND edge(MULTI_ORG_USER): /account redirects to /sign-in, anonymous header. MULTI_ORG_USER worked on chrome earlier today (006 passed) but is anonymous now -> root cause = storageState access_token EXPIRED between capture (~14:14) and dispatch (~14:35-14:41). Cold-load token refresh does not fire before the route guard redirects. Not a product defect. Implication: storageState TTL is shorter than a full suite run -> must regenerate fresh immediately before dispatch, and long single-agent case sets risk re-expiry mid-run.",
-  "totalPlanSuites": 4,
-  "windowStart": "2026-06-30T12:00:00Z",
-  "note": "Browser suites (006/008/033) blocked at [PRE:SIGNIN_AS]: Playwright MCP doesn't interpolate {{VAR}} and auto-mode classifier denies credential materialization. RESOLUTION (user-approved): storageState injection. Generated test-results/auth/<acct>.json via scripts/auth/save-storage-state.ts (in-process cred read, no transcript materialization). 6/7 accounts authed (TECHFLOW_ADMIN bounced; ORG_USER covers 008 admin). Wired contextOptions.storageState into the 3 MCP configs. AWAITING user MCP-server restart, then re-dispatch 006/008/033.",
-  "authStorageState": {
-    "chrome": "test-results/auth/TECHFLOW_ADMIN.json",
-    "firefox": "test-results/auth/MULTI_ORG_TF_BR.json",
-    "edge": "test-results/auth/MULTI_ORG_USER.json",
-    "rewiredAt": "2026-06-30T14:30Z — re-wired for 011b + suits the whole B2B push (008 needs a TechFlow maintainer on chrome; 033 org-switch on edge)",
-    "alsoAvailable": ["PERSONAL_USER_VIRTO", "ORG_USER", "USER", "BUILDRIGHT_ADMIN"]
-  },
-  "011bPlan": {
-    "newCoverage_storefrontUI": {
-      "chrome_TECHFLOW_ADMIN": ["006", "007", "016", "017", "018", "001 (invite+roster only)", "008-UI", "010 (org half)", "012 (admin-verify half)", "014 (invite UI half)"],
-      "firefox_MULTI_ORG_TF_BR": ["002", "003", "011", "020 (UI button-absent + GQL probe via session token)", "021 (me.permissions BUG-A guard)"],
-      "edge_MULTI_ORG_USER": ["004"]
-    },
-    "crossReference_027b_alreadyExecuted": {
-      "022": "= 027b Finding#2 (missing userId -> 500, expected 400). Known FAIL/needs-review; do not re-run.",
-      "019/005-REST/012-REST": "027b confirms REST lock/unlock works (200). 011b REST lock segments expected to pass.",
-      "015": "027b ORGM create-membership exercised the userId+roles contract; cross-ref.",
-      "020-GQL/021": "relate to 027b Finding#4 (inviteUser/lock GQL resolver INVALID_OPERATION) + BUG-A guard."
-    },
-    "blockedByHarness_notProductFail": {
-      "001/014": "accept-invite needs mailbox link + login-as-fresh-account — second identity not wireable via storageState.",
-      "009/013": "register then login-as-new-account — second identity blocked; registration + REST-verify still runnable.",
-      "005/012": "UI login-DENIAL test needs credential entry (cannot test a blocked login via a pre-authed storageState).",
-      "010": "personal-account half needs a 2nd browser wired to a personal account.",
-      "023": "Admin SPA (BACK_URL) operator session — no backend storageState wired; qa-backend-expert workstream.",
-      "015/019/022": "pure-REST — route to qa-backend-expert (OAuth token from .env), not the storefront browser agents."
+    "platform": "3.1041.0",
+    "theme": "2.53.0-pr-2343",
+    "modules": {
+      "VirtoCommerce.Search": "3.1005.0",
+      "VirtoCommerce.ElasticSearch8": "3.1007.0",
+      "VirtoCommerce.XCatalog": "3.1009.0",
+      "VirtoCommerce.Catalog": "3.1032.0"
     }
   },
+  "windowStart": "2026-07-01T14:30:00+02:00",
+  "completedAt": "2026-07-01T15:12:00+02:00",
+  "status": "complete",
+  "verdict": "GREEN — 129 cases: 79 PASS / 0 FAIL / 48 BLOCKED / 2 SKIPPED. 0 confirmed bugs. All blocks are harness/config/tooling limits, not product defects. App Insights run-window: 1 needs-review (GetGlobalSetting 500 x2), rest noise (image 404s + ResizeObserver).",
+  "outputDir": "reports/regression/REG-2026-07-01-1430/",
+  "reportPath": "reports/regression/REG-2026-07-01-1430/regression-2026-07-01.md",
+  "note": "Shared status file had reverted to stale REG-2026-06-30-1200 B2B content; restored to this run. Authoritative per-run record also kept in the run dir.",
   "suites": {
-    "006": {
+    "004": {
       "status": "passed",
+      "name": "Search Core",
       "browser": "playwright-chrome",
-      "agent": "qa-frontend-expert (suite006b, storageState=MULTI_ORG_USER)",
-      "priority": "P1",
-      "cases": 39,
-      "passed": 30,
-      "failed": 0,
-      "blocked": 4,
-      "skipped": 3,
-      "verdict": "GREEN. All BL-B2B-005 org-isolation invariants hold (cart isolation, address scoping, pricing re-query, user-scoped lists, branding, switcher search/keyboard); server-side XSS rejection confirmed (ORG-039). Auth held via pre-wired storageState, no manual login. No bugs filed.",
-      "blockedCases": {
-        "ORG-010": "NEEDS_SECONDARY_ACCOUNT (single-org acct); run-code identity-swap blocked by enforce-real-user hook",
-        "ORG-031": "NEEDS_SECONDARY_ACCOUNT (personal acct); same constraint",
-        "ORG-028": "coupon QA10OFF/ZUR10 reject 'not valid' — promo-config/fixture, NOT org-isolation defect (isolation proven by 003/025/026)",
-        "ORG-038": "needs sign-out/sign-in cycle; cannot re-login under pre-wired-auth rule"
-      },
-      "skippedCases": "013/014/037 (N/A-ENV: no <=10-org / exactly-10-org / no-default-org account)",
-      "passWithCaveat": {
-        "ORG-016": "Low: 'ACM'/'ACME' returns 3 real matches + 2 non-name-matching special-char orgs (likely hidden-field match); clean queries return only matches. Source-check the org-filter predicate; no ticket.",
-        "ORG-008": "Medium: stays on same valid category URL post-switch instead of redirecting to neutral page; no stale/error — candidate stale-test wording, not a product bug."
-      },
-      "keyConstraint": "browser_run_code_unsafe identity-swap is BLOCKED by enforce-real-user hook -> per-suite secondary accounts must be the browser's wired storageState, not runtime-loaded."
-    },
-    "008": {
-      "status": "pending-redispatch-CHROMIUM",
-      "browser": "MUST be edge/chrome (NOT firefox — members table's 7 perpetual 'Invited' spinners time out every in-table click on Firefox)",
       "agent": "qa-frontend-expert",
       "priority": "P1",
-      "cases": 19,
-      "provisionalCarryForward": {
-        "_caveat": "From the pre-restart suite008 agent; auth method UNVERIFIED (may have materialized creds against the hold) — re-confirm on clean storageState re-run before filing anything.",
-        "MBR-004": "FAIL (claimed product bug): 'Invite members' button ABSENT for maintainers; confirmed cross-browser (FF+Edge) + cross-maintainer (Emily/TechFlow + Carlos/BuildRight). NOT BUG-A empty-permissions (per-row Actions menus render+work). Regression of VCST-5028 maintainer write-UI. Blocks MBR-005/006/007 + invite step of 023. Evidence: MBR-004-members-header-no-invite.png. NEEDS INDEPENDENT CONFIRMATION.",
-        "passed": "MBR-019 (AC1 role-change scoped to TechFlow, BuildRight unchanged, UI+API), MBR-020/023 (AC3 org-scoped block: TF isLocked=true, BR=false, global /locked=false → BL-AUTH-012 preserved), MBR-021/011 (unblock)",
-        "minorFinding": "blocked-org login message reads 'Your access to THIS organization has been blocked...' (+contact-site-admin link), not the BL-AUTH-013 verbatim '...organization <name>...'. Intent satisfied; reconcile AC wording — not necessarily a bug.",
-        "blocked": "MBR-013–017 delegated-purchasing → config gap (org has no approver role/threshold), not a bug",
-        "cleanup": "fixture MULTI_ORG_TF_BR restored to AC1 oracle (API-verified); browsers closed"
-      }
+      "testCount": 41,
+      "passed": 33,
+      "failed": 0,
+      "blocked": 6,
+      "skipped": 2,
+      "verdict": "GREEN 80.5% (84.6% of executed non-deprecated). 0 FAIL, 0 JS TypeErrors. All core search PASS anonymously: query/autocomplete/hints/clear/submit, result-count, grid-list toggle, API sort direction-oracle + deep-link, SKU/numeric/category-scoped search, mobile 375px, term+facet URL persistence, infinite-scroll network capture.",
+      "blockedCases": "SRCH-NEW-044/048 pagination = test-design mismatch -> RE-AUTHORED to infinite-scroll model + LIVE-VERIFIED PASS on chrome 2026-07-01 (td:validate green; after-cursor continuation, no dup SKUs; evidence verify-044-048-results.json). SRCH-JRNY-001..004 need [PRE:SIGNIN_AS:ORG_USER_DEFAULT] (real-user hook blocks creds, no valid org storageState) -> behaviors spot-verified anonymously.",
+      "skippedCases": "2 deprecated-in-CSV cases",
+      "incidentalLow": [
+        "Product-image 404s across catalog (missing CMS media on vcst-qa, content-quality; e.g. SYU-76371555 all images 404) - confirmed:false",
+        "Mobile search-overlay close button accessible name is untranslated i18n key 'common.labels.close' (a11y/i18n, 375px) - confirmed:false",
+        "Homepage stale cross-env image host starmarket-platform.demo.govirto.com (ERR_NAME_NOT_RESOLVED) - confirmed:false"
+      ]
     },
-    "033": { "status": "pending-redispatch", "browser": "playwright-edge", "agent": "qa-frontend-expert", "priority": "P1", "cases": 14 },
-    "027b": {
-      "status": "executed",
-      "browser": "none (runner-native) + 2 semi-auto need playwright-edge",
-      "agent": "test-management-specialist 'tlc027b' (re-author + verification via /qa-test-lifecycle)",
+    "005": {
+      "status": "passed",
+      "name": "Search Filters & Advanced",
+      "browser": "playwright-firefox (12 PASS) + playwright-edge click-retry (19 PASS)",
+      "agent": "qa-frontend-expert x2",
       "priority": "P1",
-      "cases": 18,
-      "passed": 7,
-      "failed": 9,
-      "semiAutoNotExecuted": 2,
-      "verdict": "RE-AUTHORED to canonical runner grammar + EXECUTED (was 18 BLOCKED suite-defect). validate-td-refs 53/53 GREEN. 7 PASS / 9 FAIL / 2 semi-auto(EMPTY). Every FAIL maps to a PRODUCT FINDING, not a test defect. Added aliases MULTI_ORG_TF_BR_EMPLOYEE/_MAINTAINER (aliases.json v1.5.25). Files changed: 027b CSV + aliases.json (committed-file changes via the approved lifecycle path).",
-      "passed_cases": "ORGM-003,006,007,011,012,013,014",
-      "findings": {
-        "Finding#1": "CONFIRMED UNRESOLVED (pre-existing): maintainer JWT gets Forbidden/Access-denied on changeOrganizationContactRole (ORGM-017) AND lockOrganizationContact (ORGM-018). xapi:my_organization:edit not honored.",
-        "Finding#2": "CONFIRMED UNRESOLVED (pre-existing): create membership with missing userId -> HTTP 500 (NULL insert DB error) [ORGM-015]; empty userId -> HTTP 500 (duplicate-key) [ORGM-016]; should be 400 validation.",
-        "Finding#3": "NEW — needs human triage: changeOrganizationContactRole schema/runtime mismatch. Schema InputChangeOrganizationContactRoleType exposes only memberId+roleIds, but runtime returns OrganizationIdRequired without organizationId; adding organizationId -> schema rejects 'Unrecognized input fields'. Mutation untestable via xAPI from a no-org-context (platform-admin) caller. Affects ORGM-001/002/004 (FAIL). NUANCE: may work from a maintainer UI JWT that carries org context (reconcile against 008 MBR-019 on re-run) -> classify needs-review, not auto-file.",
-        "Finding#4": "NEW — likely real xAPI defect: lockOrganizationContact + unlockOrganizationContact GraphQL resolvers return INVALID_OPERATION ('Error trying to resolve field') for ALL callers incl platform admin, while the REST lock/unlock endpoints work (200). Affects ORGM-008/009 (FAIL). The earlier ORGM-011 'inviteUser null' signal is consistent with broken GQL resolvers on these mutations."
-      },
-      "semiAuto": "ORGM-005 (lock via Admin SPA contact-blade widget) + ORGM-010 (invite via org-blade toolbar) need playwright-edge + qa-backend-expert. Defer to after 008 on edge, or run as a small backend pass.",
-      "humanAction": "Findings #3/#4 are NEW candidate bugs for human triage via /qa-bug (detect+report only; not auto-filed). #1/#2 pre-existing confirmed."
+      "testCount": 41,
+      "passed": 31,
+      "failed": 0,
+      "blocked": 10,
+      "skipped": 0,
+      "verdict": "GREEN 75.6% (100% of executable cases PASS, 0 FAIL). Firefox pass = 12 anonymous cases (special-chars, no-results, whitespace, 200-char, XSS-escaped [Critical], SQLi-literal, URL-encoding, keyboard-nav, GA4 x2). Edge click-retry = 19 (facet apply/reset, chip precise-remove, cross-facet AND, OR-within-group, integer-boundary price slider, sort+facet composite VCST-5177, mobile 375px, DOM==API cross-layer, browse+refine journeys).",
+      "firefoxQuirk": "Firefox MCP actionability-stability quirk falsely BLOCKED all 19 click-dependent cases (feedback_firefox_cart_dropdown_quirk); did NOT reproduce on Edge/Chromium -> all 19 PASS on retry. Confirms tooling-limited, not product defect.",
+      "blockedCases": "10 total, all non-defects: 4 auth (SRCH-009/010/NEW-013/NEW-035 - real-user hook blocks creds, no org storageState); 3 Chrome-DevTools tooling (SRCH-NEW-026/027/028 - a11y/perf panels); 3 config-dependent (SRCH-NEW-100/101/102 - VCST-4729 dictionary-facet priority ordering needs Admin SPA to identify a priority-ordered facet)."
     },
-    "011b": {
-      "status": "partial-auth-blocked",
-      "windowStart": "2026-06-30T14:35:00Z",
-      "result": "chrome(8 cases TECHFLOW_ADMIN) + edge(004 MULTI_ORG_USER) BLOCKED AUTH_NOT_LOADED (those 2 storageState files expired/invalid). firefox(MULTI_ORG_TF_BR) AUTHED OK -> 2 PASS (011,020), 3 BLOCKED (002 partial/021/003) on absent org-switcher (BuildRight-only context). 008 invite-button maintainer regression STILL UNCONFIRMED (needs TechFlow maintainer context).",
-      "authFileStatus": "MULTI_ORG_TF_BR.json=VALID (loaded); TECHFLOW_ADMIN.json + MULTI_ORG_USER.json=EXPIRED/INVALID (anonymous). Regenerate the latter two (and re-verify TF_BR freshness) before browser re-dispatch.",
-      "candidateFindings": {
-        "ORG-SWITCHER-ABSENT": "needs-review: multi-org user MULTI_ORG_TF_BR sees NO org-switcher in storefront UI (BuildRight context only; header org-name non-interactive). VCST-5028/Sprint26-11 says switcher used to be in account-menu listbox. PermAudit confirming if both memberships exist at API (=> product bug) vs single-org token artifact.",
-        "EMPLOYEE-MEMBER-ACTIONS-LEAK": "candidate High, needs backend authz confirm: BuildRight EMPLOYEE (empty perms) sees per-row Actions (Edit role/Block/Delete) + functional Change-role dialog on /company/members; top-level Invite correctly hidden. Save NOT clicked (no self-escalation). PermAudit probing changeOrganizationContactRole with employee JWT (no-op) -> Forbidden=UI-only leak; 200=real bypass. Evidence: screenshots/case011-employee-sees-actions-buildright.png. No JIRA filed.",
-        "crossRef": "ties to 027b Finding#1 (maintainer Forbidden on changeRole) + Finding#3 (schema/org-context mismatch)."
-      },
+    "061": {
+      "status": "passed",
+      "name": "Search Indexing Admin",
+      "browser": "playwright-edge (ran API-only, no browser opened)",
+      "agent": "qa-backend-expert",
       "priority": "P1",
-      "cases": 23,
-      "agent": "qa-frontend-expert x3 (chrome=TECHFLOW_ADMIN[006,007,016,017,018,001,014,008]; firefox=MULTI_ORG_TF_BR[002,011,021,003,020]; edge=MULTI_ORG_USER[004])",
-      "scopeThisRun": "16 storefront-UI cases (new coverage). REST/GraphQL/AdminSPA cases cross-referenced to 027b or routed to qa-backend-expert; harness-blocked second-identity segments documented, not FAILed.",
-      "verdict": null
+      "testCount": 47,
+      "passed": 15,
+      "failed": 0,
+      "blocked": 32,
+      "skipped": 0,
+      "verdict": "GREEN on exercisable subset (15/15 API-testable PASS). 32 BLOCKED legitimate: Lucene switch + blue-green swap = shared-env mutation (safety-denied); full-rebuild/backup/settings-write need Admin SPA operator session (not wired); 031-035 are C# filter classes with no REST surface (unit-test scope); multi-instance cases N/A on single-instance topology. 0 bugs.",
+      "note": "catalog product-search `keyword` field inert; `searchPhrase` is the working field (expected API semantics, not a bug)."
     }
   }
 }
