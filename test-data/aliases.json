@@ -1026,6 +1026,21 @@
       "roles": "roles"
     }
   },
+  "NO_IMPERSONATE_OPERATOR": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-023"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
+    },
+    "notes": "IMP-015 negative operator — USR-023 Nora Manager (ORG-001 AcmeCorp), role 'Organization manager' (org-manager): full member management (edit/block/delete/invite) but NO platform:security:loginOnBehalf. Exists because org-maintainer now HAS loginOnBehalf, so SUPPORT_AGENT can no longer be the no-impersonate operator. platform_id is written back by the seeder (seed-company-users)."
+  },
   "IMPERSONATE_TARGET": {
     "file": "b2b/users",
     "filter": {
@@ -1987,7 +2002,7 @@
   },
   "TECHFLOW_ORG_ADDRESSES": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
     "count": 22,
     "seeded_count": 20,
@@ -1999,11 +2014,11 @@
     "states_distinct": 15,
     "cities_distinct": 20,
     "default_address_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
-    "notes": "VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
+    "notes": "MIGRATED 2026-07-01: TechFlow was recreated by the company-users reseed (org_id 6fb516c1→96f109a7); the same 22 addresses (same ids) were re-seeded onto the new org from the 20260423 snapshot, so the per-address TECHFLOW_ADDR_* ids and counts below still resolve live. VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
   },
   "TECHFLOW_ADDR_US_NEW_YORK": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "79a1e94d-ae00-4214-bb6c-3440b5c702e8",
     "city": "New York",
     "regionCode": "NY",
@@ -2015,7 +2030,7 @@
   },
   "TECHFLOW_ADDR_CA_TORONTO": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "61eedc5f-5b01-4a31-8633-79b1235ca8e4",
     "city": "Toronto",
     "regionCode": "ON",
@@ -2027,7 +2042,7 @@
   },
   "TECHFLOW_ADDR_UK_LONDON": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
     "city": "London",
     "regionCode": "ENG",
@@ -2137,10 +2152,10 @@
     "usaCount": 12,
     "nonUsaCount": 10,
     "totalCount": 22,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
     "snapshot": "test-data/addresses/techflow-org-addresses-state-20260423.json",
-    "notes": "VCST-4710 GAP-01 needles for checkout address-popup search/facet/sort. All needles derived from existing TechFlow snapshot (no new seeding required, 2026-04-30). Counts: USA=12, CAN=5, GBR=5, total=22. Per project_address_state_facet.md, state/province facet only renders for USA/CAN — GBR addresses must hide it. Multi-match needles guarantee >1 row to validate filter behavior. Re-snapshot to a NEW filename if address set changes; do NOT mutate the 20260423 file."
+    "notes": "MIGRATED 2026-07-01: TechFlow org_id 6fb516c1→96f109a7 (company-users reseed); the same 22 addresses were re-seeded onto the new org, so needles/counts/snapshot below remain valid. VCST-4710 GAP-01 needles for checkout address-popup search/facet/sort. All needles derived from existing TechFlow snapshot (no new seeding required, 2026-04-30). Counts: USA=12, CAN=5, GBR=5, total=22. Per project_address_state_facet.md, state/province facet only renders for USA/CAN — GBR addresses must hide it. Multi-match needles guarantee >1 row to validate filter behavior. Re-snapshot to a NEW filename if address set changes; do NOT mutate the 20260423 file."
   },
   "COUPONS": {
     "_inline": true,
@@ -2226,7 +2241,7 @@
     "targetCustomerAlias": "TECHFLOW_BUYER",
     "targetCustomerEmail": "test-david.kim-20260310@test-agent.com",
     "targetCustomerUserId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
-    "targetCustomerOrgId": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "targetCustomerOrgId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "targetCustomerOrgName": "AGENT-TEST-Org-TechFlow-20260310",
     "permission_key": "fallback:Administrator-role",
     "notes": "VCST-4725 GAP-09 Page Builder preview impersonation. PROVISIONED 2026-04-30. Created via POST /api/platform/security/users/create with isAdministrator=true. AGENT-TEST- prefixed (cleanup via /qa-seed-data teardown). Credentials live in .env (IMPERSONATION_ADMIN_EMAIL/PASSWORD) per feedback_agents_read_env_creds — NEVER inline plaintext. CAVEAT: live Platform permissions registry has 0 matches for /impersonat/i across 301 perms — exact permission key for Page Builder impersonation could not be resolved within the 5-minute investigation budget. Falling back to Administrator role (isAdministrator=true) which grants the superset. If a granular permission key is later identified (likely shipped by a CMS / Page Builder / x-portal module), update this alias and downgrade the role. Target customer reuses TECHFLOW_BUYER (USR-007) — no new customer created; orgId is the existing seeded TechFlow org."
@@ -2684,16 +2699,16 @@
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,
-    "id": "6ac04636-e816-48b3-b456-2dc202301187",
-    "userId": "4159875a-dcd6-4d3b-9e0e-8775bfb45f41",
+    "id": "86b8595a-3313-4a06-8752-38e8cd73b613",
+    "userId": "7174c560-d6e6-428a-9c4e-f8078ab754b0",
     "email": "agent-test-multiorg-20260615@yopmail.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
-    "org_techflow_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
-    "org_buildright_id": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
+    "org_techflow_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "org_buildright_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
     "techflow_role": "org-maintainer",
     "buildright_role": "org-employee",
-    "techflow_membership_id": "c172543de8a949ec9971006379c39456",
-    "buildright_membership_id": "4dfa75e0f9464b6db07800025cac50c8",
+    "techflow_membership_id": "0e3432270f2e409a8d2d05de3c4c1768",
+    "buildright_membership_id": "3a09bf010b634e9594da9f6ad129b7f6",
     "fields": {
       "id": "id",
       "userId": "userId",

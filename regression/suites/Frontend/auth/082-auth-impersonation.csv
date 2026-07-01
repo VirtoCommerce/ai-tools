@@ -256,11 +256,11 @@ Admin authenticated in platform SPA. Target customer user exists with known user
 [DOM] New tab shows Security Verification Form (admin user is not authenticated on storefront — cross-origin) or 'Switching to customer view...' if admin was also authenticated on storefront side","[NETWORK] GET /account/impersonate/{userId} returns HTTP 200 in new tab
 [CONSOLE] No JS errors in new tab on load","Button absent from toolbar; same-tab navigation (no new tab); wrong userId in URL; 404 in new tab; console TypeError","Close impersonation tab. Admin SPA session untouched.","VCST-4905, VCST-4725, BL-AUTH-005; Executed PASS 2026-05-11 — admin SPA → Security > Users → David blade → 'Login on behalf' → new storefront tab → form rendered (evidence: reports/test-lifecycle/TLC-2026-05-11-2114/execution-evidence/auth-027-v3-john-impersonates-david-PASS-storefront-identity-switched.png)","Automated"
 "IMP-015","Company Members Page — No 'Login on behalf' Option When Operator Lacks CanImpersonate","LoginOnBehalf > Storefront Entry Point > Absence","High","BL-AUTH-005","","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SUPPORT_AGENT]
-SUPPORT_AGENT is logged in and their assigned role does NOT include StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). Negative branch — this is the absence test for PR #2280 members-dropdown-menu.vue which gates the 'Login on behalf' action by CanImpersonate. /company/members page accessible. Note: when the operator DOES have CanImpersonate, 'Login on behalf' IS visible — see IMP-039 (positive counterpart added by VCST-4906).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
-[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
+[PRE:SIGNIN_AS:NO_IMPERSONATE_OPERATOR]
+NO_IMPERSONATE_OPERATOR (USR-023 Nora Manager, role 'Organization manager') is logged in — full member management (Edit role / Block / Delete) but their role does NOT include StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf). Negative branch — the absence test for PR #2280 members-dropdown-menu.vue which gates 'Login on behalf' by CanImpersonate. NOTE: org-maintainer now HAS loginOnBehalf, so SUPPORT_AGENT can no longer be the no-impersonate operator — this case uses the dedicated NO_IMPERSONATE_OPERATOR. /company/members page accessible. Positive counterpart (operator WITH CanImpersonate): IMP-039.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': @td(NO_IMPERSONATE_OPERATOR.email)
 [WAIT] Email field populated
-[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
+[ACT] Fill 'Password': @td(NO_IMPERSONATE_OPERATOR.password)
 [WAIT] Password field populated
 [ACT] Click 'Sign In'
 [WAIT] Authenticated session established
