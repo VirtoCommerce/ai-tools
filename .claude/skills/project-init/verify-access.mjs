@@ -138,6 +138,63 @@ async function main() {
     tryCmd("gh auth status") ? "gh authenticated" : "run `gh auth login` (or rely on the PAT above)");
 
   renderTable(results);
+  renderMcp();
+  process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);
+}
+
+// --- MCP servers report (.mcp.json + enabled set) with per-server auth status ---
+function renderMcp() {
+  const MCP = {
+    "playwright-chrome": { auth: "local", status: () => ["OK", "local browser, no auth"] },
+    "playwright-firefox": { auth: "local", status: () => ["OK", "local browser, no auth"] },
+    "playwright-edge": { auth: "local", status: () => ["OK", "local browser, no auth"] },
+    "Chrome DevTools": { auth: "local", status: () => ["OK", "local, no auth"] },
+    github: { auth: "token", status: () => {
+      const t = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      if (t) return ["AUTHORIZED", "PAT in env"];
+      if (tryCmd("gh auth token")) return ["AUTHORIZED", "gh CLI token"];
+      return ["NOT AUTH", "no PAT / gh token"];
+    } },
+    atlassian: { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
+    "figma-remote-mcp": { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
+    "azure-mcp": { auth: "az/AAD", status: () => tryCmd("az account show") ? ["AUTHORIZED", "az login active"] : ["NOT AUTH", "run `az login`"] },
+    context7: { auth: "key", status: () => process.env.CONTEXT7_API_KEY ? ["AUTHORIZED", "CONTEXT7_API_KEY set"] : ["NO KEY", "optional — set CONTEXT7_API_KEY"] },
+    postman: { auth: "key", status: () => process.env.POSTMAN_API_KEY ? ["AUTHORIZED", "POSTMAN_API_KEY set"] : ["NO KEY", "optional — set POSTMAN_API_KEY"] },
+  };
+
+  let mcp, enabled;
+  try { mcp = JSON.parse(readFileSync(".mcp.json", "utf-8")); } catch { mcp = null; }
+  try { enabled = JSON.parse(readFileSync(".claude/settings.local.json", "utf-8")).enabledMcpjsonServers; } catch { enabled = null; }
+
+  console.log("  MCP servers (.mcp.json)");
+  if (!mcp) { console.log("  ✗ .mcp.json not generated yet — run gen-mcp.mjs (step 6).\n"); return; }
+  const names = enabled && enabled.length ? enabled : Object.keys(mcp.mcpServers || {});
+
+  const rows = names.map((n) => {
+    const meta = MCP[n] || { auth: "?", status: () => ["?", "unknown server"] };
+    const [st, detail] = meta.status();
+    return { name: n, auth: meta.auth, status: st, detail };
+  });
+
+  const cols = ["Server", "Auth", "Status", "Detail"];
+  const w = [
+    Math.max(cols[0].length, ...rows.map((r) => r.name.length)),
+    Math.max(cols[1].length, ...rows.map((r) => r.auth.length)),
+    Math.max(cols[2].length, ...rows.map((r) => r.status.length)),
+    Math.max(cols[3].length, ...rows.map((r) => r.detail.length)),
+  ];
+  const pad = (s, n) => s + " ".repeat(n - s.length);
+  const line = (l, m, r) => l + w.map((x) => "─".repeat(x + 2)).join(m) + r;
+  const row = (a) => "│ " + a.map((v, i) => pad(v, w[i])).join(" │ ") + " │";
+  console.log("  created ✓ — " + names.length + " enabled");
+  console.log(line("┌", "┬", "┐"));
+  console.log(row(cols));
+  console.log(line("├", "┼", "┤"));
+  for (const r of rows) console.log(row([r.name, r.auth, r.status, r.detail]));
+  console.log(line("└", "┴", "┘"));
+  const oauth = rows.filter((r) => r.status === "NEEDS OAUTH").map((r) => r.name);
+  if (oauth.length) console.log(`  ! OAuth authorization needed (interactive): ${oauth.join(", ")} — reload the client, then authorize.`);
+  console.log("");
 }
 
 // --- pretty bordered table (plain Unicode; always aligned) ---
@@ -168,7 +225,6 @@ function renderTable(rows) {
   );
   console.log(fails.length ? `  ✗ NOT READY — resolve: ${fails.map((f) => f.name).join(", ")}` : `  ✓ READY for /qa-fix.`);
   console.log("");
-  process.exit(fails.length ? 1 : 0);
 }
 
 main();

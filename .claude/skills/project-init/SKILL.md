@@ -237,6 +237,14 @@ Resolve every **FAIL** before declaring success (exit code is non-zero while any
 FAIL remains). **WARN** is non-blocking; **SKIP** means a feature isn't configured
 (fine if unused). Secret values are never printed.
 
+**After the readiness table it also prints the MCP-servers section** — confirms
+`.mcp.json` was created and lists each enabled server with its auth status:
+`OK` (local, no auth) · `AUTHORIZED` (token/key/az present) · `NEEDS OAUTH`
+(atlassian / figma — authorize interactively in the client) · `NO KEY` (optional
+server, key unset). It ends with a reminder of which servers still need interactive
+OAuth. (The live per-server connection state is only known to the client after a
+reload; the script reports the *configured* auth readiness.)
+
 ## 8. Done
 
 Summarise what was written (profile path, tracker, VCS, repo counts) and point
