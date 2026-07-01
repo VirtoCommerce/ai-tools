@@ -301,7 +301,7 @@ TechFlow org-maintainer session available on storefront ({{FRONT_URL}}) as @td(M
 NOTE [BUG-A]: Storefront invite via /company/members is currently broken (BUG-A).
 Invite step performed via Admin SPA (Customer > Contacts > Invite) or REST POST /api/customer/organization-memberships as fallback until BUG-A is resolved.
 NOTE [DEPLOY-1]: Full org-membership mutations return MISSING_METHOD on current PR#135. Invite-creation path uses REST fallback.
-Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in Cleanup.","back_url={{BACK_URL}}; front_url={{FRONT_URL}}; maintainer_email=@td(MULTI_ORG_TF_BR.email); maintainer_password=@td(MULTI_ORG_TF_BR.password); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_techflow_name=@td(ORG_TECHFLOW.name); invite_email=AGENT-TEST-onboard-5028@yopmail.com; invite_password=Password1!","--- LAYER: Invite via Admin SPA (fallback for BUG-A) ---
+Invite target: AGENT-TEST-onboard-5028@yopmail.com -- fresh per run, removed in Cleanup.","back_url={{BACK_URL}}; front_url={{FRONT_URL}}; maintainer_email=@td(MULTI_ORG_TF_BR.email); maintainer_password=@td(MULTI_ORG_TF_BR.password); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_techflow_name=@td(ORG_TECHFLOW.name); invite_email=AGENT-TEST-onboard-5028@yopmail.com; invite_password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Invite via Admin SPA (fallback for BUG-A) ---
 [NAV] Navigate to {{BACK_URL}} > Customers > Contacts
 [BLADE] Contacts blade open
 [ACT] Click Invite Contact or New Contact action
