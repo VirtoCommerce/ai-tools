@@ -27,10 +27,10 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter } from './lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const ROOT = join(__dirname, '..', '..');
 
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
@@ -47,6 +47,7 @@ const RESULTS_FILE = join(ROOT, `test-data/_seed-results-std-${DATE}.json`);
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
+const TEARDOWN = args.includes('--teardown');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
 const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
@@ -432,4 +433,38 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error(`\n❌ ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });
+// --- Teardown: remove the standard products + their seed catalog/pricelist, then verify ---
+async function teardown() {
+  await auth();
+  console.log(`\n🧹 Standard products teardown${DRY_RUN ? ' [DRY RUN]' : ''}`);
+  const ids = [];
+  for (const spec of filterSpecs) {
+    const p = await findProductByCode(spec.code);
+    if (p?.id) ids.push(p.id);
+  }
+  if (ids.length) {
+    await api('POST', '/api/catalog/listentries/delete', { ids, objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch((e) => console.log(`  ⚠ product delete: ${e.message.slice(0, 120)}`));
+    console.log(`  ✗ deleted ${ids.length} product(s)`);
+  } else console.log('  – no seeded products found');
+
+  // Pricelist + seed catalog created by this seeder (names are DATE-stable).
+  const plName = `SEED-${DATE}-Standards-USD`;
+  const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
+  const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);
+  if (pls.length) await api('DELETE', `/api/pricing/pricelists?ids=${pls.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+  const cat = await findCatalogByName(`SEED-${DATE}-Standards`);
+  if (cat?.id) await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+
+  // Verify zero residue.
+  const residual = await verifyRemoved(async () => {
+    const out = [];
+    for (const spec of filterSpecs) { const p = await findProductByCode(spec.code); if (p?.id) out.push(p.id); }
+    return out;
+  });
+  console.log(residual === 0
+    ? `\n✅ Standards teardown verified — 0 products remain`
+    : `\n⚠ Standards teardown incomplete — ${residual} product(s) still present`);
+  if (residual > 0 && !DRY_RUN) process.exit(1);
+}
+
+(TEARDOWN ? teardown() : main()).catch(e => { console.error(`\n❌ ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });

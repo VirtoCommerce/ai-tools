@@ -47,7 +47,7 @@
 import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
   csvBool, STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 // Reward auto-config is ON by default (verified working — array-shaped tree). --skip-rewards opts out.
 const SKIP_REWARDS = process.argv.includes('--skip-rewards');

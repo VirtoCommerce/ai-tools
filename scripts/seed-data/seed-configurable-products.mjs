@@ -29,7 +29,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter } from './lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved } from '../lib/seed-common.mjs';
 
 // Promote TEST_ENV-suffixed secrets (e.g. ADMIN_PASSWORD_VCPTCORE_QA1) to their base
 // names, mirroring config.js. Lets .env.local carry per-env password variants so this
@@ -40,7 +40,7 @@ for (const [k, v] of Object.entries(process.env)) {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const ROOT = join(__dirname, '..', '..');
 
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
@@ -58,6 +58,7 @@ const RESULTS_FILE = join(ROOT, `test-data/_seed-results-cfg-${DATE}.json`);
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
+const TEARDOWN = args.includes('--teardown');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
 const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
@@ -655,4 +656,38 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error(`\n❌ ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });
+// --- Teardown: delete the CFG parents + the dedicated seed catalog (cascades children), then verify ---
+async function teardown() {
+  await auth();
+  console.log(`\n🧹 Configurable products teardown${DRY_RUN ? ' [DRY RUN]' : ''}`);
+  // Delete parent products by code first (children live under the seed catalog, removed with it).
+  const ids = [];
+  for (const spec of filterSpecs) {
+    const p = await findProductByCode(spec.code);
+    if (p?.id) ids.push(p.id);
+  }
+  if (ids.length) {
+    await api('POST', '/api/catalog/listentries/delete', { ids, objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch((e) => console.log(`  ⚠ parent delete: ${e.message.slice(0, 120)}`));
+    console.log(`  ✗ deleted ${ids.length} parent product(s)`);
+  } else console.log('  – no seeded CFG parents found');
+
+  const plName = `SEED-${DATE}-Configurables-USD`;
+  const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
+  const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);
+  if (pls.length) await api('DELETE', `/api/pricing/pricelists?ids=${pls.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+  // Deleting the dedicated non-virtual catalog cascades all remaining parents + child options.
+  const cat = await findCatalogByName(`SEED-${DATE}-Configurables`);
+  if (cat?.id) await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch((e) => console.log(`  ⚠ catalog delete: ${e.message.slice(0, 120)}`));
+
+  const residual = await verifyRemoved(async () => {
+    const out = [];
+    for (const spec of filterSpecs) { const p = await findProductByCode(spec.code); if (p?.id) out.push(p.id); }
+    return out;
+  });
+  console.log(residual === 0
+    ? `\n✅ Configurables teardown verified — 0 parents remain`
+    : `\n⚠ Configurables teardown incomplete — ${residual} parent(s) still present`);
+  if (residual > 0 && !DRY_RUN) process.exit(1);
+}
+
+(TEARDOWN ? teardown() : main()).catch(e => { console.error(`\n❌ ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });

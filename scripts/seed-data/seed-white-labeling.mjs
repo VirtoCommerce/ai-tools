@@ -33,7 +33,7 @@
 import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, BACK_URL,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const SKIP_USERS = process.argv.slice(2).includes('--skip-users');
 const LANG = 'en-US';

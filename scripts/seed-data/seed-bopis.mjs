@@ -26,9 +26,9 @@
  */
 import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose, csvBool, iso3,
-  ensureFulfillmentCenter,
+  ensureFulfillmentCenter, verifyRemoved,
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 let FFCS = [];
 async function loadFfcs() {
@@ -91,7 +91,19 @@ async function teardown(rows) {
     log(`  ✓ Deleted: ${row.location_name} (${found.id})`);
     deleted++;
   }
-  log(`Teardown complete — ${deleted} deleted.`);
+  // Verify zero residue — re-search for the rows we tried to delete.
+  const residual = await verifyRemoved(async () => {
+    const still = [];
+    for (const row of rows) {
+      const storeId = (row.store_id || STORE_ID).trim();
+      if (await findPickup(storeId, row.location_name)) still.push(row.location_name);
+    }
+    return still;
+  });
+  log(residual === 0
+    ? `Teardown verified — ${deleted} deleted, 0 remain.`
+    : `⚠ Teardown incomplete — ${deleted} deleted, ${residual} still present.`);
+  if (residual > 0 && !DRY_RUN) process.exit(1);
 }
 
 async function main() {

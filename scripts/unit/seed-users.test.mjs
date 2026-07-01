@@ -1,10 +1,10 @@
-// Unit tests for scripts/seed-users.mjs — the personal-account seeder.
+// Unit tests for scripts/seed-data/seed-users.mjs — the personal-account seeder.
 // Invariants: it reads BOTH user CSVs (deduped, personal emails only, skips seeded=false), and it
 // creates each account as a Customer login linked to a NO-ORG contact with NO roles.
 // Pure/mocked — no env, no network. Run: `node --test tests/unit/`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { __setApi, parseCsv, personalUsers, ensurePersonalAccount } from '../../scripts/seed-users.mjs';
+import { __setApi, parseCsv, personalUsers, ensurePersonalAccount } from '../../scripts/seed-data/seed-users.mjs';
 
 function makeApiMock() {
   const calls = [];

@@ -1,4 +1,4 @@
-// Unit tests for scripts/seed-b2b-fixtures.mjs — codifies the invariants we verified by hand:
+// Unit tests for scripts/seed-data/seed-b2b-fixtures.mjs — codifies the invariants we verified by hand:
 //   • roles are ORG-SCOPED only — the security-account body never carries global roles
 //   • find-or-create REUSES an existing membership (no duplicate)
 //   • provisioning a contact's login NEVER creates a second contact (the dedupe bug)
@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {
   __setApi, parseCsv, roleIdByName,
   ensureSecurityAccount, ensureOrgMembership, provisionContactLogins,
-} from '../../scripts/seed-b2b-fixtures.mjs';
+} from '../../scripts/seed-data/seed-b2b-fixtures.mjs';
 
 // A recording mock of the seeder's HTTP layer. Routes by (method, path) and records every call
 // so tests can assert what was (and wasn't) sent.

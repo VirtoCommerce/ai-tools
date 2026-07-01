@@ -35,7 +35,7 @@ import { parse } from 'csv-parse/sync';
 import '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const ROOT = join(__dirname, '..', '..');
 
 // --- Config ---
 const BACK_URL = process.env.BACK_URL;

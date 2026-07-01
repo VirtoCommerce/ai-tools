@@ -54,7 +54,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex } from './lib/seed-common.mjs';
+import { ensureMemberIndex } from '../lib/seed-common.mjs';
 
 // True only when run as a CLI (node scripts/seed-b2b-fixtures.mjs …), false when imported by a
 // unit test — lets the test import the functions without triggering env checks / main().
@@ -65,13 +65,21 @@ loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
 
+// Per-env override promotion (mirrors config.js / seed-common.mjs): promote any
+// `_${TEST_ENV.toUpperCase()}`-suffixed key onto its base name so .env.local's
+// per-env variants (e.g. ADMIN_PASSWORD_VCPTCORE1) win over the shared base.
+const _ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
+for (const [k, v] of Object.entries(process.env)) {
+  if (k.endsWith(_ENV_SUFFIX) && v) process.env[k.slice(0, -_ENV_SUFFIX.length)] = v;
+}
+
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STORE_ID = process.env.STORE_ID || 'B2B-store';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const ROOT = join(__dirname, '..', '..');
 const DATE = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const RESULTS_FILE = join(ROOT, `test-data/b2b/_seed-results-orgs-${DATE}.json`);
 
@@ -228,20 +236,22 @@ function orgBody(row) {
     name,
     emails: row.emails ? [row.emails.split(';')[0]] : [`${slug}@test-agent.com`],
     phones: row.phones ? row.phones.split(';') : ['+1-555-AGENT-000'],
+    // Address comes from organizations.csv (per-org, VCST-5406); fall back to a NY placeholder
+    // only if a column is blank so a partial row still seeds a valid org.
     addresses: [{
       addressType: 'BillingAndShipping',
       firstName: 'Test',
       lastName: 'Admin',
       organization: name,
-      line1: '123 Test Street',
-      city: 'New York',
-      regionId: 'NY',
-      regionName: 'New York',
-      postalCode: '10001',
-      countryCode: 'USA',
-      countryName: 'United States',
-      phone: '+1-555-AGENT-000',
-      email: `${slug}@test-agent.com`,
+      line1: row.address_line1 || '123 Test Street',
+      city: row.city || 'New York',
+      regionId: row.region_id || 'NY',
+      regionName: row.region_name || 'New York',
+      postalCode: row.postal_code || '10001',
+      countryCode: row.country_code || 'USA',
+      countryName: row.country_name || 'United States',
+      phone: (row.phones ? row.phones.split(';')[0] : '') || '+1-555-AGENT-000',
+      email: row.emails ? row.emails.split(';')[0] : `${slug}@test-agent.com`,
     }],
     groups: (row.groups || 'store-acme').split(',').map(g => g.trim()).filter(Boolean),
     description: row.description || `AGENT-TEST org seeded ${DATE}`,
@@ -519,7 +529,12 @@ async function stripSeededGlobalRoles(email) {
   if (!found?.id) return;
   // Always operate on the FULL user record (search hits omit roles[]).
   const user = await getUserById(found.id) || found;
-  const orgRoleIds = new Set(Object.keys(STATIC_ROLE_NAMES)); // org-maintainer, org-employee
+  // Strip ANY org-scoped (B2B) role from the account's global roles[], not just the two
+  // static ones — the invariant (VCST-5028) is that B2B users hold NO global org role;
+  // org roles live only on OrganizationMembership. Store-type roles (store-admin/manager)
+  // are legitimately global and left intact. Mirrors reconcile-test-data.mjs b2bOrgRoleIds().
+  const b2bRoleIds = new Set(loadRoleDefs().filter(r => (r.role_type || '').toUpperCase() === 'B2B').map(r => r.role_id));
+  const orgRoleIds = new Set([...Object.keys(STATIC_ROLE_NAMES), ...b2bRoleIds]);
   const before = user.roles || [];
   const kept = before.filter(r => !orgRoleIds.has(r.id) && !orgRoleIds.has(r.name));
   if (kept.length === before.length) {

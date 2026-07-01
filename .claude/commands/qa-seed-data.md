@@ -1,25 +1,38 @@
 ---
-description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS"
-argument-hint: "minimal | catalog | b2b | pricing | loyalty | promotions | bopis | full | teardown"
+description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS. Environment-agnostic (any TEST_ENV); verify with td:reconcile."
+argument-hint: "bootstrap | minimal | catalog | b2b | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
 disable-model-invocation: true
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown
 
-Seed a complete test environment, or tear down previously created test data. Two execution paths: **repo seed scripts** (`npm run seed*` + specialized `.mjs` seeders — direct REST/xAPI, the practical default) or **Postman MCP** (reusable collections). The skill's "Seeding Tooling — Two Execution Paths" section is the canonical map of every seeder.
+Seed a complete test environment on **any** environment (fresh `/qa-local-env` localhost, vcst, vcptcore, virtostart, a customer env — selected by `TEST_ENV`), or tear down previously created test data. Two execution paths: **repo seed scripts** (`npm run seed*` + specialized `.mjs` seeders — direct REST/xAPI, the practical default) or **Postman MCP** (reusable collections). The skill's "Seeding Tooling — Two Execution Paths" section is the canonical map of every seeder.
 
 ## Usage
 ```
+/qa-seed-data bootstrap   # ⭐ ONE command, any env: preflight (member index → catalog → FFC) then the full dependency chain → npm run seed:bootstrap
 /qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
 /qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
-/qa-seed-data b2b         # Organization + users with roles → node scripts/seed-b2b-fixtures.mjs
+/qa-seed-data b2b         # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
 /qa-seed-data pricing     # Price lists, tiers, multi-currency → npm run seed:pricing
+/qa-seed-data inventory   # Fulfillment centers + stock → npm run seed:inventory
 /qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
 /qa-seed-data promotions  # Marketing promotions + rewards + coupons → npm run seed:promotions
 /qa-seed-data bopis       # BOPIS pickup locations (linked to an existing FFC) → npm run seed:bopis
-/qa-seed-data users       # Personal storefront accounts (no org) from test-data/users/ → npm run seed:users
-/qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B + seed:users (personal accounts)
+/qa-seed-data configurable# Configurable products (Phase 1) → npm run seed:configurable (also :conditional | :default | :bike)
+/qa-seed-data users       # Personal storefront accounts + .env.{ENV} role identities (USER/EUR_USER/LOYALTY_*) → npm run seed:users
+/qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B + seed:users
 /qa-seed-data teardown    # Delete ephemeral seeded entities (match teardown to the path that seeded)
+```
+
+**Teardown per domain** (each verifies zero residue): `seed:teardown` · `seed:b2b:teardown` · `seed:users:teardown` · `seed:pricing:teardown` · `seed:inventory:teardown` · `seed:loyalty:teardown` · `seed:bopis:teardown` · `seed:products:teardown` · `seed:configurable:teardown`.
+
+## Verify (any env)
+After seeding, confirm the data is really there for this `TEST_ENV`:
+```
+npm run td:validate      # static: every @td() resolves + no hardcoded GUIDs (CI gate)
+npm run td:validate:b2b  # static: B2B CSVs consistent — every org has a valid address; every seeded user → contact → org → role → membership
+npm run td:reconcile     # live: catalog root, user roles, B2B org-scoped memberships (no global roles), secret hygiene
 ```
 
 ---
@@ -29,7 +42,7 @@ Seed a complete test environment, or tear down previously created test data. Two
 Read the skill definition and its references, then choose the path:
 
 1. Read `.claude/skills/testing/qa-seed-data/SKILL.md` — start with **Seeding Tooling — Two Execution Paths** to pick a script vs Postman.
-2. **Path A (script — fastest):** run the relevant `npm run seed*` / `node scripts/seed-*.mjs` from the tooling table, then write IDs back to `test-data/` and run `npx tsx scripts/validate-td-refs.ts`.
+2. **Path A (script — fastest):** for a fresh/arbitrary env start with `npm run seed:bootstrap`; otherwise run the relevant `npm run seed*` / `node scripts/seed-*.mjs` from the tooling table. Then write IDs back to `test-data/`, run `npm run td:validate` (static gate) and `npm run td:reconcile` (live gate) to confirm the data exists on this env.
 3. **Path B (Postman MCP):** read `.claude/skills/testing/qa-seed-data/test-data-generation.md`, then `.claude/skills/testing/qa-postman/SKILL.md` (index) + sub-guides (`mcp-tools.md`, `collections-and-requests.md`, `test-data-fixtures.md`), and execute the 6-step workflow (Read → Reuse check → Environment → Build → Execute → Report).
 
 ## Test Data Directory
@@ -45,9 +58,10 @@ After seeding, update the relevant CSVs in `test-data/` with new platform IDs so
 
 ## Safety
 
-- **Never seed into production** — verify `BACK_URL` before executing
-- **Always use `AGENT-TEST-` prefix** — enables safe teardown
-- **After seeding, wait for reindex** (~30-60s) before running storefront tests
+- **Prod is blocked by config, not hostname** — seeders refuse to run when `ENV_RISK=production` (override `--allow-admin-writes-on-prod`); they run freely on dev/test/staging/localhost. Set `ENV_RISK` per env in `.env.{TEST_ENV}`.
+- **Environment is `TEST_ENV`** — `TEST_ENV=localhost npm run seed:bootstrap`, `TEST_ENV=vcst …`, etc. Credentials resolve from `.env.{ENV}` + `.env.local` (per-env password variants via the `_${ENV}` suffix). Never hardcode passwords — see `scripts/lib/user-roles.mjs`.
+- **Always use `AGENT-TEST-` prefix** — enables safe teardown (each `*:teardown` verifies zero residue).
+- **After seeding, wait for reindex** (~30-60s) then run `npm run td:reconcile` before storefront tests.
 
 ## Agents
 

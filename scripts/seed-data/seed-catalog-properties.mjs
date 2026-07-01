@@ -30,7 +30,7 @@
 import {
   assertSafeTarget, auth, api, loadCsv, ensureVirtualCatalog, writeResults, log, verbose, csvBool,
   DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const TYPE_MAP = { PRODUCT: 'Product', VARIATION: 'Variation', CATEGORY: 'Category', CATALOG: 'Catalog' };
 const VALUE_TYPE_MAP = { DECIMALNUMBER: 'Number', DECIMAL: 'Number', TEXT: 'ShortText' };

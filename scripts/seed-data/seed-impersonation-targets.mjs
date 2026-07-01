@@ -17,10 +17,10 @@
 //
 // Output: reports/seed/seed-impersonation-targets-20260514.json
 
-import { env } from '../config.js';
+import { env } from '../../config.js';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { ensureMemberIndex } from './lib/seed-common.mjs';
+import { ensureMemberIndex } from '../lib/seed-common.mjs';
 
 const DATE = '20260514';
 const REPORT_PATH = `reports/seed/seed-impersonation-targets-${DATE}.json`;

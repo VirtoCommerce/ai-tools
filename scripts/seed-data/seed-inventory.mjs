@@ -23,7 +23,7 @@
 import {
   DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, writeResults,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
 const FFC_PREFIX = 'AGENT-TEST';

@@ -17,12 +17,23 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex } from './lib/seed-common.mjs';
+import { ensureMemberIndex, verifyCreated } from '../lib/seed-common.mjs';
+import { resolveAllRoles } from '../lib/user-roles.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
+
+// Per-env override promotion (mirrors config.js / seed-common.mjs): promote any
+// `_${TEST_ENV.toUpperCase()}`-suffixed key onto its base name so .env.local's
+// per-env password variants (e.g. USER_PASSWORD_VIRTOSTART) win. Without this the
+// base password (loaded last with override) clobbers the per-env one and the
+// seeded account gets the wrong password for this env (VCST-5406).
+const _ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
+for (const [k, v] of Object.entries(process.env)) {
+  if (k.endsWith(_ENV_SUFFIX) && v) process.env[k.slice(0, -_ENV_SUFFIX.length)] = v;
+}
 
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
@@ -30,7 +41,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STORE_ID = process.env.STORE_ID || 'B2B-store';
 const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RUN_MAIN = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 const args = process.argv.slice(2);
 const profile = args.includes('teardown') ? 'teardown' : 'seed';
@@ -86,14 +97,31 @@ async function findContactByEmail(email) {
   return (r?.results || []).find(m => (m.emails || []).some(e => e?.toLowerCase() === email.toLowerCase()));
 }
 
-// --- Build the personal-account list from both CSVs (deduped by email) ---
+// Named .env.{ENV} role identities that are PERSONAL customers (kind 'customer').
+// These are the accounts suites reference via {{USER_EMAIL}} / @td(USER.email); seeding
+// them here from the env registry guarantees the seeded account == the referenced
+// account, with the per-env password, on EVERY env. 'admin'/'org' kinds are excluded:
+// admin pre-exists, org members are owned by seed-b2b-fixtures.mjs (VCST-5406).
+function roleUsers() {
+  const nameFromEmail = (email) => {
+    const local = (email.split('@')[0] || 'QA').replace(/[._-]+/g, ' ').trim().split(/\s+/);
+    return { first: (local[0] || 'QA'), last: (local[1] || 'User') };
+  };
+  return resolveAllRoles()
+    .filter((r) => r.kind === 'customer' && r.present)
+    .map((r) => { const n = nameFromEmail(r.email); return { email: r.email, password: r.password, first: n.first, last: n.last, source: `env-role:${r.key}` }; });
+}
+
+// --- Build the personal-account list: env roles first, then both CSVs (deduped by email) ---
 function personalUsers() {
   const out = []; const seen = new Set();
-  const add = (email, password, first, last, source) => {
+  const add = (email, password, first, last, source, status = 'Active') => {
     const e = (email || '').trim(); if (!e.includes('@')) return;
     const k = e.toLowerCase(); if (seen.has(k)) return; seen.add(k);
-    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source });
+    out.push({ email: e, password: password || 'Password1!', first: first || 'QA', last: last || 'User', source, status: status || 'Active' });
   };
+  // Env-role identities take precedence over CSV rows with the same email.
+  for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source);
   try {
     for (const r of parseCsv(readFileSync(join(ROOT, 'test-data/users/agent-user-pool.csv'), 'utf-8'))) {
       if ((r.seeded || '').toLowerCase() === 'false') continue;
@@ -102,11 +130,22 @@ function personalUsers() {
   } catch { /* optional */ }
   try {
     for (const r of parseCsv(readFileSync(join(ROOT, 'test-data/users/test-users.csv'), 'utf-8'))) {
+      // `seeded=false` rows are deliberately NOT created (social-login, 2FA, inactive — states a
+      // plain password-create can't represent). `status` (Active/Locked/Pending) is honored below.
       if ((r.seeded || '').toLowerCase() === 'false') continue;
-      add(r.email, r.password, r.first_name, r.last_name, 'test-users');
+      add(r.email, r.password, r.first_name, r.last_name, 'test-users', r.status);
     }
   } catch { /* optional */ }
   return out;
+}
+
+// Map a CSV `status` to the proven security-account create flags (mirrors seed-b2b-fixtures).
+function statusFlags(status) {
+  switch ((status || 'Active').toLowerCase()) {
+    case 'locked':  return { status: 'Locked', emailConfirmed: true, lockoutEnabled: true, lockoutEnd: '9999-12-31T23:59:59Z' };
+    case 'pending': return { status: 'PendingApproval', emailConfirmed: false, lockoutEnabled: false };
+    default:        return { status: 'Approved', emailConfirmed: true, lockoutEnabled: false }; // Active
+  }
 }
 
 async function ensurePersonalAccount(u) {
@@ -121,10 +160,13 @@ async function ensurePersonalAccount(u) {
   const contactId = contact?.id || `dry-${u.email}`;
   const res = await api('POST', '/api/platform/security/users/create', {
     userName: u.email, email: u.email, password: u.password, memberId: contactId, storeId: STORE_ID,
-    userType: 'Customer', isAdministrator: false, emailConfirmed: true, lockoutEnabled: false,
+    userType: 'Customer', isAdministrator: false, ...statusFlags(u.status),
   });
   if (res && res.succeeded === false) throw new Error(`create ${u.email}: ${JSON.stringify(res.errors)}`);
-  console.log(`    ✓ create ${u.email}`);
+  // Read the account back through the same search path a test/login uses — "created" must mean "present".
+  const present = await verifyCreated(api, 'user', res?.id || contactId, { name: u.email });
+  if (!present && !DRY_RUN) throw new Error(`create ${u.email}: account not found after create (verify failed)`);
+  console.log(`    ✓ create ${u.email}${u.source?.startsWith('env-role') ? ` [${u.source}]` : ''}`);
   return 'created';
 }
 

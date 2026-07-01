@@ -23,7 +23,7 @@
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api, loadAliases, writeResults,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const NOBAL_PASSWORD = process.env.LOYALTY_NOBAL_USER_PASSWORD || 'TestNoBal1!';
 
