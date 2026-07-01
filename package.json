@@ -97,7 +97,7 @@
   "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
     "@azure/identity": "^4.13.1",
-    "@playwright/mcp": "^0.0.75",
+    "@playwright/mcp": "^0.0.77",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.0",
@@ -105,10 +105,10 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^22.19.19",
     "csv-stringify": "^6.7.0",
-    "playwright": "^1.60.0",
+    "playwright": "^1.61.1",
     "tsx": "^4.0.0"
   }
 }
