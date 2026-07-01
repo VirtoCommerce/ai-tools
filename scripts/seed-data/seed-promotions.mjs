@@ -140,23 +140,74 @@ function couponExpiry(c) {
   return toIso(c.end_date, true);
 }
 
+// The store's own catalog (a virtual catalog on the B2B store) — what the storefront actually
+// shows. Discovered once per run from the env-configured STORE_ID, so nothing here is hardcoded
+// to a single environment.
+let _storeCatalogId; // undefined = not fetched yet; null = none
+async function storeCatalogId() {
+  if (_storeCatalogId !== undefined) return _storeCatalogId;
+  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+  _storeCatalogId = store?.catalog || null;
+  return _storeCatalogId;
+}
+
+// Resolve a category for a "% off category" promo, PORTABLY across environments.
+// The CSV `condition_value` is a *preferred hint* (e.g. "Alcoholic drinks"), not a hard
+// dependency: another env may not have that category. Strategy:
+//   1. exact name match inside the STORE's own catalog (storefront-visible)
+//   2. substring name match inside the store catalog
+//   3. FALLBACK — first active category in the store catalog (deterministic by name), so the
+//      promo is always genuinely category-scoped instead of silently store-wide
+//   4. last resort — any-catalog name match (only when the store has no catalog/categories)
+// Returns { cat, via } where via ∈ 'store-exact'|'store-substr'|'fallback'|'any'|null.
 async function resolveCategory(name) {
-  if (!name) return null;
-  const r = await api('POST', '/api/catalog/search/categories', { keyword: name, take: 200 });
-  const cats = r?.results || r?.items || [];
-  const lc = name.toLowerCase();
-  return cats.find((c) => (c.name || '').toLowerCase() === lc) || cats.find((c) => (c.name || '').toLowerCase().includes(lc)) || null;
+  const catId = await storeCatalogId();
+  const lc = (name || '').toLowerCase();
+  if (catId) {
+    const inStore = await api('POST', '/api/catalog/search/categories', { catalogIds: [catId], keyword: name || '', take: 200 });
+    const cats = (inStore?.results || inStore?.items || []);
+    if (name) {
+      const exact = cats.find((c) => (c.name || '').toLowerCase() === lc);
+      if (exact) return { cat: exact, via: 'store-exact' };
+      const sub = cats.find((c) => (c.name || '').toLowerCase().includes(lc));
+      if (sub) return { cat: sub, via: 'store-substr' };
+    }
+    // 3) Fallback to a real store-catalog category (prefer active; deterministic by name).
+    const all = await api('POST', '/api/catalog/search/categories', { catalogIds: [catId], take: 200 });
+    const active = (all?.results || all?.items || [])
+      .filter((c) => c.isActive !== false)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (active.length) return { cat: active[0], via: 'fallback' };
+  }
+  // 4) No store catalog resolvable — last-resort any-catalog name match.
+  if (name) {
+    const any = await api('POST', '/api/catalog/search/categories', { keyword: name, take: 200 });
+    const cats = (any?.results || any?.items || []);
+    const hit = cats.find((c) => (c.name || '').toLowerCase() === lc) || cats.find((c) => (c.name || '').toLowerCase().includes(lc));
+    if (hit) return { cat: hit, via: 'any' };
+  }
+  return { cat: null, via: null };
 }
 async function resolveProduct(hint) {
   // reward_config is free text like "Gift product: wine" or "Gift product: any". Strip the
-  // "gift product" label and "any" to leave a real search keyword ("wine"); blank → first product.
-  const kw = (hint || '').replace(/gift\s*product\s*:?/ig, '').replace(/\bany\b/ig, '').replace(/[^a-z0-9 ]/ig, ' ').trim();
-  let r = await api('POST', '/api/catalog/search/products', { keyword: kw, take: 5 });
-  let ps = r?.results || r?.items || [];
-  if (!ps.length && kw) { // keyword too specific for this env's catalog — fall back to any product
-    r = await api('POST', '/api/catalog/search/products', { keyword: '', take: 5 });
-    ps = r?.results || r?.items || [];
-  }
+  // "gift product" label and "any" to leave a real search phrase ("wine"); blank → first product.
+  // NB: this endpoint narrows on `searchPhrase` — `keyword` is IGNORED here (returns the whole
+  // catalog), so a keyword hint silently matched nothing before. Scope to the STORE's own catalog
+  // so the gift product is storefront-visible, and fall back to any store product on other envs.
+  const phrase = (hint || '').replace(/gift\s*product\s*:?/ig, '').replace(/\bany\b/ig, '').replace(/[^a-z0-9 ]/ig, ' ').trim();
+  const catId = await storeCatalogId();
+  const search = async (body) => {
+    const r = await api('POST', '/api/catalog/search/products', body);
+    return (r?.results || r?.items || []);
+  };
+  // 1) hint phrase within the store catalog (storefront-visible + matches the hint)
+  if (catId && phrase) { const ps = await search({ catalogId: catId, searchPhrase: phrase, take: 5 }); if (ps.length) return ps[0]; }
+  // 2) any product within the store catalog (hint too specific / blank for this env)
+  if (catId) { const ps = await search({ catalogId: catId, searchPhrase: '', take: 5 }); if (ps.length) return ps[0]; }
+  // 3) hint phrase anywhere (no store catalog resolvable on this env)
+  if (phrase) { const ps = await search({ searchPhrase: phrase, take: 5 }); if (ps.length) return ps[0]; }
+  // 4) any product anywhere (last resort)
+  const ps = await search({ searchPhrase: '', take: 5 });
   return ps[0] || null;
 }
 
@@ -196,14 +247,21 @@ async function completePromotion(promo, row) {
   const blkCatalog = block('BlockCatalogCondition');
   if (blkCatalog) {
     if (ctype.includes('category')) {
-      let cat = null;
-      try { cat = await resolveCategory(cval); } catch (e) { verbose(`category lookup failed: ${e.message.slice(0, 80)}`); }
+      let res = { cat: null, via: null };
+      try { res = await resolveCategory(cval); } catch (e) { verbose(`category lookup failed: ${e.message.slice(0, 80)}`); }
+      const cat = res.cat;
       blkCatalog.children = [{
         id: 'ConditionCategoryIs', excludingCategoryIds: [], excludingProductIds: [],
         categoryId: cat?.id || null, categoryName: cat?.name || null, availableChildren: [], children: [],
       }];
       flags.conditions.push('ConditionCategoryIs');
-      if (!cat) flags.warnings.push(`category "${cval}" not found in this env — ConditionCategoryIs left unscoped (set in Admin)`);
+      if (!cat) {
+        flags.warnings.push(`category "${cval}" not found and no store-catalog category to fall back to — ConditionCategoryIs left unscoped (set in Admin)`);
+      } else if (res.via === 'fallback') {
+        // Portable-scope path: the CSV-named category doesn't exist on this env, so the promo
+        // was scoped to a real store-catalog category instead of being left store-wide.
+        log(`      ⓘ category "${cval}" not on this env — scoped to store category "${cat.name}" (${cat.id})`);
+      }
     } else { blkCatalog.children = []; }
   }
 

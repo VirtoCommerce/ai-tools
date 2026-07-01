@@ -1,74 +1,25 @@
 {
-  "runId": "REG-2026-07-01-1430",
-  "selection": "search (004, 005, 061)",
-  "startedAt": "2026-07-01T14:30:00+02:00",
+  "runId": "REG-2026-07-01-1846",
+  "selection": "077b (Coupons & Promotions — Cart Sidebar, VCST-4896)",
+  "startedAt": "2026-07-01T18:47:00+02:00",
   "env": "vcst-qa",
   "build": {
     "platform": "3.1041.0",
     "theme": "2.53.0-pr-2343",
-    "modules": {
-      "VirtoCommerce.Search": "3.1005.0",
-      "VirtoCommerce.ElasticSearch8": "3.1007.0",
-      "VirtoCommerce.XCatalog": "3.1009.0",
-      "VirtoCommerce.Catalog": "3.1032.0"
-    }
+    "note": "reused from REG-2026-07-01-1636 (same day, ~2h prior); not re-fetched via GitHub MCP"
   },
-  "windowStart": "2026-07-01T14:30:00+02:00",
-  "completedAt": "2026-07-01T15:12:00+02:00",
-  "status": "complete",
-  "verdict": "GREEN — 129 cases: 79 PASS / 0 FAIL / 48 BLOCKED / 2 SKIPPED. 0 confirmed bugs. All blocks are harness/config/tooling limits, not product defects. App Insights run-window: 1 needs-review (GetGlobalSetting 500 x2), rest noise (image 404s + ResizeObserver).",
-  "outputDir": "reports/regression/REG-2026-07-01-1430/",
-  "reportPath": "reports/regression/REG-2026-07-01-1430/regression-2026-07-01.md",
-  "note": "Shared status file had reverted to stale REG-2026-06-30-1200 B2B content; restored to this run. Authoritative per-run record also kept in the run dir.",
+  "windowStart": "2026-07-01T18:47:00+02:00",
+  "status": "in_progress",
+  "outputDir": "reports/regression/REG-2026-07-01-1846/",
+  "note": "User-requested single suite run (077b, resolved from ambiguous '077-smoke' arg). Prior run REG-2026-07-01-1636 (011b) confirmed stale/orphaned — all 4 batches completed but never reached Step 6 consolidation; left untouched in its own directory.",
   "suites": {
-    "004": {
-      "status": "passed",
-      "name": "Search Core",
-      "browser": "playwright-chrome",
+    "077b": {
+      "status": "running",
+      "name": "Coupons & Promotions — Cart Sidebar (VCST-4896)",
+      "priority": "P1",
+      "testCount": 50,
       "agent": "qa-frontend-expert",
-      "priority": "P1",
-      "testCount": 41,
-      "passed": 33,
-      "failed": 0,
-      "blocked": 6,
-      "skipped": 2,
-      "verdict": "GREEN 80.5% (84.6% of executed non-deprecated). 0 FAIL, 0 JS TypeErrors. All core search PASS anonymously: query/autocomplete/hints/clear/submit, result-count, grid-list toggle, API sort direction-oracle + deep-link, SKU/numeric/category-scoped search, mobile 375px, term+facet URL persistence, infinite-scroll network capture.",
-      "blockedCases": "SRCH-NEW-044/048 pagination = test-design mismatch -> RE-AUTHORED to infinite-scroll model + LIVE-VERIFIED PASS on chrome 2026-07-01 (td:validate green; after-cursor continuation, no dup SKUs; evidence verify-044-048-results.json). SRCH-JRNY-001..004 need [PRE:SIGNIN_AS:ORG_USER_DEFAULT] (real-user hook blocks creds, no valid org storageState) -> behaviors spot-verified anonymously.",
-      "skippedCases": "2 deprecated-in-CSV cases",
-      "incidentalLow": [
-        "Product-image 404s across catalog (missing CMS media on vcst-qa, content-quality; e.g. SYU-76371555 all images 404) - confirmed:false",
-        "Mobile search-overlay close button accessible name is untranslated i18n key 'common.labels.close' (a11y/i18n, 375px) - confirmed:false",
-        "Homepage stale cross-env image host starmarket-platform.demo.govirto.com (ERR_NAME_NOT_RESOLVED) - confirmed:false"
-      ]
-    },
-    "005": {
-      "status": "passed",
-      "name": "Search Filters & Advanced",
-      "browser": "playwright-firefox (12 PASS) + playwright-edge click-retry (19 PASS)",
-      "agent": "qa-frontend-expert x2",
-      "priority": "P1",
-      "testCount": 41,
-      "passed": 31,
-      "failed": 0,
-      "blocked": 10,
-      "skipped": 0,
-      "verdict": "GREEN 75.6% (100% of executable cases PASS, 0 FAIL). Firefox pass = 12 anonymous cases (special-chars, no-results, whitespace, 200-char, XSS-escaped [Critical], SQLi-literal, URL-encoding, keyboard-nav, GA4 x2). Edge click-retry = 19 (facet apply/reset, chip precise-remove, cross-facet AND, OR-within-group, integer-boundary price slider, sort+facet composite VCST-5177, mobile 375px, DOM==API cross-layer, browse+refine journeys).",
-      "firefoxQuirk": "Firefox MCP actionability-stability quirk falsely BLOCKED all 19 click-dependent cases (feedback_firefox_cart_dropdown_quirk); did NOT reproduce on Edge/Chromium -> all 19 PASS on retry. Confirms tooling-limited, not product defect.",
-      "blockedCases": "10 total, all non-defects: 4 auth (SRCH-009/010/NEW-013/NEW-035 - real-user hook blocks creds, no org storageState); 3 Chrome-DevTools tooling (SRCH-NEW-026/027/028 - a11y/perf panels); 3 config-dependent (SRCH-NEW-100/101/102 - VCST-4729 dictionary-facet priority ordering needs Admin SPA to identify a priority-ordered facet)."
-    },
-    "061": {
-      "status": "passed",
-      "name": "Search Indexing Admin",
-      "browser": "playwright-edge (ran API-only, no browser opened)",
-      "agent": "qa-backend-expert",
-      "priority": "P1",
-      "testCount": 47,
-      "passed": 15,
-      "failed": 0,
-      "blocked": 32,
-      "skipped": 0,
-      "verdict": "GREEN on exercisable subset (15/15 API-testable PASS). 32 BLOCKED legitimate: Lucene switch + blue-green swap = shared-env mutation (safety-denied); full-rebuild/backup/settings-write need Admin SPA operator session (not wired); 031-035 are C# filter classes with no REST surface (unit-test scope); multi-instance cases N/A on single-instance topology. 0 bugs.",
-      "note": "catalog product-search `keyword` field inert; `searchPhrase` is the working field (expected API semantics, not a bug)."
+      "browser": "playwright-chrome"
     }
   }
 }
