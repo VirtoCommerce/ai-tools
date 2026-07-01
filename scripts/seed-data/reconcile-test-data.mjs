@@ -214,22 +214,24 @@ function checkSecretHygiene() {
   console.log('\n[4] Secret hygiene (no password literals in committed CSVs)');
   const targets = [
     { file: 'test-data/b2b/users.csv', cols: ['password'] },
+    { file: 'test-data/b2b/organization-memberships.csv', cols: ['password'] },
     { file: 'test-data/users/test-users.csv', cols: ['password'] },
     { file: 'test-data/users/agent-user-pool.csv', cols: ['personal_password', 'b2b_password'] },
   ];
+  // A `{{VAR}}` token is NOT a secret — it resolves from .env.local at seed time
+  // (user-provision.mjs resolvePassword). Only bare literals count as a leak.
+  const isToken = (v) => /^\{\{\s*[A-Z0-9_]+\s*\}\}$/.test(String(v || '').trim());
   let anyHit = false;
   for (const t of targets) {
     const p = join(ROOT, t.file);
     if (!existsSync(p)) continue;
     const rows = parseCsvLoose(readFileSync(p, 'utf8'));
     for (const col of t.cols) {
-      const populated = rows.filter((r) => r[col] && r[col] !== 'n/a').length;
-      // WARN (not fail): removing these is a data migration that must follow the seeders
-      // resolving passwords from .env.local by role — flag it, don't block the live gate.
-      if (populated > 0) { warn(`${t.file}: column "${col}" has ${populated} password literal(s) — migrate to .env.local (see user-roles.mjs)`); anyHit = true; }
+      const literals = rows.filter((r) => r[col] && r[col] !== 'n/a' && !isToken(r[col])).length;
+      if (literals > 0) { warn(`${t.file}: column "${col}" has ${literals} password literal(s) — replace with a {{VAR}} token backed by .env.local (see user-provision.mjs resolvePassword)`); anyHit = true; }
     }
   }
-  if (!anyHit) ok('no password literals in committed user CSVs');
+  if (!anyHit) ok('no password literals in committed user CSVs ({{VAR}} tokens resolve from .env.local)');
 }
 
 /* ── main ─────────────────────────────────────────────────────── */

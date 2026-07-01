@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  __setApi, statusFlags, ensureSecurityAccount, ensurePersonalAccount, allSeededEmails,
+  __setApi, statusFlags, ensureSecurityAccount, ensurePersonalAccount, allSeededEmails, resolvePassword,
 } from '../../scripts/lib/user-provision.mjs';
 
 function makeApiMock() {
@@ -32,6 +32,15 @@ function makeApiMock() {
   };
   return { api, calls };
 }
+
+test('resolvePassword: {{VAR}} resolves from env, literal passes through, fallback on missing', () => {
+  process.env.__TP_TEST = 'FromEnv1!';
+  assert.equal(resolvePassword('{{__TP_TEST}}'), 'FromEnv1!');
+  assert.equal(resolvePassword('{{ __TP_TEST }}'), 'FromEnv1!');           // tolerant of spaces
+  assert.equal(resolvePassword('LiteralPass1!'), 'LiteralPass1!');         // back-compat literal
+  assert.equal(resolvePassword('{{__TP_MISSING__}}', 'fb!'), 'fb!');       // unset → fallback
+  delete process.env.__TP_TEST;
+});
 
 test('statusFlags maps CSV status → account flags', () => {
   assert.deepEqual(statusFlags('Locked'), { status: 'Locked', emailConfirmed: true, lockoutEnabled: true, lockoutEnd: '9999-12-31T23:59:59Z' });

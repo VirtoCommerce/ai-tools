@@ -170,6 +170,18 @@ export async function findContactByEmail(email) {
   return (r?.results || []).find(m => (m.emails || []).some(e => e?.toLowerCase() === email.toLowerCase()));
 }
 
+// --- Password resolution (VCST-5406: no secret literals in committed CSVs) ---
+// A CSV password cell of the form `{{VAR}}` resolves from process.env[VAR] (which config.js /
+// this lib have already suffix-promoted per env). A bare literal passes through (back-compat).
+// The localhost-safe fallback lets a fresh clone still seed even before .env.local is filled.
+const PW_FALLBACK = 'Password1!';
+export function resolvePassword(raw, fallback = PW_FALLBACK) {
+  const s = String(raw || '').trim();
+  const m = s.match(/^\{\{\s*([A-Z0-9_]+)\s*\}\}$/);
+  if (m) return process.env[m[1]] || fallback;
+  return s || fallback;
+}
+
 // --- Account status flags (data-driven from the CSV `status` column) ---
 // Approved (default) | Locked (lockoutEnd 9999) | EmailUnconfirmed/Pending (emailConfirmed:false).
 export function statusFlags(status) {
@@ -448,7 +460,7 @@ export async function provisionContactLogins(contactMap, orgMap) {
     const email = (u.email || c.email || '').trim();
     if (!email.includes('@') || String(c.platform_id).startsWith('dry-')) continue;
 
-    const userId = await ensureSecurityAccount(email, u.password || 'Password1!', c.platform_id, u.status || 'Approved');
+    const userId = await ensureSecurityAccount(email, resolvePassword(u.password), c.platform_id, u.status || 'Approved');
     await stripSeededGlobalRoles(email);
     nAcct++;
 
@@ -485,7 +497,7 @@ export async function seedMemberships() {
     if (!orgs.length) continue;
     const first = memberRows[0];
     const contactId = await ensureMembershipContact(email, first.first_name, first.last_name, orgs.map(o => o.orgId));
-    const userId = await ensureSecurityAccount(email, first.password || 'Password1!', contactId);
+    const userId = await ensureSecurityAccount(email, resolvePassword(first.password), contactId);
     await stripSeededGlobalRoles(email);
     const existing = await searchMemberships(userId);
     for (const { row, orgId } of orgs) {
@@ -518,11 +530,11 @@ export function personalUsers() {
   for (const u of roleUsers()) add(u.email, u.password, u.first, u.last, u.source, 'Active', u.group);
   for (const r of readCsv('test-data/users/agent-user-pool.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
-    if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, r.personal_password, r.personal_first_name, r.personal_last_name, 'agent-pool');
+    if (r.personal_email && r.personal_email !== 'n/a') add(r.personal_email, resolvePassword(r.personal_password), r.personal_first_name, r.personal_last_name, 'agent-pool');
   }
   for (const r of readCsv('test-data/users/test-users.csv')) {
     if ((r.seeded || '').toLowerCase() === 'false') continue;
-    add(r.email, r.password, r.first_name, r.last_name, 'test-users', r.status);
+    add(r.email, resolvePassword(r.password), r.first_name, r.last_name, 'test-users', r.status);
   }
   return out;
 }
