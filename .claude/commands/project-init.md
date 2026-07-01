@@ -30,17 +30,16 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
 2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
-   project type · tracker · code host) in one `AskUserQuestion` call; (b) values
-   **one field = one question**, covering every field the topology needs (do NOT
-   cap the count). Offer option choices ONLY for predefined/enum fields (`ENV_RISK`,
-   `STOREFRONT_PROFILE`, topology); for unique/free-text fields (env name, URLs,
-   `STORE_ID`, emails, tracker base URL+key, passwords, tokens) ask for the value
-   directly — never invented options. Non-secret identifiers → `.env.<env>`/profile;
-   secrets (`ADMIN_PASSWORD`/`USER_PASSWORD`, `GITHUB_FIX_BUGS_TOKEN`,
-   `JIRA_API_TOKEN`, `ADO_PAT`, optional `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) →
-   `.env.local`; browser-login (`gh auth login`, `az login`, Atlassian MCP) = leave
-   the token unset. Reuse an existing `.env.<env>` by skipping the Environment-URL
-   questions. Never a raw account password.
+   project type · tracker · code host) in one `AskUserQuestion` call; (b) values in
+   **one interactive `show_widget` form** with every field at once (not batched) —
+   free-text fields are plain inputs (no options), only the enums (`ENV_RISK`,
+   `STOREFRONT_PROFILE`) offer choices; Submit returns all values via `sendPrompt`
+   (fallback: paste a `KEY=value` block in chat). Non-secret identifiers →
+   `.env.<env>`/profile; secrets (`ADMIN_PASSWORD`/`USER_PASSWORD`,
+   `GITHUB_FIX_BUGS_TOKEN`, `JIRA_API_TOKEN`, `ADO_PAT`, optional
+   `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) → `.env.local`; browser-login (`gh auth
+   login`, `az login`, Atlassian MCP) = leave the token unset. Reuse an existing
+   `.env.<env>` by dropping the Environment-URL fields. Never a raw account password.
 3. Write env files with `write-env.mjs` (JSON answer object on STDIN, no pause):
    non-secret URLs → `.env.<env>`, secrets → `.env.local` (per-env creds
    `_<ENV>`-suffixed, global tokens un-suffixed), idempotent, values never echoed.

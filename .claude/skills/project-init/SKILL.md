@@ -84,13 +84,13 @@ must run before any generator/verify script — they import from `node_modules`.
 > the `.mjs` scripts, or run any other Bash **between** the interview steps —
 > everything you need is already in this skill. The interview has two parts:
 >   1. **Topology** — one `AskUserQuestion` call (categorical; step 2a).
->   2. **Values** — **one field = one question** (step 2b): ask for every value the
->      topology needs, one per question, and do **not** cap how many you ask.
+>   2. **Values** — **one interactive form** with every field at once (step 2b),
+>      rendered via `show_widget`. Free-text fields are plain inputs (no options);
+>      only the two enums (`ENV_RISK`, `STOREFRONT_PROFILE`) offer choices. Submit
+>      returns all values via `sendPrompt`.
 >
-> **Offer choices ONLY for fields with a predefined set** (`ENV_RISK`,
-> `STOREFRONT_PROFILE`, the topology fields). For a **unique / free-text** value
-> (env name, URLs, `STORE_ID`, emails, tracker base URL / project key, passwords,
-> tokens) present **just a value prompt — never invented option buttons**.
+> Never fabricate example values, and never split the value form into batches —
+> the whole point is one form, all fields, plain inputs for anything free-text.
 
 ### 2a. Topology — first `AskUserQuestion` call (categorical)
 
@@ -106,22 +106,31 @@ must run before any generator/verify script — they import from `node_modules`.
 
 ### 2b. Values — the 15-question block (one field = one question)
 
-Ask these 15 fields as an interview — **each field is its OWN question**, asked via
-`AskUserQuestion` (you may batch up to the tool's 4-questions-per-call limit; that
-is still one field per question). Two conditional token questions follow Q15 when
-the auth method is token-based. Renumber contiguously after you drop/add per
-topology.
+Collect all these values in **ONE interactive form** rendered with the visualize
+`show_widget` tool — **every field at once**, not split into batches, not capped.
+`AskUserQuestion` is the wrong tool here (it forces ≥2 options per question, caps
+at 4 questions/call, and a clicked option returns its *label*, not a typed value),
+so it is **not** used for the value step.
 
-- **Enum fields** — Q2 `ENV_RISK` and Q8 `STOREFRONT_PROFILE` — list their
-  **predefined choices** as the options.
-- **Free-text fields** — everything else — the operator types the value in the
-  question's built-in **free-text ("Other") input**. **Never fabricate example
-  values as options** (no guessed URLs / names / IDs). `AskUserQuestion` requires
-  ≥2 options, so supply only **neutral, non-value** options — the prompt/hint
-  itself, a real default where one truly exists (e.g. `ADMIN` → `admin`), and/or
-  `Skip` for optional fields — and let the free-text input carry the real value.
+Build the form so that:
+- **Free-text fields** (everything except the two enums) render as a **plain text
+  input** — a password input for secrets. **No option buttons, no fabricated
+  example values** — just the input with a short label/hint.
+- **Enum fields** — `ENV_RISK` and `STOREFRONT_PROFILE` — render as a `<select>`
+  with their predefined choices.
+- Group under headers (Environment / Tracker / Secrets); mark optional fields; do
+  not pre-fill fabricated values (a real default like `ADMIN`=`admin` is fine).
+- A **Submit** button gathers every field and calls `sendPrompt()` with the
+  values as `KEY=value` lines (one per non-empty field) so you receive them in the
+  next turn and parse them in step 3.
 
-**The block (native platform + Jira + GitHub, new env):**
+Widget constraints: inline CSS/JS only (a strict CSP blocks all external hosts);
+transparent background; start with a visually-hidden `<h2 class="sr-only">`
+summary; secrets use `type="password"`. **Fallback:** if the widget cannot render
+(headless run / no visualize MCP), ask the operator to paste the same `KEY=value`
+block directly in chat.
+
+**Fields to include** (native platform + Jira + GitHub, new env; adapt per topology):
 
 1. `ENV_NAME` — env id, `[a-z0-9_]+` only (no hyphens — the `_<ENV>` secret suffix
    promotion depends on it)
@@ -331,6 +340,7 @@ with just those flags + `--merge`.
 > Per-env URLs (Bucket #2 → `.env.<env>`) and secrets/tokens/API keys (Bucket #3 →
 > `.env.local`) are both collected as interview questions (steps 2b/2c) and written
 > non-interactively by `write-env.mjs` in step 3 — no pause. Secret **values** are
-> pasted in a plain-chat turn (not via `AskUserQuestion` labels) and reach the
-> script over STDIN. The existing `bootstrap/install.ts` (`npm run plugin:configure`)
+> entered in the step-2b `show_widget` form (all fields at once; free-text = plain
+> inputs, enums = selects; Submit returns them), or pasted as a `KEY=value` block in
+> chat when the widget can't render. The existing `bootstrap/install.ts` (`npm run plugin:configure`)
 > wizard remains an optional interactive fallback.
