@@ -21,86 +21,139 @@ platform) and to the correct bug tracker.
 | Artifact | Purpose |
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
-| `.env.<env>` + `.env.local` | env URLs + secrets (via the existing `npm run plugin:configure`) |
+| `.env.<env>` + `.env.local` | env URLs (`.env.<env>`) + secrets/tokens/API keys (`.env.local`) — collected as interview questions (step 2c) and written in step 3; the guided `npm run plugin:configure` wizard remains an optional fallback |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`) |
 
 ## Pipeline
 
 ```
-0 preconditions → 1 install → 2 interview (role · type · tracker · VCS · upstream)
-→ 3 base env (plugin:configure) → 4 write profile (gen-profile) → 5 discover repos
-(client only) → 6 MCP (gen-mcp) → 7 verify (verify-access) → 8 done
+0 preconditions → 1 install → 2 interview (ONE uninterrupted pass:
+  topology · connection details · secrets/tokens/keys)
+→ 3 write env secrets (.env.local) → 4 write profile (gen-profile)
+→ 5 discover repos (client only) → 6 MCP (gen-mcp) → 7 verify (verify-access) → 8 done
 ```
 
 All scripts live in `.claude/skills/project-init/` and are **non-interactive** —
-you (the model) run the interview in prose, then call them with the answers as
-flags. Run everything from the repo root.
+you (the model) collect every interview answer first, then call the scripts with
+the answers as flags. Run everything from the repo root. **Every generator flag
+you need is documented in steps 3–7 — never inspect the `.mjs` scripts (and never
+pass `--help`: unrecognised flags are treated as booleans and the script runs
+anyway, writing a default file).**
 
 ---
 
-## 0. Preconditions
+## 0. Preconditions — detect AND install the required tooling
 
-Confirm: Node 18+, `git`, and `gh` (GitHub CLI) installed; `az` (Azure CLI) too
-if the customer uses Azure DevOps. Confirm the current directory is the plugin
-repo root (`manifest.json` present).
+Run a detection pass, then **install whatever is missing** — do not just report a
+gap and move on (that leaves `/qa-fix` unable to open PRs). Confirm the current
+directory is the plugin repo root (`manifest.json` present).
+
+- **Node 18+** and **git** — hard prerequisites. If absent, STOP and ask the
+  operator to install them (cannot be auto-installed reliably).
+- **`gh` (GitHub CLI)** — **required** (platform upstream + client GitHub
+  PRs/issues). Install now if missing.
+- **`az` (Azure CLI)** — required **only** if the operator picks Azure
+  Boards/Repos in step 2. Install it then (or now if you already know).
+
+Install commands (pick by OS). System installs need `sudo`, which prompts — have
+the operator run them via `!` in the prompt (e.g. `! sudo pacman -S github-cli`):
+
+| Tool | Debian/Ubuntu | Arch/CachyOS | macOS (brew) | Windows (winget) |
+|------|---------------|--------------|--------------|------------------|
+| `gh` | `sudo apt install gh` | `sudo pacman -S github-cli` | `brew install gh` | `winget install GitHub.cli` |
+| `az` | `curl -sL https://aka.ms/InstallAzureCLIDeb \| sudo bash` | `sudo pacman -S azure-cli` | `brew install azure-cli` | `winget install Microsoft.AzureCLI` |
+
+Detect with `command -v gh` / `command -v az`; re-check after install before
+proceeding.
 
 ## 1. Install dependencies
 
-```bash
-npm install
-npx playwright install chromium firefox
-```
-(Edge uses the system `msedge` channel; WebKit is not used on Windows.)
-
-## 2. Interview (ask in prose, one topic at a time)
-
-Ask, explain each option briefly, and **record the answers** for step 4:
-
-1. **Who is running this?** (`operator`) — `virto-engineer` (Virto staff with
-   access to the customer infra and possibly write access to VirtoCommerce repos)
-   or `client` (the customer's own team; access to client repos only). If unsure,
-   record `ask`. This sets the default upstream **contribution mode**:
-   `virto-engineer → direct`, `client → fork`.
-2. **Project type?** (`projectType`) — `platform` (a vanilla/native Virto
-   deployment) or `client` (has custom modules / theme / storefront fork). Client
-   unlocks steps 5 + the client-repo routing.
-3. **Bug tracker?** (`tracker`) — `jira` or `azure` (Azure Boards). Collect the
-   **non-secret** connection now:
-   - Jira: base URL (e.g. `https://acme.atlassian.net`) + project key (e.g. `ABC`).
-   - Azure: organization + project name + (optional) a state map for transitions
-     (e.g. `In Review → Active`).
-4. **Where does the CLIENT's code live + open PRs?** (`vcs.clientHost`, client
-   only) — `github` or `azure-repos`. Collect the client **org** (GitHub org, or
-   Azure org/project). Tracker and VCS are **independent** — e.g. Azure Boards +
-   GitHub is fine.
-5. **Upstream GitHub account** (`upstream.clientGithubAccount`) — the GitHub login
-   used to (a) **file issues** on the open VirtoCommerce platform repos and
-   (b) **fork-and-PR** platform fixes. The platform is always on GitHub, so this
-   is needed even for an Azure-tracker/Azure-Repos client. Confirm the
-   contribution mode (`fork` for a client without write access; `direct` for a
-   Virto engineer with write access).
-
-### Auth — browser login / tokens, never passwords
-
-Guide the operator to authenticate (do **not** ask for or store passwords):
-
-| Service | Preferred (browser/device) | Fallback (token in `.env.local`) |
-|---------|----------------------------|----------------------------------|
-| GitHub (PR / issue / fork) | `gh auth login --web` (or `--device`) | fine-grained PAT → `GITHUB_FIX_BUGS_TOKEN` |
-| Azure DevOps (Boards + Repos) | `az login` → set `ADO_AUTH=az-login` | `ADO_PAT` |
-| Jira | Atlassian MCP OAuth connector (interactive) | `JIRA_EMAIL` + `JIRA_API_TOKEN` |
-
-Public VirtoCommerce repos only need a normal GitHub account (scope `public_repo`
-is enough to fork + file issues).
-
-## 3. Base environment
-
-Reuse the existing wizard for app URLs + credentials (don't duplicate it):
+Install the plugin's own package dependencies + the Playwright browsers:
 
 ```bash
-npm run plugin:configure          # writes .env.<env> + .env.local (FRONT_URL, BACK_URL, STORE_ID, app creds)
+npm install                                   # Node package dependencies (package.json)
+npx playwright install chromium firefox       # browser binaries for the MCP servers
 ```
-Note the env name chosen (e.g. `acme_qa`) — that's your `TEST_ENV`.
+(Edge uses the system `msedge` channel; WebKit is not used on Windows.) This step
+must run before any generator/verify script — they import from `node_modules`.
+
+## 2. Interview — ask everything in ONE pass, THEN run the scripts
+
+> **No pauses, no mid-interview reconnaissance.** Collect *every* answer below
+> before you run a single generator script. Do **not** read files, inspect the
+> `.mjs` scripts, or run any other Bash **between questions** — everything you
+> need is already in this skill. Ask the **topology** choices in one
+> `AskUserQuestion` call, then ask the **connection details + secrets** in a
+> second call **immediately after**, with **no other tool use in between**.
+> Branch the second call on the first call's answers (e.g. ask Jira details only
+> if `tracker=jira`; skip the code-host / client-org / repo questions for a
+> `platform` project). Two back-to-back question calls = no thinking pause.
+
+### 2a. Topology — first `AskUserQuestion` call (categorical)
+
+1. **operator** — `virto-engineer` (Virto staff, may have write access to
+   VirtoCommerce repos → default contribution mode `direct`) or `client`
+   (customer team, client repos only → default `fork`). Unsure → `ask`.
+2. **projectType** — `platform` (vanilla/native Virto) or `client` (custom
+   modules / theme / storefront fork → unlocks step 5 + client routing).
+3. **tracker** — `jira` or `azure` (Azure Boards).
+4. **code host** (client projects only) — `github` or `azure-repos` (where the
+   CLIENT's code lives + PRs open). Tracker and VCS are **independent** (Azure
+   Boards + GitHub is fine). The platform upstream is **always** GitHub.
+
+### 2b. Connection details — second call, branched (non-secret)
+
+- **Jira** → base URL (e.g. `https://acme.atlassian.net`) + project key (e.g. `ABC`).
+- **Azure Boards** → organization + project + optional transition state map
+  (e.g. `In Review → Active`).
+- **Client project** → client **org** (GitHub org, or Azure org/project) **and**
+  the **storefront/theme repo** (it is NOT in the modules API — the operator must
+  name it; it becomes a `frontend`-kind client repo).
+- **upstream GitHub account** (`upstream.clientGithubAccount`) — the login used to
+  file issues on + fork-and-PR the open VirtoCommerce platform repos. Needed even
+  for an Azure client (the platform is on GitHub). Confirm the contribution mode
+  (`fork` = client without write access; `direct` = Virto engineer with write
+  access). A normal GitHub account (`public_repo`) is enough to fork + file issues.
+
+### 2c. Secrets, tokens & API keys — same second call (ask, don't assume)
+
+**Collect secrets as questions** — one per relevant service. Only ask for what the
+chosen tracker/VCS actually needs (no `ADO_PAT` for a Jira+GitHub setup). For
+**each** token, tell the operator **where to get it** and offer three choices:
+**paste the token** (via the "Other" free-text option), **use browser login
+instead** (where available — then leave the token blank), or **skip** (feature
+stays unconfigured). **Never ask for or store a raw account password** — only app
+**test-user** credentials and issued API tokens. Do not echo pasted secret values
+back to the operator, into reports, or into the profile.
+
+| Secret (`.env.local` var) | Needed for | Browser-login alternative | Where to get the token |
+|---|---|---|---|
+| `ADMIN_PASSWORD` *(required)* | Admin / back-office login — every run | — | The deployment's admin **test** account (customer / ops). Local start-local stack: `Password1!` |
+| `USER_PASSWORD` *(required)* | Storefront test-user login | — | The deployment's storefront **test** account |
+| `GITHUB_FIX_BUGS_TOKEN` (fine-grained PAT) | `/qa-fix` PR + issue (GitHub) | `gh auth login --web` (leave token blank) | github.com → **Settings → Developer settings → Personal access tokens → Fine-grained tokens**. Perms: *Contents* + *Pull requests* = Read/Write (`public_repo` is enough to fork + file issues on VirtoCommerce) |
+| `JIRA_API_TOKEN` (+ `JIRA_EMAIL`) | Jira comments + transitions | Atlassian MCP OAuth (interactive) | **id.atlassian.com → Manage account → Security → API tokens → Create API token** |
+| `ADO_PAT` | Azure Boards + Repos | `az login` → set `ADO_AUTH=az-login` | **dev.azure.com → User settings → Personal access tokens**. Scopes: *Work Items* R/W, *Code* R/W |
+| `POSTMAN_API_KEY` *(optional)* | postman MCP | — | **postman.com → Settings → API keys** |
+| `CONTEXT7_API_KEY` *(optional)* | context7 MCP | — | **context7.com dashboard → API key** |
+
+Record every pasted value for step 3. If the operator chose a browser login,
+note it (e.g. `vcs.auth = gh-cli`, `ADO_AUTH=az-login`) instead of a token.
+
+## 3. Write env secrets (`.env.local`)
+
+Write the collected secrets/tokens/keys from step 2c into `.env.local` (gitignored
+— create it if absent, update a key **in place** if present). This is
+question-driven so there is **no interactive wizard pause**. The non-secret env
+**URLs** (`FRONT_URL`, `BACK_URL`, `STORE_ID`) belong in `.env.<env>`; if they are
+not set yet, add them from the interview or run the guided wizard once:
+
+```bash
+npm run plugin:configure          # OPTIONAL — guided wizard for URLs + app creds
+```
+Note the env name (e.g. `acme_qa`) — that's your `TEST_ENV`. For browser-login
+choices, remind the operator to run the login command themselves (via `!` in the
+prompt, e.g. `! gh auth login --web`) — you cannot complete an interactive login
+for them.
 
 ## 4. Write the deployment profile
 
@@ -198,5 +251,8 @@ with just those flags + `--merge`.
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
 | `verify-access.mjs` | preflight: profile, env, GitHub/Azure/Jira auth, app URLs |
 
-> Base env (URLs + app creds) is handled by the existing `bootstrap/install.ts`
-> (`npm run plugin:configure`) — this skill does not duplicate it.
+> Secrets/tokens/API keys are collected as interview questions (step 2c) and
+> written to `.env.local` in step 3 — no interactive pause. Non-secret env URLs
+> live in `.env.<env>`; the existing `bootstrap/install.ts`
+> (`npm run plugin:configure`) wizard remains an optional fallback for URLs +
+> app creds.

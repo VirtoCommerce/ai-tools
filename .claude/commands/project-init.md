@@ -26,12 +26,19 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 
 ## Flow (the skill drives this)
 
+0. Preconditions — detect **and install** missing tooling: `gh` (required),
+   `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
-2. Interview: operator role · project type (platform/client) · tracker (jira/azure)
-   · client code host (github/azure-repos) · upstream GitHub account. Auth via
-   **browser login** (`gh auth login`, `az login`, Atlassian MCP) or tokens —
-   never passwords.
-3. Base env via the existing `npm run plugin:configure`.
+2. Interview — **one uninterrupted pass, no mid-interview reconnaissance**:
+   topology (operator · project type · tracker · code host) in one question call,
+   then connection details **+ secrets/tokens/API keys** in a second call right
+   after. Every secret (`ADMIN_PASSWORD`/`USER_PASSWORD`, `GITHUB_FIX_BUGS_TOKEN`,
+   `JIRA_API_TOKEN`, `ADO_PAT`, optional `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) is
+   **asked as a question with where-to-get-it guidance** — paste the token, use a
+   browser login (`gh auth login`, `az login`, Atlassian MCP), or skip. Never a
+   raw account password.
+3. Write secrets/tokens to `.env.local` (question-driven, no wizard pause);
+   `npm run plugin:configure` remains an optional fallback for env URLs.
 4. Write the profile (`gen-profile.mjs`).
 5. Discover the client/platform repo split (`discover-repos.mjs`, client only) → confirm.
 6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
