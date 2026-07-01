@@ -107,7 +107,8 @@
 │
 ├── project-init/                    # Onboarding (not a QA category): deploy this plugin for a customer
 │   ├── SKILL.md                     # native-platform vs client; tracker + VCS host; profile + .mcp.json; verify access
-│   ├── write-env.mjs                # write .env.<env> (URLs) + .env.local (secrets, _<ENV>-suffixed) from STDIN JSON
+│   ├── write-env.mjs                # write .env.<env> (URLs) from STDIN JSON (idempotent; can also write secrets)
+│   ├── scaffold-secrets.mjs         # write commented .env.local template (what/why/where per secret) to fill
 │   ├── gen-profile.mjs              # write/merge project-profile.json
 │   ├── discover-repos.mjs           # Platform API → client/platform repo split
 │   ├── gen-mcp.mjs                  # OS-aware .mcp.json from template + per-tracker/VCS servers

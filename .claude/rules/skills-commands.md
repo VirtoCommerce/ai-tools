@@ -85,7 +85,7 @@ Skills are slash commands with supporting reference files, organized into 3 cate
 
 | Skill | Arguments | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
-| `/project-init` | `(no args — interactive) \| --check` | Onboard the plugin onto a deployment: native-platform vs client, bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discover the client/platform repo split, write `.env.<env>`/`.env.local` + `project-profile.json` + `.mcp.json`, verify access. The profile drives `/qa-fix` repo + tracker routing. | `write-env.mjs`, `gen-profile.mjs`, `discover-repos.mjs`, `gen-mcp.mjs`, `verify-access.mjs` |
+| `/project-init` | `(no args — interactive) \| --check` | Onboard the plugin onto a deployment: native-platform vs client, bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discover the client/platform repo split, write `.env.<env>`/`.env.local` + `project-profile.json` + `.mcp.json`, verify access. The profile drives `/qa-fix` repo + tracker routing. | `write-env.mjs`, `scaffold-secrets.mjs`, `gen-profile.mjs`, `discover-repos.mjs`, `gen-mcp.mjs`, `verify-access.mjs` |
 | `/run-vc-mcp-testing-module` | `(no args)` | Build / launch / smoke-test / health-check this tooling repo (env:check, `@td()` resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run). | `SKILL.md` |
 
 ## Usage

@@ -21,15 +21,15 @@ platform) and to the correct bug tracker.
 | Artifact | Purpose |
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
-| `.env.<env>` + `.env.local` | env URLs (`.env.<env>`, Bucket #2) + secrets/tokens/API keys (`.env.local`, Bucket #3) — collected as interview questions (steps 2b/2c) and written non-interactively by `write-env.mjs` in step 3 (per-env creds get the `_<ENV>` suffix `config.js` promotes). The guided `npm run plugin:configure` wizard remains an optional fallback |
+| `.env.<env>` + `.env.local` | `.env.<env>` (Bucket #2) holds the non-secret URLs/identifiers from the step-2b form, written by `write-env.mjs`. `.env.local` (Bucket #3) is scaffolded by `scaffold-secrets.mjs` as a **commented template** (what/why/where per secret; per-env creds get the `_<ENV>` suffix `config.js` promotes) that the operator **fills in** — secrets are never asked in the interview. The guided `npm run plugin:configure` wizard remains an optional fallback |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`) |
 
 ## Pipeline
 
 ```
-0 preconditions → 1 install → 2 interview (ONE uninterrupted pass:
-  topology · connection details + per-env URLs · secrets/tokens/keys)
-→ 3 write env files (write-env.mjs → .env.<env> + .env.local)
+0 preconditions → 1 install → 2 interview (topology + required non-secret values;
+  NO secrets asked) → 3a write-env (.env.<env>) + 3b scaffold-secrets (.env.local
+  template) + 3c operator fills the secret placeholders
 → 4 write profile (gen-profile) → 5 discover repos (client only)
 → 6 MCP (gen-mcp) → 7 verify (verify-access) → 8 done
 ```
@@ -106,33 +106,31 @@ must run before any generator/verify script — they import from `node_modules`.
 
 ### 2b. Values — the 15-question block (one field = one question)
 
-Collect all these values in **ONE interactive form** rendered with the visualize
-`show_widget` tool — **every field at once**, not split into batches, not capped.
-`AskUserQuestion` is the wrong tool here (it forces ≥2 options per question, caps
-at 4 questions/call, and a clicked option returns its *label*, not a typed value),
-so it is **not** used for the value step.
+Collect these values in **ONE interactive form** rendered with the visualize
+`show_widget` tool — **every field at once**, not split, not capped.
+`AskUserQuestion` is the wrong tool for values (≥2 options/question, ≤4/call, and a
+clicked option returns its *label* not a typed value), so it is not used here.
+
+**Ask ONLY the fields needed for a working setup — no optional fields, and NO
+secrets.** Secrets are never asked in the form; step 3 scaffolds a commented
+`.env.local` template the operator fills in afterwards.
 
 Build the form so that:
-- **Free-text fields** (everything except the two enums) render as a **plain text
-  input** — a password input for secrets. **No option buttons, no fabricated
-  example values** — just the input with a short label/hint.
-- **Enum fields** — `ENV_RISK` and `STOREFRONT_PROFILE` — render as a `<select>`
-  with their predefined choices.
-- Group under headers (Environment / Tracker / Secrets); mark optional fields; do
-  not pre-fill fabricated values (a real default like `ADMIN`=`admin` is fine).
-- A **Submit** button gathers every field and calls `sendPrompt()` with the
-  values as `KEY=value` lines (one per non-empty field) so you receive them in the
-  next turn and parse them in step 3.
+- **Free-text fields** render as a **plain text input** — no option buttons, no
+  fabricated example values, just the input with a short label/hint.
+- **Enum field** — `ENV_RISK` — renders as a `<select>`
+  (`dev` | `test` | `staging` | `production`).
+- A **Submit** button gathers the fields and calls `sendPrompt()` with the values
+  as `KEY=value` lines (one per non-empty field); you parse them in step 3.
 
-Widget constraints: inline CSS/JS only (a strict CSP blocks all external hosts);
-transparent background; start with a visually-hidden `<h2 class="sr-only">`
-summary; secrets use `type="password"`. **Fallback:** if the widget cannot render
-(headless run / no visualize MCP), ask the operator to paste the same `KEY=value`
-block directly in chat.
+Widget constraints: inline CSS/JS only (strict CSP blocks external hosts);
+transparent background; visually-hidden `<h2 class="sr-only">` summary. **Fallback:**
+if the widget can't render (headless / no visualize MCP), ask the operator to paste
+the same `KEY=value` block in chat.
 
-**Fields to include** (native platform + Jira + GitHub, new env; adapt per topology):
+**Form fields — required only (native platform + Jira + GitHub, new env):**
 
-1. `ENV_NAME` — env id, `[a-z0-9_]+` only (no hyphens — the `_<ENV>` secret suffix
+1. `ENV_NAME` — env id, `[a-z0-9_]+` only (no hyphens — the `_<ENV>` suffix
    promotion depends on it)
 2. `ENV_RISK` *(enum)* — `dev` | `test` | `staging` | `production`
 3. `FRONT_URL` — storefront URL
@@ -140,105 +138,77 @@ block directly in chat.
 5. `STORE_ID` — store identifier
 6. `ADMIN` — admin login (usually `admin`; identifier, not the password)
 7. `USER_EMAIL` — storefront test-user email
-8. `STOREFRONT_PROFILE` *(enum, optional)* — `b2b` | `b2c` | `hybrid`
-9. `MODULES_ENABLED` *(optional)* — CSV of installed modules, or skip
-10. `STORYBOOK_URL` *(optional)* — or skip
-11. `JIRA_BASE_URL` — e.g. `https://acme.atlassian.net`
-12. `JIRA_PROJECT_KEY` — e.g. `VCST`
-13. `JIRA_EMAIL` — Jira login email (identifier)
-14. `ADMIN_PASSWORD` *(secret)* — admin test-account password
-15. `USER_PASSWORD` *(secret)* — storefront test-account password
+8. `JIRA_BASE_URL` — e.g. `https://acme.atlassian.net`
+9. `JIRA_PROJECT_KEY` — e.g. `VCST`
+10. `JIRA_EMAIL` — Jira login email (identifier)
 
-Conditional secrets (append only if the auth method is token-based):
-- `JIRA_API_TOKEN` *(secret)* — **unless** Jira auth = Atlassian MCP OAuth
-- `GITHUB_FIX_BUGS_TOKEN` *(secret)* — **unless** GitHub auth = `gh` CLI login
+**Do NOT add** optional fields — `STOREFRONT_PROFILE` (defaults `hybrid`),
+`MODULES_ENABLED`, `STORYBOOK_URL` — they have safe defaults and only clutter the
+form. **Do NOT add** any secret field.
 
-**Adapt the block to the topology (keep it a single block):**
-- **Reused `.env.<env>`** (e.g. native `.env.vcst`) — drop Q1–Q10 (env URLs /
-  identifiers are already set); keep the tracker + secret questions.
-- **Azure Boards** — replace Q11–Q13 with `ADO_ORG`, `ADO_PROJECT` (+ optional
-  `In Review→Active` state map); the token is `ADO_PAT` (unless `az login`).
-- **Azure Repos** — code PRs use `ADO_PAT` / `az login` (no separate GitHub token).
+**Adapt per topology (still form-only, still no secrets):**
+- **Reused `.env.<env>`** (e.g. native `.env.vcst`) — drop the env-URL fields
+  (1, 3–7); keep the env name + tracker fields.
+- **Azure Boards** — replace the Jira fields with `ADO_ORG`, `ADO_PROJECT`
+  (+ optional `In Review→Active` state map).
 - **client project** — add `CLIENT_ORG`, the storefront/theme repo (kind
   `frontend`), and `UPSTREAM_ACCOUNT` + contribution mode.
-- **optional MCP** — add `POSTMAN_API_KEY`, `CONTEXT7_API_KEY` if wanted.
 
-**Rules:**
-- Non-secret identifiers (Q1–Q13: URLs / IDs / emails / tracker) → `.env.<env>` /
-  the profile; secrets (`*_PASSWORD` / `*_TOKEN` / API keys) → `.env.local`
-  (gitignored).
-- Only app **test-user** passwords + issued tokens — **never a raw account
-  password**. Do not echo secret values back into chat, reports, or the profile.
-- Browser-login auth — leave the token unset; the operator runs the login
-  (`gh auth login --web`, `az login`, Atlassian MCP OAuth). Record the choice
-  (`vcs.auth = gh-cli`, `ADO_AUTH=az-login`).
+Non-secret identifiers → `.env.<env>` / the profile. **Secrets are handled entirely
+by the step-3 `.env.local` template — the form never touches them** (their
+where-to-get guidance lives in that template's comments).
 
-**Where to get each token** (share the relevant rows when you ask):
+## 3. Write env values + scaffold the secrets template
 
-| Token | Browser-login alternative | Where to get it |
-|---|---|---|
-| `GITHUB_FIX_BUGS_TOKEN` (fine-grained PAT) | `gh auth login --web` (leave unset) | github.com → **Settings → Developer settings → Personal access tokens → Fine-grained**. *Contents* + *Pull requests* = R/W (`public_repo` is enough to fork + file issues) |
-| `JIRA_API_TOKEN` (+ `JIRA_EMAIL`) | Atlassian MCP OAuth (interactive) | **id.atlassian.com → Security → API tokens → Create** |
-| `ADO_PAT` | `az login` → `ADO_AUTH=az-login` | **dev.azure.com → User settings → Personal access tokens** (*Work Items* R/W, *Code* R/W) |
-| `POSTMAN_API_KEY` *(optional)* | — | **postman.com → Settings → API keys** |
-| `CONTEXT7_API_KEY` *(optional)* | — | **context7.com dashboard → API key** |
+### 3a. Non-secret values → `.env.<env>` (`write-env.mjs`)
 
-## 3. Write the env files (`write-env.mjs`)
-
-Collect the operator's per-field answers (step 2b) and split them into **non-secret
-identifiers** (`envVars`) and **secrets** (`*_PASSWORD`/`*_TOKEN`/API keys), setting
-aside the tracker connection values (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY` or `ADO_*`)
-for `gen-profile` in step 4.
-Then persist with **`write-env.mjs`** — one call writes **both** buckets and needs
-**no interactive pause**. Pass the answers as a **JSON object on STDIN** (never as
-argv — that would leak secrets into the process list / shell history). The script:
-
-- writes non-secret **`envVars`** → `.env.<env>` (Bucket #2, committed),
-- writes **`secrets`** → `.env.local` (Bucket #3, gitignored), auto-suffixing
-  per-env credentials to `KEY_<ENV>` (global tokens like `GITHUB_FIX_BUGS_TOKEN` /
-  `JIRA_API_TOKEN` / `ADO_PAT` / `POSTMAN_API_KEY` / `CONTEXT7_API_KEY` stay
-  un-suffixed),
-- updates each key **in place** (idempotent — safe to re-run), and prints **key
-  names only**, never values.
+Take the form answers (all non-secret) and set aside the tracker connection values
+(`JIRA_BASE_URL`/`JIRA_PROJECT_KEY` or `ADO_*`) for `gen-profile` in step 4. Persist
+the rest as `envVars` with **`write-env.mjs`** — a JSON object on **STDIN** (never
+argv). To keep values out of the process list / shell history, write the JSON to a
+scratch file and pipe it in, then delete it:
 
 ```bash
-# Build the JSON from the interview and pipe it in. `envVars` = non-secret
-# identifiers (→ .env.<env>); `secrets` = passwords + tokens (→ .env.local).
-# Emails (USER_EMAIL, JIRA_EMAIL, ADMIN login) are identifiers → put them in envVars.
-echo '{
-  "env": "acme_qa",
-  "suffixCreds": true,
-  "envVars": {
-    "FRONT_URL": "https://front.acme.com",
-    "BACK_URL": "https://back.acme.com",
-    "STORE_ID": "B2B-store",
-    "ENV_RISK": "test",
-    "STOREFRONT_PROFILE": "hybrid",
-    "ADMIN": "admin",
-    "USER_EMAIL": "qa-user@acme.com",
-    "JIRA_EMAIL": "jane@acme.com"
-  },
-  "secrets": {
-    "ADMIN_PASSWORD": "<pasted>",
-    "USER_PASSWORD": "<pasted>",
-    "GITHUB_FIX_BUGS_TOKEN": "<pasted-or-omit-if-gh-cli>",
-    "JIRA_API_TOKEN": "<pasted-or-omit-if-mcp-oauth>"
-  }
-}' | node .claude/skills/project-init/write-env.mjs --print
+# scratch.json = { "env":"myqa", "envVars": { ENV_RISK, FRONT_URL, BACK_URL,
+#   STORE_ID, ADMIN, USER_EMAIL, JIRA_EMAIL, JIRA_BASE_URL, JIRA_PROJECT_KEY } }
+node .claude/skills/project-init/write-env.mjs --print < scratch.json
 ```
 
-- Reusing an existing `.env.<env>` (e.g. native `.env.vcst`)? Omit `envVars` (or
-  pass only the keys you're changing) and send just `secrets` — the URLs stay put.
-- Add `--dry-run` first to preview which keys land where without writing.
-- **Browser-login choices** (`gh auth login --web`, `az login`, Atlassian MCP
-  OAuth): don't put a token in `secrets`; instead remind the operator to run the
-  login themselves (via `!` in the prompt, e.g. `! gh auth login --web`) — you
-  cannot complete an interactive login for them. Record the choice in the profile
-  (`vcs.auth = gh-cli`, or `ADO_AUTH=az-login`).
-- The guided `npm run plugin:configure` wizard remains an optional fallback for
-  URLs + app creds (interactive; asks one env at a time).
+`write-env.mjs` writes `envVars` → `.env.<env>` (Bucket #2), updates each key in
+place (idempotent), prints key names only. (It *can* also write a `secrets` block,
+but this flow does **not** pass one — secrets are scaffolded below, not collected.)
+Reusing an existing `.env.<env>`? Omit `envVars` entirely.
 
-Note the env name (e.g. `acme_qa`) — that's your `TEST_ENV` for every later run.
+### 3b. Secrets template → `.env.local` (`scaffold-secrets.mjs`)
+
+Generate a **commented `.env.local` template** — one placeholder per secret the
+topology needs, each with what / why / where-to-get comments. Per-env creds get the
+`_<ENV>` suffix `config.js` promotes; browser-login auth emits no token line.
+
+```bash
+node .claude/skills/project-init/scaffold-secrets.mjs \
+  --env myqa --tracker jira --jira-auth token \
+  --client-vcs github --vcs-auth pat --print
+```
+Flags: `--jira-auth token|oauth`, `--vcs-auth pat|gh-cli|az-login`,
+`--extras postman,context7`. Idempotent — a re-run adds only missing placeholders,
+never clobbers a filled value. Placeholders are written empty so `config.js` treats
+them as unset until filled.
+
+### 3c. Tell the operator to fill it, then pause
+
+Print a message that:
+- lists the placeholder keys `scaffold-secrets` emitted,
+- tells the operator to open `.env.local` and fill each value (the inline comments
+  say where to get each), and
+- says **verify-access (step 7) will then check them**.
+
+**Wait for the operator to confirm they've filled `.env.local`** before running
+verify — do not proceed on empty placeholders. (Browser-login choices — `gh auth
+login --web`, `az login`, Atlassian MCP OAuth — have no `.env.local` line; remind
+the operator to run the login instead.)
+
+Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 
 ## 4. Write the deployment profile
 
@@ -331,16 +301,17 @@ with just those flags + `--merge`.
 
 | Script | Role |
 |--------|------|
-| `write-env.mjs` | write `.env.<env>` (non-secret URLs) + `.env.local` (secrets, `_<ENV>`-suffixed) from a JSON answer object on STDIN; idempotent, values never echoed |
+| `write-env.mjs` | write `.env.<env>` (non-secret URLs) — and, if passed, `.env.local` secrets (`_<ENV>`-suffixed) — from a JSON answer object on STDIN; idempotent, values never echoed |
+| `scaffold-secrets.mjs` | write a commented `.env.local` **template** (placeholders + what/why/where per secret) for the operator to fill; topology-driven, idempotent |
 | `gen-profile.mjs` | write/merge `project-profile.json` from interview flags |
 | `discover-repos.mjs` | Platform API → proposed client/platform repo split |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
 | `verify-access.mjs` | preflight: profile, env, GitHub/Azure/Jira auth, app URLs |
 
-> Per-env URLs (Bucket #2 → `.env.<env>`) and secrets/tokens/API keys (Bucket #3 →
-> `.env.local`) are both collected as interview questions (steps 2b/2c) and written
-> non-interactively by `write-env.mjs` in step 3 — no pause. Secret **values** are
-> entered in the step-2b `show_widget` form (all fields at once; free-text = plain
-> inputs, enums = selects; Submit returns them), or pasted as a `KEY=value` block in
-> chat when the widget can't render. The existing `bootstrap/install.ts` (`npm run plugin:configure`)
-> wizard remains an optional interactive fallback.
+> Non-secret per-env values (Bucket #2 → `.env.<env>`) are entered in the step-2b
+> `show_widget` form (required fields only; free-text = plain inputs, the one enum =
+> a select; Submit returns them) and written by `write-env.mjs`. **Secrets are never
+> asked** — `scaffold-secrets.mjs` writes a commented `.env.local` template (Bucket
+> #3) that the operator fills in, then verify-access checks it. The existing
+> `bootstrap/install.ts` (`npm run plugin:configure`) wizard remains an optional
+> interactive fallback.

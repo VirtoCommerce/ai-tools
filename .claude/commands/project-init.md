@@ -30,20 +30,16 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
 2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
-   project type · tracker · code host) in one `AskUserQuestion` call; (b) values in
-   **one interactive `show_widget` form** with every field at once (not batched) —
-   free-text fields are plain inputs (no options), only the enums (`ENV_RISK`,
-   `STOREFRONT_PROFILE`) offer choices; Submit returns all values via `sendPrompt`
-   (fallback: paste a `KEY=value` block in chat). Non-secret identifiers →
-   `.env.<env>`/profile; secrets (`ADMIN_PASSWORD`/`USER_PASSWORD`,
-   `GITHUB_FIX_BUGS_TOKEN`, `JIRA_API_TOKEN`, `ADO_PAT`, optional
-   `POSTMAN_API_KEY`/`CONTEXT7_API_KEY`) → `.env.local`; browser-login (`gh auth
-   login`, `az login`, Atlassian MCP) = leave the token unset. Reuse an existing
-   `.env.<env>` by dropping the Environment-URL fields. Never a raw account password.
-3. Write env files with `write-env.mjs` (JSON answer object on STDIN, no pause):
-   non-secret URLs → `.env.<env>`, secrets → `.env.local` (per-env creds
-   `_<ENV>`-suffixed, global tokens un-suffixed), idempotent, values never echoed.
-   `npm run plugin:configure` remains an optional interactive fallback.
+   project type · tracker · code host) in one `AskUserQuestion` call; (b) the
+   **required non-secret values** in **one interactive `show_widget` form** (all at
+   once) — free-text fields are plain inputs (no options), only `ENV_RISK` is a
+   select; Submit returns them via `sendPrompt` (fallback: paste a `KEY=value` block
+   in chat). **No optional fields and NO secrets in the form.**
+3. Write env: (3a) `write-env.mjs` writes the non-secret values → `.env.<env>`; (3b)
+   `scaffold-secrets.mjs` writes a commented `.env.local` **template** (placeholder +
+   what/why/where per secret; per-env creds `_<ENV>`-suffixed, browser-login auth
+   emits no token line); (3c) tell the operator to fill `.env.local` and **pause** —
+   verify (step 7) checks it. Never a raw account password.
 4. Write the profile (`gen-profile.mjs`).
 5. Discover the client/platform repo split (`discover-repos.mjs`, client only) → confirm.
 6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
