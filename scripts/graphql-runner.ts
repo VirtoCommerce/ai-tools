@@ -197,24 +197,38 @@ function readQueryFile(path: string): string {
   return readFileSync(path, "utf-8");
 }
 
-function formatResult(label: string, result: ValidationResult): void {
+// Prints the validation outcome and returns whether it MATCHED expectation (a pass).
+// For negative-test fixtures (expectValid === false), a schema-rejected query is the
+// PASS case — it proves the validate-before-send guard catches malformed operations.
+function formatResult(label: string, result: ValidationResult, expectValid = true): boolean {
   const op = result.operationType
     ? `${result.operationType}${result.operationName ? ` ${result.operationName}` : ""}`
     : "(anonymous)";
+  const pass = result.valid === expectValid;
+  const icon = pass ? "✅" : "❌";
 
   if (result.valid) {
-    console.log(`✅ ${label}`);
-    console.log(`   Valid against schema — operation: ${op}`);
-    console.log(`   (HTTP send stubbed — schema-validate-before-send PROVEN)`);
+    console.log(`${icon} ${label}`);
+    if (pass) {
+      console.log(`   Valid against schema — operation: ${op}`);
+      console.log(`   (HTTP send stubbed — schema-validate-before-send PROVEN)`);
+    } else {
+      console.log(`   Expected INVALID but validated clean — negative-test guard regressed.`);
+    }
   } else {
-    console.log(`❌ ${label}`);
-    console.log(`   Invalid — ${result.errors.length} error(s), NO HTTP sent:`);
+    console.log(`${icon} ${label}`);
+    console.log(
+      pass
+        ? `   Correctly rejected — ${result.errors.length} error(s), NO HTTP sent (negative test):`
+        : `   Invalid — ${result.errors.length} error(s), NO HTTP sent:`
+    );
     for (const err of result.errors) {
       const loc = err.line ? ` [line ${err.line}${err.column ? `:${err.column}` : ""}]` : "";
       console.log(`   · ${err.code}${loc}: ${err.message}`);
     }
   }
   console.log();
+  return pass;
 }
 
 // ─── End-to-end case execution ──────────────────────────────────────────
@@ -1119,20 +1133,25 @@ async function main() {
       process.exit(2);
     }
     console.log(`\n=== Validating ${files.length} fixtures ===\n`);
+    let passed = 0;
     for (const f of files) {
       const q = readQueryFile(join(DEFAULT_FIXTURES, f));
       const r = validateQuery(schema, q);
-      formatResult(basename(f), r);
-      if (!r.valid) exitCode = 1;
+      // Fixtures named invalid-*.graphql are negative tests — schema rejection is
+      // the PASS case. All other fixtures are expected to validate cleanly.
+      const expectValid = !basename(f).startsWith("invalid-");
+      const pass = formatResult(basename(f), r, expectValid);
+      if (pass) passed++;
+      else exitCode = 1;
     }
+    console.log(`=== ${passed}/${files.length} fixtures matched expectation ===`);
   } else {
     const query = args.queryFile
       ? readQueryFile(args.queryFile)
       : args.queryInline!;
     const label = args.queryFile ? basename(args.queryFile) : "inline query";
     const r = validateQuery(schema, query);
-    formatResult(label, r);
-    if (!r.valid) exitCode = 1;
+    if (!formatResult(label, r)) exitCode = 1;
   }
 
   process.exit(exitCode);

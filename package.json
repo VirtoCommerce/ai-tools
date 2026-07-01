@@ -52,7 +52,7 @@
     "seed:configurable:bike": "node scripts/seed-bike-flat-cfg.mjs",
     "seed:impersonation": "node scripts/seed-impersonation-targets.mjs",
     "schema:refresh": "node scripts/refresh-graphql-schema.mjs",
-    "schema:check": "node scripts/refresh-graphql-schema.mjs --dry-run > /dev/null",
+    "schema:check": "node scripts/refresh-graphql-schema.mjs --check",
     "refresh-product-guids": "node scripts/refresh-product-guids.mjs",
     "graphql:validate": "npx tsx scripts/graphql-runner.ts --all-fixtures",
     "graphql:validate:refresh": "npx tsx scripts/graphql-runner.ts --all-fixtures --refresh-schema",
