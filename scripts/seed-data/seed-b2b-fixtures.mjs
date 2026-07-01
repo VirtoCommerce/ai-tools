@@ -651,8 +651,43 @@ async function teardownMemberships() {
   }
 }
 
+// Sweep every account defined in b2b/users.csv (buyers USR-001…, maintainer USR-015, and the
+// impersonation targets USR-020/021/022). teardownMemberships() only covers
+// organization-memberships.csv; without this pass the b2b/users.csv logins survive teardown and
+// end up orphaned (contact deleted by the AGENT-TEST-* member sweep, account + dangling org
+// memberships left behind). Deletes memberships → security account → contact, in that order.
+async function teardownB2bUsers() {
+  let rows;
+  try { rows = parseCsv(readFileSync(USERS_CSV, 'utf-8')).filter(r => (r.email || '').trim()); } catch { return; }
+  const emails = [...new Set(rows.map(r => r.email.trim()))];
+  console.log(`\n  Teardown: ${emails.length} account(s) from users.csv...`);
+  let accts = 0, contacts = 0;
+  for (const email of emails) {
+    const user = await findUserByEmail(email);
+    let contactId = user?.memberId || null;
+    if (user?.id) {
+      const ids = (await searchMemberships(user.id)).map(m => m.id).filter(Boolean);
+      if (ids.length) {
+        const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
+        await api('DELETE', `/api/customer/organization-memberships?${qs}`, null, { expectStatus: [200, 204, 404] });
+        console.log(`    ✗ deleted ${ids.length} membership(s) for ${email}`);
+      }
+      await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
+      accts++;
+    }
+    if (!contactId) contactId = (await findContactByEmail(email))?.id || null;
+    if (contactId) {
+      await api('DELETE', `/api/members?ids=${encodeURIComponent(contactId)}`, null, { expectStatus: [200, 204, 404] });
+      contacts++;
+    }
+    if (user?.id || contactId) console.log(`    ✗ ${email}`);
+  }
+  console.log(`  Teardown: ${accts} account(s) + ${contacts} contact(s) from users.csv`);
+}
+
 async function teardown() {
   await teardownMemberships();
+  await teardownB2bUsers();
   console.log('\n  Teardown: scanning for AGENT-TEST-* members...');
   const res = await api('POST', '/api/members/search', { keyword: 'AGENT-TEST-', take: 500 });
   const items = res?.results || [];
