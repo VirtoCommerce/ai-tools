@@ -38,12 +38,15 @@ import { loadProjectProfile } from "../scripts/lib/project-profile.mjs";
 // Configuration
 // ---------------------------------------------------------------------------
 
-/** Comma-separated VCST keys (manual mode). If empty, discover via FIX_JQL. */
+/** Comma-separated tracker keys/ids (manual mode): Jira `ABC-123`, Azure `12345`. */
 const FIX_TICKETS = (process.env.FIX_TICKETS || "").trim();
 const FIX_LABEL = process.env.FIX_LABEL || "qa-autofix";
-const FIX_JQL =
-  process.env.FIX_JQL ||
-  `project = VCST AND issuetype = Bug AND statusCategory != Done AND labels = "${FIX_LABEL}" ORDER BY priority DESC`;
+// Explicit discovery-query override in the tracker's OWN language (Jira JQL /
+// Azure WIQL). When unset, the resolved tracker supplies its default via
+// tracker.defaultQuery(FIX_LABEL) — project key / team project come from the
+// profile, so a client's non-VCST prefix (or Azure's numeric ids) just work.
+// FIX_JQL is kept as a back-compat alias for FIX_QUERY.
+const FIX_QUERY = process.env.FIX_QUERY || process.env.FIX_JQL || "";
 
 const MAX_BUDGET_USD = parseFloat(process.env.MAX_BUDGET_USD || "30.0");
 const MAX_TURNS = parseInt(process.env.MAX_TURNS || "150", 10);
@@ -552,13 +555,14 @@ async function main() {
   if (FIX_TICKETS) {
     tickets = FIX_TICKETS.split(",").map((t) => t.trim()).filter(Boolean);
   } else {
-    log(`Discovering tickets via query: ${FIX_JQL}`);
-    tickets = await tracker.search(FIX_JQL, MAX_TICKETS);
+    const query = FIX_QUERY || tracker.defaultQuery(FIX_LABEL);
+    log(`Discovering tickets via ${tracker.kind} query: ${query}`);
+    tickets = await tracker.search(query, MAX_TICKETS);
   }
   tickets = tickets.slice(0, MAX_TICKETS);
 
   if (tickets.length === 0) {
-    log("No tickets to process. Set FIX_TICKETS=VCST-XXXX or configure JIRA + label.");
+    log("No tickets to process. Set FIX_TICKETS=<key/id,...> or configure the tracker + label.");
     process.exit(0);
   }
   log(`Tickets: ${tickets.join(", ")}`);

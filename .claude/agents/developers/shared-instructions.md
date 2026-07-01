@@ -114,6 +114,14 @@ Assistant resolves it to the signed account regardless of the env. Optional over
 this identity was applied, **re-author and force-push** (`git commit --amend --reset-author …` /
 `git rebase --root --exec` for multiple) so CLA can re-evaluate.
 
+### Ticket key format follows the tracker (not always `VCST-`)
+The examples below say `VCST-XXXX`, but the **key format depends on the deployment's tracker**: a client
+Jira uses its own prefix (`ABC-123`), and **Azure Boards work items are bare numeric ids** (`12345`, no
+letter prefix). Use whatever key/id the tracker gave you verbatim — the branch (`claude/qa-autofix/<key>`),
+commit reference, and PR title all take it as-is. For **cross-linking** into the tracker from a commit/PR:
+Jira auto-links the bare key (`ABC-123`); Azure Boards links a work item via `AB#12345`. Don't assume a
+`VCST-` prefix anywhere.
+
 ### PR title — lead with the JIRA key
 The **PR title** follows `VCST-XXXX: Fix <imperative summary of the bug>` (JIRA key first, then a short
 human summary — e.g. `VCST-5210: Fix NRE in GetModules when icon file is missing`). This is the

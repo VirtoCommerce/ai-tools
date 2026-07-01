@@ -39,6 +39,13 @@ export interface Tracker {
   getIssue(key: string): Promise<TrackerTicket | null>;
   /** Find ticket keys/ids via the tracker's query language (JQL / WIQL). */
   search(query: string, max: number): Promise<string[]>;
+  /**
+   * The tracker's own default "open auto-fix bugs" discovery query, in ITS query
+   * language (Jira → JQL over the profile/env project key; Azure → WIQL over the
+   * team project, tags-as-labels). Used when the caller sets no explicit query.
+   * `label` is the auto-fix label/tag to filter on.
+   */
+  defaultQuery(label: string): string;
   /** Post a progress comment (no-op on dryRun / when disabled). */
   comment(key: string, text: string): Promise<void>;
   /** Move the ticket to a named status/state (no-op on dryRun / when disabled). */

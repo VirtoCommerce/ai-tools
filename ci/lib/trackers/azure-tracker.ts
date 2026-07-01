@@ -54,6 +54,18 @@ export class AzureTracker implements Tracker {
     return adoBase(this.org, this.project);
   }
 
+  defaultQuery(label: string): string {
+    // Azure Boards has no JQL — this is WIQL. Work items are numeric (no letter
+    // prefix); labels live in System.Tags; state is a free-text field (default
+    // "Done" excluded via the profile stateMap's Done mapping is not needed here —
+    // we compare the raw state name). ORDER BY priority ascending (1 = highest).
+    return (
+      `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${this.project}' ` +
+      `AND [System.WorkItemType] = 'Bug' AND [System.State] <> 'Done' ` +
+      `AND [System.Tags] CONTAINS '${label}' ORDER BY [Microsoft.VSTS.Common.Priority] ASC`
+    );
+  }
+
   async getIssue(key: string): Promise<TrackerTicket | null> {
     if (!this.enabled) return null;
     const res = await fetch(

@@ -28,20 +28,27 @@ export class JiraTracker implements Tracker {
   private baseUrl: string;
   private email: string;
   private apiToken: string;
+  private projectKey: string;
   private dryRun: boolean;
   private log: (msg: string) => void;
 
   constructor(deps: TrackerDeps) {
-    // Non-secret base URL: env wins, else the deployment profile. Email + token
-    // are secrets and stay env-only. No profile + no env ⇒ "" (disabled) = the
-    // original behaviour.
+    // Non-secret base URL + project key: env wins, else the deployment profile.
+    // Email + token are secrets and stay env-only. No profile + no env ⇒ "" base
+    // (disabled) and projectKey "VCST" = the original VC-internal behaviour.
     const profile: any = loadProjectProfile();
     this.baseUrl = (process.env.JIRA_BASE_URL || profile.tracker?.baseUrl || "").replace(/\/$/, "");
     this.email = process.env.JIRA_EMAIL || "";
     this.apiToken = process.env.JIRA_API_TOKEN || "";
+    this.projectKey = process.env.JIRA_PROJECT_KEY || profile.tracker?.projectKey || "VCST";
     this.enabled = Boolean(this.baseUrl && this.email && this.apiToken);
     this.dryRun = deps.dryRun;
     this.log = deps.log;
+  }
+
+  defaultQuery(label: string): string {
+    // Preserves the historical VC-internal query verbatim when projectKey = VCST.
+    return `project = ${this.projectKey} AND issuetype = Bug AND statusCategory != Done AND labels = "${label}" ORDER BY priority DESC`;
   }
 
   private authHeader(): string {
