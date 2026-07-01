@@ -104,54 +104,56 @@ must run before any generator/verify script — they import from `node_modules`.
    CLIENT's code lives + PRs open). Tracker and VCS are **independent** (Azure
    Boards + GitHub is fine). The platform upstream is **always** GitHub.
 
-### 2b. Values — per-field questions (one field = one question)
+### 2b. Values — the 15-question block (one field = one question)
 
-Ask the operator for every value the chosen topology needs, **one field per
-question**, and **do not cap how many questions you ask** — cover all fields.
+Ask the operator this **numbered block of 15 questions** — one field per question,
+and do **not** collapse or cap it. Present the **enum** questions (Q2, Q8) with
+their choices; ask every other field as a **plain value prompt with no invented
+options**. Two conditional secret questions append after Q15 when the auth method
+needs a token. Renumber contiguously after you drop/add lines per topology.
 
-**Two kinds of field:**
-- **Predefined / enum** — `ENV_RISK` (`dev`|`test`|`staging`|`production`),
-  `STOREFRONT_PROFILE` (`b2b`|`b2c`|`hybrid`), and the topology fields. Present the
-  allowed choices as options.
-- **Unique / free-text** — env name, `FRONT_URL`, `BACK_URL`, `STORE_ID`, `ADMIN`
-  login, `USER_EMAIL`, `JIRA_EMAIL`, tracker base URL / project key, and every
-  secret (passwords, tokens, API keys). Ask for the value **directly with a
-  one-line hint of what it is — do NOT fabricate option choices** for these.
+**The block (native platform + Jira + GitHub, new env):**
 
-**Mechanism.** `AskUserQuestion` requires ≥2 options per question (and caps at 4
-questions/call), so use it **only for the enum + topology fields**. Ask the
-free-text value fields **directly in the chat** — a numbered list, one field per
-line, each just a value prompt (that is how "just an input, no options" is
-honored). Skip a field only when its value is already known (pre-answered) or the
-env is being reused.
+1. `ENV_NAME` — env id, `[a-z0-9_]+` only (no hyphens — the `_<ENV>` secret suffix
+   promotion depends on it)
+2. `ENV_RISK` *(enum)* — `dev` | `test` | `staging` | `production`
+3. `FRONT_URL` — storefront URL
+4. `BACK_URL` — Admin SPA / platform URL
+5. `STORE_ID` — store identifier
+6. `ADMIN` — admin login (usually `admin`; identifier, not the password)
+7. `USER_EMAIL` — storefront test-user email
+8. `STOREFRONT_PROFILE` *(enum, optional)* — `b2b` | `b2c` | `hybrid`
+9. `MODULES_ENABLED` *(optional)* — CSV of installed modules, or skip
+10. `STORYBOOK_URL` *(optional)* — or skip
+11. `JIRA_BASE_URL` — e.g. `https://acme.atlassian.net`
+12. `JIRA_PROJECT_KEY` — e.g. `VCST`
+13. `JIRA_EMAIL` — Jira login email (identifier)
+14. `ADMIN_PASSWORD` *(secret)* — admin test-account password
+15. `USER_PASSWORD` *(secret)* — storefront test-account password
 
-**What each value is / where it goes:**
-- `ENV_NAME` must match `[a-z0-9_]+` (underscores, no hyphens — the `_<ENV>` secret
-  suffix promotion depends on it).
-- Non-secret identifiers (URLs, `STORE_ID`, `ADMIN` login, `USER_EMAIL`,
-  `JIRA_EMAIL`, tracker base URL / project key) → `.env.<env>` / the profile.
-- Secrets (`*_PASSWORD`, `*_TOKEN`, API keys) → `.env.local` (gitignored). Only app
-  **test-user** passwords + issued tokens — **never a raw account password**. Do
-  not echo pasted secret values back into chat, reports, or the profile.
-- Browser-login auth — leave that token unset; the operator runs the login
-  themselves (`gh auth login --web`, `az login`, Atlassian MCP OAuth). Record the
-  choice for the profile (`vcs.auth = gh-cli`, `ADO_AUTH=az-login`).
-- **Reusing an existing `.env.<env>`** (e.g. native `.env.vcst`)? Skip the
-  Environment-URL questions; ask only the tracker connection + secrets.
+Conditional secrets (append only if the auth method is token-based):
+- `JIRA_API_TOKEN` *(secret)* — **unless** Jira auth = Atlassian MCP OAuth
+- `GITHUB_FIX_BUGS_TOKEN` *(secret)* — **unless** GitHub auth = `gh` CLI login
 
-**Fields by topology (ask the ones that apply):**
-- **always:** `ENV_NAME`, `ENV_RISK` *(enum)*, `FRONT_URL`, `BACK_URL`, `STORE_ID`,
-  `ADMIN`, `USER_EMAIL`, `ADMIN_PASSWORD`, `USER_PASSWORD` (+ optional
-  `STOREFRONT_PROFILE` *(enum)*, `MODULES_ENABLED`, `STORYBOOK_URL`).
-- **Jira:** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`
-  (unless Atlassian MCP OAuth).
-- **Azure Boards:** `ADO_ORG`, `ADO_PROJECT` (+ optional `In Review→Active` state
-  map) and `ADO_PAT` (unless `az login`).
-- **GitHub VCS:** `GITHUB_FIX_BUGS_TOKEN` (unless `gh` CLI login).
-- **Azure Repos:** covered by `ADO_PAT` / `az login`.
-- **client project:** `CLIENT_ORG`, the storefront/theme repo (kind `frontend`),
-  `UPSTREAM_ACCOUNT` + contribution mode.
-- **optional MCP:** `POSTMAN_API_KEY`, `CONTEXT7_API_KEY`.
+**Adapt the block to the topology (keep it a single block):**
+- **Reused `.env.<env>`** (e.g. native `.env.vcst`) — drop Q1–Q10 (env URLs /
+  identifiers are already set); keep the tracker + secret questions.
+- **Azure Boards** — replace Q11–Q13 with `ADO_ORG`, `ADO_PROJECT` (+ optional
+  `In Review→Active` state map); the token is `ADO_PAT` (unless `az login`).
+- **Azure Repos** — code PRs use `ADO_PAT` / `az login` (no separate GitHub token).
+- **client project** — add `CLIENT_ORG`, the storefront/theme repo (kind
+  `frontend`), and `UPSTREAM_ACCOUNT` + contribution mode.
+- **optional MCP** — add `POSTMAN_API_KEY`, `CONTEXT7_API_KEY` if wanted.
+
+**Rules:**
+- Non-secret identifiers (Q1–Q13: URLs / IDs / emails / tracker) → `.env.<env>` /
+  the profile; secrets (`*_PASSWORD` / `*_TOKEN` / API keys) → `.env.local`
+  (gitignored).
+- Only app **test-user** passwords + issued tokens — **never a raw account
+  password**. Do not echo secret values back into chat, reports, or the profile.
+- Browser-login auth — leave the token unset; the operator runs the login
+  (`gh auth login --web`, `az login`, Atlassian MCP OAuth). Record the choice
+  (`vcs.auth = gh-cli`, `ADO_AUTH=az-login`).
 
 **Where to get each token** (share the relevant rows when you ask):
 
