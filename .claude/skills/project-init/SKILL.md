@@ -85,11 +85,11 @@ must run before any generator/verify script — they import from `node_modules`.
 > everything you need is already in this skill. The interview is tiny:
 >   1. **Topology** — operator · projectType · tracker as one `AskUserQuestion`
 >      block (enum choices; code host is a client-only follow-up).
->   2. **ENV_NAME** — a **single-input `show_widget`**: one labelled text field
->      (explaining that the env name is required) + Submit → `sendPrompt`.
->      `AskUserQuestion` is **not** usable here — it always renders ≥2 option
->      buttons, and the env name is a free-text value with no options. (Fallback if
->      the widget can't render: ask for the name in chat.)
+>   2. **ENV_NAME** — a **plain chat question** ("what should the environment be
+>      named?"); the operator replies with the value. `AskUserQuestion` is not used
+>      for it (it always renders ≥2 option buttons — no option-less input), and a
+>      `show_widget` input is avoided (renders unreliably). Plain chat is the stable
+>      way to collect one free-text value.
 >
 > That is **all** that is asked. There is **no value form and no per-value
 > questions**. Step 3 writes BOTH env files (`.env.<env>` and `.env.local`) as
@@ -111,15 +111,12 @@ in a follow-up `AskUserQuestion`. Tracker and VCS are **independent** (Azure Boa
 + GitHub is fine); the platform upstream is **always** GitHub. (For `platform`,
 code host is irrelevant.)
 
-### 2b. ENV_NAME — a single-input widget (no options)
+### 2b. ENV_NAME — one plain chat question
 
-Ask for the environment name with a **minimal `show_widget`**: one labelled text
-input (label/hint: "Environment name — becomes TEST_ENV; lowercase letters, digits,
-`_` only, no hyphens") and a Submit button whose handler calls
-`sendPrompt("ENV_NAME=" + value)`. **No option buttons** — `AskUserQuestion` can't
-render an option-less input, so it is not used for this. Inline CSS/JS only,
-transparent background, a visually-hidden `<h2 class="sr-only">` summary. If the
-widget can't render, ask for the name in chat instead.
+Ask, in plain chat, what the environment should be named (it becomes `TEST_ENV`).
+The operator replies with the value. Do **not** use `AskUserQuestion` (always ≥2
+option buttons — no option-less input) or a `show_widget` input (unreliable) for
+this — a plain chat question is the stable way to collect one free-text value.
 
 Normalise mixed case / spaces / hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`)
 and tell the operator what you used. Do **not** ask for any other value — URLs, IDs,

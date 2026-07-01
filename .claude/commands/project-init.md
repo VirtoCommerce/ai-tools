@@ -31,9 +31,10 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 1. Install deps (`npm install` + Playwright browsers).
 2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
    project type · tracker) as one `AskUserQuestion` block, code host a client-only
-   follow-up; (b) **ENV_NAME** via a minimal single-input `show_widget` (one text
-   field, no option buttons — `AskUserQuestion` can't do option-less input; becomes
-   `TEST_ENV` → normalise to `[a-z0-9_]+`). **No value form, no per-value questions.**
+   follow-up; (b) **ENV_NAME** as a plain chat question (operator replies with the
+   value; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`). Not via AskUserQuestion
+   (forces option buttons) or a widget (unreliable). **No value form, no per-value
+   questions.**
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs` →
    `.env.<env>` (non-secret URLs/identifiers/tracker placeholders); (3b)
    `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
