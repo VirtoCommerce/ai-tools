@@ -1,12 +1,14 @@
 ---
-description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS — via repo seed scripts (npm run seed) or Postman MCP"
-argument-hint: "[minimal|catalog|b2b|pricing|loyalty|promotions|bopis|full|teardown]"
+description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS — on ANY environment (TEST_ENV) via repo seed scripts (npm run seed) or Postman MCP; verify with td:reconcile"
+argument-hint: "[bootstrap|minimal|catalog|b2b|pricing|inventory|loyalty|promotions|bopis|configurable|users|full|teardown]"
 disable-model-invocation: true
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown
 
-Single entry point for seeding **every** kind of test data this repo needs — and for tearing it down. Covers two execution paths (script-based and Postman MCP), the full `test-data/` fixture surface, and the specialized one-purpose seeders.
+Single entry point for seeding **every** kind of test data this repo needs — and for tearing it down — on **any** environment (fresh `/qa-local-env` localhost, vcst, vcptcore, virtostart, a customer env; selected by `TEST_ENV`). Covers two execution paths (script-based and Postman MCP), the full `test-data/` fixture surface, and the specialized one-purpose seeders.
+
+**Environment-agnostic + self-verifying (VCST-5406):** `npm run seed:bootstrap` builds the from-scratch infrastructure (member index → store/virtual-catalog → fulfillment center) then runs the whole dependency chain in order, so the same command works on an empty DB or a populated env. Seeders read the entity back after create (`verifyCreated`) and each teardown asserts zero residue (`verifyRemoved`). Confirm any env with `npm run td:validate` (static `@td()` gate) + `npm run td:reconcile` (live: catalog root, `.env.{ENV}` user roles, B2B org-scoped memberships with **no global roles**, secret hygiene).
 
 ## Seeding Tooling — Two Execution Paths
 
@@ -14,33 +16,44 @@ Pick the path by what you're seeding. Both end with the same obligation: write s
 
 ### Path A — Repo seed scripts (direct REST/xAPI) — the practical default
 
-Node seeders in [`scripts/`](../../../../scripts/) read CSVs from [`test-data/`](../../../../test-data/), call the platform API directly, are **idempotent** (look-up-then-create), respect `TEST_ENV` (via `config.js`), enforce a **host allowlist** (vcst-qa / vcptcore-qa — can't hit prod), and write results to `test-data/_seed-results-*.json`. No Postman/Newman needed.
+Node seeders in [`scripts/seed-data/`](../../../../scripts/seed-data/) read CSVs from [`test-data/`](../../../../test-data/), call the platform API directly, are **idempotent** (look-up-then-create), respect `TEST_ENV` (via `config.js` / `seed-common.mjs`, with per-env `_${ENV}` secret-suffix promotion), are gated by **`ENV_RISK`** (config, not hostname — blocks `production`, runs on any dev/test/staging/localhost/customer env), and write results to `test-data/_seed-results-*.json`. No Postman/Newman needed.
 
 | Script | Seeds | Invoke | Write-back |
 |--------|-------|--------|-----------|
-| [`seed-test-data.js`](../../../../scripts/seed-test-data.js) | Catalog → category → product → pricing → inventory from `test-data/` CSVs. Profiles: `minimal`/`catalog`/`full`/`teardown` | `npm run seed` · `seed:minimal` · `seed:catalog` · `seed:full` · `seed:teardown` · `seed:dry-run` | `_seed-results-{date}.json` |
-| [`seed-standard-products.mjs`](../../../../scripts/seed-standard-products.mjs) | 6 standard products (`PROD_HEADPHONES`, `PROD_LAPTOP`, `PROD_OOS`, `PROD_LOW_STOCK`, `PROD_PACK_SIZE`, `PROD_TIER_PRICED`) | `node scripts/seed-standard-products.mjs [--dry-run] [--only PROD-001]` | `_seed-results-std-{date}.json` |
-| [`seed-configurable-products.mjs`](../../../../scripts/seed-configurable-products.mjs) | Single-section configurable products (CFG-012/014/015/016/018) + child-option products | `node scripts/seed-configurable-products.mjs [--dry-run] [--only CFG-012]` | `_seed-results-cfg-{date}.json` |
-| [`seed-conditional-sections-extended.mjs`](../../../../scripts/seed-conditional-sections-extended.mjs) | Conditional-cascade CFGs (CFG-022..029, `dependsOnSectionId`) | `node scripts/seed-conditional-sections-extended.mjs [--dry-run]` | `_seed-results-cfg-cond-{date}.json` |
-| [`seed-default-option-cfg.mjs`](../../../../scripts/seed-default-option-cfg.mjs) | Default-option CFGs (VCST-4715: CFG-030/031, `option.isDefault`) | `node scripts/seed-default-option-cfg.mjs [--only CFG-030]` | `_seed-results-cfg-default-{date}.json` |
-| [`seed-bike-flat-cfg.mjs`](../../../../scripts/seed-bike-flat-cfg.mjs) | Flat Bike CFG-032 for suite 072 (CFG-PDP-*) | `node scripts/seed-bike-flat-cfg.mjs` | `_seed-results-bike-flat-{date}.json` |
-| [`seed-promotions.mjs`](../../../../scripts/seed-promotions.mjs) | Marketing promotions + rewards + coupons from `test-data/promotions/*.csv` | `npm run seed:promotions` (`[--dry-run] [--only P01] [--teardown]`) | `_seed-results-promotions-{date}.json` |
-| [`seed-bopis.mjs`](../../../../scripts/seed-bopis.mjs) | BOPIS pickup locations from `test-data/stores/bopis-locations.csv` (vc-module-shipping; linked to an existing FFC) | `npm run seed:bopis` (`[--only LOC-001] [--teardown]`) | `_seed-results-bopis-{date}.json` |
-| [`seed-catalog-properties.mjs`](../../../../scripts/seed-catalog-properties.mjs) | Catalog/variation property definitions + dictionary values from `test-data/catalogs/properties.csv` | `npm run seed:properties` (`[--only PROP-001] [--teardown]`) | `_seed-results-properties-{date}.json` |
-| [`seed-white-labeling.mjs`](../../../../scripts/seed-white-labeling.mjs) | Menu link lists + white-labeling org config + users from `test-data/white-labeling/*.csv` | `npm run seed:white-labeling` (`[--skip-users] [--teardown]`) | `_seed-results-wl-{date}.json` |
-| [`seed-b2b-fixtures.mjs`](../../../../scripts/seed-b2b-fixtures.mjs) | B2B orgs + contacts + addresses from `test-data/b2b/*.csv` (the real `b2b` seeder). Profiles: `baseline` / `imp` / `memberships` / `full` / `teardown`. The `memberships` profile (VCST-5028) reads `test-data/b2b/organization-memberships.csv` and creates a contact + storefront login (security account) + **org-scoped `OrganizationMembership` role** per (user, org) — seeds cross-org members (one user in N orgs with distinct roles). | `npm run seed:b2b` / `seed:b2b:memberships` / `seed:b2b:teardown` (also `node scripts/seed-b2b-fixtures.mjs [profile] [--dry-run]`) | `_seed-results-orgs-{date}.json` / `_seed-results-vcst5028-multiorg.json` |
-| [`seed-impersonation-targets.mjs`](../../../../scripts/seed-impersonation-targets.mjs) | 11 orgs + users for IMP-048/049 (suite 082) | `node scripts/seed-impersonation-targets.mjs` | `reports/seed/seed-impersonation-targets-{date}.json` |
-| [`refresh-product-guids.mjs`](../../../../scripts/refresh-product-guids.mjs) | Refreshes product GUIDs in `test-data/` after a reseed | `npm run refresh-product-guids` | updates `test-data/` CSVs + `aliases.json` |
+| [`seed-bootstrap.mjs`](../../../../scripts/seed-data/seed-bootstrap.mjs) | ⭐ **Any-env orchestrator.** Preflight (member index → store/virtual-catalog → FFC) then the full dependency chain (properties → products → pricing → inventory → b2b → users → configurable → promotions → bopis → loyalty → white-labeling). Required steps abort on failure; optional steps warn (e.g. loyalty module absent). | `npm run seed:bootstrap` (`[--dry-run] [--verbose] [--skip-optional]`) | (child seeders write their own) |
+| [`seed-test-data.js`](../../../../scripts/seed-data/seed-test-data.js) | Catalog → category → product → pricing → inventory from `test-data/` CSVs. Profiles: `minimal`/`catalog`/`full`/`teardown` | `npm run seed` · `seed:minimal` · `seed:catalog` · `seed:full` · `seed:teardown` · `seed:dry-run` | `_seed-results-{date}.json` |
+| [`seed-standard-products.mjs`](../../../../scripts/seed-data/seed-standard-products.mjs) | 6 standard products (`PROD_HEADPHONES`, `PROD_LAPTOP`, `PROD_OOS`, `PROD_LOW_STOCK`, `PROD_PACK_SIZE`, `PROD_TIER_PRICED`) | `node scripts/seed-data/seed-standard-products.mjs [--dry-run] [--only PROD-001]` | `_seed-results-std-{date}.json` |
+| [`seed-configurable-products.mjs`](../../../../scripts/seed-data/seed-configurable-products.mjs) | Single-section configurable products (CFG-012/014/015/016/018) + child-option products | `node scripts/seed-data/seed-configurable-products.mjs [--dry-run] [--only CFG-012]` | `_seed-results-cfg-{date}.json` |
+| [`seed-conditional-sections-extended.mjs`](../../../../scripts/seed-data/seed-conditional-sections-extended.mjs) | Conditional-cascade CFGs (CFG-022..029, `dependsOnSectionId`) | `node scripts/seed-data/seed-conditional-sections-extended.mjs [--dry-run]` | `_seed-results-cfg-cond-{date}.json` |
+| [`seed-default-option-cfg.mjs`](../../../../scripts/seed-data/seed-default-option-cfg.mjs) | Default-option CFGs (VCST-4715: CFG-030/031, `option.isDefault`) | `node scripts/seed-data/seed-default-option-cfg.mjs [--only CFG-030]` | `_seed-results-cfg-default-{date}.json` |
+| [`seed-bike-flat-cfg.mjs`](../../../../scripts/seed-data/seed-bike-flat-cfg.mjs) | Flat Bike CFG-032 for suite 072 (CFG-PDP-*) | `node scripts/seed-data/seed-bike-flat-cfg.mjs` | `_seed-results-bike-flat-{date}.json` |
+| [`seed-promotions.mjs`](../../../../scripts/seed-data/seed-promotions.mjs) | Marketing promotions + rewards + coupons from `test-data/promotions/*.csv` | `npm run seed:promotions` (`[--dry-run] [--only P01] [--teardown]`) | `_seed-results-promotions-{date}.json` |
+| [`seed-bopis.mjs`](../../../../scripts/seed-data/seed-bopis.mjs) | BOPIS pickup locations from `test-data/stores/bopis-locations.csv` (vc-module-shipping; linked to an existing FFC) | `npm run seed:bopis` (`[--only LOC-001] [--teardown]`) | `_seed-results-bopis-{date}.json` |
+| [`seed-catalog-properties.mjs`](../../../../scripts/seed-data/seed-catalog-properties.mjs) | Catalog/variation property definitions + dictionary values from `test-data/catalogs/properties.csv` | `npm run seed:properties` (`[--only PROP-001] [--teardown]`) | `_seed-results-properties-{date}.json` |
+| [`seed-white-labeling.mjs`](../../../../scripts/seed-data/seed-white-labeling.mjs) | Menu link lists + white-labeling org config + users from `test-data/white-labeling/*.csv` | `npm run seed:white-labeling` (`[--skip-users] [--teardown]`) | `_seed-results-wl-{date}.json` |
+| [`seed-company-users.mjs`](../../../../scripts/seed-data/seed-company-users.mjs) | **ONE script for every company user** (VCST-5406 — replaces the old `seed-b2b-fixtures` / `seed-users` / `seed-impersonation-targets` / `seed-loyalty-users`). CSV/env-driven over [`scripts/lib/user-provision.mjs`](../../../../scripts/lib/user-provision.mjs). Kinds: `all` (default) · `b2b` (orgs parent-child + contacts + org-scoped logins + cross-org memberships) · `imp` (ORG-009…019 + blocked/invited targets, status-driven) · `cross-org` (organization-memberships.csv) · `personal` (env customer roles + agent-pool + test-users) · `loyalty` (VIP/Wholesale group). Account status (Approved/Locked/EmailUnconfirmed) is data-driven from the users.csv `status` column. **One unified `--teardown`** sweeps ALL sources (no orphan gap). | `npm run seed:company-users` (`b2b` / `personal` / `imp` via `seed:b2b` / `seed:users` / `seed:impersonation`; `--teardown` / `--dry-run`) | `_seed-results-company-users-{date}.json` |
+| [`refresh-product-guids.mjs`](../../../../scripts/seed-data/refresh-product-guids.mjs) | Refreshes product GUIDs in `test-data/` after a reseed | `npm run refresh-product-guids` | updates `test-data/` CSVs + `aliases.json` |
 
-`seed-test-data.js` covers only `minimal/catalog/full/teardown` — **B2B is `seed-b2b-fixtures.mjs`**, and pricing is folded into the `catalog`/`full` profiles. The CFG `.mjs` seeders are phased (Phase 1+2 → conditional → default-option → bike) and share catalog/category/pricelist/ffc/virtual-catalog wiring.
+`seed-test-data.js` covers only `minimal/catalog/full/teardown` — **all company users (B2B orgs/contacts/logins/memberships + personal + impersonation + loyalty) are `seed-company-users.mjs`**, and pricing is folded into the `catalog`/`full` profiles. The CFG `.mjs` seeders are phased (Phase 1+2 → conditional → default-option → bike) and share catalog/category/pricelist/ffc/virtual-catalog wiring.
 
-The newer seeders (`seed-promotions`, `seed-bopis`, `seed-catalog-properties`, `seed-white-labeling`) share [`scripts/lib/seed-common.mjs`](../../../../scripts/lib/seed-common.mjs) — the common env-load / host-allowlist / auth / `api()` / CSV / write-back helper — and all support `--dry-run` (reads only, never writes), `--verbose`, `--only <id>`, and `--teardown` (deletes exactly the rows they seed). **Reference-only `test-data/` (payment cards, search queries, security payloads, uploads, GraphQL query library) and discovered/pre-existing infra (FFCs, stores, languages) intentionally have no seeder.** Standalone B2B user-account (storefront login) creation is now covered by `seed-b2b-fixtures.mjs memberships` (creates the security account + org-scoped membership) and `seed-impersonation-targets.mjs`. `test-data/b2b/roles.csv` needs no seeder — it now mirrors the real storefront roles (vc-frontend `core/constants/security.ts` `ALL_ROLES` + real `permissions.enum.ts` keys; the 3 `member_dropdown=yes` rows are `B2B_ROLES`, the Company-Members "Change role" options). Those role IDs (`org-maintainer`/`org-employee`/`purchasing-agent`/`store-admin`/`store-manager`) are platform built-ins that already exist — the `memberships` seeder references them by id.
+The newer seeders (`seed-promotions`, `seed-bopis`, `seed-catalog-properties`, `seed-white-labeling`) share [`scripts/lib/seed-common.mjs`](../../../../scripts/lib/seed-common.mjs) — the common env-load / host-allowlist / auth / `api()` / CSV / write-back helper — and all support `--dry-run` (reads only, never writes), `--verbose`, `--only <id>`, and `--teardown` (deletes exactly the rows they seed). **Reference-only `test-data/` (payment cards, search queries, security payloads, uploads, GraphQL query library) and discovered/pre-existing infra (FFCs, stores, languages) intentionally have no seeder.** All company-user account creation (B2B logins, cross-org members, personal accounts, impersonation targets, loyalty group users) is now covered by the single `seed-company-users.mjs` over `scripts/lib/user-provision.mjs`. `test-data/b2b/roles.csv` needs no seeder — it now mirrors the real storefront roles (vc-frontend `core/constants/security.ts` `ALL_ROLES` + real `permissions.enum.ts` keys; the 3 `member_dropdown=yes` rows are `B2B_ROLES`, the Company-Members "Change role" options). Those role IDs (`org-maintainer`/`org-employee`/`purchasing-agent`/`store-admin`/`store-manager`) are platform built-ins that already exist — the `memberships` seeder references them by id.
 
 ### Path B — Postman MCP (collection-driven)
 
 The 6-step workflow below builds a reusable Postman collection via MCP and executes it via Newman / Postman CLI. Use when you want a **shareable, reusable seed collection** or are already in a Postman-centric flow. **The MCP cannot execute collections** — execution is out-of-band (see `/qa-postman/execution.md`). Read `/qa-postman` first for auth, variable scoping, collection structure, and tool signatures.
 
-> **Prefixes & teardown scope.** All seeders now share the `AGENT-TEST-*` family. `seed-test-data.js` tags entities `AGENT-TEST-SEED-{date}` (date for traceability, stable base for matching), and `npm run seed:teardown` sweeps **every prior run** of that script — matching the date-independent `AGENT-TEST-SEED-*` family plus legacy `SEED-*` (back-compat). It is intentionally scoped to its own family, so it does **not** delete the specialized `.mjs`/Postman fixtures (`AGENT-TEST-CFG-*`, B2B orgs, etc.) that carry pinned `@td()` IDs. The Postman `teardown` profile sweeps the broader `AGENT-TEST-*` ephemeral set. Deleting a seed catalog cascades to its categories/products; price lists are swept by keyword.
+> **Prefixes & teardown scope.** All seeders share the `AGENT-TEST-*` family. Each seeder owns a
+> matching teardown that **verifies zero residue** (`verifyRemoved` in `seed-common.mjs`):
+> `seed:teardown` (catalog/product/pricing family — sweeps every prior `AGENT-TEST-SEED-*` run + legacy `SEED-*`),
+> `seed:company-users:teardown` (**unified** — every company user: B2B orgs/contacts/logins/memberships +
+> personal + impersonation + loyalty across all sources; `seed:b2b:teardown` / `seed:users:teardown` are
+> back-compat aliases of it), `seed:pricing:teardown`, `seed:inventory:teardown`,
+> `seed:loyalty:teardown`, `seed:bopis:teardown`, `seed:products:teardown`, `seed:configurable:teardown`.
+> `seed:teardown` is scoped to its own family, so it does **not** delete the specialized `.mjs` fixtures
+> (`AGENT-TEST-CFG-*`, B2B orgs, etc.) that carry pinned `@td()` IDs — run those domains' teardowns for that.
+> **Promotions are persistent** (not swept by default; use `seed:promotions --teardown`). The Postman
+> `teardown` profile sweeps the broader `AGENT-TEST-*` ephemeral set. Deleting a seed catalog cascades to
+> its categories/products; price lists are swept by keyword.
 
 ## Reference
 
@@ -52,15 +65,21 @@ Read **before** executing:
 
 | Argument | Description | Fastest backing tool |
 |----------|-------------|----------------------|
+| `bootstrap` | ⭐ **Any-env, from-scratch.** Preflight (member index → catalog → FFC) then the full dependency chain; required steps abort on failure, optional steps warn. Use on a fresh `/qa-local-env` DB or to fully (re)seed any env. | `npm run seed:bootstrap` (`[--skip-optional]`) |
 | `minimal` | 1 catalog + 1 category + 1 product + price + inventory | `npm run seed:minimal` |
 | `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory | `npm run seed:catalog` |
-| `b2b` | Organizations + contacts + addresses, plus storefront logins + org-scoped role memberships (VCST-5028, `full` profile includes the `memberships` step) | `npm run seed:b2b` (memberships only: `npm run seed:b2b:memberships`) |
+| `b2b` | Organizations (parent-child) + contacts + addresses, plus storefront logins + org-scoped role memberships (VCST-5028) + cross-org members | `npm run seed:b2b` (= `seed-company-users.mjs b2b`; cross-org only: `npm run seed:b2b:memberships`) |
 | `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency | `npm run seed:pricing` (`seed-pricing.mjs`; also folded into `seed:catalog` / `seed:full`) |
-| `loyalty` | Loyalty programs (Product Points + others) built from the platform's `new/{programType}` skeleton, with per-program **product factors** (a ProductPoints program earns nothing without them) and the VIP/Wholesale eligibility user groups + users | `npm run seed:loyalty` (`seed-loyalty.mjs`; VIP/Wholesale logins via `seed-loyalty-users.mjs`) |
+| `inventory` | Fulfillment centers + stock levels from `test-data/inventory/*.csv` (creates a default FFC on a fresh DB) | `npm run seed:inventory` (`seed-inventory.mjs`) |
+| `configurable` | Configurable products — Phase 1 (`seed:configurable`), plus `:conditional`, `:default`, `:bike` variants | `npm run seed:configurable` (`seed-configurable-products.mjs`) |
+| `users` | Personal storefront accounts from `test-data/users/*.csv` **and** the `.env.{ENV}` customer role identities (USER/USER2/EUR_USER/LOYALTY_*), created with the per-env password and read back to verify | `npm run seed:users` (= `seed-company-users.mjs personal`) |
+| `imp` | Impersonation targets for IMP-048/049 (suite 082): ORG-009…019 + many-orgs/blocked/invited users, blocked & invited states data-driven from the users.csv `status` column | `npm run seed:impersonation` (= `seed-company-users.mjs imp`) |
+| `loyalty` | Loyalty programs (Product Points + others) built from the platform's `new/{programType}` skeleton, with per-program **product factors** (a ProductPoints program earns nothing without them) and the VIP/Wholesale eligibility user groups + users | `npm run seed:loyalty` (`seed-loyalty.mjs`; VIP/Wholesale logins via `npm run seed:loyalty:users` = `seed-company-users.mjs loyalty`) |
 | `promotions` | Marketing promotions + reward trees + coupons from `test-data/promotions/*.csv` | `npm run seed:promotions` (`seed-promotions.mjs`) |
 | `bopis` | BOPIS pickup locations (vc-module-shipping) from `test-data/stores/bopis-locations.csv`, linked to an existing FFC | `npm run seed:bopis` (`seed-bopis.mjs`) |
 | `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. | `npm run seed:full` + the specialized CFG/B2B `.mjs` seeders |
-| `teardown` | Delete ephemeral seeded entities. Script path: `npm run seed:teardown` sweeps all prior `AGENT-TEST-SEED-*` runs (+ legacy `SEED-*`). Postman path: sweeps the broader `AGENT-TEST-*` set. See the prefix note above. | `npm run seed:teardown` (script) |
+| `teardown` | Delete ephemeral seeded entities (each teardown verifies zero residue). `npm run seed:teardown` sweeps all prior `AGENT-TEST-SEED-*` runs (+ legacy `SEED-*`); run the per-domain teardowns for the specialized fixtures (`seed:company-users:teardown` — all company users; `seed:products:teardown`, `seed:configurable:teardown`, `seed:bopis:teardown`, `seed:pricing:teardown`, `seed:inventory:teardown`, `seed:loyalty:teardown`). See the prefix note above. | `npm run seed:teardown` (+ per-domain) |
+| _verify_ | **Not a seed profile — the check after seeding.** `td:validate` (static: every `@td()` resolves, no hardcoded GUIDs) + `td:reconcile` (live, per `TEST_ENV`: catalog root exists, `.env.{ENV}` user roles have accounts, B2B users are org-scoped with **no global roles**, no password literals in CSVs). | `npm run td:validate` · `npm run td:reconcile` |
 
 ## Workflow
 
@@ -180,14 +199,14 @@ Rich catalog for search/filter/browse testing:
 - Inventory across 2 FFCs (varied stock levels)
 
 ### `b2b`
-B2B organization with user hierarchy (`seed-b2b-fixtures.mjs`):
-- Base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + contacts + addresses from `test-data/b2b/*.csv` (`baseline`/`imp`/`full` profiles)
-- Contacts re-linked to surviving platform users
+B2B organization with user hierarchy (`seed-company-users.mjs b2b`):
+- Base orgs (AcmeCorp/TechFlow/BuildRight/AcmeWest) + the imp orgs + contacts + addresses from `test-data/b2b/*.csv`
+- Contacts re-linked to surviving platform users; org-scoped logins provisioned with status from the users.csv `status` column
 
-**`memberships` profile (VCST-5028)** — org-scoped roles & per-org access, from `test-data/b2b/organization-memberships.csv`:
+**`cross-org` kind (VCST-5028)** — org-scoped roles & per-org access, from `test-data/b2b/organization-memberships.csv`:
 - Ensures a contact + storefront login (security account) per `user_email`
 - Creates one `OrganizationMembership` per (user, org) with its `role_id` → seeds **cross-org members** (same user in N orgs with distinct roles, e.g. TechFlow=maintainer + BuildRight=employee)
-- Idempotent (reuses existing user/memberships); included in `full`; teardown removes the seeded logins + memberships
+- Idempotent (reuses existing user/memberships); included in `b2b`/`all`; the unified teardown removes the seeded logins + memberships
 - API contract: REST body uses `userId` + `roles:[{roleId,roleName}]` (NOT `memberId`/`roleIds`) — see `reference_organization_membership_api_contract` memory
 
 ### `pricing`
@@ -201,7 +220,7 @@ Pricing module deep test:
 Loyalty programs for earn/redeem testing (`seed-loyalty.mjs`, VCST-5104/5135):
 - Builds each program in `test-data/loyalty/programs.csv` from the platform's `GET /api/loyalty-programs/new/{programType}` skeleton (guaranteed-valid empty program), then applies per-row overrides: name, localized name, `isActive`, priority, store, start/end window, and the eligibility user group (all / VIP / Wholesaler via the `dynamicExpression` condition tree)
 - Populates each program's **product factors** from `test-data/loyalty/program-factors.csv` (a ProductPoints program earns nothing without factors). Factors are resolved SKU→productId at runtime — no hardcoded GUIDs — via `PUT /api/loyalty-program-product-factors/factors`
-- VIP/Wholesale storefront logins seeded by the companion `seed-loyalty-users.mjs`
+- VIP/Wholesale storefront logins seeded by `npm run seed:loyalty:users` (= `seed-company-users.mjs loyalty`)
 - **Idempotent** — a program whose name already exists is reused; factors are re-applied (PUT replaces the set, repairing factors without duplicating programs)
 - Earning model: single highest-priority eligible+active+in-window program wins globally (no stacking) — see `project_loyalty_productpoints_resolution_model` memory. Balances cannot be reset via API (`project_loyalty_balance_cannot_be_reset`)
 - Teardown: `npm run seed:loyalty:teardown` deletes `AGENT-TEST-*` loyalty programs

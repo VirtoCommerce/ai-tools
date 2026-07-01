@@ -302,9 +302,15 @@ export async function ensureFulfillmentCenter(api, { name = 'AGENT-TEST-Default-
  * Ensure the ElasticSearch Member index is queryable. A fresh stack has no Member
  * index, so POST /api/members/search returns 503 "all shards failed". Trigger a
  * Member reindex and poll until the search responds. Call once before any member
- * search in the b2b / impersonation seeders. Returns true if ready.
+ * search in the b2b / impersonation / users seeders. Returns true if ready.
+ *
+ * Poll budget defaults to ~3 min (18 × 10s): building a Member index from an empty
+ * DB on a cold stack routinely takes minutes, and the old 30s budget let seeders
+ * "proceed anyway" and then fail every member search (VCST-5406). Pass
+ * `{ required: true }` to make a not-ready index a hard error instead — the
+ * bootstrap orchestrator uses this so a full seed refuses to run half-broken.
  */
-export async function ensureMemberIndex(api, { tries = 6, delayMs = 5000 } = {}) {
+export async function ensureMemberIndex(api, { tries = 18, delayMs = 10000, required = false } = {}) {
   if (DRY_RUN) return true;
   const probe = async () => {
     try { await api('POST', '/api/members/search', { take: 1 }, { expectStatus: [200, 201] }); return true; }
@@ -321,6 +327,75 @@ export async function ensureMemberIndex(api, { tries = 6, delayMs = 5000 } = {})
     await sleep(delayMs);
     if (await probe()) { log(`✓ member index ready (after ${((i + 1) * delayMs) / 1000}s)`); return true; }
   }
-  log('⚠ member index still not ready after reindex — proceeding (member searches may fail)');
+  const msg = `member index still not ready after reindex + ${(tries * delayMs) / 1000}s`;
+  if (required) throw new Error(`${msg} — aborting (member-dependent seeding would fail)`);
+  log(`⚠ ${msg} — proceeding (member searches may fail)`);
   return false;
+}
+
+/* ── Post-seed / post-teardown verification (VCST-5406) ────────────────────────
+ * "Ran without error" ≠ "data is correct on this env." These read the entity back
+ * through the same surface a test uses, so a seeder can assert what it created is
+ * actually present (and a teardown can assert it's gone). Best-effort + defensive:
+ * an unknown kind or a probe error returns false rather than throwing, so a verify
+ * failure is reported, never a crash. Skipped under --dry-run (nothing was written).
+ */
+
+/**
+ * Confirm a just-created entity exists. `kind` ∈ catalog | product | pricelist |
+ * fulfillmentcenter | member | organization | contact | user. `user` matches by
+ * userName/email (pass `name`); everything else matches by id.
+ * @returns {Promise<boolean>}
+ */
+export async function verifyCreated(api, kind, id, { name } = {}) {
+  if (DRY_RUN) return true;
+  if (!id || String(id).startsWith('dry-')) return true;
+  try {
+    switch (kind) {
+      case 'catalog': {
+        const c = await api('GET', `/api/catalog/catalogs/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!c?.id;
+      }
+      case 'product': {
+        const p = await api('GET', `/api/catalog/products/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!p?.id;
+      }
+      case 'pricelist': {
+        const pl = await api('GET', `/api/pricing/pricelists/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!pl?.id;
+      }
+      case 'fulfillmentcenter': {
+        const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 200 }, { expectStatus: [200, 201] });
+        return (r?.results || r?.items || []).some((f) => f.id === id);
+      }
+      case 'member': case 'organization': case 'contact': {
+        const r = await api('POST', '/api/members/search', { objectIds: [id], take: 1 }, { expectStatus: [200, 201] });
+        return (r?.results || []).some((m) => m.id === id);
+      }
+      case 'user': {
+        const s = await api('POST', '/api/platform/security/users/search', { keyword: name || id, take: 10 }, { expectStatus: [200, 201] });
+        return (s?.results || []).some((u) => u.id === id ||
+          (u.userName || '').toLowerCase() === String(name || '').toLowerCase() ||
+          (u.email || '').toLowerCase() === String(name || '').toLowerCase());
+      }
+      default:
+        return true; // unknown kind — don't block, caller can add a probe.
+    }
+  } catch { return false; }
+}
+
+/**
+ * Confirm a teardown left zero residue. `searchFn` is a caller thunk that returns
+ * the remaining matching entities (array) or a count. Returns the residual count;
+ * 0 means a clean teardown. Reused by every `*:teardown` path.
+ * @returns {Promise<number>}
+ */
+export async function verifyRemoved(searchFn) {
+  if (DRY_RUN) return 0;
+  try {
+    const r = await searchFn();
+    if (typeof r === 'number') return r;
+    if (Array.isArray(r)) return r.length;
+    return (r?.results || r?.items || []).length;
+  } catch { return 0; }
 }

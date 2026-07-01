@@ -66,7 +66,14 @@ const CHECKS = [
     name: "seed:dry-run",
     desc: "seed planner resolves catalog fixtures (no API writes)",
     cmd: "node",
-    args: ["scripts/seed-test-data.js", "catalog", "--dry-run"],
+    args: ["scripts/seed-data/seed-test-data.js", "catalog", "--dry-run"],
+    acceptExit: [0],
+  },
+  {
+    name: "b2b-data",
+    desc: "B2B test-data is consistent (org addresses, user→contact→org→role→membership)",
+    cmd: "node",
+    args: ["scripts/seed-data/validate-b2b-data.mjs"],
     acceptExit: [0],
   },
   {

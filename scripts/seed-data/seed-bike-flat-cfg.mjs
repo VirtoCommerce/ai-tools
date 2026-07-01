@@ -28,10 +28,10 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter } from './lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const ROOT = join(__dirname, '..', '..');
 const BACK_URL = process.env.BACK_URL;
 const ADMIN = process.env.ADMIN;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

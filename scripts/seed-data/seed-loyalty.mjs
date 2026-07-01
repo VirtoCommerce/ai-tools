@@ -32,7 +32,7 @@
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE, ONLY,
   log, verbose, assertSafeTarget, auth, api, loadCsv, writeResults, csvBool,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const NAME_PREFIX = 'AGENT-TEST';
 

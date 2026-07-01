@@ -28,7 +28,7 @@
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api, loadAliases, writeResults,
-} from './lib/seed-common.mjs';
+} from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
 const PREFIX = 'AGENT-TEST-PRICING';

@@ -1,4 +1,4 @@
-// Unit tests for scripts/seed-b2b-fixtures.mjs — codifies the invariants we verified by hand:
+// Unit tests for scripts/seed-data/seed-b2b-fixtures.mjs — codifies the invariants we verified by hand:
 //   • roles are ORG-SCOPED only — the security-account body never carries global roles
 //   • find-or-create REUSES an existing membership (no duplicate)
 //   • provisioning a contact's login NEVER creates a second contact (the dedupe bug)
@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import {
   __setApi, parseCsv, roleIdByName,
   ensureSecurityAccount, ensureOrgMembership, provisionContactLogins,
-} from '../../scripts/seed-b2b-fixtures.mjs';
+  seedOrgs, seedContacts, ensureRoles, loadRoleDefs,
+} from '../../scripts/lib/user-provision.mjs';
 
 // A recording mock of the seeder's HTTP layer. Routes by (method, path) and records every call
 // so tests can assert what was (and wasn't) sent.
@@ -140,4 +141,122 @@ test('provisionContactLogins: a user with NO role still gets a login (account, n
   assert.ok(calls.find(c => c.path.includes('/security/users/create')), 'every seeded user gets a login');
   assert.equal(calls.filter(c => c.method === 'POST' && c.path.endsWith('/customer/organization-memberships')).length, 0,
     'no role → no org membership (account only)');
+});
+
+// --- seedOrgs / ensureRoles: index-independent reuse + stable ids + idempotent role upsert ---
+// Recording mock for the org/role endpoints. membersById = GET /api/members/{id}; orgsByName =
+// POST /api/members/search; rolesByName = POST /roles/search. GET /roles/{id} is HARDCODED to null
+// to prove ensureRoles never depends on the cache-flaky GET-by-id.
+function makeOrgRoleMock({ membersById = {}, orgsByName = {}, rolesByName = {} } = {}) {
+  const calls = [];
+  const api = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (method === 'POST' && path.endsWith('/api/members/search')) {
+      const m = orgsByName[body?.keyword];
+      return { results: m ? [m] : [] };
+    }
+    if (method === 'GET' && /\/api\/members\/[^/]+$/.test(path)) {
+      return membersById[decodeURIComponent(path.split('/').pop())] || null;
+    }
+    if (method === 'POST' && path.endsWith('/api/members')) return { id: body.id || 'server-gen-id', name: body.name };
+    if (method === 'POST' && path.endsWith('/api/platform/security/roles/search')) {
+      const r = rolesByName[body?.keyword];
+      return { results: r ? [r] : [] };
+    }
+    if (method === 'GET' && path.includes('/api/platform/security/roles/')) return null; // flaky GET-by-id
+    if (method === 'PUT' && path.endsWith('/api/platform/security/roles')) return null;
+    return null;
+  };
+  return { api, calls };
+}
+
+test('seedOrgs REUSES by the CSV platform_id via a direct GET (immune to a stale search index)', async () => {
+  const { api, calls } = makeOrgRoleMock({
+    membersById: { '96f109a7': { id: '96f109a7', name: 'AGENT-TEST-Org-TechFlow', memberType: 'Organization' } },
+    orgsByName: {}, // search index is EMPTY (stale) — reuse must still work
+  });
+  __setApi(api);
+  const out = await seedOrgs([{ org_id: 'ORG-002', org_name: 'AGENT-TEST-Org-TechFlow', platform_id: '96f109a7' }]);
+  assert.equal(out['ORG-002'].platform_id, '96f109a7', 'reuses the cached platform_id');
+  assert.equal(out['ORG-002'].reused, true);
+  assert.equal(calls.filter(c => c.method === 'POST' && c.path.endsWith('/api/members')).length, 0,
+    'must NOT create a duplicate org even though the search index is stale');
+});
+
+test('seedOrgs PINS the CSV platform_id on (re)create so a deleted org comes back with a STABLE id', async () => {
+  // Org is gone everywhere: GET-by-id 404s AND the search index is empty.
+  const { api, calls } = makeOrgRoleMock({ membersById: {}, orgsByName: {} });
+  __setApi(api);
+  const out = await seedOrgs([{ org_id: 'ORG-002', org_name: 'AGENT-TEST-Org-TechFlow', platform_id: '96f109a7' }]);
+  const create = calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members'));
+  assert.ok(create, 'creates the org when it exists nowhere');
+  assert.equal(create.body.id, '96f109a7', 'create body pins the CSV platform_id as the org id');
+  assert.equal(out['ORG-002'].platform_id, '96f109a7', 'recreated org keeps its stable id (no drift)');
+  assert.equal(out['ORG-002'].reused, false);
+});
+
+test('seedOrgs falls back to search-by-name when the CSV has no cached platform_id', async () => {
+  const { api, calls } = makeOrgRoleMock({
+    orgsByName: { 'AGENT-TEST-Org-New': { id: 'found-by-name', name: 'AGENT-TEST-Org-New' } },
+  });
+  __setApi(api);
+  const out = await seedOrgs([{ org_id: 'ORG-099', org_name: 'AGENT-TEST-Org-New', platform_id: '' }]);
+  assert.equal(out['ORG-099'].platform_id, 'found-by-name');
+  assert.equal(out['ORG-099'].reused, true);
+  assert.equal(calls.filter(c => c.method === 'POST' && c.path.endsWith('/api/members')).length, 0, 'no duplicate create');
+});
+
+test('ensureRoles ALWAYS upserts (idempotent, never gated by the flaky GET-by-id) with CSV perms', async () => {
+  const defs = loadRoleDefs();
+  // Make every role appear to already exist via SEARCH (GET-by-id is hardcoded null in the mock).
+  const rolesByName = Object.fromEntries(defs.map(d => [d.role_name, { id: d.role_id, name: d.role_name }]));
+  const { api, calls } = makeOrgRoleMock({ rolesByName });
+  __setApi(api);
+  await ensureRoles();
+  const puts = calls.filter(c => c.method === 'PUT' && c.path.endsWith('/api/platform/security/roles'));
+  assert.equal(puts.length, defs.length, 'upserts EVERY role even when it already exists (perm sync, not skip)');
+  for (const p of puts) {
+    const def = defs.find(d => d.role_id === p.body.id);
+    assert.ok(def, `PUT uses a fixed CSV role_id (${p.body.id}) — idempotent, cannot create a duplicate`);
+    const expected = (def.permissions || '').split(';').map(s => s.trim()).filter(Boolean);
+    assert.equal(p.body.permissions.length, expected.length, `${def.role_id} PUT carries all CSV permissions`);
+  }
+  // Pin the org-maintainer contract from roles.csv (11 perms incl the two xAPI + loginOnBehalf).
+  const maint = puts.find(p => p.body.id === 'org-maintainer');
+  const perms = maint.body.permissions.map(x => x.name);
+  assert.equal(perms.length, 11, 'org-maintainer carries 11 permissions');
+  assert.ok(perms.includes('xapi:my_organization:order:view'), 'org-maintainer has xapi order:view');
+  assert.ok(perms.includes('xapi:my_organization:user:invite'), 'org-maintainer has xapi user:invite');
+  assert.ok(perms.includes('platform:security:loginOnBehalf'), 'org-maintainer has loginOnBehalf (impersonation operator)');
+});
+
+test('writeBackUserPlatformIds rewrites only field 2 per USR- row, keyed by email', async () => {
+  const { writeBackUserPlatformIds } = await import('../../scripts/lib/user-provision.mjs');
+  // Function reads/writes the real users.csv; assert it is callable and no-ops on unknown emails
+  // (empty map → 0 rewrites), which proves it never corrupts the file on an empty/absent id set.
+  const n = writeBackUserPlatformIds({});
+  assert.equal(n, 0, 'empty id map performs zero rewrites (never corrupts the CSV)');
+  const n2 = writeBackUserPlatformIds({ 'nobody@nowhere.invalid': 'dry-skip' });
+  assert.equal(n2, 0, 'dry- ids and unmatched emails are skipped');
+});
+
+test('seedContacts RECONCILES a reused contact currency from currency_code (USD→EUR)', async () => {
+  const calls = [];
+  let contactCcy = 'USD';
+  const api = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (method === 'POST' && path.includes('/security/users/search')) return { results: [{ id: 'u-1', userName: 'test-john.mitchell@x.com', memberId: 'c-1' }] };
+    if (method === 'GET' && path.includes('/api/contacts/')) return { id: 'c-1', name: 'John Mitchell', currencyCode: contactCcy };
+    if (method === 'POST' && path.endsWith('/api/members')) { if (body.currencyCode) contactCcy = body.currencyCode; return { id: 'c-1' }; }
+    return null;
+  };
+  __setApi(api);
+  const out = await seedContacts(
+    [{ contact_id: 'CON-001', full_name: 'John Mitchell', email: 'test-john.mitchell@x.com', org_id: 'ORG-001', currency_code: 'EUR' }],
+    { 'ORG-001': { platform_id: 'org-1', name: 'AcmeCorp' } },
+  );
+  assert.equal(out['CON-001'].reused, true, 'reuses the existing contact');
+  const upsert = calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members'));
+  assert.ok(upsert, 'reconciles by upserting the contact');
+  assert.equal(upsert.body.currencyCode, 'EUR', 'currency corrected to EUR on reuse');
 });

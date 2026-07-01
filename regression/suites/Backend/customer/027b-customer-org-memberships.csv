@@ -9,7 +9,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRoleChg"", ""memberType
 [REST-OP create_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm001@yopmail.com"", ""email"": ""AGENT-TEST-orgm001@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm001@yopmail.com"", ""email"": ""AGENT-TEST-orgm001@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC create_account]
 [REST-OP get_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm001@yopmail.com
@@ -58,7 +58,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalRoleActor"", ""membe
 [REST-OP create_account2]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm002@yopmail.com"", ""email"": ""AGENT-TEST-orgm002@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID2}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm002@yopmail.com"", ""email"": ""AGENT-TEST-orgm002@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID2}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC create_account2]
 [REST-OP get_user_id2]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm002@yopmail.com
@@ -107,7 +107,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""RoleChangeTarget"", ""memb
 [REST-OP create_target_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm003@yopmail.com"", ""email"": ""AGENT-TEST-orgm003@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{TARGET_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm003@yopmail.com"", ""email"": ""AGENT-TEST-orgm003@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{TARGET_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC create_target_account]
 [REST-OP get_target_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm003@yopmail.com
@@ -155,7 +155,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""DualOrgRoleIso"", ""member
 [REST-OP create_dual_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm004@yopmail.com"", ""email"": ""AGENT-TEST-orgm004@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{DUAL_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm004@yopmail.com"", ""email"": ""AGENT-TEST-orgm004@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{DUAL_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC create_dual_account]
 [REST-OP get_dual_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm004@yopmail.com
@@ -210,7 +210,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""LockTFMbr"", ""memberType"
 [REST-OP setup_lock_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm005@yopmail.com"", ""email"": ""AGENT-TEST-orgm005@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm005@yopmail.com"", ""email"": ""AGENT-TEST-orgm005@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_lock_account]
 [REST-OP get_lock_setup_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm005@yopmail.com
@@ -256,7 +256,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalLockTgt"", ""memberT
 [REST-OP setup_g6_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm006@yopmail.com"", ""email"": ""AGENT-TEST-orgm006@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G6_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm006@yopmail.com"", ""email"": ""AGENT-TEST-orgm006@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G6_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_g6_account]
 [REST-OP get_g6_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm006@yopmail.com
@@ -304,7 +304,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""LockUnauthorizedTgt"", ""m
 [REST-OP setup_lock7_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm007@yopmail.com"", ""email"": ""AGENT-TEST-orgm007@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK7_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm007@yopmail.com"", ""email"": ""AGENT-TEST-orgm007@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{LOCK7_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_lock7_account]
 [REST-OP get_lock7_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm007@yopmail.com
@@ -349,7 +349,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""UnlockTFMbr"", ""memberTyp
 [REST-OP setup_unlock_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm008@yopmail.com"", ""email"": ""AGENT-TEST-orgm008@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{UNLOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm008@yopmail.com"", ""email"": ""AGENT-TEST-orgm008@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{UNLOCK_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_unlock_account]
 [REST-OP get_unlock_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm008@yopmail.com
@@ -399,7 +399,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""GlobalUnlockTgt"", ""membe
 [REST-OP setup_g9_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm009@yopmail.com"", ""email"": ""AGENT-TEST-orgm009@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G9_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm009@yopmail.com"", ""email"": ""AGENT-TEST-orgm009@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{G9_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_g9_account]
 [REST-OP get_g9_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm009@yopmail.com
@@ -568,7 +568,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""Finding1Guard"", ""memberT
 [REST-OP setup_f1_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm017@yopmail.com"", ""email"": ""AGENT-TEST-orgm017@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm017@yopmail.com"", ""email"": ""AGENT-TEST-orgm017@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_f1_account]
 [REST-OP get_f1_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm017@yopmail.com
@@ -610,7 +610,7 @@ Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""Finding1LockGuard"", ""mem
 [REST-OP setup_f1b_account]
 POST {{BACK_URL}}/api/platform/security/users/create
 Content-Type: application/json
-Body: {""userName"": ""AGENT-TEST-orgm018@yopmail.com"", ""email"": ""AGENT-TEST-orgm018@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1B_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""Password1!""}
+Body: {""userName"": ""AGENT-TEST-orgm018@yopmail.com"", ""email"": ""AGENT-TEST-orgm018@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{F1B_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
 [REST-EXEC setup_f1b_account]
 [REST-OP get_f1b_user_id]
 GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm018@yopmail.com

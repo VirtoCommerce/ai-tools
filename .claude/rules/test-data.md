@@ -13,6 +13,8 @@ Cross-skill rule for any test artifact authored in this repo (test cases, Postma
 
 The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md) — agents authoring or reviewing test cases consult that file first.
 
+**Passwords are never literals in committed test-data.** Seed-CSV password columns (`test-data/b2b/users.csv`, `test-data/b2b/organization-memberships.csv`, `test-data/users/test-users.csv`, `test-data/users/agent-user-pool.csv`) carry a `{{VAR}}` token (e.g. `{{B2B_USER_PASSWORD}}`, `{{TEST_USER_PASSWORD}}`, `{{DEFAULT_TEST_PASSWORD}}`), resolved at seed time from `.env.local` by [`scripts/lib/user-provision.mjs`](../../scripts/lib/user-provision.mjs) `resolvePassword()` (per-env via the `_${TEST_ENV}` suffix). Real values live only in `.env.local` (gitignored) + the team secret store; safe non-prod defaults ship in [`templates/.env.local.template`](../../templates/.env.local.template). `td:reconcile` secret-hygiene fails any bare password literal; a `{{VAR}}` token is clean (VCST-5406).
+
 ## Canonical references (single sources of truth)
 
 - **[`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)
@@ -22,7 +24,9 @@ The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/k
 - **[`scripts/lib/test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts)** — `@td()` resolver implementation (CSV-backed + inline aliases)
 - **[`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts)** — typed xAPI discovery primitives (catalog root, products, addresses, cart, coupons)
 - **[`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts)** — zero-dep random generators (emails, org names, SKUs, quantities, comments)
-- **[`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts)** — validation (`npx tsx scripts/validate-td-refs.ts` — verifies every `@td()` reference resolves)
+- **[`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts)** — STATIC validation (`npm run td:validate` — verifies every `@td()` reference resolves + flags hardcoded GUIDs)
+- **[`scripts/seed-data/reconcile-test-data.mjs`](../../scripts/seed-data/reconcile-test-data.mjs)** — LIVE reconciliation (`TEST_ENV=<env> npm run td:reconcile` — probes the platform: catalog root exists, `.env.{ENV}` user roles have accounts, B2B users are org-scoped with no global roles, no password literals in committed CSVs)
+- **[`scripts/lib/user-roles.mjs`](../../scripts/lib/user-roles.mjs)** — canonical test-user ROLE → `.env.{ENV}` var registry (identity from `.env.{ENV}`, secrets from `.env.local`); consumed by the user seeders + `td:reconcile`
 - **[`.claude/agents/knowledge/api/graphql-test-cases-runner.md`](../agents/knowledge/api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
 - **[`.claude/agents/knowledge/api/graphql-schema.md`](../agents/knowledge/api/graphql-schema.md)** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
 
@@ -43,7 +47,7 @@ The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/k
 | [`/qa-checklist`](../skills/testing/qa-checklist/SKILL.md) | Cross-Skill References section + checklist items resolve entities via `@td()` |
 | [`/qa-postman`](../skills/testing/qa-postman/SKILL.md) | [`test-data-fixtures.md`](../skills/testing/qa-postman/test-data-fixtures.md) + Mistake #14 in [`common-mistakes.md`](../skills/testing/qa-postman/common-mistakes.md) |
 | [`/qa-api`](../skills/testing/qa-api/SKILL.md) | "Test Data — Resolve via `@td()`, Don't Hardcode" section |
-| [`/qa-seed-data`](../skills/testing/qa-seed-data/SKILL.md) | Seed runs write IDs back into `test-data/` so downstream `@td()` references resolve |
+| [`/qa-seed-data`](../skills/testing/qa-seed-data/SKILL.md) | Seed runs write IDs back into `test-data/` so downstream `@td()` references resolve; `td:validate` (static) + `td:reconcile` (live, per env) are the post-seed gates |
 | [`/qa-generate-data`](../skills/testing/qa-generate-data/SKILL.md) | Authors fixtures from scratch with no system GUIDs (blank `*_guid`/`platform_id`, `seeded=false`), business-key aliases, `AGENT-TEST-` prefix; ends on a mandatory `validate-td-refs.ts` green gate |
 | Regression suite CSVs | `Test_Data` columns use `{{VAR}}` and `@td()` exclusively |
 | `scripts/graphql-runner.ts` | Resolves `@td()` natively before sending GraphQL ops; rejects unresolved tokens at lint time |

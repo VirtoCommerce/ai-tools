@@ -345,7 +345,7 @@ User authenticated; cart at a known starting count (capture the live value befor
 [DOM] Cart line row quantity equals 1","[NETWORK] POST add-to-cart returns HTTP 200
 [NETWORK] POST /graphql (searchProducts) fires when typing the query; returns HTTP 200
 [NETWORK] GET PDP returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Autocomplete 'Products' section never renders for {picked_query} (search index gap on a buyer-realistic term); autocomplete-click lands on /search?q=… instead of PDP; PDP heading missing captured name; for variations-parent / configurable: Add-to-Cart never enables after selecting first available variant/config option (variant selection contract broken); PDP Add-to-Cart fails; cart badge off by != 1; cart line name does NOT contain the captured PDP name; cart line price differs from PDP price after variant/config selection (in-flight repricing); console TypeError","[ACT] On the cart page, locate the remove control SCOPED TO {target_line_scope} ONLY (e.g. the row's own data-test-id=\"line-item-{id}-remove\" button, NOT a global 'Remove' / aria-label match that selects all rows)
+[CONSOLE] no TypeError or JS errors","Autocomplete 'Products' section never renders for {picked_query} (search index gap on a buyer-realistic term); autocomplete-click lands on /search?q=… instead of PDP; PDP heading missing captured name; for variations-parent / configurable: Add-to-Cart never enables after selecting first available variant/config option (variant selection contract broken); PDP Add-to-Cart fails; cart badge off by != 1; cart line name does NOT contain the captured PDP name; cart line price differs from PDP price after variant/config selection (in-flight repricing); console TypeError","[ACT] On the cart page, locate the remove control SCOPED TO {target_line_scope} ONLY (e.g. the row's own data-test-id=""line-item-{id}-remove"" button, NOT a global 'Remove' / aria-label match that selects all rows)
 [ACT] Click that scoped remove control
 [WAIT] Wait for cart to update
 [ASSERT] Verify {target_line_scope} is no longer present in the cart
@@ -408,17 +408,17 @@ Catalog has at least 1 product on a page that exposes the price-range slider (vc
 [SETUP] browser_snapshot the first product card under main; capture its displayed name → {picked_pdp_name}; parse its displayed price as numeric → {picked_price_num}; compute integer floor → {boundary_lo} = floor({picked_price_num}); {boundary_hi} = {boundary_lo} + 1
 [LOG] write {picked_pdp_name, picked_price_num, boundary_lo, boundary_hi} to evidence before any filter application
 [ACT] Set slider minimum = {boundary_lo}; set slider maximum = {boundary_hi} (the smallest valid window containing {picked_price_num} given step=1)
-[WAIT] Wait for filtered results to render (URL updates to facets=\"price\":[{boundary_lo} TO {boundary_hi}])
+[WAIT] Wait for filtered results to render (URL updates to facets=""price"":[{boundary_lo} TO {boundary_hi}])
 [ASSERT] Verify a product card with name = {picked_pdp_name} is present in the filtered results
 [ASSERT] Verify every visible product card's numeric price is within [{boundary_lo}, {boundary_hi}] inclusive
 [ACT] Adjust slider minimum = {boundary_hi}; raise slider maximum to a value > {boundary_hi} (e.g. {boundary_hi} + 100)
-[WAIT] Wait for results to update (URL updates to facets=\"price\":[{boundary_hi} TO …])
+[WAIT] Wait for results to update (URL updates to facets=""price"":[{boundary_hi} TO …])
 [ASSERT] Verify no product card with name = {picked_pdp_name} is visible (the captured product is excluded because its price < {boundary_hi})
 [ASSERT] Verify every visible product card's numeric price is >= {boundary_hi}","[MATH] Inclusion window [{boundary_lo} TO {boundary_hi}] contains the captured product {picked_pdp_name}
 [MATH] Every product visible under inclusion window has price within [{boundary_lo}, {boundary_hi}] inclusive
 [MATH] Exclusion window [{boundary_hi} TO …] excludes the captured product
 [MATH] Every product visible under exclusion window has price >= {boundary_hi}
-[NAV] URL reflects facets=\"price\":[N TO M] notation for both states
+[NAV] URL reflects facets=""price"":[N TO M] notation for both states
 [STATE] No off-by-one errors at the integer boundary","[NETWORK] POST /graphql with the price filter returns HTTP 200 for both windows
 [NETWORK] no 4xx/5xx during slider adjustments
 [CONSOLE] no TypeError or JS errors","Captured product missing from inclusion window; products outside the configured range visible in either window; captured product still visible in exclusion window; URL not reflecting facet price syntax; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11; live-discovery.md Recipe 2; rewrite from REG-2026-05-22-MINI RUNNER-GAP (slider step=1 + end>start constraint)","Generated"
@@ -492,7 +492,7 @@ Storefront accessible; B2B virtual catalog is populated (root = @td(VIRTUAL_CATA
 [ASSERT] Verify the URL or breadcrumb reflects {picked_category}
 [ASSERT] Verify >=1 product card is visible on the category page
 [SETUP] browser_snapshot the category page; if a sub-category sidebar widget is present and has >=1 child category with count > 0, OPTIONALLY pick one → {picked_subcategory}; [LOG] append {picked_subcategory} to evidence. If a sub-category was picked, [ACT] click it and [WAIT] for the sub-category page to load — vcst-qa observation: most facets (Brand, Color, Origin, etc.) only appear on sub-category pages, not top-level category pages, so this drilldown often unlocks a richer facet set
-[SETUP] browser_snapshot the facet sidebar; pick a random facet group with >=2 values where the first value has count > 0 → {picked_facet_group}; pick its first value → {picked_facet_value}. Note: vcst-qa facet widgets render with `data-test-id=\"filter-<GROUP_NAME>\"`; many widgets are collapsed by default — expand if needed before reading values
+[SETUP] browser_snapshot the facet sidebar; pick a random facet group with >=2 values where the first value has count > 0 → {picked_facet_group}; pick its first value → {picked_facet_value}. Note: vcst-qa facet widgets render with `data-test-id=""filter-<GROUP_NAME>""`; many widgets are collapsed by default — expand if needed before reading values
 [LOG] append {picked_facet_group, picked_facet_value} to evidence
 [ACT] Click {picked_facet_value} in {picked_facet_group}
 [WAIT] Wait for the filtered results to render

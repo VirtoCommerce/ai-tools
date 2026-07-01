@@ -11,7 +11,7 @@
         "height": 1080
       },
       "locale": "en-US",
-      "storageState": "test-results/auth/USER.json",
+      "storageState": "test-results/auth/TECHFLOW_ADMIN.json",
       "recordHar": {
         "path": "./test-results/edge/har",
         "omitContent": true
