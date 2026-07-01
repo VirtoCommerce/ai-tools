@@ -474,7 +474,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why â€
   const plan = contributionPlan(routeRepo);
   let prUrl = "";
   try {
-    prUrl = await getVcs(plan.ownership, vcsDeps).openPullRequest({
+    prUrl = await getVcs(plan.host, vcsDeps).openPullRequest({
       targetRepo: routeRepo,
       baseBranch: checkout.baseBranch,
       workBranch: checkout.workBranch,

@@ -15,18 +15,18 @@
 import type { Vcs, VcsDeps } from "./vcs.js";
 import { GithubVcs } from "./github-vcs.js";
 import { AzureReposVcs } from "./azure-repos-vcs.js";
-import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
-import type { RepoOwnership } from "../repo-router.js";
 
 export type { Vcs, VcsDeps, PrSpec, IssueSpec } from "./vcs.js";
 
-/** VCS adapter for opening a PR on a repo of the given ownership. */
-export function getVcs(ownership: RepoOwnership, deps: VcsDeps): Vcs {
-  if (ownership === "client") {
-    const profile = loadProjectProfile();
-    if (profile.vcs?.clientHost === "azure-repos") return new AzureReposVcs(deps);
-  }
-  return new GithubVcs(deps);
+/**
+ * VCS adapter for opening a PR on a repo, chosen by its resolved code host.
+ * Pass `contributionPlan(repo).host` — that is per-repo aware (a client repo's
+ * own `host` overrides the global `vcs.clientHost`), and it is always "github"
+ * for platform repos. With no profile the host is always "github" ⇒ GithubVcs
+ * ⇒ pre-existing behaviour.
+ */
+export function getVcs(host: "github" | "azure-repos", deps: VcsDeps): Vcs {
+  return host === "azure-repos" ? new AzureReposVcs(deps) : new GithubVcs(deps);
 }
 
 /**
