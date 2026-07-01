@@ -44,7 +44,10 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 4. Write the profile (`gen-profile.mjs`).
 5. Discover the client/platform repo split (`discover-repos.mjs`, client only) → confirm.
 6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
-7. Verify access (`verify-access.mjs`).
+7. Verify access — `TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`
+   prints a full readiness table + READY/NOT-READY verdict (profile · core env ·
+   URLs · real admin login · storefront-user soft-probe · tracker token · GitHub PAT
+   + upstream push perm · gh CLI). Resolve every FAIL.
 8. Done → `/qa-fix <TICKET>`.
 
-For `--check`, skip to step 7: run `node .claude/skills/project-init/verify-access.mjs`.
+For `--check`, skip to step 7: `TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`.

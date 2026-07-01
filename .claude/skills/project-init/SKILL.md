@@ -216,13 +216,26 @@ Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mc
 for Azure). **Remind the operator to restart the MCP servers** (reload the IDE)
 for the new config to take effect.
 
-## 7. Verify access
+## 7. Verify access — full readiness checkup
+
+Run with the env selected (so per-env creds resolve):
 
 ```bash
-node .claude/skills/project-init/verify-access.mjs
+TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs
 ```
-Resolve any `FAIL` (missing login/token/URL) before declaring success. `SKIP`
-means a feature isn't configured (fine if unused).
+
+Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
+Checks (PASS / FAIL / WARN / SKIP): deployment profile · core env vars · storefront
+URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
+password grant — proves `ADMIN`/`ADMIN_PASSWORD` actually authenticate) · storefront
+user login (soft WARN — storefront users may auth via xAPI) · tracker token (Jira
+`GET /myself` or Azure DevOps auth) · **GitHub fix token** (validates the PAT and
+reports its permission on the upstream repo — `push` ⇒ direct PR possible) · gh CLI
+session.
+
+Resolve every **FAIL** before declaring success (exit code is non-zero while any
+FAIL remains). **WARN** is non-blocking; **SKIP** means a feature isn't configured
+(fine if unused). Secret values are never printed.
 
 ## 8. Done
 
@@ -271,7 +284,7 @@ with just those flags + `--merge`.
 | `gen-profile.mjs` | write/merge `project-profile.json` from interview flags |
 | `discover-repos.mjs` | Platform API → proposed client/platform repo split |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
-| `verify-access.mjs` | preflight: profile, env, GitHub/Azure/Jira auth, app URLs |
+| `verify-access.mjs` | full `/qa-fix` readiness table + verdict: profile · core env · URLs · **real admin login** · storefront-user soft-probe · tracker token · **GitHub PAT + upstream push perm** · gh CLI |
 
 > The interview asks only topology + the **env name** — no values. Both env files
 > are scaffolded as commented templates the operator fills in: `scaffold-env.mjs` →
