@@ -1,0 +1,28 @@
+{
+  "seedDate": "20260625",
+  "profile": "memberships",
+  "platform": "http://localhost:8090",
+  "storeId": "B2B-store",
+  "memberships": [
+    {
+      "membership_id": "MOM-001",
+      "email": "agent-test-multiorg-20260615@yopmail.com",
+      "contact_id": "019effe7-8113-7f4f-a73e-28046a8bd866",
+      "user_id": "adcd37cd-9883-442f-919f-2df595ffe413",
+      "org_name": "AGENT-TEST-Org-TechFlow-20260310",
+      "org_id": "019effe7-7d8f-780e-bbfd-1581de2540ba",
+      "role_id": "org-maintainer",
+      "platform_membership_id": "2ae2f1cca1d34450a978a2f71702402e"
+    },
+    {
+      "membership_id": "MOM-002",
+      "email": "agent-test-multiorg-20260615@yopmail.com",
+      "contact_id": "019effe7-8113-7f4f-a73e-28046a8bd866",
+      "user_id": "adcd37cd-9883-442f-919f-2df595ffe413",
+      "org_name": "AGENT-TEST-Org-BuildRight-20260310",
+      "org_id": "019effe7-7d9e-72b9-8f0d-393a1566be99",
+      "role_id": "org-employee",
+      "platform_membership_id": "b5b6fd86e4af4d43a280b92d4491fbcd"
+    }
+  ]
+}

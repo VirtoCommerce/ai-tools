@@ -1,0 +1,24 @@
+{
+  "ticket": "VCST-5374",
+  "verdict": "VERIFIED",
+  "verification_type": "pre-merge (deployed PR build)",
+  "date": "2026-06-26",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1039.0",
+    "theme": "2.52.0-pr-2343",
+    "relevant_modules": { "VirtoCommerce.Customer": "3.1013.0-pr-303-fe3b" },
+    "pr_build": "PR #303 alpha (vc-module-customer) — open, not merged"
+  },
+  "agent_used": "inline (playwright-chrome + REST/token API)",
+  "str_result": "3/3",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-AUTH-003", "BL-AUTH-013"],
+  "jira_transition": "none (held — PR unmerged; awaiting user decision)",
+  "artifacts": "tests/Sprint-current/VCST-5374/"
+}

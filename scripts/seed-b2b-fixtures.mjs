@@ -52,8 +52,13 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
+import { ensureMemberIndex } from './lib/seed-common.mjs';
+
+// True only when run as a CLI (node scripts/seed-b2b-fixtures.mjs …), false when imported by a
+// unit test — lets the test import the functions without triggering env checks / main().
+const RUN_MAIN = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 loadDotenv({ path: '.env.defaults' });
@@ -76,20 +81,21 @@ const profile = ['baseline', 'imp', 'memberships', 'full', 'teardown'].find(p =>
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 
-if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
-  console.error('Missing BACK_URL / ADMIN / ADMIN_PASSWORD in env');
-  process.exit(1);
-}
-
-// --- Safety: prod gate by config (ENV_RISK), not hostname — see feedback_seed_env_risk_not_host_allowlist ---
+// CLI preflight (env validation, prod gate, banner) — only when run directly, not on import.
 const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
-if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) {
-  console.error(`ABORT: ENV_RISK=production for ${new URL(BACK_URL).host} — refusing to seed. Pass --allow-admin-writes-on-prod to override.`);
-  process.exit(2);
+if (RUN_MAIN) {
+  if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
+    console.error('Missing BACK_URL / ADMIN / ADMIN_PASSWORD in env');
+    process.exit(1);
+  }
+  // --- Safety: prod gate by config (ENV_RISK), not hostname — see feedback_seed_env_risk_not_host_allowlist ---
+  if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) {
+    console.error(`ABORT: ENV_RISK=production for ${new URL(BACK_URL).host} — refusing to seed. Pass --allow-admin-writes-on-prod to override.`);
+    process.exit(2);
+  }
+  console.log(`\n🌱 Seed B2B fixtures — profile: ${profile}${DRY_RUN ? ' [DRY RUN]' : ''}`);
+  console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID}\n`);
 }
-
-console.log(`\n🌱 Seed B2B fixtures — profile: ${profile}${DRY_RUN ? ' [DRY RUN]' : ''}`);
-console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID}\n`);
 
 // --- CSV parser ---
 function parseCsv(text) {
@@ -148,7 +154,7 @@ async function authenticate() {
   console.log(`  Auth: OK (expires in ${data.expires_in}s)${DRY_RUN ? ' [DRY RUN — reads only]' : ''}`);
 }
 
-async function api(method, path, body, { expectStatus = [200, 201, 204] } = {}) {
+let api = async function api(method, path, body, { expectStatus = [200, 201, 204] } = {}) {
   if (DRY_RUN && !isReadCall(method, path)) {
     if (VERBOSE) console.log(`  [DRY RUN] ${method} ${path}`);
     return { _dryRun: true, id: `dry-${Math.random().toString(36).slice(2, 10)}` };
@@ -314,12 +320,15 @@ async function seedContacts(rows, orgMap) {
         continue;
       }
     }
-    const orgPlatformId = orgMap[row.org_id]?.platform_id;
-    if (!orgPlatformId) {
+    // org_id may be multi-valued (`ORG-009;ORG-010;…`) for cross-org contacts — link to ALL
+    // seeded orgs so the contact (and its account) is created instead of being skipped.
+    const orgPlatformIds = (row.org_id || '').split(';').map(s => s.trim()).filter(Boolean)
+      .map(o => orgMap[o]?.platform_id).filter(Boolean);
+    if (!orgPlatformIds.length) {
       console.warn(`    ⚠ skip   ${row.contact_id} ${row.full_name}: org ${row.org_id} not in seeded set`);
       continue;
     }
-    const body = contactBody(row, [orgPlatformId]);
+    const body = contactBody(row, orgPlatformIds);
     const created = await api('POST', '/api/members', body);
     const platformId = created?.id || `dry-${row.contact_id}`;
     out[row.contact_id] = {
@@ -362,6 +371,78 @@ async function resolveRoleName(roleId) {
   const name = r?.name || roleId;
   _roleNameCache[roleId] = name;
   return name;
+}
+
+// roles.csv is the role oracle (name → id + permissions); used to (a) create the platform roles
+// so membership role refs resolve, and (b) map users.csv `roles` (a name) → a role_id.
+const ROLES_CSV = join(ROOT, 'test-data/b2b/roles.csv');
+const USERS_CSV = join(ROOT, 'test-data/b2b/users.csv');
+let _roleDefs = null;
+function loadRoleDefs() {
+  if (!_roleDefs) { try { _roleDefs = parseCsv(readFileSync(ROLES_CSV, 'utf-8')).filter(r => r.role_id); } catch { _roleDefs = []; } }
+  return _roleDefs;
+}
+function roleIdByName(name) {
+  if (!name) return null;
+  return loadRoleDefs().find(r => r.role_name === name || r.role_id === name)?.role_id || null;
+}
+
+// Create the b2b roles from roles.csv as platform roles (idempotent — skip if present).
+// PUT /api/platform/security/roles is create-or-update.
+async function ensureRoles() {
+  const defs = loadRoleDefs();
+  if (!defs.length) return;
+  console.log(`\n  Ensuring ${defs.length} platform role(s) from roles.csv...`);
+  for (const d of defs) {
+    const ex = await api('GET', `/api/platform/security/roles/${encodeURIComponent(d.role_id)}`, null, { expectStatus: [200, 404] });
+    if (ex?.id) { if (VERBOSE) console.log(`    ↻ role ${d.role_id}`); continue; }
+    const permissions = (d.permissions || '').split(';').map(p => p.trim()).filter(Boolean).map(name => ({ name }));
+    await api('PUT', '/api/platform/security/roles', { id: d.role_id, name: d.role_name, permissions }, { expectStatus: [200, 201, 204] });
+    console.log(`    ✓ role ${d.role_id} (${d.role_name})`);
+  }
+}
+
+// Give each seeded contact a storefront login + org-scoped membership (role from users.csv).
+// Uses the contact platform_id seedContacts ALREADY created (in-hand — no re-search, so it can
+// never create a duplicate contact, which was the prior bug). Roles are org-scoped only — no
+// global role is ever assigned to the account.
+async function provisionContactLogins(contactMap, orgMap) {
+  let userRows = [];
+  try { userRows = parseCsv(readFileSync(USERS_CSV, 'utf-8')); } catch { return; }
+  const userByContact = {};
+  for (const u of userRows) if (u.contact_id) userByContact[u.contact_id] = u;
+
+  console.log(`\n  Provisioning contact logins + org memberships...`);
+  let nAcct = 0, nMem = 0;
+  for (const [csvId, c] of Object.entries(contactMap)) {
+    const u = userByContact[csvId];
+    if (!u || (u.seeded || '').toLowerCase() === 'false') continue;     // skip not-seeded / negative-test users
+    const email = (u.email || c.email || '').trim();
+    if (!email.includes('@') || String(c.platform_id).startsWith('dry-')) continue;
+
+    // EVERY seeded user gets a login (account decoupled from role/org resolution — a user with an
+    // empty role or an unseeded org still gets an account). Uses the in-hand contact id (no dup).
+    const userId = await ensureSecurityAccount(email, u.password || 'Password1!', c.platform_id);
+    await stripSeededGlobalRoles(email);                                // defensive: roles are org-scoped only
+    nAcct++;
+
+    // Add an org-scoped membership for each (org, role) that resolves. org_id may be multi-valued
+    // (`ORG-009;ORG-010;…`). No role / no seeded org → account only, no membership.
+    const roleId = roleIdByName(u.roles);
+    if (roleId) {
+      const locked = /^true$/i.test(u.membership_locked || '');           // org-scoped lock (VCST-5028)
+      const orgIds = (u.org_id || '').split(';').map(s => s.trim()).filter(Boolean);
+      const resolved = orgIds.map(oid => orgMap[oid]).filter(o => o?.platform_id);
+      if (resolved.length) {
+        const existing = await searchMemberships(userId);
+        for (const org of resolved) {
+          await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked);
+          nMem++;
+        }
+      }
+    }
+  }
+  console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
 }
 
 async function findContactByEmail(email) {
@@ -457,32 +538,34 @@ async function searchMemberships(userId) {
 }
 
 // Idempotent: one OrganizationMembership per (user, org). Returns the membership id.
-async function ensureOrgMembership(userId, orgId, orgName, roleId, existing) {
+async function ensureOrgMembership(userId, orgId, orgName, roleId, existing, locked = false) {
   const roleName = await resolveRoleName(roleId);
   const found = (existing || []).find(m => m.organizationId === orgId);
   if (found) {
     const currentRoleIds = (found.roles || []).map(r => r.roleId || r.id);
-    const matches = currentRoleIds.length === 1 && currentRoleIds[0] === roleId;
+    const matches = currentRoleIds.length === 1 && currentRoleIds[0] === roleId && (found.isLocked === locked);
     if (matches) {
-      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName} → ${roleName})`);
+      if (VERBOSE) console.log(`    ↻ reuse  membership ${found.id} (${orgName} → ${roleName}${locked ? ', LOCKED' : ''})`);
       return found.id;
     }
-    // Reconcile: the CSV role_id is the role oracle — enforce it on an existing membership rather
-    // than leaving drift (e.g. a membership reseeded with the wrong role by another run).
+    // Reconcile: the CSV is the oracle for both role AND lock state — enforce them on the existing
+    // membership rather than leaving drift (e.g. reseeded with the wrong role / lock by another run).
     if (!DRY_RUN) {
       found.roles = [{ roleId, roleName }];
+      found.isLocked = locked;
       await api('PUT', `/api/customer/organization-memberships/${encodeURIComponent(found.id)}`, found, { expectStatus: [200, 204] });
     }
-    console.log(`    ✓ reconcile membership ${found.id} (${orgName} → ${roleName}) [was: ${currentRoleIds.join(',') || 'none'}]`);
+    console.log(`    ✓ reconcile membership ${found.id} (${orgName} → ${roleName}${locked ? ', LOCKED' : ''}) [was: ${currentRoleIds.join(',') || 'none'}]`);
     return found.id;
   }
   const body = {
     userId, organizationId: orgId, organizationName: orgName,
     roles: [{ roleId, roleName }],
+    isLocked: locked,
   };
   const created = await api('POST', '/api/customer/organization-memberships', body);
   const id = created?.id || `dry-mom-${orgId}`;
-  console.log(`    ✓ create membership ${id} (${orgName} → ${roleName})`);
+  console.log(`    ✓ create membership ${id} (${orgName} → ${roleName}${locked ? ', LOCKED in org' : ''})`);
   return id;
 }
 
@@ -576,6 +659,8 @@ async function teardown() {
 // --- Main ---
 async function main() {
   await authenticate();
+  // Fresh stacks have no ES Member index → /api/members/search 503s. Ensure it before any search.
+  await ensureMemberIndex(api);
   if (profile === 'teardown') { await teardown(); return; }
 
   // memberships-only: orgs must already exist; just (re)create members + logins + org-scoped roles.
@@ -596,7 +681,7 @@ async function main() {
   const orgsAll = parseCsv(readFileSync(join(ROOT, 'test-data/b2b/organizations.csv'), 'utf-8'))
     .filter(r => r.platform_id && r.org_name); // skip rows without IDs
   const contactsAll = parseCsv(readFileSync(join(ROOT, 'test-data/b2b/contacts.csv'), 'utf-8'))
-    .filter(r => r.email);
+    .filter(r => r.email && (r.seeded || '').toLowerCase() !== 'false'); // seeded=false rows (e.g. James Brown) are not created at all
 
   // Profile filter
   const baselineOrgIds = new Set(['ORG-001', 'ORG-002', 'ORG-003', 'ORG-004']);
@@ -631,9 +716,14 @@ async function main() {
 
   await relinkUsersToContacts(contactMap);
 
-  // full profile also seeds org-scoped memberships (VCST-5028) on top of the base fixtures.
+  // full profile: create the roles, give every seeded contact a login + org-scoped role
+  // (from users.csv), then seed the cross-org memberships (organization-memberships.csv) on top.
   let memberships = [];
-  if (profile === 'full') memberships = await seedMemberships();
+  if (profile === 'full') {
+    await ensureRoles();
+    await provisionContactLogins(contactMap, orgMap);
+    memberships = await seedMemberships();
+  }
 
   // Write results
   if (!DRY_RUN) {
@@ -659,4 +749,14 @@ async function main() {
   console.log('  4. Trigger member index rebuild (optional): /api/search/indexes/index Member rebuild.');
 }
 
-main().catch(e => { console.error(`\n❌ Seed failed: ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });
+if (RUN_MAIN) {
+  main().catch(e => { console.error(`\n❌ Seed failed: ${e.message}`); if (VERBOSE) console.error(e.stack); process.exit(1); });
+}
+
+// --- Test seam: importable functions + a hook to swap the HTTP layer for unit tests. ---
+export function __setApi(fn) { api = fn; }
+export {
+  parseCsv, parseCsvLine, loadRoleDefs, roleIdByName,
+  ensureRoles, ensureSecurityAccount, ensureOrgMembership, provisionContactLogins,
+  orgBody, contactBody,
+};

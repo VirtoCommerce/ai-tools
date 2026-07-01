@@ -212,5 +212,16 @@ async function teardown() {
   console.log(`🎁 Seed Loyalty${DRY_RUN ? ' [DRY RUN]' : ''}${TEARDOWN ? ' [TEARDOWN]' : ''}`);
   assertSafeTarget();
   await auth();
+  // Loyalty is an OPTIONAL module — absent on the baseline /qa-local-env manifest. If its
+  // API isn't there, skip cleanly (exit 0) rather than failing the whole seed pipeline.
+  try {
+    await api('POST', '/api/loyalty-programs/search', { take: 1 }, { expectStatus: [200, 201] });
+  } catch (e) {
+    if (/→ 404|\b404\b|not\s*found/i.test(String(e.message))) {
+      console.log('⏭  Loyalty module not installed on this env — skipping loyalty seed (run /qa-local-env VCST-5135 to include it).');
+      return;
+    }
+    throw e;
+  }
   if (TEARDOWN) await teardown(); else await seed();
 })().catch((e) => { console.error('FAILED:', e.message); process.exit(1); });

@@ -482,3 +482,58 @@ LOY-038,"ProductPoints earn lifecycle — winner factor (ALL, 500×) actually aw
 [EVENT] ProcessOrdersAsync (Hangfire) fired — verify via Admin Hangfire dashboard that a job for this order ran successfully if the Earned op is absent.","Earned op absent from history (ProcessOrdersAsync not fired or Hangfire job did not settle — extend wait or check Hangfire dashboard at {{BACK_URL}}/hangfire); loyaltyBalance unchanged after order (BAL_AFTER == BAL_BEFORE — handler skipped for this order type); place_order errors[] non-empty (cart validation error — check validationErrors before place_order); preview amount == 0 (LT-001 not in B2B virtual catalog or LOY_PP_ALL not seeded); history_check errors[] non-empty (query shape mismatch); balance_before errors[] non-empty (loyaltyBalance query unavailable)","[GQL-OP cleanup_safe]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
 [GQL-EXEC cleanup_safe]",VCST-5135; vc-module-loyalty#10 (LoyaltyProgramHandler.ProcessOrdersAsync earn credits); BL-LOY-001; BL-LOY-007,Draft
+LOY-039,"ProductPoints — Winner change via activation: deactivating the higher-priority winner (ALL pri 80) promotes the next program (PRIORITY pri 70) to global winner, so its 999x override now takes effect on QA-LOY-PRIO-001",Loyalty > Product Points Loyalty > Earning > Winner Change (Activation),High,PROPOSED-BL-LOY-WINNER; BL-LOY-001,ECL-4.2,"⚠ SERIAL — DO NOT run inside a parallel batch (it relies on LOY_PP_ALL being deactivated, which would corrupt LOY-031/032/034/036/037). Run protocol:
+  1. node scripts/loyalty-toggle-program.mjs --name ""AGENT-TEST PP Single-SKU Laptop"" --state off
+  2. npx tsx scripts/graphql-runner.ts --case ""regression/suites/Backend/loyalty/075c-loyalty-product-points-earning.csv:LOY-039""
+  3. node scripts/loyalty-toggle-program.mjs --name ""AGENT-TEST PP Single-SKU Laptop"" --state on   (RESTORE — mandatory; or run npm run seed:loyalty)
+Runner-native (cart oracle). ORG_USER (all group). After step 1, LOY_PP_ALL (pri 80) is inactive, so the highest-priority eligible+active+in-window program for ORG_USER becomes LOY_PP_PRIORITY (pri 70), which lists QA-LOY-PRIO-001 at factor 999. LT-001 is listed ONLY by LOY_PP_ALL (now inactive) → falls back to default factor 1. Discriminator is order-based (no hardcoded price): QA-LOY-PRIO-001 (999x) must out-earn LT-001 (default 1x) — the reverse of the ALL-active state where LT-001 (500x on ~$1300) dwarfs QA-LOY-PRIO-001 (500x on $60). This single ordering proves PRIORITY became the winner once ALL was deactivated.",store_id={{STORE_ID}}; culture=en-US,"[AUTH role=ORG_USER]
+[GQL-OP setup_me]
+  query { me { id } }
+[GQL-EXEC setup_me]
+[GQL-CAPTURE setup_me.data.me.id → USER_ID]
+[GQL-OP cleanup_pre]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_pre]
+[GQL-OP find_prio001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_prio001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:QA-LOY-PRIO-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_prio001]
+[GQL-CAPTURE find_prio001.data.products.items.0.id → PRIO001_ID]
+[GQL-OP find_lt001]
+  query($storeId: String!, $userId: String!, $filter: String!) {
+    products(storeId: $storeId userId: $userId currencyCode: ""USD"" cultureName: ""en-US"" filter: $filter first: 1) {
+      items { id code }
+    }
+  }
+[GQL-VARS find_lt001] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{USER_ID}}"", ""filter"": ""code:LT-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-EXEC find_lt001]
+[GQL-CAPTURE find_lt001.data.products.items.0.id → LT001_ID]
+[GQL-OP add_prio001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRIO001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_prio001]
+[GQL-OP add_lt001]
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{LT001_ID}}"" quantity: 1 }) { id } }
+[GQL-EXEC add_lt001]
+[GQL-OP read_cart]
+  query {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+      items { sku loyaltyPoints { amount currency { code } } extendedPrice { amount } }
+      loyaltyPoints { amount currency { code } }
+    }
+  }
+[GQL-EXEC read_cart]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount → AMT_PRIO001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=LT-001].loyaltyPoints.amount → AMT_LT001]
+[GQL-CAPTURE read_cart.data.cart.items[?sku=QA-LOY-PRIO-001].extendedPrice.amount → PRICE_PRIO001]
+[GQL-OP cleanup_post]
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" }) { id } }
+[GQL-EXEC cleanup_post]","[ERRORS label=read_cart] errors[] empty
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=LT-001].loyaltyPoints.amount > 0
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.currency.code = PTS
+[DATA label=read_cart] data.cart.items[?sku=QA-LOY-PRIO-001].loyaltyPoints.amount > data.cart.items[?sku=LT-001].loyaltyPoints.amount
+[EVIDENCE] Winner-change proof. PRE-STEP deactivated LOY_PP_ALL (pri 80); LOY_PP_PRIORITY (pri 70) is now the global winner for ORG_USER. QA-LOY-PRIO-001 earns PRIORITY's 999x override (~999 x $60 = ~59940); LT-001, listed only by the now-inactive ALL, earns default 1x (~1299). The order-based gate (QA-LOY-PRIO-001 > LT-001) is the INVERSE of the ALL-active baseline (LOY-031/034: LT-001 649995 >> QA-LOY-PRIO-001 30000), so a PASS here can ONLY occur when ALL is deactivated and the lower-priority program was promoted. Captured: AMT_PRIO001={{AMT_PRIO001}}, AMT_LT001={{AMT_LT001}}, PRICE_PRIO001={{PRICE_PRIO001}}. Human/automated review: AMT_PRIO001 / PRICE_PRIO001 = 999 confirms the override factor.","[ADMIN] After step 1, the loyalty workspace shows AGENT-TEST PP Single-SKU Laptop = Inactive and AGENT-TEST PP Priority High (pri 70) as the highest-priority active program; QA-LOY-PRIO-001 factor = 999 on it.","QA-LOY-PRIO-001.amount <= LT-001.amount → LOY_PP_ALL (pri 80) is STILL ACTIVE — the --state off pre-step was skipped (or already restored); re-run step 1. amount=0 → QA-LOY-PRIO-001 not in B2B virtual catalog. errors[] non-empty → query/auth issue.",none,VCST-5135; closes LOY-035 deferred winner-change gap; scripts/loyalty-toggle-program.mjs; PROPOSED-BL-LOY-WINNER,Draft (SERIAL — isolate; restore ALL after)

@@ -27,6 +27,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
+import { ensureVirtualCatalog, ensureFulfillmentCenter } from './lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -36,13 +37,9 @@ const ADMIN = process.env.ADMIN;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STORE_ID = process.env.STORE_ID || 'B2B-store';
 
-// Resolve virtual catalog root from the canonical alias registry — never hardcode GUIDs.
-const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-const VIRTUAL_CATALOG_ID = aliases?.VIRTUAL_CATALOG_B2B?.id;
-if (!VIRTUAL_CATALOG_ID) {
-  console.error('ABORT: VIRTUAL_CATALOG_B2B.id not found in test-data/aliases.json');
-  process.exit(2);
-}
+// Virtual catalog is resolved at RUNTIME from the store's assigned catalog (and
+// created if the env has none) — never a hardcoded GUID, so this seeds a fresh DB too.
+let VIRTUAL_CATALOG_ID = null;
 
 const DATE = '20260519';
 const RESULTS_FILE = join(ROOT, `test-data/_seed-results-std-${DATE}.json`);
@@ -182,7 +179,7 @@ if (!filterSpecs.length) {
 }
 
 console.log(`\n🌱 Standard products seed${DRY_RUN ? ' (DRY RUN)' : ''}`);
-console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID} | Virtual catalog: ${VIRTUAL_CATALOG_ID}`);
+console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID}`);
 console.log(`   Specs: ${filterSpecs.map(s => s.csvId).join(', ')}\n`);
 
 // --- HTTP ---
@@ -319,11 +316,6 @@ async function findOrCreatePriceList() {
   return pl;
 }
 
-async function getDefaultFfc() {
-  const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 5 });
-  return (r?.results || [])[0];
-}
-
 async function linkProductToVirtualCatalog(productId, virtualCatalogId) {
   await api('POST', '/api/catalog/listentrylinks', [{
     listEntryId: productId, listEntryType: 'product', catalogId: virtualCatalogId,
@@ -379,10 +371,12 @@ async function seedSpec(spec, catalog, category, priceListId, ffcId) {
 
 async function main() {
   await auth();
+  VIRTUAL_CATALOG_ID = await ensureVirtualCatalog(api);
+  console.log(`  Virtual catalog: ${VIRTUAL_CATALOG_ID}`);
   const catalog = await ensureCatalog();
   const category = await ensureCategory(catalog.id, 'Standard Test Products', `SEED-${DATE}-STD-CAT`);
   const priceList = await findOrCreatePriceList();
-  const ffc = await getDefaultFfc();
+  const ffc = await ensureFulfillmentCenter(api);
   if (!ffc?.id && !DRY_RUN) throw new Error('No fulfillment center available');
 
   // Link parent category to virtual catalog

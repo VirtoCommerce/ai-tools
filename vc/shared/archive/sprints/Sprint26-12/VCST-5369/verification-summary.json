@@ -1,0 +1,35 @@
+{
+  "ticket": "VCST-5369",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-06-29",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.52.0-pr-2353-6f3c",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend PR #2353 commit 6f3cf213 (deploy vc-deploy-dev #6076)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "fix_strategy": "Commit 6f3cf213: allowCartPayment = !checkout_multistep_enabled && paymentMethod.allowCartPayment; multistep disables cart-inline payment, defers to dedicated /checkout/payment step after order placement. Supersedes the :cart-prop approach (802c2b75).",
+  "str_result": "3/3",
+  "orders_placed": {
+    "authorize_net": ["CO260629-00014", "CO260629-00015", "CO260629-00016"],
+    "cybersource": ["CO260629-00017"],
+    "skyflow": ["CO260629-00018"],
+    "datatrans": ["CO260629-00019"]
+  },
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "CyberSource gateway declined the automated card on the dedicated payment page (sandbox/cross-origin Microform automation limitation, cf. VCST-5100) — not a fix regression; the original Review block + 'container' TypeError are gone.",
+    "Out-of-scope follow-up: 'container' TypeError now fires on the Skyflow payment page when its (down) gateway stalls; never on the CyberSource path."
+  ],
+  "known_infra": [
+    "Skyflow gateway down on vcst-qa (bearer-token/vault creds) — card stalls at Loading; not a fix failure."
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-PAY-004"],
+  "jira_transition": "pending user decision (ticket at In progress; fix PR #2353 still open)",
+  "artifacts": "tests/Sprint-current/VCST-5369/ (verification-report-v2.md + screenshots/v2-*)"
+}

@@ -20,6 +20,7 @@
 import { env } from '../config.js';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { ensureMemberIndex } from './lib/seed-common.mjs';
 
 const DATE = '20260514';
 const REPORT_PATH = `reports/seed/seed-impersonation-targets-${DATE}.json`;
@@ -72,6 +73,23 @@ async function api(method, path, body) {
 async function findOrgByName(name) {
   const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword: name, take: 20 });
   return (r.results || []).find(m => m.name === name);
+}
+
+// True if a member with this id exists (fresh DBs lack the vcst-qa "surviving" orgs).
+// NOTE: GET /api/members/{missing} returns 200 + null (NOT 404), so check for a real id.
+async function memberExists(id) {
+  if (!id) return false;
+  try { const m = await api('GET', `/api/members/${id}`); return !!(m && m.id); }
+  catch (e) { if (e.status === 404) return false; throw e; }
+}
+
+// Use the preferred (env-specific) id if it exists; else find-or-create by name. Lets the
+// same script reuse the real vcst-qa orgs AND bootstrap them on a fresh /qa-local-env DB.
+async function ensureOrg(orgId, name, preferredId) {
+  if (await memberExists(preferredId)) return { org_id: orgId, platform_id: preferredId };
+  let existing = await findOrgByName(name);
+  if (!existing) existing = await api('POST', '/api/members', orgBody(name));
+  return { org_id: orgId, platform_id: existing.id };
 }
 
 async function findUserByName(userName) {
@@ -184,6 +202,9 @@ function step(name, payload) {
 await authn();
 step('authn', { ok: true });
 
+// Fresh stacks have no ES Member index → members/search 503s. Ensure it before any search.
+await ensureMemberIndex(api);
+
 // 11 new orgs (ORG-009..ORG-019) — covers USR-020 single-handedly without
 // relying on stale ORG-001/ORG-004 platform_ids.
 const orgSpec = [
@@ -213,9 +234,9 @@ for (const [orgId, name] of orgSpec) {
 }
 report.entities.orgs = seededOrgs;
 
-// Live, verified surviving orgs from the original 4 seeded baseline
-const TECHFLOW = { org_id: 'ORG-002', platform_id: '6fb516c1-07f3-4af4-be5e-35961e3f7993' };
-const BUILDRIGHT = { org_id: 'ORG-003', platform_id: 'fba51391-b652-4dbb-b178-aa2d98d2ceed' };
+// Surviving vcst-qa baseline orgs — reuse their real ids where present, else create on a fresh DB.
+const TECHFLOW = await ensureOrg('ORG-002', 'AGENT-TEST-Org-TechFlow-20260514', '6fb516c1-07f3-4af4-be5e-35961e3f7993');
+const BUILDRIGHT = await ensureOrg('ORG-003', 'AGENT-TEST-Org-BuildRight-20260514', 'fba51391-b652-4dbb-b178-aa2d98d2ceed');
 
 // All 11 platform_ids for USR-020 (all new AGENT-TEST orgs)
 const usr020OrgList = seededOrgs.map(o => ({ org_id: o.org_id, platform_id: o.platform_id }));

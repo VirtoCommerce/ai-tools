@@ -26,6 +26,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
+import { ensureVirtualCatalog, ensureFulfillmentCenter } from './lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -34,9 +35,8 @@ const ADMIN = process.env.ADMIN;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STORE_ID = process.env.STORE_ID || 'B2B-store';
 
-const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-const VIRTUAL_CATALOG_ID = aliases?.VIRTUAL_CATALOG_B2B?.id;
-if (!VIRTUAL_CATALOG_ID) { console.error('ABORT: VIRTUAL_CATALOG_B2B.id missing'); process.exit(2); }
+// Resolved at RUNTIME from the store's assigned virtual catalog (created if missing) — seeds a fresh DB.
+let VIRTUAL_CATALOG_ID = null;
 
 const DATE = '20260527';
 const RESULTS_FILE = join(ROOT, `test-data/_seed-results-cfg-default-${DATE}.json`);
@@ -165,10 +165,6 @@ async function findOrCreatePriceList() {
   } catch (e) { console.log(`  ⚠ assignment failed: ${e.message.slice(0, 120)}`); }
   return pl;
 }
-async function getDefaultFfc() {
-  const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 5 });
-  return (r?.results || [])[0];
-}
 async function linkToVCat(listEntryId, type) {
   await api('POST', '/api/catalog/listentrylinks', [{ listEntryId, listEntryType: type, catalogId: VIRTUAL_CATALOG_ID }], { expectStatus: [200, 204] });
 }
@@ -261,12 +257,14 @@ async function seedSpec(spec, catalog, parentCat, childCat, priceListId, ffcId) 
 
 async function main() {
   await auth();
+  VIRTUAL_CATALOG_ID = await ensureVirtualCatalog(api);
+  console.log(`  Virtual catalog: ${VIRTUAL_CATALOG_ID}`);
   const catalog = await ensureCatalog();
   const parentCat = await ensureCategory(catalog.id, 'Default Option Parents', `SEED-${DATE}-DEF-PARENTS`);
   const childCat  = await ensureCategory(catalog.id, 'Default Option Options', `SEED-${DATE}-DEF-OPTS`);
   const priceList = await findOrCreatePriceList();
-  const ffc = await getDefaultFfc();
-  if (!ffc?.id) throw new Error('No fulfillment center');
+  const ffc = await ensureFulfillmentCenter(api);
+  if (!ffc?.id && !DRY_RUN) throw new Error('No fulfillment center');
 
   try { await linkToVCat(parentCat.id, 'category'); console.log('  ✓ parent category linked into virtual catalog'); }
   catch (e) { console.log(`  ⚠ parent-cat link: ${e.message.slice(0, 160)}`); }

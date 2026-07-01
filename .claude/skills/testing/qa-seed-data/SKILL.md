@@ -1,6 +1,6 @@
 ---
-description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products — via repo seed scripts (npm run seed) or Postman MCP"
-argument-hint: "[minimal|catalog|b2b|pricing|full|teardown]"
+description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS — via repo seed scripts (npm run seed) or Postman MCP"
+argument-hint: "[minimal|catalog|b2b|pricing|loyalty|promotions|bopis|full|teardown]"
 disable-model-invocation: true
 ---
 
@@ -55,7 +55,10 @@ Read **before** executing:
 | `minimal` | 1 catalog + 1 category + 1 product + price + inventory | `npm run seed:minimal` |
 | `catalog` | Full catalog tree: 3 categories, 5 products (physical/digital/configurable), variations, prices, inventory | `npm run seed:catalog` |
 | `b2b` | Organizations + contacts + addresses, plus storefront logins + org-scoped role memberships (VCST-5028, `full` profile includes the `memberships` step) | `npm run seed:b2b` (memberships only: `npm run seed:b2b:memberships`) |
-| `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency | folded into `seed:catalog` / `seed:full` (Postman path for standalone) |
+| `pricing` | Price lists (USD + EUR), tiered prices, quantity breaks, multi-currency | `npm run seed:pricing` (`seed-pricing.mjs`; also folded into `seed:catalog` / `seed:full`) |
+| `loyalty` | Loyalty programs (Product Points + others) built from the platform's `new/{programType}` skeleton, with per-program **product factors** (a ProductPoints program earns nothing without them) and the VIP/Wholesale eligibility user groups + users | `npm run seed:loyalty` (`seed-loyalty.mjs`; VIP/Wholesale logins via `seed-loyalty-users.mjs`) |
+| `promotions` | Marketing promotions + reward trees + coupons from `test-data/promotions/*.csv` | `npm run seed:promotions` (`seed-promotions.mjs`) |
+| `bopis` | BOPIS pickup locations (vc-module-shipping) from `test-data/stores/bopis-locations.csv`, linked to an existing FFC | `npm run seed:bopis` (`seed-bopis.mjs`) |
 | `full` | **Seed every seedable fixture defined in `test-data/`** — all CSV-backed entities (catalogs, categories, properties, products, pricing, inventory, B2B orgs/contacts/users/roles, promotions/coupons, white-labeling, BOPIS locations, CMS pages, loyalty settings) so that every `@td()` reference across all suites resolves against live data. NOT just the synthetic `AGENT-TEST-*` entities from the other profiles. See `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures. | `npm run seed:full` + the specialized CFG/B2B `.mjs` seeders |
 | `teardown` | Delete ephemeral seeded entities. Script path: `npm run seed:teardown` sweeps all prior `AGENT-TEST-SEED-*` runs (+ legacy `SEED-*`). Postman path: sweeps the broader `AGENT-TEST-*` set. See the prefix note above. | `npm run seed:teardown` (script) |
 
@@ -152,6 +155,9 @@ After the run, capture the seeded entity IDs from the Newman/Postman result JSON
 | `minimal` | ~10s | 0s | ~5s | ~15s | **~20-30s** |
 | `catalog` | ~15s | 0s | ~15s | ~30s | **~30-60s** |
 | `b2b` | ~10s | 0s | ~10s | ~15s | **~25-35s** |
+| `loyalty` | n/a (script) | — | ~15-25s | n/a | **~20-30s** |
+| `promotions` | n/a (script) | — | ~10-20s | n/a | **~15-25s** |
+| `bopis` | n/a (script) | — | ~5-10s | n/a | **~10-15s** |
 | `full` | ~30s | 0s | ~2-4 min | ~45-60s | **~4-6 min** (seeds the entire `test-data/` directory; far heavier than the legacy "all profiles" full) |
 
 ## Profile Details
@@ -190,6 +196,27 @@ Pricing module deep test:
 - Assignments to catalog + store with priority
 - Tiered prices: qty 1 (list + sale), qty 5, qty 10, qty 50
 - Products reused from `catalog` profile (or created if run standalone)
+
+### `loyalty`
+Loyalty programs for earn/redeem testing (`seed-loyalty.mjs`, VCST-5104/5135):
+- Builds each program in `test-data/loyalty/programs.csv` from the platform's `GET /api/loyalty-programs/new/{programType}` skeleton (guaranteed-valid empty program), then applies per-row overrides: name, localized name, `isActive`, priority, store, start/end window, and the eligibility user group (all / VIP / Wholesaler via the `dynamicExpression` condition tree)
+- Populates each program's **product factors** from `test-data/loyalty/program-factors.csv` (a ProductPoints program earns nothing without factors). Factors are resolved SKU→productId at runtime — no hardcoded GUIDs — via `PUT /api/loyalty-program-product-factors/factors`
+- VIP/Wholesale storefront logins seeded by the companion `seed-loyalty-users.mjs`
+- **Idempotent** — a program whose name already exists is reused; factors are re-applied (PUT replaces the set, repairing factors without duplicating programs)
+- Earning model: single highest-priority eligible+active+in-window program wins globally (no stacking) — see `project_loyalty_productpoints_resolution_model` memory. Balances cannot be reset via API (`project_loyalty_balance_cannot_be_reset`)
+- Teardown: `npm run seed:loyalty:teardown` deletes `AGENT-TEST-*` loyalty programs
+
+### `promotions`
+Marketing promotions for cart/coupon testing (`seed-promotions.mjs`):
+- Promotions + reward trees + coupons from `test-data/promotions/*.csv`
+- Reward set via GET-merge-PUT of `dynamicExpression`; relative date tokens resolved to ISO; coupons added via the separate `POST /api/marketing/promotions/coupons/add` (inline `coupons[]` is silently ignored — see `reference_marketing_coupons_api_contract`)
+- Supports `--only P01`, `--dry-run`, `--teardown`
+
+### `bopis`
+BOPIS (Buy Online, Pick up In Store) pickup locations (`seed-bopis.mjs`, vc-module-shipping):
+- Pickup locations from `test-data/stores/bopis-locations.csv`, each linked to an existing fulfillment center (FFC discovered at runtime, not hardcoded)
+- Covers store-selector / cart / checkout pickup suites (036–038)
+- Supports `--only LOC-001`, `--teardown`
 
 ### `full`
 **Seeds the entire `test-data/` directory** — not just the synthetic entities created by the other profiles. The goal is a platform state where **every `@td()` reference in every regression suite resolves against live data**. Use before full regression runs.

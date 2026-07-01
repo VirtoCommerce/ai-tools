@@ -26,6 +26,7 @@
  */
 import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose, csvBool, iso3,
+  ensureFulfillmentCenter,
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
 } from './lib/seed-common.mjs';
 
@@ -107,7 +108,12 @@ async function main() {
 
   await loadFfcs();
   if (!FFCS.length && !DRY_RUN) {
-    console.error('ABORT: no fulfillment centers exist — a pickup location requires an FFC. Seed/enable an FFC first.');
+    // Fresh DB has no FFC — create a default one (a pickup location requires an FFC as its inventory source).
+    const ffc = await ensureFulfillmentCenter(api);
+    if (ffc?.id) { FFCS = [ffc]; log(`Using created fulfillment center ${ffc.id}`); }
+  }
+  if (!FFCS.length && !DRY_RUN) {
+    console.error('ABORT: no fulfillment centers exist and one could not be created — a pickup location requires an FFC.');
     process.exit(2);
   }
 

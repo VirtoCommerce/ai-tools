@@ -385,7 +385,11 @@ Fields: `list`, `listWithTax`, `sale`, `saleWithTax`, `actual`, `actualWithTax`,
 
 ### ProductConnection
 
-Fields: `totalCount`, `pageInfo`, `edges`, `items`, `filter_facets`, `range_facets`, `term_facets`, `filters`
+Fields: `totalCount`, `pageInfo`, `edges`, `items`, `filter_facets`, `range_facets`, `term_facets`, `filters`, `sortings`
+
+### ProductSortingType (VCST-5177)
+
+Returned by `products(...).sortings` — the store's configured "Sort by" options. Fields: `id` (String!, the `?sort=<id>` code), `name` (String, culture-resolved), `isDefault` (Boolean!), `selected` (Boolean!). Semantics: empty `sort` → the `isDefault` option is `selected`; explicit code → that option `selected`; hidden/unknown code or raw expression → results returned but nothing `selected`.
 
 ### TermFacet
 

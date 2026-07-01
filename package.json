@@ -29,9 +29,12 @@
     "seed:full": "node scripts/seed-test-data.js full",
     "seed:teardown": "node scripts/seed-test-data.js teardown",
     "seed:dry-run": "node scripts/seed-test-data.js catalog --dry-run --verbose",
+    "test": "node --test \"tests/unit/**/*.test.mjs\"",
     "seed:b2b": "node scripts/seed-b2b-fixtures.mjs",
     "seed:b2b:memberships": "node scripts/seed-b2b-fixtures.mjs memberships",
     "seed:b2b:teardown": "node scripts/seed-b2b-fixtures.mjs teardown",
+    "seed:users": "node scripts/seed-users.mjs",
+    "seed:users:teardown": "node scripts/seed-users.mjs teardown",
     "seed:pricing": "node scripts/seed-pricing.mjs",
     "seed:pricing:teardown": "node scripts/seed-pricing.mjs --teardown",
     "seed:inventory": "node scripts/seed-inventory.mjs",
@@ -74,7 +77,11 @@
     "scope:validate": "npx tsx scripts/validate-critical-ui-scope.ts",
     "verify:multi-env": "npx tsx scripts/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/verify-multi-env-filters.ts --write-report",
-    "bundle:check": "npx tsx scripts/bundle-version-check.ts"
+    "bundle:check": "npx tsx scripts/bundle-version-check.ts",
+    "hotfix:precheck": "npx tsx scripts/hotfix-precheck.ts",
+    "hotfix:release": "npx tsx scripts/hotfix-release.ts",
+    "local:manifest": "node .claude/skills/testing/qa-local-env/gen-manifest.mjs",
+    "local:health": "node .claude/skills/testing/qa-local-env/healthcheck.mjs"
   },
   "repository": {
     "type": "git",
