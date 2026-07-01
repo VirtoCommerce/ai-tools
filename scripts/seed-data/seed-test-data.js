@@ -32,7 +32,7 @@ import { parse } from 'csv-parse/sync';
 // .env.defaults + .env.${TEST_ENV} + .env.local and validates required vars.
 // Replaces the old direct `.env` load so seeding respects TEST_ENV like every
 // other entry point. Run from the repo root (config.js uses CWD-relative paths).
-import '../config.js';
+import '../../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');

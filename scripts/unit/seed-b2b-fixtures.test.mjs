@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {
   __setApi, parseCsv, roleIdByName,
   ensureSecurityAccount, ensureOrgMembership, provisionContactLogins,
-} from '../../scripts/seed-data/seed-b2b-fixtures.mjs';
+} from '../../scripts/lib/user-provision.mjs';
 
 // A recording mock of the seeder's HTTP layer. Routes by (method, path) and records every call
 // so tests can assert what was (and wasn't) sent.

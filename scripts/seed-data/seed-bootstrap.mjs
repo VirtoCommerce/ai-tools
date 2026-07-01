@@ -39,8 +39,9 @@ const STEPS = [
   { name: 'products', script: 'seed-standard-products.mjs', required: true },
   { name: 'pricing', script: 'seed-pricing.mjs', required: true },
   { name: 'inventory', script: 'seed-inventory.mjs', required: true },
-  { name: 'b2b', script: 'seed-b2b-fixtures.mjs', required: true },
-  { name: 'users', script: 'seed-users.mjs', required: true },
+  // Unified company-users: orgs (parent-child) + contacts + org-scoped logins + cross-org
+  // memberships + personal storefront accounts (env roles + agent-pool + test-users), all in one.
+  { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true },
   { name: 'configurable', script: 'seed-configurable-products.mjs', required: false },
   { name: 'promotions', script: 'seed-promotions.mjs', required: false },
   { name: 'bopis', script: 'seed-bopis.mjs', required: false },
@@ -51,7 +52,7 @@ const STEPS = [
 function runStep(step) {
   const scriptPath = join(ROOT, 'scripts', 'seed-data', step.script);
   log(`\n─── seed:${step.name} (${step.required ? 'required' : 'optional'}) ───`);
-  const res = spawnSync('node', [scriptPath, ...passthrough], {
+  const res = spawnSync('node', [scriptPath, ...(step.args || []), ...passthrough], {
     stdio: 'inherit',
     env: process.env,
     cwd: ROOT,

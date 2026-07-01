@@ -4,7 +4,7 @@
 // Pure/mocked — no env, no network. Run: `node --test tests/unit/`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { __setApi, parseCsv, personalUsers, ensurePersonalAccount } from '../../scripts/seed-data/seed-users.mjs';
+import { __setApi, parseCsv, personalUsers, ensurePersonalAccount } from '../../scripts/lib/user-provision.mjs';
 
 function makeApiMock() {
   const calls = [];

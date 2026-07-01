@@ -32,6 +32,7 @@
  * @property {'admin'|'customer'|'org'} kind  Account shape.
  * @property {boolean} required      True = must resolve on every env (a CORE account).
  * @property {string} purpose        One-line description for reports.
+ * @property {string} [group]        Customer group the contact must belong to (e.g. 'VIP' for loyalty).
  */
 
 /** @type {UserRole[]} */
@@ -42,9 +43,9 @@ export const USER_ROLES = [
   { key: 'ORG_USER', emailVars: ['ORG_USER_EMAIL'], passwordVar: 'ORG_USER_PASSWORD', idVar: 'ORG_USER_ID', kind: 'org', required: false, purpose: 'Single-org B2B member' },
   { key: 'MULTI_ORG_USER', emailVars: ['MULTI_ORG_USER_EMAIL'], passwordVar: 'MULTI_ORG_USER_PASSWORD', kind: 'org', required: false, purpose: 'Multi-org member — org switching' },
   { key: 'EUR_USER', emailVars: ['EUR_USER_EMAIL'], passwordVar: 'EUR_USER_PASSWORD', kind: 'customer', required: false, purpose: 'EUR-currency shopper' },
-  { key: 'LOYALTY_VIP_USER', emailVars: ['LOYALTY_VIP_USER_EMAIL'], passwordVar: 'LOYALTY_VIP_USER_PASSWORD', kind: 'customer', required: false, purpose: 'Loyalty VIP tier' },
-  { key: 'LOYALTY_WHOLESALE_USER', emailVars: ['LOYALTY_WHOLESALE_USER_EMAIL'], passwordVar: 'LOYALTY_WHOLESALE_USER_PASSWORD', kind: 'customer', required: false, purpose: 'Loyalty wholesale tier' },
-  { key: 'LOYALTY_NOBAL_USER', emailVars: ['LOYALTY_NOBAL_USER_EMAIL'], passwordVar: 'LOYALTY_NOBAL_USER_PASSWORD', kind: 'customer', required: false, purpose: 'Loyalty zero-balance (insufficient-balance tests)' },
+  { key: 'LOYALTY_VIP_USER', emailVars: ['LOYALTY_VIP_USER_EMAIL'], passwordVar: 'LOYALTY_VIP_USER_PASSWORD', kind: 'customer', required: false, group: 'VIP', purpose: 'Loyalty VIP tier' },
+  { key: 'LOYALTY_WHOLESALE_USER', emailVars: ['LOYALTY_WHOLESALE_USER_EMAIL'], passwordVar: 'LOYALTY_WHOLESALE_USER_PASSWORD', kind: 'customer', required: false, group: 'Wholesale', purpose: 'Loyalty wholesale tier' },
+  { key: 'LOYALTY_NOBAL_USER', emailVars: ['LOYALTY_NOBAL_USER_EMAIL'], passwordVar: 'LOYALTY_NOBAL_USER_PASSWORD', kind: 'customer', required: false, group: 'VIP', purpose: 'Loyalty zero-balance (insufficient-balance tests)' },
   { key: 'IMPERSONATION_ADMIN', emailVars: ['IMPERSONATION_ADMIN_EMAIL'], passwordVar: 'IMPERSONATION_ADMIN_PASSWORD', kind: 'admin', required: false, purpose: 'Impersonation operator' },
   { key: 'LOCKOUT_TEST', emailVars: ['LOCKOUT_TEST_EMAIL'], passwordVar: 'LOCKOUT_TEST_PASSWORD', kind: 'customer', required: false, purpose: 'Account-lockout tests' },
 ];
@@ -68,6 +69,7 @@ export function resolveRole(role, env = process.env) {
   if (!password) missing.push(role.passwordVar);
   return {
     key: role.key, kind: role.kind, required: role.required, purpose: role.purpose,
+    group: role.group || null,
     email, password, id, emailVar, present: missing.length === 0, missing,
   };
 }
