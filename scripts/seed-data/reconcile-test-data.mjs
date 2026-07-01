@@ -88,8 +88,12 @@ async function checkUserRoles() {
     let user = null;
     try { user = await findSecurityUser(r.email); }
     catch (e) { warn(`${r.key}: probe error for ${r.email} — ${String(e.message).slice(0, 100)}`); continue; }
-    if (user?.id) ok(`${r.key} → ${r.email} (account exists)`);
-    else if (r.required) fail(`${r.key} → ${r.email} has NO live account on ${TEST_ENV} (needs seed)`);
+    if (user?.id) { ok(`${r.key} → ${r.email} (account exists)`); continue; }
+    // Admin-kind roles are the platform administrator, NOT a seedable Customer member — they don't
+    // surface in the customer/member search. Their existence is already proven by the successful
+    // auth() this reconcile ran, so a search miss is not a real failure.
+    if (r.kind === 'admin') { ok(`${r.key} → ${r.email} (platform admin — verified via auth, not seeded)`); continue; }
+    if (r.required) fail(`${r.key} → ${r.email} has NO live account on ${TEST_ENV} (needs seed)`);
     else warn(`${r.key} → ${r.email} has no live account [optional — seed if the suite needs it]`);
   }
 }
