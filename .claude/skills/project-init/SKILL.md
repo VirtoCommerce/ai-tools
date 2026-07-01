@@ -82,19 +82,22 @@ must run before any generator/verify script — they import from `node_modules`.
 
 > **No pauses, no mid-interview reconnaissance.** Do **not** read files, inspect
 > the `.mjs` scripts, or run any other Bash **between** the interview steps —
-> everything you need is already in this skill. The interview is tiny and lives in
-> **one `AskUserQuestion` block**: topology (operator · projectType · tracker) **+
-> the env name** together (step 2a/2b). Ask the env name **inside that question
-> block via `AskUserQuestion`** — never as a separate plain-chat prompt. `ENV_NAME`
-> is free-text, so the operator types it in the question's Other input.
+> everything you need is already in this skill. The interview is tiny:
+>   1. **Topology** — operator · projectType · tracker as one `AskUserQuestion`
+>      block (enum choices; code host is a client-only follow-up).
+>   2. **ENV_NAME** — a **single-input `show_widget`**: one labelled text field
+>      (explaining that the env name is required) + Submit → `sendPrompt`.
+>      `AskUserQuestion` is **not** usable here — it always renders ≥2 option
+>      buttons, and the env name is a free-text value with no options. (Fallback if
+>      the widget can't render: ask for the name in chat.)
 >
 > That is **all** that is asked. There is **no value form and no per-value
 > questions**. Step 3 writes BOTH env files (`.env.<env>` and `.env.local`) as
 > commented templates; the operator fills them, then verify-access (step 7) checks.
 
-### 2a. Topology + env name — one `AskUserQuestion` block
+### 2a. Topology — one `AskUserQuestion` block (enum choices)
 
-Ask these **four** as a single `AskUserQuestion` call (max 4 questions/call):
+Ask these three as a single `AskUserQuestion` call:
 
 1. **operator** — `virto-engineer` (Virto staff, may have write access to
    VirtoCommerce repos → default contribution mode `direct`) or `client`
@@ -102,22 +105,27 @@ Ask these **four** as a single `AskUserQuestion` call (max 4 questions/call):
 2. **projectType** — `platform` (vanilla/native Virto) or `client` (custom
    modules / theme / storefront fork → unlocks step 5 + client routing).
 3. **tracker** — `jira` or `azure` (Azure Boards).
-4. **ENV_NAME** *(free-text — enter in Other)* — becomes `TEST_ENV`; **must match
-   `[a-z0-9_]+`** (lowercase/digits/underscores, no hyphens). Normalise mixed
-   case / spaces (e.g. `My QA` → `my_qa`) and tell the operator what you used.
 
 **Only for `projectType=client`**, ask **code host** (`github` or `azure-repos`)
-in a follow-up `AskUserQuestion` — where the CLIENT's code lives + PRs open.
-Tracker and VCS are **independent** (Azure Boards + GitHub is fine); the platform
-upstream is **always** GitHub. (For `platform`, code host is irrelevant.)
+in a follow-up `AskUserQuestion`. Tracker and VCS are **independent** (Azure Boards
++ GitHub is fine); the platform upstream is **always** GitHub. (For `platform`,
+code host is irrelevant.)
 
-### 2b. No further questions
+### 2b. ENV_NAME — a single-input widget (no options)
 
-`ENV_NAME` is already captured in the 2a block (via its Other input) — that's the
-only value asked. Do **not** ask for URLs, IDs, emails, passwords, or tokens: every
-value is a placeholder the operator fills into the two template files created in
-step 3. (Reusing an existing `.env.<env>` such as native `.env.vcst`? Use that name
-— step 3 only adds missing keys and never clobbers filled values.)
+Ask for the environment name with a **minimal `show_widget`**: one labelled text
+input (label/hint: "Environment name — becomes TEST_ENV; lowercase letters, digits,
+`_` only, no hyphens") and a Submit button whose handler calls
+`sendPrompt("ENV_NAME=" + value)`. **No option buttons** — `AskUserQuestion` can't
+render an option-less input, so it is not used for this. Inline CSS/JS only,
+transparent background, a visually-hidden `<h2 class="sr-only">` summary. If the
+widget can't render, ask for the name in chat instead.
+
+Normalise mixed case / spaces / hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`)
+and tell the operator what you used. Do **not** ask for any other value — URLs, IDs,
+emails, passwords, tokens are all placeholders the operator fills into the two
+template files created in step 3. (Reusing an existing `.env.<env>` such as native
+`.env.vcst`? Use that name — step 3 only adds missing keys, never clobbers.)
 
 ## 3. Scaffold the two env templates, then hand off for filling
 

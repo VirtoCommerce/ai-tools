@@ -29,11 +29,11 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 0. Preconditions — detect **and install** missing tooling: `gh` (required),
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
-2. Interview — **no mid-interview reconnaissance**: one `AskUserQuestion` block with
-   operator · project type · tracker · **ENV_NAME** (env name entered via the Other
-   input; becomes `TEST_ENV` → must match `[a-z0-9_]+`, normalise if needed). Code
-   host is a client-only follow-up. **No value form, no per-value questions, no
-   separate chat prompt for the name.**
+2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
+   project type · tracker) as one `AskUserQuestion` block, code host a client-only
+   follow-up; (b) **ENV_NAME** via a minimal single-input `show_widget` (one text
+   field, no option buttons — `AskUserQuestion` can't do option-less input; becomes
+   `TEST_ENV` → normalise to `[a-z0-9_]+`). **No value form, no per-value questions.**
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs` →
    `.env.<env>` (non-secret URLs/identifiers/tracker placeholders); (3b)
    `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
