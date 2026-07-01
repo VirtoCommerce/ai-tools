@@ -11,6 +11,8 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { parse } from 'dotenv';
+import { resolveTestEnv } from './lib/resolve-test-env.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -18,25 +20,37 @@ const OUTPUT = resolve(ROOT, '.claude/agents/knowledge/api/graphql-schema.md');
 
 // Parse args
 const args = process.argv.slice(2);
+// --check: validate that introspection succeeds and the schema renders, but write
+// nothing (no file, no stdout). Used by `npm run schema:check` — cross-platform,
+// so it needs no `> /dev/null` redirect (which is not valid on Windows cmd).
+const check = args.includes('--check');
 const dryRun = args.includes('--dry-run');
 const urlIdx = args.indexOf('--url');
 let backUrl = urlIdx !== -1 ? args[urlIdx + 1] : null;
 
+// Resolve BACK_URL from the layered env files, matching config.js precedence:
+//   .env.defaults → .env.${TEST_ENV} → .env.local → process.env (wins).
+// The legacy monolithic .env file was removed from this project, so reading it
+// (as this script used to) always failed. Read the same layered files config.js does.
+const testEnv = resolveTestEnv('vcst');
 if (!backUrl) {
-  const envPath = resolve(ROOT, '.env');
-  if (existsSync(envPath)) {
-    const env = readFileSync(envPath, 'utf-8');
-    const match = env.match(/^BACK_URL=(.+)$/m);
-    if (match) backUrl = match[1].trim();
+  const merged = {};
+  for (const layer of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
+    const p = resolve(ROOT, layer);
+    if (existsSync(p)) Object.assign(merged, parse(readFileSync(p)));
   }
+  backUrl = process.env.BACK_URL || merged.BACK_URL || null;
 }
 
 if (!backUrl) {
-  console.error('Error: BACK_URL not found in .env and --url not provided');
+  console.error(
+    `Error: BACK_URL not found in .env.defaults / .env.${testEnv} / .env.local and --url not provided`
+  );
   process.exit(1);
 }
 
-const GQL = `${backUrl}/graphql`;
+// Strip any trailing slash so we don't build `https://host//graphql`.
+const GQL = `${backUrl.trim().replace(/\/+$/, '')}/graphql`;
 
 async function gql(query) {
   const res = await fetch(GQL, {
@@ -49,11 +63,10 @@ async function gql(query) {
   return json.data;
 }
 
+// Render an arg's type faithfully (unwrapping NON_NULL/LIST), e.g. `ids: [String!]!`.
+// Relies on renderType (hoisted) + args being introspected deep enough (see below).
 function formatArg(a) {
-  const t = a.type;
-  const name = t.name || (t.ofType && t.ofType.name) || '?';
-  const req = t.kind === 'NON_NULL' ? '!' : '';
-  return `${a.name}: ${name}${req}`;
+  return `${a.name}: ${renderType(a.type)}`;
 }
 
 function formatField(f) {
@@ -69,10 +82,14 @@ function renderType(t) {
   return t.name || '?';
 }
 
+// Nest ofType 3 deep so wrapped arg types like [String!]! (NON_NULL→LIST→NON_NULL→SCALAR)
+// render faithfully via renderType, instead of collapsing to the bare inner scalar name.
+const ARG_TYPE_REF = `name kind ofType { name kind ofType { name kind ofType { name kind } } }`;
+
 async function introspectQueries() {
   const data = await gql(`{
     __schema {
-      queryType { fields { name args { name type { name kind ofType { name kind } } } } }
+      queryType { fields { name args { name type { ${ARG_TYPE_REF} } } } }
     }
   }`);
   return data.__schema.queryType.fields;
@@ -81,7 +98,7 @@ async function introspectQueries() {
 async function introspectMutations() {
   const data = await gql(`{
     __schema {
-      mutationType { fields { name args { name type { name kind ofType { name kind } } } } }
+      mutationType { fields { name args { name type { ${ARG_TYPE_REF} } } } }
     }
   }`);
   return data.__schema.mutationType.fields;
@@ -265,7 +282,12 @@ async function main() {
   md += `### Search products\n\`\`\`graphql\nquery { products(storeId: "B2B-store" query: "laptop" currencyCode: "USD") { totalCount items { id name code imgSrc price { actual { amount } } } term_facets { name terms { term label count } } } }\n\`\`\`\n\n`;
   md += `### Full checkout flow (verified — see order-creation-matrix.md)\n\`\`\`graphql\n# 1. Get userId\nquery { me { id } }\n# 2. Add item (userId required)\nmutation { addItem(command: { storeId: "B2B-store" userId: "<USER_ID>" productId: "<PRODUCT_ID>" quantity: 1 currencyCode: "USD" cultureName: "en-US" }) { id } }\n# 3. Set shipment (price MUST match rate)\nmutation { addOrUpdateCartShipment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" shipment: { shipmentMethodCode: "FixedRate" shipmentMethodOption: "Ground" price: 150 deliveryAddress: { city: "New York" countryCode: "US" countryName: "United States" firstName: "Test" lastName: "User" line1: "123 Test St" postalCode: "10001" } } }) { id } }\n# 4. Set payment\nmutation { addOrUpdateCartPayment(command: { storeId: "B2B-store" userId: "<USER_ID>" currencyCode: "USD" cultureName: "en-US" payment: { paymentGatewayCode: "DefaultManualPaymentMethod" } }) { id } }\n# 5. Create order\nmutation { createOrderFromCart(command: { cartId: "<CART_ID>" }) { id number status } }\n\`\`\`\n`;
 
-  if (dryRun) {
+  if (check) {
+    console.error(
+      `[check] OK — ${queries.length} queries, ${mutations.length} mutations, ` +
+        `${Object.keys(typeResults).length} types, ${md.length} bytes rendered (nothing written).`
+    );
+  } else if (dryRun) {
     process.stdout.write(md);
     console.error('\n[dry-run] Schema printed to stdout. Use without --dry-run to write to file.');
   } else {

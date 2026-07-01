@@ -23,9 +23,16 @@
  */
 
 import { config as loadDotenv } from "dotenv";
+import { resolveTestEnv } from "./lib/resolve-test-env.js";
 import { TokenCache } from "./lib/graphql-auth.js";
 
-loadDotenv();
+// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
+// A bare loadDotenv() reads only `.env`, which does not exist in this repo, so BACK_URL
+// and the admin creds would be missing and every run would exit 2.
+const _TEST_ENV = resolveTestEnv("vcst");
+loadDotenv({ path: ".env.defaults" });
+loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
+loadDotenv({ path: ".env.local", override: true });
 
 const DEFAULT_LEAKED = [
   "7725c8a7-46e2-4556-851b-fa3243da15e4",
