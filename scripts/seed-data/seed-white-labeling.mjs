@@ -18,6 +18,12 @@
  *       field, NOT dynamic properties). GET /organization/{id}; POST if absent (→200),
  *       else PUT (→204). Validator: exactly one of storeId/organizationId; can't change
  *       the key on update — so GET-first then PUT the same key.
+ *       Logo/secondary/favicon BYTES are uploaded here too (not just the config URL): a
+ *       row's `logo_source`/`secondary_logo_source`/`favicon_source` (a path under test-data/)
+ *       is POSTed to `api/assets?folderUrl=customization[/favicons]` — the same endpoint the
+ *       admin blades use — plus its sibling `{stem}_<size>.<ext>` thumbnails (admin tile 64x64
+ *       + the WL xAPI favicon set 16/32/96/128/196), so both surfaces render with no 404s.
+ *       Idempotent: reuses an already-serving config URL unless --reupload-assets.
  *
  * Orgs + users are NOT provisioned here (VCST-5406 follow-up) — that's a "company users"
  * concern, so it's delegated to scripts/lib/user-provision.mjs's seedWhiteLabelingUsers(),
@@ -28,12 +34,16 @@
  *
  * USAGE:
  *   node scripts/seed-white-labeling.mjs [--dry-run] [--verbose] [--teardown]
- *   node scripts/seed-white-labeling.mjs --skip-users   # link lists + WL config only, no org/user provisioning
+ *   node scripts/seed-white-labeling.mjs --skip-users        # link lists + WL config only, no org/user provisioning
+ *   node scripts/seed-white-labeling.mjs --reupload-assets   # force re-upload logo/favicon bytes even if the current URL serves
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by list name, org name, user email.
  * Writes test-data/_seed-results-wl-{DATE}.json
  */
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { join, basename, extname, dirname } from 'node:path';
 import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
+  uploadAsset, assetUrlOk, ROOT,
   STORE_ID, DATE_STAMP, DRY_RUN, VERBOSE, TEARDOWN, BACK_URL,
 } from '../lib/seed-common.mjs';
 import {
@@ -42,8 +52,49 @@ import {
 } from '../lib/user-provision.mjs';
 
 const SKIP_USERS = process.argv.slice(2).includes('--skip-users');
+const REUPLOAD_ASSETS = process.argv.slice(2).includes('--reupload-assets');
 const LANG = 'en-US';
 const WL_USERS_CSV = 'test-data/white-labeling/users.csv';
+const TS = Date.now();
+
+// Asset upload mirrors the WL admin blades (vc-module-white-labeling): logo/secondary →
+// folderUrl=customization, favicon → customization/favicons; stored name {kind}_{orgId}_{ts}.{ext}.
+const ASSET_FOLDER = { logo: 'customization', secondary: 'customization', favicon: 'customization/favicons' };
+const ASSET_PREFIX = { logo: 'logo', secondary: 'secondary_logo', favicon: 'favicon' };
+const CONTENT_TYPE = { '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
+
+/**
+ * Resolve one WL asset URL for an org. If `sourceRel` (a path under test-data/) is given, upload
+ * the base file + its sibling `{stem}_<size>.<ext>` derivatives to the platform asset store and
+ * return the served base URL. Derivatives are re-named to `{storedBaseStem}_<size>.<ext>` so they
+ * match exactly what the admin blade (64x64) and the WL xAPI favicon set (16/32/96/128/196) request.
+ * Idempotent: if `currentUrl` already serves 200 (and not --reupload-assets), reuse it — no dupes.
+ * With no source, falls back to `currentUrl` (a pre-resolved URL from the CSV/config).
+ */
+async function resolveAsset(kind, sourceRel, orgId, currentUrl) {
+  if (!sourceRel) return currentUrl || null;
+  const abs = join(ROOT, 'test-data', sourceRel);
+  if (!existsSync(abs)) { log(`  ⚠ ${kind} source missing: ${sourceRel} — keeping current URL`); return currentUrl || null; }
+  if (!REUPLOAD_ASSETS && (await assetUrlOk(currentUrl))) { verbose(`${kind}: current URL still serves — reuse`); return currentUrl; }
+
+  const ext = extname(abs);
+  const ct = CONTENT_TYPE[ext.toLowerCase()] || 'application/octet-stream';
+  const folder = ASSET_FOLDER[kind];
+  const base = await uploadAsset(folder, `${ASSET_PREFIX[kind]}_${orgId}_${TS}${ext}`, readFileSync(abs), ct);
+  const storedStem = basename(base.name || base.url.split('/').pop(), ext);
+
+  const stem = basename(abs, ext);
+  const dir = dirname(abs);
+  let derivs = 0;
+  for (const f of readdirSync(dir)) {
+    if (f === basename(abs) || !f.startsWith(`${stem}_`) || !f.endsWith(ext)) continue;
+    const size = f.slice(stem.length + 1, -ext.length); // e.g. "64x64", "16x16"
+    await uploadAsset(folder, `${storedStem}_${size}${ext}`, readFileSync(join(dir, f)), ct);
+    derivs++;
+  }
+  log(`  ⬆ ${kind}: ${base.url}${derivs ? ` (+${derivs} thumbnail${derivs > 1 ? 's' : ''})` : ''}`);
+  return base.url;
+}
 
 // --- Reshape link-lists.csv into flat MenuLinkLists (one extra list per parent_title) ---
 function buildLinkLists(rows) {
@@ -119,12 +170,20 @@ async function main() {
     const main = (row.main_menu_link_list_name || '').trim();
     const footer = (row.footer_link_list_name || '').trim();
     const theme = (row.theme_preset || '').trim(); // must be one of the platform's WhiteLabeling.ThemePresetNames dictionary values — case-sensitive
-    const logo = (row.logo_url || '').trim();
-    const secondaryLogo = (row.secondary_logo_url || '').trim();
-    const favicon = (row.favicon_url || '').trim();
-    if (!main && !footer && !theme && !logo && !secondaryLogo && !favicon) { verbose(`  (no WL config for ${row.org_name} — fallback org)`); results.orgs.push({ name: row.org_name, id: orgId, wl: false }); continue; }
+    const logoSrc = (row.logo_source || '').trim();
+    const secondarySrc = (row.secondary_logo_source || '').trim();
+    const faviconSrc = (row.favicon_source || '').trim();
+    const logoUrl0 = (row.logo_url || '').trim();
+    const secondaryUrl0 = (row.secondary_logo_url || '').trim();
+    const faviconUrl0 = (row.favicon_url || '').trim();
+    const hasBranding = logoSrc || secondarySrc || faviconSrc || logoUrl0 || secondaryUrl0 || faviconUrl0;
+    if (!main && !footer && !theme && !hasBranding) { verbose(`  (no WL config for ${row.org_name} — fallback org)`); results.orgs.push({ name: row.org_name, id: orgId, wl: false }); continue; }
     if (orgId && !String(orgId).startsWith('dry-')) {
       const existing = await api('GET', `/api/white-labeling/organization/${orgId}`, null, { expectStatus: [200, 204, 404] });
+      // Upload assets from source (idempotent), preferring an already-serving config URL to avoid dupes.
+      const logo = await resolveAsset('logo', logoSrc, orgId, existing?.logoUrl || logoUrl0);
+      const secondaryLogo = await resolveAsset('secondary', secondarySrc, orgId, existing?.secondaryLogoUrl || secondaryUrl0);
+      const favicon = await resolveAsset('favicon', faviconSrc, orgId, existing?.faviconUrl || faviconUrl0);
       const body = {
         organizationId: orgId, isEnabled: true,
         mainMenuLinkListName: main || null, footerLinkListName: footer || null, themePresetName: theme || null,

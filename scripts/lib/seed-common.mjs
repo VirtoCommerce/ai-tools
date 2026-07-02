@@ -130,6 +130,37 @@ export async function api(method, path, body = null, { expectStatus = [200, 201,
   return ct.includes('application/json') ? res.json() : null;
 }
 
+/**
+ * Multipart upload to platform asset storage (`api/assets?folderUrl=…`) — the SAME endpoint the
+ * White Labeling admin blades use. Returns the created asset descriptor (first item: `{ url, name, … }`).
+ * In --dry-run, skips and returns a fake descriptor. Bytes = Buffer/Uint8Array.
+ */
+export async function uploadAsset(folderUrl, fileName, bytes, contentType, { expectStatus = [200, 201] } = {}) {
+  if (DRY_RUN) { verbose(`[DRY] upload ${fileName} → ${folderUrl}`); return { url: `dry://${folderUrl}/${fileName}`, name: fileName, _dryRun: true }; }
+  const form = new FormData();
+  form.append('file', new Blob([bytes], { type: contentType || 'application/octet-stream' }), fileName);
+  const res = await fetch(`${BACK_URL}/api/assets?folderUrl=${encodeURIComponent(folderUrl)}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' }, body: form,
+  });
+  if (!expectStatus.includes(res.status)) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`upload ${fileName} → ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const j = await res.json().catch(() => null);
+  const info = Array.isArray(j) ? j[0] : j;
+  if (!info?.url) throw new Error(`upload ${fileName}: no .url in response`);
+  return info;
+}
+
+/** True if an asset URL currently serves 200 (absolute or BACK_URL-relative). Cache-busted to
+ * dodge a stale CDN negative-cache from a prior missing file. */
+export async function assetUrlOk(url) {
+  if (!url || String(url).startsWith('dry://')) return false;
+  const abs = url.startsWith('http') ? url : `${BACK_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  try { const r = await fetch(`${abs}${abs.includes('?') ? '&' : '?'}cb=${Date.now()}`); return r.status === 200; }
+  catch { return false; }
+}
+
 // --- Data helpers ---
 export function loadCsv(relPath) {
   const full = join(ROOT, relPath);

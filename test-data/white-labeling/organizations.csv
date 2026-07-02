@@ -1,6 +1,6 @@
-org_id,alias_name,org_name,main_menu_link_list_name,footer_link_list_name,logo_url,secondary_logo_url,favicon_url,theme_preset,test_purpose
-WL-ORG-A,WL_ELECTRONICS,Electronics Store,main-menu-electronics,footer-electronics,/cms-content/assets/customization/logo_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.png,/cms-content/assets/customization/secondary_logo_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.png,/cms-content/assets/customization/favicons/favicon_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.webp,Watermelon,Test EVERY WL field at once - logo + secondary logo + favicon + main menu + footer + theme (fully configured)
-WL-ORG-B,WL_FASHION,Fashion Boutique,main-menu-fashion,footer-fashion,,,,Coffee,Test different custom main menu + footer + theme preset (org switching)
-WL-ORG-C,WL_DEFAULT,Default Company,,,,,,black-gold,Test theme-only config (no menu/footer)
-WL-ORG-D,WL_MENU_ONLY,Menu Only Corp,main-menu-electronics,,,,,Purple Pink,Test main menu + theme configured but no footer (partial config)
-WL-ORG-E,WL_FOOTER_ONLY,Footer Only Corp,,footer-electronics,,,,,Test footer configured but no main menu or theme (partial config)
+org_id,alias_name,org_name,main_menu_link_list_name,footer_link_list_name,logo_url,secondary_logo_url,favicon_url,logo_source,secondary_logo_source,favicon_source,theme_preset,test_purpose
+WL-ORG-A,WL_ELECTRONICS,Electronics Store,main-menu-electronics,footer-electronics,/cms-content/assets/customization/logo_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.png,/cms-content/assets/customization/secondary_logo_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.png,/cms-content/assets/customization/favicons/favicon_5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610_1783003801772.webp,white-labeling/assets/electronics/logo.png,white-labeling/assets/electronics/secondary-logo.png,white-labeling/assets/electronics/favicon.webp,Watermelon,Test EVERY WL field at once - logo + secondary logo + favicon + main menu + footer + theme (fully configured)
+WL-ORG-B,WL_FASHION,Fashion Boutique,main-menu-fashion,footer-fashion,,,,,,,Coffee,Test different custom main menu + footer + theme preset (org switching)
+WL-ORG-C,WL_DEFAULT,Default Company,,,,,,,,,black-gold,Test theme-only config (no menu/footer)
+WL-ORG-D,WL_MENU_ONLY,Menu Only Corp,main-menu-electronics,,,,,,,,Purple Pink,Test main menu + theme configured but no footer (partial config)
+WL-ORG-E,WL_FOOTER_ONLY,Footer Only Corp,,footer-electronics,,,,,,,,Test footer configured but no main menu or theme (partial config)
