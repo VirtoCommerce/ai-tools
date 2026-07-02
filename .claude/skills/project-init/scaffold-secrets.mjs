@@ -12,10 +12,22 @@
  *   - ADMIN_PASSWORD / USER_PASSWORD — always (app test-user creds; per-env → the
  *     `_<ENV>` suffix config.js promotes to the base name when TEST_ENV matches).
  *   - JIRA_API_TOKEN   — only if --tracker jira    AND --jira-auth token
- *   - GITHUB_FIX_BUGS_TOKEN — only if --client-vcs github AND --vcs-auth pat
- *   - ADO_PAT          — only if --tracker azure   OR  --client-vcs azure-repos
+ *   - GITHUB_FIX_BUGS_TOKEN — only if the GitHub auth is a PAT (--github-auth pat).
+ *     GitHub auth is its OWN axis (client GitHub repos AND/OR the platform upstream
+ *     fork-PR), independent of where the client's code is hosted — so an azure-repos
+ *     client contributing upstream via a GitHub PAT still gets this line.
+ *   - ADO_PAT          — only if (--tracker azure OR --client-vcs azure-repos) AND the
+ *     ADO auth is a PAT (--ado-auth pat). --ado-auth az-login relies on the `az` session
+ *     and emits NO ADO_PAT line.
  *   - POSTMAN_API_KEY / CONTEXT7_API_KEY — only if named in --extras
- * Browser-login auth (gh-cli / az-login / Atlassian MCP OAuth) emits NO token line.
+ * Browser-login/session auth (gh-cli / az-login / Atlassian MCP OAuth) emits NO token line.
+ *
+ * Auth axes (each maps from its own interview question):
+ *   --ado-auth    pat | az-login   (Azure Boards + Azure Repos)
+ *   --github-auth pat | gh-cli     (client GitHub repos and/or the platform upstream)
+ *   --jira-auth   token | oauth    (Jira)
+ * Legacy: --vcs-auth pat|gh-cli|az-login is still honoured as a fallback for the two new
+ * flags (pat⇒both pat; gh-cli⇒github gh-cli; az-login⇒ado az-login) when they are absent.
  *
  * IDEMPOTENT: appends only the placeholders not already present in `.env.local`
  * (a line matching `^KEY=`), so a re-run never clobbers values the operator has
@@ -71,13 +83,13 @@ const CATALOG = {
     where: "id.atlassian.com → Manage account → Security → API tokens → Create API token.",
   },
   GITHUB_FIX_BUGS_TOKEN: {
-    perEnv: false, include: (o) => o.clientVcs === "github" && o.vcsAuth === "pat",
+    perEnv: false, include: (o) => o.githubAuth === "pat",
     what: "GitHub fine-grained Personal Access Token.",
-    why: "Lets /qa-fix open PRs and file issues on GitHub.",
+    why: "Lets /qa-fix open PRs and file issues on GitHub (client GitHub repos and/or the platform upstream fork-PR).",
     where: "github.com → Settings → Developer settings → Personal access tokens → Fine-grained. Perms: Contents + Pull requests = Read/Write (public_repo is enough to fork + file issues).",
   },
   ADO_PAT: {
-    perEnv: false, include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos",
+    perEnv: false, include: (o) => (o.tracker === "azure" || o.clientVcs === "azure-repos") && o.adoAuth !== "az-login",
     what: "Azure DevOps Personal Access Token.",
     why: "Azure Boards work items and/or Azure Repos pull requests.",
     where: "dev.azure.com → User settings → Personal access tokens. Scopes: Work Items R/W, Code R/W.",
@@ -102,11 +114,17 @@ function main() {
   if (!env || typeof env !== "string") fail('missing --env <name> (needed for the per-env credential suffix).');
   if (!/^[a-z0-9_]+$/.test(env)) fail(`invalid --env "${env}". Must match [a-z0-9_]+ (underscores, no hyphens).`);
 
+  const vcsAuth = args["vcs-auth"] || "pat";        // legacy single flag (fallback)
   const opts = {
     tracker: args.tracker || "jira",
-    jiraAuth: args["jira-auth"] || "token",       // token | oauth
+    jiraAuth: args["jira-auth"] || "token",         // token | oauth
     clientVcs: args["client-vcs"] || "github",
-    vcsAuth: args["vcs-auth"] || "pat",            // pat | gh-cli | az-login
+    vcsAuth,
+    // Independent auth axes; each maps from its own interview question. Fall back to the
+    // legacy --vcs-auth so existing callers keep working (pat⇒both pat; gh-cli⇒github
+    // session; az-login⇒ado session).
+    adoAuth: args["ado-auth"] || (vcsAuth === "az-login" ? "az-login" : "pat"),   // pat | az-login
+    githubAuth: args["github-auth"] || (vcsAuth === "gh-cli" ? "gh-cli" : "pat"), // pat | gh-cli
     extras: String(args.extras || "").split(",").map((s) => s.trim()).filter(Boolean),
   };
 

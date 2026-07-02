@@ -187,10 +187,18 @@ auth emits no token line:
 ```bash
 node .claude/skills/project-init/scaffold-secrets.mjs \
   --env myqa --tracker jira --jira-auth token \
-  --client-vcs github --vcs-auth pat --print
+  --client-vcs github --github-auth pat --print
+# client on Azure with session auth for both axes → emits ONLY the app passwords:
+node .claude/skills/project-init/scaffold-secrets.mjs \
+  --env acme --tracker azure --client-vcs azure-repos \
+  --ado-auth az-login --github-auth gh-cli --print
 ```
-Flags: `--jira-auth token|oauth`, `--vcs-auth pat|gh-cli|az-login`,
-`--extras postman,context7`. Idempotent, placeholders written empty.
+Flags — **one per auth axis, each from its own interview question**: `--jira-auth
+token|oauth` (Jira) · `--ado-auth pat|az-login` (Azure Boards + Repos; `az-login` ⇒ no
+`ADO_PAT`, uses the `az` session) · `--github-auth pat|gh-cli` (client GitHub repos
+and/or the platform upstream fork-PR; `gh-cli` ⇒ no `GITHUB_FIX_BUGS_TOKEN`, uses the gh
+session) · `--extras postman,context7`. (Legacy `--vcs-auth pat|gh-cli|az-login` is still
+honoured as a fallback.) Idempotent, placeholders written empty.
 
 ### 3c. Tell the operator: two files created — fill them, then verify
 
@@ -206,6 +214,14 @@ Print a message that:
 continuing. Do not proceed on empty placeholders. (Browser-login choices — `gh auth
 login --web`, `az login`, Atlassian MCP OAuth — have no `.env.local` token line;
 remind the operator to run that login instead.)
+
+**Make the wait VISUALLY OBVIOUS.** A plain "let me know when done" reads as narration,
+not a question — the operator can't tell the pipeline has stopped for them. End the
+message with an unmistakable, set-apart call-to-action on its own line, e.g. a blockquote
+banner: `> ⏸️ **WAITING FOR YOU** — fill both files, then reply **“готово / done”**.`
+Do not append any further tool calls or steps after it — the turn ends there so the
+prompt-for-input is the last thing on screen. (Same principle wherever the pipeline
+blocks on the operator: reuse this banner.)
 
 Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 

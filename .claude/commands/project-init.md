@@ -46,9 +46,12 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    (`--project-type client --client-vcs github` also emits `CLIENT_REPO_ORG`; azure-repos
    emits nothing extra — client org = ADO_ORG) → `.env.<env>`; (3b)
    `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
-   `_<ENV>`-suffixed, browser-login auth emits no token line); (3c) tell the operator
-   **two files were created — fill both** (inline comments say what/where), then
-   **pause** — verify (step 7) checks them. Never a raw account password.
+   `_<ENV>`-suffixed, auth axes `--ado-auth`/`--github-auth`; session auth emits no token
+   line); (3c) tell the operator **two files were created — fill both** (inline comments
+   say what/where), then **pause** — verify (step 7) checks them. Never a raw account
+   password. **End the pause with a visually unmistakable waiting banner** (e.g. a
+   blockquote `> ⏸️ WAITING FOR YOU — fill both files, then reply "готово"`) as the last
+   line, no tool calls after it — a plain "let me know" reads as narration, not a prompt.
 4. Write the profile (`gen-profile.mjs`) — read connection/routing values back from the
    filled `.env.<env>` (tracker; client `--client-org` = `CLIENT_REPO_ORG` or `ADO_ORG`);
    for fork mode derive `--upstream-account` from the GitHub token owner (`gh api user`),
