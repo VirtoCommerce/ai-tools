@@ -73,6 +73,9 @@ const truncTo = (s, n) => (s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…"
 function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
 }
+function tryOut(cmd) {
+  try { return execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { return ""; }
+}
 async function httpStatus(url) {
   if (!url) return 0;
   try { return (await fetch(url, { method: "GET", redirect: "manual" })).status; }
@@ -180,9 +183,21 @@ async function main() {
     }
   }
 
-  // 8. GitHub fix token (PAT) — validate + push perm on the upstream platform repo
-  const ghtok = process.env.GITHUB_FIX_BUGS_TOKEN || "";
+  // 8. GitHub auth for fix PRs/issues — REAL probe, whether the token comes from a PAT
+  //    or the gh-cli session. Resolve a token, hit /user + the upstream repo, and check
+  //    the permission is enough for the contribution mode (fork ⇒ read is enough since you
+  //    PR from your own fork; direct ⇒ needs push). gh-cli is no longer merely "logged in".
   const upstream = `${profile.upstream.org || "VirtoCommerce"}/vc-platform`;
+  const forkMode = profile.upstream.contributionMode === "fork";
+  const ghAuthed = tryCmd("gh auth status");
+  let ghtok = process.env.GITHUB_FIX_BUGS_TOKEN || "";
+  let ghVia = ghtok ? "PAT" : "";
+  let ghScopes = "";
+  if (!ghtok && ghAuthed) {
+    ghtok = tryOut("gh auth token"); ghVia = "gh CLI";
+    const m = /Token scopes:\s*(.+)/i.exec(tryOut("gh auth status 2>&1") || "");
+    ghScopes = m ? m[1].replace(/['\s]/g, "") : "";
+  }
   if (ghtok) {
     try {
       const gh = (path) => fetch(`https://api.github.com${path}`, { headers: { Authorization: `Bearer ${ghtok}`, "User-Agent": "vc-project-init", Accept: "application/vnd.github+json" } });
@@ -192,14 +207,18 @@ async function main() {
         const rp = await gh(`/repos/${upstream}`);
         let perm = "unknown";
         if (rp.ok) { const p = (await rp.json()).permissions || {}; perm = p.admin ? "admin" : p.maintain ? "maintain" : p.push ? "push" : p.pull ? "pull(read-only)" : "none"; }
-        add("GitHub fix token (PAT)", "PASS", `valid, login '${login}'; ${upstream}: ${perm}`);
-      } else add("GitHub fix token (PAT)", "FAIL", `GET /user → ${u.status}`);
-    } catch (e) { add("GitHub fix token (PAT)", "FAIL", e.message); }
-  } else add("GitHub fix token (PAT)", "SKIP", "GITHUB_FIX_BUGS_TOKEN unset (relying on gh CLI)");
+        // fork mode: read is enough (fork + PR from own account); direct: needs push+.
+        const enough = rp.ok && (forkMode || ["push", "maintain", "admin"].includes(perm));
+        const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
+        add(`GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`, enough ? "PASS" : "WARN",
+          `${ghVia}, login '${login}'; ${upstream}: ${perm}${scopesNote}` + (enough ? "" : forkMode ? "" : " — direct PR needs push; use fork mode or a token with write"));
+      } else add(`GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`, "FAIL", `${ghVia}: GET /user → ${u.status}`);
+    } catch (e) { add("GitHub auth", "FAIL", e.message); }
+  } else add("GitHub auth", "FAIL", "no GITHUB_FIX_BUGS_TOKEN and no gh CLI session — set the PAT or run `gh auth login`");
 
-  // 9. gh CLI session
-  add("gh CLI session", tryCmd("gh auth status") ? "PASS" : ghtok ? "SKIP" : "FAIL",
-    tryCmd("gh auth status") ? "gh authenticated" : "run `gh auth login` (or rely on the PAT above)");
+  // 9. gh CLI session (informational — the capability probe above is the real gate)
+  add("gh CLI session", ghAuthed ? "PASS" : (process.env.GITHUB_FIX_BUGS_TOKEN ? "SKIP" : "FAIL"),
+    ghAuthed ? "gh authenticated" : "run `gh auth login` (or rely on the PAT above)");
 
   renderTable(results);
   renderMcp();
