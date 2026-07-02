@@ -25,8 +25,8 @@
  * Identity from .env.{ENV}; secrets from .env.local. Prod blocked by ENV_RISK=production.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   BACK_URL, ADMIN, ADMIN_PASSWORD, STORE_ID, ENV_RISK, ROOT, DATE,
   setFlags, authenticate, ensureMemberIndex, parseCsv,
@@ -34,6 +34,7 @@ import {
   personalUsers, ensurePersonalAccount, adminUsers, ensureAdminAccount,
   deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, getApi,
 } from '../lib/user-provision.mjs';
+import { syncEnvAliases } from '../lib/seed-common.mjs';
 
 const args = process.argv.slice(2);
 const KINDS = ['all', 'b2b', 'imp', 'cross-org', 'personal', 'loyalty'];
@@ -42,6 +43,12 @@ const TEARDOWN = args.includes('--teardown') || args.includes('teardown');
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 setFlags({ dryRun: DRY_RUN, verbose: VERBOSE });
+
+// Seed-freshness marker consumed by the regression pipeline's reuse-skip check
+// (regression-orchestrator / autonomous-regression-orchestrator / /qa-regression):
+// a fresh mtime + matching profile lets a run skip reseeding. A stamp, NOT a results
+// dump — runtime GUIDs live in aliases.{env}.json / the CSVs. Gitignored, local state.
+const SEED_FINGERPRINT = join(ROOT, 'test-data/b2b/.seed-fingerprint.json');
 
 // The impersonation subset: the 11 many-orgs orgs PLUS TechFlow (ORG-002), which the blocked/
 // invited targets (CON-021/CON-022) belong to. Contacts selected explicitly by id.
@@ -75,6 +82,16 @@ async function seedOrgGraph({ orgFilter = null, contactFilter = null } = {}) {
   await relinkUsersToContacts(contactMap);
   await ensureRoles();
   await provisionContactLogins(contactMap, orgMap);
+
+  // Persist the freshly-created org platform GUIDs to aliases.<env>.json so ORG_*
+  // aliases resolve their real platform_id (business keys / names stay in the CSV).
+  // No-op for the primary vcst env. orgMap is keyed by the CSV org_id business key.
+  const orgByKey = {};
+  for (const [orgId, v] of Object.entries(orgMap)) {
+    if (v?.platform_id) orgByKey[orgId] = { platform_id: v.platform_id };
+  }
+  syncEnvAliases('b2b/organizations', orgByKey);
+
   return { orgs: Object.values(orgMap), contacts: Object.values(contactMap) };
 }
 
@@ -127,32 +144,44 @@ async function run() {
   await authenticate();
   await ensureMemberIndex(getApi());
 
-  if (TEARDOWN) { await runTeardown(); return; }
+  if (TEARDOWN) {
+    await runTeardown();
+    // Drop the freshness marker so a later regression run doesn't treat torn-down data as seeded.
+    if (!DRY_RUN) { try { rmSync(SEED_FINGERPRINT, { force: true }); } catch { /* best-effort */ } }
+    return;
+  }
 
-  const report = { seedDate: DATE, kind, platform: BACK_URL, storeId: STORE_ID };
+  // Each helper seeds as a side effect; runtime GUIDs are persisted to
+  // aliases.<env>.json by seedOrgGraph (org platform_id). No standalone
+  // _seed-results report is written (business keys/emails live in the CSVs).
   if (kind === 'personal') {
-    Object.assign(report, await seedPersonal(false));
+    await seedPersonal(false);
   } else if (kind === 'loyalty') {
-    Object.assign(report, await seedPersonal(true));
+    await seedPersonal(true);
   } else if (kind === 'cross-org') {
-    report.memberships = await seedMemberships();
+    await seedMemberships();
   } else if (kind === 'imp') {
-    Object.assign(report, await seedOrgGraph({ orgFilter: r => IMP_ORG_IDS.has(r.org_id), contactFilter: r => IMP_CONTACT_IDS.has(r.contact_id) }));
+    await seedOrgGraph({ orgFilter: r => IMP_ORG_IDS.has(r.org_id), contactFilter: r => IMP_CONTACT_IDS.has(r.contact_id) });
   } else if (kind === 'b2b') {
-    Object.assign(report, await seedOrgGraph());
-    report.memberships = await seedMemberships();
+    await seedOrgGraph();
+    await seedMemberships();
   } else { // all
-    Object.assign(report, await seedOrgGraph());
-    report.memberships = await seedMemberships();
-    Object.assign(report, await seedPersonal(false));
+    await seedOrgGraph();
+    await seedMemberships();
+    await seedPersonal(false);
   }
 
+  // Write the seed-freshness marker (mtime + profile) for the regression reuse-skip check.
   if (!DRY_RUN) {
-    const out = join(ROOT, `test-data/b2b/_seed-results-company-users-${DATE}.json`);
-    mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, JSON.stringify(report, null, 2));
-    console.log(`\nResults: ${out}`);
+    writeFileSync(SEED_FINGERPRINT, JSON.stringify({
+      seededAt: new Date().toISOString(),
+      kind,
+      env: process.env.TEST_ENV || 'vcst',
+      storeId: STORE_ID,
+      platform: BACK_URL,
+    }, null, 2));
   }
+
   console.log(`\n✅ Company-users seed complete (kind=${kind})\n`);
 }
 

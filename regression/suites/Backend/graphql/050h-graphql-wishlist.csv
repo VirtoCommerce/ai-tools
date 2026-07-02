@@ -550,7 +550,7 @@ WL-025,"Personal Account — Private Wishlist OK But Cannot See Org Lists","Grap
   mutation {
     createWishlist(command: {
       storeId: ""{{STORE_ID}}""
-      userId: ""{{ORG_USER_ID}}""
+      userId: ""@td(TECHFLOW_ADMIN.platform_id)""
       listName: ""AGENT-TEST-WL-025-ORG""
       scope: ""organization""
     }) { id scope }
@@ -596,7 +596,7 @@ WL-026,"Personal Account — Cannot Access Org List by ID","GraphQL > Wishlist >
   mutation {
     createWishlist(command: {
       storeId: ""{{STORE_ID}}""
-      userId: ""{{ORG_USER_ID}}""
+      userId: ""@td(TECHFLOW_ADMIN.platform_id)""
       listName: ""AGENT-TEST-WL-026-ORG""
       scope: ""organization""
     }) { id scope }

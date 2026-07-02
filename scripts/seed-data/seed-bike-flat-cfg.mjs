@@ -17,9 +17,9 @@
  *
  * USAGE: node scripts/seed-bike-flat-cfg.mjs [--verbose]
  * Safety: ENV_RISK gate (blocks production; override --allow-admin-writes-on-prod); idempotent by product code.
- * Writes test-data/_seed-results-bike-flat-{DATE}.json.
+ * Writes CFG_BIKE runtime GUIDs to test-data/aliases.{env}.json (non-vcst).
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
@@ -28,7 +28,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, syncEnvAliases } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -41,7 +41,6 @@ const STORE_ID = process.env.STORE_ID || 'B2B-store';
 let VIRTUAL_CATALOG_ID = null;
 
 const DATE = '20260527';
-const RESULTS_FILE = join(ROOT, `test-data/_seed-results-bike-flat-${DATE}.json`);
 const args = process.argv.slice(2);
 const VERBOSE = args.includes('--verbose');
 
@@ -245,9 +244,9 @@ async function main() {
   try { await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: true }], { expectStatus: [200, 204] }); console.log('\n  ✓ reindex (rebuild) triggered'); }
   catch (e) { console.log(`  ⚠ reindex: ${e.message.slice(0, 120)}`); }
 
-  mkdirSync(dirname(RESULTS_FILE), { recursive: true });
-  writeFileSync(RESULTS_FILE, JSON.stringify({ date: DATE, platform: BACK_URL, storeId: STORE_ID, catalog: { id: catalog.id, name: catalog.name }, virtualCatalogId: VIRTUAL_CATALOG_ID, seeded: [seeded] }, null, 2));
-  console.log(`\nResults: ${RESULTS_FILE}`);
+  // Persist CFG-032 runtime GUIDs to aliases.<env>.json (CFG_BIKE.id + configuration_id);
+  // no _seed-results report. Business keys/names stay in the committed CSV.
+  if (!seeded.error) syncEnvAliases('products/configurable-products', { [seeded.csvId]: { product_id_guid: seeded.parentId, configuration_id: seeded.configurationId } });
   if (seeded.error) { console.log(`\n❌ ${seeded.csvId}: ${seeded.error.slice(0, 200)}`); process.exit(1); }
   console.log(`\n✅ ${seeded.csvId} parent=${seeded.parentId} config=${seeded.configurationId}`);
   for (const sec of seeded.sections) console.log(`      §${sec.displayOrder} ${sec.name} id=${sec.id} req=${sec.isRequired} opts=[${sec.options.map(o => `${o.productName}×${o.quantity}`).join(', ')}]`);

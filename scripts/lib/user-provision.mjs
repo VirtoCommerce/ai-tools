@@ -36,7 +36,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex, verifyCreated, verifyRemoved } from './seed-common.mjs';
+import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases } from './seed-common.mjs';
 import { resolveAllRoles } from './user-roles.mjs';
 
 // --- Env (defaults → .env.{ENV} → .env.local) + per-env suffix promotion ---
@@ -539,8 +539,26 @@ export async function provisionContactLogins(contactMap, orgMap) {
   }
   console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
   if (!DRY_RUN) {
-    const written = writeBackUserPlatformIds(idByEmail);
-    if (written) console.log(`  ✓ users.csv: refreshed ${written} platform_id(s) from live (keeps @td userId aliases stable)`);
+    // Persist the live security-account userIds so @td(ACME_ADMIN.platform_id) etc.
+    // resolve. Primary vcst → refresh the committed users.csv (canonical). Every other
+    // env → aliases.<env>.json (keyed by user_id) so the committed CSV isn't dirtied
+    // with env-specific ids; the resolver layers it over the base CSV field-by-field.
+    if ((process.env.TEST_ENV || 'vcst') === 'vcst') {
+      const written = writeBackUserPlatformIds(idByEmail);
+      if (written) console.log(`  ✓ users.csv: refreshed ${written} platform_id(s) from live (keeps @td userId aliases stable)`);
+    } else {
+      const idByLcEmail = {};
+      for (const [e, i] of Object.entries(idByEmail)) {
+        if (e && i && !String(i).startsWith('dry-')) idByLcEmail[e.toLowerCase()] = i;
+      }
+      const byUserId = {};
+      for (const u of userRows) {
+        const id = idByLcEmail[(u.email || '').toLowerCase()];
+        if (u.user_id && id) byUserId[u.user_id] = { platform_id: id };
+      }
+      syncEnvAliases('b2b/users', byUserId);
+      console.log(`  ✓ aliases.${process.env.TEST_ENV}.json: wrote ${Object.keys(byUserId).length} user platform_id(s)`);
+    }
   }
   return { accounts: nAcct, memberships: nMem };
 }

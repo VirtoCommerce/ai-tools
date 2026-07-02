@@ -148,9 +148,7 @@ async function teardown() {
   log(`${ffcs.length} fulfillment center(s) available`);
   const bulk = argv.includes('--catalog') || argv.includes('--stock');
   const count = bulk ? await seedBulkCatalog(ffcs) : await seedFromFixtures(ffcs);
-  if (!DRY_RUN) writeResults(`test-data/inventory/_seed-results-inventory-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), mode: bulk ? 'bulk-catalog' : 'fixtures',
-    catalogId: bulk ? CATALOG_ID : null, stockedEntries: count,
-    fulfillmentCenters: ffcs.map((f) => ({ id: f.id, code: f.code })),
-  });
+  // No _seed-results report: FC_* aliases resolve by static business key (ffc_id)
+  // from the committed CSV — no runtime GUID to persist here.
+  log(`Done: ${count} stock entr${count === 1 ? 'y' : 'ies'} across ${ffcs.length} FFC(s).`);
 })().catch((e) => { console.error('FAILED:', e.message); process.exit(1); });

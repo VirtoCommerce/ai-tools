@@ -134,12 +134,9 @@ async function seed() {
     log(`⚠ reindex trigger failed (${String(e.message).slice(0, 100)}) — run a CatalogProduct reindex manually before cart tests`);
   }
 
-  writeResults(`test-data/pricing/_seed-results-pricing-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), catalogId: CATALOG_ID, storeId: TARGET_STORE,
-    currency: CURRENCY, pricelist, listPrice: LIST_PRICE, productsPriced: priced,
-    productIds: products.map((p) => p.id),
-  });
-  log(`Wrote results → test-data/pricing/_seed-results-pricing-${DATE_STAMP}.json`);
+  // No _seed-results report: PRICELIST_* aliases resolve by static business key
+  // (pricelist_id) from the committed CSV — no runtime GUID to persist here.
+  log(`Done: ${priced} product(s) priced on ${pricelist?.name || CURRENCY} list.`);
 }
 
 async function teardown() {

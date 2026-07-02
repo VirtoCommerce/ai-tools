@@ -1,6 +1,6 @@
 ---
 description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS. Environment-agnostic (any TEST_ENV); verify with td:reconcile."
-argument-hint: "bootstrap | minimal | catalog | b2b | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
+argument-hint: "bootstrap | minimal | catalog | company-users | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ Seed a complete test environment on **any** environment (fresh `/qa-local-env` l
 /qa-seed-data bootstrap   # ⭐ ONE command, any env: preflight (member index → catalog → FFC) then the full dependency chain → npm run seed:bootstrap
 /qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
 /qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
-/qa-seed-data b2b         # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
+/qa-seed-data company-users  # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
 /qa-seed-data pricing     # Price lists, tiers, multi-currency → npm run seed:pricing
 /qa-seed-data inventory   # Fulfillment centers + stock → npm run seed:inventory
 /qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
@@ -49,12 +49,11 @@ Read the skill definition and its references, then choose the path:
 
 Seeded entity data, CSVs, and `@td()` alias references live in `test-data/`. See `test-data/README.md` for:
 - `aliases.json` — `@td()` token registry used by regression suite CSVs
-- `b2b/` — seeded orgs, contacts, users with live platform IDs (`_seed-results-orgs.json`)
+- `b2b/` — seeded orgs, contacts, users (business keys in CSVs; platform GUIDs via `@td()`)
 - `users/agent-user-pool.csv` — 3 dedicated users for parallel agent browser slots
 - `payment/test-cards.csv` — processor-specific test cards
-- `test-data/b2b/load-test-data.js` — JS loader module for scripts
 
-After seeding, update the relevant CSVs in `test-data/` with new platform IDs so downstream suites can reference them via `@td()`.
+After seeding, runtime platform IDs resolve via `@td()`: on `vcst` from `aliases.json` + the CSVs; on other envs the seeders write them to `aliases.{env}.json` (see `.claude/rules/test-data.md` §Seed writeback).
 
 ## Safety
 

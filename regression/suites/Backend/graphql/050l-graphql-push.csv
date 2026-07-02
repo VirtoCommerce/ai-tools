@@ -1,10 +1,10 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-PUSH-011,xAPI GraphQL — Query Push Messages List (Happy Path),GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push targeted to ORG_USER (member {{ORG_USER_ID}}) as ADMIN, then reads the recipient inbox via xAPI. Store-user token requires storeId (runner sets it from STORE_ID).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+PUSH-011,xAPI GraphQL — Query Push Messages List (Happy Path),GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push targeted to ORG_USER (member @td(TECHFLOW_ADMIN.platform_id)) as ADMIN, then reads the recipient inbox via xAPI. Store-user token requires storeId (runner sets it from STORE_ID).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) ---
 [AUTH role=ADMIN]
 [REST-OP seed_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-push011"", ""shortMessage"": ""AGENT-TEST-push011-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-push011"", ""shortMessage"": ""AGENT-TEST-push011-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_msg]
 --- READ (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -31,12 +31,12 @@ Body: {""topic"": ""AGENT-TEST-push011"", ""shortMessage"": ""AGENT-TEST-push011
 [DATA label=get_messages] data.pushMessages.items.0.isRead is non-null
 [DATA label=get_messages] data.pushMessages.items.0.createdDate is non-null","[ROUNDTRIP label=get_messages] response data matches REST GET /api/push-message/{id} for captured FIRST_MSG_ID
 [CONSOLE] no JS errors","errors[] non-empty, totalCount=0 despite sent messages existing, isRead field absent from response items, HTTP 401 (storeId missing from token request)",none — seed is AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-001,Automated
-PUSH-012,xAPI GraphQL — Mark Single Push Message as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces it unread (markAllPushMessagesUnread) so an unread message is guaranteed before marking it read.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+PUSH-012,xAPI GraphQL — Mark Single Push Message as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces it unread (markAllPushMessagesUnread) so an unread message is guaranteed before marking it read.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) ---
 [AUTH role=ADMIN]
 [REST-OP seed_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-push012"", ""shortMessage"": ""AGENT-TEST-push012-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-push012"", ""shortMessage"": ""AGENT-TEST-push012-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_msg]
 --- READ STATE (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -69,12 +69,12 @@ Body: {""topic"": ""AGENT-TEST-push012"", ""shortMessage"": ""AGENT-TEST-push012
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.pushMessages.items[?id={{MSG_ID}}].isRead = true","[ROUNDTRIP label=read_back] item with MSG_ID shows isRead=true after mutation
 [CONSOLE] no JS errors","errors[] non-empty on mark_read, markPushMessageRead returns false, isRead remains false in read_back, HTTP 401",none — message stays read (acceptable),COV-2026-06-09-push GAP-001,Automated
-PUSH-013,xAPI GraphQL — Mark Single Push Message as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read (markAllPushMessagesRead) so a read message is guaranteed before flipping it back to unread.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+PUSH-013,xAPI GraphQL — Mark Single Push Message as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read (markAllPushMessagesRead) so a read message is guaranteed before flipping it back to unread.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) ---
 [AUTH role=ADMIN]
 [REST-OP seed_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-push013"", ""shortMessage"": ""AGENT-TEST-push013-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-push013"", ""shortMessage"": ""AGENT-TEST-push013-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_msg]
 --- READ STATE (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -102,12 +102,12 @@ Body: {""topic"": ""AGENT-TEST-push013"", ""shortMessage"": ""AGENT-TEST-push013
 [ERRORS label=read_back] errors[] empty
 [DATA label=read_back] data.pushMessages.items[?id={{MSG_ID}}].isRead = false","[ROUNDTRIP label=read_back] unreadOnly=true query now includes MSG_ID
 [CONSOLE] no JS errors","errors[] non-empty on mark_unread, markPushMessageUnread returns false, MSG_ID absent from unreadOnly=true list after mutation, HTTP 401",none,COV-2026-06-09-push GAP-001,Automated
-PUSH-014,xAPI GraphQL — Mark All Push Messages as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces all unread, marks all read, and verifies unread count drops to 0 while the total list is unchanged (marked, not deleted).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+PUSH-014,xAPI GraphQL — Mark All Push Messages as Read,GraphQL > Push Messages > Read State,High,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then forces all unread, marks all read, and verifies unread count drops to 0 while the total list is unchanged (marked, not deleted).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) ---
 [AUTH role=ADMIN]
 [REST-OP seed_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-push014"", ""shortMessage"": ""AGENT-TEST-push014-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-push014"", ""shortMessage"": ""AGENT-TEST-push014-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_msg]
 --- READ STATE (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -137,12 +137,12 @@ Body: {""topic"": ""AGENT-TEST-push014"", ""shortMessage"": ""AGENT-TEST-push014
 [COUNT label=verify_all] data.pushMessages.totalCount >= 1","[ROUNDTRIP label=read_back] unreadOnly=true returns totalCount=0 after markAllPushMessagesRead
 [ROUNDTRIP label=verify_all] full list (unreadOnly=false) still returns all messages — none deleted
 [CONSOLE] no JS errors","errors[] non-empty on mark_all_read, markAllPushMessagesRead returns false, unreadOnly=true still returns items after bulk mark, messages deleted instead of marked read",none,COV-2026-06-09-push GAP-001,Automated
-PUSH-015,xAPI GraphQL — Mark All Push Messages as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read; markAllPushMessagesUnread must flip everything back to unread so unreadOnly=true returns at least the seeded message.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) ---
+PUSH-015,xAPI GraphQL — Mark All Push Messages as Unread,GraphQL > Push Messages > Read State,Medium,BL-NOTIF-001,ECL-14.1,"Self-seeds 1 Sent push to ORG_USER then marks all read; markAllPushMessagesUnread must flip everything back to unread so unreadOnly=true returns at least the seeded message.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) ---
 [AUTH role=ADMIN]
 [REST-OP seed_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-push015"", ""shortMessage"": ""AGENT-TEST-push015-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-push015"", ""shortMessage"": ""AGENT-TEST-push015-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_msg]
 --- READ STATE (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -206,12 +206,12 @@ Content-Type: application/json
 Body: {""topic"": ""AGENT-TEST-authz-probe"", ""shortMessage"": ""authz probe"", ""status"": ""Draft""}
 [REST-EXEC platform_push]","[ERRORS label=platform_push] HTTP 403","[ADMIN] confirm no notification created by the failed call — admin Push Messages list unchanged
 [CONSOLE] no JS errors from REST call","HTTP 200/201 from /api/push-message using storefront token (real authorization gap — escalate), HTTP 404/405 (wrong endpoint or method, not an authz signal), message actually created despite 403 status",none — no message was created,COV-2026-06-09-push GAP-002,Automated
-PUSH-027,E2E Cross-Layer — Admin Sends Targeted Push; Recipient Reads and Marks via xAPI,E2E > Push Messages > End-to-End Delivery,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Admin creates a Sent push directly (status:Sent in POST body — there is no /send subendpoint) targeting ORG_USER, proving the SEND path. The recipient READ path (capture an unread message, mark it read, confirm isRead flips) is verified deterministically over already-delivered inbox inventory via force-unread + capture — NOT the just-sent message, because per-recipient projection is async (verified 2026-06-09: a just-created Sent message is not in the recipient xAPI inbox synchronously). Confirming THAT specific message arrived is a manual/poll-capable cross-layer check. Precondition: recipient inbox non-empty (the suite's other cases seed it; AGENT-TEST Sent messages accumulate and are never deletable).","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN: send a fresh targeted Sent message (proves the send path) ---
+PUSH-027,E2E Cross-Layer — Admin Sends Targeted Push; Recipient Reads and Marks via xAPI,E2E > Push Messages > End-to-End Delivery,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Admin creates a Sent push directly (status:Sent in POST body — there is no /send subendpoint) targeting ORG_USER, proving the SEND path. The recipient READ path (capture an unread message, mark it read, confirm isRead flips) is verified deterministically over already-delivered inbox inventory via force-unread + capture — NOT the just-sent message, because per-recipient projection is async (verified 2026-06-09: a just-created Sent message is not in the recipient xAPI inbox synchronously). Confirming THAT specific message arrived is a manual/poll-capable cross-layer check. Precondition: recipient inbox non-empty (the suite's other cases seed it; AGENT-TEST Sent messages accumulate and are never deletable).","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- ADMIN: send a fresh targeted Sent message (proves the send path) ---
 [AUTH role=ADMIN]
 [REST-OP create_msg]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-e2e-delivery"", ""shortMessage"": ""AGENT-TEST-e2e-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-e2e-delivery"", ""shortMessage"": ""AGENT-TEST-e2e-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC create_msg]
 [REST-CAPTURE create_msg.body.id → PUSH_MSG_ID]
 --- STOREFRONT (xAPI): recipient read path over delivered inventory (decoupled from async projection of the just-sent message) ---
@@ -247,17 +247,17 @@ Body: {""topic"": ""AGENT-TEST-e2e-delivery"", ""shortMessage"": ""AGENT-TEST-e2
 [DATA label=verify_read] data.pushMessages.items[?id={{RECEIVED_ID}}].isRead = true","[ADMIN] POST /api/push-message/search with statuses:[Sent] confirms the just-sent message status=Sent
 [MANUAL] async per-recipient projection: poll the recipient inbox until shortMessage=AGENT-TEST-e2e-body appears, then confirm mark-read on THAT id (browser / poll-capable harness — not the synchronous runner)
 [CONSOLE] no JS errors","create_msg returns 4xx/5xx, recipient inbox empty (totalCount=0 — nothing delivered), probe_unread returns no items after force-unread, mark_read errors[] non-empty, isRead still false in verify_read for the captured id",none — Sent message is not deletable (AGENT-TEST-prefixed; leave in system),COV-2026-06-09-push GAP-003,Automated
-PUSH-028,xAPI GraphQL — pushMessages Query Filters (unreadOnly / keyword / sort / cursor paging),GraphQL > Push Messages > Filters,High,BL-NOTIF-001,ECL-14.1,"Seeds 2 Sent AGENT-TEST pushes to ORG_USER to keep the inbox populated, then exercises the pushMessages filters deterministically. Keyword filtering is verified WITHOUT depending on async delivery of the fresh seeds: a real existing message's shortMessage is captured live and used as a positive keyword (must match >=1), plus a bogus keyword must match 0 (proves the keyword param is honored). unreadOnly / sort / cursor-paging run over the pre-existing inbox and are synchronous. Precondition: recipient inbox non-empty (AGENT-TEST Sent messages accumulate; store-user token requires storeId).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- SEED (ADMIN) two messages ---
+PUSH-028,xAPI GraphQL — pushMessages Query Filters (unreadOnly / keyword / sort / cursor paging),GraphQL > Push Messages > Filters,High,BL-NOTIF-001,ECL-14.1,"Seeds 2 Sent AGENT-TEST pushes to ORG_USER to keep the inbox populated, then exercises the pushMessages filters deterministically. Keyword filtering is verified WITHOUT depending on async delivery of the fresh seeds: a real existing message's shortMessage is captured live and used as a positive keyword (must match >=1), plus a bogus keyword must match 0 (proves the keyword param is honored). unreadOnly / sort / cursor-paging run over the pre-existing inbox and are synchronous. Precondition: recipient inbox non-empty (AGENT-TEST Sent messages accumulate; store-user token requires storeId).","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- SEED (ADMIN) two messages ---
 [AUTH role=ADMIN]
 [REST-OP seed_a]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-filter-a"", ""shortMessage"": ""AGENT-TEST-filter-a-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-filter-a"", ""shortMessage"": ""AGENT-TEST-filter-a-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_a]
 [REST-OP seed_b]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-filter-b"", ""shortMessage"": ""AGENT-TEST-filter-b-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-02T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-filter-b"", ""shortMessage"": ""AGENT-TEST-filter-b-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-02T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_b]
 --- FILTERS (ORG_USER xAPI) ---
 [AUTH role=ORG_USER]
@@ -308,12 +308,12 @@ Body: {""topic"": ""AGENT-TEST-filter-b"", ""shortMessage"": ""AGENT-TEST-filter
 [ERRORS label=page_two] errors[] empty
 [DATA label=page_two] data.pushMessages.items.0.id is non-null","[ROUNDTRIP label=page_two] items on page 2 are different from items on page 1 (no duplicates)
 [CONSOLE] no JS errors","errors[] non-empty on any filter op, unreadOnly=true returns read messages, positive keyword (a real message text) returns 0, bogus keyword returns >0 (keyword param ignored), sort not descending, page 2 cursor returns same items as page 1, HTTP 401",none — seeds are AGENT-TEST-prefixed and Sent (not deletable),COV-2026-06-09-push GAP-004,Automated
-PUSH-030,E2E — trackNewRecipients Toggle: tracking flag flips without error and inbox count never decreases,E2E > Push Messages > Recipient Tracking,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Seeds a Sent tracked push to ORG_USER (member {{ORG_USER_ID}}), toggles trackNewRecipients on/off via PUT /api/push-message/{id}/tracking/{bool}, and confirms inbox count does not increase after tracking is disabled. storeId required for storefront token.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN: seed a Sent tracked push and enable tracking ---
+PUSH-030,E2E — trackNewRecipients Toggle: tracking flag flips without error and inbox count never decreases,E2E > Push Messages > Recipient Tracking,High,BL-NOTIF-001 BL-NOTIF-003,ECL-14.3,"Seeds a Sent tracked push to ORG_USER (member @td(TECHFLOW_ADMIN.platform_id)), toggles trackNewRecipients on/off via PUT /api/push-message/{id}/tracking/{bool}, and confirms inbox count does not increase after tracking is disabled. storeId required for storefront token.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- ADMIN: seed a Sent tracked push and enable tracking ---
 [AUTH role=ADMIN]
 [REST-OP seed_tracked]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-track"", ""shortMessage"": ""AGENT-TEST-track-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-track"", ""shortMessage"": ""AGENT-TEST-track-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_tracked]
 [REST-CAPTURE seed_tracked.body.id → TRACKED_MSG_ID]
 [REST-OP set_track_on]
@@ -383,12 +383,12 @@ Body: {""topic"": ""AGENT-TEST-broadcast"", ""shortMessage"": ""AGENT-TEST-broad
 [REST DELETE /api/push-message?ids={{ORG_MSG_ID}}]
 [REST DELETE /api/push-message?ids={{GROUP_MSG_ID}}]
 [REST DELETE /api/push-message?ids={{BROADCAST_MSG_ID}}]",COV-2026-06-09-push GAP-007,Automated
-PUSH-032,E2E — Scheduled Push Lifecycle: Future startDate then Auto-Delivery then Received by Recipient,E2E > Push Messages > Scheduled Delivery,High,BL-NOTIF-003,ECL-14.3,"Deterministic gate: create a scheduled message with a FUTURE startDate (2099) and confirm it persists with that exact startDate and stays status=Draft — i.e. it is NOT prematurely delivered/Sent at create time (BL-NOTIF-003). The downstream auto-delivery at startDate needs a multi-minute scheduler wait the browserless runner cannot poll — that [WAIT] + recipient-receipt confirmation is a documented manual cross-layer check. Admin account accessible; ORG_USER storefront account (storeId=B2B-store); scheduler active.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id={{ORG_USER_ID}}","--- ADMIN ---
+PUSH-032,E2E — Scheduled Push Lifecycle: Future startDate then Auto-Delivery then Received by Recipient,E2E > Push Messages > Scheduled Delivery,High,BL-NOTIF-003,ECL-14.3,"Deterministic gate: create a scheduled message with a FUTURE startDate (2099) and confirm it persists with that exact startDate and stays status=Draft — i.e. it is NOT prematurely delivered/Sent at create time (BL-NOTIF-003). The downstream auto-delivery at startDate needs a multi-minute scheduler wait the browserless runner cannot poll — that [WAIT] + recipient-receipt confirmation is a documented manual cross-layer check. Admin account accessible; ORG_USER storefront account (storeId=B2B-store); scheduler active.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","--- ADMIN ---
 [AUTH role=ADMIN]
 [REST-OP create_scheduled]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-scheduled"", ""shortMessage"": ""AGENT-TEST-scheduled-body"", ""status"": ""Draft"", ""memberIds"": [""{{ORG_USER_ID}}""], ""startDate"": ""2099-01-01T00:00:00Z""}
+Body: {""topic"": ""AGENT-TEST-scheduled"", ""shortMessage"": ""AGENT-TEST-scheduled-body"", ""status"": ""Draft"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""], ""startDate"": ""2099-01-01T00:00:00Z""}
 [REST-EXEC create_scheduled]
 [REST-CAPTURE create_scheduled.body.id → SCHED_ID]
 [REST-OP verify_created]
@@ -401,11 +401,11 @@ GET /api/push-message/{{SCHED_ID}}
 [DATA label=verify_created] body.status = Draft","[ROUNDTRIP] After startDate passes, GET shows body.status=Sent and ORG_USER xAPI inbox contains AGENT-TEST-scheduled-body (runner-manual — scheduler wait)
 [CONSOLE] no JS errors","create_scheduled returns 4xx/5xx, SCHED_ID null, startDate not persisted as 2099, message auto-Sent at create despite future startDate, scheduler never flips status to Sent (escalate)","[AUTH role=ADMIN]
 [REST DELETE /api/push-message?ids={{SCHED_ID}}]",COV-2026-06-09-push GAP-008,Automated
-PUSH-034,Admin API Negative — Delete Sent Message Returns Error (HTTP 500 Known Defect),API > Push Messages > Negative,Medium,BL-NOTIF-003,ECL-14.1,"A Sent push message exists (this case seeds one); DELETE of a Sent message is a known 500 defect — the module rejects modify/delete of Sent with HTTP 500 (should arguably be 4xx).","back_url={{BACK_URL}}, org_user_id={{ORG_USER_ID}}","[AUTH role=ADMIN]
+PUSH-034,Admin API Negative — Delete Sent Message Returns Error (HTTP 500 Known Defect),API > Push Messages > Negative,Medium,BL-NOTIF-003,ECL-14.1,"A Sent push message exists (this case seeds one); DELETE of a Sent message is a known 500 defect — the module rejects modify/delete of Sent with HTTP 500 (should arguably be 4xx).","back_url={{BACK_URL}}, org_user_id=@td(TECHFLOW_ADMIN.platform_id)","[AUTH role=ADMIN]
 [REST-OP seed_sent]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-neg-sent"", ""shortMessage"": ""AGENT-TEST-neg-sent-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""{{ORG_USER_ID}}""]}
+Body: {""topic"": ""AGENT-TEST-neg-sent"", ""shortMessage"": ""AGENT-TEST-neg-sent-body"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberIds"": [""@td(TECHFLOW_ADMIN.platform_id)""]}
 [REST-EXEC seed_sent]
 [REST-CAPTURE seed_sent.body.id → SENT_ID]
 [REST-OP delete_sent]

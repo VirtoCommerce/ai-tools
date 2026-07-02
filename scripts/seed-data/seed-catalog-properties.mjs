@@ -151,9 +151,8 @@ async function main() {
   }
   if (failed) log(`(${failed} propert${failed === 1 ? 'y' : 'ies'} skipped due to errors)`);
 
-  writeResults(`test-data/_seed-results-properties-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), target: BACK_URL, properties: results,
-  });
+  // No _seed-results report: catalog properties are not referenced by @td alias id —
+  // nothing runtime-drifting to persist here.
   console.log(`\n✅ Catalog-properties seed complete — ${results.length} propert(y/ies).`);
 }
 
