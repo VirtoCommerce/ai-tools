@@ -189,22 +189,22 @@ Organization @td(WL_ELECTRONICS.name) has secondary logo configured; White Label
 [NETWORK] secondary logo image loads with HTTP 200","Broken image where secondary logo should appear; Primary logo shown in secondary logo position","none","VCST-4637","Manual"
 "FWL-021","Verify main menu links displayed in header after sign-in (NEW - VCST-4637)","Main Menu Links","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) has main menu link list configured: @td(WL_ELECTRONICS.main_menu) with 5 top-level links, 1 with children; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.main_menu)
-[ASSERT] 2. Verify structure: Home (priority 1); Products (priority 2) with children Laptops (2.1) Phones (2.2) Tablets (2.3); About Us (priority 3); Support (priority 4)
+[ASSERT] 2. Verify structure: Home (priority 1); Brands (priority 2) with children Laptops (2.1) Phones (2.2) Tablets (2.3); About Us (priority 3); Support (priority 4)
 [NAV] 3. Navigate to Admin > Organizations > @td(WL_ELECTRONICS.name)
 [ACT] 4. Set Main Menu Link List Name: @td(WL_ELECTRONICS.main_menu)
 [ACT] 5. Save
 [NAV] 6. Sign in to storefront with user from this org
 [ASSERT] 7. Inspect header navigation
-[ASSERT] 8. Verify main menu structure","[DOM] Top-level links visible in header: Home, Products, About Us, Support
+[ASSERT] 8. Verify main menu structure","[DOM] Top-level links visible in header: Home, Brands, About Us, Support
 [DOM] Links displayed in priority order (1 to 4)
-[DOM] Hovering Products shows dropdown: Laptops, Phones, Tablets
+[DOM] Hovering Brands shows dropdown: Laptops, Phones, Tablets
 [STATE] Home, About Us, Support have no dropdowns
 [DOM] Main menu matches configured link list","[CONSOLE] no uncaught JS errors
 [API] whiteLabelingSettings query returns correct mainMenuLinks","Main menu not visible in header; Wrong links shown; Dropdown not appearing on hover; Priority order wrong","restore org MainMenuLinkListName to original","VCST-4637","Manual"
 "FWL-022","Verify main menu links hierarchical dropdown behavior (parent + children)","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with hierarchical main menu configured (state from FWL-021: @td(WL_ELECTRONICS.main_menu) assigned)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
 [NAV] 2. Navigate to homepage
-[ACT] 3. Hover over Products parent link in header
+[ACT] 3. Hover over Brands parent link in header
 [ASSERT] 4. Observe dropdown menu
 [ASSERT] 5. Verify child links visible: Laptops, Phones, Tablets
 [ACT] 6. Hover over each child link (verify hover state)
@@ -227,21 +227,21 @@ Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile device o
 [ACT] 5. Tap hamburger icon
 [ASSERT] 6. Inspect mobile menu drawer
 [ASSERT] 7. Verify main menu structure in mobile view
-[ACT] 8. Tap Products parent item
+[ACT] 8. Tap Brands parent item
 [ASSERT] 9. Verify child links expand/collapse
 [ACT] 10. Tap Laptops child link
 [ASSERT] 11. Verify navigation","[DOM] Hamburger menu icon visible in mobile header
 [STATE] Tapping hamburger opens mobile menu drawer
-[DOM] Main menu links listed: Home, Products, About Us, Support
-[DOM] Products has expand/collapse icon
-[STATE] Tapping Products expands to show Laptops, Phones, Tablets
+[DOM] Main menu links listed: Home, Brands, About Us, Support
+[DOM] Brands has expand/collapse icon
+[STATE] Tapping Brands expands to show Laptops, Phones, Tablets
 [DOM] Child links are indented or visually nested
 [NAV] Tapping child link navigates correctly
 [STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding; Navigation broken on mobile; Menu not closing after tap","none","VCST-4637","Manual"
 "FWL-024","Verify main menu links navigation works correctly","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with main menu configured; Main menu links pointing to valid URLs","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
 [NAV] 2. Navigate to homepage
-[ACT] 3. Hover over Products in main menu
+[ACT] 3. Hover over Brands in main menu
 [ACT] 4. Click Laptops child link
 [ASSERT] 5. Verify URL changes to the Laptops link's configured route and the page loads (no 404)
 [ASSERT] 6. Verify page loads correctly
@@ -489,8 +489,8 @@ Organization @td(WL_ELECTRONICS.name) with custom logo configured; Screen reader
 Organization @td(WL_ELECTRONICS.name) with main menu configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
 [NAV] 2. Navigate to homepage
 [KEY] 3. Use Tab key to navigate to main menu
-[KEY] 4. Tab through each main menu link (Home, Products, About Us, Support)
-[KEY] 5. When focused on parent link with children (e.g. Products), press Enter or Down Arrow
+[KEY] 4. Tab through each main menu link (Home, Brands, About Us, Support)
+[KEY] 5. When focused on parent link with children (e.g. Brands), press Enter or Down Arrow
 [ASSERT] 6. Verify dropdown opens
 [KEY] 7. Tab through child links in dropdown (Laptops, Phones, Tablets)
 [KEY] 8. Press Enter on a child link
@@ -532,7 +532,7 @@ Organization @td(WL_ELECTRONICS.name) with hierarchical main menu; Screen reader
 [NAV] 3. Navigate to homepage
 [KEY] 4. Use screen reader navigation to reach main menu
 [KEY] 5. Navigate through main menu with screen reader
-[ASSERT] 6. When reaching parent link with children (Products), listen to announcement
+[ASSERT] 6. When reaching parent link with children (Brands), listen to announcement
 [KEY] 7. Navigate into dropdown (if supported by screen reader)
 [ASSERT] 8. Verify screen reader announces child links
 [ASSERT] 9. Verify hierarchy is conveyed","[STATE] Screen reader announces each main menu link by title

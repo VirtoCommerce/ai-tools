@@ -1,23 +1,23 @@
 list_name,link_title,link_url,priority,parent_title,list_type,notes
 main-menu-electronics,Home,/,1,,main-menu,Top-level link — real storefront route
-main-menu-electronics,Products,/catalog,2,,main-menu,Parent with children — real catalog route
-main-menu-electronics,Laptops,/search?q=laptop,1,Products,main-menu,Child of Products — real search route
-main-menu-electronics,Phones,/search?q=phone,2,Products,main-menu,Child of Products — real search route
-main-menu-electronics,Tablets,/search?q=tablet,3,Products,main-menu,Child of Products — real search route
-main-menu-electronics,About Us,/catalog,3,,main-menu,Top-level link — real route (demo label)
+main-menu-electronics,Brands,/brands,2,,main-menu,Parent with children — real brands route
+main-menu-electronics,Laptops,/search?q=laptop,1,Brands,main-menu,Child of Brands — real search route
+main-menu-electronics,Phones,/search?q=phone,2,Brands,main-menu,Child of Brands — real search route
+main-menu-electronics,Tablets,/search?q=tablet,3,Brands,main-menu,Child of Brands — real search route
+main-menu-electronics,About Us,/brands,3,,main-menu,Top-level link — real route (demo label)
 main-menu-electronics,Support,/search?q=support,4,,main-menu,Top-level link — real search route
 main-menu-fashion,Home,/,1,,main-menu,Top-level link — real storefront route
-main-menu-fashion,Shop,/catalog,2,,main-menu,Parent with children — real catalog route
+main-menu-fashion,Shop,/brands,2,,main-menu,Parent with children — real brands route
 main-menu-fashion,Men,/search?q=men,1,Shop,main-menu,Child of Shop — real search route
 main-menu-fashion,Women,/search?q=women,2,Shop,main-menu,Child of Shop — real search route
 main-menu-fashion,Kids,/search?q=kids,3,Shop,main-menu,Child of Shop — real search route
-main-menu-fashion,New Arrivals,/catalog,3,,main-menu,Top-level link — real route (demo label)
+main-menu-fashion,New Arrivals,/brands,3,,main-menu,Top-level link — real route (demo label)
 main-menu-fashion,Contact,/search?q=contact,4,,main-menu,Top-level link — real search route
-footer-electronics,Privacy Policy,/catalog,1,,footer,Footer link — real route (demo label)
-footer-electronics,Terms of Service,/catalog,2,,footer,Footer link — real route (demo label)
+footer-electronics,Privacy Policy,/brands,1,,footer,Footer link — real route (demo label)
+footer-electronics,Terms of Service,/brands,2,,footer,Footer link — real route (demo label)
 footer-electronics,Support,/search?q=support,3,,footer,Footer link — real search route
 footer-electronics,Warranty,/search?q=warranty,4,,footer,Footer link — real search route
-footer-fashion,Shipping Info,/catalog,1,,footer,Footer link — real route (demo label)
-footer-fashion,Returns & Exchanges,/catalog,2,,footer,Footer link with special char — real route (demo label)
+footer-fashion,Shipping Info,/brands,1,,footer,Footer link — real route (demo label)
+footer-fashion,Returns & Exchanges,/brands,2,,footer,Footer link with special char — real route (demo label)
 footer-fashion,Size Guide,/search?q=size,3,,footer,Footer link — real search route
 footer-fashion,Contact Us,/search?q=contact,4,,footer,Footer link — real search route
