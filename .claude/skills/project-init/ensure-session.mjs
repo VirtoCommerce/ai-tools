@@ -71,12 +71,13 @@ async function adoAuthorized(org, project) {
   }
   if (!authHeader) return false;
   try {
-    const r = await fetch(`https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
+    // `_apis/projects` is ORG-level — no project segment (a /{project}/ path 404s).
+    const r = await fetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
     return r.ok && (r.headers.get("content-type") || "").includes("application/json");
   } catch { return false; }
 }
 
-async function ensureAdo(check) {
+async function ensureAdo(check, deviceCode) {
   const org = process.env.ADO_ORG || "";
   const project = process.env.ADO_PROJECT || "";
   if (!org || !project) { log("ADO: SKIP (ADO_ORG/ADO_PROJECT unset)"); return true; }
@@ -89,8 +90,16 @@ async function ensureAdo(check) {
   const tenant = await resolveAdoTenant(org);
   if (!tenant) { log(`ADO: FAIL — could not discover tenant for '${org}'`); return false; }
   if (check) { log(`ADO: NOT authorized — run: az login --tenant ${tenant}`); return false; }
-  log(`ADO: launching browser login for tenant ${tenant} (complete the sign-in in your browser)…`);
-  spawnSync("az", ["login", "--tenant", tenant, "--allow-no-subscriptions"], { stdio: "inherit", shell: true });
+  const azArgs = ["login", "--tenant", tenant, "--allow-no-subscriptions"];
+  if (deviceCode) azArgs.push("--use-device-code"); // device-code: prints URL+code (works when the WAM popup hides the number-match)
+  else if (process.platform === "win32") {
+    // Disable the Windows WAM broker so az opens the REAL browser — it reuses the browser's
+    // existing Azure session (SSO, usually no fresh MFA), instead of the native popup that
+    // ignores browser cookies and forces number-match.
+    spawnSync("az", ["config", "set", "core.enable_broker_on_windows=false"], { stdio: "ignore", shell: true });
+  }
+  log(`ADO: launching ${deviceCode ? "device-code" : "browser (SSO from your signed-in browser)"} login for tenant ${tenant}…`);
+  spawnSync("az", azArgs, { stdio: "inherit", shell: true });
   const ok = await adoAuthorized(org, project);
   log(`ADO: ${ok ? "OK — session now authorizes '" + org + "'" : "still FAIL — the account may not be a member of '" + org + "'"}`);
   return ok;
@@ -114,7 +123,7 @@ async function main() {
   const wantAdo = args.ado || (!args.ado && !args.github && (profile.tracker.kind === "azure" || profile.vcs.clientHost === "azure-repos"));
   const wantGh = args.github || (!args.ado && !args.github); // upstream is always GitHub
   let ok = true;
-  if (wantAdo) ok = (await ensureAdo(Boolean(args.check))) && ok;
+  if (wantAdo) ok = (await ensureAdo(Boolean(args.check), Boolean(args["device-code"]))) && ok;
   if (wantGh) ok = (await ensureGithub(Boolean(args.check))) && ok;
   log(ok ? "all requested sessions authorized ✓" : "one or more sessions need attention ✗");
   process.exit(ok ? 0 : 1);

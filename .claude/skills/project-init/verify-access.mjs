@@ -167,7 +167,7 @@ async function main() {
     else if (!authHeader) add("Azure DevOps auth", "FAIL", "no ADO_PAT and no `az login` session — run `az login` (browser) or set ADO_PAT");
     else {
       try {
-        const r = await fetch(`https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
+        const r = await fetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
         const okJson = r.ok && (r.headers.get("content-type") || "").includes("application/json");
         let detail;
         if (okJson) detail = `${org}/${project} (${via})`;
