@@ -310,11 +310,20 @@ FAIL remains). **WARN** is non-blocking; **SKIP** means a feature isn't configur
 an ADO token from the `az` session and hits the org's `_apis/projects` — an active `az`
 session that is not a member of the org (or is in a different tenant) answers a 203 HTML
 sign-in page and is reported **FAIL** (not a false PASS). GitHub `gh-cli` is checked via
-`gh auth status`. **The pipeline never runs the blocking browser login itself** (an inline
-`az login` / `gh auth login` can hang for minutes): on a session FAIL, tell the operator
-to run the exact command **in their own terminal** — `az login --tenant <org-tenant>` (or
-`gh auth login --web`) — then **re-run verify-access**. Use the ⏸️ waiting banner. (Or fall
-back to a PAT: set `ADO_PAT` / `GITHUB_FIX_BUGS_TOKEN`.)
+`gh auth status`. On a session FAIL, do NOT make the operator hand-craft commands — run
+**`ensure-session.mjs`**, which auto-discovers the ADO org's tenant (from its
+`X-VSS-ResourceTenant` challenge header) and drives `az login --tenant <guid>` /
+`gh auth login --web` itself, then re-probes:
+
+```bash
+TEST_ENV=<env> node .claude/skills/project-init/ensure-session.mjs           # establish
+TEST_ENV=<env> node .claude/skills/project-init/ensure-session.mjs --check   # probe only
+```
+`az login` / `gh auth login` are **blocking** (they wait on the browser), so an inline
+foreground run hangs for minutes — **launch `ensure-session.mjs` in the background** and
+let the operator complete the single browser consent, then re-run verify-access. The only
+thing it can't remove is that browser click (inherent to interactive OAuth); for a fully
+non-interactive setup use a PAT (`ADO_PAT` / `GITHUB_FIX_BUGS_TOKEN`) or a service principal.
 
 **After the readiness table it also prints the MCP-servers section** — confirms
 `.mcp.json` was created and lists each enabled server with its auth status:
@@ -382,7 +391,8 @@ with just those flags + `--merge`.
 | `gen-profile.mjs` | write/merge `project-profile.json` from interview flags |
 | `discover-repos.mjs` | Platform API → proposed client/platform repo split |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
-| `verify-access.mjs` | full `/qa-fix` readiness table + verdict: profile · core env · URLs · **real admin login** · storefront-user soft-probe · tracker token · **GitHub PAT + upstream push perm** · gh CLI |
+| `verify-access.mjs` | full `/qa-fix` readiness table + verdict: profile · core env · URLs · **real admin login** · storefront-user soft-probe · tracker token / **real ADO org probe** · **GitHub PAT + upstream push perm** · gh CLI; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
+| `ensure-session.mjs` | establish the browser-login sessions for session auth WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`, idempotent, `--check` probes only. Run in the background (the login blocks on the browser). |
 
 > The interview asks only topology + the **env name** — no values. Both env files
 > are scaffolded as commented templates the operator fills in: `scaffold-env.mjs` →

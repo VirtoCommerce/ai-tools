@@ -70,6 +70,10 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    AND the MCP-server status as Markdown tables in your reply** (tool output is often
    collapsed/hidden), mapping rows to surfaces (front=FRONT_URL, back=BACK_URL+admin
    login, Jira=tracker token, Git=GitHub PAT+gh CLI) + the PASS/FAIL/WARN/verdict line.
+   For a **session-auth FAIL** (az/ADO or gh), don't make the operator type commands —
+   run `ensure-session.mjs` **in the background** (it auto-discovers the ADO tenant and
+   drives `az login --tenant <guid>` / `gh auth login --web`), let them complete the one
+   browser consent, then re-run verify-access. Truly non-interactive ⇒ a PAT instead.
 8. Done → present as an explicit labelled **Step 8**: summary + manual actions (reload
    IDE for `.mcp.json`, pending OAuth) + first run `/qa-fix <TICKET>`.
 
