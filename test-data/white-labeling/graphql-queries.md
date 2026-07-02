@@ -141,24 +141,24 @@ Default Org (no config - expect fallback):
           "childItems": []
         },
         {
-          "title": "Products",
-          "url": "/products",
+          "title": "Brands",
+          "url": "/brands",
           "priority": 2,
           "childItems": [
-            { "title": "Laptops", "url": "/products/laptops", "priority": 1 },
-            { "title": "Phones", "url": "/products/phones", "priority": 2 },
-            { "title": "Tablets", "url": "/products/tablets", "priority": 3 }
+            { "title": "Laptops", "url": "/search?q=laptop", "priority": 1 },
+            { "title": "Phones", "url": "/search?q=phone", "priority": 2 },
+            { "title": "Tablets", "url": "/search?q=tablet", "priority": 3 }
           ]
         },
         {
           "title": "About Us",
-          "url": "/about",
+          "url": "/brands",
           "priority": 3,
           "childItems": []
         },
         {
           "title": "Support",
-          "url": "/support",
+          "url": "/search?q=support",
           "priority": 4,
           "childItems": []
         }
@@ -182,23 +182,23 @@ Default Org (no config - expect fallback):
         },
         {
           "title": "Shop",
-          "url": "/shop",
+          "url": "/brands",
           "priority": 2,
           "childItems": [
-            { "title": "Men", "url": "/shop/men", "priority": 1 },
-            { "title": "Women", "url": "/shop/women", "priority": 2 },
-            { "title": "Kids", "url": "/shop/kids", "priority": 3 }
+            { "title": "Men", "url": "/search?q=men", "priority": 1 },
+            { "title": "Women", "url": "/search?q=women", "priority": 2 },
+            { "title": "Kids", "url": "/search?q=kids", "priority": 3 }
           ]
         },
         {
           "title": "New Arrivals",
-          "url": "/new-arrivals",
+          "url": "/brands",
           "priority": 3,
           "childItems": []
         },
         {
           "title": "Contact",
-          "url": "/contact",
+          "url": "/search?q=contact",
           "priority": 4,
           "childItems": []
         }

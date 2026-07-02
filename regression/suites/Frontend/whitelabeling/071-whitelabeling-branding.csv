@@ -158,16 +158,16 @@ User account @td(WL_USER_MULTI.email) is member of 2 organizations: Org A = @td(
 [STATE] All branding changes persist across page navigation after switch","[CONSOLE] no uncaught JS errors
 [NETWORK] @td(WL_FASHION.logo) loads with HTTP 200 after switch","Stale @td(WL_ELECTRONICS.logo)/favicon still shown after switching to Org B; Theme not updating; Flash of wrong branding during transition; Org A branding not restored on switch-back","none","Multi-Organization","Manual"
 "FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
-User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (main menu link list @td(WL_ELECTRONICS.main_menu): Home, Products > Laptops/Phones/Tablets, About Us, Support) and Org B = @td(WL_FASHION.name) (main menu link list @td(WL_FASHION.main_menu): Home, Shop > Men/Women/Kids, New Arrivals, Contact)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user
+User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (main menu link list @td(WL_ELECTRONICS.main_menu): Home, Brands > Laptops/Phones/Tablets, About Us, Support) and Org B = @td(WL_FASHION.name) (main menu link list @td(WL_FASHION.main_menu): Home, Shop > Men/Women/Kids, New Arrivals, Contact)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user
 [ASSERT] 2. Verify current org is @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 3. Inspect main menu links in header: Home, Products, About Us, Support
-[ACT] 4. Hover over Products to verify dropdown: Laptops, Phones, Tablets
+[ASSERT] 3. Inspect main menu links in header: Home, Brands, About Us, Support
+[ACT] 4. Hover over Brands to verify dropdown: Laptops, Phones, Tablets
 [ACT] 5. Switch organization to @td(WL_FASHION.name) (Org B)
 [WAIT] 6. Wait for refresh
 [ASSERT] 7. Inspect main menu links in header: should NOW show Home, Shop, New Arrivals, Contact
 [ASSERT] 8. Hover over Shop to verify dropdown: Men, Women, Kids
 [ACT] 9. Switch back to @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 10. Verify main menu reverts to Home, Products, About Us, Support","[DOM] Org A (@td(WL_ELECTRONICS.main_menu)) displays main menu: Home, Products, About Us, Support
+[ASSERT] 10. Verify main menu reverts to Home, Brands, About Us, Support","[DOM] Org A (@td(WL_ELECTRONICS.main_menu)) displays main menu: Home, Brands, About Us, Support
 [DOM] Switching to Org B (@td(WL_FASHION.main_menu)) updates main menu to: Home, Shop, New Arrivals, Contact
 [DOM] Switching back to Org A restores original main menu
 [STATE] No stale links from previous org displayed
