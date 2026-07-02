@@ -236,10 +236,15 @@ for the new config to take effect.
 
 ## 7. Verify access — full readiness checkup
 
-Run with the env selected (so per-env creds resolve):
+Run with the env selected (so per-env creds resolve). **Pass `FORCE_COLOR=1`** —
+the table colours the Status column green/yellow/red, but the script auto-disables
+colour when stdout is not a TTY, and the harness runs this through a pipe (not a
+TTY), so without `FORCE_COLOR=1` the operator only ever sees a plain table. (`NO_COLOR`
+still wins as the opt-out; a human running it directly in a terminal gets colour
+automatically.)
 
 ```bash
-TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs
+FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.

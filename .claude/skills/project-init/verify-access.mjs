@@ -63,6 +63,13 @@ const statusCell = (st, n) => {
 };
 const statusWidth = (st) => `${MARKER[st] || " "} ${st}`.length;
 
+// Target render width. A TTY reports stdout.columns; under a pipe (the harness / a Bash
+// tool) it is undefined, so fall back to $COLUMNS then a conservative 100 — otherwise the
+// box table renders at its natural ~130 cols, wraps in the panel, and the borders shatter
+// into garbled lines (i.e. the table "doesn't appear"). Detail columns are budgeted to fit.
+const MAXW = Number(process.env.COLUMNS) || process.stdout.columns || 100;
+const truncTo = (s, n) => (s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…" : s);
+
 function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
 }
@@ -198,12 +205,13 @@ function renderMcp() {
   });
 
   const cols = ["Server", "Auth", "Status", "Detail"];
-  const w = [
-    Math.max(cols[0].length, ...rows.map((r) => r.name.length)),
-    Math.max(cols[1].length, ...rows.map((r) => r.auth.length)),
-    Math.max(cols[2].length, ...rows.map((r) => r.status.length)),
-    Math.max(cols[3].length, ...rows.map((r) => r.detail.length)),
-  ];
+  const w0 = Math.max(cols[0].length, ...rows.map((r) => r.name.length));
+  const w1 = Math.max(cols[1].length, ...rows.map((r) => r.auth.length));
+  const w2 = Math.max(cols[2].length, ...rows.map((r) => r.status.length));
+  // Chrome for the 4-col row "│ a │ b │ c │ d │" is 13 fixed chars; budget Detail to fit MAXW.
+  const mcpDetailBudget = Math.max(24, MAXW - 13 - w0 - w1 - w2);
+  for (const r of rows) r.detail = truncTo(r.detail, mcpDetailBudget);
+  const w = [w0, w1, w2, Math.max(cols[3].length, ...rows.map((r) => r.detail.length))];
   const pad = (s, n) => s + " ".repeat(n - s.length);
   const line = (l, m, r) => l + w.map((x) => "─".repeat(x + 2)).join(m) + r;
   const row = (a, colorStatus = false) => "│ " + a.map((v, i) => {
@@ -224,11 +232,13 @@ function renderMcp() {
 // --- pretty bordered table (plain Unicode; always aligned) ---
 function renderTable(rows) {
   // Plain ASCII status words (no ambiguous-width glyphs) so borders always align.
-  const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-  const cells = rows.map((r) => ({ name: r.name, status: r.status, detail: trunc(r.detail, 74) }));
   const H = { name: "Check", status: "Status", detail: "Detail" };
-  const w1 = Math.max(H.name.length, ...cells.map((c) => c.name.length));
-  const w2 = Math.max(H.status.length, ...cells.map((c) => statusWidth(c.status)));
+  const w1 = Math.max(H.name.length, ...rows.map((r) => r.name.length));
+  const w2 = Math.max(H.status.length, ...rows.map((r) => statusWidth(r.status)));
+  // Chrome for "│ name │ status │ detail │" is 10 fixed chars; give the rest to Detail,
+  // floored so it stays legible, so the whole table fits within MAXW and never wraps.
+  const detailBudget = Math.max(24, MAXW - 10 - w1 - w2);
+  const cells = rows.map((r) => ({ name: r.name, status: r.status, detail: truncTo(r.detail, detailBudget) }));
   const w3 = Math.max(H.detail.length, ...cells.map((c) => c.detail.length));
   const pad = (s, n) => s + " ".repeat(n - s.length);
   const line = (l, m, r) => `${l}${"─".repeat(w1 + 2)}${m}${"─".repeat(w2 + 2)}${m}${"─".repeat(w3 + 2)}${r}`;
