@@ -52,7 +52,11 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    auto-disables colour on a non-TTY, and the harness runs it through a pipe)
    prints a full readiness table + READY/NOT-READY verdict (profile · core env ·
    URLs · real admin login · storefront-user soft-probe · tracker token · GitHub PAT
-   + upstream push perm · gh CLI). Resolve every FAIL.
-8. Done → `/qa-fix <TICKET>`.
+   + upstream push perm · gh CLI). Resolve every FAIL. **Restate the readiness table
+   AND the MCP-server status as Markdown tables in your reply** (tool output is often
+   collapsed/hidden), mapping rows to surfaces (front=FRONT_URL, back=BACK_URL+admin
+   login, Jira=tracker token, Git=GitHub PAT+gh CLI) + the PASS/FAIL/WARN/verdict line.
+8. Done → present as an explicit labelled **Step 8**: summary + manual actions (reload
+   IDE for `.mcp.json`, pending OAuth) + first run `/qa-fix <TICKET>`.
 
 For `--check`, skip to step 7: `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`.

@@ -268,10 +268,21 @@ server, key unset). It ends with a reminder of which servers still need interact
 OAuth. (The live per-server connection state is only known to the client after a
 reload; the script reports the *configured* auth readiness.)
 
+**Surface the result in your reply — do NOT leave it only in the script's stdout.**
+The table is emitted as tool output, which many clients collapse or hide, so the
+operator may never see it. **Restate the readiness table AND the MCP-server status as
+Markdown tables in your chat message**, mapping each row to the surface it proves —
+**front** = `FRONT_URL` (+ storefront user login), **back** = `BACK_URL` + admin
+login, **Jira/tracker** = tracker token, **Git** = GitHub PAT + gh CLI — and end with
+the `N PASS · N FAIL · N WARN · N SKIP` line and the READY / NOT READY verdict. (Run
+the script with `FORCE_COLOR=1` for the terminal; mirror it in Markdown for the chat.)
+
 ## 8. Done
 
-Summarise what was written (profile path, tracker, VCS, repo counts) and point
-the operator at the first run:
+Present this as an explicit, labelled **Step 8** in your reply (the operator tracks the
+pipeline by step number). Summarise what was written (profile path, tracker, VCS, repo
+counts), list the remaining **manual** actions (reload the IDE for `.mcp.json`; any
+interactive OAuth still pending, e.g. Atlassian), and point the operator at the first run:
 
 ```
 /qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
