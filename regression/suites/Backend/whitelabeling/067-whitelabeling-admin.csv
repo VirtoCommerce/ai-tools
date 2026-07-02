@@ -1,133 +1,220 @@
-ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-WL-001,Check White Labeling widget,Widget,Functional,High,2m,White Labeling module installed,"1. Navigate to Admin Dashboard
-2. Locate White Labeling widget","White Labeling widget displayed with current settings summary",C384970,Not Automated
-WL-002,Set theme presets,Theme,Functional,High,3m,White Labeling module installed,"1. Navigate to White Labeling settings
-2. Select a theme preset
-3. Save","Theme preset applied; colors change accordingly",C384973,Not Automated
-WL-003,Upload custom logo - allowed extensions,Logo,Functional,Critical,3m,White Labeling module enabled,"1. Navigate to White Labeling
-2. Upload logo with allowed file extension (PNG/SVG/JPG)
-3. Save","Custom logo uploaded and displayed",C384971,Not Automated
-WL-004,Upload logo - rejected for invalid extension,Logo,Negative,Medium,2m,White Labeling module enabled,"1. Attempt to upload logo with non-allowed extension","Upload rejected with validation message",C384980,Not Automated
-WL-005,Upload favicon,Favicon,Functional,High,3m,White Labeling module enabled,"1. Navigate to White Labeling
-2. Upload favicon
-3. Save","Favicon uploaded and displayed in browser tab",C384972,Not Automated
-WL-006,Reset branding to defaults,Settings,Functional,Medium,2m,Custom branding applied,"1. Click Reset to restore defaults","Branding restored to default theme/logo/favicon",C384977,Not Automated
-WL-007,Clear all custom branding,Settings,Functional,Medium,2m,Custom branding applied,"1. Click Clear to remove customization","All custom branding removed",C384978,Not Automated
-WL-008,Per-organization footer links - add parent links,Organization Branding,Functional,High,3m,Multiple organizations exist; WL enabled,"1. Navigate to Organization settings
-2. Add parent footer links for Organization1
-3. Save","Parent footer links created for organization",C385322,Not Automated
-WL-009,Per-organization footer links - add children links,Organization Branding,Functional,Medium,3m,Parent footer links exist,"1. Add children footer links under parent
-2. Save","Child footer links nested under parent",C385323,Not Automated
-WL-010,Footer links and main menu links returned in GraphQL query,Organization Branding,Functional,Critical,4m,Footer and main menu links configured for organization,"1. Query white labeling settings via GraphQL with both footerLinks and mainMenuLinks fields
-2. Verify response structure
-3. Verify hierarchical data","GraphQL query returns correct footer link hierarchy and main menu links hierarchy with priority ordering",C385324 VCST-4637,Not Automated
-WL-011,Organization-specific logo and favicon,Organization Branding,Functional,High,5m,Organization with custom branding,"1. Set custom logo/favicon for Organization1
-2. Sign in under Organization1 account
-3. Verify branding displayed","Organization-specific logo and favicon displayed for org users",C385326 C384974,Not Automated
-WL-012,White Labeling Enabled = OFF shows default branding,Store Settings,Functional,Medium,3m,Custom branding exists,"1. Set White Labeling Enabled = OFF
-2. Navigate to storefront
-3. Verify branding","Default platform branding displayed when WL disabled",C384975,Not Automated
-WL-013,White Labeling Enabled = ON shows custom branding,Store Settings,Functional,Medium,3m,Custom branding exists,"1. Set White Labeling Enabled = ON
-2. Navigate to storefront
-3. Verify branding","Custom logo/favicon/colors displayed when WL enabled",C384976,Not Automated
-WL-014,Store-level White Labeling OFF,Store Settings,Functional,Medium,3m,Store settings accessible,"1. Set store-level White Labeling = OFF
-2. Verify storefront","Store-level WL override disables custom branding for that store",C384979,Not Automated
-WL-015,Enable thumbnail job for favicons,Background Jobs,Functional,Medium,3m,White Labeling installed,"1. Enable thumbnail job
-2. Add new run for favicon generation
-3. Verify favicons generated","Favicon generation job runs and produces favicons in all required sizes",C385320 C385321,Not Automated
-WL-016,Verify MainMenuLinkListName field exists in database,Database Schema,Functional,Critical,2m,Database migrations applied,"1. Connect to QA database
-2. Query WhiteLabelingSettings table schema
-3. Verify MainMenuLinkListName column exists
-4. Verify column type is varchar(256)
-5. Verify column is nullable","MainMenuLinkListName column exists with correct type and nullable constraint",VCST-4637 PR#21,Not Automated
-WL-017,Test GraphQL query returns mainMenuLinks field,GraphQL xAPI,Functional,Critical,3m,"Backend deployed with PR #21; Test organization configured","1. Navigate to GraphQL playground
-2. Execute white labeling settings query with mainMenuLinks field
-3. Verify response contains mainMenuLinks array","Query executes successfully; mainMenuLinks field returned with title/url/priority; hierarchical structure supported",VCST-4637 PR#21,Not Automated
-WL-018,Test mainMenuLinks with hierarchical structure,GraphQL xAPI,Functional,High,3m,"Link list with parent + child links created","1. Create link list with parent (Products) and children (Laptops, Phones)
-2. Set organization MainMenuLinkListName
-3. Execute GraphQL query
-4. Verify response structure","Parent link returned; Child links nested under childItems; Correct priority order",VCST-4637 PR#21,Not Automated
-WL-019,Test mainMenuLinks when MainMenuLinkListName is empty,GraphQL xAPI,Functional,High,2m,Organization with MainMenuLinkListName = NULL,"1. Configure organization with MainMenuLinkListName = NULL
-2. Execute GraphQL query
-3. Verify mainMenuLinks field","Query executes successfully; mainMenuLinks is empty array or null; No error",VCST-4637 PR#21,Not Automated
-WL-020,Test mainMenuLinks with non-existent link list name,GraphQL xAPI,Negative,Medium,2m,Organization exists,"1. Set organization MainMenuLinkListName = non-existent-link-list
-2. Execute GraphQL query
-3. Verify response","Query executes without error; mainMenuLinks is empty; Graceful handling",VCST-4637 PR#21,Not Automated
-WL-021,Test query handler retrieves correct org-specific main menu,Query Handler,Functional,High,4m,"Two organizations configured with different MainMenuLinkListName","1. Create two different link lists
-2. Configure Org A and Org B with different values
-3. Query with Org A context
-4. Query with Org B context
-5. Verify results","Org A query returns Org A main menu; Org B query returns Org B main menu; No cross-contamination",VCST-4637 PR#21,Not Automated
-WL-022,Test backward compatibility - footerLinks still works,GraphQL xAPI,Regression,Critical,3m,Organization with existing FooterLinkListName,"1. Query white labeling settings
-2. Verify footerLinks field returned
-3. Verify footer data correct","footerLinks field returned; Data matches FooterLinkListName; No breaking changes",VCST-4637 PR#21,Not Automated
-WL-023,Test GraphQL query performance with mainMenuLinks,Performance,Performance,Medium,3m,Organization with main menu and footer configured,"1. Execute query 10 times
-2. Measure average response time
-3. Compare with baseline","Average response time < 500ms; No significant performance degradation",VCST-4637 PR#21,Not Automated
-WL-024,Verify Admin SPA displays main menu link list field,Admin UI,Functional,High,3m,"Admin SPA deployed; Admin user logged in","1. Navigate to Organization White Labeling settings
-2. Verify Main menu link list field exists
-3. Verify field label and placeholder","Field displayed; Label: Main menu link list; Placeholder: Enter link list name...",VCST-4637 PR#21,Not Automated
-WL-025,Configure MainMenuLinkListName via Admin SPA,Admin UI,Functional,Critical,3m,"Admin SPA accessible; Link list exists","1. Navigate to Organization White Labeling settings
-2. Enter main-menu-test in Main menu link list field
-3. Save settings
-4. Verify success message","Value saves successfully; Success message displayed; Value persisted",VCST-4637 PR#21,Not Automated
-WL-026,Verify MainMenuLinkListName persisted after save,Admin UI,Functional,High,2m,MainMenuLinkListName configured,"1. Configure MainMenuLinkListName
-2. Save settings
-3. Refresh page
-4. Navigate back to White Labeling settings
-5. Verify field value","Field displays saved value; Value persisted; No data loss",VCST-4637 PR#21,Not Automated
-WL-027,Clear MainMenuLinkListName value,Admin UI,Functional,Medium,2m,MainMenuLinkListName configured,"1. Navigate to White Labeling settings
-2. Clear Main menu link list field
-3. Save settings
-4. Verify value cleared","Field clears successfully; Value set to NULL; Storefront falls back to default",VCST-4637 PR#21,Not Automated
-WL-028,Test Admin UI localization - English,Localization,Functional,Medium,1m,Admin SPA language set to English,"1. Navigate to White Labeling settings
-2. Verify field label and placeholder","Label: Main menu link list; Placeholder: Enter link list name...",VCST-4637 PR#21,Not Automated
-WL-029,Verify storefront displays per-org main menu links,Storefront Rendering,Functional,Critical,3m,"Organization configured; User logged in","1. Sign in as organization member
-2. Navigate to storefront homepage
-3. Verify main menu displays
-4. Verify links match configured link list","Main menu displays; Links match titles and URLs; Correct priority order",VCST-4637 PR#21,Not Automated
-WL-030,Verify hierarchical main menu rendering (parent + children),Storefront Rendering,Functional,High,4m,Link list with hierarchical structure,"1. Create link list with parent + child links
-2. Configure organization
-3. Sign in as organization member
-4. Hover over parent menu item
-5. Verify dropdown shows children","Parent displays; Hovering reveals dropdown; Dropdown shows child links; Links clickable",VCST-4637 PR#21,Not Automated
-WL-031,Verify main menu on mobile (responsive design),Mobile,Functional,High,4m,"Organization configured; Mobile device or dev tools","1. Open storefront on mobile
-2. Sign in as organization member
-3. Verify main menu displays
-4. Test hamburger menu
-5. Verify links accessible","Main menu renders correctly; Links accessible; Touch-friendly; No UI issues",VCST-4637 PR#21,Not Automated
-WL-032,Verify main menu on desktop (Chrome),Browser Compatibility,Functional,Medium,3m,Organization configured,"1. Open storefront in Chrome
-2. Sign in as organization member
-3. Verify main menu displays
-4. Test hover states and dropdowns","Main menu renders correctly; Hover states work; Dropdowns display; No console errors",VCST-4637 PR#21,Not Automated
-WL-033,Verify main menu accessibility (keyboard navigation),Accessibility,Functional,High,4m,Organization configured,"1. Navigate to storefront
-2. Sign in
-3. Use Tab to navigate menu
-4. Verify focus indicators
-5. Use Enter/Space to activate
-6. Use Arrow keys for dropdowns","All menu items keyboard-accessible; Focus indicators visible; WCAG 2.1 AA compliant",VCST-4637 PR#21,Not Automated
-WL-034,Test switching between organizations updates main menu,Multi-Organization,Functional,Critical,5m,"Two organizations configured; User member of both","1. Sign in as Org A member
-2. Verify Org A main menu
-3. Switch to Org B
-4. Verify Org B main menu
-5. Switch back to Org A
-6. Verify Org A main menu","Org A: Org A menu; Org B: Org B menu; Switching updates dynamically; No cross-contamination",VCST-4637 PR#21,Not Automated
-WL-035,Test main menu + footer both update on org switch,Multi-Organization,Functional,High,4m,Two organizations with different configs,"1. Sign in as Org A member
-2. Verify Org A main menu and footer
-3. Switch to Org B
-4. Verify Org B main menu and footer","Both main menu and footer update; Updates simultaneous; No inconsistent state",VCST-4637 PR#21,Not Automated
-WL-036,Verify existing footer-only configs still work,Backward Compatibility,Regression,Critical,3m,"Organization with pre-existing FooterLinkListName; MainMenuLinkListName = NULL","1. Identify organization with footer config
-2. Sign in as organization member
-3. Verify footer displays
-4. Verify no errors","Footer displays correctly; Existing configs unaffected; No migration required",VCST-4637 PR#21,Not Automated
-WL-037,Verify existing logo configs still work,Backward Compatibility,Regression,High,2m,Organization with custom logo,"1. Sign in as organization member
-2. Verify logo displays in header
-3. Verify logo unchanged","Custom logo displays correctly; No changes to logo functionality",VCST-4637 PR#21,Not Automated
-WL-038,Verify existing theme preset configs still work,Backward Compatibility,Regression,High,2m,Organization with custom theme preset,"1. Sign in as organization member
-2. Verify theme colors and styling
-3. Verify theme unchanged","Custom theme preset displays correctly; No changes to theme functionality",VCST-4637 PR#21,Not Automated
-WL-039,Verify store-level white labeling still works,Backward Compatibility,Regression,High,3m,Store-level white labeling configured,"1. Navigate to storefront without org context
-2. Verify store-level branding displays
-3. Verify no errors","Store-level white labeling unaffected; Fallback logic works",VCST-4637 PR#21,Not Automated
-WL-040,Verify GraphQL query without mainMenuLinks field still works,Backward Compatibility,Regression,High,2m,GraphQL playground accessible,"1. Execute white labeling query WITHOUT mainMenuLinks field
-2. Verify query executes successfully","Query executes without errors; Backward compatibility maintained (optional field)",VCST-4637 PR#21,Not Automated
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"WL-001","Check White Labeling widget","Dashboard Widget","High","BL-WL-001",,"White Labeling module installed and enabled; Admin access to {{BACK_URL}}","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to {{BACK_URL}}
+[ACT] 2. Sign in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
+[NAV] 3. Navigate to Admin Dashboard
+[ASSERT] 4. Locate the White Labeling widget on the dashboard","[DOM] White Labeling widget is visible on the dashboard
+[DOM] Widget shows a summary of current settings (Enabled state, theme preset name, logo presence)","[CONSOLE] no uncaught JS errors on dashboard load","Widget missing from dashboard; Widget shows stale or blank summary; Console error on dashboard load","none","C384970","Manual"
+"WL-002","Set theme presets","Theme","High","BL-WL-001",,"White Labeling module installed; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Select a theme preset from the Theme preset name field (e.g. @td(WL_FASHION.theme))
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification","[FORM] Theme preset field displays the selected value after save
+[STATE] Success notification confirms settings saved","[STOREFRONT] storefront reflects the new theme colors on next page load for users without an org override","Save button has no effect; Theme preset reverts on refresh; No success notification","restore store theme preset to original value","C384973","Manual"
+"WL-003","Upload custom logo - allowed extensions","Logo","Critical","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Click Logo upload widget and select a PNG file
+[WAIT] 3. Wait for upload to complete
+[ACT] 4. Click 'Save'
+[WAIT] 5. Wait for success notification
+[ACT] 6. Repeat steps 2-5 with a GIF file
+[ACT] 7. Repeat steps 2-5 with an SVG file","[DOM] Logo preview updates to the uploaded image after each upload
+[STATE] Save succeeds for PNG, GIF, and SVG without validation error (the logo widget's allowed extension set per en.WhiteLabeling.json — NOT JPG, which is not a valid logo type)","[NETWORK] logo upload request returns HTTP 200
+[STOREFRONT] uploaded logo displays in storefront header after save","Upload rejected for a valid extension; Logo preview does not update; 4xx/5xx on upload request","restore store logo to original value","C384971, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
+"WL-004","Upload logo - rejected for invalid extension","Logo","Medium","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Click Logo upload widget and attempt to select a file with an extension NOT in the logo's allowed set (e.g. .webp — valid for the favicon widget but NOT the logo widget — or .bmp)","[DOM] Filetype-error dialog appears with title 'Filetype error' and message 'Only PNG, GIF or SVG files are allowed'
+[STATE] Logo field remains unchanged (previous logo, or empty, still shown)","[CONSOLE] no uncaught JS error (validation handled, not a crash)","Invalid file silently accepted; No validation message shown; Uncaught JS error on rejected upload; .webp incorrectly accepted by the logo widget","none","C384980, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
+"WL-005","Upload favicon","Favicon","High","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Click Favicon upload widget and select a valid favicon file (.png)
+[WAIT] 3. Wait for upload to complete
+[ACT] 4. Click 'Save'
+[WAIT] 5. Wait for success notification
+[ACT] 6. Repeat steps 2-5 with a JPG file
+[ACT] 7. Repeat steps 2-5 with a WEBP file","[DOM] Favicon preview updates after each upload
+[STATE] Save succeeds for PNG, JPG, and WEBP without validation error (the favicon widget's allowed extension set per en.WhiteLabeling.json — distinct from the logo widget's PNG/GIF/SVG set; favicon does NOT accept GIF or SVG)","[NETWORK] favicon upload request returns HTTP 200
+[STOREFRONT] uploaded favicon displays in the browser tab on next storefront load","Upload rejected for a valid favicon format; Favicon preview does not update; 4xx/5xx on upload request","restore store favicon to original value","C384972, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
+"WL-006","Reset branding to defaults","Settings","Medium","BL-WL-001",,"Custom branding (logo, favicon, theme) applied to store @td(STORE_PRIMARY.id)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Click 'Reset to defaults'
+[WAIT] 3. Wait for confirmation dialog and confirm
+[WAIT] 4. Wait for success notification","[FORM] Theme preset, logo, and favicon fields revert to platform default values
+[STATE] Success notification confirms reset","[STOREFRONT] storefront shows default branding on next page load","Reset has no effect; Some fields reset but not others; No confirmation dialog before destructive reset","re-apply the original custom branding removed by this test","C384977","Manual"
+"WL-007","Clear all custom branding","Settings","Medium","BL-WL-001, BL-WL-004",,"Custom branding applied to store @td(STORE_PRIMARY.id)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Click 'Clear' to remove customization
+[WAIT] 3. Wait for confirmation dialog and confirm
+[WAIT] 4. Wait for success notification","[FORM] Logo, favicon, theme preset, footer link list, and main menu link list fields are all empty/NULL after clear
+[STATE] Success notification confirms clear","[STOREFRONT] storefront shows platform default branding after clear","Clear only removes some fields; No confirmation dialog before destructive clear; Fields repopulate on refresh","re-apply the original custom branding removed by this test","C384978","Manual"
+"WL-008","Per-organization footer links - add parent links","Organization Branding","High","BL-WL-004",,"Organization @td(WL_ELECTRONICS.name) exists; White Labeling enabled","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_ELECTRONICS.name), footer_list=@td(WL_ELECTRONICS.footer)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.footer)
+[ASSERT] 2. Verify parent footer links exist: Privacy Policy, Terms of Service, Support, Warranty
+[NAV] 3. Navigate to Customer > Organizations > @td(WL_ELECTRONICS.name) > White Labeling
+[ACT] 4. Set Footer Link List Name: @td(WL_ELECTRONICS.footer)
+[ACT] 5. Click 'Save'
+[WAIT] 6. Wait for success notification","[FORM] Footer Link List Name field persists @td(WL_ELECTRONICS.footer) after save
+[GRID] Link List blade shows 4 parent footer links in priority order","[API] whiteLabelingSettings query for @td(WL_ELECTRONICS.id) returns footerLinks with 4 entries (cross-ref WL-013)","Save fails; Link list shows wrong or missing parent links; Field does not persist after refresh","none (footer-electronics is a shared fixture; do not delete)","C385322","Manual"
+"WL-009","Per-organization footer links - add children links","Organization Branding","Medium","BL-WL-004",,"state from WL-008 (@td(WL_ELECTRONICS.name) footer link list @td(WL_ELECTRONICS.footer) assigned)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, footer_list=@td(WL_ELECTRONICS.footer)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.footer)
+[ASSERT] 2. Verify list is currently a flat list (no children) per fixture design
+[ACT] 3. Add a temporary child link under 'Support': 'Contact Us' (url /contacts, priority 1)
+[ACT] 4. Click 'Save'
+[WAIT] 5. Wait for success notification","[GRID] 'Support' parent link now shows 1 nested child: 'Contact Us'
+[FORM] Child link priority and URL persist after save","[API] whiteLabelingSettings footerLinks for @td(WL_ELECTRONICS.id) shows childItems populated under 'Support' (cross-ref WL-013)","Child link not nested under correct parent; Save fails; Child link missing after refresh","remove the temporary 'Contact Us' child link added by this test, restoring @td(WL_ELECTRONICS.footer) to its flat-list fixture state","C385323","Manual"
+"WL-010","Footer links and main menu links returned in GraphQL query","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Organization @td(WL_ELECTRONICS.name) has both footer (@td(WL_ELECTRONICS.footer)) and main menu (@td(WL_ELECTRONICS.main_menu)) link lists configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute whiteLabelingSettings query with both footerLinks and mainMenuLinks fields (cultureName is REQUIRED — omitting it returns empty arrays even though configured):
+query {
+  whiteLabelingSettings(
+    organizationId: ""@td(WL_ELECTRONICS.id)""
+    storeId: ""@td(STORE_PRIMARY.id)""
+    cultureName: ""en-US""
+  ) {
+    footerLinks { title url priority childItems { title url priority } }
+    mainMenuLinks { title url priority childItems { title url priority } }
+  }
+}
+[ASSERT] 3. Verify response structure and hierarchy","[DOM] footerLinks array has 4 entries matching @td(WL_ELECTRONICS.footer): Privacy Policy(1), Terms of Service(2), Support(3), Warranty(4)
+[DOM] mainMenuLinks array has 4 top-level entries matching @td(WL_ELECTRONICS.main_menu): Home(1), Brands(2), About Us(3), Support(4)
+[DOM] Brands entry's childItems contains Laptops(1), Phones(2), Tablets(3)","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; footerLinks or mainMenuLinks missing/null; childItems not returned for Brands; priority order wrong","none","C385324 VCST-4637","Manual"
+"WL-011","Organization-specific logo and favicon","Organization Branding","High","BL-WL-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has custom logo (@td(WL_ELECTRONICS.logo)) and favicon (@td(WL_ELECTRONICS.favicon)) configured","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to {{FRONT_URL}}
+[ACT] 2. Sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password)
+[WAIT] 3. Wait for redirect to homepage
+[ASSERT] 4. Inspect header logo and browser tab favicon","[DOM] Header logo matches @td(WL_ELECTRONICS.logo) (NOT default platform logo)
+[DOM] Browser tab favicon matches @td(WL_ELECTRONICS.favicon) (NOT default favicon)","[NETWORK] logo and favicon assets load with HTTP 200
+[CONSOLE] no uncaught JS errors","Default logo/favicon shown instead of org branding; Broken image in header; Favicon reverts on navigation","sign out","C385326 C384974","Manual"
+"WL-012","Store master switch (WhiteLabeling.WhiteLabelingEnabled) OFF → default branding for all, including org users","Store Settings","Medium","BL-WL-003",,"Store @td(STORE_PRIMARY.id) has the WhiteLabeling.WhiteLabelingEnabled platform setting = true (default); organization @td(WL_ELECTRONICS.name) has its own White Labeling enabled with custom logo (@td(WL_ELECTRONICS.logo)) and theme (@td(WL_ELECTRONICS.theme)), which would normally apply via the org/store per-field merge","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > Settings
+[ACT] 2. Locate the 'WhiteLabeling.WhiteLabelingEnabled' setting and set it to false
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification
+[NAV] 5. Navigate to {{FRONT_URL}} and sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password) (an org with its own enabled White Labeling)
+[ASSERT] 6. Inspect logo, favicon, theme, main menu","[DOM] Default platform logo and favicon displayed (NOT @td(WL_ELECTRONICS.logo))
+[FORMAT] Default theme colors applied (NOT @td(WL_ELECTRONICS.theme))
+[STATE] The storefront (useWhiteLabeling.ts) never fetches White Labeling settings when this platform setting is false — org branding IS suppressed, regardless of the org's own record being enabled (contrast with WL-014's Layer-2 record gating)","[CONSOLE] no uncaught JS errors","WL still applied while the store master switch is OFF; org branding shown despite WhiteLabeling.WhiteLabelingEnabled = false","restore WhiteLabeling.WhiteLabelingEnabled = true","C384975, Store master switch WhiteLabeling.WhiteLabelingEnabled — useWhiteLabeling.ts (2026-07-02)","Manual"
+"WL-013","White Labeling Enabled = ON shows custom branding (store master switch)","Store Settings","Medium","BL-WL-003",,"Custom branding exists on store @td(STORE_PRIMARY.id); Enabled currently OFF (state from WL-012)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
+[ACT] 2. Set Enabled = ON
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification
+[NAV] 5. Navigate to {{FRONT_URL}} in a fresh/anonymous session
+[ASSERT] 6. Inspect logo, favicon, theme","[DOM] Custom logo and favicon displayed (not platform default)
+[FORMAT] Custom theme colors applied","[CONSOLE] no uncaught JS errors","Default branding still visible after Enabled = ON; Stale branding from cache","none (Enabled = ON is the expected end state for subsequent tests)","C384976, Store master switch WhiteLabeling.WhiteLabelingEnabled — source useWhiteLabeling.ts (2026-07-02)","Manual"
+"WL-014","Store's own WL record disabled/absent (master switch ON) does NOT suppress an enabled org's branding","Store Settings","Medium","BL-WL-003",,"Store master switch WhiteLabeling.WhiteLabelingEnabled = true (ON) on store @td(STORE_PRIMARY.id); organization @td(WL_ELECTRONICS.name) has its own White Labeling enabled with custom logo (@td(WL_ELECTRONICS.logo)) and theme (@td(WL_ELECTRONICS.theme))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings (the store's own WL record — distinct from the WhiteLabeling.WhiteLabelingEnabled platform setting tested in WL-012)
+[ACT] 2. Set the store's own WL record Enabled = OFF (disables/removes only the store-level record; the platform master switch stays ON)
+[ACT] 3. Click 'Save'
+[NAV] 4. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 5. Execute whiteLabelingSettings query requesting logoUrl and themePresetName for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 6. Verify the org's logo/theme still resolve despite the store's own WL record being disabled
+[NAV] 7. Navigate to {{FRONT_URL}} and sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password)
+[ASSERT] 8. Inspect header logo and theme on the storefront","[DOM] GraphQL response returns logoUrl matching @td(WL_ELECTRONICS.logo) and themePresetName matching @td(WL_ELECTRONICS.theme) even though the store's own WL record is disabled (independent per-record gating — the platform master switch, not this record, is what would suppress it)
+[DOM] Storefront header displays @td(WL_ELECTRONICS.logo) and the @td(WL_ELECTRONICS.theme) theme (org branding still resolves)","[API] whiteLabelingSettings response errors[] is empty","Org branding disappears when the store's own WL record is off (would indicate a false master-switch — confusing Layer 2 record gating with the Layer 1 platform setting tested in WL-012); errors[] non-empty","restore store's own WL record Enabled = ON; sign out","C384979, Record-level IsEnabled gating (Layer 2) — GetWhiteLabelingSettingsQueryHandler, live TLC-2026-07-02-2043","Manual"
+"WL-015","Enable thumbnail job for favicons","Background Jobs","Medium","BL-WL-001",,"White Labeling module installed; Admin access to backend jobs","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Settings > Jobs
+[ACT] 2. Locate the thumbnail generation job
+[ACT] 3. Enable the job
+[ACT] 4. Add a new run for favicon generation
+[WAIT] 5. Wait for job completion
+[NAV] 6. Navigate to a store's White Labeling settings","[DOM] Job run status shows Success
+[DOM] favicons array (multi-size) contains entries for 16x16, 32x32, 180x180, 192x192, 512x512","[ADMIN] job run history shows Success
+[CONSOLE] no uncaught JS errors","Job fails to run; favicons array remains empty after job completes; Only legacy faviconUrl populated","none","C385320 C385321","Manual"
+"WL-016","Verify MainMenuLinkListName field behaves as nullable varchar(256) (indirect — no DB access in this framework)","Admin UI","High","BL-WL-004",,"state from WL-025 (Admin SPA accessible; @td(WL_MENU_ONLY.name) has Main menu link list field editable)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ACT] 2. Enter a realistic link-list-name string (@td(WL_MENU_ONLY.main_menu)) in the Main menu link list field
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification
+[ACT] 5. Clear the Main menu link list field to empty
+[ACT] 6. Click 'Save'
+[WAIT] 7. Wait for success notification","[FORM] Field accepts and persists a typical link-list-name string without a type/length validation error (indirect proof the column is a string type, not a bounded enum)
+[FORM] Field accepts an empty value and saves successfully without a NOT-NULL constraint error (indirect proof the column is nullable)","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) resolves mainMenuLinks without a GraphQL schema error both before and after clearing the field (cross-ref WL-017, WL-019)","Save rejects a normal-length string; Save rejects an empty value; GraphQL errors[] non-empty after either save","restore @td(WL_MENU_ONLY.main_menu) value","VCST-4637 PR#21","Manual"
+"WL-017","GraphQL query returns mainMenuLinks field","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Backend deployed with PR #21; Organization @td(WL_ELECTRONICS.name) has main menu link list @td(WL_ELECTRONICS.main_menu) configured","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute whiteLabelingSettings query with the mainMenuLinks field (cultureName required):
+query {
+  whiteLabelingSettings(
+    organizationId: ""@td(WL_ELECTRONICS.id)""
+    storeId: ""@td(STORE_PRIMARY.id)""
+    cultureName: ""en-US""
+  ) {
+    mainMenuLinks { title url priority childItems { title url priority } }
+  }
+}
+[ASSERT] 3. Verify response contains mainMenuLinks array","[DOM] mainMenuLinks array is returned (not null) with title/url/priority on each entry
+[DOM] at least one entry (Brands) has a non-empty childItems array, proving hierarchical structure is supported","[API] whiteLabelingSettings response errors[] is empty","mainMenuLinks missing or null; errors[] non-empty; childItems absent on Brands","none","VCST-4637 PR#21","Manual"
+"WL-018","mainMenuLinks with hierarchical structure (parent Brands + children Laptops/Phones/Tablets)","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Link list @td(WL_ELECTRONICS.main_menu) has parent 'Brands' (priority 2) with children Laptops(1)/Phones(2)/Tablets(3); organization @td(WL_ELECTRONICS.name) has this list assigned as Main menu link list","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.main_menu)
+[ASSERT] 2. Verify structure: Home(1), Brands(2) with children Laptops(1)/Phones(2)/Tablets(3), About Us(3), Support(4)
+[NAV] 3. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 4. Execute the whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 5. Verify response structure matches Admin configuration","[DOM] Brands parent link returned with title='Brands', url='/brands', priority=2
+[DOM] Brands.childItems contains exactly Laptops(1), Phones(2), Tablets(3) in that priority order
+[DOM] Home, About Us, Support returned with empty childItems (no children)","[API] whiteLabelingSettings response errors[] is empty","Brands parent missing; childItems not nested under Brands; priority order wrong; errors[] non-empty","none","VCST-4637 PR#21, Synced: Products→Brands rename #79 (2026-07-02)","Manual"
+"WL-019","mainMenuLinks when MainMenuLinkListName is empty/NULL","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Organization @td(WL_DEFAULT.name) has Main Menu Link List Name = NULL (theme-only fixture, no menu/footer configured)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_DEFAULT.name) > White Labeling
+[ASSERT] 2. Verify Main menu link list field is empty
+[NAV] 3. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 4. Execute whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_DEFAULT.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 5. Verify mainMenuLinks field","[DOM] mainMenuLinks is an empty array or null (not an error)
+[NULL] no exception/error is thrown for the missing link list name","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; query throws a 500; mainMenuLinks resolver crashes instead of returning empty","none","VCST-4637 PR#21","Manual"
+"WL-020","mainMenuLinks with non-existent link list name","GraphQL xAPI","Medium","BL-WL-004","ECL-14.1","Organization @td(WL_MENU_ONLY.name) currently has a valid Main menu link list (@td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id), org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ACT] 2. Temporarily set Main menu link list to a non-existent name: nonexistent-menu-wl020
+[ACT] 3. Click 'Save'
+[NAV] 4. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 5. Execute whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_MENU_ONLY.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 6. Verify response","[DOM] mainMenuLinks is an empty array (query executes without error)
+[NULL] no exception thrown for the unresolvable link list name","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; 500 error; query hangs","restore @td(WL_MENU_ONLY.main_menu) value on the organization","VCST-4637 PR#21","Manual"
+"WL-021","Query handler retrieves correct org-specific main menu (no cross-contamination)","Query Handler","High","BL-WL-002","ECL-14.1","@td(WL_ELECTRONICS.name) has main menu @td(WL_ELECTRONICS.main_menu) (Home/Brands/About Us/Support); @td(WL_FASHION.name) has main menu @td(WL_FASHION.main_menu) (Home/Shop/New Arrivals/Contact)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 3. Record result A
+[ACT] 4. Execute the same query with organizationId=@td(WL_FASHION.id) instead
+[ASSERT] 5. Record result B
+[ASSERT] 6. Compare A and B","[DOM] Result A contains Home/Brands/About Us/Support (@td(WL_ELECTRONICS.main_menu)) and does NOT contain Shop, New Arrivals, or Contact
+[DOM] Result B contains Home/Shop/New Arrivals/Contact (@td(WL_FASHION.main_menu)) and does NOT contain Brands, About Us, or the Electronics Support entry","[API] both responses have errors[] empty","Result A contains Fashion-org links or vice versa; identical mainMenuLinks returned for both orgs","none","VCST-4637 PR#21","Manual"
+"WL-022","Backward compatibility - footerLinks still works alongside mainMenuLinks","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Organization @td(WL_ELECTRONICS.name) has an existing FooterLinkListName (@td(WL_ELECTRONICS.footer))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute whiteLabelingSettings query selecting ONLY the footerLinks field (no mainMenuLinks in selection) for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 3. Verify footerLinks field returned correctly","[DOM] footerLinks array has 4 entries matching @td(WL_ELECTRONICS.footer): Privacy Policy(1), Terms of Service(2), Support(3), Warranty(4)
+[DOM] response has no reference to mainMenuLinks (field was not selected, and this does not cause an error)","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; footerLinks missing since the PR #21 migration; query fails when mainMenuLinks is omitted from selection","none","VCST-4637 PR#21","Manual"
+"WL-023","GraphQL query performance with mainMenuLinks","Performance","Medium","BL-WL-004",,"Organization @td(WL_ELECTRONICS.name) has both main menu and footer configured","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute the whiteLabelingSettings query (footerLinks + mainMenuLinks, full field selection) for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ACT] 3. Repeat the same query 9 more times (10 executions total), noting the response time shown in the GraphiQL network panel for each
+[ASSERT] 4. Compute the average response time across the 10 runs","[PERF] average response time across 10 runs is < 500ms
+[DOM] all 10 runs return identical footerLinks/mainMenuLinks data (no flakiness)","[API] all 10 responses have errors[] empty","any single run > 1000ms; average > 500ms; data differs between runs","none","VCST-4637 PR#21","Manual"
+"WL-024","Admin SPA displays main menu link list field","Admin UI","High","BL-WL-001",,"Admin SPA deployed with PR #21; Admin user logged in","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ASSERT] 2. Verify Main menu link list field exists","[DOM] Field is displayed with label 'Main menu link list'
+[DOM] Field placeholder reads 'Enter link list name...'","[CONSOLE] no uncaught JS errors","Field missing from the White Labeling blade; Wrong label or placeholder text","none","VCST-4637 PR#21","Manual"
+"WL-025","Configure MainMenuLinkListName via Admin SPA","Admin UI","Critical","BL-WL-001",,"Admin SPA accessible; link list @td(WL_MENU_ONLY.main_menu) exists","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name), main_menu=@td(WL_MENU_ONLY.main_menu)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ACT] 2. Enter @td(WL_MENU_ONLY.main_menu) in the Main menu link list field
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification","[FORM] Value saves successfully
+[STATE] Success notification is displayed","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu)","Save fails silently; No success notification; Value not reflected in GraphQL query","none (this is the fixture's intended configured state)","VCST-4637 PR#21","Manual"
+"WL-026","MainMenuLinkListName persisted after save","Admin UI","High","BL-WL-001",,"state from WL-025 (@td(WL_MENU_ONLY.name) Main menu link list = @td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[KEY] 2. Refresh the page
+[NAV] 3. Navigate back to the White Labeling blade
+[ASSERT] 4. Verify field value","[FORM] Main menu link list field displays @td(WL_MENU_ONLY.main_menu) after refresh","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) still returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu) after refresh","Field reverts to empty after refresh; Value differs from what was saved","none","VCST-4637 PR#21","Manual"
+"WL-027","Clear MainMenuLinkListName value","Admin UI","Medium","BL-WL-001, BL-WL-004",,"state from WL-025/WL-026 (@td(WL_MENU_ONLY.name) Main menu link list = @td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ACT] 2. Clear the Main menu link list field
+[ACT] 3. Click 'Save'
+[WAIT] 4. Wait for success notification","[FORM] Field clears successfully and shows empty
+[STATE] Success notification confirms save","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks as empty array (storefront falls back to default — cross-ref WL-019)","Clear has no effect; Field repopulates on refresh; GraphQL still returns the old link list","restore @td(WL_MENU_ONLY.main_menu) value on the organization","VCST-4637 PR#21","Manual"
+"WL-028","Admin UI localization - English","Localization","Medium","BL-WL-001",,"Admin SPA language set to English","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
+[ASSERT] 2. Verify field label and placeholder","[DOM] Field label reads 'Main menu link list'
+[DOM] Field placeholder reads 'Enter link list name...'","[CONSOLE] no uncaught JS errors","Label or placeholder shows a translation key instead of English text (e.g. 'whiteLabeling.mainMenuLinkListName')","none","VCST-4637 PR#21","Manual"
+"WL-029","Storefront displays per-org main menu links (DEPRECATED — see Frontend suite 070 FWL-021)","Storefront Rendering","Critical","BL-WL-001",,"N/A — deprecated, superseded by FWL-021 in suite 070 (Frontend/whitelabeling/070-whitelabeling-storefront.csv)","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-021 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-021 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-021 (suite 070) — storefront rendering is the Frontend suite's responsibility","deprecated"
+"WL-030","Hierarchical main menu rendering, parent + children (DEPRECATED — see Frontend suite 070 FWL-022)","Storefront Rendering","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-022 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-022 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-022 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-022 (suite 070)","deprecated"
+"WL-031","Main menu on mobile, responsive design (DEPRECATED — see Frontend suite 070 FWL-023/FWL-034)","Mobile","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-023 and FWL-034 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-023 (hierarchy on mobile) and FWL-034 (hamburger access) for the current, actively-maintained version","[STATE] Coverage moved to FWL-023/FWL-034 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-023/FWL-034 (suite 070)","deprecated"
+"WL-032","Main menu on desktop, Chrome (DEPRECATED — see Frontend suite 070 FWL-038)","Browser Compatibility","Medium","BL-WL-001",,"N/A — deprecated, superseded by FWL-038 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-038 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-038 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-038 (suite 070)","deprecated"
+"WL-033","Main menu accessibility, keyboard navigation (DEPRECATED — see Frontend suite 070 FWL-044/FWL-047)","Accessibility","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-044 and FWL-047 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-044 (keyboard nav) and FWL-047 (screen reader) for the current, actively-maintained version","[STATE] Coverage moved to FWL-044/FWL-047 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-044/FWL-047 (suite 070)","deprecated"
+"WL-034","Switching between organizations updates main menu (DEPRECATED — see Frontend suite 071 FWL-029)","Multi-Organization","Critical","BL-CROSS-008",,"N/A — deprecated, superseded by FWL-029 in suite 071 (Frontend/whitelabeling/071-whitelabeling-branding.csv)","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/071-whitelabeling-branding.csv FWL-029 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-029 in suite 071 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-029 (suite 071)","deprecated"
+"WL-035","Main menu + footer both update on org switch (DEPRECATED — see Frontend suite 071 FWL-029/FWL-030)","Multi-Organization","High","BL-CROSS-008",,"N/A — deprecated, superseded by FWL-029 and FWL-030 in suite 071","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/071-whitelabeling-branding.csv FWL-029 (main menu) and FWL-030 (footer) for the current, actively-maintained version","[STATE] Coverage moved to FWL-029/FWL-030 in suite 071 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-029/FWL-030 (suite 071)","deprecated"
+"WL-036","Existing footer-only configs still work (backward compatibility)","Backward Compatibility","Critical","BL-WL-004",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FOOTER_ONLY]
+Organization @td(WL_FOOTER_ONLY.name) has a pre-existing FooterLinkListName (@td(WL_FOOTER_ONLY.footer)) and MainMenuLinkListName = NULL (partial-config fixture, predates VCST-4637)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FOOTER_ONLY.email), org_password=@td(WL_USER_FOOTER_ONLY.password)","[NAV] 1. Navigate to {{FRONT_URL}}
+[ACT] 2. Sign in with @td(WL_USER_FOOTER_ONLY.email) / @td(WL_USER_FOOTER_ONLY.password)
+[SCROLL] 3. Scroll to footer
+[ASSERT] 4. Inspect footer links","[DOM] Footer displays @td(WL_FOOTER_ONLY.footer) links correctly
+[STATE] Application does not error or degrade due to the missing MainMenuLinkListName","[CONSOLE] no uncaught JS errors
+[API] whiteLabelingSettings for @td(WL_FOOTER_ONLY.id) returns footerLinks populated and mainMenuLinks empty/null, errors[] empty","Footer broken by the mainMenuLinks migration; Console error referencing MainMenuLinkListName; Header layout broken by missing main menu","sign out","VCST-4637 PR#21","Manual"
+"WL-037","Existing logo configs still work (backward compatibility)","Backward Compatibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has a pre-existing custom logo (@td(WL_ELECTRONICS.logo)) configured before the VCST-4637 migration","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to {{FRONT_URL}}
+[ACT] 2. Sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password)
+[ASSERT] 3. Inspect header logo","[DOM] Header logo displays @td(WL_ELECTRONICS.logo) unchanged","[CONSOLE] no uncaught JS errors
+[NETWORK] logo asset loads with HTTP 200","Logo broken or reverted to default after the migration; Broken image in header","sign out","VCST-4637 PR#21","Manual"
+"WL-038","Existing theme preset configs still work (backward compatibility)","Backward Compatibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FASHION]
+Organization @td(WL_FASHION.name) has a pre-existing theme preset (@td(WL_FASHION.theme)) configured before the VCST-4637 migration","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[NAV] 1. Navigate to {{FRONT_URL}}
+[ACT] 2. Sign in with @td(WL_USER_FASHION.email) / @td(WL_USER_FASHION.password)
+[ASSERT] 3. Inspect page theme colors","[FORMAT] @td(WL_FASHION.theme) theme colors display unchanged","[CONSOLE] no uncaught JS errors","Theme reverted to default after the migration; Theme colors partially applied","sign out","VCST-4637 PR#21","Manual"
+"WL-039","Store-level white labeling still works (backward compatibility)","Backward Compatibility","High","BL-WL-003",,"Store @td(STORE_PRIMARY.id) has store-level white labeling configured (Enabled = ON, theme preset, logo)","storefront={{FRONT_URL}}, admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to {{FRONT_URL}} without any org context (anonymous or personal-account user)
+[ASSERT] 2. Inspect logo, favicon, theme","[DOM] Store-level branding displays correctly (unaffected by the MainMenuLinkListName migration)","[CONSOLE] no uncaught JS errors
+[API] whiteLabelingSettings for the store-level fallback (no organizationId) returns errors[] empty","Store-level branding broken after migration; Fallback logic errors when organizationId is absent","none","VCST-4637 PR#21","Manual"
+"WL-040","GraphQL query without mainMenuLinks field still works (backward compatibility)","Backward Compatibility","High","BL-WL-004","ECL-14.1","GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
+[ACT] 2. Execute the whiteLabelingSettings query selecting only pre-existing fields (logoUrl, faviconUrl, themePresetName, footerLinks) — deliberately WITHOUT mainMenuLinks — for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
+[ASSERT] 3. Verify query executes successfully","[DOM] Query executes without errors and returns the requested fields
+[NULL] no error is raised for omitting the optional mainMenuLinks field","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; query fails because mainMenuLinks was not selected; unexpected required-field validation error","none","VCST-4637 PR#21","Manual"

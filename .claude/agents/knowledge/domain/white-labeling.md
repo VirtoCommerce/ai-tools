@@ -10,10 +10,10 @@ Includes **VCST-4637** (mainMenuLinks / MainMenuLinkListName — added Sprint 26
 
 ## What It Does
 
-Per-org and per-store branding customization applied after sign-in. Settings resolve in priority order:
-**user → organization → store default**
+Per-org and per-store branding customization applied after sign-in. **Two enable layers** (see BL-WL-003):
 
-When org-level settings exist → they override store-level. When store-level White Labeling is OFF → all custom branding is disabled (master switch).
+1. **Store master switch** — the store-level public setting `WhiteLabeling.WhiteLabelingEnabled` (Boolean, default `true`). Enforced in the storefront (`useWhiteLabeling.ts`): when OFF, the storefront fetches/applies **no** WL at all → theme defaults for everyone, **including org users**. This is the true master switch.
+2. **Record resolution (master switch ON)** — org and store `WhiteLabelingSetting` *records* are merged **per-field, org-preferred** (NOT whole-object override): for each of `logoUrl`, `secondaryLogoUrl`, `faviconUrl`, `themePresetName`, `footerLinkListName`, `mainMenuLinkListName`, the org value is used when non-empty, else the store value. Each record is filtered by its own `IsEnabled`; a disabled/absent **store record** removes only the store's contribution and does NOT suppress an enabled **org record**. The current `GetWhiteLabelingSettingsQueryHandler` resolves **org + store** only (no user-level override).
 
 ## Configurable Fields
 
