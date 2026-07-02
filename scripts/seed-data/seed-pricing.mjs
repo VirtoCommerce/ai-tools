@@ -27,7 +27,7 @@
  */
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
-  log, verbose, assertSafeTarget, auth, api, loadAliases, writeResults,
+  log, verbose, assertSafeTarget, auth, api, loadAliases,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);

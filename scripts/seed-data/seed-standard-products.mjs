@@ -15,7 +15,7 @@
  *   - Idempotent: searches by product code first, reuses existing entities
  *   - --dry-run prints plan, no writes
  *
- * Writes results to test-data/_seed-results-std-{DATE}.json.
+ * No _seed-results report (VCST-5406) — PROD_* resolve by SKU/business key from the committed CSV.
  */
 
 import { readFileSync } from 'node:fs';

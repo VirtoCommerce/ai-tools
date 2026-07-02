@@ -42,10 +42,10 @@
  * USAGE:
  *   node scripts/seed-promotions.mjs [--dry-run] [--verbose] [--only P01] [--teardown] [--skip-rewards]
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by promotion name + coupon code.
- * Writes test-data/_seed-results-promotions-{DATE}.json
+ * No _seed-results report (VCST-5406) — COUPON_* resolve by static business key.
  */
 import {
-  assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
+  assertSafeTarget, auth, api, loadCsv, log, verbose,
   csvBool, STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
 } from '../lib/seed-common.mjs';
 

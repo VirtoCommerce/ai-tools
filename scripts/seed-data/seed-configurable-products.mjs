@@ -17,7 +17,7 @@
  *   - Idempotent: searches by name first, reuses existing entities.
  *   - --dry-run prints plan, no writes.
  *
- * Writes results to test-data/_seed-results-cfg-{DATE}.json.
+ * Persists runtime GUIDs to test-data/aliases.{env}.json (id + configuration_id); no _seed-results report (VCST-5406).
  */
 
 import { readFileSync } from 'node:fs';

@@ -29,8 +29,8 @@
  * Identity from .env.{ENV}; secrets from .env.local. Prod blocked by ENV_RISK=production.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   BACK_URL, ADMIN, ADMIN_PASSWORD, STORE_ID, ENV_RISK, ROOT, DATE,
   setFlags, authenticate, ensureMemberIndex, parseCsv,
@@ -168,12 +168,9 @@ async function run() {
     report.whiteLabeling = await seedWhiteLabelingUsers();
   }
 
-  if (!DRY_RUN) {
-    const out = join(ROOT, `test-data/b2b/_seed-results-company-users-${DATE}.json`);
-    mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, JSON.stringify(report, null, 2));
-    console.log(`\nResults: ${out}`);
-  }
+  // No _seed-results report (VCST-5406): live platform ids are written to aliases.{env}.json
+  // by user-provision's writeBackPlatformIds/writeLiveIdAliases; the rest resolves by static
+  // business key (email / org name) from the committed CSVs.
   console.log(`\n✅ Company-users seed complete (kind=${kind})\n`);
 }
 

@@ -22,10 +22,10 @@
  * USAGE:
  *   node scripts/seed-bopis.mjs [--dry-run] [--verbose] [--only LOC-001] [--teardown]
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by location name within the store.
- * Writes test-data/_seed-results-bopis-{DATE}.json
+ * No _seed-results report (VCST-5406) — BOPIS_* resolve by static location_id business key.
  */
 import {
-  assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose, csvBool, iso3,
+  assertSafeTarget, auth, api, loadCsv, log, verbose, csvBool, iso3,
   ensureFulfillmentCenter, verifyRemoved,
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
 } from '../lib/seed-common.mjs';

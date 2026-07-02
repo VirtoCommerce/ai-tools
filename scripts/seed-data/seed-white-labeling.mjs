@@ -37,14 +37,14 @@
  *   node scripts/seed-white-labeling.mjs --skip-users        # link lists + WL config only, no org/user provisioning
  *   node scripts/seed-white-labeling.mjs --reupload-assets   # force re-upload logo/favicon bytes even if the current URL serves
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by list name, org name, user email.
- * Writes test-data/_seed-results-wl-{DATE}.json
+ * No _seed-results report is written (VCST-5406) — live platform ids go to aliases.{env}.json.
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, basename, extname, dirname } from 'node:path';
 import {
-  assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
+  assertSafeTarget, auth, api, loadCsv, log, verbose,
   uploadAsset, assetUrlOk, ROOT,
-  STORE_ID, DATE_STAMP, DRY_RUN, VERBOSE, TEARDOWN, BACK_URL,
+  STORE_ID, DRY_RUN, VERBOSE, TEARDOWN, BACK_URL,
 } from '../lib/seed-common.mjs';
 import {
   __setApi, setFlags, seedOrgs, ensureRoles, seedInlineOrgUsers,
@@ -212,9 +212,9 @@ async function main() {
     Object.assign(results, { userAccounts: userCounts.accounts, userMemberships: userCounts.memberships });
   }
 
-  writeResults(`test-data/_seed-results-wl-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), target: BACK_URL, storeId: STORE_ID, ...results,
-  });
+  // No _seed-results report (VCST-5406 migration): live platform ids are written to
+  // aliases.{env}.json by user-provision's writeLiveIdAliases; everything else resolves
+  // by static business key from the committed CSVs.
   console.log(`\n✅ White-labeling seed complete — ${results.linkLists.length} link lists, ${results.orgs.length} orgs, ${results.users.length} users.`);
 }
 

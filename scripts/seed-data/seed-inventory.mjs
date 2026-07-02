@@ -22,7 +22,7 @@
  */
 import {
   DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
-  log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, writeResults,
+  log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);

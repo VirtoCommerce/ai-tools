@@ -20,7 +20,7 @@
 
 import { config as loadDotenv } from 'dotenv';
 import { resolveTestEnv } from './resolve-test-env.js';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
@@ -174,13 +174,10 @@ export function loadAliases() {
   return JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
 }
 
-export function writeResults(relPath, obj) {
-  if (DRY_RUN) { log(`[DRY] would write ${relPath}`); return; }
-  const full = join(ROOT, relPath);
-  mkdirSync(dirname(full), { recursive: true });
-  writeFileSync(full, JSON.stringify(obj, null, 2));
-  log(`Results → ${relPath}`);
-}
+// NOTE: _seed-results-*.json reports were removed (VCST-5406). Seeders write live platform ids
+// to aliases.{env}.json (writeLiveIdAliases / writeBackPlatformIds in user-provision.mjs); every
+// other entity resolves by static business key from the committed CSVs. Do not reintroduce a
+// generic results-file writer here — it drifts the test-data tree and the two twin surfaces.
 
 // CSV booleans are loose ('true'/'Yes'/'1' → true; '', 'No', 'false' → false).
 export const csvBool = (v, dflt = false) => {
