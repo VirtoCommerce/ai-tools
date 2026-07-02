@@ -1,25 +1,37 @@
 {
-  "runId": "REG-2026-07-01-1846",
-  "selection": "077b (Coupons & Promotions — Cart Sidebar, VCST-4896)",
-  "startedAt": "2026-07-01T18:47:00+02:00",
+  "runId": "REG-2026-07-02-1825",
+  "selection": "070 (Whitelabeling Storefront)",
+  "startedAt": "2026-07-02T18:25:29+02:00",
   "env": "vcst-qa",
   "build": {
     "platform": "3.1041.0",
     "theme": "2.53.0-pr-2343",
-    "note": "reused from REG-2026-07-01-1636 (same day, ~2h prior); not re-fetched via GitHub MCP"
+    "whiteLabeling": "3.1002.0",
+    "customer": "3.1013.0",
+    "xFrontend": "3.1003.0",
+    "note": "fetched via GitHub MCP from vc-deploy-dev@vcst-qa 2026-07-02"
   },
-  "windowStart": "2026-07-01T18:47:00+02:00",
+  "windowStart": "2026-07-02T18:25:29+02:00",
   "status": "in_progress",
-  "outputDir": "reports/regression/REG-2026-07-01-1846/",
-  "note": "User-requested single suite run (077b, resolved from ambiguous '077-smoke' arg). Prior run REG-2026-07-01-1636 (011b) confirmed stale/orphaned — all 4 batches completed but never reached Step 6 consolidation; left untouched in its own directory.",
+  "outputDir": "reports/regression/REG-2026-07-02-1825/",
+  "note": "RESUMED 18:48. Batch 1 (2026-07-02 18:35) was mis-executed against the agent-pool TechFlow org (no WL branding) and refused sign-in -> only FWL-066 PASS is valid; FWL-016/017/018/003/068 re-run correctly against seeded WL orgs (WL-ORG-A Electronics fully branded, WL-ORG-B Fashion, etc.). Read-only display/render/a11y/GraphQL cases run in 3 browser-parallel waves; admin-mutation cases (create link lists, toggle global store WL switch, invalid-config) reserved for a careful final wave. Sequential waves keep <=3 concurrent browsers.",
   "suites": {
-    "077b": {
+    "070": {
       "status": "running",
-      "name": "Coupons & Promotions — Cart Sidebar (VCST-4896)",
+      "name": "Whitelabeling Storefront",
       "priority": "P1",
-      "testCount": 50,
+      "testCount": 51,
       "agent": "qa-frontend-expert",
-      "browser": "playwright-chrome"
+      "browser": "playwright-chrome+firefox+edge",
+      "batches": {
+        "1-store-display-ORIG": {"status": "superseded", "valid": ["FWL-066"], "note": "wrong org; FWL-016/017/018/003/068 re-run in batch2/3", "cases": ["FWL-002","FWL-003","FWL-009","FWL-016","FWL-017","FWL-018","FWL-066","FWL-068"]},
+        "2-display-isolation": {"status": "running", "browser": "chrome", "cases": ["FWL-016","FWL-017","FWL-018","FWL-068","FWL-065"]},
+        "3-menu-footer": {"status": "running", "browser": "firefox", "cases": ["FWL-021","FWL-022","FWL-024","FWL-014","FWL-025","FWL-003"]},
+        "4-graphql-a11y": {"status": "running", "browser": "edge", "cases": ["FWL-013","FWL-026","FWL-027","FWL-043","FWL-044","FWL-045","FWL-046","FWL-047"]},
+        "5-responsive-mobile": {"status": "pending", "cases": ["FWL-023","FWL-033","FWL-034","FWL-035","FWL-036","FWL-037"]},
+        "6-xbrowser-perf-session": {"status": "pending", "cases": ["FWL-038","FWL-039","FWL-040","FWL-041","FWL-042","FWL-049","FWL-050","FWL-051","FWL-052","FWL-053","FWL-054","FWL-056"]},
+        "7-admin-mutation-careful": {"status": "pending", "cases": ["FWL-001","FWL-002","FWL-009","FWL-011","FWL-012","FWL-015","FWL-055","FWL-057","FWL-058","FWL-059","FWL-060","FWL-067","FWL-048"]}
+      }
     }
   }
 }
