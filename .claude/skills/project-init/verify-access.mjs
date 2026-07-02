@@ -139,9 +139,29 @@ async function main() {
     const az = profile.tracker.azure || {};
     const org = process.env.ADO_ORG || az.organization || "";
     const project = process.env.ADO_PROJECT || az.project || "";
-    const hasAuth = Boolean(process.env.ADO_PAT) || (process.env.ADO_AUTH || "").toLowerCase() === "az-login" || tryCmd("az account show");
-    add("Azure DevOps auth", org && project && hasAuth ? "PASS" : "FAIL",
-      org && project && hasAuth ? `${org}/${project} (auth present)` : "set ADO_ORG/ADO_PROJECT + ADO_PAT, or `az login` (ADO_AUTH=az-login)");
+    // Resolve auth: ADO_PAT (Basic) else a bearer token from the `az login` session
+    // (resource GUID 499b84ac-… = Azure DevOps). Then PROBE the org — a live session that
+    // is not a member of the org (or a different tenant) answers 203 + an HTML sign-in
+    // page, so "az account show works" is NOT proof of access.
+    let authHeader = "", via = "";
+    if (process.env.ADO_PAT) { authHeader = "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"); via = "ADO_PAT"; }
+    else if (tryCmd("az account show")) {
+      try {
+        const tok = execSync("az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+        if (tok) { authHeader = "Bearer " + tok; via = "az session"; }
+      } catch { /* no token */ }
+    }
+    if (!org || !project) add("Azure DevOps auth", "FAIL", "set ADO_ORG + ADO_PROJECT");
+    else if (!authHeader) add("Azure DevOps auth", "FAIL", "no ADO_PAT and no `az login` session — run `az login` (browser) or set ADO_PAT");
+    else {
+      try {
+        const r = await fetch(`https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
+        const okJson = r.ok && (r.headers.get("content-type") || "").includes("application/json");
+        add("Azure DevOps auth", okJson ? "PASS" : "FAIL",
+          okJson ? `${org}/${project} (${via})`
+                 : `${via} not accepted for '${org}' (→ ${r.status})` + (via === "az session" ? " — az identity not a member / wrong tenant: `az login --tenant <id>` or set ADO_PAT" : " — check ADO_PAT scopes"));
+      } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
+    }
   }
 
   // 8. GitHub fix token (PAT) — validate + push perm on the upstream platform repo

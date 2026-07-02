@@ -306,6 +306,16 @@ Resolve every **FAIL** before declaring success (exit code is non-zero while any
 FAIL remains). **WARN** is non-blocking; **SKIP** means a feature isn't configured
 (fine if unused). Secret values are never printed.
 
+**Session auth is really probed, not assumed.** For `--ado-auth az-login` the check mints
+an ADO token from the `az` session and hits the org's `_apis/projects` — an active `az`
+session that is not a member of the org (or is in a different tenant) answers a 203 HTML
+sign-in page and is reported **FAIL** (not a false PASS). GitHub `gh-cli` is checked via
+`gh auth status`. **The pipeline never runs the blocking browser login itself** (an inline
+`az login` / `gh auth login` can hang for minutes): on a session FAIL, tell the operator
+to run the exact command **in their own terminal** — `az login --tenant <org-tenant>` (or
+`gh auth login --web`) — then **re-run verify-access**. Use the ⏸️ waiting banner. (Or fall
+back to a PAT: set `ADO_PAT` / `GITHUB_FIX_BUGS_TOKEN`.)
+
 **After the readiness table it also prints the MCP-servers section** — confirms
 `.mcp.json` was created and lists each enabled server with its auth status:
 `OK` (local, no auth) · `AUTHORIZED` (token/key/az present) · `NEEDS OAUTH`

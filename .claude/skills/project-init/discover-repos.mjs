@@ -21,6 +21,7 @@
  *   node .claude/skills/project-init/discover-repos.mjs --client-org acme --modules-json mods.json --print
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { config as dotenv } from "dotenv";
@@ -106,13 +107,33 @@ export function pickFrontendRepos(names) {
 async function listClientReposLive(host, { org, project }) {
   if (host === "azure-repos") {
     if (!org || !project) throw new Error("need ADO_ORG + ADO_PROJECT to list Azure Repos");
+    // Auth: ADO_PAT (Basic) if set, else fall back to the `az login` session by acquiring
+    // an Azure DevOps bearer token (resource GUID 499b84ac-… is the ADO app id).
+    let authHeader = "";
     const pat = process.env.ADO_PAT || "";
-    if (!pat) throw new Error("need ADO_PAT to list Azure Repos");
+    if (pat) {
+      authHeader = "Basic " + Buffer.from(":" + pat).toString("base64");
+    } else {
+      try {
+        const tok = execSync(
+          "az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv",
+          { stdio: ["ignore", "pipe", "ignore"] },
+        ).toString().trim();
+        if (tok) authHeader = "Bearer " + tok;
+      } catch { /* no az session */ }
+    }
+    if (!authHeader) throw new Error("need ADO_PAT or an `az login` session to list Azure Repos");
     const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories?api-version=7.1`;
-    const res = await fetch(url, {
-      headers: { Authorization: "Basic " + Buffer.from(":" + pat).toString("base64"), Accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`ADO repositories → ${res.status}`);
+    const res = await fetch(url, { headers: { Authorization: authHeader, Accept: "application/json" } });
+    const ct = res.headers.get("content-type") || "";
+    // ADO answers an unauthenticated/misdirected request with a 203 + HTML sign-in page.
+    if (!res.ok || !ct.includes("application/json")) {
+      const via = pat ? "ADO_PAT" : "the az session";
+      throw new Error(
+        `ADO repositories → ${res.status} — ${via} not accepted for org '${org}'` +
+          (pat ? "" : " (the az identity may not be a member of this ADO org, or it is in a different tenant — try `az login --tenant <id>`, or set ADO_PAT)"),
+      );
+    }
     return ((await res.json()).value || []).map((r) => r.name);
   }
   // github
