@@ -32,7 +32,7 @@
  * Prod is blocked by config (ENV_RISK=production), not hostname.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
@@ -255,6 +255,8 @@ const USERS_CSV = 'test-data/b2b/users.csv';
 const ORGS_CSV = 'test-data/b2b/organizations.csv';
 const CONTACTS_CSV = 'test-data/b2b/contacts.csv';
 const MEMBERSHIPS_CSV = 'test-data/b2b/organization-memberships.csv';
+const WL_ORGS_CSV = 'test-data/white-labeling/organizations.csv';
+const WL_USERS_CSV = 'test-data/white-labeling/users.csv';
 const STATIC_ROLE_NAMES = { 'org-maintainer': 'Organization maintainer', 'org-employee': 'Organization employee' };
 let _roleDefs = null;
 export function loadRoleDefs() {
@@ -484,28 +486,33 @@ export async function ensureMembershipContact(email, firstName, lastName, orgPla
   return id;
 }
 
-// Write live security-account ids back into users.csv `platform_id` — the ROOT-CAUSE fix for suite
-// instability: teardown+reseed mints new account GUIDs, and @td(...userId) aliases resolve FROM this
-// column, so without write-back every reseed silently breaks impersonation/user suites. Rewrites only
-// field 2 per USR- row (regex-anchored), preserving all other columns/quoting.
-export function writeBackUserPlatformIds(idByEmail) {
-  const path = join(ROOT, USERS_CSV);
+// Write live security-account ids back into a users CSV's `platform_id` column — the ROOT-CAUSE fix
+// for suite instability: teardown+reseed mints new account GUIDs, and @td(...userId) aliases resolve
+// FROM this column, so without write-back every reseed silently breaks impersonation/user suites.
+// Rewrites only the platform_id field per row (regex-anchored on the row-id prefix), preserving all
+// other columns/quoting. Generalized (VCST-5406 follow-up) so any "<PREFIX>-<n>,platform_id,...,email,..."
+// CSV can reuse it — not just b2b/users.csv's USR- rows.
+export function writeBackPlatformIds(idByEmail, { csvPath = USERS_CSV, idPrefix = 'USR-', emailCol = 5 } = {}) {
+  const path = join(ROOT, csvPath);
   let text; try { text = readFileSync(path, 'utf-8'); } catch { return 0; }
   const key = {};
   for (const [e, i] of Object.entries(idByEmail)) if (e && i && !String(i).startsWith('dry-')) key[e.toLowerCase()] = i;
+  const rowRe = new RegExp(`^${idPrefix}[0-9]+,`);
+  const captureRe = new RegExp(`^(${idPrefix}[0-9]+),([^,]*),`);
   let n = 0;
   const out = text.split(/\r?\n/).map((line) => {
-    if (!/^USR-[0-9]+,/.test(line)) return line;
-    const email = (parseCsvLine(line)[5] || '').toLowerCase();
+    if (!rowRe.test(line)) return line;
+    const email = (parseCsvLine(line)[emailCol] || '').toLowerCase();
     const id = key[email];
-    const cur = line.match(/^USR-[0-9]+,([^,]*),/)?.[1];
+    const cur = line.match(captureRe)?.[2];
     if (!id || cur === id) return line;
     n++;
-    return line.replace(/^(USR-[0-9]+),[^,]*,/, `$1,${id},`);
+    return line.replace(captureRe, `$1,${id},`);
   });
   if (n) writeFileSync(path, out.join('\n'));
   return n;
 }
+export const writeBackUserPlatformIds = (idByEmail) => writeBackPlatformIds(idByEmail);
 
 // Give each seeded contact a login + org-scoped membership (role + status from users.csv).
 export async function provisionContactLogins(contactMap, orgMap) {
@@ -561,6 +568,120 @@ export async function provisionContactLogins(contactMap, orgMap) {
     }
   }
   return { accounts: nAcct, memberships: nMem };
+}
+
+// Contact + login + org-scoped membership in ONE pass, for CSVs where a single row IS the contact
+// (no separate contacts.csv join like b2b's) — e.g. white-labeling/users.csv. `org_id`/`roles` are
+// `;`-joined and INDEX-PARALLEL, so one row can be a multi-org member with a DIFFERENT role per org
+// (VCST-5028) — unlike provisionContactLogins's single `roles` value applied to every org uniformly.
+export async function seedInlineOrgUsers(rows, orgMap) {
+  console.log(`\n  Seeding ${rows.length} inline contact+login+membership row(s)...`);
+  const idByEmail = {};
+  let nAcct = 0, nMem = 0;
+  for (const row of rows) {
+    if ((row.seeded || '').toLowerCase() === 'false') continue;
+    const email = (row.email || '').trim();
+    if (!email.includes('@')) continue;
+
+    const orgIds = (row.org_id || '').split(';').map(s => s.trim()).filter(Boolean);
+    const roleNames = (row.roles || '').split(';').map(s => s.trim()).filter(Boolean);
+    const resolvedOrgs = orgIds.map(id => orgMap[id]).filter((o) => o?.platform_id);
+    if (orgIds.length && !resolvedOrgs.length) {
+      console.warn(`    ⚠ skip   ${row.user_id || email}: org(s) "${row.org_id}" not in seeded set`);
+      continue;
+    }
+
+    // Resolve via the account's memberId FIRST (a direct GET) — same as seedContacts() above.
+    // The member-search index lags right after a write (VCST-5406's documented flakiness class),
+    // so searching by email here would miss a just-created contact and mint a duplicate.
+    const existingUser = await findUserByEmail(email);
+    let contact = existingUser?.memberId ? await findContactById(existingUser.memberId) : null;
+    if (!contact) contact = await findContactByEmail(email);
+    if (!contact) {
+      const created = await api('POST', '/api/members', contactBody(row, resolvedOrgs.map((o) => o.platform_id)));
+      contact = created;
+      console.log(`    ✓ create contact ${created?.id || ''} (${email})`);
+    } else if (VERBOSE) console.log(`    ↻ reuse  contact ${contact.id} (${email})`);
+    if (!contact?.id) continue;
+
+    const userId = await ensureSecurityAccount(email, resolvePassword(row.password), contact.id, row.status || 'Approved');
+    idByEmail[email] = userId;
+    await stripSeededGlobalRoles(email);
+    nAcct++;
+    if (String(contact.id).startsWith('dry-') || String(userId).startsWith('dry-')) continue;
+
+    const locked = /^true$/i.test(row.membership_locked || '');
+    const existingMemberships = await searchMemberships(userId);
+    for (let i = 0; i < resolvedOrgs.length; i++) {
+      const org = resolvedOrgs[i];
+      const roleName = roleNames[i] || roleNames[0];
+      const roleId = roleIdByName(roleName);
+      if (!roleId) { console.warn(`    ⚠ role "${roleName}" not found in roles.csv — skipping membership for ${email} @ ${org.name}`); continue; }
+      await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existingMemberships, locked);
+      nMem++;
+    }
+  }
+  console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
+  return { accounts: nAcct, memberships: nMem, idByEmail };
+}
+
+// Write live-resolved ids as INLINE per-env aliases — test-data/aliases.${TEST_ENV}.json — instead
+// of into a CSV column. Unlike b2b (whose organizations.csv/users.csv pin a platform_id that's only
+// valid on the ONE env it was captured from, despite being a single file shared across all envs),
+// white-labeling's CSVs carry NO live ids at all, so they stay correct for any environment; each
+// env's actual ids live in its own override file, layered over the base test-data/aliases.json by
+// TestDataResolver (same per-env-overlay mechanism as aliases.localhost.json, just not gitignored —
+// vcst-qa is a stable shared env, not a fresh-DB-per-run one). Entries are `{alias}_PLATFORM_ID`.
+export function writeLiveIdAliases(entries) {
+  const clean = Object.fromEntries(Object.entries(entries).filter(([, id]) => id && !String(id).startsWith('dry-')));
+  if (DRY_RUN || !Object.keys(clean).length) return 0;
+  const env = process.env.TEST_ENV || 'vcst';
+  const path = join(ROOT, `test-data/aliases.${env}.json`);
+  let cur = {};
+  try { if (existsSync(path)) cur = JSON.parse(readFileSync(path, 'utf-8')); } catch { cur = {}; }
+  const additions = {};
+  for (const [key, id] of Object.entries(clean)) additions[key] = { _inline: true, id, fields: { id: 'id' } };
+  const merged = {
+    ...cur, ...additions,
+    _meta: {
+      ...(cur._meta || {}), env,
+      note: 'Auto-generated by seed-white-labeling.mjs / seed-company-users.mjs (wl kind) via writeLiveIdAliases() — live platform ids for this env only. The white-labeling CSVs intentionally carry no ids (multi-env safe).',
+    },
+  };
+  writeFileSync(path, JSON.stringify(merged, null, 2));
+  return Object.keys(clean).length;
+}
+
+// Builds {`${alias_name}_PLATFORM_ID`: platformId} from white-labeling org/user rows' `alias_name`
+// column (the CSV-declared key into test-data/aliases.json) + the ids seedOrgs/seedInlineOrgUsers
+// just resolved. Shared by seedWhiteLabelingUsers() and seed-white-labeling.mjs's own user step so
+// both entry points produce identical alias output.
+export function buildWhiteLabelingAliasEntries(orgRows, userRows, orgMap, idByEmail) {
+  const entries = {};
+  for (const r of orgRows) {
+    const platformId = orgMap[r.org_id]?.platform_id;
+    if (r.alias_name && platformId) entries[`${r.alias_name}_PLATFORM_ID`] = platformId;
+  }
+  for (const r of userRows) {
+    const platformId = idByEmail[r.email];
+    if (r.alias_name && platformId) entries[`${r.alias_name}_PLATFORM_ID`] = platformId;
+  }
+  return entries;
+}
+
+// Full white-labeling org+user provisioning — the SINGLE function called by both
+// seed-company-users.mjs's `wl` kind and seed-white-labeling.mjs's user step (VCST-5406 follow-up:
+// white-labeling used to duplicate its own org/contact/user CRUD instead of sharing this library).
+export async function seedWhiteLabelingUsers() {
+  const orgRows = readCsv(WL_ORGS_CSV).filter((r) => r.org_name);
+  const userRows = readCsv(WL_USERS_CSV).filter((r) => r.email);
+  console.log(`\n  Plan: ${orgRows.length} white-labeling org(s), ${userRows.length} user(s)`);
+  const orgMap = await seedOrgs(orgRows);
+  await ensureRoles();
+  const { idByEmail, ...counts } = await seedInlineOrgUsers(userRows, orgMap);
+  const written = writeLiveIdAliases(buildWhiteLabelingAliasEntries(orgRows, userRows, orgMap, idByEmail));
+  if (written) console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${written} live platform id alias(es)`);
+  return { whiteLabelingOrgs: Object.values(orgMap), ...counts };
 }
 
 // Cross-org memberships from organization-memberships.csv (orgs must already exist).
@@ -722,11 +843,52 @@ export async function sweepAgentTestMembers() {
   return deleted;
 }
 
-// Emails that every teardown must sweep: b2b/users.csv + organization-memberships.csv + personal.
+// Emails that every teardown must sweep: b2b/users.csv + organization-memberships.csv +
+// white-labeling/users.csv + personal.
 export function allSeededEmails() {
   const emails = new Set();
   for (const u of readCsv(USERS_CSV)) if ((u.email || '').trim()) emails.add(u.email.trim());
   for (const m of readCsv(MEMBERSHIPS_CSV)) if ((m.user_email || '').trim()) emails.add(m.user_email.trim());
+  for (const w of readCsv(WL_USERS_CSV)) if ((w.email || '').trim()) emails.add(w.email.trim());
   for (const p of personalUsers()) emails.add(p.email);
   return [...emails];
+}
+
+// Scoped subset of allSeededEmails() for the `wl` kind's teardown — so `seed-company-users.mjs wl
+// --teardown` sweeps ONLY white-labeling accounts, not the full b2b/personal/imp/loyalty set.
+export function whiteLabelingSeededEmails() {
+  return readCsv(WL_USERS_CSV).map((w) => (w.email || '').trim()).filter(Boolean);
+}
+
+// Delete the white-labeling orgs by name (live lookup — org platform ids live only in
+// aliases.${TEST_ENV}.json now, never in the CSV, so this doesn't trust a possibly-stale cache).
+// Unlike b2b (whose CSV pins a platform_id so orgs must survive teardown for id-stability), WL orgs
+// have no such requirement — their ids get rewritten to aliases.${TEST_ENV}.json on every reseed —
+// so a `wl` teardown can safely remove them too instead of treating them as permanent fixtures.
+export async function deleteWhiteLabelingOrgs() {
+  const orgRows = readCsv(WL_ORGS_CSV).filter((r) => r.org_name);
+  let deleted = 0;
+  for (const row of orgRows) {
+    const found = await findOrgByName(row.org_name);
+    if (!found?.id) { if (VERBOSE) console.log(`    ↻ org "${row.org_name}" already gone`); continue; }
+    await api('DELETE', `/api/members?ids=${encodeURIComponent(found.id)}`, null, { expectStatus: [200, 204, 404] });
+    console.log(`    ✗ org ${row.org_name} (${found.id})`);
+    deleted++;
+  }
+  return deleted;
+}
+
+// Removes every `WL_*_PLATFORM_ID` entry writeLiveIdAliases() wrote — called on `wl` teardown so
+// aliases.${TEST_ENV}.json doesn't keep pointing @td() references at now-deleted orgs/accounts.
+export function clearWhiteLabelingAliases() {
+  if (DRY_RUN) return 0;
+  const env = process.env.TEST_ENV || 'vcst';
+  const path = join(ROOT, `test-data/aliases.${env}.json`);
+  let cur = {};
+  try { if (existsSync(path)) cur = JSON.parse(readFileSync(path, 'utf-8')); } catch { return 0; }
+  const keys = Object.keys(cur).filter((k) => k.startsWith('WL_') && k.endsWith('_PLATFORM_ID'));
+  if (!keys.length) return 0;
+  for (const k of keys) delete cur[k];
+  writeFileSync(path, JSON.stringify(cur, null, 2));
+  return keys.length;
 }

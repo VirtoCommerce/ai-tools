@@ -9,46 +9,44 @@
  * b2b/users.csv logins is now structural).
  *
  * Usage:
- *   node scripts/seed-company-users.mjs [all|b2b|personal|imp|loyalty|cross-org] [flags]
+ *   node scripts/seed-company-users.mjs [all|b2b|personal|imp|loyalty|cross-org|wl] [flags]
  *   flags: --teardown  --dry-run  --verbose  --allow-admin-writes-on-prod
  *
  * Kinds:
- *   all        orgs + contacts + b2b logins + cross-org memberships + personal accounts (default)
+ *   all        orgs + contacts + b2b logins + cross-org memberships + personal + white-labeling (default)
  *   b2b        the whole B2B graph: orgs (parent-child) + contacts + org-scoped logins + cross-org
  *   imp        just the impersonation subset: ORG-009..019 + CON/USR-020..022 (blocked/invited via status)
  *   cross-org  just organization-memberships.csv (multi-org members; orgs must already exist)
  *   personal   personal storefront accounts: env customer roles + agent-pool + test-users (no org)
  *   loyalty    just the loyalty personal users (VIP/Wholesale group)
+ *   wl         white-labeling orgs + users (test-data/white-labeling/*.csv) — same org-scoped-role
+ *              model as b2b (VCST-5028); shared by seed-white-labeling.mjs's user-provisioning step
+ *              so there's ONE place that creates a WL org/contact/login/membership, not two
  *
  * Data sources: test-data/b2b/{organizations,contacts,users,organization-memberships,roles}.csv,
- * test-data/users/{agent-user-pool,test-users}.csv, and the .env.{ENV} role registry (user-roles.mjs).
+ * test-data/users/{agent-user-pool,test-users}.csv, test-data/white-labeling/{organizations,users}.csv,
+ * and the .env.{ENV} role registry (user-roles.mjs).
  * Identity from .env.{ENV}; secrets from .env.local. Prod blocked by ENV_RISK=production.
  */
 
-import { readFileSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import {
   BACK_URL, ADMIN, ADMIN_PASSWORD, STORE_ID, ENV_RISK, ROOT, DATE,
   setFlags, authenticate, ensureMemberIndex, parseCsv,
   seedOrgs, seedContacts, relinkUsersToContacts, ensureRoles, provisionContactLogins, seedMemberships,
-  personalUsers, ensurePersonalAccount, adminUsers, ensureAdminAccount,
-  deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, getApi,
+  personalUsers, ensurePersonalAccount, adminUsers, ensureAdminAccount, seedWhiteLabelingUsers,
+  deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, whiteLabelingSeededEmails,
+  deleteWhiteLabelingOrgs, clearWhiteLabelingAliases, getApi,
 } from '../lib/user-provision.mjs';
-import { syncEnvAliases } from '../lib/seed-common.mjs';
 
 const args = process.argv.slice(2);
-const KINDS = ['all', 'b2b', 'imp', 'cross-org', 'personal', 'loyalty'];
+const KINDS = ['all', 'b2b', 'imp', 'cross-org', 'personal', 'loyalty', 'wl'];
 const kind = KINDS.find(k => args.includes(k)) || 'all';
 const TEARDOWN = args.includes('--teardown') || args.includes('teardown');
 const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 setFlags({ dryRun: DRY_RUN, verbose: VERBOSE });
-
-// Seed-freshness marker consumed by the regression pipeline's reuse-skip check
-// (regression-orchestrator / autonomous-regression-orchestrator / /qa-regression):
-// a fresh mtime + matching profile lets a run skip reseeding. A stamp, NOT a results
-// dump — runtime GUIDs live in aliases.{env}.json / the CSVs. Gitignored, local state.
-const SEED_FINGERPRINT = join(ROOT, 'test-data/b2b/.seed-fingerprint.json');
 
 // The impersonation subset: the 11 many-orgs orgs PLUS TechFlow (ORG-002), which the blocked/
 // invited targets (CON-021/CON-022) belong to. Contacts selected explicitly by id.
@@ -82,16 +80,6 @@ async function seedOrgGraph({ orgFilter = null, contactFilter = null } = {}) {
   await relinkUsersToContacts(contactMap);
   await ensureRoles();
   await provisionContactLogins(contactMap, orgMap);
-
-  // Persist the freshly-created org platform GUIDs to aliases.<env>.json so ORG_*
-  // aliases resolve their real platform_id (business keys / names stay in the CSV).
-  // No-op for the primary vcst env. orgMap is keyed by the CSV org_id business key.
-  const orgByKey = {};
-  for (const [orgId, v] of Object.entries(orgMap)) {
-    if (v?.platform_id) orgByKey[orgId] = { platform_id: v.platform_id };
-  }
-  syncEnvAliases('b2b/organizations', orgByKey);
-
   return { orgs: Object.values(orgMap), contacts: Object.values(contactMap) };
 }
 
@@ -117,9 +105,16 @@ async function seedPersonal(loyaltyOnly = false) {
   return report;
 }
 
+// `wl` is the only kind with a scoped teardown today — its accounts are unambiguous (one CSV).
+// Unlike b2b (whose orgs must survive teardown for id-stability, since their platform_id is
+// pinned in the CSV), WL orgs carry no CSV id at all — their live id lives only in
+// aliases.${TEST_ENV}.json, refreshed on every seed — so a `wl` teardown removes the orgs too,
+// leaving nothing behind. Every other kind (including bare `--teardown` with no kind) keeps the
+// original unified sweep — that's the whole point of VCST-5406's "one teardown, no orphan gap".
 async function runTeardown() {
-  const emails = allSeededEmails();
-  console.log(`\n  Teardown: ${emails.length} account(s) across users.csv + memberships.csv + personal...`);
+  const scoped = kind === 'wl';
+  const emails = scoped ? whiteLabelingSeededEmails() : allSeededEmails();
+  console.log(`\n  Teardown${scoped ? ' (white-labeling only)' : ''}: ${emails.length} account(s)...`);
   let accounts = 0, contacts = 0;
   for (const email of emails) {
     const r = await deleteUserByEmail(email);
@@ -127,6 +122,12 @@ async function runTeardown() {
     if (r.contact) contacts++;
   }
   console.log(`  Teardown: ${accounts} account(s) + ${contacts} contact(s)`);
+  if (scoped) {
+    const orgs = await deleteWhiteLabelingOrgs();
+    const clearedAliases = clearWhiteLabelingAliases();
+    console.log(`\n✅ White-labeling teardown complete — ${accounts} accounts, ${contacts} contacts, ${orgs} orgs removed${clearedAliases ? `, ${clearedAliases} stale alias(es) cleared` : ''}\n`);
+    return;
+  }
   const members = await sweepAgentTestMembers();
   console.log(`\n✅ Company-users teardown complete — ${accounts} accounts, ${contacts + members} members removed\n`);
 }
@@ -144,44 +145,35 @@ async function run() {
   await authenticate();
   await ensureMemberIndex(getApi());
 
-  if (TEARDOWN) {
-    await runTeardown();
-    // Drop the freshness marker so a later regression run doesn't treat torn-down data as seeded.
-    if (!DRY_RUN) { try { rmSync(SEED_FINGERPRINT, { force: true }); } catch { /* best-effort */ } }
-    return;
-  }
+  if (TEARDOWN) { await runTeardown(); return; }
 
-  // Each helper seeds as a side effect; runtime GUIDs are persisted to
-  // aliases.<env>.json by seedOrgGraph (org platform_id). No standalone
-  // _seed-results report is written (business keys/emails live in the CSVs).
+  const report = { seedDate: DATE, kind, platform: BACK_URL, storeId: STORE_ID };
   if (kind === 'personal') {
-    await seedPersonal(false);
+    Object.assign(report, await seedPersonal(false));
   } else if (kind === 'loyalty') {
-    await seedPersonal(true);
+    Object.assign(report, await seedPersonal(true));
   } else if (kind === 'cross-org') {
-    await seedMemberships();
+    report.memberships = await seedMemberships();
   } else if (kind === 'imp') {
-    await seedOrgGraph({ orgFilter: r => IMP_ORG_IDS.has(r.org_id), contactFilter: r => IMP_CONTACT_IDS.has(r.contact_id) });
+    Object.assign(report, await seedOrgGraph({ orgFilter: r => IMP_ORG_IDS.has(r.org_id), contactFilter: r => IMP_CONTACT_IDS.has(r.contact_id) }));
   } else if (kind === 'b2b') {
-    await seedOrgGraph();
-    await seedMemberships();
+    Object.assign(report, await seedOrgGraph());
+    report.memberships = await seedMemberships();
+  } else if (kind === 'wl') {
+    Object.assign(report, await seedWhiteLabelingUsers());
   } else { // all
-    await seedOrgGraph();
-    await seedMemberships();
-    await seedPersonal(false);
+    Object.assign(report, await seedOrgGraph());
+    report.memberships = await seedMemberships();
+    Object.assign(report, await seedPersonal(false));
+    report.whiteLabeling = await seedWhiteLabelingUsers();
   }
 
-  // Write the seed-freshness marker (mtime + profile) for the regression reuse-skip check.
   if (!DRY_RUN) {
-    writeFileSync(SEED_FINGERPRINT, JSON.stringify({
-      seededAt: new Date().toISOString(),
-      kind,
-      env: process.env.TEST_ENV || 'vcst',
-      storeId: STORE_ID,
-      platform: BACK_URL,
-    }, null, 2));
+    const out = join(ROOT, `test-data/b2b/_seed-results-company-users-${DATE}.json`);
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, JSON.stringify(report, null, 2));
+    console.log(`\nResults: ${out}`);
   }
-
   console.log(`\n✅ Company-users seed complete (kind=${kind})\n`);
 }
 

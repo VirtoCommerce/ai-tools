@@ -38,6 +38,8 @@
     "seed:b2b:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",
     "seed:users": "node scripts/seed-data/seed-company-users.mjs personal",
     "seed:users:teardown": "node scripts/seed-data/seed-company-users.mjs --teardown",
+    "seed:wl": "node scripts/seed-data/seed-company-users.mjs wl",
+    "seed:wl:teardown": "node scripts/seed-data/seed-company-users.mjs wl --teardown",
     "seed:pricing": "node scripts/seed-data/seed-pricing.mjs",
     "seed:pricing:teardown": "node scripts/seed-data/seed-pricing.mjs --teardown",
     "seed:inventory": "node scripts/seed-data/seed-inventory.mjs",

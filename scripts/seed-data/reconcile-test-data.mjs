@@ -16,7 +16,11 @@
  *                          alignment from Phase 2b).
  *   3. B2B organizations  — seeded rows in test-data/b2b/organizations.csv are
  *                          findable live (catches the stale-ORG-id drift).
- *   4. Secret hygiene     — no password literals committed in the user CSVs.
+ *   4. Org-scoped roles   — VCST-5028: every org user (b2b + white-labeling) has NO global
+ *                          org role on its security account, and ≥1 OrganizationMembership
+ *                          WITH a role; a multi-org user's memberships carry DIFFERENT roles.
+ *   5. Secret hygiene     — no password literals committed in the user CSVs
+ *                          (b2b, personal, agent-pool, white-labeling).
  *
  * Usage:
  *   TEST_ENV=vcst   npm run td:reconcile
@@ -187,6 +191,15 @@ function orgUsersToCheck() {
     if (!(r.roles || '').trim()) continue;                       // no role → nothing to assert
     bump(r.email, r.org_id, 'users.csv');
   }
+  // white-labeling/users.csv: same invariant, same column names as b2b/users.csv (org_id/roles,
+  // ';'-joined) since its schema was aligned to match — provisioned via the SAME
+  // seedInlineOrgUsers/seedWhiteLabelingUsers path user-provision.mjs uses for b2b.
+  const wl = join(ROOT, 'test-data/white-labeling/users.csv');
+  if (existsSync(wl)) for (const r of parseCsvLoose(readFileSync(wl, 'utf8'))) {
+    if (!/^(true|yes|1)$/i.test(r.seeded || '')) continue;
+    if (!(r.roles || '').trim()) continue;
+    bump(r.email, r.org_id, 'white-labeling/users.csv');
+  }
   return [...map.values()];
 }
 
@@ -198,7 +211,11 @@ async function checkB2bMemberships() {
   for (const u of users) {
     let acct = null;
     try { acct = await findSecurityUser(u.email); } catch { warn(`${u.email}: account probe error`); continue; }
-    if (!acct?.id) { warn(`${u.email}: no security account (run seed:b2b) [${u.source}]`); continue; }
+    if (!acct?.id) {
+      const seeder = u.source === 'white-labeling/users.csv' ? 'seed:white-labeling' : 'seed:b2b';
+      warn(`${u.email}: no security account (run ${seeder}) [${u.source}]`);
+      continue;
+    }
 
     // (a) no GLOBAL org role on the account — fetch the FULL record (search hits omit roles[]).
     let full = null;

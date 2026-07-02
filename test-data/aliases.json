@@ -1565,7 +1565,12 @@
       "name": "org_name",
       "main_menu": "main_menu_link_list_name",
       "footer": "footer_link_list_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "logo": "logo_url",
+      "secondary_logo": "secondary_logo_url",
+      "favicon": "favicon_url",
+      "id": "org_id",
+      "alias_name": "alias_name"
     }
   },
   "WL_FASHION": {
@@ -1577,7 +1582,9 @@
       "name": "org_name",
       "main_menu": "main_menu_link_list_name",
       "footer": "footer_link_list_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
     }
   },
   "WL_DEFAULT": {
@@ -1587,7 +1594,115 @@
     },
     "fields": {
       "name": "org_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_MENU_ONLY": {
+    "file": "white-labeling/organizations",
+    "filter": {
+      "org_id": "WL-ORG-D"
+    },
+    "fields": {
+      "name": "org_name",
+      "main_menu": "main_menu_link_list_name",
+      "footer": "footer_link_list_name",
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_FOOTER_ONLY": {
+    "file": "white-labeling/organizations",
+    "filter": {
+      "org_id": "WL-ORG-E"
+    },
+    "fields": {
+      "name": "org_name",
+      "main_menu": "main_menu_link_list_name",
+      "footer": "footer_link_list_name",
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_ELECTRONICS": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-01"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_FASHION": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-02"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_DEFAULT": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-03"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_MULTI": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-04"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_MENU_ONLY": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-05"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_FOOTER_ONLY": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-06"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
     }
   },
   "LANG_EN": {
