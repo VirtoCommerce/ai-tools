@@ -34,7 +34,10 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    follow-up; (b) **ENV_NAME** as a plain chat question (operator replies with the
    value; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`). Not via AskUserQuestion
    (forces option buttons) or a widget (unreliable). **No value form, no per-value
-   questions.**
+   questions.** (c) **Existing-env guard:** before step 3, check whether
+   `.env.<name>` already exists; if it does, ask via `AskUserQuestion` whether to
+   **reuse it** (scaffold only adds missing keys, never clobbers) or **use a new
+   name** (ask again, re-check) — never auto-pick.
 3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs` →
    `.env.<env>` (non-secret URLs/identifiers/tracker placeholders); (3b)
    `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds

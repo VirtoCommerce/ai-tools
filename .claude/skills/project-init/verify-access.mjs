@@ -42,6 +42,27 @@ const FRONT = (process.env.FRONT_URL || "").replace(/\/+$/, "");
 const results = [];
 const add = (name, status, detail = "") => results.push({ name, status, detail });
 
+// --- color support (green/yellow/red status markers; auto-off when piped or NO_COLOR) ---
+const USE_COLOR = !process.env.NO_COLOR && (Boolean(process.stdout.isTTY) || Boolean(process.env.FORCE_COLOR));
+const ANSI = { reset: "\x1b[0m", bold: "\x1b[1m", green: "\x1b[32m", yellow: "\x1b[33m", red: "\x1b[31m", gray: "\x1b[90m", cyan: "\x1b[36m" };
+const paint = (code, s) => (USE_COLOR ? `${code}${s}${ANSI.reset}` : s);
+// Status → colour + a leading fixed-width ASCII marker (safe width; the colour is the signal).
+const STATUS_STYLE = {
+  PASS: ANSI.green, OK: ANSI.green, AUTHORIZED: ANSI.green,
+  WARN: ANSI.yellow, "NEEDS OAUTH": ANSI.yellow,
+  FAIL: ANSI.red, "NOT AUTH": ANSI.red,
+  SKIP: ANSI.gray, "NO KEY": ANSI.gray,
+};
+const MARKER = { PASS: "+", OK: "+", AUTHORIZED: "+", WARN: "!", "NEEDS OAUTH": "!", FAIL: "x", "NOT AUTH": "x", SKIP: "-", "NO KEY": "-" };
+// Render a status word as "<marker> <WORD>" padded to width `n`, then colourised (colour added
+// AFTER padding so borders stay aligned regardless of the invisible ANSI escapes).
+const statusCell = (st, n) => {
+  const label = `${MARKER[st] || " "} ${st}`;
+  const padded = label + " ".repeat(Math.max(0, n - label.length));
+  return paint(ANSI.bold + (STATUS_STYLE[st] || ""), padded);
+};
+const statusWidth = (st) => `${MARKER[st] || " "} ${st}`.length;
+
 function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
 }
@@ -185,12 +206,15 @@ function renderMcp() {
   ];
   const pad = (s, n) => s + " ".repeat(n - s.length);
   const line = (l, m, r) => l + w.map((x) => "─".repeat(x + 2)).join(m) + r;
-  const row = (a) => "│ " + a.map((v, i) => pad(v, w[i])).join(" │ ") + " │";
-  console.log("  created ✓ — " + names.length + " enabled");
+  const row = (a, colorStatus = false) => "│ " + a.map((v, i) => {
+    const cell = pad(v, w[i]);
+    return colorStatus && i === 2 ? paint(ANSI.bold + (STATUS_STYLE[v] || ""), cell) : cell;
+  }).join(" │ ") + " │";
+  console.log("  created " + paint(ANSI.green, "✓") + " — " + names.length + " enabled");
   console.log(line("┌", "┬", "┐"));
   console.log(row(cols));
   console.log(line("├", "┼", "┤"));
-  for (const r of rows) console.log(row([r.name, r.auth, r.status, r.detail]));
+  for (const r of rows) console.log(row([r.name, r.auth, r.status, r.detail], true));
   console.log(line("└", "┴", "┘"));
   const oauth = rows.filter((r) => r.status === "NEEDS OAUTH").map((r) => r.name);
   if (oauth.length) console.log(`  ! OAuth authorization needed (interactive): ${oauth.join(", ")} — reload the client, then authorize.`);
@@ -204,26 +228,34 @@ function renderTable(rows) {
   const cells = rows.map((r) => ({ name: r.name, status: r.status, detail: trunc(r.detail, 74) }));
   const H = { name: "Check", status: "Status", detail: "Detail" };
   const w1 = Math.max(H.name.length, ...cells.map((c) => c.name.length));
-  const w2 = Math.max(H.status.length, ...cells.map((c) => c.status.length));
+  const w2 = Math.max(H.status.length, ...cells.map((c) => statusWidth(c.status)));
   const w3 = Math.max(H.detail.length, ...cells.map((c) => c.detail.length));
   const pad = (s, n) => s + " ".repeat(n - s.length);
   const line = (l, m, r) => `${l}${"─".repeat(w1 + 2)}${m}${"─".repeat(w2 + 2)}${m}${"─".repeat(w3 + 2)}${r}`;
-  const row = (a, b, c) => `│ ${pad(a, w1)} │ ${pad(b, w2)} │ ${pad(c, w3)} │`;
+  const headRow = (a, b, c) => `│ ${pad(a, w1)} │ ${pad(b, w2)} │ ${pad(c, w3)} │`;
 
   const counts = rows.reduce((m, r) => ((m[r.status] = (m[r.status] || 0) + 1), m), {});
   const fails = rows.filter((r) => r.status === "FAIL");
 
   console.log("");
-  console.log(`  /qa-fix readiness — TEST_ENV=${resolveTestEnv("vcst")}`);
+  console.log(`  ${paint(ANSI.bold, `/qa-fix readiness — TEST_ENV=${resolveTestEnv("vcst")}`)}`);
   console.log(line("┌", "┬", "┐"));
-  console.log(row(H.name, H.status, H.detail));
+  console.log(headRow(H.name, H.status, H.detail));
   console.log(line("├", "┼", "┤"));
-  for (const c of cells) console.log(row(c.name, c.status, c.detail));
+  for (const c of cells) {
+    console.log(`│ ${pad(c.name, w1)} │ ${statusCell(c.status, w2)} │ ${pad(c.detail, w3)} │`);
+  }
   console.log(line("└", "┴", "┘"));
   console.log(
-    `  ${rows.length} checks · ✓ ${counts.PASS || 0} pass · ✗ ${counts.FAIL || 0} fail · ! ${counts.WARN || 0} warn · – ${counts.SKIP || 0} skip`
+    `  ${rows.length} checks · ` +
+      `${paint(ANSI.green, `✓ ${counts.PASS || 0} pass`)} · ` +
+      `${paint(ANSI.red, `✗ ${counts.FAIL || 0} fail`)} · ` +
+      `${paint(ANSI.yellow, `! ${counts.WARN || 0} warn`)} · ` +
+      `${paint(ANSI.gray, `– ${counts.SKIP || 0} skip`)}`
   );
-  console.log(fails.length ? `  ✗ NOT READY — resolve: ${fails.map((f) => f.name).join(", ")}` : `  ✓ READY for /qa-fix.`);
+  console.log(fails.length
+    ? paint(ANSI.bold + ANSI.red, `  ✗ NOT READY — resolve: ${fails.map((f) => f.name).join(", ")}`)
+    : paint(ANSI.bold + ANSI.green, `  ✓ READY for /qa-fix.`));
   console.log("");
 }
 

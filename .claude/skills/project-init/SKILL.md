@@ -121,8 +121,26 @@ this — a plain chat question is the stable way to collect one free-text value.
 Normalise mixed case / spaces / hyphens to `[a-z0-9_]+` (e.g. `My QA` → `my_qa`)
 and tell the operator what you used. Do **not** ask for any other value — URLs, IDs,
 emails, passwords, tokens are all placeholders the operator fills into the two
-template files created in step 3. (Reusing an existing `.env.<env>` such as native
-`.env.vcst`? Use that name — step 3 only adds missing keys, never clobbers.)
+template files created in step 3.
+
+### 2c. Existing-env guard — check `.env.<name>` BEFORE scaffolding
+
+After you have the normalised name, **check whether `.env.<name>` already exists**
+(`test -f .env.<name>`, or list `.env.*`). This must happen before step 3 so the
+operator never silently reuses (or half-overwrites) an env they forgot about.
+
+- **Not found** → proceed to step 3 with this name.
+- **Found** → this is a real decision — surface it with `AskUserQuestion` (two
+  options), never auto-pick:
+  1. **Use the existing environment** — keep the name; step 3 (`scaffold-env`) is
+     idempotent and only *adds* missing keys, never clobbers filled values. Best
+     when reusing a native env (`.env.vcst`, `.env.vcptcore`, `.env.virtostart`)
+     or resuming a prior init.
+  2. **Create a new one with a different name** — the operator supplies a fresh
+     name (ask again in plain chat); re-run this 2c guard on the new name.
+
+  Show the operator *what* the existing file already contains at a glance (the set
+  of keys, values masked) so they can decide — but never print secret values.
 
 ## 3. Scaffold the two env templates, then hand off for filling
 

@@ -141,6 +141,15 @@ function main() {
   }
 
   const profile = deepMerge(base, patch);
+
+  // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written
+  // file MIRRORS THE ANSWERS — no dead `azure:{}` block in a Jira+GitHub profile. This is SAFE:
+  // the discriminators are `tracker.kind` and `vcs.clientHost` (never object *presence*), and
+  // loadProjectProfile() always re-layers PROFILE_DEFAULTS on read, so any consumer that does
+  // touch profile.tracker.azure / profile.vcs.azure still sees the empty default at runtime.
+  if (profile.tracker?.kind !== "azure") delete profile.tracker.azure;
+  if (profile.vcs?.clientHost !== "azure-repos") delete profile.vcs.azure;
+
   const withMeta = {
     _meta: {
       version: "1.0.0",
