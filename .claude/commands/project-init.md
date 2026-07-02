@@ -30,22 +30,33 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
 2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
-   project type · tracker) as one `AskUserQuestion` block, code host a client-only
-   follow-up; (b) **ENV_NAME** as a plain chat question (operator replies with the
-   value; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`). Not via AskUserQuestion
-   (forces option buttons) or a widget (unreliable). **No value form, no per-value
-   questions.** (c) **Existing-env guard:** before step 3, check whether
+   project type · tracker) as one `AskUserQuestion` block; for `projectType=client`
+   a follow-up `AskUserQuestion` for the remaining enums — **code host** AND
+   **contribution mode** (fork/direct); (b) **ENV_NAME** as a plain chat question
+   (operator replies with the value; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`).
+   Not via AskUserQuestion (forces option buttons) or a widget (unreliable). **All
+   enums are asked here; every free-text value is a placeholder in the ONE scaffolded
+   file, NEVER a chat question** (client org for a GitHub host; the fork account is
+   NOT asked — it is derived from the GitHub token owner at step 4). (c) **Existing-env
+   guard:** before step 3, check whether
    `.env.<name>` already exists; if it does, ask via `AskUserQuestion` whether to
    **reuse it** (scaffold only adds missing keys, never clobbers) or **use a new
    name** (ask again, re-check) — never auto-pick.
-3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs` →
-   `.env.<env>` (non-secret URLs/identifiers/tracker placeholders); (3b)
+3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs`
+   (`--project-type client --client-vcs github` also emits `CLIENT_REPO_ORG`; azure-repos
+   emits nothing extra — client org = ADO_ORG) → `.env.<env>`; (3b)
    `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
    `_<ENV>`-suffixed, browser-login auth emits no token line); (3c) tell the operator
    **two files were created — fill both** (inline comments say what/where), then
    **pause** — verify (step 7) checks them. Never a raw account password.
-4. Write the profile (`gen-profile.mjs`).
-5. Discover the client/platform repo split (`discover-repos.mjs`, client only) → confirm.
+4. Write the profile (`gen-profile.mjs`) — read connection/routing values back from the
+   filled `.env.<env>` (tracker; client `--client-org` = `CLIENT_REPO_ORG` or `ADO_ORG`);
+   for fork mode derive `--upstream-account` from the GitHub token owner (`gh api user`),
+   never from a chat question.
+5. Discover the client/platform repo split (`discover-repos.mjs --client-vcs …`, client
+   only): classify installed modules AND scan the client's code host for the
+   storefront/theme repo (kind `frontend`). If none matches → ask the operator to name
+   it. Confirm with the operator, then merge into the profile.
 6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 7. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`
    (`FORCE_COLOR=1` so the green/yellow/red Status column renders — the script

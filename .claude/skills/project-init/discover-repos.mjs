@@ -8,16 +8,19 @@
  * ⇒ platform; anything else (esp. under --client-org) ⇒ client. Emits
  * { client:[...], platform:[...] } for `gen-profile.mjs --repos-json --merge`.
  *
- * The storefront / theme / frontend repo is NOT discoverable from the modules
- * API — the /project-init skill asks for it and adds it to repos.client itself.
- * The proposal is a STARTING POINT: the skill shows it to the user to confirm/fix.
+ * The storefront / theme / frontend repo is NOT a platform module, so it is not in
+ * the modules API. Instead this scans the CLIENT's code host (Azure Repos or GitHub,
+ * per --client-vcs) for a repo whose name matches a theme/frontend heuristic and adds
+ * it to repos.client as kind:"frontend". If NONE matches, it prints a notice so the
+ * skill ASKS the operator to name it. The proposal is a STARTING POINT — confirm/fix.
  *
  * Usage:
- *   node .claude/skills/project-init/discover-repos.mjs --client-org acme-corp [--out repos.json] [--print] [--insecure]
- *   # offline test with mock module data ([{Id,ProjectUrl}, ...]):
+ *   node .claude/skills/project-init/discover-repos.mjs --client-org acme-corp \
+ *     [--client-vcs github|azure-repos] [--out repos.json] [--print] [--insecure]
+ *   # offline test with mock module data ([{Id,ProjectUrl}, ...]); skips the repo scan:
  *   node .claude/skills/project-init/discover-repos.mjs --client-org acme --modules-json mods.json --print
  */
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { config as dotenv } from "dotenv";
@@ -37,46 +40,90 @@ function parseArgs(argv) {
   return a;
 }
 
-/** Map a module descriptor → { id, owner, name, kind, url }. Pure (unit-testable). */
+/** Map a module descriptor → { id, owner, name, host, kind, url }. Pure (unit-testable). */
 export function moduleToRepo(mod) {
   const id = mod.Id || mod.id || "";
   const url = mod.ProjectUrl || mod.projectUrl || "";
   let owner = null;
   let name = null;
-  const m = /github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url || "");
-  if (m) {
-    owner = m[1];
-    name = m[2];
+  let host = null;
+  const gh = /github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url || "");
+  // Azure Repos: https://[org@]dev.azure.com/<org>/<project>/_git/<repo>
+  const az = /dev\.azure\.com\/([^/@]+)\/(?:[^/]+\/)*_git\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url || "");
+  if (gh) {
+    owner = gh[1]; name = gh[2]; host = "github";
+  } else if (az) {
+    owner = az[1]; name = az[2]; host = "azure-repos";
   } else if (id) {
-    // VirtoCommerce.XCart → vc-module-x-cart (best-effort; owner left null).
+    // No resolvable repo URL → derive a name from the id (owner stays null; classify
+    // then decides client-vs-platform by the id namespace).
     const short = id.replace(/^VirtoCommerce\./, "");
     name =
       "vc-module-" +
       short.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/\./g, "-").toLowerCase();
   }
-  return { id, owner, name, kind: "module", url };
+  return { id, owner, name, host, kind: "module", url };
 }
 
-/** Classify discovered modules into client vs platform repo lists. Pure. */
+/**
+ * Classify discovered modules into client vs platform repo lists. Pure.
+ * Platform iff a VirtoCommerce-owned repo, or (owner unknown) a `VirtoCommerce.*` module
+ * id. Everything else — a non-VirtoCommerce owner, an owner matching `clientOrg`, or a
+ * non-`VirtoCommerce.*` id (e.g. a custom `vc-module-leo-main`) — is a CLIENT repo.
+ */
 export function classify(modules, clientOrg) {
   const client = [];
   const platform = [];
   const seen = new Set();
+  const co = (clientOrg || "").toLowerCase();
   for (const mod of modules || []) {
     const r = moduleToRepo(mod);
     if (!r.name) continue;
     const full = r.owner ? `${r.owner}/${r.name}` : r.name;
     if (seen.has(full)) continue;
     seen.add(full);
-    const isPlatform = !r.owner || r.owner.toLowerCase() === UPSTREAM_ORG.toLowerCase();
+    let isPlatform = r.owner
+      ? r.owner.toLowerCase() === UPSTREAM_ORG.toLowerCase()
+      : /^VirtoCommerce\./i.test(r.id); // owner unknown → decide by module-id namespace
+    if (r.owner && co && r.owner.toLowerCase() === co) isPlatform = false; // explicit client org wins
     if (isPlatform) {
       platform.push({ name: full, kind: r.kind });
     } else {
-      // Non-VirtoCommerce owner ⇒ treat as client (skill lets the user correct).
-      client.push({ name: full, kind: r.kind, host: "github" });
+      // host from the URL when known; else omit so profile.vcs.clientHost governs.
+      client.push({ name: full, kind: r.kind, ...(r.host ? { host: r.host } : {}) });
     }
   }
   return { client, platform };
+}
+
+/** Heuristic: pick storefront/theme/frontend repo names from a client repo list. Pure. */
+export function pickFrontendRepos(names) {
+  const rx = /(vc-theme|vc-frontend|storefront|theme|front-?end)/i;
+  return [...new Set((names || []).filter((n) => rx.test(n)))];
+}
+
+/** List the client's repo NAMES from their code host (Azure Repos or GitHub). */
+async function listClientReposLive(host, { org, project }) {
+  if (host === "azure-repos") {
+    if (!org || !project) throw new Error("need ADO_ORG + ADO_PROJECT to list Azure Repos");
+    const pat = process.env.ADO_PAT || "";
+    if (!pat) throw new Error("need ADO_PAT to list Azure Repos");
+    const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories?api-version=7.1`;
+    const res = await fetch(url, {
+      headers: { Authorization: "Basic " + Buffer.from(":" + pat).toString("base64"), Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`ADO repositories → ${res.status}`);
+    return ((await res.json()).value || []).map((r) => r.name);
+  }
+  // github
+  if (!org) throw new Error("need client org to list GitHub repos");
+  const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
+  const hdr = { "User-Agent": "vc-project-init", Accept: "application/vnd.github+json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) };
+  for (const kind of ["orgs", "users"]) {
+    const res = await fetch(`https://api.github.com/${kind}/${org}/repos?per_page=100`, { headers: hdr });
+    if (res.ok) return (await res.json()).map((r) => r.name);
+  }
+  throw new Error(`GitHub repos for '${org}' → not found`);
 }
 
 async function getModulesLive() {
@@ -84,6 +131,12 @@ async function getModulesLive() {
   dotenv({ path: ".env.defaults" });
   dotenv({ path: `.env.${TEST_ENV}`, override: true });
   dotenv({ path: ".env.local", override: true });
+  // Per-env suffix promotion (mirror config.js / verify-access) so ADMIN_PASSWORD_<ENV>
+  // → ADMIN_PASSWORD etc. — otherwise per-env creds in .env.local are never seen.
+  const SUF = `_${TEST_ENV.toUpperCase()}`;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
+  }
 
   const BACK_URL = (process.env.BACK_URL || "").replace(/\/$/, "");
   const ADMIN = process.env.ADMIN || "";
@@ -131,9 +184,34 @@ async function main() {
       (clientOrg ? ` (client org: ${clientOrg})` : ""),
   );
 
+  // Scan the CLIENT's repos for a storefront/theme/frontend repo — it is NOT installed as
+  // a platform module, so the modules API never surfaces it. Live mode only.
+  if (!args["modules-json"] && clientOrg) {
+    const host = args["client-vcs"] || "github";
+    try {
+      const org = host === "azure-repos" ? (process.env.ADO_ORG || clientOrg) : clientOrg;
+      const all = await listClientReposLive(host, { org, project: process.env.ADO_PROJECT || "" });
+      const fe = pickFrontendRepos(all);
+      const have = new Set(result.client.map((c) => c.name.split("/").pop()));
+      for (const n of fe) {
+        if (have.has(n)) continue;
+        result.client.push({ name: `${org}/${n}`, kind: "frontend", host });
+      }
+      console.error(
+        fe.length
+          ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}`
+          : `[discover-repos] NO storefront/theme repo matched — ASK the operator to name it, then add { kind: "frontend" } to repos.client.`,
+      );
+    } catch (err) {
+      console.error(`[discover-repos] client-repo scan skipped (${err.message}) — ASK the operator to name the storefront/theme repo.`);
+    }
+  }
+
   if (args.out) {
-    writeFileSync(resolve(args.out), JSON.stringify(result, null, 2) + "\n");
-    console.error(`[discover-repos] wrote ${resolve(args.out)}`);
+    const outAbs = resolve(args.out);
+    mkdirSync(dirname(outAbs), { recursive: true }); // ensure the --out dir exists
+    writeFileSync(outAbs, JSON.stringify(result, null, 2) + "\n");
+    console.error(`[discover-repos] wrote ${outAbs}`);
   }
   // Machine-readable result on stdout (so callers can pipe / capture).
   if (args.print || !args.out) console.log(JSON.stringify(result, null, 2));

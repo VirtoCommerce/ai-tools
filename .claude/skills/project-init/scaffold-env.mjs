@@ -20,8 +20,18 @@
  *   node .claude/skills/project-init/scaffold-env.mjs --env myqa --tracker jira --print
  *   node .claude/skills/project-init/scaffold-env.mjs --env acme --tracker azure
  *
- * Flags: --env <name> (required), --tracker jira|azure, --out <path>
- *        (default .env.<env>), --print.
+ * Flags: --env <name> (required), --tracker jira|azure, --project-type
+ *        platform|client, --client-vcs github|azure-repos, --contribution-mode
+ *        fork|direct, --out <path> (default .env.<env>), --print.
+ *
+ * For --project-type client with --client-vcs github it also emits CLIENT_REPO_ORG
+ * (the GitHub org owning the client's custom repos) as a fillable placeholder, so that
+ * free-text value lives in this ONE file — never a chat question. For --client-vcs
+ * azure-repos it is NOT emitted: the client org is already ADO_ORG/ADO_PROJECT.
+ *
+ * The upstream FORK account is deliberately NOT a placeholder — it is the owner of the
+ * GitHub fix token / gh session, which gen-profile derives (GET /user) at step 4, and
+ * the fix pipeline auto-creates the fork under it (`gh repo fork`). No manual entry.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { dirname, resolve, join } from "path";
@@ -68,6 +78,11 @@ const CATALOG = [
     what: "Azure DevOps organization.", where: "dev.azure.com/<org>." }],
   ["ADO_PROJECT",      { include: (o) => o.tracker === "azure",
     what: "Azure DevOps project (Boards).", where: "the project holding your work items." }],
+  // Only for a GitHub-hosted client: the client org is a distinct GitHub namespace.
+  // For azure-repos it is redundant with ADO_ORG/ADO_PROJECT, so it is NOT emitted.
+  ["CLIENT_REPO_ORG",  { include: (o) => o.projectType === "client" && o.clientVcs === "github",
+    what: "GitHub org that owns your CUSTOM/client repos (modules, theme, storefront fork).",
+    where: "e.g. acme-corp — routes client bugs to your repos (gen-profile --client-org)." }],
 ];
 
 function main() {
@@ -76,7 +91,12 @@ function main() {
   if (!env || typeof env !== "string") fail("missing --env <name>.");
   if (!/^[a-z0-9_]+$/.test(env)) fail(`invalid --env "${env}". Must match [a-z0-9_]+ (underscores, no hyphens).`);
 
-  const opts = { tracker: args.tracker || "jira" };
+  const opts = {
+    tracker: args.tracker || "jira",
+    projectType: args["project-type"] || "platform",
+    contributionMode: args["contribution-mode"] || "fork",
+    clientVcs: args["client-vcs"] || "github",
+  };
   const outPath = args.out ? resolve(args.out) : join(REPO_ROOT, `.env.${env}`);
   const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
 

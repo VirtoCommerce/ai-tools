@@ -106,10 +106,22 @@ Ask these three as a single `AskUserQuestion` call:
    modules / theme / storefront fork → unlocks step 5 + client routing).
 3. **tracker** — `jira` or `azure` (Azure Boards).
 
-**Only for `projectType=client`**, ask **code host** (`github` or `azure-repos`)
-in a follow-up `AskUserQuestion`. Tracker and VCS are **independent** (Azure Boards
-+ GitHub is fine); the platform upstream is **always** GitHub. (For `platform`,
-code host is irrelevant.)
+**Only for `projectType=client`**, ask a follow-up `AskUserQuestion` with the
+remaining client **enum** choices: **code host** (`github` or `azure-repos`) and
+**contribution mode** (`fork` — client without upstream write, the default — or
+`direct`). Tracker and VCS are **independent** (Azure Boards + GitHub is fine); the
+platform upstream is **always** GitHub. (For `platform`, both are irrelevant.)
+
+**Every enum choice is asked here, up front.** Every free-text *value* is a placeholder
+in the ONE scaffolded file (step 3), never a mid-pipeline chat question — so do NOT ask
+the client org in chat. Two client-routing subtleties:
+- **`CLIENT_REPO_ORG`** is scaffolded **only for `--client-vcs github`** (a distinct
+  GitHub org). For `azure-repos` it is redundant with `ADO_ORG`/`ADO_PROJECT` and is
+  NOT emitted — derive the client org from `ADO_ORG` at step 4.
+- **The upstream fork account is NOT asked or scaffolded.** It is the owner of the
+  GitHub fix token / gh session, which gen-profile derives at step 4 (`gh api user` /
+  GET /user → `login`); the fix pipeline auto-creates the fork under it (`gh repo
+  fork`). Only ask if the operator wants the fork under a *different* org.
 
 ### 2b. ENV_NAME — one plain chat question
 
@@ -154,10 +166,17 @@ Non-secret per-env placeholders (URLs / `STORE_ID` / `ADMIN` / `USER_EMAIL` /
 
 ```bash
 node .claude/skills/project-init/scaffold-env.mjs --env myqa --tracker jira --print
+# client project → also emit the routing identifiers as placeholders (ONE file to fill):
+node .claude/skills/project-init/scaffold-env.mjs --env acme --tracker azure \
+  --project-type client --contribution-mode fork --print
 ```
-Flags: `--env <name>` (required), `--tracker jira|azure`. `ENV_RISK` and `ADMIN`
-are pre-filled with safe defaults; everything else is empty. Idempotent — a re-run
-(or a reused `.env.<env>`) only adds missing keys, never clobbers filled values.
+Flags: `--env <name>` (required), `--tracker jira|azure`, `--project-type
+platform|client`, `--client-vcs github|azure-repos`, `--contribution-mode fork|direct`.
+`ENV_RISK` and `ADMIN` are pre-filled with safe defaults; everything else is empty.
+**For `--project-type client --client-vcs github` it also emits `CLIENT_REPO_ORG`** (the
+client's GitHub org). For `--client-vcs azure-repos` nothing extra is emitted (client org
+= `ADO_ORG`/`ADO_PROJECT`). The fork account is never scaffolded — it is derived from the
+GitHub token owner at step 4. Idempotent — a re-run only adds missing keys, never clobbers.
 
 ### 3b. `.env.local` template (`scaffold-secrets.mjs`)
 
@@ -193,8 +212,12 @@ Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 ## 4. Write the deployment profile
 
 **After the operator has filled the files**, call `gen-profile.mjs`. Read the
-tracker connection back from the now-filled `.env.<env>` (`JIRA_BASE_URL` /
-`JIRA_PROJECT_KEY`, or `ADO_ORG` / `ADO_PROJECT`) and pass them as flags:
+connection/routing values back from the now-filled `.env.<env>` and pass them as flags:
+tracker (`JIRA_BASE_URL` / `JIRA_PROJECT_KEY`, or `ADO_ORG` / `ADO_PROJECT`). For a
+client project: `--client-org` = `CLIENT_REPO_ORG` (GitHub host) **or** `ADO_ORG` (azure
+host); and for `--contribution-mode fork`, **derive `--upstream-account` from the GitHub
+token owner** — `gh api user --jq .login` (or GET /user with `GITHUB_FIX_BUGS_TOKEN`) —
+do NOT ask it in chat. (contribution mode / code host were the enum answers from step 2a):
 
 ```bash
 node .claude/skills/project-init/gen-profile.mjs \
@@ -207,15 +230,22 @@ For Azure: `--tracker azure --azure-org acme --azure-project Web --client-vcs az
 
 ## 5. Discover the repo split (client projects only)
 
-Propose the client/platform repo map from the live Platform API, then **show it
-to the operator to confirm/correct** (it's a starting point, not gospel):
+Propose the client/platform repo map from the live Platform API **and** a scan of the
+client's own code host, then **show it to the operator to confirm/correct** (a starting
+point, not gospel):
 
 ```bash
-node .claude/skills/project-init/discover-repos.mjs --client-org acme-corp --out .local-env/repos.json --print
+node .claude/skills/project-init/discover-repos.mjs --client-org acme-corp \
+  --client-vcs azure-repos --out .local-env/repos.json --print
 # (add --insecure only for a QA env with a self-signed cert)
 ```
-- The **storefront / theme / frontend** repo is NOT in the modules API. Ask the
-  operator for it and add it to the client list (kind `frontend`).
+- Installed modules are classified client-vs-platform by owner / id-namespace / Azure
+  URL (a custom `vc-module-*` under the client org ⇒ client).
+- The **storefront / theme / frontend** repo is NOT a platform module, so it is not in
+  the modules API. The script **scans the client's repos** (Azure Repos via `ADO_PAT`,
+  or GitHub via the fix token — pass `--client-vcs`) and adds any name matching the
+  theme/frontend heuristic as `kind: "frontend"`. **Only if NONE matches** does it print
+  a notice → then **ask the operator to name the storefront/theme repo** and add it.
 - After the operator confirms, merge the map into the profile:
 
 ```bash
