@@ -115,9 +115,10 @@ query {
   }
 }
 [ASSERT] 3. Verify response structure
-[ASSERT] 4. Verify data matches admin configuration","[DOM] Response includes footerLinks array with 4 entries from @td(WL_ELECTRONICS.footer)
-[DOM] Links returned with title, url, priority in order: Privacy Policy (1), Terms of Service (2), Support (3), Warranty (4) — each url non-empty
-[DOM] @td(WL_ELECTRONICS.footer) is a flat list — childItems is empty [] for each entry
+[ASSERT] 4. Verify data matches admin configuration","[DOM] Response includes footerLinks array with 2 top-level SECTION entries from @td(WL_ELECTRONICS.footer) in priority order: Legal (1), Help (2) — each is a section header, not a leaf link
+[DOM] Legal has childItems in order: Privacy Policy (1), Terms of Service (2) — each url non-empty
+[DOM] Help has childItems in order: Support (1), Warranty (2) — each url non-empty
+[DOM] childItems is populated (footer is hierarchical: top-level = section header, children = the actual links — matches the footer render contract in vc-frontend footer-links.vue)
 [DOM] Data matches the @td(WL_ELECTRONICS.footer) link list configured in admin","[API] whiteLabelingSettings query returns correct footerLinks fields
 [API] errors[] is empty in GraphQL response","GraphQL errors in response; footerLinks field missing or null; childItems not returned; Data mismatch with admin config","none","C389433 VCST-4637","Manual"
 "FWL-014","Set footer link list for organization - footer links displayed after sign-in","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
@@ -128,9 +129,10 @@ Organization @td(WL_ELECTRONICS.name) exists; Footer link list configured: @td(W
 [NAV] 5. Sign in to storefront with @td(WL_ELECTRONICS.name) user
 [NAV] 6. Navigate to homepage
 [SCROLL] 7. Scroll to footer
-[ASSERT] 8. Inspect footer links","[DOM] Footer shows the 4 links from @td(WL_ELECTRONICS.footer) in priority order: Privacy Policy, Terms of Service, Support, Warranty
+[ASSERT] 8. Inspect footer links","[DOM] Footer shows 2 section columns from @td(WL_ELECTRONICS.footer): Legal, Help — the section title is a bold, NON-clickable header (renders as text, not an anchor — by design)
+[DOM] Under Legal: Privacy Policy, Terms of Service; under Help: Support, Warranty — these are the clickable anchors
 [DOM] Links are organization-specific (not default footer)
-[NAV] Clicking each footer link navigates without a 404 (each resolves to a real storefront route)
+[NAV] Clicking each CHILD link (Privacy Policy / Terms of Service / Support / Warranty) navigates without a 404; the section headers themselves are not focusable/clickable (expected)
 [STATE] Footer links persist across page navigation","[CONSOLE] no uncaught JS errors
 [NETWORK] footer link data loads successfully","Default footer shown instead of org footer; Links from wrong org shown; Wrong labels or order","restore org FooterLinkListName to original","C389434","Manual"
 "FWL-015","Verify administrator role has access to White Labeling logo management","User Roles","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
@@ -189,16 +191,16 @@ Organization @td(WL_ELECTRONICS.name) has secondary logo configured; White Label
 [NETWORK] secondary logo image loads with HTTP 200","Broken image where secondary logo should appear; Primary logo shown in secondary logo position","none","VCST-4637","Manual"
 "FWL-021","Verify main menu links displayed in header after sign-in (NEW - VCST-4637)","Main Menu Links","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) has main menu link list configured: @td(WL_ELECTRONICS.main_menu) with 5 top-level links, 1 with children; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.main_menu)
-[ASSERT] 2. Verify structure: Home (priority 1); Brands (priority 2) with children Laptops (2.1) Phones (2.2) Tablets (2.3); About Us (priority 3); Support (priority 4)
+[ASSERT] 2. Verify structure: Home (priority 1); Brands (priority 2) with children Laptops (2.1) Phones (2.2) Tablets (2.3); Company (priority 3); Support (priority 4)
 [NAV] 3. Navigate to Admin > Organizations > @td(WL_ELECTRONICS.name)
 [ACT] 4. Set Main Menu Link List Name: @td(WL_ELECTRONICS.main_menu)
 [ACT] 5. Save
 [NAV] 6. Sign in to storefront with user from this org
 [ASSERT] 7. Inspect header navigation
-[ASSERT] 8. Verify main menu structure","[DOM] Top-level links visible in header: Home, Brands, About Us, Support
+[ASSERT] 8. Verify main menu structure","[DOM] Top-level links visible in header: Home, Brands, Company, Support
 [DOM] Links displayed in priority order (1 to 4)
 [DOM] Hovering Brands shows dropdown: Laptops, Phones, Tablets
-[STATE] Home, About Us, Support have no dropdowns
+[STATE] Home, Company, Support have no dropdowns
 [DOM] Main menu matches configured link list","[CONSOLE] no uncaught JS errors
 [API] whiteLabelingSettings query returns correct mainMenuLinks","Main menu not visible in header; Wrong links shown; Dropdown not appearing on hover; Priority order wrong","restore org MainMenuLinkListName to original","VCST-4637","Manual"
 "FWL-022","Verify main menu links hierarchical dropdown behavior (parent + children)","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
@@ -232,7 +234,7 @@ Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile device o
 [ACT] 10. Tap Laptops child link
 [ASSERT] 11. Verify navigation","[DOM] Hamburger menu icon visible in mobile header
 [STATE] Tapping hamburger opens mobile menu drawer
-[DOM] Main menu links listed: Home, Brands, About Us, Support
+[DOM] Main menu links listed: Home, Brands, Company, Support
 [DOM] Brands has expand/collapse icon
 [STATE] Tapping Brands expands to show Laptops, Phones, Tablets
 [DOM] Child links are indented or visually nested
@@ -366,12 +368,12 @@ Organization @td(WL_ELECTRONICS.name) with footer links configured; Mobile viewp
 [ASSERT] 4. Inspect footer layout
 [ASSERT] 5. Verify footer links visible
 [ASSERT] 6. Verify hierarchical structure preserved or adapted for mobile
-[ACT] 7. Tap footer links to test navigation","[DOM] Footer is visible at bottom of mobile page
-[DOM] Footer links are readable and properly sized
-[STATE] Parent/child structure is preserved or collapsed into accordion for mobile
-[STATE] Links are tappable (adequate tap targets)
+[ACT] 7. Expand a section (tap Legal / Help header) then tap a child link to test navigation","[DOM] Footer is visible at bottom of mobile page
+[DOM] Footer sections (Legal, Help) render as collapsible accordions — the section title is the accordion toggle (chevron), not a link
+[STATE] Tapping a section header expands it to REVEAL its child links (Privacy Policy / Terms of Service under Legal; Support / Warranty under Help) — an accordion that expands to nothing is a FAIL (was the flat-seed symptom)
+[STATE] Child links are tappable (adequate tap targets)
 [STATE] Footer does not overlap content
-[NAV] Tapping links navigates correctly","[CONSOLE] no uncaught JS errors","Footer links not visible on mobile; Links too small to tap; Footer overlapping content; Hierarchy broken on mobile","none","Mobile Responsive","Manual"
+[NAV] Tapping a revealed child link navigates correctly","[CONSOLE] no uncaught JS errors","Footer sections not visible on mobile; accordion expands to nothing (no child links); Links too small to tap; Footer overlapping content; Hierarchy broken on mobile","none","Mobile Responsive","Manual"
 "FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-13.2","[PRE:SIGNIN_AS:WL_USER_FASHION]
 [PRE:RESET_CART]
 Organization @td(WL_FASHION.name) with @td(WL_FASHION.theme) theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[ACT] 1. Resize to mobile: 375px width
@@ -489,7 +491,7 @@ Organization @td(WL_ELECTRONICS.name) with custom logo configured; Screen reader
 Organization @td(WL_ELECTRONICS.name) with main menu configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
 [NAV] 2. Navigate to homepage
 [KEY] 3. Use Tab key to navigate to main menu
-[KEY] 4. Tab through each main menu link (Home, Brands, About Us, Support)
+[KEY] 4. Tab through each main menu link (Home, Brands, Company, Support)
 [KEY] 5. When focused on parent link with children (e.g. Brands), press Enter or Down Arrow
 [ASSERT] 6. Verify dropdown opens
 [KEY] 7. Tab through child links in dropdown (Laptops, Phones, Tablets)
