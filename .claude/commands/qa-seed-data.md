@@ -1,6 +1,6 @@
 ---
 description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS. Environment-agnostic (any TEST_ENV); verify with td:reconcile."
-argument-hint: "bootstrap | minimal | catalog | b2b | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
+argument-hint: "bootstrap | minimal | catalog | company-users | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ Seed a complete test environment on **any** environment (fresh `/qa-local-env` l
 /qa-seed-data bootstrap   # ⭐ ONE command, any env: preflight (member index → catalog → FFC) then the full dependency chain → npm run seed:bootstrap
 /qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
 /qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
-/qa-seed-data b2b         # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
+/qa-seed-data company-users  # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
 /qa-seed-data pricing     # Price lists, tiers, multi-currency → npm run seed:pricing
 /qa-seed-data inventory   # Fulfillment centers + stock → npm run seed:inventory
 /qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
