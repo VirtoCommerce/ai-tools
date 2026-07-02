@@ -77,6 +77,41 @@ auto-merge:
 
 ---
 
+## 2a. Client-code containment — hard security invariant (NEVER leak client code upstream)
+
+**Client code MUST NEVER leave the client's own project.** The upstream VirtoCommerce
+platform / platform theme receives **contribution only** — platform-authored code fixes —
+and **never** any client-owned source, in any form. This outranks every other goal: when
+it conflicts with "fix the bug", the fix STOPS.
+
+Across every gate:
+
+- **Direction is one-way.** Client repos (custom modules, client theme, client storefront
+  fork — anything `repoOwnership(repo) === "client"`) are fixed **only** on the client's
+  own host (`contributionPlan` host = client GitHub / Azure Repos, mode `direct`). A client
+  repo is **never** forked, PR'd, or issue-filed to `VirtoCommerce/*` or any external/public
+  destination. The upstream path (fork-PR / GitHub issue) is reachable **only** for
+  `repoOwnership(repo) === "platform"`.
+- **No client bytes in an upstream contribution.** A platform PR / fork / issue must contain
+  **only** platform code + platform-generic reproduction. The repro test, diff, PR/issue
+  body, logs, and stack traces are **scrubbed of client source, file paths, identifiers,
+  data, and secrets** before anything is pushed or filed to `VirtoCommerce/*`. If a bug can
+  be reproduced *only* with client code, it is **not** upstream-contributable → STOP (G0/G1
+  BAIL) and hand back to the client team.
+- **One repo per run, no cross-checkout mixing.** A fix run touches a single repo; the
+  `.fix-workspace/` clone for a platform contribution never contains client repos, and
+  vice-versa. Never copy code between a client checkout and a platform checkout.
+- **Misroute ⇒ STOP, containment-first.** If ownership is uncertain (a module not clearly
+  under `CLIENT_ORG` / in `repos.client`, nor clearly VirtoCommerce), treat it as **client**
+  and STOP for human routing — never open an upstream PR/issue on a maybe-client repo.
+
+**Enforced (triple guard, like §2):** routing (`repoOwnership` / `contributionPlan` refuse
+the upstream path for client repos) · G3/G4 (the write agent produces, and the reviewer
+rejects, any client source / path / identifier in a platform diff or issue body) · the
+developers team (`developers/shared-instructions.md`).
+
+---
+
 ## 3. STOP / BAIL is a success, not a failure
 
 A clean BAIL (G0/G1) or a reported `FIX_STATUS: FAILED` (G2–G6) is the **correct** outcome for

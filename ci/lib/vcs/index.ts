@@ -15,6 +15,7 @@
 import type { Vcs, VcsDeps } from "./vcs.js";
 import { GithubVcs } from "./github-vcs.js";
 import { AzureReposVcs } from "./azure-repos-vcs.js";
+import { assertUpstreamAllowed } from "../repo-router.js";
 
 export type { Vcs, VcsDeps, PrSpec, IssueSpec } from "./vcs.js";
 
@@ -33,7 +34,12 @@ export function getVcs(host: "github" | "azure-repos", deps: VcsDeps): Vcs {
  * VCS for filing an issue on the platform UPSTREAM. The upstream host is always
  * GitHub (the VirtoCommerce org's repos are public GitHub), so this is always a
  * GithubVcs regardless of where the client's own code lives.
+ *
+ * `repo` is REQUIRED and asserted platform-owned (quality-gates §2a): a client repo
+ * must never be issue-filed / PR'd upstream — client code must never leave the client
+ * project. This is the hard last line of defence behind the caller's ownership check.
  */
-export function getUpstreamVcs(deps: VcsDeps): Vcs {
+export function getUpstreamVcs(deps: VcsDeps, repo: string): Vcs {
+  assertUpstreamAllowed(repo);
   return new GithubVcs(deps);
 }

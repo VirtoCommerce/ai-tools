@@ -323,7 +323,7 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
           (bugReport ? `## Bug report\n\n${bugReport}\n` : `${ticket?.description || ""}\n`),
       );
       try {
-        const issueUrl = await getUpstreamVcs(vcsDeps).fileIssue({
+        const issueUrl = await getUpstreamVcs(vcsDeps, routeRepo).fileIssue({
           repo: routeRepo,
           title: `[QA] ${ticket?.summary || key} (${key})`,
           bodyFile: issueBodyPath,

@@ -54,6 +54,20 @@ In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls
 hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
 no-auto-merge hard rules below are unchanged in every case.
 
+### 🔒 Client-code containment — HARD security invariant (see quality-gates §2a)
+**Client code MUST NEVER leave the client's project. Upstream VirtoCommerce gets contribution only —
+platform code — NEVER client source, in any form.** This outranks fixing the bug: on any conflict, STOP.
+- A `repoOwnership === "client"` repo is fixed **only** on the client's host (direct). **Never** fork /
+  PR / file an issue for a client repo to `VirtoCommerce/*` or any public/external destination.
+- A platform PR / fork / GitHub issue carries **only** platform code + platform-generic repro. **Scrub**
+  the repro test, diff, PR/issue body, logs, and stack traces of every client source line, file path,
+  identifier, datum, and secret before pushing/filing to `VirtoCommerce/*`. If the bug reproduces *only*
+  with client code, it is **not** upstream-contributable → STOP and hand back to the client team.
+- **One repo per run.** The `.fix-workspace/` for a platform contribution never contains a client repo
+  (and vice-versa); never copy code between a client and a platform checkout.
+- **Uncertain ownership ⇒ treat as client and STOP** (containment-first) — never open an upstream PR/issue
+  on a maybe-client repo.
+
 ## GitHub authentication (the write token)
 The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
 **cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write

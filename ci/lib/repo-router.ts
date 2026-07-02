@@ -169,6 +169,23 @@ export function repoOwnership(repo: string): RepoOwnership {
 }
 
 /**
+ * SECURITY GUARD — client-code containment (quality-gates §2a). Throws unless `repo` is
+ * platform-owned. Call before ANY upstream (VirtoCommerce) delivery — fork-PR or GitHub
+ * issue — so a client-owned repo can never be forked / PR'd / issue-filed upstream, even
+ * if a caller forgets its own ownership check. **Client code must never leave the client
+ * project.** Structural last line of defence behind `contributionPlan` (which already only
+ * yields an upstream plan for platform repos).
+ */
+export function assertUpstreamAllowed(repo: string): void {
+  if (repoOwnership(repo) !== "platform") {
+    throw new Error(
+      `SECURITY (quality-gates §2a): refusing upstream delivery for client-owned repo ` +
+        `'${repo}'. Client code must never leave the client project.`,
+    );
+  }
+}
+
+/**
  * Is the fix agent permitted to push branches / open PRs to this repo?
  * The triage agent's `ROUTE_REPO:` is validated against this — the safety gate.
  * Allowed iff: org matches REPO_ORG, AND (name is pinned in `explicit`
