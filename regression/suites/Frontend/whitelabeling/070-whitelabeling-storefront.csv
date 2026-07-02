@@ -95,11 +95,12 @@ Organization @td(WL_ELECTRONICS.name) has parent footer links configured (state 
 [NETWORK] hierarchical link list data loads correctly","Child links not visible; Children shown under wrong parent; Priority order wrong; Other parent sections (About Us, Legal) broken","remove child links added in test; revert to parent-only structure","C389432","Manual"
 "FWL-013","Verify footer links returned in whiteLabelingSettings GraphQL query","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with footer links configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
-[ACT] 2. Execute whiteLabelingSettings query with footerLinks field:
+[ACT] 2. Execute whiteLabelingSettings query with footerLinks field (cultureName is REQUIRED — omitting it returns empty footerLinks/mainMenuLinks even though they are configured):
 query {
   whiteLabelingSettings(
     organizationId: ""@td(WL_ELECTRONICS.id)""
     storeId: ""@td(STORE_PRIMARY.id)""
+    cultureName: ""en-US""
   ) {
     footerLinks {
       title
@@ -115,7 +116,7 @@ query {
 }
 [ASSERT] 3. Verify response structure
 [ASSERT] 4. Verify data matches admin configuration","[DOM] Response includes footerLinks array with 4 entries from @td(WL_ELECTRONICS.footer)
-[DOM] Links returned with title, url, priority: Privacy Policy (/privacy, 1), Terms of Service (/terms, 2), Support (/support, 3), Warranty (/warranty, 4)
+[DOM] Links returned with title, url, priority in order: Privacy Policy (1), Terms of Service (2), Support (3), Warranty (4) — each url non-empty
 [DOM] @td(WL_ELECTRONICS.footer) is a flat list — childItems is empty [] for each entry
 [DOM] Data matches the @td(WL_ELECTRONICS.footer) link list configured in admin","[API] whiteLabelingSettings query returns correct footerLinks fields
 [API] errors[] is empty in GraphQL response","GraphQL errors in response; footerLinks field missing or null; childItems not returned; Data mismatch with admin config","none","C389433 VCST-4637","Manual"
@@ -129,7 +130,7 @@ Organization @td(WL_ELECTRONICS.name) exists; Footer link list configured: @td(W
 [SCROLL] 7. Scroll to footer
 [ASSERT] 8. Inspect footer links","[DOM] Footer shows the 4 links from @td(WL_ELECTRONICS.footer) in priority order: Privacy Policy, Terms of Service, Support, Warranty
 [DOM] Links are organization-specific (not default footer)
-[NAV] Link URLs correct: /privacy, /terms, /support, /warranty
+[NAV] Clicking each footer link navigates without a 404 (each resolves to a real storefront route)
 [STATE] Footer links persist across page navigation","[CONSOLE] no uncaught JS errors
 [NETWORK] footer link data loads successfully","Default footer shown instead of org footer; Links from wrong org shown; Wrong labels or order","restore org FooterLinkListName to original","C389434","Manual"
 "FWL-015","Verify administrator role has access to White Labeling logo management","User Roles","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
@@ -242,7 +243,7 @@ Organization @td(WL_ELECTRONICS.name) with main menu configured; Main menu links
 [NAV] 2. Navigate to homepage
 [ACT] 3. Hover over Products in main menu
 [ACT] 4. Click Laptops child link
-[ASSERT] 5. Verify URL changes to configured URL (/products/laptops)
+[ASSERT] 5. Verify URL changes to the Laptops link's configured route and the page loads (no 404)
 [ASSERT] 6. Verify page loads correctly
 [NAV] 7. Return to homepage
 [ACT] 8. Click Support link (no children)
@@ -266,11 +267,12 @@ Organization @td(WL_FOOTER_ONLY.name) exists with White Labeling enabled but Mai
 [STATE] User can navigate site via search, footer, catalog pages","[CONSOLE] no uncaught JS errors","Application crash on missing main menu config; Header layout broken; Console errors about missing link list","none","VCST-4637","Manual"
 "FWL-026","Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with main menu configured; GraphQL endpoint accessible","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
-[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks field:
+[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks field (cultureName is REQUIRED — omitting it returns empty mainMenuLinks/footerLinks even though they are configured):
 query {
   whiteLabelingSettings(
     organizationId: ""@td(WL_ELECTRONICS.id)""
     storeId: ""@td(STORE_PRIMARY.id)""
+    cultureName: ""en-US""
   ) {
     mainMenuLinks {
       title

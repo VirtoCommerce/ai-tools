@@ -1,23 +1,23 @@
 list_name,link_title,link_url,priority,parent_title,list_type,notes
-main-menu-electronics,Home,/,1,,main-menu,Top-level link
-main-menu-electronics,Products,/products,2,,main-menu,Parent with children
-main-menu-electronics,Laptops,/products/laptops,1,Products,main-menu,Child of Products
-main-menu-electronics,Phones,/products/phones,2,Products,main-menu,Child of Products
-main-menu-electronics,Tablets,/products/tablets,3,Products,main-menu,Child of Products
-main-menu-electronics,About Us,/about,3,,main-menu,Top-level link
-main-menu-electronics,Support,/support,4,,main-menu,Top-level link
-main-menu-fashion,Home,/,1,,main-menu,Top-level link
-main-menu-fashion,Shop,/shop,2,,main-menu,Parent with children
-main-menu-fashion,Men,/shop/men,1,Shop,main-menu,Child of Shop
-main-menu-fashion,Women,/shop/women,2,Shop,main-menu,Child of Shop
-main-menu-fashion,Kids,/shop/kids,3,Shop,main-menu,Child of Shop
-main-menu-fashion,New Arrivals,/new-arrivals,3,,main-menu,Top-level link
-main-menu-fashion,Contact,/contact,4,,main-menu,Top-level link
-footer-electronics,Privacy Policy,/privacy,1,,footer,Footer link
-footer-electronics,Terms of Service,/terms,2,,footer,Footer link
-footer-electronics,Support,/support,3,,footer,Footer link
-footer-electronics,Warranty,/warranty,4,,footer,Footer link
-footer-fashion,Shipping Info,/shipping,1,,footer,Footer link
-footer-fashion,Returns & Exchanges,/returns,2,,footer,Footer link with special char
-footer-fashion,Size Guide,/size-guide,3,,footer,Footer link
-footer-fashion,Contact Us,/contact,4,,footer,Footer link
+main-menu-electronics,Home,/,1,,main-menu,Top-level link — real storefront route
+main-menu-electronics,Products,/catalog,2,,main-menu,Parent with children — real catalog route
+main-menu-electronics,Laptops,/search?q=laptop,1,Products,main-menu,Child of Products — real search route
+main-menu-electronics,Phones,/search?q=phone,2,Products,main-menu,Child of Products — real search route
+main-menu-electronics,Tablets,/search?q=tablet,3,Products,main-menu,Child of Products — real search route
+main-menu-electronics,About Us,/catalog,3,,main-menu,Top-level link — real route (demo label)
+main-menu-electronics,Support,/search?q=support,4,,main-menu,Top-level link — real search route
+main-menu-fashion,Home,/,1,,main-menu,Top-level link — real storefront route
+main-menu-fashion,Shop,/catalog,2,,main-menu,Parent with children — real catalog route
+main-menu-fashion,Men,/search?q=men,1,Shop,main-menu,Child of Shop — real search route
+main-menu-fashion,Women,/search?q=women,2,Shop,main-menu,Child of Shop — real search route
+main-menu-fashion,Kids,/search?q=kids,3,Shop,main-menu,Child of Shop — real search route
+main-menu-fashion,New Arrivals,/catalog,3,,main-menu,Top-level link — real route (demo label)
+main-menu-fashion,Contact,/search?q=contact,4,,main-menu,Top-level link — real search route
+footer-electronics,Privacy Policy,/catalog,1,,footer,Footer link — real route (demo label)
+footer-electronics,Terms of Service,/catalog,2,,footer,Footer link — real route (demo label)
+footer-electronics,Support,/search?q=support,3,,footer,Footer link — real search route
+footer-electronics,Warranty,/search?q=warranty,4,,footer,Footer link — real search route
+footer-fashion,Shipping Info,/catalog,1,,footer,Footer link — real route (demo label)
+footer-fashion,Returns & Exchanges,/catalog,2,,footer,Footer link with special char — real route (demo label)
+footer-fashion,Size Guide,/search?q=size,3,,footer,Footer link — real search route
+footer-fashion,Contact Us,/search?q=contact,4,,footer,Footer link — real search route

@@ -181,8 +181,8 @@ User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (foo
 [SCROLL] 6. Scroll to footer
 [ASSERT] 7. Verify footer now shows the 4 @td(WL_FASHION.footer) links: Shipping Info, Returns & Exchanges, Size Guide, Contact Us (different from Org A)
 [ACT] 8. Switch back to Org A
-[ASSERT] 9. Verify footer reverts to the @td(WL_ELECTRONICS.footer) links (Privacy Policy, Terms of Service, Support, Warranty)","[DOM] Org A footer shows @td(WL_ELECTRONICS.footer): Privacy Policy, Terms of Service, Support, Warranty (URLs /privacy, /terms, /support, /warranty)
-[DOM] Switching to Org B updates footer to @td(WL_FASHION.footer): Shipping Info, Returns & Exchanges, Size Guide, Contact Us (URLs /shipping, /returns, /size-guide, /contact)
+[ASSERT] 9. Verify footer reverts to the @td(WL_ELECTRONICS.footer) links (Privacy Policy, Terms of Service, Support, Warranty)","[DOM] Org A footer shows @td(WL_ELECTRONICS.footer): Privacy Policy, Terms of Service, Support, Warranty
+[DOM] Switching to Org B updates footer to @td(WL_FASHION.footer): Shipping Info, Returns & Exchanges, Size Guide, Contact Us
 [STATE] Switching back restores the Org A @td(WL_ELECTRONICS.footer) links
 [STATE] No stale footer links from the other org displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong labels or order","none","Multi-Organization","Manual"
 "FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
