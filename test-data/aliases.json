@@ -1583,6 +1583,9 @@
       "main_menu": "main_menu_link_list_name",
       "footer": "footer_link_list_name",
       "theme": "theme_preset",
+      "logo": "logo_url",
+      "secondary_logo": "secondary_logo_url",
+      "favicon": "favicon_url",
       "id": "org_id",
       "alias_name": "alias_name"
     }
