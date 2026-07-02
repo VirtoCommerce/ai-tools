@@ -78,6 +78,18 @@ async function httpStatus(url) {
   try { return (await fetch(url, { method: "GET", redirect: "manual" })).status; }
   catch { return -1; }
 }
+// Discover an ADO org's Entra tenant GUID from its unauthenticated auth-challenge headers
+// (X-VSS-ResourceTenant / WWW-Authenticate authorization_uri) so we can hand the operator
+// a ready `az login --tenant <guid>` — no need to know/type the tenant.
+async function resolveAdoTenant(org) {
+  try {
+    const r = await fetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`, { redirect: "manual" });
+    const t = r.headers.get("x-vss-resourcetenant") || "";
+    if (/^[0-9a-f-]{36}$/i.test(t.trim())) return t.trim();
+    const m = /login\.microsoftonline\.com\/([0-9a-f-]{36})/i.exec(r.headers.get("www-authenticate") || "");
+    return m ? m[1] : "";
+  } catch { return ""; }
+}
 
 async function main() {
   // 1. Profile
@@ -157,9 +169,13 @@ async function main() {
       try {
         const r = await fetch(`https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/projects?api-version=7.1`, { headers: { Authorization: authHeader, Accept: "application/json" } });
         const okJson = r.ok && (r.headers.get("content-type") || "").includes("application/json");
-        add("Azure DevOps auth", okJson ? "PASS" : "FAIL",
-          okJson ? `${org}/${project} (${via})`
-                 : `${via} not accepted for '${org}' (→ ${r.status})` + (via === "az session" ? " — az identity not a member / wrong tenant: `az login --tenant <id>` or set ADO_PAT" : " — check ADO_PAT scopes"));
+        let detail;
+        if (okJson) detail = `${org}/${project} (${via})`;
+        else if (via === "az session") {
+          const tenant = await resolveAdoTenant(org); // auto-discovered → ready-to-run login
+          detail = `az session not accepted for '${org}' (→ ${r.status}) — run \`az login --tenant ${tenant || "<org-tenant>"}\` or set ADO_PAT`;
+        } else detail = `ADO_PAT not accepted for '${org}' (→ ${r.status}) — check scopes (Work Items R/W, Code R/W)`;
+        add("Azure DevOps auth", okJson ? "PASS" : "FAIL", detail);
       } catch (e) { add("Azure DevOps auth", "FAIL", e.message); }
     }
   }
@@ -286,6 +302,12 @@ function renderTable(rows) {
   console.log(fails.length
     ? paint(ANSI.bold + ANSI.red, `  ✗ NOT READY — resolve: ${fails.map((f) => f.name).join(", ")}`)
     : paint(ANSI.bold + ANSI.green, `  ✓ READY for /qa-fix.`));
+  // Full, UN-truncated remediation for each FAIL — the Detail column is width-capped, so
+  // an actionable command (e.g. `az login --tenant <guid>`) would otherwise be cut off.
+  if (fails.length) {
+    console.log(paint(ANSI.bold, "  To resolve:"));
+    for (const f of fails) console.log(`   ${paint(ANSI.red, "•")} ${f.name}: ${f.detail}`);
+  }
   console.log("");
 }
 
