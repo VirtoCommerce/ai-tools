@@ -20,7 +20,7 @@
  * Writes results to test-data/_seed-results-cfg-{DATE}.json.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
@@ -29,7 +29,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved, syncEnvAliases } from '../lib/seed-common.mjs';
 
 // Promote TEST_ENV-suffixed secrets (e.g. ADMIN_PASSWORD_VCPTCORE_QA1) to their base
 // names, mirroring config.js. Lets .env.local carry per-env password variants so this
@@ -53,7 +53,6 @@ const STORE_ID = process.env.STORE_ID || 'B2B-store';
 let VIRTUAL_CATALOG_ID = null;
 
 const DATE = '20260518';
-const RESULTS_FILE = join(ROOT, `test-data/_seed-results-cfg-${DATE}.json`);
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
@@ -636,16 +635,15 @@ async function main() {
       console.log(`  ⚠ reindex: ${e.message.slice(0, 100)}`);
     }
 
-    mkdirSync(dirname(RESULTS_FILE), { recursive: true });
-    writeFileSync(RESULTS_FILE, JSON.stringify({
-      date: DATE,
-      platform: BACK_URL,
-      storeId: STORE_ID,
-      catalog: { id: catalog.id, name: catalog.name },
-      virtualCatalogId: VIRTUAL_CATALOG_ID,
-      seeded,
-    }, null, 2));
-    console.log(`\nResults: ${RESULTS_FILE}`);
+    // Persist the runtime GUIDs to aliases.<env>.json so regression suites resolve
+    // CFG_* by their real platform ids (product_id_guid + configuration_id). Business
+    // keys / names / slugs stay in the committed CSV. No-op for the primary vcst env.
+    const byKey = {};
+    for (const s of seeded) {
+      if (s.error || s._dryRun) continue;
+      byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId };
+    }
+    syncEnvAliases('products/configurable-products', byKey);
   }
 
   const ok = seeded.filter(s => !s.error).length;

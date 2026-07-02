@@ -34,6 +34,7 @@ import {
   assertSafeTarget, auth, api, loadCsv, writeResults, log, verbose,
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, BACK_URL,
 } from '../lib/seed-common.mjs';
+import { resolvePassword } from '../lib/user-provision.mjs';
 
 const SKIP_USERS = process.argv.slice(2).includes('--skip-users');
 const LANG = 'en-US';
@@ -161,7 +162,7 @@ async function main() {
         const fullName = [row.first_name, row.last_name].filter(Boolean).join(' ') || row.email;
         const contact = await ensureContact(row.email, fullName, org?.id);
         if (contact?.id && !String(contact.id).startsWith('dry-')) {
-          await ensureUser(row.email, row.password || 'Test123!', contact.id);
+          await ensureUser(row.email, resolvePassword(row.password), contact.id);
         }
         results.users.push({ email: row.email, org: row.organization, contactId: contact?.id });
       } catch (err) {
@@ -171,9 +172,8 @@ async function main() {
     }
   }
 
-  writeResults(`test-data/_seed-results-wl-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), target: BACK_URL, storeId: STORE_ID, ...results,
-  });
+  // No _seed-results report: WL_* aliases resolve by static business key (org_id)
+  // from the committed CSV — no runtime GUID to persist here.
   console.log(`\n✅ White-labeling seed complete — ${results.linkLists.length} link lists, ${results.orgs.length} orgs, ${results.users.length} users.`);
 }
 

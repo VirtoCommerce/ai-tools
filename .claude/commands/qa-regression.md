@@ -75,7 +75,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 ### Step 0.5 — Seed Data (only if `--seed=<profile>` provided)
 
 1. **Reject smoke-with-seed** — if selection is `smoke`/`042` and `--seed` is set, warn the user and skip seeding.
-2. **Check fingerprint** — if `test-data/b2b/_seed-results-orgs.json` exists AND was modified within the last 2 hours AND the profile matches a prior seed, skip (reuse) and log "Seed reused from <timestamp>".
+2. **Check fingerprint** — if `test-data/b2b/.seed-fingerprint.json` exists AND was modified within the last 2 hours AND its `kind`/`env`/`storeId` match the requested profile, skip (reuse) and log "Seed reused from <timestamp>".
 3. **Invoke** `/qa-seed-data <profile>` via the qa-seed-data skill. Wait for completion.
 4. **Wait for reindex** — sleep 60s before starting Step 1 so storefront tests see new catalog/pricing data.
 5. **On seed failure** — abort the regression run. Report the seeding error to the user with the failed profile; do not attempt to run suites against unseeded state.

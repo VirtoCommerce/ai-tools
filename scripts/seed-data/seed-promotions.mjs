@@ -425,9 +425,8 @@ async function main() {
     }
   }
 
-  writeResults(`test-data/_seed-results-promotions-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), target: BACK_URL, storeId: STORE_ID, promotions: results,
-  });
+  // No _seed-results report: COUPON_* aliases resolve by static business key
+  // (coupon_id) and coupons apply by `code` — no runtime GUID to persist here.
   const failed = results.filter((r) => r.error);
   const ok = results.filter((r) => !r.error);
   const couponCount = ok.reduce((n, r) => n + (r.couponCodes?.length || 0), 0);

@@ -146,9 +146,9 @@ async function main() {
     }
   }
 
-  writeResults(`test-data/_seed-results-bopis-${DATE_STAMP}.json`, {
-    seededAt: new Date().toISOString(), target: BACK_URL, storeId: STORE_ID, pickupLocations: results,
-  });
+  // No _seed-results report: BOPIS_* aliases resolve by static location_id business
+  // keys, and the live BOPIS inline snapshot (position-50/51 ids) is captured out-of-band
+  // (VCST-4707), not seeded — so this seeder has no runtime GUIDs to persist.
   console.log(`\n✅ BOPIS seed complete — ${results.length} pickup location(s).`);
 }
 

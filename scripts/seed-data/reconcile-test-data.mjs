@@ -235,6 +235,7 @@ function checkSecretHygiene() {
     { file: 'test-data/b2b/organization-memberships.csv', cols: ['password'] },
     { file: 'test-data/users/test-users.csv', cols: ['password'] },
     { file: 'test-data/users/agent-user-pool.csv', cols: ['personal_password', 'b2b_password'] },
+    { file: 'test-data/white-labeling/users.csv', cols: ['password'] },
   ];
   // A `{{VAR}}` token is NOT a secret — it resolves from .env.local at seed time
   // (user-provision.mjs resolvePassword). Only bare literals count as a leak.

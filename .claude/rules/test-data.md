@@ -15,6 +15,16 @@ The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/k
 
 **Passwords are never literals in committed test-data.** Seed-CSV password columns (`test-data/b2b/users.csv`, `test-data/b2b/organization-memberships.csv`, `test-data/users/test-users.csv`, `test-data/users/agent-user-pool.csv`) carry a `{{VAR}}` token (e.g. `{{B2B_USER_PASSWORD}}`, `{{TEST_USER_PASSWORD}}`, `{{DEFAULT_TEST_PASSWORD}}`), resolved at seed time from `.env.local` by [`scripts/lib/user-provision.mjs`](../../scripts/lib/user-provision.mjs) `resolvePassword()` (per-env via the `_${TEST_ENV}` suffix). Real values live only in `.env.local` (gitignored) + the team secret store; safe non-prod defaults ship in [`templates/.env.local.template`](../../templates/.env.local.template). `td:reconcile` secret-hygiene fails any bare password literal; a `{{VAR}}` token is clean (VCST-5406).
 
+## Seed writeback — where runtime GUIDs land after a seed
+
+Seeders resolve/create entities at runtime, then persist the **drifting platform GUIDs** so `@td()` keeps resolving. The split:
+
+- **Business keys / SKUs / codes / names** stay in the **committed CSV** (they don't drift; they're the seed *input*). SKU-, code-, and business-key-backed aliases (`PROD_*`, `COUPON_*`, `STORE_*`, `FC_*`, `PRICELIST_*`, `USER_*`, `WL_*`, `ORG_*.id`, `BOPIS_*.id`) need **no writeback** — their id columns already hold stable keys.
+- **Runtime platform GUIDs** are written to **`test-data/aliases.{TEST_ENV}.json`** by [`scripts/lib/seed-common.mjs`](../../scripts/lib/seed-common.mjs) — `writeEnvAliasOverride(updates)` (inline aliases) and `syncEnvAliases(fileKey, byBusinessKey)` (CSV-backed: matches aliases by `file`+`filter`, writes only the id fields they declare). The resolver ([`test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts)) layers this env file **field-by-field** over `aliases.json`, so the override supplies only the GUID while `code`/`name`/`sku` fall back to the base CSV.
+- **Primary env `vcst` is never auto-written** — its canonical GUIDs stay curated in `aliases.json` (b2b user `platform_id` refreshes the committed `users.csv`). Every other env (`localhost`, `vcptcore`, `virtostart`, customer envs) gets `aliases.{env}.json`; `localhost` is gitignored (drifts each fresh-DB provision), the rest are committed so a team shares them.
+- **Wired today:** configurable-products (`product_id_guid` + `configuration_id`), b2b organizations + users (`platform_id`), virtual-catalog root. **Not seeder-written** (captured out-of-band): the `BOPIS`/loyalty inline snapshots and the live-discovered `products/standard` pool (resolved by `code:`).
+- Seeders **no longer write `_seed-results-*.json` reports** — runtime GUIDs live in `aliases.{env}.json`, business keys in the CSVs.
+
 ## Canonical references (single sources of truth)
 
 - **[`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)

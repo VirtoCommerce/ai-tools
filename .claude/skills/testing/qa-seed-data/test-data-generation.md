@@ -719,52 +719,44 @@ The `b2b` seed profile was originally executed on **2026-03-10**, **partially wi
 
 | File | Purpose |
 |------|---------|
-| `test-data/b2b/_seed-results-orgs.json` | Live platform IDs (primary source) |
+| `test-data/aliases.json` | `@td()` alias registry (business keys + `vcst` platform GUIDs) |
+| `test-data/aliases.{env}.json` | Per-env platform GUIDs written by the seeders (non-`vcst`) |
 | `test-data/b2b/organizations.csv` | Orgs with `platform_id` and `seeded` flag |
 | `test-data/b2b/contacts.csv` | Contacts with `platform_id` and `seeded` flag |
 | `test-data/b2b/users.csv` | Users with `platform_id` and `seeded` flag |
-| `test-data/b2b/load-test-data.js` | JS loader module with lookup helpers |
 
 ### Seeded Entities Summary
 
 - **4 organizations** (AcmeCorp, TechFlow, BuildRight, AcmeWest) — AcmeWest is child of AcmeCorp
 - **10 contacts** — all `status: Approved`, with live `platform_id`
-- **10 users** — all `status: Approved`, password `TestPass123!`
+- **10 users** — all `status: Approved`, password via `{{B2B_USER_PASSWORD}}` token (resolved from `.env.local`)
 - **4 template orgs** + **3 template contacts/users** — `seeded=false`, need `/qa-seed-data` to create
 
 ### How Agents Should Use Seeded Data
 
-**Option 1 — JS Loader (recommended for scripts):**
-```js
-import { b2b } from './test-data/b2b/load-test-data.js';
+**Resolve via `@td()` aliases (canonical).** Business keys (email, name, role) come from the
+CSVs; platform GUIDs resolve from `aliases.json` (`vcst`) or `aliases.{env}.json` (other envs,
+written by the seeders). Never hardcode IDs or passwords.
 
-const admin = b2b.credentials('Org Admin');
-// → { userName, email, password, contactName, orgKey, platformRoles }
-
-const rbac = b2b.rbacTestSet();
-// → { admin, buyer, viewer, password }
-
-const multiOrg = b2b.multiOrgTestSet();
-// → { acmeCorp, techFlow, buildRight, acmeWest, password }
+```
+@td(ORG_ACME.platform_id)      @td(ACME_ADMIN.email)      @td(ACME_ADMIN.platform_id)
+@td(ACME_BUYER.platform_id)    @td(TECHFLOW_ADMIN.email)  @td(BUILDRIGHT_ADMIN.platform_id)
 ```
 
-**Option 2 — Read CSVs directly (for LLM agents):**
-Read `test-data/b2b/users.csv` and filter by `seeded=true`. Key columns:
-- `platform_id` — live entity ID
-- `user_name` / `email` — login credentials
-- `password` — `TestPass123!` for all seeded users
-- `roles` — platform role name (`Organization maintainer`, `Purchasing agent`, `Organization employee`)
+For LLM agents reading `test-data/b2b/users.csv` directly, filter by `seeded=true`. Key columns:
+`platform_id` (live id), `user_name`/`email` (login), `password` (`{{B2B_USER_PASSWORD}}` token —
+never a literal), `roles` (`Organization maintainer` / `Purchasing agent` / `Organization employee`).
 
 ### Available Test Scenarios
 
-| Scenario | Users | Orgs | Loader Helper |
-|----------|-------|------|---------------|
-| RBAC (admin/buyer/viewer) | John, Sarah, Mike | AcmeCorp | `b2b.rbacTestSet()` |
-| Multi-buyer approval | Sarah + Lisa | AcmeCorp | `b2b.multiBuyerTestSet()` |
-| Multi-org switching | John vs Emily | AcmeCorp vs TechFlow | `b2b.multiOrgTestSet()` |
-| Parent-child hierarchy | John → Robert | AcmeCorp → AcmeWest | `b2b.orgHierarchy()` |
-| Multi-language/currency | Hans (de-DE, EUR) | AcmeCorp | `b2b.userByName('Hans')` |
-| Cross-org order isolation | Sarah vs David | AcmeCorp vs TechFlow | `b2b.usersForOrg()` |
+| Scenario | Users | Orgs | Aliases |
+|----------|-------|------|---------|
+| RBAC (admin/buyer/viewer) | John, Sarah, Mike | AcmeCorp | `ACME_ADMIN` / `ACME_BUYER` / `ACME_VIEWER` |
+| Multi-buyer approval | Sarah + Lisa | AcmeCorp | `ACME_BUYER` / `ACME_BUYER2` |
+| Multi-org switching | John vs Emily | AcmeCorp vs TechFlow | `ACME_ADMIN` / `TECHFLOW_ADMIN` |
+| Parent-child hierarchy | John → Robert | AcmeCorp → AcmeWest | `ORG_ACME` → `ORG_ACMEWEST` |
+| Multi-org membership | multi-org user | 11 orgs | `MULTI_ORG_USER_EMAIL` |
+| Cross-org order isolation | Sarah vs David | AcmeCorp vs TechFlow | `ACME_BUYER` / `TECHFLOW_BUYER` |
 
 ### B2B Auth Note
 

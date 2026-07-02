@@ -44,7 +44,9 @@ export const USER_ROLES = [
   { key: 'ADMIN', emailVars: ['ADMIN_EMAIL', 'ADMIN'], passwordVar: 'ADMIN_PASSWORD', kind: 'admin', required: true, purpose: 'Platform admin / OAuth password grant' },
   { key: 'USER', emailVars: ['USER_EMAIL'], passwordVar: 'USER_PASSWORD', idVar: 'TEST_USER_ID', kind: 'customer', required: true, purpose: 'Primary storefront shopper' },
   { key: 'USER2', emailVars: ['USER2_EMAIL'], passwordVar: 'USER2_PASSWORD', kind: 'customer', required: false, purpose: 'Second shopper — list-sharing / multi-user' },
-  { key: 'ORG_USER', emailVars: ['ORG_USER_EMAIL'], passwordVar: 'ORG_USER_PASSWORD', idVar: 'ORG_USER_ID', kind: 'org', required: false, purpose: 'Single-org B2B member' },
+  // No idVar: ORG_USER's runtime platform id resolves via @td(TECHFLOW_ADMIN.platform_id)
+  // (USR-006, auto-written to aliases.{env}.json by the b2b-user seed writeback).
+  { key: 'ORG_USER', emailVars: ['ORG_USER_EMAIL'], passwordVar: 'ORG_USER_PASSWORD', kind: 'org', required: false, purpose: 'Single-org B2B member' },
   { key: 'MULTI_ORG_USER', emailVars: ['MULTI_ORG_USER_EMAIL'], passwordVar: 'MULTI_ORG_USER_PASSWORD', kind: 'org', required: false, purpose: 'Multi-org member — org switching' },
   { key: 'EUR_USER', emailVars: ['EUR_USER_EMAIL'], passwordVar: 'EUR_USER_PASSWORD', kind: 'customer', required: false, currency: 'EUR', purpose: 'EUR-currency shopper' },
   { key: 'LOYALTY_VIP_USER', emailVars: ['LOYALTY_VIP_USER_EMAIL'], passwordVar: 'LOYALTY_VIP_USER_PASSWORD', kind: 'customer', required: false, group: 'VIP', purpose: 'Loyalty VIP tier' },

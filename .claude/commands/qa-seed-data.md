@@ -49,12 +49,11 @@ Read the skill definition and its references, then choose the path:
 
 Seeded entity data, CSVs, and `@td()` alias references live in `test-data/`. See `test-data/README.md` for:
 - `aliases.json` — `@td()` token registry used by regression suite CSVs
-- `b2b/` — seeded orgs, contacts, users with live platform IDs (`_seed-results-orgs.json`)
+- `b2b/` — seeded orgs, contacts, users (business keys in CSVs; platform GUIDs via `@td()`)
 - `users/agent-user-pool.csv` — 3 dedicated users for parallel agent browser slots
 - `payment/test-cards.csv` — processor-specific test cards
-- `test-data/b2b/load-test-data.js` — JS loader module for scripts
 
-After seeding, update the relevant CSVs in `test-data/` with new platform IDs so downstream suites can reference them via `@td()`.
+After seeding, runtime platform IDs resolve via `@td()`: on `vcst` from `aliases.json` + the CSVs; on other envs the seeders write them to `aliases.{env}.json` (see `.claude/rules/test-data.md` §Seed writeback).
 
 ## Safety
 

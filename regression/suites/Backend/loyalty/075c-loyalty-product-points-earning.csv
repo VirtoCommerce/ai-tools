@@ -38,7 +38,7 @@ LOY-029,"ProductPoints — VIP program earns override on WH-001 for VIP user; OR
 [GQL-EXEC setup_me_org]
 [GQL-CAPTURE setup_me_org.data.me.id → ORG_USER_ID]
 [GQL-OP cleanup_pre_org]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" cartName: ""default"" }) { id } }
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""@td(TECHFLOW_ADMIN.platform_id)"" cartName: ""default"" }) { id } }
 [GQL-EXEC cleanup_pre_org]
 [GQL-OP find_wh001_org]
   query($storeId: String!, $userId: String!, $filter: String!) {
@@ -46,22 +46,22 @@ LOY-029,"ProductPoints — VIP program earns override on WH-001 for VIP user; OR
       items { id code }
     }
   }
-[GQL-VARS find_wh001_org] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""{{ORG_USER_ID}}"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
+[GQL-VARS find_wh001_org] {""storeId"": ""{{STORE_ID}}"", ""userId"": ""@td(TECHFLOW_ADMIN.platform_id)"", ""filter"": ""code:WH-001 category.subtree:@td(VIRTUAL_CATALOG_B2B.id)""}
 [GQL-EXEC find_wh001_org]
 [GQL-CAPTURE find_wh001_org.data.products.items.0.id → WH001_PROD_ID_ORG]
 [GQL-OP add_wh001_org]
-  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" productId: ""{{WH001_PROD_ID_ORG}}"" quantity: 1 }) { id } }
+  mutation { addItem(command: { cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""@td(TECHFLOW_ADMIN.platform_id)"" productId: ""{{WH001_PROD_ID_ORG}}"" quantity: 1 }) { id } }
 [GQL-EXEC add_wh001_org]
 [GQL-OP read_cart_org]
   query {
-    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"") {
+    cart(cartName: ""default"" storeId: ""{{STORE_ID}}"" userId: ""@td(TECHFLOW_ADMIN.platform_id)"" currencyCode: ""USD"" cultureName: ""en-US"") {
       items { sku loyaltyPoints { amount currency { code } } }
     }
   }
 [GQL-EXEC read_cart_org]
 [GQL-CAPTURE read_cart_org.data.cart.items[?sku=WH-001].loyaltyPoints.amount → ORG_WH001_AMT]
 [GQL-OP cleanup_post_org]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ORG_USER_ID}}"" cartName: ""default"" }) { id } }
+  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""@td(TECHFLOW_ADMIN.platform_id)"" cartName: ""default"" }) { id } }
 [GQL-EXEC cleanup_post_org]","[ERRORS label=read_cart_vip] errors[] empty
 [ERRORS label=read_cart_org] errors[] empty
 [DATA label=read_cart_vip] data.cart.items[?sku=WH-001].loyaltyPoints.amount > 0

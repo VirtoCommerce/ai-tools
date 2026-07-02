@@ -18,7 +18,7 @@
  * Writes results to test-data/_seed-results-std-{DATE}.json.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
@@ -42,7 +42,6 @@ const STORE_ID = process.env.STORE_ID || 'B2B-store';
 let VIRTUAL_CATALOG_ID = null;
 
 const DATE = '20260519';
-const RESULTS_FILE = join(ROOT, `test-data/_seed-results-std-${DATE}.json`);
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
@@ -413,16 +412,9 @@ async function main() {
       console.log(`  ⚠ reindex: ${e.message.slice(0, 100)}`);
     }
 
-    mkdirSync(dirname(RESULTS_FILE), { recursive: true });
-    writeFileSync(RESULTS_FILE, JSON.stringify({
-      date: DATE,
-      platform: BACK_URL,
-      storeId: STORE_ID,
-      catalog: { id: catalog.id, name: catalog.name },
-      virtualCatalogId: VIRTUAL_CATALOG_ID,
-      seeded,
-    }, null, 2));
-    console.log(`\nResults: ${RESULTS_FILE}`);
+    // No _seed-results report written: PROD_* aliases resolve by SKU/business key
+    // from the committed CSV (products/test-products), so there are no runtime GUIDs
+    // to persist for this seeder.
   }
 
   const ok = seeded.filter(s => !s.error).length;

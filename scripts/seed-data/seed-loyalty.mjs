@@ -188,11 +188,9 @@ async function seed() {
     });
   }
 
-  if (created.length) {
-    writeResults(`test-data/loyalty/_seed-results-loyalty-${DATE_STAMP}.json`, {
-      seededAt: new Date().toISOString(), storeId: STORE_ID, created,
-    });
-  }
+  // No _seed-results report: loyalty program ids are not consumed by any @td alias
+  // (programs resolve by name/priority at runtime); the LOYALTY_*_USER / LOY_SKU_PTS_UNIT
+  // inline aliases are captured snapshots, not produced here.
   log(`Done: ${created.length} created, rest reused/skipped.`);
 }
 
