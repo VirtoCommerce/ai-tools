@@ -40,7 +40,7 @@ import '../../config.js';
 // results file). No-op under --dry-run.
 // Store fixtures are now shared: ensureStore + its helpers live in seed-common.mjs so this
 // relational seeder and the bootstrap preflight build ONE store from test-data/stores/stores.csv.
-import { writeEnvAliasOverride, ensureStore } from '../lib/seed-common.mjs';
+import { writeEnvAliasOverride, ensureStore, ensureCatalogs, seedCategoryTree } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -201,6 +201,11 @@ async function discoverInfrastructure() {
   }
 }
 
+// DEPRECATED / UNUSED: seedCatalogs, seedCategories, linkVirtualCatalog below created date-stamped
+// (AGENT-TEST-SEED-<date>-*) catalogs that forked from the bootstrap. main() now delegates to the
+// shared seed-common ensureCatalogs + seedCategoryTree (stable AGENT-TEST-SEED-* names, store-scoped
+// SEO, root-linking, store binding). These are kept only as reference and are safe to remove.
+// eslint-disable-next-line no-unused-vars
 async function seedCatalogs(rows) {
   log(`Creating ${rows.length} catalog(s)...`);
 
@@ -464,14 +469,15 @@ function buildProductBody(row, catalog, category, parent) {
 
   if (properties.length > 0) body.properties = properties;
 
-  if (row.seo_slug) {
-    body.seoInfos = [{
-      languageCode: 'en-US',
-      semanticUrl: `seed-${row.seo_slug}`,
-      pageTitle: row.meta_title || row.product_name,
-      metaDescription: row.meta_description || '',
-    }];
-  }
+  // Store-scoped product SEO (unified with the other seeders — platform default leaves storeId=null).
+  const seoSlug = row.seo_slug || String(row.product_name || row.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  body.seoInfos = [{
+    storeId: STORE_ID,
+    languageCode: 'en-US',
+    semanticUrl: `seed-${seoSlug}`,
+    pageTitle: row.meta_title || row.product_name,
+    metaDescription: row.meta_description || '',
+  }];
 
   if (parent) {
     body.mainProductId = parent.id;
@@ -906,9 +912,17 @@ async function main() {
   console.log(`  Data slice: ${slice.catalogs.length} catalogs, ${slice.categories.length} categories, ${slice.products.length} products, ${slice.priceLists.length} price lists, ${slice.prices.length} prices, ${slice.stock.length} stock entries\n`);
 
   await discoverInfrastructure();
-  await seedCatalogs(slice.catalogs);
-  await seedCategories(slice.categories);
-  await linkVirtualCatalog(slice.categories);
+  // UNIFIED with the bootstrap: build the SAME stable-named catalog + category structure
+  // (AGENT-TEST-SEED-*, store-scoped SEO, roots linked into the virtual catalog, store bound) via the
+  // shared seed-common helpers — NOT a date-stamped fork. Populate created.catalogs / created.categories
+  // (keyed by CSV business id) so seedProducts / seedPricing / seedInventory resolve them unchanged.
+  const catMap = await ensureCatalogs(api);
+  const _cseen = new Set();
+  created.catalogs = Object.values(catMap)
+    .filter(c => c?.id && !_cseen.has(c.id) && _cseen.add(c.id))
+    .map(c => ({ id: c.id, csvId: c.csvId, csvName: c.csvName, name: c.name, isVirtual: c.isVirtual }));
+  const catgMap = await seedCategoryTree(api, catMap);
+  created.categories = Object.entries(catgMap).map(([csvId, c]) => ({ id: c.id, csvId, name: c.name }));
   await seedProducts(slice.products);
   await seedPricing(slice.priceLists, slice.prices);
   await seedInventory(slice.stock);

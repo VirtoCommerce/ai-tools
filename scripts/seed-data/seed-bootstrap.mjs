@@ -80,9 +80,13 @@ const STEPS = [
   { name: 'categories', script: 'seed-catalog-categories.mjs', required: true, priority: 20 },
   { name: 'store', script: 'seed-store.mjs', required: true, priority: 80 },
   { name: 'properties', script: 'seed-catalog-properties.mjs', required: true, priority: 30 },
-  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },
+
+  
   { name: 'configurable', script: 'seed-configurable.mjs', required: false, priority: 50 },
-  { name: 'pricing', script: 'seed-pricing.mjs', required: true, priority: 60 },
+  // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
+  // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
+  // priority that overrode every per-product price (all products showed 99.99). It remains available
+  // as a standalone `npm run seed:pricing` for explicitly bulk-pricing an arbitrary catalog.
   { name: 'inventory', script: 'seed-inventory.mjs', required: true, priority: 70 },
   { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
