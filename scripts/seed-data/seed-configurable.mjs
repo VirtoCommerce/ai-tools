@@ -154,10 +154,16 @@ async function ensureProduct(catalogId, categoryId, body) {
     // missed it and we tried to re-insert (unique IX_Code_CatalogId). Poll the index
     // until it catches up and reuse the existing row rather than failing the spec.
     if (/duplicate key|IX_Code_CatalogId/i.test(e.message)) {
+      // The row exists in the DB but the CatalogProduct search index lagged (findProductByCode is
+      // index-based). Poll won't resolve on its own without a reindex, so TRIGGER one, then poll —
+      // re-triggering periodically until the index shows the row (recovers a partial prior run).
+      const reindex = () => api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] }).catch(() => {});
+      await reindex();
       for (let i = 0; i < 12; i++) {
         await sleep(5000);
         const found = await findProductByCode(body.code);
         if (found) { verbose(`↻ recovered ${body.code} after index lag (${(i + 1) * 5}s)`); return found; }
+        if (i === 3 || i === 7) await reindex();
       }
     }
     throw e;

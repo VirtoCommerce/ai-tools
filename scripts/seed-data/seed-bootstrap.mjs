@@ -80,14 +80,18 @@ const STEPS = [
   { name: 'categories', script: 'seed-catalog-categories.mjs', required: true, priority: 20 },
   { name: 'store', script: 'seed-store.mjs', required: true, priority: 80 },
   { name: 'properties', script: 'seed-catalog-properties.mjs', required: true, priority: 30 },
-
-  
+  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },  
   { name: 'configurable', script: 'seed-configurable.mjs', required: false, priority: 50 },
   // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
   // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
   // priority that overrode every per-product price (all products showed 99.99). It remains available
   // as a standalone `npm run seed:pricing` for explicitly bulk-pricing an arbitrary catalog.
   { name: 'inventory', script: 'seed-inventory.mjs', required: true, priority: 70 },
+  // Relational fixture set (products-full.csv + pricing/*.csv + stock-levels.csv). Now UNIFIED: it
+  // delegates catalog/categories to the shared ensureCatalogs + seedCategoryTree (stable AGENT-TEST-SEED
+  // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
+  // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
+  { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
   { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   { name: 'promotions', script: 'seed-promotions.mjs', required: false, priority: 110 },
