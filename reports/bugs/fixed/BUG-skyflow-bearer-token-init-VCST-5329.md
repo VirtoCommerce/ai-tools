@@ -1,6 +1,6 @@
 # BUG — Skyflow payment fails to initialize across environments ("Failed to get bearer token") `[High]`
 
-**JIRA:** VCST-5329 (Relates to VCST-5269) · **Status:** OPEN · **Filed:** 2026-06-22
+**JIRA:** VCST-5329 (Relates to VCST-5269) · **Status:** FIXED · **Filed:** 2026-06-22 · **Fixed/verified:** 2026-07-03
 **Env:** vcst-qa (Platform 3.1038.0) **and** virtostart (storefront 2.51.0) — reproduces on both
 
 ## Summary
@@ -35,3 +35,14 @@ Re-populate each env's `appsettings.json` → `Payments:Skyflow` with valid Skyf
 
 ## Discovery
 Found during VCST-5269 verification — the fix (PR #2336) made the already-broken Skyflow card form appear earlier on `/cart`, surfacing this pre-existing outage.
+
+## Resolution
+**Status: FIXED** — Skyflow vault/service-account credentials (`appsettings.json → Payments:Skyflow`) restored/redeployed on the infra side (no application code change). JIRA VCST-5329 = Done.
+
+QA re-verified live on **2026-07-03** (Platform 3.1038.0 · Theme 2.53.0-pr-2336-50d4-50d40585), two accounts / two browsers:
+- Personal shopper (chrome) and WL org user `wl-fashion@virtocommerce.com` / WL-ORG-B (edge).
+- `initializeCartPayment` → **`isSuccess:true`** with a valid Skyflow `accessToken` (JWT bearer) + `vaultID c1aeec61ad7c46c2b724f004a7658b2f` + `vaultURL https://ebfc9bee4242.vault.skyflowapis.com`; `GetSkyflowCards` → 200 (no INVALID_OPERATION).
+- Card iframe renders inline (no "Loading…" stall); console clean (no `TypeError ...'container'`, no bearer-token error).
+- Skyflow test card `5424000000000015` accepted into the iframe (order not placed).
+
+Evidence: `tests/Sprint-current/VCST-5329/` (skyflow-reverify.md, skyflow-reverify-wlfashion.md + screenshots).

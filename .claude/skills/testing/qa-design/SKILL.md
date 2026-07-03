@@ -89,6 +89,17 @@ After running all invariant snippets, the agent must:
 
 Visual-review findings are filed individually (one bug per defect) and should explicitly note "caught by visual review, not invariant snippet" so the methodology gap is visible — over time, recurring visual findings become candidates for new invariants.
 
+### Sized-Control Measurement Pass — assert against the token + aspect ratio, not a threshold
+
+Raw dimensions that clear a "≥ threshold / no-overflow" gate can still be wrong: a control can pass full-width, touch-target ≥ 44 px, and no-overflow while rendering the wrong *shape* or the wrong *size*. **VCST-5413** (VcSlider price-filter handles rendering as 34×28 ovals instead of an 18×18 circle — nouislider's default `.noUi-handle` winning the storefront cascade over the component's `size-[--handle-size]`) passed every threshold gate and was missed on the first pass, because the oracle direction was wrong: the handle's `34×28` was in the measurement table the whole time, read as "just larger" instead of "off-token and non-square."
+
+For **any control with a declared size** (slider handles, avatars, icon buttons, badges, thumbnails, chips, swatches, checkboxes/radios — anything backed by a `--*-size` token, `size-[…]`, or an intended square / circle / fixed-ratio shape), the oracle is **equality + aspect**, not a lower bound:
+
+1. **Token equality.** Resolve the declared design token and assert the rendered dimension equals it — `getComputedStyle(el).width === <resolved --token>` (e.g. `--handle-size` → 18 px). "Bigger is fine" is NOT acceptable; a size that drifts off its token is a FAIL to investigate, not a footnote.
+2. **Aspect ratio.** For a control meant to be circular/square, assert `rect.width === rect.height`; for a fixed-ratio control assert `width / height === <intended ratio>`. `34 !== 28` on a `border-radius: 9999px` box → oval → instant FAIL.
+3. **Cross-surface equality.** Measure the SAME control in Storybook (isolated) AND on the storefront (integrated). Any part whose size **changes between isolation and integration** is a red flag for a CSS-cascade override — the exact class of bug dual-eval exists to catch. Do not rationalize the drift as "an intentional skin"; treat it as a FAIL until proven a deliberate override.
+4. **Always capture one confirmation screenshot of the integrated control — even when the numbers PASS.** Numbers that clear thresholds can hide a shape that is obviously wrong to the eye; one screenshot of the real, composed control makes an oval-where-a-circle-belongs immediately visible. This single per-control confirmation shot is a deliberate exception to the FAIL-only screenshot default and stays within the per-scope budget (`evidence-capture-policy.md` "final state if critical").
+
 ### UX Heuristic Evaluation
 
 1. **Navigate the target flow** using playwright-chrome / firefox / edge MCP — see [browser assignments](../../../rules/agents.md).
@@ -112,7 +123,8 @@ See "Recommended workflow" in the project conversation log (or ask `/claude-code
 - **UX heuristic scorecard** — Nielsen 0–4 rating per heuristic with specific issues, cross-referenced to BL-* / WCAG / ECL where applicable
 - **State-Stress matrix** — per-state PASS/FAIL grid covering the states enumerated in the State-Stress Pass; skipped states must include a reason
 - **Visual Findings** — defects spotted in the Visual-Review Screenshot Pass that no invariant snippet caught; each carries a "caught by visual review" tag so methodology gaps stay visible
-- **Screenshots** — FAIL states (per `evidence-capture-policy.md`) **+ baseline screenshots per viewport per state** to support the Visual-Review Pass
+- **Sized-control table** — for every declared-size control audited: design-token value vs rendered width×height, the aspect-ratio check, and the Storybook-vs-storefront cross-surface comparison; each row carries a confirmation screenshot of the integrated control (pass or fail)
+- **Screenshots** — FAIL states (per `evidence-capture-policy.md`) **+ baseline screenshots per viewport per state** to support the Visual-Review Pass **+ one confirmation screenshot of each integrated sized control even on PASS** (Sized-Control Measurement Pass)
 
 ## Findings → Filings
 
@@ -135,6 +147,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 - **Audit at multiple viewports** — 375 / 768 / 1280 minimum; some tokens override at breakpoint boundaries.
 - **Audit at multiple states** — run the State-Stress Pass; default-only audits miss state-specific defects (F-CART-006 was missed precisely because the default state had no disabled product visible).
 - **Always run the Visual-Review Screenshot Pass** before exiting — invariant snippets are necessary but not sufficient.
+- **For any sized control, assert token equality + aspect ratio, never a threshold** — a dimension that clears "≥ / no-overflow" gates can still be the wrong size or shape (VCST-5413: 34×28 oval slider handle vs 18×18 circle). Resolve the design token and assert `rendered === token` **and** `width === height` (or the intended ratio); cross-check Storybook vs storefront (size drift between the two = cascade-override red flag); and capture one confirmation screenshot of the integrated control even on PASS.
 - **UX heuristic findings ≥ 3** must be filed as bugs (P1 or higher).
 - **Figma comparison is optional** — don't block an audit waiting for Figma access; BL-UI invariants are the authoritative contract.
 - Delegate execution to `ui-ux-expert` via the **Agent tool** (`subagent_type: ui-ux-expert`) — this skill is a methodology library, not an executor.
