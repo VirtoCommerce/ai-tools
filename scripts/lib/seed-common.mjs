@@ -592,7 +592,10 @@ export async function ensureCatalogs(api) {
     const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
     if (store?.catalog) {
       const cat = await api('GET', `/api/catalog/catalogs/${store.catalog}`, null, { expectStatus: [200, 404] });
-      if (cat?.isVirtual) reusedStoreVc = { id: cat.id, name: cat.name };
+      // Only a FOREIGN live catalog counts as a reuse (skip fork + rebind). A virtual catalog WE own
+      // (AGENT-TEST-SEED-*, e.g. a repeat localhost run) must go through the normal create-or-reuse-by-
+      // name + ensureStore path so store config + root-linking stay idempotent.
+      if (cat?.isVirtual && !String(cat.name || '').startsWith(SEED_FAMILY)) reusedStoreVc = { id: cat.id, name: cat.name };
     }
   }
   // Physical first so the virtual catalogs can link to them.
@@ -689,12 +692,28 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
   return byCsvId;
 }
 
+/**
+ * The store's bound virtual-catalog id, but ONLY when it's safe to mutate its link set — i.e. a
+ * virtual catalog WE own (AGENT-TEST-SEED-*) or a fresh binding. Returns null (→ callers skip the
+ * link) when the store is bound to a FOREIGN live catalog (e.g. "B2B-mixed" on vcst/vcptcore):
+ * injecting AGENT-TEST-SEED roots into a real catalog would alter live storefront navigation. This
+ * is the linking-side twin of ensureCatalogs' `reusedStoreVc` guard.
+ */
+async function seedOwnedStoreVirtualCatalogId(api) {
+  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+  const vcId = store?.catalog;
+  if (!vcId) return null;
+  const cat = await api('GET', `/api/catalog/catalogs/${vcId}`, null, { expectStatus: [200, 404] });
+  if (!cat?.isVirtual) return null;
+  if (!String(cat.name || '').startsWith(SEED_FAMILY)) return null; // foreign live catalog — do not mutate
+  return vcId;
+}
+
 /** Link each physical catalog's root categories (no parent) into the store's virtual catalog. */
 async function linkRootsIntoVirtual(api, categoryRows, byCsvId) {
   if (DRY_RUN) return;
-  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
-  const vcId = store?.catalog;
-  if (!vcId) { log('⚠ no store virtual catalog to link roots into'); return; }
+  const vcId = await seedOwnedStoreVirtualCatalogId(api);
+  if (!vcId) { log('⚠ skip root-linking — store virtual catalog is foreign/live (or unset); not mutating it'); return; }
   const rootIds = categoryRows.filter((r) => !r.parent_id && String(r.is_active).toLowerCase() !== 'no').map((r) => r.category_id);
   const links = rootIds.map((cid) => byCsvId[cid]).filter((c) => c?.id).map((c) => ({ listEntryId: c.id, listEntryType: 'category', catalogId: vcId }));
   if (!links.length) return;
@@ -752,9 +771,10 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
   // Ensure the ROOT is linked into the store virtual catalog (idempotent) so the subtree surfaces —
   // covers created-here roots (e.g. Test Fixtures) that categories.csv didn't already link.
   if (rootId && !DRY_RUN) {
-    const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
-    if (store?.catalog) {
-      await api('POST', '/api/catalog/listentrylinks', [{ listEntryId: rootId, listEntryType: 'category', catalogId: store.catalog }], { expectStatus: [200, 204] }).catch(() => {});
+    // Only mutate a seed-owned store virtual catalog — never a foreign live one (vcst B2B-mixed).
+    const vcId = await seedOwnedStoreVirtualCatalogId(api);
+    if (vcId) {
+      await api('POST', '/api/catalog/listentrylinks', [{ listEntryId: rootId, listEntryType: 'category', catalogId: vcId }], { expectStatus: [200, 204] }).catch(() => {});
     }
   }
   _catPathCache.set(cacheKey, leaf);
