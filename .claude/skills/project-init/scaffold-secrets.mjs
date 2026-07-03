@@ -19,7 +19,9 @@
  *   - ADO_PAT          — only if (--tracker azure OR --client-vcs azure-repos) AND the
  *     ADO auth is a PAT (--ado-auth pat). --ado-auth az-login relies on the `az` session
  *     and emits NO ADO_PAT line.
- *   - POSTMAN_API_KEY / CONTEXT7_API_KEY — only if named in --extras
+ *   - POSTMAN_API_KEY / CONTEXT7_API_KEY — ALWAYS emitted, but as OPTIONAL placeholders
+ *     (blank = the postman / context7 MCP server stays disabled; not needed for /qa-fix).
+ *     Each carries a "for which tool" description. (--extras is retained but no longer gates them.)
  * Browser-login/session auth (gh-cli / az-login / Atlassian MCP OAuth) emits NO token line.
  *
  * Auth axes (each maps from its own interview question):
@@ -95,15 +97,15 @@ const CATALOG = {
     where: "dev.azure.com → User settings → Personal access tokens. Scopes: Work Items R/W, Code R/W.",
   },
   POSTMAN_API_KEY: {
-    perEnv: false, include: (o) => o.extras.includes("postman"),
-    what: "Postman API key.",
-    why: "Enables the postman MCP server (/qa-postman, /qa-api test).",
-    where: "postman.com → Settings → API keys.",
+    perEnv: false, optional: true, include: () => true,
+    what: "Postman API key (OPTIONAL).",
+    why: "Enables the `postman` MCP server — powers /qa-postman (build/configure/verify API collections) and /qa-api test (REST + GraphQL xAPI test execution).",
+    where: "postman.com → Settings → API keys → Generate API Key.",
   },
   CONTEXT7_API_KEY: {
-    perEnv: false, include: (o) => o.extras.includes("context7"),
-    what: "Context7 API key.",
-    why: "Enables the context7 MCP docs lookup (fallback for /vc-docs).",
+    perEnv: false, optional: true, include: () => true,
+    what: "Context7 API key (OPTIONAL).",
+    why: "Enables the `context7` MCP server — up-to-date library / framework / SDK docs lookup; the fallback docs source for /vc-docs (VirtoOZ MCP is primary).",
     where: "context7.com dashboard → API key.",
   },
 };
@@ -144,6 +146,7 @@ function main() {
       `# ${key} — ${meta.what}\n` +
       `#   Why:   ${meta.why}\n` +
       `#   Where: ${meta.where}\n` +
+      (meta.optional ? `#   Optional: leave blank to skip — the MCP server above just stays disabled; not needed for /qa-fix.\n` : ``) +
       (meta.perEnv ? `#   (per-env: config.js promotes ${name} → ${key} when TEST_ENV=${env})\n` : ``) +
       `${name}=\n`
     );

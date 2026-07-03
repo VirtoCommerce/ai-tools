@@ -176,15 +176,18 @@ keys, never clobbers.
 node .claude/skills/project-init/scaffold-secrets.mjs \
   --env myqa --tracker jira --jira-auth token \
   --client-vcs github --github-auth pat --print
-# client on Azure with session auth for both axes → emits ONLY the app passwords:
+# client on Azure with session auth for both axes → app passwords + optional MCP keys only:
 node .claude/skills/project-init/scaffold-secrets.mjs \
   --env acme --tracker azure --client-vcs azure-repos \
   --ado-auth az-login --github-auth gh-cli --print
 ```
 Flags — **one per auth axis, from step 2d**: `--jira-auth token|oauth` · `--ado-auth
 pat|az-login` (`az-login` ⇒ no `ADO_PAT`) · `--github-auth pat|gh-cli` (`gh-cli` ⇒ no
-`GITHUB_FIX_BUGS_TOKEN`) · `--extras postman,context7`. App test-user passwords
-(`ADMIN_PASSWORD`/`USER_PASSWORD`, `_<ENV>`-suffixed) are always emitted. Idempotent.
+`GITHUB_FIX_BUGS_TOKEN`). App test-user passwords (`ADMIN_PASSWORD`/`USER_PASSWORD`,
+`_<ENV>`-suffixed) are always emitted. **`POSTMAN_API_KEY` + `CONTEXT7_API_KEY` are
+always emitted too, but as OPTIONAL placeholders** (blank ⇒ that MCP server stays
+disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comment.
+(`--extras` is retained for back-compat but no longer gates them.) Idempotent.
 
 ### 3c. Tell the operator: two files created — fill them, then pause
 
