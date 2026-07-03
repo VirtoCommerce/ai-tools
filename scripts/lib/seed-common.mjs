@@ -118,7 +118,11 @@ const isReadCall = (method, path) => method === 'GET' || (method === 'POST' && p
 // turns a flaky seed into a deterministic one. Matched on status + body so it
 // covers the 500-wrapping-503 shape the platform actually returns:
 //   "Status code 503 from: POST /default-member-active/_search … all shards failed"
-const TRANSIENT_ES_RE = /all shards failed|search_phase_execution_exception|503|no[_ ]?shard|index[_ ]?not[_ ]?found|no such index|unavailable_shards/i;
+// Precise ES-transient markers only. NOT a bare "503" — that matched any 500 whose body merely
+// contained the digits 503 (a price like 1503.99, a quantity, an id/SKU), retrying genuine
+// validation errors 4× (~15s) and risking double-creates. The platform relays an ES search fault as
+// a 500 wrapping "Status code 503 from: … _search … all shards failed", so match that shape.
+const TRANSIENT_ES_RE = /all shards failed|search_phase_execution_exception|unavailable_shards|status code 503 from|no[_ ]?such[_ ]?index|index[_ ]?not[_ ]?found/i;
 function isTransientEsError(status, text) {
   return status === 503 || (status === 500 && TRANSIENT_ES_RE.test(text || ''));
 }
@@ -576,10 +580,31 @@ export async function ensureCatalogs(api) {
     const rec = { id, name: catalogSeedName(row.catalog_name), isVirtual, csvName: row.catalog_name, csvId: row.catalog_id };
     byKey[row.catalog_id] = rec; byKey[row.catalog_name] = rec;
   };
+  // The catalogs.csv row that is the STORE's virtual catalog (assigned_store = STORE_ID, else the
+  // first virtual). On a POPULATED env (vcst/vcptcore) the store is already bound to a REAL virtual
+  // catalog (e.g. "B2B-mixed" / fc596540…) whose name is NOT "AGENT-TEST-SEED-*". We must REUSE that
+  // one — never create a forked AGENT-TEST-SEED-B2B-mixed and re-point the store away from its live
+  // catalog (that would orphan every real product). Only a truly empty env (localhost) creates it.
+  const storeVirtualRow = rows.find((r) => r.catalog_type === 'Virtual' && (r.assigned_store || '') === STORE_ID)
+                       || rows.find((r) => r.catalog_type === 'Virtual');
+  let reusedStoreVc = null;
+  if (!DRY_RUN && storeVirtualRow) {
+    const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+    if (store?.catalog) {
+      const cat = await api('GET', `/api/catalog/catalogs/${store.catalog}`, null, { expectStatus: [200, 404] });
+      if (cat?.isVirtual) reusedStoreVc = { id: cat.id, name: cat.name };
+    }
+  }
   // Physical first so the virtual catalogs can link to them.
   const ordered = [...rows].sort((a, b) => (a.catalog_type === 'Virtual' ? 1 : 0) - (b.catalog_type === 'Virtual' ? 1 : 0));
   for (const row of ordered) {
     const isVirtual = row.catalog_type === 'Virtual';
+    // Reuse the store's existing virtual catalog for its assigned row — don't fork/re-create it.
+    if (reusedStoreVc && row.catalog_id === storeVirtualRow.catalog_id) {
+      register(row, reusedStoreVc.id, true);
+      log(`↻ reusing store's existing virtual catalog "${reusedStoreVc.name}" (${reusedStoreVc.id}) — not forking`);
+      continue;
+    }
     const name = catalogSeedName(row.catalog_name);
     const existing = DRY_RUN ? null : await findCatalogByName(api, name);
     if (existing) { register(row, existing.id, isVirtual); verbose(`↻ catalog: ${name} (${existing.id})`); continue; }
@@ -602,11 +627,11 @@ export async function ensureCatalogs(api) {
     register(row, created?.id, isVirtual);
     log(`✓ catalog: ${name} (${created?.id})${isVirtual && body.links?.length ? ` [links ${body.links.length}]` : ''}`);
   }
-  // Bind the store to its virtual catalog (the row assigned to STORE_ID, else the first virtual).
-  const storeVirtualRow = rows.find((r) => r.catalog_type === 'Virtual' && (r.assigned_store || '') === STORE_ID)
-                       || rows.find((r) => r.catalog_type === 'Virtual');
+  // Bind the store to its virtual catalog. If we REUSED the store's existing virtual catalog above,
+  // the store is already configured on a populated env — do NOT run ensureStore (it would overwrite
+  // the live store's FFCs/currencies/url/settings from the CSV). Only bind on a fresh env.
   const vc = storeVirtualRow ? byKey[storeVirtualRow.catalog_id] : null;
-  if (vc?.id && !DRY_RUN) await ensureStore(api, { catalogId: vc.id });
+  if (vc?.id && !DRY_RUN && !reusedStoreVc) await ensureStore(api, { catalogId: vc.id });
 
   // Writeback (multi-env rule): persist the runtime catalog GUIDs to aliases.<env>.json so
   // @td(CATALOG_MIXED.id) / CATALOG_ELECTRONICS / CATALOG_INDUSTRIAL resolve the real platform ids

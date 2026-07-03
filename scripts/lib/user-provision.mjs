@@ -324,11 +324,23 @@ export async function seedOrgs(rows, parentMap = {}) {
     let existing = null;
     if (row.platform_id) {
       const byId = await findMemberById(row.platform_id);
-      if (byId?.id && byId.name === row.org_name) existing = byId;
+      // The pinned platform_id is the org's STABLE identity — reuse it regardless of the live name.
+      // (Previously this required byId.name === row.org_name, so a RENAMED org, e.g. TEST-* →
+      // AGENT-TEST-Org-*, wasn't reused; on an already-seeded env it fell through to a create with a
+      // duplicate pinned id — a conflict/rewrite every run. Reuse by id + rename in place instead.)
+      if (byId?.id) existing = byId;
     }
     // Reuse key #2 (fallback): search-by-name — covers a first-ever seed with no cached id.
     if (!existing) existing = await findOrgByName(row.org_name);
     if (existing) {
+      // Name is not the identity (the id is) — if the live name drifted from the CSV, rename in place
+      // (upsert by id) so a rename propagates without a duplicate-id create.
+      if (existing.name && existing.name !== row.org_name && !DRY_RUN) {
+        try {
+          await api('POST', '/api/members', { ...existing, name: row.org_name }, { expectStatus: [200, 201, 204] });
+          console.log(`    ✎ renamed ${row.org_id} "${existing.name}" → "${row.org_name}" (${existing.id})`);
+        } catch (e) { console.log(`    ⚠ rename ${row.org_id} failed: ${String(e.message).slice(0, 120)}`); }
+      }
       out[row.org_id] = { csv_id: row.org_id, name: row.org_name, platform_id: existing.id, reused: true };
       if (VERBOSE) console.log(`    ↻ reuse  ${row.org_id} ${row.org_name} (${existing.id})`);
       continue;
