@@ -25,11 +25,13 @@ import { config as dotenv } from "dotenv";
 import { readFileSync } from "fs";
 import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
+import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant } from "./probe-lib.mjs";
 
 const TEST_ENV = resolveTestEnv("vcst");
-dotenv({ path: ".env.defaults" });
-dotenv({ path: `.env.${TEST_ENV}`, override: true });
-dotenv({ path: ".env.local", override: true });
+// quiet: dotenv v17 prints promo tips to stdout, which would garble the readiness table.
+dotenv({ path: ".env.defaults", quiet: true });
+dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
+dotenv({ path: ".env.local", override: true, quiet: true });
 // Per-env suffix promotion (mirror config.js) so ADMIN_PASSWORD_<ENV> → ADMIN_PASSWORD etc.
 const SUF = `_${TEST_ENV.toUpperCase()}`;
 for (const [k, v] of Object.entries(process.env)) {
@@ -73,26 +75,12 @@ const truncTo = (s, n) => (s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…"
 function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
 }
-function tryOut(cmd) {
-  try { return execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { return ""; }
-}
 async function httpStatus(url) {
   if (!url) return 0;
   try { return (await fetch(url, { method: "GET", redirect: "manual" })).status; }
   catch { return -1; }
 }
-// Discover an ADO org's Entra tenant GUID from its unauthenticated auth-challenge headers
-// (X-VSS-ResourceTenant / WWW-Authenticate authorization_uri) so we can hand the operator
-// a ready `az login --tenant <guid>` — no need to know/type the tenant.
-async function resolveAdoTenant(org) {
-  try {
-    const r = await fetch(`https://dev.azure.com/${org}/_apis/projects?api-version=7.1`, { redirect: "manual" });
-    const t = r.headers.get("x-vss-resourcetenant") || "";
-    if (/^[0-9a-f-]{36}$/i.test(t.trim())) return t.trim();
-    const m = /login\.microsoftonline\.com\/([0-9a-f-]{36})/i.exec(r.headers.get("www-authenticate") || "");
-    return m ? m[1] : "";
-  } catch { return ""; }
-}
+// resolveAdoTenant now lives in probe-lib.mjs (shared with derive-context.mjs).
 
 async function main() {
   // 1. Profile
@@ -186,34 +174,21 @@ async function main() {
   // 8. GitHub auth for fix PRs/issues — REAL probe, whether the token comes from a PAT
   //    or the gh-cli session. Resolve a token, hit /user + the upstream repo, and check
   //    the permission is enough for the contribution mode (fork ⇒ read is enough since you
-  //    PR from your own fork; direct ⇒ needs push). gh-cli is no longer merely "logged in".
-  const upstream = `${profile.upstream.org || "VirtoCommerce"}/vc-platform`;
+  //    PR from your own fork; direct ⇒ needs push). Shared with derive-context via
+  //    probe-lib so "what verify reports" and "what the profile stored" can't drift.
   const forkMode = profile.upstream.contributionMode === "fork";
   const ghAuthed = tryCmd("gh auth status");
-  let ghtok = process.env.GITHUB_FIX_BUGS_TOKEN || "";
-  let ghVia = ghtok ? "PAT" : "";
-  let ghScopes = "";
-  if (!ghtok && ghAuthed) {
-    ghtok = tryOut("gh auth token"); ghVia = "gh CLI";
-    const m = /Token scopes:\s*(.+)/i.exec(tryOut("gh auth status 2>&1") || "");
-    ghScopes = m ? m[1].replace(/['\s]/g, "") : "";
-  }
+  const { token: ghtok, via: ghVia, scopes: ghScopes } = resolveGithubToken();
   if (ghtok) {
-    try {
-      const gh = (path) => fetch(`https://api.github.com${path}`, { headers: { Authorization: `Bearer ${ghtok}`, "User-Agent": "vc-project-init", Accept: "application/vnd.github+json" } });
-      const u = await gh("/user");
-      if (u.ok) {
-        const login = (await u.json()).login;
-        const rp = await gh(`/repos/${upstream}`);
-        let perm = "unknown";
-        if (rp.ok) { const p = (await rp.json()).permissions || {}; perm = p.admin ? "admin" : p.maintain ? "maintain" : p.push ? "push" : p.pull ? "pull(read-only)" : "none"; }
-        // fork mode: read is enough (fork + PR from own account); direct: needs push+.
-        const enough = rp.ok && (forkMode || ["push", "maintain", "admin"].includes(perm));
-        const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
-        add(`GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`, enough ? "PASS" : "WARN",
-          `${ghVia}, login '${login}'; ${upstream}: ${perm}${scopesNote}` + (enough ? "" : forkMode ? "" : " — direct PR needs push; use fork mode or a token with write"));
-      } else add(`GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`, "FAIL", `${ghVia}: GET /user → ${u.status}`);
-    } catch (e) { add("GitHub auth", "FAIL", e.message); }
+    const label = `GitHub auth (${forkMode ? "fork-PR" : "direct PR"})`;
+    const p = await probeGithubUpstream({ upstreamOrg: profile.upstream.org || "VirtoCommerce", token: ghtok });
+    if (p.ok && p.login) {
+      // fork mode: read is enough (fork + PR from own account); direct: needs push+.
+      const enough = p.perm !== "unknown" && (forkMode || ["push", "maintain", "admin"].includes(p.perm));
+      const scopesNote = ghScopes ? ` [scopes: ${ghScopes}]` : "";
+      add(label, enough ? "PASS" : "WARN",
+        `${ghVia}, login '${p.login}'; ${p.repo}: ${p.perm}${scopesNote}` + (enough ? "" : forkMode ? "" : " — direct PR needs push; use fork mode or a token with write"));
+    } else add(label, "FAIL", `${ghVia}: GET /user → ${p.status || "error"}`);
   } else add("GitHub auth", "FAIL", "no GITHUB_FIX_BUGS_TOKEN and no gh CLI session — set the PAT or run `gh auth login`");
 
   // 9. gh CLI session (informational — the capability probe above is the real gate)

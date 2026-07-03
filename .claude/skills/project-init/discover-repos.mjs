@@ -3,10 +3,19 @@
  * .claude/skills/project-init/discover-repos.mjs
  *
  * Query the Platform API for installed modules and propose a client/platform
- * repo split for the deployment profile. Each module's ProjectUrl (or, as a
- * fallback, its Id) is mapped to a repo and classified by owner: VirtoCommerce
- * ⇒ platform; anything else (esp. under --client-org) ⇒ client. Emits
- * { client:[...], platform:[...] } for `gen-profile.mjs --repos-json --merge`.
+ * repo split for the deployment profile — AND derive projectType + clientOrg from
+ * it (this is the redesign's "scan is the source of projectType" step: it ALWAYS
+ * runs, and needs no --client-org). Each module's ProjectUrl (or, as a fallback, its
+ * Id) is mapped to a repo and classified by owner: VirtoCommerce ⇒ platform; anything
+ * else ⇒ client. Emits { projectType, clientOrg, client:[...], platform:[...] } for
+ * `gen-profile.mjs --repos-json --merge` (which now also ingests projectType/clientOrg).
+ *
+ * DERIVE (no questions):
+ *   - clientOrg  — the owner of the discovered client modules (from their repo URL);
+ *     for an azure-repos host, ADO_ORG. --client-org still OVERRIDES when passed.
+ *   - projectType — "client" if any client module was found, OR the host is azure-repos
+ *     (native VirtoCommerce always lives on GitHub), OR a clientOrg resolved; else
+ *     "platform" (native VC — the original default; every repo stays platform-owned).
  *
  * The storefront / theme / frontend repo is NOT a platform module, so it is not in
  * the modules API. Instead this scans the CLIENT's code host (Azure Repos or GitHub,
@@ -15,10 +24,10 @@
  * skill ASKS the operator to name it. The proposal is a STARTING POINT — confirm/fix.
  *
  * Usage:
- *   node .claude/skills/project-init/discover-repos.mjs --client-org acme-corp \
- *     [--client-vcs github|azure-repos] [--out repos.json] [--print] [--insecure]
+ *   node .claude/skills/project-init/discover-repos.mjs \
+ *     [--client-vcs github|azure-repos] [--client-org acme-corp] [--out repos.json] [--print] [--insecure]
  *   # offline test with mock module data ([{Id,ProjectUrl}, ...]); skips the repo scan:
- *   node .claude/skills/project-init/discover-repos.mjs --client-org acme --modules-json mods.json --print
+ *   node .claude/skills/project-init/discover-repos.mjs --modules-json mods.json --print
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
@@ -103,6 +112,27 @@ export function pickFrontendRepos(names) {
   return [...new Set((names || []).filter((n) => rx.test(n)))];
 }
 
+/**
+ * Derive the client org from a classified client-repo list. Pure. Prefers, in order:
+ * an explicit override, ADO_ORG for an azure-repos host, then the most common owner
+ * among client entries that carry one ("owner/name"). "" when none can be resolved
+ * (e.g. GitHub client modules with no ProjectUrl) — the caller then asks the operator.
+ */
+export function deriveClientOrg(client, { host, adoOrg, override } = {}) {
+  if (override) return override;
+  if (host === "azure-repos" && adoOrg) return adoOrg;
+  const counts = new Map();
+  for (const r of client || []) {
+    const i = (r.name || "").indexOf("/");
+    if (i < 0) continue;
+    const owner = r.name.slice(0, i);
+    counts.set(owner, (counts.get(owner) || 0) + 1);
+  }
+  let best = "", bestN = 0;
+  for (const [owner, n] of counts) if (n > bestN) { best = owner; bestN = n; }
+  return best;
+}
+
 /** List the client's repo NAMES from their code host (Azure Repos or GitHub). */
 async function listClientReposLive(host, { org, project }) {
   if (host === "azure-repos") {
@@ -149,9 +179,10 @@ async function listClientReposLive(host, { org, project }) {
 
 async function getModulesLive() {
   const TEST_ENV = resolveTestEnv("vcst");
-  dotenv({ path: ".env.defaults" });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true });
-  dotenv({ path: ".env.local", override: true });
+  // quiet: stdout carries the machine-readable repo map (dotenv v17 prints promo tips otherwise).
+  dotenv({ path: ".env.defaults", quiet: true });
+  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
+  dotenv({ path: ".env.local", override: true, quiet: true });
   // Per-env suffix promotion (mirror config.js / verify-access) so ADMIN_PASSWORD_<ENV>
   // → ADMIN_PASSWORD etc. — otherwise per-env creds in .env.local are never seen.
   const SUF = `_${TEST_ENV.toUpperCase()}`;
@@ -184,7 +215,8 @@ async function getModulesLive() {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  const clientOrg = args["client-org"] || "";
+  const override = args["client-org"] || "";
+  const host = args["client-vcs"] || "github";
 
   let modules;
   if (args["modules-json"]) {
@@ -199,16 +231,22 @@ async function main() {
     }
   }
 
-  const result = classify(modules, clientOrg);
+  // Classify modules (no --client-org needed: owner / id-namespace already decides
+  // client-vs-platform; the override only forces a repo under that org to be client).
+  const result = classify(modules, override);
+
+  // Derive the client org from the classified client modules (or ADO_ORG / override).
+  const clientOrg = deriveClientOrg(result.client, {
+    host, adoOrg: process.env.ADO_ORG || "", override,
+  });
   console.error(
     `[discover-repos] ${result.platform.length} platform repo(s), ${result.client.length} client repo(s)` +
-      (clientOrg ? ` (client org: ${clientOrg})` : ""),
+      (clientOrg ? ` (client org: ${clientOrg})` : " (no client org resolved)"),
   );
 
   // Scan the CLIENT's repos for a storefront/theme/frontend repo — it is NOT installed as
-  // a platform module, so the modules API never surfaces it. Live mode only.
+  // a platform module, so the modules API never surfaces it. Live mode only, needs an org.
   if (!args["modules-json"] && clientOrg) {
-    const host = args["client-vcs"] || "github";
     try {
       const org = host === "azure-repos" ? (process.env.ADO_ORG || clientOrg) : clientOrg;
       const all = await listClientReposLive(host, { org, project: process.env.ADO_PROJECT || "" });
@@ -228,14 +266,26 @@ async function main() {
     }
   }
 
+  // Derive projectType: client iff we found client code, the host is azure-repos (native
+  // VC is always on GitHub), or a clientOrg resolved; else platform (the native default).
+  const projectType =
+    result.client.length || host === "azure-repos" || clientOrg ? "client" : "platform";
+  const out = { projectType, clientOrg, ...result };
+  console.error(`[discover-repos] derived projectType=${projectType}`);
+  if (projectType === "client" && !clientOrg && host === "github") {
+    console.error(
+      `[discover-repos] GENUINE AMBIGUITY: client code on GitHub but no org resolved (modules lack a ProjectUrl) — ASK the operator for the client GitHub org (or confirm native platform).`,
+    );
+  }
+
   if (args.out) {
     const outAbs = resolve(args.out);
     mkdirSync(dirname(outAbs), { recursive: true }); // ensure the --out dir exists
-    writeFileSync(outAbs, JSON.stringify(result, null, 2) + "\n");
+    writeFileSync(outAbs, JSON.stringify(out, null, 2) + "\n");
     console.error(`[discover-repos] wrote ${outAbs}`);
   }
   // Machine-readable result on stdout (so callers can pipe / capture).
-  if (args.print || !args.out) console.log(JSON.stringify(result, null, 2));
+  if (args.print || !args.out) console.log(JSON.stringify(out, null, 2));
 }
 
 // Run only when invoked directly (so classify/moduleToRepo stay importable for tests).

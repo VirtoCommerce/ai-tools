@@ -74,10 +74,13 @@ const CATALOG = [
   ["JIRA_EMAIL",       { include: (o) => o.tracker === "jira",
     what: "Jira login email (identifier, pairs with JIRA_API_TOKEN in .env.local).",
     where: "your Atlassian account email." }],
-  ["ADO_ORG",          { include: (o) => o.tracker === "azure",
+  // Emitted for Azure Boards (tracker) OR an Azure Repos code host — a Jira + azure-repos
+  // client still needs ADO_ORG/ADO_PROJECT (discover-repos scan + the client checkout read
+  // them, and it is the client org for routing). Mirrors ADO_PAT's gate in scaffold-secrets.
+  ["ADO_ORG",          { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos",
     what: "Azure DevOps organization.", where: "dev.azure.com/<org>." }],
-  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure",
-    what: "Azure DevOps project (Boards).", where: "the project holding your work items." }],
+  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos",
+    what: "Azure DevOps project (Boards / Repos).", where: "the project holding your work items / repos." }],
   // Only for a GitHub-hosted client: the client org is a distinct GitHub namespace.
   // For azure-repos it is redundant with ADO_ORG/ADO_PROJECT, so it is NOT emitted.
   ["CLIENT_REPO_ORG",  { include: (o) => o.projectType === "client" && o.clientVcs === "github",

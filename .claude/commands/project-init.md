@@ -1,5 +1,5 @@
 ---
-description: "Initialize / onboard this QA plugin for a deployment — install deps, choose native-platform vs CLIENT project, pick bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), capture the test-env URL + browser-login/token auth, discover the client/platform repo split, write project-profile.json + .mcp.json, verify access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
+description: "Initialize / onboard this QA plugin for a deployment — install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Writes project-profile.json + .env + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
 argument-hint: "(no args — interactive) | --check (verify an existing setup)"
 disable-model-invocation: true
 ---
@@ -17,6 +17,11 @@ Methodology + helper scripts: the [`/project-init` skill](../skills/project-init
 **Additive & safe:** only adds a profile + config; with no profile the plugin
 keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merges.
 
+**Ask only what shapes the config; DERIVE the rest.** Interview = **env name ·
+tracker · code host** + an auth preference per axis. `projectType`, client org,
+contribution mode, and fork account are **not asked** — they come from the token's
+permissions + the filled env + a live module/repo scan.
+
 ## Usage
 
 ```
@@ -29,52 +34,55 @@ keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merge
 0. Preconditions — detect **and install** missing tooling: `gh` (required),
    `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
 1. Install deps (`npm install` + Playwright browsers).
-2. Interview — **no mid-interview reconnaissance**: (a) topology (operator ·
-   project type · tracker) as one `AskUserQuestion` block; for `projectType=client`
-   a follow-up `AskUserQuestion` for the remaining enums — **code host** AND
-   **contribution mode** (fork/direct); (b) **ENV_NAME** as a plain chat question
-   (operator replies with the value; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`).
-   Not via AskUserQuestion (forces option buttons) or a widget (unreliable). **All
-   enums are asked here; every free-text value is a placeholder in the ONE scaffolded
-   file, NEVER a chat question** (client org for a GitHub host; the fork account is
-   NOT asked — it is derived from the GitHub token owner at step 4). (c) **Existing-env
-   guard:** before step 3, check whether
-   `.env.<name>` already exists; if it does, ask via `AskUserQuestion` whether to
-   **reuse it** (scaffold only adds missing keys, never clobbers) or **use a new
-   name** (ask again, re-check) — never auto-pick.
-3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs`
-   (`--project-type client --client-vcs github` also emits `CLIENT_REPO_ORG`; azure-repos
-   emits nothing extra — client org = ADO_ORG) → `.env.<env>`; (3b)
-   `scaffold-secrets.mjs` → `.env.local` (secret placeholders; per-env creds
-   `_<ENV>`-suffixed, auth axes `--ado-auth`/`--github-auth`; session auth emits no token
-   line); (3c) tell the operator **two files were created — fill both** (inline comments
-   say what/where), then **pause** — verify (step 7) checks them. Never a raw account
-   password. **End the pause with a visually unmistakable waiting banner** (e.g. a
-   blockquote `> ⏸️ WAITING FOR YOU — fill both files, then reply "готово"`) as the last
-   line, no tool calls after it — a plain "let me know" reads as narration, not a prompt.
-4. Write the profile (`gen-profile.mjs`) — read connection/routing values back from the
-   filled `.env.<env>` (tracker; client `--client-org` = `CLIENT_REPO_ORG` or `ADO_ORG`);
-   for fork mode derive `--upstream-account` from the GitHub token owner (`gh api user`),
-   never from a chat question.
-5. Discover the client/platform repo split (`discover-repos.mjs --client-vcs …`, client
-   only): classify installed modules AND scan the client's code host for the
-   storefront/theme repo (kind `frontend`). If none matches → ask the operator to name
-   it. Confirm with the operator, then merge into the profile.
-6. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
-7. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`
-   (`FORCE_COLOR=1` so the green/yellow/red Status column renders — the script
-   auto-disables colour on a non-TTY, and the harness runs it through a pipe)
-   prints a full readiness table + READY/NOT-READY verdict (profile · core env ·
-   URLs · real admin login · storefront-user soft-probe · tracker token · GitHub PAT
-   + upstream push perm · gh CLI). Resolve every FAIL. **Restate the readiness table
-   AND the MCP-server status as Markdown tables in your reply** (tool output is often
-   collapsed/hidden), mapping rows to surfaces (front=FRONT_URL, back=BACK_URL+admin
-   login, Jira=tracker token, Git=GitHub PAT+gh CLI) + the PASS/FAIL/WARN/verdict line.
-   For a **session-auth FAIL** (az/ADO or gh), don't make the operator type commands —
-   run `ensure-session.mjs` **in the background** (it auto-discovers the ADO tenant and
-   drives `az login --tenant <guid>` / `gh auth login --web`), let them complete the one
-   browser consent, then re-run verify-access. Truly non-interactive ⇒ a PAT instead.
-8. Done → present as an explicit labelled **Step 8**: summary + manual actions (reload
-   IDE for `.mcp.json`, pending OAuth) + first run `/qa-fix <TICKET>`.
+2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat
+   question (operator replies; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`; not via
+   AskUserQuestion / widget); (b) **tracker + code host** as one `AskUserQuestion` block
+   (independent — Azure Boards + GitHub is fine; upstream is always GitHub); (c)
+   **existing-env guard** — if `.env.<name>` exists, ask via `AskUserQuestion` to
+   **reuse** (scaffold only adds missing keys) or **new name** (re-check) — never
+   auto-pick; (d) **auth preference** as one `AskUserQuestion` block for the applicable
+   axes (github always; ado if azure tracker/host; jira if jira) — **PAT is Recommended**,
+   else browser/CLI login. The token is NOT typed in chat — the choice only decides
+   whether a token placeholder is emitted to `.env.local` (PAT) or a login is run
+   (session). **No operator / projectType / contribution-mode question** — derived later.
+3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs --tracker …
+   --client-vcs …` → `.env.<env>` (ADO_ORG/ADO_PROJECT emitted for an azure tracker OR
+   azure-repos host; **do NOT pass --project-type/--client-org** — client org is derived);
+   (3b) `scaffold-secrets.mjs` → `.env.local` (auth axes `--jira-auth`/`--ado-auth`/
+   `--github-auth`; session auth emits no token line); (3c) tell the operator **two files
+   created — fill both** (inline comments say what/where), then **pause**. Never a raw
+   account password. **End the pause with a visually unmistakable waiting banner** (e.g. a
+   blockquote `> ⏸️ ЖДУ ТЕБЯ — заполни оба файла, потом «готово»`) as the last line, no
+   tool calls after it — a plain "let me know" reads as narration, not a prompt.
+4. **Discover repos — ALWAYS** (`discover-repos.mjs --client-vcs …`, no `--client-org`):
+   classify installed modules + scan the client host for the storefront/theme repo, and
+   **derive `projectType` + `clientOrg`** → `.local-env/repos.json`
+   (`{ projectType, clientOrg, client, platform }`). Show the map; confirm. Ask ONLY on a
+   genuine ambiguity (github host + no client modules + no org → native platform vs client
+   org; or no storefront repo matched → name it).
+5. **Derive block** (`derive-context.mjs --tracker … --client-vcs …`): reads the filled
+   env + sessions, probes the upstream permission, prints JSON — auth actually present per
+   axis, `contributionMode` (push⇒direct, else fork), `forkAccount` (token owner),
+   `operator`. Capture for step 6.
+6. Write the profile (`gen-profile.mjs --repos-json .local-env/repos.json` supplies
+   projectType/clientOrg/repos; + tracker connection from the filled `.env.<env>`; +
+   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`).
+   Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
+7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
+8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`
+   (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
+   non-TTY, and the harness runs it through a pipe) prints a full readiness table +
+   READY/NOT-READY verdict (profile · core env · URLs · real admin login · storefront-user
+   soft-probe · tracker token · GitHub token + upstream perm · gh CLI). Resolve every FAIL.
+   **Restate the readiness table AND the MCP-server status as Markdown tables in your
+   reply** (tool output is often collapsed/hidden), mapping rows to surfaces
+   (front=FRONT_URL, back=BACK_URL+admin login, Jira=tracker token, Git=GitHub token+gh
+   CLI) + the PASS/FAIL/WARN/verdict line. For a **session-auth FAIL** (az/ADO or gh),
+   don't make the operator type commands — run `ensure-session.mjs` **in the background**
+   (it auto-discovers the ADO tenant and drives `az login --tenant <guid>` /
+   `gh auth login --web`), let them complete the one browser consent, then re-run.
+9. Done → present as an explicit labelled **Step 9**: summary (incl. derived projectType /
+   contributionMode) + manual actions (reload IDE for `.mcp.json`, pending OAuth) + first
+   run `/qa-fix <TICKET>`.
 
-For `--check`, skip to step 7: `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`.
+For `--check`, skip to step 8: `FORCE_COLOR=1 TEST_ENV=<env> node .claude/skills/project-init/verify-access.mjs`.

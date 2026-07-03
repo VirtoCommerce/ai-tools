@@ -127,7 +127,10 @@ function main() {
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
 
-  // Optional repo map from discover-repos.mjs ({ client: [...], platform: [...] }).
+  // Optional repo map from discover-repos.mjs
+  // ({ projectType, clientOrg, client: [...], platform: [...] }). The scan is the source
+  // of projectType + clientOrg in the redesign, so ingest them here too (explicit flags
+  // still win — they are applied after this block). Absent keys are left untouched.
   if (args["repos-json"]) {
     try {
       const repos = JSON.parse(readFileSync(resolve(args["repos-json"]), "utf-8"));
@@ -135,6 +138,8 @@ function main() {
         set("repos.client", repos.client || []);
         set("repos.platform", repos.platform || []);
       }
+      if (repos.projectType && args["project-type"] === undefined) set("projectType", repos.projectType);
+      if (repos.clientOrg && args["client-org"] === undefined) set("vcs.clientOrg", repos.clientOrg);
     } catch (err) {
       fail(`--repos-json: cannot read ${args["repos-json"]}: ${err.message}`);
     }
