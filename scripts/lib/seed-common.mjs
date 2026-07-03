@@ -20,7 +20,7 @@
 
 import { config as loadDotenv } from 'dotenv';
 import { resolveTestEnv } from './resolve-test-env.js';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
@@ -33,6 +33,19 @@ const _TEST_ENV = resolveTestEnv();
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
+
+// Per-env override promotion (mirrors config.js): any key ending in
+// `_${TEST_ENV.toUpperCase()}` is promoted to its base name. Lets `.env.local`
+// carry per-env secret variants (e.g. ADMIN_PASSWORD_VCPTCORE1) so seeders run
+// against an env whose admin password differs from the shared base. Without this,
+// `.env.local`'s base ADMIN_PASSWORD (loaded last with override) clobbers any
+// inline override and auth fails with invalid_grant.
+const _ENV_SUFFIX = `_${_TEST_ENV.toUpperCase()}`;
+for (const [key, value] of Object.entries(process.env)) {
+  if (key.endsWith(_ENV_SUFFIX) && value) {
+    process.env[key.slice(0, -_ENV_SUFFIX.length)] = value;
+  }
+}
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -117,6 +130,37 @@ export async function api(method, path, body = null, { expectStatus = [200, 201,
   return ct.includes('application/json') ? res.json() : null;
 }
 
+/**
+ * Multipart upload to platform asset storage (`api/assets?folderUrl=…`) — the SAME endpoint the
+ * White Labeling admin blades use. Returns the created asset descriptor (first item: `{ url, name, … }`).
+ * In --dry-run, skips and returns a fake descriptor. Bytes = Buffer/Uint8Array.
+ */
+export async function uploadAsset(folderUrl, fileName, bytes, contentType, { expectStatus = [200, 201] } = {}) {
+  if (DRY_RUN) { verbose(`[DRY] upload ${fileName} → ${folderUrl}`); return { url: `dry://${folderUrl}/${fileName}`, name: fileName, _dryRun: true }; }
+  const form = new FormData();
+  form.append('file', new Blob([bytes], { type: contentType || 'application/octet-stream' }), fileName);
+  const res = await fetch(`${BACK_URL}/api/assets?folderUrl=${encodeURIComponent(folderUrl)}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' }, body: form,
+  });
+  if (!expectStatus.includes(res.status)) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`upload ${fileName} → ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const j = await res.json().catch(() => null);
+  const info = Array.isArray(j) ? j[0] : j;
+  if (!info?.url) throw new Error(`upload ${fileName}: no .url in response`);
+  return info;
+}
+
+/** True if an asset URL currently serves 200 (absolute or BACK_URL-relative). Cache-busted to
+ * dodge a stale CDN negative-cache from a prior missing file. */
+export async function assetUrlOk(url) {
+  if (!url || String(url).startsWith('dry://')) return false;
+  const abs = url.startsWith('http') ? url : `${BACK_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  try { const r = await fetch(`${abs}${abs.includes('?') ? '&' : '?'}cb=${Date.now()}`); return r.status === 200; }
+  catch { return false; }
+}
+
 // --- Data helpers ---
 export function loadCsv(relPath) {
   const full = join(ROOT, relPath);
@@ -130,13 +174,10 @@ export function loadAliases() {
   return JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
 }
 
-export function writeResults(relPath, obj) {
-  if (DRY_RUN) { log(`[DRY] would write ${relPath}`); return; }
-  const full = join(ROOT, relPath);
-  mkdirSync(dirname(full), { recursive: true });
-  writeFileSync(full, JSON.stringify(obj, null, 2));
-  log(`Results → ${relPath}`);
-}
+// NOTE: _seed-results-*.json reports were removed (VCST-5406). Seeders write live platform ids
+// to aliases.{env}.json (writeLiveIdAliases / writeBackPlatformIds in user-provision.mjs); every
+// other entity resolves by static business key from the committed CSVs. Do not reintroduce a
+// generic results-file writer here — it drifts the test-data tree and the two twin surfaces.
 
 // CSV booleans are loose ('true'/'Yes'/'1' → true; '', 'No', 'false' → false).
 export const csvBool = (v, dflt = false) => {
@@ -158,23 +199,75 @@ export function iso3(code) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Primary env: its canonical IDs live committed, curated, inline in aliases.json,
+// so seeders NEVER auto-write an aliases.vcst.json override for it. Every OTHER env
+// (localhost, vcptcore, virtostart, customer envs) gets aliases.<env>.json written on
+// seed. localhost is gitignored (IDs drift each fresh-DB provision); the rest are
+// committed so a team shares them. The resolver layers this file field-by-field over
+// aliases.json (see scripts/lib/test-data-resolver.ts).
+const PRIMARY_ENV = 'vcst';
+
 /**
- * Persist runtime-resolved ids to test-data/aliases.<TEST_ENV>.json so regression
- * SUITES resolve them too (the resolver merges this env-override over aliases.json).
- * Only writes for localhost (a fresh-DB env whose ids drift every provision — the
- * file is gitignored and regenerated each seed); never touches committed env overrides.
+ * Persist runtime-resolved GUIDs to test-data/aliases.<TEST_ENV>.json so regression
+ * SUITES resolve them too. `updates` is a map of aliasName → { fieldName: value }
+ * (or a full inline object with `_inline: true`). Merges field-by-field with any
+ * existing overrides so successive seeders in one run accumulate rather than clobber.
+ * No-op for the primary env, dry-run, or an empty update.
  */
-export function writeLocalAliasOverride(updates) {
-  if ((process.env.TEST_ENV || '') !== 'localhost' || DRY_RUN) return;
-  const p = join(ROOT, 'test-data/aliases.localhost.json');
+export function writeEnvAliasOverride(updates) {
+  const env = process.env.TEST_ENV || PRIMARY_ENV;
+  if (env === PRIMARY_ENV || DRY_RUN || !updates || Object.keys(updates).length === 0) return;
+  const p = join(ROOT, `test-data/aliases.${env}.json`);
   let cur = {};
   try { if (existsSync(p)) cur = JSON.parse(readFileSync(p, 'utf8')); } catch { cur = {}; }
-  const merged = {
-    ...cur, ...updates,
-    _meta: { ...(cur._meta || {}), env: 'localhost', note: 'Auto-generated by /qa-local-env seeders — IDs drift each fresh-DB provision; gitignored.' },
+  const merged = { ...cur };
+  for (const [alias, fields] of Object.entries(updates)) {
+    merged[alias] = { ...(cur[alias] || {}), ...fields };
+  }
+  const gitignored = env === 'localhost';
+  merged._meta = {
+    ...(cur._meta || {}), env,
+    note: `Auto-generated by seed scripts — runtime GUIDs for the ${env} env${gitignored ? ' (drift each fresh-DB provision; gitignored)' : ' (committed; regenerate via npm run seed:*)'}.`,
   };
   writeFileSync(p, JSON.stringify(merged, null, 2));
-  verbose(`wrote aliases.localhost.json (${Object.keys(updates).join(', ')})`);
+  verbose(`wrote aliases.${env}.json (${Object.keys(updates).join(', ')})`);
+}
+
+/** Back-compat alias for the pre-rename callers. */
+export const writeLocalAliasOverride = writeEnvAliasOverride;
+
+/**
+ * Generic writeback: map freshly-seeded platform GUIDs onto every alias in
+ * aliases.json that points at `fileKey` (e.g. 'products/configurable-products'),
+ * then persist to aliases.<env>.json. Seeders don't need to know alias NAMES — they
+ * pass the runtime values keyed by the CSV business key + CSV column they already
+ * have in hand:
+ *
+ *   byBusinessKey = { 'CFG-003': { product_id_guid: '<guid>', configuration_id: '<guid>' }, ... }
+ *
+ * The helper reads each alias's `filter` (the business key that selects its CSV row)
+ * and `fields` (fieldName → csvColumn), and emits an override for every alias field
+ * whose CSV column has a provided runtime value. Business keys / codes / SKUs stay in
+ * the committed CSV — only the drifting GUIDs move to the env file.
+ */
+export function syncEnvAliases(fileKey, byBusinessKey) {
+  if (DRY_RUN || !byBusinessKey || Object.keys(byBusinessKey).length === 0) return;
+  const aliases = loadAliases();
+  const updates = {};
+  for (const [aliasName, def] of Object.entries(aliases)) {
+    if (!def || def.file !== fileKey || !def.filter || !def.fields) continue;
+    const key = Object.values(def.filter)[0];
+    const provided = byBusinessKey[key];
+    if (!provided) continue;
+    const override = {};
+    for (const [fieldName, csvColumn] of Object.entries(def.fields)) {
+      if (provided[csvColumn] != null && provided[csvColumn] !== '') {
+        override[fieldName] = provided[csvColumn];
+      }
+    }
+    if (Object.keys(override).length > 0) updates[aliasName] = override;
+  }
+  writeEnvAliasOverride(updates);
 }
 
 // --- From-scratch infrastructure helpers (idempotent; safe on a fresh DB) -----
@@ -289,9 +382,15 @@ export async function ensureFulfillmentCenter(api, { name = 'AGENT-TEST-Default-
  * Ensure the ElasticSearch Member index is queryable. A fresh stack has no Member
  * index, so POST /api/members/search returns 503 "all shards failed". Trigger a
  * Member reindex and poll until the search responds. Call once before any member
- * search in the b2b / impersonation seeders. Returns true if ready.
+ * search in the b2b / impersonation / users seeders. Returns true if ready.
+ *
+ * Poll budget defaults to ~3 min (18 × 10s): building a Member index from an empty
+ * DB on a cold stack routinely takes minutes, and the old 30s budget let seeders
+ * "proceed anyway" and then fail every member search (VCST-5406). Pass
+ * `{ required: true }` to make a not-ready index a hard error instead — the
+ * bootstrap orchestrator uses this so a full seed refuses to run half-broken.
  */
-export async function ensureMemberIndex(api, { tries = 6, delayMs = 5000 } = {}) {
+export async function ensureMemberIndex(api, { tries = 18, delayMs = 10000, required = false } = {}) {
   if (DRY_RUN) return true;
   const probe = async () => {
     try { await api('POST', '/api/members/search', { take: 1 }, { expectStatus: [200, 201] }); return true; }
@@ -308,6 +407,75 @@ export async function ensureMemberIndex(api, { tries = 6, delayMs = 5000 } = {})
     await sleep(delayMs);
     if (await probe()) { log(`✓ member index ready (after ${((i + 1) * delayMs) / 1000}s)`); return true; }
   }
-  log('⚠ member index still not ready after reindex — proceeding (member searches may fail)');
+  const msg = `member index still not ready after reindex + ${(tries * delayMs) / 1000}s`;
+  if (required) throw new Error(`${msg} — aborting (member-dependent seeding would fail)`);
+  log(`⚠ ${msg} — proceeding (member searches may fail)`);
   return false;
+}
+
+/* ── Post-seed / post-teardown verification (VCST-5406) ────────────────────────
+ * "Ran without error" ≠ "data is correct on this env." These read the entity back
+ * through the same surface a test uses, so a seeder can assert what it created is
+ * actually present (and a teardown can assert it's gone). Best-effort + defensive:
+ * an unknown kind or a probe error returns false rather than throwing, so a verify
+ * failure is reported, never a crash. Skipped under --dry-run (nothing was written).
+ */
+
+/**
+ * Confirm a just-created entity exists. `kind` ∈ catalog | product | pricelist |
+ * fulfillmentcenter | member | organization | contact | user. `user` matches by
+ * userName/email (pass `name`); everything else matches by id.
+ * @returns {Promise<boolean>}
+ */
+export async function verifyCreated(api, kind, id, { name } = {}) {
+  if (DRY_RUN) return true;
+  if (!id || String(id).startsWith('dry-')) return true;
+  try {
+    switch (kind) {
+      case 'catalog': {
+        const c = await api('GET', `/api/catalog/catalogs/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!c?.id;
+      }
+      case 'product': {
+        const p = await api('GET', `/api/catalog/products/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!p?.id;
+      }
+      case 'pricelist': {
+        const pl = await api('GET', `/api/pricing/pricelists/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+        return !!pl?.id;
+      }
+      case 'fulfillmentcenter': {
+        const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 200 }, { expectStatus: [200, 201] });
+        return (r?.results || r?.items || []).some((f) => f.id === id);
+      }
+      case 'member': case 'organization': case 'contact': {
+        const r = await api('POST', '/api/members/search', { objectIds: [id], take: 1 }, { expectStatus: [200, 201] });
+        return (r?.results || []).some((m) => m.id === id);
+      }
+      case 'user': {
+        const s = await api('POST', '/api/platform/security/users/search', { keyword: name || id, take: 10 }, { expectStatus: [200, 201] });
+        return (s?.results || []).some((u) => u.id === id ||
+          (u.userName || '').toLowerCase() === String(name || '').toLowerCase() ||
+          (u.email || '').toLowerCase() === String(name || '').toLowerCase());
+      }
+      default:
+        return true; // unknown kind — don't block, caller can add a probe.
+    }
+  } catch { return false; }
+}
+
+/**
+ * Confirm a teardown left zero residue. `searchFn` is a caller thunk that returns
+ * the remaining matching entities (array) or a count. Returns the residual count;
+ * 0 means a clean teardown. Reused by every `*:teardown` path.
+ * @returns {Promise<number>}
+ */
+export async function verifyRemoved(searchFn) {
+  if (DRY_RUN) return 0;
+  try {
+    const r = await searchFn();
+    if (typeof r === 'number') return r;
+    if (Array.isArray(r)) return r.length;
+    return (r?.results || r?.items || []).length;
+  } catch { return 0; }
 }

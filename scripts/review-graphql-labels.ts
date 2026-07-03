@@ -75,8 +75,16 @@ function lintFile(csvPath: string): {
       columns: true,
       skip_empty_lines: true,
       relax_column_count: false,
+      bom: true, // suite CSVs are frequently saved with a UTF-8 BOM — strip it, don't fail on it
     });
   } catch (e) {
+    // DV-019 only governs runner-native GraphQL cases. A CSV that can't be parsed
+    // and shows no runner-native markers is out of scope (e.g. a frontend suite with
+    // loose quoting) — don't emit a false S-007 for it. Only report unparseable files
+    // that plausibly carry runner-native cases we can no longer inspect.
+    if (!isRunnerNative(raw)) {
+      return { runnerNativeRows: 0, totalRows: 0, findings: [] };
+    }
     return {
       runnerNativeRows: 0,
       totalRows: 0,
@@ -117,20 +125,25 @@ function lintFile(csvPath: string): {
   return { runnerNativeRows: runnerNative, totalRows: rows.length, findings };
 }
 
+// Default scan root when no target is passed (e.g. the bare `npm run graphql:lint-labels`).
+// The linter skips non-runner-native rows, so scanning all suites is safe and thorough.
+const DEFAULT_TARGET = "regression/suites";
+
 function main() {
   const args = process.argv.slice(2);
-  if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
+  if (args.includes("-h") || args.includes("--help")) {
     console.log(`Lint runner-native GraphQL step-structure (DV-019)
 
 Usage:
-  npx tsx scripts/review-graphql-labels.ts <csv-or-dir> [<csv-or-dir>...]
+  npx tsx scripts/review-graphql-labels.ts [<csv-or-dir>...]   # defaults to ${DEFAULT_TARGET}
 
 Exit codes:
   0 = clean  |  1 = findings  |  2 = usage/IO error`);
-    process.exit(args.length === 0 ? 2 : 0);
+    process.exit(0);
   }
 
   const targets = args.filter((a) => !a.startsWith("-"));
+  if (targets.length === 0) targets.push(DEFAULT_TARGET);
   let csvs: string[] = [];
   try {
     for (const t of targets) csvs.push(...collectCsvFiles(t));

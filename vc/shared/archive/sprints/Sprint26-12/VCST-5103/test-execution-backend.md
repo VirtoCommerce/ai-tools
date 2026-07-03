@@ -51,7 +51,7 @@ Attempted to re-zero `LOYALTY_NOBAL_USER` (204 PTS → 0) and re-run MCO-GQL-005
 Full loyalty REST surface (`/docs/VirtoCommerce.Loyalty/swagger.json`, 12 paths):
 - **Operation-log: READ-ONLY** — only `POST .../operation-log/search` and `GET .../operation-log/balance/{userId}`, both `loyalty:read`. No POST/PUT/DELETE to create/adjust an operation-log entry.
 - Write verbs exist only for: `loyalty-programs` (CRUD), `loyalty-program-product-factors` (CRUD + `/factors`), `loyalty-setting` (PUT). **None set or debit a member balance.**
-- `scripts/seed-loyalty-users.mjs` has no balance call (its comment confirms it "deliberately does NOT grant any loyalty balance — starts at 0").
+- `scripts/seed-data/seed-loyalty-users.mjs` has no balance call (its comment confirms it "deliberately does NOT grant any loyalty balance — starts at 0").
 
 Balances are mutated only internally by `LoyaltyProgramHandler` earn/redeem on orders. The 204 PTS on this user accrued from earned points on prior test orders (ProcessOrdersAsync); the only API-reachable way to drain it is to place a points-redeeming order, which can't deterministically hit exactly 0 and just re-introduces drift.
 

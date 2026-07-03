@@ -206,7 +206,7 @@ PRF-GQL-041,"xProfile — requestRegistration Duplicate Email Rejected","GraphQL
       account: {
         username: ""{{ORG_USER_EMAIL}}""
         email: ""{{ORG_USER_EMAIL}}""
-        password: ""Password1!""
+        password: ""{{DEFAULT_TEST_PASSWORD}}""
       }
     }) {
       result { succeeded errors { code description } }
@@ -250,7 +250,7 @@ PRF-GQL-044,"xProfile — requestRegistration XSS in Name Fields","GraphQL > xPr
       account: {
         username: ""xss-agent-test-nonexistent@test-agent.com""
         email: ""xss-agent-test-nonexistent@test-agent.com""
-        password: ""Password1!""
+        password: ""{{DEFAULT_TEST_PASSWORD}}""
       }
     }) { result { succeeded errors { code description } } contact { firstName } account { id } }
   }
@@ -263,7 +263,7 @@ PRF-GQL-045,"xProfile — requestRegistration Result Contains requireEmailVerifi
       account: {
         username: ""{{ORG_USER_EMAIL}}""
         email: ""{{ORG_USER_EMAIL}}""
-        password: ""Password1!""
+        password: ""{{DEFAULT_TEST_PASSWORD}}""
       }
     }) {
       result { succeeded requireEmailVerification errors { code } }

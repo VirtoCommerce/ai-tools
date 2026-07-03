@@ -1,11 +1,40 @@
 {
-  "runId": "REG-2026-06-24-1325",
-  "selection": "083b",
-  "startedAt": "2026-06-24T13:25:00Z",
-  "finishedAt": "2026-06-24T13:45:00Z",
+  "runId": "REG-2026-07-02-1825",
+  "selection": "070 (Whitelabeling Storefront)",
+  "startedAt": "2026-07-02T18:25:29+02:00",
+  "finishedAt": "2026-07-02T20:15:00+02:00",
   "env": "vcst-qa",
-  "build": { "platform": "3.1039.0", "theme": "2.52.0-pr-2335", "loyalty": "pr-10", "orders": "pr-497", "xorder": "pr-43" },
+  "build": {
+    "platform": "3.1041.0",
+    "theme": "2.53.0-pr-2343",
+    "whiteLabeling": "3.1002.0",
+    "customer": "3.1013.0",
+    "xFrontend": "3.1003.0"
+  },
+  "status": "completed",
+  "outputDir": "reports/regression/REG-2026-07-02-1825/",
+  "report": "reports/regression/REG-2026-07-02-1825/regression-2026-07-02.md",
+  "qualityGate": "FAIL",
+  "totals": {"cases": 51, "pass": 33, "fail": 13, "blocked": 4, "skip": 1, "passRateExclBlockedSkip": "33/46 (72%)"},
+  "bugsFiled": 6,
+  "note": "Resumed run. Batch 1 (18:35) mis-executed against agent-pool TechFlow org (no WL branding) + refused sign-in -> only FWL-066 salvaged; all others re-run correctly against seeded WL orgs (WL-ORG-A..E) signed in as real WL users. Env left clean (store WL=ON, Electronics logo byte-identical). Shared-env concurrency observed (seed URL drift, WL_DEFAULT reset, Wave-1 bug files removed then re-filed). App Insights correlation NOT run (sandbox no network); recommend /qa-monitoring both --since=120.",
   "suites": {
-    "083b": { "status": "passed", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "cases": 7, "passed": 7, "failed": 0, "blocked": 0, "attempt": 1 }
+    "070": {
+      "status": "completed",
+      "name": "Whitelabeling Storefront",
+      "priority": "P1",
+      "testCount": 51,
+      "batches": {
+        "1-store-display-ORIG": {"status": "superseded", "valid": ["FWL-066"]},
+        "2-display-isolation": {"status": "done", "browser": "chrome", "file": "batch2-display-isolation.json"},
+        "3-menu-footer": {"status": "done", "browser": "firefox", "file": "batch3-menu-footer.json"},
+        "4-graphql-a11y": {"status": "done", "browser": "edge", "file": "batch4-graphql-a11y.json"},
+        "5-menuverify-mobile": {"status": "done", "browser": "chrome", "file": "batch5-menuverify-mobile.json"},
+        "6-responsive-perf": {"status": "done", "browser": "edge", "file": "batch6-responsive-perf.json"},
+        "7-xbrowser-cache-session": {"status": "done", "browser": "firefox", "file": "batch7-xbrowser-cache-session.json"},
+        "8-emulation-security": {"status": "done", "browser": "chrome-devtools", "file": "batch8-emulation-security.json"},
+        "9-admin-mutation": {"status": "done", "browser": "playwright-edge", "file": "batch9-admin-mutation.json"}
+      }
+    }
   }
 }

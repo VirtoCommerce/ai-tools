@@ -232,26 +232,22 @@
 [MATH] Result count > 0 for partial query
 [STATE] Products in results contain 'hoo' in name or are relevance-matched","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with results
 [CONSOLE] no TypeError or JS errors","Partial query 'hoo' returning 0 results; autocomplete not showing matches; results page empty for valid partial match; console TypeError","none","E2E-SEARCH-004, GAP-CS-07","Generated"
-"SRCH-NEW-044","Search Results Pagination - Controls Visible and Functional for Large Result Sets","Search > Pagination","High","BL-SRCH-001","","Search query returns 100+ products across multiple pages; pagination enabled in storefront config","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products
+"SRCH-NEW-044","Search Results Load More Products via Infinite Scroll for Large Result Sets","Search > Infinite Scroll","High","BL-SRCH-001","","Search query returns 100+ products across multiple scroll-loaded batches; storefront /search uses infinite scroll by design (no numbered pager, no ?page param — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and search for a broad term returning 100+ products (e.g. 'laptop')
 [KEY] press [Enter]
 [WAIT] Wait for search results page to load
-[ASSERT] Verify a result count is displayed (e.g., 'Showing 1-24 of 124 results')
-[ASSERT] Verify pagination controls are visible (page numbers or Previous/Next or Load More)
-[ACT] Click 'Next' or page 2 in the pagination controls
-[WAIT] Wait for the next page of results to load
-[ASSERT] Verify the URL or page state reflects page 2
-[ASSERT] Verify different products are shown on page 2
-[ASSERT] Verify 'Previous' or page 1 link is now active/visible
-[ACT] Click 'Previous' or page 1 to return to the first page
-[WAIT] Wait for results to reload
-[ASSERT] Verify first-page products are restored","[DOM] Result count displayed showing total items across pages
-[DOM] Pagination controls visible when total results exceed one page
-[STATE] Page 2 shows a different set of products than page 1
-[NAV] URL updates to reflect the current page
-[STATE] 'Previous' control active on page 2 and disabled or absent on page 1
-[STATE] First page products restored after clicking 'Previous'","[NETWORK] POST /graphql (searchProducts) fires with updated skip or page param on pagination click
-[NETWORK] no 4xx/5xx on pagination requests
-[CONSOLE] no TypeError or JS errors","Pagination controls absent for 100+ result query; page 2 showing same products as page 1; URL not reflecting page change; 'Previous' not navigating back; console TypeError","none","Coverage Gap Analysis; GAP-CS-18","Generated"
+[ASSERT] Verify a result count is displayed (e.g., 'Showing X of 135 results')
+[ASSERT] Verify the initial batch of product cards renders (no numbered pager or Next/Previous controls present)
+[ACT] Scroll to the bottom of the results grid
+[WAIT] Wait for the next batch of results to load (network: searchProducts with after-cursor)
+[ASSERT] Verify additional product cards are appended below the initial batch
+[ASSERT] Verify the appended cards are a different set of products than the initial batch
+[ASSERT] Verify the URL/search state (q= and any active sort/filter params) is unchanged after the scroll-load","[DOM] Result count displayed showing total items across the full result set
+[DOM] No numbered pagination or Next/Previous controls rendered (infinite scroll is the only mechanism)
+[STATE] Additional product cards appended after scrolling, distinct from the initial batch
+[NAV] URL query params (q, sort, facets) unchanged after scroll-triggered load
+[STATE] Total rendered card count increases monotonically as scrolling continues","[NETWORK] POST /graphql (searchProducts) fires on scroll with an after-cursor param (not a page/skip param)
+[NETWORK] no 4xx/5xx on scroll-triggered requests
+[CONSOLE] no TypeError or JS errors","Scrolling to the bottom does not load additional products; appended batch duplicates the initial batch; URL params reset/cleared after scroll-load; console TypeError","none","Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Generated"
 "SRCH-NEW-045","Search Results Pagination Preserves Search Term and Active Filters","Search > Pagination","High","BL-SRCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ pages","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search that returns 2+ pages of results
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -299,25 +295,25 @@
 [STATE] Numeric-only query handled gracefully by the search engine","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for numeric query
 [NETWORK] no 5xx server errors for numeric-only search
 [CONSOLE] no TypeError or JS errors","Numeric query causing 500 error; autocomplete crashing on numeric input; search results page blank for numeric query; console TypeError on numeric input","none","Coverage Gap Analysis; GAP-CS-19; ECL-14.2","Generated"
-"SRCH-NEW-048","Search Results Next and Previous Page Navigation Controls Work Correctly","Search > Pagination","High","BL-SRCH-001, BL-CAT-005","","Search returns 2+ pages of results; pagination enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning 2+ pages
+"SRCH-NEW-048","Search Results Scroll Position and Batch Continuity Across Repeated Infinite-Scroll Loads","Search > Infinite Scroll","High","BL-SRCH-001, BL-CAT-005","","Search returns enough products for 2+ scroll-loaded batches; storefront /search uses infinite scroll by design (no Previous/Next controls — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a broad search returning many products (e.g. 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
-[ASSERT] Verify result count exceeds 1 page worth of results
-[ASSERT] Verify pagination controls rendered: 'Previous' and page numbers and 'Next'
-[ASSERT] Verify 'Previous' is disabled or absent on page 1
-[ACT] Click 'Next' or page number 2
-[WAIT] Wait for page 2 to load
-[ASSERT] Verify 'Previous' is now enabled on page 2
-[ASSERT] Verify page 2 indicator is active in the pagination control
-[ACT] Click 'Previous' to return to page 1
-[WAIT] Wait for page 1 to reload
-[ASSERT] Verify page 1 indicator is active and 'Previous' is again disabled or absent","[DOM] Pagination controls with Previous and page numbers and Next visible for 2+ page result set
-[STATE] 'Previous' disabled or absent on first page; enabled on page 2
-[STATE] Active page indicator updates correctly when navigating pages
-[STATE] Correct page content shown after each navigation action
-[DOM] 'Next' button visible and enabled when more pages exist","[NETWORK] POST /graphql (searchProducts) fires with updated offset or page on each navigation
-[NETWORK] no 4xx/5xx on pagination requests
-[CONSOLE] no TypeError or JS errors","'Previous' active on first page; 'Next' absent even when results span multiple pages; page indicator not updating; same products on both pages; console TypeError","none","Coverage Gap Analysis; GAP-CS-22","Generated"
+[ASSERT] Verify result count exceeds one initial batch worth of results
+[ASSERT] Verify no 'Previous'/'Next' or numbered page controls are rendered
+[ACT] Scroll to the bottom of the results grid to trigger the first load-more
+[WAIT] Wait for the second batch to load
+[ASSERT] Verify the second batch's products are distinct from the first batch (no duplicate cards)
+[ACT] Scroll to the bottom again to trigger a second load-more
+[WAIT] Wait for the third batch to load
+[ASSERT] Verify the third batch's products are distinct from batches 1 and 2
+[ACT] Scroll back up to the top of the results grid
+[WAIT] Wait for the scroll to settle
+[ASSERT] Verify the first batch's products are still rendered at the top (no content lost/reset on scroll-up)","[DOM] No pagination or Previous/Next controls rendered at any point (infinite scroll only)
+[STATE] Each scroll-triggered batch contains products not present in prior batches (no duplicates)
+[STATE] Scrolling back to the top preserves previously loaded batches (no reset/reload)
+[STATE] Total rendered card count only grows across scroll-load cycles, never shrinks","[NETWORK] POST /graphql (searchProducts) fires on each scroll-load with an incrementing after-cursor (not a page/offset param)
+[NETWORK] no 4xx/5xx on scroll-triggered requests
+[CONSOLE] no TypeError or JS errors","Duplicate products appear across scroll-loaded batches; scrolling back to top clears earlier batches; scroll-load stops firing after the second batch; console TypeError","none","Coverage Gap Analysis; GAP-CS-22; re-authored from Previous/Next-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Generated"
 "SRCH-NEW-049","Sort Persists After Infinite-Scroll Load-More (API-driven sortings)","Search > Infinite Scroll","High","BL-SRCH-001, BL-CAT-005","","Search returns enough products to trigger infinite scroll (broad term); sort options available; storefront uses vc-frontend theme 2.52+ with API-driven sortings. NOTE: storefront uses infinite scroll on /search — there is NO numbered pager and NO ?page URL param.","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and perform a search returning many products (use a broad term like 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -429,17 +425,17 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 "SRCH-NEW-056","No-Results Suggestion Link Is Clickable and Navigates to Corrected Results","Search > No Results > Suggestions","Medium","BL-SRCH-002","ECL-3.1","DEPRECATED 2026-05-22: Did-you-mean / typo-correction suggestions are switched OFF on vcst-qa. This test depends on a UI element that the configured feature flag never renders. Reactivate this case (flip Automation_Status back to Draft) only when the typo-correction feature is enabled in the target environment. Until then the test cannot meaningfully PASS or FAIL — it would always be BLOCKED.","url={{FRONT_URL}}","[DEPRECATED] Steps preserved for re-activation. Original flow: type 'laptp' → assert 'Did you mean' link present → click it → assert corrected results.","[DEPRECATED] Original assertions preserved for re-activation.","[DEPRECATED]","[DEPRECATED]","none","GAP-S-03; ECL-3.1; BL-SRCH-002; deprecated when Did-you-mean OFF confirmed on vcst-qa 2026-05-22","Deprecated"
 "SRCH-NEW-057","Sort Dropdown Options Match API sortings (Order + Membership) and Default Shown on Clean URL (VCST-5177)","Search > Sorting > API-Driven","High","BL-CAT-005","ECL-2.1","Storefront uses vc-frontend 2.52+ theme with API-driven sortings. Store {{STORE_ID}} has at least one visible sort option configured. No ?sort param in the initial URL (clean URL → default sort selected).","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/search?q=a (broad search; no ?sort param)
 [WAIT] Wait for search results page to load
-[ASSERT] Verify sort dropdown combobox is present and visible in the toolbar (VcSelect: rendered as `<input role="combobox" readonly>` + a `role="listbox"` of `role="option"` items — not a native select)
+[ASSERT] Verify sort dropdown combobox is present and visible in the toolbar (VcSelect: rendered as `<input role=""combobox"" readonly>` + a `role=""listbox""` of `role=""option""` items — not a native select)
 [ASSERT] Verify the combobox has a non-empty accessible name (the default option label)
-[ACT] Click the combobox to open the listbox, then read all available role="option" labels
+[ACT] Click the combobox to open the listbox, then read all available role=""option"" labels
 [ASSERT] Verify exactly one option appears as selected (the default option — no ?sort in URL); the selected option is reflected in the combobox accessible name
 [ASSERT] Verify the URL does NOT contain a ?sort parameter (clean URL for default)
 [NETWORK] Capture the POST /graphql searchProducts response and read the sortings[] array
 [ASSERT] Verify the number of options rendered in the dropdown equals the number of sortings entries returned by the API (membership match)
-[ASSERT] Verify the order of options in the dropdown matches the order of sortings[] in the API response","[DOM] Sort dropdown combobox visible and populated with >= 1 option (role="combobox" + role="listbox" + role="option" items — not a native select)
+[ASSERT] Verify the order of options in the dropdown matches the order of sortings[] in the API response","[DOM] Sort dropdown combobox visible and populated with >= 1 option (role=""combobox"" + role=""listbox"" + role=""option"" items — not a native select)
 [STATE] Combobox accessible name = default option label on clean URL (isDefault=true option selected)
 [NAV] URL contains no ?sort parameter on initial load
-[DOM] role="option" count in listbox equals sortings[].length from the API response
+[DOM] role=""option"" count in listbox equals sortings[].length from the API response
 [DOM] Option order in UI matches sortings array order in API response
 [STATE] No hardcoded option labels — all labels originate from API sortings[].name","[NETWORK] POST /graphql (searchProducts) with withFacets=true returns sortings[] array
 [NETWORK] sortings[].length matches the rendered dropdown option count","Sort dropdown empty or showing hardcoded options not from API; more or fewer options rendered than sortings[] returned; default option not selected on clean URL; ?sort param present on initial clean-URL load; dropdown order differs from API sortings order","none — read-only","VCST-5177; BL-CAT-005","Draft"
@@ -468,12 +464,12 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 "SRCH-NEW-059","Hidden or Unknown ?sort Code → Dropdown Renders Blank, Results Still Returned (VCST-5177)","Search > Sorting > Blank State > Negative","High","BL-CAT-005","ECL-10.2; ECL-3.1","Storefront uses vc-frontend 2.52+ theme. A manually-crafted URL with an unknown or hidden sort code is navigated to directly (no interaction-driven path). Expected: server returns results, dropdown shows blank (no default assumed), no JS error.","url={{FRONT_URL}}","[NAV] Navigate directly to {{FRONT_URL}}/search?q=a&sort=agent-test-nonexistent-sort-xyz (unknown sort code injected via URL)
 [WAIT] Wait for search results page to load
 [ASSERT] Verify search results are displayed (totalCount > 0 OR empty-state message — not a 404 or 500)
-[ASSERT] Verify the sort combobox is present (VcSelect: role="combobox" element)
+[ASSERT] Verify the sort combobox is present (VcSelect: role=""combobox"" element)
 [ASSERT] Verify the combobox has NO accessible name (blank state — no guessed default; the combobox accessible name is empty/absent for an unknown sort code)
-[ASSERT] Verify the sort combobox is still populated with the configured sort options when opened (click combobox to open listbox; role="option" items present, just none in selected state)
+[ASSERT] Verify the sort combobox is still populated with the configured sort options when opened (click combobox to open listbox; role=""option"" items present, just none in selected state)
 [CONSOLE] Verify no unhandled JS errors or TypeError in the console
 [ASSERT] Verify the URL still contains the ?sort=agent-test-nonexistent-sort-xyz parameter (not silently rewritten)","[STATE] Sort combobox accessible name is empty/absent for unknown sort code (blank state — VcSelect renders with no accessible name when no option matches)
-[DOM] Sort combobox role="option" items still present when listbox opened (options available, just none selected)
+[DOM] Sort combobox role=""option"" items still present when listbox opened (options available, just none selected)
 [DOM] Results returned (totalCount > 0 or graceful empty state — not an error page)
 [NAV] URL retains the ?sort=agent-test-nonexistent-sort-xyz parameter
 [STATE] No guessed default applied — the unknown code must not cause the combobox to show the first option's label","[NETWORK] searchProducts fires with the unknown sort code (not rewritten by client)

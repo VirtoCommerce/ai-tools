@@ -10,7 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.3.0. Pin to v0.3.0 for stability; this branch tip is unstable.
+Forward-looking work on top of v0.4.0. Pin to a tagged release for stability; this branch tip is unstable.
+
+---
+
+## [0.4.0] — 2026-07-01
+
+Bug auto-fix + hotfix pipelines land, and the test-data layer becomes env-agnostic. Adds the `/qa-fix` interactive fix loop with its write-capable `developers/` team, the `/qa-hotfix` + `/qa-bundle-check` release pipeline, a unified env-agnostic seeder with live reconciliation gates (VCST-5406), a new `vcptcore-qa1` environment, and a Playwright bump. All changes are additive (new commands, new env vars with safe defaults, new suites) — no breaking changes.
 
 ### Added
 
@@ -23,7 +29,38 @@ Forward-looking work on top of v0.3.0. Pin to v0.3.0 for stability; this branch 
 - **`.claude/agents/knowledge/vc-module-architecture.md`** — VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the fix agents.
 - **Dedicated write token** — `GITHUB_FIX_BUGS_TOKEN` → `GH_TOKEN` for `/qa-fix` push/PR scope; QA agents stay read-only on GitHub.
 
+#### Hotfix release pipeline — PR #70
+- **`/qa-hotfix VCST-XXXX [bundles]`** (`.claude/commands/qa-hotfix.md` + skill) — release a hotfix of an already-merged-and-released fix into the bundles currently latest-stable (asks which): resolve task → linked PR → fix commit, verify MERGED + SHIPPED, then per bundle cherry-pick onto `support/<X.Y>` and trigger the repo's "Release hotfix" workflow. Deterministic core: `scripts/hotfix-precheck.ts` (read-only) + `scripts/hotfix-release.ts` (gated write). Never auto-merges; STOPs when no support branch exists. npm: `hotfix:precheck`, `hotfix:release`.
+- **`/qa-bundle-check vN | <package.json-url>`** (`.claude/commands/qa-bundle-check.md` + skill) — compare a frozen stable bundle's pinned module/Platform/Theme versions against the latest same-line hotfix on GitHub; flags only newer patches on the same major.minor line, traces each to its PR + JIRA task. Upstream discovery step for `/qa-hotfix`. npm: `bundle:check`.
+
+#### Env-agnostic seeding + test-data integrity gates (VCST-5406) — PR #76
+- **Unified company-users seeder** (`scripts/seed-data/seed-company-users.mjs` + shared lib) — replaces 4 separate seeders; one entry point for personal / B2B / cross-org memberships / impersonation / loyalty users. npm: `seed:company-users`, `seed:b2b`, `seed:b2b:memberships`, `seed:users`, `seed:impersonation`, `seed:loyalty:users` (+ teardowns). Hardened against reseed id drift; B2B teardown now sweeps all `users.csv` accounts, not just the membership CSV.
+- **`seed:bootstrap`** (`scripts/seed-data/seed-bootstrap.mjs`) — env-agnostic seed bootstrap so seeders self-resolve per `TEST_ENV` instead of assuming vcst-qa.
+- **Live reconciliation gate** — `td:reconcile` (`scripts/seed-data/reconcile-test-data.mjs`) probes the platform (catalog root exists, `.env.{ENV}` user roles have accounts, B2B users are org-scoped with no global roles, no password literals in committed CSVs). Companion static gate `td:validate` unchanged. New `td:validate:b2b` (`validate-b2b-data.mjs`) checks the B2B relational graph.
+- **Portable promotion seeding** — `seed-promotions.mjs` resolves promotion category/product by business key instead of hardcoded ids; fixture refresh for drifted ids + impersonation fixtures.
+
+#### MCP/UCP testing — PR #74
+- **UCP MVP scenarios (VCST-5126)** — live execution report + demo script; MCP/UCP testing checklist added.
+
 ### Changed
+
+#### Test-data — password-literal migration (VCST-5406)
+- **Seed-CSV password columns now carry `{{VAR}}` tokens** (`B2B_USER_PASSWORD` / `TEST_USER_PASSWORD` / `DEFAULT_TEST_PASSWORD` / per-slot `AGENT_SLOT*`), resolved at seed time from `.env.local` by `scripts/lib/user-provision.mjs` `resolvePassword()`. Real values live only in `.env.local` (gitignored) + the team secret store; safe non-prod defaults ship in `templates/.env.local.template`. `td:reconcile` secret-hygiene fails any bare password literal.
+- **B2B relational graph aligned** across `test-data/b2b/`; orphaned virtostart fixtures dropped.
+
+#### Environments
+- **`vcptcore-qa1` environment added** (`TEST_ENV=vcptcore1`, `.env.vcptcore_qa1`) — PRs #71, #73. Duplicate env config consolidated onto `.env.vcptcore_qa1`; personas wired to `seed:b2b` fixture accounts.
+
+#### Dependencies
+- **Playwright bumped to 1.61.1** + `@playwright/mcp` 0.0.77 (PR #72); `npm audit fix` resolved 4 of 5 transitive advisories.
+
+#### Tooling & suites
+- **GraphQL runner tooling repaired** (PR #75) — env loading, negative-test scoring, lint defaults.
+- **Strict CSV lint ratchet** for regression suites + search-suite fixes.
+- **Runner-native GraphQL / configurable suite fixes** — 050b2, 050b4 (`88e098b`, PR #69), 050b5 (CVAL-GQL-007 isolation with pinned addable B2B fixtures), 050i (configurable cases; VCST-5398 cancelled), 050a, 030; 072 recovered blocked configurable-product cases (CFG-PDP-019, CFG-VAR-017/019); VCST-5391 verification; VCST-5177 configurable sorting cases (PR #66).
+- **Repo housekeeping** — vcst-qa archive relocated to `vc/shared/`; sprint 26-12 plan added (PR #68).
+
+#### Auto-fix pipeline follow-ups & earlier suite sync
 
 - **`regression/suites/Backend/graphql/050j-graphql-xmarketing.csv`** — +7 cases (13 → 20): VCST-5022 `promotionCoupons` sort coverage — 3 regression guards (endDate/name honored, `;` multi-field separator, silently-ignored syntaxes) + lifecycle sync. Manifest `testCount` updated.
 - **`regression/suites/Backend/customer/026-customer-contacts.csv`** — CUST-055 updated for the new `va-filter-panel` contacts filter UI (VCST-5148, PR #24).

@@ -120,10 +120,10 @@ Organization has theme preset: Default; User account for this organization exist
 [FORMAT] Buttons use Default theme primary color
 [FORMAT] Links use Default theme accent color
 [STATE] No color conflicts or visual glitches","[CONSOLE] no CSS or JS errors","Wrong theme colors applied; Coffee theme shown when Default expected; CSS variable values don't match Default palette","none","VCST-4637","Manual"
-"FWL-020","Verify theme preset colors applied to storefront after sign-in - Coffee theme","Theme Preset","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization has theme preset: Coffee; User account for this organization exists","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Coffee Theme
+"FWL-020","Verify theme preset colors applied to storefront after sign-in - Coffee theme","Theme Preset","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_FASHION]
+Organization @td(WL_FASHION.name) has theme preset: @td(WL_FASHION.theme); User account for this organization exists","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password), admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > @td(WL_FASHION.name)
 [ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Theme Preset = Coffee
+[ASSERT] 3. Verify Theme Preset = @td(WL_FASHION.theme)
 [ACT] 4. Save
 [NAV] 5. Sign in to storefront with user from this org
 [NAV] 6. Navigate to homepage
@@ -137,80 +137,79 @@ Organization has theme preset: Coffee; User account for this organization exists
 [FORMAT] Links use Coffee theme accent color
 [STATE] Visual difference from Default theme is obvious
 [STATE] No color conflicts","[CONSOLE] no CSS or JS errors","Default theme shown instead of Coffee; CSS variables unchanged from Default; No visual difference between themes","none","VCST-4637","Manual"
-"FWL-028","Switch organization - verify branding updates dynamically (logo and favicon)","Multi-Organization","Critical","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User account is member of 2 organizations: Org A (logo-a.png, favicon-a.ico, Default theme) and Org B (logo-b.png, favicon-b.ico, Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in to storefront with multi-org user account
-[ASSERT] 2. Verify current organization is Org A
-[ASSERT] 3. Inspect header logo (should be logo-a.png)
-[ASSERT] 4. Inspect browser tab favicon (should be favicon-a.ico)
-[ASSERT] 5. Inspect theme colors (should be Default)
+"FWL-028","Switch organization - verify branding updates dynamically (logo and favicon)","Multi-Organization","Critical","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
+User account @td(WL_USER_MULTI.email) is member of 2 organizations: Org A = @td(WL_ELECTRONICS.name) (logo @td(WL_ELECTRONICS.logo), favicon @td(WL_ELECTRONICS.favicon), theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (logo @td(WL_FASHION.logo), favicon @td(WL_FASHION.favicon), theme @td(WL_FASHION.theme))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in to storefront with multi-org user account
+[ASSERT] 2. Verify current organization is @td(WL_ELECTRONICS.name) (Org A)
+[ASSERT] 3. Inspect header logo (should be @td(WL_ELECTRONICS.logo))
+[ASSERT] 4. Inspect browser tab favicon (should be @td(WL_ELECTRONICS.favicon))
+[ASSERT] 5. Inspect theme colors (should be @td(WL_ELECTRONICS.theme))
 [ACT] 6. Click organization switcher in header
-[ACT] 7. Select Org B from dropdown
+[ACT] 7. Select @td(WL_FASHION.name) (Org B) from dropdown
 [WAIT] 8. Wait for organization switch to complete
 [ASSERT] 9. Verify page refreshes or updates
-[ASSERT] 10. Inspect header logo (should NOW be logo-b.png)
-[ASSERT] 11. Inspect browser tab favicon (should NOW be favicon-b.ico)
-[ASSERT] 12. Inspect theme colors (should NOW be Coffee)
-[ACT] 13. Switch back to Org A
-[ASSERT] 14. Verify logo/favicon/theme revert to Org A branding","[DOM] Switching Org A to Org B updates header logo from logo-a.png to logo-b.png
-[DOM] Browser tab favicon updates from favicon-a.ico to favicon-b.ico
-[STATE] Theme updates from Default to Coffee
-[STATE] Switching back to Org A restores Org A branding
+[ASSERT] 10. Inspect header logo (should NOW be @td(WL_FASHION.logo), NOT stale @td(WL_ELECTRONICS.logo))
+[ASSERT] 11. Inspect browser tab favicon (should NOW be @td(WL_FASHION.favicon), NOT stale @td(WL_ELECTRONICS.favicon))
+[ASSERT] 12. Inspect theme colors (should NOW be @td(WL_FASHION.theme))
+[ACT] 13. Switch back to @td(WL_ELECTRONICS.name) (Org A)
+[ASSERT] 14. Verify logo/favicon/theme revert to Org A branding (@td(WL_ELECTRONICS.logo) / @td(WL_ELECTRONICS.favicon) / @td(WL_ELECTRONICS.theme))","[DOM] Switching Org A to Org B updates header logo from @td(WL_ELECTRONICS.logo) to @td(WL_FASHION.logo)
+[DOM] Browser tab favicon updates from @td(WL_ELECTRONICS.favicon) to @td(WL_FASHION.favicon)
+[STATE] Theme updates from @td(WL_ELECTRONICS.theme) to @td(WL_FASHION.theme)
+[STATE] Switching back to Org A restores @td(WL_ELECTRONICS.logo) / @td(WL_ELECTRONICS.favicon) / @td(WL_ELECTRONICS.theme)
 [STATE] All branding changes persist across page navigation after switch","[CONSOLE] no uncaught JS errors
-[NETWORK] new logo image loads with HTTP 200 after switch","Old org logo still shown after switch; Stale branding from previous org; Theme not updating; Flash of wrong branding during transition","none","Multi-Organization","Manual"
-"FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User is member of Org A (main menu: Products, Services, Contact) and Org B (main menu: Solutions, Partners, Support, Blog)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user
-[ASSERT] 2. Verify current org is Org A
-[ASSERT] 3. Inspect main menu links in header: Products, Services, Contact
-[ACT] 4. Hover over links to verify dropdowns (if any)
-[ACT] 5. Switch organization to Org B
+[NETWORK] @td(WL_FASHION.logo) loads with HTTP 200 after switch","Stale @td(WL_ELECTRONICS.logo)/favicon still shown after switching to Org B; Theme not updating; Flash of wrong branding during transition; Org A branding not restored on switch-back","none","Multi-Organization","Manual"
+"FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
+User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (main menu link list @td(WL_ELECTRONICS.main_menu): Home, Brands > Laptops/Phones/Tablets, Company, Support) and Org B = @td(WL_FASHION.name) (main menu link list @td(WL_FASHION.main_menu): Home, Shop > Men/Women/Kids, New Arrivals, Contact)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user
+[ASSERT] 2. Verify current org is @td(WL_ELECTRONICS.name) (Org A)
+[ASSERT] 3. Inspect main menu links in header: Home, Brands, Company, Support
+[ACT] 4. Hover over Brands to verify dropdown: Laptops, Phones, Tablets
+[ACT] 5. Switch organization to @td(WL_FASHION.name) (Org B)
 [WAIT] 6. Wait for refresh
-[ASSERT] 7. Inspect main menu links in header: should NOW show Solutions, Partners, Support, Blog
-[ASSERT] 8. Verify main menu structure changed
-[ACT] 9. Switch back to Org A
-[ASSERT] 10. Verify main menu reverts to Products, Services, Contact","[DOM] Org A displays main menu: Products, Services, Contact
-[DOM] Switching to Org B updates main menu to: Solutions, Partners, Support, Blog
+[ASSERT] 7. Inspect main menu links in header: should NOW show Home, Shop, New Arrivals, Contact
+[ASSERT] 8. Hover over Shop to verify dropdown: Men, Women, Kids
+[ACT] 9. Switch back to @td(WL_ELECTRONICS.name) (Org A)
+[ASSERT] 10. Verify main menu reverts to Home, Brands, Company, Support","[DOM] Org A (@td(WL_ELECTRONICS.main_menu)) displays main menu: Home, Brands, Company, Support
+[DOM] Switching to Org B (@td(WL_FASHION.main_menu)) updates main menu to: Home, Shop, New Arrivals, Contact
 [DOM] Switching back to Org A restores original main menu
 [STATE] No stale links from previous org displayed
 [NAV] Navigation works correctly after org switch","[CONSOLE] no uncaught JS errors","Stale main menu links from previous org; Menu not updating after switch; Navigation broken after switch","none","Multi-Organization","Manual"
-"FWL-030","Switch organization - verify footer links update dynamically","Multi-Organization","Medium","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User is member of Org A (footer: About, Support, Legal) and Org B (footer: Company, Help, Policies, Careers)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+"FWL-030","Switch organization - verify footer links update dynamically","Multi-Organization","Medium","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
+User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (footer link list @td(WL_ELECTRONICS.footer)) and Org B = @td(WL_FASHION.name) (footer link list @td(WL_FASHION.footer))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name))
 [SCROLL] 2. Scroll to footer
-[ASSERT] 3. Verify footer links: About, Support, Legal
-[ACT] 4. Switch organization to Org B
+[ASSERT] 3. Verify footer shows the 4 @td(WL_ELECTRONICS.footer) links: Privacy Policy, Terms of Service, Support, Warranty
+[ACT] 4. Switch organization to @td(WL_FASHION.name) (Org B)
 [WAIT] 5. Wait for refresh
 [SCROLL] 6. Scroll to footer
-[ASSERT] 7. Verify footer links updated: Company, Help, Policies, Careers
+[ASSERT] 7. Verify footer now shows the 4 @td(WL_FASHION.footer) links: Shipping Info, Returns & Exchanges, Size Guide, Contact Us (different from Org A)
 [ACT] 8. Switch back to Org A
-[ASSERT] 9. Verify footer reverts","[DOM] Org A displays footer: About, Support, Legal
-[DOM] Switching to Org B updates footer to: Company, Help, Policies, Careers
-[STATE] Switching back restores Org A footer
-[STATE] No stale footer links displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong hierarchy displayed","none","Multi-Organization","Manual"
-"FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User is member of Org A (Default theme) and Org B (Coffee theme)","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A with Default theme)
+[ASSERT] 9. Verify footer reverts to the @td(WL_ELECTRONICS.footer) links (Privacy Policy, Terms of Service, Support, Warranty)","[DOM] Org A footer shows @td(WL_ELECTRONICS.footer): Privacy Policy, Terms of Service, Support, Warranty
+[DOM] Switching to Org B updates footer to @td(WL_FASHION.footer): Shipping Info, Returns & Exchanges, Size Guide, Contact Us
+[STATE] Switching back restores the Org A @td(WL_ELECTRONICS.footer) links
+[STATE] No stale footer links from the other org displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong labels or order","none","Multi-Organization","Manual"
+"FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
+User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (theme @td(WL_FASHION.theme))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name) with @td(WL_ELECTRONICS.theme) theme)
 [ASSERT] 2. Inspect page CSS variables and colors
-[ASSERT] 3. Note Default theme colors (header, buttons, links)
-[ACT] 4. Switch organization to Org B (Coffee theme)
+[ASSERT] 3. Note @td(WL_ELECTRONICS.theme) theme colors (header, buttons, links)
+[ACT] 4. Switch organization to @td(WL_FASHION.name) (Org B, @td(WL_FASHION.theme) theme)
 [WAIT] 5. Wait for refresh
 [ASSERT] 6. Inspect CSS variables again
-[ASSERT] 7. Verify colors changed to Coffee theme
-[ASSERT] 8. Verify visual difference (browns/creams instead of default blue/gray)
+[ASSERT] 7. Verify colors changed to @td(WL_FASHION.theme) theme (browns/creams)
+[ASSERT] 8. Verify visual difference from @td(WL_ELECTRONICS.theme) theme
 [ACT] 9. Switch back to Org A
-[ASSERT] 10. Verify theme reverts to Default","[FORMAT] Org A displays Default theme colors
-[FORMAT] Switching to Org B applies Coffee theme (visual color change obvious)
-[FORMAT] CSS variables update to Coffee theme values
-[FORMAT] Switching back to Org A restores Default theme
+[ASSERT] 10. Verify theme reverts to @td(WL_ELECTRONICS.theme)","[FORMAT] Org A displays @td(WL_ELECTRONICS.theme) theme colors
+[FORMAT] Switching to Org B applies @td(WL_FASHION.theme) theme (visual color change obvious)
+[FORMAT] CSS variables update to @td(WL_FASHION.theme) theme values
+[FORMAT] Switching back to Org A restores @td(WL_ELECTRONICS.theme) theme
 [STATE] Theme transition is smooth (no flicker or broken styles)","[CONSOLE] no uncaught JS errors","Theme not changing after org switch; Stale theme from previous org; CSS variables not updating; Theme flicker during transition","none","Multi-Organization","Manual"
-"FWL-032","Verify branding transition is smooth during organization switch (no flash of wrong branding)","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-User is member of 2 organizations with distinct branding; Fast internet connection for accurate performance test","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Sign in with multi-org user (Org A)
+"FWL-032","Verify branding transition is smooth during organization switch (no flash of wrong branding)","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
+User @td(WL_USER_MULTI.email) is member of 2 organizations with distinct branding: Org A = @td(WL_ELECTRONICS.name) (theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (theme @td(WL_FASHION.theme)); Fast internet connection for accurate performance test","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name))
 [ACT] 2. Open browser DevTools > Network tab
-[ACT] 3. Switch organization to Org B
+[ACT] 3. Switch organization to @td(WL_FASHION.name) (Org B)
 [ASSERT] 4. Observe page reload/refresh
-[ASSERT] 5. Watch for logo/favicon loading
-[ASSERT] 6. Verify no flash of old branding during transition
+[ASSERT] 5. Watch for logo/favicon loading and theme/CSS transition
+[ASSERT] 6. Verify no flash of stale @td(WL_ELECTRONICS.logo) / @td(WL_ELECTRONICS.favicon) / @td(WL_ELECTRONICS.theme) during transition to Org B
 [ASSERT] 7. Measure time for branding to fully update
-[ACT] 8. Repeat switch 3 times (Org A to Org B and back)","[STATE] No flash of Org A logo before Org B logo loads
-[STATE] No flash of Org A favicon before Org B favicon loads
-[STATE] Theme colors transition smoothly (no jarring color flash)
+[ACT] 8. Repeat switch 3 times (Org A to Org B and back)","[STATE] No flash of the Org A logo/favicon before @td(WL_FASHION.logo) / @td(WL_FASHION.favicon) load
+[STATE] Theme colors transition smoothly from @td(WL_ELECTRONICS.theme) to @td(WL_FASHION.theme) (no jarring color flash)
 [FORMAT] Branding update completes within 1-2 seconds
 [STATE] No broken images or layout during transition","[CONSOLE] no uncaught JS errors
 [NETWORK] new branding assets load with HTTP 200 within 2 seconds","Flash of wrong branding during org switch; Broken images during transition; Transition takes more than 2 seconds; Layout breaks during switch","none","Multi-Organization Performance","Manual"

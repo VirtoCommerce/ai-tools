@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60" role="img" aria-label="Fashion Boutique">
+  <rect width="200" height="60" rx="6" fill="#C1276A"/>
+  <text x="100" y="30" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-style="italic" font-weight="bold" fill="#F4E4E9">Fashion</text>
+  <text x="100" y="46" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="9" letter-spacing="4" fill="#F4E4E9">BOUTIQUE</text>
+</svg>

@@ -10,6 +10,7 @@
         "height": 1080
       },
       "locale": "en-US",
+      "storageState": "test-results/auth/MULTI_ORG_TF_BR.json",
       "recordHar": {
         "path": "./test-results/firefox/har",
         "omitContent": true

@@ -34,7 +34,7 @@ Suite selection (one of): `smoke` (042), `critical` (042,039,044,049), `sprint` 
 ### Step 0.5: Pre-Seed (only if `--seed=<profile>` provided)
 
 1. **Reject smoke-with-seed** — if selection is `smoke`/`042`, warn and skip seeding (no coverage benefit).
-2. **Reuse check** — if `test-data/b2b/_seed-results-orgs.json` exists AND mtime within last 2 hours AND profile matches, skip and log "Seed reused from {timestamp}".
+2. **Reuse check** — if `test-data/b2b/.seed-fingerprint.json` exists AND mtime within last 2 hours AND its `kind`/`env`/`storeId` match the profile, skip and log "Seed reused from {timestamp}".
 3. **Invoke** `/qa-seed-data <profile>` (via Skill or delegate to `qa-backend-expert` with the qa-seed-data skill). Wait for completion.
 4. **Wait 60s** for reindex before proceeding to Step 1 so storefront tests see new data.
 5. **On seed failure** — abort the run; report the seeding error to the user. Do not proceed to Step 1.

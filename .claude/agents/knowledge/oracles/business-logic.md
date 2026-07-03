@@ -440,11 +440,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Data path (VCST-5028):** Permission-gated features read `pageContext.user.permissions`, which MUST be populated from the **active `OrganizationMembership.Roles`** after an org-switch. The global `ApplicationUser.Roles` is no longer the source of truth for org-scoped visibility. (BUG-A: the org-scoped JWT was correct but the `me`/GetPageContext projection returned `permissions:[]`, hiding maintainer actions — see BL-B2B-007.)
 - **Agents:** qa-frontend-expert (storefront nav), qa-backend-expert (org roles API)
 
-### BL-B2B-006: White labeling resolution order `[P1-data]`
-- **Rule:** White labeling (logos, theme preset, colors) follows a resolution chain: user-level override → organization override → store default. Organization overrides only apply when the store's White Labeling feature is enabled. If disabled, all users see the store default regardless of org settings.
-- **Verify:** Store default = Theme A. Org B has override = Theme B. User in Org B → sees Theme B. Disable White Labeling feature → same user now sees Theme A. Re-enable → Theme B returns.
-- **Violation signal:** Org override applied when White Labeling is disabled; store default shown despite active org override; user-level override not taking precedence over org.
-- **Agents:** qa-frontend-expert (visual theming), qa-backend-expert (white labeling API, store settings)
+### BL-B2B-006: White labeling resolution order `[P1-data]` → superseded by Domain 19 (BL-WL)
+- **Rule:** White labeling resolution now lives in **Domain 19 (BL-WL-001..006)**. The authoritative behavior: a **store master switch** (`WhiteLabeling.WhiteLabelingEnabled`, store-level public setting, storefront-enforced in `useWhiteLabeling.ts`) gates all WL for the store — when OFF, the storefront applies no branding at all and everyone (incl. org users) sees theme defaults (**BL-WL-003 layer 1** — this validates the original claim's spirit). When ON, org and store WL *records* are merged **per-field** with the org value preferred (**BL-WL-002**), each record filtered by its own `IsEnabled` flag (**BL-WL-003 layer 2** — a disabled/absent store record removes only the store's contribution and does NOT suppress an enabled org record). The current `GetWhiteLabelingSettingsQueryHandler` resolves **organization + store** only — a user-level override is not present in the handler (do not assume it).
+- **Verify:** See BL-WL-002 (per-field merge) and BL-WL-003 (store master switch + record-level gating).
+- **Violation signal:** Master switch OFF but WL still applied; whole-object override instead of per-field merge; an enabled org's branding suppressed merely by a disabled/absent store *record* (confusing the record flag with the master switch).
+- **Agents:** qa-frontend-expert (visual theming, master-switch gate), qa-backend-expert (white labeling xAPI, store settings)
+- **Corrected:** 2026-07-02 (TLC-2026-07-02-2043). Refined the original *"user-level override → organization → store default; org overrides only apply when store WL enabled; if disabled all users see store default regardless of org"* into the two-layer model above: the master switch (store setting, storefront-enforced) is real and does suppress org branding; the per-record `IsEnabled` merge (per-field, org-preferred) is the newly-documented xAPI detail. User-level override not found in the current handler.
 
 ### BL-B2B-007: Per-org JWT permission set is org-scoped; pageContext must match it `[P0-revenue]`
 - **Rule:** A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)
@@ -1042,6 +1043,65 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Agents:** qa-frontend-expert
 - **Source:** VCST-5162 PR vc-frontend#2309 + VCST-5009 (Skyflow); `payment.vue`, `payment-processing-authorize-net.vue` (`isActive` guard, register-after-init), `useCheckout.ts` (`allowCartPayment` finalize guard); suite 040a/040b PAY-AN-010/011/015/016/017. Multistep redirect-to-payment-page intent (single-step inline only) corrected 2026-06-25 per QA-lead direction — supersedes the earlier "inline state survives the Billing-step unmount into Review" wording; see the multistep cart-inline Place-Order block bug in `reports/bugs/open/`.
 - **Promoted:** 2026-06-15. **Corrected:** 2026-06-25.
+
+---
+
+## Domain 19: White Labeling (BL-WL)
+
+Per-org / per-store branding resolved after sign-in by the White Labeling module's xAPI query
+(`GetWhiteLabelingSettingsQueryHandler`). These supersede the WL-specific detail formerly carried by
+`BL-B2B-006` (see the cross-reference there). Grounded in `vc-module-white-labeling` source + live
+vcst-qa verification (TLC-2026-07-02-2043).
+
+### BL-WL-001: Branding is org-context & post-auth; no enabled config → platform defaults `[P2-ux]`
+- **Rule:** White Labeling branding resolves from the signed-in user's organization context after authentication. `whiteLabelingSettings(organizationId, storeId)` returns `null` when neither an enabled org setting nor an enabled store setting exists; the storefront then shows platform/theme defaults — no crash, no partial branding.
+- **Verify:** Query for an org+store with no enabled WL setting → null; storefront renders default logo/theme.
+- **Violation signal:** Error, blank header, or stale branding when no WL config exists.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** PlatformUserGuide White Labeling overview; `GetWhiteLabelingSettingsQueryHandler.Handle` → `return null` when `OrganizationSetting == null && StoreSetting == null`.
+- **Promoted:** 2026-07-02 (TLC-2026-07-02-2043).
+
+### BL-WL-002: Org & store settings merge per-field, org-preferred (NOT whole-object override) `[P1-data]`
+- **Rule:** Org and store WL settings are merged **field by field**. For each of `logoUrl`, `secondaryLogoUrl`, `faviconUrl`, `themePresetName`, `footerLinkListName`, `mainMenuLinkListName`, the org value is used when non-empty, otherwise the store value. An org that sets only some fields inherits the store's remaining fields — it is not a whole-object override.
+- **Verify:** Org sets logo only; store sets theme + footer → merged result = org logo + store theme + store footer. (Live-verified 2026-07-02: Electronics org @ B2B-store → org's Watermelon theme replaces store Coffee while other fields merge.)
+- **Violation signal:** Setting one org field blanks out store-provided fields; or org fields ignored entirely.
+- **Agents:** qa-backend-expert, qa-frontend-expert
+- **Source:** `GetCombinedWhiteLabelingSetting()` — per-field ternaries `!IsNullOrEmpty(org.X) ? org.X : store.X` + `WhiteLabelingFlags` (HasLogo/HasSecondaryLogo/HasFavicon) picks. Refines the old BL-B2B-006 "override" wording.
+- **Promoted:** 2026-07-02 (TLC-2026-07-02-2043).
+
+### BL-WL-003: Two enable layers — store master switch (storefront) vs per-record IsEnabled (xAPI) `[P1-data]`
+- **Rule:** White Labeling has **two independent enable mechanisms** at different layers:
+  1. **Store master switch** — the store-level public setting `WhiteLabeling.WhiteLabelingEnabled` (Boolean, default `true`). The storefront (`useWhiteLabeling.ts`) reads it from the current store's module settings; when `false`, `fetchWhiteLabelingSettings()` returns early and **no** white labeling is fetched or applied — logo/favicon/footer/mainMenu/theme all fall back to theme (`settings_data.json`) defaults. Because it gates the whole store context, it **suppresses org branding too** (defaults shown regardless of org settings). This is the true master switch.
+  2. **Per-record `WhiteLabelingSetting.IsEnabled`** — the enabled flag on each org/store WL *record*, applied only when the master switch is ON. It controls only whether that record joins the xAPI per-field merge (`GetWhiteLabelingSettingsQueryHandler`, `IsEnabled=true` filter). A disabled/absent **store record** removes only the store's contribution; an enabled **org record** still resolves. This is NOT a master switch.
+- **Verify:** (1) Store setting `WhiteLabeling.WhiteLabelingEnabled=false` → org user sees theme defaults (no org logo/theme); set `true` → branding returns. (2) With the master switch ON, query an enabled org against a store that has no enabled store-WL record → org logo+theme still resolve (live-verified 2026-07-02, non-destructive).
+- **Violation signal:** Master switch OFF but WL still applied; OR an enabled org's branding suppressed merely because the store *record* is disabled/absent (confusing the two layers).
+- **Agents:** qa-frontend-expert (master-switch/storefront gate), qa-backend-expert (xAPI record resolution)
+- **Source:** `WhiteLabeling.WhiteLabelingEnabled` in `ModuleConstants.Settings.General` (`StoreLevelSettings`, `IsPublic`, default true) + storefront `useWhiteLabeling.ts` (`moduleEnabled` guard in `fetchWhiteLabelingSettings`/`setWhiteLabelingSettings`); record-level filter in `GetWhiteLabelingSettingsQueryHandler` (`IsEnabled=true`) with independent org/store per-field merge.
+- **Promoted:** 2026-07-02. **Corrected:** 2026-07-02 — added the store master-switch layer per user correction; an earlier same-day draft wrongly claimed no master switch existed (that draft had only exercised the record-level layer).
+
+### BL-WL-004: Link lists resolve by name; missing → empty array, no error; footer legacy fallback `[P2-ux]`
+- **Rule:** `mainMenuLinks` resolves the link list named in `MainMenuLinkListName`; `footerLinks` resolves `FooterLinkListName`. A NULL/empty/non-existent name yields an **empty array**, HTTP 200, no `errors[]`. Footer (only) additionally falls back to a `footer-{organizationName}` list when `FooterLinkListName` is empty (backward compat); main menu has no such fallback. Querying without `mainMenuLinks` in the selection set stays valid (optional field).
+- **Verify:** Org with NULL MainMenuLinkListName → `mainMenuLinks: []`, no error; org with empty FooterLinkListName but a `footer-<orgname>` list present → footer resolves.
+- **Violation signal:** Error/500 on missing list; main-menu resolving a `main-menu-{org}` fallback that does not exist in code.
+- **Agents:** qa-backend-expert
+- **Source:** `AddMainMenuLinksAsync()` / `AddFooterLinksAsync()` (footer `footer-{organization.Name}` branch); `ExpWhiteLabelingSetting` lists default to `[]`.
+- **Promoted:** 2026-07-02 (TLC-2026-07-02-2043).
+
+### BL-WL-005: A WL setting binds to exactly one of Store XOR Organization `[P2-ux]`
+- **Rule:** Each `WhiteLabelingSetting` references exactly one of Store or Organization — never both, never neither. The Admin blade rejects both-set and neither-set, and blocks duplicate store/org bindings.
+- **Verify:** Admin WL blade with both Store & Org set → "Both Store and Organization set" error; neither → "Store or Organization must be set"; a duplicate store/org → "Duplicate Store or Organization".
+- **Violation signal:** A setting saved with both or neither binding; duplicate bindings persisted.
+- **Agents:** qa-backend-expert
+- **Source:** `en.WhiteLabeling.json` errors `store-and-organization-set` / `store-or-organization-must-be-set` / `duplicate-store-or-organization`.
+- **Promoted:** 2026-07-02 (TLC-2026-07-02-2043).
+
+### BL-WL-006: Distinct allowed upload types — logo vs favicon `[P2-ux]`
+- **Rule:** The **Logo** widget accepts **PNG / GIF / SVG**; the **Favicon** widget accepts **PNG / JPG / WEBP**. Other extensions are rejected with a "Filetype error" dialog. The sets are distinct — JPG/WEBP are favicon-only, GIF/SVG are logo-only.
+- **Verify:** Upload `.gif` logo → accepted; `.jpg` logo → rejected ("Only PNG, GIF or SVG files are allowed"); `.webp` favicon → accepted; `.svg` favicon → rejected ("Only PNG, JPG, or WEBP files are allowed").
+- **Violation signal:** Logo widget accepts JPG/WEBP; favicon widget accepts GIF/SVG; no filetype-error dialog on a disallowed extension.
+- **Agents:** qa-backend-expert
+- **Source:** `en.WhiteLabeling.json` — logo hint/filter (PNG/GIF/SVG) + favicon hint/filter (PNG/JPG/WEBP). Suite 067 WL-003/004/005.
+- **Promoted:** 2026-07-02 (TLC-2026-07-02-2043).
 
 ---
 

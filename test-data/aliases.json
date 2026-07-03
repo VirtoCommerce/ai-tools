@@ -1,9 +1,10 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.23",
+    "version": "1.5.28",
     "updated": "GENERATED",
-    "changelog_1_5_23": "VCST-5103 loyalty fixture hardening (2026-06-24). (1) Added LOY_SKU_PTS_UNIT inline alias — a 1-PTS divisor product (id d53eddf2-6a00-487b-b983-007462814526, SKU AGENT-TEST-PTS-UNIT-001) priced exactly 1 PTS in the 'Loyalty PTS price list' (currency=PTS, id 3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894), linked into the B2B virtual catalog, so a cart's PTS subtotal == addItem qty for ANY integer total. (2) Updated LOYALTY_NOBAL_USER: new memberId 31399071-7589-42a8-9013-75f805dfd48b after a teardown+reseed (security account 5a216728… reused). CRITICAL WARNING added to its _notes: the seeder CANNOT re-zero the balance — loyalty balance = sum of operation-log entries keyed on the reused security-account userId, and vc-module-loyalty exposes the op-log READ-ONLY (no write/delete, no balance set/debit API). After teardown+reseed the balance was still 404 PTS (earned on prior E2E orders). So insufficient-balance tests must be balance-RELATIVE (add LOY_SKU_PTS_UNIT at qty=balance+1), not a fixed PTS total. Equal-boundary (==balance allowed, +1 blocked, required>available strict) live-verified 2026-06-24 via LOY_SKU_PTS_UNIT @ 404/405.",
+    "changelog_1_5_25": "VCST-5028 suite 027b re-auth: added MULTI_ORG_TF_BR_EMPLOYEE and MULTI_ORG_TF_BR_MAINTAINER inline aliases. Both resolve to the same physical MULTI_ORG_TF_BR account (email/password/store_id identical) but are semantically distinct: EMPLOYEE = BuildRight org-employee context (no xapi:my_organization:edit → changeRole/lock/invite MUST reject); MAINTAINER = TechFlow org-maintainer context (should carry xapi:my_organization:edit → Finding #1 guard). Used by ORGM-003/007/012 and ORGM-017/018 respectively. resolveRole falls back to *_EMAIL/*_PASSWORD env vars; for these aliases the env vars are identical to MULTI_ORG_TF_BR_EMAIL/PASSWORD — no new .env entries needed beyond already-set MULTI_ORG_TF_BR_* vars.",
+    "changelog_1_5_23": "VCST-5135 ProductPoints fixtures REWORKED 2026-06-24: the original LOY-010..013 were eligibility-only clones with ZERO product factors (functionally hollow — earned no points). Discovered live in Admin (qa-backend-expert) that a ProductPoints program's earn rule lives in a SEPARATE sub-resource (LoyaltyProgramProductFactor = {loyaltyProgramId, productId, factor-points}, PUT /api/loyalty-program-product-factors/factors), NOT on the program entity. Replaced LOY-010..013 with a 10-program set LOY-010..019 that varies REAL mechanics: single-SKU earn (LOY-010), multi-SKU summation (LOY-011), VIP-exclusive earn (LOY-012), wholesaler tier (LOY-013), future/expired windows (LOY-014/015, new start_offset_days/end_offset_days CSV cols → ISO dates), inactive-with-factors (LOY-016), priority stacking (LOY-017), zero-points BVA (LOY-018), localized+multi (LOY-019). New fixture program-factors.csv (program_id,sku,factor) holds the per-product point values; seeder resolves SKU→productId at runtime via POST /api/catalog/search/products searchPhrase 'code:\"<SKU>\"' (no hardcoded GUIDs). seed-loyalty.mjs rebuilt to construct from GET /api/loyalty-programs/new/{type} skeleton (not brittle clone), set dates/store/localizedName/eligibility, then PUT factors. Aliases reworked: LOY_PP_ALL/VIP/WHOLESALE repointed, LOY_PP_VIP_INACTIVE→LOY_PP_INACTIVE, added LOY_PP_MULTI/FUTURE/EXPIRED/PRIORITY/ZERO/LOCALIZED. All seeded=false pending /qa-seed-data (or node scripts/seed-data/seed-loyalty.mjs).",
     "changelog_1_5_19": "Added LOYALTY_NOBAL_USER inline alias (AGENT-TEST-nobal@test.virtocommerce.com, VIP group, zero balance) for MCO-GQL-005 LOYALTY_INSUFFICIENT_BALANCE test. LOYALTY_VIP_USER balance was seeded to ~4.87M PTS on 2026-06-22 for MCO-GQL-001/003/004 — it can no longer trigger insufficient-balance at finite cart quantities. FIXTURE-SEEDING REQUIRED: provision Customer member + security account on vcst-qa with no loyalty balance before first run. email_env=LOYALTY_NOBAL_USER_EMAIL / password_env=LOYALTY_NOBAL_USER_PASSWORD must be set in .env.local.",
     "changelog_1_5_18": "Added PUSH_MSG_SEED inline alias — single source of truth for the Push Messages seed contract shared by suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI). No static recipient fixture by design (messages self-seed per run via POST /api/push-message with AGENT-TEST- topic prefix; recipients env-resolved {{ORG_USER_ID}}/{{TEST_USER_ID}} or live-discovered me.id). Captures stable contract values the suites repeated literally: endpoint, topic_prefix, sent/draft status, broadcast_group ('Registered'), epoch/future startDate, plus _notes documenting targeting field names (memberIds/targetOrganizationIds/userGroups/cultureName) and 4 model facts (status-in-body not /send, DELETE-Sent->500 known defect PUSH-034, async per-recipient inbox projection PUSH-027/028, no dedicated link field PUSH-037). Existing suites left unchanged (validated/automated); alias is available for future authoring + as the documented contract reference.",
     "changelog_1_5_17": "VCST-5028 cross-org fixture: added MULTI_ORG_TF_BR inline alias — a single AGENT-TEST member (agent-test-multiorg-20260615@yopmail.com, password Password1!) that belongs to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 isolation has a clear oracle: TechFlow (6fb516c1-…) = org-maintainer, BuildRight (fba51391-…) = org-employee. Provisioned on vcst-qa 2026-06-15: contact via POST /api/members (id 57389d49-aae0-4cce-a4b1-8e67352310e1, organizations=[TechFlow,BuildRight]); security account via POST /api/platform/security/users/create (userId 631063d0-cf9c-4a29-ac48-c015e78b9cc6, userType=Customer, storeId=B2B-store, emailConfirmed=true); two org-memberships via the NEW PR #300 route POST /api/customer/organization-memberships (hyphenated, plural). KEY LESSON: the OrganizationMembership create-body key is `userId` (the SECURITY-ACCOUNT user id, NOT the contact/member id) and roles is `roles:[{roleId,roleName}]` (NOT a flat roleIds[]). Storefront login confirmed (account menu shows TechFlow / member name). AGENT-TEST- prefix → teardown-swept. Membership ids: TechFlow eff31ad2375641548ef86449ceb9372a, BuildRight 3219a007f7fb432fb3f0b99208a4b90c.",
@@ -22,7 +23,7 @@
     "changelog_1_4_2": "Fixed OTHER_ORG_USER alias data bug — was pointing to USR-007 (same user as IMPERSONATE_TARGET, both ORG-002); now points to USR-008 Carlos Rodriguez (ORG-003 BuildRight). Unblocks IMP-018 cross-org impersonation rejection test in suite 082-auth-impersonation.csv.",
     "changelog_1_4_3": "Added inline AGENT_TEST_IMP_ROLE + AGENT_TEST_IMP_CUSTOMER aliases for IMP-033/034/038 in suite 082-auth-impersonation.csv. Inline (no CSV row) because these are ephemeral entities created+destroyed by the tests themselves — names are stable contracts, not env-resolved data.",
     "changelog_1_4_4": "Added IMPERSONATE_TARGET_MANY_ORGS (USR-020), IMPERSONATE_TARGET_BLOCKED (USR-021), IMPERSONATE_TARGET_INVITED (USR-022) for IMP-048 and IMP-049 in suite 082-auth-impersonation.csv. All three point to b2b/users.csv rows that do not yet exist — FIXTURE-SEEDING REQUIRED before first run. See _comment on each alias for provisioning instructions.",
-    "changelog_1_4_5": "Seeded IMPERSONATE_TARGET_MANY_ORGS (USR-020 — Password1!, 11 AGENT-TEST orgs), IMPERSONATE_TARGET_BLOCKED (USR-021 — Locked), IMPERSONATE_TARGET_INVITED (USR-022 — EmailUnconfirmed) on vcst-qa via scripts/seed-impersonation-targets.mjs. Added 11 supporting AGENT-TEST orgs (ORG-009..ORG-019) to b2b/organizations.csv; added 3 contacts (CON-020..CON-022) to b2b/contacts.csv; added org_count column to b2b/users.csv. Data-drift note: ORG-001 (AcmeCorp eba8b270-...) and ORG-004 (AcmeWest a1e98b8e-...) platform_ids in organizations.csv are STALE on vcst-qa as of 2026-05-14 — search returns 0 results; USR-001..USR-004 contacts now point to TechFlow's id (6fb516c1-...). USR-020 therefore uses 11 NEW AGENT-TEST orgs rather than mixing 4 base + 7 new. USR-021/022 are assigned to ORG-002 (TechFlow), not ORG-001. Observed Locked enum on platform: lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true + /api/platform/security/users/{id}/locked returns {locked:true}; status field remains null (the platform persists Locked state via Identity Framework lockoutEnd, not via UserState/status enum). Observed Invited enum: emailConfirmed=false + lockoutEnabled=true + status=null (the platform has no dedicated 'Invited' UserState enum — invitation is signaled purely by emailConfirmed=false + sendVerificationEmail trigger).",
+    "changelog_1_4_5": "Seeded IMPERSONATE_TARGET_MANY_ORGS (USR-020 — Password1!, 11 AGENT-TEST orgs), IMPERSONATE_TARGET_BLOCKED (USR-021 — Locked), IMPERSONATE_TARGET_INVITED (USR-022 — EmailUnconfirmed) on vcst-qa via scripts/seed-data/seed-impersonation-targets.mjs. Added 11 supporting AGENT-TEST orgs (ORG-009..ORG-019) to b2b/organizations.csv; added 3 contacts (CON-020..CON-022) to b2b/contacts.csv; added org_count column to b2b/users.csv. Data-drift note: ORG-001 (AcmeCorp eba8b270-...) and ORG-004 (AcmeWest a1e98b8e-...) platform_ids in organizations.csv are STALE on vcst-qa as of 2026-05-14 — search returns 0 results; USR-001..USR-004 contacts now point to TechFlow's id (6fb516c1-...). USR-020 therefore uses 11 NEW AGENT-TEST orgs rather than mixing 4 base + 7 new. USR-021/022 are assigned to ORG-002 (TechFlow), not ORG-001. Observed Locked enum on platform: lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true + /api/platform/security/users/{id}/locked returns {locked:true}; status field remains null (the platform persists Locked state via Identity Framework lockoutEnd, not via UserState/status enum). Observed Invited enum: emailConfirmed=false + lockoutEnabled=true + status=null (the platform has no dedicated 'Invited' UserState enum — invitation is signaled purely by emailConfirmed=false + sendVerificationEmail trigger).",
     "changelog_1_4_6": "Locked IMP-049 VERIFY assertions on first run (2026-05-14, qa-testing-expert, Firefox MCP, vcst-qa, platform 3.1026.0, theme vc-theme-b2b-vue-2.49.0-pr-2280-8069-80690ef2). Observed contracts — Blocked: HTTP 200 with valid Bearer token (sub=blocked, vc_operator_user_id=operator); storefront frontend wipes auth and redirects to /blocked; operator session is DESTROYED as a side effect. Invited: HTTP 200 with valid Bearer token (sub=invited, vc_operator_user_id=operator); silent success, lands on Home, operator chip + 'Back to {operator}' revert button visible in header. SECURITY GAP confirmed via REST cross-check: platform /connect/token grant_type=impersonate has NO status-based gate — direct REST callers with platform:security:loginOnBehalf permission can mint a usable 30-min Bearer for Locked OR Invited targets, bypassing the storefront UI's /blocked enforcement entirely. Full contract evidence at tests/Sprint-current/VCST-4906/evidence/imp-049/ and report at tests/Sprint-current/VCST-4906/test-execution-report-imp-049.md.",
     "changelog_1_5_0": "Post-restore (2026-05-15) status flags applied to CFG_* aliases. Affected: 28 CFG entries got _status field (shape-drift / weak-match / needs-reseed / new-survivor / unchanged). Added 3 new aliases for restored-env survivors (CFG_BED c7205a92…, CFG_BIKE_TEXT 05a8b8a5…, CFG_WEDDING_CAKE_VINTAGE c94d730a…) — these are inline (no CSV row) since they were not in the original test data. Catalog root reverted to fc596540864a41bf8ab78734ee7353a3 (the 2026-04-30 migration to 9238c387… rolled back by restore). The BOPIS testProductCatalogId reference to 9238c387… is now STALE and should be updated to fc596540… in a follow-up. 5 CFG products fully alive with matching GUIDs (Hat 38dbe95c, T-shirt 50529b79, Vintage Hoodie 4b1de1b0, Bike with options f16d3e8f, Off-Road Bike 958d0762) — 4 with shape drift (sections differ from CSV spec). 24 CFG products gone — needs-reseed flag indicates which need a fresh seed PR (Laptop, Ring, Giftbox, conditional cascades CFG-022..029). Full mapping rationale: tests/reseed-2026-05-18/cfg-alias-mapping-proposal.md.",
     "changelog_1_5_2": "Phase 1 CFG reseed complete: CFG-012/014/015/016/018 now have working products in vcst-qa with new GUIDs (da3f85bb, ae791be7, 3b0052b9, 37d2f9ae, 03f6007c respectively). All have configurations with 1 Product-type section + 2-4 options. Parent products linked into VIRTUAL_CATALOG_B2B and storefront-visible (isAvailable=true, isBuyable=true). Child option products have inventory in ffc-acme-eur-berlin-de with status=Enabled. Aliases that reference these 5 CFGs now resolve correctly. Pricelist SEED-20260518-Configurables-USD assigned to B2B-store. Aliases touched: . Phase 2 (multi-section CFG-006/013/020/021) and Phase 3 (conditional cascades CFG-022..029) deferred to follow-up PR.",
@@ -31,7 +32,8 @@
     "changelog_1_5_20": "/qa-generate-data (loyalty-mixed-cart): added 10 alias(es) [AGENT_TEST_UNPRICED_PRODUCT, LOY_MIX_01, LOY_MIX_02, LOY_MIX_03, LOY_MIX_04, LOY_MIX_05, LOY_MIX_06, LOY_MIX_07, LOY_MIX_08, LOY_MIX_09] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
     "changelog_1_5_21": "/qa-generate-data (loyalty-product-points): added 5 alias(es) [LOY_PP_BASELINE, LOY_PP_ALL, LOY_PP_VIP, LOY_PP_WHOLESALE, LOY_PP_VIP_INACTIVE] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
     "changelog_1_5_22": "VCST-5135 ProductPoints program fixtures: programs.csv updated with seeded=true + platform_ids for LOY-010..013 (seeded 2026-06-24 via seed-loyalty.mjs). LOY_PP_* alias notes updated to reflect live IDs. Added 5 VCST-5135 combination aliases [LOY_PP_5135_01..05] covering: all-customers earn (LOY-010), VIP-only earn (LOY-011 + LOYALTY_VIP_USER), VIP-only blocked (non-VIP user — LOYALTY_NOBAL_USER has no Wholesaler group so serves as non-VIP), wholesaler earn (LOY-012), inactive program blocked (LOY-013). VCST-5135 programs are already provisioned — no /qa-seed-data step needed for programs.",
-    "changelog_1_5_23": "VCST-5135 ProductPoints fixtures REWORKED 2026-06-24: the original LOY-010..013 were eligibility-only clones with ZERO product factors (functionally hollow — earned no points). Discovered live in Admin (qa-backend-expert) that a ProductPoints program's earn rule lives in a SEPARATE sub-resource (LoyaltyProgramProductFactor = {loyaltyProgramId, productId, factor-points}, PUT /api/loyalty-program-product-factors/factors), NOT on the program entity. Replaced LOY-010..013 with a 10-program set LOY-010..019 that varies REAL mechanics: single-SKU earn (LOY-010), multi-SKU summation (LOY-011), VIP-exclusive earn (LOY-012), wholesaler tier (LOY-013), future/expired windows (LOY-014/015, new start_offset_days/end_offset_days CSV cols → ISO dates), inactive-with-factors (LOY-016), priority stacking (LOY-017), zero-points BVA (LOY-018), localized+multi (LOY-019). New fixture program-factors.csv (program_id,sku,factor) holds the per-product point values; seeder resolves SKU→productId at runtime via POST /api/catalog/search/products searchPhrase 'code:\"<SKU>\"' (no hardcoded GUIDs). seed-loyalty.mjs rebuilt to construct from GET /api/loyalty-programs/new/{type} skeleton (not brittle clone), set dates/store/localizedName/eligibility, then PUT factors. Aliases reworked: LOY_PP_ALL/VIP/WHOLESALE repointed, LOY_PP_VIP_INACTIVE→LOY_PP_INACTIVE, added LOY_PP_MULTI/FUTURE/EXPIRED/PRIORITY/ZERO/LOCALIZED. All seeded=false pending /qa-seed-data (or node scripts/seed-loyalty.mjs)."
+    "changelog_1_5_27": "VCST-5406: reseeded vcst-qa via the unified scripts/seed-data/seed-company-users.mjs (all kinds) on 2026-07-01 after teardown; refreshed org + contact platform_id caches in b2b/organizations.csv (19) + b2b/contacts.csv (14) from the fresh seed. Impersonation re-seed hints now point to `npm run seed:impersonation`. B2B graph reconciles clean (org-scoped roles only, VCST-5028). Note: b2b/users.csv user platform_id caches remain informational (resolved live by email); a handful of orgs (child AcmeWest + ORG-005..008) exist in DB but lag the Member search index.",
+    "changelog_1_5_28": "VCST-5406 follow-up: swept the last password literals into the {{VAR}} pattern. 4 alias password fields (AGENT_TEST_IMP_CUSTOMER, MULTI_ORG_TF_BR[/_EMPLOYEE/_MAINTAINER]) → {{DEFAULT_TEST_PASSWORD}}; 15 real-credential Password1! literals in create-account bodies of suites 027/027b/050d → {{DEFAULT_TEST_PASSWORD}}. Left intentional test inputs alone (031/082 Test/Any/WrongPassword1! are registration/negative inputs, not stored secrets)."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -47,7 +49,7 @@
     },
     "notes": "Two required Product sections (RAM, Storage). 9 price combos $999-$1399. For GraphQL configuration suite (050i).",
     "_status": "reseeded-20260518-phase2",
-    "_status_note": "Phase 2 reseed via scripts/seed-configurable-products.mjs. Parent GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72. Config 8514ef1e-…. 2 required Product sections (RAM 3 opts + Storage 3 opts). Base $999, price math intact."
+    "_status_note": "Phase 2 reseed via scripts/seed-data/seed-configurable-products.mjs. Parent GUID dd56d770-3c3b-4e09-b126-0c2bb8bd0f72. Config 8514ef1e-…. 2 required Product sections (RAM 3 opts + Storage 3 opts). Base $999, price math intact."
   },
   "CFG_FILE_UPLOAD": {
     "file": "products/configurable-products",
@@ -63,7 +65,7 @@
     },
     "notes": "Single optional File section ('Design Upload'). Configure via ConfigurationSectionInput.fileUrls; configurationSection.type=File. Backs CFG-GQL-055b (VCST-5173 configurationSection on cart line items). Fills the documented CFG_TSHIRT File-section gap.",
     "_status": "seeded-20260624",
-    "_status_note": "Seeded 2026-06-24 via scripts/seed-configurable-products.mjs --only CFG-FILE on vcst (GUID eba4f507-f7e6-4c67-a75a-d7c8bbc0ae87, config a5bbb3b2-…) AND vcptcore-qa1 (GUID 522b191f-…, config 24e1cb45-…, File section 75d3512f-…). type:File verified live on qa1 (PR x-cart#122 deploy)."
+    "_status_note": "Seeded 2026-06-24 via scripts/seed-data/seed-configurable-products.mjs --only CFG-FILE on vcst (GUID eba4f507-f7e6-4c67-a75a-d7c8bbc0ae87, config a5bbb3b2-…) AND vcptcore-qa1 (GUID 522b191f-…, config 24e1cb45-…, File section 75d3512f-…). type:File verified live on qa1 (PR x-cart#122 deploy)."
   },
   "CFG_RING": {
     "file": "products/configurable-products",
@@ -131,11 +133,11 @@
   },
   "CFG_022_SECTIONS": {
     "_inline": true,
-    "A": "ef9827b5-715c-421c-b44a-a62b0f863afe",
-    "B": "116614bd-2643-411e-af87-f336e3c44085",
-    "C": "ef2b0922-c340-46c1-aec8-987448aab5fd",
-    "D": "62667eaf-1b11-4f31-9c95-6cbe98911dc7",
-    "config_id": "e81c1850-9139-43d5-b548-62d21806f234",
+    "A": "4374665b-997a-4c69-91f5-a519305ee1f7",
+    "B": "c0d2212e-152d-4708-ab77-e424e3ffd76e",
+    "C": "0fffe046-af4d-4372-ad62-b0b2d47708b3",
+    "D": "0a22799a-b0c6-4a58-a4e4-46f3258cb743",
+    "config_id": "db10a28b-6e11-4e01-b567-9a6de73a06fa",
     "fields": {
       "A": "A",
       "B": "B",
@@ -143,16 +145,16 @@
       "D": "D",
       "config_id": "config_id"
     },
-    "_notes": "CFG-022 Conditional Bike section IDs (re-seeded 2026-05-19 Phase 3). A=Frame Type (root, required), B=Wheel Set (dep A), D=Frame Color (dep A, sibling of B), C=Tire Type (dep B, transitive cascade). Use @td(CFG_022_SECTIONS.A) etc. in test data instead of bare section UUIDs."
+    "_notes": "CFG-022 Conditional Bike section IDs (refreshed live 2026-07-03 after full delete+reseed). A=Frame Type (root, required), B=Wheel Set (dep A), D=Frame Color (dep A, sibling of B), C=Tire Type (dep B, transitive cascade). Use @td(CFG_022_SECTIONS.A) etc. in test data instead of bare section UUIDs."
   },
   "CFG_023_SECTIONS": {
     "_inline": true,
-    "Base": "4fe5a13c-5cfe-4979-a8cd-631337a14d6a",
-    "Creme": "8e11e288-46f9-499b-a5c6-989fb34f758f",
-    "Message": "e9a1080c-5ed7-4167-b551-a2128717cdb5",
-    "Text": "e01a061b-7d24-46d1-ae52-0c26fe7a0043",
-    "Image": "9ba49ff7-32ef-4ff5-ae9b-9af783b9da70",
-    "config_id": "1854862f-f6ac-4716-a473-0712a63a09a8",
+    "Base": "d707dc6e-0087-42fb-a1fb-6819b31e729c",
+    "Creme": "162ee815-721c-433f-af67-877a491d48f3",
+    "Message": "93c47e7f-965f-4773-9b13-8df9c86f2bca",
+    "Text": "44dc99d3-e5e9-494a-bef3-9a7fbdae5159",
+    "Image": "bae96ccc-e6a8-4c9a-8563-f457d385eb31",
+    "config_id": "d38b8383-f15c-496e-91dd-026e2399f55a",
     "fields": {
       "Base": "Base",
       "Creme": "Creme",
@@ -161,29 +163,29 @@
       "Image": "Image",
       "config_id": "config_id"
     },
-    "_notes": "CFG-023 Wedding Cake section IDs (re-seeded 2026-05-19 Phase 3). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
+    "_notes": "CFG-023 Wedding Cake section IDs (refreshed live 2026-07-03 after full delete+reseed). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
   },
   "CFG_023_OPTIONS": {
     "_inline": true,
-    "Base_Default": "362c8bba-3ea2-4bc2-871b-246b4b8a9755",
-    "Creme_Default": "962c3142-f6bf-4fd5-a730-cd709999b4bb",
-    "Message_Default": "447633ca-c700-4d8a-abae-8affca19da3c",
+    "Base_Default": "42b0c2b3-5351-4e25-945b-b0cbc908d8ef",
+    "Creme_Default": "0cb0634f-b442-4fe9-82c2-a78cd9b8b8a9",
+    "Message_Default": "538b5b7f-ca99-495f-8e54-9871883d37df",
     "fields": {
       "Base_Default": "Base_Default",
       "Creme_Default": "Creme_Default",
       "Message_Default": "Message_Default"
     },
-    "_notes": "CFG-023 default option-product IDs for the 3 Product sections (verified live via productConfiguration 2026-05-20). Base_Default=Top White Bottom White, Creme_Default=Buttercreme Vanilla, Message_Default=Standard Message Tag. Use @td(CFG_023_OPTIONS.Base_Default) etc. in `option: { productId: ... }` slots of ConfigurationSectionInput. Companion to CFG_023_SECTIONS (which holds the section UUIDs)."
+    "_notes": "CFG-023 default option-product IDs for the 3 Product sections (refreshed live via productConfiguration 2026-07-03 after full delete+reseed). Base_Default=Top White Bottom White, Creme_Default=Buttercreme Vanilla, Message_Default=Standard Message Tag. Use @td(CFG_023_OPTIONS.Base_Default) etc. in `option: { productId: ... }` slots of ConfigurationSectionInput. Companion to CFG_023_SECTIONS (which holds the section UUIDs)."
   },
   "CFG_017_SECTIONS": {
     "_inline": true,
-    "Text": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
-    "config_id": "b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d",
+    "Text": "a2fc5823-2be8-44d4-9cc6-304f14470843",
+    "config_id": "f03082c4-11a8-4e62-ab66-21c62570fe40",
     "fields": {
       "Text": "Text",
       "config_id": "config_id"
     },
-    "_notes": "CFG-017 Ring section IDs (verified live via productConfiguration 2026-05-20). Single REQUIRED Text section 'Engraving Text', maxLength=30. Parent product GUID 750d36bd-5d1a-4261-898d-e506f89e5184 (resolves as @td(CFG_RING.id)). Use @td(CFG_017_SECTIONS.Text) for the section UUID instead of hardcoding."
+    "_notes": "CFG-017 Ring section IDs (refreshed live via productConfiguration 2026-07-03 after full delete+reseed). Single REQUIRED Text section 'Engraving Text', maxLength=30. Parent resolves as @td(CFG_RING.id). Use @td(CFG_017_SECTIONS.Text) for the section UUID instead of hardcoding."
   },
   "PROD_FULL_FIELD_COVERAGE": {
     "_inline": true,
@@ -1024,6 +1026,21 @@
       "roles": "roles"
     }
   },
+  "NO_IMPERSONATE_OPERATOR": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-023"
+    },
+    "fields": {
+      "userId": "platform_id",
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "org_id": "org_id",
+      "roles": "roles"
+    },
+    "notes": "IMP-015 negative operator — USR-023 Nora Manager (ORG-001 AcmeCorp), role 'Organization manager' (org-manager): full member management (edit/block/delete/invite) but NO platform:security:loginOnBehalf. Exists because org-maintainer now HAS loginOnBehalf, so SUPPORT_AGENT can no longer be the no-impersonate operator. platform_id is written back by the seeder (seed-company-users)."
+  },
   "IMPERSONATE_TARGET": {
     "file": "b2b/users",
     "filter": {
@@ -1120,179 +1137,6 @@
       "id": "org_id"
     }
   },
-  "ACME_ADMIN_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-001"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "org_id": "org_id",
-      "roles": "roles"
-    }
-  },
-  "ACME_BUYER_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-002"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "roles": "roles"
-    }
-  },
-  "ACME_VIEWER_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-003"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "roles": "roles"
-    }
-  },
-  "ACME_BUYER2_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-004"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id"
-    }
-  },
-  "TECHFLOW_ADMIN_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-006"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "org_id": "org_id"
-    }
-  },
-  "TECHFLOW_BUYER_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-007"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id"
-    }
-  },
-  "BUILDRIGHT_ADMIN_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-008"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "org_id": "org_id"
-    }
-  },
-  "BUILDRIGHT_BUYER_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-009"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id"
-    }
-  },
-  "ACMEWEST_ADMIN_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-010"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id",
-      "org_id": "org_id"
-    }
-  },
-  "EU_ADMIN_VIRTOSTART": {
-    "file": "b2b/users-virtostart",
-    "filter": {
-      "user_id": "USR-011"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "name": "user_name",
-      "platform_id": "platform_id"
-    }
-  },
-  "ORG_ACME_VIRTOSTART": {
-    "file": "b2b/organizations-virtostart",
-    "filter": {
-      "org_id": "ORG-001"
-    },
-    "fields": {
-      "name": "org_name",
-      "platform_id": "platform_id",
-      "id": "org_id",
-      "category": "business_category"
-    }
-  },
-  "ORG_TECHFLOW_VIRTOSTART": {
-    "file": "b2b/organizations-virtostart",
-    "filter": {
-      "org_id": "ORG-002"
-    },
-    "fields": {
-      "name": "org_name",
-      "platform_id": "platform_id",
-      "id": "org_id"
-    }
-  },
-  "ORG_BUILDRIGHT_VIRTOSTART": {
-    "file": "b2b/organizations-virtostart",
-    "filter": {
-      "org_id": "ORG-003"
-    },
-    "fields": {
-      "name": "org_name",
-      "platform_id": "platform_id",
-      "id": "org_id"
-    }
-  },
-  "ORG_ACMEWEST_VIRTOSTART": {
-    "file": "b2b/organizations-virtostart",
-    "filter": {
-      "org_id": "ORG-004"
-    },
-    "fields": {
-      "name": "org_name",
-      "platform_id": "platform_id",
-      "id": "org_id",
-      "parent": "parent_org_id"
-    }
-  },
   "PROD_HEADPHONES": {
     "file": "products/test-products",
     "filter": {
@@ -1305,7 +1149,7 @@
       "category": "category"
     },
     "_status": "seeded-20260519",
-    "_status_note": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=WH-001 (matches sku field). Product GUID: ac39926b-d469-45d5-8062-9a6cb0c36688 (catalog SEED-20260519-Standards, linked into virtual catalog). $99.99, stock=50, isAvailable=true."
+    "_status_note": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=WH-001 (matches sku field). Product GUID: ac39926b-d469-45d5-8062-9a6cb0c36688 (catalog SEED-20260519-Standards, linked into virtual catalog). $99.99, stock=50, isAvailable=true."
   },
   "PROD_LAPTOP": {
     "file": "products/test-products",
@@ -1319,7 +1163,7 @@
       "category": "category"
     },
     "_status": "seeded-20260519",
-    "_status_note": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=LT-001 (matches sku field). Product GUID: bce99323-467e-463a-adae-9cf0b4b5adfb. $1299.99, stock=10, isAvailable=true."
+    "_status_note": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=LT-001 (matches sku field). Product GUID: bce99323-467e-463a-adae-9cf0b4b5adfb. $1299.99, stock=10, isAvailable=true."
   },
   "PROD_SHOES": {
     "file": "products/test-products",
@@ -1398,7 +1242,7 @@
       "id": "product_id_guid",
       "configuration_id": "configuration_id"
     },
-    "_notes": "Repointed 2026-05-27 from CFG-009 (live 'Bike with options' f16d3e8f…, which drifted to [P?P!F?P!] after the 2026-05-15 restore and lost the test option set) to the freshly seeded flat bike CFG-032 (78daa2db…). One OPTIONAL Product section 'Select one' with 4 options: Seat $15 / Rear wheel ×2 ext $176 / Engine $225 / Pedals $14 (+ implicit None) — matches 072 CFG-PDP-001/002 prices exactly. Seeded via scripts/seed-bike-flat-cfg.mjs. Navigate via @td(CFG_BIKE.url) (full SEO path /seed-20260527-def-parents/…); the old /products-with-options/configurations/ prefix does NOT resolve this product. Product code = AGENT-TEST-CFG-032-20260527 (the original SKU CVQ-54616437 no longer applies)."
+    "_notes": "Repointed 2026-05-27 from CFG-009 (live 'Bike with options' f16d3e8f…, which drifted to [P?P!F?P!] after the 2026-05-15 restore and lost the test option set) to the freshly seeded flat bike CFG-032 (78daa2db…). One OPTIONAL Product section 'Select one' with 4 options: Seat $15 / Rear wheel ×2 ext $176 / Engine $225 / Pedals $14 (+ implicit None) — matches 072 CFG-PDP-001/002 prices exactly. Seeded via scripts/seed-data/seed-bike-flat-cfg.mjs. Navigate via @td(CFG_BIKE.url) (full SEO path /seed-20260527-def-parents/…); the old /products-with-options/configurations/ prefix does NOT resolve this product. Product code = AGENT-TEST-CFG-032-20260527 (the original SKU CVQ-54616437 no longer applies)."
   },
   "CFG_CONDITIONAL": {
     "file": "products/configurable-products",
@@ -1721,7 +1565,12 @@
       "name": "org_name",
       "main_menu": "main_menu_link_list_name",
       "footer": "footer_link_list_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "logo": "logo_url",
+      "secondary_logo": "secondary_logo_url",
+      "favicon": "favicon_url",
+      "id": "org_id",
+      "alias_name": "alias_name"
     }
   },
   "WL_FASHION": {
@@ -1733,7 +1582,12 @@
       "name": "org_name",
       "main_menu": "main_menu_link_list_name",
       "footer": "footer_link_list_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "logo": "logo_url",
+      "secondary_logo": "secondary_logo_url",
+      "favicon": "favicon_url",
+      "id": "org_id",
+      "alias_name": "alias_name"
     }
   },
   "WL_DEFAULT": {
@@ -1743,7 +1597,115 @@
     },
     "fields": {
       "name": "org_name",
-      "id": "org_id"
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_MENU_ONLY": {
+    "file": "white-labeling/organizations",
+    "filter": {
+      "org_id": "WL-ORG-D"
+    },
+    "fields": {
+      "name": "org_name",
+      "main_menu": "main_menu_link_list_name",
+      "footer": "footer_link_list_name",
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_FOOTER_ONLY": {
+    "file": "white-labeling/organizations",
+    "filter": {
+      "org_id": "WL-ORG-E"
+    },
+    "fields": {
+      "name": "org_name",
+      "main_menu": "main_menu_link_list_name",
+      "footer": "footer_link_list_name",
+      "theme": "theme_preset",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_ELECTRONICS": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-01"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_FASHION": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-02"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_DEFAULT": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-03"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_MULTI": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-04"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_MENU_ONLY": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-05"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    }
+  },
+  "WL_USER_FOOTER_ONLY": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-06"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
     }
   },
   "LANG_EN": {
@@ -1928,6 +1890,76 @@
       "id": "user_id"
     }
   },
+  "USER_SPECIAL_CHARS": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-011"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "_notes": "Mary-Jane O'Connor — hyphen + apostrophe in name (form/display edge case)."
+  },
+  "USER_UNICODE": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-012"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "_notes": "José García — accented/unicode name."
+  },
+  "USER_LONG_NAME": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-016"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "_notes": "Very long hyphenated name — field-length boundary."
+  },
+  "USER_LOCKED": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-019"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "_notes": "Locked account (status=Locked → lockoutEnd far future). Login must fail with locked-out message."
+  },
+  "USER_PENDING": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-020"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "_notes": "Email-verification-pending account (status=Pending → emailConfirmed=false)."
+  },
   "PROD_DEFAULT": {
     "file": "products/test-products",
     "filter": {
@@ -1964,7 +1996,7 @@
       "price": "price",
       "id": "product_id"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=QA-OOS-001 (matches sku field). Product GUID: 1585405d-b4b1-4aa2-ba6d-34c22152b933. stock=0, isAvailable=false, isInStock=false (verified xAPI). Unblocks CART-046 CART-082. Env var: OOS_SKU.",
+    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-OOS-001 (matches sku field). Product GUID: 1585405d-b4b1-4aa2-ba6d-34c22152b933. stock=0, isAvailable=false, isInStock=false (verified xAPI). Unblocks CART-046 CART-082. Env var: OOS_SKU.",
     "_status": "seeded-20260519"
   },
   "PROD_LOW_STOCK": {
@@ -1978,7 +2010,7 @@
       "price": "price",
       "id": "product_id"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=QA-LOW-001 (matches sku field). Product GUID: ca405b27-efb8-453b-9561-c8efe38c10b4. stock=5 (verified xAPI). Must not go OOS — top up if it drops. Unblocks CART-037. Env var: LOW_STOCK_SKU.",
+    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-LOW-001 (matches sku field). Product GUID: ca405b27-efb8-453b-9561-c8efe38c10b4. stock=5 (verified xAPI). Must not go OOS — top up if it drops. Unblocks CART-037. Env var: LOW_STOCK_SKU.",
     "_status": "seeded-20260519"
   },
   "PROD_PACK_SIZE": {
@@ -1992,7 +2024,7 @@
       "price": "price",
       "id": "product_id"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=QA-PACK-001 (matches sku field). Product GUID: 49567c47-5d21-4303-a11a-a53210f2e5c4. minQuantity=6, packSize=6 (verified xAPI). stock=60. Unblocks CART-054 CART-055. Env var: PACK_SIZE_SKU.",
+    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-PACK-001 (matches sku field). Product GUID: 49567c47-5d21-4303-a11a-a53210f2e5c4. minQuantity=6, packSize=6 (verified xAPI). stock=60. Unblocks CART-054 CART-055. Env var: PACK_SIZE_SKU.",
     "_status": "seeded-20260519"
   },
   "PROD_TIER_PRICED": {
@@ -2006,7 +2038,7 @@
       "price": "price",
       "id": "product_id"
     },
-    "notes": "Seeded 2026-05-19 via scripts/seed-standard-products.mjs. Platform code=QA-TIER-001 (matches sku field). Product GUID: 9d709714-7905-429f-88e9-d5e342854425. Tier pricing: list=$29.99 minQty=1, sale=$26.99 minQty=10, sale=$23.99 minQty=20. stock=200. Unblocks CART-078. Env var: TIER_PRICED_SKU.",
+    "notes": "Seeded 2026-05-19 via scripts/seed-data/seed-standard-products.mjs. Platform code=QA-TIER-001 (matches sku field). Product GUID: 9d709714-7905-429f-88e9-d5e342854425. Tier pricing: list=$29.99 minQty=1, sale=$26.99 minQty=10, sale=$23.99 minQty=20. stock=200. Unblocks CART-078. Env var: TIER_PRICED_SKU.",
     "_status": "seeded-20260519"
   },
   "PROD_CONFIGURABLE": {
@@ -2088,7 +2120,7 @@
   },
   "TECHFLOW_ORG_ADDRESSES": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
     "count": 22,
     "seeded_count": 20,
@@ -2100,11 +2132,11 @@
     "states_distinct": 15,
     "cities_distinct": 20,
     "default_address_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
-    "notes": "VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
+    "notes": "MIGRATED 2026-07-01: TechFlow was recreated by the company-users reseed (org_id 6fb516c1→96f109a7); the same 22 addresses (same ids) were re-seeded onto the new org from the 20260423 snapshot, so the per-address TECHFLOW_ADDR_* ids and counts below still resolve live. VCST-4710 OQ-5 seed 2026-04-23. 20 new addresses (10 US, 5 CA, 5 UK) plus 2 pre-existing. Unblocks SF-004/006/007/009/010/012 (list/search/facet/sort) and GQ-003/004/005 (currentOrganizationAddresses). Full per-address IDs in test-data/addresses/_seed-results-techflow-20260423.json. Known caveat: platform CustomerAddress schema has no isFavorite field — storefront MemberAddressType returns isFavorite=false for all 20 after seed; toggle favorite via storefront UI if needed."
   },
   "TECHFLOW_ADDR_US_NEW_YORK": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "79a1e94d-ae00-4214-bb6c-3440b5c702e8",
     "city": "New York",
     "regionCode": "NY",
@@ -2116,7 +2148,7 @@
   },
   "TECHFLOW_ADDR_CA_TORONTO": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "61eedc5f-5b01-4a31-8633-79b1235ca8e4",
     "city": "Toronto",
     "regionCode": "ON",
@@ -2128,7 +2160,7 @@
   },
   "TECHFLOW_ADDR_UK_LONDON": {
     "_inline": true,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "platform_id": "dbcb94fa-e085-4fe7-8cea-90ddee015a62",
     "city": "London",
     "regionCode": "ENG",
@@ -2170,7 +2202,7 @@
       "org_id": "org_id",
       "roles": "roles"
     },
-    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / Password1!) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
+    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
   },
   "ORG_XSS": {
     "file": "security/xss-payloads",
@@ -2238,10 +2270,10 @@
     "usaCount": 12,
     "nonUsaCount": 10,
     "totalCount": 22,
-    "org_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "org_name": "AGENT-TEST-Org-TechFlow-20260310",
     "snapshot": "test-data/addresses/techflow-org-addresses-state-20260423.json",
-    "notes": "VCST-4710 GAP-01 needles for checkout address-popup search/facet/sort. All needles derived from existing TechFlow snapshot (no new seeding required, 2026-04-30). Counts: USA=12, CAN=5, GBR=5, total=22. Per project_address_state_facet.md, state/province facet only renders for USA/CAN — GBR addresses must hide it. Multi-match needles guarantee >1 row to validate filter behavior. Re-snapshot to a NEW filename if address set changes; do NOT mutate the 20260423 file."
+    "notes": "MIGRATED 2026-07-01: TechFlow org_id 6fb516c1→96f109a7 (company-users reseed); the same 22 addresses were re-seeded onto the new org, so needles/counts/snapshot below remain valid. VCST-4710 GAP-01 needles for checkout address-popup search/facet/sort. All needles derived from existing TechFlow snapshot (no new seeding required, 2026-04-30). Counts: USA=12, CAN=5, GBR=5, total=22. Per project_address_state_facet.md, state/province facet only renders for USA/CAN — GBR addresses must hide it. Multi-match needles guarantee >1 row to validate filter behavior. Re-snapshot to a NEW filename if address set changes; do NOT mutate the 20260423 file."
   },
   "COUPONS": {
     "_inline": true,
@@ -2327,7 +2359,7 @@
     "targetCustomerAlias": "TECHFLOW_BUYER",
     "targetCustomerEmail": "test-david.kim-20260310@test-agent.com",
     "targetCustomerUserId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b",
-    "targetCustomerOrgId": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
+    "targetCustomerOrgId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
     "targetCustomerOrgName": "AGENT-TEST-Org-TechFlow-20260310",
     "permission_key": "fallback:Administrator-role",
     "notes": "VCST-4725 GAP-09 Page Builder preview impersonation. PROVISIONED 2026-04-30. Created via POST /api/platform/security/users/create with isAdministrator=true. AGENT-TEST- prefixed (cleanup via /qa-seed-data teardown). Credentials live in .env (IMPERSONATION_ADMIN_EMAIL/PASSWORD) per feedback_agents_read_env_creds — NEVER inline plaintext. CAVEAT: live Platform permissions registry has 0 matches for /impersonat/i across 301 perms — exact permission key for Page Builder impersonation could not be resolved within the 5-minute investigation budget. Falling back to Administrator role (isAdministrator=true) which grants the superset. If a granular permission key is later identified (likely shipped by a CMS / Page Builder / x-portal module), update this alias and downgrade the role. Target customer reuses TECHFLOW_BUYER (USR-007) — no new customer created; orgId is the existing seeded TechFlow org."
@@ -2378,8 +2410,8 @@
     "userId": "1eb2fa8ac6574541afdb525833dadb46",
     "memberId": null,
     "email": "admin@vc-demostore.com",
-    "email_env": "(none — userName 'admin' is the platform login, not an email; resolved from .env ADMIN)",
-    "email_value_source": "GET /api/platform/security/users/admin (admin userType='Administrator' carries no contact/email row in QA env beyond the static demo-store value)",
+    "email_env": "ADMIN",
+    "email_value_source": "GET /api/platform/security/users/admin (admin userType='Administrator'). email_env=ADMIN because the platform OAuth2 password-grant uses the literal username 'admin' (not an email address); $ADMIN env var holds that username string. The static demo-store email 'admin@vc-demostore.com' is informational only and cannot be used for token acquisition.",
     "password_env": "ADMIN_PASSWORD",
     "userName_env": "ADMIN",
     "isAdministrator": true,
@@ -2652,9 +2684,9 @@
   },
   "AGENT_TEST_IMP_CUSTOMER": {
     "_inline": true,
-    "_comment": "Ephemeral test customer user created and destroyed by IMP-034/038. REQUIRED provisioning when (re)creating via Admin SPA: (1) Security > Users > Add (Account type=Customer, Status=Approved, Password=Password1!, no roles) → Save. (2) On the user-DETAIL blade (NOT Add dialog), set Container store=B2B-store → Save again (without B2B-store the user cannot authenticate against the storefront). (3) Create an associated Contact record (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). (4) Assign AGENT_TEST_IMP_ROLE. Password is the standard test password (Password1!) — see user_test_accounts memory.",
+    "_comment": "Ephemeral test customer user created and destroyed by IMP-034/038. REQUIRED provisioning when (re)creating via Admin SPA: (1) Security > Users > Add (Account type=Customer, Status=Approved, Password={{DEFAULT_TEST_PASSWORD}}, no roles) → Save. (2) On the user-DETAIL blade (NOT Add dialog), set Container store=B2B-store → Save again (without B2B-store the user cannot authenticate against the storefront). (3) Create an associated Contact record (Customers > Contacts > Add, link to this user account — required for B2B storefront flows). (4) Assign AGENT_TEST_IMP_ROLE. Password is the standard test password ({{DEFAULT_TEST_PASSWORD}}) — see user_test_accounts memory.",
     "email": "agent-test-imp-customer@test-agent.com",
-    "password": "Password1!",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
     "display_name": "Agent Test Impersonation Customer",
     "account_type": "Customer",
     "role_name": "AGENT-TEST-imp-role",
@@ -2672,7 +2704,7 @@
       "name": "user_name",
       "org_count": "org_count"
     },
-    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user is member of 11 AGENT-TEST Active orgs (ORG-009..ORG-019: BMW-Group, Bence-and-Family, Brand-Specials, Cypress-Company-Kft, Elena-Company, Fill-Fillips-Company, Graceland-Boots-Shoes, Hillcrest-Holdings, Ironwood-Industries, Juniper-Junction, Kingsbridge-Imports). Exercises org-switcher scroll+search behavior in IMP-048. Note: vcst-qa data drift on 2026-05-14 — original ORG-001 AcmeCorp + ORG-004 AcmeWest no longer exist in live DB, so this user uses 11 fresh AGENT-TEST orgs rather than mixing 4 base + 7 new. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent). Storefront verification: sign in with AGENT-TEST-imp-target-many-orgs-20260514@test-agent.com / Password1!, click org switcher in top header; should show 11 rows with scroll + searchable partial match."
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-data/seed-impersonation-targets.mjs). Target user is member of 11 AGENT-TEST Active orgs (ORG-009..ORG-019: BMW-Group, Bence-and-Family, Brand-Specials, Cypress-Company-Kft, Elena-Company, Fill-Fillips-Company, Graceland-Boots-Shoes, Hillcrest-Holdings, Ironwood-Industries, Juniper-Junction, Kingsbridge-Imports). Exercises org-switcher scroll+search behavior in IMP-048. Note: vcst-qa data drift on 2026-05-14 — original ORG-001 AcmeCorp + ORG-004 AcmeWest no longer exist in live DB, so this user uses 11 fresh AGENT-TEST orgs rather than mixing 4 base + 7 new. To re-seed (e.g. after DB refresh), run: npm run seed:impersonation (idempotent). Storefront verification: sign in with AGENT-TEST-imp-target-many-orgs-20260514@test-agent.com / {{DEFAULT_TEST_PASSWORD}}, click org switcher in top header; should show 11 rows with scroll + searchable partial match."
   },
   "IMPERSONATE_TARGET_BLOCKED": {
     "file": "b2b/users",
@@ -2684,7 +2716,7 @@
       "email": "email",
       "name": "user_name"
     },
-    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user whose platform account is Locked at the user level — distinct from ORG-006 (suspended org). Required by IMP-049 Part A. Observed platform encoding of 'Locked': lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true; GET /api/platform/security/users/{id}/locked returns {\"locked\":true}; UserState/status remains null (the platform uses ASP.NET Core Identity's lockoutEnd field, NOT a separate enum). User belongs to ORG-002 (TechFlow) — the user-level Locked status is the variable under test, not org status. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent — re-applies lock via POST /api/platform/security/users/{id}/lock). LOCKED CONTRACT 2026-05-14 (IMP-049 Part A): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). The platform OAuth endpoint has NO status-based gate — Locked accounts CAN be impersonated at the API level. The storefront frontend detects the Locked status downstream, wipes its own auth state, and redirects to /blocked (heading 'Your account is blocked'). Operator session is destroyed in the process. Direct REST callers bypass the /blocked redirect entirely. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-data/seed-impersonation-targets.mjs). Target user whose platform account is Locked at the user level — distinct from ORG-006 (suspended org). Required by IMP-049 Part A. Observed platform encoding of 'Locked': lockoutEnd='9999-12-31T23:59:59.9999999+00:00' + lockoutEnabled=true; GET /api/platform/security/users/{id}/locked returns {\"locked\":true}; UserState/status remains null (the platform uses ASP.NET Core Identity's lockoutEnd field, NOT a separate enum). User belongs to ORG-002 (TechFlow) — the user-level Locked status is the variable under test, not org status. To re-seed (e.g. after DB refresh), run: npm run seed:impersonation (idempotent — re-applies lock via POST /api/platform/security/users/{id}/lock). LOCKED CONTRACT 2026-05-14 (IMP-049 Part A): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). The platform OAuth endpoint has NO status-based gate — Locked accounts CAN be impersonated at the API level. The storefront frontend detects the Locked status downstream, wipes its own auth state, and redirects to /blocked (heading 'Your account is blocked'). Operator session is destroyed in the process. Direct REST callers bypass the /blocked redirect entirely. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
   },
   "IMPERSONATE_TARGET_INVITED": {
     "file": "b2b/users",
@@ -2696,7 +2728,7 @@
       "email": "email",
       "name": "user_name"
     },
-    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-impersonation-targets.mjs). Target user who was Invited (verification email sent) but never completed email verification. Observed platform encoding of 'Invited': emailConfirmed=false + sendVerificationEmail has been issued; the VC platform has NO dedicated 'Invited' UserState enum — invitation state is signaled purely by emailConfirmed=false. status/userState fields remain null. User belongs to ORG-002 (TechFlow). The platform_id resolves to a valid user record so /account/impersonate/{userId} receives a real target with verification pending. To re-seed (e.g. after DB refresh), run: node scripts/seed-impersonation-targets.mjs (idempotent — re-issues sendVerificationEmail). The dummy password Password1! is set but the user should be treated as not having a usable password since email verification gates first sign-in. LOCKED CONTRACT 2026-05-14 (IMP-049 Part B): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). emailConfirmed=false does NOT gate the impersonate grant. Impersonation succeeds silently — storefront lands on Home, header chrome shows operator chip + 'Back to {operator}' revert button. Operator can fully act as the Invited user. May or may not be by design depending on the desired support workflow. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
+    "_comment": "SEEDED on vcst-qa 2026-05-14 (scripts/seed-data/seed-impersonation-targets.mjs). Target user who was Invited (verification email sent) but never completed email verification. Observed platform encoding of 'Invited': emailConfirmed=false + sendVerificationEmail has been issued; the VC platform has NO dedicated 'Invited' UserState enum — invitation state is signaled purely by emailConfirmed=false. status/userState fields remain null. User belongs to ORG-002 (TechFlow). The platform_id resolves to a valid user record so /account/impersonate/{userId} receives a real target with verification pending. To re-seed (e.g. after DB refresh), run: npm run seed:impersonation (idempotent — re-issues sendVerificationEmail). The dummy password {{DEFAULT_TEST_PASSWORD}} is set but the user should be treated as not having a usable password since email verification gates first sign-in. LOCKED CONTRACT 2026-05-14 (IMP-049 Part B): POST /connect/token grant_type=impersonate user_id=<this> returns HTTP 200 with a valid 30-min Bearer (sub=this, vc_operator_user_id=operator). emailConfirmed=false does NOT gate the impersonate grant. Impersonation succeeds silently — storefront lands on Home, header chrome shows operator chip + 'Back to {operator}' revert button. Operator can fully act as the Invited user. May or may not be by design depending on the desired support workflow. See tests/Sprint-current/VCST-4906/evidence/imp-049/ for token response bodies + screenshots."
   },
   "CFG_BED": {
     "id": "c7205a92-94c2-49f9-9049-ed3cfcb3a70b",
@@ -2764,7 +2796,7 @@
       "group": "group",
       "memberId": "memberId"
     },
-    "_notes": "VCST-5103 MCO-GQL-005 fixture — a VIP-group Customer storefront user intended to hold a ZERO loyalty balance for LOYALTY_INSUFFICIENT_BALANCE testing (LOYALTY_VIP_USER has ~4.87M PTS and cannot trigger insufficient-balance at finite cart quantity). RESEEDED 2026-06-24 via scripts/seed-loyalty-users.mjs --teardown && (re-seed): new member 31399071-7589-42a8-9013-75f805dfd48b; security account 5a216728-c49f-4c4b-b611-227757f071c1 is REUSED (deterministic by email), groups=['VIP'], userType=Customer, storeId=B2B-store. Creds in .env.local: LOYALTY_NOBAL_USER_EMAIL / LOYALTY_NOBAL_USER_PASSWORD. AGENT-TEST- prefix → /qa-seed-data teardown sweeps it. ⚠ BALANCE RE-DRIFTS AND THE SEEDER CANNOT RE-ZERO IT: the loyalty balance is the sum of loyalty-program operation-log entries keyed on the SECURITY-ACCOUNT userId (5a216728…), which the module exposes READ-ONLY (GET /api/loyalty-program-operation-log/balance/{userId}, POST .../search) — there is NO operation-log write/delete and NO balance set/debit API anywhere in vc-module-loyalty. seed-loyalty-users.mjs deletes+recreates the member/account but REUSES the same security-account id, so prior Earned entries survive and the balance is NOT reset (verified 2026-06-24: after teardown+reseed the balance was still 404 PTS, accrued from earned points on E2E/test orders CO260624-00020/21 + others). Whenever the loyalty E2E suite earns points on this user the balance grows again. CONSEQUENCE: MCO-GQL-005 as-written (PTS subtotal fixed at 200) only blocks when the live balance < 200; at balance 404 it (correctly) does NOT block and the order places — a fixture-drift FAIL, not a product defect. DURABLE FIXES (pick one): (a) make MCO-GQL-005's PTS quantity balance-relative — read loyaltyBalance(me.id) then add the 1-PTS divisor product LOY_SKU_PTS_UNIT at qty = balance+1 (suite-CSV edit, owner test-mgmt); or (b) add a balance-reset capability to vc-module-loyalty (operation-log purge / balance-set endpoint — code change). The equal-boundary behaviour (== balance allowed, +1 blocked, required>available strict) was live-verified 2026-06-24 using LOY_SKU_PTS_UNIT at qty 404 (allowed) / 405 (LOYALTY_INSUFFICIENT_BALANCE, required=405, available=404.0000) — this is the authoritative BL-LOY-008 proof."
+    "_notes": "VCST-5103 MCO-GQL-005 fixture — a VIP-group Customer storefront user intended to hold a ZERO loyalty balance for LOYALTY_INSUFFICIENT_BALANCE testing (LOYALTY_VIP_USER has ~4.87M PTS and cannot trigger insufficient-balance at finite cart quantity). RESEEDED 2026-06-24 via scripts/seed-data/seed-loyalty-users.mjs --teardown && (re-seed): new member 31399071-7589-42a8-9013-75f805dfd48b; security account 5a216728-c49f-4c4b-b611-227757f071c1 is REUSED (deterministic by email), groups=['VIP'], userType=Customer, storeId=B2B-store. Creds in .env.local: LOYALTY_NOBAL_USER_EMAIL / LOYALTY_NOBAL_USER_PASSWORD. AGENT-TEST- prefix → /qa-seed-data teardown sweeps it. ⚠ BALANCE RE-DRIFTS AND THE SEEDER CANNOT RE-ZERO IT: the loyalty balance is the sum of loyalty-program operation-log entries keyed on the SECURITY-ACCOUNT userId (5a216728…), which the module exposes READ-ONLY (GET /api/loyalty-program-operation-log/balance/{userId}, POST .../search) — there is NO operation-log write/delete and NO balance set/debit API anywhere in vc-module-loyalty. seed-loyalty-users.mjs deletes+recreates the member/account but REUSES the same security-account id, so prior Earned entries survive and the balance is NOT reset (verified 2026-06-24: after teardown+reseed the balance was still 404 PTS, accrued from earned points on E2E/test orders CO260624-00020/21 + others). Whenever the loyalty E2E suite earns points on this user the balance grows again. CONSEQUENCE: MCO-GQL-005 as-written (PTS subtotal fixed at 200) only blocks when the live balance < 200; at balance 404 it (correctly) does NOT block and the order places — a fixture-drift FAIL, not a product defect. DURABLE FIXES (pick one): (a) make MCO-GQL-005's PTS quantity balance-relative — read loyaltyBalance(me.id) then add the 1-PTS divisor product LOY_SKU_PTS_UNIT at qty = balance+1 (suite-CSV edit, owner test-mgmt); or (b) add a balance-reset capability to vc-module-loyalty (operation-log purge / balance-set endpoint — code change). The equal-boundary behaviour (== balance allowed, +1 blocked, required>available strict) was live-verified 2026-06-24 using LOY_SKU_PTS_UNIT at qty 404 (allowed) / 405 (LOYALTY_INSUFFICIENT_BALANCE, required=405, available=404.0000) — this is the authoritative BL-LOY-008 proof."
   },
   "LOY_SKU_PTS_UNIT": {
     "_inline": true,
@@ -2785,16 +2817,16 @@
   },
   "MULTI_ORG_TF_BR": {
     "_inline": true,
-    "id": "6ac04636-e816-48b3-b456-2dc202301187",
-    "userId": "4159875a-dcd6-4d3b-9e0e-8775bfb45f41",
+    "id": "86b8595a-3313-4a06-8752-38e8cd73b613",
+    "userId": "7174c560-d6e6-428a-9c4e-f8078ab754b0",
     "email": "agent-test-multiorg-20260615@yopmail.com",
-    "password": "Password1!",
-    "org_techflow_id": "6fb516c1-07f3-4af4-be5e-35961e3f7993",
-    "org_buildright_id": "fba51391-b652-4dbb-b178-aa2d98d2ceed",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "org_techflow_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "org_buildright_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
     "techflow_role": "org-maintainer",
     "buildright_role": "org-employee",
-    "techflow_membership_id": "c172543de8a949ec9971006379c39456",
-    "buildright_membership_id": "4dfa75e0f9464b6db07800025cac50c8",
+    "techflow_membership_id": "0e3432270f2e409a8d2d05de3c4c1768",
+    "buildright_membership_id": "3a09bf010b634e9594da9f6ad129b7f6",
     "fields": {
       "id": "id",
       "userId": "userId",
@@ -2807,8 +2839,32 @@
       "techflow_membership_id": "techflow_membership_id",
       "buildright_membership_id": "buildright_membership_id"
     },
-    "_comment": "VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password Password1!. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
+    "_comment": "VCST-5028 cross-org fixture (vcst-qa, re-seeded 2026-06-15). ONE AGENT-TEST member belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles so AC1 org-isolation has a clear oracle: TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv → re-seed/refresh idempotently via `npm run seed:b2b:memberships` (IDs above are platform-assigned and change on each re-seed; refresh them from the run's _seed-results-orgs-{date}.json). `id` = contact/member platform id; `userId` = the security-account user id (the field POST /api/customer/organization-memberships keys on — NOT the contact id). Password {{DEFAULT_TEST_PASSWORD}}. Auth works via plain /connect/token password grant WITH storeId=B2B-store (a no-store grant returns user_cannot_login_in_store). AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
     "_notes": "Membership create payload shape that worked: POST /api/customer/organization-memberships  body {\"userId\":\"631063d0-…\",\"organizationId\":\"<orgId>\",\"organizationName\":\"<name>\",\"roles\":[{\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\"}]} → 200. Read back via POST /api/customer/organization-memberships/search {\"userId\":\"631063d0-…\"} → totalCount 2."
+  },
+  "MULTI_ORG_TF_BR_EMPLOYEE": {
+    "_inline": true,
+    "email": "agent-test-multiorg-20260615@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id"
+    },
+    "_notes": "VCST-5028 role-specific auth alias for MULTI_ORG_TF_BR account authenticated as BuildRight org-employee. Physical account is identical to MULTI_ORG_TF_BR (same email/password/storeId). This alias exists to make the test intent explicit: the caller has org-employee role in BuildRight — which lacks xapi:my_organization:edit permission, so changeOrganizationContactRole and inviteUser MUST reject this JWT. Cases: ORGM-003 (changeRole unauthorized), ORGM-007 (lockContact unauthorized), ORGM-012 (inviteUser unauthorized). resolveRole in scripts/lib/graphql-auth.ts resolves via email_env=MULTI_ORG_TF_BR_EMPLOYEE_EMAIL / password_env=MULTI_ORG_TF_BR_EMPLOYEE_PASSWORD with store_id fallback from this alias."
+  },
+  "MULTI_ORG_TF_BR_MAINTAINER": {
+    "_inline": true,
+    "email": "agent-test-multiorg-20260615@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "store_id": "store_id"
+    },
+    "_notes": "VCST-5028 role-specific auth alias for MULTI_ORG_TF_BR account authenticated as TechFlow org-maintainer. Physical account is identical to MULTI_ORG_TF_BR (same email/password/storeId). This alias exists to make the test intent explicit: the caller holds org-maintainer role in TechFlow — which should carry xapi:my_organization:edit permission. Cases: ORGM-017 (changeRole Finding #1 guard — maintainer SHOULD succeed but currently returns Forbidden), ORGM-018 (lockContact Finding #1 guard). resolveRole in scripts/lib/graphql-auth.ts resolves via email_env=MULTI_ORG_TF_BR_MAINTAINER_EMAIL / password_env=MULTI_ORG_TF_BR_MAINTAINER_PASSWORD with store_id fallback from this alias."
   },
   "VIRTUAL_CATALOG_B2B": {
     "_inline": true,
@@ -2832,6 +2888,16 @@
     },
     "_notes": "Verified cart-buyable B2B-mixed fixture for cart/checkout/xCart tests — adds to cart cleanly (GQL-MC-001 PASS, 6/6, 2026-06-16). Same product as BUYABLE_NO_MIN_QTY (STD-001). IMPORTANT: cart buyability comes from the product being properly PLACED + INDEXED in the B2B-mixed virtual catalog (fc596540…), NOT from a pricelist-API price — `/api/pricing/evaluate` returns [] for this product yet the cart accepts it, while a product with a pricelist-API price but no B2B-mixed placement (e.g. Canon MF232W 08c33cfc) is rejected with PRODUCT_PRICE_INVALID. So pick fixtures the cart actually accepts (mirror BUYABLE_NO_MIN_QTY's catalog placement), not ones that merely resolve a price. See project_vcstqa_cart_price_invalid_blocker."
   },
+  "BUYABLE_SIBLING_B2B": {
+    "_inline": true,
+    "id": "eae298de-0997-44d2-8b35-88e5512dbbe2",
+    "name": "ASUS ROG 6D/6D Ultimate Smartphone",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    },
+    "_notes": "Second DISTINCT cart-addable B2B-mixed fixture (different productId from BUYABLE_NO_MIN_QTY) for multi-line cart tests that need two separate line items. Probe-verified addable 2026-06-29 (addItem qty=1 → itemsCount=1; availableQuantity 1062, trackInventory=true, properly placed in B2B-mixed virtual catalog fc596540…). Used as the VALID sibling line in 050b5 CVAL-GQL-007 per-line isValid isolation. NOTE: Canon MF232W (08c33cfc) and Xerox WorkCentre (4b729fae) match the B2B category-subtree query but are NOT cart-addable — do not use; see project_vcstqa_cart_price_invalid_blocker."
+  },
   "CFG_WITH_DEFAULT": {
     "file": "products/configurable-products",
     "filter": {
@@ -2849,7 +2915,7 @@
       "default_option_name": "default_option_name",
       "default_option_price": "default_option_price"
     },
-    "_notes": "VCST-4715 flat default-option. Seeded 2026-05-27 via scripts/seed-default-option-cfg.mjs. One required Product section 'Frame Material' with 3 options; exactly one isDefault=true (Carbon, $200). configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI (configurableProductId arg). default_section_id = Frame Material; default_option_id = Carbon REST option id."
+    "_notes": "VCST-4715 flat default-option. Seeded 2026-05-27 via scripts/seed-data/seed-default-option-cfg.mjs. One required Product section 'Frame Material' with 3 options; exactly one isDefault=true (Carbon, $200). configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI (configurableProductId arg). default_section_id = Frame Material; default_option_id = Carbon REST option id."
   },
   "CFG_WITH_DEFAULT_COND": {
     "file": "products/configurable-products",
@@ -2872,7 +2938,7 @@
       "dependent_section_id": "dependent_section_id",
       "dependent_default_option_id": "dependent_default_option_id"
     },
-    "_notes": "VCST-4715 conditional default-option (CFG-PDP-043). Seeded 2026-05-27 via scripts/seed-default-option-cfg.mjs. Two Product sections: parent 'Base Choice' (REQUIRED, default=Standard $0) and dependent 'Add-on' (dependsOn=parent, default=Warranty $25). Parent default reveals the dependent section on PDP load; the dependent section ITSELF has a preselected default. dependsOn wired via POST upsert (PUT 404s on this build). default_section_id/default_option_id mirror the parent (Standard); parent_* and dependent_* hold both sides explicitly. configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI."
+    "_notes": "VCST-4715 conditional default-option (CFG-PDP-043). Seeded 2026-05-27 via scripts/seed-data/seed-default-option-cfg.mjs. Two Product sections: parent 'Base Choice' (REQUIRED, default=Standard $0) and dependent 'Add-on' (dependsOn=parent, default=Warranty $25). Parent default reveals the dependent section on PDP load; the dependent section ITSELF has a preselected default. dependsOn wired via POST upsert (PUT 404s on this build). default_section_id/default_option_id mirror the parent (Standard); parent_* and dependent_* hold both sides explicitly. configuration isActive=true, linked into @td(VIRTUAL_CATALOG_B2B.id). Verified via productConfiguration xAPI."
   },
   "LOCKOUT_TEST_USERS": {
     "_inline": true,
@@ -3086,7 +3152,7 @@
       "epoch_start_date": "epoch_start_date",
       "future_start_date": "future_start_date"
     },
-    "_notes": "Push Messages seed contract — single source of truth for the values suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI) repeat literally when they self-seed messages. NO static recipient fixture exists by design: messages are created fresh per run via POST {{BACK_URL}}/api/push-message with an AGENT-TEST- topic prefix (teardown-swept); recipients are env-resolved ({{ORG_USER_ID}} / {{TEST_USER_ID}}) or live-discovered (xAPI me.id -> RCPT_MEMBER_ID). Canonical Sent seed body: {topic:'@td(PUSH_MSG_SEED.topic_prefix)<case>', shortMessage:'...', status:'@td(PUSH_MSG_SEED.sent_status)', startDate:'@td(PUSH_MSG_SEED.epoch_start_date)', memberIds:['{{ORG_USER_ID}}']}. TARGETING field names (verified live, PUSH-031): memberIds[] (member ids), targetOrganizationIds[] (org scope), userGroups[] (e.g. 'Registered' = broadcast_group), cultureName (per-culture probe, PUSH-038). MODEL NOTES: (1) status='Sent' is set IN the create body — there is no /send subendpoint. (2) DELETE of a Sent message returns HTTP 500 (known defect, PUSH-034 — should be 4xx); Sent seeds are intentionally left in the system (AGENT-TEST- prefix). (3) Per-recipient inbox projection is ASYNC — a just-created Sent message is not synchronously in the recipient xAPI inbox (poll before asserting; PUSH-027/028 are needs-review for this reason). (4) Push-message model has NO dedicated link field — a clickable link requires an <a> anchor embedded in shortMessage (PUSH-037). These are contract values under test, not catalog data — update only if the module's API contract changes."
+    "_notes": "Push Messages seed contract — single source of truth for the values suites 068 (Admin/Storefront UI) and 050l (GraphQL xAPI) repeat literally when they self-seed messages. NO static recipient fixture exists by design: messages are created fresh per run via POST {{BACK_URL}}/api/push-message with an AGENT-TEST- topic prefix (teardown-swept); recipients are resolved via @td(TECHFLOW_ADMIN.platform_id) (the ORG_USER b2b account, auto-written to aliases.{env}.json) / {{TEST_USER_ID}} (personal env-role account) or live-discovered (xAPI me.id -> RCPT_MEMBER_ID). Canonical Sent seed body: {topic:'@td(PUSH_MSG_SEED.topic_prefix)<case>', shortMessage:'...', status:'@td(PUSH_MSG_SEED.sent_status)', startDate:'@td(PUSH_MSG_SEED.epoch_start_date)', memberIds:['@td(TECHFLOW_ADMIN.platform_id)']}. TARGETING field names (verified live, PUSH-031): memberIds[] (member ids), targetOrganizationIds[] (org scope), userGroups[] (e.g. 'Registered' = broadcast_group), cultureName (per-culture probe, PUSH-038). MODEL NOTES: (1) status='Sent' is set IN the create body — there is no /send subendpoint. (2) DELETE of a Sent message returns HTTP 500 (known defect, PUSH-034 — should be 4xx); Sent seeds are intentionally left in the system (AGENT-TEST- prefix). (3) Per-recipient inbox projection is ASYNC — a just-created Sent message is not synchronously in the recipient xAPI inbox (poll before asserting; PUSH-027/028 are needs-review for this reason). (4) Push-message model has NO dedicated link field — a clickable link requires an <a> anchor embedded in shortMessage (PUSH-037). These are contract values under test, not catalog data — update only if the module's API contract changes."
   },
   "AGENT_TEST_UNPRICED_PRODUCT": {
     "file": "products/standard",
@@ -3438,13 +3504,47 @@
     },
     "notes": "VCST-5135 localization: es-ES localized name + dedicated SKU QA-LOY-LOCALE-001 (factor 10). seeded=true (provisioned 2026-06-24)."
   },
-  "LOY_SKU_PRIORITY": { "_inline": true, "sku": "QA-LOY-PRIO-001", "listPrice": 60.0, "_notes": "VCST-5135 dedicated SKU shared by LOY_PP_ALL(factor 500, pri=80) + LOY_PP_PRIORITY(factor 999, pri=70) — priority-resolution / no-stacking oracle. Live-verified 2026-06-24 (075c LOY-034): for ORG_USER, ALL WINS (higher priority 80 > 70) → QA-LOY-PRIO-001 earns ALL's 500x, NOT PRIORITY's 999x. Single winner, no stacking. (Prior note inverted the winner — corrected.)" },
-  "LOY_SKU_INACTIVE": { "_inline": true, "sku": "QA-LOY-INACT-001", "listPrice": 50.0, "_notes": "VCST-5135 dedicated in-stock SKU for LOY_PP_INACTIVE (factor 500, isActive=false)." },
-  "LOY_SKU_ZERO": { "_inline": true, "sku": "QA-LOY-ZERO-001", "listPrice": 50.0, "_notes": "VCST-5135 dedicated SKU for LOY_PP_ZERO (factor 0 — when ZERO wins, earns 0)." },
-  "LOY_SKU_MULTI_A": { "_inline": true, "sku": "QA-LOY-MULTI-A", "listPrice": 40.0, "_notes": "VCST-5135 LOY_PP_MULTI SKU #1 (factor 50)." },
-  "LOY_SKU_MULTI_B": { "_inline": true, "sku": "QA-LOY-MULTI-B", "listPrice": 80.0, "_notes": "VCST-5135 LOY_PP_MULTI SKU #2 (factor 25)." },
-  "LOY_SKU_LOCALIZED": { "_inline": true, "sku": "QA-LOY-LOCALE-001", "listPrice": 30.0, "_notes": "VCST-5135 dedicated SKU for LOY_PP_LOCALIZED (factor 10)." },
-  "USER_GROUP_WHOLESALE": { "_inline": true, "name": "Wholesaler", "_notes": "VCST-5135 — the 'Wholesaler' customer group used by LOY_PP_WHOLESALE eligibility. Verified selectable in the Loyalty user-group condition alongside VIP." },
+  "LOY_SKU_PRIORITY": {
+    "_inline": true,
+    "sku": "QA-LOY-PRIO-001",
+    "listPrice": 60,
+    "_notes": "VCST-5135 dedicated SKU shared by LOY_PP_ALL(factor 500, pri=80) + LOY_PP_PRIORITY(factor 999, pri=70) — priority-resolution / no-stacking oracle. Live-verified 2026-06-24 (075c LOY-034): for ORG_USER, ALL WINS (higher priority 80 > 70) → QA-LOY-PRIO-001 earns ALL's 500x, NOT PRIORITY's 999x. Single winner, no stacking. (Prior note inverted the winner — corrected.)"
+  },
+  "LOY_SKU_INACTIVE": {
+    "_inline": true,
+    "sku": "QA-LOY-INACT-001",
+    "listPrice": 50,
+    "_notes": "VCST-5135 dedicated in-stock SKU for LOY_PP_INACTIVE (factor 500, isActive=false)."
+  },
+  "LOY_SKU_ZERO": {
+    "_inline": true,
+    "sku": "QA-LOY-ZERO-001",
+    "listPrice": 50,
+    "_notes": "VCST-5135 dedicated SKU for LOY_PP_ZERO (factor 0 — when ZERO wins, earns 0)."
+  },
+  "LOY_SKU_MULTI_A": {
+    "_inline": true,
+    "sku": "QA-LOY-MULTI-A",
+    "listPrice": 40,
+    "_notes": "VCST-5135 LOY_PP_MULTI SKU #1 (factor 50)."
+  },
+  "LOY_SKU_MULTI_B": {
+    "_inline": true,
+    "sku": "QA-LOY-MULTI-B",
+    "listPrice": 80,
+    "_notes": "VCST-5135 LOY_PP_MULTI SKU #2 (factor 25)."
+  },
+  "LOY_SKU_LOCALIZED": {
+    "_inline": true,
+    "sku": "QA-LOY-LOCALE-001",
+    "listPrice": 30,
+    "_notes": "VCST-5135 dedicated SKU for LOY_PP_LOCALIZED (factor 10)."
+  },
+  "USER_GROUP_WHOLESALE": {
+    "_inline": true,
+    "name": "Wholesaler",
+    "_notes": "VCST-5135 — the 'Wholesaler' customer group used by LOY_PP_WHOLESALE eligibility. Verified selectable in the Loyalty user-group condition alongside VIP."
+  },
   "LOYALTY_WHOLESALE_USER": {
     "_inline": true,
     "email": "AGENT-TEST-wholesale@test.virtocommerce.com",

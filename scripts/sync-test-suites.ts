@@ -13,11 +13,25 @@
  *   npm run suites:lint          exit 1 if file is out of sync (for CI)
  */
 
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import { parse as parseCsv } from "csv-parse/sync";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
+
+/**
+ * Strict CSV lint baseline — a BURN-DOWN list of suites that already fail the
+ * strict parse as of 2026-07-01 (malformed quote-escaping / unquoted commas, or
+ * a missing file for 080). This is a ratchet, NOT a permanent exemption: the lint
+ * hard-fails on any suite NOT in this set, so new drift is caught immediately.
+ * Fix a listed suite and remove its id here — the lint will remind you (a
+ * baselined suite that now passes is reported as "stale baseline entry").
+ * Goal: shrink this to empty.
+ */
+const CSV_LINT_BASELINE = new Set<string>([
+  "014", "015", "026", "030", "040b", "044", "045", "048b", "052", "080", "082",
+]);
 
 interface Suite {
   id: string;
@@ -109,6 +123,40 @@ function validateRules(manifest: Manifest): string[] {
   return errors;
 }
 
+/**
+ * Strict-parse every suite CSV with the repo's canonical settings (bom + strict
+ * column count + strict quotes — same as graphql-runner.ts / review-graphql-labels.ts).
+ * Returns errors for suites NOT in the burn-down baseline, plus any baseline entries
+ * that now pass (stale — should be removed from the baseline).
+ */
+function lintSuiteCsvs(manifest: Manifest): { newErrors: string[]; baselineStale: string[] } {
+  const newErrors: string[] = [];
+  const baselineStale: string[] = [];
+  for (const suite of manifest.suites) {
+    let problem: string | null = null;
+    if (!existsSync(suite.file)) {
+      problem = `CSV file missing: ${suite.file}`;
+    } else {
+      try {
+        parseCsv(readFileSync(suite.file, "utf-8"), {
+          columns: true,
+          skip_empty_lines: true,
+          relax_column_count: false,
+          bom: true,
+        });
+      } catch (e) {
+        const err = e as { code?: string; lines?: number; message?: string };
+        const at = err.lines !== undefined ? ` @line ${err.lines}` : "";
+        problem = `${err.code ?? "PARSE_ERROR"}${at}`;
+      }
+    }
+    const inBaseline = CSV_LINT_BASELINE.has(suite.id);
+    if (problem && !inBaseline) newErrors.push(`suite ${suite.id} (${suite.file}): ${problem}`);
+    if (!problem && inBaseline) baselineStale.push(suite.id);
+  }
+  return { newErrors, baselineStale };
+}
+
 function regenerate(manifest: Manifest): { next: Manifest; drift: string[] } {
   const sortedSuites = [...manifest.suites].sort((a, b) => a.id.localeCompare(b.id));
   const today = new Date().toISOString().slice(0, 10);
@@ -142,6 +190,25 @@ function main(): void {
   if (errors.length > 0) {
     console.error(`[suites:lint] FAIL — ${errors.length} rule errors:`);
     for (const e of errors) console.error(`  - ${e}`);
+    process.exit(1);
+  }
+
+  // Strict CSV lint (ratchet + burn-down baseline).
+  const { newErrors, baselineStale } = lintSuiteCsvs(manifest);
+  if (baselineStale.length > 0) {
+    console.warn(
+      `[suites:lint] ${baselineStale.length} baselined suite(s) now PASS — remove from CSV_LINT_BASELINE: ${baselineStale.join(", ")}`,
+    );
+  }
+  if (CSV_LINT_BASELINE.size > 0) {
+    console.warn(
+      `[suites:lint] CSV burn-down backlog: ${CSV_LINT_BASELINE.size} known-malformed suite(s) baselined — fix + de-baseline to shrink.`,
+    );
+  }
+  if (newErrors.length > 0) {
+    console.error(`[suites:lint] FAIL — ${newErrors.length} CSV parse error(s) (not in baseline — new drift):`);
+    for (const e of newErrors) console.error(`  - ${e}`);
+    console.error(`Fix the CSV, or (only if genuinely pre-existing) add its id to CSV_LINT_BASELINE in scripts/sync-test-suites.ts.`);
     process.exit(1);
   }
 

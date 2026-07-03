@@ -70,7 +70,7 @@ Top-level structure (see [`test-data/README.md`](../../../../test-data/README.md
 | Directory | Purpose | Notable files |
 |-----------|---------|---------------|
 | [`test-data/users/`](../../../../test-data/users/) | Personal user accounts | `agent-user-pool.csv` (3 dedicated agents — `TestAgent1!`/`2!`/`3!`), `test-users.csv` |
-| [`test-data/b2b/`](../../../../test-data/b2b/) | B2B orgs/contacts/users (seeded) | `organizations.csv`, `contacts.csv`, `_seed-results-orgs.json` (live IDs) |
+| [`test-data/b2b/`](../../../../test-data/b2b/) | B2B orgs/contacts/users (seeded) | `organizations.csv`, `contacts.csv`, `users.csv` (platform GUIDs via `@td()` → `aliases.json` / `aliases.{env}.json`) |
 | [`test-data/organizations/`](../../../../test-data/organizations/) | Special-character org cases | `sample-organizations.csv` |
 | [`test-data/catalogs/`](../../../../test-data/catalogs/) | Catalog seed data | `catalogs.csv`, `categories.csv`, `properties.csv` |
 | [`test-data/products/`](../../../../test-data/products/) | Product fixtures | `test-products.csv`, `configurable-products.csv` |

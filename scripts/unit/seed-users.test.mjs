@@ -1,10 +1,11 @@
-// Unit tests for scripts/seed-users.mjs — the personal-account seeder.
+// Unit tests for scripts/seed-data/seed-users.mjs — the personal-account seeder.
 // Invariants: it reads BOTH user CSVs (deduped, personal emails only, skips seeded=false), and it
 // creates each account as a Customer login linked to a NO-ORG contact with NO roles.
 // Pure/mocked — no env, no network. Run: `node --test tests/unit/`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { __setApi, parseCsv, personalUsers, ensurePersonalAccount } from '../../scripts/seed-users.mjs';
+import { __setApi, parseCsv, personalUsers, ensurePersonalAccount, ensureAdminAccount } from '../../scripts/lib/user-provision.mjs';
+import { resolveRole, roleByKey } from '../../scripts/lib/user-roles.mjs';
 
 function makeApiMock() {
   const calls = [];
@@ -67,4 +68,59 @@ test('ensurePersonalAccount is idempotent — reuses an existing user (no create
   const r = await ensurePersonalAccount({ email: 'dup@example.com', password: 'x', first: 'A', last: 'B' }); // should reuse
   assert.equal(r, 'reused');
   assert.equal(calls.slice(before).filter(c => c.path.endsWith('/api/members')).length, 0, 'no second contact created on re-run');
+});
+
+test('EUR_USER role carries currency EUR; other customer roles default to null (USD)', () => {
+  const eur = resolveRole(roleByKey('EUR_USER'), { EUR_USER_EMAIL: 'e@x.com', EUR_USER_PASSWORD: 'p' });
+  assert.equal(eur.currency, 'EUR');
+  const usr = resolveRole(roleByKey('USER'), { USER_EMAIL: 'u@x.com', USER_PASSWORD: 'p' });
+  assert.equal(usr.currency, null, 'non-EUR roles carry no currency override (seeder falls back to USD)');
+});
+
+test('IMPERSONATION_ADMIN is provision=true; bootstrap ADMIN is not (never recreated)', () => {
+  const imp = resolveRole(roleByKey('IMPERSONATION_ADMIN'), { IMPERSONATION_ADMIN_EMAIL: 'i@x.com', IMPERSONATION_ADMIN_PASSWORD: 'p' });
+  assert.equal(imp.provision, true, 'seeder must create the impersonation admin');
+  const admin = resolveRole(roleByKey('ADMIN'), { ADMIN: 'admin', ADMIN_PASSWORD: 'p' });
+  assert.equal(admin.provision, false, 'bootstrap admin is never provisioned by the seeder');
+});
+
+test('ensureAdminAccount creates a missing admin as isAdministrator=true, else reuses', async () => {
+  const { api, calls } = makeApiMock();
+  __setApi(api);
+  const r1 = await ensureAdminAccount({ email: 'imp@example.com', password: 'x', source: 'env-role:IMPERSONATION_ADMIN' });
+  assert.equal(r1, 'created');
+  const create = calls.find(c => c.method === 'POST' && c.path.includes('/security/users/create'));
+  assert.equal(create.body.isAdministrator, true, 'admin account created with isAdministrator=true');
+  assert.equal(create.body.userType, 'Manager');
+  assert.ok(!create.body.memberId, 'admin has no contact member');
+  const r2 = await ensureAdminAccount({ email: 'imp@example.com', password: 'x', source: 'env-role:IMPERSONATION_ADMIN' });
+  assert.equal(r2, 'reused', 'idempotent — existing admin is reused, not recreated');
+});
+
+test('ensurePersonalAccount sets contact currencyCode from the user, defaulting to USD', async () => {
+  const { api, calls } = makeApiMock();
+  __setApi(api);
+  await ensurePersonalAccount({ email: 'eur@example.com', password: 'x', first: 'EUR', last: 'User', currency: 'EUR' });
+  assert.equal(calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members')).body.currencyCode, 'EUR');
+  const m2 = makeApiMock(); __setApi(m2.api);
+  await ensurePersonalAccount({ email: 'plain@example.com', password: 'x', first: 'QA', last: 'User' });
+  assert.equal(m2.calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members')).body.currencyCode, 'USD', 'defaults to USD when no currency');
+});
+
+test('ensurePersonalAccount RECONCILES currency on reuse (USD→EUR) — fixes pre-existing drift', async () => {
+  const calls = [];
+  let contactCurrency = 'USD';
+  const api = async (method, path, body) => {
+    calls.push({ method, path, body });
+    if (method === 'POST' && path.includes('/security/users/search')) return { results: [{ id: 'u-1', userName: 'eur@example.com', memberId: 'c-1' }] };
+    if (method === 'GET' && path.includes('/api/contacts/')) return { id: 'c-1', currencyCode: contactCurrency };
+    if (method === 'POST' && path.endsWith('/api/members')) { contactCurrency = body.currencyCode; return { id: 'c-1' }; }
+    return null;
+  };
+  __setApi(api);
+  const r = await ensurePersonalAccount({ email: 'eur@example.com', password: 'x', first: 'EUR', last: 'User', currency: 'EUR' });
+  assert.equal(r, 'reused');
+  const put = calls.find(c => c.method === 'POST' && c.path.endsWith('/api/members'));
+  assert.ok(put, 'reconciles by upserting the existing contact');
+  assert.equal(put.body.currencyCode, 'EUR', 'currency corrected to EUR on reuse (not left as USD)');
 });

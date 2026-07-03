@@ -88,6 +88,12 @@ function parseCSVLine(line: string): string[] {
 export class TestDataResolver {
   private testDataDir: string;
   private aliases: AliasRegistry;
+  // Per-env overrides are kept SEPARATE from the base registry (not shallow-merged)
+  // so they can supplement a base alias field-by-field: a CSV-backed alias keeps
+  // its `file`/`fields`/`filter` from aliases.json (code, sku, name) while the env
+  // file supplies only the runtime-drifting GUIDs (id, platform_id, …). See
+  // resolveAlias() — env fields win per-field; anything absent falls back to base.
+  private envOverrides: AliasRegistry = {};
   private csvCache: Map<string, CSVRow[]> = new Map();
   private warnings: string[] = [];
 
@@ -96,31 +102,30 @@ export class TestDataResolver {
 
     // Load base aliases (shared across all environments)
     const basePath = join(testDataDir, "aliases.json");
-    let merged: AliasRegistry = {};
+    let base: AliasRegistry = {};
     if (existsSync(basePath)) {
-      merged = JSON.parse(readFileSync(basePath, "utf-8"));
+      base = JSON.parse(readFileSync(basePath, "utf-8"));
     } else {
       console.warn(`[test-data-resolver] aliases.json not found at ${basePath}`);
     }
+    this.aliases = base;
 
-    // Layer per-env aliases on top (per feature/qa-agentic-standardization).
-    // Defaults to process.env.TEST_ENV so existing callers Just Work without
-    // passing an explicit env. Customers with N envs override only what differs
-    // (org IDs, user emails, addresses) — base aliases.json stays shared.
+    // Load per-env overrides (per feature/qa-agentic-standardization). Defaults to
+    // process.env.TEST_ENV so existing callers Just Work without passing an explicit
+    // env. Seeders write runtime IDs here via seed-common's writeEnvAliasOverride();
+    // the base aliases.json stays shared and definition-only. Resolution is
+    // field-level (see resolveAlias), so an override needs only the drifting fields.
     const envName = testEnv ?? process.env.TEST_ENV;
     if (envName) {
       const envPath = join(testDataDir, `aliases.${envName}.json`);
       if (existsSync(envPath)) {
-        const envOverrides = JSON.parse(readFileSync(envPath, "utf-8")) as AliasRegistry;
-        const overrideCount = Object.keys(envOverrides).filter(k => k !== "_meta").length;
-        merged = { ...merged, ...envOverrides };
+        this.envOverrides = JSON.parse(readFileSync(envPath, "utf-8")) as AliasRegistry;
+        const overrideCount = Object.keys(this.envOverrides).filter(k => k !== "_meta").length;
         console.log(
           `[test-data-resolver] Layered ${overrideCount} env override(s) from aliases.${envName}.json`
         );
       }
     }
-
-    this.aliases = merged;
   }
 
   /** Resolve all @td() tokens in a string */
@@ -170,7 +175,38 @@ export class TestDataResolver {
     throw new Error(`Invalid @td() syntax: "${inner}". Expected ALIAS.field or file, filter, column`);
   }
 
+  /**
+   * Soft dotted-path lookup on an inline-ish object (an alias value or an env
+   * override). Returns the stringified value, or undefined when the path is
+   * absent/null — the caller decides whether that's an error or a fallback.
+   * Primitives stringify directly; arrays/objects serialize to JSON (for query
+   * bodies). The reserved `_inline` marker is skipped for a bare field name.
+   */
+  private tryResolveObjectField(
+    obj: Record<string, unknown>,
+    fieldName: string
+  ): string | undefined {
+    let cur: unknown = obj;
+    for (const seg of fieldName.split(".")) {
+      if (cur === null || cur === undefined || typeof cur !== "object") return undefined;
+      cur = (cur as Record<string, unknown>)[seg];
+    }
+    if (cur === null || cur === undefined) return undefined;
+    if (typeof cur === "string") return cur;
+    if (typeof cur === "number" || typeof cur === "boolean") return String(cur);
+    return JSON.stringify(cur);
+  }
+
   private resolveAlias(aliasName: string, fieldName: string): string {
+    // Per-env override wins field-by-field: a seeder-written aliases.{env}.json
+    // supplies the runtime GUIDs (id, platform_id, section ids, …) while every
+    // other field falls through to the shared base alias below (code, sku, name).
+    const override = this.envOverrides[aliasName];
+    if (override && typeof override === "object") {
+      const ov = this.tryResolveObjectField(override as Record<string, unknown>, fieldName);
+      if (ov !== undefined) return ov;
+    }
+
     const alias = this.aliases[aliasName] as
       | (AliasEntry & { _inline?: boolean })
       | Record<string, unknown>
@@ -183,30 +219,13 @@ export class TestDataResolver {
     // Examples: CFG_OFFROAD_BIKE, CFG_FILE_HOODIE — see test-data/aliases.json.
     // fieldName may be dotted ("primary.path") for nested objects.
     if ((alias as { _inline?: boolean })._inline) {
-      const inline = alias as Record<string, unknown>;
-      const segments = fieldName.split(".");
-      let cur: unknown = inline;
-      for (const seg of segments) {
-        if (cur === null || cur === undefined || typeof cur !== "object") {
-          throw new Error(
-            `Field "${fieldName}" on inline alias "${aliasName}": traversal hit non-object before reaching "${seg}"`
-          );
-        }
-        cur = (cur as Record<string, unknown>)[seg];
-        if (cur === undefined) {
-          throw new Error(
-            `Unknown field "${fieldName}" on inline alias "${aliasName}" — missing segment "${seg}"`
-          );
-        }
+      const resolved = this.tryResolveObjectField(alias as Record<string, unknown>, fieldName);
+      if (resolved === undefined) {
+        throw new Error(
+          `Unknown or null field "${fieldName}" on inline alias "${aliasName}"`
+        );
       }
-      if (cur === null) {
-        throw new Error(`Field "${fieldName}" on inline alias "${aliasName}" is null`);
-      }
-      // Inline values can be primitives, arrays, or nested objects. Stringify
-      // primitives directly; serialize arrays/objects as JSON for query bodies.
-      if (typeof cur === "string") return cur;
-      if (typeof cur === "number" || typeof cur === "boolean") return String(cur);
-      return JSON.stringify(cur);
+      return resolved;
     }
 
     if (!(alias as AliasEntry).file) {

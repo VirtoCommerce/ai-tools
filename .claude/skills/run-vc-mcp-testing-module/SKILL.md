@@ -71,7 +71,7 @@ What each check guards (all run from the repo root):
 | `td-refs` | `npx tsx scripts/validate-td-refs.ts` | every `@td()` ref across all suites resolves; no bare GUID/ID literals |
 | `scope` | `npx tsx scripts/validate-critical-ui-scope.ts` | critical-UI-scope matrix cells point at existing test IDs |
 | `suites:lint` | `npx tsx scripts/sync-test-suites.ts --check` | `config/test-suites.json` matches CSVs on disk |
-| `seed:dry-run` | `node scripts/seed-test-data.js catalog --dry-run` | seed planner resolves fixtures, makes no API writes |
+| `seed:dry-run` | `node scripts/seed-data/seed-test-data.js catalog --dry-run` | seed planner resolves fixtures, makes no API writes |
 | `graphql:fixtures` | `npx tsx scripts/validate-graphql-fixtures.ts` | every `.graphql` fixture validates vs cached schema |
 | `graphql:labels` | `npx tsx scripts/review-graphql-labels.ts <csv>` | runner-native GraphQL CSV has balanced labels |
 

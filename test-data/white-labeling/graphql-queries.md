@@ -141,24 +141,24 @@ Default Org (no config - expect fallback):
           "childItems": []
         },
         {
-          "title": "Products",
-          "url": "/products",
+          "title": "Brands",
+          "url": "/brands",
           "priority": 2,
           "childItems": [
-            { "title": "Laptops", "url": "/products/laptops", "priority": 1 },
-            { "title": "Phones", "url": "/products/phones", "priority": 2 },
-            { "title": "Tablets", "url": "/products/tablets", "priority": 3 }
+            { "title": "Laptops", "url": "/search?q=laptop", "priority": 1 },
+            { "title": "Phones", "url": "/search?q=phone", "priority": 2 },
+            { "title": "Tablets", "url": "/search?q=tablet", "priority": 3 }
           ]
         },
         {
-          "title": "About Us",
-          "url": "/about",
+          "title": "Company",
+          "url": "/contacts",
           "priority": 3,
           "childItems": []
         },
         {
           "title": "Support",
-          "url": "/support",
+          "url": "/search?q=support",
           "priority": 4,
           "childItems": []
         }
@@ -182,23 +182,23 @@ Default Org (no config - expect fallback):
         },
         {
           "title": "Shop",
-          "url": "/shop",
+          "url": "/brands",
           "priority": 2,
           "childItems": [
-            { "title": "Men", "url": "/shop/men", "priority": 1 },
-            { "title": "Women", "url": "/shop/women", "priority": 2 },
-            { "title": "Kids", "url": "/shop/kids", "priority": 3 }
+            { "title": "Men", "url": "/search?q=men", "priority": 1 },
+            { "title": "Women", "url": "/search?q=women", "priority": 2 },
+            { "title": "Kids", "url": "/search?q=kids", "priority": 3 }
           ]
         },
         {
           "title": "New Arrivals",
-          "url": "/new-arrivals",
+          "url": "/catalog",
           "priority": 3,
           "childItems": []
         },
         {
           "title": "Contact",
-          "url": "/contact",
+          "url": "/contacts",
           "priority": 4,
           "childItems": []
         }
@@ -214,6 +214,74 @@ Default Org (no config - expect fallback):
   "data": {
     "whiteLabelingSettings": {
       "mainMenuLinks": []
+    }
+  }
+}
+```
+
+### Electronics Org - footerLinks
+
+The footer is **hierarchical** (two-level), same as the main menu: each top-level entry is a
+**section header** (rendered as a non-clickable column title in `footer-links.vue`), and its
+`childItems` are the actual clickable links. A flat footer list (top-level entries with empty
+`childItems`) renders as empty header columns — bold text on desktop, an accordion that reveals
+nothing on mobile — which is a **test-data structure error, not a product bug**.
+
+```json
+{
+  "data": {
+    "whiteLabelingSettings": {
+      "footerLinks": [
+        {
+          "title": "Legal",
+          "url": "/search?q=legal",
+          "priority": 1,
+          "childItems": [
+            { "title": "Privacy Policy", "url": "/search?q=privacy", "priority": 1 },
+            { "title": "Terms of Service", "url": "/search?q=terms", "priority": 2 }
+          ]
+        },
+        {
+          "title": "Help",
+          "url": "/search?q=help",
+          "priority": 2,
+          "childItems": [
+            { "title": "Support", "url": "/search?q=support", "priority": 1 },
+            { "title": "Warranty", "url": "/search?q=warranty", "priority": 2 }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+### Fashion Org - footerLinks
+
+```json
+{
+  "data": {
+    "whiteLabelingSettings": {
+      "footerLinks": [
+        {
+          "title": "Customer Service",
+          "url": "/search?q=service",
+          "priority": 1,
+          "childItems": [
+            { "title": "Shipping Info", "url": "/search?q=shipping", "priority": 1 },
+            { "title": "Returns & Exchanges", "url": "/search?q=returns", "priority": 2 },
+            { "title": "Size Guide", "url": "/search?q=size", "priority": 3 }
+          ]
+        },
+        {
+          "title": "Our Company",
+          "url": "/contacts",
+          "priority": 2,
+          "childItems": [
+            { "title": "Contact Us", "url": "/contacts", "priority": 1 }
+          ]
+        }
+      ]
     }
   }
 }

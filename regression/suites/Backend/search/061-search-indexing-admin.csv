@@ -205,7 +205,7 @@ SRCH-045,Blue-Green Multi-Instance Index Coordination,Index Management,Functiona
 - No instance continues to serve search results from the old (now inactive) index after the coordination period
 - Search queries return consistent results across all instances after swap
 - Zero downtime observed during the swap coordination",C338469,Not Automated
-SRCH-046,Partial Index Rebuild — Single Document Type,Index Management,Functional,Medium,4m,Multiple document types indexed (e.g. Products, Customers, Orders); admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
+SRCH-046,Partial Index Rebuild — Single Document Type,Index Management,Functional,Medium,4m,"Multiple document types indexed (e.g. Products, Customers, Orders); admin logged into ${BACK_URL}","1. Navigate to ${BACK_URL} > Search > Index Management
 2. Identify available document type options (e.g. Product, Customer, Order, Category)
 3. Select only the 'Product' document type for rebuild
 4. Click Build or Rebuild for the selected document type only

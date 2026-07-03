@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-06-23)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-07-01)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `node scripts/refresh-graphql-schema.mjs` — run when schema may have changed.
 
@@ -29,7 +29,7 @@ cartPickupLocations(after: String, first: Int, keyword: String, sort: String, ca
 promotionCoupons(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, currencyCode: String, cultureName: String)
 validateCoupon(cartId: String, storeId: String!, currencyCode: String!, userId: String!, cultureName: String, cartName: String, cartType: String, coupon: String!)
 cart(cartId: String, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
-pricesSum(cartId: String!, storeId: String!, currencyCode: String!, cultureName: String, userId: String, lineItemIds: ?!)
+pricesSum(cartId: String!, storeId: String!, currencyCode: String!, cultureName: String, userId: String, lineItemIds: [String]!)
 getSavedForLater(storeId: String!, userId: String!, organizationId: String, currencyCode: String, cultureName: String)
 pickupLocations(after: String, first: Int, keyword: String, sort: String, storeId: String)
 carts(after: String, first: Int, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, cartType: String, filter: String)
@@ -43,16 +43,16 @@ dynamicProperties(after: String, first: Int, cultureName: String, filter: String
 productPickupLocations(after: String, first: Int, keyword: String, sort: String, productId: String!, storeId: String!, cultureName: String!)
 product(id: String!, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String, custom: String)
 category(id: String!, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String)
-categories(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String, query: String, filter: String, fuzzy: Boolean, fuzzyLevel: Int, facet: String, sort: String, categoryIds: String)
-properties(after: String, first: Int, storeId: String!, types: PropertyType, filter: String, cultureName: String)
+categories(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, previousOutline: String, query: String, filter: String, fuzzy: Boolean, fuzzyLevel: Int, facet: String, sort: String, categoryIds: [String])
+properties(after: String, first: Int, storeId: String!, types: [PropertyType], filter: String, cultureName: String)
 property(id: String!, cultureName: String)
 fulfillmentCenter(id: String!)
-fulfillmentCenters(after: String, first: Int, storeId: String, query: String, sort: String, fulfillmentCenterIds: String)
+fulfillmentCenters(after: String, first: Int, storeId: String, query: String, sort: String, fulfillmentCenterIds: [String])
 childCategories(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, categoryId: String, maxLevel: Int, onlyActive: Boolean, productFilter: String)
 brand(id: String!, storeId: String!, cultureName: String)
 productSuggestions(storeId: String!, query: String, size: Int)
 brands(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, sort: String, keyword: String)
-products(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, query: String, previousOutline: String, filter: String, preserveUserQuery: Boolean, facet: String, fuzzy: Boolean, fuzzyLevel: Int, sort: String, productIds: String, selectedAddressId: String, selectedAddress: String, custom: String)
+products(after: String, first: Int, storeId: String!, userId: String, currencyCode: String, cultureName: String, query: String, previousOutline: String, filter: String, preserveUserQuery: Boolean, facet: String, fuzzy: Boolean, fuzzyLevel: Int, sort: String, productIds: [String], selectedAddressId: String, selectedAddress: String, custom: String)
 productConfiguration(configurableProductId: String!, storeId: String!, userId: String, cultureName: String, currencyCode: String)
 ```
 
@@ -93,14 +93,14 @@ contract(id: String)
 fileUploadOptions(scope: String)
 newsArticleAuthor(authorId: String!)
 newsArticle(id: String!, storeId: String!, languageCode: String!)
-newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: String)
+newsArticles(after: String, first: Int, keyword: String, sort: String, storeId: String!, languageCode: String!, userId: String, authorId: String, tags: [String])
 newsArticleTags(languageCode: String!)
 fcmSettings()
 pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
 skyflowCards(storeId: String)
-evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: String, userGroups: String)
-backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: String, isActive: Boolean)
+evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: [String], userGroups: [String])
+backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: [String], isActive: Boolean)
 configurationItems(cartId: String, lineItemId: String!, storeId: String!, currencyCode: String!, cartType: String, cartName: String, userId: String, cultureName: String)
 recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, maxProducts: Int)
 recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
@@ -108,7 +108,7 @@ searchHistory(storeId: String!, maxCount: Int!)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
-currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
+currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
 customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 ```
@@ -116,7 +116,7 @@ customerReviews(after: String, first: Int, keyword: String, sort: String, storeI
 ### Profile
 
 ```
-organizationContracts(after: String, first: Int, organizationId: String!, storeId: String, vendorId: String, statuses: String, startDate: DateTime, endDate: DateTime)
+organizationContracts(after: String, first: Int, organizationId: String!, storeId: String, vendorId: String, statuses: [String], startDate: DateTime, endDate: DateTime)
 me(userId: String)
 organization(id: String!, userId: String)
 contact(id: String!, userId: String)
@@ -128,7 +128,7 @@ checkEmailUniqueness(email: String!)
 validatePassword(password: String!)
 user(id: String, userName: String, email: String, loginProvider: String, providerKey: String)
 role(roleName: String!)
-currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: String, regionIds: String, cities: String, ids: String)
+currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 ```
 
 ### Quotes
@@ -386,10 +386,6 @@ Fields: `list`, `listWithTax`, `sale`, `saleWithTax`, `actual`, `actualWithTax`,
 ### ProductConnection
 
 Fields: `totalCount`, `pageInfo`, `edges`, `items`, `filter_facets`, `range_facets`, `term_facets`, `filters`, `sortings`
-
-### ProductSortingType (VCST-5177)
-
-Returned by `products(...).sortings` — the store's configured "Sort by" options. Fields: `id` (String!, the `?sort=<id>` code), `name` (String, culture-resolved), `isDefault` (Boolean!), `selected` (Boolean!). Semantics: empty `sort` → the `isDefault` option is `selected`; explicit code → that option `selected`; hidden/unknown code or raw expression → results returned but nothing `selected`.
 
 ### TermFacet
 

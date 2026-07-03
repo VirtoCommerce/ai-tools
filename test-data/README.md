@@ -54,10 +54,9 @@ test-data/
 │   ├── contacts.csv                # 13 contacts (10 seeded with platform IDs)
 │   ├── users.csv                   # 13 users (10 seeded with platform IDs)
 │   ├── roles.csv                   # 5 B2B role definitions
-│   ├── addresses.csv               # 15 addresses (org + contact level)
-│   ├── load-test-data.js           # JS loader module for agents/scripts
-│   ├── _seed-results-orgs.json     # Live platform IDs (source of truth)
-│   └── seed-report-20260310.md     # Human-readable seed report
+│   └── addresses.csv               # 15 addresses (org + contact level)
+│                                   # (platform IDs resolve via @td() aliases; on non-vcst envs
+│                                   #  seeders write them to aliases.{env}.json — see aliases.json)
 ├── users/                           # Personal user accounts
 │   ├── test-users.csv              # 50 personal user templates
 │   ├── agent-user-pool.csv         # 3 dedicated users for parallel agents (1 per browser slot)
@@ -134,33 +133,28 @@ The B2B test data in `b2b/` is **seeded on the live platform** and can be consum
 4. /qa-seed-data teardown      ← Clean up when done
 ```
 
-### Loader Module (recommended for scripts)
+### Resolving b2b entities (recommended — `@td()` aliases)
 
-```js
-import { b2b } from './test-data/b2b/load-test-data.js';
+Look up orgs/contacts/users by their aliases in `aliases.json`, resolved via
+`scripts/lib/test-data-resolver.ts`. Business keys (email, name, role) come from the
+committed CSVs; platform GUIDs come from `aliases.json` (vcst) or `aliases.{env}.json`
+(other envs, written by the seeders). Never hardcode IDs or passwords.
 
-// Get credentials by role
-const admin = b2b.credentials('Org Admin');
-// → { userName, email, password, contactName, orgKey, platformRoles }
-
-// RBAC test set (admin + buyer + viewer from same org)
-const rbac = b2b.rbacTestSet();
-// → { admin, buyer, viewer, password }
-
-// Multi-org isolation test set
-const multiOrg = b2b.multiOrgTestSet();
-// → { acmeCorp, techFlow, buildRight, acmeWest, password }
-
-// Lookup by org
-const techFlowUsers = b2b.usersForOrg('TechFlow');
 ```
+@td(ORG_ACME.platform_id)      # AcmeCorp org GUID
+@td(ACME_ADMIN.email)          # Org-admin login
+@td(ACME_ADMIN.platform_id)    # Org-admin security-account id
+@td(ACME_BUYER.platform_id)    # Buyer in AcmeCorp
+```
+
+Passwords resolve from `.env.local` via the CSV `{{B2B_USER_PASSWORD}}` token — never a literal.
 
 ### For LLM Agents (read CSVs directly)
 
 Agents read `test-data/b2b/users.csv` to get:
 - `platform_id` — live entity ID on the platform
 - `user_name` / `email` — login credentials
-- `password` — `TestPass123!` for all seeded users
+- `password` — `{{B2B_USER_PASSWORD}}` token, resolved from `.env.local` at seed time (never a literal)
 - `roles` — platform role name
 - `status` — `Approved` (seeded) or empty (not yet created)
 - `seeded` — `true` if entity exists on platform, `false` if template only
