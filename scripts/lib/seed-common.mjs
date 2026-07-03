@@ -590,8 +590,9 @@ export async function ensureCatalogs(api) {
     const body = {
       name, isVirtual, languages,
       // Catalog SEO: add store + language to the platform default (which has storeId=null). Keep the
-      // GENERIC "catalog" slug — root catalogs are NOT browsed by slug, so no unique slug per catalog.
-      seoInfos: [{ storeId: STORE_ID, languageCode: defLang, semanticUrl: 'catalog', pageTitle: name, isActive: true }],
+      // GENERIC "catalog" slug + generic "Catalog" title for EVERY catalog — root catalogs aren't
+      // browsed by slug and shouldn't surface their internal AGENT-TEST-SEED-* name as a title.
+      seoInfos: [{ storeId: STORE_ID, languageCode: defLang, semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true }],
     };
     if (isVirtual && row.linked_physical_catalogs) {
       body.links = row.linked_physical_catalogs.split(',')

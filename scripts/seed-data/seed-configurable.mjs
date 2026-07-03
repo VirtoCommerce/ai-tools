@@ -119,8 +119,8 @@ async function ensureCatalog(name) {
   if (cat) { log(`↻ catalog: ${name} (${cat.id})`); return cat; }
   cat = await api('POST', '/api/catalog/catalogs', {
     name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }],
-    // Catalog SEO with store + language (generic slug — root catalogs aren't browsed by slug).
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'catalog', pageTitle: name, isActive: true }],
+    // Catalog SEO with store + language (generic slug + generic "Catalog" title — not the internal name).
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true }],
   });
   log(`✓ catalog: ${name} (${cat?.id})`);
   return cat;
