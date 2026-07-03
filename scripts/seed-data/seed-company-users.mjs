@@ -169,8 +169,8 @@ async function run() {
   }
 
   // No _seed-results report (VCST-5406): live platform ids are written to aliases.{env}.json
-  // by user-provision's writeBackPlatformIds/writeLiveIdAliases; the rest resolves by static
-  // business key (email / org name) from the committed CSVs.
+  // by user-provision's syncEnvAliases/writeLiveIdAliases (every env incl. vcst); the rest
+  // resolves by static business key (email / org name) from the committed CSVs.
   console.log(`\n✅ Company-users seed complete (kind=${kind})\n`);
 }
 

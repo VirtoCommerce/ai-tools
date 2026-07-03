@@ -87,6 +87,8 @@ async function teardown(rows) {
     const storeId = (row.store_id || STORE_ID).trim();
     const found = await findPickup(storeId, row.location_name);
     if (!found) { verbose(`not present: ${row.location_name}`); continue; }
+    // Safety: only delete AGENT-TEST- pickup locations, never a real one that shares a name.
+    if (!(found.name || row.location_name || '').startsWith('AGENT-TEST')) { verbose(`skip ${found.name}: not an AGENT-TEST location`); continue; }
     await api('DELETE', `/api/shipping/pickup-locations/${storeId}/${found.id}`, null, { expectStatus: [200, 204, 404] });
     log(`  ✓ Deleted: ${row.location_name} (${found.id})`);
     deleted++;

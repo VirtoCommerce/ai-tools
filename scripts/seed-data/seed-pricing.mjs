@@ -27,7 +27,7 @@
  */
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
-  log, verbose, assertSafeTarget, auth, api, loadAliases,
+  log, verbose, assertSafeTarget, auth, api, ensureVirtualCatalog,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
@@ -37,13 +37,24 @@ const flag = (name, dflt = null) => (argv.includes(name) ? argv[argv.indexOf(nam
 const CURRENCY = (flag('--currency', 'USD')).toUpperCase();
 const COUNT = Number(flag('--count', 100));
 const LIST_PRICE = Number(flag('--list-price', 99.99));
-
-// No hardcoded GUIDs: catalog/store come from flags → aliases → env defaults.
-const aliases = loadAliases();
-// VIRTUAL_CATALOG_B2B is an inline alias object ({_inline, id, ...}); accept either the object's .id or a plain string.
-const vcAlias = aliases.VIRTUAL_CATALOG_B2B;
-const CATALOG_ID = flag('--catalog', null) || (vcAlias && (vcAlias.id || (typeof vcAlias === 'string' ? vcAlias : null))) || process.env.VIRTUAL_CATALOG_B2B;
 const TARGET_STORE = flag('--store', null) || STORE_ID;
+
+/**
+ * Resolve the catalog to price — UNIFIED with every other seeder. Order:
+ *   --catalog flag → the store's actual virtual catalog (ensureVirtualCatalog, env-correct,
+ *   creates/assigns if missing) → VIRTUAL_CATALOG_B2B env override.
+ * We deliberately do NOT read aliases.json's VIRTUAL_CATALOG_B2B here: loadAliases() reads only the
+ * base (vcst) file and never layers aliases.<env>.json, so on any non-vcst env it returned vcst's
+ * fc596540… root → the pricelist got assigned to a catalog with 0 products (silent "priced 0").
+ * ensureVirtualCatalog resolves the catalog the store really uses and is auth-dependent, so it runs
+ * after auth() inside seed().
+ */
+async function resolveCatalogId() {
+  const fromFlag = flag('--catalog', null);
+  if (fromFlag) return fromFlag;
+  const resolved = await ensureVirtualCatalog(api, { storeId: TARGET_STORE });
+  return resolved || process.env.VIRTUAL_CATALOG_B2B || null;
+}
 
 async function findPricelistByName(name) {
   const r = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(name)}`, null, { expectStatus: [200, 404] });
@@ -69,6 +80,8 @@ async function discoverProducts(catalogId, take) {
 }
 
 async function seed() {
+  // Resolve the store's real virtual catalog at runtime (env-correct) — never a base-aliases GUID.
+  const CATALOG_ID = await resolveCatalogId();
   if (!CATALOG_ID) {
     console.error('ABORT: no catalog id. Pass --catalog <id> or set VIRTUAL_CATALOG_B2B alias / env.');
     process.exit(1);

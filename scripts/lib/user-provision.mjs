@@ -267,12 +267,27 @@ export function roleIdByName(name) {
   if (!name) return null;
   return loadRoleDefs().find(r => r.role_name === name || r.role_id === name)?.role_id || null;
 }
+// Inverse of roleIdByName — the roles.csv oracle name for an id (STATIC fallback covers the two
+// built-in org roles even if roles.csv is unreadable). Offline; used to seed the platform lookup.
+export function roleNameById(roleId) {
+  if (!roleId) return null;
+  return loadRoleDefs().find(r => r.role_id === roleId)?.role_name || STATIC_ROLE_NAMES[roleId] || null;
+}
 const _roleNameCache = {};
 export async function resolveRoleName(roleId) {
-  if (STATIC_ROLE_NAMES[roleId]) return STATIC_ROLE_NAMES[roleId];
+  if (!roleId) return roleId;
   if (_roleNameCache[roleId]) return _roleNameCache[roleId];
-  const r = await api('GET', `/api/platform/security/roles/${encodeURIComponent(roleId)}`, null, { expectStatus: [200, 404] });
-  return (_roleNameCache[roleId] = r?.name || roleId);
+  // The candidate name comes from the roles.csv oracle (what ensureRoles PUSHES to the platform),
+  // so it normally equals the platform's origin name. Confirm against the LIVE platform via the
+  // reliable SEARCH endpoint (keyword MUST be the name — the roles search matches on name, and
+  // GET /roles/{id} is cache-flaky, same class as findRole/findUserByEmail). If the platform name
+  // has drifted from roles.csv, the live value wins; otherwise the CSV name is authoritative.
+  const csvName = roleNameById(roleId);
+  try {
+    const found = await findRole({ role_id: roleId, role_name: csvName || undefined });
+    if (found?.name) return (_roleNameCache[roleId] = found.name);
+  } catch { /* fall through to the offline oracle */ }
+  return (_roleNameCache[roleId] = csvName || roleId);
 }
 // Reliable role existence check via SEARCH — GET /api/platform/security/roles/{id} is cache-flaky
 // (404s even when the role exists, same class as the findUserByEmail GET-by-username bug), so it
@@ -486,33 +501,20 @@ export async function ensureMembershipContact(email, firstName, lastName, orgPla
   return id;
 }
 
-// Write live security-account ids back into a users CSV's `platform_id` column — the ROOT-CAUSE fix
-// for suite instability: teardown+reseed mints new account GUIDs, and @td(...userId) aliases resolve
-// FROM this column, so without write-back every reseed silently breaks impersonation/user suites.
-// Rewrites only the platform_id field per row (regex-anchored on the row-id prefix), preserving all
-// other columns/quoting. Generalized (VCST-5406 follow-up) so any "<PREFIX>-<n>,platform_id,...,email,..."
-// CSV can reuse it — not just b2b/users.csv's USR- rows.
-export function writeBackPlatformIds(idByEmail, { csvPath = USERS_CSV, idPrefix = 'USR-', emailCol = 5 } = {}) {
-  const path = join(ROOT, csvPath);
-  let text; try { text = readFileSync(path, 'utf-8'); } catch { return 0; }
-  const key = {};
-  for (const [e, i] of Object.entries(idByEmail)) if (e && i && !String(i).startsWith('dry-')) key[e.toLowerCase()] = i;
-  const rowRe = new RegExp(`^${idPrefix}[0-9]+,`);
-  const captureRe = new RegExp(`^(${idPrefix}[0-9]+),([^,]*),`);
-  let n = 0;
-  const out = text.split(/\r?\n/).map((line) => {
-    if (!rowRe.test(line)) return line;
-    const email = (parseCsvLine(line)[emailCol] || '').toLowerCase();
-    const id = key[email];
-    const cur = line.match(captureRe)?.[2];
-    if (!id || cur === id) return line;
-    n++;
-    return line.replace(captureRe, `$1,${id},`);
-  });
-  if (n) writeFileSync(path, out.join('\n'));
-  return n;
+// Build { user_id: { platform_id } } for syncEnvAliases from the live security-account ids just
+// resolved (keyed by email in `idByEmail`) joined to the CSV rows' user_id. Skips dry-/empty ids.
+function byUserIdFromEmails(userRows, idByEmail) {
+  const idByLcEmail = {};
+  for (const [e, i] of Object.entries(idByEmail)) {
+    if (e && i && !String(i).startsWith('dry-')) idByLcEmail[e.toLowerCase()] = i;
+  }
+  const byUserId = {};
+  for (const u of userRows) {
+    const id = idByLcEmail[(u.email || '').toLowerCase()];
+    if (u.user_id && id) byUserId[u.user_id] = { platform_id: id };
+  }
+  return byUserId;
 }
-export const writeBackUserPlatformIds = (idByEmail) => writeBackPlatformIds(idByEmail);
 
 // Give each seeded contact a login + org-scoped membership (role + status from users.csv).
 export async function provisionContactLogins(contactMap, orgMap) {
@@ -546,26 +548,14 @@ export async function provisionContactLogins(contactMap, orgMap) {
   }
   console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
   if (!DRY_RUN) {
-    // Persist the live security-account userIds so @td(ACME_ADMIN.platform_id) etc.
-    // resolve. Primary vcst → refresh the committed users.csv (canonical). Every other
-    // env → aliases.<env>.json (keyed by user_id) so the committed CSV isn't dirtied
-    // with env-specific ids; the resolver layers it over the base CSV field-by-field.
-    if ((process.env.TEST_ENV || 'vcst') === 'vcst') {
-      const written = writeBackUserPlatformIds(idByEmail);
-      if (written) console.log(`  ✓ users.csv: refreshed ${written} platform_id(s) from live (keeps @td userId aliases stable)`);
-    } else {
-      const idByLcEmail = {};
-      for (const [e, i] of Object.entries(idByEmail)) {
-        if (e && i && !String(i).startsWith('dry-')) idByLcEmail[e.toLowerCase()] = i;
-      }
-      const byUserId = {};
-      for (const u of userRows) {
-        const id = idByLcEmail[(u.email || '').toLowerCase()];
-        if (u.user_id && id) byUserId[u.user_id] = { platform_id: id };
-      }
-      syncEnvAliases('b2b/users', byUserId);
-      console.log(`  ✓ aliases.${process.env.TEST_ENV}.json: wrote ${Object.keys(byUserId).length} user platform_id(s)`);
-    }
+    // Persist the live security-account userIds to aliases.<env>.json for EVERY env (incl. vcst)
+    // so @td(ACME_ADMIN.platform_id) / @td(IMPERSONATE_TARGET.userId) resolve. The committed
+    // users.csv carries NO platform_id — each env's ids live only in its own overlay, so a suite
+    // run against one env can never resolve another env's GUIDs. The resolver layers the overlay
+    // over the base CSV field-by-field (code/name/email/role stay in the shared CSV).
+    const byUserId = byUserIdFromEmails(userRows, idByEmail);
+    syncEnvAliases('b2b/users', byUserId);
+    console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${Object.keys(byUserId).length} b2b user platform_id(s)`);
   }
   return { accounts: nAcct, memberships: nMem };
 }
@@ -829,7 +819,10 @@ export async function deleteUserByEmail(email) {
 export async function sweepAgentTestMembers() {
   console.log('\n  Teardown: scanning for AGENT-TEST-* members...');
   const res = await api('POST', '/api/members/search', { keyword: 'AGENT-TEST-', take: 500 });
-  const items = res?.results || [];
+  // Safety: the keyword search can match on more than a name prefix (contains / other fields), so
+  // re-verify each member's own name carries the AGENT-TEST prefix before deleting — never delete a
+  // real member the search happened to return.
+  const items = (res?.results || []).filter((m) => (m.name || '').startsWith('AGENT-TEST'));
   console.log(`  Found ${items.length} AGENT-TEST-* member(s)`);
   let deleted = 0;
   for (const m of items) {
@@ -869,8 +862,10 @@ export async function deleteWhiteLabelingOrgs() {
   const orgRows = readCsv(WL_ORGS_CSV).filter((r) => r.org_name);
   let deleted = 0;
   for (const row of orgRows) {
+    // Safety: only delete AGENT-TEST- WL orgs, never a real org that shares a name.
+    if (!String(row.org_name).startsWith('AGENT-TEST')) { if (VERBOSE) console.log(`    skip "${row.org_name}": not an AGENT-TEST org`); continue; }
     const found = await findOrgByName(row.org_name);
-    if (!found?.id) { if (VERBOSE) console.log(`    ↻ org "${row.org_name}" already gone`); continue; }
+    if (!found?.id || !String(found.name || '').startsWith('AGENT-TEST')) { if (VERBOSE) console.log(`    ↻ org "${row.org_name}" already gone or not AGENT-TEST`); continue; }
     await api('DELETE', `/api/members?ids=${encodeURIComponent(found.id)}`, null, { expectStatus: [200, 204, 404] });
     console.log(`    ✗ org ${row.org_name} (${found.id})`);
     deleted++;

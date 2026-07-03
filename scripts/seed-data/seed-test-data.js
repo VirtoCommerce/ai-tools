@@ -10,7 +10,8 @@
  * Profiles:
  *   minimal   — 1 catalog, 1 category, 3 products, 1 price list, basic inventory (default)
  *   catalog   — All catalogs, categories, products with variations and pricing
- *   full      — Everything: catalog + B2B orgs/users + all price lists + all inventory
+ *
+ * 
  *   teardown  — Delete this seeder's entities from EVERY prior run (matches the
  *               date-independent `AGENT-TEST-SEED-*` family + legacy `SEED-*`),
  *               not just today's. Deleting a seed catalog cascades to its
@@ -24,7 +25,7 @@
  *   node scripts/seed-test-data.js catalog --dry-run # preview without creating
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse/sync';
@@ -33,6 +34,13 @@ import { parse } from 'csv-parse/sync';
 // Replaces the old direct `.env` load so seeding respects TEST_ENV like every
 // other entry point. Run from the repo root (config.js uses CWD-relative paths).
 import '../../config.js';
+// Runtime-GUID writeback: the SAME sanctioned helper every .mjs seeder uses to persist
+// env-specific ids to test-data/aliases.<env>.json. Replaces the old _seed-results-*.json
+// report (removed — VCST-5406: seeders write runtime GUIDs to aliases.{env}.json, never a
+// results file). No-op under --dry-run.
+// Store fixtures are now shared: ensureStore + its helpers live in seed-common.mjs so this
+// relational seeder and the bootstrap preflight build ONE store from test-data/stores/stores.csv.
+import { writeEnvAliasOverride, ensureStore } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -47,18 +55,27 @@ const DATE_STAMP = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 // Naming convention. The STABLE family prefix is date-independent so teardown can
 // sweep EVERY prior run (not just today's). The per-run PREFIX adds the date for
 // traceability. The family lives under `AGENT-TEST-` so it matches the repo-wide
-// teardown convention shared by the Postman path + the specialized .mjs seeders
-// (resolving the old SEED-* vs AGENT-TEST-* prefix drift). Legacy `SEED-*` entities
-// from before this change are still matched by teardown for backward compatibility.
+// teardown convention shared by the Postman path + the specialized .mjs seeders.
+// Teardown matches ONLY this family — a bare `SEED-` prefix is deliberately NOT swept:
+// it collides with other active seeders (e.g. seed-standard-products.mjs's
+// `SEED-<date>-Standards*`), and the rule is "delete only AGENT-TEST entities, nothing else".
 const SEED_FAMILY = 'AGENT-TEST-SEED';        // stable matcher (all runs, all dates)
-const LEGACY_PREFIX = 'SEED-';                // pre-2026-06 runs, swept for back-compat
 const PREFIX = `${SEED_FAMILY}-${DATE_STAMP}`; // per-run entity name/code prefix
-const RESULTS_FILE = join(ROOT, 'test-data', `_seed-results-${DATE_STAMP}.json`);
 
-// An entity belongs to this seeder if its name/code carries the current family
-// prefix OR the legacy one. Used by teardown — date-independent on purpose.
+// Runtime GUIDs land in the env overlay (aliases.<env>.json), NOT a _seed-results file.
+// The env name mirrors seed-common's default (process.env.TEST_ENV || 'vcst').
+const TEST_ENV_NAME = process.env.TEST_ENV || 'vcst';
+const ENV_ALIAS_FILE = join(ROOT, 'test-data', `aliases.${TEST_ENV_NAME}.json`);
+// Internal bookkeeping key inside aliases.<env>.json — a leading underscore marks it as
+// non-@td (like `_meta`). These AGENT-TEST-SEED-* entities are ephemeral fixtures that no
+// alias resolves, so we don't map them onto named aliases; we stash this run's ids here
+// purely so teardown can clean orphaned products + restore the store catalog.
+const SEED_BOOKKEEPING_KEY = '_seedTestData';
+
+// An entity belongs to this seeder ONLY if its name/code carries the AGENT-TEST family
+// prefix. Used by teardown — date-independent on purpose, but never matches non-AGENT-TEST data.
 function isSeedEntity(name) {
-  return typeof name === 'string' && (name.startsWith(SEED_FAMILY) || name.startsWith(LEGACY_PREFIX));
+  return typeof name === 'string' && name.startsWith(SEED_FAMILY);
 }
 
 // --- CLI Args ---
@@ -137,20 +154,25 @@ async function api(method, path, body = null, { expectStatus = [200, 204], formU
 
 async function authenticate() {
   log('Authenticating...');
-  const data = await api('POST', '/connect/token', {
-    grant_type: 'password',
-    username: ADMIN,
-    password: ADMIN_PASSWORD,
-  }, { formUrlEncoded: true, expectStatus: [200] });
-
-  if (DRY_RUN) {
-    created.token = 'dry-run-token';
-    log('Auth: [DRY RUN]');
-    return;
+  // Always fetch a REAL token — even in --dry-run. Dry-run skips WRITES only; reads
+  // (GET + POST /search) still execute (see api()), and they need a valid bearer. The
+  // old code stubbed a fake 'dry-run-token', which 401'd every read and broke the whole
+  // dry-run preview. This bypasses api()'s write-skip guard for the token call itself.
+  // Raw key=value (not URLSearchParams) to avoid double-encoding '!' etc. in the password.
+  const body = Object.entries({ grant_type: 'password', username: ADMIN, password: ADMIN_PASSWORD })
+    .map(([k, v]) => `${k}=${v}`).join('&');
+  const res = await fetch(`${BACK_URL}/connect/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Auth failed: ${res.status} ${text.slice(0, 200)}`);
   }
-
+  const data = await res.json();
   created.token = data.access_token;
-  log(`Auth: OK (expires in ${data.expires_in}s)`);
+  log(`Auth: OK (expires in ${data.expires_in}s)${DRY_RUN ? ' [DRY RUN — reads only]' : ''}`);
 }
 
 // --- Seed Steps ---
@@ -223,162 +245,13 @@ async function seedCatalogs(rows) {
   // on an env that already has the store we just re-point its catalog.
   const virtualCat = created.catalogs.find(c => c.isVirtual && !DRY_RUN);
   log('Ensuring store + catalog assignment...');
-  await ensureStore(virtualCat);
+  // Shared store seeder (seed-common) — pass this seeder's own `api`; it reads stores.csv.
+  await ensureStore(api, { catalogId: virtualCat?.id });
 }
 
-// Map a test-data/stores/stores.csv row's flag columns → VC store settings.
-// Booleans are kept even when false (e.g. email_verification_required=false is
-// meaningful). Env-specific keys (GA4 / Firebase / AppInsights / Maps / BuilderIO)
-// are intentionally NOT seeded here — those are per-env secrets set by the deploy
-// config, not test fixtures.
-function storeSettingsFromRow(row) {
-  const bool = v => /^true$/i.test(String(v ?? ''));
-  const out = [];
-  const addBool = (name, v) => out.push({ name, valueType: 'Boolean', value: bool(v) });
-  const addText = (name, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') out.push({ name, valueType: 'ShortText', value: String(v).trim() }); };
-  addBool('Stores.IsSpa', row.is_spa);
-  addBool('Stores.AllowAnonymousUsers', row.anonymous_users_allowed);
-  addBool('XOrder.CreateAnonymousOrderEnabled', row.create_anonymous_order_enabled);
-  addBool('Stores.EmailVerificationEnabled', row.email_verification_enabled);
-  addBool('Stores.EmailVerificationRequired', row.email_verification_required);
-  addBool('Quotes.EnableQuotes', row.quotes_enabled);
-  addBool('Subscription.EnableSubscriptions', row.subscription_enabled);
-  addBool('Stores.TaxCalculationEnabled', row.tax_calculation_enabled);
-  addText('Stores.SeoLinksType', row.seo_link_type);
-  addBool('Loyalty.Enable', row.loyalty_enabled);
-  addText('Loyalty.Mode', row.loyalty_mode);
-  addText('Loyalty.Currency', row.loyalty_currency);
-  addBool('WhiteLabeling.WhiteLabelingEnabled', row.whitelabeling_enabled);
-  addText('Customer.ContactDefaultStatus', row.contact_default_status);
-  addText('Customer.OrganizationDefaultStatus', row.org_default_status);
-  return out;
-}
-
-// Currency definitions (symbol / decimals / primary) from test-data/stores/currencies.csv.
-function loadCurrencyDefs() {
-  const defs = {};
-  for (const r of loadCsv('test-data/stores/currencies.csv')) {
-    defs[r.code] = {
-      code: r.code,
-      name: r.name || r.code,
-      symbol: r.symbol || r.code,
-      exchangeRate: Number(r.exchange_rate) || 1,
-      isPrimary: /^true$/i.test(r.is_primary || ''),
-      decimalDigits: Number.isFinite(+r.decimal_digits) ? +r.decimal_digits : 2,
-      ...(r.culture_name ? { cultureName: r.culture_name } : {}),
-    };
-  }
-  return defs;
-}
-
-// Register the given currency codes as platform Currency entities (Core module,
-// POST /api/currencies). REQUIRED: a store can list currency codes, but unless each
-// is a registered Currency the storefront/admin show none ("I don't see currency").
-// Idempotent — skips codes already registered; the service enforces a single primary.
-async function ensureCurrencies(codes) {
-  if (DRY_RUN || !codes?.length) return;
-  const defs = loadCurrencyDefs();
-  const existing = (await api('GET', '/api/currencies')) || [];
-  const have = new Set(existing.map(c => c.code));
-  const missing = codes.filter(c => !have.has(c));
-  if (!missing.length) { verbose('currencies already registered'); return; }
-  const primaryHandled = existing.some(c => c.isPrimary) || missing.some(c => (defs[c] || {}).isPrimary);
-  for (const code of missing) {
-    const d = defs[code] || { code, name: code, symbol: code, exchangeRate: 1, isPrimary: false, decimalDigits: 2 };
-    await api('POST', '/api/currencies', d, { expectStatus: [200, 201, 204] });
-    // POST-create does not reliably persist a non-default decimalDigits (e.g. 0 for
-    // point currencies like PTS/XPT); a follow-up PUT enforces the exact value.
-    if (d.decimalDigits !== 2) await api('PUT', '/api/currencies', d, { expectStatus: [200, 201, 204] });
-  }
-  // Guarantee a primary exists (first registered code) if none was set anywhere.
-  if (!primaryHandled) {
-    const d = defs[missing[0]] || { code: missing[0], name: missing[0], symbol: missing[0], exchangeRate: 1, decimalDigits: 2 };
-    await api('PUT', '/api/currencies', { ...d, isPrimary: true }, { expectStatus: [200, 201, 204] });
-  }
-  log(`  ✓ Registered ${missing.length} currenc${missing.length === 1 ? 'y' : 'ies'}: ${missing.join(', ')}`);
-}
-
-// Resolve active fulfillment centers (matched to test-data/inventory/fulfillment-centers.csv
-// by name) and set the store's main / additional FFC fields. FFCs must already exist
-// (created by seed-inventory.mjs); if none are present this is a no-op. Mutates `store`
-// in place and returns true when anything changed.
-async function applyFulfillmentCenters(store) {
-  let ffcRows = [];
-  try { ffcRows = loadCsv('test-data/inventory/fulfillment-centers.csv'); } catch { /* optional */ }
-  const roleByName = {};
-  for (const r of ffcRows) roleByName[(r.ffc_name || '').trim().toLowerCase()] = (r.store_role || '').trim().toLowerCase();
-
-  const search = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 100 });
-  const ffcs = (search?.results || []).filter(f => f.isActive !== false);
-  if (!ffcs.length) { verbose('no active fulfillment centers to assign'); return false; }
-
-  const roleOf = (f) => {
-    const n = (f.name || '').toLowerCase();
-    for (const [name, role] of Object.entries(roleByName)) if (name && n.endsWith(name)) return role;
-    return '';
-  };
-  let main = ffcs.find(f => roleOf(f) === 'main') || ffcs[0];
-  const returns = ffcs.find(f => roleOf(f) === 'returns');
-  const roleAdditional = ffcs.filter(f => roleOf(f) === 'additional');
-  // Fallback (no role mapping): everything except main becomes additional.
-  const additionalIds = (roleAdditional.length ? roleAdditional : ffcs.filter(f => f.id !== main.id)).map(f => f.id);
-
-  let changed = false;
-  if (store.mainFulfillmentCenterId !== main.id) { store.mainFulfillmentCenterId = main.id; changed = true; }
-  const sortJoin = a => (a || []).slice().sort().join(',');
-  if (sortJoin(store.additionalFulfillmentCenterIds) !== sortJoin(additionalIds)) { store.additionalFulfillmentCenterIds = additionalIds; changed = true; }
-  if (returns && store.returnsFulfillmentCenterId !== returns.id) { store.returnsFulfillmentCenterId = returns.id; changed = true; }
-  if (changed) log(`  ✓ FFC assignment: main=${main.name}, +${additionalIds.length} additional${returns ? `, returns=${returns.name}` : ''}`);
-  return changed;
-}
-
-// Create the store from stores.csv when missing, else re-point its catalog.
-// Always registers the store's currencies first so they actually resolve.
-async function ensureStore(virtualCat) {
-  const row = loadCsv('test-data/stores/stores.csv').find(r => r.store_id === STORE_ID);
-  const list = s => (s || '').split(';').map(x => x.trim()).filter(Boolean);
-  const currencies = row ? list(row.available_currencies) : [];
-  if (!currencies.length) currencies.push(row?.default_currency || 'USD');
-
-  // Currencies are a prerequisite for both an existing and a new store.
-  await ensureCurrencies(currencies);
-
-  const desiredUrl = process.env.FRONT_URL || (row && row.store_url) || undefined;
-  const existing = await api('GET', `/api/stores/${STORE_ID}`);
-  if (existing) {
-    let changed = false;
-    if (virtualCat) { existing.catalog = virtualCat.id; changed = true; }
-    if (desiredUrl && existing.url !== desiredUrl) { existing.url = desiredUrl; changed = true; }
-    if (await applyFulfillmentCenters(existing)) changed = true;
-    if (changed) {
-      await api('PUT', '/api/stores', existing, { expectStatus: [200, 204] });
-      log(`  ✓ Store ${STORE_ID} updated (catalog ${virtualCat ? virtualCat.name : 'unchanged'}, url ${existing.url})`);
-    }
-    return;
-  }
-  // Store absent (fresh start-local DB). Build it from the CSV fixture.
-  if (!row) { log(`  ⚠ Store ${STORE_ID} missing and no matching stores.csv row — skipping store creation`); return; }
-  const catId = virtualCat?.id || created.catalogs[0]?.id;
-  if (!catId) { log(`  ⚠ Store ${STORE_ID} missing but no catalog seeded to bind — skipping store creation`); return; }
-  if (DRY_RUN) { log(`  [DRY RUN] would create store ${STORE_ID} from stores.csv`); return; }
-  const languages = list(row.available_languages); if (!languages.length) languages.push(row.default_language || 'en-US');
-  const settings = storeSettingsFromRow(row);
-  const storeBody = {
-    id: STORE_ID,
-    name: row.store_name || STORE_ID,
-    storeState: row.store_state || 'Open',
-    catalog: catId,
-    defaultLanguage: row.default_language || 'en-US',
-    languages,
-    defaultCurrency: row.default_currency || 'USD',
-    currencies,
-    url: process.env.FRONT_URL || row.store_url,
-    settings,
-  };
-  await applyFulfillmentCenters(storeBody);
-  await api('POST', '/api/stores', storeBody, { expectStatus: [200, 201, 204] });
-  log(`  ✓ Created store ${STORE_ID} from stores.csv (catalog ${virtualCat?.name || catId}, ${currencies.length} currencies, ${languages.length} languages, ${settings.length} settings)`);
-}
+// storeSettingsFromRow / loadCurrencyDefs / ensureCurrencies / applyFulfillmentCenters / ensureStore
+// were EXTRACTED to scripts/lib/seed-common.mjs (imported above) so the bootstrap preflight and this
+// relational seeder build ONE store from test-data/stores/stores.csv. Do not re-add local copies.
 
 async function seedCategories(rows) {
   log(`Creating ${rows.length} categor${rows.length === 1 ? 'y' : 'ies'}...`);
@@ -669,14 +542,14 @@ async function seedPricing(priceListRows, priceRows) {
     for (const pl of created.priceLists) {
       try {
         const assignBody = {
-          name: `${pl.name} → ${STORE_ID}`,
+          name: `${pl.name} → ${virtualCat.id}`,
           pricelistId: pl.id,
-          storeId: STORE_ID,
+          catalogId: virtualCat.id,
           priority: 100,
         };
         await api('POST', '/api/pricing/assignments', assignBody, { expectStatus: [200, 201] });
         assignCount++;
-        verbose(`  ✓ Assignment: ${pl.name} → ${STORE_ID}`);
+        verbose(`  ✓ Assignment: ${pl.name} → catalog ${virtualCat.id}`);
       } catch (err) {
         log(`  ⚠ Assignment failed for ${pl.name}: ${err.message.slice(0, 120)}`);
       }
@@ -722,6 +595,28 @@ function buildBatchPrices(priceRows) {
 async function seedInventory(stockRows) {
   log('Setting inventory...');
 
+  // stock-levels.csv references FFCs by business key (row.ffc_id, e.g. "FFC-001"), but the
+  // LIVE fulfillment centers (created by seed-inventory.mjs) carry code=ffc_code (e.g.
+  // "FFC-EAST") and name="AGENT-TEST-FFC-<ffc_name>" — neither equals "FFC-001". Bridge the
+  // two through fulfillment-centers.csv so per-FFC stock lands on the intended center instead
+  // of silently collapsing onto the first active one.
+  let ffcMeta = [];
+  try { ffcMeta = loadCsv('test-data/inventory/fulfillment-centers.csv'); } catch { /* optional */ }
+  const ffcMetaByBusinessId = {};
+  for (const r of ffcMeta) {
+    ffcMetaByBusinessId[r.ffc_id] = { code: (r.ffc_code || '').trim(), name: (r.ffc_name || '').trim() };
+  }
+  const resolveFfc = (businessId) => {
+    const meta = ffcMetaByBusinessId[businessId] || {};
+    return created.fulfillmentCenters.find(f =>
+      f.id === businessId ||
+      f.code === businessId ||
+      (meta.code && f.code === meta.code) ||
+      (meta.name && f.name?.includes(meta.name)) ||
+      f.name?.includes(businessId)
+    );
+  };
+
   // Build flat array of InventoryInfo objects for batch upsert via PUT /api/inventory/plenty
   const inventoryEntries = [];
   for (const row of stockRows) {
@@ -729,10 +624,8 @@ async function seedInventory(stockRows) {
     if (!product) continue;
     if (row.track_inventory === 'false') continue;
 
-    // Match FFC by id or code
-    let ffc = created.fulfillmentCenters.find(f =>
-      f.id === row.ffc_id || f.code === row.ffc_id || f.name?.includes(row.ffc_id)
-    );
+    // Match FFC by business id → live code/name (see bridge above)
+    let ffc = resolveFfc(row.ffc_id);
     // Fallback: use first active FFC
     if (!ffc && created.fulfillmentCenters.length > 0) {
       ffc = created.fulfillmentCenters[0];
@@ -814,35 +707,32 @@ async function verifySeededData() {
 
 // --- Teardown ---
 
-// Merge entity IDs from EVERY _seed-results-*.json (all prior runs, newest first),
-// so teardown can clean runs whose entities no longer carry a discoverable name
-// (e.g. a product moved into a non-seed catalog). The catalog-prefix sweep below
-// is the primary, results-file-independent path; this is the supplementary one.
-function loadAllSeedResults() {
-  const dir = join(ROOT, 'test-data');
-  const merged = { products: [], priceLists: [], storeOriginalCatalog: null, files: [] };
-  let files = [];
+// Read this seeder's bookkeeping section from aliases.<env>.json (written at the end of a
+// successful seed). Supplies product ids for orphan cleanup + the store's original catalog
+// for restore. The PRIMARY teardown path is the date-independent AGENT-TEST-SEED catalog
+// prefix-sweep (overlay-independent) — this only covers products whose catalog was already
+// removed. One overlay per env ⇒ only the latest run's ids are stored here; older runs are
+// still swept by the prefix path (their catalogs cascade their products away).
+function loadSeedBookkeeping() {
+  const empty = { products: [], priceLists: [], storeOriginalCatalog: null };
   try {
-    files = readdirSync(dir).filter(f => /^_seed-results-.*\.json$/.test(f)).sort().reverse();
-  } catch { /* test-data dir missing — nothing to merge */ }
-  for (const f of files) {
-    try {
-      const r = JSON.parse(readFileSync(join(dir, f), 'utf-8'));
-      merged.files.push(f);
-      if (Array.isArray(r?.created?.products)) merged.products.push(...r.created.products);
-      if (Array.isArray(r?.created?.priceLists)) merged.priceLists.push(...r.created.priceLists);
-      if (!merged.storeOriginalCatalog && r?.storeOriginalCatalog) merged.storeOriginalCatalog = r.storeOriginalCatalog;
-    } catch { verbose(`Skipping unreadable results file: ${f}`); }
-  }
-  return merged;
+    if (!existsSync(ENV_ALIAS_FILE)) return empty;
+    const bk = JSON.parse(readFileSync(ENV_ALIAS_FILE, 'utf-8'))?.[SEED_BOOKKEEPING_KEY];
+    if (!bk) return empty;
+    return {
+      products: Array.isArray(bk.products) ? bk.products : [],
+      priceLists: Array.isArray(bk.priceLists) ? bk.priceLists : [],
+      storeOriginalCatalog: bk.storeOriginalCatalog || null,
+    };
+  } catch { verbose(`Could not read bookkeeping from ${ENV_ALIAS_FILE}`); return empty; }
 }
 
 async function teardown() {
-  log(`Starting teardown — deleting ${SEED_FAMILY}-* (and legacy ${LEGACY_PREFIX}*) entities across ALL runs...`);
+  log(`Starting teardown — deleting ${SEED_FAMILY}-* entities across ALL runs (AGENT-TEST family only)...`);
 
-  const seedResults = loadAllSeedResults();
-  if (seedResults.files.length) {
-    log(`Aggregated IDs from ${seedResults.files.length} results file(s): ${seedResults.files.join(', ')}`);
+  const seedResults = loadSeedBookkeeping();
+  if (seedResults.products.length || seedResults.priceLists.length) {
+    log(`Bookkeeping from aliases.${TEST_ENV_NAME}.json: ${seedResults.products.length} products, ${seedResults.priceLists.length} price lists`);
   }
 
   // --- 1. Find every seed catalog by the date-independent prefix ---
@@ -857,15 +747,20 @@ async function teardown() {
     const catSearch = await api('POST', '/api/catalog/search/categories', { catalogId: cat.id, take: 500 });
     const seedCats = (catSearch?.results || []).filter(c => isSeedEntity(c.name) || isSeedEntity(c.code));
     if (seedCats.length > 0) {
+      // `objectIds` (NOT listEntryIds): POST /api/catalog/listentries/delete takes a
+      // CatalogListEntrySearchCriteria — an empty/absent ObjectIds triggers a
+      // search-and-delete of EVERY authorized entity (full-catalog wipe). The wrong field
+      // deserialized to null ObjectIds. Correct field + the seedCats.length guard keep this
+      // on the delete-only-these-ids branch.
       await api('POST', '/api/catalog/listentries/delete', {
-        listEntryIds: seedCats.map(c => c.id),
+        objectIds: seedCats.map(c => c.id),
         objectType: 'Category',
       }, { expectStatus: [200, 204] });
       log(`  ✓ Deleted ${seedCats.length} categories from ${cat.name}`);
     }
   }
 
-  // --- 3. Best-effort product deletion from aggregated results files. Covers
+  // --- 3. Best-effort product deletion from the env-overlay bookkeeping. Covers
   //        products whose catalog was already removed or is shared; survivors in
   //        a seed catalog cascade away at step 5. 404 is tolerated (already gone). ---
   const resultProductIds = [...new Set(
@@ -877,24 +772,24 @@ async function teardown() {
     for (const [ids, label] of [[variationIds, 'variations'], [parentIds, 'products']]) {
       if (ids.length === 0) continue;
       try {
+        // `objectIds` (NOT listEntryIds) — see the Category delete above: an empty ObjectIds
+        // makes this endpoint wipe every authorized product. `ids.length === 0` is guarded above.
         await api('POST', '/api/catalog/listentries/delete', {
-          listEntryIds: ids,
+          objectIds: ids,
           objectType: 'CatalogProduct',
         }, { expectStatus: [200, 204, 404] });
-        log(`  ✓ Deleted ${ids.length} ${label} (from results files)`);
+        log(`  ✓ Deleted ${ids.length} ${label} (from bookkeeping)`);
       } catch (err) {
-        verbose(`results-file ${label} delete failed: ${err.message.slice(0, 120)}`);
+        verbose(`bookkeeping ${label} delete failed: ${err.message.slice(0, 120)}`);
       }
     }
   }
 
-  // --- 4. Delete seed price lists: keyword search per family + results-file IDs ---
+  // --- 4. Delete seed price lists: keyword search per family + bookkeeping IDs ---
   const plIds = new Set(seedResults.priceLists.map(pl => pl.id).filter(Boolean));
-  for (const family of [SEED_FAMILY, LEGACY_PREFIX]) {
-    const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(family)}`, null, { expectStatus: [200, 404] });
-    const list = Array.isArray(plSearch) ? plSearch : (plSearch?.results || []);
-    list.filter(pl => isSeedEntity(pl.name)).forEach(pl => plIds.add(pl.id));
-  }
+  const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(SEED_FAMILY)}`, null, { expectStatus: [200, 404] });
+  const plList = Array.isArray(plSearch) ? plSearch : (plSearch?.results || []);
+  plList.filter(pl => isSeedEntity(pl.name)).forEach(pl => plIds.add(pl.id));
   if (plIds.size > 0) {
     await api('DELETE', `/api/pricing/pricelists?ids=${[...plIds].join(',')}`, null, { expectStatus: [200, 204, 404] });
     log(`  ✓ Deleted ${plIds.size} price lists`);
@@ -1020,24 +915,27 @@ async function main() {
   await triggerReindex();
   await verifySeededData();
 
-  // Save results
+  // Persist this run's runtime GUIDs to test-data/aliases.<env>.json — the sanctioned
+  // location for env-specific ids (no _seed-results-*.json). These AGENT-TEST-SEED-*
+  // entities are ephemeral and resolved by no @td() alias, so they live under an internal
+  // bookkeeping key (see SEED_BOOKKEEPING_KEY) rather than named aliases. Kept only so
+  // teardown can clean orphaned products + restore the store catalog. No-op under --dry-run.
   if (!DRY_RUN) {
-    const report = {
-      profile,
-      dateStamp: DATE_STAMP,
-      prefix: PREFIX,
-      target: BACK_URL,
-      storeId: STORE_ID,
-      created: {
-        catalogs: created.catalogs.map(c => ({ id: c.id, name: c.name, csvId: c.csvId })),
-        categories: created.categories.map(c => ({ id: c.id, name: c.name, csvId: c.csvId })),
+    // Preserve the FIRST-recorded original catalog: on a re-seed the store already points at
+    // a seed catalog, so this run's discovered "original" would be a seed catalog — don't let
+    // it overwrite the real one captured on the initial seed.
+    const prior = loadSeedBookkeeping();
+    writeEnvAliasOverride({
+      [SEED_BOOKKEEPING_KEY]: {
+        profile,
+        dateStamp: DATE_STAMP,
+        prefix: PREFIX,
         products: created.products.map(p => ({ id: p.id, sku: p.sku, name: p.name, csvId: p.csvId, isVariation: p.isVariation })),
         priceLists: created.priceLists.map(pl => ({ id: pl.id, name: pl.name, csvId: pl.csvId, currency: pl.currency })),
+        storeOriginalCatalog: prior.storeOriginalCatalog || created.storeOriginalCatalog,
       },
-      storeOriginalCatalog: created.storeOriginalCatalog,
-    };
-    writeFileSync(RESULTS_FILE, JSON.stringify(report, null, 2));
-    log(`\nResults saved to ${RESULTS_FILE}`);
+    });
+    log(`\nRuntime GUIDs saved to test-data/aliases.${TEST_ENV_NAME}.json (${SEED_BOOKKEEPING_KEY})`);
   }
 
   console.log('\n✅ Seed complete!\n');
