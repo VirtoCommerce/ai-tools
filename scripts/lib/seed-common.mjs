@@ -402,8 +402,10 @@ export async function applyFulfillmentCenters(api, store) {
   };
   const main = ffcs.find((f) => roleOf(f) === 'main') || ffcs[0];
   const returns = ffcs.find((f) => roleOf(f) === 'returns');
-  const roleAdditional = ffcs.filter((f) => roleOf(f) === 'additional');
-  const additionalIds = (roleAdditional.length ? roleAdditional : ffcs.filter((f) => f.id !== main.id)).map((f) => f.id);
+  // Store gets a default (main) + EVERY other active FFC as available (not just the role='additional'
+  // ones) — all created FFCs are usable at store level. (Inactive FFCs are excluded by the isActive
+  // filter above — they're fixtures for inactive-FFC scenarios, not live shipping options.)
+  const additionalIds = ffcs.filter((f) => f.id !== main.id).map((f) => f.id);
   let changed = false;
   if (store.mainFulfillmentCenterId !== main.id) { store.mainFulfillmentCenterId = main.id; changed = true; }
   const sortJoin = (a) => (a || []).slice().sort().join(',');
@@ -584,7 +586,13 @@ export async function ensureCatalogs(api) {
     const languages = (row.languages || 'en-US').split(',').map((lc) => ({
       languageCode: lc.trim(), isDefault: lc.trim() === (row.default_language || 'en-US'),
     }));
-    const body = { name, isVirtual, languages };
+    const defLang = row.default_language || 'en-US';
+    const body = {
+      name, isVirtual, languages,
+      // Catalog SEO: add store + language to the platform default (which has storeId=null). Keep the
+      // GENERIC "catalog" slug — root catalogs are NOT browsed by slug, so no unique slug per catalog.
+      seoInfos: [{ storeId: STORE_ID, languageCode: defLang, semanticUrl: 'catalog', pageTitle: name, isActive: true }],
+    };
     if (isVirtual && row.linked_physical_catalogs) {
       body.links = row.linked_physical_catalogs.split(',')
         .map((n) => byKey[n.trim()]).filter(Boolean).map((c) => ({ catalogId: c.id }));
@@ -640,7 +648,7 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
           catalogId: cat.id, parentId, name, code,
           isActive: String(row.is_active).toLowerCase() !== 'no',
           priority: Number(row.priority) || 1,
-          seoInfos: [{ languageCode: 'en-US', semanticUrl: `seed-${row.seo_slug}`, pageTitle: row.meta_title || row.category_name, metaDescription: row.meta_description || '' }],
+          seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: `seed-${row.seo_slug}`, pageTitle: row.meta_title || row.category_name, metaDescription: row.meta_description || '' }],
         };
         try { id = (await api('POST', '/api/catalog/categories', body, { expectStatus: [200, 201] }))?.id; log(`✓ category: ${name} (${id})`); }
         catch (e) {
@@ -701,7 +709,10 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
     const name = `${SEED_FAMILY}-${seg}`;
     let found = await findCategoryByCode(api, catalogId, code);
     if (!found && !DRY_RUN) {
-      try { found = await api('POST', '/api/catalog/categories', { catalogId, parentId, name, code, isActive: true, priority: 1 }, { expectStatus: [200, 201] }); log(`✓ category: ${name} (${found?.id})`); }
+      // Store + language scoped SEO (curated slug/meta from categories.csv when the slug matches).
+      const csvRow = catRows.find((r) => catSlug(r.code || r.category_name) === catSlug(seg));
+      const seo = [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: `seed-${csvRow?.seo_slug || catSlug(seg)}`, pageTitle: csvRow?.meta_title || seg, metaDescription: csvRow?.meta_description || '' }];
+      try { found = await api('POST', '/api/catalog/categories', { catalogId, parentId, name, code, isActive: true, priority: 1, seoInfos: seo }, { expectStatus: [200, 201] }); log(`✓ category: ${name} (${found?.id})`); }
       catch (e) {
         if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(1500); found = await findCategoryByCode(api, catalogId, code); }
         else throw e;

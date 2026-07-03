@@ -51,6 +51,7 @@ const IMAGES_PER = argv.includes('--images') ? Math.max(0, parseInt(argv[argv.in
 const enrich = (id, code) => (NO_ASSETS ? Promise.resolve({}) : enrichProductContent(id, { images: IMAGES_PER, code, force: FORCE_ASSETS }));
 
 let VIRTUAL_CATALOG_ID = null;
+const cfgSlug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // ── Family → catalog-group + naming/slug conventions ─────────────────────────
 // catalogGroup: which SEED-* catalog holds this family's products.
@@ -116,7 +117,11 @@ async function findCatalogByName(name) {
 async function ensureCatalog(name) {
   let cat = await findCatalogByName(name);
   if (cat) { log(`↻ catalog: ${name} (${cat.id})`); return cat; }
-  cat = await api('POST', '/api/catalog/catalogs', { name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }] });
+  cat = await api('POST', '/api/catalog/catalogs', {
+    name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }],
+    // Catalog SEO with store + language (generic slug — root catalogs aren't browsed by slug).
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'catalog', pageTitle: name, isActive: true }],
+  });
   log(`✓ catalog: ${name} (${cat?.id})`);
   return cat;
 }
@@ -126,7 +131,7 @@ async function ensureCategory(catalogId, name, code) {
   if (found) { log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code, isActive: true, priority: 1,
-    seoInfos: [{ languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
   });
   log(`✓ category: ${name} (${cat?.id})`);
   return cat;
@@ -223,7 +228,7 @@ async function ensureProductsWithOptionsCategory() {
   if (found) { PWO_CATEGORY_ID = found.id; log(`↻ VC category: ${name} (${found.id})`); return PWO_CATEGORY_ID; }
   const c = await api('POST', '/api/catalog/categories', {
     catalogId: VIRTUAL_CATALOG_ID, name, code: 'products-with-options', isActive: true, priority: 1,
-    seoInfos: [{ languageCode: 'en-US', semanticUrl: 'products-with-options' }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'products-with-options' }],
   }, { expectStatus: [200, 201] });
   PWO_CATEGORY_ID = c?.id; log(`✓ VC category created: ${name} (${c?.id})`);
   return PWO_CATEGORY_ID;
@@ -346,6 +351,7 @@ async function seedSpec(spec, ctx, ffcId) {
       const { code, name } = childIdentity(spec, section, opt, idx);
       const child = await ensureProduct(catalog.id, childCat.id, {
         name, code, productType: 'Physical', vendor: 'QA', isActive: true, isBuyable: true, trackInventory: true,
+        seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: cfgSlug(code) }],
       });
       opt._productId = child.id;
       if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
@@ -360,8 +366,10 @@ async function seedSpec(spec, ctx, ffcId) {
   const parentBody = {
     name: spec.name, code: spec.code, productType: 'Physical', vendor: 'QA',
     isActive: true, isBuyable: true, trackInventory: false,
+    // Store-scoped product SEO (platform default leaves storeId=null). Preserve the slug scheme:
+    // slugFromCode families keep the code slug; others use the name slug (== the prior auto-slug).
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name) }],
   };
-  if (slugFromCode) parentBody.seoInfos = [{ languageCode: 'en-US', semanticUrl: spec.code.toLowerCase() }];
   const parent = await ensureProduct(catalog.id, parentCat.id, parentBody);
   if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
     await ensurePrice(priceList.id, parent.id, spec.basePrice, spec.salePrice ?? null);
@@ -385,22 +393,27 @@ async function seedSpec(spec, ctx, ffcId) {
   return { csvId: spec.csvId, name: spec.name, parentId: parent.id, configurationId: cfg?.id, sections: sectionReport };
 }
 
-// ── Group context cache (ensure a catalog group only once, and only if used) ──
-const groupCtx = {};
-async function ctxFor(groupKey) {
-  if (groupCtx[groupKey]) return groupCtx[groupKey];
-  const g = GROUPS[groupKey];
-  log(`\n─── catalog group: ${g.catalog} ───`);
-  const catalog = await ensureCatalog(g.catalog);
-  const parentCat = await ensureCategory(catalog.id, g.parentCat[0], g.parentCat[1]);
-  const childCat = await ensureCategory(catalog.id, g.childCat[0], g.childCat[1]);
-  const priceList = await findOrCreatePriceList(g.pricelist);
+// ── Unified catalog context (ONE stable catalog for every family) ─────────────
+// UNIFIED: all configurable families place into a SINGLE stable-named physical catalog
+// `AGENT-TEST-SEED-Configurables` (was 3 date-stamped SEED-<date>-Configurables catalogs → orphan
+// sprawl + not family-swept). The stable name is caught by the `seed:teardown` family sweep. The
+// storefront-special "Products with options" category (exact name — NOT AGENT-TEST-prefixed) is kept
+// as the parent nesting so /products-with-options still resolves. seedSpec is untouched.
+const UNIFIED = { catalog: 'AGENT-TEST-SEED-Configurables' };
+let sharedCtx = null;
+async function ctxFor(_groupKey) {
+  if (sharedCtx) return sharedCtx;
+  log(`\n─── configurable catalog: ${UNIFIED.catalog} ───`);
+  const catalog = await ensureCatalog(UNIFIED.catalog);
+  const parentCat = await ensureCategory(catalog.id, 'Configurable Parents', 'AGENT-TEST-SEED-CFG-PARENTS');
+  const childCat = await ensureCategory(catalog.id, 'Configurable Options', 'AGENT-TEST-SEED-CFG-OPTS');
+  const priceList = await findOrCreatePriceList('AGENT-TEST-SEED-Configurables-USD');
   if (!DRY_RUN && parentCat.id && !String(parentCat.id).startsWith('dry-')) {
     try { await linkCategoryUnder(parentCat.id, PWO_CATEGORY_ID); log(`✓ ${parentCat.name} nested under "Products with options"`); }
     catch (e) { log(`⚠ parent-category link: ${e.message.slice(0, 160)}`); }
   }
-  groupCtx[groupKey] = { catalog, parentCat, childCat, priceList };
-  return groupCtx[groupKey];
+  sharedCtx = { catalog, parentCat, childCat, priceList };
+  return sharedCtx;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -477,15 +490,17 @@ async function teardown() {
       }
     } else log(`– ${spec.csvId} not found`);
   } else {
-    const groupKeys = [...new Set(specs.map(s => FAMILY[s.family].catalogGroup))];
-    for (const gk of groupKeys) {
-      const g = GROUPS[gk];
-      const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(g.pricelist)}`, null, { expectStatus: [200, 404] });
-      const plIds = (plSearch?.results || []).filter(p => p?.name === g.pricelist).map(p => p.id);
+    // Delete the unified catalog + pricelist AND any legacy date-stamped ones from prior runs.
+    const catalogs = [UNIFIED.catalog, ...Object.values(GROUPS).map(g => g.catalog)];
+    const pricelists = ['AGENT-TEST-SEED-Configurables-USD', ...Object.values(GROUPS).map(g => g.pricelist)];
+    for (const plName of [...new Set(pricelists)]) {
+      const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
+      const plIds = (plSearch?.results || []).filter(p => p?.name === plName).map(p => p.id);
       if (plIds.length) await api('DELETE', `/api/pricing/pricelists?ids=${plIds.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
-      const cat = await findCatalogByName(g.catalog);
-      if (cat?.id) { await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ catalog delete: ${e.message.slice(0, 120)}`)); log(`✗ deleted catalog ${g.catalog} (cascades children)`); }
-      else log(`– catalog ${g.catalog} not found`);
+    }
+    for (const catName of [...new Set(catalogs)]) {
+      const cat = await findCatalogByName(catName);
+      if (cat?.id) { await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ catalog delete: ${e.message.slice(0, 120)}`)); log(`✗ deleted catalog ${catName} (cascades children)`); }
     }
   }
 
