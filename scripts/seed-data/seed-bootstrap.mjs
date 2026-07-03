@@ -42,7 +42,7 @@ const STEPS = [
   // Unified company-users: orgs (parent-child) + contacts + org-scoped logins + cross-org
   // memberships + personal storefront accounts (env roles + agent-pool + test-users), all in one.
   { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true },
-  { name: 'configurable', script: 'seed-configurable-products.mjs', required: false },
+  { name: 'configurable', script: 'seed-configurable.mjs', required: false },
   { name: 'promotions', script: 'seed-promotions.mjs', required: false },
   { name: 'bopis', script: 'seed-bopis.mjs', required: false },
   { name: 'loyalty', script: 'seed-loyalty.mjs', required: false },
