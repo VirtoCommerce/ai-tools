@@ -133,11 +133,11 @@
   },
   "CFG_022_SECTIONS": {
     "_inline": true,
-    "A": "ef9827b5-715c-421c-b44a-a62b0f863afe",
-    "B": "116614bd-2643-411e-af87-f336e3c44085",
-    "C": "ef2b0922-c340-46c1-aec8-987448aab5fd",
-    "D": "62667eaf-1b11-4f31-9c95-6cbe98911dc7",
-    "config_id": "e81c1850-9139-43d5-b548-62d21806f234",
+    "A": "4374665b-997a-4c69-91f5-a519305ee1f7",
+    "B": "c0d2212e-152d-4708-ab77-e424e3ffd76e",
+    "C": "0fffe046-af4d-4372-ad62-b0b2d47708b3",
+    "D": "0a22799a-b0c6-4a58-a4e4-46f3258cb743",
+    "config_id": "db10a28b-6e11-4e01-b567-9a6de73a06fa",
     "fields": {
       "A": "A",
       "B": "B",
@@ -145,16 +145,16 @@
       "D": "D",
       "config_id": "config_id"
     },
-    "_notes": "CFG-022 Conditional Bike section IDs (re-seeded 2026-05-19 Phase 3). A=Frame Type (root, required), B=Wheel Set (dep A), D=Frame Color (dep A, sibling of B), C=Tire Type (dep B, transitive cascade). Use @td(CFG_022_SECTIONS.A) etc. in test data instead of bare section UUIDs."
+    "_notes": "CFG-022 Conditional Bike section IDs (refreshed live 2026-07-03 after full delete+reseed). A=Frame Type (root, required), B=Wheel Set (dep A), D=Frame Color (dep A, sibling of B), C=Tire Type (dep B, transitive cascade). Use @td(CFG_022_SECTIONS.A) etc. in test data instead of bare section UUIDs."
   },
   "CFG_023_SECTIONS": {
     "_inline": true,
-    "Base": "4fe5a13c-5cfe-4979-a8cd-631337a14d6a",
-    "Creme": "8e11e288-46f9-499b-a5c6-989fb34f758f",
-    "Message": "e9a1080c-5ed7-4167-b551-a2128717cdb5",
-    "Text": "e01a061b-7d24-46d1-ae52-0c26fe7a0043",
-    "Image": "9ba49ff7-32ef-4ff5-ae9b-9af783b9da70",
-    "config_id": "1854862f-f6ac-4716-a473-0712a63a09a8",
+    "Base": "d707dc6e-0087-42fb-a1fb-6819b31e729c",
+    "Creme": "162ee815-721c-433f-af67-877a491d48f3",
+    "Message": "93c47e7f-965f-4773-9b13-8df9c86f2bca",
+    "Text": "44dc99d3-e5e9-494a-bef3-9a7fbdae5159",
+    "Image": "bae96ccc-e6a8-4c9a-8563-f457d385eb31",
+    "config_id": "d38b8383-f15c-496e-91dd-026e2399f55a",
     "fields": {
       "Base": "Base",
       "Creme": "Creme",
@@ -163,29 +163,29 @@
       "Image": "Image",
       "config_id": "config_id"
     },
-    "_notes": "CFG-023 Wedding Cake section IDs (re-seeded 2026-05-19 Phase 3). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
+    "_notes": "CFG-023 Wedding Cake section IDs (refreshed live 2026-07-03 after full delete+reseed). Base=Product (root, required), Creme=Product (dep Base), Message=Product (dep Creme), Text=Text (REQUIRED, dep Message — the VCST-4713 toast-Save bug repro section), Image=File (optional, dep Message). Use @td(CFG_023_SECTIONS.Text) etc. instead of bare section UUIDs."
   },
   "CFG_023_OPTIONS": {
     "_inline": true,
-    "Base_Default": "362c8bba-3ea2-4bc2-871b-246b4b8a9755",
-    "Creme_Default": "962c3142-f6bf-4fd5-a730-cd709999b4bb",
-    "Message_Default": "447633ca-c700-4d8a-abae-8affca19da3c",
+    "Base_Default": "42b0c2b3-5351-4e25-945b-b0cbc908d8ef",
+    "Creme_Default": "0cb0634f-b442-4fe9-82c2-a78cd9b8b8a9",
+    "Message_Default": "538b5b7f-ca99-495f-8e54-9871883d37df",
     "fields": {
       "Base_Default": "Base_Default",
       "Creme_Default": "Creme_Default",
       "Message_Default": "Message_Default"
     },
-    "_notes": "CFG-023 default option-product IDs for the 3 Product sections (verified live via productConfiguration 2026-05-20). Base_Default=Top White Bottom White, Creme_Default=Buttercreme Vanilla, Message_Default=Standard Message Tag. Use @td(CFG_023_OPTIONS.Base_Default) etc. in `option: { productId: ... }` slots of ConfigurationSectionInput. Companion to CFG_023_SECTIONS (which holds the section UUIDs)."
+    "_notes": "CFG-023 default option-product IDs for the 3 Product sections (refreshed live via productConfiguration 2026-07-03 after full delete+reseed). Base_Default=Top White Bottom White, Creme_Default=Buttercreme Vanilla, Message_Default=Standard Message Tag. Use @td(CFG_023_OPTIONS.Base_Default) etc. in `option: { productId: ... }` slots of ConfigurationSectionInput. Companion to CFG_023_SECTIONS (which holds the section UUIDs)."
   },
   "CFG_017_SECTIONS": {
     "_inline": true,
-    "Text": "2cc0f57e-5654-4396-8795-66fe6e226ad1",
-    "config_id": "b7e534c2-c47f-4c22-ac9e-5c094f1b7f0d",
+    "Text": "a2fc5823-2be8-44d4-9cc6-304f14470843",
+    "config_id": "f03082c4-11a8-4e62-ab66-21c62570fe40",
     "fields": {
       "Text": "Text",
       "config_id": "config_id"
     },
-    "_notes": "CFG-017 Ring section IDs (verified live via productConfiguration 2026-05-20). Single REQUIRED Text section 'Engraving Text', maxLength=30. Parent product GUID 750d36bd-5d1a-4261-898d-e506f89e5184 (resolves as @td(CFG_RING.id)). Use @td(CFG_017_SECTIONS.Text) for the section UUID instead of hardcoding."
+    "_notes": "CFG-017 Ring section IDs (refreshed live via productConfiguration 2026-07-03 after full delete+reseed). Single REQUIRED Text section 'Engraving Text', maxLength=30. Parent resolves as @td(CFG_RING.id). Use @td(CFG_017_SECTIONS.Text) for the section UUID instead of hardcoding."
   },
   "PROD_FULL_FIELD_COVERAGE": {
     "_inline": true,

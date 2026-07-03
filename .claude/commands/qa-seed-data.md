@@ -19,7 +19,7 @@ Seed a complete test environment on **any** environment (fresh `/qa-local-env` l
 /qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
 /qa-seed-data promotions  # Marketing promotions + rewards + coupons → npm run seed:promotions
 /qa-seed-data bopis       # BOPIS pickup locations (linked to an existing FFC) → npm run seed:bopis
-/qa-seed-data configurable# Configurable products (Phase 1) → npm run seed:configurable (also :conditional | :default | :bike)
+/qa-seed-data configurable# All configurable products (CFG-012..032 + CFG-FILE) → npm run seed:configurable (--group base|conditional|default|bike filters)
 /qa-seed-data users       # Personal storefront accounts + .env.{ENV} role identities (USER/EUR_USER/LOYALTY_*) → npm run seed:users
 /qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B + seed:users
 /qa-seed-data teardown    # Delete ephemeral seeded entities (match teardown to the path that seeded)
