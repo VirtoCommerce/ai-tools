@@ -24,6 +24,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
+import zlib from 'node:zlib';
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
 // Intentionally does NOT import config.js: seeders only need BACK_URL/ADMIN/ADMIN_PASSWORD
@@ -478,4 +479,102 @@ export async function verifyRemoved(searchFn) {
     if (Array.isArray(r)) return r.length;
     return (r?.results || r?.items || []).length;
   } catch { return 0; }
+}
+
+/* ── Product content enrichment (images + descriptions) ────────────────────────
+ * Give a bare seeded product the content a real one has: an image library +
+ * editorial descriptions. Images are pure zero-dep PNGs (Node's built-in zlib for
+ * the IDAT deflate + a hand-rolled CRC32) — a deterministic solid colour + diagonal
+ * band keyed by the product code, so every product gets a distinct, recognisable
+ * placeholder (main + N-1 alternates). No native image deps (sharp/canvas). Assets
+ * are uploaded to platform storage (uploadAsset → api/assets) exactly like the
+ * white-labeling seeder. Non-destructive: fills gaps only unless `force`.
+ * Called by the product seeders (seed-standard-products, seed-configurable) so
+ * enrichment lives with product creation instead of in a separate script.
+ */
+const _PNG_MARKER = 'AGENT-TEST-IMG';
+const _CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+  return t;
+})();
+function _crc32(buf) { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = _CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function _pngChunk(type, data) {
+  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+  const t = Buffer.from(type, 'ascii');
+  const crc = Buffer.alloc(4); crc.writeUInt32BE(_crc32(Buffer.concat([t, data])), 0);
+  return Buffer.concat([len, t, data, crc]);
+}
+function _hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function _hslToRgb(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+/** Deterministic 600x600 RGB PNG placeholder for (code, variant): base colour from
+ * the code hash + a lighter diagonal band. Returns a Buffer. */
+export function makeProductPng(code, variant = 0) {
+  const W = 600, H = 600, bandW = 90;
+  const hue = (_hash(String(code)) + variant * 47) % 360;
+  const base = _hslToRgb(hue, 58, 52 - variant * 6);
+  const band = _hslToRgb(hue, 42, 78);
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const rowLen = W * 3;
+  const raw = Buffer.alloc((rowLen + 1) * H);
+  for (let y = 0; y < H; y++) {
+    raw[y * (rowLen + 1)] = 0;
+    for (let x = 0; x < W; x++) {
+      const [r, g, b] = (((x + y) % 220) < bandW) ? band : base;
+      const o = y * (rowLen + 1) + 1 + x * 3; raw[o] = r; raw[o + 1] = g; raw[o + 2] = b;
+    }
+  }
+  const idat = zlib.deflateSync(raw, { level: 9 });
+  return Buffer.concat([sig, _pngChunk('IHDR', ihdr), _pngChunk('IDAT', idat), _pngChunk('IEND', Buffer.alloc(0))]);
+}
+
+/**
+ * Enrich ONE product (by id) with an image library + editorial descriptions.
+ * GET → append missing content → POST save. Idempotent + non-destructive: a product
+ * that already has images / reviews keeps them unless `force`. An already-serving
+ * asset URL is not re-uploaded. No-op under --dry-run. Returns { images, reviews }.
+ *   opts: { images=3, descriptions=true, force=false, code }
+ */
+export async function enrichProductContent(productId, { images = 3, descriptions = true, force = false, code = null } = {}) {
+  if (DRY_RUN || !productId || String(productId).startsWith('dry-')) return { images: 0, reviews: 0, dry: true };
+  const p = await api('GET', `/api/catalog/products/${productId}`, null, { expectStatus: [200, 404] });
+  if (!p?.id) return { skipped: true };
+  p.images ??= []; p.reviews ??= [];
+  const c = code || p.code;
+  let changed = false; const did = { images: 0, reviews: 0 };
+
+  if (images > 0 && (force || !p.images.length)) {
+    if (force) p.images = p.images.filter(im => !(im.name || '').startsWith(_PNG_MARKER));
+    const folder = `catalog/${String(c).replace(/[^A-Za-z0-9_-]+/g, '-')}`;
+    for (let v = 0; v < images; v++) {
+      const fileName = `${c}-${v === 0 ? 'main' : `alt-${v}`}.png`.replace(/[^A-Za-z0-9._-]+/g, '-');
+      const url = `/assets/${folder}/${fileName}`;
+      let assetUrl;
+      if (!force && await assetUrlOk(url)) assetUrl = url;
+      else { const info = await uploadAsset(folder, fileName, makeProductPng(c, v), 'image/png'); assetUrl = info.url; }
+      p.images.push({ url: assetUrl, name: `${_PNG_MARKER}-${c}-${v}`, sortOrder: v, group: 'images', languageCode: null });
+      did.images++; changed = true;
+    }
+  }
+
+  if (descriptions && (force || !p.reviews.length)) {
+    if (force) p.reviews = p.reviews.filter(r => !/AGENT-TEST/.test(r.content || ''));
+    const kind = (p.productType || 'product').toLowerCase();
+    p.reviews.push(
+      { reviewType: 'QuickReview', languageCode: 'en-US', content: `${p.name} — QA test fixture (${kind}). Seeded for automated regression coverage.` },
+      { reviewType: 'FullReview', languageCode: 'en-US', content: `<p><strong>${p.name}</strong> is an AGENT-TEST ${kind} fixture (code <code>${p.code}</code>) used by the Virto Commerce QA suite.</p><p>It exists to exercise catalog, cart, checkout and storefront rendering paths deterministically. Not a real merchandise item.</p>` },
+    );
+    did.reviews = 2; changed = true;
+  }
+
+  if (changed) await api('POST', '/api/catalog/products', p, { expectStatus: [200, 201, 204] });
+  return did;
 }

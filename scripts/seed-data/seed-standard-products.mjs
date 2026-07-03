@@ -27,7 +27,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, verifyRemoved, auth as commonAuth, enrichProductContent } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -48,6 +48,10 @@ const DRY_RUN = args.includes('--dry-run');
 const VERBOSE = args.includes('--verbose');
 const TEARDOWN = args.includes('--teardown');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
+// Product content enrichment (images + descriptions), on by default; idempotent.
+const NO_ASSETS = args.includes('--no-assets');
+const FORCE_ASSETS = args.includes('--force-assets');
+const IMAGES_PER = args.includes('--images') ? Math.max(0, parseInt(args[args.indexOf('--images') + 1], 10)) : 3;
 
 const ENV_RISK = (process.env.ENV_RISK || 'dev').toLowerCase();
 if (ENV_RISK === 'production' && !args.includes('--allow-admin-writes-on-prod')) {
@@ -353,6 +357,11 @@ async function seedSpec(spec, catalog, category, priceListId, ffcId) {
     } catch (e) {
       console.log(`  ⚠ virtual-catalog link: ${e.message.slice(0, 200)}`);
     }
+
+    if (!NO_ASSETS) {
+      const did = await enrichProductContent(product.id, { images: IMAGES_PER, code: spec.code, force: FORCE_ASSETS });
+      if (did?.images || did?.reviews) console.log(`  ✓ enriched: +${did.images || 0} img +${did.reviews || 0} desc`);
+    }
   }
 
   return {
@@ -371,6 +380,7 @@ async function seedSpec(spec, catalog, category, priceListId, ffcId) {
 
 async function main() {
   await auth();
+  if (!NO_ASSETS) await commonAuth(); // token for seed-common's enrichProductContent (images → assets)
   VIRTUAL_CATALOG_ID = await ensureVirtualCatalog(api);
   console.log(`  Virtual catalog: ${VIRTUAL_CATALOG_ID}`);
   const catalog = await ensureCatalog();

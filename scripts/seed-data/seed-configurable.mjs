@@ -41,12 +41,18 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID,
+  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID,
 } from '../lib/seed-common.mjs';
 
 const PRIMARY_ENV = 'vcst';
 const argv = process.argv.slice(2);
 const GROUP = argv.includes('--group') ? argv[argv.indexOf('--group') + 1] : null;
+// Product content enrichment (images + descriptions), on by default — a bare seeded
+// product otherwise has no imagery/copy. Idempotent (skips products already populated).
+const NO_ASSETS = argv.includes('--no-assets');
+const FORCE_ASSETS = argv.includes('--force-assets');
+const IMAGES_PER = argv.includes('--images') ? Math.max(0, parseInt(argv[argv.indexOf('--images') + 1], 10)) : 3;
+const enrich = (id, code) => (NO_ASSETS ? Promise.resolve({}) : enrichProductContent(id, { images: IMAGES_PER, code, force: FORCE_ASSETS }));
 
 let VIRTUAL_CATALOG_ID = null;
 
@@ -543,6 +549,7 @@ async function seedSpec(spec, ctx, ffcId) {
       if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
         if (opt.price != null) await ensurePrice(priceList.id, child.id, opt.price, opt.salePrice ?? null);
         await ensureInventory(ffcId, child.id, opt.stock ?? 100);
+        await enrich(child.id, code); // images + descriptions (idempotent)
       }
     }
   }
@@ -554,7 +561,10 @@ async function seedSpec(spec, ctx, ffcId) {
   };
   if (slugFromCode) parentBody.seoInfos = [{ languageCode: 'en-US', semanticUrl: spec.code.toLowerCase() }];
   const parent = await ensureProduct(catalog.id, parentCat.id, parentBody);
-  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) await ensurePrice(priceList.id, parent.id, spec.basePrice, spec.salePrice ?? null);
+  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
+    await ensurePrice(priceList.id, parent.id, spec.basePrice, spec.salePrice ?? null);
+    await enrich(parent.id, spec.code); // images + descriptions (idempotent)
+  }
 
   // 3. configuration
   const cfg = await createOrUpdateConfiguration(parent.id, spec.sections);
