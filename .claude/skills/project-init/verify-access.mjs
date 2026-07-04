@@ -82,6 +82,24 @@ async function httpStatus(url) {
 }
 // resolveAdoTenant now lives in probe-lib.mjs (shared with derive-context.mjs).
 
+/** Azure DevOps REST auth header (PAT Basic, else an `az login` bearer). {header, via} — header "" if none. */
+function adoAuth() {
+  if (process.env.ADO_PAT) return { header: "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"), via: "ADO_PAT" };
+  if (tryCmd("az account show")) {
+    try {
+      const tok = execSync("az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+      if (tok) return { header: "Bearer " + tok, via: "az session" };
+    } catch { /* no token */ }
+  }
+  return { header: "", via: "" };
+}
+
+/** Split owner/name. */
+function splitRepo(full) {
+  const i = (full || "").indexOf("/");
+  return i >= 0 ? { owner: full.slice(0, i), name: full.slice(i + 1) } : { owner: "", name: full || "" };
+}
+
 async function main() {
   // 1. Profile
   const profile = loadProjectProfile();
@@ -194,6 +212,48 @@ async function main() {
   // 9. gh CLI session (informational — the capability probe above is the real gate)
   add("gh CLI session", ghAuthed ? "PASS" : (process.env.GITHUB_FIX_BUGS_TOKEN ? "SKIP" : "FAIL"),
     ghAuthed ? "gh authenticated" : "run `gh auth login` (or rely on the PAT above)");
+
+  // 10. Client repos reachable + writable — the MAIN /qa-fix operation on a client deployment
+  //     is clone+PR on the CLIENT's own repos, so probe them here rather than discover a dead
+  //     token at Gate 2. Native platform (no client repos) → SKIP. Per repo, by its host.
+  const clientRepos = profile.repos?.client || [];
+  if (!clientRepos.length) {
+    add("Client repos", "SKIP", "native-platform deployment — no client repos to probe");
+  } else {
+    const ado = adoAuth();
+    for (const r of clientRepos) {
+      if (!r?.name) continue;
+      const host = r.host || profile.vcs.clientHost || "github";
+      const label = `Client repo ${r.name}${r.kind ? ` (${r.kind})` : ""}`;
+      if (host === "azure-repos") {
+        const org = profile.vcs.azure?.organization || process.env.ADO_ORG || "";
+        const project = profile.vcs.azure?.project || process.env.ADO_PROJECT || "";
+        const { name } = splitRepo(r.name);
+        if (!ado.header) { add(label, "FAIL", "no ADO_PAT / az session to reach Azure Repos"); continue; }
+        if (!org || !project) { add(label, "FAIL", "missing vcs.azure.organization / project"); continue; }
+        try {
+          const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/${encodeURIComponent(name)}?api-version=7.1`;
+          const res = await fetch(url, { headers: { Authorization: ado.header, Accept: "application/json" } });
+          const okJson = res.ok && (res.headers.get("content-type") || "").includes("application/json");
+          add(label, okJson ? "PASS" : "FAIL", okJson ? `reachable via ${ado.via}` : `→ ${res.status} (${ado.via} not accepted — check PAT Code R/W or az tenant)`);
+        } catch (e) { add(label, "FAIL", e.message); }
+      } else {
+        // github client repo
+        if (!ghtok) { add(label, "FAIL", "no GitHub token to reach the client repo"); continue; }
+        try {
+          const { owner, name } = splitRepo(r.name);
+          const res = await fetch(`https://api.github.com/repos/${owner}/${name}`, {
+            headers: { "User-Agent": "vc-verify", Accept: "application/vnd.github+json", Authorization: `Bearer ${ghtok}` },
+          });
+          if (res.ok) {
+            const repo = await res.json();
+            const push = Boolean(repo.permissions?.push);
+            add(label, push ? "PASS" : "WARN", push ? `push access via ${ghVia}` : `reachable (${ghVia}) but no push perm — PR needs write`);
+          } else add(label, "FAIL", `GET repos/${owner}/${name} → ${res.status}`);
+        } catch (e) { add(label, "FAIL", e.message); }
+      }
+    }
+  }
 
   renderTable(results);
   renderMcp();

@@ -54,6 +54,17 @@ In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls
 hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
 no-auto-merge hard rules below are unchanged in every case.
 
+### Frontend provenance — a client storefront fork mixes client + platform code
+When the routed repo is a **client `frontend` fork**, the *repo* is client-owned but an individual bug may
+live in **unmodified vc-frontend code** carried into the fork. Don't decide from the symptom — decide from
+the RCA anchor's **provenance** against the fork's upstream (`clientUpstream(repo)` → `{ upstream,
+upstreamRef }`): fetch the anchor file from the client repo and from `vc-frontend @ upstreamRef`, then use
+`classifyFrontendProvenance()` + `frontendDeliveryPlan()` (`ci/lib/provenance.ts`). Anchor client-only or
+differing ⇒ fix the fork; byte-identical to unmodified upstream ⇒ platform bug → under the default
+`fork-and-issue` policy **patch the fork** (repair the site) **and file a platform-generic upstream GitHub
+issue** (client-scrubbed, §2a — never a client-code PR); already fixed upstream ⇒ STOP-upgrade;
+uncomparable ⇒ STOP (containment-first). Full table: `quality-gates.md` §1a Gate 1b.
+
 ### 🔒 Client-code containment — HARD security invariant (see quality-gates §2a)
 **Client code MUST NEVER leave the client's project. Upstream VirtoCommerce gets contribution only —
 platform code — NEVER client source, in any form.** This outranks fixing the bug: on any conflict, STOP.

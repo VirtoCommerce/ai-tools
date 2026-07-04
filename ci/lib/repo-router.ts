@@ -141,11 +141,25 @@ const CLIENT_REPOS = PROFILE.repos.client || [];
 
 export type RepoOwnership = "client" | "platform";
 
+/** Optional per-repo toolchain overrides + upstream provenance for a client repo. */
+export interface ClientRepoMeta {
+  installCmd?: string;
+  buildCmd?: string;
+  typecheckCmd?: string;
+  lintCmd?: string;
+  testCmd?: string;
+  /** The platform repo this client repo was forked/derived from (provenance). */
+  upstream?: string;
+  /** The platform version/tag/branch the client fork was cut from (provenance anchor). */
+  upstreamRef?: string;
+}
+
 const CLIENT_FULL = new Set<string>();
 const CLIENT_BARE = new Set<string>();
 const CLIENT_KINDS = new Map<string, RepoKind>();
 const CLIENT_HOSTS = new Map<string, "github" | "azure-repos">();
 const CLIENT_BRANCHES = new Map<string, string>();
+const CLIENT_META = new Map<string, ClientRepoMeta>();
 for (const r of CLIENT_REPOS) {
   if (!r?.name) continue;
   const bare = repoName(r.name).name;
@@ -154,6 +168,45 @@ for (const r of CLIENT_REPOS) {
   if (r.kind) CLIENT_KINDS.set(bare, r.kind as RepoKind);
   if (r.host) CLIENT_HOSTS.set(bare, r.host);
   if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
+  const meta: ClientRepoMeta = {};
+  for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef"] as const) {
+    if (r[k]) meta[k] = r[k];
+  }
+  if (Object.keys(meta).length) CLIENT_META.set(bare, meta);
+}
+
+/**
+ * Pure ownership decision — exported for unit testing without the module-load
+ * side effects (config + profile). Callers pass the resolved client facts.
+ *
+ * Rules, in order:
+ *  1. An explicit `owner/name` entry in `repos.client` → client (operator declared it).
+ *  2. An owner equal to the PLATFORM org (VirtoCommerce) → ALWAYS platform. This is the
+ *     H1 guard: a client fork that keeps the upstream name (e.g. a repo literally called
+ *     `vc-frontend`) must NOT make `VirtoCommerce/vc-frontend` look client via a bare-name
+ *     collision. The platform-org owner is decisive.
+ *  3. An owner equal to the client org → client.
+ *  4. A BARE (owner-less) query whose name is a known client repo → client. Bare names are
+ *     only trusted when there is no owner to disambiguate — never to override an explicit
+ *     platform-org owner (rule 2 already returned).
+ *  5. Otherwise → platform (the native-platform default; also the no-client case).
+ */
+export function computeOwnership(
+  repo: string,
+  facts: {
+    platformOrg: string;
+    clientOrg: string;
+    clientFull: Set<string>;
+    clientBare: Set<string>;
+  },
+): RepoOwnership {
+  const { owner, name } = repoName(repo);
+  if (facts.clientFull.has(repo)) return "client";
+  const lo = (owner || "").toLowerCase();
+  if (owner && facts.platformOrg && lo === facts.platformOrg.toLowerCase()) return "platform";
+  if (owner && facts.clientOrg && lo === facts.clientOrg.toLowerCase()) return "client";
+  if (!owner && facts.clientBare.has(name)) return "client";
+  return "platform";
 }
 
 /**
@@ -162,10 +215,12 @@ for (const r of CLIENT_REPOS) {
  * which VCS a PR/issue targets. Always "platform" when no client is configured.
  */
 export function repoOwnership(repo: string): RepoOwnership {
-  const { owner, name } = repoName(repo);
-  if (CLIENT_ORG && owner === CLIENT_ORG) return "client";
-  if (CLIENT_FULL.has(repo) || CLIENT_BARE.has(name)) return "client";
-  return "platform";
+  return computeOwnership(repo, {
+    platformOrg: REPO_ORG,
+    clientOrg: CLIENT_ORG,
+    clientFull: CLIENT_FULL,
+    clientBare: CLIENT_BARE,
+  });
 }
 
 /**
@@ -220,7 +275,36 @@ export function repoKind(repo: string): RepoKind {
 
 export function repoProfile(repo: string): RepoProfile {
   if (!isAllowedRepo(repo)) throw new Error(`Repo not allowed: ${repo}`);
-  return REPO_PROFILES[repoKind(repo)];
+  const base = REPO_PROFILES[repoKind(repo)];
+  // A client repo may pin its own toolchain (a custom module built differently from a
+  // native VC module, or a storefront fork with a non-standard test command). Layer the
+  // profile overrides over the kind default; platform repos always use the kind default.
+  if (repoOwnership(repo) === "client") {
+    const meta = CLIENT_META.get(repoName(repo).name);
+    if (meta) {
+      return {
+        ...base,
+        ...(meta.installCmd ? { installCmd: meta.installCmd } : {}),
+        ...(meta.buildCmd ? { buildCmd: meta.buildCmd } : {}),
+        ...(meta.typecheckCmd ? { typecheckCmd: meta.typecheckCmd } : {}),
+        ...(meta.lintCmd ? { lintCmd: meta.lintCmd } : {}),
+        ...(meta.testCmd ? { testCmd: meta.testCmd } : {}),
+      };
+    }
+  }
+  return base;
+}
+
+/**
+ * Upstream provenance of a client repo (the platform repo it was forked/derived from,
+ * and the version anchor), or null for a platform repo / an unconfigured client repo.
+ * Read by the frontend-provenance routing check (client customization vs platform bug).
+ */
+export function clientUpstream(repo: string): { upstream: string; upstreamRef: string } | null {
+  if (repoOwnership(repo) !== "client") return null;
+  const meta = CLIENT_META.get(repoName(repo).name);
+  if (!meta?.upstream) return null;
+  return { upstream: meta.upstream, upstreamRef: meta.upstreamRef || "" };
 }
 
 /**

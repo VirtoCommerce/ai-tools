@@ -30,8 +30,22 @@
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
  *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
- *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
- * @property {{client:Array<object>, platform:Array<object>}} repos
+ *   contributionMode:"fork"|"direct", clientGithubAccount:string,
+ *   frontendDelivery:"fork-and-issue"|"fork-only"|"upstream-only"}} upstream
+ * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
+ *
+ * @typedef {Object} ClientRepo
+ * @property {string} name  owner/name of the client-owned repo
+ * @property {"frontend"|"module"|"platform"} [kind]
+ * @property {"github"|"azure-repos"} [host]
+ * @property {string} [defaultBranch]  the repo's default branch (checkoutForFix uses it)
+ * @property {string} [upstream]  the platform repo this was forked/derived from (provenance)
+ * @property {string} [upstreamRef]  the platform version/tag the fork was cut from (provenance anchor)
+ * @property {string} [installCmd]  toolchain override (else the kind default)
+ * @property {string} [buildCmd]
+ * @property {string} [typecheckCmd]
+ * @property {string} [lintCmd]
+ * @property {string} [testCmd]
  */
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
@@ -58,6 +72,13 @@ export const PROFILE_DEFAULTS = {
     fileIssues: true,
     contributionMode: "fork",
     clientGithubAccount: "",
+    // How a PLATFORM-owned frontend bug is delivered on a CLIENT deployment whose
+    // storefront is a vc-frontend fork. "fork-and-issue" (default): fix the client's
+    // fork so the site is repaired now AND file an upstream GitHub issue so the platform
+    // learns of the defect (never a client-code PR upstream — §2a). "fork-only": patch
+    // the fork, no upstream signal. "upstream-only": PR/issue upstream, client waits for a
+    // release + fork sync. Moot on a native-platform deployment (no fork → normal path).
+    frontendDelivery: "fork-and-issue",
   },
   repos: { client: [], platform: [] },
 };

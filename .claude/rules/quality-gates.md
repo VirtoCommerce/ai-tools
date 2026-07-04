@@ -60,6 +60,29 @@ prefix; `gh auth status` confirms write scope). Azure Repos / Boards: `ADO_PAT` 
 (`ADO_AUTH=az-login`). The platform upstream is **always GitHub** (public repos), so a platform fork-PR
 or upstream issue uses `gh` even when the client's own code lives on Azure Repos.
 
+### Gate 1b — frontend provenance (a client storefront is a vc-frontend fork)
+
+`repoOwnership` routes by repo, but a **client storefront fork** contains both client-customized files
+and files byte-identical to the platform — the *repo* is client, yet an individual bug may live in
+**unmodified platform code**. So for a routed **client `frontend`** repo, ownership is refined from the
+RCA anchor's **code provenance** (not the symptom), then delivery follows `upstream.frontendDelivery`.
+This is **data, not judgment**: `ci/lib/provenance.ts` `classifyFrontendProvenance()` + `frontendDeliveryPlan()`
+(shared by both twins); the fork's upstream + version anchor come from `clientUpstream(repo)`
+(`repos.client[].upstream` / `upstreamRef`, derived by `/project-init`).
+
+| RCA anchor vs `vc-frontend @ upstreamRef` | Ownership | Delivery (policy `fork-and-issue`, default) |
+|---|---|---|
+| anchor exists **only** in the client repo (custom component) | **client** | fix the client fork |
+| anchor exists in both but **differs** (customized) | **client** | fix the client fork |
+| **byte-identical** to unmodified upstream, not fixed on upstream HEAD | **platform** | **fix the client fork** (repair the site now) **+ file a platform-generic upstream issue** (scrubbed of client code, §2a) so VirtoCommerce fixes the root cause |
+| identical **and already fixed** on upstream HEAD | **platform** | **STOP-upgrade** — the client should sync the fork / upgrade the platform version, not re-fix |
+| anchor missing / uncomparable | **client + LOW** | **STOP** for human routing (containment-first) |
+
+`upstream.frontendDelivery` overrides the platform-bug row: `fork-only` (patch the fork, no upstream
+signal) or `upstream-only` (PR/issue upstream, client waits for a release + fork sync). **The upstream
+side is always an ISSUE, never a client-code PR** — §2a holds. On a **native platform** deployment there
+is no fork, so this sub-gate is a no-op and a frontend bug takes the ordinary `vc-frontend` path.
+
 ---
 
 ## 2. No-auto-merge — triple guard (G7)
@@ -129,7 +152,9 @@ time and erodes trust in the pipeline; a BAIL just leaves the bug for a human. E
 | Need | Lives at |
 |------|----------|
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
-| Module→repo resolution, `isAllowedRepo`, `checkoutForFix`, `repoOwnership`, `contributionPlan`, `REPO_PROFILES` (build/test cmds) | `ci/lib/repo-router.ts` |
+| Module→repo resolution, `isAllowedRepo`, `checkoutForFix`, `repoOwnership`, `computeOwnership`, `contributionPlan`, `clientUpstream`, `REPO_PROFILES` (build/test cmds) | `ci/lib/repo-router.ts` |
+| Frontend provenance decision (client customization vs platform bug) + delivery plan | `ci/lib/provenance.ts` (`classifyFrontendProvenance` / `frontendDeliveryPlan`) |
+| Tracker/host-agnostic ops (resolve/comment/transition; live transition discovery; clone/PR matrix) | `.claude/agents/knowledge/execution/tracker-ops.md` |
 | PR/issue delivery by ownership (`getVcs` / `getUpstreamVcs`; GitHub fork-PR + issue dedup; Azure Repos PR) | `ci/lib/vcs/` |
 | Deployment profile (client vs platform, tracker, VCS host, upstream) — written by `/project-init` | `project-profile.json` (gitignored) · `scripts/lib/project-profile.mjs` · `project-profile.example.json` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |

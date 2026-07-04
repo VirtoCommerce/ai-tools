@@ -108,8 +108,34 @@ export function classify(modules, clientOrg) {
 
 /** Heuristic: pick storefront/theme/frontend repo names from a client repo list. Pure. */
 export function pickFrontendRepos(names) {
-  const rx = /(vc-theme|vc-frontend|storefront|theme|front-?end)/i;
+  // Broadened (H6): the storefront repo is frequently named without the vc- prefix
+  // (a plain `frontend`, `storefront`, `webstore`, `shopfront`, a `theme`, or an `spa`).
+  const rx = /(vc-theme|vc-frontend|store-?front|shop-?front|web-?store|storefront|theme|front-?end|\bspa\b)/i;
   return [...new Set((names || []).filter((n) => rx.test(n)))];
+}
+
+/** Strip a git ref down to its branch name: `refs/heads/main` → `main`. Pure. */
+export function stripRef(ref) {
+  return String(ref || "").replace(/^refs\/heads\//, "");
+}
+
+/**
+ * Decide, from a repo's parsed package.json, whether it descends from VirtoCommerce
+ * vc-frontend, and pin the version anchor. Pure + conservative: only asserts the
+ * vc-frontend upstream on a clear signal (a `vc-frontend` package name, or a
+ * `@vc-shell`/virtocommerce dependency) — a routing/containment decision must not
+ * guess. Returns { upstream, upstreamRef } or null (operator then names it).
+ */
+export function frontendProvenanceFromPackage(pkg) {
+  if (!pkg || typeof pkg !== "object") return null;
+  const name = String(pkg.name || "").toLowerCase();
+  const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+  const vcSignal =
+    name === "vc-frontend" ||
+    name.includes("vc-frontend") ||
+    Object.keys(deps).some((d) => /@vc-shell|virtocommerce|@virto\//i.test(d));
+  if (!vcSignal) return null;
+  return { upstream: "VirtoCommerce/vc-frontend", upstreamRef: String(pkg.version || "") };
 }
 
 /**
@@ -133,48 +159,118 @@ export function deriveClientOrg(client, { host, adoOrg, override } = {}) {
   return best;
 }
 
-/** List the client's repo NAMES from their code host (Azure Repos or GitHub). */
+/** Azure DevOps auth header from ADO_PAT (Basic) or an `az login` bearer token. "" if neither. */
+function adoAuthHeaderSync() {
+  const pat = process.env.ADO_PAT || "";
+  if (pat) return "Basic " + Buffer.from(":" + pat).toString("base64");
+  try {
+    const tok = execSync(
+      "az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv",
+      { stdio: ["ignore", "pipe", "ignore"] },
+    ).toString().trim();
+    if (tok) return "Bearer " + tok;
+  } catch { /* no az session */ }
+  return "";
+}
+
+/** GitHub API auth headers from the fix token (if any). */
+function githubHeaders() {
+  const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
+  return { "User-Agent": "vc-project-init", Accept: "application/vnd.github+json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) };
+}
+
+/**
+ * List the client's repos from their code host (Azure Repos or GitHub), returning
+ * `[{ name, defaultBranch }]` (H2: the default branch is carried so checkoutForFix
+ * doesn't blind-guess `main`). GitHub also carries `{ isFork, fullName }` for provenance.
+ */
 async function listClientReposLive(host, { org, project }) {
   if (host === "azure-repos") {
     if (!org || !project) throw new Error("need ADO_ORG + ADO_PROJECT to list Azure Repos");
-    // Auth: ADO_PAT (Basic) if set, else fall back to the `az login` session by acquiring
-    // an Azure DevOps bearer token (resource GUID 499b84ac-… is the ADO app id).
-    let authHeader = "";
-    const pat = process.env.ADO_PAT || "";
-    if (pat) {
-      authHeader = "Basic " + Buffer.from(":" + pat).toString("base64");
-    } else {
-      try {
-        const tok = execSync(
-          "az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv",
-          { stdio: ["ignore", "pipe", "ignore"] },
-        ).toString().trim();
-        if (tok) authHeader = "Bearer " + tok;
-      } catch { /* no az session */ }
-    }
+    const authHeader = adoAuthHeaderSync();
     if (!authHeader) throw new Error("need ADO_PAT or an `az login` session to list Azure Repos");
     const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories?api-version=7.1`;
     const res = await fetch(url, { headers: { Authorization: authHeader, Accept: "application/json" } });
     const ct = res.headers.get("content-type") || "";
     // ADO answers an unauthenticated/misdirected request with a 203 + HTML sign-in page.
     if (!res.ok || !ct.includes("application/json")) {
-      const via = pat ? "ADO_PAT" : "the az session";
+      const via = process.env.ADO_PAT ? "ADO_PAT" : "the az session";
       throw new Error(
         `ADO repositories → ${res.status} — ${via} not accepted for org '${org}'` +
-          (pat ? "" : " (the az identity may not be a member of this ADO org, or it is in a different tenant — try `az login --tenant <id>`, or set ADO_PAT)"),
+          (process.env.ADO_PAT ? "" : " (the az identity may not be a member of this ADO org, or it is in a different tenant — try `az login --tenant <id>`, or set ADO_PAT)"),
       );
     }
-    return ((await res.json()).value || []).map((r) => r.name);
+    return ((await res.json()).value || []).map((r) => ({
+      name: r.name,
+      defaultBranch: stripRef(r.defaultBranch),
+    }));
   }
   // github
   if (!org) throw new Error("need client org to list GitHub repos");
-  const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
-  const hdr = { "User-Agent": "vc-project-init", Accept: "application/vnd.github+json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) };
+  const hdr = githubHeaders();
   for (const kind of ["orgs", "users"]) {
     const res = await fetch(`https://api.github.com/${kind}/${org}/repos?per_page=100`, { headers: hdr });
-    if (res.ok) return (await res.json()).map((r) => r.name);
+    if (res.ok) {
+      return (await res.json()).map((r) => ({
+        name: r.name,
+        defaultBranch: r.default_branch || "",
+        isFork: Boolean(r.fork),
+        fullName: r.full_name || "",
+      }));
+    }
   }
   throw new Error(`GitHub repos for '${org}' → not found`);
+}
+
+/**
+ * Best-effort upstream provenance for a storefront repo — { upstream, upstreamRef } or null.
+ * GitHub: a true fork exposes `parent.full_name` (the exact upstream). Otherwise (and for
+ * Azure Repos, which has no fork lineage) read the repo's package.json and infer vc-frontend
+ * lineage + version. Never throws — provenance is optional; the operator fills gaps.
+ */
+async function deriveFrontendProvenance(host, { org, project, name, isFork, fullName }) {
+  try {
+    if (host === "github") {
+      // A real GitHub fork names its parent directly.
+      const res = await fetch(`https://api.github.com/repos/${org}/${name}`, { headers: githubHeaders() });
+      if (res.ok) {
+        const repo = await res.json();
+        if (repo.fork && repo.parent?.full_name) {
+          // Anchor the version from package.json when available.
+          const pkg = await readPackageJsonLive(host, { org, project, name });
+          return { upstream: repo.parent.full_name, upstreamRef: String(pkg?.version || "") };
+        }
+      }
+    }
+    // Fallback (Azure Repos, or a GitHub copy that isn't a fork): infer from package.json.
+    const pkg = await readPackageJsonLive(host, { org, project, name });
+    return frontendProvenanceFromPackage(pkg);
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch + parse a repo's root package.json from the code host. Returns the object or null. */
+async function readPackageJsonLive(host, { org, project, name }) {
+  try {
+    if (host === "azure-repos") {
+      const authHeader = adoAuthHeaderSync();
+      if (!authHeader) return null;
+      const url =
+        `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/` +
+        `${encodeURIComponent(name)}/items?path=/package.json&api-version=7.1&$format=text`;
+      const res = await fetch(url, { headers: { Authorization: authHeader, Accept: "text/plain" } });
+      if (!res.ok) return null;
+      return JSON.parse(await res.text());
+    }
+    const res = await fetch(`https://api.github.com/repos/${org}/${name}/contents/package.json`, {
+      headers: { ...githubHeaders(), Accept: "application/vnd.github.raw+json" },
+    });
+    if (!res.ok) return null;
+    return JSON.parse(await res.text());
+  } catch {
+    return null;
+  }
 }
 
 async function getModulesLive() {
@@ -249,16 +345,39 @@ async function main() {
   if (!args["modules-json"] && clientOrg) {
     try {
       const org = host === "azure-repos" ? (process.env.ADO_ORG || clientOrg) : clientOrg;
-      const all = await listClientReposLive(host, { org, project: process.env.ADO_PROJECT || "" });
-      const fe = pickFrontendRepos(all);
+      const project = process.env.ADO_PROJECT || "";
+      const all = await listClientReposLive(host, { org, project });
+      const byName = new Map(all.map((r) => [r.name, r]));
+      const fe = pickFrontendRepos(all.map((r) => r.name));
       const have = new Set(result.client.map((c) => c.name.split("/").pop()));
+
+      // Backfill defaultBranch onto client MODULE entries (from the modules API, which
+      // carries no branch info) by matching the live repo listing (H2).
+      for (const c of result.client) {
+        const bare = c.name.split("/").pop();
+        const info = byName.get(bare);
+        if (info?.defaultBranch && !c.defaultBranch) c.defaultBranch = info.defaultBranch;
+      }
+
       for (const n of fe) {
         if (have.has(n)) continue;
-        result.client.push({ name: `${org}/${n}`, kind: "frontend", host });
+        const info = byName.get(n) || {};
+        const entry = { name: `${org}/${n}`, kind: "frontend", host };
+        if (info.defaultBranch) entry.defaultBranch = info.defaultBranch;
+        // Best-effort upstream provenance (H3): the platform repo + version this fork
+        // was cut from, so /qa-fix can tell a client customization from a platform bug.
+        const prov = await deriveFrontendProvenance(host, {
+          org, project, name: n, isFork: info.isFork, fullName: info.fullName,
+        });
+        if (prov?.upstream) { entry.upstream = prov.upstream; entry.upstreamRef = prov.upstreamRef; }
+        result.client.push(entry);
       }
       console.error(
         fe.length
-          ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}`
+          ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}` +
+              (result.client.some((c) => c.kind === "frontend" && c.upstream)
+                ? ` (provenance derived)`
+                : ` — provenance NOT derived; ASK the operator for the vc-frontend version the fork is based on (repos.client[].upstreamRef).`)
           : `[discover-repos] NO storefront/theme repo matched — ASK the operator to name it, then add { kind: "frontend" } to repos.client.`,
       );
     } catch (err) {

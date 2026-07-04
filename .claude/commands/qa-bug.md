@@ -103,12 +103,20 @@ sync, never invent a different one.
 | **Layer 4** REST | `module` (or `platform`) | `vc-module-<name>`; `vc-platform` if security/RBAC/users/dynamic-properties/platform-settings | Lowest layer wins — REST wrong = the whole stack inherits it. |
 | **Layer 3** xAPI only | `module` | `vc-module-x-<name>` (xCart/xCatalog/xOrder/xProfile/xCMS) | REST correct + GraphQL wrong = resolver/aggregation bug in the **x-** module. |
 | **Layer 2** Admin only | `module` | `vc-module-<name>` (**same repo as Layer 4** — the Admin SPA Angular UI ships *inside* the module repo) | Admin-UI-only bug → the module's `*.Web`/Angular SPA, not a separate repo. |
-| **Layer 1** Storefront only | `frontend` | `vc-frontend` | REST + GraphQL + Admin all correct, only the storefront UI is wrong = theme/component/client-state bug. |
+| **Layer 1** Storefront only | `frontend` | `vc-frontend` (native) **or the client's storefront fork** | REST + GraphQL + Admin all correct, only the storefront UI is wrong = theme/component/client-state bug. |
 
 > **Heuristic, not authority.** This table fixes the *kind*; the *exact* repo is confirmed in Step 3 via
 > `module-suite-map.md` + the `fix-repos.json` routing hints + `search_code`. `/qa-fix` Gate 1 re-validates
 > your choice with `isAllowedRepo()` — so a wrong guess is caught, but a **named, evidence-backed repo**
 > lets Gate 1 confirm instead of re-deriving.
+
+> **On a CLIENT deployment the owning *repo* may be the client's own** (a custom `vc-module-*`, or the
+> storefront **fork** of vc-frontend) rather than a VirtoCommerce repo — `project-profile.json` lists them
+> (`repos.client`). You don't decide ownership here; you provide the strongest RCA anchor so `/qa-fix`
+> Gate 1/1b can. For a **Layer-1 storefront** bug on a client fork especially, capture a precise **RCA
+> anchor (file:line)** — that anchor is what lets `/qa-fix` tell a *client customization* from an
+> *unmodified-platform* bug (provenance; see `qa-fix.md` Gate 1b). When no profile is present, the owning
+> repo is always the VirtoCommerce one — unchanged.
 
 ---
 
@@ -222,10 +230,11 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 ## Fix Routing (→ /qa-fix)
 
 - **Owning layer:** Layer N — <Storefront | Admin | xAPI | REST>
-- **Suggested repo:** VirtoCommerce/<vc-module-… | vc-module-x-… | vc-platform | vc-frontend>
+- **Suggested repo:** <VirtoCommerce/vc-module-… | vc-module-x-… | vc-platform | vc-frontend — OR a client repo from repos.client>
 - **repoKind:** module | platform | frontend
+- **Ownership hint:** platform | client | unsure  (a HINT only — /qa-fix Gate 1/1b decides from the profile + provenance; native / no-profile ⇒ always platform)
 - **Component / module:** <e.g. Pricing, xCatalog resolver, vc-frontend PDP>
-- **RCA anchor:** <file:line or method/error string for search_code validation>
+- **RCA anchor:** <file:line or method/error string for search_code validation — REQUIRED for a Layer-1 storefront bug on a client deployment: it drives the provenance check>
 - **Routing confidence:** HIGH | MEDIUM | LOW  (LOW = ambiguous layer/RCA; say why)
 ```
 

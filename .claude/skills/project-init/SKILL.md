@@ -233,7 +233,13 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   azure-repos host).
 - The **storefront/theme/frontend** repo is not a platform module; the scan lists the
   client's repos (Azure Repos via `ADO_PAT` / `az`, or GitHub via the fix token) and
-  adds any name matching the theme/frontend heuristic as `kind:"frontend"`.
+  adds any name matching the theme/frontend heuristic as `kind:"frontend"`. It also
+  captures each repo's **`defaultBranch`** (so `checkoutForFix` doesn't blind-guess `main`)
+  and **best-effort provenance** for a storefront fork — `upstream` (the vc-frontend repo it
+  was forked from) + `upstreamRef` (its version, from `package.json`). **`upstreamRef` is what
+  lets `/qa-fix` Gate 1b tell a client customization from an unmodified-platform bug** — if the
+  scan can't derive it (no clear vc-frontend signal), ASK the operator for the vc-frontend
+  version the fork is based on and set `repos.client[].upstreamRef`.
 
 **Show the proposed map to the operator to confirm/correct** — a starting point, not
 gospel. **Genuine-ambiguity asks (only these):**
@@ -318,7 +324,10 @@ URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/toke
 password grant) · storefront user login (soft WARN) · tracker token (Jira `GET /myself`
 or a **real ADO org probe**) · **GitHub fix token / gh session** (validates the token and
 its permission on the upstream — shared with the derive block via `probe-lib.mjs`, so
-what verify reports and what the profile stored can't drift). Resolve every **FAIL**
+what verify reports and what the profile stored can't drift) · **client repos** (for a
+client deployment, each `repos.client` entry is probed for reach + push on its own host —
+GitHub `permissions.push` or an Azure Repos `_apis/git/repositories/<repo>` JSON hit — so a
+dead client-repo token surfaces here, not at Gate 2; native platform ⇒ SKIP). Resolve every **FAIL**
 (exit code is non-zero while any FAIL remains); **WARN** is non-blocking; **SKIP** means
 a feature isn't configured.
 
