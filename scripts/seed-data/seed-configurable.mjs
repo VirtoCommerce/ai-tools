@@ -39,7 +39,7 @@
 
 import {
   api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv,
+  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv, buildStoreSeo,
 } from '../lib/seed-common.mjs';
 const argv = process.argv.slice(2);
 
@@ -63,12 +63,7 @@ const CATEGORY_SEO = (() => {
 // Build the en-US seoInfo for a category: title/slug/meta from the CSV, falling back to the name/code.
 const categorySeoInfo = (name, code) => {
   const m = CATEGORY_SEO[String(name).trim().toLowerCase()] || {};
-  return {
-    storeId: STORE_ID, languageCode: 'en-US',
-    semanticUrl: m.seoSlug || String(code).toLowerCase(),
-    pageTitle: m.pageTitle || name,
-    metaDescription: m.metaDescription || '',
-  };
+  return buildStoreSeo({ semanticUrl: m.seoSlug || String(code).toLowerCase(), pageTitle: m.pageTitle || name, metaDescription: m.metaDescription || '' });
 };
 // Ensure an EXISTING category carries the SEO pageTitle (so a re-run backfills it without a reseed).
 async function applyCategorySeo(categoryId, seo) {
@@ -164,7 +159,7 @@ async function ensureCatalog(name) {
   cat = await api('POST', '/api/catalog/catalogs', {
     name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }],
     // Catalog SEO with store + language (generic slug + generic "Catalog" title — not the internal name).
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true }],
+    seoInfos: [buildStoreSeo({ semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true })],
   });
   log(`✓ catalog: ${name} (${cat?.id})`);
   return cat;
@@ -403,7 +398,7 @@ async function seedSpec(spec, ctx, ffcId) {
       const { code, name } = childIdentity(spec, section, opt, idx);
       const child = await ensureProduct(catalog.id, childCat.id, {
         name, code, productType: 'Physical', vendor: 'QA', isActive: true, isBuyable: true, trackInventory: true,
-        seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: cfgSlug(code), pageTitle: name }],
+        seoInfos: [buildStoreSeo({ semanticUrl: cfgSlug(code), pageTitle: name })],
       });
       opt._productId = child.id;
       if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
@@ -420,7 +415,7 @@ async function seedSpec(spec, ctx, ffcId) {
     isActive: true, isBuyable: true, trackInventory: false,
     // Store-scoped product SEO (platform default leaves storeId=null). Preserve the slug scheme:
     // slugFromCode families keep the code slug; others use the name slug (== the prior auto-slug).
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name), pageTitle: spec.name }],
+    seoInfos: [buildStoreSeo({ semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name), pageTitle: spec.name })],
   };
   const parent = await ensureProduct(catalog.id, parentCat.id, parentBody);
   if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {

@@ -63,13 +63,16 @@ const TEARDOWN_STEPS = [
  * Explicit seed PRIORITY — the dependency chain, encoded as a number per step so ordering is
  * data-driven (sorted below), not an accident of array position. Reorder by editing `priority`.
  *
- *   Catalog(10) > Categories(20) > Properties(30) > Products(40) > Configurations(50) >
+ *   Catalog(10) > Properties(30) > Products(40) > Configurations(50) >
  *   Prices(60) > Inventory(70) > Store(80) > BOPIS(90) > Company-users(100) > …others(110+)
  *
- * Every phase is its own common script (Catalog/Categories/Store included) — the preflight only
- * warms the member index + ensures one bridge fulfillment center. seed-catalog(10) builds the
- * AGENT-TEST-SEED-* catalog structure and binds the store; seed-catalog-categories(20) builds the
- * tree and links roots into the virtual catalog; seed-store(80) finalizes store config + FFC roles.
+ * Every phase is its own common script — the preflight only warms the member index + ensures one
+ * bridge fulfillment center. seed-catalog(10) builds the AGENT-TEST-SEED-* catalog structure and
+ * binds the store; seed-store(80) finalizes store config + FFC roles. There is NO separate categories
+ * phase: the categories.csv tree is built IN-PROCESS by Products(40) (seed-standard-products calls
+ * seedCategoryTree) so its category cache spans category creation + product placement — a separate
+ * categories process couldn't be seen by the products process (cross-process index lag) → duplicate
+ * tree. `seed:categories` remains only as a standalone command; do NOT re-add a categories step here.
  * WHY this order: prices must come AFTER every product exists, so Configurations(50) is priced
  * too → pricing(60) follows both products(40) and configurable(50); BOPIS(90) needs a
  * fulfillment center (inventory/70); company-users(100) needs the member index.

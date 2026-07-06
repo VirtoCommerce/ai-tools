@@ -34,7 +34,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, buildStoreSeo, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
 import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES } from './standard-specs.mjs';
 
@@ -167,21 +167,6 @@ async function ensureCatalog() {
   return cat;
 }
 
-async function ensureCategory(catalogId, name, code) {
-  const r = await api('POST', '/api/catalog/listentries', {
-    catalog: catalogId, keyword: name, take: 20,
-  }, { expectStatus: [200, 201, 400, 404] });
-  const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category');
-  if (found) { console.log(`  ↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
-  const cat = await api('POST', '/api/catalog/categories', {
-    catalogId, name, code,
-    isActive: true, priority: 1,
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: code.toLowerCase(), pageTitle: name }],
-  });
-  console.log(`  ✓ category: ${name} (${cat?.id})`);
-  return cat;
-}
-
 // Find a product by exact code. SCOPED to a catalog when `catalogId` is given — the
 // listentries search is otherwise platform-wide, so a bare code lookup would match (and
 // let teardown delete) a real product on the env that happens to share a generic SKU
@@ -311,7 +296,7 @@ async function seedRecord(rec, priceListId, ffcId) {
     isBuyable: true,
     trackInventory: true,
     // Store-scoped product SEO (platform default leaves storeId=null): slug + title + store + language.
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slug(rec.name), pageTitle: rec.name }],
+    seoInfos: [buildStoreSeo({ semanticUrl: slug(rec.name), pageTitle: rec.name })],
   };
   if (rec.minQuantity != null) body.minQuantity = Number(rec.minQuantity);
   if (rec.packSize != null) body.packSize = Number(rec.packSize);

@@ -534,12 +534,25 @@ export async function ensureVirtualCatalog(api, { storeId = STORE_ID, name = `LO
  * FFC set / it isn't in the active list (caller falls back to ffcs[0]).
  */
 export async function storeMainFulfillmentCenter(api, ffcs) {
+  const list = ffcs || [];
+  // Prefer the CSV-designated main (fulfillment-centers.csv store_role='main'), matched the SAME way
+  // the store phase's applyFulfillmentCenters does (name endsWith). This is authoritative regardless
+  // of phase order: the inventory phase (priority 70) runs BEFORE the store phase (80) finalizes
+  // store.mainFulfillmentCenterId, so trusting only the store binding would land fresh-env stock on a
+  // stale default FFC that the store phase then re-points away from (→ real main reads 0 stock).
+  try {
+    const mainRow = loadCsvOptional('test-data/inventory/fulfillment-centers.csv')
+      .find((r) => (r.store_role || '').trim().toLowerCase() === 'main');
+    const key = (mainRow?.ffc_name || '').trim().toLowerCase();
+    if (key) { const hit = list.find((f) => (f.name || '').toLowerCase().endsWith(key)); if (hit) return hit; }
+  } catch { /* fall through to the store binding */ }
+  // Fall back to the store's currently-bound main FFC.
   try {
     const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
     const mainId = store?.mainFulfillmentCenterId;
-    if (!mainId) return null;
-    return (ffcs || []).find((f) => f.id === mainId) || null;
-  } catch { return null; }
+    if (mainId) return list.find((f) => f.id === mainId) || null;
+  } catch { /* ignore */ }
+  return null;
 }
 
 /**
@@ -590,6 +603,16 @@ export async function ensureFulfillmentCenter(api, { name = 'AGENT-TEST-Default-
 export const SEED_FAMILY = 'AGENT-TEST-SEED';           // stable, date-independent entity prefix
 const catalogSeedName = (csvName) => `${SEED_FAMILY}-${csvName}`;
 
+// Single builder for a store-scoped en-US SEO record. Every seeded category/product SEO must carry
+// slug + title + store + language (enforced live by td:reconcile check [8]); building the object in
+// one place stops a hand-copied literal from drifting (omitting languageCode/storeId) and silently
+// failing that gate. Callers pass only what varies.
+export function buildStoreSeo({ semanticUrl, pageTitle, metaDescription = '', languageCode = 'en-US', isActive } = {}) {
+  const seo = { storeId: STORE_ID, languageCode, semanticUrl, pageTitle, metaDescription };
+  if (isActive !== undefined) seo.isActive = isActive;
+  return seo;
+}
+
 async function findCatalogByName(api, name) {
   // List ALL catalogs + exact-name match — NOT a `{keyword}` search. Catalogs have no unique-name
   // constraint, so a fuzzy/lagging keyword miss makes ensureCatalogs create a DUPLICATE catalog, and
@@ -608,7 +631,7 @@ async function findCatalogByName(api, name) {
 // a common name is fuzzy + cross-catalog and could page the target past `take`.
 async function findCategoryByCode(api, catalogId, code) {
   try {
-    const r = await api('POST', '/api/catalog/listentries', { catalog: catalogId, catalogId, keyword: code, take: 50 }, { expectStatus: [200, 201, 400, 404] });
+    const r = await api('POST', '/api/catalog/listentries', { catalog: catalogId, keyword: code, take: 50 }, { expectStatus: [200, 201, 400, 404] });
     const entries = r?.listEntries || r?.results || [];
     return entries.find((c) => c.type === 'category' && c.code === code && (!c.catalogId || c.catalogId === catalogId)) || null;
   } catch { return null; }
@@ -678,7 +701,7 @@ async function _ensureCatalogs(api) {
       // Catalog SEO: add store + language to the platform default (which has storeId=null). Keep the
       // GENERIC "catalog" slug + generic "Catalog" title for EVERY catalog — root catalogs aren't
       // browsed by slug and shouldn't surface their internal AGENT-TEST-SEED-* name as a title.
-      seoInfos: [{ storeId: STORE_ID, languageCode: defLang, semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true }],
+      seoInfos: [buildStoreSeo({ semanticUrl: 'catalog', pageTitle: 'Catalog', languageCode: defLang, isActive: true })],
     };
     if (isVirtual && row.linked_physical_catalogs) {
       body.links = row.linked_physical_catalogs.split(',')
@@ -737,7 +760,7 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
           catalogId: cat.id, parentId, name, code,
           isActive: String(row.is_active).toLowerCase() !== 'no',
           priority: Number(row.priority) || 1,
-          seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: `seed-${row.seo_slug}`, pageTitle: row.meta_title || row.category_name, metaDescription: row.meta_description || '' }],
+          seoInfos: [buildStoreSeo({ semanticUrl: `seed-${row.seo_slug}`, pageTitle: row.meta_title || row.category_name, metaDescription: row.meta_description || '' })],
         };
         try { id = (await api('POST', '/api/catalog/categories', body, { expectStatus: [200, 201] }))?.id; log(`✓ category: ${name} (${id})`); }
         catch (e) {
@@ -804,7 +827,7 @@ export async function unlinkSeedRootsFromStoreVirtualCatalog(api) {
     // DB-backed root-level browse via /listentries — NOT the ES /catalog/search/categories, which lags
     // behind writes. A stale index at teardown would return nothing, skip the unlink, and leave the
     // AGENT-TEST-SEED roots linked into the live virtual catalog (polluting real storefront nav).
-    const r = await api('POST', '/api/catalog/listentries', { catalog: pid, catalogId: pid, take: 500 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+    const r = await api('POST', '/api/catalog/listentries', { catalog: pid, take: 500 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
     for (const c of (r?.listEntries || r?.results || [])) {
       // Root-level browse returns this catalog's top-level entries; identify seed categories by their
       // CODE (keeps the AGENT-TEST-SEED prefix). Name fallback covers legacy prefixed-name categories.
@@ -838,6 +861,17 @@ const _catPathCache = new Map();
 // Caching by (catalog, code) means each category is resolved/created ONCE and every product with that
 // breadcrumb segment consolidates onto the same category id.
 const _categoryIdByCatCode = new Map();
+
+// Reset all per-process seed caches. A one-shot `node` seed never needs this, but a LONG-LIVED
+// process that seeds more than once (a test harness importing this module, or a teardown followed by
+// a re-seed in the same process) must call it — otherwise ensureCategoryPath can return a cached id
+// for a category deleted by the intervening teardown, POSTing products with a dangling categoryId.
+export function resetSeedCaches() {
+  _catalogsPromise = null;
+  _catPathCache.clear();
+  _categoryIdByCatCode.clear();
+}
+
 export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvName = 'B2B-Electronics' } = {}) {
   const segs = String(breadcrumb || '').split('>').map((s) => s.trim()).filter(Boolean);
   if (!segs.length) return null;
@@ -854,8 +888,15 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
 
   let parentId = null; let leaf = null; let rootId = null;
   const pathSlugs = [];
+  // Only segments that are STILL on the categories.csv tree may reuse a flat CSV code. Once a segment
+  // leaves the CSV tree (an ad-hoc parent), every deeper segment is ad-hoc too — even if its leaf name
+  // happens to slug-match some unrelated CSV row. Without this gate a global CSV lookup would give
+  // e.g. "Furniture > Office" the flat `office` code if any CSV row were named Office, collapsing it
+  // onto "Electronics > Office" (mis-parented). Guards the parent-scoping below against name collisions.
+  let inCsvTree = true;
   for (const seg of segs) {
-    const csvRow = catRows.find((r) => catSlug(r.code || r.category_name) === catSlug(seg));
+    const csvRow = inCsvTree ? catRows.find((r) => catSlug(r.code || r.category_name) === catSlug(seg)) : null;
+    if (!csvRow) inCsvTree = false;
     pathSlugs.push(catSlug(seg));
     // categories.csv segments reuse their CSV code (shared with the categories phase). Ad-hoc segments
     // (Office, Storage, …) get a PARENT-SCOPED code + slug so a leaf name reused under different parents
@@ -872,7 +913,7 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
     if (!found && !DRY_RUN) {
       // Store + language scoped SEO (curated slug/meta from categories.csv when the slug matches;
       // ad-hoc segments use the parent-scoped slug so semanticUrls stay unique too).
-      const seo = [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: `seed-${csvRow?.seo_slug || scoped}`, pageTitle: csvRow?.meta_title || seg, metaDescription: csvRow?.meta_description || '' }];
+      const seo = [buildStoreSeo({ semanticUrl: `seed-${csvRow?.seo_slug || scoped}`, pageTitle: csvRow?.meta_title || seg, metaDescription: csvRow?.meta_description || '' })];
       try { found = await api('POST', '/api/catalog/categories', { catalogId, parentId, name, code, isActive: true, priority: 1, seoInfos: seo }, { expectStatus: [200, 201] }); log(`✓ category: ${name} (${found?.id})`); }
       catch (e) {
         if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(1500); found = await findCategoryByCode(api, catalogId, code); }
