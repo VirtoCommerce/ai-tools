@@ -591,13 +591,25 @@ export const SEED_FAMILY = 'AGENT-TEST-SEED';           // stable, date-independ
 const catalogSeedName = (csvName) => `${SEED_FAMILY}-${csvName}`;
 
 async function findCatalogByName(api, name) {
-  const r = await api('POST', '/api/catalog/catalogs/search', { keyword: name, take: 50 }, { expectStatus: [200, 201] });
+  // List ALL catalogs + exact-name match — NOT a `{keyword}` search. Catalogs have no unique-name
+  // constraint, so a fuzzy/lagging keyword miss makes ensureCatalogs create a DUPLICATE catalog, and
+  // each duplicate then grows its own full category tree → many same-named "Electronics"/"Home"
+  // categories. The unfiltered list is the reliable idempotency key across phase processes.
+  const r = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
   return (r?.results || []).find((c) => c.name === name) || null;
 }
-async function findCategoryByCode(api, catalogId, code) {
+// DB-backed lookup via /listentries — NOT the ES /catalog/search/categories, which LAGS behind
+// writes across phase PROCESSES. The categories phase (seedCategoryTree) and the products phase
+// (ensureCategoryPath) run as separate `node` processes back-to-back; with the lagging search the
+// products phase misses the categories just created and builds a DUPLICATE parallel tree — and the
+// platform does NOT enforce unique category codes, so nothing else stops it. /listentries reflects
+// writes immediately (same call seed-configurable uses — its categories never duplicate). Search by
+// the clean name, then match the exact AGENT-TEST-SEED-* code (our codes are globally unique).
+async function findCategoryByCode(api, catalogId, code, name = code) {
   try {
-    const r = await api('POST', '/api/catalog/search/categories', { catalogId, keyword: code, take: 100 }, { expectStatus: [200, 201] });
-    return (r?.results || r?.items || []).find((c) => c.code === code) || null;
+    const r = await api('POST', '/api/catalog/listentries', { catalog: catalogId, catalogId, keyword: name, take: 50 }, { expectStatus: [200, 201, 400, 404] });
+    const entries = r?.listEntries || r?.results || [];
+    return entries.find((c) => c.type === 'category' && c.code === code) || null;
   } catch { return null; }
 }
 
@@ -607,7 +619,15 @@ async function findCategoryByCode(api, catalogId, code) {
  * BOTH the CSV business key (catalog_id, e.g. CAT-PHYS-001) AND the CSV name (e.g. B2B-Electronics):
  *   { 'CAT-PHYS-001': {id,name,isVirtual,csvName,csvId}, 'B2B-Electronics': <same rec>, ... }
  */
-export async function ensureCatalogs(api) {
+// Memoized per process: ensureCategoryPath calls this once per product (110×/run). Without
+// memoization each call re-runs findCatalogByName + could create a duplicate catalog; resolving
+// once means every product in the run consolidates onto the SAME catalog + category tree.
+let _catalogsPromise = null;
+export function ensureCatalogs(api) {
+  if (!_catalogsPromise) _catalogsPromise = _ensureCatalogs(api);
+  return _catalogsPromise;
+}
+async function _ensureCatalogs(api) {
   const rows = loadCsvOptional('test-data/catalogs/catalogs.csv');
   const byKey = {};
   const register = (row, id, isVirtual) => {
@@ -699,12 +719,14 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
     const cat = catalogs[row.catalog_id];
     if (!cat) { verbose(`skip category ${row.category_name} — catalog ${row.catalog_id} absent`); continue; }
     const code = `${SEED_FAMILY}-${row.code}`;
-    const name = `${SEED_FAMILY}-${row.category_name}`;
+    // Clean, customer-facing display name; the AGENT-TEST-SEED family prefix lives on the CODE only
+    // (teardown + idempotency match by code — see unlinkSeedRootsFromStoreVirtualCatalog / findCategoryByCode).
+    const name = row.category_name;
     const parentId = row.parent_id ? (byCsvId[row.parent_id]?.id || null) : null;
     let id;
     if (DRY_RUN) { id = `dry-${row.category_id}`; }
     else {
-      const found = await findCategoryByCode(api, cat.id, code);
+      const found = await findCategoryByCode(api, cat.id, code, name);
       if (found) { id = found.id; verbose(`↻ category: ${name} (${id})`); }
       else {
         const body = {
@@ -715,7 +737,7 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
         };
         try { id = (await api('POST', '/api/catalog/categories', body, { expectStatus: [200, 201] }))?.id; log(`✓ category: ${name} (${id})`); }
         catch (e) {
-          if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(2000); id = (await findCategoryByCode(api, cat.id, code))?.id; verbose(`↻ category dup-key → reused ${code}`); }
+          if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(2000); id = (await findCategoryByCode(api, cat.id, code, name))?.id; verbose(`↻ category dup-key → reused ${code}`); }
           else throw e;
         }
       }
@@ -772,7 +794,9 @@ export async function unlinkSeedRootsFromStoreVirtualCatalog(api) {
   for (const pid of physIds) {
     const r = await api('POST', '/api/catalog/search/categories', { catalogId: pid, take: 500 }, { expectStatus: [200, 201] }).catch(() => null);
     for (const c of (r?.results || r?.items || [])) {
-      if (!c.parentId && String(c.name || '').startsWith(SEED_FAMILY)) rootIds.add(c.id);
+      // Seed categories now carry a clean display name — identify them by their CODE (which keeps the
+      // AGENT-TEST-SEED prefix). Name fallback covers legacy categories seeded with a prefixed name.
+      if (!c.parentId && (String(c.code || '').startsWith(SEED_FAMILY) || String(c.name || '').startsWith(SEED_FAMILY))) rootIds.add(c.id);
     }
   }
   if (!rootIds.size) return;
@@ -795,6 +819,13 @@ const catSlug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
  * catalog's root-category subtree links). Cached per breadcrumb within a run.
  */
 const _catPathCache = new Map();
+// Per-process cache of resolved category ids keyed by `${catalogId}::${code}`. The catalog-search
+// index (findCategoryByCode) LAGS behind writes, so without this a shared segment (e.g. "Electronics"
+// across many breadcrumbs) is re-looked-up, missed, and re-create-attempted for every product —
+// spamming the API and, when the catalog itself was duplicated, producing many same-named categories.
+// Caching by (catalog, code) means each category is resolved/created ONCE and every product with that
+// breadcrumb segment consolidates onto the same category id.
+const _categoryIdByCatCode = new Map();
 export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvName = 'B2B-Electronics' } = {}) {
   const segs = String(breadcrumb || '').split('>').map((s) => s.trim()).filter(Boolean);
   if (!segs.length) return null;
@@ -812,19 +843,24 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
   let parentId = null; let leaf = null; let rootId = null;
   for (const seg of segs) {
     const code = `${SEED_FAMILY}-${catSlug(seg)}`;
-    const name = `${SEED_FAMILY}-${seg}`;
-    let found = await findCategoryByCode(api, catalogId, code);
+    // Clean display name; the AGENT-TEST-SEED family prefix stays on the CODE for teardown/idempotency.
+    const name = seg;
+    const cacheKey = `${catalogId}::${code}`;
+    let found = _categoryIdByCatCode.has(cacheKey)
+      ? { id: _categoryIdByCatCode.get(cacheKey) }
+      : await findCategoryByCode(api, catalogId, code, name);
     if (!found && !DRY_RUN) {
       // Store + language scoped SEO (curated slug/meta from categories.csv when the slug matches).
       const csvRow = catRows.find((r) => catSlug(r.code || r.category_name) === catSlug(seg));
       const seo = [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: `seed-${csvRow?.seo_slug || catSlug(seg)}`, pageTitle: csvRow?.meta_title || seg, metaDescription: csvRow?.meta_description || '' }];
       try { found = await api('POST', '/api/catalog/categories', { catalogId, parentId, name, code, isActive: true, priority: 1, seoInfos: seo }, { expectStatus: [200, 201] }); log(`✓ category: ${name} (${found?.id})`); }
       catch (e) {
-        if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(1500); found = await findCategoryByCode(api, catalogId, code); }
+        if (/duplicate key|IX_Code_CatalogId|unique constraint/i.test(e.message)) { await sleep(1500); found = await findCategoryByCode(api, catalogId, code, name); }
         else throw e;
       }
     }
     if (!found?.id) { if (DRY_RUN) { leaf = { catalogId, categoryId: `dry-${code}`, name }; continue; } log(`⚠ could not resolve category ${code}`); return null; }
+    _categoryIdByCatCode.set(cacheKey, found.id);
     rootId = rootId || found.id;
     parentId = found.id;
     leaf = { catalogId, categoryId: found.id, name };

@@ -282,7 +282,7 @@ async function seedCategories(rows) {
     const body = {
       catalogId: catalog.id,
       parentId,
-      name: `${PREFIX}-${row.category_name}`,
+      name: row.category_name,
       code: `${PREFIX}-${row.code}`,
       isActive: row.is_active !== 'No',
       priority: Number(row.priority) || 1,
