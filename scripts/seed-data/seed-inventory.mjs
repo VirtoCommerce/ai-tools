@@ -105,18 +105,18 @@ async function setStock(entries) {
 async function seedFromFixtures(ffcs) {
   let rows = [];
   try { rows = loadCsv('test-data/inventory/stock-levels.csv'); } catch { log('no stock-levels.csv — skipping fixture stock'); return 0; }
-  // Default to the store's OWN fulfillment center — not ffcs[0], which is an arbitrary
-  // search-order pick that strands stock on an unrelated warehouse. (The per-row f.code
-  // match below never hits: the /fulfillmentcenters/search projection omits `code`, so a
-  // code-keyed lookup is dead — every row correctly falls back to the store main FFC.)
-  const defaultFfc = (await storeMainFulfillmentCenter(api, ffcs)) || ffcs[0];
+  // All fixture stock lands on the store's OWN fulfillment center. stock-levels.csv's `ffc_id` is a
+  // CODE, but the /fulfillmentcenters/search projection omits `code`, so per-row FFC routing isn't
+  // resolvable here — don't pretend it is (a dead `f.code === row.ffc_id` .find always missed). Using
+  // the store main FFC (not ffcs[0], an arbitrary search-order pick) keeps stock on the warehouse the
+  // store actually fulfills from.
+  const storeFfc = (await storeMainFulfillmentCenter(api, ffcs)) || ffcs[0];
   const entries = [];
   for (const row of rows) {
-    const ffc = ffcs.find((f) => f.code === row.ffc_id) || defaultFfc;
-    if (!ffc) continue;
+    if (!storeFfc) continue;
     const pid = DRY_RUN ? `dry-${row.sku}` : await resolveProductIdBySku(row.sku);
     if (!pid) { verbose(`unresolved SKU ${row.sku} — skipped`); continue; }
-    entries.push({ fulfillmentCenterId: ffc.id, productId: pid, inStockQuantity: Number(row.in_stock_quantity) || 0 });
+    entries.push({ fulfillmentCenterId: storeFfc.id, productId: pid, inStockQuantity: Number(row.in_stock_quantity) || 0 });
   }
   await setStock(entries);
   log(`✓ Fixture stock: ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`);

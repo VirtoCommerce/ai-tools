@@ -328,7 +328,10 @@ async function checkSeedEntityPrefixes() {
         if (!String(p.name || '').startsWith(PROD) && !String(p.code || '').startsWith(PROD)) { fail(`product "${p.name}" (${p.code}) in ${c.name} carries no AGENT-TEST prefix on name or code — teardown would orphan it`); bad++; }
       }
       skip += items.length;
-      if (skip >= (pr.totalCount ?? skip)) break;
+      // Stop at totalCount when the API reports it; otherwise stop on a short (< take) page. Do NOT
+      // use `totalCount ?? skip` — when totalCount is absent that equals `skip`, breaking after page 1
+      // and silently scanning only the first 100 products (false PASS on the very defects this guards).
+      if (typeof pr.totalCount === 'number' ? skip >= pr.totalCount : items.length < 100) break;
     }
   }
   if (!bad) ok(`all ${products} product(s) + ${categories} categor(y/ies) across ${seedPhys.length} seed catalog(s) are teardown-identifiable`);
@@ -375,7 +378,10 @@ async function checkSeoComplete() {
         if (gap) { if (prodBad < 5) fail(`product "${p.name}" (${p.code}) SEO ${gap}`); prodBad++; }
       }
       skip += items.length;
-      if (skip >= (pr.totalCount ?? skip)) break;
+      // Stop at totalCount when the API reports it; otherwise stop on a short (< take) page. Do NOT
+      // use `totalCount ?? skip` — when totalCount is absent that equals `skip`, breaking after page 1
+      // and silently scanning only the first 100 products (false PASS on the very defects this guards).
+      if (typeof pr.totalCount === 'number' ? skip >= pr.totalCount : items.length < 100) break;
     }
   }
   if (catBad > 5) fail(`… +${catBad - 5} more categor(y/ies) with incomplete SEO`);

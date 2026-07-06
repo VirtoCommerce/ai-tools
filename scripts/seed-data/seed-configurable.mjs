@@ -152,7 +152,10 @@ console.log(`   Specs (${specs.length}): ${specs.map(s => s.csvId).join(', ')}\n
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 async function findCatalogByName(name) {
-  const r = await api('POST', '/api/catalog/catalogs/search', { keyword: name, take: 5 });
+  // List all catalogs + exact-name match — NOT a fuzzy/lagging `{keyword}` search. Catalogs have no
+  // unique-name constraint, so a keyword miss makes ensureCatalog create a DUPLICATE catalog that
+  // grows its own tree (same hardening as seed-common.findCatalogByName).
+  const r = await api('POST', '/api/catalog/catalogs/search', { take: 500 });
   return (r?.results || []).find(c => c.name === name);
 }
 async function ensureCatalog(name) {
