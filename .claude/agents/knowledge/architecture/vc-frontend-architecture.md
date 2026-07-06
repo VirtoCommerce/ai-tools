@@ -129,7 +129,7 @@ cause in a NuGet dependency".
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
   token-owner with Claude as `Co-Authored-By:`** (CLA — see `developers/shared-instructions.md`).
 - **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
-  `--draft`), title `VCST-XXXX: Fix <imperative>`, body = RCA + JIRA link + red→green test +
+  `--draft`), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
   verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — re-confirmed via `/qa-regression frontend` + `/qa-verify-fix`.
   **Never** auto-merge.

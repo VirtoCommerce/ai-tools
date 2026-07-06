@@ -149,13 +149,14 @@ commit reference, and PR title all take it as-is. For **cross-linking** into the
 Jira auto-links the bare key (`ABC-123`); Azure Boards links a work item via `AB#12345`. Don't assume a
 `VCST-` prefix anywhere.
 
-### PR title — lead with the JIRA key
-The **PR title** follows `VCST-XXXX: Fix <imperative summary of the bug>` (JIRA key first, then a short
-human summary — e.g. `VCST-5210: Fix NRE in GetModules when icon file is missing`). This is the
-`gh pr create --title` value and the `PR_TITLE:` marker the agent emits. It is **distinct from the commit
-message**, which stays Conventional Commits (`fix(<scope>): <summary> (VCST-XXXX)`): the commit feeds
-changelog/scope tooling, while the PR title leads with the ticket so reviewers and the JIRA link read at
-a glance.
+### PR title — Conventional Commits, ticket key as scope
+The **PR title** follows `fix(<key>): <imperative summary of the bug>` — Conventional-Commits shaped,
+with the **ticket key in the scope slot** (e.g. `fix(VCST-5210): guard NRE in GetModules when icon file is
+missing`; for Azure Boards the bare id, `fix(12345): …`). This puts the ticket up front so reviewers and
+the tracker link read at a glance while the title stays changelog/scope-tooling parseable (the org
+squash-merges, so the PR title becomes the squashed commit subject). It is **distinct from the commit
+message**, which keeps the code area as its scope and the key trailing (`fix(<scope>): <summary> (<key>)`).
+This is the `gh pr create --title` value and the `PR_TITLE:` marker the agent emits.
 
 ## After the PR — verify CI, don't assume green (Gate 5)
 **Opening the PR is not the finish line.** The run is not done until the PR's GitHub Actions checks are

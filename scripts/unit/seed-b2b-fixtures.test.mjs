@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  __setApi, parseCsv, roleIdByName,
+  __setApi, setFlags, parseCsv, roleIdByName, roleNameById, resolveRoleName,
   ensureSecurityAccount, ensureOrgMembership, provisionContactLogins,
   seedOrgs, seedContacts, ensureRoles, loadRoleDefs,
 } from '../../scripts/lib/user-provision.mjs';
@@ -53,6 +53,46 @@ test('roleIdByName maps role NAMEs (from roles.csv) to ids', () => {
   assert.equal(roleIdByName('Organization employee'), 'org-employee');
   assert.equal(roleIdByName('org-maintainer'), 'org-maintainer'); // id passes through
   assert.equal(roleIdByName('Nonexistent role'), null);
+});
+
+test('roleNameById maps ids (from roles.csv) back to their display NAME', () => {
+  assert.equal(roleNameById('org-maintainer'), 'Organization maintainer');
+  assert.equal(roleNameById('purchasing-agent'), 'Purchasing agent');
+  assert.equal(roleNameById('org-manager'), 'Organization manager');
+  assert.equal(roleNameById('org-employee'), 'Organization employee');
+  assert.equal(roleNameById('nope'), null);
+});
+
+// The bug this guards: purchasing-agent / org-manager are NOT in STATIC_ROLE_NAMES, so the old
+// resolveRoleName fell to the cache-flaky GET /roles/{id}; on its frequent 404 it returned the
+// id slug as the name → memberships stamped roleName:'purchasing-agent'. The fix resolves the
+// origin name from the platform SEARCH (keyword = the roles.csv name), never the flaky GET.
+test('resolveRoleName returns the platform origin name, never the id slug (flaky GET path)', async () => {
+  const calls = [];
+  const api = async (method, path, body) => {
+    calls.push({ method, path, body });
+    // Reliable search: matches on NAME — returns the live role for a known keyword.
+    if (method === 'POST' && path.endsWith('/api/platform/security/roles/search')) {
+      const byName = { 'Purchasing agent': { id: 'purchasing-agent', name: 'Purchasing agent' } };
+      const hit = byName[body?.keyword];
+      return { results: hit ? [hit] : [] };
+    }
+    if (method === 'GET' && path.includes('/api/platform/security/roles/')) return null; // flaky GET-by-id
+    return null;
+  };
+  __setApi(api);
+  const name = await resolveRoleName('purchasing-agent');
+  assert.equal(name, 'Purchasing agent', 'resolves the display name, not the slug');
+  assert.equal(calls.filter(c => c.method === 'GET' && c.path.includes('/security/roles/')).length, 0,
+    'must NOT depend on the cache-flaky GET /roles/{id}');
+});
+
+test('resolveRoleName falls back to the roles.csv oracle when the platform search is empty', async () => {
+  // Platform returns nothing (e.g. index lag) — the CSV name (pushed to the platform by ensureRoles)
+  // is still the correct origin name, and must be used instead of the id slug.
+  const api = async () => null;
+  __setApi(api);
+  assert.equal(await resolveRoleName('org-manager'), 'Organization manager');
 });
 
 test('parseCsv handles quoted fields containing commas', () => {
@@ -113,7 +153,11 @@ test('provisionContactLogins: login + org-scoped membership, NO duplicate contac
     'CON-001': { platform_id: 'contact-1', email: 'test-john.mitchell-20260310@test-agent.com', csv_id: 'CON-001', name: 'John Mitchell' },
   };
   const orgMap = { 'ORG-001': { platform_id: 'org-1', name: 'AGENT-TEST-Org-AcmeCorp-20260310' } };
-  await provisionContactLogins(contactMap, orgMap);
+  // Dry-run the alias writeback so this unit test never touches the committed aliases.<env>.json
+  // (the api layer is still the mock; only the fs writeback at the end of provisionContactLogins
+  // is suppressed). The security-account create still fires before the dry-run short-circuit.
+  setFlags({ dryRun: true });
+  try { await provisionContactLogins(contactMap, orgMap); } finally { setFlags({ dryRun: false }); }
 
   // THE key invariant: it must never create a contact (no POST /api/members) → no duplicate.
   assert.equal(calls.filter(c => c.method === 'POST' && c.path.endsWith('/api/members')).length, 0,
@@ -136,7 +180,8 @@ test('provisionContactLogins: a user with NO role still gets a login (account, n
     'CON-022': { platform_id: 'contact-22', email: 'AGENT-TEST-imp-target-invited-20260514@test-agent.com', csv_id: 'CON-022', name: 'Invited User' },
   };
   const orgMap = { 'ORG-002': { platform_id: 'org-2', name: 'AGENT-TEST-Org-TechFlow-20260310' } };
-  await provisionContactLogins(contactMap, orgMap);
+  setFlags({ dryRun: true });
+  try { await provisionContactLogins(contactMap, orgMap); } finally { setFlags({ dryRun: false }); }
 
   assert.ok(calls.find(c => c.path.includes('/security/users/create')), 'every seeded user gets a login');
   assert.equal(calls.filter(c => c.method === 'POST' && c.path.endsWith('/customer/organization-memberships')).length, 0,
@@ -228,16 +273,6 @@ test('ensureRoles ALWAYS upserts (idempotent, never gated by the flaky GET-by-id
   assert.ok(perms.includes('xapi:my_organization:order:view'), 'org-maintainer has xapi order:view');
   assert.ok(perms.includes('xapi:my_organization:user:invite'), 'org-maintainer has xapi user:invite');
   assert.ok(perms.includes('platform:security:loginOnBehalf'), 'org-maintainer has loginOnBehalf (impersonation operator)');
-});
-
-test('writeBackUserPlatformIds rewrites only field 2 per USR- row, keyed by email', async () => {
-  const { writeBackUserPlatformIds } = await import('../../scripts/lib/user-provision.mjs');
-  // Function reads/writes the real users.csv; assert it is callable and no-ops on unknown emails
-  // (empty map → 0 rewrites), which proves it never corrupts the file on an empty/absent id set.
-  const n = writeBackUserPlatformIds({});
-  assert.equal(n, 0, 'empty id map performs zero rewrites (never corrupts the CSV)');
-  const n2 = writeBackUserPlatformIds({ 'nobody@nowhere.invalid': 'dry-skip' });
-  assert.equal(n2, 0, 'dry- ids and unmatched emails are skipped');
 });
 
 test('seedContacts RECONCILES a reused contact currency from currency_code (USD→EUR)', async () => {

@@ -173,7 +173,7 @@ cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 ### Required output markers (each on its own line, at the very end)
 ```
 FIX_STATUS: SUCCESS      # SUCCESS only if pushed AND typecheck+lint+test(+build) passed
-PR_TITLE: <KEY>: Fix <imperative summary of the bug>      # e.g. VCST-5210: Fix cart quantity not clamped to valid range
+PR_TITLE: fix(<KEY>): <imperative summary of the bug>      # e.g. fix(VCST-5210): clamp cart quantity to valid range
 PR_URL: <PR url>         # when SUCCESS
 CONFIDENCE: HIGH|MEDIUM|LOW
 ROOT_CAUSE: <one sentence>

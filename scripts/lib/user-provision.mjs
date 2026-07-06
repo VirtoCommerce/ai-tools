@@ -36,7 +36,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases } from './seed-common.mjs';
+import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, idsParam } from './seed-common.mjs';
 import { resolveAllRoles } from './user-roles.mjs';
 
 // --- Env (defaults → .env.{ENV} → .env.local) + per-env suffix promotion ---
@@ -267,12 +267,27 @@ export function roleIdByName(name) {
   if (!name) return null;
   return loadRoleDefs().find(r => r.role_name === name || r.role_id === name)?.role_id || null;
 }
+// Inverse of roleIdByName — the roles.csv oracle name for an id (STATIC fallback covers the two
+// built-in org roles even if roles.csv is unreadable). Offline; used to seed the platform lookup.
+export function roleNameById(roleId) {
+  if (!roleId) return null;
+  return loadRoleDefs().find(r => r.role_id === roleId)?.role_name || STATIC_ROLE_NAMES[roleId] || null;
+}
 const _roleNameCache = {};
 export async function resolveRoleName(roleId) {
-  if (STATIC_ROLE_NAMES[roleId]) return STATIC_ROLE_NAMES[roleId];
+  if (!roleId) return roleId;
   if (_roleNameCache[roleId]) return _roleNameCache[roleId];
-  const r = await api('GET', `/api/platform/security/roles/${encodeURIComponent(roleId)}`, null, { expectStatus: [200, 404] });
-  return (_roleNameCache[roleId] = r?.name || roleId);
+  // The candidate name comes from the roles.csv oracle (what ensureRoles PUSHES to the platform),
+  // so it normally equals the platform's origin name. Confirm against the LIVE platform via the
+  // reliable SEARCH endpoint (keyword MUST be the name — the roles search matches on name, and
+  // GET /roles/{id} is cache-flaky, same class as findRole/findUserByEmail). If the platform name
+  // has drifted from roles.csv, the live value wins; otherwise the CSV name is authoritative.
+  const csvName = roleNameById(roleId);
+  try {
+    const found = await findRole({ role_id: roleId, role_name: csvName || undefined });
+    if (found?.name) return (_roleNameCache[roleId] = found.name);
+  } catch { /* fall through to the offline oracle */ }
+  return (_roleNameCache[roleId] = csvName || roleId);
 }
 // Reliable role existence check via SEARCH — GET /api/platform/security/roles/{id} is cache-flaky
 // (404s even when the role exists, same class as the findUserByEmail GET-by-username bug), so it
@@ -309,11 +324,23 @@ export async function seedOrgs(rows, parentMap = {}) {
     let existing = null;
     if (row.platform_id) {
       const byId = await findMemberById(row.platform_id);
-      if (byId?.id && byId.name === row.org_name) existing = byId;
+      // The pinned platform_id is the org's STABLE identity — reuse it regardless of the live name.
+      // (Previously this required byId.name === row.org_name, so a RENAMED org, e.g. TEST-* →
+      // AGENT-TEST-Org-*, wasn't reused; on an already-seeded env it fell through to a create with a
+      // duplicate pinned id — a conflict/rewrite every run. Reuse by id + rename in place instead.)
+      if (byId?.id) existing = byId;
     }
     // Reuse key #2 (fallback): search-by-name — covers a first-ever seed with no cached id.
     if (!existing) existing = await findOrgByName(row.org_name);
     if (existing) {
+      // Name is not the identity (the id is) — if the live name drifted from the CSV, rename in place
+      // (upsert by id) so a rename propagates without a duplicate-id create.
+      if (existing.name && existing.name !== row.org_name && !DRY_RUN) {
+        try {
+          await api('POST', '/api/members', { ...existing, name: row.org_name }, { expectStatus: [200, 201, 204] });
+          console.log(`    ✎ renamed ${row.org_id} "${existing.name}" → "${row.org_name}" (${existing.id})`);
+        } catch (e) { console.log(`    ⚠ rename ${row.org_id} failed: ${String(e.message).slice(0, 120)}`); }
+      }
       out[row.org_id] = { csv_id: row.org_id, name: row.org_name, platform_id: existing.id, reused: true };
       if (VERBOSE) console.log(`    ↻ reuse  ${row.org_id} ${row.org_name} (${existing.id})`);
       continue;
@@ -486,33 +513,20 @@ export async function ensureMembershipContact(email, firstName, lastName, orgPla
   return id;
 }
 
-// Write live security-account ids back into a users CSV's `platform_id` column — the ROOT-CAUSE fix
-// for suite instability: teardown+reseed mints new account GUIDs, and @td(...userId) aliases resolve
-// FROM this column, so without write-back every reseed silently breaks impersonation/user suites.
-// Rewrites only the platform_id field per row (regex-anchored on the row-id prefix), preserving all
-// other columns/quoting. Generalized (VCST-5406 follow-up) so any "<PREFIX>-<n>,platform_id,...,email,..."
-// CSV can reuse it — not just b2b/users.csv's USR- rows.
-export function writeBackPlatformIds(idByEmail, { csvPath = USERS_CSV, idPrefix = 'USR-', emailCol = 5 } = {}) {
-  const path = join(ROOT, csvPath);
-  let text; try { text = readFileSync(path, 'utf-8'); } catch { return 0; }
-  const key = {};
-  for (const [e, i] of Object.entries(idByEmail)) if (e && i && !String(i).startsWith('dry-')) key[e.toLowerCase()] = i;
-  const rowRe = new RegExp(`^${idPrefix}[0-9]+,`);
-  const captureRe = new RegExp(`^(${idPrefix}[0-9]+),([^,]*),`);
-  let n = 0;
-  const out = text.split(/\r?\n/).map((line) => {
-    if (!rowRe.test(line)) return line;
-    const email = (parseCsvLine(line)[emailCol] || '').toLowerCase();
-    const id = key[email];
-    const cur = line.match(captureRe)?.[2];
-    if (!id || cur === id) return line;
-    n++;
-    return line.replace(captureRe, `$1,${id},`);
-  });
-  if (n) writeFileSync(path, out.join('\n'));
-  return n;
+// Build { user_id: { platform_id } } for syncEnvAliases from the live security-account ids just
+// resolved (keyed by email in `idByEmail`) joined to the CSV rows' user_id. Skips dry-/empty ids.
+function byUserIdFromEmails(userRows, idByEmail) {
+  const idByLcEmail = {};
+  for (const [e, i] of Object.entries(idByEmail)) {
+    if (e && i && !String(i).startsWith('dry-')) idByLcEmail[e.toLowerCase()] = i;
+  }
+  const byUserId = {};
+  for (const u of userRows) {
+    const id = idByLcEmail[(u.email || '').toLowerCase()];
+    if (u.user_id && id) byUserId[u.user_id] = { platform_id: id };
+  }
+  return byUserId;
 }
-export const writeBackUserPlatformIds = (idByEmail) => writeBackPlatformIds(idByEmail);
 
 // Give each seeded contact a login + org-scoped membership (role + status from users.csv).
 export async function provisionContactLogins(contactMap, orgMap) {
@@ -546,26 +560,14 @@ export async function provisionContactLogins(contactMap, orgMap) {
   }
   console.log(`  ✓ Provisioned ${nAcct} login(s) + ${nMem} org-scoped membership(s)`);
   if (!DRY_RUN) {
-    // Persist the live security-account userIds so @td(ACME_ADMIN.platform_id) etc.
-    // resolve. Primary vcst → refresh the committed users.csv (canonical). Every other
-    // env → aliases.<env>.json (keyed by user_id) so the committed CSV isn't dirtied
-    // with env-specific ids; the resolver layers it over the base CSV field-by-field.
-    if ((process.env.TEST_ENV || 'vcst') === 'vcst') {
-      const written = writeBackUserPlatformIds(idByEmail);
-      if (written) console.log(`  ✓ users.csv: refreshed ${written} platform_id(s) from live (keeps @td userId aliases stable)`);
-    } else {
-      const idByLcEmail = {};
-      for (const [e, i] of Object.entries(idByEmail)) {
-        if (e && i && !String(i).startsWith('dry-')) idByLcEmail[e.toLowerCase()] = i;
-      }
-      const byUserId = {};
-      for (const u of userRows) {
-        const id = idByLcEmail[(u.email || '').toLowerCase()];
-        if (u.user_id && id) byUserId[u.user_id] = { platform_id: id };
-      }
-      syncEnvAliases('b2b/users', byUserId);
-      console.log(`  ✓ aliases.${process.env.TEST_ENV}.json: wrote ${Object.keys(byUserId).length} user platform_id(s)`);
-    }
+    // Persist the live security-account userIds to aliases.<env>.json for EVERY env (incl. vcst)
+    // so @td(ACME_ADMIN.platform_id) / @td(IMPERSONATE_TARGET.userId) resolve. The committed
+    // users.csv carries NO platform_id — each env's ids live only in its own overlay, so a suite
+    // run against one env can never resolve another env's GUIDs. The resolver layers the overlay
+    // over the base CSV field-by-field (code/name/email/role stay in the shared CSV).
+    const byUserId = byUserIdFromEmails(userRows, idByEmail);
+    syncEnvAliases('b2b/users', byUserId);
+    console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${Object.keys(byUserId).length} b2b user platform_id(s)`);
   }
   return { accounts: nAcct, memberships: nMem };
 }
@@ -825,21 +827,66 @@ export async function deleteUserByEmail(email) {
   return { account, contact };
 }
 
-// Sweep every remaining AGENT-TEST-* member (orgs + contacts) by keyword.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Paginate /api/members/search over `searchBody`, returning only members whose OWN name carries
+// the AGENT-TEST prefix. Safety: the keyword search can match on fields other than the name, so we
+// re-verify the prefix here — never delete a real member the search happened to surface.
+async function collectAgentTestMembers(searchBody) {
+  const out = [];
+  const page = 100;
+  for (let skip = 0; ; ) {
+    const res = await api('POST', '/api/members/search', { ...searchBody, skip, take: page });
+    const batch = res?.results || [];
+    out.push(...batch.filter((m) => (m.name || '').startsWith('AGENT-TEST')));
+    skip += batch.length;
+    if (batch.length < page || skip >= (res?.totalCount ?? skip)) break;
+  }
+  return out;
+}
+
+// Sweep every remaining AGENT-TEST-* member (orgs + contacts). The generic keyword search alone
+// under-returned organizations (a full teardown left pinned b2b orgs behind), so we ALSO enumerate
+// memberType:'Organization' UNCONDITIONALLY (all orgs, filtered by name prefix — no reliance on the
+// flaky keyword match). b2b orgs are no longer permanent fixtures: their platform_id is pinned in
+// test-data/b2b/organizations.csv and forced on create, so a reseed restores the identical GUID —
+// sweeping them keeps a full teardown truly residue-free.
 export async function sweepAgentTestMembers() {
   console.log('\n  Teardown: scanning for AGENT-TEST-* members...');
-  const res = await api('POST', '/api/members/search', { keyword: 'AGENT-TEST-', take: 500 });
-  const items = res?.results || [];
+  const byId = new Map();
+  for (const m of await collectAgentTestMembers({ keyword: 'AGENT-TEST-' })) byId.set(m.id, m);
+  for (const m of await collectAgentTestMembers({ memberType: 'Organization' })) byId.set(m.id, m);
+  const items = [...byId.values()];
   console.log(`  Found ${items.length} AGENT-TEST-* member(s)`);
+  // Batch-delete via the repeated `ids=` form the platform binds (idsParam) — one call instead of
+  // one HTTP round-trip per member. The member/org sweep is by far the largest N in a teardown.
   let deleted = 0;
-  for (const m of items) {
+  if (items.length) {
     try {
-      await api('DELETE', `/api/members?ids=${encodeURIComponent(m.id)}`, null, { expectStatus: [200, 204, 404] });
-      if (VERBOSE) console.log(`    ✗ deleted ${m.memberType} ${m.name} (${m.id})`);
-      deleted++;
-    } catch (e) { console.warn(`    ⚠ delete failed for ${m.name}: ${e.message.slice(0, 100)}`); }
+      await api('DELETE', `/api/members?${idsParam(items.map((m) => m.id))}`, null, { expectStatus: [200, 204, 404] });
+      if (VERBOSE) items.forEach((m) => console.log(`    ✗ deleted ${m.memberType} ${m.name} (${m.id})`));
+      deleted += items.length;
+    } catch (e) { console.warn(`    ⚠ batch member delete failed: ${e.message.slice(0, 120)}`); }
   }
-  console.log(`  Teardown: ${deleted}/${items.length} member(s) deleted`);
+  // Org residue can survive the first pass: members/search is index-backed and lags right after a
+  // large contact teardown, so the enumeration misses some orgs (a full teardown left 2 child orgs
+  // behind — the index hadn't caught up). Settle-and-retry: sleep for the index, re-enumerate, delete
+  // whatever surfaced, and loop until a settled search comes back empty (or attempts are exhausted).
+  // We trust a fresh post-sleep search, never the attempted count (a DELETE that 200s but leaves the
+  // entity must never read as success).
+  let residual = [];
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await sleep(1500);
+    residual = await collectAgentTestMembers({ memberType: 'Organization' });
+    if (!residual.length) break;
+    try {
+      await api('DELETE', `/api/members?${idsParam(residual.map((o) => o.id))}`, null, { expectStatus: [200, 204, 404] });
+      if (VERBOSE) residual.forEach((o) => console.log(`    ✗ deleted (settle pass ${attempt}) ${o.memberType} ${o.name} (${o.id})`));
+      deleted += residual.length;
+    } catch (e) { console.warn(`    ⚠ retry batch delete failed: ${e.message.slice(0, 100)}`); }
+  }
+  if (residual.length) console.warn(`  ⚠ ${residual.length} AGENT-TEST org(s) still present after retries: ${residual.map((o) => o.name).join(', ')}`);
+  console.log(`  Teardown: ${deleted} member(s) deleted${residual.length ? ` — ${residual.length} org(s) RESIDUAL` : ''}`);
   return deleted;
 }
 
@@ -862,15 +909,17 @@ export function whiteLabelingSeededEmails() {
 
 // Delete the white-labeling orgs by name (live lookup — org platform ids live only in
 // aliases.${TEST_ENV}.json now, never in the CSV, so this doesn't trust a possibly-stale cache).
-// Unlike b2b (whose CSV pins a platform_id so orgs must survive teardown for id-stability), WL orgs
-// have no such requirement — their ids get rewritten to aliases.${TEST_ENV}.json on every reseed —
-// so a `wl` teardown can safely remove them too instead of treating them as permanent fixtures.
+// This is the SCOPED `wl` teardown's org step. The unified sweep (sweepAgentTestMembers) now removes
+// b2b orgs too — a reseed restores their pinned platform_id identically — so neither kind of org is
+// treated as a permanent fixture any more; a full teardown leaves zero AGENT-TEST orgs behind.
 export async function deleteWhiteLabelingOrgs() {
   const orgRows = readCsv(WL_ORGS_CSV).filter((r) => r.org_name);
   let deleted = 0;
   for (const row of orgRows) {
+    // Safety: only delete AGENT-TEST- WL orgs, never a real org that shares a name.
+    if (!String(row.org_name).startsWith('AGENT-TEST')) { if (VERBOSE) console.log(`    skip "${row.org_name}": not an AGENT-TEST org`); continue; }
     const found = await findOrgByName(row.org_name);
-    if (!found?.id) { if (VERBOSE) console.log(`    ↻ org "${row.org_name}" already gone`); continue; }
+    if (!found?.id || !String(found.name || '').startsWith('AGENT-TEST')) { if (VERBOSE) console.log(`    ↻ org "${row.org_name}" already gone or not AGENT-TEST`); continue; }
     await api('DELETE', `/api/members?ids=${encodeURIComponent(found.id)}`, null, { expectStatus: [200, 204, 404] });
     console.log(`    ✗ org ${row.org_name} (${found.id})`);
     deleted++;

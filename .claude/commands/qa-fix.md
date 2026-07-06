@@ -146,7 +146,8 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   host `contributionPlan(routeRepo)` resolved** (GitHub `gh pr create`; Azure Repos ADO REST
   `POST …/pullrequests`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
   auth-per-host are in [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §3). A **normal PR
-  for human review — not auto-merged**, **PR title `<key>: Fix <summary>`** (ticket key first; see
+  for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
+  key in the scope slot; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
   human review"; backend adds "needs deploy verification"), label, link the tracker.
 - **If Gate 1b resolved the route to `upstream-contribution`** (a byte-identical **platform** bug in the

@@ -29,7 +29,7 @@
  */
 import {
   assertSafeTarget, auth, api, loadCsv, ensureVirtualCatalog, log, verbose, csvBool,
-  DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
+  DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL, SEED_FAMILY,
 } from '../lib/seed-common.mjs';
 
 const TYPE_MAP = { PRODUCT: 'Product', VARIATION: 'Variation', CATEGORY: 'Category', CATALOG: 'Catalog' };
@@ -38,6 +38,18 @@ const mapType = (t) => TYPE_MAP[(t || '').trim().toUpperCase()] || (t || '').tri
 const mapValueType = (v) => VALUE_TYPE_MAP[(v || '').trim().toUpperCase()] || (v || '').trim();
 
 const isGuid = (s) => /^[0-9a-f]{32}$|^[0-9a-f-]{36}$/i.test((s || '').trim());
+
+// The platform validates a catalog property NAME as a code-like identifier ("must start with a
+// letter or number, and can contain only …") — spaces and punctuation are rejected, so CSV labels
+// like "Warranty (months)" / "Release Date" 500 and get silently skipped (7/15 lost). Products
+// already reference the identifier form (the storefront shows "Warranty_months"), so we sanitize the
+// name to that shape and carry the original human label as a localized displayName.
+function toPropertyName(raw) {
+  const s = String(raw || '').trim()
+    .replace(/[^0-9A-Za-z]+/g, '_') // any run of non-alphanumerics → single underscore
+    .replace(/^_+|_+$/g, '');        // trim leading/trailing underscores
+  return /^[0-9A-Za-z]/.test(s) ? s : `P_${s}`; // guarantee it starts with a letter/number
+}
 
 // Property definitions have no REST search — list them off the catalog itself.
 // Cached per catalogId so we GET each catalog at most once per run.
@@ -79,17 +91,33 @@ async function seedDictionary(propertyId, valuesCsv) {
   return missing.length;
 }
 
+// Property names are generic (Brand, Color, Size…) with NO AGENT-TEST prefix, so teardown must NOT
+// delete them from a real catalog it happens to resolve to. Guard: only delete properties that live
+// in an AGENT-TEST-SEED catalog (the seed's own). On a real env the store/target catalog isn't a seed
+// catalog, so this is a safe no-op there. Cached per catalog id.
+const _seedCatalogCache = new Map();
+async function isSeedCatalog(catalogId) {
+  if (_seedCatalogCache.has(catalogId)) return _seedCatalogCache.get(catalogId);
+  const cat = await api('GET', `/api/catalog/catalogs/${catalogId}`, null, { expectStatus: [200, 404] });
+  const ok = (cat?.name || '').startsWith(SEED_FAMILY);
+  _seedCatalogCache.set(catalogId, ok);
+  return ok;
+}
+
 async function teardown(rows, catalogId) {
-  log(`Teardown — deleting ${rows.length} propert(y/ies)...`);
-  let deleted = 0;
+  log(`Teardown — deleting ${rows.length} propert(y/ies) (AGENT-TEST-SEED catalogs only)...`);
+  let deleted = 0, skipped = 0;
   for (const row of rows) {
-    const found = await findProperty(row.catalog_id && isGuid(row.catalog_id) ? row.catalog_id : catalogId, row.property_name);
+    const cid = row.catalog_id && isGuid(row.catalog_id) ? row.catalog_id : catalogId;
+    // SAFETY: never delete a generically-named property from a non-seed (real) catalog.
+    if (!(await isSeedCatalog(cid))) { verbose(`skip ${row.property_name}: catalog ${cid} is not an AGENT-TEST-SEED catalog`); skipped++; continue; }
+    const found = await findProperty(cid, toPropertyName(row.property_name));
     if (!found) { verbose(`not present: ${row.property_name}`); continue; }
     await api('DELETE', `/api/catalog/properties?id=${found.id}&doDeleteValues=true`, null, { expectStatus: [200, 204, 404] });
     log(`  ✓ Deleted: ${row.property_name} (${found.id})`);
     deleted++;
   }
-  log(`Teardown complete — ${deleted} deleted.`);
+  log(`Teardown complete — ${deleted} deleted${skipped ? `, ${skipped} skipped (non-seed catalog)` : ''}.`);
 }
 
 async function main() {
@@ -112,7 +140,8 @@ async function main() {
   let failed = 0;
   for (const row of rows) {
     const catalogId = isGuid(row.catalog_id) ? row.catalog_id.trim() : defaultCatalogId;
-    const name = row.property_name;
+    const label = row.property_name;          // human label as authored in the CSV
+    const name = toPropertyName(label);        // platform-valid identifier (== what products reference)
     // Per-row isolation: a single rejected property (e.g. an invalid CSV name) must not
     // abort the whole seeder — log it and continue so the valid properties still seed.
     try {
@@ -130,6 +159,8 @@ async function main() {
           required: csvBool(row.is_required),
           multivalue: csvBool(row.is_multivalue),
           multilanguage: false,
+          // Preserve the readable label for the Admin UI without violating the name rule.
+          displayNames: label && label !== name ? [{ languageCode: 'en-US', name: label }] : undefined,
         };
         await api('POST', '/api/catalog/properties', body, { expectStatus: [200, 201, 204] });
         // 204 carries no id — re-read the catalog (bypassing the stale cache) to resolve it.

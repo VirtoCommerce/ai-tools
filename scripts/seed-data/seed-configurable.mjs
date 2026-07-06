@@ -37,18 +37,21 @@
  *   .claude/rules/test-data.md.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
-  ROOT, api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID,
+  api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
+  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam,
 } from '../lib/seed-common.mjs';
-
-const PRIMARY_ENV = 'vcst';
 const argv = process.argv.slice(2);
 const GROUP = argv.includes('--group') ? argv[argv.indexOf('--group') + 1] : null;
+// Product content enrichment (images + descriptions), on by default — a bare seeded
+// product otherwise has no imagery/copy. Idempotent (skips products already populated).
+const NO_ASSETS = argv.includes('--no-assets');
+const FORCE_ASSETS = argv.includes('--force-assets');
+const IMAGES_PER = argv.includes('--images') ? Math.max(0, parseInt(argv[argv.indexOf('--images') + 1], 10)) : 3;
+const enrich = (id, code) => (NO_ASSETS ? Promise.resolve({}) : enrichProductContent(id, { images: IMAGES_PER, code, force: FORCE_ASSETS }));
 
 let VIRTUAL_CATALOG_ID = null;
+const cfgSlug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // ── Family → catalog-group + naming/slug conventions ─────────────────────────
 // catalogGroup: which SEED-* catalog holds this family's products.
@@ -89,171 +92,7 @@ const GROUPS = {
 // Source of truth: test-data/products/configurable-products.csv (section_details).
 // Section `key` is intra-spec (dependsOn wiring + config create/update mapping).
 // `dependsOn` references another section's key; null/absent = root section.
-const SPECS = [
-  // ---------- base family (date 20260518, catalog SEED-20260518-Configurables) ----------
-  { csvId: 'CFG-012', family: 'base', name: 'AGENT-TEST-Config-Bike-20260518', code: 'AGENT-TEST-CFG-012-20260518', basePrice: 100,
-    sections: [
-      { key: 'A', name: 'Choose Upgrade', type: 'Product', isRequired: false,
-        options: [{ name: 'Basic Seat', price: 15 }, { name: 'Premium Seat', price: 45 }, { name: 'Racing Seat', price: 95 }] },
-    ] },
-  { csvId: 'CFG-013', family: 'base', name: 'AGENT-TEST-Config-Laptop-20260518', code: 'AGENT-TEST-CFG-013-20260518', basePrice: 999,
-    sections: [
-      { key: 'A', name: 'RAM', type: 'Product', isRequired: true,
-        options: [{ name: '8GB', price: 0 }, { name: '16GB', price: 100 }, { name: '32GB', price: 250 }] },
-      { key: 'B', name: 'Storage', type: 'Product', isRequired: true,
-        options: [{ name: '256GB SSD', price: 0 }, { name: '512GB SSD', price: 75 }, { name: '1TB SSD', price: 150 }] },
-    ] },
-  { csvId: 'CFG-014', family: 'base', name: 'AGENT-TEST-Config-Sale-Bike-20260518', code: 'AGENT-TEST-CFG-014-20260518', basePrice: 250, salePrice: 200,
-    sections: [
-      { key: 'A', name: 'Handlebars', type: 'Product', isRequired: false,
-        options: [{ name: 'Standard', price: 50, salePrice: 40 }, { name: 'Drop Bar', price: 100, salePrice: 80 }] },
-    ] },
-  { csvId: 'CFG-015', family: 'base', name: 'AGENT-TEST-Config-OOS-Bike-20260518', code: 'AGENT-TEST-CFG-015-20260518', basePrice: 120,
-    sections: [
-      { key: 'A', name: 'Frame Color', type: 'Product', isRequired: true,
-        options: [
-          { name: 'Red', price: 0, stock: 10 }, { name: 'Blue', price: 0, stock: 5 },
-          { name: 'Ltd Black', price: 50, stock: 0 }, // OOS option — the point of CFG-015
-          { name: 'Silver', price: 25, stock: 8 },
-        ] },
-    ] },
-  { csvId: 'CFG-016', family: 'base', name: 'AGENT-TEST-Config-Checkout-Bike-20260518', code: 'AGENT-TEST-CFG-016-20260518', basePrice: 150,
-    sections: [
-      { key: 'A', name: 'Wheels', type: 'Product', isRequired: true,
-        options: [{ name: 'Standard', price: 0 }, { name: 'Sport', price: 50 }] },
-    ] },
-  { csvId: 'CFG-017', family: 'base', name: 'AGENT-TEST-Ring-Txt-Cfg-20260518', code: 'AGENT-TEST-CFG-017-20260518', basePrice: 150,
-    sections: [
-      { key: 'A', name: 'Engraving Text', type: 'Text', isRequired: true, allowCustomText: true, maxLength: 30, options: [] },
-    ] },
-  { csvId: 'CFG-018', family: 'base', name: 'AGENT-TEST-Config-Custom-Jersey-20260518', code: 'AGENT-TEST-CFG-018-20260518', basePrice: 50,
-    sections: [
-      { key: 'A', name: 'Size', type: 'Product', isRequired: true,
-        options: [{ name: 'Small', price: 0 }, { name: 'Medium', price: 0 }, { name: 'Large', price: 5 }] },
-    ] },
-  { csvId: 'CFG-019', family: 'base', name: 'AGENT-TEST-Config-Gift-Box-20260518', code: 'AGENT-TEST-CFG-019-20260518', basePrice: 50,
-    sections: [
-      { key: 'A', name: 'Gift Message', type: 'Text', isRequired: false, allowCustomText: true, maxLength: 100, options: [] },
-    ] },
-  { csvId: 'CFG-020', family: 'base', name: 'AGENT-TEST-Config-Phone-Case-20260518', code: 'AGENT-TEST-CFG-020-20260518', basePrice: 30,
-    sections: [
-      { key: 'A', name: 'Case Style', type: 'Product', isRequired: true,
-        options: [{ name: 'Clear', price: 0 }, { name: 'Matte', price: 5 }, { name: 'Gloss', price: 8 }] },
-      { key: 'B', name: 'Accessories', type: 'Product', isRequired: false,
-        options: [{ name: 'Ring', price: 10 }, { name: 'Stand', price: 12 }] },
-      { key: 'C', name: 'Custom Name', type: 'Text', isRequired: false, allowCustomText: true, maxLength: 20, options: [] },
-    ] },
-  { csvId: 'CFG-021', family: 'base', name: 'AGENT-TEST-Config-Custom-Bike-20260518', code: 'AGENT-TEST-CFG-021-20260518', basePrice: 500,
-    sections: [
-      { key: 'A', name: 'Frame', type: 'Product', isRequired: true,
-        options: [{ name: 'Aluminum', price: 0 }, { name: 'Carbon', price: 200 }, { name: 'Steel', price: 50 }] },
-      { key: 'B', name: 'Wheels', type: 'Product', isRequired: true,
-        options: [{ name: 'Standard', price: 0 }, { name: 'Sport', price: 75 }, { name: 'Pro', price: 150 }] },
-      { key: 'C', name: 'Seat', type: 'Product', isRequired: false,
-        options: [{ name: 'Basic', price: 0 }, { name: 'Comfort', price: 30 }, { name: 'Racing', price: 60 }] },
-    ] },
-  { csvId: 'CFG-FILE', family: 'base', name: 'AGENT-TEST-Config-FileUpload-20260518', code: 'AGENT-TEST-CFG-FILE-20260518', basePrice: 80,
-    // File-attachment fixture — backs CFG-GQL-055b (VCST-5173 configurationSection type:"File").
-    sections: [
-      { key: 'A', name: 'Design Upload', type: 'File', isRequired: false, options: [] },
-    ] },
-
-  // ---------- conditional family (date 20260519, catalog SEED-20260519-Configurables-Cascades) ----------
-  { csvId: 'CFG-022', family: 'conditional', name: 'AGENT-TEST-Config-Conditional-Bike-20260519', code: 'AGENT-TEST-CFG-022-20260519', basePrice: 300,
-    sections: [
-      { key: 'A', name: 'Frame Type', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Aluminum', price: 0 }, { name: 'Carbon', price: 200 }, { name: 'Steel', price: 50 }] },
-      { key: 'B', name: 'Wheel Set', type: 'Product', isRequired: false, dependsOn: 'A',
-        options: [{ name: 'Standard', price: 25 }, { name: 'Sport', price: 75 }] },
-      { key: 'D', name: 'Frame Color', type: 'Product', isRequired: false, dependsOn: 'A',
-        options: [{ name: 'Black', price: 10 }, { name: 'Red', price: 15 }] },
-      { key: 'C', name: 'Tire Type', type: 'Product', isRequired: false, dependsOn: 'B',
-        options: [{ name: 'Slick', price: 20 }, { name: 'Knobby', price: 35 }] },
-    ] },
-  { csvId: 'CFG-023', family: 'conditional', name: 'AGENT-TEST-Wedding-Cake-Cond-20260519', code: 'AGENT-TEST-CFG-023-20260519', basePrice: 81,
-    sections: [
-      { key: 'Base', name: 'Base', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Top White Bottom White', price: 0 }, { name: 'Top White Bottom Cream', price: 5 }, { name: 'Top Cream Bottom Cream', price: 10 }] },
-      { key: 'Creme', name: 'Creme', type: 'Product', isRequired: false, dependsOn: 'Base',
-        options: [{ name: 'Buttercreme Peach and Blue', price: 12 }, { name: 'Buttercreme Vanilla', price: 8 }] },
-      { key: 'Message', name: 'Message', type: 'Product', isRequired: false, dependsOn: 'Creme',
-        options: [{ name: 'Standard Message Tag', price: 12 }, { name: 'Premium Message Tag', price: 20 }] },
-      { key: 'Text', name: 'Custom text required', type: 'Text', isRequired: true, dependsOn: 'Message', allowCustomText: true, maxLength: 100, options: [] },
-      { key: 'Image', name: 'Image', type: 'File', isRequired: false, dependsOn: 'Message', options: [] },
-    ] },
-  { csvId: 'CFG-024', family: 'conditional', name: 'AGENT-TEST-Text-Driven-Cond-20260519', code: 'AGENT-TEST-CFG-024-20260519', basePrice: 200,
-    sections: [
-      { key: 'A', name: 'Engraving Line 1', type: 'Text', isRequired: true, dependsOn: null, allowCustomText: true, maxLength: 60, options: [] },
-      { key: 'B', name: 'Style Pack', type: 'Product', isRequired: false, dependsOn: 'A',
-        options: [{ name: 'Classic', price: 30 }, { name: 'Modern', price: 45 }] },
-      { key: 'C', name: 'Accessory', type: 'Product', isRequired: false, dependsOn: 'B',
-        options: [{ name: 'Bag', price: 20 }, { name: 'Case', price: 25 }] },
-    ] },
-  { csvId: 'CFG-025', family: 'conditional', name: 'AGENT-TEST-File-Driven-Cond-20260519', code: 'AGENT-TEST-CFG-025-20260519', basePrice: 180,
-    sections: [
-      { key: 'A', name: 'Design Upload', type: 'File', isRequired: true, dependsOn: null, options: [] },
-      { key: 'B', name: 'Finish Type', type: 'Product', isRequired: false, dependsOn: 'A',
-        options: [{ name: 'Matte', price: 15 }, { name: 'Gloss', price: 20 }] },
-      { key: 'C', name: 'Notes', type: 'Text', isRequired: false, dependsOn: 'B', allowCustomText: true, maxLength: 200, options: [] },
-    ] },
-  { csvId: 'CFG-026', family: 'conditional', name: 'AGENT-TEST-Req-File-Child-20260519', code: 'AGENT-TEST-CFG-026-20260519', basePrice: 150,
-    sections: [
-      { key: 'A', name: 'Service Plan', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Basic', price: 0 }, { name: 'Premium', price: 50 }] },
-      { key: 'B', name: 'ID Proof', type: 'File', isRequired: true, dependsOn: 'A', options: [] },
-    ] },
-  { csvId: 'CFG-027', family: 'conditional', name: 'AGENT-TEST-Two-Req-Siblings-20260519', code: 'AGENT-TEST-CFG-027-20260519', basePrice: 120,
-    sections: [
-      { key: 'A', name: 'Bundle Choice', type: 'Product', isRequired: false, dependsOn: null,
-        options: [{ name: 'Bundle A', price: 40 }, { name: 'Bundle B', price: 60 }] },
-      { key: 'B', name: 'Size', type: 'Product', isRequired: true, dependsOn: 'A',
-        options: [{ name: 'Small', price: 0 }, { name: 'Medium', price: 5 }, { name: 'Large', price: 10 }] },
-      { key: 'C', name: 'Color', type: 'Product', isRequired: true, dependsOn: 'A',
-        options: [{ name: 'Black', price: 0 }, { name: 'White', price: 0 }, { name: 'Red', price: 5 }] },
-    ] },
-  { csvId: 'CFG-028', family: 'conditional', name: 'AGENT-TEST-Deep-4-Level-Chain-20260519', code: 'AGENT-TEST-CFG-028-20260519', basePrice: 300,
-    sections: [
-      { key: 'A', name: 'Level A', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Opt1', price: 20 }, { name: 'Opt2', price: 40 }] },
-      { key: 'B', name: 'Level B', type: 'Product', isRequired: false, dependsOn: 'A', options: [{ name: 'Opt1', price: 10 }] },
-      { key: 'C', name: 'Level C', type: 'Product', isRequired: false, dependsOn: 'B', options: [{ name: 'Opt1', price: 10 }] },
-      { key: 'D', name: 'Level D', type: 'Product', isRequired: false, dependsOn: 'C', options: [{ name: 'Opt1', price: 10 }] },
-      { key: 'E', name: 'Level E', type: 'Product', isRequired: false, dependsOn: 'D', options: [{ name: 'Opt1', price: 10 }] },
-    ] },
-  { csvId: 'CFG-029', family: 'conditional', name: 'AGENT-TEST-Req-Child-Opt-Parent-20260519', code: 'AGENT-TEST-CFG-029-20260519', basePrice: 100,
-    sections: [
-      { key: 'A', name: 'Add Extras', type: 'Product', isRequired: false, dependsOn: null,
-        options: [{ name: 'Extra A', price: 25 }, { name: 'Extra B', price: 35 }] },
-      { key: 'B', name: 'Extra Type', type: 'Product', isRequired: true, dependsOn: 'A',
-        options: [{ name: 'Standard', price: 0 }, { name: 'Premium', price: 15 }] },
-    ] },
-
-  // ---------- default family (date 20260527, catalog SEED-20260527-Configurables-Default) ----------
-  { csvId: 'CFG-030', family: 'default', name: 'AGENT-TEST-CFG-Default-Flat-20260527', code: 'AGENT-TEST-CFG-030-20260527', basePrice: 100,
-    sections: [
-      { key: 'A', name: 'Frame Material', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Aluminum', price: 0 }, { name: 'Carbon', price: 200, default: true }, { name: 'Steel', price: 50 }] },
-    ] },
-  { csvId: 'CFG-031', family: 'default', name: 'AGENT-TEST-CFG-Default-Cond-20260527', code: 'AGENT-TEST-CFG-031-20260527', basePrice: 150,
-    sections: [
-      { key: 'A', name: 'Base Choice', type: 'Product', isRequired: true, dependsOn: null,
-        options: [{ name: 'Standard', price: 0, default: true }, { name: 'Deluxe', price: 80 }] },
-      { key: 'B', name: 'Add-on', type: 'Product', isRequired: false, dependsOn: 'A',
-        options: [{ name: 'Warranty', price: 25, default: true }, { name: 'Case', price: 15 }] },
-    ] },
-
-  // ---------- bike family (date 20260527, shares SEED-20260527-Configurables-Default) ----------
-  { csvId: 'CFG-032', family: 'bike', name: 'AGENT-TEST-CFG-Bike-Flat-20260527', code: 'AGENT-TEST-CFG-032-20260527', basePrice: 350,
-    sections: [
-      { key: 'A', name: 'Select one', type: 'Product', isRequired: false, dependsOn: null,
-        options: [
-          { name: 'Rear wheel, 26", double-wall rim, motorized', price: 88, quantity: 2 },
-          { name: '200CC 250CC 4-Stroke Engine Motor', price: 225, quantity: 1 },
-          { name: 'Seat', price: 15, quantity: 1 },
-          { name: 'Pedals', price: 14, quantity: 1 },
-        ] },
-    ] },
-];
+import { SPECS } from './configurable-specs.mjs';
 
 // ── Spec selection ───────────────────────────────────────────────────────────
 let specs = SPECS;
@@ -278,7 +117,11 @@ async function findCatalogByName(name) {
 async function ensureCatalog(name) {
   let cat = await findCatalogByName(name);
   if (cat) { log(`↻ catalog: ${name} (${cat.id})`); return cat; }
-  cat = await api('POST', '/api/catalog/catalogs', { name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }] });
+  cat = await api('POST', '/api/catalog/catalogs', {
+    name, isVirtual: false, languages: [{ languageCode: 'en-US', isDefault: true }],
+    // Catalog SEO with store + language (generic slug + generic "Catalog" title — not the internal name).
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'catalog', pageTitle: 'Catalog', isActive: true }],
+  });
   log(`✓ catalog: ${name} (${cat?.id})`);
   return cat;
 }
@@ -288,7 +131,7 @@ async function ensureCategory(catalogId, name, code) {
   if (found) { log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code, isActive: true, priority: 1,
-    seoInfos: [{ languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
   });
   log(`✓ category: ${name} (${cat?.id})`);
   return cat;
@@ -311,10 +154,16 @@ async function ensureProduct(catalogId, categoryId, body) {
     // missed it and we tried to re-insert (unique IX_Code_CatalogId). Poll the index
     // until it catches up and reuse the existing row rather than failing the spec.
     if (/duplicate key|IX_Code_CatalogId/i.test(e.message)) {
+      // The row exists in the DB but the CatalogProduct search index lagged (findProductByCode is
+      // index-based). Poll won't resolve on its own without a reindex, so TRIGGER one, then poll —
+      // re-triggering periodically until the index shows the row (recovers a partial prior run).
+      const reindex = () => api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] }).catch(() => {});
+      await reindex();
       for (let i = 0; i < 12; i++) {
         await sleep(5000);
         const found = await findProductByCode(body.code);
         if (found) { verbose(`↻ recovered ${body.code} after index lag (${(i + 1) * 5}s)`); return found; }
+        if (i === 3 || i === 7) await reindex();
       }
     }
     throw e;
@@ -341,8 +190,8 @@ async function findOrCreatePriceList(name) {
   if (pl) { log(`↻ pricelist: ${name} (${pl.id})`); return pl; }
   pl = await api('POST', '/api/pricing/pricelists', { name, currency: 'USD', description: 'Seeded for configurable products test data' }, { expectStatus: [200, 201] });
   try {
-    await api('POST', '/api/pricing/assignments', { name: `${name} → ${STORE_ID}`, pricelistId: pl.id, storeId: STORE_ID, priority: 100 }, { expectStatus: [200, 201] });
-    log(`✓ pricelist + store assignment: ${name} (${pl.id})`);
+    await api('POST', '/api/pricing/assignments', { name: `${name} → ${VIRTUAL_CATALOG_ID}`, pricelistId: pl.id, catalogId: VIRTUAL_CATALOG_ID, priority: 100 }, { expectStatus: [200, 201] });
+    log(`✓ pricelist + catalog assignment: ${name} (${pl.id})`);
   } catch (e) { log(`⚠ pricelist created but assignment failed: ${e.message.slice(0, 150)}`); }
   return pl;
 }
@@ -385,63 +234,33 @@ async function ensureProductsWithOptionsCategory() {
   if (found) { PWO_CATEGORY_ID = found.id; log(`↻ VC category: ${name} (${found.id})`); return PWO_CATEGORY_ID; }
   const c = await api('POST', '/api/catalog/categories', {
     catalogId: VIRTUAL_CATALOG_ID, name, code: 'products-with-options', isActive: true, priority: 1,
-    seoInfos: [{ languageCode: 'en-US', semanticUrl: 'products-with-options' }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'products-with-options' }],
   }, { expectStatus: [200, 201] });
   PWO_CATEGORY_ID = c?.id; log(`✓ VC category created: ${name} (${c?.id})`);
   return PWO_CATEGORY_ID;
 }
 
-// --- Primary-env CSV writeback -----------------------------------------------
-// On the PRIMARY env (vcst), syncEnvAliases is a no-op — the canonical CFG GUIDs
-// live in the committed configurable-products.csv (product_id_guid + configuration_id),
-// which the CSV-backed CFG_* aliases resolve against. A delete+reseed mints NEW GUIDs,
-// so without this the CSV would go stale and every @td(CFG_*.id) would break. Mirrors
-// the users.csv platform_id writeback in user-provision.mjs. Only writes when a value
-// actually changed (idempotent reseeds reuse the same GUIDs → no file churn).
-const CSV_REL = 'test-data/products/configurable-products.csv';
-function parseCsvLine(line) {
-  const out = []; let cur = ''; let q = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (q) { if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; }
-    else { if (ch === '"') q = true; else if (ch === ',') { out.push(cur); cur = ''; } else cur += ch; }
+// --- Section/option id capture (for the default/conditional CFG aliases) ------
+// CFG_WITH_DEFAULT (CFG-030) and CFG_WITH_DEFAULT_COND (CFG-031) resolve section +
+// default-option GUIDs, not just product_id_guid — derive them from the seeded config
+// (sectionReport) so they land in aliases.<env>.json alongside the core ids (multi-env:
+// the committed CSV carries NO GUIDs). Only emits a field when unambiguously determined
+// (a base section with a default option; a dependent section via dependsOnSectionId);
+// writeEnvAliasOverride merges, so an absent field never clobbers a captured value.
+// Mapping matches the CSV semantics: base/default section == the controlling (parent)
+// section; dependent == the section with dependsOnSectionId set.
+function sectionOptionIds(sections) {
+  const defOpt = (s) => (s?.options || []).find((o) => o.isDefault)?.id || null;
+  const base = (sections || []).find((s) => !s.dependsOnSectionId && defOpt(s));
+  const dependent = (sections || []).find((s) => s.dependsOnSectionId);
+  const out = {};
+  if (base) { out.default_section_id = base.id; out.default_option_id = defOpt(base); }
+  if (dependent) {
+    if (base) { out.parent_section_id = base.id; out.parent_default_option_id = defOpt(base); }
+    out.dependent_section_id = dependent.id;
+    out.dependent_default_option_id = defOpt(dependent);
   }
-  out.push(cur); return out;
-}
-function escapeCsvField(v) {
-  const s = v == null ? '' : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function writeCsvGuids(byKey) {
-  const env = process.env.TEST_ENV || PRIMARY_ENV;
-  if (env !== PRIMARY_ENV || DRY_RUN || !byKey || !Object.keys(byKey).length) return;
-  const path = join(ROOT, CSV_REL);
-  const raw = readFileSync(path, 'utf-8');
-  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
-  const lines = raw.split(/\r?\n/);
-  const trailing = lines[lines.length - 1] === '' ? eol : '';
-  if (trailing) lines.pop();
-  const header = parseCsvLine(lines[0]);
-  const idIdx = header.indexOf('product_id');
-  const guidIdx = header.indexOf('product_id_guid');
-  const cfgIdx = header.indexOf('configuration_id');
-  let changed = 0;
-  const out = [lines[0]];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) { out.push(line); continue; }
-    const f = parseCsvLine(line);
-    if (f.length !== header.length) { out.push(line); continue; }
-    const upd = byKey[f[idIdx]];
-    if (!upd) { out.push(line); continue; }
-    let rowChanged = false;
-    if (upd.product_id_guid && f[guidIdx] !== upd.product_id_guid) { f[guidIdx] = upd.product_id_guid; rowChanged = true; }
-    if (cfgIdx >= 0 && upd.configuration_id && f[cfgIdx] !== upd.configuration_id) { f[cfgIdx] = upd.configuration_id; rowChanged = true; }
-    if (rowChanged) changed++;
-    out.push(f.map(escapeCsvField).join(','));
-  }
-  if (changed) { writeFileSync(path, out.join(eol) + trailing, 'utf-8'); log(`✓ wrote ${changed} row(s) to ${CSV_REL} (product_id_guid + configuration_id)`); }
-  else verbose('CSV GUIDs already current — no write');
+  return Object.fromEntries(Object.entries(out).filter(([, v]) => v)); // drop null/empty
 }
 
 // Option-product code/name — MUST match the legacy family scheme or a re-run
@@ -538,11 +357,13 @@ async function seedSpec(spec, ctx, ffcId) {
       const { code, name } = childIdentity(spec, section, opt, idx);
       const child = await ensureProduct(catalog.id, childCat.id, {
         name, code, productType: 'Physical', vendor: 'QA', isActive: true, isBuyable: true, trackInventory: true,
+        seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: cfgSlug(code) }],
       });
       opt._productId = child.id;
       if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
         if (opt.price != null) await ensurePrice(priceList.id, child.id, opt.price, opt.salePrice ?? null);
         await ensureInventory(ffcId, child.id, opt.stock ?? 100);
+        await enrich(child.id, code); // images + descriptions (idempotent)
       }
     }
   }
@@ -551,10 +372,15 @@ async function seedSpec(spec, ctx, ffcId) {
   const parentBody = {
     name: spec.name, code: spec.code, productType: 'Physical', vendor: 'QA',
     isActive: true, isBuyable: true, trackInventory: false,
+    // Store-scoped product SEO (platform default leaves storeId=null). Preserve the slug scheme:
+    // slugFromCode families keep the code slug; others use the name slug (== the prior auto-slug).
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name) }],
   };
-  if (slugFromCode) parentBody.seoInfos = [{ languageCode: 'en-US', semanticUrl: spec.code.toLowerCase() }];
   const parent = await ensureProduct(catalog.id, parentCat.id, parentBody);
-  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) await ensurePrice(priceList.id, parent.id, spec.basePrice, spec.salePrice ?? null);
+  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
+    await ensurePrice(priceList.id, parent.id, spec.basePrice, spec.salePrice ?? null);
+    await enrich(parent.id, spec.code); // images + descriptions (idempotent)
+  }
 
   // 3. configuration
   const cfg = await createOrUpdateConfiguration(parent.id, spec.sections);
@@ -568,27 +394,32 @@ async function seedSpec(spec, ctx, ffcId) {
   const sectionReport = (cfg?.sections || []).map(s => ({
     id: s.id, name: s.name, type: s.type, isRequired: s.isRequired,
     dependsOnSectionId: s.dependsOnSectionId, displayOrder: s.displayOrder,
-    options: (s.options || []).map(o => ({ productName: o.productName, quantity: o.quantity, isDefault: !!o.isDefault })),
+    options: (s.options || []).map(o => ({ id: o.id, productName: o.productName, quantity: o.quantity, isDefault: !!o.isDefault })),
   }));
   return { csvId: spec.csvId, name: spec.name, parentId: parent.id, configurationId: cfg?.id, sections: sectionReport };
 }
 
-// ── Group context cache (ensure a catalog group only once, and only if used) ──
-const groupCtx = {};
-async function ctxFor(groupKey) {
-  if (groupCtx[groupKey]) return groupCtx[groupKey];
-  const g = GROUPS[groupKey];
-  log(`\n─── catalog group: ${g.catalog} ───`);
-  const catalog = await ensureCatalog(g.catalog);
-  const parentCat = await ensureCategory(catalog.id, g.parentCat[0], g.parentCat[1]);
-  const childCat = await ensureCategory(catalog.id, g.childCat[0], g.childCat[1]);
-  const priceList = await findOrCreatePriceList(g.pricelist);
+// ── Unified catalog context (ONE stable catalog for every family) ─────────────
+// UNIFIED: all configurable families place into a SINGLE stable-named physical catalog
+// `AGENT-TEST-SEED-Configurables` (was 3 date-stamped SEED-<date>-Configurables catalogs → orphan
+// sprawl + not family-swept). The stable name is caught by the `seed:teardown` family sweep. The
+// storefront-special "Products with options" category (exact name — NOT AGENT-TEST-prefixed) is kept
+// as the parent nesting so /products-with-options still resolves. seedSpec is untouched.
+const UNIFIED = { catalog: 'AGENT-TEST-SEED-Configurables' };
+let sharedCtx = null;
+async function ctxFor(_groupKey) {
+  if (sharedCtx) return sharedCtx;
+  log(`\n─── configurable catalog: ${UNIFIED.catalog} ───`);
+  const catalog = await ensureCatalog(UNIFIED.catalog);
+  const parentCat = await ensureCategory(catalog.id, 'Configurable Parents', 'AGENT-TEST-SEED-CFG-PARENTS');
+  const childCat = await ensureCategory(catalog.id, 'Configurable Options', 'AGENT-TEST-SEED-CFG-OPTS');
+  const priceList = await findOrCreatePriceList('AGENT-TEST-SEED-Configurables-USD');
   if (!DRY_RUN && parentCat.id && !String(parentCat.id).startsWith('dry-')) {
     try { await linkCategoryUnder(parentCat.id, PWO_CATEGORY_ID); log(`✓ ${parentCat.name} nested under "Products with options"`); }
     catch (e) { log(`⚠ parent-category link: ${e.message.slice(0, 160)}`); }
   }
-  groupCtx[groupKey] = { catalog, parentCat, childCat, priceList };
-  return groupCtx[groupKey];
+  sharedCtx = { catalog, parentCat, childCat, priceList };
+  return sharedCtx;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -616,12 +447,12 @@ async function main() {
     try { await api('POST', '/api/search/indexes/index', [{ documentType: 'CatalogProduct', rebuild: false }], { expectStatus: [200, 204] }); log(`\n✓ reindex triggered`); }
     catch (e) { log(`⚠ reindex: ${e.message.slice(0, 100)}`); }
 
-    // Persist runtime GUIDs to aliases.<env>.json (product_id_guid + configuration_id).
-    // Business keys / names / slugs stay in the committed CSV. No-op for primary vcst.
+    // Persist runtime GUIDs to aliases.<env>.json for EVERY env incl. vcst: product_id_guid,
+    // configuration_id, and — for the default/conditional specs — section + default-option ids.
+    // Business keys / names / slugs stay in the committed CSV (which carries NO GUIDs).
     const byKey = {};
-    for (const s of seeded) if (!s.error) byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId };
-    syncEnvAliases('products/configurable-products', byKey); // non-primary envs → aliases.{env}.json
-    writeCsvGuids(byKey);                                    // primary vcst → committed CSV columns
+    for (const s of seeded) if (!s.error) byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections) };
+    syncEnvAliases('products/configurable-products', byKey); // → aliases.{env}.json (all envs)
   }
 
   const ok = seeded.filter(s => !s.error).length;
@@ -654,19 +485,28 @@ async function teardown() {
     const spec = specs[0];
     const p = await findProductByCode(spec.code);
     if (p?.id) {
-      await api('POST', '/api/catalog/listentries/delete', { ids: [p.id], objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ delete: ${e.message.slice(0, 120)}`));
-      log(`✗ deleted parent ${spec.csvId} (${p.id}) — child options + catalog preserved (partial teardown)`);
+      // MUST be `objectIds` (NOT `ids`): POST /api/catalog/listentries/delete takes a
+      // CatalogListEntrySearchCriteria — the wrong field name `ids` leaves ObjectIds empty, which
+      // the endpoint treats as "search-and-delete EVERY authorized product" (a full-catalog wipe).
+      // Extra guard: only delete a product whose name carries the AGENT-TEST seed prefix.
+      if (!p.name?.startsWith('AGENT-TEST')) { log(`⚠ skip ${spec.csvId}: "${p.name}" lacks AGENT-TEST prefix — not a seed product`); }
+      else {
+        await api('POST', '/api/catalog/listentries/delete', { objectIds: [p.id], objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ delete: ${e.message.slice(0, 120)}`));
+        log(`✗ deleted parent ${spec.csvId} (${p.id}) — child options + catalog preserved (partial teardown)`);
+      }
     } else log(`– ${spec.csvId} not found`);
   } else {
-    const groupKeys = [...new Set(specs.map(s => FAMILY[s.family].catalogGroup))];
-    for (const gk of groupKeys) {
-      const g = GROUPS[gk];
-      const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(g.pricelist)}`, null, { expectStatus: [200, 404] });
-      const plIds = (plSearch?.results || []).filter(p => p?.name === g.pricelist).map(p => p.id);
-      if (plIds.length) await api('DELETE', `/api/pricing/pricelists?ids=${plIds.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
-      const cat = await findCatalogByName(g.catalog);
-      if (cat?.id) { await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ catalog delete: ${e.message.slice(0, 120)}`)); log(`✗ deleted catalog ${g.catalog} (cascades children)`); }
-      else log(`– catalog ${g.catalog} not found`);
+    // Delete the unified catalog + pricelist AND any legacy date-stamped ones from prior runs.
+    const catalogs = [UNIFIED.catalog, ...Object.values(GROUPS).map(g => g.catalog)];
+    const pricelists = ['AGENT-TEST-SEED-Configurables-USD', ...Object.values(GROUPS).map(g => g.pricelist)];
+    for (const plName of [...new Set(pricelists)]) {
+      const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
+      const plIds = (plSearch?.results || []).filter(p => p?.name === plName).map(p => p.id);
+      if (plIds.length) await api('DELETE', `/api/pricing/pricelists?${idsParam(plIds)}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+    }
+    for (const catName of [...new Set(catalogs)]) {
+      const cat = await findCatalogByName(catName);
+      if (cat?.id) { await api('DELETE', `/api/catalog/catalogs/${cat.id}`, null, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ catalog delete: ${e.message.slice(0, 120)}`)); log(`✗ deleted catalog ${catName} (cascades children)`); }
     }
   }
 

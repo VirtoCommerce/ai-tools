@@ -1545,17 +1545,6 @@
       "type": "catalog_type"
     }
   },
-  "CATALOG_INDUSTRIAL": {
-    "file": "catalogs/catalogs",
-    "filter": {
-      "catalog_id": "CAT-PHYS-002"
-    },
-    "fields": {
-      "id": "catalog_id",
-      "name": "catalog_name",
-      "type": "catalog_type"
-    }
-  },
   "WL_ELECTRONICS": {
     "file": "white-labeling/organizations",
     "filter": {
