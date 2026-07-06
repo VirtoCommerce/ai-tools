@@ -1,5 +1,5 @@
 contact_id,platform_id,org_id,first_name,last_name,full_name,email,phone,title,department,status,time_zone,default_language,currency_code,seeded,test_purpose
-CON-001,,ORG-001,John,Mitchell,John Mitchell,test-john.mitchell-20260310@test-agent.com,+1-212-555-1010,VP of Procurement,Purchasing,Approved,America/New_York,en-US,EUR,true,Org admin — full permissions (EUR-currency buyer)
+CON-001,,ORG-001,John,Mitchell,John Mitchell,test-john.mitchell-20260310@test-agent.com,+1-212-555-1010,VP of Procurement,Purchasing,Approved,America/New_York,en-US,USD,true,Org admin — full permissions
 CON-002,,ORG-001,Sarah,Chen,Sarah Chen,test-sarah.chen-20260310@test-agent.com,+1-212-555-1020,Senior Buyer,Purchasing,Approved,America/New_York,en-US,USD,true,Buyer role — can place orders and manage cart
 CON-023,,ORG-001,Nora,Manager,Nora Manager,test-nora.manager-20260701@test-agent.com,+1-212-555-1023,Team Manager,Operations,Approved,America/New_York,en-US,USD,true,IMP-015 negative operator — member manager without impersonation
 CON-003,,ORG-001,Mike,Torres,Mike Torres,test-mike.torres-20260310@test-agent.com,+1-212-555-1030,Procurement Analyst,Purchasing,Approved,America/New_York,en-US,USD,true,Viewer role — read-only access
