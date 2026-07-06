@@ -39,7 +39,7 @@ platform) and to the correct bug tracker.
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
 → 5 derive block (derive-context) → auth-fact · contributionMode · forkAccount · operator
 → 6 write profile (gen-profile: repos-json + derived flags) → 7 MCP (gen-mcp)
-→ 8 verify (verify-access) → 9 done
+→ 8 verify (verify-access) [+ 8a ensure-subscription if monitoring] → 9 done
 ```
 
 All scripts live in `.claude/skills/project-init/` and are **non-interactive** —
@@ -61,8 +61,9 @@ directory is the plugin repo root (`manifest.json` present).
   operator to install them (cannot be auto-installed reliably).
 - **`gh` (GitHub CLI)** — **required** (platform upstream + client GitHub
   PRs/issues). Install now if missing.
-- **`az` (Azure CLI)** — required **only** if the operator picks Azure
-  Boards/Repos in step 2. Install it then (or now if you already know).
+- **`az` (Azure CLI)** — required if the operator picks Azure Boards/Repos in step 2,
+  **or** if the deployment uses App Insights monitoring (step 8a sets the `az` default
+  subscription; `/qa-monitoring` reads telemetry via the `az` identity). Install it then.
 
 Install commands (pick by OS). System installs need `sudo`, which prompts — have
 the operator run them via `!` in the prompt (e.g. `! sudo pacman -S github-cli`):
@@ -167,8 +168,12 @@ node .claude/skills/project-init/scaffold-env.mjs --env acme --tracker jira --cl
 Flags: `--env <name>` (required), `--tracker jira|azure`, `--client-vcs
 github|azure-repos`. `ENV_RISK` and `ADMIN` are pre-filled with safe defaults;
 everything else is empty. `ADO_ORG`/`ADO_PROJECT` are emitted when the tracker is
-Azure **or** the code host is Azure Repos. Idempotent — a re-run only adds missing
-keys, never clobbers.
+Azure **or** the code host is Azure Repos. It also always emits an **OPTIONAL
+monitoring block** (blank ⇒ monitoring off; not needed for `/qa-fix`):
+`AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`, `APPINSIGHTS_APP_ID_{BACKEND,STOREFRONT}`,
+`APPINSIGHTS_RESOURCE_{BACKEND,STOREFRONT}` — the non-secret half that powers
+`/qa-monitoring` (the App Insights read-telemetry API keys are the secret half →
+`.env.local`). Idempotent — a re-run only adds missing keys, never clobbers.
 
 ### 3b. `.env.local` template (`scaffold-secrets.mjs`)
 
@@ -184,10 +189,12 @@ node .claude/skills/project-init/scaffold-secrets.mjs \
 Flags — **one per auth axis, from step 2d**: `--jira-auth token|oauth` · `--ado-auth
 pat|az-login` (`az-login` ⇒ no `ADO_PAT`) · `--github-auth pat|gh-cli` (`gh-cli` ⇒ no
 `GITHUB_FIX_BUGS_TOKEN`). App test-user passwords (`ADMIN_PASSWORD`/`USER_PASSWORD`,
-`_<ENV>`-suffixed) are always emitted. **`POSTMAN_API_KEY` + `CONTEXT7_API_KEY` are
-always emitted too, but as OPTIONAL placeholders** (blank ⇒ that MCP server stays
-disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comment.
-(`--extras` is retained for back-compat but no longer gates them.) Idempotent.
+`_<ENV>`-suffixed) are always emitted. **`POSTMAN_API_KEY` + `CONTEXT7_API_KEY` +
+`APPINSIGHTS_API_KEY_{BACKEND,STOREFRONT}` are always emitted too, but as OPTIONAL
+placeholders** (blank ⇒ that capability stays disabled; not needed for `/qa-fix`) — each
+with a "which tool it powers" comment. The App Insights keys are `_<ENV>`-suffixed and are
+only a *fallback* for `/qa-monitoring`: an `az login` session (step 8a) covers the auth
+without any key. (`--extras` is retained for back-compat but no longer gates them.) Idempotent.
 
 ### 3c. Tell the operator: two files created — fill them, then pause
 
@@ -363,6 +370,55 @@ row to the surface it proves — **front** = `FRONT_URL` (+ storefront user logi
 token + gh CLI — and end with the `N PASS · N FAIL · N WARN · N SKIP` line and the
 READY / NOT READY verdict.
 
+## 8a. Set the deployment's Azure subscription as the `az` default (monitoring only)
+
+**Run this only when monitoring is configured** — i.e. verify-access step 8 shows the
+**"Azure subscription (monitoring)"** row as `WARN` (or the operator will use
+`/qa-monitoring`). It is a no-op for a deployment with no App Insights (that row is `SKIP`).
+
+The single `az login` this skill runs (step 8's `ensure-session.mjs`, for Azure DevOps)
+uses `--allow-no-subscriptions` — it deliberately selects **no** subscription, so `azure-mcp`'s
+subscription-scoped tools (`monitor` / `applicationinsights` / `resourcehealth`) and
+`DefaultAzureCredential` otherwise fail with "no default subscription". This step fixes that
+by detecting the deployment's subscription and making it the `az` default:
+
+```bash
+TEST_ENV=<env> node .claude/skills/project-init/ensure-subscription.mjs --check   # probe only
+TEST_ENV=<env> node .claude/skills/project-init/ensure-subscription.mjs           # detect + `az account set`
+```
+
+The subscription is always tied to the **deployment `/project-init` configured** — never
+"whatever `az` happens to see". `AZURE_SUBSCRIPTION_ID` and the `APPINSIGHTS_*` resource are
+**deployment anchors**; the un-anchored fallbacks are **gated by `projectType`** so a **client**
+deployment never adopts an unrelated (e.g. VirtoCommerce-internal) subscription. It reads
+`project-profile.json` for `projectType` (+ the client's ADO org, to hint the tenant).
+
+Detection order (App-Insights-first): **`AZURE_SUBSCRIPTION_ID` in env** → **the subscription
+HOSTING the `APPINSIGHTS_RESOURCE_*` / `APPINSIGHTS_APP_ID_*` resource** (via `az` Resource Graph,
+falling back to a per-subscription scan by name) → then, ONLY for **`projectType: platform`**
+(native VC — those `az` subs ARE VC's): the **single enabled subscription**, else **AMBIGUOUS**.
+It prints ONE JSON object on stdout (`{subscriptionId,name,tenantId,resourceGroup,source,isDefault}`)
+with notes on stderr, and exits non-zero when it could not set a default.
+
+- **`source:"client-needs-anchor"`** (exit 1, **client only**) → no anchor was set, so it refused to
+  guess. The JSON carries `clientTenant` + `candidates[]`. Fill the deployment's
+  `APPINSIGHTS_RESOURCE_*` / `AZURE_SUBSCRIPTION_ID`, re-run with `--subscription <id>`, or
+  `az login --tenant <clientTenant>` if the client's subscription isn't visible — then retry.
+- **`source:"ambiguous"`** (exit 1, platform only) → **ASK which subscription is the deployment's**,
+  re-run with `--subscription <id>`.
+- **`source:"env-not-found"` / `"override-not-found"`** → the chosen subscription isn't visible to
+  this `az` identity (a different tenant) → `az login --tenant <tenantId>` for it, then retry.
+- **On a successful set it PINS `AZURE_SUBSCRIPTION_ID` (+ `AZURE_RESOURCE_GROUP`) back into
+  `.env.<env>`** (via `write-env.mjs`) automatically — the subscription becomes a durable **per-env**
+  artifact of the configured project (portal deep-links resolve; no re-detect on the next machine).
+  `--no-write` sets the `az` default without touching `.env`; `--check` neither sets nor writes.
+
+**Tenant caveat:** the deployment's subscription and the Azure DevOps org may live in **different
+tenants**. `az account set` switches the active tenant context to the subscription's tenant — this
+does not break ADO (the ADO code paths pass `--tenant <ado>` explicitly to
+`az account get-access-token`), but do run this step **after** `ensure-session.mjs`, and re-run
+verify-access to confirm both the ADO row and the subscription row are green.
+
 ## 9. Done
 
 Present this as an explicit, labelled **Step 9** in your reply (the operator tracks the
@@ -417,6 +473,7 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
+| `ensure-subscription.mjs` | detect the CONFIGURED deployment's Azure subscription (App-Insights-first anchors: `AZURE_SUBSCRIPTION_ID` → resource-hosting sub; un-anchored fallbacks gated by `projectType` — client STOPs `client-needs-anchor`, platform does single/ambiguous), make it the `az` default so `azure-mcp` + `/qa-monitoring` resolve, and PIN it back into `.env.<env>` (write-env.mjs). `--check` probes only, `--subscription <id>` overrides, `--no-write` skips the pin. Emits a JSON result. Monitoring-only (step 8a). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
 > per axis. Both env files are scaffolded as commented templates the operator fills;

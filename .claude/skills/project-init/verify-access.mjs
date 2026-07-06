@@ -75,6 +75,22 @@ const truncTo = (s, n) => (s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…"
 function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
 }
+function cmdOut(cmd) {
+  try { return execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { return ""; }
+}
+/**
+ * The `az` DEFAULT subscription, or "" when none is selected. A tenant-level
+ * `--allow-no-subscriptions` login reports id === tenantId (a placeholder, not a
+ * real subscription), which we treat as "no default".
+ */
+function azDefaultSub() {
+  if (!tryCmd("az account show")) return { session: false, id: "", name: "", tenantId: "" };
+  const id = cmdOut("az account show --query id -o tsv");
+  const tenantId = cmdOut("az account show --query tenantId -o tsv");
+  const name = cmdOut("az account show --query name -o tsv");
+  const real = id && id !== tenantId;
+  return { session: true, id: real ? id : "", name: real ? name : "", tenantId };
+}
 async function httpStatus(url) {
   if (!url) return 0;
   try { return (await fetch(url, { method: "GET", redirect: "manual" })).status; }
@@ -255,6 +271,31 @@ async function main() {
     }
   }
 
+  // 11. Azure subscription (monitoring) — the `az` default subscription must point at the
+  //     deployment's subscription so azure-mcp's subscription-scoped tools + /qa-monitoring
+  //     resolve. Only relevant when monitoring is configured; otherwise SKIP. Non-blocking
+  //     (WARN, not FAIL): /qa-fix doesn't need it; ensure-subscription.mjs is the fixer.
+  const monConfigured = Boolean(
+    process.env.AZURE_SUBSCRIPTION_ID ||
+    process.env.APPINSIGHTS_APP_ID_BACKEND || process.env.APPINSIGHTS_APP_ID_STOREFRONT ||
+    process.env.APPINSIGHTS_RESOURCE_BACKEND || process.env.APPINSIGHTS_RESOURCE_STOREFRONT,
+  );
+  if (!monConfigured) {
+    add("Azure subscription (monitoring)", "SKIP", "monitoring not configured (no AZURE_SUBSCRIPTION_ID / APPINSIGHTS_*)");
+  } else {
+    const sub = azDefaultSub();
+    const wanted = process.env.AZURE_SUBSCRIPTION_ID || "";
+    if (!sub.session) {
+      add("Azure subscription (monitoring)", "WARN", "no `az` session — run `az login`, then ensure-subscription.mjs");
+    } else if (!sub.id) {
+      add("Azure subscription (monitoring)", "WARN", "az session has NO default subscription (tenant-level login) — run ensure-subscription.mjs");
+    } else if (wanted && sub.id !== wanted) {
+      add("Azure subscription (monitoring)", "WARN", `az default '${sub.name}' ≠ AZURE_SUBSCRIPTION_ID — run ensure-subscription.mjs to align`);
+    } else {
+      add("Azure subscription (monitoring)", "PASS", `az default: ${sub.name} (${sub.id})${wanted ? "" : " — no AZURE_SUBSCRIPTION_ID pin, using az default"}`);
+    }
+  }
+
   renderTable(results);
   renderMcp();
   process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);
@@ -275,7 +316,12 @@ function renderMcp() {
     } },
     atlassian: { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
     "figma-remote-mcp": { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
-    "azure-mcp": { auth: "az/AAD", status: () => tryCmd("az account show") ? ["AUTHORIZED", "az login active"] : ["NOT AUTH", "run `az login`"] },
+    "azure-mcp": { auth: "az/AAD", status: () => {
+      const s = azDefaultSub();
+      if (!s.session) return ["NOT AUTH", "run `az login`"];
+      if (!s.id) return ["WARN", "az session but NO default subscription — run ensure-subscription.mjs"];
+      return ["AUTHORIZED", `default sub: ${s.name || s.id}`];
+    } },
     context7: { auth: "key", status: () => process.env.CONTEXT7_API_KEY ? ["AUTHORIZED", "CONTEXT7_API_KEY set"] : ["NO KEY", "optional — set CONTEXT7_API_KEY"] },
     postman: { auth: "key", status: () => process.env.POSTMAN_API_KEY ? ["AUTHORIZED", "POSTMAN_API_KEY set"] : ["NO KEY", "optional — set POSTMAN_API_KEY"] },
   };

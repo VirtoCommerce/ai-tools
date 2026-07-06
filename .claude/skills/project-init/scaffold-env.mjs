@@ -86,6 +86,29 @@ const CATALOG = [
   ["CLIENT_REPO_ORG",  { include: (o) => o.projectType === "client" && o.clientVcs === "github",
     what: "GitHub org that owns your CUSTOM/client repos (modules, theme, storefront fork).",
     where: "e.g. acme-corp — routes client bugs to your repos (gen-profile --client-org)." }],
+  // --- Online monitoring (App Insights) — OPTIONAL, non-secret identifiers. Powers
+  //     /qa-monitoring (App Insights KQL + azure-mcp). Blank ⇒ monitoring stays off; not
+  //     needed for /qa-fix. Deployment-independent (not gated on tracker/host). Read-telemetry
+  //     API keys (if any) are the SECRET half and live in .env.local. ensure-subscription.mjs
+  //     uses AZURE_SUBSCRIPTION_ID / APPINSIGHTS_RESOURCE_* to pick the `az` default subscription.
+  ["AZURE_SUBSCRIPTION_ID", { include: () => true, optional: true,
+    what: "Azure subscription hosting the deployment's App Insights (OPTIONAL — monitoring + portal links).",
+    where: "portal.azure.com → Subscriptions, or `az account list`. ensure-subscription.mjs sets it as the `az` default." }],
+  ["AZURE_RESOURCE_GROUP", { include: () => true, optional: true,
+    what: "Resource group of the App Insights resources (OPTIONAL — for portal deep-links).",
+    where: "the RG containing the App Insights components below." }],
+  ["APPINSIGHTS_APP_ID_BACKEND", { include: () => true, optional: true,
+    what: "App Insights Application ID for the PLATFORM/backend (OPTIONAL — the KQL query target).",
+    where: "App Insights resource → Configure → API Access → Application ID." }],
+  ["APPINSIGHTS_APP_ID_STOREFRONT", { include: () => true, optional: true,
+    what: "App Insights Application ID for the STOREFRONT (OPTIONAL — the KQL query target).",
+    where: "the storefront App Insights resource → API Access → Application ID." }],
+  ["APPINSIGHTS_RESOURCE_BACKEND", { include: () => true, optional: true,
+    what: "App Insights resource NAME for the PLATFORM/backend (OPTIONAL — portal links + subscription auto-detect).",
+    where: "the ARM resource name, e.g. myenv-qa." }],
+  ["APPINSIGHTS_RESOURCE_STOREFRONT", { include: () => true, optional: true,
+    what: "App Insights resource NAME for the STOREFRONT (OPTIONAL — portal links + subscription auto-detect).",
+    where: "the ARM resource name, e.g. myenv-qa-storefront." }],
 ];
 
 function main() {
@@ -112,6 +135,7 @@ function main() {
     blocks.push(
       `# ${key} — ${meta.what}\n` +
       `#   ${meta.where}\n` +
+      (meta.optional ? `#   Optional: leave blank to skip — not needed for /qa-fix.\n` : ``) +
       `${key}=${meta.def || ""}\n`
     );
     emitted.push(key);
