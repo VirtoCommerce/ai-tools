@@ -101,8 +101,26 @@ const FILE_UPSTREAM_ISSUES =
   PROFILE.projectType === "client" && PROFILE.upstream.fileIssues;
 
 // ---------------------------------------------------------------------------
-// Bug-report lookup (links the JIRA key to a local reports/bugs/*.md file)
+// Bug-report lookup (links the tracker key to a local reports/bugs/*.md file)
 // ---------------------------------------------------------------------------
+
+// Escape a string for safe literal use inside a RegExp.
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Does a report's text reference this ticket key? The match is key-format-aware,
+// so a bare Azure Boards numeric id never false-matches a longer number:
+//   - Jira-style (`ABC-123`): whole-token match — `VCST-5404` won't match `VCST-54040`.
+//   - Azure Boards bare numeric (`521`): only the cross-link forms `AB#521` / `#521`
+//     (a bare `521` substring would false-match `VCST-5218`, `521px`, etc.).
+//   - anything else: word-boundary-anchored match.
+function reportReferencesKey(text: string, key: string): boolean {
+  if (/^\d+$/.test(key)) {
+    return new RegExp("#" + key + "(?![0-9])").test(text);
+  }
+  return new RegExp("\\b" + escapeRegExp(key) + "\\b").test(text);
+}
 
 function findBugReport(key: string): string | null {
   const root = join("reports", "bugs");
@@ -125,7 +143,7 @@ function findBugReport(key: string): string | null {
     }
     for (const file of entries) {
       try {
-        if (readFileSync(file, "utf-8").includes(key)) return file;
+        if (reportReferencesKey(readFileSync(file, "utf-8"), key)) return file;
       } catch {
         /* ignore */
       }

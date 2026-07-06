@@ -40,9 +40,13 @@ live module graph (`ci/lib/module-registry.ts`). Workspace `.fix-workspace/`, br
 ```
 /qa-fix VCST-1234        # fix a bug already filed (+ reported by /qa-bug)
 ```
-`/qa-fix` does NOT create the ticket. If `VCST-XXXX` doesn't exist or has no `/qa-bug` report, tell the
-user to run `/qa-bug` first. Once invoked it **auto-continues** through all phases; **Gate 0/Gate 1**
-are the automatic cut-offs (a STOP leaves the ticket filed for a human).
+`/qa-fix` does NOT create the ticket. It needs **at least one** of: a resolvable ticket in the tracker
+**or** a local `/qa-bug` report — only when **both** are missing does it stop and ask the user to run
+`/qa-bug` first (matching the CI twin `ci/run-fix-cycle.ts`, which bails only on `!ticket && !bugReport`).
+A ticket with no local report is the **normal client-deployment case** (the client's QA filed the bug
+straight in their tracker and never ran `/qa-bug`): `/qa-fix` continues, using the ticket
+description/STR/attachments as the repro context. Once invoked it **auto-continues** through all phases;
+**Gate 0/Gate 1** are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 
 > **Hard orchestration rule** (as in `qa-test-lifecycle.md`): do NOT run phases inline. Each phase is
 > delegated to its owning agent via the Task tool. The orchestrator only parses input, evaluates gates
@@ -58,8 +62,19 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
    [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
    Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
-   (or `fixed/`).
-2. If no ticket or no report → STOP: "Run `/qa-bug <key>` first to reproduce + file the report."
+   (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
+   to the ticket by the tracker's key format: for Azure Boards' bare numeric ids match `AB#<n>` / `#<n>`,
+   NOT a bare `<n>` substring — `521` would otherwise false-match `VCST-5218`.)
+2. Proceed when **either** the ticket **or** a local report resolves; **STOP only when both are absent**
+   → "No `<key>` in the tracker and no local `/qa-bug` report — run `/qa-bug <key>` first to reproduce +
+   file the report." Otherwise, by case:
+   - **Ticket + report** (native VC path) → use the report as the primary signal, unchanged.
+   - **Ticket, no report** (typical client deployment) → **do NOT stop.** Build the repro context from
+     the ticket description/STR/attachments; the Fix Routing block is absent, so Gate 1 derives the route
+     via `suggestRepo()` (it already handles a missing block), and the live reproduction is done in the
+     Phase 1 root-cause step by the routed QA expert. On PASS this writes the standard
+     `reports/bugs/open/*.md` so all downstream gates see the usual report.
+   - **Report, no ticket** (rare) → proceed off the report.
 3. `/qa-env-check endpoints`; **build verify — source depends on `projectType`:** native platform →
    deployed versions via GitHub MCP from `vc-deploy-dev` (branch matching `TEST_ENV`, default `vcst-qa`);
    **client deployment → `GET {BACK_URL}/api/platform/modules`** (the deployment exposes its own module/
