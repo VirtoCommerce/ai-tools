@@ -5,196 +5,196 @@
   },
   "WL_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
-    "id": "5c3fcbf6-8105-4ea7-9e62-9bdfd5a20610",
+    "id": "23b672d6-c27e-49a9-8741-4489960058d9",
     "fields": {
       "id": "id"
     }
   },
   "WL_FASHION_PLATFORM_ID": {
     "_inline": true,
-    "id": "e5c8838f-9ca9-4251-905f-00dc10a53fa7",
+    "id": "bf48ab7c-fc68-447d-afba-a8b2b302c008",
     "fields": {
       "id": "id"
     }
   },
   "WL_DEFAULT_PLATFORM_ID": {
     "_inline": true,
-    "id": "0c8863f8-574e-47f3-9f45-38e4122edc03",
+    "id": "94f014b8-326f-4606-9dc5-3491e376c696",
     "fields": {
       "id": "id"
     }
   },
   "WL_MENU_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "26d01d01-7283-427e-8bf4-43bb1fdb068a",
+    "id": "bab6848b-0023-49cc-a65b-897e252ca2e7",
     "fields": {
       "id": "id"
     }
   },
   "WL_FOOTER_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "18c87757-f2d8-4896-86b7-ad83eb5206fa",
+    "id": "0cefa0d2-61aa-49a8-9406-eaf0c00de17c",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
-    "id": "04deead4-24df-423a-92e9-51a6c193b77a",
+    "id": "4c18a609-22e3-4f68-a2ea-308877647447",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_FASHION_PLATFORM_ID": {
     "_inline": true,
-    "id": "15ce0196-7877-431a-ab90-e21d42f44e12",
+    "id": "8c08de10-5923-4f76-996e-cfee21c7131d",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_DEFAULT_PLATFORM_ID": {
     "_inline": true,
-    "id": "30153175-bced-43bc-8833-056064299eed",
+    "id": "3b9bf870-a6ee-4577-9655-4af21b95b577",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_MULTI_PLATFORM_ID": {
     "_inline": true,
-    "id": "0e2123bb-989c-43fc-982e-d54c6a57e656",
+    "id": "705845b6-29d5-4581-8116-292b051da2d6",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_MENU_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "853d264d-da7d-49c9-9d13-af54aa11dc7d",
+    "id": "27acd245-f08c-46b4-b33b-bd85d08a4a7d",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_FOOTER_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "2a7920c5-7c0f-4a68-a9ab-d094e8d357a4",
+    "id": "5e903d4f-680b-42a0-9ac6-feba3f85c99b",
     "fields": {
       "id": "id"
     }
   },
   "ACME_ADMIN": {
-    "platform_id": "63ef7f04-09f7-4921-8d1e-13bd74535111"
+    "platform_id": "61ef67a6-3c90-4bb8-a1a4-7a559d55be03"
   },
   "ACME_BUYER": {
-    "platform_id": "ad31af46-e087-4eae-bac9-7b2a1a6c16c6"
+    "platform_id": "b4f106de-9d0f-4beb-8e88-98f8c4aa3b6f"
   },
   "ACME_VIEWER": {
-    "platform_id": "bb497e81-fe6f-4eb9-ac6d-c9d8f3f9e787"
+    "platform_id": "b7241e80-1640-43f2-a89b-fac35aca0617"
   },
   "ACME_BUYER2": {
-    "platform_id": "c603b9a7-6634-4313-b948-871f6417d257"
+    "platform_id": "63ff72c4-f47f-4eca-b109-283b79999e47"
   },
   "TECHFLOW_ADMIN": {
-    "platform_id": "bf41e3c0-a6a9-495a-9cfe-40d7f3632ea0"
+    "platform_id": "68fed13a-6946-4bc0-93a0-9dc9c970d4b0"
   },
   "TECHFLOW_BUYER": {
-    "platform_id": "3b0b511f-4209-4430-b11e-55750bd46b6b"
+    "platform_id": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
   },
   "BUILDRIGHT_ADMIN": {
-    "platform_id": "196b5706-c514-4b9f-a712-61a91c60b5c9"
+    "platform_id": "7194fb2c-0660-4738-9692-4db20b5cec10"
   },
   "ACMEWEST_ADMIN": {
-    "platform_id": "d8b70b44-b065-4ed4-966b-cf6de4ed1f9e"
+    "platform_id": "75e7edda-ff40-4ba3-b46f-af952b62a13e"
   },
   "EU_ADMIN": {
-    "platform_id": "0c99035b-0bfe-458c-a955-65e041c76dce"
+    "platform_id": "589cbeac-61cf-435c-8cb6-1d0eb24cfbaa"
   },
   "SUPPORT_AGENT": {
-    "userId": "63ef7f04-09f7-4921-8d1e-13bd74535111"
+    "userId": "61ef67a6-3c90-4bb8-a1a4-7a559d55be03"
   },
   "NO_IMPERSONATE_OPERATOR": {
-    "userId": "a59a2db2-b3f0-4ec0-839a-7cd83d731877"
+    "userId": "92e91bc6-4748-4b13-80fe-73e474c460f2"
   },
   "IMPERSONATE_TARGET": {
-    "userId": "3b0b511f-4209-4430-b11e-55750bd46b6b"
+    "userId": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
   },
   "OTHER_ORG_USER": {
-    "userId": "196b5706-c514-4b9f-a712-61a91c60b5c9"
+    "userId": "7194fb2c-0660-4738-9692-4db20b5cec10"
   },
   "USER_EUR": {
-    "platform_id": "0c99035b-0bfe-458c-a955-65e041c76dce"
+    "platform_id": "589cbeac-61cf-435c-8cb6-1d0eb24cfbaa"
   },
   "IMPERSONATE_TARGET_MANY_ORGS": {
-    "userId": "f4cf619f-721a-4f17-a952-4b91bec67876"
+    "userId": "901c2e29-7449-4253-ba10-b06edbd07439"
   },
   "IMPERSONATE_TARGET_BLOCKED": {
-    "userId": "b4da49d7-30aa-4660-a280-0409b1321cbd"
+    "userId": "7bc13fe1-fd17-4182-a83c-983189dff115"
   },
   "IMPERSONATE_TARGET_INVITED": {
-    "userId": "f4189994-039f-4488-a8fd-ede96668bb12"
+    "userId": "232c2d6a-fda0-4650-81f9-6dcdd1141f99"
   },
   "CFG_LAPTOP": {
-    "id": "45b2953e-46ab-4aa4-890c-b59cfd62d505"
+    "id": "fecfe693-f555-40aa-bac7-751ee9b5d6c9"
   },
   "CFG_FILE_UPLOAD": {
-    "id": "ceebc7e5-3704-4978-ad98-984f99b2d0b1"
+    "id": "0cbdc80d-efb0-4670-bd25-e12fef15ea26"
   },
   "CFG_RING": {
-    "id": "843c732f-87fe-4951-a2a6-ffe00e146973"
+    "id": "a5a04d20-e91c-40e5-9db1-a2bb469edce0"
   },
   "CFG_GIFTBOX": {
-    "id": "510f7d2e-10b4-491e-9682-9493f4d0cef5"
+    "id": "8b869469-c019-46c1-9fed-7370b685c8f4"
   },
   "CFG_HOODIE": {
     "id": "4b1de1b0-b220-4092-9336-9ad462216719"
   },
   "CFG_CONDITIONAL_BIKE": {
-    "id": "c5b0a2bb-d1a9-4958-b297-aa572f8bd459"
+    "id": "bc1cdbc0-0031-4dc0-afb2-ce3fed74bc7c"
   },
   "CFG_HAT": {
     "id": "38dbe95c-3f46-48ff-bb9a-8bd96f475214"
   },
   "CFG_BIKE": {
-    "id": "324cff2d-3624-440c-b59d-07281447d234",
-    "configuration_id": "449dd235-19ba-43f9-9b03-be5fa3097ef9"
+    "id": "d020b5c7-3218-45de-9f72-8c6fec4a3755",
+    "configuration_id": "8ba084c8-d010-4aac-985a-33c7dc3a193e"
   },
   "CFG_CONDITIONAL": {
-    "id": "c5b0a2bb-d1a9-4958-b297-aa572f8bd459"
+    "id": "bc1cdbc0-0031-4dc0-afb2-ce3fed74bc7c"
   },
   "CFG_WEDDING_CAKE_CONDITIONAL": {
-    "id": "46090e98-abed-4b71-ad52-3e1e2a26d0ae"
+    "id": "4bd23e0b-972e-4922-a8a6-9e5409303a58"
   },
   "CFG_TEXT_DRIVEN_COND": {
-    "id": "c3e43dc9-6c83-4671-848d-ea42343bb53b"
+    "id": "f1359913-e47b-4b6e-9f86-97685999392e"
   },
   "CFG_FILE_DRIVEN_COND": {
-    "id": "4c5d5586-dc15-4f47-a122-e3ddfeb8e69f"
+    "id": "2a7f4ffd-7e1b-4b93-92a5-00652ec87cd4"
   },
   "CFG_REQUIRED_FILE_CHILD": {
-    "id": "baead909-ce79-40c4-ba4f-b4aa5cd4022d"
+    "id": "84cd45dd-1fd0-4038-be11-a364da1fcf7f"
   },
   "CFG_TWO_REQ_SIBLINGS": {
-    "id": "3179d79d-6c19-4e71-9164-cf13f1d78e93"
+    "id": "0e36dbbc-8a43-4de2-8a18-235c544e5338"
   },
   "CFG_DEEP_CHAIN": {
-    "id": "71f92d7f-1b3a-46f6-9ce5-720b1ee8a3d4"
+    "id": "d4e89acc-8b64-489e-b8df-ae36ab513bd3"
   },
   "CFG_REQ_CHILD_OPT_PARENT": {
-    "id": "7549b0d4-bf88-49db-9ed5-839fb75c2de5"
+    "id": "2da84f23-e7e4-4b6e-b2ba-1d214f17cc1d"
   },
   "CFG_WITH_DEFAULT": {
-    "id": "1fcd22eb-996c-4baa-92e7-bb05c36ab7f6",
-    "configuration_id": "f19de380-548e-4d19-83c9-b04888c5d824",
-    "default_section_id": "f5b7c87c-cd80-4638-b487-50031d24f40f",
-    "default_option_id": "dbb96f92-39ed-42de-a15f-6c9f86d86c4b"
+    "id": "2bb1a018-56e9-406d-af0a-3f04a6b15a06",
+    "configuration_id": "9b518a51-3ea4-472d-a19d-07d92190f001",
+    "default_section_id": "b356b58e-ffd2-46f9-ac3e-9c152256ac30",
+    "default_option_id": "55aea702-8e94-4562-bf5f-f5f19380bc8c"
   },
   "CFG_WITH_DEFAULT_COND": {
-    "id": "750d4cfa-98d6-4ab3-a7d9-5c8213350140",
-    "configuration_id": "e56ec398-be8a-4118-b403-f0ee030d8791",
-    "default_section_id": "7fb353db-c0e0-449c-aff4-eb7dee8f623c",
-    "default_option_id": "9b33bacc-fa3f-40a8-add1-e0a320c83245",
-    "parent_section_id": "7fb353db-c0e0-449c-aff4-eb7dee8f623c",
-    "parent_default_option_id": "9b33bacc-fa3f-40a8-add1-e0a320c83245",
-    "dependent_section_id": "89555504-56db-48be-b35f-600336c205d0",
-    "dependent_default_option_id": "a41bd728-852c-4a1e-9661-243212d63f51"
+    "id": "445acecf-6d6c-42a0-9f78-15d5e06613e4",
+    "configuration_id": "6e20e98d-86b0-408a-8ab5-2146215ecd01",
+    "default_section_id": "eeb54105-5790-477d-b942-27eb72db373f",
+    "default_option_id": "9d4a1e74-bc6f-4147-9581-9710c5039a9e",
+    "parent_section_id": "eeb54105-5790-477d-b942-27eb72db373f",
+    "parent_default_option_id": "9d4a1e74-bc6f-4147-9581-9710c5039a9e",
+    "dependent_section_id": "138d345a-a699-4834-99d9-861a37c45f8f",
+    "dependent_default_option_id": "c82788c4-c02a-4ad9-83f9-443cfa2b190d"
   },
   "BUYABLE_NO_MIN_QTY": {
     "id": "0b6297e8-d100-4419-ac54-8bf240777271"
@@ -206,5 +206,326 @@
   "VIRTUAL_CATALOG_B2B": {
     "_inline": true,
     "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_MIXED": {
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_ELECTRONICS": {
+    "id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f"
+  },
+  "_seedTestData": {
+    "profile": "catalog",
+    "dateStamp": "20260706",
+    "prefix": "AGENT-TEST-SEED-20260706",
+    "products": [
+      {
+        "id": "ee67680b-b97f-4b82-aa69-eb55097da38c",
+        "sku": "CISCO-SW24-001",
+        "name": "AGENT-TEST-SEED-20260706-Cisco Catalyst 24-Port Managed Switch",
+        "csvId": "BPROD-001",
+        "isVariation": false
+      },
+      {
+        "id": "a2f92bf3-11c8-4b63-b087-3e5af6923e42",
+        "sku": "CISCO-SW48-001",
+        "name": "AGENT-TEST-SEED-20260706-Cisco Catalyst 48-Port Managed Switch",
+        "csvId": "BPROD-002",
+        "isVariation": false
+      },
+      {
+        "id": "31cf9827-b305-474a-8d88-0b7fec2dbf26",
+        "sku": "UBNT-AP-001",
+        "name": "AGENT-TEST-SEED-20260706-Ubiquiti UniFi AP Wi-Fi 6",
+        "csvId": "BPROD-003",
+        "isVariation": false
+      },
+      {
+        "id": "8c6ef550-82bd-4121-896d-c1fc9c22dac5",
+        "sku": "CAT6-PATCH-001",
+        "name": "AGENT-TEST-SEED-20260706-Cat6 Ethernet Patch Cable 10ft",
+        "csvId": "BPROD-004",
+        "isVariation": false
+      },
+      {
+        "id": "6aff6d22-d1a7-4a34-9c8c-4318fc412aa8",
+        "sku": "CAT6-PATCH-025",
+        "name": "AGENT-TEST-SEED-20260706-Cat6 Ethernet Patch Cable 25ft",
+        "csvId": "BPROD-005",
+        "isVariation": false
+      },
+      {
+        "id": "b6887afa-b6b0-4763-a3c9-fd0d64149967",
+        "sku": "DELL-LAT-001",
+        "name": "AGENT-TEST-SEED-20260706-Dell Latitude 5540 Business Laptop",
+        "csvId": "BPROD-006",
+        "isVariation": false
+      },
+      {
+        "id": "6dc61466-7a57-4f39-8825-c70338e29fc2",
+        "sku": "DELL-LAT-001-32-1TB",
+        "name": "AGENT-TEST-SEED-20260706-Dell Latitude 5540 — 32GB/1TB",
+        "csvId": "BPROD-007",
+        "isVariation": false
+      },
+      {
+        "id": "ebe41a55-0d82-419e-9fb4-4d9b7dd08a90",
+        "sku": "DELL-LAT-001-8-256",
+        "name": "AGENT-TEST-SEED-20260706-Dell Latitude 5540 — 8GB/256GB",
+        "csvId": "BPROD-008",
+        "isVariation": false
+      },
+      {
+        "id": "e01a142b-c723-4c03-a390-7f2a372e9e45",
+        "sku": "HP-Z2-001",
+        "name": "AGENT-TEST-SEED-20260706-HP Z2 Tower G9 Workstation",
+        "csvId": "BPROD-009",
+        "isVariation": false
+      },
+      {
+        "id": "6bc0743a-7a6f-422c-9709-7d3f39af0936",
+        "sku": "LG-27UK850-001",
+        "name": "AGENT-TEST-SEED-20260706-LG 27UK850 4K UHD Monitor",
+        "csvId": "BPROD-010",
+        "isVariation": false
+      },
+      {
+        "id": "13ba0506-221a-4a57-b114-2d3f5d550dad",
+        "sku": "SAMSUNG-34-001",
+        "name": "AGENT-TEST-SEED-20260706-Samsung 34-inch Ultrawide Curved Monitor",
+        "csvId": "BPROD-011",
+        "isVariation": false
+      },
+      {
+        "id": "c518a67d-958a-4e78-9076-d866499d26fa",
+        "sku": "LOGI-MX-001",
+        "name": "AGENT-TEST-SEED-20260706-Logitech MX Master 3S Wireless Mouse",
+        "csvId": "BPROD-012",
+        "isVariation": false
+      },
+      {
+        "id": "845abd5f-255f-45c9-9114-78da50c0b354",
+        "sku": "LOGI-KB-001",
+        "name": "AGENT-TEST-SEED-20260706-Logitech MX Keys S Wireless Keyboard",
+        "csvId": "BPROD-015",
+        "isVariation": false
+      },
+      {
+        "id": "516b7b1d-ecb6-4d71-993d-f16f4e68d01f",
+        "sku": "3M-PPE-HARDHAT-001",
+        "name": "AGENT-TEST-SEED-20260706-3M Hard Hat H-700 Series",
+        "csvId": "BPROD-016",
+        "isVariation": false
+      },
+      {
+        "id": "502d5353-7ae7-4019-ab21-aa0fea3052da",
+        "sku": "FAK-OSHA-001",
+        "name": "AGENT-TEST-SEED-20260706-OSHA First Aid Kit — 50 Person",
+        "csvId": "BPROD-020",
+        "isVariation": false
+      },
+      {
+        "id": "16108808-5031-4a31-bf6f-e8bf0daf4a0b",
+        "sku": "DEWALT-DCD771-001",
+        "name": "AGENT-TEST-SEED-20260706-DeWalt 20V MAX Cordless Drill/Driver",
+        "csvId": "BPROD-021",
+        "isVariation": false
+      },
+      {
+        "id": "f296895d-8697-4593-bbb4-bdc639af65cd",
+        "sku": "MAKITA-XFD131-001",
+        "name": "AGENT-TEST-SEED-20260706-Makita 18V LXT Brushless Drill Kit",
+        "csvId": "BPROD-022",
+        "isVariation": false
+      },
+      {
+        "id": "d5e37ffc-12aa-40f0-aeae-e4c122d94762",
+        "sku": "BOSCH-WRENCH-001",
+        "name": "AGENT-TEST-SEED-20260706-Bosch 12-Piece Ratcheting Wrench Set",
+        "csvId": "BPROD-023",
+        "isVariation": false
+      },
+      {
+        "id": "7630d726-7934-4594-a4c0-9a0f3382d285",
+        "sku": "HEX-BOLT-001",
+        "name": "AGENT-TEST-SEED-20260706-Hex Bolt M10x40 Grade 8.8 (Box of 100)",
+        "csvId": "BPROD-024",
+        "isVariation": false
+      },
+      {
+        "id": "1ff76c7d-28b9-4869-b471-e4161d843f87",
+        "sku": "PJACK-001",
+        "name": "AGENT-TEST-SEED-20260706-Pallet Jack 5500 lb Capacity",
+        "csvId": "BPROD-025",
+        "isVariation": false
+      },
+      {
+        "id": "c08b885b-4975-4acc-a351-3b2322a93871",
+        "sku": "HAMM-A4-001",
+        "name": "AGENT-TEST-SEED-20260706-HP LaserJet Pro A4 Printer Paper (Case of 5000)",
+        "csvId": "BPROD-026",
+        "isVariation": false
+      },
+      {
+        "id": "0286eb68-11a7-4982-9a3b-1905bf18f3bb",
+        "sku": "HP-TONER-001",
+        "name": "AGENT-TEST-SEED-20260706-HP 58A LaserJet Toner Cartridge Black",
+        "csvId": "BPROD-027",
+        "isVariation": false
+      },
+      {
+        "id": "076d02cc-3bf6-4e79-b7d1-3cf6ad37b379",
+        "sku": "STLCASE-LEAP-001",
+        "name": "AGENT-TEST-SEED-20260706-Steelcase Leap V2 Ergonomic Chair",
+        "csvId": "BPROD-028",
+        "isVariation": false
+      },
+      {
+        "id": "f8c8ee27-fece-405f-8cc6-bb1098f609a5",
+        "sku": "HMILL-DESK-001",
+        "name": "AGENT-TEST-SEED-20260706-Herman Miller Nevi Sit-Stand Desk",
+        "csvId": "BPROD-032",
+        "isVariation": false
+      },
+      {
+        "id": "1025600d-9d64-4806-bfdf-788f6318d17d",
+        "sku": "LOGI-RALLY-001",
+        "name": "AGENT-TEST-SEED-20260706-Logitech Rally Plus Conference System",
+        "csvId": "BPROD-033",
+        "isVariation": false
+      },
+      {
+        "id": "6d70309e-d927-4c33-bf94-3da192a6bf2c",
+        "sku": "MS-TEAMS-HEADSET",
+        "name": "AGENT-TEST-SEED-20260706-Microsoft Teams Certified Headset",
+        "csvId": "BPROD-034",
+        "isVariation": false
+      },
+      {
+        "id": "b79627ff-fa9c-444c-afaf-ae89a566a2c4",
+        "sku": "COFFEE-KEURIG-001",
+        "name": "AGENT-TEST-SEED-20260706-Keurig K-Elite Commercial Brewer",
+        "csvId": "BPROD-035",
+        "isVariation": false
+      },
+      {
+        "id": "b2649abd-8c97-416c-ac73-260cc86dcdf5",
+        "sku": "DOCK-TB4-001",
+        "name": "AGENT-TEST-SEED-20260706-Thunderbolt 4 Docking Station Universal",
+        "csvId": "BPROD-036",
+        "isVariation": false
+      },
+      {
+        "id": "0f8db272-29fc-44ac-b301-bcb2e412bc62",
+        "sku": "DIGITAL-LICENSE-001",
+        "name": "AGENT-TEST-SEED-20260706-Microsoft 365 Business Standard — Annual",
+        "csvId": "BPROD-037",
+        "isVariation": false
+      },
+      {
+        "id": "e78fe812-69ab-4c0b-a1b9-1a28b444fcb4",
+        "sku": "WARRANTY-EXT-001",
+        "name": "AGENT-TEST-SEED-20260706-Extended Warranty — 2 Year",
+        "csvId": "BPROD-038",
+        "isVariation": false
+      },
+      {
+        "id": "1b83fb3e-5cef-4a4d-a864-e381c4c5519f",
+        "sku": "OOS-PRODUCT-001",
+        "name": "AGENT-TEST-SEED-20260706-Cisco Meraki MR46 Access Point [OUT OF STOCK]",
+        "csvId": "BPROD-039",
+        "isVariation": false
+      },
+      {
+        "id": "bc4d2c6f-838b-4551-a56d-cfd7ab14af55",
+        "sku": "BULK-PAPER-001",
+        "name": "AGENT-TEST-SEED-20260706-Copy Paper — Pallet (40 Cases)",
+        "csvId": "BPROD-041",
+        "isVariation": false
+      },
+      {
+        "id": "b4f3d78f-5c0b-49f8-92bb-bdf39d347eeb",
+        "sku": "MIN-PRICE-001",
+        "name": "AGENT-TEST-SEED-20260706-Cable Tie 100-Pack",
+        "csvId": "BPROD-042",
+        "isVariation": false
+      },
+      {
+        "id": "e050ca4a-5735-4c4b-a90e-d00cb42cd632",
+        "sku": "LOGI-MX-001-GY",
+        "name": "AGENT-TEST-SEED-20260706-Logitech MX Master 3S — Pale Gray",
+        "csvId": "BPROD-013",
+        "isVariation": true
+      },
+      {
+        "id": "fc895a71-3ccd-4497-9841-d18b67b01a5e",
+        "sku": "LOGI-MX-001-WH",
+        "name": "AGENT-TEST-SEED-20260706-Logitech MX Master 3S — White",
+        "csvId": "BPROD-014",
+        "isVariation": true
+      },
+      {
+        "id": "7cd3873c-a22b-4e43-a78b-18febf6b5aed",
+        "sku": "3M-PPE-HARDHAT-WH",
+        "name": "AGENT-TEST-SEED-20260706-3M Hard Hat H-700 — White",
+        "csvId": "BPROD-017",
+        "isVariation": true
+      },
+      {
+        "id": "4246bde7-c646-461d-98e5-ff9d483b3c48",
+        "sku": "3M-PPE-HARDHAT-YL",
+        "name": "AGENT-TEST-SEED-20260706-3M Hard Hat H-700 — Yellow",
+        "csvId": "BPROD-018",
+        "isVariation": true
+      },
+      {
+        "id": "cecbfff7-394f-46ed-9b90-7cb125f7d074",
+        "sku": "3M-PPE-HARDHAT-BL",
+        "name": "AGENT-TEST-SEED-20260706-3M Hard Hat H-700 — Blue",
+        "csvId": "BPROD-019",
+        "isVariation": true
+      },
+      {
+        "id": "7b190b8b-32c8-443c-9e28-d5131eb25db4",
+        "sku": "STLCASE-LEAP-BK",
+        "name": "AGENT-TEST-SEED-20260706-Steelcase Leap V2 — Black Fabric",
+        "csvId": "BPROD-029",
+        "isVariation": true
+      },
+      {
+        "id": "689899dc-b391-4f16-8e6d-ea2ffe5eebe3",
+        "sku": "STLCASE-LEAP-NY",
+        "name": "AGENT-TEST-SEED-20260706-Steelcase Leap V2 — Navy Fabric",
+        "csvId": "BPROD-030",
+        "isVariation": true
+      },
+      {
+        "id": "a18a8886-9674-4ce9-bdd7-074f304221f2",
+        "sku": "STLCASE-LEAP-MS",
+        "name": "AGENT-TEST-SEED-20260706-Steelcase Leap V2 — Mesh Back",
+        "csvId": "BPROD-031",
+        "isVariation": true
+      }
+    ],
+    "priceLists": [
+      {
+        "id": "f5cb6f59-48ab-4f2c-b3a3-016016090dc8",
+        "name": "AGENT-TEST-SEED-20260706-B2B Standard USD",
+        "csvId": "PL-USD-001",
+        "currency": "USD"
+      },
+      {
+        "id": "100e2986-5d5c-4913-9cd4-c7ae6a9c8593",
+        "name": "AGENT-TEST-SEED-20260706-B2B Standard EUR",
+        "csvId": "PL-EUR-001",
+        "currency": "EUR"
+      },
+      {
+        "id": "d3542c65-41c4-4c4b-a2c9-7bb728b9b6d0",
+        "name": "AGENT-TEST-SEED-20260706-B2B Volume Discount USD",
+        "csvId": "PL-USD-002",
+        "currency": "USD"
+      }
+    ],
+    "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   }
 }
