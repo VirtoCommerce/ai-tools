@@ -65,23 +65,26 @@ or upstream issue uses `gh` even when the client's own code lives on Azure Repos
 `repoOwnership` routes by repo, but a **client storefront fork** contains both client-customized files
 and files byte-identical to the platform — the *repo* is client, yet an individual bug may live in
 **unmodified platform code**. So for a routed **client `frontend`** repo, ownership is refined from the
-RCA anchor's **code provenance** (not the symptom), then delivery follows `upstream.frontendDelivery`.
+RCA anchor's **code provenance** (not the symptom); a platform-owned bug then takes the standard §1a
+platform delivery (fork-PR contribution, or an upstream issue only on a Gate-0 too-complex bail).
 This is **data, not judgment**: `ci/lib/provenance.ts` `classifyFrontendProvenance()` + `frontendDeliveryPlan()`
 (shared by both twins); the fork's upstream + version anchor come from `clientUpstream(repo)`
 (`repos.client[].upstream` / `upstreamRef`, derived by `/project-init`).
 
-| RCA anchor vs `vc-frontend @ upstreamRef` | Ownership | Delivery (policy `fork-and-issue`, default) |
+| RCA anchor vs `vc-frontend @ upstreamRef` | Ownership | Delivery |
 |---|---|---|
-| anchor exists **only** in the client repo (custom component) | **client** | fix the client fork |
-| anchor exists in both but **differs** (customized) | **client** | fix the client fork |
-| **byte-identical** to unmodified upstream, not fixed on upstream HEAD | **platform** | **fix the client fork** (repair the site now) **+ file a platform-generic upstream issue** (scrubbed of client code, §2a) so VirtoCommerce fixes the root cause |
+| anchor exists **only** in the client repo (custom component) | **client** | fix + PR on the **client** repo |
+| anchor exists in both but **differs** (customized) | **client** | fix + PR on the **client** repo |
+| **byte-identical** to unmodified upstream, not fixed on upstream HEAD | **platform** | **contribute the fix upstream** — fork `vc-frontend`, fix, open a **fork-PR to VirtoCommerce** (the same platform path as a backend platform bug — the top-level §1a matrix). The client picks it up via the next release + fork sync; we do NOT patch the client fork with platform code |
 | identical **and already fixed** on upstream HEAD | **platform** | **STOP-upgrade** — the client should sync the fork / upgrade the platform version, not re-fix |
 | anchor missing / uncomparable | **client + LOW** | **STOP** for human routing (containment-first) |
 
-`upstream.frontendDelivery` overrides the platform-bug row: `fork-only` (patch the fork, no upstream
-signal) or `upstream-only` (PR/issue upstream, client waits for a release + fork sync). **The upstream
-side is always an ISSUE, never a client-code PR** — §2a holds. On a **native platform** deployment there
-is no fork, so this sub-gate is a no-op and a frontend bug takes the ordinary `vc-frontend` path.
+The provenance step supplies **only the ownership**; a platform-owned frontend bug then follows the
+**standard §1a platform matrix** — a **fork-PR** contributes the fix when it is auto-fixable, and an
+upstream **GitHub Issue** is filed **only** when Gate 0 judged the bug too-complex / multi-repo (i.e. the
+robot can't safely fix it and hands it to humans). The upstream side is a platform contribution — **never
+a client-code PR** (§2a). On a **native platform** deployment there is no fork, so this sub-gate is a
+no-op and a frontend bug takes the ordinary `vc-frontend` path.
 
 ---
 

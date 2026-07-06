@@ -50,39 +50,17 @@ test("in both but content uncomparable ⇒ client LOW (containment-first)", () =
 
 // ---- frontendDeliveryPlan ---------------------------------------------------
 
-test("client-owned ⇒ fix the client fork, no upstream issue", () => {
-  const p = frontendDeliveryPlan({ ownership: "client", projectType: "client", policy: "fork-and-issue" });
+test("client-owned ⇒ fix + PR on the client repo", () => {
+  const p = frontendDeliveryPlan({ ownership: "client" });
   assert.equal(p.action, "fix-client-fork");
-  assert.equal(p.fileUpstreamIssue, false);
 });
 
-test("platform-owned on a native deployment ⇒ ordinary upstream path", () => {
-  const p = frontendDeliveryPlan({ ownership: "platform", projectType: "platform", policy: "fork-and-issue" });
-  assert.equal(p.action, "upstream-normal");
-  assert.equal(p.fileUpstreamIssue, false);
+test("platform-owned ⇒ contribute the fix upstream (fork-PR to VirtoCommerce)", () => {
+  const p = frontendDeliveryPlan({ ownership: "platform" });
+  assert.equal(p.action, "upstream-contribution");
 });
 
-test("platform-owned on a client deployment (fork-and-issue) ⇒ fix fork + file upstream issue", () => {
-  const p = frontendDeliveryPlan({ ownership: "platform", projectType: "client", policy: "fork-and-issue" });
-  assert.equal(p.action, "fix-client-fork");
-  assert.equal(p.fileUpstreamIssue, true);
-});
-
-test("platform-owned on a client deployment (fork-only) ⇒ fix fork, no issue", () => {
-  const p = frontendDeliveryPlan({ ownership: "platform", projectType: "client", policy: "fork-only" });
-  assert.equal(p.action, "fix-client-fork");
-  assert.equal(p.fileUpstreamIssue, false);
-});
-
-test("platform-owned on a client deployment (upstream-only) ⇒ upstream path", () => {
-  const p = frontendDeliveryPlan({ ownership: "platform", projectType: "client", policy: "upstream-only" });
-  assert.equal(p.action, "upstream-normal");
-});
-
-test("already-fixed-upstream ⇒ stop-upgrade regardless of policy", () => {
-  const p = frontendDeliveryPlan({
-    ownership: "platform", projectType: "client", policy: "fork-and-issue", bailClass: "already-fixed-upstream",
-  });
+test("platform-owned + already fixed upstream ⇒ stop-upgrade (sync the fork, don't re-fix)", () => {
+  const p = frontendDeliveryPlan({ ownership: "platform", bailClass: "already-fixed-upstream" });
   assert.equal(p.action, "stop-upgrade");
-  assert.equal(p.fileUpstreamIssue, false);
 });

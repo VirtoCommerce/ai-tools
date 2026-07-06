@@ -30,8 +30,7 @@
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
  *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
- *   contributionMode:"fork"|"direct", clientGithubAccount:string,
- *   frontendDelivery:"fork-and-issue"|"fork-only"|"upstream-only"}} upstream
+ *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
  *
  * @typedef {Object} ClientRepo
@@ -72,13 +71,6 @@ export const PROFILE_DEFAULTS = {
     fileIssues: true,
     contributionMode: "fork",
     clientGithubAccount: "",
-    // How a PLATFORM-owned frontend bug is delivered on a CLIENT deployment whose
-    // storefront is a vc-frontend fork. "fork-and-issue" (default): fix the client's
-    // fork so the site is repaired now AND file an upstream GitHub issue so the platform
-    // learns of the defect (never a client-code PR upstream — §2a). "fork-only": patch
-    // the fork, no upstream signal. "upstream-only": PR/issue upstream, client waits for a
-    // release + fork sync. Moot on a native-platform deployment (no fork → normal path).
-    frontendDelivery: "fork-and-issue",
   },
   repos: { client: [], platform: [] },
 };

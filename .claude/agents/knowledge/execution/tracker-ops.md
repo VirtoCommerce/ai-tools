@@ -20,8 +20,7 @@ apply the same matrix by reading the profile.
 | `tracker.baseUrl` / `tracker.projectKey` | Jira site + project key | Jira REST/MCP target |
 | `tracker.azure.{organization,project}` + `stateMap` | ADO org/project + status→System.State map | Azure Boards target |
 | `vcs.clientHost` | `github` \| `azure-repos` | where a **client** repo's PR is opened |
-| `upstream.contributionMode` | `direct` \| `fork` | platform PR: direct vs fork-PR (`upstream.clientGithubAccount`) |
-| `upstream.frontendDelivery` | `fork-and-issue` \| `fork-only` \| `upstream-only` | how a platform frontend bug is delivered on a client deploy (see `provenance.ts`) |
+| `upstream.contributionMode` | `direct` \| `fork` | platform PR: direct vs fork-PR (`upstream.clientGithubAccount`) — a platform frontend bug found in a client fork is contributed upstream the same way (see `provenance.ts` / quality-gates §1a Gate 1b) |
 
 **Ticket key format follows the tracker** — never assume `VCST-`:
 - **Jira:** `<PROJECT>-<n>` (e.g. `VCST-5404`, a client's `ABC-123`). Auto-links from a commit/PR by the bare key.

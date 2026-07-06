@@ -98,13 +98,14 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   anchor's **code provenance** against the fork's upstream (`clientUpstream(routeRepo)` → `{ upstream,
   upstreamRef }`): fetch the anchor file from the client repo AND from `vc-frontend @ upstreamRef`, then
   feed the signals to `classifyFrontendProvenance()` (`ci/lib/provenance.ts`) — anchor only in client, or
-  differs ⇒ **client** (fix the fork); byte-identical to unmodified upstream ⇒ **platform**; anchor
-  missing / uncomparable ⇒ **client + LOW ⇒ STOP** (containment-first, §2a). Then `frontendDeliveryPlan()`
-  (with `upstream.frontendDelivery`, default `fork-and-issue`) gives the action: **fix-client-fork**
-  (+ optionally file a **platform-generic upstream issue** — never a client-code PR), **upstream-normal**,
-  or **stop-upgrade** (already fixed upstream → the client should sync the fork / upgrade). See
-  [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §1. (Native platform / no client
-  frontend fork ⇒ this sub-gate is a no-op; the route stays platform.)
+  differs ⇒ **client** (fix + PR on the client repo); byte-identical to unmodified upstream ⇒ **platform**;
+  anchor missing / uncomparable ⇒ **client + LOW ⇒ STOP** (containment-first, §2a). Then
+  `frontendDeliveryPlan()` gives the action: **fix-client-fork**, **upstream-contribution** (a platform
+  bug → **fork `vc-frontend` and open a fork-PR to VirtoCommerce**, exactly the standard §1a platform path
+  — the client picks the fix up on its next release + fork sync; we do NOT patch the client fork with
+  platform code), or **stop-upgrade** (already fixed upstream → the client should sync / upgrade). An
+  upstream **Issue** instead of a PR happens **only** when Gate 0 already judged the bug too-complex /
+  multi-repo. (Native platform / no client frontend fork ⇒ this sub-gate is a no-op; the route stays platform.)
 - **Write-credential preflight (now that the host is known):** probe only the axis
   `contributionPlan(routeRepo).host` needs — GitHub PAT (`GH_TOKEN="$GITHUB_FIX_BUGS_TOKEN" gh api
   repos/<owner>/<repo> --jq .permissions.push` → `true`), a `gh-cli` browser session (`gh auth status`
@@ -148,10 +149,12 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   for human review — not auto-merged**, **PR title `<key>: Fix <summary>`** (ticket key first; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
   human review"; backend adds "needs deploy verification"), label, link the tracker.
-- **If Gate 1b returned `fileUpstreamIssue: true`** (a platform-owned frontend bug patched in the client
-  fork under the `fork-and-issue` policy): also file a **platform-generic upstream GitHub issue** on
-  `VirtoCommerce/vc-frontend` via `getUpstreamVcs()` — **scrubbed of all client source / paths / identifiers**
-  (§2a). This is an issue, not a PR, so it does not break the single-repo rule.
+- **If Gate 1b resolved the route to `upstream-contribution`** (a byte-identical **platform** bug in the
+  storefront): the branch + PR go to the **VirtoCommerce upstream**, not the client fork — fork `vc-frontend`,
+  apply the fix, open a **fork-PR** (`--head <forkOwner>:<branch>`), **scrubbed of any client source / paths /
+  identifiers** (§2a). This is the ordinary platform fork-PR path (same as a backend platform bug); the client
+  receives it through a later release + fork sync. (An upstream **Issue** instead is only for a Gate-0
+  too-complex / multi-repo bail — handled at Gate 0, not here.)
 - Transition the ticket to the **in-review** role state (Jira: live-discover the transition, don't hardcode
   "Go to review"; Azure Boards: `System.State` via `stateMap`; ask the user first) with the PR link.
 

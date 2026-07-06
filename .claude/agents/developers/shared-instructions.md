@@ -60,10 +60,12 @@ live in **unmodified vc-frontend code** carried into the fork. Don't decide from
 the RCA anchor's **provenance** against the fork's upstream (`clientUpstream(repo)` → `{ upstream,
 upstreamRef }`): fetch the anchor file from the client repo and from `vc-frontend @ upstreamRef`, then use
 `classifyFrontendProvenance()` + `frontendDeliveryPlan()` (`ci/lib/provenance.ts`). Anchor client-only or
-differing ⇒ fix the fork; byte-identical to unmodified upstream ⇒ platform bug → under the default
-`fork-and-issue` policy **patch the fork** (repair the site) **and file a platform-generic upstream GitHub
-issue** (client-scrubbed, §2a — never a client-code PR); already fixed upstream ⇒ STOP-upgrade;
-uncomparable ⇒ STOP (containment-first). Full table: `quality-gates.md` §1a Gate 1b.
+differing ⇒ fix + PR on the client repo; byte-identical to unmodified upstream ⇒ platform bug →
+**contribute the fix upstream**: fork `vc-frontend`, fix, open a **fork-PR to VirtoCommerce** (the standard
+§1a platform path — client-scrubbed, §2a; the client gets it via a later release + fork sync, we do NOT
+patch the client fork with platform code). An upstream **Issue** instead is only for a Gate-0 too-complex /
+multi-repo bail. Already fixed upstream ⇒ STOP-upgrade; uncomparable ⇒ STOP (containment-first). Full
+table: `quality-gates.md` §1a Gate 1b.
 
 ### 🔒 Client-code containment — HARD security invariant (see quality-gates §2a)
 **Client code MUST NEVER leave the client's project. Upstream VirtoCommerce gets contribution only —

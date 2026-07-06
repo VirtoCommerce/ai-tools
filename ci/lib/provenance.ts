@@ -92,62 +92,46 @@ export function classifyFrontendProvenance(s: ProvenanceSignals): ProvenanceVerd
   };
 }
 
-export type FrontendDeliveryPolicy = "fork-and-issue" | "fork-only" | "upstream-only";
-
 export interface DeliveryPlan {
   /**
-   *  - fix-client-fork  — patch the client's own storefront repo (repairs the site now)
-   *  - upstream-normal  — the ordinary platform path (direct or fork PR per contributionPlan)
-   *  - stop-upgrade     — don't fix; the platform bug is already fixed upstream, so the
-   *                       client should sync the fork / upgrade rather than re-fix
+   *  - fix-client-fork       — the bug is in client-owned code → fix + PR on the CLIENT repo.
+   *  - upstream-contribution — the bug is in unmodified PLATFORM code → the fix is CONTRIBUTED
+   *                            upstream: fork the platform repo (vc-frontend / vc-module-*), fix
+   *                            there, and open a fork-PR to VirtoCommerce (the same platform path
+   *                            as any backend platform bug, per §1a). The client picks the fix up
+   *                            on the next release + fork sync — we do NOT patch the client fork
+   *                            with platform code. (An upstream ISSUE instead of a PR is Gate 0's
+   *                            call — only when the bug is too-complex / multi-repo to auto-fix.)
+   *  - stop-upgrade          — platform bug ALREADY fixed upstream → the client should sync the
+   *                            fork / upgrade the platform version, not re-fix.
    */
-  action: "fix-client-fork" | "upstream-normal" | "stop-upgrade";
-  /** Additionally file a platform-generic upstream GitHub ISSUE (never a client-code PR). */
-  fileUpstreamIssue: boolean;
+  action: "fix-client-fork" | "upstream-contribution" | "stop-upgrade";
   reason: string;
 }
 
 /**
- * Turn an ownership verdict into a concrete delivery action under the deployment's
- * frontend-delivery policy. Pure. Keeps §2a intact: a client-owned bug never routes
- * upstream; `fileUpstreamIssue` only ever attaches an ISSUE (no client code) to a
- * PLATFORM-owned bug on a client deployment.
+ * Turn an ownership verdict into a concrete delivery action. Pure. Keeps §2a intact:
+ * a client-owned bug is fixed only on the client repo; a platform-owned bug is a
+ * CONTRIBUTION to the VirtoCommerce upstream (fork-PR — or, when Gate 0 judged it
+ * unfixable, an upstream issue — never a client-code PR upstream). This matches the
+ * established §1a platform matrix; the provenance step only supplies the ownership.
  */
 export function frontendDeliveryPlan(s: {
   ownership: RepoOwnership;
-  projectType: "platform" | "client";
-  policy: FrontendDeliveryPolicy;
   bailClass?: string;
 }): DeliveryPlan {
   if (s.ownership === "client") {
-    return { action: "fix-client-fork", fileUpstreamIssue: false, reason: "Client-owned code — fix in the client fork." };
+    return { action: "fix-client-fork", reason: "Client-owned code — fix + PR on the client repo." };
   }
   // platform-owned bug
-  if (s.projectType === "platform") {
-    return { action: "upstream-normal", fileUpstreamIssue: false, reason: "Native platform — ordinary upstream PR path." };
-  }
-  // platform-owned bug on a CLIENT deployment
   if (s.bailClass === "already-fixed-upstream") {
     return {
       action: "stop-upgrade",
-      fileUpstreamIssue: false,
       reason: "Already fixed upstream — the client should sync the fork / upgrade the platform version rather than re-fix.",
     };
   }
-  if (s.policy === "upstream-only") {
-    return {
-      action: "upstream-normal",
-      fileUpstreamIssue: false,
-      reason: "Policy upstream-only — PR/issue upstream; the client picks up the fix on the next release + fork sync.",
-    };
-  }
-  // fork-and-issue (default) or fork-only
   return {
-    action: "fix-client-fork",
-    fileUpstreamIssue: s.policy === "fork-and-issue",
-    reason:
-      s.policy === "fork-and-issue"
-        ? "Patch the client fork to repair the site now; file a platform-generic upstream issue so VirtoCommerce fixes the root cause."
-        : "Patch the client fork to repair the site now (fork-only policy — no upstream signal).",
+    action: "upstream-contribution",
+    reason: "Platform code — contribute the fix upstream: fork vc-frontend, fix, and open a PR to VirtoCommerce (an upstream ISSUE instead only if Gate 0 judged it too-complex / multi-repo).",
   };
 }
