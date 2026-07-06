@@ -270,32 +270,33 @@ function checkSecretHygiene() {
   if (!anyHit) ok('no password literals in committed user CSVs ({{VAR}} tokens resolve from .env.local)');
 }
 
-/* ── 6. No duplicate seed catalogs / category titles ─────────────
- * A category with the same title must exist ONCE. Duplicates appear when a seed catalog is
- * accidentally re-created (each copy grows its own tree) or a category is re-created under
- * search-index lag. This check is the live guard for the ensureCatalogs/ensureCategoryPath
- * consolidation fix (memoized catalog resolution + (catalog,code) category cache). */
+/* ── 6. No duplicate seed catalogs / categories ──────────────────
+ * A category's IDENTITY is its CODE, not its display title: the same title legitimately recurs at
+ * different tree positions (Electronics>Office vs Furniture>Office → distinct parent-scoped codes).
+ * A true duplicate is two categories sharing one CODE — which happens when a seed catalog is
+ * re-created, or a category is re-created under cross-process index lag. This is the live guard for
+ * the ensureCatalogs/ensureCategoryPath consolidation fix. */
 async function checkDuplicateSeedEntities() {
-  console.log('\n[6] No duplicate seed catalogs / category titles');
+  console.log('\n[6] No duplicate seed catalogs / categories (by code)');
   const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
   const seedCatalogs = (cats?.results || []).filter((c) => String(c.name || '').startsWith(SEED_FAMILY));
   let dupes = 0;
-  // (a) duplicate seed catalogs by name
+  // (a) duplicate seed catalogs by name (catalogs SHOULD be name-unique)
   const catByName = {};
   for (const c of seedCatalogs) (catByName[c.name] ??= []).push(c.id);
   for (const [n, ids] of Object.entries(catByName)) {
     if (ids.length > 1) { fail(`duplicate seed CATALOG "${n}" ×${ids.length} (${ids.map((i) => i.slice(0, 8)).join(', ')})`); dupes++; }
   }
-  // (b) duplicate category titles within the seed physical catalogs
-  const nameToIds = {};
+  // (b) duplicate category CODES within the seed physical catalogs (same code = same category re-created)
+  const codeToCats = {};
   for (const c of seedCatalogs.filter((c) => !c.isVirtual)) {
     const r = await api('POST', '/api/catalog/search/categories', { catalogId: c.id, take: 1000 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
-    for (const x of (r?.results || r?.items || [])) (nameToIds[x.name] ??= []).push(x.id);
+    for (const x of (r?.results || r?.items || [])) if (x.code) (codeToCats[x.code] ??= []).push(x);
   }
-  for (const [name, ids] of Object.entries(nameToIds)) {
-    if (ids.length > 1) { fail(`duplicate category title "${name}" ×${ids.length} in seed catalogs (${ids.map((i) => i.slice(0, 8)).join(', ')})`); dupes++; }
+  for (const [code, arr] of Object.entries(codeToCats)) {
+    if (arr.length > 1) { fail(`duplicate category code "${code}" ×${arr.length} ("${arr[0].name}") in seed catalogs (${arr.map((x) => x.id.slice(0, 8)).join(', ')})`); dupes++; }
   }
-  if (!dupes) ok(`no duplicate seed catalogs or category titles (${seedCatalogs.length} catalog(s), ${Object.keys(nameToIds).length} categories)`);
+  if (!dupes) ok(`no duplicate seed catalogs or category codes (${seedCatalogs.length} catalog(s), ${Object.keys(codeToCats).length} distinct category codes)`);
 }
 
 /* ── 7. Every seed-catalog entity is teardown-identifiable (AGENT-TEST prefix) ──
