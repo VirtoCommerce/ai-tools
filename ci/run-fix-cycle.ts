@@ -480,7 +480,7 @@ ${profile.typecheckCmd ? `- Type-check: \`${profile.typecheckCmd}\`\n` : ""}${pr
 5. Write the PR description to: ${prBodyPath}
 6. End your reply with these markers on their own lines:
    - \`FIX_STATUS: SUCCESS\` | \`PARTIAL\` | \`FAILED\`
-   - \`PR_TITLE: ${key}: Fix <imperative summary of the bug>\`  (JIRA key first; distinct from the Conventional-Commits commit message)
+   - \`PR_TITLE: fix(${key}): <imperative summary of the bug>\`  (Conventional Commits, JIRA key in the scope slot)
    - \`CONFIDENCE: HIGH\` | \`MEDIUM\` | \`LOW\`
    - \`ROOT_CAUSE: <one sentence>\`
 
@@ -497,7 +497,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why â€
 
   const fixStatus = (marker(fix.result, "FIX_STATUS") || "FAILED").toUpperCase();
   const confidence = (marker(fix.result, "CONFIDENCE") || "LOW").toUpperCase();
-  const prTitle = marker(fix.result, "PR_TITLE") || `${key}: Fix ${ticket?.summary || key}`;
+  const prTitle = marker(fix.result, "PR_TITLE") || `fix(${key}): ${ticket?.summary || key}`;
   const rootCause = marker(fix.result, "ROOT_CAUSE") || "";
 
   if (fixStatus !== "SUCCESS" || confidence === "LOW") {

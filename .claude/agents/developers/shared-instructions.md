@@ -79,13 +79,14 @@ Assistant resolves it to the signed account regardless of the env. Optional over
 this identity was applied, **re-author and force-push** (`git commit --amend --reset-author …` /
 `git rebase --root --exec` for multiple) so CLA can re-evaluate.
 
-### PR title — lead with the JIRA key
-The **PR title** follows `VCST-XXXX: Fix <imperative summary of the bug>` (JIRA key first, then a short
-human summary — e.g. `VCST-5210: Fix NRE in GetModules when icon file is missing`). This is the
-`gh pr create --title` value and the `PR_TITLE:` marker the agent emits. It is **distinct from the commit
-message**, which stays Conventional Commits (`fix(<scope>): <summary> (VCST-XXXX)`): the commit feeds
-changelog/scope tooling, while the PR title leads with the ticket so reviewers and the JIRA link read at
-a glance.
+### PR title — Conventional Commits, JIRA key as scope
+The **PR title** follows `fix(VCST-XXXX): <imperative summary of the bug>` — Conventional-Commits shaped,
+with the **JIRA key in the scope slot** (e.g. `fix(VCST-5210): guard NRE in GetModules when icon file is
+missing`). This puts the ticket up front so reviewers and the JIRA link read at a glance while the title
+stays changelog/scope-tooling parseable (the org squash-merges, so the PR title becomes the squashed
+commit subject). It is **distinct from the commit message**, which keeps the code area as its scope and
+the key trailing (`fix(<KEY>): <summary>`). This is the `gh pr create --title` value and
+the `PR_TITLE:` marker the agent emits.
 
 ## After the PR — verify CI, don't assume green (Gate 5)
 **Opening the PR is not the finish line.** The run is not done until the PR's GitHub Actions checks are

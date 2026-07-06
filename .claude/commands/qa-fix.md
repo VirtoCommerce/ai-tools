@@ -105,8 +105,8 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 - `git commit` (Conventional Commits + JIRA key), **authored as the human token-owner with Claude as
   `Co-Authored-By`** (NOT a bot author — CLA Assistant blocks bot-authored commits; pattern in
   `developers/shared-instructions.md` §Commit identity) → `git push -u origin claude/qa-autofix/VCST-XXXX`
-  → `gh pr create` (a **normal PR for human review — not auto-merged**), **PR title `VCST-XXXX: Fix
-  <summary>`** (JIRA key first — distinct from the Conventional-Commits commit message; see
+  → `gh pr create` (a **normal PR for human review — not auto-merged**), **PR title `fix(VCST-XXXX):
+  <summary>`** (Conventional Commits, JIRA key in the scope slot; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
   human review"; backend adds "needs deploy verification"), label, link JIRA.
 - Transition JIRA **IN PROGRESS → IN REVIEW** ("Go to review"; ask user first) with the PR link.
