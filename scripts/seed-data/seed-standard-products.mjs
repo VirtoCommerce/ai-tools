@@ -34,7 +34,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
 import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES } from './standard-specs.mjs';
 
@@ -353,6 +353,14 @@ async function main() {
   const priceList = await findOrCreatePriceList();
   const ffc = await ensureFulfillmentCenter(api);
   if (!ffc?.id && !DRY_RUN) throw new Error('No fulfillment center available');
+
+  // SINGLE-PROCESS SEEDING: build the categories.csv tree HERE, in the same process that places
+  // products, so seedCategoryTree and ensureCategoryPath share the in-process (catalogId, code)
+  // category cache. Running the tree as a separate `seed:categories` node process leaves the products
+  // process unable to see those categories (no lookup endpoint is immediately consistent across
+  // processes) → it re-creates them → duplicate categories.csv tree. This is the canonical creator;
+  // `seed:categories` is dropped from the seed chain / bootstrap so there is exactly ONE creator.
+  await seedCategoryTree(api);
 
   // UNIFIED placement: each product goes into the categories.csv tree (physical catalogs) via
   // seedRecord → ensureCategoryPath (reuse-or-create its category path). No private SEED-Standards

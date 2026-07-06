@@ -747,6 +747,11 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
       }
     }
     byCsvId[row.category_id] = { id, name, csvId: row.category_id };
+    // Seed the SHARED (catalogId, code) cache so ensureCategoryPath — when it runs in the SAME
+    // process (single-process seeding: seed-standard-products calls seedCategoryTree first) — reuses
+    // these exact categories instead of re-creating them across a process boundary the index can't
+    // bridge. This is what collapses the cross-process duplicate categories.csv tree to one.
+    if (id && !String(id).startsWith('dry-')) _categoryIdByCatCode.set(`${cat.id}::${code}`, id);
   }
   await linkRootsIntoVirtual(api, rows, byCsvId);
   return byCsvId;

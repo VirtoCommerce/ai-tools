@@ -77,10 +77,14 @@ const TEARDOWN_STEPS = [
  */
 const STEPS = [
   { name: 'catalog', script: 'seed-catalog.mjs', required: true, priority: 10 },
-  { name: 'categories', script: 'seed-catalog-categories.mjs', required: true, priority: 20 },
+  // NOTE: the categories.csv tree is NOT a separate phase — the products phase (priority 40) builds it
+  // in-process via seedCategoryTree so its (catalogId, code) cache spans category creation + product
+  // placement. A separate `seed-catalog-categories.mjs` process could not be seen by the products
+  // process (cross-process index lag) → duplicate categories.csv tree. `seed:categories` remains only
+  // as a standalone command. Do NOT re-add a categories step here.
   { name: 'store', script: 'seed-store.mjs', required: true, priority: 80 },
   { name: 'properties', script: 'seed-catalog-properties.mjs', required: true, priority: 30 },
-  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },  
+  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },
   { name: 'configurable', script: 'seed-configurable.mjs', required: false, priority: 50 },
   // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
   // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
