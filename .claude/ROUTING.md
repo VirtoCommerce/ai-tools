@@ -28,7 +28,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 | **Seed / teardown test data** | `/qa-seed-data [minimal\|catalog\|b2b\|pricing\|loyalty\|promotions\|bopis\|full\|teardown]` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| new <domain> \| admin <module>` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID \| migrate <suite>` | Skill |
-| **Author test-data fixtures from scratch** | `/qa-generate-data <domain> [count]` | Skill |
+| **Design test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze \| generate \| validate \| full` | Skill |
 | **Review test case quality** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
