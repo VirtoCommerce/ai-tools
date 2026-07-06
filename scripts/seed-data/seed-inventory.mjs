@@ -22,7 +22,7 @@
  */
 import {
   DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
-  log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases,
+  log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, storeMainFulfillmentCenter,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
@@ -105,7 +105,11 @@ async function setStock(entries) {
 async function seedFromFixtures(ffcs) {
   let rows = [];
   try { rows = loadCsv('test-data/inventory/stock-levels.csv'); } catch { log('no stock-levels.csv — skipping fixture stock'); return 0; }
-  const defaultFfc = ffcs[0];
+  // Default to the store's OWN fulfillment center — not ffcs[0], which is an arbitrary
+  // search-order pick that strands stock on an unrelated warehouse. (The per-row f.code
+  // match below never hits: the /fulfillmentcenters/search projection omits `code`, so a
+  // code-keyed lookup is dead — every row correctly falls back to the store main FFC.)
+  const defaultFfc = (await storeMainFulfillmentCenter(api, ffcs)) || ffcs[0];
   const entries = [];
   for (const row of rows) {
     const ffc = ffcs.find((f) => f.code === row.ffc_id) || defaultFfc;
@@ -120,7 +124,7 @@ async function seedFromFixtures(ffcs) {
 }
 
 async function seedBulkCatalog(ffcs) {
-  const ffc = ffcs[0];
+  const ffc = (await storeMainFulfillmentCenter(api, ffcs)) || ffcs[0];
   if (!ffc) { log('no fulfillment center available for bulk stock'); return 0; }
   const products = [];
   let skip = 0;

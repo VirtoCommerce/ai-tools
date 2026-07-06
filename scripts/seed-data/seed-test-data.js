@@ -40,7 +40,7 @@ import '../../config.js';
 // results file). No-op under --dry-run.
 // Store fixtures are now shared: ensureStore + its helpers live in seed-common.mjs so this
 // relational seeder and the bootstrap preflight build ONE store from test-data/stores/stores.csv.
-import { writeEnvAliasOverride, ensureStore, ensureCatalogs, seedCategoryTree } from '../lib/seed-common.mjs';
+import { writeEnvAliasOverride, ensureStore, ensureCatalogs, seedCategoryTree, unlinkSeedRootsFromStoreVirtualCatalog } from '../lib/seed-common.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -735,6 +735,11 @@ function loadSeedBookkeeping() {
 
 async function teardown() {
   log(`Starting teardown — deleting ${SEED_FAMILY}-* entities across ALL runs (AGENT-TEST family only)...`);
+
+  // First remove the seed root-category links we injected into the store's virtual catalog (e.g.
+  // the live B2B-mixed), restoring its original entry set. Runs BEFORE catalog deletion so the
+  // roots are still resolvable; only AGENT-TEST-SEED roots are touched.
+  await unlinkSeedRootsFromStoreVirtualCatalog(api);
 
   const seedResults = loadSeedBookkeeping();
   if (seedResults.products.length || seedResults.priceLists.length) {

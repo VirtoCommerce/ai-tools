@@ -525,13 +525,37 @@ export async function ensureVirtualCatalog(api, { storeId = STORE_ID, name = `LO
 }
 
 /**
+ * Resolve the STORE's designated main fulfillment center out of a list of FFCs.
+ * Stock MUST land on the center the store actually fulfills from — an env can have
+ * dozens of FFCs and the /fulfillmentcenters/search order is arbitrary, so picking
+ * the first result strands inventory on an unrelated warehouse (the product then
+ * reads 0 on the store's real FFC — see the vcst-qa "0 for all FFC" incident).
+ * Returns the matching FFC object from `ffcs`, or null when the store has no main
+ * FFC set / it isn't in the active list (caller falls back to ffcs[0]).
+ */
+export async function storeMainFulfillmentCenter(api, ffcs) {
+  try {
+    const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+    const mainId = store?.mainFulfillmentCenterId;
+    if (!mainId) return null;
+    return (ffcs || []).find((f) => f.id === mainId) || null;
+  } catch { return null; }
+}
+
+/**
  * Return an active fulfillment center, creating a minimal default one if none
  * exists (fresh DB has zero). Used by product/configurable/bopis seeders.
+ * Prefers the store's main FFC so seeded stock is visible on the store's warehouse.
  */
 export async function ensureFulfillmentCenter(api, { name = 'AGENT-TEST-Default-FFC', code = 'AGENT-TEST-FFC-MAIN' } = {}) {
   const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 100 }, { expectStatus: [200, 201] });
   const existing = (r?.results || r?.items || []).filter((f) => f.isActive !== false);
-  if (existing.length) { verbose(`↻ fulfillment center: ${existing[0].name} (${existing[0].id})`); return existing[0]; }
+  if (existing.length) {
+    const main = await storeMainFulfillmentCenter(api, existing);
+    const ffc = main || existing[0];
+    verbose(`↻ fulfillment center: ${ffc.name} (${ffc.id})${main ? ' [store main]' : ''}`);
+    return ffc;
+  }
   if (DRY_RUN) { log(`[DRY] would create fulfillment center ${code}`); return { id: `dry-ffc-${DATE_STAMP}`, code }; }
   const body = {
     name, code, isActive: true, description: 'Auto-created by seed-common for from-scratch envs',
@@ -703,32 +727,59 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
 }
 
 /**
- * The store's bound virtual-catalog id, but ONLY when it's safe to mutate its link set — i.e. a
- * virtual catalog WE own (AGENT-TEST-SEED-*) or a fresh binding. Returns null (→ callers skip the
- * link) when the store is bound to a FOREIGN live catalog (e.g. "B2B-mixed" on vcst/vcptcore):
- * injecting AGENT-TEST-SEED roots into a real catalog would alter live storefront navigation. This
- * is the linking-side twin of ensureCatalogs' `reusedStoreVc` guard.
+ * The store's bound virtual-catalog id, for LINKING seed root categories so seeded products are
+ * storefront-visible. Returns the id even for a FOREIGN live catalog (e.g. "B2B-mixed" on
+ * vcst/vcptcore): we intentionally link our AGENT-TEST-SEED roots into it — otherwise seeded
+ * products live only in the physical catalog and 404 on the storefront. Only OUR seed categories
+ * are ever linked, and teardown removes exactly those links (unlinkSeedRootsFromStoreVirtualCatalog),
+ * so the live catalog's own navigation is left untouched. Returns null only when the store has no
+ * virtual catalog bound (nothing to link into).
  */
-async function seedOwnedStoreVirtualCatalogId(api) {
+async function storeVirtualCatalogIdForLinking(api) {
   const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
   const vcId = store?.catalog;
   if (!vcId) return null;
   const cat = await api('GET', `/api/catalog/catalogs/${vcId}`, null, { expectStatus: [200, 404] });
-  if (!cat?.isVirtual) return null;
-  if (!String(cat.name || '').startsWith(SEED_FAMILY)) return null; // foreign live catalog — do not mutate
-  return vcId;
+  return cat?.isVirtual ? vcId : null;
 }
 
 /** Link each physical catalog's root categories (no parent) into the store's virtual catalog. */
 async function linkRootsIntoVirtual(api, categoryRows, byCsvId) {
   if (DRY_RUN) return;
-  const vcId = await seedOwnedStoreVirtualCatalogId(api);
-  if (!vcId) { log('⚠ skip root-linking — store virtual catalog is foreign/live (or unset); not mutating it'); return; }
+  const vcId = await storeVirtualCatalogIdForLinking(api);
+  if (!vcId) { log('⚠ skip root-linking — store has no virtual catalog bound; nothing to link into'); return; }
   const rootIds = categoryRows.filter((r) => !r.parent_id && String(r.is_active).toLowerCase() !== 'no').map((r) => r.category_id);
   const links = rootIds.map((cid) => byCsvId[cid]).filter((c) => c?.id).map((c) => ({ listEntryId: c.id, listEntryType: 'category', catalogId: vcId }));
   if (!links.length) return;
   try { await api('POST', '/api/catalog/listentrylinks', links, { expectStatus: [200, 204] }); log(`✓ linked ${links.length} root categor${links.length === 1 ? 'y' : 'ies'} into virtual catalog`); }
   catch (e) { log(`⚠ virtual-catalog link failed: ${String(e.message).slice(0, 150)}`); }
+}
+
+/**
+ * Teardown counterpart of the root-linking above: remove the AGENT-TEST-SEED root-category links
+ * this seeder injected into the store's virtual catalog, so a foreign live catalog (B2B-mixed) is
+ * restored to its original entry set. Read-only-safe discovery: find our seed PHYSICAL catalogs by
+ * name prefix (NOT ensureCatalogs — that would re-create them mid-teardown), take their root
+ * (parentless) AGENT-TEST-SEED categories, and delete exactly those links from the virtual catalog.
+ * Must run BEFORE the seed catalogs are deleted (so the roots are still resolvable).
+ */
+export async function unlinkSeedRootsFromStoreVirtualCatalog(api) {
+  const vcId = await storeVirtualCatalogIdForLinking(api);
+  if (!vcId) return;
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 200 }, { expectStatus: [200, 201] }).catch(() => null);
+  const physIds = (cats?.results || []).filter((c) => !c.isVirtual && String(c.name || '').startsWith(SEED_FAMILY)).map((c) => c.id);
+  const rootIds = new Set();
+  for (const pid of physIds) {
+    const r = await api('POST', '/api/catalog/search/categories', { catalogId: pid, take: 500 }, { expectStatus: [200, 201] }).catch(() => null);
+    for (const c of (r?.results || r?.items || [])) {
+      if (!c.parentId && String(c.name || '').startsWith(SEED_FAMILY)) rootIds.add(c.id);
+    }
+  }
+  if (!rootIds.size) return;
+  if (DRY_RUN) { log(`[DRY] would unlink ${rootIds.size} AGENT-TEST-SEED root(s) from store virtual catalog`); return; }
+  const links = [...rootIds].map((id) => ({ listEntryId: id, listEntryType: 'category', catalogId: vcId }));
+  try { await api('POST', '/api/catalog/listentrylinks/delete', links, { expectStatus: [200, 204, 404] }); log(`✓ unlinked ${links.length} AGENT-TEST-SEED root(s) from store virtual catalog`); }
+  catch (e) { log(`⚠ unlink from virtual catalog failed: ${String(e.message).slice(0, 150)}`); }
 }
 
 const catSlug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -781,8 +832,9 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
   // Ensure the ROOT is linked into the store virtual catalog (idempotent) so the subtree surfaces —
   // covers created-here roots (e.g. Test Fixtures) that categories.csv didn't already link.
   if (rootId && !DRY_RUN) {
-    // Only mutate a seed-owned store virtual catalog — never a foreign live one (vcst B2B-mixed).
-    const vcId = await seedOwnedStoreVirtualCatalogId(api);
+    // Link the seed root into the store's virtual catalog (incl. a foreign live one, e.g. vcst
+    // B2B-mixed) so the subtree surfaces on the storefront; teardown unlinks exactly these roots.
+    const vcId = await storeVirtualCatalogIdForLinking(api);
     if (vcId) {
       await api('POST', '/api/catalog/listentrylinks', [{ listEntryId: rootId, listEntryType: 'category', catalogId: vcId }], { expectStatus: [200, 204] }).catch(() => {});
     }
