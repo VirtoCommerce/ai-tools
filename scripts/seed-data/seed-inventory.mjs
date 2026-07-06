@@ -40,20 +40,26 @@ async function listFfcs() {
   return r?.results || r?.items || [];
 }
 
+// Deterministic display name for a CSV FFC row — the idempotency key we CAN rely on.
+// (The fulfillmentcenters/search projection does NOT return `code`, so a code-keyed dedupe
+//  map is all-undefined and re-creates every FFC on every run — 6→11→16…. Name is returned.)
+const ffcName = (row) => `${FFC_PREFIX}-${row.ffc_name}`;
+
 async function ensureFulfillmentCenters() {
   const existing = await listFfcs();
-  const byCode = new Map(existing.map((f) => [f.code, f]));
+  const byName = new Map(existing.map((f) => [f.name, f]));
   let rows = [];
   try { rows = loadCsv('test-data/inventory/fulfillment-centers.csv'); } catch { rows = []; }
   const out = [...existing];
   // Bulk mode only needs ONE existing FFC; never create. Fixture mode may top up missing
   // FFCs, but creation is best-effort (some envs disallow POST /fulfillmentcenters → 405).
   const bulkMode = argv.includes('--catalog') || argv.includes('--stock');
-  if (bulkMode || (existing.length && !rows.some((r) => !byCode.has(r.ffc_code)))) return out;
+  if (bulkMode || (existing.length && !rows.some((r) => !byName.has(ffcName(r))))) return out;
   for (const row of rows) {
-    if (byCode.has(row.ffc_code)) { verbose(`FFC exists: ${row.ffc_code}`); continue; }
+    const name = ffcName(row);
+    if (byName.has(name)) { verbose(`FFC exists: ${name}`); continue; }
     const body = {
-      name: `${FFC_PREFIX}-${row.ffc_name}`,
+      name,
       code: row.ffc_code,
       isActive: String(row.is_active).toLowerCase() !== 'false',
       address: {
@@ -61,16 +67,18 @@ async function ensureFulfillmentCenters() {
         postalCode: row.postal_code, countryCode: row.country_code, phone: row.phone,
       },
     };
-    if (DRY_RUN) { log(`[DRY] would create FFC ${row.ffc_code}`); out.push({ id: `dry-${row.ffc_code}`, code: row.ffc_code }); continue; }
+    if (DRY_RUN) { log(`[DRY] would create FFC ${row.ffc_code}`); out.push({ id: `dry-${row.ffc_code}`, code: row.ffc_code, name }); continue; }
     try {
       // Create/update is PUT (POST /fulfillmentcenters is 405 — only /search,/plenty,/batch are POST).
       let r = await api('PUT', '/api/inventory/fulfillmentcenters', body, { expectStatus: [200, 201, 204] });
       if (!r?.id) {
+        // PUT 204 with no body — re-resolve by NAME (search omits code, so a code match fails).
         const again = await listFfcs();
-        r = again.find((f) => f.code === row.ffc_code) || r;
+        r = again.find((f) => f.name === name) || r;
       }
-      out.push({ id: r?.id, code: row.ffc_code, name: body.name, _created: true });
-      log(`Created FFC ${row.ffc_code} (${r?.id})`);
+      out.push({ id: r?.id, code: row.ffc_code, name, _created: true });
+      byName.set(name, r);
+      log(`Created FFC ${name} (${r?.id})`);
     } catch (e) {
       log(`⚠ FFC create not available for ${row.ffc_code} (${String(e.message).slice(0, 80)}) — using existing FFCs`);
     }
@@ -132,11 +140,18 @@ async function seedBulkCatalog(ffcs) {
 async function teardown() {
   log(`Teardown: deleting ${FFC_PREFIX}-* fulfillment centers`);
   const ffcs = await listFfcs();
-  const ids = ffcs.filter((f) => (f.name || '').startsWith(FFC_PREFIX)).map((f) => f.id);
+  const ids = ffcs.filter((f) => (f.name || '').startsWith(FFC_PREFIX)).map((f) => f.id).filter(Boolean);
   if (!ids.length) { log('  none to delete'); return; }
   if (DRY_RUN) { log(`  [DRY] would delete ${ids.length}`); return; }
-  await api('DELETE', `/api/inventory/fulfillmentcenters?ids=${ids.join(',')}`, null, { expectStatus: [200, 204, 404] });
-  log(`  ✓ deleted ${ids.length} fulfillment center(s)`);
+  // Delete one id per request: the controller does NOT parse the comma-joined `?ids=a,b,c`
+  // form (it treats the whole string as a single id → matches nothing → deletes 0 while still
+  // returning 200, so a batch teardown silently no-ops). Individual deletes are verified to work.
+  let deleted = 0;
+  for (const id of ids) {
+    await api('DELETE', `/api/inventory/fulfillmentcenters?ids=${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+    deleted++;
+  }
+  log(`  ✓ deleted ${deleted} fulfillment center(s)`);
 }
 
 (async () => {

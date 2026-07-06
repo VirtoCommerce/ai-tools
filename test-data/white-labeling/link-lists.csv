@@ -1,27 +1,27 @@
 list_name,link_title,link_url,priority,parent_title,list_type,notes
-main-menu-electronics,Home,/,1,,main-menu,Top-level link — homepage route
-main-menu-electronics,Brands,/brands,2,,main-menu,Parent with children — real brands route
-main-menu-electronics,Laptops,/search?q=laptop,1,Brands,main-menu,Child of Brands — real search route
-main-menu-electronics,Phones,/search?q=phone,2,Brands,main-menu,Child of Brands — real search route
-main-menu-electronics,Tablets,/search?q=tablet,3,Brands,main-menu,Child of Brands — real search route
-main-menu-electronics,Company,/contacts,3,,main-menu,Top-level link — Contacts static page (title avoids collision with store's default "About Us" menu list)
-main-menu-electronics,Support,/search?q=support,4,,main-menu,Top-level link — real search route
-main-menu-fashion,Home,/,1,,main-menu,Top-level link — homepage route
-main-menu-fashion,Shop,/brands,2,,main-menu,Parent with children — real brands route
-main-menu-fashion,Men,/search?q=men,1,Shop,main-menu,Child of Shop — real search route
-main-menu-fashion,Women,/search?q=women,2,Shop,main-menu,Child of Shop — real search route
-main-menu-fashion,Kids,/search?q=kids,3,Shop,main-menu,Child of Shop — real search route
-main-menu-fashion,New Arrivals,/catalog,3,,main-menu,Top-level link — Catalog landing page (distinct real route)
-main-menu-fashion,Contact,/contacts,4,,main-menu,Top-level link — Contacts static page (distinct real route)
-footer-electronics,Legal,/search?q=legal,1,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links; name must be globally unique across all lists (nesting is by-name)
-footer-electronics,Help,/search?q=help,2,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links
-footer-electronics,Privacy Policy,/search?q=privacy,1,Legal,footer,Child link under Legal — real search route (distinct)
-footer-electronics,Terms of Service,/search?q=terms,2,Legal,footer,Child link under Legal — real search route (distinct)
-footer-electronics,Support,/search?q=support,1,Help,footer,Child link under Help — real search route
-footer-electronics,Warranty,/search?q=warranty,2,Help,footer,Child link under Help — real search route
-footer-fashion,Customer Service,/search?q=service,1,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links
-footer-fashion,Our Company,/contacts,2,,footer,"Footer SECTION HEADER (non-clickable column title) — name avoids collision with the ""Company""/""Contact"" menu links (nesting is by-name)"
-footer-fashion,Shipping Info,/search?q=shipping,1,Customer Service,footer,Child link under Customer Service — real search route (distinct)
-footer-fashion,Returns & Exchanges,/search?q=returns,2,Customer Service,footer,Child link under Customer Service — special char — real search route (distinct)
-footer-fashion,Size Guide,/search?q=size,3,Customer Service,footer,Child link under Customer Service — real search route
-footer-fashion,Contact Us,/contacts,1,Our Company,footer,Child link under Our Company — Contacts static page (distinct real route)
+AGENT-TEST-main-menu-electronics,Home,/,1,,main-menu,Top-level link — homepage route
+AGENT-TEST-main-menu-electronics,Brands,/brands,2,,main-menu,Parent with children — real brands route
+AGENT-TEST-main-menu-electronics,Laptops,/search?q=laptop,1,Brands,main-menu,Child of Brands — real search route
+AGENT-TEST-main-menu-electronics,Phones,/search?q=phone,2,Brands,main-menu,Child of Brands — real search route
+AGENT-TEST-main-menu-electronics,Tablets,/search?q=tablet,3,Brands,main-menu,Child of Brands — real search route
+AGENT-TEST-main-menu-electronics,Company,/contacts,3,,main-menu,Top-level link — Contacts static page (title avoids collision with store's default "About Us" menu list)
+AGENT-TEST-main-menu-electronics,Support,/search?q=support,4,,main-menu,Top-level link — real search route
+AGENT-TEST-main-menu-fashion,Home,/,1,,main-menu,Top-level link — homepage route
+AGENT-TEST-main-menu-fashion,Shop,/brands,2,,main-menu,Parent with children — real brands route
+AGENT-TEST-main-menu-fashion,Men,/search?q=men,1,Shop,main-menu,Child of Shop — real search route
+AGENT-TEST-main-menu-fashion,Women,/search?q=women,2,Shop,main-menu,Child of Shop — real search route
+AGENT-TEST-main-menu-fashion,Kids,/search?q=kids,3,Shop,main-menu,Child of Shop — real search route
+AGENT-TEST-main-menu-fashion,New Arrivals,/catalog,3,,main-menu,Top-level link — Catalog landing page (distinct real route)
+AGENT-TEST-main-menu-fashion,Contact,/contacts,4,,main-menu,Top-level link — Contacts static page (distinct real route)
+AGENT-TEST-footer-electronics,Legal,/search?q=legal,1,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links; name must be globally unique across all lists (nesting is by-name)
+AGENT-TEST-footer-electronics,Help,/search?q=help,2,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links
+AGENT-TEST-footer-electronics,Privacy Policy,/search?q=privacy,1,Legal,footer,Child link under Legal — real search route (distinct)
+AGENT-TEST-footer-electronics,Terms of Service,/search?q=terms,2,Legal,footer,Child link under Legal — real search route (distinct)
+AGENT-TEST-footer-electronics,Support,/search?q=support,1,Help,footer,Child link under Help — real search route
+AGENT-TEST-footer-electronics,Warranty,/search?q=warranty,2,Help,footer,Child link under Help — real search route
+AGENT-TEST-footer-fashion,Customer Service,/search?q=service,1,,footer,Footer SECTION HEADER (non-clickable column title) — its children are the links
+AGENT-TEST-footer-fashion,Our Company,/contacts,2,,footer,"Footer SECTION HEADER (non-clickable column title) — name avoids collision with the ""Company""/""Contact"" menu links (nesting is by-name)"
+AGENT-TEST-footer-fashion,Shipping Info,/search?q=shipping,1,Customer Service,footer,Child link under Customer Service — real search route (distinct)
+AGENT-TEST-footer-fashion,Returns & Exchanges,/search?q=returns,2,Customer Service,footer,Child link under Customer Service — special char — real search route (distinct)
+AGENT-TEST-footer-fashion,Size Guide,/search?q=size,3,Customer Service,footer,Child link under Customer Service — real search route
+AGENT-TEST-footer-fashion,Contact Us,/contacts,1,Our Company,footer,Child link under Our Company — Contacts static page (distinct real route)

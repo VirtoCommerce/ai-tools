@@ -89,7 +89,7 @@ pipeline + `/qa-verify-fix <KEY>`).
 
 ```
 FIX_STATUS: SUCCESS      # SUCCESS only if pushed AND build+test passed
-PR_TITLE: <KEY>: Fix <imperative summary of the bug>      # e.g. VCST-5210: Fix NRE in GetModules when icon file is missing
+PR_TITLE: fix(<KEY>): <imperative summary of the bug>      # e.g. fix(VCST-5210): guard NRE in GetModules when icon file is missing
 CONFIDENCE: HIGH|MEDIUM|LOW
 ROOT_CAUSE: <one sentence>
 ```

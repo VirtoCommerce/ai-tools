@@ -1,6 +1,6 @@
 ---
 description: "Seed/teardown all test data via repo seed scripts (npm run seed) or Postman MCP: catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS. Environment-agnostic (any TEST_ENV); verify with td:reconcile."
-argument-hint: "bootstrap | minimal | catalog | company-users | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
+argument-hint: "bootstrap | minimal | catalog | b2b | pricing | inventory | loyalty | promotions | bopis | configurable | users | full | teardown"
 disable-model-invocation: true
 ---
 
@@ -10,22 +10,22 @@ Seed a complete test environment on **any** environment (fresh `/qa-local-env` l
 
 ## Usage
 ```
-/qa-seed-data bootstrap   # ⭐ ONE command, any env: preflight (member index → catalog → FFC) then the full dependency chain → npm run seed:bootstrap
-/qa-seed-data minimal     # 1 product + price + inventory (fastest)  → npm run seed:minimal
-/qa-seed-data catalog     # Rich catalog: 5 products, categories, multi-currency → npm run seed:catalog
-/qa-seed-data company-users  # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
+/qa-seed-data bootstrap   # ⭐ ONE command, any env: preflight (member index + bridge FFC) then all 13 phases (common scripts) in explicit priority order → npm run seed:bootstrap  (tear down all: npm run seed:bootstrap:teardown)
+/qa-seed-data minimal     # Unified required-only chain → npm run seed:minimal (= seed:bootstrap --skip-optional)
+/qa-seed-data catalog     # Unified catalog subset (structure→categories→products→pricing→inventory) → npm run seed:catalog
+/qa-seed-data b2b         # Orgs + contacts + org-scoped role memberships (VCST-5028) → npm run seed:b2b (memberships-only: npm run seed:b2b:memberships)
 /qa-seed-data pricing     # Price lists, tiers, multi-currency → npm run seed:pricing
 /qa-seed-data inventory   # Fulfillment centers + stock → npm run seed:inventory
 /qa-seed-data loyalty     # Loyalty programs + product factors + VIP/Wholesale users → npm run seed:loyalty
 /qa-seed-data promotions  # Marketing promotions + rewards + coupons → npm run seed:promotions
 /qa-seed-data bopis       # BOPIS pickup locations (linked to an existing FFC) → npm run seed:bopis
-/qa-seed-data configurable# All configurable products (CFG-012..032 + CFG-FILE) → npm run seed:configurable (--group base|conditional|default|bike filters)
+/qa-seed-data configurable  # All configurable products (CFG-012..032 + CFG-FILE) → npm run seed:configurable (--group base|conditional|default|bike filters)
 /qa-seed-data users       # Personal storefront accounts + .env.{ENV} role identities (USER/EUR_USER/LOYALTY_*) → npm run seed:users
 /qa-seed-data full        # Seed the ENTIRE test-data/ directory so every @td() resolves → npm run seed:full + CFG/B2B + seed:users
 /qa-seed-data teardown    # Delete ephemeral seeded entities (match teardown to the path that seeded)
 ```
 
-**Teardown per domain** (each verifies zero residue): `seed:teardown` · `seed:b2b:teardown` · `seed:users:teardown` · `seed:pricing:teardown` · `seed:inventory:teardown` · `seed:loyalty:teardown` · `seed:bopis:teardown` · `seed:products:teardown` · `seed:configurable:teardown`.
+**Tear down everything:** `npm run seed:bootstrap:teardown` (reverse-order sweep of all domains). **Per domain** (each verifies zero residue): `seed:teardown` · `seed:b2b:teardown` · `seed:users:teardown` · `seed:pricing:teardown` · `seed:inventory:teardown` · `seed:loyalty:teardown` · `seed:promotions:teardown` · `seed:bopis:teardown` · `seed:products:teardown` · `seed:configurable:teardown` · `seed:properties:teardown` · `seed:white-labeling:teardown`. **All teardowns delete ONLY `AGENT-TEST` entities** (name prefix / exact seed email / own catalog / bookkeeping id — never a broad match).
 
 ## Verify (any env)
 After seeding, confirm the data is really there for this `TEST_ENV`:

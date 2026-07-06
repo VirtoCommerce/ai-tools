@@ -123,6 +123,8 @@ async function teardown() {
   const menus = await getMenus(STORE_ID);
   let deleted = 0;
   for (const name of lists.keys()) {
+    // Safety: only delete AGENT-TEST- link lists, never a real store menu that shares a name.
+    if (!String(name).startsWith('AGENT-TEST')) { verbose(`skip ${name}: not an AGENT-TEST link list`); continue; }
     const found = menus.find((m) => m.name === name && (m.language || LANG) === LANG);
     if (!found) { verbose(`not present: ${name}`); continue; }
     await api('DELETE', `/api/cms/${STORE_ID}/menu?listIds=${encodeURIComponent(found.id)}`, null, { expectStatus: [200, 204, 404] });

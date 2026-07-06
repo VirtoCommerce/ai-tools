@@ -6,10 +6,12 @@
  * (VCST-5406). It does the from-scratch preflight the individual seeders can't
  * do on their own, then runs them in dependency order.
  *
- * Order (plan dependency chain):
- *   preflight: member-index → store/virtual-catalog → fulfillment-center
- *   required : properties → products → pricing → inventory → b2b → users
- *   optional : configurable → promotions → bopis → loyalty → white-labeling
+ * Order (explicit seed priority — see STEPS[].priority):
+ *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
+ *   priority 30+ : properties → products → configurable → pricing → inventory → bopis
+ *                  → company-users → promotions → loyalty → white-labeling
+ *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
+ *    so a fulfillment center exists; company-users after the member index is ready.)
  *
  * A REQUIRED step that fails aborts the run (non-zero exit). An OPTIONAL step
  * that fails is a warning — e.g. the Loyalty module may be absent from a
@@ -27,27 +29,75 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
-  ensureMemberIndex, ensureVirtualCatalog, ensureFulfillmentCenter, log,
+  ensureMemberIndex, ensureFulfillmentCenter, log,
 } from '../lib/seed-common.mjs';
 
 const SKIP_OPTIONAL = process.argv.includes('--skip-optional');
+const TEARDOWN = process.argv.includes('--teardown');
 const passthrough = process.argv.slice(2).filter((a) => a === '--dry-run' || a === '--verbose');
 
-/** Dependency-ordered chain. `required` steps abort on failure; optional ones warn. */
-const STEPS = [
-  { name: 'properties', script: 'seed-catalog-properties.mjs', required: true },
-  { name: 'products', script: 'seed-standard-products.mjs', required: true },
-  { name: 'pricing', script: 'seed-pricing.mjs', required: true },
-  { name: 'inventory', script: 'seed-inventory.mjs', required: true },
-  // Unified company-users: orgs (parent-child) + contacts + org-scoped logins + cross-org
-  // memberships + personal storefront accounts (env roles + agent-pool + test-users), all in one.
-  { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true },
-  { name: 'configurable', script: 'seed-configurable.mjs', required: false },
-  { name: 'promotions', script: 'seed-promotions.mjs', required: false },
-  { name: 'bopis', script: 'seed-bopis.mjs', required: false },
-  { name: 'loyalty', script: 'seed-loyalty.mjs', required: false },
-  { name: 'white-labeling', script: 'seed-white-labeling.mjs', required: false },
+/**
+ * Unified teardown chain — the mirror of the seed chain, in REVERSE dependency order (dependents
+ * before their dependencies). Each domain seeder exposes its own `--teardown`; catalog + categories
+ * (+ any leftover products/pricelists) are swept by seed-test-data.js's family teardown, which also
+ * unbinds the store from a deleted catalog. The store itself is intentionally NOT deleted. Every
+ * step is best-effort: a failing teardown warns and the chain continues (so one stuck domain can't
+ * block a full clean). Invoked with `npm run seed:bootstrap -- --teardown`.
+ */
+const TEARDOWN_STEPS = [
+  { name: 'white-labeling', script: 'seed-white-labeling.mjs', args: ['--teardown'] },
+  { name: 'loyalty', script: 'seed-loyalty.mjs', args: ['--teardown'] },
+  { name: 'promotions', script: 'seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'company-users', script: 'seed-company-users.mjs', args: ['--teardown'] },
+  { name: 'bopis', script: 'seed-bopis.mjs', args: ['--teardown'] },
+  { name: 'inventory', script: 'seed-inventory.mjs', args: ['--teardown'] },
+  { name: 'pricing', script: 'seed-pricing.mjs', args: ['--teardown'] },
+  { name: 'configurable', script: 'seed-configurable.mjs', args: ['--teardown'] },
+  { name: 'products', script: 'seed-standard-products.mjs', args: ['--teardown'] },
+  { name: 'properties', script: 'seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
+  { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
+
+/**
+ * Explicit seed PRIORITY — the dependency chain, encoded as a number per step so ordering is
+ * data-driven (sorted below), not an accident of array position. Reorder by editing `priority`.
+ *
+ *   Catalog(10) > Categories(20) > Properties(30) > Products(40) > Configurations(50) >
+ *   Prices(60) > Inventory(70) > Store(80) > BOPIS(90) > Company-users(100) > …others(110+)
+ *
+ * Every phase is its own common script (Catalog/Categories/Store included) — the preflight only
+ * warms the member index + ensures one bridge fulfillment center. seed-catalog(10) builds the
+ * AGENT-TEST-SEED-* catalog structure and binds the store; seed-catalog-categories(20) builds the
+ * tree and links roots into the virtual catalog; seed-store(80) finalizes store config + FFC roles.
+ * WHY this order: prices must come AFTER every product exists, so Configurations(50) is priced
+ * too → pricing(60) follows both products(40) and configurable(50); BOPIS(90) needs a
+ * fulfillment center (inventory/70); company-users(100) needs the member index.
+ * `required` steps abort the run on failure; optional ones warn and continue.
+ */
+const STEPS = [
+  { name: 'catalog', script: 'seed-catalog.mjs', required: true, priority: 10 },
+  { name: 'categories', script: 'seed-catalog-categories.mjs', required: true, priority: 20 },
+  { name: 'store', script: 'seed-store.mjs', required: true, priority: 80 },
+  { name: 'properties', script: 'seed-catalog-properties.mjs', required: true, priority: 30 },
+  { name: 'products', script: 'seed-standard-products.mjs', required: true, priority: 40 },  
+  { name: 'configurable', script: 'seed-configurable.mjs', required: false, priority: 50 },
+  // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
+  // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
+  // priority that overrode every per-product price (all products showed 99.99). It remains available
+  // as a standalone `npm run seed:pricing` for explicitly bulk-pricing an arbitrary catalog.
+  { name: 'inventory', script: 'seed-inventory.mjs', required: true, priority: 70 },
+  // Relational fixture set (products-full.csv + pricing/*.csv + stock-levels.csv). Now UNIFIED: it
+  // delegates catalog/categories to the shared ensureCatalogs + seedCategoryTree (stable AGENT-TEST-SEED
+  // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
+  // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
+  { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
+  { name: 'bopis', script: 'seed-bopis.mjs', required: true, priority: 90 },
+  { name: 'company-users', script: 'seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
+  { name: 'promotions', script: 'seed-promotions.mjs', required: false, priority: 110 },
+  { name: 'loyalty', script: 'seed-loyalty.mjs', required: false, priority: 120 },
+  { name: 'white-labeling', script: 'seed-white-labeling.mjs', required: false, priority: 130 },
+].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {
   const scriptPath = join(ROOT, 'scripts', 'seed-data', step.script);
@@ -61,17 +111,32 @@ function runStep(step) {
 }
 
 (async () => {
-  console.log(`=== seed:bootstrap — TEST_ENV=${process.env.TEST_ENV || 'vcst'}${DRY_RUN ? ' [DRY RUN]' : ''} ===`);
+  console.log(`=== seed:bootstrap${TEARDOWN ? ' [TEARDOWN]' : ''} — TEST_ENV=${process.env.TEST_ENV || 'vcst'}${DRY_RUN ? ' [DRY RUN]' : ''} ===`);
   assertSafeTarget();
   await auth();
 
-  // ── Preflight: build the infrastructure a fresh DB lacks, in order. ──
+  // ── Teardown mode: reverse-order sweep of every domain, then exit. Best-effort per step. ──
+  if (TEARDOWN) {
+    const tdResults = [];
+    for (const step of TEARDOWN_STEPS) {
+      const ok = runStep({ ...step, required: false });
+      tdResults.push({ ...step, status: ok ? 'ok' : 'warn' });
+      if (!ok) log(`⚠ teardown ${step.name} reported a problem — continuing.`);
+    }
+    printSummary(tdResults);
+    console.log('\nTeardown complete. Re-seed with `npm run seed:bootstrap`.');
+    process.exit(0);
+  }
+
+  // ── Preflight: only what the STEPS below don't own. Catalog/categories/store are now explicit
+  // steps (priority 10/20/80) that build the AGENT-TEST-SEED-* structure and bind the store — so the
+  // preflight must NOT call ensureVirtualCatalog (it would create a LOCAL-<date> orphan before the
+  // catalog step's B2B-mixed). We warm the member index early (it's slow/async; company-users needs
+  // it) and ensure ONE fulfillment center exists so product seeding (priority 40) — which runs before
+  // the inventory step (70) — has a stock target; the inventory step tops up the full FFC set. ──
   log('\n[preflight] member index');
   await ensureMemberIndex(api, { required: !DRY_RUN });
-  log('[preflight] store + virtual catalog');
-  const catalogId = await ensureVirtualCatalog(api);
-  if (!catalogId && !DRY_RUN) { console.error('ABORT: could not ensure a virtual catalog.'); process.exit(1); }
-  log('[preflight] fulfillment center');
+  log('[preflight] fulfillment center (bridge for products before the inventory step)');
   await ensureFulfillmentCenter(api);
 
   // ── Seeder chain ──

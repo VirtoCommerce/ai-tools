@@ -81,6 +81,10 @@ for (const [rows, key, label] of [[orgs, 'org_id', 'organizations'], [contacts, 
 if (!problems.length) ok('org_id / contact_id / user_id / email are unique');
 
 // 1. Organization addresses (present + valid + aligned with addresses.csv).
+// NOTE: organizations.csv KEEPS its platform_id (unlike users/contacts). It's a PINNED id —
+// seedOrgs forces `body.id = row.platform_id` on create, so the same org GUID is used on EVERY
+// env by construction (a deterministic seed input, not a runtime-drift output). Do not blank it:
+// it's env-invariant, so it neither leaks cross-env nor needs a per-env overlay.
 console.log('\n[1] Organization addresses (present + valid + aligned)');
 let orgAddrOk = 0;
 for (const o of orgs) {
@@ -122,6 +126,9 @@ else {
 console.log('\n[3] Seeded contacts belong to an existing org');
 let contactOk = 0;
 for (const c of contacts) {
+  // Multi-env rule (same as users): contact platform_id is a runtime, per-env id — it must NOT sit
+  // in the committed CSV. (No @td alias consumes it today; keep it blank so one never leaks cross-env.)
+  if ((c.platform_id || '').trim()) fail(`contact ${c.contact_id} (${c.email}): platform_id "${c.platform_id.trim()}" must be blank — contact ids resolve per env, not from the shared CSV`);
   if (!isTrue(c.seeded)) continue;
   const cOrgs = ids(c.org_id);
   if (!cOrgs.length) { fail(`contact ${c.contact_id} (${c.email}) has no org_id`); continue; }
@@ -159,6 +166,11 @@ for (const u of users) {
     fail(`user ${tag}: role "${u.roles}" does not resolve in roles.csv`);
   }
   if (seeded && !(u.password || '').trim()) fail(`user ${tag}: seeded but no password`);
+  // Multi-env rule: b2b user platform_id must NOT live in the committed CSV — runtime ids live in
+  // aliases.<env>.json per env (written by the seeder), so a suite run against any env resolves
+  // ONLY that env's ids and can never leak another env's GUID (or a leaked mock like "user-1").
+  const pid = (u.platform_id || '').trim();
+  if (pid) fail(`user ${tag}: platform_id "${pid}" must be blank — b2b user ids live in aliases.<env>.json (multi-env-safe), not users.csv`);
 }
 ok('checked all users');
 
