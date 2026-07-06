@@ -36,7 +36,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases } from './seed-common.mjs';
+import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, idsParam } from './seed-common.mjs';
 import { resolveAllRoles } from './user-roles.mjs';
 
 // --- Env (defaults → .env.{ENV} → .env.local) + per-env suffix promotion ---
@@ -858,13 +858,15 @@ export async function sweepAgentTestMembers() {
   for (const m of await collectAgentTestMembers({ memberType: 'Organization' })) byId.set(m.id, m);
   const items = [...byId.values()];
   console.log(`  Found ${items.length} AGENT-TEST-* member(s)`);
+  // Batch-delete via the repeated `ids=` form the platform binds (idsParam) — one call instead of
+  // one HTTP round-trip per member. The member/org sweep is by far the largest N in a teardown.
   let deleted = 0;
-  for (const m of items) {
+  if (items.length) {
     try {
-      await api('DELETE', `/api/members?ids=${encodeURIComponent(m.id)}`, null, { expectStatus: [200, 204, 404] });
-      if (VERBOSE) console.log(`    ✗ deleted ${m.memberType} ${m.name} (${m.id})`);
-      deleted++;
-    } catch (e) { console.warn(`    ⚠ delete failed for ${m.name}: ${e.message.slice(0, 100)}`); }
+      await api('DELETE', `/api/members?${idsParam(items.map((m) => m.id))}`, null, { expectStatus: [200, 204, 404] });
+      if (VERBOSE) items.forEach((m) => console.log(`    ✗ deleted ${m.memberType} ${m.name} (${m.id})`));
+      deleted += items.length;
+    } catch (e) { console.warn(`    ⚠ batch member delete failed: ${e.message.slice(0, 120)}`); }
   }
   // Org residue can survive the first pass: members/search is index-backed and lags right after a
   // large contact teardown, so the enumeration misses some orgs (a full teardown left 2 child orgs
@@ -877,13 +879,11 @@ export async function sweepAgentTestMembers() {
     await sleep(1500);
     residual = await collectAgentTestMembers({ memberType: 'Organization' });
     if (!residual.length) break;
-    for (const o of residual) {
-      try {
-        await api('DELETE', `/api/members?ids=${encodeURIComponent(o.id)}`, null, { expectStatus: [200, 204, 404] });
-        if (VERBOSE) console.log(`    ✗ deleted (settle pass ${attempt}) ${o.memberType} ${o.name} (${o.id})`);
-        deleted++;
-      } catch (e) { console.warn(`    ⚠ retry delete failed for ${o.name}: ${e.message.slice(0, 100)}`); }
-    }
+    try {
+      await api('DELETE', `/api/members?${idsParam(residual.map((o) => o.id))}`, null, { expectStatus: [200, 204, 404] });
+      if (VERBOSE) residual.forEach((o) => console.log(`    ✗ deleted (settle pass ${attempt}) ${o.memberType} ${o.name} (${o.id})`));
+      deleted += residual.length;
+    } catch (e) { console.warn(`    ⚠ retry batch delete failed: ${e.message.slice(0, 100)}`); }
   }
   if (residual.length) console.warn(`  ⚠ ${residual.length} AGENT-TEST org(s) still present after retries: ${residual.map((o) => o.name).join(', ')}`);
   console.log(`  Teardown: ${deleted} member(s) deleted${residual.length ? ` — ${residual.length} org(s) RESIDUAL` : ''}`);

@@ -25,7 +25,7 @@
     "ci:monitor:dry": "cross-env DRY_RUN=true npx tsx ci/run-monitor.ts",
     "seed": "node scripts/seed-data/seed-bootstrap.mjs",
     "seed:minimal": "node scripts/seed-data/seed-bootstrap.mjs --skip-optional",
-    "seed:catalog": "npm run seed:catalog-structure && npm run seed:categories && npm run seed:products && npm run seed:pricing && npm run seed:inventory",
+    "seed:catalog": "npm run seed:catalog-structure && npm run seed:categories && npm run seed:products && npm run seed:inventory",
     "seed:full": "node scripts/seed-data/seed-bootstrap.mjs",
     "seed:bootstrap": "node scripts/seed-data/seed-bootstrap.mjs",
     "seed:bootstrap:teardown": "node scripts/seed-data/seed-bootstrap.mjs --teardown",

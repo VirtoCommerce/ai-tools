@@ -144,9 +144,12 @@ export async function api(method, path, body = null, { expectStatus = [200, 201,
       return ct.includes('application/json') ? res.json() : null;
     }
     const text = await res.text().catch(() => '');
-    // Retry only genuine index-warming transients (bounded, exponential backoff). Everything
-    // else — 4xx, business validation, non-ES 5xx — throws immediately as before.
-    if (attempt < retries && isTransientEsError(res.status, text)) {
+    // Retry only genuine index-warming transients (bounded, exponential backoff), and ONLY for
+    // idempotent read calls (GET / POST-to-/search). A write (POST create) that returns 503 may have
+    // committed server-side before the fault surfaced, so blindly re-POSTing it risks a duplicate
+    // entity or an uncaught duplicate-key abort — the caller's own look-up-then-create guards that,
+    // not this retry. Everything else — 4xx, business validation, non-ES 5xx — throws immediately.
+    if (attempt < retries && isReadCall(method, path) && isTransientEsError(res.status, text)) {
       const wait = 1000 * 2 ** attempt; // 1s, 2s, 4s, 8s
       verbose(`transient index error on ${method} ${path} (${res.status}) — retry ${attempt + 1}/${retries} in ${wait}ms`);
       await sleep(wait);
@@ -802,8 +805,10 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
  */
 export async function ensureMemberIndex(api, { tries = 18, delayMs = 10000, required = false } = {}) {
   if (DRY_RUN) return true;
+  // retries:0 — the probe WANTS a fast 503→false while the index is cold; without it the api()
+  // transient-retry would burn ~15s of backoff per probe, inflating this poll ~2.5× (VCST-5406).
   const probe = async () => {
-    try { await api('POST', '/api/members/search', { take: 1 }, { expectStatus: [200, 201] }); return true; }
+    try { await api('POST', '/api/members/search', { take: 1 }, { expectStatus: [200, 201], retries: 0 }); return true; }
     catch (e) {
       if (/all shards failed|503|index[_ ]?not[_ ]?found|no such index/i.test(String(e.message))) return false;
       throw e;
@@ -954,6 +959,10 @@ export function makeProductPng(code, variant = 0) {
  */
 export async function enrichProductContent(productId, { images = 3, descriptions = true, force = false, code = null } = {}) {
   if (DRY_RUN || !productId || String(productId).startsWith('dry-')) return { images: 0, reviews: 0, dry: true };
+  // This helper (unlike the api-parameterized ensure* siblings) uses seed-common's OWN module api /
+  // uploadAsset, which need seed-common's module TOKEN. Self-authenticate if a caller drove its own
+  // token and never called our auth() — otherwise the GET/POST below would 401 with no obvious cause.
+  if (!TOKEN) await auth();
   const p = await api('GET', `/api/catalog/products/${productId}`, null, { expectStatus: [200, 404] });
   if (!p?.id) return { skipped: true };
   p.images ??= []; p.reviews ??= [];
