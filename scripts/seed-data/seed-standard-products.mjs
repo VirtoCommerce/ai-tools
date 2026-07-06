@@ -310,8 +310,8 @@ async function seedRecord(rec, priceListId, ffcId) {
     isActive: true,
     isBuyable: true,
     trackInventory: true,
-    // Store-scoped product SEO (platform default leaves storeId=null).
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slug(rec.name) }],
+    // Store-scoped product SEO (platform default leaves storeId=null): slug + title + store + language.
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slug(rec.name), pageTitle: rec.name }],
   };
   if (rec.minQuantity != null) body.minQuantity = Number(rec.minQuantity);
   if (rec.packSize != null) body.packSize = Number(rec.packSize);

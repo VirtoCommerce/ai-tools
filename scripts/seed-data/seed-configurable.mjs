@@ -400,7 +400,7 @@ async function seedSpec(spec, ctx, ffcId) {
       const { code, name } = childIdentity(spec, section, opt, idx);
       const child = await ensureProduct(catalog.id, childCat.id, {
         name, code, productType: 'Physical', vendor: 'QA', isActive: true, isBuyable: true, trackInventory: true,
-        seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: cfgSlug(code) }],
+        seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: cfgSlug(code), pageTitle: name }],
       });
       opt._productId = child.id;
       if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
@@ -417,7 +417,7 @@ async function seedSpec(spec, ctx, ffcId) {
     isActive: true, isBuyable: true, trackInventory: false,
     // Store-scoped product SEO (platform default leaves storeId=null). Preserve the slug scheme:
     // slugFromCode families keep the code slug; others use the name slug (== the prior auto-slug).
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name) }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: slugFromCode ? spec.code.toLowerCase() : cfgSlug(spec.name), pageTitle: spec.name }],
   };
   const parent = await ensureProduct(catalog.id, parentCat.id, parentBody);
   if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
