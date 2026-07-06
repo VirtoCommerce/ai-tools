@@ -27,7 +27,7 @@
  */
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
-  log, verbose, assertSafeTarget, auth, api, ensureVirtualCatalog,
+  log, verbose, assertSafeTarget, auth, api, ensureVirtualCatalog, idsParam,
 } from '../lib/seed-common.mjs';
 
 const argv = process.argv.slice(2);
@@ -159,7 +159,7 @@ async function teardown() {
   const ids = list.filter((p) => (p.name || '').startsWith(PREFIX)).map((p) => p.id);
   if (!ids.length) { log('  nothing to delete'); return; }
   if (DRY_RUN) { log(`  [DRY RUN] would delete ${ids.length} pricelist(s)`); return; }
-  await api('DELETE', `/api/pricing/pricelists?ids=${ids.join(',')}`, null, { expectStatus: [200, 204, 404] });
+  await api('DELETE', `/api/pricing/pricelists?${idsParam(ids)}`, null, { expectStatus: [200, 204, 404] });
   log(`  ✓ deleted ${ids.length} pricelist(s) (assignments + prices cascade)`);
 }
 

@@ -105,12 +105,12 @@ async function seedPersonal(loyaltyOnly = false) {
   return report;
 }
 
-// `wl` is the only kind with a scoped teardown today — its accounts are unambiguous (one CSV).
-// Unlike b2b (whose orgs must survive teardown for id-stability, since their platform_id is
-// pinned in the CSV), WL orgs carry no CSV id at all — their live id lives only in
-// aliases.${TEST_ENV}.json, refreshed on every seed — so a `wl` teardown removes the orgs too,
-// leaving nothing behind. Every other kind (including bare `--teardown` with no kind) keeps the
-// original unified sweep — that's the whole point of VCST-5406's "one teardown, no orphan gap".
+// `wl` is the only kind with a scoped teardown today — its accounts are unambiguous (one CSV), and
+// it removes its own orgs via deleteWhiteLabelingOrgs. Every other kind (including bare `--teardown`
+// with no kind) runs the unified sweep, which now removes b2b orgs too: their platform_id is pinned
+// in test-data/b2b/organizations.csv and forced on create, so a reseed restores the identical GUID —
+// nothing needs to survive teardown for id-stability. A full teardown therefore leaves zero
+// AGENT-TEST orgs behind — the VCST-5406 "one teardown, no orphan gap" goal, now including orgs.
 async function runTeardown() {
   const scoped = kind === 'wl';
   const emails = scoped ? whiteLabelingSeededEmails() : allSeededEmails();

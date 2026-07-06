@@ -39,7 +39,7 @@
 
 import {
   api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID,
+  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam,
 } from '../lib/seed-common.mjs';
 const argv = process.argv.slice(2);
 const GROUP = argv.includes('--group') ? argv[argv.indexOf('--group') + 1] : null;
@@ -502,7 +502,7 @@ async function teardown() {
     for (const plName of [...new Set(pricelists)]) {
       const plSearch = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
       const plIds = (plSearch?.results || []).filter(p => p?.name === plName).map(p => p.id);
-      if (plIds.length) await api('DELETE', `/api/pricing/pricelists?ids=${plIds.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+      if (plIds.length) await api('DELETE', `/api/pricing/pricelists?${idsParam(plIds)}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
     }
     for (const catName of [...new Set(catalogs)]) {
       const cat = await findCatalogByName(catName);

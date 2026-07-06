@@ -34,7 +34,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv({ path: '.env.defaults' });
 loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
 loadDotenv({ path: '.env.local', override: true });
-import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases } from '../lib/seed-common.mjs';
+import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam } from '../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
 import { CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES } from './standard-specs.mjs';
 
@@ -424,7 +424,7 @@ async function teardown() {
   const plName = `SEED-${DATE}-Standards-USD`;
   const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
   const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);
-  if (pls.length) await api('DELETE', `/api/pricing/pricelists?ids=${pls.join(',')}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
+  if (pls.length) await api('DELETE', `/api/pricing/pricelists?${idsParam(pls)}`, null, { expectStatus: [200, 204, 404] }).catch(() => {});
 
   // Verify zero residue (code lookup + AGENT-TEST guard).
   const residual = await verifyRemoved(async () => {

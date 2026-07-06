@@ -223,6 +223,13 @@ export function iso3(code) {
   return up.length === 3 ? up : (ISO2_TO_3[up] || up);
 }
 
+// Build a repeated-param query string for a batch DELETE by id: `ids=a&ids=b&ids=c`.
+// The platform's `[FromQuery] string[] ids` binds ONLY the repeated form — a comma-joined
+// `ids=a,b,c` binds to a single string "a,b,c" that matches no id, so the delete silently
+// no-ops (it 200s and deletes nothing). Callers that logged success from the requested count
+// therefore reported clean teardowns while leaving residue. Always route batch id-deletes here.
+export const idsParam = (ids) => [...ids].filter(Boolean).map((id) => `ids=${encodeURIComponent(id)}`).join('&');
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Primary env: its canonical IDs live committed, curated, inline in aliases.json,

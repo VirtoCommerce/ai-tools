@@ -30,6 +30,11 @@ import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
 } from '../lib/seed-common.mjs';
 
+// Pickup locations join the AGENT-TEST family so teardown's safety guard can identify
+// and sweep them (the guard only deletes locations whose LIVE name starts with AGENT-TEST).
+// Idempotent: a CSV name that already carries the prefix is left as-is.
+const seededName = (name) => (name && name.startsWith('AGENT-TEST') ? name : `AGENT-TEST-${name}`);
+
 let FFCS = [];
 async function loadFfcs() {
   const r = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 100 });
@@ -54,7 +59,7 @@ function buildBody(row, ffcId, existingId) {
   const lat = (row.latitude || '').trim();
   const lng = (row.longitude || '').trim();
   const body = {
-    name: row.location_name,
+    name: seededName(row.location_name),
     storeId,
     isActive: csvBool(row.is_active, true),
     fulfillmentCenterId: ffcId,
@@ -85,7 +90,7 @@ async function teardown(rows) {
   let deleted = 0;
   for (const row of rows) {
     const storeId = (row.store_id || STORE_ID).trim();
-    const found = await findPickup(storeId, row.location_name);
+    const found = await findPickup(storeId, seededName(row.location_name));
     if (!found) { verbose(`not present: ${row.location_name}`); continue; }
     // Safety: only delete AGENT-TEST- pickup locations, never a real one that shares a name.
     // Authorize deletion on the LIVE entity's name only — never the seeder-authored CSV name (which
@@ -100,7 +105,7 @@ async function teardown(rows) {
     const still = [];
     for (const row of rows) {
       const storeId = (row.store_id || STORE_ID).trim();
-      if (await findPickup(storeId, row.location_name)) still.push(row.location_name);
+      if (await findPickup(storeId, seededName(row.location_name))) still.push(row.location_name);
     }
     return still;
   });
@@ -137,7 +142,7 @@ async function main() {
   for (const row of rows) {
     const storeId = (row.store_id || STORE_ID).trim();
     const ffcId = resolveFfcId(row.ffc_id);
-    const existing = await findPickup(storeId, row.location_name);
+    const existing = await findPickup(storeId, seededName(row.location_name));
     const body = buildBody(row, ffcId, existing?.id);
     if (existing) {
       await api('PUT', '/api/shipping/pickup-locations', body, { expectStatus: [200, 204] });

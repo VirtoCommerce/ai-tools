@@ -797,7 +797,10 @@ async function teardown() {
   const plList = Array.isArray(plSearch) ? plSearch : (plSearch?.results || []);
   plList.filter(pl => isSeedEntity(pl.name)).forEach(pl => plIds.add(pl.id));
   if (plIds.size > 0) {
-    await api('DELETE', `/api/pricing/pricelists?ids=${[...plIds].join(',')}`, null, { expectStatus: [200, 204, 404] });
+    // Repeated `ids=a&ids=b` — the platform binds `[FromQuery] string[] ids` ONLY from the
+    // repeated form; a comma-joined `ids=a,b` binds to one string that matches no id → silent no-op.
+    const plQs = [...plIds].map((id) => `ids=${encodeURIComponent(id)}`).join('&');
+    await api('DELETE', `/api/pricing/pricelists?${plQs}`, null, { expectStatus: [200, 204, 404] });
     log(`  ✓ Deleted ${plIds.size} price lists`);
   }
 

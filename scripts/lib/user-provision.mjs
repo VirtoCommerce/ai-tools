@@ -827,14 +827,36 @@ export async function deleteUserByEmail(email) {
   return { account, contact };
 }
 
-// Sweep every remaining AGENT-TEST-* member (orgs + contacts) by keyword.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Paginate /api/members/search over `searchBody`, returning only members whose OWN name carries
+// the AGENT-TEST prefix. Safety: the keyword search can match on fields other than the name, so we
+// re-verify the prefix here — never delete a real member the search happened to surface.
+async function collectAgentTestMembers(searchBody) {
+  const out = [];
+  const page = 100;
+  for (let skip = 0; ; ) {
+    const res = await api('POST', '/api/members/search', { ...searchBody, skip, take: page });
+    const batch = res?.results || [];
+    out.push(...batch.filter((m) => (m.name || '').startsWith('AGENT-TEST')));
+    skip += batch.length;
+    if (batch.length < page || skip >= (res?.totalCount ?? skip)) break;
+  }
+  return out;
+}
+
+// Sweep every remaining AGENT-TEST-* member (orgs + contacts). The generic keyword search alone
+// under-returned organizations (a full teardown left pinned b2b orgs behind), so we ALSO enumerate
+// memberType:'Organization' UNCONDITIONALLY (all orgs, filtered by name prefix — no reliance on the
+// flaky keyword match). b2b orgs are no longer permanent fixtures: their platform_id is pinned in
+// test-data/b2b/organizations.csv and forced on create, so a reseed restores the identical GUID —
+// sweeping them keeps a full teardown truly residue-free.
 export async function sweepAgentTestMembers() {
   console.log('\n  Teardown: scanning for AGENT-TEST-* members...');
-  const res = await api('POST', '/api/members/search', { keyword: 'AGENT-TEST-', take: 500 });
-  // Safety: the keyword search can match on more than a name prefix (contains / other fields), so
-  // re-verify each member's own name carries the AGENT-TEST prefix before deleting — never delete a
-  // real member the search happened to return.
-  const items = (res?.results || []).filter((m) => (m.name || '').startsWith('AGENT-TEST'));
+  const byId = new Map();
+  for (const m of await collectAgentTestMembers({ keyword: 'AGENT-TEST-' })) byId.set(m.id, m);
+  for (const m of await collectAgentTestMembers({ memberType: 'Organization' })) byId.set(m.id, m);
+  const items = [...byId.values()];
   console.log(`  Found ${items.length} AGENT-TEST-* member(s)`);
   let deleted = 0;
   for (const m of items) {
@@ -844,7 +866,27 @@ export async function sweepAgentTestMembers() {
       deleted++;
     } catch (e) { console.warn(`    ⚠ delete failed for ${m.name}: ${e.message.slice(0, 100)}`); }
   }
-  console.log(`  Teardown: ${deleted}/${items.length} member(s) deleted`);
+  // Org residue can survive the first pass: members/search is index-backed and lags right after a
+  // large contact teardown, so the enumeration misses some orgs (a full teardown left 2 child orgs
+  // behind — the index hadn't caught up). Settle-and-retry: sleep for the index, re-enumerate, delete
+  // whatever surfaced, and loop until a settled search comes back empty (or attempts are exhausted).
+  // We trust a fresh post-sleep search, never the attempted count (a DELETE that 200s but leaves the
+  // entity must never read as success).
+  let residual = [];
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await sleep(1500);
+    residual = await collectAgentTestMembers({ memberType: 'Organization' });
+    if (!residual.length) break;
+    for (const o of residual) {
+      try {
+        await api('DELETE', `/api/members?ids=${encodeURIComponent(o.id)}`, null, { expectStatus: [200, 204, 404] });
+        if (VERBOSE) console.log(`    ✗ deleted (settle pass ${attempt}) ${o.memberType} ${o.name} (${o.id})`);
+        deleted++;
+      } catch (e) { console.warn(`    ⚠ retry delete failed for ${o.name}: ${e.message.slice(0, 100)}`); }
+    }
+  }
+  if (residual.length) console.warn(`  ⚠ ${residual.length} AGENT-TEST org(s) still present after retries: ${residual.map((o) => o.name).join(', ')}`);
+  console.log(`  Teardown: ${deleted} member(s) deleted${residual.length ? ` — ${residual.length} org(s) RESIDUAL` : ''}`);
   return deleted;
 }
 
@@ -867,9 +909,9 @@ export function whiteLabelingSeededEmails() {
 
 // Delete the white-labeling orgs by name (live lookup — org platform ids live only in
 // aliases.${TEST_ENV}.json now, never in the CSV, so this doesn't trust a possibly-stale cache).
-// Unlike b2b (whose CSV pins a platform_id so orgs must survive teardown for id-stability), WL orgs
-// have no such requirement — their ids get rewritten to aliases.${TEST_ENV}.json on every reseed —
-// so a `wl` teardown can safely remove them too instead of treating them as permanent fixtures.
+// This is the SCOPED `wl` teardown's org step. The unified sweep (sweepAgentTestMembers) now removes
+// b2b orgs too — a reseed restores their pinned platform_id identically — so neither kind of org is
+// treated as a permanent fixture any more; a full teardown leaves zero AGENT-TEST orgs behind.
 export async function deleteWhiteLabelingOrgs() {
   const orgRows = readCsv(WL_ORGS_CSV).filter((r) => r.org_name);
   let deleted = 0;
