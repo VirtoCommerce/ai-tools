@@ -108,18 +108,6 @@ const CATALOG = {
     why: "Enables the `context7` MCP server — up-to-date library / framework / SDK docs lookup; the fallback docs source for /vc-docs (VirtoOZ MCP is primary).",
     where: "context7.com dashboard → API key.",
   },
-  APPINSIGHTS_API_KEY_BACKEND: {
-    perEnv: true, optional: true, include: () => true,
-    what: "App Insights READ-telemetry API key for the PLATFORM/backend (OPTIONAL).",
-    why: "Fallback auth for /qa-monitoring when NO Azure identity (az login / service principal) is available — an `az login` session covers this without any key.",
-    where: "App Insights resource → Configure → API Access → Create API key (Read telemetry).",
-  },
-  APPINSIGHTS_API_KEY_STOREFRONT: {
-    perEnv: true, optional: true, include: () => true,
-    what: "App Insights READ-telemetry API key for the STOREFRONT (OPTIONAL).",
-    why: "Fallback auth for /qa-monitoring when no Azure identity is available (see backend key above).",
-    where: "the storefront App Insights resource → API Access → Create API key (Read telemetry).",
-  },
 };
 
 function main() {
