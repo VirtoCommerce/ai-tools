@@ -159,11 +159,17 @@ for (const u of users) {
     if (cNotU.length) warn(`user ${tag}: contact ${c.contact_id} has extra org(s) ${cNotU.join(', ')} the user isn't assigned to`);
   }
   const invited = /invit|unconfirm|pending/i.test(`${u.status} ${u.test_purpose}`);
-  if (!(u.roles || '').trim()) {
+  // `roles` is `;`-joined and INDEX-PARALLEL with `org_id` (VCST-5028): a single role applies to
+  // every org; N roles ⇒ the i-th role scopes the i-th org (a multi-org member with distinct
+  // per-org roles). Each part must resolve in roles.csv; a multi-role list must match the org count.
+  const roleNames = (u.roles || '').split(';').map((s) => s.trim()).filter(Boolean);
+  if (!roleNames.length) {
     if (invited) warn(`user ${tag}: no role — OK (invitation-pending)`);
     else fail(`user ${tag}: no role → no org membership with a role`);
-  } else if (!roleKeys.has(u.roles.trim())) {
-    fail(`user ${tag}: role "${u.roles}" does not resolve in roles.csv`);
+  } else {
+    const badRoles = roleNames.filter((r) => !roleKeys.has(r));
+    if (badRoles.length) fail(`user ${tag}: role(s) "${badRoles.join('", "')}" do not resolve in roles.csv`);
+    else if (roleNames.length > 1 && roleNames.length !== uOrgs.length) fail(`user ${tag}: ${roleNames.length} role(s) for ${uOrgs.length} org(s) — a multi-role list must be index-parallel with org_id (or one role for all)`);
   }
   if (seeded && !(u.password || '').trim()) fail(`user ${tag}: seeded but no password`);
   // Multi-env rule: b2b user platform_id must NOT live in the committed CSV — runtime ids live in

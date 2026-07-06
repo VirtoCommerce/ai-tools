@@ -547,14 +547,25 @@ export async function provisionContactLogins(contactMap, orgMap) {
     await stripSeededGlobalRoles(email);
     nAcct++;
 
-    const roleId = roleIdByName(u.roles);
-    if (roleId) {
-      const locked = /^true$/i.test(u.membership_locked || '');
-      const orgIds = (u.org_id || '').split(';').map(s => s.trim()).filter(Boolean);
-      const resolved = orgIds.map(oid => orgMap[oid]).filter(o => o?.platform_id);
-      if (resolved.length) {
-        const existing = await searchMemberships(userId);
-        for (const org of resolved) { await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked); nMem++; }
+    // `roles` is `;`-joined and INDEX-PARALLEL with `org_id`, so one contact can be a multi-org
+    // member with a DIFFERENT role per org (VCST-5028) — same grammar as seedInlineOrgUsers. A
+    // single role (the common case) still applies to every org via the roleNames[0] fallback, so
+    // existing single-role rows are unchanged.
+    const locked = /^true$/i.test(u.membership_locked || '');
+    const orgIds = (u.org_id || '').split(';').map(s => s.trim()).filter(Boolean);
+    const roleNames = (u.roles || '').split(';').map(s => s.trim()).filter(Boolean);
+    // pair each org with its index-parallel role BEFORE filtering unseeded orgs, so a dropped org
+    // never shifts the remaining orgs' roles.
+    const pairs = orgIds
+      .map((oid, i) => ({ org: orgMap[oid], roleName: roleNames[i] || roleNames[0] }))
+      .filter(p => p.org?.platform_id && p.roleName);
+    if (pairs.length) {
+      const existing = await searchMemberships(userId);
+      for (const { org, roleName } of pairs) {
+        const roleId = roleIdByName(roleName);
+        if (!roleId) { console.warn(`    ⚠ role "${roleName}" not found in roles.csv — skipping membership for ${email} @ ${org.name}`); continue; }
+        await ensureOrgMembership(userId, org.platform_id, org.name, roleId, existing, locked);
+        nMem++;
       }
     }
   }

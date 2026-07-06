@@ -774,7 +774,12 @@ export async function seedCategoryTree(api, catalogsByKey = null) {
     // process (single-process seeding: seed-standard-products calls seedCategoryTree first) — reuses
     // these exact categories instead of re-creating them across a process boundary the index can't
     // bridge. This is what collapses the cross-process duplicate categories.csv tree to one.
-    if (id && !String(id).startsWith('dry-')) _categoryIdByCatCode.set(`${cat.id}::${code}`, id);
+    if (id && !String(id).startsWith('dry-')) {
+      _categoryIdByCatCode.set(`${cat.id}::${code}`, id);
+      // Give the category a placeholder image + description (idempotent — fills gaps only), so the
+      // AGENT-TEST-SEED family isn't bare on category pages.
+      await enrichCategoryContent(id, { name, code });
+    }
   }
   await linkRootsIntoVirtual(api, rows, byCsvId);
   return byCsvId;
@@ -922,6 +927,8 @@ export async function ensureCategoryPath(api, breadcrumb, { defaultCatalogCsvNam
     }
     if (!found?.id) { if (DRY_RUN) { leaf = { catalogId, categoryId: `dry-${code}`, name }; continue; } log(`⚠ could not resolve category ${code}`); return null; }
     _categoryIdByCatCode.set(catCodeKey, found.id);
+    // Placeholder image + description so the category isn't bare (idempotent — fills gaps only).
+    await enrichCategoryContent(found.id, { name, code });
     rootId = rootId || found.id;
     parentId = found.id;
     leaf = { catalogId, categoryId: found.id, name };
@@ -1143,5 +1150,48 @@ export async function enrichProductContent(productId, { images = 3, descriptions
   }
 
   if (changed) await api('POST', '/api/catalog/products', p, { expectStatus: [200, 201, 204] });
+  return did;
+}
+
+/**
+ * Enrich ONE category (by id) with a placeholder image + an editorial description — the content a
+ * real category carries. Mirrors enrichProductContent (same zero-dep PNG + uploadAsset) but writes
+ * the CATEGORY shape: images[] + descriptions[] (categories use `descriptions`, not `reviews`).
+ * Idempotent + non-destructive (fills gaps only unless force). No-op under --dry-run.
+ *   opts: { name, code, images=1, description=true, force=false }
+ */
+export async function enrichCategoryContent(categoryId, { name = '', code = null, images = 1, description = true, force = false } = {}) {
+  if (DRY_RUN || !categoryId || String(categoryId).startsWith('dry-')) return { images: 0, descriptions: 0, dry: true };
+  if (!TOKEN) await auth();
+  const cat = await api('GET', `/api/catalog/categories/${categoryId}`, null, { expectStatus: [200, 404] });
+  if (!cat?.id) return { skipped: true };
+  cat.images ??= []; cat.descriptions ??= [];
+  const c = code || cat.code || cat.id;
+  let changed = false; const did = { images: 0, descriptions: 0 };
+
+  if (images > 0 && (force || !cat.images.length)) {
+    if (force) cat.images = cat.images.filter((im) => !(im.name || '').startsWith(_PNG_MARKER));
+    const folder = `catalog/categories/${String(c).replace(/[^A-Za-z0-9_-]+/g, '-')}`;
+    for (let v = 0; v < images; v++) {
+      const fileName = `${c}-${v === 0 ? 'main' : `alt-${v}`}.png`.replace(/[^A-Za-z0-9._-]+/g, '-');
+      const url = `/assets/${folder}/${fileName}`;
+      let assetUrl;
+      if (!force && await assetUrlOk(url)) assetUrl = url;
+      else { const info = await uploadAsset(folder, fileName, makeProductPng(c, v), 'image/png'); assetUrl = info.url; }
+      cat.images.push({ url: assetUrl, name: `${_PNG_MARKER}-${c}-${v}`, sortOrder: v, group: 'images', languageCode: null });
+      did.images++; changed = true;
+    }
+  }
+
+  if (description && (force || !cat.descriptions.length)) {
+    if (force) cat.descriptions = cat.descriptions.filter((d) => !/AGENT-TEST/.test(d.content || ''));
+    cat.descriptions.push({
+      languageCode: 'en-US', descriptionType: 'FullText',
+      content: `<p><strong>${cat.name || name}</strong> is an AGENT-TEST category fixture (code <code>${cat.code || c}</code>) used by the Virto Commerce QA suite to exercise catalog navigation and category-page rendering deterministically.</p>`,
+    });
+    did.descriptions = 1; changed = true;
+  }
+
+  if (changed) await api('POST', '/api/catalog/categories', cat, { expectStatus: [200, 201, 204] }).catch((e) => verbose(`category enrich save ${categoryId}: ${String(e.message).slice(0, 150)}`));
   return did;
 }
