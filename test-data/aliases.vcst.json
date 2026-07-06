@@ -132,69 +132,69 @@
     "userId": "232c2d6a-fda0-4650-81f9-6dcdd1141f99"
   },
   "CFG_LAPTOP": {
-    "id": "646280ca-4e42-46e4-adba-4f4f8f890d39"
+    "id": "2c5a6531-4aa0-4533-a964-af276ed5e32a"
   },
   "CFG_FILE_UPLOAD": {
-    "id": "7d875fea-8ccc-4f57-8aec-d8492def6b33"
+    "id": "273fd0e5-dd25-4338-a0ef-545887b13a95"
   },
   "CFG_RING": {
-    "id": "d68fe3ec-c387-4605-84c3-c4f199020e6a"
+    "id": "d3b3ae72-4f00-4674-a638-fc7e8d161b86"
   },
   "CFG_GIFTBOX": {
-    "id": "25316fa2-c18b-4afe-81d6-c0f9c341db31"
+    "id": "4e87d567-9e79-439f-9b53-a06009ebc9e9"
   },
   "CFG_HOODIE": {
     "id": "4b1de1b0-b220-4092-9336-9ad462216719"
   },
   "CFG_CONDITIONAL_BIKE": {
-    "id": "1e07284b-1d63-4aed-aff5-35a94aa44fd1"
+    "id": "899a56ab-8a19-402b-86c0-71ecf64464db"
   },
   "CFG_HAT": {
     "id": "38dbe95c-3f46-48ff-bb9a-8bd96f475214"
   },
   "CFG_BIKE": {
-    "id": "b7e9b6a1-af8f-49e6-be15-ef12a6e1879b",
-    "configuration_id": "4519e277-0518-4e4f-9e6e-c59abb11b9ab"
+    "id": "049ae6b0-4dec-45a3-a79c-72d1fafcace1",
+    "configuration_id": "aaefc496-511a-493e-b786-7b04f7f86d99"
   },
   "CFG_CONDITIONAL": {
-    "id": "1e07284b-1d63-4aed-aff5-35a94aa44fd1"
+    "id": "899a56ab-8a19-402b-86c0-71ecf64464db"
   },
   "CFG_WEDDING_CAKE_CONDITIONAL": {
-    "id": "6d6aefd0-b92f-459e-9329-c721bcfadd12"
+    "id": "2c28722f-6a0c-4528-892a-b82db89f709f"
   },
   "CFG_TEXT_DRIVEN_COND": {
-    "id": "b841f033-c365-4d7c-938b-48e347717a18"
+    "id": "cb235091-2aaa-4317-b650-7955ec5d7153"
   },
   "CFG_FILE_DRIVEN_COND": {
-    "id": "7fc592d7-fb2d-4406-b276-a0885b740fea"
+    "id": "36ac9367-1221-4a7f-9ce7-c9ac5d8e8567"
   },
   "CFG_REQUIRED_FILE_CHILD": {
-    "id": "bab86741-6d05-47bc-8381-44a91a8558f5"
+    "id": "c5850b08-c784-429b-aaf3-ef5f6561e81e"
   },
   "CFG_TWO_REQ_SIBLINGS": {
-    "id": "5e3c09a2-0a2e-4998-a537-29352aac007d"
+    "id": "c90ef57c-a037-4065-b118-e777db4ed1a3"
   },
   "CFG_DEEP_CHAIN": {
-    "id": "aafcf08e-683e-4ebf-bab5-98f707db436c"
+    "id": "030354cc-b5d4-419e-9a85-1a88788feb6c"
   },
   "CFG_REQ_CHILD_OPT_PARENT": {
-    "id": "eba4ce05-f944-47a4-ad07-4ef59b11cb17"
+    "id": "63a1de40-06df-4a09-95af-b0a21c1505d1"
   },
   "CFG_WITH_DEFAULT": {
-    "id": "e4550177-ea69-4b02-8bb6-64bbdc9e677e",
-    "configuration_id": "181ff4de-3d99-45e8-89ce-58af150d38b4",
-    "default_section_id": "33bcca7d-36e9-4a53-bbd5-7bb9e8d3176c",
-    "default_option_id": "28b5389d-7111-4c9c-b751-437f1191c9d1"
+    "id": "2b2dcef9-a88f-4393-8656-4308e09c5677",
+    "configuration_id": "04cacb67-e197-49b5-9424-46c14014bda6",
+    "default_section_id": "f858bd42-7b0b-4c2b-b4ef-4abc95257423",
+    "default_option_id": "28909865-d53b-436a-9cb7-242a19633c03"
   },
   "CFG_WITH_DEFAULT_COND": {
-    "id": "d516d2ae-a13b-4704-9ac8-8a3c430ccfc3",
-    "configuration_id": "273902ad-18fe-4739-b5b4-4539de7942e7",
-    "default_section_id": "bda0c7f6-bf66-4ed8-a500-375d9885e752",
-    "default_option_id": "456d69c8-131e-40a2-b12c-a75c59b558ff",
-    "parent_section_id": "bda0c7f6-bf66-4ed8-a500-375d9885e752",
-    "parent_default_option_id": "456d69c8-131e-40a2-b12c-a75c59b558ff",
-    "dependent_section_id": "d5b3b064-4eb6-483c-9661-b9732735d58d",
-    "dependent_default_option_id": "9747efa2-5655-443f-8ad6-8139de9cef64"
+    "id": "a0cd466b-ddd3-4118-8457-c2dbd533fb5f",
+    "configuration_id": "c0f25c0d-51d8-465d-8dac-ef7a7dbea943",
+    "default_section_id": "1a8e6fb1-156b-4c1e-ad8c-5ad99e3bcb9a",
+    "default_option_id": "f76a7477-7588-41eb-8da4-0e81e87eeb18",
+    "parent_section_id": "1a8e6fb1-156b-4c1e-ad8c-5ad99e3bcb9a",
+    "parent_default_option_id": "f76a7477-7588-41eb-8da4-0e81e87eeb18",
+    "dependent_section_id": "03f6bcc7-33c9-4573-b060-a0d40026fb6a",
+    "dependent_default_option_id": "ba4edfa0-a8b4-45bb-b82c-de999c603a71"
   },
   "BUYABLE_NO_MIN_QTY": {
     "id": "0b6297e8-d100-4419-ac54-8bf240777271"
@@ -211,7 +211,7 @@
     "id": "fc596540864a41bf8ab78734ee7353a3"
   },
   "CATALOG_ELECTRONICS": {
-    "id": "6e220b0a-9983-4204-90fb-8a5cc63ad179"
+    "id": "5f32946a-afa7-4119-8641-38b693202d78"
   },
   "_seedTestData": {
     "profile": "catalog",
