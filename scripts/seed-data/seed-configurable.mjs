@@ -39,9 +39,50 @@
 
 import {
   api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam,
+  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv,
 } from '../lib/seed-common.mjs';
 const argv = process.argv.slice(2);
+
+// Category SEO (pageTitle / slug / meta) sourced from test-data/catalogs/categories.csv, keyed by
+// category_name. These categories are created here (not by the category-tree seeders), so their
+// SEO title lives in the shared CSV under the CAT-CFG marker catalog (skipped by the tree seeders).
+const CATEGORY_SEO = (() => {
+  const map = {};
+  let rows = [];
+  try { rows = loadCsv('test-data/catalogs/categories.csv'); } catch { rows = []; }
+  for (const r of rows) {
+    if (!r.category_name) continue;
+    map[r.category_name.trim().toLowerCase()] = {
+      pageTitle: (r.meta_title || r.category_name).trim(),
+      metaDescription: (r.meta_description || '').trim(),
+      seoSlug: (r.seo_slug || '').trim(),
+    };
+  }
+  return map;
+})();
+// Build the en-US seoInfo for a category: title/slug/meta from the CSV, falling back to the name/code.
+const categorySeoInfo = (name, code) => {
+  const m = CATEGORY_SEO[String(name).trim().toLowerCase()] || {};
+  return {
+    storeId: STORE_ID, languageCode: 'en-US',
+    semanticUrl: m.seoSlug || String(code).toLowerCase(),
+    pageTitle: m.pageTitle || name,
+    metaDescription: m.metaDescription || '',
+  };
+};
+// Ensure an EXISTING category carries the SEO pageTitle (so a re-run backfills it without a reseed).
+async function applyCategorySeo(categoryId, seo) {
+  if (DRY_RUN || !categoryId || String(categoryId).startsWith('dry-')) return;
+  const cat = await api('GET', `/api/catalog/categories/${categoryId}`, null, { expectStatus: [200, 404] });
+  if (!cat?.id) return;
+  const infos = cat.seoInfos || [];
+  const cur = infos.find((s) => s.languageCode === 'en-US' && (s.storeId === STORE_ID || !s.storeId));
+  if (cur && cur.pageTitle === seo.pageTitle && (cur.storeId === STORE_ID)) return; // already correct
+  if (cur) { cur.pageTitle = seo.pageTitle; cur.storeId = STORE_ID; if (!cur.metaDescription) cur.metaDescription = seo.metaDescription; if (!cur.semanticUrl) cur.semanticUrl = seo.semanticUrl; }
+  else infos.push(seo);
+  cat.seoInfos = infos;
+  await api('PUT', '/api/catalog/categories', cat, { expectStatus: [200, 204] }).catch((e) => verbose(`seo update ${categoryId}: ${String(e.message).slice(0, 120)}`));
+}
 const GROUP = argv.includes('--group') ? argv[argv.indexOf('--group') + 1] : null;
 // Product content enrichment (images + descriptions), on by default — a bare seeded
 // product otherwise has no imagery/copy. Idempotent (skips products already populated).
@@ -126,12 +167,13 @@ async function ensureCatalog(name) {
   return cat;
 }
 async function ensureCategory(catalogId, name, code) {
+  const seo = categorySeoInfo(name, code);
   const r = await api('POST', '/api/catalog/listentries', { catalog: catalogId, keyword: name, take: 20 }, { expectStatus: [200, 201, 400, 404] });
   const found = (r?.listEntries || r?.results || []).find(c => c.name === name && c.type === 'category');
-  if (found) { log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
+  if (found) { await applyCategorySeo(found.id, seo); log(`↻ category: ${name} (${found.id})`); return { id: found.id, name }; }
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code, isActive: true, priority: 1,
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
+    seoInfos: [seo],
   });
   log(`✓ category: ${name} (${cat?.id})`);
   return cat;
@@ -231,10 +273,11 @@ async function ensureProductsWithOptionsCategory() {
   const name = 'Products with options';
   const r = await api('POST', '/api/catalog/listentries', { catalogId: VIRTUAL_CATALOG_ID, keyword: name, take: 50 }, { expectStatus: [200, 201, 400, 404] });
   const found = (r?.listEntries || r?.results || []).find(c => c.type === 'category' && (c.name || '').toLowerCase() === name.toLowerCase() && c.catalogId === VIRTUAL_CATALOG_ID);
-  if (found) { PWO_CATEGORY_ID = found.id; log(`↻ VC category: ${name} (${found.id})`); return PWO_CATEGORY_ID; }
+  const seo = categorySeoInfo(name, 'products-with-options');
+  if (found) { PWO_CATEGORY_ID = found.id; await applyCategorySeo(found.id, seo); log(`↻ VC category: ${name} (${found.id})`); return PWO_CATEGORY_ID; }
   const c = await api('POST', '/api/catalog/categories', {
     catalogId: VIRTUAL_CATALOG_ID, name, code: 'products-with-options', isActive: true, priority: 1,
-    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: 'products-with-options' }],
+    seoInfos: [seo],
   }, { expectStatus: [200, 201] });
   PWO_CATEGORY_ID = c?.id; log(`✓ VC category created: ${name} (${c?.id})`);
   return PWO_CATEGORY_ID;

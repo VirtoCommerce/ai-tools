@@ -176,7 +176,7 @@ async function ensureCategory(catalogId, name, code) {
   const cat = await api('POST', '/api/catalog/categories', {
     catalogId, name, code,
     isActive: true, priority: 1,
-    seoInfos: [{ languageCode: 'en-US', semanticUrl: code.toLowerCase() }],
+    seoInfos: [{ storeId: STORE_ID, languageCode: 'en-US', semanticUrl: code.toLowerCase(), pageTitle: name }],
   });
   console.log(`  ✓ category: ${name} (${cat?.id})`);
   return cat;
