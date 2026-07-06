@@ -34,7 +34,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log,
+  ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log, SEED_FAMILY, STORE_ID,
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles } from '../lib/user-roles.mjs';
 
@@ -270,6 +270,119 @@ function checkSecretHygiene() {
   if (!anyHit) ok('no password literals in committed user CSVs ({{VAR}} tokens resolve from .env.local)');
 }
 
+/* ── 6. No duplicate seed catalogs / category titles ─────────────
+ * A category with the same title must exist ONCE. Duplicates appear when a seed catalog is
+ * accidentally re-created (each copy grows its own tree) or a category is re-created under
+ * search-index lag. This check is the live guard for the ensureCatalogs/ensureCategoryPath
+ * consolidation fix (memoized catalog resolution + (catalog,code) category cache). */
+async function checkDuplicateSeedEntities() {
+  console.log('\n[6] No duplicate seed catalogs / category titles');
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+  const seedCatalogs = (cats?.results || []).filter((c) => String(c.name || '').startsWith(SEED_FAMILY));
+  let dupes = 0;
+  // (a) duplicate seed catalogs by name
+  const catByName = {};
+  for (const c of seedCatalogs) (catByName[c.name] ??= []).push(c.id);
+  for (const [n, ids] of Object.entries(catByName)) {
+    if (ids.length > 1) { fail(`duplicate seed CATALOG "${n}" ×${ids.length} (${ids.map((i) => i.slice(0, 8)).join(', ')})`); dupes++; }
+  }
+  // (b) duplicate category titles within the seed physical catalogs
+  const nameToIds = {};
+  for (const c of seedCatalogs.filter((c) => !c.isVirtual)) {
+    const r = await api('POST', '/api/catalog/search/categories', { catalogId: c.id, take: 1000 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+    for (const x of (r?.results || r?.items || [])) (nameToIds[x.name] ??= []).push(x.id);
+  }
+  for (const [name, ids] of Object.entries(nameToIds)) {
+    if (ids.length > 1) { fail(`duplicate category title "${name}" ×${ids.length} in seed catalogs (${ids.map((i) => i.slice(0, 8)).join(', ')})`); dupes++; }
+  }
+  if (!dupes) ok(`no duplicate seed catalogs or category titles (${seedCatalogs.length} catalog(s), ${Object.keys(nameToIds).length} categories)`);
+}
+
+/* ── 7. Every seed-catalog entity is teardown-identifiable (AGENT-TEST prefix) ──
+ * Teardown sweeps ONLY entities carrying the AGENT-TEST family prefix — a product by its NAME
+ * (AGENT-TEST-*) and a catalog/category by its CODE (AGENT-TEST-SEED-*; category display NAMES are
+ * intentionally clean). Anything in a seed catalog WITHOUT that prefix would be orphaned by teardown,
+ * so this fails on it. */
+async function checkSeedEntityPrefixes() {
+  console.log('\n[7] Every seed-catalog entity carries the AGENT-TEST teardown prefix');
+  const PROD = 'AGENT-TEST-';
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+  const seedPhys = (cats?.results || []).filter((c) => String(c.name || '').startsWith(SEED_FAMILY) && !c.isVirtual);
+  let bad = 0, products = 0, categories = 0;
+  for (const c of seedPhys) {
+    const cr = await api('POST', '/api/catalog/search/categories', { catalogId: c.id, take: 1000 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+    for (const x of (cr?.results || cr?.items || [])) {
+      categories++;
+      if (!String(x.code || '').startsWith(SEED_FAMILY)) { fail(`category "${x.name}" (${String(x.id).slice(0, 8)}) in ${c.name} has non-prefixed code "${x.code}" — teardown would orphan it`); bad++; }
+    }
+    let skip = 0;
+    for (;;) {
+      const pr = await api('POST', '/api/catalog/search/products', { catalogId: c.id, take: 100, skip }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+      const items = pr?.results || pr?.items || [];
+      if (!items.length) break;
+      for (const p of items) {
+        products++;
+        // Teardown-identifiable if the name OR code carries the AGENT-TEST family prefix. Products
+        // use AGENT-TEST-* names (standard) or AGENT-TEST-CFG-* codes (configurable options), both
+        // of which the seeders' teardowns sweep — so accept the broad family, not just SEED_FAMILY.
+        if (!String(p.name || '').startsWith(PROD) && !String(p.code || '').startsWith(PROD)) { fail(`product "${p.name}" (${p.code}) in ${c.name} carries no AGENT-TEST prefix on name or code — teardown would orphan it`); bad++; }
+      }
+      skip += items.length;
+      if (skip >= (pr.totalCount ?? skip)) break;
+    }
+  }
+  if (!bad) ok(`all ${products} product(s) + ${categories} categor(y/ies) across ${seedPhys.length} seed catalog(s) are teardown-identifiable`);
+}
+
+/* ── 8. SEO complete for all seed categories + products ──────────
+ * Each seeded category/product must carry a store-scoped SEO record with ALL of: semanticUrl (slug),
+ * pageTitle (title), storeId (store) and languageCode (language). Missing any of these breaks
+ * storefront SEO / canonical URLs. Reads the full entity (search projections omit seoInfos). */
+function seoGap(entity) {
+  const infos = entity?.seoInfos || [];
+  if (!infos.length) return 'no seoInfos';
+  const s = infos.find((x) => x.storeId === STORE_ID && x.languageCode) || infos.find((x) => x.languageCode);
+  if (!s) return 'no store/language-scoped seoInfo';
+  const missing = [];
+  if (!s.semanticUrl) missing.push('slug');
+  if (!s.pageTitle) missing.push('title');
+  if (s.storeId !== STORE_ID) missing.push('store');
+  if (!s.languageCode) missing.push('language');
+  return missing.length ? `missing ${missing.join('+')}` : null;
+}
+async function checkSeoComplete() {
+  console.log('\n[8] SEO complete (slug + title + store + language) for seed categories + products');
+  const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
+  const seedPhys = (cats?.results || []).filter((c) => String(c.name || '').startsWith(SEED_FAMILY) && !c.isVirtual);
+  let catN = 0, prodN = 0, catBad = 0, prodBad = 0;
+  for (const c of seedPhys) {
+    const cr = await api('POST', '/api/catalog/search/categories', { catalogId: c.id, take: 1000 }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+    for (const x of (cr?.results || cr?.items || [])) {
+      catN++;
+      const full = await api('GET', `/api/catalog/categories/${x.id}`, null, { expectStatus: [200, 404] }).catch(() => null);
+      const gap = seoGap(full);
+      if (gap) { if (catBad < 5) fail(`category "${x.name}" (${String(x.id).slice(0, 8)}) SEO ${gap}`); catBad++; }
+    }
+    let skip = 0;
+    for (;;) {
+      const pr = await api('POST', '/api/catalog/search/products', { catalogId: c.id, take: 100, skip }, { expectStatus: [200, 201, 400, 404] }).catch(() => null);
+      const items = pr?.results || pr?.items || [];
+      if (!items.length) break;
+      for (const p of items) {
+        prodN++;
+        const full = await api('GET', `/api/catalog/products/${p.id}`, null, { expectStatus: [200, 404] }).catch(() => null);
+        const gap = seoGap(full);
+        if (gap) { if (prodBad < 5) fail(`product "${p.name}" (${p.code}) SEO ${gap}`); prodBad++; }
+      }
+      skip += items.length;
+      if (skip >= (pr.totalCount ?? skip)) break;
+    }
+  }
+  if (catBad > 5) fail(`… +${catBad - 5} more categor(y/ies) with incomplete SEO`);
+  if (prodBad > 5) fail(`… +${prodBad - 5} more product(s) with incomplete SEO`);
+  if (!catBad && !prodBad) ok(`SEO complete on all ${catN} categor(y/ies) + ${prodN} product(s) (slug + title + store + language)`);
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -280,6 +393,9 @@ function checkSecretHygiene() {
   await checkB2bOrgs();
   await checkB2bMemberships();
   checkSecretHygiene();
+  await checkDuplicateSeedEntities();
+  await checkSeedEntityPrefixes();
+  await checkSeoComplete();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);
