@@ -11,6 +11,7 @@ import {
   deriveClientOrg,
   stripRef,
   frontendProvenanceFromPackage,
+  vcFrontendRef,
 } from "../../.claude/skills/project-init/discover-repos.mjs";
 
 test("moduleToRepo: parses a GitHub ProjectUrl", () => {
@@ -62,21 +63,30 @@ test("stripRef (H2): refs/heads/main → main; passthrough for a bare name", () 
   assert.equal(stripRef(undefined), "");
 });
 
-test("frontendProvenanceFromPackage (H3): asserts vc-frontend lineage from name", () => {
+test("vcFrontendRef: reduces a version to its MAJOR.MINOR line", () => {
+  assert.equal(vcFrontendRef("2.49.7"), "2.49");
+  assert.equal(vcFrontendRef("v1.4.2"), "1.4");
+  assert.equal(vcFrontendRef("10.0.0-rc.1"), "10.0");
+  assert.equal(vcFrontendRef(""), "");
+  assert.equal(vcFrontendRef(undefined), "");
+  assert.equal(vcFrontendRef("garbage"), "");
+});
+
+test("frontendProvenanceFromPackage (H3): the repo IS vc-frontend ⇒ FULL version (genuine upstream tag)", () => {
   const prov = frontendProvenanceFromPackage({ name: "vc-frontend", version: "2.31.0" });
   assert.deepEqual(prov, { upstream: "VirtoCommerce/vc-frontend", upstreamRef: "2.31.0" });
 });
 
-test("frontendProvenanceFromPackage: asserts from a @vc-shell dependency", () => {
+test("frontendProvenanceFromPackage: a CLIENT fork (@vc-shell dep) ⇒ MAJOR.MINOR line, not its own patch version", () => {
   const prov = frontendProvenanceFromPackage({
     name: "leo-storefront",
     version: "1.4.2",
     dependencies: { "@vc-shell/framework": "^1.0.0", vue: "^3.4.0" },
   });
-  assert.deepEqual(prov, { upstream: "VirtoCommerce/vc-frontend", upstreamRef: "1.4.2" });
+  assert.deepEqual(prov, { upstream: "VirtoCommerce/vc-frontend", upstreamRef: "1.4" });
 });
 
-test("frontendProvenanceFromPackage: conservative — no vc signal ⇒ null (operator fills)", () => {
+test("frontendProvenanceFromPackage: conservative — no vc signal ⇒ null (fallback/operator fills)", () => {
   assert.equal(frontendProvenanceFromPackage({ name: "some-vue-app", version: "1.0.0", dependencies: { vue: "^3" } }), null);
   assert.equal(frontendProvenanceFromPackage(null), null);
   assert.equal(frontendProvenanceFromPackage({}), null);

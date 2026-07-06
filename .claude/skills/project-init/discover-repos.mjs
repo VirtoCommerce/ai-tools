@@ -120,22 +120,42 @@ export function stripRef(ref) {
 }
 
 /**
+ * Reduce a storefront package.json `version` to the vc-frontend LINE it was cut from —
+ * its MAJOR.MINOR ("2.49.7" → "2.49", "v1.4.2" → "1.4"). Per the Virto convention a
+ * client frontend fork carries its OWN patch version (which has no upstream tag); only
+ * the first two components pin the vc-frontend version that was taken. Pure. "" when no
+ * leading X.Y can be parsed.
+ */
+export function vcFrontendRef(version) {
+  const m = /^\s*v?(\d+)\.(\d+)/.exec(String(version || ""));
+  return m ? `${m[1]}.${m[2]}` : "";
+}
+
+/**
  * Decide, from a repo's parsed package.json, whether it descends from VirtoCommerce
  * vc-frontend, and pin the version anchor. Pure + conservative: only asserts the
  * vc-frontend upstream on a clear signal (a `vc-frontend` package name, or a
  * `@vc-shell`/virtocommerce dependency) — a routing/containment decision must not
  * guess. Returns { upstream, upstreamRef } or null (operator then names it).
+ *
+ * The anchor form depends on WHICH repo this is:
+ *  - the repo IS vc-frontend itself (name === "vc-frontend") ⇒ its `version` is a genuine
+ *    upstream release, so pin the FULL version;
+ *  - a CLIENT fork (any other name, recognised via the @vc-shell/virtocommerce signal) ⇒
+ *    pin the MAJOR.MINOR line (`vcFrontendRef`): the fork's patch version has no upstream tag.
  */
 export function frontendProvenanceFromPackage(pkg) {
   if (!pkg || typeof pkg !== "object") return null;
   const name = String(pkg.name || "").toLowerCase();
   const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+  const isUpstreamItself = name === "vc-frontend";
   const vcSignal =
-    name === "vc-frontend" ||
+    isUpstreamItself ||
     name.includes("vc-frontend") ||
     Object.keys(deps).some((d) => /@vc-shell|virtocommerce|@virto\//i.test(d));
   if (!vcSignal) return null;
-  return { upstream: "VirtoCommerce/vc-frontend", upstreamRef: String(pkg.version || "") };
+  const upstreamRef = isUpstreamItself ? String(pkg.version || "") : vcFrontendRef(pkg.version);
+  return { upstream: "VirtoCommerce/vc-frontend", upstreamRef };
 }
 
 /**
@@ -244,7 +264,15 @@ async function deriveFrontendProvenance(host, { org, project, name, isFork, full
     }
     // Fallback (Azure Repos, or a GitHub copy that isn't a fork): infer from package.json.
     const pkg = await readPackageJsonLive(host, { org, project, name });
-    return frontendProvenanceFromPackage(pkg);
+    const strong = frontendProvenanceFromPackage(pkg);
+    if (strong) return strong;
+    // No @vc-shell/vc-frontend signal, but this repo was ALREADY identified as the
+    // client's storefront fork (name heuristic). Per the Virto convention its
+    // package.json `version`'s MAJOR.MINOR pins the vc-frontend line it was cut from —
+    // anchor upstreamRef to that so /qa-fix Gate 1b can compare against the right upstream.
+    const ref = vcFrontendRef(pkg?.version);
+    if (ref) return { upstream: "VirtoCommerce/vc-frontend", upstreamRef: ref };
+    return null;
   } catch {
     return null;
   }

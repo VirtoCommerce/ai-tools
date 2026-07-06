@@ -236,10 +236,15 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
   adds any name matching the theme/frontend heuristic as `kind:"frontend"`. It also
   captures each repo's **`defaultBranch`** (so `checkoutForFix` doesn't blind-guess `main`)
   and **best-effort provenance** for a storefront fork — `upstream` (the vc-frontend repo it
-  was forked from) + `upstreamRef` (its version, from `package.json`). **`upstreamRef` is what
-  lets `/qa-fix` Gate 1b tell a client customization from an unmodified-platform bug** — if the
-  scan can't derive it (no clear vc-frontend signal), ASK the operator for the vc-frontend
-  version the fork is based on and set `repos.client[].upstreamRef`.
+  was forked from) + `upstreamRef` (the **vc-frontend LINE** it was cut from = the
+  **MAJOR.MINOR** of the fork's `package.json` `version`, e.g. `"2.49.7"` → `2.49`; the fork's
+  own patch version has no upstream tag). The scan reads that `version` for **any** repo it
+  identified as the storefront (no `@vc-shell`/`vc-frontend` signal required) — only a repo
+  literally named `vc-frontend` keeps its full version (it *is* an upstream release).
+  **`upstreamRef` is what lets `/qa-fix` Gate 1b tell a client customization from an
+  unmodified-platform bug** — if the scan still can't derive it (package.json unreadable / no
+  parseable version), ASK the operator for the vc-frontend version the fork is based on and set
+  `repos.client[].upstreamRef`.
 
 **Show the proposed map to the operator to confirm/correct** — a starting point, not
 gospel. **Genuine-ambiguity asks (only these):**
