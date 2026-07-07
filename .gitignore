@@ -22,6 +22,9 @@ results/
 .mcp.json
 scripts/.graphql-schema.cache.json
 
+# Newman/Postman run artifacts — carry live env credentials + OAuth tokens. Never commit.
+.newman-run/
+
 # Deployment profile (project-init) — client-specific, may carry repo topology.
 # The committed project-profile.example.json is the template; the real one is local.
 project-profile.json

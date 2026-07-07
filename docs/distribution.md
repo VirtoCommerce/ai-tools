@@ -11,9 +11,9 @@ The plugin ships as a **hybrid package**:
 | Layer | Mechanism | Why |
 |-------|-----------|-----|
 | **Agents, skills, commands, knowledge files** (`.claude/`) | **Claude Code plugin** via the plugin manager | Matches how Claude Code natively discovers and loads these artifacts. Customers add it once; Claude Code handles updates. No git operations on the customer side. |
-| **Scripts, CI orchestrators, schemas, templates** (`scripts/`, `ci/`, `config/`, `templates/`, `bootstrap/`, `manifest.json`) | **npm package** under `@virtocommerce/vc-qa` | These are Node.js entry points. The npm pattern is what customers expect for `npx vc-qa init …` and `npm run plugin:install`. Semver via npm versioning. |
+| **Scripts, CI orchestrators, schemas, templates** (`scripts/`, `ci/`, `config/`, `templates/`, `bootstrap/`, `manifest.json`) | **Ship in the same git-cloned plugin repo** | These are Node.js entry points run via `npm run <script>` from the plugin checkout (e.g. `npm run plugin:configure`, `npm run ci:regression`). There is no separately-published npm package; `npm install` in the checkout pulls their dependencies. |
 | **Regression suite CSVs, knowledge files** (`regression/suites/`, `.claude/agents/knowledge/`) | **Bundled in both layers** | Customers need these files locally to run suites. They're the plugin's actual value — VC-specific BLs + suites. |
-| **Customer's own config** (`.env.{env}`, `.env.local`, `test-data/aliases.json`, `test-data/aliases.{env}.json`) | **Customer's repo (gitignored or per-env-committed)** | Never ships with the plugin. Customer scaffolds it via `npm run plugin:install`. |
+| **Customer's own config** (`.env.{env}`, `.env.local`, `test-data/aliases.json`, `test-data/aliases.{env}.json`) | **Customer's repo (gitignored or per-env-committed)** | Never ships with the plugin. Customer scaffolds it via `npm run plugin:configure`. |
 
 ### Why hybrid?
 
@@ -42,10 +42,10 @@ customer-vc-qa/                  # the plugin, installed locally
 ├── ci/                          # orchestrators (regression, full-cycle)
 ├── scripts/                     # validators, resolvers, taggers
 ├── bootstrap/                   # install.ts (customer onboarding)
-├── templates/                   # .env.local.template, aliases.json.template
+├── templates/                   # .env.local.template, aliases.{env}.json.template
 ├── docs/                        # onboarding, configuration, versioning, this file
 ├── config/                      # browser MCP configs, test-suites manifest
-├── regression/suites/           # 99 suites (40 Frontend + 38 Backend + others)
+├── regression/suites/           # 110 suites (Frontend/ + Backend/ + _release; see config/test-suites.json)
 └── test-data/                   # base aliases.json + sample seed CSVs
                                  # ↑ Customer-overridable via aliases.{env}.json
 
@@ -92,8 +92,10 @@ Full triage flow, SLA targets, communication templates, and patch-release workfl
 
 | File | Authoritative for |
 |------|-------------------|
-| `manifest.json` `.version` | Plugin version as it appears to the customer in `npm run plugin:check`, `/qa-env-check`, etc. |
-| `package.json` `.version` | npm package version (kept in sync with manifest). |
+| `.claude-plugin/plugin.json` `.version` | **The plugin version** — what Claude Code's plugin loader reads. Must equal `.claude-plugin/marketplace.json` `.version`. |
+| `.claude-plugin/marketplace.json` `.version` | Marketplace listing version. Kept identical to `plugin.json`. |
+| `manifest.json` `.version` | Extended-metadata mirror consumed by `bootstrap/install.ts` (`npm run plugin:check` / `plugin:configure`). Bump in lockstep with `plugin.json`. |
+| `package.json` `.version` | Internal npm version of the tooling repo; not the plugin version and not customer-facing. |
 | `docs/versioning.md` | What counts as breaking, Tier A artifacts under freeze, customer upgrade path. |
 | `CHANGELOG.md` (TBD) | Per-release change list. Added at v0.1.0-alpha → v0.2.0 transition. |
 

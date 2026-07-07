@@ -63,14 +63,10 @@ The configure script walks you through 5 steps and writes:
 - `test-data/aliases.{env-name}.json` — per-env entity overrides (stub)
 - A green `npm run env:check` confirms the env loads
 
-Re-run `npm run plugin:configure -- --env=staging` for additional environments.
-
-> **Caveat — v0.2.0-alpha:** The Claude Code plugin install path has been verified end-to-end on the test bench but NOT on a customer-side fresh clone yet. The reliable install path today is still `git clone` + `npm install` + `npm run plugin:configure`. The `/plugin install` path will be the recommended one once verified live in workstream #2 (see plan).
-
 Re-run for additional environments:
 ```bash
-npm run plugin:install -- --env=staging
-npm run plugin:install -- --env=prod
+npm run plugin:configure -- --env=staging
+npm run plugin:configure -- --env=prod
 ```
 
 ## Verify
@@ -209,7 +205,7 @@ Default selections are conservative. Don't run `/qa-regression full` against pro
 
 **`Invalid TEST_ENV="customer-staging-eu"`** → kebab-case env names break the suffix-promotion in `.env.local`. Use underscores: `customer_staging_eu`.
 
-**`Missing required environment variables: FRONT_URL, …`** → run `npm run plugin:install`. If you ran it but vars are still missing, check that `.env.local` has the per-env-suffixed entries (e.g. `USER_PASSWORD_QA`, not just `USER_PASSWORD`).
+**`Missing required environment variables: FRONT_URL, …`** → run `npm run plugin:configure`. If you ran it but vars are still missing, check that `.env.local` has the per-env-suffixed entries (e.g. `USER_PASSWORD_QA`, not just `USER_PASSWORD`).
 
 **`Browser "chromium" is not installed`** → run `cli.js install` inside the MCP's bundled playwright-core. See memory `feedback_playwright_mcp_browser_version` in the plugin's MEMORY.md.
 

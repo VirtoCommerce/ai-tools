@@ -1,12 +1,12 @@
 ---
-description: "Customer onboarding flow: post-install handoff that walks a new user from 'plugin installed' to 'green smoke run + first bug filed'. Use after `npm run plugin:install`."
+description: "Customer onboarding flow: post-install handoff that walks a new user from 'plugin installed' to 'green smoke run + first bug filed'. Use after `npm run plugin:configure`."
 argument-hint: "[env name | smoke | tour | troubleshoot]"
 disable-model-invocation: true
 ---
 
 # /qa-onboarding — Customer Onboarding Flow
 
-The first command a new customer runs after `npm run plugin:install` completes. Validates the install is functional, runs a guided smoke pass on both surfaces, and hands the user off to the rest of the plugin.
+The first command a new customer runs after `npm run plugin:configure` completes. Validates the install is functional, runs a guided smoke pass on both surfaces, and hands the user off to the rest of the plugin.
 
 ## Usage
 
@@ -38,7 +38,7 @@ This validates:
 - Active config printed: `TEST_ENV`, `ENV_RISK`, `STOREFRONT_PROFILE`, `MODULES_ENABLED`, `JIRA_PROJECT_KEY`
 
 If this fails, surface the specific blocker and stop. Common fixes:
-- Missing `.env.${TEST_ENV}` → run `npm run plugin:install -- --env=${envName}`
+- Missing `.env.${TEST_ENV}` → run `npm run plugin:configure -- --env=${envName}`
 - Kebab-case `TEST_ENV` → re-run install with an underscore name
 - Missing creds → check `.env.local` has `USER_PASSWORD_${TEST_ENV.upper()}` etc.
 
@@ -142,7 +142,7 @@ Test authoring
   /qa-checklist <domain>    — domain-specific test checklist (33 storefront + 29 admin)
 
 Multi-env workflow
-  Configure a second env:    npm run plugin:install -- --env=staging
+  Configure a second env:    npm run plugin:configure -- --env=staging
   Switch at runtime:         TEST_ENV=staging /qa-smoke
   Production-risk safety:    Set ENV_RISK=production in .env.${envName} → admin-write
                               suites refuse to run without --allow-admin-writes-on-prod

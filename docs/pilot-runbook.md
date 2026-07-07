@@ -55,7 +55,7 @@ Before our kickoff call, please:
   ☐ Have the env's URLs, store ID, and a non-admin test user ready
 
 At the kickoff (60 min), we'll:
-  - Walk through `npm run plugin:install` together (5 min)
+  - Walk through `npm run plugin:configure` together (5 min)
   - Run /qa-onboarding on your env (15 min)
   - Verify both surfaces are reachable + run smoke (15 min)
   - Discuss the rest of the suite (15 min)
@@ -79,7 +79,7 @@ Follow this exactly. Capture timestamps for the friction-point analysis.
 |------|------|-----------------------------|
 | 0:00 | Customer screenshares their terminal in their plugin clone | — |
 | 0:05 | They run `npm install` | How long? Any warnings or errors? |
-| 0:10 | They run `npm run plugin:install` | Did they answer every prompt without asking you? Which prompts confused them? |
+| 0:10 | They run `npm run plugin:configure` | Did they answer every prompt without asking you? Which prompts confused them? |
 | 0:25 | They run `npm run plugin:check` | Did it pass first try? If not, what was the blocker? |
 | 0:30 | They run `/qa-onboarding` | Step-by-step, where did they pause? What did they read? |
 | 0:50 | First `/qa-smoke` result | Pass rate? Bugs found? Time to first result? |
@@ -89,7 +89,7 @@ Follow this exactly. Capture timestamps for the friction-point analysis.
 ### Solo run (week +1, customer alone)
 
 Customer commits to:
-1. Configure a SECOND env (`npm run plugin:install -- --env=<other>`)
+1. Configure a SECOND env (`npm run plugin:configure -- --env=<other>`)
 2. Run `/qa-smoke` against the second env without VC help
 3. Run `/qa-regression critical` against the first env
 4. File one real bug via `/qa-bug` (if smoke surfaces any)
