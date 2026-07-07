@@ -88,8 +88,9 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 > `tracker-ops.md` §4.
 
 ## Phase 1 — Triage (Gate 0) + Root-cause + Repo route (Gate 1)
-> **Owner:** `qa-lead-orchestrator` (triage) → `qa-backend-expert` (root-cause). Reuses the
-> `ci/agents/fix-triage-agent.md` criteria and `skills/qa-fix-routing/repo-router.ts`.
+> **Owner:** the top-level session (triage — no separate orchestrator agent is shipped in `vc-fix`)
+> → `qa-backend-expert` (root-cause). Reuses the `ci/agents/fix-triage-agent.md` criteria
+> (design-heritage; CI-only) and `skills/qa-fix-routing/repo-router.ts`.
 
 - **Gate 0 — fix-eligibility triage** (`/qa-defect classify` + `/qa-risk`): proceed ONLY if the bug is
   a **simple, low-risk, localized, non-breaking, code-fixable** defect. **BAIL** (before any clone) on
@@ -203,13 +204,13 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks. Persistent
   RED / cross-repo / repo-owned QG threshold → STOP + hand off. (Full reason→action table:
   `knowledge/agents/developers/shared-instructions.md` §After the PR.)
-- **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
-  `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
+- **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert re-runs the
+  bug's own STR (the `/qa-bug` reproduction steps) live against the deployed artifact —
+  `module-suite-map.md` is a reference for which module owns the affected area, not a runnable suite
+  selector (`/qa-regression` is full `vc-qa` plugin only, not shipped here).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes
-  post-merge via the regression pipeline + `/qa-verify-fix`. **For a CLIENT custom module / storefront fork
-  there is usually no regression suite in `module-suite-map.md`** — degrade to a **targeted re-run of the
-  bug's own STR** (the `/qa-bug` reproduction steps) against the deployed client env, plus any client-supplied
-  suite. State the reduced scope in the PR/verify note; do not claim broad regression coverage that wasn't run.
+  post-merge via `/qa-verify-fix`. State the exact scope re-verified in the PR/verify note; do not
+  claim broad regression coverage that wasn't run.
 
 ## Phase 7 — STOP for human review (Gate 7)
 - Transition the ticket to the **ready-for-test** role state (Jira: live-discover, don't hardcode "Ready

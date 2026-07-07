@@ -1,6 +1,6 @@
 # Domain Test Case Writing Checklists
 
-> Reference file for `test-management-specialist` agent and `/qa-checklist` skill. Read on-demand when writing test cases for a specific domain.
+> Reference file for the `/qa-checklist` skill. Read on-demand when writing test cases for a specific domain.
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 244 items).
 
@@ -559,7 +559,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 
 ## BF. Bug Fix Verification
 
-> **Cross-domain checklist. Used by qa-lead-orchestrator (Workflow 5) when delegating bug fix verification to test-management-specialist.** Combine with the affected domain's checklist (#1-32) and/or `backend-admin-checklists.md` (A1-A27) for full coverage.
+> **Cross-domain checklist. Used by `/qa-verify-fix`.** Combine with the affected domain's checklist (#1-32) and/or `backend-admin-checklists.md` (A1-A27) for full coverage.
 
 **Fix Confirmation (always):**
 - [ ] Original bug reproduced first (STR from ticket), then verify fix resolves the exact reported issue

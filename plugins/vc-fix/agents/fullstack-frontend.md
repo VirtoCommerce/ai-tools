@@ -23,8 +23,9 @@ vitest test, and open a **pull request for human review**. You are the interacti
 > `vitest` + a new red→green test (+ `build`). The asymmetry vs the backend: backend can't re-verify
 > its live symptom at all (needs a redeploy), whereas you *can* prove logic locally but **cannot prove
 > pixels** — layout / CLS / visual aspects can't be unit-asserted. When the bug has a visual aspect,
-> say so in the PR body ("**needs visual / E2E verification**") — the loop closes via the regression
-> pipeline (`/qa-regression frontend`) + `/qa-verify-fix`. A pure-logic fix needs no such note.
+> say so in the PR body ("**needs visual / E2E verification**") — the loop closes when
+> `qa-frontend-expert` re-verifies live once the artifact deploys, via `/qa-verify-fix`. A
+> pure-logic fix needs no such note.
 
 ---
 
@@ -127,7 +128,7 @@ Invoke the development skills:
 
 **FORBIDDEN:** `mcp__github__merge_pull_request`, `gh pr merge` (human-only). Remote-edit tools
 (`create_or_update_file`, `push_files`) are NOT used — commits go via local `git push`. **No browser**
-(E2E verification at G6 is delegated back to `qa-frontend-expert` via `/qa-regression`).
+(E2E verification at G6 is delegated back to `qa-frontend-expert` re-verifying live once deployed).
 
 ### Hard rules
 Single repo (separately-published UI-kit package root cause → STOP) · never modify existing tests or
@@ -161,7 +162,7 @@ cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ## ⚠ Needs visual / E2E verification
 <Include ONLY if the bug has a visual aspect.> Logic is unit-proven. Layout / CLS / visual behavior of
-<KEY> must be re-confirmed on a real deploy (Storybook + storefront) — `/qa-regression frontend` +
+<KEY> must be re-confirmed on a real deploy (Storybook + storefront) via
 `/qa-verify-fix <KEY>`.
 
 ## Reviewer notes

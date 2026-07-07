@@ -63,12 +63,12 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 
 ### VC-CAT-001 — Virtual catalog root ID drifts after migrations / restores
 - **Pattern:** Storefront-facing products live in a B2B virtual catalog; the root ID can change after a catalog migration or restore. Hardcoded GUIDs in tests then 404 silently.
-- **Detection probe:** Before running any catalog test, verify `VIRTUAL_CATALOG_B2B.id` in `test-data/aliases.json` matches the live root. Current value: `fc596540864a41bf8ab78734ee7353a3` (2026-05-15 restore).
+- **Detection probe:** Before assuming a virtual-catalog root ID, verify it against the live system (query the catalog root, don't hardcode). Last known value: `fc596540864a41bf8ab78734ee7353a3` (2026-05-15 restore) — treat as stale, re-verify live.
 - **Cross-ref:** `feedback_storefront_virtual_catalog_link` in MEMORY; `project_vcstqa_restore_2026_05_15`
 
 ### VC-CAT-002 — Catalog wipe / restore aftermath
 - **Pattern:** A catalog wipe (e.g. 2026-05-15) replaces products and categories with restored versions; ~4,537 products and 422 categories differ, ~5 of 28 CFG products keep their GUIDs but with rebuilt sections
-- **Detection probe:** When running catalog suites after a restore, expect alias-based tests to pass and hardcoded-GUID tests to 404. Update `aliases.json` first; rerun `validate-td-refs`.
+- **Detection probe:** When reproducing a catalog bug after a restore, expect anything relying on a hardcoded GUID to 404 — re-resolve the entity live before concluding it's a defect.
 - **Cross-ref:** `project_vcstqa_restore_2026_05_15` in MEMORY
 
 ### VC-CAT-003 — Products seeded in physical catalog 404 on storefront until linked
@@ -340,9 +340,9 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 
 ## VC-EXEC — Test Execution & Tooling
 
-### VC-EXEC-001 — Always use the canonical GraphQL runner
-- **Pattern:** NEVER write custom JS scripts to execute GraphQL CSV cases. Always use `npx tsx scripts/graphql-runner.ts --case <csv>:<ID>`. The runner does schema validation, var substitution, evidence capture.
-- **Detection probe:** If you see a custom GraphQL JS runner in PR diff, flag it
+### VC-EXEC-001 — Always use the canonical GraphQL runner *(full `vc-qa` plugin only, not shipped here)*
+- **Pattern:** NEVER write custom JS scripts to execute GraphQL CSV cases. Always use `npx tsx scripts/graphql-runner.ts --case <csv>:<ID>`. The runner does schema validation, var substitution, evidence capture. In `vc-fix`, query GraphQL directly (GraphiQL or a direct HTTP call) — there's no CSV-suite runner to route through.
+- **Detection probe:** If you see a custom GraphQL JS runner in a PR diff to the full `vc-qa` plugin, flag it.
 - **Cross-ref:** `feedback_use_canonical_graphql_runner` in MEMORY
 
 ### VC-EXEC-002 — Real-user interaction; never bypass UI with scripts

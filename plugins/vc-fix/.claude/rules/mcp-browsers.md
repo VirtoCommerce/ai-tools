@@ -33,6 +33,4 @@ The 6 servers in the table above are configured in `.mcp.json` (project-level). 
 
 This file is gitignored. After cloning, create it locally. Windows uses `cmd /c npx`, Linux/Mac uses `npx` directly.
 
-## Storybook Visual Regression
-
-Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to `ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `skills/qa-storybook/` for methodology and guides.
+> Storybook visual regression (`/qa-storybook` + `ui-ux-expert`) is full `vc-qa` plugin only, not shipped here.

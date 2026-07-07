@@ -192,9 +192,8 @@ Reference `/qa-risk` skill's `risk-prioritization-framework.md` for definitions.
 |-----------|----------|------------|
 | Storefront UI, checkout, cart, mobile | qa-frontend-expert | Page/flow bugs, CSS issues, responsive failures |
 | Platform API, GraphQL, Admin SPA, modules | qa-backend-expert | API errors (4xx/5xx), data integrity, background jobs |
-| Storybook components, accessibility, design system | ui-ux-expert | Component rendering, WCAG violations, design drift |
-| Cross-module, workflow spanning frontend+backend | qa-lead-orchestrator | Payment flows, BOPIS end-to-end, multi-org |
-| Security vulnerabilities | qa-lead-orchestrator | XSS, CSRF, auth bypass, injection — always escalate |
+| Cross-module, workflow spanning frontend+backend | escalate to the user | Payment flows, BOPIS end-to-end, multi-org |
+| Security vulnerabilities | escalate to the user | XSS, CSRF, auth bypass, injection — always escalate |
 
 ### Step 6: Set JIRA Fields + Transition
 Set: Summary, Description (with STR), Severity, Priority, Labels, Component, Assignee.
@@ -300,7 +299,7 @@ Run 2-3 related checks in the same feature area:
 
 ## 8. Defect Metrics
 
-Six process-health metrics. These are distinct from test execution metrics in `/qa-metrics` — these measure the defect pipeline, not test pass rates.
+Six process-health metrics measuring the defect pipeline, not test pass rates.
 
 ### 8.1 Defect Aging (days open)
 
@@ -366,7 +365,7 @@ Six process-health metrics. These are distinct from test execution metrics in `/
 
 ### Escalation Path
 ```
-QA Tester → QA Lead (qa-lead-orchestrator)
+QA Tester → QA Lead
          → Tech Lead (for development assignment)
          → Product Owner (for priority disputes)
          → CTO/Security Lead (for security/production issues)

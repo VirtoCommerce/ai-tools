@@ -224,7 +224,7 @@ Captured via stylesheet introspection (`document.styleSheets` rule search). DOM 
   "longTitleChars": 179
 }
 ```
-(NOTE: this entry was NOT added by this capture session — write task is selector documentation only. Suggest adding via a separate `/qa-seed-data` or manual `test-data/` update, then run `npx tsx scripts/validate-td-refs.ts`.)
+(NOTE: this entry was NOT added by this capture session — write task is selector documentation only. `test-data/aliases.json` / `/qa-seed-data` are full `vc-qa` plugin only, not shipped in `vc-fix`; the SKU itself is enough to re-locate this fixture via a live search.)
 
 ---
 

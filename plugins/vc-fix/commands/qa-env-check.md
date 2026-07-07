@@ -150,15 +150,12 @@ Customer secrets  : 8/8 from .env.local (via _QA suffix promotion)
 | atlassian                 | Optional | Yes        |
 | context7                  | Optional | No (skill /vc-docs falls back to VirtoOZ) |
 
-### Test Infrastructure
+### Plugin Local State
 | Item                          | Status |
 |-------------------------------|--------|
-| manifest.json                 | OK     |
-| config/test-suites.json       | OK (99 suites, schema valid) |
-| test-data/aliases.json        | OK     |
-| test-data/aliases.qa.json     | OK (env overrides active) |
-| Suite CSV files               | OK (99/99 present) |
-| reports/ directory            | OK     |
+| project-profile.json          | OK (client / jira / github) |
+| .fix-workspace/               | OK (creatable) |
+| reports/bugs/, reports/fixes/ | OK     |
 
 ### Verdict: READY
 (or NOT READY: list specific blockers + remediation hints)

@@ -128,7 +128,7 @@ Storybook: STORYBOOK_URL / STORYBOOK_DEV_URL
 
 ## JIRA Transition Protocol
 
-Commands that transition JIRA tickets (`/qa-test`, `/qa-verify-fix`, `/qa-bug`) follow the same workflow:
+Commands that transition tickets (`/qa-bug`, `/qa-fix`, `/qa-verify-fix`) follow the same workflow:
 
 1. **Always ask user before transitioning** — never auto-transition
 2. If Atlassian MCP unavailable → skip transitions, inform user
@@ -183,7 +183,7 @@ Key modules: {list modules relevant to the test scope with their versions}
 
 PRs in `vc-frontend` and `vc-module-*` are deployed to QA **while still open** (not merged). Testing happens before merge.
 
-For `/qa-test PR #NNN` and `/qa-verify-fix`:
+For `/qa-verify-fix`:
 
 1. Get PR details: `gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
 2. Identify which module/theme the PR belongs to (from the repo name)
@@ -195,12 +195,7 @@ For `/qa-test PR #NNN` and `/qa-verify-fix`:
 
 | Command | Verification Level |
 |---------|-------------------|
-| `/qa-test PR #NNN` | Full — confirm PR is deployed (module version matches) |
 | `/qa-verify-fix` | Full — confirm fix PR is deployed before testing |
-| `/qa-test VCST-XXXX` | Standard — record platform + relevant module versions |
-| `/qa-smoke` | Standard — record platform + theme versions in report |
-| `/qa-regression` | Standard — record full deploy state (platform + theme + all modules) |
-| `/qa-exploratory` | Light — record platform + theme versions |
 | `/qa-bug` | Light — include platform + theme versions in bug report |
 
 ### Caching

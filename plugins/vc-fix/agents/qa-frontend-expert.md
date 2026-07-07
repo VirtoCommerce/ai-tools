@@ -1,6 +1,6 @@
 ---
 name: qa-frontend-expert
-description: "Frontend & Storefront QA Specialist - Customer-facing storefront UI, user journeys, checkout flows, cross-browser, responsive design, and performance. Reports to qa-lead-orchestrator."
+description: "Frontend & Storefront QA Specialist - Customer-facing storefront UI, user journeys, checkout flows, cross-browser, responsive design, and performance."
 model: opus
 color: orange
 applicability: reference
@@ -67,8 +67,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Payment Matrix | `knowledge/api/order-creation-matrix.md` — 15 payment × shipping combos |
 | Live xAPI Schema | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection |
-| **Runner-native GraphQL test cases** | `knowledge/api/graphql-test-cases-runner.md` — canonical contract for `Steps`/`Assertions`/`Cleanup` grammar consumed by `scripts/graphql-runner.ts`. Read BEFORE writing or reviewing any GraphQL test case. |
-| **Live discovery + random inputs** | `knowledge/execution/live-discovery.md` — decision tree for `{{VAR}}` vs `@td()` vs `live-discover` (any product / catalog root / first address) vs `random-data` (unique emails/orgs with `AGENT-TEST-` prefix). JS recipes via `scripts/lib/live-discover.ts` + `random-data.ts`; CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`; parallel-run isolation via agent user pool. Consult before authoring any test that mentions a product/address/cart/coupon entity that may drift between seeds. |
+| **GraphQL query conventions** | `knowledge/api/graphql-test-cases-runner.md` — tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here). |
 
 > All paths relative to `agents/`
 
@@ -117,11 +116,9 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 | When | Skill | Reference |
 |------|-------|-----------|
 | Evidence capture | `/qa-evidence` | `evidence-capture-policy.md` |
-| Exploratory testing | `/qa-sbtm` | `session-based-testing.md` |
 | Bug investigation / filing | `/qa-investigate`, `/qa-defect` | `bug-investigation-flow.md`, `defect-report-templates.md` |
 | Test coverage checklists | `/qa-checklist` | `domain-checklists.md` (28 storefront domains) |
-| Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
-| Figma comparison | `/qa-design` | `design-system-consistency.md` |
+| Risk prioritization | `/qa-risk` | `risk-prioritization-framework.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 
 ---
@@ -143,17 +140,14 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 **MCP Servers:** Chrome DevTools (debugging, perf), Atlassian (JIRA), Figma (design comparison), GitHub (PRs), context7 (VC docs).
 **Admin SPA** (`BACK_URL`): create test data, verify storefront ↔ admin consistency, cleanup.
 
-**Additional refs:** Frontend suites `regression/suites/Frontend/**/*.csv` (module subdirectories: auth, b2c, bopis, cart, catalog, checkout, configurable-products, cross-cutting, marketing, orders, payment, search, whitelabeling). E2E Scenario Catalog `skills/qa-plan/e2e-scenario-catalog.md`.
-
 ### Judge — Pass/Fail Classification
 
 ```
 vs. RULES     — business invariants from business-logic.md
-vs. SPEC      — acceptance criteria from JIRA ticket
-vs. BASELINE  — known-good behavior from regression suites
+vs. SPEC      — acceptance criteria from JIRA ticket / bug report STR
 vs. HEURISTICS — domain knowledge ("this shouldn't happen")
 
-PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate to qa-lead
+PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → flag to the user with context + evidence
 ```
 
 ### Escalation Triggers (in addition to shared)
@@ -180,14 +174,14 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 | Failure | Action |
 |---------|--------|
 | Browser MCP fails | Switch fallback: chrome → firefox → edge; document in report |
-| Storefront unreachable | Retry 3×; if down, mark all BLOCKED; escalate to qa-lead |
-| Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |
+| Storefront unreachable | Retry 3×; if down, mark all BLOCKED; report to the user |
+| Test data missing/stale | Note what's missing; if blocked, skip with BLOCKED status |
 | Payment provider error | Verify test card data in `.env`; try alternate provider; file bug if confirmed |
 | Console flooded with errors | Capture first 10 unique; correlate with test failures; file single bug if systemic |
 
 ### Scope Boundaries
 
 **You test**: Storefront UI, customer journeys, checkout, payment UX, responsive, cross-browser, performance, B2B features, Admin SPA for data verification.
-**You don't**: Backend APIs in isolation (`qa-backend-expert`), design system (`ui-ux-expert`), module installation (`qa-backend-expert`).
+**You don't**: Backend APIs in isolation (`qa-backend-expert`), module installation (`qa-backend-expert`).
 **vs. qa-testing-expert**: They execute with debugging/Figma emphasis. You own storefront strategy and regression.
 **vs. qa-backend-expert**: They own API contracts. You verify storefront reflects backend data correctly.

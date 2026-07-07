@@ -2,6 +2,13 @@
 
 **Every artifact MUST be saved to the correct folder. Never mix artifact types across directories.**
 
+> **In `vc-fix`:** most rows below describe the full `vc-qa` plugin's output paths (regression,
+> smoke, exploratory, checklists, BA, test-lifecycle, coverage — none of that is shipped here).
+> This plugin actively uses: **Bug reports** (`reports/bugs/`), **Bug evidence**
+> (`reports/bugs/screenshots/`, `reports/bugs/api-traces/`), **Ticket test evidence**
+> (`reports/tickets/`), **Fix reports** (`reports/fixes/FIX-*/`), and **Monitoring summaries**
+> (`reports/monitoring/MONITOR-*/`). Everything else is inert reference.
+
 | Artifact Type | Path | Examples |
 |---------------|------|----------|
 | **Test documentation** (plans, cases, execution reports, testrail CSVs) | `tests/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
@@ -58,5 +65,5 @@ tests/SprintXX-XX/VCST-XXXX-feature-name/
 - `tests/` and `reports/` are tracked in git -- use them for all documentation artifacts
 - Never save test documentation into `test-results/` and never save raw browser dumps into `tests/` or `reports/`
 - **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/VCST-XXXX/` or `tests/SprintXX-XX/VCST-XXXX/`
-- **Default for `/qa-test` runs:** always use `tests/SprintXX-XX/VCST-XXXX/`; only use `reports/tickets/` for ad-hoc evidence with no sprint context
+- **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** use `reports/tickets/VCST-XXXX/` for ad-hoc evidence with no sprint context
 - See `reports/README.md` for full naming convention reference

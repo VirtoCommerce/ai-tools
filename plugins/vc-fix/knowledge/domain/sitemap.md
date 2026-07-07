@@ -546,7 +546,7 @@ Plus all top-level categories listed in §3 (live order may vary): Home Applianc
 
 ## Notes
 
-1. **Catalog content is unstable** — 2026-05-15 wipe + restore replaced thousands of products and categories. Treat any IDs/slugs/SKUs in test data as drift candidates; resolve via `@td()` or `live-discover` (see `.claude/rules/test-data.md`).
+1. **Catalog content is unstable** — 2026-05-15 wipe + restore replaced thousands of products and categories. Treat any hardcoded IDs/slugs/SKUs as drift candidates — resolve entities by querying the live system instead.
 2. **Dynamic content:** Many pages contain content loaded via GraphQL / WebSocket
 3. **Authentication required** for all `/account/*` and `/company/*` pages
 4. **Product variations** may have additional sub-pages

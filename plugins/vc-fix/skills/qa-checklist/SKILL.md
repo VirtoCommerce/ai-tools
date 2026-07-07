@@ -196,16 +196,11 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 - 6-15 items per domain (fewer = incomplete, more = too granular)
 - Always include cross-layer verification items for P0/P1 domains
 - New checklists must be validated against the live environment before delivery
-- Link back to E2E scenario catalog (`e2e-scenario-catalog.md`) for related scenarios
 - For GraphQL checklists: always include the "New Query/Mutation Verification" section when a ticket introduces new queries or mutations
 
 ## Integration with Other Skills
 
 | Skill | Relationship |
 |-------|-------------|
-| `/qa-plan` | Checklists feed into test plan creation — ensures no domain is missed |
-| `/qa-test-design` | Checklist items can be expanded using EP, BVA, decision tables |
 | `/qa-risk` | High-risk domains get more granular checklist items |
-| `/qa-sbtm` | Checklists serve as starting point for exploratory session charters |
-| `/qa-api` | GraphQL xAPI checklist aligns with xAPI test execution and case generation |
 | `knowledge/domain/sitemap.md` | Sitemap provides URLs and product types for UI exploration |

@@ -205,6 +205,9 @@ GET /api/catalog/products?responseGroup=WithProperties
 
 ## Test Suites
 
+> **In `vc-fix`:** `regression/suites/` and its CSV test cases are full `vc-qa` plugin only, not
+> shipped here — this section is a reference for what's covered elsewhere, not a runnable suite.
+
 ### Frontend — Catalog Suites (001-003) + Search Suites (004-005)
 Files: `regression/suites/Frontend/catalog/001-catalog-navigation.csv`, `002-product-detail.csv`, `003-catalog-filters.csv`, `regression/suites/Frontend/search/004-search-core.csv`, `005-search-filters-advanced.csv`
 Tags: `catalog`, `search`, `sprint`

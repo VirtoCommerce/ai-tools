@@ -148,17 +148,13 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | When | Skill | Reference File |
 |------|-------|---------------|
 | Starting test session | `/qa-evidence` | `evidence-capture-policy.md` |
-| Exploratory testing | `/qa-sbtm` | `session-based-testing.md` |
 | Investigating a bug | `/qa-investigate` | `bug-investigation-flow.md` |
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
-| Verifying a fix | `/qa-verify-fix` | — (JIRA ticket required) |
+| Verifying a fix | `/qa-verify-fix` | — (ticket required) |
 | Checking test coverage | `/qa-checklist` | `domain-checklists.md`, `backend-admin-checklists.md` |
-| Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
-| Figma comparison | `/qa-design` | `design-system-consistency.md` |
-| API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
+| Risk prioritization | `/qa-risk` | `risk-prioritization-framework.md` |
 | GraphQL interaction (GraphiQL UI) | — | `knowledge/api/graphiql-interaction.md` |
-| **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql-runner.ts` consumes. |
-| **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
+| **GraphQL query conventions** | — | **`knowledge/api/graphql-test-cases-runner.md`** — tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here). |
 | Live xAPI schema | — | `knowledge/api/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 
@@ -203,9 +199,6 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Area | Reference File |
 |------|---------------|
-| Frontend suites | `regression/suites/Frontend/**/*.csv` (40 suites in module subdirectories) |
-| Backend suites | `regression/suites/Backend/**/*.csv` (38 suites in module subdirectories) |
-| E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
 | Evidence Capture Policy | `skills/qa-evidence/evidence-capture-policy.md` |
 | Bug Investigation Flow | `skills/qa-investigate/bug-investigation-flow.md` |
 | Defect Report Templates | `skills/qa-defect/defect-report-templates.md` |
@@ -214,14 +207,13 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ```
 vs. RULES     — business invariants from business-logic.md
-vs. SPEC      — acceptance criteria from JIRA ticket
+vs. SPEC      — acceptance criteria from JIRA ticket / bug report STR
 vs. DESIGN    — Figma mockup (pixel-level comparison)
-vs. BASELINE  — known-good behavior from regression suites
 vs. HEURISTICS — domain knowledge ("this shouldn't happen")
 
 PASS ✅      → log result, move to next test
 FAIL ❌      → capture evidence (screenshot + console + network), file bug
-AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
+AMBIGUOUS ⚠️ → flag to the user with context + evidence
 ```
 
 ### Escalation Triggers (in addition to shared triggers)
@@ -274,14 +266,13 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 | Failure | Action |
 |---------|--------|
 | Browser MCP fails mid-test | Switch to fallback browser (firefox → chrome → edge); note in report |
-| Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; escalate to qa-lead |
-| Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |
+| Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; report to the user |
+| Test data missing/stale | Note what's missing; if blocked, skip with BLOCKED status |
 | Figma MCP unavailable | Skip design verification steps; document as unverified in report |
 | Console flooded with errors | Capture first 10 unique errors; correlate with test failures; file single bug if systemic |
 
 ### Scope Boundaries
 
 **You test**: Both storefront and admin — interactive test execution, Figma verification, console/network debugging, exploratory testing, cross-browser, evidence collection.
-**You don't test**: Storybook in isolation (`ui-ux-expert`), WCAG audits (`ui-ux-expert`), test plan creation (`test-management-specialist`).
 **vs. qa-frontend-expert**: They own storefront strategy and regression. You execute with emphasis on debugging and Figma verification.
 **vs. qa-backend-expert**: They own API contracts and Admin CRUD. You execute Admin tests with cross-layer investigation.

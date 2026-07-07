@@ -6,7 +6,7 @@ applicability_rationale: "Storefront store config patterns. Customer's settings 
 # Store Settings — Agent Reference
 
 QA testing knowledge for the Virto Commerce Store Settings module.
-For API schema (StoreResponseType, StoreSettingsType, GraphQL queries, REST endpoints) see `skills/qa-api/xapi-query-ref.md` → **Store Settings** section.
+For API schema (StoreResponseType, StoreSettingsType) consult `knowledge/api/graphql-schema.md` and the live schema directly.
 
 ## What It Does
 
@@ -275,6 +275,9 @@ Push notifications are configured at platform level via `appsettings.json` using
 ---
 
 ## Regression Suites
+
+> Full `vc-qa` plugin only, not shipped here (`regression/suites/`) — kept as a reference for
+> where this domain is covered elsewhere.
 
 - **Suites 036-038** — Frontend BOPIS: `regression/suites/Frontend/bopis/`
 - **Suites 034-035** — Backend Store: `regression/suites/Backend/store/`

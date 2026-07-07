@@ -5,7 +5,7 @@ applicability_rationale: "Four-layer agent architecture template — universal p
 
 # Shared Agent Instructions — Virto Commerce QA
 
-This file contains shared framework, classification rules, and reference patterns used by all QA interactive agents (qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist, ui-ux-expert). Agents reference this file to avoid duplicating boilerplate.
+This file contains shared framework, classification rules, and reference patterns used by all QA interactive agents shipped in `vc-fix` (qa-frontend-expert, qa-backend-expert, qa-testing-expert). Agents reference this file to avoid duplicating boilerplate.
 
 ## Four-Layer Architecture
 
@@ -43,7 +43,7 @@ vs. HEURISTICS — domain knowledge ("this shouldn't happen")
 
 PASS ✅      → log result, move to next test
 FAIL ❌      → capture evidence, file bug with severity
-AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
+AMBIGUOUS ⚠️ → flag to the user with context + evidence
 ```
 
 Ambiguous examples: label text changed (intentional?), new console warning (harmful?), performance 5% slower (regression or noise?), UI element restyled (design update or bug?).
@@ -70,7 +70,7 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 
 **This does NOT lower the bar for what counts as a bug.** The Live-Verification Policy below still governs filing: a disabled control is validation working (not a bug), an API-only repro is not a UI-layer defect, and by-design / config-gated behavior is verified at the source before filing. Notice everything; **verify before you file.** Continuous observation widens what you *look at* — it does not widen what you *call a defect*.
 
-**Discovery pass — ticket / feature / PR testing only (NOT bulk regression).** When testing a ticket, feature, or PR (i.e. not executing a pre-built regression suite), spend a short focused block — ~5–10 min — on active discovery beyond the scripted cases: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the existing cases don't cover. Bulk-regression runs (`test-runner-agent` / `autonomous-test-runner` executing a CSV suite) skip this timed pass and rely on the continuous-observation reflex above. Full methodology: `/qa-exploratory` (discovery-first command) and `/qa-sbtm` (charters, CRISP/SFDPOT, Whittaker tours, personas). Read the VC bug catalog (`knowledge/oracles/vc-bug-catalog.md`) to avoid re-discovering known patterns.
+**Discovery pass.** When reproducing a bug or verifying a fix, spend a short focused block — ~5–10 min — on active discovery beyond the reported STR: surprise-seeking plus one adversarial tour or persona lens. Aim to surface at least one scenario the report doesn't cover (a related input, an adjacent flow, a different role). Read the VC bug catalog (`knowledge/oracles/vc-bug-catalog.md`) to avoid re-discovering known patterns.
 
 ## Evidence Collection Standards
 
@@ -84,7 +84,7 @@ Ambiguous examples: label text changed (intentional?), new console warning (harm
 **Naming**: `{ticket-id}-{type}-{timestamp}.{ext}`
 **Full policy**: `skills/qa-evidence/evidence-capture-policy.md`
 
-## Escalation Triggers (notify qa-lead-orchestrator IMMEDIATELY)
+## Escalation Triggers (notify the user IMMEDIATELY)
 
 - Checkout flow broken in any browser
 - Payment processing fails (any provider)
@@ -112,7 +112,7 @@ Reference files — read on-demand before each testing area, not all upfront:
 | **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` |
 | **Live Test-Data Discovery** | `knowledge/execution/live-discovery.md` |
 
-**Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
+**Authoring or reviewing GraphQL queries? Read `graphql-test-cases-runner.md` first** for the tag/predicate/path-syntax conventions and schema-validation discipline (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here).
 
 ## Live-Verification Policy
 
@@ -120,26 +120,26 @@ Test data, schema, and design intent are verified against **live state**, not ag
 
 ### 1. Resolve test data at runtime — never hardcode
 
-Pick the right layer for each data role:
+`vc-fix` reproduces one bug at a time live against the target environment — it has no persistent
+alias/fixture registry (that's full `vc-qa` plugin scope: `@td()`, `test-data/`, `live-discover`,
+`random-data`). Two layers apply here:
 
 | Layer | Use for | Source |
 |---|---|---|
 | `{{VAR}}` | Per-env URLs, credentials, store/culture/currency | `.env` (loaded by `config.js`) |
-| `@td(ALIAS.field)` | Specific entities you **assert against by name** (CFG_LAPTOP, ORG_TECHFLOW, COUPON_10OFF) | `test-data/aliases.json` → CSV in `test-data/` |
-| `live-discover` | **Any** entity, or one whose ID drifts (virtual-catalog root, first product, first address, any active coupon) | `scripts/lib/live-discover.ts` (JS) or `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) |
-| `random-data` | **Unique inputs** you never assert exact values on (emails, org names, BVA quantities, comments) | `scripts/lib/random-data.ts` (defaults use `AGENT-TEST-` prefix) |
+| Live query | Any entity needed for repro (a product, an address, an order) — resolve it by querying the live system (search, list, GraphQL) rather than assuming an ID | REST/GraphQL against `BACK_URL`/`FRONT_URL` |
 
-**Cardinal rule:** random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants (`isNumber`, `> 0`, currency-formatted).
-
-Full decision tree, JS recipes, and CSV-runner recipes: `knowledge/execution/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
+Never assert exact prices, titles, IDs, or URL path segments on a live-queried value — assert
+shape/range invariants (`isNumber`, `> 0`, currency-formatted) unless the bug report itself names
+a specific value to reproduce against.
 
 ### 2. Validate GraphQL against the live schema
 
-Before authoring or reviewing any query/mutation:
-- Consult `knowledge/api/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
-- For ad-hoc inline checks: `npx tsx scripts/graphql-runner.ts --query "<inline>"`.
-- Schema is refreshed via `npm run schema:refresh`; fixtures are bumped/renamed via `npm run graphql:fixtures:update`; CI gate is `npm run graphql:fixtures:validate`.
-- The canonical runner is `scripts/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
+Before authoring or reviewing any query/mutation, consult `knowledge/api/graphql-schema.md` (live
+introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh) and
+`knowledge/api/graphql-test-cases-runner.md` for query-authoring conventions. Send queries directly
+via GraphiQL (`graphiql-interaction.md`) or a direct HTTP call — the CSV-suite runner those files
+also document is full `vc-qa` plugin only, not shipped here.
 
 ### 3. Verify selectors & state against the live UI
 
@@ -202,19 +202,15 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 
 | When | Skill | Reference File |
 |------|-------|---------------|
-| Seeding test data | `/qa-seed-data` | `test-data-generation.md` |
 | Starting test session | `/qa-evidence` | `evidence-capture-policy.md` |
-| Deriving test cases | `/qa-test-design` | `test-design-techniques.md` |
-| Generating CSV test cases | `/qa-test-cases-generator` | `test-case-template.md` |
 | Prioritizing test depth | `/qa-risk` | `risk-prioritization-framework.md` |
-| Exploratory testing | `/qa-sbtm` | `session-based-testing.md` |
 | Investigating a bug | `/qa-investigate` | `bug-investigation-flow.md` — **follow it in order**: resolve `TEST_ENV` first (§1) → reproduce → isolate layer **and name the fix target** (layer → `repoKind` → repo, §3+§8) → gather **all** logs incl. App Insights (§4+§9) → root cause → document with the **Fix Routing** block |
 | Filing a bug report | `/qa-defect` | `defect-report-templates.md` |
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
+| Test coverage checklists | `/qa-checklist` | `domain-checklists.md`, `backend-admin-checklists.md`, `graphql-checklist.md` |
 | VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
 | Module mapping | `knowledge/execution/module-suite-map.md` | direct file reference |
-| xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
 ## Environment Variables (read via process.env)
 
@@ -227,31 +223,16 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 | Admin creds | `ADMIN` / `ADMIN_PASSWORD` |
 | User creds (fallback) | `USER_EMAIL` / `USER_PASSWORD` |
 | User2 creds (fallback) | `USER2_EMAIL` / `USER2_PASSWORD` |
-
-## Agent User Pool (Parallel Isolation)
-
-When running in parallel, each browser slot uses a **dedicated test user** to prevent session/cart/order conflicts. Resolve via `@td(AGENT_POOL_SLOT_N.email)` (and `.password`, `.b2b_email`, etc.) — the alias points at `test-data/users/agent-user-pool.csv` row where `slot=N`. Match on your assigned `{{BROWSER_SERVER}}`:
-
-| Browser Server | Personal User alias | B2B User alias |
-|---------------|---------------------|----------------|
-| `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.email)` | `@td(AGENT_POOL_SLOT_1.b2b_email)` (org: `@td(AGENT_POOL_SLOT_1.b2b_org)`) |
-| `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` (org: `@td(AGENT_POOL_SLOT_2.b2b_org)`) |
-| `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` (org: `@td(AGENT_POOL_SLOT_3.b2b_org)`) |
-
-**vcst-qa values for reference** (customers edit `users/agent-user-pool.csv` with their own):
-- Slot 1: `qa-agent-slot1@virtocommerce.com` / `test-john.mitchell-...@test-agent.com` (AcmeCorp)
-- Slot 2: `qa-agent-slot2@virtocommerce.com` / `test-emily.johnson-...@test-agent.com` (TechFlow)
-- Slot 3: `qa-agent-slot3@virtocommerce.com` / `test-carlos.rodriguez-...@test-agent.com` (BuildRight)
-
-**Resolution order:** agent-user-pool.csv → `process.env` fallback (populated from `.env.${TEST_ENV}` + `.env.local`). If pool users are not seeded (`seeded=false`), fall back to `process.env` and log a warning.
-**Seeding:** `test-data/users/seed-agent-users.md` — run once to create personal users on the platform.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
+
+`vc-fix` reproduces one bug at a time — there's no parallel agent-user pool to coordinate (that's
+full `vc-qa` plugin scope, for concurrent regression suites). Use the credentials above directly.
 
 ## Sign-Off Format
 
 ```
-@qa-lead-orchestrator: [Feature] Testing Complete
+Testing Complete: [Feature]
 
 **Feature:** [name]  |  **Ticket:** [VCST-XXXX]  |  **Environment:** [QA]
 
@@ -301,7 +282,7 @@ You MUST drive the browser like a real customer:
 
 qa-backend-expert posted a direct `POST /api/loyalty-programs` with `name:null`, got a 500 + DB-name leak, and filed it as "no client validation, silent failure" on the Admin SPA. The Save button is **disabled** when Name is empty (`ng-invalid-required`, `menu-item __disabled`). The 500 is a real API-hardening bug, but the UI claim was false and wasted a review cycle. Real-user repro first; only then file an API-only ticket separately if the API behavior is independently wrong.
 
-This rule applies to **all** agents — QA, BA, orchestrators, and the parameterized test runners — without exception. See memories `feedback_real_user_interaction`, `feedback_no_force_disabled_controls`.
+This rule applies to **all** QA agents in this plugin without exception. See memories `feedback_real_user_interaction`, `feedback_no_force_disabled_controls`.
 
 ## Platform Constraints
 

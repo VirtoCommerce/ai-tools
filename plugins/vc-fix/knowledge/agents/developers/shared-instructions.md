@@ -238,4 +238,4 @@ human). You do **not** file the issue yourself; just report the class so the orc
   `frontend-reviewer`: `REVIEW: APPROVE|REQUEST_CHANGES` + reasons + `CONFIDENCE`).
 - Real-user / browser rules do **not** apply here — this team writes code; it does not drive browsers.
   E2E verification (Gate 6) is delegated back to `qa-backend-expert` (module/platform) or
-  `qa-frontend-expert` (vc-frontend) via `/qa-regression`.
+  `qa-frontend-expert` (vc-frontend), who re-verify the original STR live once the artifact deploys.

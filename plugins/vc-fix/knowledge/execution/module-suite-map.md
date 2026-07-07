@@ -8,6 +8,12 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 > Quick reference for mapping VC modules to regression test suites, admin UI sections, and API endpoints.
 > Suites are organized under `regression/suites/Frontend/` (user flows) and `Backend/` (admin UI, modules, APIs).
 
+> **In `vc-fix`:** the regression suites themselves (`regression/suites/`) and `/qa-regression` are
+> full `vc-qa` plugin only, not shipped here — the Frontend/Backend Suite ID columns and the
+> "Selection Groups" section below are inert. The **Admin UI Sections**, **REST API Path**, and
+> **xAPI Module** columns stay useful: they help route a bug to the right module/blade/endpoint
+> during `/qa-bug` reproduction and `/qa-fix` Gate 1 repo routing.
+
 ## Module Map
 
 | Module | Frontend Suites | Backend Suites | Admin UI Sections | REST API Path | xAPI Module |

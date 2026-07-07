@@ -761,7 +761,7 @@ When your investigation reveals the bug is in another agent's domain, hand off w
 - The specific field/value the frontend should display
 - Whether there was a recent API schema change
 
-### Any Agent → qa-lead-orchestrator (Escalation)
+### Any Agent → the user (Escalation)
 - Current investigation status (which layers tested, what was found)
 - Blocking reason (why you cannot continue)
 - Recommended next agent and what they should check

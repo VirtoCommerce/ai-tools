@@ -22,7 +22,8 @@ per-task notes. Paths are referenced throughout `agents/`, `commands/`, `skills/
   never paste the body into a report. See [`.claude/rules/reports.md`](../.claude/rules/reports.md).
 - **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
-- **`graphql-schema.md` is generated** from live introspection via
-  `scripts/refresh-graphql-schema.mjs` — verify field names there before authoring GraphQL.
+- **`graphql-schema.md` is a live-introspection snapshot** — verify field names there before
+  authoring GraphQL (the refresh script that generates it is full `vc-qa` plugin only, not shipped
+  here; introspect `{{BACK_URL}}/graphql` directly to check for drift).
 - **Cross-file links use relative paths** (e.g. an `oracles/` file links a selector as
   `../automation/storefront-selectors.md`).

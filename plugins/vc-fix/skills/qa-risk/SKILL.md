@@ -57,10 +57,8 @@ Apply risk-based testing strategy to prioritize test effort where it matters mos
    - Infrastructure change → platform stability risk increase
 
 ## Integration with Other Skills
-- Use `/qa-test-design` to apply appropriate techniques based on risk level
 - Critical risk items should get decision tables + state transitions
-- Use `/qa-metrics` to validate that risk coverage targets are met
-- Use `/qa-sbtm` for exploratory sessions on high-risk areas
+- Higher-risk bugs get a deeper discovery pass during `/qa-bug` reproduction (see `qa/shared-instructions.md` Discovery pass)
 
 ## Rules
 - Revenue-critical flows (checkout, payment) start at minimum Medium risk regardless of change size

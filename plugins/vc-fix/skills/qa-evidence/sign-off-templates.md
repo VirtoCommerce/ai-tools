@@ -8,7 +8,7 @@
 ## Frontend Quick Status Report (for Teams/Comment)
 
 ```markdown
-@qa-lead-orchestrator: [Feature/Flow] Frontend Testing Complete
+Testing Complete: [Feature/Flow] Frontend
 
 **Feature:** [Feature Name]
 **Ticket:** [STORE-XXXX / VCST-XXXX]
@@ -75,7 +75,7 @@
 | Role | Agent | Decision | Date |
 |------|-------|----------|------|
 | Frontend Expert | qa-frontend-expert | APPROVED | [date] |
-| QA Lead | qa-lead-orchestrator | PENDING | - |
+| QA Lead | (assign in your tracker) | PENDING | - |
 ```
 
 ### Frontend Approval Criteria
@@ -88,7 +88,7 @@
 ## Backend Quick Status Report (for Teams/Comment)
 
 ```markdown
-@qa-lead-orchestrator: [Module/Feature] Backend Testing Complete
+Testing Complete: [Module/Feature] Backend
 
 **Module:** [Module Name / API Endpoint]
 **Ticket:** [PLAT-XXXX / VIRC-XXXX]
@@ -147,7 +147,7 @@
 | Role | Agent | Decision | Date |
 |------|-------|----------|------|
 | **Backend Expert** | qa-backend-expert | APPROVED | [date] |
-| **QA Lead** | qa-lead-orchestrator | PENDING | - |
+| **QA Lead** | (assign in your tracker) | PENDING | - |
 ```
 
 ### Backend Approval Criteria

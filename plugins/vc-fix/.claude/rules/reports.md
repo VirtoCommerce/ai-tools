@@ -7,10 +7,12 @@
 | # | Category | Path | When |
 |---|----------|------|------|
 | 1 | Bug report | `reports/bugs/` | A confirmed defect with reproducible STR |
-| 2 | Test cases | `regression/suites/` (CSV) | Adding/updating test coverage |
-| 3 | BA report | `reports/ba/` | `/ba-analyze` deliverables |
-| 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
+| 2 | Test cases *(full `vc-qa` plugin only, not shipped here)* | `regression/suites/` (CSV) | Adding/updating test coverage |
+| 3 | BA report *(full `vc-qa` plugin only, not shipped here)* | `reports/ba/` | `/ba-analyze` deliverables |
+| 4 | Regression summary *(full `vc-qa` plugin only, not shipped here)* | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
+
+**In `vc-fix`, only categories 1 and 5 apply** — bug reports (`/qa-bug`) and monitoring summaries (`/qa-monitoring`). Categories 2–4 are kept here because this file is a verbatim copy of the full `vc-qa` policy (still the single source of truth to avoid drift if those categories are ever added back); they're inert until then.
 
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
 
@@ -106,6 +108,6 @@ Reports:
 |----------|----------|---------|
 | HAR files | `test-results/{browser}/har/` | "HAR: `checkout-2026-05-21.har`" |
 | Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
-| Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
+| Test data *(full `vc-qa` plugin only, not shipped here)* | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
 | BL/ECL invariants | `knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
-| Prior runs | `reports/regression/REG-*` | Link by run ID, don't recap |
+| Prior runs *(full `vc-qa` plugin only, not shipped here)* | `reports/regression/REG-*` | Link by run ID, don't recap |

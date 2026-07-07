@@ -1,6 +1,6 @@
 # Backend & Admin Module Test Case Writing Checklists
 
-> Reference file for `test-management-specialist` agent and `/qa-checklist` skill. Admin SPA and Platform API checklists aligned with **Bundle v14.0.8** (Platform 3.1007.2, 53 modules).
+> Reference file for the `/qa-checklist` skill. Admin SPA and Platform API checklists aligned with **Bundle v14.0.8** (Platform 3.1007.2, 53 modules).
 >
 > For storefront-facing checklists, see `domain-checklists.md`.
 
