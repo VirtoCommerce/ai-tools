@@ -315,9 +315,8 @@ Do not use these tags in CSVs yet — they have no runner support. Until then, e
 ## Cross-References
 
 - `knowledge/execution/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
-- `skills/qa-test-cases-generator/test-case-template.md` — Preconditions column spec and when to use `[PRE:*]`
-- `agents/test-runner-agent.md` — Phase 2 step 2 triggers this protocol
-- `agents/autonomous-test-runner.md` — Phase 2 step 2 triggers this protocol
+- `skills/qa-test-cases-generator/test-case-template.md` — Preconditions column spec and when to use `[PRE:*]` (full `vc-qa` plugin only, not shipped here)
+- `agents/test-runner-agent.md` / `agents/autonomous-test-runner.md` — Phase 2 step 2 triggers this protocol (full `vc-qa` plugin only, not shipped here; in `vc-fix`, `qa-backend-expert`/`qa-frontend-expert`/`qa-testing-expert` apply it directly during `/qa-bug` reproduction)
 - Project memory:
   - `feedback_agents_read_env_creds` — credentials are read from `.env` at runtime
   - `feedback_real_user_interaction` — UI actions only, no JS shortcuts

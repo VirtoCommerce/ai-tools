@@ -7,9 +7,17 @@ applicability_rationale: "Runner contract grammar (tag syntax, predicate shapes,
 
 Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
 
-**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases — `test-management-specialist`, `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`, `test-runner-agent`, `autonomous-test-runner`, `qa-lead-orchestrator`, plus the `/qa-test-cases-generator` and `/qa-api` skills.
+> **In `vc-fix`:** the CSV-suite runner (`scripts/graphql-runner.ts` + its `scripts/lib/graphql-*.ts`
+> helpers), the alias registry (`test-data/aliases.json`), and `regression/suites/` are **full
+> `vc-qa` plugin only, not shipped here** — this plugin's `qa-backend-expert` / `qa-frontend-expert`
+> / `qa-testing-expert` use this file only for the **tag grammar / predicate shapes / query-authoring
+> conventions** (sections below) when writing ad-hoc GraphQL calls during bug repro; they query the
+> API directly rather than through the runner, and treat `knowledge/api/graphql-schema.md` as the
+> primary schema reference.
 
-**Source of truth (read these if anything below seems ambiguous — code wins):**
+**Audience:** every QA agent that writes, reviews, or migrates GraphQL test cases. In `vc-fix`: `qa-backend-expert`, `qa-frontend-expert`, `qa-testing-expert`. (`test-management-specialist`, `test-runner-agent`, `autonomous-test-runner`, `qa-lead-orchestrator`, `/qa-test-cases-generator`, and `/qa-api` are full `vc-qa` plugin only, not shipped here.)
+
+**Source of truth (read these if anything below seems ambiguous — code wins; not shipped in `vc-fix`, full `vc-qa` plugin only):**
 
 - `scripts/graphql-runner.ts` — orchestrator (loadCase → parse → AUTH → GQL/REST exec → assertions → cleanup → evidence)
 - `scripts/lib/graphql-case-parser.ts` — Steps tag grammar (`isStepTag()` + `parseSteps()`)
@@ -19,7 +27,7 @@ Canonical reference for writing **runner-native GraphQL test cases** in suite CS
 - `scripts/lib/test-data-resolver.ts` — `@td()` resolver
 - `test-data/aliases.json` — alias registry
 - `regression/suites/Backend/graphql/050i-graphql-configurations.csv` — gold-standard examples (CFG-GQL-001…032)
-- `knowledge/api/graphql-schema.md` — live xAPI schema reference (consult BEFORE writing any query/mutation)
+- `knowledge/api/graphql-schema.md` — live xAPI schema reference (consult BEFORE writing any query/mutation) — **shipped in `vc-fix`**
 
 ---
 

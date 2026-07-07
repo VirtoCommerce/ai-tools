@@ -186,6 +186,12 @@ See [`docs/onboarding.md`](onboarding.md) § Configuration Buckets for the 3-buc
 
 ### #runtime-3 · "Failed to resolve @td() reference"
 
+> The `@td()` resolver, `test-data/aliases.json`, and `regression/suites/` belong to the full `vc-qa`
+> agent crew (regression + suite authoring) — not currently marketplace-listed; work from a direct
+> clone (see [#install-1](#install-1-invalid-marketplace-source-format)). `vc-fix`'s dev-team agents
+> reproduce a bug as an ad-hoc unit test instead of running suite CSVs, so this failure mode doesn't
+> apply to a marketplace `vc-fix` install.
+
 **Symptom:** `npx tsx scripts/validate-td-refs.ts` or a suite run logs:
 ```
 [test-data-resolver] Failed to resolve @td(TECHFLOW_ADMIN.email): Unknown alias "TECHFLOW_ADMIN"

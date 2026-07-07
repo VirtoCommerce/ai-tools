@@ -19,13 +19,19 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 > content — it still lives in this repo but is **not currently marketplace-installable**; work from a
 > clone of this repo directly (see below) to use it.
 
-Then, in the plugin install directory (Claude Code shows the path), configure your env:
+**For `vc-fix`:** in the plugin install directory (Claude Code shows the path after install), run
+`/project-init` — it interviews you for env name / bug tracker / code host, scaffolds `.env.<env>` +
+`.env.local` + `.mcp.json`, and verifies access. Then try `/qa-bug <description>` or `/qa-fix VCST-1234`.
+
+**For the full `vc-qa` agent crew** (regression, BA, 110 suites — not marketplace-installable, work from
+a direct clone):
 
 ```bash
+git clone https://github.com/VirtoCommerce/vc-mcp-testing-module && cd vc-mcp-testing-module
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
 npm run plugin:configure                   # scaffolds .env.<env> + .env.local, then env:check
-# Create .mcp.json (see below) → restart IDE → type: /qa-smoke storefront
+# Create .mcp.json (see below) → restart IDE → type: /qa-env-check
 ```
 
 > Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` instead of `plugin:configure` — it also writes the `project-profile.json` that `/qa-fix` routing needs.

@@ -28,7 +28,14 @@ npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --browser=c
 npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
 ```
 
-What the script does:
+> **In `vc-fix`:** `scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped here.
+> Create the package dir by hand at the path in "Package location" below (`reports/tickets/<TICKET>/evidence-<UTCstamp>/`
+> — `vc-fix` has no sprint context, so always use the ad-hoc path), with `screenshots/ network/ console/ har/`
+> subfolders, and write `evidence-index.md` / `root-cause.md` yourself following the manifest/worksheet
+> shapes below (Part A's table is the `evidence-index.md` checklist; Part B is `root-cause.md`). There is
+> no `--check` completeness script — self-verify against Part A's **M** rows before writing the bug report.
+
+What the script does (full `vc-qa` plugin only):
 - Resolves `TEST_ENV` and pre-fills the **env header** (TEST_ENV, FRONT_URL/BACK_URL, ENV_RISK) into the
   manifest — no hardcoding.
 - Creates the package dir + subfolders: `screenshots/ network/ console/ har/ source/`.

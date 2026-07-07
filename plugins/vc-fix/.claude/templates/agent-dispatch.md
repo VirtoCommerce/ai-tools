@@ -35,17 +35,13 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 Each agent MUST be assigned an explicit browser server. If the primary browser fails (launch error, user data dir conflict, timeout), retry with the next browser in the fallback chain. Max 1 retry.
 
-### Default Assignments (per `.claude/rules/agents.md`)
+### Default Assignments (per `knowledge/agents/README.md` — this plugin ships only the 3 QA agents below; the dev team uses no browser)
 
 | Agent | Primary Browser | Fallback |
 |-------|----------------|----------|
 | `qa-frontend-expert` | `playwright-chrome` | `playwright-firefox` |
 | `qa-backend-expert` | `playwright-edge` | `playwright-chrome` |
 | `qa-testing-expert` | `playwright-firefox` | `playwright-edge` |
-| `ui-ux-expert` | Chrome DevTools MCP | `playwright-edge` |
-| `test-management-specialist` | `playwright-chrome` (sequential only) | `playwright-firefox` |
-| `ba-system-analyzer` | `playwright-firefox` | `playwright-edge` |
-| `ba-api-specialist` | `playwright-edge` | `playwright-firefox` |
 
 ### Fallback Protocol
 
@@ -57,7 +53,7 @@ Each agent MUST be assigned an explicit browser server. If the primary browser f
 
 ### Parallel Constraints
 
-- Max 3 concurrent browser agents (QA + BA combined)
+- Max 3 concurrent browser agents
 - Never assign two agents to the same browser server simultaneously
 - Never use WebKit on Windows — skip to next in chain
 

@@ -92,28 +92,24 @@ Check which MCP servers are configured and reachable. Source of truth: customer'
 
 | Server | Gates |
 |--------|-------|
-| `postman` | `/qa-postman`, `/qa-api test` |
-| `atlassian` | `/qa-bug` JIRA filing, `/qa-status`, `/qa-test-plan` |
+| `atlassian` | `/qa-bug` JIRA filing, `/qa-fix` ticket transitions, `/qa-verify-fix` |
 | `context7` | `/vc-docs` (fallback) |
-| `github` | `/qa-test PR #N`, `/ba-analyze` |
-| `figma-remote-mcp` | `/qa-design` (Figma comparison) |
+| `github` | `/qa-fix` PR open/route, `/project-init` repo discovery |
 | `claude_ai_VirtoOZ_for_virtocommerce_com_docs` | `/vc-docs` (primary) |
 
 Optional MCPs missing = warning, not failure. The dependent skill prints a clear error at runtime.
 
-### 5. Test Infrastructure
+### 5. Plugin Local State
 
-Quick checks on plugin local state:
+Quick checks on plugin local state (vc-fix has no suite manifest / test-data registry — those are
+full `vc-qa` plugin only, not shipped here):
 
 | Item | Check |
 |------|-------|
-| `manifest.json` | Exists at repo root, valid JSON. |
-| `config/test-suites.json` | Exists, valid JSON, schema lint passes (`npm run suites:lint`). |
-| `test-data/aliases.json` | Exists. |
-| `test-data/aliases.${TEST_ENV}.json` | Optional — note if present (env overrides active). |
-| Regression suite CSV files | All `file:` paths in manifest resolve to existing CSV files. |
-| `agents/test-runner-agent.md` | Exists (orchestrator dispatches to this template). |
-| `reports/` directory | Exists (create if missing — orchestrator writes here). |
+| `project-profile.json` | Exists at repo root, valid JSON — written by `/project-init`; its absence means `/qa-fix` falls back to native-platform/Jira/GitHub defaults. |
+| `.fix-workspace/` | Present or creatable (gitignored — `/qa-fix` clones repos here). |
+| `reports/bugs/` | Exists (create if missing — `/qa-bug` writes here). |
+| `reports/fixes/` | Exists (create if missing — `/qa-fix` writes here). |
 
 ---
 
