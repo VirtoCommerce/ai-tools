@@ -126,18 +126,25 @@ Full list: `package.json`.
 
 ## Repository Structure
 
+Plugin components (`agents/`, `skills/`, `commands/`, `hooks/`, `knowledge/`) live at the **repo root** — plugin discovery is non-recursive.
+
 ```
 vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
+├── .claude-plugin/       # plugin.json + marketplace.json (plugin manifest only)
+├── agents/               # 18 agents, flat *.md (QA 10, BA 4, Developers 4) — no subfolders
+├── skills/               # 32 skills, each skills/<name>/SKILL.md (30 categorized + project-init + run-vc-mcp-testing-module)
+├── commands/             # 23 slash commands, flat *.md
+├── hooks/                # hooks.json (2 hooks) + enforce-real-user.mjs
+├── knowledge/            # 28 shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
 ├── .claude/
-│   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (28 reference files)
-│   ├── skills/           # 30 skills (4 categories) + 2 root-level
-│   ├── commands/         # 23 slash commands
-│   └── rules/            # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
+│   ├── rules/            # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
+│   ├── architecture/     # TIER.md classification
+│   └── ROUTING.md        # "New here?" entry point
 ├── config/               # Playwright browser configs + test-suites.json manifest
-├── ci/                   # CI / full-cycle / auto-fix / monitoring pipelines (gitignored)
+├── ci/                   # CI / full-cycle / auto-fix / monitoring pipelines (tracked — ships with the plugin)
 ├── vc/                   # VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
-├── regression/suites/    # CSV suites under Frontend/ + Backend/ (manifest is authoritative)
+├── regression/suites/    # 110 CSV suites (~3,480 cases) under Frontend/ + Backend/ (44 module dirs)
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── test-data/            # Alias registry + CSV fixtures
 ├── reports/              # Bug + regression reports
