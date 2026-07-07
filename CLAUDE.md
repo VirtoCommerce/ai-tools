@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `vc/vcst-qa/docs/prompts/`.
+**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `vc/shared/docs/prompts/`.
 
-This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/plugin.json`, marketplace entry: `marketplace.json`). Customers install it via Claude Code's `/plugin install`, then run `npm run plugin:configure` for env setup. Distribution/onboarding docs live in `docs/distribution.md` + `docs/onboarding.md`; see also `/qa-onboarding`.
+This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/plugin.json`, marketplace entry: `.claude-plugin/marketplace.json` — marketplace name `vc-tools`). Teammates/customers add the marketplace with `/plugin marketplace add VirtoCommerce/vc-mcp-testing-module`, install via `/plugin install vc-qa@vc-tools`, then run `npm run plugin:configure` for env setup. Distribution/onboarding docs live in `docs/distribution.md` + `docs/onboarding.md`; see also `/qa-onboarding`.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ npm run ci:smoke         # Smoke tests only (suites 042, 078)
 npm run ci:critical      # P0 suites (042, 078, 039, 044, 049)
 npm run ci:frontend      # Frontend-layer suites
 npm run ci:backend       # Backend-layer suites
-npm run ci:full          # Full regression (all 104 suites)
+npm run ci:full          # Full regression (all 110 suites)
 npm run ci:regression    # Run CI regression via Claude Agent SDK
 npm run ci:cycle         # Full cycle: sync → lifecycle → regression
 npm run ci:coverage      # Coverage generation pipeline
@@ -60,7 +60,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── .claude/rules/        # Reference docs (agents, regression, skills-commands, mcp-browsers, quality-gates, test-data, reports)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
-├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/vcst-qa/docs/prompts/)
+├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/shared/docs/prompts/)
 ├── vc/                    # Layer 2 — VC internal per-env data (vcst-qa, shared); customers ignore
 ├── regression/suites/    # 110 CSV suites (~3,480 cases) in 44 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
@@ -68,7 +68,7 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ├── test-data/            # Orgs, search queries, uploads
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `settings.json`, `results/`, `ci/`, `.github/`, `.claude/settings.local.json`
+**Gitignored:** `.env`, `.env.local`, `.env.backup`, `.mcp.json`, `settings.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json` (note: `ci/` and `.github/` ARE tracked and ship with the plugin — only transient sub-paths like `ci/config/.module-registry.cache.json` are ignored)
 
 ## Essential Rules
 

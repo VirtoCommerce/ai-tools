@@ -6,15 +6,23 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 
 ## Quick Start
 
+**Install as a Claude Code plugin** (in Claude Code):
+
+```
+/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
+/plugin install vc-qa@vc-tools
+```
+
+Then, in the plugin install directory (Claude Code shows the path), configure your env:
+
 ```bash
-git clone https://github.com/VirtoCommerce/vc-mcp-testing-module.git
-cd vc-mcp-testing-module
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
-# 1. Create .env.local (secrets)  → npm run env:check
-# 2. Create .mcp.json (see below) → restart IDE
-# 3. Open Claude Code → type: /qa-smoke storefront
+npm run plugin:configure                   # scaffolds .env.<env> + .env.local, then env:check
+# Create .mcp.json (see below) → restart IDE → type: /qa-smoke storefront
 ```
+
+> Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` instead of `plugin:configure` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
 
 Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
 
@@ -91,7 +99,7 @@ Five pipelines, each with an interactive + headless-CI twin:
 4. **Full-cycle** — `ci/run-full-cycle.ts`: sync stale cases → review → regression (`npm run ci:cycle`).
 5. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
-> `ci/` is gitignored — available in GitHub Actions / for team members with CI access.
+> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, the module-registry cache, heavy run artifacts) are gitignored.
 
 ## Commands, Skills & Agents
 
@@ -122,13 +130,13 @@ Full list: `package.json`.
 vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
 ├── .claude/
-│   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (29 reference files)
+│   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (28 reference files)
 │   ├── skills/           # 30 skills (4 categories) + 2 root-level
 │   ├── commands/         # 23 slash commands
 │   └── rules/            # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
 ├── config/               # Playwright browser configs + test-suites.json manifest
 ├── ci/                   # CI / full-cycle / auto-fix / monitoring pipelines (gitignored)
-├── vc/                   # VC internal per-env data (+ vcst-qa/docs/prompts/ templates) — customers ignore
+├── vc/                   # VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
 ├── regression/suites/    # CSV suites under Frontend/ + Backend/ (manifest is authoritative)
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── test-data/            # Alias registry + CSV fixtures
@@ -137,7 +145,7 @@ vc-mcp-testing-module/
 └── config.js             # Layered env loader (TEST_ENV-keyed)
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.mcp.json`, `settings.json`, `results/`, `ci/`, `.github/`, `.claude/settings.local.json`.
+**Gitignored:** `.env`, `.env.local`, `.mcp.json`, `settings.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json`. (`ci/` and `.github/` are tracked and ship.)
 
 ## Regression Suites
 

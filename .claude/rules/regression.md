@@ -3,7 +3,7 @@
 ## Architecture: Four Testing Modes
 
 ### 1. Interactive MCP-Driven Testing (Primary)
-Load a prompt template from `docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
+Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser tools with DevTools monitoring. After each flow: export HAR, capture console logs, take screenshots. Generate bug reports in `reports/bugs/`.
 
 ### 2. CI Regression via Claude Agent SDK
 `ci/run-regression.ts` orchestrates headless regression using `@anthropic-ai/claude-agent-sdk`. It reads suite CSVs from `regression/suites/`, injects them into prompts with the 3 regression agent definitions in `ci/agents/` (`qa-frontend-expert.md`, `qa-backend-expert.md`, `qa-testing-expert.md`), and runs suites in parallel batches (up to 3 concurrent, configurable via `MAX_PARALLEL`). Results are tracked in `reports/regression/history.json` (90-day rolling window). Teams notifications via `ci/notify-teams.ts`.
@@ -147,7 +147,7 @@ It queries both layers' App Insights resources (env-resolved `APPINSIGHTS_*`, ne
 
 ## Prompt Templates
 
-Key prompt templates in `docs/prompts/`:
+Key prompt templates in `vc/shared/docs/prompts/`:
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
 - `story-testing.md` - Story-level testing prompt
 
