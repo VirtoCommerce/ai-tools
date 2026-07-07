@@ -3,7 +3,9 @@
 //
 // Blocks MCP browser evaluation tools (browser_evaluate, browser_run_code_unsafe,
 // evaluate_script) unless the JS payload matches a documented exception. Wired
-// via .claude/settings.json. Source of rule: knowledge/agents/qa/shared-instructions.md
+// via the plugin manifest hooks/hooks.json (PreToolUse, ${CLAUDE_PLUGIN_ROOT}) so
+// it ships with the plugin; a per-machine .claude/settings.json entry may also
+// point here. Source of rule: knowledge/agents/qa/shared-instructions.md
 // §"Browser Interaction — Mandatory Real-User Behavior" plus the memory entries
 // feedback_real_user_interaction and feedback_no_force_disabled_controls.
 

@@ -2,11 +2,11 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Skill",
+        "matcher": "mcp__(playwright-(chrome|firefox|edge|webkit)|Chrome_DevTools)__(browser_evaluate|browser_run_code_unsafe|evaluate_script)",
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/track-skill-usage.js"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-real-user.mjs\""
           }
         ]
       }
