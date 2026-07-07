@@ -14,7 +14,7 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 ```
 
 > **`vc-fix` is currently the only plugin listed in the `vc-tools` marketplace** — it's the bug-lifecycle
-> slice (`/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`; see `plugins/vc-fix/`). The fuller agent
+> slice (`/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`; see `plugins/vc-fix/`). The fuller agent
 > crew described in the rest of this README (regression, BA analysis, 110 suites, 18 agents) is `vc-qa`'s
 > content — it still lives in this repo but is **not currently marketplace-installable**; work from a
 > clone of this repo directly (see below) to use it.

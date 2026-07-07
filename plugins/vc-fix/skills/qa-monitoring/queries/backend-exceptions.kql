@@ -1,0 +1,19 @@
+// Backend (platform) server-side exceptions, grouped by signature.
+// Runs against the backend App Insights resource (env-resolved App ID), queried
+// via Azure MCP's applicationinsights tool. Time window is applied as the
+// tool's timespan parameter, so no `where timestamp > ago(...)` here.
+// Emitted columns are consumed by skills/qa-monitoring/fingerprint-store.ts — keep names stable.
+exceptions
+| where client_Type != "Browser"
+| summarize
+    count_ = count(),
+    firstSeen = min(timestamp),
+    lastSeen = max(timestamp),
+    sampleOperationId = any(operation_Id),
+    sampleMessage = any(outerMessage),
+    sampleStack = any(tostring(details)),
+    sampleOperation = any(operation_Name),
+    cloud_RoleName = any(cloud_RoleName)
+    by signature = problemId, sampleType = type, sampleMethod = method
+| order by count_ desc
+| take 50

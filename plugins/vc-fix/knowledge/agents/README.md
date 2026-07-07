@@ -1,10 +1,10 @@
 # Agent System — vc-fix
 
-`vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to four workflows: project
-setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), and bug
-verification (`/qa-verify-fix`). **7 agents, 5 commands, 13 skills** — no regression orchestration,
-no BA team, no Storybook/a11y/design-system tooling. Those live only in the full `vc-qa` plugin
-(not shipped here).
+`vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to five workflows: project
+setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
+verification (`/qa-verify-fix`), and online bug monitoring (`/qa-monitoring`). **8 agents, 6
+commands, 14 skills** — no regression orchestration, no BA team, no Storybook/a11y/design-system
+tooling. Those live only in the full `vc-qa` plugin (not shipped here).
 
 ## Quick Start
 
@@ -13,19 +13,21 @@ no BA team, no Storybook/a11y/design-system tooling. Those live only in the full
 /qa-bug <description>        # Reproduce, document, optionally file a bug
 /qa-fix VCST-1234            # Autonomous fix of an already-filed bug
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
+/qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 ```
 
 ---
 
-## Agent Inventory (7 agents)
+## Agent Inventory (8 agents)
 
-### QA specialists (3) — read-only, no shared-instructions file
+### QA specialists (4) — read-only, no shared-instructions file
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows — used by `/qa-bug` (repro) and `/qa-verify-fix`/G6 (frontend E2E verification) |
-| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA — used by `/qa-bug` (repro) and `/qa-verify-fix`/G6 (backend E2E verification) |
+| **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows — used by `/qa-bug` (repro) and `/qa-verify-fix`/G6 (frontend E2E verification), and by `/qa-monitoring` for frontend live repro |
+| **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA — used by `/qa-bug` (repro) and `/qa-verify-fix`/G6 (backend E2E verification), and by `/qa-monitoring` for backend live repro |
 | **qa-testing-expert** | opus | Interactive testing, debugging, evidence collection — used by `/qa-bug` for live reproduction |
+| **monitor-triage-agent** | sonnet | Classifies a deduplicated App Insights error signature (REAL_BUG / KNOWN_ISSUE / CONFIG_GATED / THIRD_PARTY / TRANSIENT / NOISE) with severity + repo route — used by `/qa-monitoring` |
 
 ### Developers team (4) — the only write-capable agents
 
@@ -51,7 +53,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 
 ---
 
-## Slash Commands (5)
+## Slash Commands (6)
 
 | Command | Purpose |
 |---------|---------|
@@ -59,11 +61,12 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | `/qa-bug [description]` | Reproduce, document, and optionally file a bug |
 | `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
+| `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only — never files a ticket or auto-fixes |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 
 **Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-regression`,
 `/qa-coverage-generation`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-sync-tests`,
-`/qa-seed-data`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-status`,
+`/qa-seed-data`, `/qa-design`, `/qa-exploratory`, `/qa-status`,
 `/qa-onboarding`, `/qa-hotfix`, `/qa-bundle-check`, `/qa-local-env`, `/ba-analyze`,
 `/ba-stories` — full `vc-qa` plugin only, not shipped here.
 
@@ -87,6 +90,12 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
                                        │
                                   PR open, human review (never merged)
 ```
+
+`/qa-monitoring [layer]` is a separate entry point: it queries App Insights, dedups via
+`skills/qa-monitoring/fingerprint-store.ts`, triages with `monitor-triage-agent`, live-repros
+HIGH-confidence findings with `qa-frontend-expert`/`qa-backend-expert`, and drafts a bug report
+with a `## Fix Routing` block — the same contract `/qa-bug` produces, so a confirmed draft can
+be handed to `/qa-fix` by the user.
 
 ### Browser Isolation
 
@@ -121,7 +130,7 @@ repo, minus the BA-only files). Includes `business-logic.md`, `graphql-schema.md
 
 ## Customizing Agents
 
-All 7 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is
+All 8 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is
 non-recursive — no team subfolders). The developers team's `shared-instructions.md` lives under
 `knowledge/agents/developers/`. Each agent is a Markdown file with YAML frontmatter (name,
 description, model, color). Edit the `.md` file to customize behavior.

@@ -21,6 +21,14 @@ stays on disk at the repo root, unmodified, but is not currently installable via
 it does not share files with the root `vc-qa` tree at runtime, since a plugin install has no documented
 way to resolve its own install location for cross-file references.
 
+**Added `/qa-monitoring` + `monitor-triage-agent` to `vc-fix`.** Online bug monitoring from
+Application Insights (query → fingerprint dedup → triage → live repro → report; detect-and-report
+only, never files a ticket or auto-fixes) — a self-contained extract of the full `vc-qa` plugin's
+monitoring pipeline. The headless CI twin (`ci/run-monitor.ts`) and its `@azure/identity` REST
+client are not shipped; `/qa-monitoring` queries via Azure MCP's `applicationinsights` tool
+directly, and the dedup logic + KQL probes live in `plugins/vc-fix/skills/qa-monitoring/`
+(`fingerprint-store.ts`, `queries/*.kql`). `vc-fix` now ships 8 agents, 14 skills, 6 commands.
+
 ---
 
 ## [0.6.0] — 2026-07-07

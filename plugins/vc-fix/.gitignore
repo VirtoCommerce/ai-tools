@@ -11,3 +11,4 @@ project-profile.json
 .local-env/
 skills/qa-fix-routing/.module-registry.cache.json
 .claude/settings.local.json
+reports/monitoring/.seen-fingerprints.json
