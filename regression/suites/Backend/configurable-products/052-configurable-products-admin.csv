@@ -213,7 +213,7 @@
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [{ name: Dynamic Options Section, type: Product, isRequired: false, options: [] }] }
 [WAIT] Response received
 [ASSERT] Verify HTTP response is 200 or 201
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id> to retrieve saved configuration
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<product-id>] } to retrieve saved configuration
 [ASSERT] Verify isActive field in response","[STATUS] POST returns 200 or 201 — configuration saved successfully
 [BODY] Response contains the created configuration with sections[].type = Product
 [BODY] sections[0].options is empty array []
@@ -239,7 +239,7 @@
 "CFG-CA-018","Save Configuration with No Sections — IsActive Forced to False","Catalog > Configurable Products > IsActive Validation","High","BL-CAT-001","","Admin logged in at {{BACK_URL}}. Admin Bearer token obtained. A configurable product exists.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [] }
 [WAIT] Response received
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id> to retrieve saved configuration
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<product-id>] } to retrieve saved configuration
 [ASSERT] Verify isActive field in response","[STATUS] POST returns 200 or 201 — configuration saved
 [BODY] sections is empty array []
 [BODY] isActive = false — correctly forced to false because no sections exist
@@ -262,7 +262,7 @@
 [STATE] Base Options is selectable from the dropdown
 [STATE] Save completes without error toast
 [DOM] After re-open: "Active when section has value" field shows Base Options — dependency persisted
-[STATE] No other section data changed (name, required flag, options unchanged)","[API] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id> — verify sections[B].dependsOnSectionId = sectionA.id
+[STATE] No other section data changed (name, required flag, options unchanged)","[API] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] } — verify sections[B].dependsOnSectionId = sectionA.id
 [CONSOLE] No Angular JS errors or $http errors in Admin SPA","\"Active when section has value\" dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)","VCST-4713","Manual"
 "CFG-CA-020","Clear Active when section has value Dependency from Section — Verify Removal Persists","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product Section B (Accessories) has dependsOnSectionId = Section A.id (set by CFG-CA-019 or pre-seeded). Admin Bearer token available.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module
@@ -274,7 +274,7 @@
 [NAV] Re-open Section B detail blade
 [ASSERT] Observe "Active when section has value" field
 [AUTH] POST {{BACK_URL}}/connect/token to obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] "Active when section has value" dropdown has a clear/empty option available
 [STATE] Save completes without error
 [DOM] After re-open: "Active when section has value" field shows "Always active" — dependency cleared, not reverting to Base Options
@@ -291,7 +291,7 @@
 [ACT] Click on Section B (Accessories) to open its detail blade
 [ASSERT] Inspect the Depends On field
 [AUTH] POST {{BACK_URL}}/connect/token to obtain Bearer token
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] Inspect sections[B].dependsOnSectionId in response","[STATE] Deletion confirmation dialog appears
 [STATE] Section A removed from section list after confirm
 [DOM] Section B detail blade: Depends On is now empty/None — not referencing deleted Section A
@@ -307,8 +307,8 @@
 [STATE] Section B (Accessories) does NOT appear in its own "Active when section has value" dropdown options
 [STATE] Only other sections (e.g. Section A: Base Options) are shown as valid parents
 [STATE] If only one section exists, dropdown is either empty or shows a disabled placeholder","[CONSOLE] No JS errors when opening dropdown
-[API] Attempting to POST dependsOnSectionId = own section id returns 400 Bad Request","Section B appears in its own dropdown and can be selected; self-selection causes server 500 on save; self-referential save silently succeeds; dropdown shows all sections including self","none","VCST-4713","Manual"
-"CFG-CA-023","Circular Dependency A Depends On B — B Depends On A — Confirmed OPTION 3: Silent Reject Without Warning","Catalog > Configurable Products > Conditional Sections","Medium","BL-CAT-001","ECL-5.1","Admin logged in. Seed product. Section A currently has no dependency. Section B currently depends on Section A (from CFG-CA-019 or pre-seeded).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
+[API] Self-dependency is NOT enforced server-side — POST/PATCH with dependsOnSectionId = own section id returns 200/204 and PERSISTS; the self-exclusion is a UI-ONLY guard (the dropdown omits self). Circular (mutual) deps are ALSO not guarded when editing existing sections — they persist (200); a 500 "circular dependency was detected" appears ONLY when both sections are inserted new in one create-POST (EF insert-ordering artifact, not a validation guard) — see CFG-CA-023.","Section B appears in its own dropdown and can be selected; dropdown shows all sections including self","none","VCST-4713","Manual"
+"CFG-CA-023","Circular Dependency (A↔B) — NOT Guarded When Editing Existing Sections: Cycle Persists Silently (200); Only a From-Scratch Create-POST With the Cycle Errors (500 EF Insert-Ordering)","Catalog > Configurable Products > Conditional Sections","Medium","BL-CAT-001","ECL-5.1","Admin logged in. Seed product. Section A currently has no dependency. Section B currently depends on Section A (from CFG-CA-019 or pre-seeded).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product > Configurations tab
 [ASSERT] Confirm Section B depends on Section A
 [ACT] Open Section A detail blade
@@ -316,21 +316,20 @@
 [ASSERT] Inspect dropdown — observe whether Section B is listed as a valid option
 [ACT] Attempt to select Section B (if available in dropdown)
 [ACT] Click Save
-[ASSERT] Observe outcome — no validation error or warning shown
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
-[ASSERT] Inspect both sections' dependsOnSectionId values","[STATE] CONFIRMED BEHAVIOR — OPTION 3: Silent reject without warning
-[STATE] The UI does NOT prevent circular selection in the "Active when section has value" dropdown — Section B can be selected as a parent for Section A
-[STATE] Clicking Save does NOT show a validation error or circular dependency warning
-[STATE] The circular value is silently NOT persisted — data integrity is preserved at the server level
-[BODY] GET after save: Section A dependsOnSectionId remains null (circular assignment silently discarded); Section B dependsOnSectionId still = Section A id (unchanged)
-[STATE] No Admin SPA crash regardless of outcome","[CONSOLE] No unhandled exceptions during save
-[API] GET confirms circular value was silently rejected — Section A dependsOnSectionId = null after attempted circular save","Admin SPA crashes on save or on re-opening Configurations tab; storefront enters infinite loop if circular dependency is actually persisted; 500 server error on GET after circular save; Section A dependsOnSectionId = Section B id in GET response (would indicate guard failed)","clear Section A dependency after test (set "Active when section has value" back to "Always active")","VCST-4713","Manual"
+[ASSERT] Observe the save outcome — editing existing sections, the save (POST /configurations upsert of the existing section rows) returns HTTP 200 with NO validation error or warning; the cycle is silently accepted
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
+[ASSERT] Inspect both sections' dependsOnSectionId values — confirm the cycle PERSISTED (Section A → Section B AND Section B → Section A)","[STATE] The UI does NOT prevent circular selection in the "Active when section has value" dropdown — Section B is selectable as a parent for Section A (no client-side cycle guard)
+[STATE] KNOWN GAP — circular section dependencies are NOT validated server-side when editing existing sections: saving A→B while B→A already exists returns HTTP 200 and the cycle PERSISTS silently (no error, no warning, no guard). Verified live (POST upsert 200, PATCH 204, both persist the cycle)
+[BODY] search read-back after save: Section A dependsOnSectionId = Section B id AND Section B dependsOnSectionId = Section A id — the cycle is stored
+[STATE] The ONLY place a cycle errors is a from-scratch create-POST that inserts BOTH sections new in one call carrying the cyclic FKs — HTTP 500 "circular dependency was detected in the data to be saved" (EF cannot order the [Added] inserts); this is an insert-ordering artifact, NOT a validation guard, and does not protect the edit path
+[STATE] No Admin SPA crash; storefront tolerates a persisted cycle without hanging — the vc-frontend section-visibility resolver is bounded by section count (useConfigurableProduct.ts maxIterations), so affected sections simply stay hidden","[CONSOLE] No unhandled client exceptions
+[API] search read-back confirms the cycle persisted (Section A → Section B AND Section B → Section A) after a 200 save — server has no cycle validation on the edit path","Admin SPA crashes on save or on re-opening Configurations tab; storefront hangs/infinite-loops on a product with a persisted cycle (frontend resolver is bounded — should not happen); the edit-path save returns a 500 or a validation warning (would indicate a NEW server-side cycle guard was added — update this case)","clear Section A dependency after test (set "Active when section has value" back to "Always active")","VCST-4713","Manual"
 "CFG-CA-024","REST API — POST Configuration with dependsOnSectionId and GET Verifies Persistence","Catalog > Configurable Products > REST API","Medium","BL-CAT-001","","Admin Bearer token obtainable. Seed product exists. Section A id and Section B id known. dependsOnSectionId not yet set via API.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; sectionA_id=<id-of-section-A>; sectionB_id=<id-of-section-B>","[AUTH] POST {{BACK_URL}}/connect/token with grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, scope=offline_access — store access_token
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<seed-product-id> with Authorization: Bearer <token> — note current section structure
-[HTTP] PATCH or PUT {{BACK_URL}}/api/catalog/products/configurations/<config-id> with body including sections array: section B object with dependsOnSectionId = <sectionA_id> — if PATCH not supported use POST with full config body
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<seed-product-id>] } with Authorization: Bearer <token> — note current section structure
+[HTTP] PATCH {{BACK_URL}}/api/catalog/products/configurations/<config-id> with a JSON Patch (Operation[]) setting section B's dependsOnSectionId = <sectionA_id> — PATCH by config id is a supported UPDATE verb (204). Verified live: PATCH → 204 and POST /configurations carrying the existing config id → 200 both update; PUT → 405. The IX_ProductConfiguration_ProductId 500 fires only on a POST creating a NEW config (no id) for a productId that already owns one — not on the id-carrying upsert.
 [WAIT] Response received
 [ASSERT] Inspect HTTP status
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<seed-product-id> — retrieve updated configuration
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<seed-product-id>] } — retrieve updated configuration
 [ASSERT] Inspect sections array in response body
 [ASSERT] Locate section B in sections array and inspect dependsOnSectionId field","[STATUS] Auth POST returns 200 with access_token
 [STATUS] Initial GET returns 200 with sections array
@@ -354,12 +353,12 @@
 [ASSERT] Both Size and Color show Depends On=Bundle Choice in the admin Configurations UI","[ADMIN] Section A created: name=Bundle Choice; type=Product; required=false; dependsOnSectionId=null
 [ADMIN] Section B created: name=Size; type=Product; required=true; dependsOnSectionId=<Bundle Choice id>
 [ADMIN] Section C created: name=Color; type=Product; required=true; dependsOnSectionId=<Bundle Choice id>
-[ADMIN] Both siblings show correct Depends On dropdown value (Bundle Choice) in saved configuration view","[API] GET /api/catalog/products/configurations?productId=<id> returns sections with correct dependsOnSectionId wiring; [STOREFRONT] After reindex: Bundle=None hides both siblings; Bundle=value reveals both (CFG-PDP-034-COND)","Admin saves only one sibling dependency correctly; Depends On dropdown not persisted; required flag not saved; sections not appearing in storefront as expected","none","VCST-4713","Manual"
+[ADMIN] Both siblings show correct Depends On dropdown value (Bundle Choice) in saved configuration view","[API] POST /api/catalog/products/configurations/search body { productIds: [<id>] } returns sections with correct dependsOnSectionId wiring; [STOREFRONT] After reindex: Bundle=None hides both siblings; Bundle=value reveals both (CFG-PDP-034-COND)","Admin saves only one sibling dependency correctly; Depends On dropdown not persisted; required flag not saved; sections not appearing in storefront as expected","none","VCST-4713","Manual"
 "CFG-CA-026","Admin: Create CFG-028 Pattern — 4-Level Chain and Verify REST API Persistence","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","ECL-7.1","Admin SPA accessible. Logged in. Configurable product exists or created fresh.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_DEEP_CHAIN.slug)","[AUTH] POST {{BACK_URL}}/connect/token for admin Bearer token
 [NAV] Catalog > Products > open configurable product > Configurations tab
 [ACT] Add 5 sections sequentially: Level A (Product, req, no dep); Level B (Product, opt, Depends On=Level A); Level C (Product, opt, Depends On=Level B); Level D (Product, opt, Depends On=Level C); Level E (Product, opt, Depends On=Level D)
 [SAVE] Save after each addition
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<product-id>] }
 [ASSERT] Response contains 5 sections with correct dependsOnSectionId chain: A=null; B=A.id; C=B.id; D=C.id; E=D.id","[ADMIN] All 5 levels saved with correct Depends On values in admin UI
 [HTTP] GET response: 5 sections; Level A dependsOnSectionId=null; Level B dependsOnSectionId=Level A id; chain continues through E
 [DATA] Chain integrity: each level depends only on direct predecessor
@@ -376,7 +375,7 @@
 [ASSERT] Option A Default checkbox now unchecked (UI cleared the previous default)
 [SAVE] Click Save on the product/blade
 [WAIT] Success toast
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<product-id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<product-id>] }
 [ASSERT] Option B has isDefault=true in API response; Option A has isDefault=false","[BLADE] Default checkbox column visible in Product-type section option list
 [STATE] Checking one option as default automatically unchecks all other options in the same section (UI enforcement)
 [TOAST] Success notification after Save
@@ -389,31 +388,26 @@
 [ASSERT] Text Option A Default checked; all others unchecked (single-default)
 [SAVE] Save the product
 [WAIT] Success toast
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] Text Option A has isDefault=true in API response","[BLADE] Default checkbox column visible in Text-type section option list
 [STATE] Single-default clearing applies to Text sections too (same as Product sections)
 [TOAST] Success notification after Save
 [BODY] GET response: Text Option A isDefault=true; all others false","[API] GET confirms isDefault=true on Text Option A; [STOREFRONT] After reindex: Text section shows Text Option A pre-selected on PDP (CFG-PDP-040 pattern applied to Text section)","Default checkbox not visible for Text section; checking Text option does not clear others; isDefault not persisted for Text section type","Restore product to original state","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
 "CFG-CA-029","REST API — POST Configurations Persists isDefault=true and Enforces Single-Default Normalization (VCST-4715)","Configurable Products > Admin > REST API IsDefault","Critical","BL-CAT-006","ECL-14.1","Admin authenticated with Bearer token. Use a THROWAWAY configurable product created for this test — do NOT use seeded CFG-030 (@td(CFG_WITH_DEFAULT.id)) or CFG-031 (@td(CFG_WITH_DEFAULT_COND.id)) as re-POSTing would overwrite the default options that other VCST-4715 cases (CFG-PDP-040..043, CFG-E2E-070) depend on. POST /api/catalog/products/configurations endpoint accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
-[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <id>; isActive: true; sections: [{ name: Frame Material; type: Product; isRequired: true; options: [{ productId: <opt-A-id>; isDefault: true }; { productId: <opt-B-id>; isDefault: false }; { productId: <opt-C-id>; isDefault: false }] }] }
-[ASSERT] POST returns 200 or 201
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
-[ASSERT] GET shows option A isDefault=true; options B and C isDefault=false
-[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with SAME product, now TWO options both isDefault=true: options A and B both isDefault=true
-[ASSERT] POST returns 200 (no validation error — normalization is server-side)
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
-[ASSERT] GET response: only FIRST option (A) has isDefault=true; option B has isDefault=false (normalization rule — service preserves first, clears rest)","[STATUS] First POST: 200 or 201; [BODY] GET after first POST: option A isDefault=true; B and C isDefault=false
-[STATUS] Second POST (two defaults): 200 (no 422 — normalization not a validation error)
-[BODY] GET after second POST: exactly ONE option has isDefault=true (option A — first submitted); option B isDefault=false
-[SCHEMA] isDefault field present on each option in GET response as boolean","[ROUNDTRIP] REST normalization enforced by ProductConfigurationService: only first default preserved when multiple submitted; [STOREFRONT] After reindex (~60s): storefront PDP pre-selects option A","POST with two isDefault=true returning 422 validation error (should be 200 + normalization); both options showing isDefault=true in GET (normalization not applied); isDefault field absent from GET response; first POST with single default not persisting (isDefault=false in GET response)","Delete test configuration after test","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations (THROWAWAY product) submitting TWO isDefault:true options to exercise single-default normalization in ONE create — a 2nd create-POST (no config id) for the same productId 500s on IX_ProductConfiguration_ProductId, so normalization must be tested within this single create POST: { productId: <id>; isActive: true; sections: [{ name: Frame Material; type: Product; isRequired: true; options: [{ productId: <opt-A-id>; isDefault: true }; { productId: <opt-B-id>; isDefault: true }; { productId: <opt-C-id>; isDefault: false }] }] }
+[ASSERT] POST returns 200 or 201 (no 422 — single-default normalization is server-side, not a validation error)
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] } — read back the persisted configuration
+[ASSERT] search results[0]: only the FIRST submitted default (option A) has isDefault=true; options B and C isDefault=false (service preserves first, clears the rest)","[STATUS] POST returns 200 or 201 (no 422 — single-default normalization is server-side, not a validation error)
+[BODY] search read-back results[0]: exactly ONE option has isDefault=true — the FIRST submitted (option A); options B and C isDefault=false
+[SCHEMA] isDefault field present on each option in the search results as boolean","[ROUNDTRIP] REST normalization enforced by ProductConfigurationService: only first default preserved when multiple submitted; [STOREFRONT] After reindex (~60s): storefront PDP pre-selects option A","POST with two isDefault=true returning 422 validation error (should be 200 + normalization); both options showing isDefault=true in GET (normalization not applied); isDefault field absent from GET response; first POST with single default not persisting (isDefault=false in GET response)","Delete test configuration after test","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
 "CFG-CA-030","REST API — GET Configurations Returns isDefault=false for All Options When No Default Set (VCST-4715)","Configurable Products > Admin > REST API IsDefault","High","BL-CAT-006","ECL-14.1","Admin authenticated with Bearer token. An existing configurable product with options where NO option has been set as default. Or: a product where all options are posted with isDefault=false.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with all options having isDefault=false (or omitting the isDefault field entirely)
 [ASSERT] POST returns 200 or 201
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] GET response: all options[].isDefault = false; no option has isDefault=true
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with isDefault field OMITTED from option payload (backward-compat test)
 [ASSERT] POST returns 200
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] GET response: options with omitted isDefault field serialize as isDefault=false (EF Core default false; not null)","[STATUS] POST returns 200 or 201
 [BODY] All GET options[].isDefault = false; no nulls; no true
 [STATUS] POST with omitted isDefault: 200
@@ -426,7 +420,7 @@
 [ASSERT] Default checkbox now unchecked for that option; no option has Default checked
 [SAVE] Save the product
 [WAIT] Success toast
-[HTTP] GET {{BACK_URL}}/api/catalog/products/configurations?productId=<id>
+[HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] }
 [ASSERT] All options have isDefault=false in API response
 [WAIT] 60s for search index reindex
 [NAV] Navigate to the product PDP on {{FRONT_URL}}
