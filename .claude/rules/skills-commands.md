@@ -1,6 +1,6 @@
 # Skills & Commands Reference
 
-## Slash Commands (23) — `.claude/commands/`
+## Slash Commands (23) — `commands/`
 
 All commands have YAML frontmatter with `description`, `argument-hint`, and invocation control. Commands with side effects use `disable-model-invocation: true` to prevent accidental auto-triggering.
 
@@ -30,9 +30,9 @@ All commands have YAML frontmatter with `description`, `argument-hint`, and invo
 | `/ba-stories` | `feature name \| VCST-XXXX` | No | Generate Agile user stories with BDD acceptance criteria |
 | `/project-init` | `(no args — interactive) \| --check` | No | **Onboard this plugin onto a deployment.** Install deps; choose native-platform vs CLIENT project; pick bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos); capture test-env URL + browser-login/token auth (never passwords); discover the client/platform repo split; write `project-profile.json` + `.mcp.json`; verify access. The profile is what makes `/qa-fix` route each bug to the **right repo** (client custom code vs native VirtoCommerce platform) and the **right tracker**. Backed by the `/project-init` skill. |
 
-## Skills (30) — `.claude/skills/` (grouped by category)
+## Skills (30) — `skills/` (grouped by category)
 
-Skills are slash commands with supporting reference files, organized into 4 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `.claude/skills/README.md` for full reference. (A separate top-level `run-vc-mcp-testing-module` skill builds/smoke-tests this repo's own tooling and is not part of the categorized QA set.)
+Skills are slash commands with supporting reference files, organized into 4 category directories. Each skill has a `SKILL.md` with `[Category]` tag in the description. See `skills/README.md` for full reference. (A separate top-level `run-vc-mcp-testing-module` skill builds/smoke-tests this repo's own tooling and is not part of the categorized QA set.)
 
 **`vc-knowledge/` — Virto Commerce Knowledge (1) — auto-invocable:**
 

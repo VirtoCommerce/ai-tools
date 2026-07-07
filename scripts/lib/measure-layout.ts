@@ -26,7 +26,7 @@
  * any MCP `evaluate` tool (playwright-*, Chrome DevTools). They use no imports
  * and no TypeScript syntax — pure JS executable in any modern browser context.
  *
- * Invariants enforced (see `.claude/agents/qa/ui-ux-expert.md` Layer 1):
+ * Invariants enforced (see `agents/ui-ux-expert.md` Layer 1):
  *   BL-UI-001  Layout stability (CLS ≤ 0.1)
  *   BL-UI-002  Spacing grid {4,8,12,16,20,24,32,40,48,56,64,80,96} px
  *   BL-UI-003  No state-induced shift (rect Δ = 0 on hover/focus)

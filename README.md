@@ -98,8 +98,8 @@ Five pipelines, each with an interactive + headless-CI twin:
 Full reference: [`.claude/rules/skills-commands.md`](.claude/rules/skills-commands.md).
 
 - **23 slash commands** — `/project-init`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-bundle-check`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-onboarding`, `/ba-analyze`, `/ba-stories`, …
-- **30 skills** in [`.claude/skills/`](.claude/skills/) (VC knowledge, testing, QA methodology, development) + 2 root-level (`project-init`, `run-vc-mcp-testing-module`).
-- **18 agents** in [`.claude/agents/`](.claude/agents/) across three teams (QA 10, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
+- **30 skills** in [`skills/`](skills/) (VC knowledge, testing, QA methodology, development) + 2 root-level (`project-init`, `run-vc-mcp-testing-module`).
+- **18 agents** in [`agents/`](agents/) across three teams (QA 10, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
@@ -145,7 +145,7 @@ CSV suites in enriched agent-native format, organized under `Frontend/<module>/`
 
 P0 suites: 042 (Smoke), 078 (Smoke companion), 039 (CyberSource payment), 044 (Security), 049 (Platform REST API).
 
-Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/agents/knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/agents/knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)).
+Authoring guides: browser-mode tags ([`test-runner-tags.md`](knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)).
 
 ## Notes
 

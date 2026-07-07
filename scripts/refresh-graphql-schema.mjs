@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Refreshes .claude/agents/knowledge/api/graphql-schema.md from live GraphQL introspection.
+ * Refreshes knowledge/api/graphql-schema.md from live GraphQL introspection.
  *
  * Usage:
  *   node scripts/refresh-graphql-schema.mjs              # uses BACK_URL from .env
@@ -16,7 +16,7 @@ import { resolveTestEnv } from './lib/resolve-test-env.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const OUTPUT = resolve(ROOT, '.claude/agents/knowledge/api/graphql-schema.md');
+const OUTPUT = resolve(ROOT, 'knowledge/api/graphql-schema.md');
 
 // Parse args
 const args = process.argv.slice(2);

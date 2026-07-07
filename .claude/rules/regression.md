@@ -14,7 +14,7 @@ Load a prompt template from `docs/prompts/`, execute via MCP browser tools with 
 1. `regression-orchestrator` agent reads `config/test-suites.json` manifest
 2. Resolves suite selection (`smoke`, `critical`, `sprint`, `full`, or comma-separated IDs)
 3. Assigns suites to browser pool slots (3 slots: chrome, firefox, edge)
-4. Spawns sub-agents using `.claude/agents/qa/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
+4. Spawns sub-agents using `agents/test-runner-agent.md` template with substituted parameters (`{{SUITE_ID}}`, `{{BROWSER_SERVER}}`, `{{ENVIRONMENT_URL}}`, `{{OUTPUT_FILE}}`, etc.)
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
 
@@ -88,7 +88,7 @@ Central configuration for regression orchestration. Defines:
 
 - **Release suite**: `_release/080-full-regression-release.csv` (100 P0/P1 tests for major releases)
 - **P0 suites**: 042 (Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API)
-- **Critical UI scope**: `.claude/agents/knowledge/oracles/critical-ui-scope.md` defines the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`) with applicable BL-UI invariants per cell. The validator `npm run scope:validate` exits non-zero if any covered matrix cell points at a missing test ID. Covered exclusively by suite `048b-layout-stability.csv` (selection `layout-stability`).
+- **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`) with applicable BL-UI invariants per cell. The validator `npm run scope:validate` exits non-zero if any covered matrix cell points at a missing test ID. Covered exclusively by suite `048b-layout-stability.csv` (selection `layout-stability`).
 
 ### Selection Groups
 
@@ -140,7 +140,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 Beyond the four testing modes above, there is an **online monitoring** pipeline that watches Azure Application Insights for live errors instead of executing test cases. Like the others it has an interactive + headless **twin** pair:
 
-- **Interactive:** `/qa-monitoring [frontend|backend|both] [--since=MIN] [--dry-run]` (`.claude/commands/qa-monitoring.md`)
+- **Interactive:** `/qa-monitoring [frontend|backend|both] [--since=MIN] [--dry-run]` (`commands/qa-monitoring.md`)
 - **Headless:** `ci/run-monitor.ts` (`npm run ci:monitor` / `ci:monitor:dry`) + `.github/workflows/monitor.yml`
 
 It queries both layers' App Insights resources (env-resolved `APPINSIGHTS_*`, never hardcoded), **deduplicates** errors via a fingerprint store (`reports/monitoring/.seen-fingerprints.json`, carried across CI runs by `actions/cache`), **triages** new/spiking signatures (`ci/agents/monitor-triage-agent.md`), **reproduces** HIGH-confidence bugs live via the QA experts, drafts bug reports with a `## Fix Routing` block, and reports to `reports/monitoring/MONITOR-*/` + Teams (`NOTIFY_MODE=monitor`). **Detect-and-report only** — it never files JIRA and never auto-fixes; a human picks up the confirmed drafts via `/qa-bug` → `/qa-fix`. KQL probes live in `ci/monitoring/queries/`. Full methodology: the `/qa-monitoring` skill.
@@ -151,4 +151,4 @@ Key prompt templates in `docs/prompts/`:
 - `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
 - `story-testing.md` - Story-level testing prompt
 
-> **Note:** `test-runner-agent.md` is now an agent definition at `.claude/agents/qa/test-runner-agent.md`, not a prompt template.
+> **Note:** `test-runner-agent.md` is now an agent definition at `agents/test-runner-agent.md`, not a prompt template.

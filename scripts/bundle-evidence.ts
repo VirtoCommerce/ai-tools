@@ -1,7 +1,7 @@
 /**
  * bundle-evidence.ts — scaffold & validate a structured bug-investigation evidence package.
  *
- * Companion to the /qa-investigate skill (.claude/skills/qa-methodology/qa-investigate/
+ * Companion to the /qa-investigate skill (skills/qa-investigate/
  * evidence-and-root-cause.md). It does NOT capture evidence itself (the MCP browser tools do that,
  * live, during reproduction) — it gives every artifact one home, a manifest with the mandatory slots
  * (incl. the easily-lost trace/operation ID), and a completeness gate before the bug report is written.
@@ -194,7 +194,7 @@ function manifestTemplate(pkg: string, raw: RawArtifact[]): string {
 **Browser:** ${browser}
 **Package:** \`${pkg.replace(/\\/g, '/')}\`
 
-> Companion: \`.claude/skills/qa-methodology/qa-investigate/evidence-and-root-cause.md\` (Part A).
+> Companion: \`skills/qa-investigate/evidence-and-root-cause.md\` (Part A).
 > Fill each \`<fill: …>\` slot as you capture. Run \`--check\` before writing the bug report.
 
 ## Header slots (fill these)

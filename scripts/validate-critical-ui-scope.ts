@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Validate that every covered cell in `.claude/agents/knowledge/oracles/critical-ui-scope.md`
+ * Validate that every covered cell in `knowledge/oracles/critical-ui-scope.md`
  * points at a test ID that actually exists in a regression suite CSV.
  *
  * Cell value contract (per critical-ui-scope.md):

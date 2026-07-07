@@ -238,4 +238,4 @@ Watching for: 3+ "must-fix-before-next-pilot" findings from one pilot. That's a 
 - Customer-facing onboarding: [`./onboarding.md`](onboarding.md)
 - Distribution model: [`./distribution.md`](distribution.md)
 - Tier governance: [`./versioning.md`](versioning.md)
-- Customer-onboarding command: [`../.claude/commands/qa-onboarding.md`](../.claude/commands/qa-onboarding.md)
+- Customer-onboarding command: [`../commands/qa-onboarding.md`](../commands/qa-onboarding.md)

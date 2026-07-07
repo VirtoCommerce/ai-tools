@@ -11,7 +11,7 @@
  * Usage:
  *   npx tsx scripts/detect-vcst-isms.ts                # full scan
  *   npx tsx scripts/detect-vcst-isms.ts --suites       # only regression/suites/
- *   npx tsx scripts/detect-vcst-isms.ts --agents       # only .claude/agents/
+ *   npx tsx scripts/detect-vcst-isms.ts --agents       # only agents/
  *   npx tsx scripts/detect-vcst-isms.ts --quiet        # summary only (CI mode)
  *
  * Exit code: 0 if zero findings, 1 if any findings.
@@ -200,7 +200,7 @@ function shouldScan(path: string): boolean {
 
   // Restrict by --suites/--agents flags
   if (SUITES_ONLY && !path.includes("/regression/suites/")) return false;
-  if (AGENTS_ONLY && !path.includes("/.claude/agents/")) return false;
+  if (AGENTS_ONLY && !path.includes("/agents/")) return false;
 
   return true;
 }

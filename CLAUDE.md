@@ -51,9 +51,12 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 18 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (29 files) for shared refs
-├── .claude/skills/       # 30 QA skills (vc-knowledge, testing, qa-methodology, development) + 2 root-level (project-init, run-vc-mcp-testing-module)
-├── .claude/commands/     # 23 slash commands (incl. /project-init onboarding)
+├── .claude-plugin/       # plugin.json + marketplace.json (ONLY these live here)
+├── agents/       # 18 agents — FLAT *.md at plugin root (QA + BA + Developers teams). Plugin agent discovery is non-recursive: no subfolders
+├── skills/       # 32 skills — each skills/<name>/SKILL.md (ONE level; no category subfolders — discovery is one level only)
+├── commands/     # 23 slash commands, flat *.md (incl. /project-init onboarding)
+├── hooks/        # hooks.json (2 hooks) + enforce-real-user.mjs
+├── knowledge/    # 28 shared reference files + agents/ (per-team shared-instructions + README) — plain dir, NOT scanned as components
 ├── .claude/rules/        # Reference docs (agents, regression, skills-commands, mcp-browsers, quality-gates, test-data, reports)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)

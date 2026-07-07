@@ -47,7 +47,7 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 
 (Other accepted source formats: `https://github.com/VirtoCommerce/vc-mcp-testing-module`, `git@github.com:VirtoCommerce/vc-mcp-testing-module.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
 
-Claude Code clones the plugin into its cache and auto-discovers the agents (`.claude/agents/`), skills (`.claude/skills/`), commands (`.claude/commands/`), knowledge files (`.claude/agents/knowledge/`), and MCP server config.
+Claude Code clones the plugin into its cache and auto-discovers the agents (`agents/`), skills (`skills/`), commands (`commands/`), knowledge files (`knowledge/`), and MCP server config.
 
 **Step B — configure your env (post-install one-time setup):**
 
@@ -226,8 +226,8 @@ After your first green `/qa-smoke`:
 **Day 1:**
 - Try a focused regression: `/qa-regression critical`
 - Run a design audit: `/qa-design <your storefront page>`
-- Explore the agent set: `.claude/agents/README.md`
-- Read the methodology: `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md`
+- Explore the agent set: `knowledge/agents/README.md`
+- Read the methodology: `skills/qa-process/test-process-lifecycle.md`
 
 **Week 1:**
 - Identify vcst-specific suites that don't apply to your deployment; add them to your local suite-skip list.

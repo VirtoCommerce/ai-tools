@@ -104,7 +104,7 @@ To diagnose, please share:
 2. The full output (paste verbatim, including any colors/formatting).
 3. Your TEST_ENV name and ENV_RISK.
 4. Output of `npm run plugin:check`.
-5. Output of `node .claude/skills/run-vc-mcp-testing-module/driver.mjs`.
+5. Output of `node skills/run-vc-mcp-testing-module/driver.mjs`.
 6. Node version: `node --version`.
 7. OS + Claude Code version.
 

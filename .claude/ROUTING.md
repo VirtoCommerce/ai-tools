@@ -120,7 +120,7 @@ Quick decision tree for commands, skills, and agents. New here? Start with `/qa-
 - `fullstack-frontend` — Fixes the `vc-frontend` storefront (Vue 3 / TS + in-repo UI kit + Storybook); reproduce-as-vitest-test → minimal fix → PR
 - `frontend-reviewer` — Gate-4 reviewer of the Vue/TS diff before the PR (single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved)
 
-### Knowledge Base (shared agent references in `agents/knowledge/`, grouped by subfolder)
+### Knowledge Base (shared agent references in `knowledge/`, grouped by subfolder)
 - **`api/`** — `api-auth.md`, `platform-patterns.md`, `graphiql-interaction.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md`
 - **`architecture/`** — `vc-module-architecture.md`, `vc-frontend-architecture.md`
 - **`automation/`** — `browser-quirks.md`, `storefront-selectors.md`, `storefront-config-flags.md`

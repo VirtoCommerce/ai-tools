@@ -16,7 +16,7 @@
     "skillsDir": ".claude/skills",
     "commandsDir": ".claude/commands",
     "rulesDir": ".claude/rules",
-    "knowledgeDir": ".claude/agents/knowledge"
+    "knowledgeDir": "agents/knowledge"
   },
 
   "scope": {

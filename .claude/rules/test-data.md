@@ -11,7 +11,7 @@ Cross-skill rule for any test artifact authored in this repo (test cases, Postma
 | `live-discover` | [`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts) (xAPI at runtime) or CSV-runner `[GQL-OP]+[GQL-CAPTURE]` | **Any** entity, or one whose ID drifts between seeds: "first available product", "current virtual-catalog root", "first saved address", "any active coupon". Assert shape, not exact values. |
 | `random-data` | [`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts) (zero-dep) | **Unique inputs** you never assert exact values on: registration emails, org names, comments, BVA quantities. Defaults use `AGENT-TEST-` prefix so `/qa-seed-data teardown` sweeps them. |
 
-The decision tree, JS recipes, and CSV-runner recipes live in [`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md) — agents authoring or reviewing test cases consult that file first.
+The decision tree, JS recipes, and CSV-runner recipes live in [`knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md) — agents authoring or reviewing test cases consult that file first.
 
 **Passwords are never literals in committed test-data.** Seed-CSV password columns (`test-data/b2b/users.csv`, `test-data/b2b/organization-memberships.csv`, `test-data/users/test-users.csv`, `test-data/users/agent-user-pool.csv`) carry a `{{VAR}}` token (e.g. `{{B2B_USER_PASSWORD}}`, `{{TEST_USER_PASSWORD}}`, `{{DEFAULT_TEST_PASSWORD}}`), resolved at seed time from `.env.local` by [`scripts/lib/user-provision.mjs`](../../scripts/lib/user-provision.mjs) `resolvePassword()` (per-env via the `_${TEST_ENV}` suffix). Real values live only in `.env.local` (gitignored) + the team secret store; safe non-prod defaults ship in [`templates/.env.local.template`](../../templates/.env.local.template). `td:reconcile` secret-hygiene fails any bare password literal; a `{{VAR}}` token is clean (VCST-5406).
 
@@ -40,8 +40,8 @@ Reference implementations: b2b users (`user-provision.mjs` → `syncEnvAliases('
 
 ## Canonical references (single sources of truth)
 
-- **[`.claude/agents/knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)
-- **[`.claude/skills/testing/qa-postman/test-data-fixtures.md`](../skills/testing/qa-postman/test-data-fixtures.md)** — `@td()` resolver contract, fixture directory layout, account/catalog/address conventions, integration patterns
+- **[`knowledge/execution/live-discovery.md`](../agents/knowledge/execution/live-discovery.md)** — decision tree, JS + CSV-runner recipes, anti-patterns, parallel-run isolation (the agent-facing summary of this rule)
+- **[`skills/qa-postman/test-data-fixtures.md`](../skills/testing/qa-postman/test-data-fixtures.md)** — `@td()` resolver contract, fixture directory layout, account/catalog/address conventions, integration patterns
 - **[`test-data/aliases.json`](../../test-data/aliases.json)** — alias registry (`_meta.version` is the contract version)
 - **[`test-data/README.md`](../../test-data/README.md)** — directory layout and seed-results index
 - **[`scripts/lib/test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts)** — `@td()` resolver implementation (CSV-backed + inline aliases)
@@ -50,8 +50,8 @@ Reference implementations: b2b users (`user-provision.mjs` → `syncEnvAliases('
 - **[`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts)** — STATIC validation (`npm run td:validate` — verifies every `@td()` reference resolves + flags hardcoded GUIDs)
 - **[`scripts/seed-data/reconcile-test-data.mjs`](../../scripts/seed-data/reconcile-test-data.mjs)** — LIVE reconciliation (`TEST_ENV=<env> npm run td:reconcile` — probes the platform: catalog root exists, `.env.{ENV}` user roles have accounts, B2B users are org-scoped with no global roles, no password literals in committed CSVs)
 - **[`scripts/lib/user-roles.mjs`](../../scripts/lib/user-roles.mjs)** — canonical test-user ROLE → `.env.{ENV}` var registry (identity from `.env.{ENV}`, secrets from `.env.local`); consumed by the user seeders + `td:reconcile`
-- **[`.claude/agents/knowledge/api/graphql-test-cases-runner.md`](../agents/knowledge/api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
-- **[`.claude/agents/knowledge/api/graphql-schema.md`](../agents/knowledge/api/graphql-schema.md)** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
+- **[`knowledge/api/graphql-test-cases-runner.md`](../agents/knowledge/api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
+- **[`knowledge/api/graphql-schema.md`](../agents/knowledge/api/graphql-schema.md)** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
 
 ## Why hardcoded fixtures rot
 

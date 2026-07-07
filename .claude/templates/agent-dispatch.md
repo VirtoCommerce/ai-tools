@@ -22,7 +22,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Output:** {OUTPUT_PATH}
 
-**Evidence policy:** Follow `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md`
+**Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only
 - Console: capture errors, skip noise
 - Network: capture 4xx/5xx and slow requests (>2s)
