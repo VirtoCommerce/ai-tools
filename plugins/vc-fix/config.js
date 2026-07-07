@@ -115,13 +115,14 @@ const featureGatedVars = {
         gates: '/qa-postman, /qa-api test',
     },
     monitoring: {
-        // App IDs gate the feature. Auth is AAD-first (az login / service principal /
-        // managed identity) — API keys are an OPTIONAL fallback, not required here.
+        // App IDs gate the feature. Queried via Azure MCP's applicationinsights tool
+        // (uses your connected Azure identity) — API keys are an OPTIONAL fallback,
+        // not required here.
         vars: [
             'APPINSIGHTS_APP_ID_BACKEND',
             'APPINSIGHTS_APP_ID_STOREFRONT',
         ],
-        gates: '/qa-monitoring, ci:monitor (App Insights online bug monitoring)',
+        gates: '/qa-monitoring (App Insights online bug monitoring)',
     },
 };
 
@@ -238,7 +239,7 @@ export const env = {
     DATATRANCE_CVV: getEnvVar('DATATRANCE_CVV'),
     DATATRANCE_OTP: getEnvVar('DATATRANCE_OTP'),
 
-    // Azure / Application Insights — online bug monitoring (/qa-monitoring, ci:monitor)
+    // Azure / Application Insights — online bug monitoring (/qa-monitoring)
     // Resource IDs are per-env identifiers (Bucket #2, committed in .env.${TEST_ENV});
     // API keys are secrets (Bucket #3, .env.local only). All optional — the monitor
     // flow no-ops with a clear message when the App IDs / keys are unset.

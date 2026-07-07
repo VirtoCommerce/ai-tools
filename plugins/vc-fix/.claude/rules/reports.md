@@ -34,7 +34,7 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 
 **Regression summary:** Run ID/date/env/browser/selection · Counts table · Failures section (TC-ID, expected, actual, evidence ref, bug link) · Passes as one comma-separated line · Bugs Found (links only) · Quality Gate verdict.
 
-**Monitoring summary:** Run ID/date/env/window/layers · Signature counts (seen/new/spiking/triaged/deferred) · Confirmed bugs table (severity, layer, signature, repo, draft link, telemetry link) · Needs-review table · Dismissed table (class, signature, oracle) · "no JIRA filed, no fix attempted" footer.
+**Monitoring summary:** Run ID/date/env/window/layers · Signature counts (seen/new/spiking/triaged/deferred) · Confirmed bugs table (severity, layer, signature, repo, draft link, telemetry link) · Needs-review table · Dismissed table (class, signature, oracle) · "no ticket filed, no fix attempted" footer.
 
 **BA report:** Title + scope + env · Executive summary (≤5 sentences) · One of: architecture diagram OR prose · Findings table (issue, severity, recommendation) · Open questions/follow-ups.
 
