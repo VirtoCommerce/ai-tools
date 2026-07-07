@@ -127,7 +127,7 @@ cause in a NuGet dependency".
 - **Workspace:** `.fix-workspace/vc-frontend/` (gitignored). **One** repo per run.
 - **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
-  token-owner with Claude as `Co-Authored-By:`** (CLA — see `developers/shared-instructions.md`).
+  token-owner with Claude as `Co-Authored-By:`** (CLA — see `knowledge/agents/developers/shared-instructions.md`).
 - **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
   `--draft`), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
   verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**

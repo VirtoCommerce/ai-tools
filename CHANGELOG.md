@@ -12,6 +12,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; this branch tip is unstable.
 
+**`**BREAKING:**` `vc-qa` removed from the marketplace listing; added `vc-fix`.** `.claude-plugin/marketplace.json`
+now lists only `vc-fix` (`plugins/vc-fix/` — the bug-lifecycle subset: `/project-init`, `/qa-bug`, `/qa-fix`
++ dev team, `/qa-verify-fix`; 7 agents, 13 skills, 5 commands). `/plugin install vc-qa@vc-tools` no longer
+resolves — use `/plugin install vc-fix@vc-tools`. `vc-qa`'s full agent crew (regression, BA, 110 suites)
+stays on disk at the repo root, unmodified, but is not currently installable via the marketplace.
+`vc-fix` is fully self-contained (its own `knowledge/`, `.claude/rules/`, `scripts/lib/`, `config.js`) —
+it does not share files with the root `vc-qa` tree at runtime, since a plugin install has no documented
+way to resolve its own install location for cross-file references.
+
 ---
 
 ## [0.6.0] — 2026-07-07

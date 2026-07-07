@@ -157,13 +157,13 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 > **Owner:** the routed developer agent.
 - `git commit` (Conventional Commits + ticket key), **authored as the human token-owner with Claude as
   `Co-Authored-By`** (NOT a bot author — CLA Assistant blocks bot-authored commits; pattern in
-  `developers/shared-instructions.md` §Commit identity) → push the work branch → **open the PR on the
+  `knowledge/agents/developers/shared-instructions.md` §Commit identity) → push the work branch → **open the PR on the
   host `contributionPlan(routeRepo)` resolved** (GitHub `gh pr create`; Azure Repos ADO REST
   `POST …/pullrequests`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
   auth-per-host are in [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §3). A **normal PR
   for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
   key in the scope slot; see
-  `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
+  `knowledge/agents/developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
   human review"; backend adds "needs deploy verification"), label, link the tracker.
 - **If Gate 1b resolved the route to `upstream-contribution`** (a byte-identical **platform** bug in the
   storefront): the branch + PR go to the **VirtoCommerce upstream**, not the client fork — fork `vc-frontend`,
@@ -202,7 +202,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   the fix). Sonar QG red on changed lines → fix the valid finding / add new-code coverage within
   minimal-diff + never-edit-existing-tests; don't chase pre-existing debt or off-diff nitpicks. Persistent
   RED / cross-repo / repo-owned QG threshold → STOP + hand off. (Full reason→action table:
-  `developers/shared-instructions.md` §After the PR.)
+  `knowledge/agents/developers/shared-instructions.md` §After the PR.)
 - **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
   `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes
@@ -242,7 +242,7 @@ available for CI-on-PR; the routine is the lighter scheduled trigger.
   per host** (`tracker-ops.md` §3): GitHub PAT host → `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`),
   not the ambient read-only token; GitHub `gh-cli` host → the ambient logged-in `gh`; Azure Repos →
   `ADO_PAT` / `az login`. Commits are **authored as the human token-owner + `Co-Authored-By: Claude`**
-  (CLA Assistant blocks bot-authored commits) — patterns in `developers/shared-instructions.md`
+  (CLA Assistant blocks bot-authored commits) — patterns in `knowledge/agents/developers/shared-instructions.md`
   §GitHub authentication / §Commit identity.
 - **Client-code containment (§2a) is absolute:** a client-owned repo is never forked / PR'd / issue-filed
   upstream; an upstream issue carries only platform-generic, client-scrubbed content.

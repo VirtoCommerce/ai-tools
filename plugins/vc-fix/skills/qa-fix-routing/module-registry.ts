@@ -21,10 +21,7 @@
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-
-// CWD-independent — see repo-router.ts's SKILL_DIR comment for why.
-const SKILL_DIR = dirname(fileURLToPath(import.meta.url));
+import { SKILL_DIR } from "./skill-dir.js";
 
 const BACK_URL = (process.env.BACK_URL || "").replace(/\/$/, "");
 const ADMIN = process.env.ADMIN || "admin";

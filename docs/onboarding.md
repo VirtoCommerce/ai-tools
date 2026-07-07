@@ -38,11 +38,17 @@ You need each of these before you start. If any are missing, the install will fa
 
 The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plugin docs](https://code.claude.com/docs/en/plugin-marketplaces)). Two steps:
 
+> **Note:** the `vc-tools` marketplace currently lists only `vc-fix` (the bug-lifecycle subset — setup,
+> bug filing, autofix, verification; see `plugins/vc-fix/`). `vc-qa` — the full agent crew this
+> onboarding guide otherwise describes (regression, BA analysis, 110 suites) — is not currently
+> marketplace-installable; its content still lives in this repo but must be used from a direct clone,
+> not `/plugin install`. This guide's remaining steps assume the full `vc-qa` checkout.
+
 **Step A — install the plugin via Claude Code:**
 
 ```
 /plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-qa@vc-tools
+/plugin install vc-fix@vc-tools
 ```
 
 (Other accepted source formats: `https://github.com/VirtoCommerce/vc-mcp-testing-module`, `git@github.com:VirtoCommerce/vc-mcp-testing-module.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)

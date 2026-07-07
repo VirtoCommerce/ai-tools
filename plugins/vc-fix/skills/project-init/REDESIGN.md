@@ -31,7 +31,7 @@ code vs native VirtoCommerce platform) and the right tracker. Key files:
 - Colored readiness table (FORCE_COLOR + adaptive width ≤100 cols, "To resolve" block).
 - Existing-`.env` guard before scaffolding (step 2c): reuse vs new name.
 - Prune inapplicable azure blocks from the profile (written only for azure).
-- **Client-code containment** (§2a + `developers/shared-instructions.md` +
+- **Client-code containment** (§2a + `knowledge/agents/developers/shared-instructions.md` +
   `assertUpstreamAllowed` in repo-router + `getUpstreamVcs(deps, repo)` asserts platform):
   CLIENT CODE NEVER LEAVES THE CLIENT PROJECT; upstream = platform contribution only.
 - Independent auth axes (`--ado-auth`/`--github-auth`); session auth is really probed

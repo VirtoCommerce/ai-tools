@@ -74,7 +74,7 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 
 ### Layer 4 — Platform REST API
 - **Where:** `{BACK_URL}/api/...` — see `knowledge/api/api-auth.md` for OAuth2 token flow
-- **Tool:** qa-backend-expert via direct HTTP call (`/qa-postman` is not part of this plugin — use the full `vc-qa` plugin if installed alongside)
+- **Tool:** qa-backend-expert via direct HTTP call (`/qa-postman` — full `vc-qa` plugin only, not shipped here)
 - **Verify:** call the underlying Platform REST endpoint (e.g., `/api/catalog/products/{id}`, `/api/order/customerOrders/{id}`, `/api/pricing/prices/search`). Compare response to GraphQL/Admin/UI.
 - **Signal:** REST wrong = module/DB/seeding issue (lowest layer). REST right + GraphQL wrong = xAPI bug. REST + GraphQL right + UI wrong = frontend bug.
 

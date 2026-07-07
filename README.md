@@ -10,8 +10,14 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 
 ```
 /plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-qa@vc-tools
+/plugin install vc-fix@vc-tools
 ```
+
+> **`vc-fix` is currently the only plugin listed in the `vc-tools` marketplace** — it's the bug-lifecycle
+> slice (`/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`; see `plugins/vc-fix/`). The fuller agent
+> crew described in the rest of this README (regression, BA analysis, 110 suites, 18 agents) is `vc-qa`'s
+> content — it still lives in this repo but is **not currently marketplace-installable**; work from a
+> clone of this repo directly (see below) to use it.
 
 Then, in the plugin install directory (Claude Code shows the path), configure your env:
 

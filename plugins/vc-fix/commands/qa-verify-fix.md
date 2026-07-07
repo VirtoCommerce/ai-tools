@@ -140,7 +140,7 @@ Edge Cases:
 | Cross-browser or debugging needed | `qa-testing-expert` | `playwright-firefox` |
 | Both frontend + backend | Two agents in parallel | Respective browsers |
 
-> Storybook / design-system / WCAG a11y verification (`ui-ux-expert`) is out of scope for this plugin — it lives only in the full `vc-qa` plugin.
+> Storybook / design-system / WCAG a11y verification (`ui-ux-expert`) — full `vc-qa` plugin only, not shipped here.
 
 **Agent prompt must include:**
 - The ticket ID and bug summary

@@ -15,8 +15,9 @@ files used) rather than authoring routing logic inline.
 
 | File | Role |
 |------|------|
+| `skill-dir.ts` | `SKILL_DIR` — this directory's own path via `fileURLToPath(import.meta.url)`, CWD-independent. Shared by `repo-router.ts` and `module-registry.ts` so the pattern isn't duplicated. |
 | `repo-router.ts` | Core routing: `repoKind`, `repoOwnership`, `isAllowedRepo`, `repoProfile` (build/test cmd per kind), `contributionPlan` (direct / fork / issue), `suggestRepo`, `checkoutForFix`. Reads `fix-repos.json` (allowlist + routing hints) and the deployment profile (`project-profile.json` via `loadProjectProfile`). |
-| `module-registry.ts` | Live VC module dependency graph via the Platform API (`BACK_URL`) — `repoFromProjectUrl`, `moduleIdToRepoGuess`. Caches to `.module-registry.cache.json` (gitignored) next to this file. No local imports — fully self-contained. |
+| `module-registry.ts` | Live VC module dependency graph via the Platform API (`BACK_URL`) — `repoFromProjectUrl`, `moduleIdToRepoGuess`. Caches to `.module-registry.cache.json` (gitignored) next to this file. |
 | `provenance.ts` | Pure logic, no I/O — `classifyFrontendProvenance` / `frontendDeliveryPlan` for Gate 1b (telling a client's storefront-fork customization from an unmodified-platform bug). Depends only on `repo-router.ts`'s `RepoOwnership` type. |
 | `ado-rest.ts` | Azure DevOps REST auth helpers (PAT or `az login`) shared by the Azure tracker/VCS. |
 | `vcs/` | `Vcs` interface + `github-vcs.ts` (gh CLI) + `azure-repos-vcs.ts` (ADO REST) implementations + `index.ts` factory (`getVcs`/`getUpstreamVcs`). |
@@ -28,11 +29,11 @@ files used) rather than authoring routing logic inline.
 The original `ci/lib/repo-router.ts` etc. back the headless `ci/run-fix-cycle.ts`
 CI twin. `vc-fix` only needs the routing/checkout logic, not the CI orchestration
 — so it carries its own copy here. The `fix-repos.json` / `.module-registry.cache.json`
-default paths resolve off this file's own directory (`SKILL_DIR`, via
-`fileURLToPath(import.meta.url)`) rather than `process.cwd()` — still overridable
-via `FIX_REPOS_CONFIG` / `MODULE_REGISTRY_CACHE`. If `ci/` is ever removed from
-this repo, or this plugin is installed on its own with no `ci/` present at all,
-`vc-fix` keeps working unaffected.
+default paths resolve off this directory's own path (`SKILL_DIR`, from `skill-dir.ts`)
+rather than `process.cwd()` — still overridable via `FIX_REPOS_CONFIG` /
+`MODULE_REGISTRY_CACHE`. If `ci/` is ever removed from this repo, or this plugin
+is installed on its own with no `ci/` present at all, `vc-fix` keeps working
+unaffected.
 
 ## Fully self-contained (not repo-coupled)
 

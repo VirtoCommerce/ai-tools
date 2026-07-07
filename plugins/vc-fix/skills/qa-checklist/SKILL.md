@@ -35,7 +35,7 @@ Checklist items are written to be testable; they assume readers will resolve tes
 
 | File | Use when |
 |------|----------|
-| `@td(ALIAS.field)` resolver | Not part of this plugin (lives only in the full `vc-qa` plugin's `qa-postman`/`test-data/`). Resolve test data ad hoc (live-discover the entity, or ask the user) instead of inventing values |
+| `@td(ALIAS.field)` resolver | `skills/qa-postman/`, `test-data/` (full `vc-qa` plugin only, not shipped here). Resolve test data ad hoc (live-discover the entity, or ask the user) instead of inventing values |
 | [`knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
 | [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
 | [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) | Cross-link checklist items to `BL-*` invariants in the `Business_Rule` column of derived test cases |

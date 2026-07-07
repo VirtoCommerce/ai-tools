@@ -78,7 +78,7 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 ## Pre-v1.0 Status
 
-**Currently:** v0.6.0, developed on `main` and distributed via the `vc-tools` marketplace (`/plugin install vc-qa@vc-tools`). Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
+**Currently:** v0.6.0, developed on `main` and distributed via the `vc-tools` marketplace (`/plugin install vc-fix@vc-tools` — currently the only listed plugin; `vc-qa`'s fuller content lives in this repo but isn't marketplace-listed). Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
 
 Until then: any consumer of this repo should expect frequent changes and pin to a specific commit, not a branch tip.
 

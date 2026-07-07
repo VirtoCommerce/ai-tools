@@ -12,7 +12,7 @@
 |------|---------|
 | [`knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | **Authoritative** live introspection snapshot — query/mutation names, input types, return types. Verify every name and field against this before writing. |
 | [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | **Authoring contract** for runner-native GraphQL test cases (`scripts/graphql-runner.ts`): full `Steps`/`Assertions`/`Cleanup` tag grammar, `getByPath` filter, capture chaining. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`. |
-| `@td(ALIAS.field)` resolver | Not part of this plugin's skill set (the `qa-postman`/`test-data/` registry lives only in the full `vc-qa` plugin). If both plugins are installed in this repo, `@td()` and `{{VAR}}` still resolve the same way — see the full plugin's `.claude/rules/test-data.md`. Otherwise, resolve test data ad hoc (live-discover the entity, or ask the user) rather than inventing values. |
+| `@td(ALIAS.field)` resolver | `skills/qa-postman/`, `test-data/`, `.claude/rules/test-data.md` (full `vc-qa` plugin only, not shipped here). Resolve test data ad hoc (live-discover the entity, or ask the user) rather than inventing values. |
 
 ---
 

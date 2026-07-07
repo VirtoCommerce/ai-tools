@@ -10,15 +10,9 @@
  */
 import { execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync } from "fs";
-import { join, resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join, resolve } from "path";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-
-/** This file's own directory — CWD-independent, so `fix-repos.json` resolves
- * regardless of where the invoking process's working directory happens to be
- * (the plugin cache location Claude Code installs this skill into is not
- * something callers can reliably assume/discover). */
-const SKILL_DIR = dirname(fileURLToPath(import.meta.url));
+import { SKILL_DIR } from "./skill-dir.js";
 
 export type RepoKind = "frontend" | "module" | "platform";
 

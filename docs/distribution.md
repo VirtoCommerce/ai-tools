@@ -3,6 +3,11 @@
 How the plugin reaches Virto Commerce customers, what we ship, and how we version.
 
 > **Status:** Pre-v1.0 (currently v0.6.0). Distribution mechanism is **finalized below** for the v0.x → v1.0.0 path. Subject to refinement based on Phase 4 pilot feedback.
+>
+> **Update:** `.claude-plugin/marketplace.json` currently lists only `vc-fix` (the bug-lifecycle subset —
+> see `plugins/vc-fix/`), not `vc-qa`. Everything below describes `vc-qa`'s distribution model, which
+> still applies to its on-disk content but is not currently reachable via `/plugin install` — customers
+> get it only via a direct clone, not the marketplace.
 
 ## Distribution Decision
 

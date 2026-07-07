@@ -62,7 +62,7 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 
 ## Slash Commands (19)
 
-Full argument reference: [`.claude/rules/skills-commands.md`](../../.claude/rules/skills-commands.md).
+Full argument reference: `.claude/rules/skills-commands.md` (full `vc-qa` plugin only, not shipped here — this plugin ships only the 5 commands/13 skills listed in `plugins/vc-fix/.claude-plugin/plugin.json`).
 
 ### QA Commands
 

@@ -5,9 +5,18 @@ applicability_rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- 
 
 # Live Test-Data Discovery — Agent Reference
 
+> **Not part of this plugin's shipped infrastructure.** The companion code this file describes
+> (`scripts/lib/live-discover.ts`, `random-data.ts`, `graphql-*.ts`, `test-data/`, `.claude/rules/test-data.md`)
+> lives only in the full `vc-qa` plugin — none of it is copied into `plugins/vc-fix/`. This plugin's
+> dev-team skills (`/dotnet-unit-test`, `/vue-unit-test`, etc.) reproduce one specific bug with ad-hoc
+> test data, not the full fixture registry — resolve data inline (live-discover the entity via a direct
+> API/UI call, or ask the user) rather than assuming this file's tooling is present. The decision
+> *model* below (when to use `{{VAR}}` vs an asserted alias vs a discovered value vs a random input)
+> still applies conceptually even without the code.
+
 QA agents have four ways to get data into a test. Picking the right one per data role is what keeps a suite from rotting when the catalog/seed drifts.
 
-This file is the single source of truth for that decision and for the discovery recipes. Companion code lives in [`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts) and [`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts).
+This file is the single source of truth for that decision and for the discovery recipes (in the full `vc-qa` plugin). Companion code there lives in `scripts/lib/live-discover.ts` and `scripts/lib/random-data.ts`.
 
 ---
 
@@ -24,7 +33,7 @@ Pick one row, then read that row's recipe section below.
 
 **The cardinal rule**: random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants instead (`isNumber`, `> 0`, formatted as currency).
 
-Cross-reference: this rule extends the resolver table in [`.claude/rules/test-data.md`](../../.claude/rules/test-data.md).
+Cross-reference: this rule extends the resolver table in `.claude/rules/test-data.md` (full `vc-qa` plugin only — not shipped here).
 
 ---
 
@@ -271,7 +280,7 @@ The regression orchestrator runs up to 3 browser agents in parallel (chrome / fi
 | `discoverFirstAvailableProduct(ctx)` with three agents adding it to cart | All three add the same SKU; one of them will own a cart with quantity 3 when its assertion expected quantity 1. |
 | `discoverFirstAddress(ctx, { type: "shipping" })` when the test then *deletes* the address | Sibling agents lose the address mid-run. |
 
-**Use the agent user pool** in [`test-data/users/agent-user-pool.csv`](../../test-data/users/agent-user-pool.csv) — there are dedicated slots keyed by browser:
+**Use the agent user pool** in `test-data/users/agent-user-pool.csv` (full `vc-qa` plugin only — not shipped here) — there are dedicated slots keyed by browser:
 
 | Slot | Browser | Personal (alias) | B2B account (alias) |
 |---|---|---|---|
@@ -303,8 +312,11 @@ When a test fails on discovered data, the diff between "what we asked for" and "
 
 ## Reused primitives
 
-- [`scripts/lib/graphql-auth.ts`](../../scripts/lib/graphql-auth.ts) — `TokenCache` (called by `tokenForRole`)
-- [`scripts/lib/graphql-executor.ts`](../../scripts/lib/graphql-executor.ts) — `executeOperation` (called by every `discover*`)
-- [`scripts/lib/graphql-case-parser.ts`](../../scripts/lib/graphql-case-parser.ts) — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
+Full `vc-qa` plugin only — none of these are shipped in this plugin:
+- `scripts/lib/graphql-auth.ts` — `TokenCache` (called by `tokenForRole`)
+- `scripts/lib/graphql-executor.ts` — `executeOperation` (called by every `discover*`)
+- `scripts/lib/graphql-case-parser.ts` — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
+- `test-data/aliases.json` — registry for `@td()` references (the other half of the data layer)
+
+Shipped in this plugin:
 - [`knowledge/api/graphql-schema.md`](../api/graphql-schema.md) — schema reference; consult before writing new discovery queries
-- [`test-data/aliases.json`](../../test-data/aliases.json) — registry for `@td()` references (the other half of the data layer)

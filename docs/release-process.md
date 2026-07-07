@@ -2,6 +2,10 @@
 
 How to cut a release of the `vc-qa` plugin. Companion to [`versioning.md`](versioning.md) (the *what*) — this doc is the *how*.
 
+> **Note:** `vc-qa` is not currently listed in `.claude-plugin/marketplace.json` — only `vc-fix` is (see
+> `plugins/vc-fix/`). This process still applies to cutting a `vc-fix` release; substitute `vc-fix`
+> wherever this doc says `vc-qa`, until/unless `vc-qa` is re-listed.
+
 > **Audience:** Maintainers cutting releases. Not customers (customers read [`onboarding.md`](onboarding.md) and pin to a tagged version per [`versioning.md` § Customer Upgrade Path](versioning.md#customer-upgrade-path)).
 
 ## Cadence

@@ -16,7 +16,6 @@ move a file → update its references (and `scripts/audit-agents-knowledge.ts` /
 | [`automation/`](automation/) | How to drive the live UI as a real user | `storefront-selectors.md`, `storefront-config-flags.md`, `browser-quirks.md` |
 | [`execution/`](execution/) | Running the suite: preflight, tags, data resolution, signals, thresholds | `test-execution-preflight.md`, `test-runner-tags.md`, `live-discovery.md`, `module-suite-map.md`, `debugging-signals.md`, `performance-thresholds.md` |
 | [`architecture/`](architecture/) | Repo anatomy for the developers team (auto-fix) | `vc-frontend-architecture.md`, `vc-module-architecture.md` |
-| [`ba/`](ba/) | BA documentation craft | `virto-doc-style.md` |
 
 ## Conventions
 

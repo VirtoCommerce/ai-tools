@@ -376,6 +376,6 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 
 - [business-logic.md](business-logic.md) — Testable invariants (BL-* IDs); each catalog entry cross-refs relevant BL invariants
 - [e-commerce-edge-cases-library.md](e-commerce-edge-cases-library.md) — Generic e-commerce patterns (ECL-* IDs); use alongside this catalog
-- [../../skills/qa-methodology/qa-sbtm/adversarial-heuristics.md](../../skills/qa-sbtm/adversarial-heuristics.md) — Uses this catalog as the "Familiar Problems" oracle (HICCUPPS-F) and seeds Bad Neighborhood Tours
-- [../../skills/qa-methodology/qa-sbtm/charter-library.md](../../skills/qa-sbtm/charter-library.md) — Many charters reference specific entries from this catalog
+- `skills/qa-sbtm/adversarial-heuristics.md` (full `vc-qa` plugin only, not shipped here) — uses this catalog as the "Familiar Problems" oracle (HICCUPPS-F) and seeds Bad Neighborhood Tours
+- `skills/qa-sbtm/charter-library.md` (full `vc-qa` plugin only, not shipped here) — many charters reference specific entries from this catalog
 - `~/.claude/projects/.../memory/MEMORY.md` — Source-of-truth chronological project lessons (kept up-to-date by the assistant during sessions)
