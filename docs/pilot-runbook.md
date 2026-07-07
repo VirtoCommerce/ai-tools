@@ -4,7 +4,7 @@ Internal-to-VC playbook for running the first customer pilots (Phase 4 of the st
 
 > **Audience:** VC QA / partner-engineering staff running the pilot. Not customer-facing.
 >
-> **Goal of every pilot:** the customer's QA lead runs `/qa-smoke` on their own across ≥ 2 envs and files a real bug in the standard `reports.md` format — without VC support. That's the [Phase 4 success metric](functional-singing-cosmos.md).
+> **Goal of every pilot:** the customer's QA lead runs `/qa-smoke` on their own across ≥ 2 envs and files a real bug in the standard `reports.md` format — without VC support. That's the Phase 4 success metric (plan: `~/.claude/plans/functional-singing-cosmos.md`).
 
 ## Section 1 — Pilot Candidate Qualification
 
@@ -44,7 +44,7 @@ Hi [name],
 Welcome to the VC QA plugin pilot. Here's everything you need to start:
 
 1. Plugin repo:    https://github.com/VirtoCommerce/vc-mcp-testing-module
-2. Version to pin: v0.1.0-alpha (commit: ${SHA})
+2. Version to pin: latest tagged release on top of v0.6.0 (commit: ${SHA})
 3. Onboarding:     docs/onboarding.md (in the repo)
 
 Before our kickoff call, please:

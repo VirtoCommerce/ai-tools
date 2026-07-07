@@ -55,7 +55,7 @@ These are the artifacts customers will reference in their own docs, training, an
 | `skills/qa-evidence/evidence-capture-policy.md` | Evidence capture rules, retention, naming. |
 | `skills/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow states + transitions, severity-to-priority mapping. |
 | `skills/qa-metrics/quality-gates.md` | Quality gate thresholds (pass rate, DRE, defect density). |
-| `.claude/rules/reports.md` | 4 report categories, hard size caps, naming conventions. |
+| `.claude/rules/reports.md` | 5 report categories (bug, test cases, BA, regression, monitoring), hard size caps, naming conventions. |
 | `.claude/rules/test-data.md` | `@td()` syntax, no-hardcode rule, four data layers. |
 | `knowledge/agents/qa/shared-instructions.md` | Four-layer agent architecture, PASS/FAIL/AMBIGUOUS classifier, evidence standards. |
 | BL ID convention | `BL-{DOMAIN}-{NNN}` format. Severity tags. |
@@ -63,7 +63,7 @@ These are the artifacts customers will reference in their own docs, training, an
 
 ## Changelog Discipline
 
-- Every release bumps `CHANGELOG.md` (TBD — added when first GA release ships).
+- Every release bumps [`CHANGELOG.md`](../CHANGELOG.md) (already live; `[Unreleased]` accrues on top of the current v0.x line).
 - Every entry categorizes as: **Added** / **Changed** / **Deprecated** / **Removed** / **Fixed** / **Security**.
 - Breaking changes get a leading `**BREAKING:**` marker and a link to `docs/migrations/v{N}.md`.
 - Tier A changes (even non-breaking) get a `**Tier A:**` marker so reviewers know to read carefully.
@@ -74,11 +74,11 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 - Customers **pin a version range**, not a specific version. Recommended: `^1.0` (any 1.x, no major bumps).
 - Customers can opt into prereleases with `1.x-beta` ranges.
-- The plugin records its version in `.vc-qa-version` written by the bootstrap; `npm run env:check` warns if the plugin version doesn't match what the consumer's `.env.{TEST_ENV}` declares.
+- The plugin's version is the single source of truth in [`.claude-plugin/plugin.json`](../.claude-plugin/plugin.json) (mirrored in `package.json`); the Claude Code plugin manager tracks the installed version against the pinned range.
 
 ## Pre-v1.0 Status
 
-**Currently:** v0.x. The plugin is in development on `feature/qa-agentic-standardization`. Nothing is frozen yet. Tier A artifacts are being finalized — once they land in `vc-qa-core` (or whichever distribution mechanism we pick in Phase 2 of the plan), they get the v1.0 freeze stamp.
+**Currently:** v0.6.0, developed on `main` and distributed via the `vc-tools` marketplace (`/plugin install vc-qa@vc-tools`). Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
 
 Until then: any consumer of this repo should expect frequent changes and pin to a specific commit, not a branch tip.
 

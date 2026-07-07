@@ -16,7 +16,7 @@ The plugin is **a methodology + agents + framework + reference suite library** �
 |-------|---------------|---------|
 | Methodology (ISTQB, evidence policy, defect workflow, report templates) | ✅ Use as-is | — |
 | Agent crew + capability infrastructure (orchestrator, env loader, `@td()`, MCP browser pool) | ✅ Use as-is | — |
-| Reference suites for **universal VC platform behavior** (auth, cart, checkout shape, payment integration patterns, GraphQL xAPI, Admin SPA module surfaces) | ✅ ~60-70% of the 99 suites run as-is once you fill in your `@td()` data | Configure `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED` so non-applicable suites skip |
+| Reference suites for **universal VC platform behavior** (auth, cart, checkout shape, payment integration patterns, GraphQL xAPI, Admin SPA module surfaces) | ✅ ~60-70% of the 110 suites run as-is once you fill in your `@td()` data | Configure `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED` so non-applicable suites skip |
 | Reference suites that are **vcst-qa-specific** (some BL invariants assume vcst-qa data shape, some UI assertions match VC's default Coffee theme) | ⚠️ Will fail or need adaptation on your deployment | Clone-and-adapt the closest reference, or skip via suite-list selection |
 | Suites for **your custom features** (custom modules, custom checkout customizations, branded theme assertions, business-specific invariants) | ❌ Plugin does NOT ship these | **You write them** under `regression/suites/customer/` — see [`docs/test-authoring.md`](test-authoring.md) |
 

@@ -23,7 +23,7 @@ How to cut a release of the `vc-qa` plugin. Companion to [`versioning.md`](versi
 | **Approval reviewer** | At least one non-owner reviewer signs off on the release PR. Catches changelog-vs-diff drift. |
 | **Pilot liaison** (post-Phase 2) | When a release ships during an active pilot, the liaison communicates the change to the pilot customer with a 1-line summary + the changelog link. |
 
-**Currently:** Release owner is the maintainer working in `feature/v0.3-product-audit`. Approval reviewer is open — will be named when [`docs/support-runbook.md`](support-runbook.md) Tier 1 owner is decided.
+**Currently:** Release owner is the maintainer working on `main`. Approval reviewer is open — will be named when [`docs/support-runbook.md`](support-runbook.md) Tier 1 owner is decided.
 
 ## What Triggers a Release
 
@@ -130,12 +130,12 @@ In order:
 3. **Internal VC team** — Post in the QA channel: "vc-qa vX.Y.Z is out — highlights: [bullets]. Pin to the tag in your CI."
 4. **No marketing campaign for pre-1.0 releases.** Save the launch noise for v1.0 GA.
 
-### Step 7 — Update the v0.3-product-audit branch (or successor)
+### Step 7 — Advance `main`
 
-After tagging, the branch the release was cut from advances or sunsets:
+After tagging, `main` continues as the canonical line:
 
-- If more Phase 1 work continues, keep the branch active; next release cuts when next workstream lands
-- If Phase 1 is complete, archive the branch (don't delete — git history reference)
+- Keep `main` as the release line; the next release cuts when the next workstream lands
+- Feature branches merge into `main` and are deleted after merge (git history is preserved by the merge commit)
 
 ## Hotfix Flow
 

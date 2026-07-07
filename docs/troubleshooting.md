@@ -52,7 +52,7 @@ Or for local testing while developing:
 
 **Symptom:** `/plugin marketplace add` claims success but `/plugin install vc-qa@vc-tools` fails with `Plugin vc-qa not found in vc-tools marketplace`.
 
-**Cause:** Marketplace was added but the source repo's default branch doesn't contain `.claude-plugin/marketplace.json`. For our repo this happens if you target a branch that pre-dates the plugin migration (anything before commit `ecf00c4` on `feature/v0.3-product-audit` / `main` after merge).
+**Cause:** Marketplace was added but the source repo's default branch doesn't contain `.claude-plugin/marketplace.json`. For our repo this happens if you target a branch/commit that pre-dates the plugin migration (anything before commit `ecf00c4` on `main`).
 
 **Fix:** Ensure you're on a branch/tag with the manifest. For published releases:
 ```

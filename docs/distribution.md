@@ -2,7 +2,7 @@
 
 How the plugin reaches Virto Commerce customers, what we ship, and how we version.
 
-> **Status:** Pre-v1.0. Distribution mechanism is **finalized below** for the v0.1.0-alpha → v1.0.0 path. Subject to refinement based on Phase 4 pilot feedback.
+> **Status:** Pre-v1.0 (currently v0.6.0). Distribution mechanism is **finalized below** for the v0.x → v1.0.0 path. Subject to refinement based on Phase 4 pilot feedback.
 
 ## Distribution Decision
 
@@ -10,7 +10,7 @@ The plugin ships as a **hybrid package**:
 
 | Layer | Mechanism | Why |
 |-------|-----------|-----|
-| **Agents, skills, commands, knowledge files** (`.claude/`) | **Claude Code plugin** via the plugin manager | Matches how Claude Code natively discovers and loads these artifacts. Customers add it once; Claude Code handles updates. No git operations on the customer side. |
+| **Agents, skills, commands, knowledge files** (repo root: `agents/`, `skills/`, `commands/`, `knowledge/`) | **Claude Code plugin** via the plugin manager | Matches how Claude Code natively discovers and loads these artifacts (discovery is non-recursive, so they live at the plugin root). Customers add it once; Claude Code handles updates. No git operations on the customer side. |
 | **Scripts, CI orchestrators, schemas, templates** (`scripts/`, `ci/`, `config/`, `templates/`, `bootstrap/`, `manifest.json`) | **Ship in the same git-cloned plugin repo** | These are Node.js entry points run via `npm run <script>` from the plugin checkout (e.g. `npm run plugin:configure`, `npm run ci:regression`). There is no separately-published npm package; `npm install` in the checkout pulls their dependencies. |
 | **Regression suite CSVs, knowledge files** (`regression/suites/`, `knowledge/`) | **Bundled in both layers** | Customers need these files locally to run suites. They're the plugin's actual value — VC-specific BLs + suites. |
 | **Customer's own config** (`.env.{env}`, `.env.local`, `test-data/aliases.json`, `test-data/aliases.{env}.json`) | **Customer's repo (gitignored or per-env-committed)** | Never ships with the plugin. Customer scaffolds it via `npm run plugin:configure`. |
@@ -33,10 +33,12 @@ The previous default ("just `git clone` and edit") doesn't scale past one or two
 customer-vc-qa/                  # the plugin, installed locally
 ├── manifest.json                # plugin metadata
 ├── package.json                 # npm scripts entry
+├── agents/                      # 18 agents (QA 10 + BA 4 + Developers 4), flat *.md
+├── skills/                      # 32 skills (each skills/<name>/SKILL.md)
+├── commands/                    # 23 slash commands
+├── knowledge/                   # 28 shared reference files + agents/ team instructions
+├── hooks/                       # hooks.json + enforce-real-user.mjs
 ├── .claude/
-│   ├── agents/                  # 14 QA + BA agents
-│   ├── skills/                  # 20 skills
-│   ├── commands/                # 16 slash commands
 │   ├── rules/                   # report rules, test-data policy
 │   └── architecture/            # TIER.md
 ├── ci/                          # orchestrators (regression, full-cycle)
@@ -97,19 +99,19 @@ Full triage flow, SLA targets, communication templates, and patch-release workfl
 | `manifest.json` `.version` | Extended-metadata mirror consumed by `bootstrap/install.ts` (`npm run plugin:check` / `plugin:configure`). Bump in lockstep with `plugin.json`. |
 | `package.json` `.version` | Internal npm version of the tooling repo; not the plugin version and not customer-facing. |
 | `docs/versioning.md` | What counts as breaking, Tier A artifacts under freeze, customer upgrade path. |
-| `CHANGELOG.md` (TBD) | Per-release change list. Added at v0.1.0-alpha → v0.2.0 transition. |
+| `CHANGELOG.md` | Per-release change list (live; Keep-a-Changelog format, `[Unreleased]` on top of v0.6.0). |
 
 ## Customer Migration Path (Phase 4 pilot → GA)
 
-1. **Pre-pilot (now):** plugin lives on `feature/qa-agentic-standardization`. No customers yet.
+1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `vc-tools` marketplace. No external customers yet.
 2. **Pilot start (v0.1.0):** one friendly VC customer installs from a specific commit SHA. We support them directly through Phase 4.
 3. **Pilot close (v0.2.0):** consolidate pilot feedback into a versioned release. Possibly bump to `0.2.0-beta` for second-customer dogfood.
 4. **GA (v1.0.0):** at least 3 successful customer installs on a stable contract. Tier A gets the freeze stamp. `^1.0` becomes the recommended pin.
 5. **Post-GA:** quarterly minor releases. Major releases paired with migration guides.
 
-## Source of Truth: `feature/qa-agentic-standardization`
+## Source of Truth: `main`
 
-While we're pre-v1.0, this branch IS the canonical source. Once we cut v1.0:
+While we're pre-v1.0, `main` IS the canonical source (pin to a tagged release for stability — the branch tip is unstable). Once we cut v1.0:
 
 - Branch becomes a maintenance line for the v1.x series.
 - New work goes to `feature/v2-*` branches as needed.

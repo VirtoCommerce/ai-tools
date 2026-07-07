@@ -4,7 +4,7 @@
 
 **Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files. Prompt templates live in `vc/shared/docs/prompts/`.
 
-This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/plugin.json`, marketplace entry: `.claude-plugin/marketplace.json` — marketplace name `vc-tools`). Teammates/customers add the marketplace with `/plugin marketplace add VirtoCommerce/vc-mcp-testing-module`, install via `/plugin install vc-qa@vc-tools`, then run `npm run plugin:configure` for env setup. Distribution/onboarding docs live in `docs/distribution.md` + `docs/onboarding.md`; see also `/qa-onboarding`.
+This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/plugin.json`, marketplace entry: `.claude-plugin/marketplace.json` — marketplace name `vc-tools`). Teammates/customers add the marketplace with `/plugin marketplace add VirtoCommerce/vc-mcp-testing-module`, install via `/plugin install vc-qa@vc-tools`, then set up their env: a **teammate** on an already-committed env (`.env.vcst` etc.) runs `npm run plugin:configure` (env-only — secrets + `env:check`); a **new deployment / customer** runs `/project-init` instead (the full wizard — also picks tracker/host, discovers the repo split, and writes `project-profile.json` that `/qa-fix` routing needs). Distribution/onboarding docs live in `docs/distribution.md` + `docs/onboarding.md`; see also `/qa-onboarding`.
 
 ## Prerequisites
 

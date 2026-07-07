@@ -6,11 +6,11 @@
 
 An **agentic QA toolkit** for VirtoCommerce customers, in three layers:
 
-1. **An agent crew + methodology** — 14 specialized agents (frontend, backend, UI/UX, BA, test-management, orchestration), 20 skills, ISTQB lifecycle, evidence policy, defect workflow. Same crew VC's internal QA uses. **Same for every customer.**
+1. **An agent crew + methodology** — 18 specialized agents (frontend, backend, UI/UX, BA, test-management, orchestration, developers), 32 skills, ISTQB lifecycle, evidence policy, defect workflow. Same crew VC's internal QA uses. **Same for every customer.**
 
 2. **An authoring framework** — Enriched CSV test-case format, `@td()` test-data resolver, multi-env aware orchestrator (`TEST_ENV` + `ENV_RISK` + `MODULES_ENABLED` + `STOREFRONT_PROFILE` + `PAYMENT_PROCESSORS_ENABLED`), per-suite filtering, parallel browser pool. **The infrastructure you'd otherwise build yourself.**
 
-3. **A reference suite library** — ~99 starter suites covering universal VC platform behavior (auth, cart, checkout, payment-processor patterns, GraphQL xAPI, Admin SPA modules). Plug in your own product/org/user IDs via `@td()`, the universal suites run as-is. **Some apply to your deployment directly; some are reference patterns to clone and adapt; some are vcst-specific and won't apply.**
+3. **A reference suite library** — 110 starter suites covering universal VC platform behavior (auth, cart, checkout, payment-processor patterns, GraphQL xAPI, Admin SPA modules). Plug in your own product/org/user IDs via `@td()`, the universal suites run as-is. **Some apply to your deployment directly; some are reference patterns to clone and adapt; some are vcst-specific and won't apply.**
 
 **Customer authoring is the expected workflow, not the exception.** Your custom modules, your custom checkout flow, your branded theme, your business-specific invariants — those need suites written by your team. The plugin gives you the framework + reference patterns; the suites for *your* customizations are yours to write.
 
@@ -23,7 +23,7 @@ An **agentic QA toolkit** for VirtoCommerce customers, in three layers:
 | Reference suites — universal VC platform | Auth flow, cart mechanics, checkout shape, payment-processor integration patterns, Admin SPA module surfaces, GraphQL xAPI queries | ~60-70% — runs as-is with your `@td()` data overrides |
 | Reference suites — vcst-qa-specific | Some BL invariants assume vcst-qa's data shape; some UI assertions match VC's default Coffee theme; some suites reference specific vcst-qa orgs/products | ~30-40% — patterns to clone, not run as-is |
 
-**99 suites total, ~2,400 test cases, 76 business-logic invariants.** Coverage: storefront (40 Frontend suites) + Admin SPA + Platform APIs + GraphQL xAPI (38 Backend + 1 release).
+**110 suites total, ~3,480 test cases, across 44 module directories.** Coverage: storefront (50 Frontend suites) + Admin SPA + Platform APIs + GraphQL xAPI (59 Backend suites + 1 release suite).
 
 ## What you do as a customer
 
@@ -56,7 +56,7 @@ An **agentic QA toolkit** for VirtoCommerce customers, in three layers:
 
 ## What the plugin gives you that you don't have to build
 
-- A 14-agent QA crew, pre-trained on VC platform behavior
+- An 18-agent QA crew, pre-trained on VC platform behavior
 - Multi-env orchestration with safety gates (`ENV_RISK`, `MODULES_ENABLED`, `STOREFRONT_PROFILE`, `PAYMENT_PROCESSORS_ENABLED`, `envRiskGate`)
 - Standardized bug-filing format (every bug looks identical, regardless of which agent surfaced it)
 - ISTQB-compliant test process with evidence policy + quality gates
@@ -78,14 +78,14 @@ An **agentic QA toolkit** for VirtoCommerce customers, in three layers:
 
 | Without the plugin | With the plugin |
 |--------------------|-----------------|
-| Build a QA framework from scratch | Framework + 14 agents + methodology shipped |
+| Build a QA framework from scratch | Framework + 18 agents + methodology shipped |
 | Write checkout test from a blank page | Clone reference suite 011, adapt for your custom flow |
 | Decide your own test-data convention | `@td()` resolver pattern documented + lint-enforced |
 | Decide your own bug-report format | `reports.md` is the standard; every bug filed looks identical |
 | Build multi-env orchestration | Already wired (`TEST_ENV` + `ENV_RISK` + module/profile gates) |
 | Hire/train QA from scratch | Onboard onto a published methodology with reference implementation |
 
-**You're not paying for the 99 specific suites. You're paying for everything that surrounds them.** The suites are the visible artifact; the agent crew + methodology + framework + standardization is the deliverable.
+**You're not paying for the 110 specific suites. You're paying for everything that surrounds them.** The suites are the visible artifact; the agent crew + methodology + framework + standardization is the deliverable.
 
 ## Pricing (TBD, post-pilot)
 
