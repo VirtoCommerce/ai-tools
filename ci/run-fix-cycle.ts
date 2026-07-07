@@ -4,13 +4,18 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 
 import { join } from "path";
 import {
   checkoutForFix,
+  contributionPlan,
   isAllowedRepo,
+  repoOwnership,
   repoProfile,
   routingReference,
   suggestRepo,
   REPO_ORG,
 } from "./lib/repo-router.js";
 import { dependenciesOf, dependentsOf } from "./lib/module-registry.js";
+import { getTracker } from "./lib/trackers/index.js";
+import { getVcs, getUpstreamVcs } from "./lib/vcs/index.js";
+import { loadProjectProfile } from "../scripts/lib/project-profile.mjs";
 
 /**
  * Auto-Fix CI Pipeline
@@ -33,12 +38,15 @@ import { dependenciesOf, dependentsOf } from "./lib/module-registry.js";
 // Configuration
 // ---------------------------------------------------------------------------
 
-/** Comma-separated VCST keys (manual mode). If empty, discover via FIX_JQL. */
+/** Comma-separated tracker keys/ids (manual mode): Jira `ABC-123`, Azure `12345`. */
 const FIX_TICKETS = (process.env.FIX_TICKETS || "").trim();
 const FIX_LABEL = process.env.FIX_LABEL || "qa-autofix";
-const FIX_JQL =
-  process.env.FIX_JQL ||
-  `project = VCST AND issuetype = Bug AND statusCategory != Done AND labels = "${FIX_LABEL}" ORDER BY priority DESC`;
+// Explicit discovery-query override in the tracker's OWN language (Jira JQL /
+// Azure WIQL). When unset, the resolved tracker supplies its default via
+// tracker.defaultQuery(FIX_LABEL) — project key / team project come from the
+// profile, so a client's non-VCST prefix (or Azure's numeric ids) just work.
+// FIX_JQL is kept as a back-compat alias for FIX_QUERY.
+const FIX_QUERY = process.env.FIX_QUERY || process.env.FIX_JQL || "";
 
 const MAX_BUDGET_USD = parseFloat(process.env.MAX_BUDGET_USD || "30.0");
 const MAX_TURNS = parseInt(process.env.MAX_TURNS || "150", 10);
@@ -47,12 +55,12 @@ const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
 const DRY_RUN = process.env.DRY_RUN === "true";
 const PHASE_TIMEOUT_MS = parseInt(process.env.PHASE_TIMEOUT_MS || "1800000", 10); // 30 min
 
-// JIRA REST (optional)
-const JIRA_BASE_URL = (process.env.JIRA_BASE_URL || "").replace(/\/$/, "");
-const JIRA_EMAIL = process.env.JIRA_EMAIL || "";
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN || "";
-const JIRA_TRANSITION = process.env.JIRA_TRANSITION || "In Review";
-const jiraEnabled = Boolean(JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN);
+// Tracker transition/state applied after a PR opens. For Jira this is a
+// transition name ("In Review"); for Azure Boards the adapter maps it to a
+// System.State via the profile stateMap. TRACKER_TRANSITION wins; JIRA_TRANSITION
+// is kept for back-compat.
+const TRACKER_TRANSITION =
+  process.env.TRACKER_TRANSITION || process.env.JIRA_TRANSITION || "In Review";
 
 const WORKSPACE_DIR = process.env.FIX_WORKSPACE || ".fix-workspace";
 
@@ -66,136 +74,53 @@ function log(msg: string) {
 }
 
 // ---------------------------------------------------------------------------
-// JIRA REST helpers (guarded — no-op when creds are absent)
+// Bug tracker (Jira | Azure Boards) — resolved from the deployment profile via
+// ci/lib/trackers. Defaults to Jira, so existing VirtoCommerce-internal runs are
+// unchanged. The four ops used below (getIssue / search / comment / transition)
+// behave identically to the former inline JIRA REST helpers.
 // ---------------------------------------------------------------------------
 
-function jiraAuthHeader(): string {
-  return "Basic " + Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString("base64");
-}
-
-interface JiraTicket {
-  key: string;
-  summary: string;
-  description: string;
-  status: string;
-  priority: string;
-  components: string[];
-  labels: string[];
-  assignee: string | null;
-  raw: unknown;
-}
-
-/** Flatten Atlassian Document Format (ADF) to plain text (best-effort). */
-function adfToText(node: unknown): string {
-  if (!node || typeof node !== "object") return "";
-  const n = node as { text?: string; content?: unknown[]; type?: string };
-  if (typeof n.text === "string") return n.text;
-  let out = "";
-  if (Array.isArray(n.content)) {
-    for (const child of n.content) out += adfToText(child);
-    if (["paragraph", "heading", "listItem", "blockquote"].includes(n.type || "")) out += "\n";
-  }
-  return out;
-}
-
-async function jiraGetIssue(key: string): Promise<JiraTicket | null> {
-  if (!jiraEnabled) return null;
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}`, {
-    headers: { Authorization: jiraAuthHeader(), Accept: "application/json" },
-  });
-  if (!res.ok) {
-    log(`JIRA: failed to fetch ${key} — ${res.status}`);
-    return null;
-  }
-  const data = (await res.json()) as any;
-  const f = data.fields || {};
-  return {
-    key: data.key,
-    summary: f.summary || "",
-    description: adfToText(f.description).trim(),
-    status: f.status?.name || "",
-    priority: f.priority?.name || "",
-    components: (f.components || []).map((c: any) => c.name),
-    labels: f.labels || [],
-    assignee: f.assignee?.displayName || null,
-    raw: data,
-  };
-}
-
-async function jiraSearch(jql: string, max: number): Promise<string[]> {
-  if (!jiraEnabled) return [];
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/search`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ jql, maxResults: max, fields: ["key"] }),
-  });
-  if (!res.ok) {
-    log(`JIRA: search failed — ${res.status}`);
-    return [];
-  }
-  const data = (await res.json()) as any;
-  return (data.issues || []).map((i: any) => i.key);
-}
-
-async function jiraComment(key: string, text: string): Promise<void> {
-  if (!jiraEnabled || DRY_RUN) {
-    log(`JIRA: (skipped${DRY_RUN ? " dry-run" : ""}) comment on ${key}`);
-    return;
-  }
-  const body = {
-    body: {
-      type: "doc",
-      version: 1,
-      content: [{ type: "paragraph", content: [{ type: "text", text }] }],
-    },
-  };
-  const res = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/comment`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) log(`JIRA: comment on ${key} failed — ${res.status}`);
-}
-
-async function jiraTransition(key: string, transitionName: string): Promise<void> {
-  if (!jiraEnabled || DRY_RUN) {
-    log(`JIRA: (skipped${DRY_RUN ? " dry-run" : ""}) transition ${key} → ${transitionName}`);
-    return;
-  }
-  const tRes = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/transitions`, {
-    headers: { Authorization: jiraAuthHeader(), Accept: "application/json" },
-  });
-  if (!tRes.ok) return;
-  const tData = (await tRes.json()) as any;
-  const match = (tData.transitions || []).find(
-    (t: any) => t.name.toLowerCase() === transitionName.toLowerCase(),
-  );
-  if (!match) {
-    log(`JIRA: no transition "${transitionName}" available for ${key}`);
-    return;
-  }
-  await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/transitions`, {
-    method: "POST",
-    headers: {
-      Authorization: jiraAuthHeader(),
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ transition: { id: match.id } }),
-  });
-}
+const tracker = getTracker({ dryRun: DRY_RUN, log });
 
 // ---------------------------------------------------------------------------
-// Bug-report lookup (links the JIRA key to a local reports/bugs/*.md file)
+// Code host (GitHub | Azure Repos) + upstream-issue policy — resolved from the
+// deployment profile via ci/lib/vcs. getVcs(ownership) picks where a fix-PR is
+// opened (client repo, possibly on Azure Repos; or the GitHub platform repo with
+// fork/direct mode); getUpstreamVcs() is always GitHub for filing issues.
+//
+// Issue-filing is a CLIENT-deployment feature: when a real platform bug is NOT
+// auto-fixable (too complex / multi-repo), the client can't fix it, so we open a
+// GitHub Issue on the VirtoCommerce upstream instead. A native-platform checkout
+// (no profile, projectType "platform") NEVER files issues ⇒ identical to before:
+// the ticket is just commented and left for a human.
 // ---------------------------------------------------------------------------
+
+const PROFILE = loadProjectProfile();
+const vcsDeps = { dryRun: DRY_RUN, log };
+const FILE_UPSTREAM_ISSUES =
+  PROFILE.projectType === "client" && PROFILE.upstream.fileIssues;
+
+// ---------------------------------------------------------------------------
+// Bug-report lookup (links the tracker key to a local reports/bugs/*.md file)
+// ---------------------------------------------------------------------------
+
+// Escape a string for safe literal use inside a RegExp.
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Does a report's text reference this ticket key? The match is key-format-aware,
+// so a bare Azure Boards numeric id never false-matches a longer number:
+//   - Jira-style (`ABC-123`): whole-token match — `VCST-5404` won't match `VCST-54040`.
+//   - Azure Boards bare numeric (`521`): only the cross-link forms `AB#521` / `#521`
+//     (a bare `521` substring would false-match `VCST-5218`, `521px`, etc.).
+//   - anything else: word-boundary-anchored match.
+function reportReferencesKey(text: string, key: string): boolean {
+  if (/^\d+$/.test(key)) {
+    return new RegExp("#" + key + "(?![0-9])").test(text);
+  }
+  return new RegExp("\\b" + escapeRegExp(key) + "\\b").test(text);
+}
 
 function findBugReport(key: string): string | null {
   const root = join("reports", "bugs");
@@ -218,7 +143,7 @@ function findBugReport(key: string): string | null {
     }
     for (const file of entries) {
       try {
-        if (readFileSync(file, "utf-8").includes(key)) return file;
+        if (reportReferencesKey(readFileSync(file, "utf-8"), key)) return file;
       } catch {
         /* ignore */
       }
@@ -309,6 +234,7 @@ function marker(text: string, key: string): string | null {
 
 type TicketOutcome =
   | "pr_opened"
+  | "issue_filed"
   | "bailed_by_design"
   | "fix_failed"
   | "low_confidence"
@@ -332,7 +258,7 @@ async function processTicket(
   let spent = 0;
 
   // --- Gather context: JIRA ticket + linked bug report ---
-  const ticket = await jiraGetIssue(key);
+  const ticket = await tracker.getIssue(key);
   const bugReportPath = findBugReport(key);
   const bugReport = bugReportPath ? readFileSync(bugReportPath, "utf-8") : "";
 
@@ -387,9 +313,53 @@ Read the ticket JSON and bug report, then output your verdict markers as instruc
   const verdict = (marker(triage.result, "VERDICT") || "").toUpperCase();
   const routeRepo = marker(triage.result, "ROUTE_REPO") || guess || "";
   const bailReason = marker(triage.result, "BAIL_REASON") || "Triage declined (no reason given)";
+  // BAIL_CLASS (not-a-bug | too-complex | multi-repo) decides whether a BAIL on a
+  // real-but-unfixable PLATFORM bug warrants an upstream GitHub Issue. Defaults to
+  // not-a-bug, which never files (preserves the old comment-and-leave behaviour).
+  const bailClass = (marker(triage.result, "BAIL_CLASS") || "not-a-bug").toLowerCase();
 
   if (verdict !== "GO") {
-    await jiraComment(
+    // A real-but-unfixable platform bug → file a GitHub Issue upstream so a human
+    // picks it up (client deployments only; gated by FILE_UPSTREAM_ISSUES). Any
+    // other BAIL (not-a-bug, no routable platform repo, native-platform checkout)
+    // → just comment and leave the ticket, exactly as before.
+    const issuable =
+      FILE_UPSTREAM_ISSUES &&
+      (bailClass === "too-complex" || bailClass === "multi-repo") &&
+      routeRepo &&
+      isAllowedRepo(routeRepo) &&
+      repoOwnership(routeRepo) === "platform";
+
+    if (issuable) {
+      const issueBodyPath = join(ticketDir, "ISSUE_BODY.md");
+      writeFileSync(
+        issueBodyPath,
+        `Reported by the QA auto-fix pipeline as a real defect that is **not auto-fixable** ` +
+          `(${bailClass}). Filed for human triage.\n\n` +
+          `- **Tracker key:** ${key}\n- **Summary:** ${ticket?.summary || "(see tracker)"}\n` +
+          `- **Reason not auto-fixed:** ${bailReason}\n\n` +
+          (bugReport ? `## Bug report\n\n${bugReport}\n` : `${ticket?.description || ""}\n`),
+      );
+      try {
+        const issueUrl = await getUpstreamVcs(vcsDeps, routeRepo).fileIssue({
+          repo: routeRepo,
+          title: `[QA] ${ticket?.summary || key} (${key})`,
+          bodyFile: issueBodyPath,
+          labels: [FIX_LABEL],
+        });
+        await tracker.comment(
+          key,
+          `[auto-fix] Not auto-fixable (${bailClass}): ${bailReason}. Filed upstream issue: ${issueUrl} (run ${RUN_ID})`,
+        );
+        return { key, outcome: "issue_filed", repo: routeRepo, prUrl: issueUrl, reason: bailReason, costUsd: spent };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log(`[${key}] upstream issue filing failed: ${msg}`);
+        // Fall through to the plain bail comment below.
+      }
+    }
+
+    await tracker.comment(
       key,
       `[auto-fix] Skipped: ${bailReason} — left for human review. (run ${RUN_ID})`,
     );
@@ -501,7 +471,7 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
   const rootCause = marker(fix.result, "ROOT_CAUSE") || "";
 
   if (fixStatus !== "SUCCESS" || confidence === "LOW") {
-    await jiraComment(
+    await tracker.comment(
       key,
       `[auto-fix] Could not produce a confident fix (status=${fixStatus}, confidence=${confidence}). ${rootCause} Left for a human. (run ${RUN_ID})`,
     );
@@ -514,40 +484,43 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
     };
   }
 
-  // --- Open DRAFT PR (deterministic, via gh) ---
+  // --- Open DRAFT PR (deterministic, via the profile-routed VCS) ---
+  // getVcs(ownership) selects GitHub (platform, or a GitHub client repo) or Azure
+  // Repos (a client repo on Azure DevOps). For a platform fork-mode contribution
+  // the head ref is `<forkOwner>:<branch>`. With no profile this is the original
+  // `gh pr create --draft --head <branch>` on the platform repo, unchanged.
+  if (!existsSync(prBodyPath)) {
+    writeFileSync(prBodyPath, `Automated fix for ${key}.\n\nRoot cause: ${rootCause}\n`);
+  }
+  const plan = contributionPlan(routeRepo);
   let prUrl = "";
-  const prBody = existsSync(prBodyPath)
-    ? readFileSync(prBodyPath, "utf-8")
-    : `Automated fix for ${key}.\n\nRoot cause: ${rootCause}\n`;
-
-  if (DRY_RUN) {
-    log(`[${key}] (dry-run) would open draft PR on ${routeRepo}: ${prTitle}`);
-    prUrl = "(dry-run — no PR created)";
-  } else {
-    try {
-      prUrl = execSync(
-        `gh pr create --repo ${routeRepo} --draft --base ${checkout.baseBranch} ` +
-          `--head ${checkout.workBranch} --title ${JSON.stringify(prTitle)} ` +
-          `--body-file ${JSON.stringify(prBodyPath)} --label ${JSON.stringify(FIX_LABEL)}`,
-        { encoding: "utf-8" },
-      ).trim();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      log(`[${key}] gh pr create failed: ${msg}`);
-      await jiraComment(
-        key,
-        `[auto-fix] Fix pushed to branch ${checkout.workBranch} on ${routeRepo}, but draft PR creation failed: ${msg}. (run ${RUN_ID})`,
-      );
-      return { key, outcome: "error", repo: routeRepo, reason: `PR creation failed: ${msg}`, costUsd: spent };
-    }
+  try {
+    prUrl = await getVcs(plan.host, vcsDeps).openPullRequest({
+      targetRepo: routeRepo,
+      baseBranch: checkout.baseBranch,
+      workBranch: checkout.workBranch,
+      forkOwner: plan.mode === "fork" ? plan.forkOwner : undefined,
+      title: prTitle,
+      bodyFile: prBodyPath,
+      draft: true,
+      labels: [FIX_LABEL],
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log(`[${key}] PR creation failed: ${msg}`);
+    await tracker.comment(
+      key,
+      `[auto-fix] Fix pushed to branch ${checkout.workBranch} on ${routeRepo}, but PR creation failed: ${msg}. (run ${RUN_ID})`,
+    );
+    return { key, outcome: "error", repo: routeRepo, reason: `PR creation failed: ${msg}`, costUsd: spent };
   }
 
   // --- Update JIRA ---
-  await jiraComment(
+  await tracker.comment(
     key,
     `[auto-fix] Draft PR opened: ${prUrl}\nRoot cause: ${rootCause}\nConfidence: ${confidence}. Please review & merge. (run ${RUN_ID})`,
   );
-  await jiraTransition(key, JIRA_TRANSITION);
+  await tracker.transition(key, TRACKER_TRANSITION);
 
   writeFileSync(
     join(ticketDir, "result.json"),
@@ -580,10 +553,10 @@ function validateEnv(): void {
       console.warn("Warning: `gh auth setup-git` failed — git push may not authenticate.");
     }
   }
-  if (!jiraEnabled) {
+  if (!tracker.enabled) {
     console.warn(
-      "Warning: JIRA REST not configured (JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN). " +
-        "Ticket discovery requires FIX_TICKETS; JIRA comments/transitions will be skipped.",
+      `Warning: tracker (${tracker.kind}) not configured. ` +
+        "Ticket discovery requires FIX_TICKETS; tracker comments/transitions will be skipped.",
     );
   }
 }
@@ -600,13 +573,14 @@ async function main() {
   if (FIX_TICKETS) {
     tickets = FIX_TICKETS.split(",").map((t) => t.trim()).filter(Boolean);
   } else {
-    log(`Discovering tickets via JQL: ${FIX_JQL}`);
-    tickets = await jiraSearch(FIX_JQL, MAX_TICKETS);
+    const query = FIX_QUERY || tracker.defaultQuery(FIX_LABEL);
+    log(`Discovering tickets via ${tracker.kind} query: ${query}`);
+    tickets = await tracker.search(query, MAX_TICKETS);
   }
   tickets = tickets.slice(0, MAX_TICKETS);
 
   if (tickets.length === 0) {
-    log("No tickets to process. Set FIX_TICKETS=VCST-XXXX or configure JIRA + label.");
+    log("No tickets to process. Set FIX_TICKETS=<key/id,...> or configure the tracker + label.");
     process.exit(0);
   }
   log(`Tickets: ${tickets.join(", ")}`);
@@ -640,12 +614,14 @@ async function main() {
   // --- Consolidated report ---
   const totalCost = results.reduce((s, r) => s + r.costUsd, 0);
   const prs = results.filter((r) => r.outcome === "pr_opened");
+  const issues = results.filter((r) => r.outcome === "issue_filed");
   let report = `# Auto-Fix Cycle Report — ${RUN_ID}
 
 - **Date:** ${date}
 - **Model:** ${MODEL}
 - **Tickets processed:** ${results.length}
 - **Draft PRs opened:** ${prs.length}
+- **Upstream issues filed:** ${issues.length}
 - **Total cost:** $${totalCost.toFixed(2)}
 - **Dry run:** ${DRY_RUN}
 
@@ -663,12 +639,15 @@ async function main() {
   );
 
   log(`\n=== Done. Report: ${join(outputDir, "fix-report.md")} ===`);
-  log(`PRs opened: ${prs.length}/${results.length} | Cost: $${totalCost.toFixed(2)}`);
+  log(`PRs opened: ${prs.length}/${results.length} | Issues filed: ${issues.length} | Cost: $${totalCost.toFixed(2)}`);
 
-  // Exit codes: 0 = at least one PR or clean bail; 1 = hard errors; 2 = none actionable
+  // Exit codes: 0 = at least one PR/issue or clean bail; 1 = hard errors; 2 = none actionable
   const hadError = results.some((r) => r.outcome === "error");
   const anyProgress = results.some(
-    (r) => r.outcome === "pr_opened" || r.outcome === "bailed_by_design",
+    (r) =>
+      r.outcome === "pr_opened" ||
+      r.outcome === "issue_filed" ||
+      r.outcome === "bailed_by_design",
   );
   process.exit(hadError && !anyProgress ? 1 : anyProgress ? 0 : 2);
 }

@@ -22,9 +22,11 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
 - The ticket + `/qa-bug` report (STR, RCA, owning layer) and the agent's `ROOT_CAUSE`/`CONFIDENCE`.
 
 ## Review checklist (all must hold to APPROVE)
-1. **Single repo** — every changed file is in `vc-frontend` (the in-repo `client-app/ui-kit/` counts as
-   single-repo). Anything pointing at a separately-published design-system package → REQUEST_CHANGES
-   (→ likely cross-repo STOP).
+1. **Single repo** — every changed file is in the one storefront repo: native `VirtoCommerce/vc-frontend`
+   **or** a client storefront fork / theme repo (per `project-profile.json`) — the in-repo
+   `client-app/ui-kit/` counts as single-repo either way. Anything pointing at a separately-published
+   design-system package → REQUEST_CHANGES (→ likely cross-repo STOP). The PR target/host is the
+   orchestrator's concern, not a review criterion.
 2. **No existing-test/story edits** — `git diff` touches NO pre-existing `*.spec.ts` / `*.test.ts` /
    `*.stories.ts` method or file except to ADD new ones. Any edit/delete of an existing test or story →
    REQUEST_CHANGES.

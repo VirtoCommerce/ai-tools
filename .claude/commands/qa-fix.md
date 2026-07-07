@@ -27,13 +27,26 @@ via `FIX_REPO_ORG` for customer forks / other projects) — `/qa-fix` reads them
 live module graph (`ci/lib/module-registry.ts`). Workspace `.fix-workspace/`, branch
 `claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
 
+> **Profile-driven, not Jira/GitHub-hardcoded.** Which **bug tracker** (Jira / Azure Boards) and
+> **code host** (GitHub / Azure Repos) every phase talks to comes from `project-profile.json`
+> (written by `/project-init`). Read [`knowledge/execution/tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md)
+> for the per-tracker resolve/comment/transition recipes, live transition discovery (never hardcode a
+> workflow name), ticket-key formats, and the `contributionPlan(repo)` → clone/push/PR matrix. **With no
+> profile ⇒ Jira / GitHub / VirtoCommerce, direct PRs — the original behaviour, unchanged.** The single
+> hard invariant on a client deployment: **client code never leaves the client project** (`quality-gates.md`
+> §2a); the upstream gets platform contribution only.
+
 ## Usage
 ```
 /qa-fix VCST-1234        # fix a bug already filed (+ reported by /qa-bug)
 ```
-`/qa-fix` does NOT create the ticket. If `VCST-XXXX` doesn't exist or has no `/qa-bug` report, tell the
-user to run `/qa-bug` first. Once invoked it **auto-continues** through all phases; **Gate 0/Gate 1**
-are the automatic cut-offs (a STOP leaves the ticket filed for a human).
+`/qa-fix` does NOT create the ticket. It needs **at least one** of: a resolvable ticket in the tracker
+**or** a local `/qa-bug` report — only when **both** are missing does it stop and ask the user to run
+`/qa-bug` first (matching the CI twin `ci/run-fix-cycle.ts`, which bails only on `!ticket && !bugReport`).
+A ticket with no local report is the **normal client-deployment case** (the client's QA filed the bug
+straight in their tracker and never ran `/qa-bug`): `/qa-fix` continues, using the ticket
+description/STR/attachments as the repro context. Once invoked it **auto-continues** through all phases;
+**Gate 0/Gate 1** are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 
 > **Hard orchestration rule** (as in `qa-test-lifecycle.md`): do NOT run phases inline. Each phase is
 > delegated to its owning agent via the Task tool. The orchestrator only parses input, evaluates gates
@@ -44,17 +57,35 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 ---
 
 ## Phase 0 — Pre-flight
-1. Resolve `VCST-XXXX` via Atlassian MCP (`getJiraIssue`). Confirm it's a Bug in a workable status
-   (TO DO / REOPEN). Load the linked `/qa-bug` report from `reports/bugs/open/` (or `fixed/`).
-2. If no ticket or no report → STOP: "Run `/qa-bug VCST-XXXX` first to reproduce + file the report."
-3. `/qa-env-check endpoints`; build verify (deployed versions via GitHub MCP from `vc-deploy-dev`,
-   branch `vcst-qa` by default — use the branch matching `TEST_ENV` for other envs); Context7 query on expected post-fix behavior.
-4. **Write-token preflight:** confirm `GITHUB_FIX_BUGS_TOKEN` is present in `.env.local` and resolves
-   to a token with push access (`GH_TOKEN="$FIX" gh api repos/VirtoCommerce/<routed-repo> --jq .permissions.push`
-   → `true`). The ambient `gh` session is the **read-only** MCP token and cannot push; clone/push/PR
-   must use `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (see `developers/shared-instructions.md` §GitHub
-   authentication). Missing/expired token → STOP before clone.
-5. Create the run dir `reports/fixes/FIX-YYYY-MM-DD-HHMM/` (heavy artifacts gitignored).
+1. Resolve the ticket via the **profile's tracker** (`tracker.kind`): Jira → Atlassian MCP
+   `getJiraIssue`; Azure Boards → `az boards work-item show` / ADO REST (see
+   [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
+   tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
+   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
+   (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
+   to the ticket by the tracker's key format: for Azure Boards' bare numeric ids match `AB#<n>` / `#<n>`,
+   NOT a bare `<n>` substring — `521` would otherwise false-match `VCST-5218`.)
+2. Proceed when **either** the ticket **or** a local report resolves; **STOP only when both are absent**
+   → "No `<key>` in the tracker and no local `/qa-bug` report — run `/qa-bug <key>` first to reproduce +
+   file the report." Otherwise, by case:
+   - **Ticket + report** (native VC path) → use the report as the primary signal, unchanged.
+   - **Ticket, no report** (typical client deployment) → **do NOT stop.** Build the repro context from
+     the ticket description/STR/attachments; the Fix Routing block is absent, so Gate 1 derives the route
+     via `suggestRepo()` (it already handles a missing block), and the live reproduction is done in the
+     Phase 1 root-cause step by the routed QA expert. On PASS this writes the standard
+     `reports/bugs/open/*.md` so all downstream gates see the usual report.
+   - **Report, no ticket** (rare) → proceed off the report.
+3. `/qa-env-check endpoints`; **build verify — source depends on `projectType`:** native platform →
+   deployed versions via GitHub MCP from `vc-deploy-dev` (branch matching `TEST_ENV`, default `vcst-qa`);
+   **client deployment → `GET {BACK_URL}/api/platform/modules`** (the deployment exposes its own module/
+   Platform versions; a client has no `vc-deploy-dev` access — `tracker-ops.md` §5). Context7 query on
+   expected post-fix behavior.
+4. Create the run dir `reports/fixes/FIX-YYYY-MM-DD-HHMM/` (heavy artifacts gitignored).
+
+> **Write-credential preflight moves to *after* Gate 1** (Phase 1) — the host to probe (GitHub vs Azure
+> Repos, PAT vs `gh-cli` vs `az`) isn't known until the routed repo's `contributionPlan` is resolved.
+> Probing before routing bakes in a GitHub assumption that breaks on an Azure-Repos client. See
+> `tracker-ops.md` §4.
 
 ## Phase 1 — Triage (Gate 0) + Root-cause + Repo route (Gate 1)
 > **Owner:** `qa-lead-orchestrator` (triage) → `qa-backend-expert` (root-cause). Reuses the
@@ -76,8 +107,30 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
   no developer agent enabled yet, STOP with "routed to <repo> (<kind>); no developer agent enabled for
   this kind yet — handing off"; the ticket stays filed. Both live kinds — `module`/`platform` and
   `frontend` — have an agent today.)
-- On PASS: transition JIRA **TO DO → IN PROGRESS** ("Take to development"; ask user first) with a
-  comment naming the routed repo + kind.
+- **Gate 1b — frontend provenance (client deployments only):** if the routed repo is a **client
+  `frontend` fork** (`repoOwnership(routeRepo) === "client"` AND `repoKind === "frontend"`), the symptom
+  alone can't tell a *client customization* bug from an *unmodified-platform* bug. Resolve it from the RCA
+  anchor's **code provenance** against the fork's upstream (`clientUpstream(routeRepo)` → `{ upstream,
+  upstreamRef }`): fetch the anchor file from the client repo AND from `vc-frontend @ upstreamRef`, then
+  feed the signals to `classifyFrontendProvenance()` (`ci/lib/provenance.ts`) — anchor only in client, or
+  differs ⇒ **client** (fix + PR on the client repo); byte-identical to unmodified upstream ⇒ **platform**;
+  anchor missing / uncomparable ⇒ **client + LOW ⇒ STOP** (containment-first, §2a). Then
+  `frontendDeliveryPlan()` gives the action: **fix-client-fork**, **upstream-contribution** (a platform
+  bug → **fork `vc-frontend` and open a fork-PR to VirtoCommerce**, exactly the standard §1a platform path
+  — the client picks the fix up on its next release + fork sync; we do NOT patch the client fork with
+  platform code), or **stop-upgrade** (already fixed upstream → the client should sync / upgrade). An
+  upstream **Issue** instead of a PR happens **only** when Gate 0 already judged the bug too-complex /
+  multi-repo. (Native platform / no client frontend fork ⇒ this sub-gate is a no-op; the route stays platform.)
+- **Write-credential preflight (now that the host is known):** probe only the axis
+  `contributionPlan(routeRepo).host` needs — GitHub PAT (`GH_TOKEN="$GITHUB_FIX_BUGS_TOKEN" gh api
+  repos/<owner>/<repo> --jq .permissions.push` → `true`), a `gh-cli` browser session (`gh auth status`
+  shows write), or Azure Repos (`GET {base}/_apis/git/repositories/<repo>` returns JSON, not the 203+HTML
+  sign-in). Missing/insufficient → STOP before clone. (`tracker-ops.md` §3–4; native platform resolves to
+  the original `GITHUB_FIX_BUGS_TOKEN` + `VirtoCommerce/<repo>` probe.)
+- On PASS: transition the ticket to the **in-progress** role state (Jira: discover the transition live via
+  `getTransitionsForJiraIssue`, don't hardcode "Take to development"; Azure Boards: `System.State` via
+  `tracker.azure.stateMap`; **ask the user first**) with a comment naming the routed repo + kind + (for a
+  frontend route) the provenance verdict.
 
 ## Phase 2 — Clone + Reproduce (Gate 2)
 > **Owner:** the routed developer agent (`fullstack-backend` for module/platform; `fullstack-frontend`
@@ -102,18 +155,40 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 
 ## Phase 5 — Branch + PR
 > **Owner:** the routed developer agent.
-- `git commit` (Conventional Commits + JIRA key), **authored as the human token-owner with Claude as
+- `git commit` (Conventional Commits + ticket key), **authored as the human token-owner with Claude as
   `Co-Authored-By`** (NOT a bot author — CLA Assistant blocks bot-authored commits; pattern in
-  `developers/shared-instructions.md` §Commit identity) → `git push -u origin claude/qa-autofix/VCST-XXXX`
-  → `gh pr create` (a **normal PR for human review — not auto-merged**), **PR title `fix(VCST-XXXX):
-  <summary>`** (Conventional Commits, JIRA key in the scope slot; see
+  `developers/shared-instructions.md` §Commit identity) → push the work branch → **open the PR on the
+  host `contributionPlan(routeRepo)` resolved** (GitHub `gh pr create`; Azure Repos ADO REST
+  `POST …/pullrequests`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
+  auth-per-host are in [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §3). A **normal PR
+  for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
+  key in the scope slot; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
-  human review"; backend adds "needs deploy verification"), label, link JIRA.
-- Transition JIRA **IN PROGRESS → IN REVIEW** ("Go to review"; ask user first) with the PR link.
+  human review"; backend adds "needs deploy verification"), label, link the tracker.
+- **If Gate 1b resolved the route to `upstream-contribution`** (a byte-identical **platform** bug in the
+  storefront): the branch + PR go to the **VirtoCommerce upstream**, not the client fork — fork `vc-frontend`,
+  apply the fix, open a **fork-PR** (`--head <forkOwner>:<branch>`), **scrubbed of any client source / paths /
+  identifiers** (§2a). This is the ordinary platform fork-PR path (same as a backend platform bug); the client
+  receives it through a later release + fork sync. (An upstream **Issue** instead is only for a Gate-0
+  too-complex / multi-repo bail — handled at Gate 0, not here.)
+- Transition the ticket to the **in-review** role state (Jira: live-discover the transition, don't hardcode
+  "Go to review"; Azure Boards: `System.State` via `stateMap`; ask the user first) with the PR link.
 
 ## Phase 6 — Await CI + E2E (Gates 5 & 6)
 > **Owner:** orchestrator (CI poll) + `qa-backend-expert` / `qa-frontend-expert` (E2E, by kind).
-- **Gate 5 (CI):** poll `gh pr checks` / `mcp__github__get_pull_request_status` until the repo's
+- **Gate 5 (CI) — the check contract depends on ownership + host:**
+  - **Platform repo / platform fork-PR on GitHub** → the full VirtoCommerce contract below (it is the
+    *VirtoCommerce-repo* CI contract, not a universal one).
+  - **Client repo** (GitHub or Azure Repos) → the client's own PR checks, **discovered live, not assumed**:
+    GitHub client PR → poll whatever `gh pr checks` reports; Azure Repos PR → poll the PR's ADO build
+    policies / statuses (`GET …/pullrequests/<id>` + policy evaluations). **If the client repo has no PR
+    checks at all**, Gate 5 = the **local build + unit test** already proven green in Gate 3 (per the
+    `repoProfile` — client `buildCmd`/`testCmd` overrides apply), and the PR is labelled **"no CI — local
+    build+test only"**. Never wait on VirtoCommerce-specific jobs (`auto-tests`, SonarCloud, `license/cla`)
+    on a client repo — they don't exist there. Read the failing logs, classify, self-correct (≤2), re-poll,
+    same as platform.
+- **Platform CI contract (platform repos / fork-PRs):** poll `gh pr checks` /
+  `mcp__github__get_pull_request_status` until the repo's
   GitHub Actions are all `success` + `mergeable`. Wait on **both** PR jobs (background polling, not
   blocking sleeps): (1) the build/test job — **`ci`** (build + unit tests + the **SonarCloud quality
   gate**: `Quality Gate` / `SonarCloud Code Analysis`; backend also runs **Swagger validation** on
@@ -131,11 +206,15 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 - **Gate 6 (E2E):** once the PR's artifact deploys to QA, the kind-appropriate QA expert runs
   `/qa-regression <group>` (Backend or Frontend suites for the affected area, from `module-suite-map.md`).
   Backend is static-only pre-deploy → the PR carries **"needs deploy verification"** and G6 closes
-  post-merge via the regression pipeline + `/qa-verify-fix`.
+  post-merge via the regression pipeline + `/qa-verify-fix`. **For a CLIENT custom module / storefront fork
+  there is usually no regression suite in `module-suite-map.md`** — degrade to a **targeted re-run of the
+  bug's own STR** (the `/qa-bug` reproduction steps) against the deployed client env, plus any client-supplied
+  suite. State the reduced scope in the PR/verify note; do not claim broad regression coverage that wasn't run.
 
 ## Phase 7 — STOP for human review (Gate 7)
-- Transition JIRA **IN REVIEW → READY FOR TEST** ("Ready to test"; ask user first) with "CI green +
-  E2E result + awaiting human review/merge".
+- Transition the ticket to the **ready-for-test** role state (Jira: live-discover, don't hardcode "Ready
+  to test"; Azure Boards: `System.State` via `stateMap`; ask the user first) with "CI green + E2E result +
+  awaiting human review/merge".
 - Write `reports/fixes/FIX-*/fix-report.md` + `summary.json` (ticket, repo, kind, branch, PR URL, gate
   results, confidence). Print the PR link. **End.** Never merge. Post-merge verification is the separate
   `/qa-verify-fix VCST-XXXX`.
@@ -144,8 +223,9 @@ are the automatic cut-offs (a STOP leaves the ticket filed for a human).
 
 ## Autonomous / scheduled runs
 Run `/qa-fix` unattended as a **Claude Code Routine** (`/schedule`) rather than custom cron — the
-routine runs headless on a cron (min 1h) over the GitHub + Atlassian connectors and can invoke this
-command (e.g. *"scan JIRA for `labels = qa-autofix`, run `/qa-fix` on the top N eligible, open PRs"*).
+routine runs headless on a cron (min 1h) over the code-host + tracker connectors and can invoke this
+command (e.g. *"scan the tracker for the `qa-autofix` label/tag, run `/qa-fix` on the top N eligible,
+open PRs"* — Jira JQL or Azure Boards WIQL per `tracker.kind`).
 This is why the work branch is **`claude/`-prefixed** (`claude/qa-autofix/VCST-XXXX`): routines may
 only push `claude/*` branches by default. The headless `ci/run-fix-cycle.ts` + `auto-fix.yml` remain
 available for CI-on-PR; the routine is the lighter scheduled trigger.
@@ -158,10 +238,13 @@ available for CI-on-PR; the routine is the lighter scheduled trigger.
 - Reuse `ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts` — do not
   reinvent routing/checkout. Other org / customer fork → `FIX_REPO_ORG`. Workspace `.fix-workspace/`,
   branch `claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
-- Never modify existing tests (ADD only). Never auto-merge. Never echo the GitHub PAT. All remote
-  git/gh writes run as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`), not the ambient read-only
-  token, and commits are **authored as the human token-owner + `Co-Authored-By: Claude`** (CLA
-  Assistant blocks bot-authored commits) — exact command patterns in
-  `developers/shared-instructions.md` §GitHub authentication / §Commit identity.
-- Ask before every JIRA transition (consistent with `/qa-bug` Step 5 and `/qa-verify-fix` Step 6).
+- Never modify existing tests (ADD only). Never auto-merge. Never echo any PAT. **Remote-write auth is
+  per host** (`tracker-ops.md` §3): GitHub PAT host → `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`),
+  not the ambient read-only token; GitHub `gh-cli` host → the ambient logged-in `gh`; Azure Repos →
+  `ADO_PAT` / `az login`. Commits are **authored as the human token-owner + `Co-Authored-By: Claude`**
+  (CLA Assistant blocks bot-authored commits) — patterns in `developers/shared-instructions.md`
+  §GitHub authentication / §Commit identity.
+- **Client-code containment (§2a) is absolute:** a client-owned repo is never forked / PR'd / issue-filed
+  upstream; an upstream issue carries only platform-generic, client-scrubbed content.
+- Ask before every tracker transition (consistent with `/qa-bug` Step 5 and `/qa-verify-fix` Step 6).
 - Reports follow `.claude/rules/reports.md` (the `reports/fixes/` category; long logs via SendMessage).

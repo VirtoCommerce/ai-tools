@@ -12,6 +12,7 @@ This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/
 - **Node.js**: 18+
 - **Plugin install**: `/plugin install` (Claude Code) → `npm run plugin:configure` (env setup; `plugin:check` to verify). See `docs/onboarding.md`.
 - **MCP Servers**: `.mcp.json` (gitignored, create locally)
+- **New deployment / new customer?** Run **`/project-init`** — it installs deps, asks native-platform vs CLIENT project, picks the bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discovers the client/platform repo split, and writes `project-profile.json` + `.mcp.json`. That profile is what makes `/qa-fix` route each bug to the right repo + tracker. **Absent profile ⇒ native-platform / Jira / GitHub defaults = the original behaviour.**
 - **New here?** See `.claude/ROUTING.md`
 
 ## Commands
@@ -51,8 +52,8 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 
 ```
 ├── .claude/agents/       # 18 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (27 files) for shared refs
-├── .claude/skills/       # 27 skills (vc-knowledge, testing, qa-methodology, development)
-├── .claude/commands/     # 19 slash commands
+├── .claude/skills/       # 27 QA skills (vc-knowledge, testing, qa-methodology, development) + 2 root-level (project-init, run-vc-mcp-testing-module)
+├── .claude/commands/     # 20 slash commands (incl. /project-init onboarding)
 ├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)

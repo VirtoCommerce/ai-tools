@@ -23,7 +23,10 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
 
 ## Review checklist (all must hold to APPROVE)
 1. **Single repo** — every changed file is in the one allowed repo (C# and/or its `Web/Scripts/` UI).
-   Anything spilling to a second repo → REQUEST_CHANGES (→ likely cross-module STOP).
+   Anything spilling to a second repo → REQUEST_CHANGES (→ likely cross-module STOP). This is
+   **ownership-agnostic**: the one repo may be a native `VirtoCommerce/*` module **or** a client custom
+   module (per `project-profile.json`) — review the diff the same way; the PR target/host is the
+   orchestrator's concern, not a review criterion.
 2. **No existing-test edits** — `git diff` touches NO pre-existing test method/file except to ADD new
    ones. Any edit/delete of an existing `*Tests*` / `*.spec.*` → REQUEST_CHANGES.
 3. **Red→green real** — a NEW test encodes the STR/RCA (or trivial-skip is justified). The assertion

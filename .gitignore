@@ -22,6 +22,10 @@ results/
 .mcp.json
 scripts/.graphql-schema.cache.json
 
+# Deployment profile (project-init) — client-specific, may carry repo topology.
+# The committed project-profile.example.json is the template; the real one is local.
+project-profile.json
+
 # Regression / lifecycle / coverage run evidence — ephemeral by policy.
 # Root paths catch live customer / VC active runs.
 # vc/shared/reports/ paths catch the archived Layer-2 mirror after the

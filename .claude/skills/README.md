@@ -105,10 +105,20 @@
 ├── run-vc-mcp-testing-module/       # Repo tooling (not a QA category): build / launch / smoke-test / health-check this repo
 │   └── SKILL.md
 │
+├── project-init/                    # Onboarding (not a QA category): deploy this plugin for a customer
+│   ├── SKILL.md                     # native-platform vs client; tracker + VCS host; profile + .mcp.json; verify access
+│   ├── scaffold-env.mjs             # write commented .env.<env> template (URLs/identifiers/tracker) to fill
+│   ├── scaffold-secrets.mjs         # write commented .env.local template (what/why/where per secret) to fill
+│   ├── write-env.mjs                # (helper) write .env.<env>/.env.local from STDIN JSON when values are known
+│   ├── gen-profile.mjs              # write/merge project-profile.json
+│   ├── discover-repos.mjs           # Platform API → client/platform repo split
+│   ├── gen-mcp.mjs                  # OS-aware .mcp.json from template + per-tracker/VCS servers
+│   └── verify-access.mjs            # preflight: tracker + VCS + env reachability
+│
 └── README.md                        # This file
 ```
 
-> Plus one repo-tooling skill at the root — `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) — outside the 4 QA category groups (27 `SKILL.md` files total).
+> Plus two root-level skills outside the 4 QA category groups: `/run-vc-mcp-testing-module` (env:check, @td() resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) and `/project-init` (onboard the plugin onto a deployment — choose native-platform vs client, pick the bug tracker + code host, write `project-profile.json` + `.mcp.json`, verify access; the profile is what makes `/qa-fix` route each bug to the right repo + tracker).
 
 ## VC Knowledge (1) — `vc-knowledge/`
 

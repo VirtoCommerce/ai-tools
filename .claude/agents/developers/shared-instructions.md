@@ -34,6 +34,53 @@ gate ladder — never diverge from it.
 | Branch | `claude/qa-autofix/VCST-XXXX` |
 | Output | `reports/fixes/FIX-*/` |
 
+## Where the fix goes — ownership routing (client vs platform)
+A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
+modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when
+unfixable, an issue) goes. Ownership is **data, not guesswork**: `ci/lib/repo-router.ts` `repoOwnership(repo)`
+returns `client` or `platform` from `project-profile.json` (written by `/project-init`); `contributionPlan(repo)`
+returns `{ ownership, host, mode, forkOwner }`. **When no profile is present, every repo is `platform` /
+GitHub / `direct` — i.e. the original VirtoCommerce-internal behaviour, unchanged.**
+
+| Routed repo | Where the PR goes | How |
+|-------------|-------------------|-----|
+| **Client** repo (custom module / theme / storefront fork) | the **client** repo | push + PR on the client's host: GitHub (`gh pr create`) or **Azure Repos** (per `vcs.clientHost`) |
+| **Platform** repo, operator = **virto-engineer** | **direct** PR to `VirtoCommerce/<repo>` | push the work branch to the repo, `gh pr create` on it (today's behaviour) |
+| **Platform** repo, operator = **client** | **fork** PR to `VirtoCommerce/<repo>` | the fix branch lives on the client's fork (`upstream.clientGithubAccount`); PR head is `<forkOwner>:<branch>` |
+| **Platform** bug that is **real but NOT fixable** (too-complex / multi-repo per Gate 0/1) | a **GitHub Issue** on `VirtoCommerce/<repo>` | not a PR — the client can't fix complex platform internals, so hand it upstream (client just needs a GitHub account) |
+
+In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls `getVcs(ownership)` /
+`getUpstreamVcs()` and a fork-aware `checkoutForFix`). **You** (interactive) must apply the same matrix by
+hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
+no-auto-merge hard rules below are unchanged in every case.
+
+### Frontend provenance — a client storefront fork mixes client + platform code
+When the routed repo is a **client `frontend` fork**, the *repo* is client-owned but an individual bug may
+live in **unmodified vc-frontend code** carried into the fork. Don't decide from the symptom — decide from
+the RCA anchor's **provenance** against the fork's upstream (`clientUpstream(repo)` → `{ upstream,
+upstreamRef }`): fetch the anchor file from the client repo and from `vc-frontend @ upstreamRef`, then use
+`classifyFrontendProvenance()` + `frontendDeliveryPlan()` (`ci/lib/provenance.ts`). Anchor client-only or
+differing ⇒ fix + PR on the client repo; byte-identical to unmodified upstream ⇒ platform bug →
+**contribute the fix upstream**: fork `vc-frontend`, fix, open a **fork-PR to VirtoCommerce** (the standard
+§1a platform path — client-scrubbed, §2a; the client gets it via a later release + fork sync, we do NOT
+patch the client fork with platform code). An upstream **Issue** instead is only for a Gate-0 too-complex /
+multi-repo bail. Already fixed upstream ⇒ STOP-upgrade; uncomparable ⇒ STOP (containment-first). Full
+table: `quality-gates.md` §1a Gate 1b.
+
+### 🔒 Client-code containment — HARD security invariant (see quality-gates §2a)
+**Client code MUST NEVER leave the client's project. Upstream VirtoCommerce gets contribution only —
+platform code — NEVER client source, in any form.** This outranks fixing the bug: on any conflict, STOP.
+- A `repoOwnership === "client"` repo is fixed **only** on the client's host (direct). **Never** fork /
+  PR / file an issue for a client repo to `VirtoCommerce/*` or any public/external destination.
+- A platform PR / fork / GitHub issue carries **only** platform code + platform-generic repro. **Scrub**
+  the repro test, diff, PR/issue body, logs, and stack traces of every client source line, file path,
+  identifier, datum, and secret before pushing/filing to `VirtoCommerce/*`. If the bug reproduces *only*
+  with client code, it is **not** upstream-contributable → STOP and hand back to the client team.
+- **One repo per run.** The `.fix-workspace/` for a platform contribution never contains a client repo
+  (and vice-versa); never copy code between a client and a platform checkout.
+- **Uncertain ownership ⇒ treat as client and STOP** (containment-first) — never open an upstream PR/issue
+  on a maybe-client repo.
+
 ## GitHub authentication (the write token)
 The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
 **cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write
@@ -52,6 +99,21 @@ GH_TOKEN="$FIX" gh pr create ...                                # PR
 The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is **required**: this
 host's default helper is the Windows credential manager, which would otherwise serve the wrong (read)
 token. `gh` commands need only the `GH_TOKEN=` prefix.
+
+### When `gh` is already logged in (browser login), or the host is Azure Repos
+The `GH_TOKEN=` prefix above is specific to a host whose **ambient** `gh` is the read-only GitHub MCP
+token. A client deployment configured by `/project-init` with `vcs.auth: "gh-cli"` instead runs
+`gh auth login` (browser), so the **ambient** `gh`/`git` session already has write scope — in that case
+**drop the `GH_TOKEN=` prefix and the explicit credential helper**; plain `gh`/`git` already authenticate
+(`gh auth status` confirms). Only fall back to the token-prefix form when `gh auth status` shows a
+read-only / wrong identity. Check `project-profile.json` → `vcs.auth` to know which you're on
+(`gh-cli` = ambient login; `pat` = a token in `.env.local`).
+
+For a **client repo on Azure Repos** (`vcs.clientHost: "azure-repos"`), GitHub auth doesn't apply: clone
+with the Azure Git URL `https://dev.azure.com/<org>/<project>/_git/<repo>` and authenticate with
+`ADO_PAT` (`.env.local`) or an `az login` session (`ADO_AUTH=az-login`) — **never a password**. Open the
+PR with the Azure DevOps REST `POST …/_apis/git/repositories/<repo>/pullrequests` (the headless twin's
+`AzureReposVcs` does exactly this). `gh pr create` is GitHub-only.
 
 ### Commit identity — author as the human, NOT a bot (CLA)
 Commits **must be authored by the human who owns the write token** (the GitHub account behind
@@ -79,14 +141,22 @@ Assistant resolves it to the signed account regardless of the env. Optional over
 this identity was applied, **re-author and force-push** (`git commit --amend --reset-author …` /
 `git rebase --root --exec` for multiple) so CLA can re-evaluate.
 
-### PR title — Conventional Commits, JIRA key as scope
-The **PR title** follows `fix(VCST-XXXX): <imperative summary of the bug>` — Conventional-Commits shaped,
-with the **JIRA key in the scope slot** (e.g. `fix(VCST-5210): guard NRE in GetModules when icon file is
-missing`). This puts the ticket up front so reviewers and the JIRA link read at a glance while the title
-stays changelog/scope-tooling parseable (the org squash-merges, so the PR title becomes the squashed
-commit subject). It is **distinct from the commit message**, which keeps the code area as its scope and
-the key trailing (`fix(<KEY>): <summary>`). This is the `gh pr create --title` value and
-the `PR_TITLE:` marker the agent emits.
+### Ticket key format follows the tracker (not always `VCST-`)
+The examples below say `VCST-XXXX`, but the **key format depends on the deployment's tracker**: a client
+Jira uses its own prefix (`ABC-123`), and **Azure Boards work items are bare numeric ids** (`12345`, no
+letter prefix). Use whatever key/id the tracker gave you verbatim — the branch (`claude/qa-autofix/<key>`),
+commit reference, and PR title all take it as-is. For **cross-linking** into the tracker from a commit/PR:
+Jira auto-links the bare key (`ABC-123`); Azure Boards links a work item via `AB#12345`. Don't assume a
+`VCST-` prefix anywhere.
+
+### PR title — Conventional Commits, ticket key as scope
+The **PR title** follows `fix(<key>): <imperative summary of the bug>` — Conventional-Commits shaped,
+with the **ticket key in the scope slot** (e.g. `fix(VCST-5210): guard NRE in GetModules when icon file is
+missing`; for Azure Boards the bare id, `fix(12345): …`). This puts the ticket up front so reviewers and
+the tracker link read at a glance while the title stays changelog/scope-tooling parseable (the org
+squash-merges, so the PR title becomes the squashed commit subject). It is **distinct from the commit
+message**, which keeps the code area as its scope and the key trailing (`fix(<scope>): <summary> (<key>)`).
+This is the `gh pr create --title` value and the `PR_TITLE:` marker the agent emits.
 
 ## After the PR — verify CI, don't assume green (Gate 5)
 **Opening the PR is not the finish line.** The run is not done until the PR's GitHub Actions checks are
@@ -154,6 +224,11 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 - Fix requires a migration / schema / contract change.
 - CI infra failure (not a code failure) — don't retry in a loop.
 - Ambiguous "expected result", security disclosure, or low confidence after ≤2 revise iterations.
+
+When you STOP on a **platform** repo for *too-complex* or *multi-repo* (not a by-design rejection), say so
+explicitly in your report — on a client deployment the orchestrator turns that into a **GitHub Issue on
+the VirtoCommerce upstream** (the client can't fix platform internals, so it's handed upstream for a
+human). You do **not** file the issue yourself; just report the class so the orchestrator can.
 
 ## Reporting discipline
 - Long transcripts / investigation logs go via SendMessage to the orchestrator (or the `reports/fixes/FIX-*/`
