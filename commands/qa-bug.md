@@ -131,7 +131,7 @@ After reproducing the bug, research the root cause before writing the report:
 Step 2 gave you the `repoKind` and a layer. Now name the **one** concrete repo so the bug report carries a
 ready-to-route target. Resolve it deterministically (do **not** free-guess):
 
-1. **Map the domain → module** via [`knowledge/execution/module-suite-map.md`](../agents/knowledge/execution/module-suite-map.md)
+1. **Map the domain → module** via [`knowledge/execution/module-suite-map.md`](../knowledge/execution/module-suite-map.md)
    (the *Module → REST API Path → xAPI Module* table). The failing REST path (`/api/pricing/…` → `vc-module-pricing`)
    or the xAPI module name (xCatalog → `vc-module-x-catalog`) from your Layer 3/4 capture is the strongest signal.
 2. **Cross-check against the routing hints** in [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
@@ -218,7 +218,7 @@ When moving to `fixed/`, add a Resolution block below the status:
 
 ### Report Template
 
-> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-methodology/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
+> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
 
 ### Fix Routing block (REQUIRED — the `/qa-fix` handoff contract)
 
@@ -282,4 +282,4 @@ Report the ticket key back to the user.
 - **Keep the routing vocabulary in sync with one source of truth:** `repoKind` and the allowed-repo set
   come from [`ci/lib/repo-router.ts`](../../ci/lib/repo-router.ts) + [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
   (the same files `/qa-fix` uses). Resolve the exact module via
-  [`module-suite-map.md`](../agents/knowledge/execution/module-suite-map.md). Never invent a parallel naming scheme.
+  [`module-suite-map.md`](../knowledge/execution/module-suite-map.md). Never invent a parallel naming scheme.

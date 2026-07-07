@@ -277,7 +277,7 @@ For full sign-off tables: `skills/qa-evidence/sign-off-templates.md`
 
 ## File Output Policy
 
-See [`.claude/rules/reports.md`](../../rules/reports.md) — the single source of truth for: allowed report categories (4), hard size caps per type, required sections, bloat patterns to cut, screenshot/console/network/HAR rules, and naming conventions. Do not restate the policy here; update only `reports.md`.
+See [`.claude/rules/reports.md`](../../../.claude/rules/reports.md) — the single source of truth for: allowed report categories (4), hard size caps per type, required sections, bloat patterns to cut, screenshot/console/network/HAR rules, and naming conventions. Do not restate the policy here; update only `reports.md`.
 
 ## Browser Interaction — Mandatory Real-User Behavior
 

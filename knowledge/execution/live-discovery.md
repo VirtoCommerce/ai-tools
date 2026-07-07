@@ -24,7 +24,7 @@ Pick one row, then read that row's recipe section below.
 
 **The cardinal rule**: random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants instead (`isNumber`, `> 0`, formatted as currency).
 
-Cross-reference: this rule extends the resolver table in [`.claude/rules/test-data.md`](../../rules/test-data.md).
+Cross-reference: this rule extends the resolver table in [`.claude/rules/test-data.md`](../../.claude/rules/test-data.md).
 
 ---
 

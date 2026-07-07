@@ -131,7 +131,7 @@ Layout defects rarely appear in a static screenshot of the default story. They e
 
 ### Storybook Testing Workflow (10 steps)
 
-> **Tooling baseline (Storybook 9):** `storybook/test` for interaction assertions (no `@` prefix in SB 9), `@storybook/addon-vitest` is the modern test runner (Vitest browser mode + Playwright Chromium), `@storybook/addon-a11y` for axe-core, MSW addon for network stubs. See [`skills/qa-storybook/tooling-stack.md`](../../skills/testing/qa-storybook/tooling-stack.md) and [`play-function-patterns.md`](../../skills/testing/qa-storybook/play-function-patterns.md) for canonical patterns.
+> **Tooling baseline (Storybook 9):** `storybook/test` for interaction assertions (no `@` prefix in SB 9), `@storybook/addon-vitest` is the modern test runner (Vitest browser mode + Playwright Chromium), `@storybook/addon-a11y` for axe-core, MSW addon for network stubs. See [`skills/qa-storybook/tooling-stack.md`](../skills/qa-storybook/tooling-stack.md) and [`play-function-patterns.md`](../skills/qa-storybook/play-function-patterns.md) for canonical patterns.
 
 1. **CONTROLS TAB**: Document all props. Test each: default, all enum options, booleans, edge values (empty, very long, 0, negative)
 2. **ACCESSIBILITY (axe-core via addon-a11y + programmatic re-run)**: Read the addon panel for violation count; then run axe programmatically against the story iframe (recipes in `wcag-accessibility-checklist.md`) — for each finding note WCAG 2.2 criterion ID, severity, affected element. Filter out `best-practice` tag results (advisory, not WCAG failures). Surface `incomplete` items as manual-verification needed.
@@ -205,7 +205,7 @@ el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'
 
 ### Accessibility Audit Technique
 
-> **Canonical recipes:** [`skills/qa-accessibility/wcag-accessibility-checklist.md`](../../skills/testing/qa-accessibility/wcag-accessibility-checklist.md) — the five Agent Automation Recipes (axe-core injection, Lighthouse, keyboard walk, contrast from computed style, target-size measurement). Read this file before running an audit; **do not hand-roll axe invocations.**
+> **Canonical recipes:** [`skills/qa-accessibility/wcag-accessibility-checklist.md`](../skills/qa-accessibility/wcag-accessibility-checklist.md) — the five Agent Automation Recipes (axe-core injection, Lighthouse, keyboard walk, contrast from computed style, target-size measurement). Read this file before running an audit; **do not hand-roll axe invocations.**
 
 **Automated layer (catches ~30–57% per Deque):**
 - **axe-core programmatic** — inject `axe.min.js` via `browser_evaluate` / `evaluate_script`, then `axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22a','wcag22aa'] }, resultTypes: ['violations','incomplete'] })`. **Filter out axe `best-practice` rules** — they're advisory, not WCAG conformance failures. Report `incomplete` results in the "requires manual verification" section.

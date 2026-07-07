@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Compare a `vc-modules` stable bundle against GitHub and report which pinned modules (plus
 Platform and Theme) have a newer **hotfix** available on their **same `major.minor` line**.
-Backed by the [`/qa-bundle-check` skill](../skills/qa-methodology/qa-bundle-check/SKILL.md) —
+Backed by the [`/qa-bundle-check` skill](../skills/qa-bundle-check/SKILL.md) —
 the command is the terminal entry; the skill holds the methodology.
 
 ## Usage

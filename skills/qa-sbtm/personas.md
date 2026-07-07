@@ -186,5 +186,5 @@ Use the **persona** to set the mindset for the whole 30-minute session. Layer on
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Whittaker tours, FAILURE, Soap Opera, HICCUPPS-F
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Browser-specific attack techniques (used heavily by Malicious + Session-Corrupted personas)
 - [charter-library.md](charter-library.md) — Ready-to-use charters; many reference a recommended persona
-- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../../agents/knowledge/oracles/vc-bug-catalog.md) — VC historical bug patterns indexed by domain
+- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC historical bug patterns indexed by domain
 - [../qa-risk/SKILL.md](../qa-risk/SKILL.md) — Risk prioritization (use to pick which persona's session to schedule first)

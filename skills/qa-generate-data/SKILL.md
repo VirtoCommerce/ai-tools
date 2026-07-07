@@ -228,7 +228,7 @@ This skill is invoked **while authoring test cases**, so cases reference *prepar
 ad-hoc data:
 - **`test-management-specialist`** calls `/qa-generate-data <feature>` as the data-prep step of its
   test-authoring flow, then writes each case's `Test_Data` column as `@td(COMBO_ALIAS.field)`.
-- **[`/qa-test-cases-generator`](../../qa-methodology/qa-test-cases-generator/SKILL.md)** delegates
+- **[`/qa-test-cases-generator`](../qa-test-cases-generator/SKILL.md)** delegates
   combination design here first, then maps one case (or case group) per Combo ID.
 
 The combination matrix returned inline (step 7) is what those callers consume to map cases → Combo IDs.
@@ -240,11 +240,11 @@ The combination matrix returned inline (step 7) is what those callers consume to
 
 ## References (cite, don't duplicate)
 - Combination-design intent: `feedback_test_data_prep_is_combination_design` · test-design mindset: `feedback_test_design_mental_model`
-- Techniques: [`/qa-test-design`](../../qa-methodology/qa-test-design/SKILL.md) (EP, BVA, decision tables, pairwise)
-- Policy + enforcement: [`.claude/rules/test-data.md`](../../../rules/test-data.md)
-- Directory map + seed-gap tables: [`test-data/README.md`](../../../../test-data/README.md)
-- Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../../agents/knowledge/execution/live-discovery.md)
-- BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../../agents/knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../../agents/knowledge/oracles/vc-bug-catalog.md)
+- Techniques: [`/qa-test-design`](../qa-test-design/SKILL.md) (EP, BVA, decision tables, pairwise)
+- Policy + enforcement: [`.claude/rules/test-data.md`](../../.claude/rules/test-data.md)
+- Directory map + seed-gap tables: [`test-data/README.md`](../../test-data/README.md)
+- Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
+- BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
 - Generators: [`scripts/lib/random-data.ts`](../../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../../scripts/lib/live-discover.ts)
 - Validators: [`scripts/validate-td-refs.ts`](../../../../scripts/validate-td-refs.ts) · [`scripts/audit-aliases.ts`](../../../../scripts/audit-aliases.ts)
 - Provisioning companion: [`/qa-seed-data`](../qa-seed-data/SKILL.md)

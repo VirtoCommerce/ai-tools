@@ -65,7 +65,7 @@ Verifies every `@td()` reference across all suites resolves cleanly.
 
 ## 3. Test Data Directory Layout
 
-Top-level structure (see [`test-data/README.md`](../../../../test-data/README.md) for full detail):
+Top-level structure (see [`test-data/README.md`](../../test-data/README.md) for full detail):
 
 | Directory | Purpose | Notable files |
 |-----------|---------|---------------|

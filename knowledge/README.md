@@ -21,7 +21,7 @@ move a file → update its references (and `scripts/audit-agents-knowledge.ts` /
 ## Conventions
 
 - **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-03`, `VC-CART-*`) or a path,
-  never paste the body into a report. See [`.claude/rules/reports.md`](../../rules/reports.md).
+  never paste the body into a report. See [`.claude/rules/reports.md`](../.claude/rules/reports.md).
 - **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
 - **`graphql-schema.md` is generated** from live introspection via

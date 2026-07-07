@@ -29,7 +29,7 @@ live module graph (`ci/lib/module-registry.ts`). Workspace `.fix-workspace/`, br
 
 > **Profile-driven, not Jira/GitHub-hardcoded.** Which **bug tracker** (Jira / Azure Boards) and
 > **code host** (GitHub / Azure Repos) every phase talks to comes from `project-profile.json`
-> (written by `/project-init`). Read [`knowledge/execution/tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md)
+> (written by `/project-init`). Read [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md)
 > for the per-tracker resolve/comment/transition recipes, live transition discovery (never hardcode a
 > workflow name), ticket-key formats, and the `contributionPlan(repo)` → clone/push/PR matrix. **With no
 > profile ⇒ Jira / GitHub / VirtoCommerce, direct PRs — the original behaviour, unchanged.** The single
@@ -59,7 +59,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 ## Phase 0 — Pre-flight
 1. Resolve the ticket via the **profile's tracker** (`tracker.kind`): Jira → Atlassian MCP
    `getJiraIssue`; Azure Boards → `az boards work-item show` / ADO REST (see
-   [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
+   [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
    Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
    (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
@@ -160,7 +160,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   `developers/shared-instructions.md` §Commit identity) → push the work branch → **open the PR on the
   host `contributionPlan(routeRepo)` resolved** (GitHub `gh pr create`; Azure Repos ADO REST
   `POST …/pullrequests`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
-  auth-per-host are in [`tracker-ops.md`](../agents/knowledge/execution/tracker-ops.md) §3). A **normal PR
+  auth-per-host are in [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §3). A **normal PR
   for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
   key in the scope slot; see
   `developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /qa-design — Design & UX Evaluation
 
-Run a layout-stability + design-system audit against a component, page, or flow. For **components**, evaluates **both Storybook (isolated)** and **Storefront (real integration)** by default — the two surfaces catch different bug classes (isolation-only bugs vs integration-only bugs). For **pages and flows**, evaluates the Storefront only (Storybook hosts components, not pages). Resolves scope from the critical-UI matrix when possible; falls back to selector discovery + heuristic invariant resolution for off-matrix targets. Delegates execution to `ui-ux-expert` — this command is the orchestration shell, the methodology lives in the [`/qa-design` skill](../skills/testing/qa-design/SKILL.md).
+Run a layout-stability + design-system audit against a component, page, or flow. For **components**, evaluates **both Storybook (isolated)** and **Storefront (real integration)** by default — the two surfaces catch different bug classes (isolation-only bugs vs integration-only bugs). For **pages and flows**, evaluates the Storefront only (Storybook hosts components, not pages). Resolves scope from the critical-UI matrix when possible; falls back to selector discovery + heuristic invariant resolution for off-matrix targets. Delegates execution to `ui-ux-expert` — this command is the orchestration shell, the methodology lives in the [`/qa-design` skill](../skills/qa-design/SKILL.md).
 
 ## Usage
 ```
@@ -24,7 +24,7 @@ Run a layout-stability + design-system audit against a component, page, or flow.
 ### Step 1 — Parse parameter
 
 Classify the argument:
-- **Component name** — matches an entry (case-insensitive) in [critical-ui-scope.md](../agents/knowledge/oracles/critical-ui-scope.md) Component Inventory (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar, BOPIS Modal) → in-matrix component.
+- **Component name** — matches an entry (case-insensitive) in [critical-ui-scope.md](../knowledge/oracles/critical-ui-scope.md) Component Inventory (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar, BOPIS Modal) → in-matrix component.
 - **Component name** not in the inventory (e.g., `VcDatePicker`, `VcAlert`, `VcInput`, `VcSelect`) → off-matrix component (go to Step 2 Case B).
 - **Page** — starts with `/` or is a full URL. Match against the 9 entries in Page Inventory (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`, Configurable PDP) → in-matrix page. Anything else → off-matrix page.
 - **Flow name** — keyword match (`checkout`, `purchase`, `onboarding`, `sign-up`, `b2b-invite`) → resolves to an ordered list of pages.
@@ -39,7 +39,7 @@ Resolve current sprint: check `tests/Sprint-current` → otherwise list `tests/`
 ### Step 2 — Resolve audit scope
 
 **Case A — Target IS in the matrix:**
-- Read the relevant matrix in [critical-ui-scope.md](../agents/knowledge/oracles/critical-ui-scope.md) (components matrix for component, pages matrix for page).
+- Read the relevant matrix in [critical-ui-scope.md](../knowledge/oracles/critical-ui-scope.md) (components matrix for component, pages matrix for page).
 - Collect BL-UI-NNN columns whose cell is NOT `n/a` (e.g., VcTable → BL-UI-002 / 003 / 004 / 005; skip 001 and 006).
 - Selector + render-location come straight from the matrix row.
 
@@ -48,7 +48,7 @@ Resolve current sprint: check `tests/Sprint-current` → otherwise list `tests/`
 Produce a real audit, not a generic "audit all six" fallback.
 
 1. **Resolve selector + render-location:**
-   - Check [storefront-selectors.md](../agents/knowledge/automation/storefront-selectors.md) for the component name. Many vc-frontend components are documented there even if not in the critical matrix.
+   - Check [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) for the component name. Many vc-frontend components are documented there even if not in the critical matrix.
    - If not found → use GitHub MCP `search_code` against `VirtoCommerce/vc-frontend` for the component file (e.g., `VcDatePicker.vue`, `VcAlert.vue`). Extract `data-test-id` / root class from the template. Then `search_code` for usages of `<VcDatePicker` to find which pages render it.
    - If still ambiguous → ask: "I couldn't find a confirmed render location for `{Component}`. Provide a page URL where it's visible, or say `discover` and I'll have ui-ux-expert explore the storefront to find it."
    - On `discover` → dispatch `ui-ux-expert` with a discovery charter (visit `/sign-up`, `/cart`, `/checkout`, account pages); capture the first page that renders the component plus the verified selector.
@@ -66,7 +66,7 @@ Produce a real audit, not a generic "audit all six" fallback.
 
    Uncertain cases → run the union of definitely-applicable invariants and report which were skipped + why. User can re-run with `--all` for full coverage.
 
-3. **Warn + offer to promote** — print: "`{Component}` is off-matrix. Audited with heuristic invariant scope: [list]." After audit, if findings exist or the component appears in audit history ≥ 3 times, suggest: "Consider adding to [critical-ui-scope.md](../agents/knowledge/oracles/critical-ui-scope.md) so it's regression-protected." Never auto-edit the matrix.
+3. **Warn + offer to promote** — print: "`{Component}` is off-matrix. Audited with heuristic invariant scope: [list]." After audit, if findings exist or the component appears in audit history ≥ 3 times, suggest: "Consider adding to [critical-ui-scope.md](../knowledge/oracles/critical-ui-scope.md) so it's regression-protected." Never auto-edit the matrix.
 
 **Case C — Off-matrix page:** Apply default page-level invariants (BL-UI-001 CLS + 002 spacing-anchor + 004 overflow + 006 touch). Print "off-matrix page" warning + promote-suggestion.
 
@@ -99,7 +99,7 @@ Otherwise, discover the Storybook URL using **convention first, GitHub fallback*
 
 ### Step 3 — Dispatch ui-ux-expert
 
-Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevTools MCP` (per [.claude/rules/agents.md](../rules/agents.md)). For component targets without `--storefront-only`, the agent runs **two phases in sequence**; for page/flow targets (or with `--storefront-only`), only Phase B runs.
+Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevTools MCP` (per [.claude/rules/agents.md](../.claude/rules/agents.md)). For component targets without `--storefront-only`, the agent runs **two phases in sequence**; for page/flow targets (or with `--storefront-only`), only Phase B runs.
 
 **Phase A — Storybook audit (component targets, Storybook story resolved in Step 2.5):**
 
@@ -107,7 +107,7 @@ Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevT
 - Wait for the story iframe to render (story `#story` element painted, no skeletons).
 - Run the same invariant audits as Phase B but scoped to the story's rendered DOM (typically `#root` or the `[data-test-id]` of the component within the iframe).
 - Output: `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storybook/` — screenshots only for FAIL.
-- Methodology reuse: [`/qa-storybook` skill](../skills/testing/qa-storybook/SKILL.md) — same responsive-breakpoint and isolation patterns.
+- Methodology reuse: [`/qa-storybook` skill](../skills/qa-storybook/SKILL.md) — same responsive-breakpoint and isolation patterns.
 
 **Phase B — Storefront audit (always runs):**
 
@@ -144,11 +144,11 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
 
    When a match is in a shared partial, also read the partial via GitHub MCP `get_file_contents` and trace which page imports/embeds it (`search_code` for the partial's filename in `.vue` files) to find the final mount point.
 
-   **Step 1.3 — Cross-check against the curated map** — read [critical-ui-scope.md](../agents/knowledge/oracles/critical-ui-scope.md) Render-Location Map. For in-matrix components, the curated locations are high-confidence; treat them as candidates first, then add any GitHub-discovered locations the curated map missed (and surface the gap in the report).
+   **Step 1.3 — Cross-check against the curated map** — read [critical-ui-scope.md](../knowledge/oracles/critical-ui-scope.md) Render-Location Map. For in-matrix components, the curated locations are high-confidence; treat them as candidates first, then add any GitHub-discovered locations the curated map missed (and surface the gap in the report).
 
    **Step 1.4 — Live probe to confirm rendering** — for each candidate URL, before audit:
    - Navigate via ui-ux-expert (real-user click-through, per [`feedback_real_user_interaction`](../../../memory/feedback_real_user_interaction.md) — NOT direct deep-linking unless that IS the natural entry).
-   - Run `document.querySelectorAll('{selector}').length > 0` (selector from [storefront-selectors.md](../agents/knowledge/automation/storefront-selectors.md) or matrix row).
+   - Run `document.querySelectorAll('{selector}').length > 0` (selector from [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) or matrix row).
    - Keep candidates where the component actually mounts; drop candidates where it doesn't (some usages are conditional on auth state, cart contents, feature flags, B2B vs B2C store, etc.).
    - For conditional mounts, capture the precondition in the report (e.g., "VcLineItem renders on /cart only when cart has ≥ 1 item — precondition: `[PRE:RESET_CART]` + add SKU before audit").
 
@@ -190,12 +190,12 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
 
 - Resolved BL-UI invariant list from Step 2.
 - Reference paths the agent must consult:
-  - [business-logic.md § Domain 15](../agents/knowledge/oracles/business-logic.md) — BL-UI invariant definitions.
+  - [business-logic.md § Domain 15](../knowledge/oracles/business-logic.md) — BL-UI invariant definitions.
   - [measure-layout.ts](../../scripts/lib/measure-layout.ts) — `LAYOUT_SNIPPETS`, `spacingAuditSnippet`, `alignmentAuditSnippet`, `rectSnapshotSnippet`, classifiers.
-  - [storefront-selectors.md](../agents/knowledge/automation/storefront-selectors.md) — verified DOM selectors.
-  - [/qa-design skill](../skills/testing/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
+  - [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) — verified DOM selectors.
+  - [/qa-design skill](../skills/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
 - Audit at three viewports: 375 / 768 / 1280 (skip a viewport only if the target is verifiably desktop-only).
-- Evidence capture per [evidence-capture-policy.md](../skills/qa-methodology/qa-evidence/evidence-capture-policy.md) — screenshots for FAIL states only.
+- Evidence capture per [evidence-capture-policy.md](../skills/qa-evidence/evidence-capture-policy.md) — screenshots for FAIL states only.
 
 ---
 
@@ -249,7 +249,7 @@ Receive agent results, write `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD
 
 ### Step 5 — Findings → Filings (ask user)
 
-Apply the decision tree in [SKILL.md § Findings → Filings](../skills/testing/qa-design/SKILL.md):
+Apply the decision tree in [SKILL.md § Findings → Filings](../skills/qa-design/SKILL.md):
 
 - 0 failures → done; print summary.
 - N failures → list them; ask: "File these via `/qa-bug`? (y/n)"
@@ -267,9 +267,9 @@ Never auto-file. Explicit `y` required.
 - Storybook story discovery uses convention (`{STORYBOOK_URL}/?path=/story/{atomic}-{component-kebab}--default`) first, then GitHub MCP `search_code` for `{Component}.stories.ts` fallback. If neither resolves, skip the Storybook phase with a note — never fail the audit.
 - Cite the BL-UI / WCAG / ECL ID for every finding — findings without citations decay into subjective debate.
 - Audit at 375 / 768 / 1280 viewports unless the target is verifiably desktop-only.
-- Never hardcode design tokens — read live `:root` custom properties (per [SKILL.md "Read live tokens, never hardcode"](../skills/testing/qa-design/SKILL.md)).
+- Never hardcode design tokens — read live `:root` custom properties (per [SKILL.md "Read live tokens, never hardcode"](../skills/qa-design/SKILL.md)).
 - `STORYBOOK_URL` and `FRONT_URL` come from env / `config.js` — never hardcode URLs.
 - Ask before filing bugs (explicit user yes required).
 - Off-matrix targets get audited but trigger a warning + "Consider adding to critical-ui-scope.md" suggestion. Never auto-edit the matrix.
-- Browser: ui-ux-expert uses `Chrome DevTools MCP`. Max 3 concurrent browser agents (per [agents.md](../rules/agents.md)). Phase A and Phase B run sequentially within the same agent dispatch; they do not need two browser slots.
-- Output path follows [output-paths.md](../skills/qa-methodology/qa-evidence/output-paths.md): `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/{storybook|storefront}/`.
+- Browser: ui-ux-expert uses `Chrome DevTools MCP`. Max 3 concurrent browser agents (per [agents.md](../.claude/rules/agents.md)). Phase A and Phase B run sequentially within the same agent dispatch; they do not need two browser slots.
+- Output path follows [output-paths.md](../skills/qa-evidence/output-paths.md): `tests/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/{storybook|storefront}/`.

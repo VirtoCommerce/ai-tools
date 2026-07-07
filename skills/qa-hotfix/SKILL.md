@@ -13,7 +13,7 @@ the fix to a frozen bundle you cut a **hotfix**: a new patch `X.Y.(Z+1)` on the 
 `X.Y` line, produced from a `support/<X.Y>` branch.
 
 This skill productizes the manual flow Oleg described (choose branch → find commit → cherry-pick →
-commit → "Release Hotfix"). Terminal entry: [`/qa-hotfix`](../../../commands/qa-hotfix.md).
+commit → "Release Hotfix"). Terminal entry: [`/qa-hotfix`](../../commands/qa-hotfix.md).
 
 > Twin relationship: `/qa-hotfix` is to hotfix releases what [`/qa-bundle-check`](../qa-bundle-check/SKILL.md)
 > is to hotfix *detection*. `bundle:check` tells you a bundle is **missing** a same-line patch;

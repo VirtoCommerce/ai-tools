@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Cherry-pick an already-merged-and-released fix onto the `support/<major.minor>` branches of the
 frozen stable bundles that need it, then cut the patch releases. Backed by the
-[`/qa-hotfix` skill](../skills/qa-methodology/qa-hotfix/SKILL.md) — the command is the terminal
+[`/qa-hotfix` skill](../skills/qa-hotfix/SKILL.md) — the command is the terminal
 entry; the skill holds the full methodology and the gate ladder.
 
 This is the productized form of the manual cherry-pick → "Release Hotfix" flow.

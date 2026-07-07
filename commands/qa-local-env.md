@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Bring up a full local VC stack (backend + storefront + DB + Redis + Elasticsearch) on this
 machine via VirtoCommerce **start-local**, pinned to the **actual deployed package manifest**.
-Methodology + helper scripts: the [`/qa-local-env` skill](../skills/testing/qa-local-env/SKILL.md).
+Methodology + helper scripts: the [`/qa-local-env` skill](../skills/qa-local-env/SKILL.md).
 
 ## Usage
 ```

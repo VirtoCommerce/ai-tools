@@ -504,7 +504,7 @@ Two resolvers, two sources — never hardcode either.
 - Wrong: `[NAV] https://vcst-qa-storefront.govirto.com/cart`
 - Right: `[NAV] {{FRONT_URL}}/cart`
 
-**`@td(ALIAS.field)` — fixture-backed:** entity IDs, SKUs, prices, addresses, coupon codes, test cards, order numbers, virtual-catalog roots, URL path segments. Resolved from [`test-data/aliases.json`](../../../../test-data/aliases.json) (the registry) → CSV row in [`test-data/`](../../../../test-data/). Implemented by `scripts/lib/test-data-resolver.ts`; validated by `npx tsx scripts/validate-td-refs.ts`. Full contract: [`../../testing/qa-postman/test-data-fixtures.md`](../../testing/qa-postman/test-data-fixtures.md).
+**`@td(ALIAS.field)` — fixture-backed:** entity IDs, SKUs, prices, addresses, coupon codes, test cards, order numbers, virtual-catalog roots, URL path segments. Resolved from [`test-data/aliases.json`](../../../../test-data/aliases.json) (the registry) → CSV row in [`test-data/`](../../../../test-data/). Implemented by `scripts/lib/test-data-resolver.ts`; validated by `npx tsx scripts/validate-td-refs.ts`. Full contract: [`../../testing/qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md).
 - Wrong: `productId: "3a2c9d8e-..."` (rots when catalog is reseeded)
 - Right: `productId: @td(CFG_LAPTOP.id)`
 - Wrong: `cardNumber: "4622943127013705"`

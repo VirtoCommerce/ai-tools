@@ -178,7 +178,7 @@ Do NOT generate a case for every possible transition — only those where reject
 ### Step 3.7: Prepare test-data combinations first (data-dependent cases)
 
 Before populating any `Test_Data` column, **delegate combination design to
-[`/qa-generate-data <feature>`](../../testing/qa-generate-data/SKILL.md)** — it learns the live variant
+[`/qa-generate-data <feature>`](../qa-generate-data/SKILL.md)** — it learns the live variant
 space, builds the pairwise matrix, reuses existing fixtures, authors only the gaps, and wires one
 `@td()` **combination alias per Combo ID**. This makes the *source* of every `@td()` value explicit:
 the prepared combinations, not invented data. Then **map one case (or case group) per Combo ID** so the

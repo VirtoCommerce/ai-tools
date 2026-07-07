@@ -72,7 +72,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
 - Findings feed into `/qa-metrics` (defect density, escape rate)
 
 ## Test Data
-Discovery sessions hit live data that drifts. Resolve at runtime via the decision tree in [`../../../agents/knowledge/execution/live-discovery.md`](../../../agents/knowledge/execution/live-discovery.md): `live-discover` for any-entity navigation, `random-data` for unique throwaway inputs, `@td(ALIAS.field)` for specific assertion targets. Never hardcode GUIDs/SKUs/prices encountered during a session — when a discovered gap becomes a follow-up test case, the new case must use this decision tree.
+Discovery sessions hit live data that drifts. Resolve at runtime via the decision tree in [`../../../agents/knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md): `live-discover` for any-entity navigation, `random-data` for unique throwaway inputs, `@td(ALIAS.field)` for specific assertion targets. Never hardcode GUIDs/SKUs/prices encountered during a session — when a discovered gap becomes a follow-up test case, the new case must use this decision tree.
 
 ## Rules
 - **Discovery first**: every exploratory session must end with at least one net-new scenario (not covered by any CSV suite or the VC bug catalog). If it doesn't, log it as `[VAL]` re-validation, not `[EXP]` exploration (see `scenario-discovery.md` § 10).

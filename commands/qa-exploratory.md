@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 **Primary purpose: find scenarios our existing coverage misses.** The CSV suites in [`regression/suites/`](../../regression/suites/) cover what we know to test; this command exists to discover what we *don't* know to test. Confirming known coverage works is valuable but is **re-validation**, not exploration — log it accordingly.
 
-Every session must end with at least one **net-new scenario** (not in any regression suite, not in [vc-bug-catalog.md](../agents/knowledge/oracles/vc-bug-catalog.md), not predictable from the charter alone). If no net-new scenario emerges, the session is `[VAL]` re-validation, not `[EXP]` exploration. See [`scenario-discovery.md`](../skills/qa-methodology/qa-sbtm/scenario-discovery.md) for the discovery techniques.
+Every session must end with at least one **net-new scenario** (not in any regression suite, not in [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md), not predictable from the charter alone). If no net-new scenario emerges, the session is `[VAL]` re-validation, not `[EXP]` exploration. See [`scenario-discovery.md`](../skills/qa-sbtm/scenario-discovery.md) for the discovery techniques.
 
 ## Usage
 ```
@@ -32,19 +32,19 @@ Every session must end with at least one **net-new scenario** (not in any regres
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
 4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 5. **Coverage map** — for the target domain, identify what's *already covered*:
-   - Open the CSV suite(s) for the domain (via [module-suite-map.md](../agents/knowledge/execution/module-suite-map.md) → [`regression/suites/`](../../regression/suites/)) — list the scenarios already tested
-   - Open [vc-bug-catalog.md](../agents/knowledge/oracles/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
+   - Open the CSV suite(s) for the domain (via [module-suite-map.md](../knowledge/execution/module-suite-map.md) → [`regression/suites/`](../../regression/suites/)) — list the scenarios already tested
+   - Open [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
    - These two lists are what NOT to spend session time re-validating. The discovery target is everything *else*.
-6. **Pick a discovery technique** — open [scenario-discovery.md](../skills/qa-methodology/qa-sbtm/scenario-discovery.md) and select ONE technique appropriate to the situation:
+6. **Pick a discovery technique** — open [scenario-discovery.md](../skills/qa-sbtm/scenario-discovery.md) and select ONE technique appropriate to the situation:
    - New feature in this sprint → User-flow edge enumeration + Surprise-seeking time
    - Two features integrated recently → Feature-pair matrix at their seam (Boundary-of-features hunting)
    - Production keeps escaping bugs → Production-error mining (Azure App Insights)
    - Regression suite feels stale → Coverage-diff hunting (suite vs codebase via GitHub MCP)
    - No specific risk → Surprise-seeking + Hostile interview
 7. **Heuristic filters (optional)** — load the heuristic references as *filters* (familiar-problems oracles), not checklists:
-   - [adversarial-heuristics.md](../skills/qa-methodology/qa-sbtm/adversarial-heuristics.md) — Whittaker tours, FAILURE, HICCUPPS-F
-   - [personas.md](../skills/qa-methodology/qa-sbtm/personas.md) — Pick a persona that would see scenarios the charter author wouldn't
-   - [modern-web-attack-surface.md](../skills/qa-methodology/qa-sbtm/modern-web-attack-surface.md) — Cache/multi-tab/browser-feature probes
+   - [adversarial-heuristics.md](../skills/qa-sbtm/adversarial-heuristics.md) — Whittaker tours, FAILURE, HICCUPPS-F
+   - [personas.md](../skills/qa-sbtm/personas.md) — Pick a persona that would see scenarios the charter author wouldn't
+   - [modern-web-attack-surface.md](../skills/qa-sbtm/modern-web-attack-surface.md) — Cache/multi-tab/browser-feature probes
    - The agent uses these to spot familiar problems faster — NOT as a sequential checklist.
 
 Delegate to **qa-testing-expert** (Task tool, `subagent_type: qa-testing-expert`) with the target area + the chosen discovery technique.
@@ -148,8 +148,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - Always query VirtoOZ MCP (via the `/vc-docs` skill) in Step 0 to build a feature inventory for the target domain (Context7 is fallback only)
 
 ## Related
-- [scenario-discovery.md](../skills/qa-methodology/qa-sbtm/scenario-discovery.md) — **Primary reference.** 10 techniques for finding scenarios our coverage misses
+- [scenario-discovery.md](../skills/qa-sbtm/scenario-discovery.md) — **Primary reference.** 10 techniques for finding scenarios our coverage misses
 - `/qa-sbtm` skill — Full SBTM methodology: scenario discovery (primary), core framework, charter templates, CRISP/SFDPOT, adversarial heuristics, personas, modern web attack surface, charter library, debrief format
-- [knowledge/oracles/vc-bug-catalog.md](../agents/knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bug patterns (read to AVOID re-discovery)
-- [knowledge/execution/live-discovery.md](../agents/knowledge/execution/live-discovery.md) — Runtime test-data resolution (`live-discover` / `random-data` / `@td()`); use when a session needs to pick "any product / any address" and when a discovered gap becomes a follow-up test case
+- [knowledge/oracles/vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bug patterns (read to AVOID re-discovery)
+- [knowledge/execution/live-discovery.md](../knowledge/execution/live-discovery.md) — Runtime test-data resolution (`live-discover` / `random-data` / `@td()`); use when a session needs to pick "any product / any address" and when a discovered gap becomes a follow-up test case
 - `/qa-coverage-gap` skill — Programmatic coverage-gap analysis (complementary to manual exploratory discovery)

@@ -163,5 +163,5 @@ A 30-minute session can run **one tour + one mnemonic pass**:
 - [personas.md](personas.md) — Persona-driven exploration (different user lens)
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Browser-specific attack techniques
 - [charter-library.md](charter-library.md) — Ready-to-use charters
-- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../../agents/knowledge/oracles/vc-bug-catalog.md) — VC historical failure patterns (feeds Bad Neighborhood Tour + Familiar Problems oracle)
-- [../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md](../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md) — Generic e-commerce ECL-* patterns
+- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC historical failure patterns (feeds Bad Neighborhood Tour + Familiar Problems oracle)
+- [../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md](../../knowledge/oracles/e-commerce-edge-cases-library.md) — Generic e-commerce ECL-* patterns

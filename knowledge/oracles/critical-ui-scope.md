@@ -9,7 +9,7 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 > **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts), [048b suite](../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
 >
-> **Owner agent:** [ui-ux-expert](../qa/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions per [feedback_business_logic_promotion](../../../memory)).
+> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions per [feedback_business_logic_promotion](../../../memory)).
 
 ## Why a matrix, not a list
 

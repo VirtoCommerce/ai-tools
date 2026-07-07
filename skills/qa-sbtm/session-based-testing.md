@@ -377,7 +377,7 @@ CRISP and SFDPOT (sections 3–4) are **quality-attribute** heuristics — they 
 - [personas.md](personas.md) — Persona-driven exploration: 6 personas (Impatient Buyer, Screen-Reader User, Malicious User, Slow-Network User, B2B Procurement Officer, Session-Corrupted User) with mindset + starter test ideas
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Browser-specific probes: DevTools-as-attack-tool, multi-tab state collisions, storage/cache drift, history/router races, browser-feature attack surface, network/performance probes
 
-Use the **VC bug catalog** as a "Familiar Problems" oracle and to seed Bad Neighborhood Tours: [../../agents/knowledge/oracles/vc-bug-catalog.md](../../agents/knowledge/oracles/vc-bug-catalog.md).
+Use the **VC bug catalog** as a "Familiar Problems" oracle and to seed Bad Neighborhood Tours: [../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md).
 
 ### Combining heuristic layers in a 30-minute session
 

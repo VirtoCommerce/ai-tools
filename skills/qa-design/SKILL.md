@@ -7,9 +7,9 @@ disable-model-invocation: true
 
 # /qa-design — Design & UX Evaluation
 
-> **Terminal command:** `/qa-design <component | page | flow>` — see [commands/qa-design.md](../../../commands/qa-design.md). The command parses the argument, resolves audit scope from [critical-ui-scope.md](../../../agents/knowledge/oracles/critical-ui-scope.md), and dispatches `ui-ux-expert`; this file is the methodology library it consults.
+> **Terminal command:** `/qa-design <component | page | flow>` — see [commands/qa-design.md](../../commands/qa-design.md). The command parses the argument, resolves audit scope from [critical-ui-scope.md](../../knowledge/oracles/critical-ui-scope.md), and dispatches `ui-ux-expert`; this file is the methodology library it consults.
 
-Validate design system consistency and run UX heuristic evaluations against the active Coffee theme tokens, [BL-UI invariants](../../../agents/knowledge/oracles/business-logic.md#domain-15-ui-display--layout-stability-bl-ui), and Nielsen's 10 usability heuristics.
+Validate design system consistency and run UX heuristic evaluations against the active Coffee theme tokens, [BL-UI invariants](../../knowledge/oracles/business-logic.md#domain-15-ui-display--layout-stability-bl-ui), and Nielsen's 10 usability heuristics.
 
 ## Usage
 
@@ -23,10 +23,10 @@ Validate design system consistency and run UX heuristic evaluations against the 
 
 Before any design audit, the agent must already be aware of:
 
-- [`business-logic.md` Domain 15 (BL-UI-001..006)](../../../agents/knowledge/oracles/business-logic.md#domain-15-ui-display--layout-stability-bl-ui) — the canonical UI invariants. A violation is a FAIL regardless of how the result looks.
+- [`business-logic.md` Domain 15 (BL-UI-001..006)](../../knowledge/oracles/business-logic.md#domain-15-ui-display--layout-stability-bl-ui) — the canonical UI invariants. A violation is a FAIL regardless of how the result looks.
 - [`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) — the helper that wraps every required measurement: CLS observer, spacing audit, alignment audit, overflow audit, touch-target audit, rect snapshot for shift detection, **occlusion audit (BL-UI-007)**, **contrast audit (BL-UI-008)**, **focus-indicator audit (BL-UI-009)**, **image aspect-ratio audit (BL-UI-010)**, plus classifiers.
 - [`048b-layout-stability.csv`](../../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv) — the 18-case suite that drives BL-UI-001..006 against live storefront. Run via `SUITE_SELECTION=layout-stability npm run ci:regression`.
-- [storefront-config-flags.md](../../../agents/knowledge/automation/storefront-config-flags.md) — active theme preset + flags affecting which tokens render.
+- [storefront-config-flags.md](../../knowledge/automation/storefront-config-flags.md) — active theme preset + flags affecting which tokens render.
 - **Proposed BL-UI-007..010** (occlusion, contrast, focus-indicator, image aspect-ratio) + a BL-UI-001 refinement are implemented as audits in [`measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) but are **not yet promoted** into `business-logic.md` Domain 15 (which currently defines only BL-UI-001..006). Audit *with* them; cite them as `PROPOSED-BL-UI-NNN` until promoted.
 
 ## Supporting Files
@@ -45,11 +45,11 @@ Delegate to `ui-ux-expert` via the **Agent tool** (`subagent_type: ui-ux-expert`
    // browser_evaluate snippet — see design-system-consistency.md for the full version
    const tokens = getRootCustomProperties();  // → { '--color-primary': '#…', '--spacing-md': '16px', … }
    ```
-2. **Audit spacing** with `spacingAuditSnippet(selector)` from [measure-layout.ts](../../../../scripts/lib/measure-layout.ts), classify with `classifySpacing()`. Pin every finding to [BL-UI-002](../../../agents/knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux).
-3. **Audit alignment** with `alignmentAuditSnippet(selector)` + `classifyAlignment()`. Pin to [BL-UI-005](../../../agents/knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux).
+2. **Audit spacing** with `spacingAuditSnippet(selector)` from [measure-layout.ts](../../../../scripts/lib/measure-layout.ts), classify with `classifySpacing()`. Pin every finding to [BL-UI-002](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux).
+3. **Audit alignment** with `alignmentAuditSnippet(selector)` + `classifyAlignment()`. Pin to [BL-UI-005](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux).
 4. **Audit color usage + WCAG 1.4.3 contrast**: every brand-styled element must reference `var(--color-…)`, not a literal hex. Run `contrastAuditSnippet(selector)` + `classifyContrast()` to enforce 4.5:1 / 3:1 ratios. Pin to **PROPOSED-BL-UI-008** (or BL-UI-008 once promoted). Toggle theme preset — literals don't move, tokens do; a contrast PASS on default may FAIL on a dark preset.
 5. **Audit typography**: same `font-family` family across surfaces, weights ∈ `{400, 500, 600, 700}`, body ≥ 14 px.
-6. **Audit overflow + touch targets** with `LAYOUT_SNIPPETS.overflowAudit` + `LAYOUT_SNIPPETS.touchTargetAudit`. Pin to [BL-UI-004](../../../agents/knowledge/oracles/business-logic.md#bl-ui-004-content-boundary-p2-ux) and [BL-UI-006](../../../agents/knowledge/oracles/business-logic.md#bl-ui-006-touch-target-size-and-spacing-p1-data).
+6. **Audit overflow + touch targets** with `LAYOUT_SNIPPETS.overflowAudit` + `LAYOUT_SNIPPETS.touchTargetAudit`. Pin to [BL-UI-004](../../knowledge/oracles/business-logic.md#bl-ui-004-content-boundary-p2-ux) and [BL-UI-006](../../knowledge/oracles/business-logic.md#bl-ui-006-touch-target-size-and-spacing-p1-data).
 7. **Audit critical-alert occlusion** with `occlusionAuditSnippet()` + `classifyOcclusion()` on any page that can render `.vc-alert--danger` / `.vc-alert--warning` / `[role="alert"]`. **Mandatory whenever the State-Stress Pass (below) renders a disabled / error / unavailable state.** Pin to **PROPOSED-BL-UI-007**. P0 if `severe: true` on any overlap.
 8. **Audit focus indicators (WCAG 2.4.7)** with `LAYOUT_SNIPPETS.focusIndicatorAudit` + `classifyFocusIndicator()`. Mandatory on `/sign-in`, `/sign-up`, `/cart`, `/checkout/payment` (revenue-critical keyboard flows). Pin to **PROPOSED-BL-UI-009**.
 9. **Audit image aspect ratios** with `imageAspectAuditSnippet(selector)` + `classifyImageAspect()` on pages with product images, hero banners, logos, or CMS imagery. Pin to **PROPOSED-BL-UI-010**.
@@ -103,7 +103,7 @@ For **any control with a declared size** (slider handles, avatars, icon buttons,
 
 ### UX Heuristic Evaluation
 
-1. **Navigate the target flow** using playwright-chrome / firefox / edge MCP — see [browser assignments](../../../rules/agents.md).
+1. **Navigate the target flow** using playwright-chrome / firefox / edge MCP — see [browser assignments](../../.claude/rules/agents.md).
 2. **Walk Nielsen's 10** — questions and concrete VC examples in [ux-heuristic-evaluation.md](ux-heuristic-evaluation.md).
 3. **Rate severity 0–4** per finding using the rubric in `ux-heuristic-evaluation.md` (0 = not an issue, 4 = catastrophe). Promote one level on revenue-critical surfaces (checkout / payment / add-to-cart / registration).
 4. **Cross-reference** each finding against BL-*, WCAG, or ECL where one applies — a citable rule beats a subjective complaint. See the cross-ref table in `ux-heuristic-evaluation.md`.
@@ -133,7 +133,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 | Pattern | What to file |
 |---------|--------------|
-| One component, one violation | Individual bug via [/qa-bug](../../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN` |
+| One component, one violation | Individual bug via [/qa-bug](../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN` |
 | One component, multiple violations | ONE bug per component listing all violations — don't fragment |
 | Multiple components share the same violation (5+ components with off-token color, etc.) | ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Priority bumped to P1 |
 | Token resolution itself is broken | P1 bug — the design system layer is broken, not the components |
