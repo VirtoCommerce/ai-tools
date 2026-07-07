@@ -125,7 +125,7 @@ and delegate the browser render/screenshot to `qa-backend-expert`.
 ### Hard rules
 Single repo · never modify existing tests (ADD only) · minimal diff · no breaking changes (contract /
 schema / migration / manifest / dep-bump) · no secrets · preserve BL-* · **open a PR, never merge it**.
-Full list: `developers/shared-instructions.md`. If the fix is unclear/risky/cross-module →
+Full list: `knowledge/agents/developers/shared-instructions.md`. If the fix is unclear/risky/cross-module →
 `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)

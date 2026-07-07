@@ -134,7 +134,7 @@ Single repo (separately-published UI-kit package root cause → STOP) · never m
 stories (ADD only) · minimal diff (no refactor / dep bump / `yarn.lock` change / formatting churn) ·
 no breaking changes (no public GraphQL query/contract change, no shared-component **prop/event/slot**
 API change, no router contract change) · no secrets · preserve BL-UI-* + `critical-ui-scope` · **open a
-PR, never merge it**. Full list: `developers/shared-instructions.md`. If the fix is unclear / risky /
+PR, never merge it**. Full list: `knowledge/agents/developers/shared-instructions.md`. If the fix is unclear / risky /
 cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)
