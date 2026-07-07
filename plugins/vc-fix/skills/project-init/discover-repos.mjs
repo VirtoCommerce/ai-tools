@@ -34,7 +34,7 @@ import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 
 const UPSTREAM_ORG = "VirtoCommerce";
 
@@ -185,7 +185,7 @@ function adoAuthHeaderSync() {
   if (pat) return "Basic " + Buffer.from(":" + pat).toString("base64");
   try {
     const tok = execSync(
-      "az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv",
+      "az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv",
       { stdio: ["ignore", "pipe", "ignore"] },
     ).toString().trim();
     if (tok) return "Bearer " + tok;

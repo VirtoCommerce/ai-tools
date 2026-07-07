@@ -37,7 +37,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { dirname, resolve, join } from "path";
 import { fileURLToPath } from "url";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function parseArgs(argv) {
   const a = {};

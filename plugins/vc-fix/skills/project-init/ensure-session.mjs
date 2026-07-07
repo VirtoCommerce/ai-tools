@@ -24,10 +24,10 @@
  */
 import { execSync, spawnSync } from "child_process";
 import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
-import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 
-const ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798"; // Azure DevOps app id
+const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0"; // Azure DevOps app id
 
 function parseArgs(argv) {
   const a = {};

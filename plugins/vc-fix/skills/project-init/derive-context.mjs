@@ -23,7 +23,7 @@
  *     --tracker jira|azure --client-vcs github|azure-repos [--upstream-org VirtoCommerce]
  */
 import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { probeGithubUpstream, resolveGithubToken, tryCmd } from "./probe-lib.mjs";
 
 function parseArgs(argv) {

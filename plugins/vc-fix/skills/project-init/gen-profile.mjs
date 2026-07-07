@@ -32,9 +32,9 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
-import { PROFILE_DEFAULTS } from "../../../scripts/lib/project-profile.mjs";
+import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const ENUMS = {
   "project-type": ["platform", "client"],

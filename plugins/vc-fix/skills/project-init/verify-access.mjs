@@ -23,8 +23,8 @@
 import { execSync } from "child_process";
 import { config as dotenv } from "dotenv";
 import { readFileSync } from "fs";
-import { resolveTestEnv } from "../../../scripts/lib/resolve-test-env.js";
-import { loadProjectProfile } from "../../../scripts/lib/project-profile.mjs";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant } from "./probe-lib.mjs";
 
 const TEST_ENV = resolveTestEnv("vcst");
@@ -87,7 +87,7 @@ function adoAuth() {
   if (process.env.ADO_PAT) return { header: "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"), via: "ADO_PAT" };
   if (tryCmd("az account show")) {
     try {
-      const tok = execSync("az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+      const tok = execSync("az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
       if (tok) return { header: "Bearer " + tok, via: "az session" };
     } catch { /* no token */ }
   }
@@ -168,7 +168,7 @@ async function main() {
     if (process.env.ADO_PAT) { authHeader = "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"); via = "ADO_PAT"; }
     else if (tryCmd("az account show")) {
       try {
-        const tok = execSync("az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+        const tok = execSync("az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
         if (tok) { authHeader = "Bearer " + tok; via = "az session"; }
       } catch { /* no token */ }
     }

@@ -45,7 +45,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 // Secret keys that are GLOBAL (one value across all envs) → never get the _<ENV>
 // suffix. Everything else in `secrets` is treated as a per-env credential.
