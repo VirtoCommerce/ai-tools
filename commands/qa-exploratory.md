@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /qa-exploratory — Scenario Discovery Session
 
-**Primary purpose: find scenarios our existing coverage misses.** The CSV suites in [`regression/suites/`](../../regression/suites/) cover what we know to test; this command exists to discover what we *don't* know to test. Confirming known coverage works is valuable but is **re-validation**, not exploration — log it accordingly.
+**Primary purpose: find scenarios our existing coverage misses.** The CSV suites in [`regression/suites/`](../regression/suites/) cover what we know to test; this command exists to discover what we *don't* know to test. Confirming known coverage works is valuable but is **re-validation**, not exploration — log it accordingly.
 
 Every session must end with at least one **net-new scenario** (not in any regression suite, not in [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md), not predictable from the charter alone). If no net-new scenario emerges, the session is `[VAL]` re-validation, not `[EXP]` exploration. See [`scenario-discovery.md`](../skills/qa-sbtm/scenario-discovery.md) for the discovery techniques.
 
@@ -32,7 +32,7 @@ Every session must end with at least one **net-new scenario** (not in any regres
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
 4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 5. **Coverage map** — for the target domain, identify what's *already covered*:
-   - Open the CSV suite(s) for the domain (via [module-suite-map.md](../knowledge/execution/module-suite-map.md) → [`regression/suites/`](../../regression/suites/)) — list the scenarios already tested
+   - Open the CSV suite(s) for the domain (via [module-suite-map.md](../knowledge/execution/module-suite-map.md) → [`regression/suites/`](../regression/suites/)) — list the scenarios already tested
    - Open [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
    - These two lists are what NOT to spend session time re-validating. The discovery target is everything *else*.
 6. **Pick a discovery technique** — open [scenario-discovery.md](../skills/qa-sbtm/scenario-discovery.md) and select ONE technique appropriate to the situation:

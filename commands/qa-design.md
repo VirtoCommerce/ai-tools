@@ -147,7 +147,7 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    **Step 1.3 — Cross-check against the curated map** — read [critical-ui-scope.md](../knowledge/oracles/critical-ui-scope.md) Render-Location Map. For in-matrix components, the curated locations are high-confidence; treat them as candidates first, then add any GitHub-discovered locations the curated map missed (and surface the gap in the report).
 
    **Step 1.4 — Live probe to confirm rendering** — for each candidate URL, before audit:
-   - Navigate via ui-ux-expert (real-user click-through, per [`feedback_real_user_interaction`](../../../memory/feedback_real_user_interaction.md) — NOT direct deep-linking unless that IS the natural entry).
+   - Navigate via ui-ux-expert (real-user click-through, per memory `feedback_real_user_interaction` — NOT direct deep-linking unless that IS the natural entry).
    - Run `document.querySelectorAll('{selector}').length > 0` (selector from [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) or matrix row).
    - Keep candidates where the component actually mounts; drop candidates where it doesn't (some usages are conditional on auth state, cart contents, feature flags, B2B vs B2C store, etc.).
    - For conditional mounts, capture the precondition in the report (e.g., "VcLineItem renders on /cart only when cart has ≥ 1 item — precondition: `[PRE:RESET_CART]` + add SKU before audit").
@@ -167,7 +167,7 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    - Log skipped candidates in the report under "Not audited — out of budget" so the user can re-run for them later.
 
 3. **Audit each context** — for each enumerated URL:
-   - Navigate via real-user interaction (click nav, follow links — NOT direct deep-link unless that IS the natural entry path per [`feedback_real_user_interaction`](../../../memory/feedback_real_user_interaction.md)).
+   - Navigate via real-user interaction (click nav, follow links — NOT direct deep-link unless that IS the natural entry path per memory `feedback_real_user_interaction`).
    - Wait for the component to mount + paint (no skeletons, no FOUC).
    - Run the resolved invariant audits at 375 / 768 / 1280.
    - Capture rect snapshot + computed-style sample per invariant; screenshot only on FAIL.
@@ -191,7 +191,7 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
 - Resolved BL-UI invariant list from Step 2.
 - Reference paths the agent must consult:
   - [business-logic.md § Domain 15](../knowledge/oracles/business-logic.md) — BL-UI invariant definitions.
-  - [measure-layout.ts](../../scripts/lib/measure-layout.ts) — `LAYOUT_SNIPPETS`, `spacingAuditSnippet`, `alignmentAuditSnippet`, `rectSnapshotSnippet`, classifiers.
+  - [measure-layout.ts](../scripts/lib/measure-layout.ts) — `LAYOUT_SNIPPETS`, `spacingAuditSnippet`, `alignmentAuditSnippet`, `rectSnapshotSnippet`, classifiers.
   - [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) — verified DOM selectors.
   - [/qa-design skill](../skills/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
 - Audit at three viewports: 375 / 768 / 1280 (skip a viewport only if the target is verifiably desktop-only).

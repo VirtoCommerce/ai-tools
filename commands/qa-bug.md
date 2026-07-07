@@ -134,7 +134,7 @@ ready-to-route target. Resolve it deterministically (do **not** free-guess):
 1. **Map the domain → module** via [`knowledge/execution/module-suite-map.md`](../knowledge/execution/module-suite-map.md)
    (the *Module → REST API Path → xAPI Module* table). The failing REST path (`/api/pricing/…` → `vc-module-pricing`)
    or the xAPI module name (xCatalog → `vc-module-x-catalog`) from your Layer 3/4 capture is the strongest signal.
-2. **Cross-check against the routing hints** in [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
+2. **Cross-check against the routing hints** in [`ci/config/fix-repos.json`](../ci/config/fix-repos.json)
    `routing[]` — these are the exact `text → repo` rules `/qa-fix`'s `suggestRepo()` applies. If your domain
    matches a rule, use that repo name verbatim (e.g. CyberSource → `vc-module-CyberSource`, promotion/coupon →
    `vc-module-marketing`, xAPI+promotion → `vc-module-marketing-experience-api`).
@@ -280,6 +280,6 @@ Report the ticket key back to the user.
   `/qa-bug` → `/qa-fix` handoff contract; a named, evidence-backed repo lets `/qa-fix` Gate 1 confirm
   rather than re-derive routing.
 - **Keep the routing vocabulary in sync with one source of truth:** `repoKind` and the allowed-repo set
-  come from [`ci/lib/repo-router.ts`](../../ci/lib/repo-router.ts) + [`ci/config/fix-repos.json`](../../ci/config/fix-repos.json)
+  come from [`ci/lib/repo-router.ts`](../ci/lib/repo-router.ts) + [`ci/config/fix-repos.json`](../ci/config/fix-repos.json)
   (the same files `/qa-fix` uses). Resolve the exact module via
   [`module-suite-map.md`](../knowledge/execution/module-suite-map.md). Never invent a parallel naming scheme.

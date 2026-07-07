@@ -177,7 +177,7 @@ Output concise verdict to user with pass rate, bugs, and report path. Mention se
 
 Never assign two agents to the same browser. Never use WebKit on Windows.
 
-**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch via `@td(AGENT_POOL_SLOT_N.*)` — alias points at [test-data/users/agent-user-pool.csv](../../test-data/users/agent-user-pool.csv) row where `slot=N`.
+**Per-slot test user credentials** — each browser slot has dedicated storefront accounts (personal + B2B) so parallel agents never collide on login state. Resolve at dispatch via `@td(AGENT_POOL_SLOT_N.*)` — alias points at [test-data/users/agent-user-pool.csv](../test-data/users/agent-user-pool.csv) row where `slot=N`.
 
 - Slot 1 (`playwright-chrome`) → `@td(AGENT_POOL_SLOT_1.email)` / `@td(AGENT_POOL_SLOT_1.password)` (B2B pair: `@td(AGENT_POOL_SLOT_1.b2b_email)` in `@td(AGENT_POOL_SLOT_1.b2b_org)`)
 - Slot 2 (`playwright-firefox`) → `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` (same-org pair with slot 1 when CSV configures it that way)
