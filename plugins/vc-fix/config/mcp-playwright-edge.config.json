@@ -1,0 +1,24 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": false,
+      "channel": "msedge"
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "locale": "en-US",
+      "storageState": "test-results/auth/TECHFLOW_ADMIN.json",
+      "recordHar": {
+        "path": "./test-results/edge/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/edge",
+  "screenshot": "only-on-failure"
+}

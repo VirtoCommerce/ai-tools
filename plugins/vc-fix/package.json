@@ -1,0 +1,21 @@
+{
+  "name": "vc-fix",
+  "version": "0.1.0",
+  "description": "Bug lifecycle plugin for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification. Self-contained subset of vc-qa.",
+  "main": "config.js",
+  "type": "module",
+  "scripts": {
+    "env:check": "node get_variables_env.js"
+  },
+  "license": "TBD-internal",
+  "dependencies": {
+    "@playwright/mcp": "^0.0.77",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^22.19.19",
+    "playwright": "^1.61.1",
+    "tsx": "^4.0.0"
+  }
+}

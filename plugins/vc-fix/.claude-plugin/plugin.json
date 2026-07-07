@@ -1,0 +1,21 @@
+{
+  "name": "vc-fix",
+  "description": "Agentic bug lifecycle for Virto Commerce — project setup, bug filing, autonomous bug fixing, and fix verification. Ships 7 agents, 13 skills, 5 commands. A focused subset of vc-qa's bug-lifecycle slice, packaged as an independent plugin inside the same repo (references the repo's shared knowledge/, .claude/rules/, config.js, scripts/lib in place; its repo-routing logic is self-contained in skills/qa-fix-routing/, no dependency on ci/).",
+  "version": "0.1.0",
+  "displayName": "Virto Commerce Bug Lifecycle",
+  "author": {
+    "name": "Virto Commerce",
+    "email": "support@virtocommerce.com"
+  },
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "license": "TBD-internal",
+  "keywords": [
+    "qa",
+    "virtocommerce",
+    "ecommerce",
+    "bugfix",
+    "autofix",
+    "agentic"
+  ]
+}
