@@ -108,8 +108,6 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Products (types, xAPI fields, configurable sections) | `knowledge/domain/products.md` |
 | Storefront Sitemap (URLs, nav, categories, account pages) | `knowledge/domain/sitemap.md` |
 | Store Settings | `knowledge/domain/store-settings.md` |
-| White Labeling | `knowledge/domain/white-labeling.md` |
-| Test Data Generation | `knowledge/test-data-generation.md` |
 | GraphQL xAPI Schema | `knowledge/api/graphql-schema.md` |
 | **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` |
 | **Live Test-Data Discovery** | `knowledge/execution/live-discovery.md` |
@@ -145,7 +143,7 @@ Before authoring or reviewing any query/mutation:
 
 ### 3. Verify selectors & state against the live UI
 
-Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `knowledge/execution/test-execution-preflight.md` and `knowledge/automation/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
+Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `knowledge/automation/storefront-selectors.md`. It was verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
 
 ### 4. Verify source data and design intent before filing a bug
 

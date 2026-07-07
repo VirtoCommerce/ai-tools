@@ -24,7 +24,7 @@ Store settings control all aspects of a store: identity, catalog, languages, cur
 | **Shipping methods** | Store → Shipping methods widget | Fulfillment center linkage |
 | **Tax providers** | Store → Tax providers widget | Tax calculation provider selection |
 | **SEO** | Store → SEO settings | `seoLinkType`, SEO metadata, URL slug patterns |
-| **White Labeling** | Store → White Labeling blade | Logo, favicon, theme preset, footer/main menu link lists (see `white-labeling.md`) |
+| **White Labeling** | Store → White Labeling blade | Logo, favicon, theme preset, footer/main menu link lists |
 | **Frontend / Module settings** | Store → settings blade | `isSpa`, per-module public flags (GA4, etc.) — see Public Store Settings below |
 
 ---
@@ -260,7 +260,7 @@ Push notifications are configured at platform level via `appsettings.json` using
 
 ## Related Modules / Interactions
 
-- **White Labeling** — theme preset, logos, link lists layer on top of store settings (see `white-labeling.md`)
+- **White Labeling** — theme preset, logos, link lists layer on top of store settings
 - **Content > Store > Link Lists** — source for footer/main menu navigation
 - **Google Analytics** — configured via `settings.modules[VirtoCommerce.GoogleEcommerceAnalytics]` (public store settings)
 - **Vue.js Storefront** — reads `isSpa`, `anonymousUsersAllowed`, `seoLinkType` at runtime via xAPI `store` query

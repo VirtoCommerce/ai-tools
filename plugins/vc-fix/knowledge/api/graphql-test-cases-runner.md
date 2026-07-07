@@ -571,7 +571,6 @@ Walks: AUTH → set up vars → declare op + vars + body → execute → capture
 
 | Context | Where to look |
 |---------|---------------|
-| What columns / tags exist | `knowledge/execution/test-runner-tags.md` |
 | Which GraphQL types/fields are real | `knowledge/api/graphql-schema.md` (snapshot) + live introspection |
 | Auth contract (token endpoint, headers) | `knowledge/api/api-auth.md` |
 | Order/checkout flow matrix | `knowledge/api/order-creation-matrix.md` |
