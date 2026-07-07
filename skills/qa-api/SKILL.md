@@ -36,7 +36,7 @@ Three modes in one skill: look up API reference, execute tests, or write test ca
 - **api-test-case-patterns.md** — Coverage checklists and writing guide for generating new test cases in enriched CSV format. Read this when in `cases` mode.
 - **`knowledge/api/graphql-schema.md`** — **Authoritative** live introspection snapshot of the GraphQL schema. Lists all queries, mutations, input types, return types, and key rules. Consult this FIRST when writing or reviewing any GraphQL test case.
 - **`knowledge/api/graphql-test-cases-runner.md`** — **Authoritative** authoring contract for runner-native GraphQL test cases (the format consumed by `scripts/graphql-runner.ts`): full `Steps` / `Assertions` / `Cleanup` tag grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, common failure modes, authoring checklist, worked example. Read this BEFORE writing ANY GraphQL test case; gold-standard reference suite is `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
-- **`skills/qa-postman/test-data-fixtures.md`** — `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json) registry, and fixture conventions. Read this BEFORE writing entity IDs, SKUs, prices, emails, addresses, or test-card numbers into request bodies — resolve at authoring time, never hardcode.
+- **`skills/qa-postman/test-data-fixtures.md`** — `@td(ALIAS.field)` resolver, [`test-data/aliases.json`](../../test-data/aliases.json) registry, and fixture conventions. Read this BEFORE writing entity IDs, SKUs, prices, emails, addresses, or test-card numbers into request bodies — resolve at authoring time, never hardcode.
 - **`skills/qa-postman/SKILL.md`** — Postman MCP entry point (modes, workflow, sub-guide index). The Postman MCP **authors** collections; it does **not** execute them — execution happens via Newman/Postman CLI/Postman Monitor (see `qa-postman/execution.md`).
 
 ## MANDATORY: Introspection-First Rule
@@ -188,7 +188,7 @@ Always use env vars — never hardcode URLs or credentials:
 
 Same rule applies to **entity IDs, SKUs, prices, emails, addresses, coupon codes, test cards, order numbers, and URL path segments** — resolve them at authoring time via the project's test-data library. Hardcoding rots: catalogs get re-seeded, orgs get re-created, prices change.
 
-- **Resolver:** `@td(ALIAS.field)` → looks up [`test-data/aliases.json`](../../../../test-data/aliases.json), reads the matching CSV row, returns the requested column. Examples: `@td(CYBERSOURCE_VISA.number)`, `@td(STORE_PRIMARY.id)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`.
-- **Implementation:** [`scripts/lib/test-data-resolver.ts`](../../../../scripts/lib/test-data-resolver.ts), consumed by `scripts/graphql-runner.ts` and the regression suite parsers.
+- **Resolver:** `@td(ALIAS.field)` → looks up [`test-data/aliases.json`](../../test-data/aliases.json), reads the matching CSV row, returns the requested column. Examples: `@td(CYBERSOURCE_VISA.number)`, `@td(STORE_PRIMARY.id)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`.
+- **Implementation:** [`scripts/lib/test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts), consumed by `scripts/graphql-runner.ts` and the regression suite parsers.
 - **Validation:** `npx tsx scripts/validate-td-refs.ts` — verifies every `@td()` reference resolves.
 - **Reference:** [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) covers full conventions (catalog/address/account gotchas, fixture directory layout).

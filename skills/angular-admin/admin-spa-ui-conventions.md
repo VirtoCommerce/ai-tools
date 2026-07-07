@@ -342,7 +342,7 @@ overlap/alignment assertion passes numerically.
 
 **Step 1 — measure the live blade in a browser (read-only; allowed by the real-user hook).** Use the shared,
 **generic** helper `bladeStaticOverflowSnippet()` from
-[`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts) (don't hand-roll a one-off — it
+[`scripts/lib/measure-layout.ts`](../../scripts/lib/measure-layout.ts) (don't hand-roll a one-off — it
 works for any module's blade, not just export/catalog). Get the snippet string, pass it verbatim to Chrome
 DevTools `evaluate_script` or Playwright `browser_evaluate` (it uses only `getBoundingClientRect` /
 `getComputedStyle`, the read-only ops the hook permits), then classify with `classifyBladeStaticOverflow`:

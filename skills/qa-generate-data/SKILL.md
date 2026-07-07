@@ -93,7 +93,7 @@ pairwise wouldn't pick them. *(The matrix is returned inline to the caller — n
 ### 5. Resolve each cell — reuse first, author the gap
 For every entity a combination needs, in order:
 1. **Reuse** — does an existing `aliases.json` entry / `test-data/` row / live platform entity already
-   satisfy this state? Use [`live-discover.ts`](../../../../scripts/lib/live-discover.ts) to find a
+   satisfy this state? Use [`live-discover.ts`](../../scripts/lib/live-discover.ts) to find a
    real one (e.g. "any unpriced product", "a VIP user with balance ≥ X"). If yes, point the combination
    at it — author nothing.
 2. **Author the gap** — only when no existing entity covers the state. Build the fixture row using the
@@ -116,7 +116,7 @@ npx tsx scripts/author-fixtures.ts --plan plan.json --dry-run  # preview the dif
 
 Plan shape (the contract): `{ feature, fixtures:[{combo, scenario, file, businessKey, row, alias}],
 comboAliases:[{name, combo, inline, fields, notes}] }` — see the header of
-[`scripts/author-fixtures.ts`](../../../../scripts/author-fixtures.ts). It is **idempotent** (a gap row
+[`scripts/author-fixtures.ts`](../../scripts/author-fixtures.ts). It is **idempotent** (a gap row
 whose business key already exists is reused, never duplicated) and enforces the guardrails (GUID columns
 blanked, bare UUIDs rejected, `seeded=false`, `AGENT-TEST-` prefix checked). This is the **only on-disk
 output**. (Manual fallback if you don't build a plan: edit the CSVs + `aliases.json` by hand, then run
@@ -179,7 +179,7 @@ absorbed once in the base row. Record the base→variant lineage in each alias's
 |------|-----|
 | **No system-generated GUIDs** in authored rows. Leave `*_guid`/`platform_id` empty, `seeded=false`. | IDs exist only after `/qa-seed-data`; the validator (DV-013) fails on bare UUIDs. |
 | **Reference data by stable business key** — `code`/`sku`/`name`/`slug`/`email`. | Business keys survive teardown+reseed; GUIDs don't. |
-| **`AGENT-TEST-` prefix** on every authored unique value. | `/qa-seed-data teardown` sweeps the prefix. Use [`random-data.ts`](../../../../scripts/lib/random-data.ts). |
+| **`AGENT-TEST-` prefix** on every authored unique value. | `/qa-seed-data teardown` sweeps the prefix. Use [`random-data.ts`](../../scripts/lib/random-data.ts). |
 | **Reuse before authoring.** Live-discover / existing aliases first; author only true gaps. | Minimizes new seed load and keeps the fixture surface small (your answer: reuse-first). |
 | **Realistic, domain-correct values** — believable names/brands/prices, valid state↔ZIP, alphanumeric coupon codes (`^[a-zA-Z0-9]+$`). | Fixtures are read by humans and drive real assertions. |
 | **Assert shape, not volatile values** (prices, catalog-dependent titles drift). | `feedback_env_resilience`. |
@@ -234,9 +234,9 @@ ad-hoc data:
 The combination matrix returned inline (step 7) is what those callers consume to map cases → Combo IDs.
 
 ## Pipeline scripts (this skill's tooling)
-- Stage 1 — live variant discovery: [`scripts/discover-variants.mjs`](../../../../scripts/discover-variants.mjs) (CLI) + [`scripts/lib/feature-variants.mjs`](../../../../scripts/lib/feature-variants.mjs) (`FEATURES` registry)
-- Stage 2 — pairwise/all-pairs: [`scripts/lib/combinatorial-generator.ts`](../../../../scripts/lib/combinatorial-generator.ts)
-- Stage 3 — gap fixtures + aliases + validate: [`scripts/author-fixtures.ts`](../../../../scripts/author-fixtures.ts)
+- Stage 1 — live variant discovery: [`scripts/discover-variants.mjs`](../../scripts/discover-variants.mjs) (CLI) + [`scripts/lib/feature-variants.mjs`](../../scripts/lib/feature-variants.mjs) (`FEATURES` registry)
+- Stage 2 — pairwise/all-pairs: [`scripts/lib/combinatorial-generator.ts`](../../scripts/lib/combinatorial-generator.ts)
+- Stage 3 — gap fixtures + aliases + validate: [`scripts/author-fixtures.ts`](../../scripts/author-fixtures.ts)
 
 ## References (cite, don't duplicate)
 - Combination-design intent: `feedback_test_data_prep_is_combination_design` · test-design mindset: `feedback_test_design_mental_model`
@@ -245,6 +245,6 @@ The combination matrix returned inline (step 7) is what those callers consume to
 - Directory map + seed-gap tables: [`test-data/README.md`](../../test-data/README.md)
 - Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 - BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
-- Generators: [`scripts/lib/random-data.ts`](../../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../../scripts/lib/live-discover.ts)
-- Validators: [`scripts/validate-td-refs.ts`](../../../../scripts/validate-td-refs.ts) · [`scripts/audit-aliases.ts`](../../../../scripts/audit-aliases.ts)
+- Generators: [`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts)
+- Validators: [`scripts/validate-td-refs.ts`](../../scripts/validate-td-refs.ts) · [`scripts/audit-aliases.ts`](../../scripts/audit-aliases.ts)
 - Provisioning companion: [`/qa-seed-data`](../qa-seed-data/SKILL.md)

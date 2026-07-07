@@ -10,7 +10,7 @@ Use this as the **default lens** for `/qa-exploratory`. The other files in this 
 
 Every exploratory session ends with at least one **net-new scenario** — something that:
 
-1. Is not covered by any CSV suite in [`regression/suites/`](../../../../regression/suites/)
+1. Is not covered by any CSV suite in [`regression/suites/`](../../regression/suites/)
 2. Is not in the [VC bug catalog](../../knowledge/oracles/vc-bug-catalog.md) or ECL
 3. The charter author would not have predicted before the session
 

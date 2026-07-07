@@ -1,12 +1,12 @@
 # Design System Consistency — Coffee Theme
 
-> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../../scripts/lib/measure-layout.ts). Canonical suite: [`048b-layout-stability.csv`](../../../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
+> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../scripts/lib/measure-layout.ts). Canonical suite: [`048b-layout-stability.csv`](../../regression/suites/Frontend/cross-cutting/048b-layout-stability.csv).
 
 ---
 
 ## Core principle — read live tokens, never hardcode
 
-Coffee is a **multi-preset theme** (6 light + 3 dark variants — see [reference_theme_presets](../../../../memory/reference_theme_presets.md) memory). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
+Coffee is a **multi-preset theme** (6 light + 3 dark variants — see memory `reference_theme_presets`). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
 
 ### Live-token extraction snippet
 

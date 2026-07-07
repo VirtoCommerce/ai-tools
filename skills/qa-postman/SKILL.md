@@ -25,7 +25,7 @@ Read the relevant file **before** invoking the matching Postman MCP tools.
 | [variables-and-environments.md](variables-and-environments.md) | Before `createEnvironment`/`putEnvironment` or whenever you set/get a variable |
 | [collections-and-requests.md](collections-and-requests.md) | Before `createCollection`/`createCollectionRequest` — schema, auth flow, chaining patterns |
 | [graphql-authoring.md](graphql-authoring.md) | Before any GraphQL request — links to canonical [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) and [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) |
-| [test-data-fixtures.md](test-data-fixtures.md) | Before authoring values into bodies — `@td()` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json), fixture conventions |
+| [test-data-fixtures.md](test-data-fixtures.md) | Before authoring values into bodies — `@td()` resolver, [`test-data/aliases.json`](../../test-data/aliases.json), fixture conventions |
 | [execution.md](execution.md) | After authoring — verify checklist + Newman/Postman CLI/Monitor + endpoint quick-reference |
 | [common-mistakes.md](common-mistakes.md) | When something doesn't work — 15-item catalog |
 | [examples.md](examples.md) | Copy-paste-ready collection + environment payloads |
@@ -75,7 +75,7 @@ See [collections-and-requests.md](collections-and-requests.md). Every collection
 5. First request = OAuth2 token with `auth: { type: "noauth" }`
 
 ### Step 5 — Add Requests
-Resolve fixture values via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` resolver, [`test-data/aliases.json`](../../../../test-data/aliases.json)). For GraphQL bodies, verify field names against [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) **before** writing — see [graphql-authoring.md](graphql-authoring.md).
+Resolve fixture values via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` resolver, [`test-data/aliases.json`](../../test-data/aliases.json)). For GraphQL bodies, verify field names against [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) **before** writing — see [graphql-authoring.md](graphql-authoring.md).
 
 Every request must have URL using `{{baseUrl}}`, proper headers, and a test script with at least a status-code assertion.
 

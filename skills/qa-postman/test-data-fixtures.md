@@ -8,7 +8,7 @@ How to source values for Postman collections and environments from the project's
 
 Hardcoded values rot. Catalogs get re-seeded, orgs get re-created, prices change. A collection with `"productId": "P-12345"` will silently start failing or drift away from real coverage.
 
-The project ships a centralized fixture system at [`test-data/`](../../../../test-data/) with a registry of named aliases. Collections should source values from this registry — directly when seeding via the Postman MCP, indirectly via env vars or pre-request scripts otherwise.
+The project ships a centralized fixture system at [`test-data/`](../../test-data/) with a registry of named aliases. Collections should source values from this registry — directly when seeding via the Postman MCP, indirectly via env vars or pre-request scripts otherwise.
 
 **Memory entries to consult:**
 - `feedback_no_test_data.md` — Use `test-data/` for test data; avoid hardcoding in CSV `Test_Data` columns
@@ -21,7 +21,7 @@ The project ships a centralized fixture system at [`test-data/`](../../../../tes
 
 ## 2. The `@td()` Resolver
 
-The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../../../scripts/lib/test-data-resolver.ts) reads CSV-backed fixtures and a JSON alias registry. It is consumed by `scripts/graphql-runner.ts` and the regression suite parsers. **Postman collections themselves don't run the resolver** — but you should resolve `@td()` references **at authoring time** when building the collection (read the file, look up the alias, paste the actual value or pass it through an env variable).
+The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../scripts/lib/test-data-resolver.ts) reads CSV-backed fixtures and a JSON alias registry. It is consumed by `scripts/graphql-runner.ts` and the regression suite parsers. **Postman collections themselves don't run the resolver** — but you should resolve `@td()` references **at authoring time** when building the collection (read the file, look up the alias, paste the actual value or pass it through an env variable).
 
 ### Syntax
 
@@ -39,7 +39,7 @@ The runtime resolver at [`scripts/lib/test-data-resolver.ts`](../../../../script
 
 ### How It Resolves
 
-1. Look up the alias in [`test-data/aliases.json`](../../../../test-data/aliases.json):
+1. Look up the alias in [`test-data/aliases.json`](../../test-data/aliases.json):
    ```json
    "CFG_LAPTOP": {
      "file": "products/configurable-products",
@@ -69,23 +69,23 @@ Top-level structure (see [`test-data/README.md`](../../test-data/README.md) for 
 
 | Directory | Purpose | Notable files |
 |-----------|---------|---------------|
-| [`test-data/users/`](../../../../test-data/users/) | Personal user accounts | `agent-user-pool.csv` (3 dedicated agents — `TestAgent1!`/`2!`/`3!`), `test-users.csv` |
-| [`test-data/b2b/`](../../../../test-data/b2b/) | B2B orgs/contacts/users (seeded) | `organizations.csv`, `contacts.csv`, `users.csv` (platform GUIDs via `@td()` → `aliases.json` / `aliases.{env}.json`) |
-| [`test-data/organizations/`](../../../../test-data/organizations/) | Special-character org cases | `sample-organizations.csv` |
-| [`test-data/catalogs/`](../../../../test-data/catalogs/) | Catalog seed data | `catalogs.csv`, `categories.csv`, `properties.csv` |
-| [`test-data/products/`](../../../../test-data/products/) | Product fixtures | `test-products.csv`, `configurable-products.csv` |
-| [`test-data/pricing/`](../../../../test-data/pricing/) | Price lists & prices | `price-lists.csv`, `prices.csv` |
-| [`test-data/inventory/`](../../../../test-data/inventory/) | Stock fixtures | |
-| [`test-data/payment/`](../../../../test-data/payment/) | Test cards per processor | `test-cards.csv` |
-| [`test-data/promotions/`](../../../../test-data/promotions/) | Coupons & promo codes | |
-| [`test-data/addresses/`](../../../../test-data/addresses/) | Address fixtures | TechFlow snapshot at `techflow-org-addresses-state-20260423.json` |
-| [`test-data/bopis/`](../../../../test-data/bopis/) | BOPIS test data | Includes `testProductCatalogId` for B2B virtual catalog root |
-| [`test-data/graphql/`](../../../../test-data/graphql/) | GraphQL queries/mutations + index | `index.json` |
-| [`test-data/search-queries/`](../../../../test-data/search-queries/) | Search test queries | |
-| [`test-data/security/`](../../../../test-data/security/) | RBAC/security cases | |
-| [`test-data/stores/`](../../../../test-data/stores/) | Store fixtures | |
-| [`test-data/localization/`](../../../../test-data/localization/) | i18n test strings | |
-| [`test-data/uploads/`](../../../../test-data/uploads/) | Upload sample files | |
+| [`test-data/users/`](../../test-data/users/) | Personal user accounts | `agent-user-pool.csv` (3 dedicated agents — `TestAgent1!`/`2!`/`3!`), `test-users.csv` |
+| [`test-data/b2b/`](../../test-data/b2b/) | B2B orgs/contacts/users (seeded) | `organizations.csv`, `contacts.csv`, `users.csv` (platform GUIDs via `@td()` → `aliases.json` / `aliases.{env}.json`) |
+| [`test-data/organizations/`](../../test-data/organizations/) | Special-character org cases | `sample-organizations.csv` |
+| [`test-data/catalogs/`](../../test-data/catalogs/) | Catalog seed data | `catalogs.csv`, `categories.csv`, `properties.csv` |
+| [`test-data/products/`](../../test-data/products/) | Product fixtures | `test-products.csv`, `configurable-products.csv` |
+| [`test-data/pricing/`](../../test-data/pricing/) | Price lists & prices | `price-lists.csv`, `prices.csv` |
+| [`test-data/inventory/`](../../test-data/inventory/) | Stock fixtures | |
+| [`test-data/payment/`](../../test-data/payment/) | Test cards per processor | `test-cards.csv` |
+| [`test-data/promotions/`](../../test-data/promotions/) | Coupons & promo codes | |
+| [`test-data/addresses/`](../../test-data/addresses/) | Address fixtures | TechFlow snapshot at `techflow-org-addresses-state-20260423.json` |
+| [`test-data/bopis/`](../../test-data/bopis/) | BOPIS test data | Includes `testProductCatalogId` for B2B virtual catalog root |
+| [`test-data/graphql/`](../../test-data/graphql/) | GraphQL queries/mutations + index | `index.json` |
+| [`test-data/search-queries/`](../../test-data/search-queries/) | Search test queries | |
+| [`test-data/security/`](../../test-data/security/) | RBAC/security cases | |
+| [`test-data/stores/`](../../test-data/stores/) | Store fixtures | |
+| [`test-data/localization/`](../../test-data/localization/) | i18n test strings | |
+| [`test-data/uploads/`](../../test-data/uploads/) | Upload sample files | |
 
 ---
 
@@ -146,7 +146,7 @@ When writing address request bodies (checkout, account, B2B):
 - `isFavorite` is a **storefront xAPI** field — does not exist on the platform REST API address payload.
 - State/Province facet only appears for USA/Canada — empty `term: []` for UK by design.
 
-Use [`test-data/addresses/`](../../../../test-data/addresses/) fixtures rather than authoring address bodies from scratch.
+Use [`test-data/addresses/`](../../test-data/addresses/) fixtures rather than authoring address bodies from scratch.
 
 ---
 
@@ -158,6 +158,6 @@ Use [`test-data/addresses/`](../../../../test-data/addresses/) fixtures rather t
 |---------------|--------|----------|
 | Admin | `.env` `ADMIN` / `ADMIN_PASSWORD` | `Password1!` |
 | Main storefront user | `.env` `USER_EMAIL` / `USER_PASSWORD` | `Password1!` |
-| Per-agent slot 1/2/3 | [`test-data/users/agent-user-pool.csv`](../../../../test-data/users/agent-user-pool.csv) | `TestAgent1!` / `TestAgent2!` / `TestAgent3!` |
+| Per-agent slot 1/2/3 | [`test-data/users/agent-user-pool.csv`](../../test-data/users/agent-user-pool.csv) | `TestAgent1!` / `TestAgent2!` / `TestAgent3!` |
 
 Memory: `user_test_accounts.md`, `feedback_agents_read_env_creds.md`.
