@@ -12,11 +12,11 @@
 
   "claudeCode": {
     "minVersion": "1.0.0",
-    "agentsDir": ".claude/agents",
-    "skillsDir": ".claude/skills",
-    "commandsDir": ".claude/commands",
+    "agentsDir": "agents",
+    "skillsDir": "skills",
+    "commandsDir": "commands",
     "rulesDir": ".claude/rules",
-    "knowledgeDir": ".claude/agents/knowledge"
+    "knowledgeDir": "knowledge"
   },
 
   "scope": {

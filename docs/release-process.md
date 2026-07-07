@@ -73,7 +73,7 @@ npm run verify:multi-env
 npm run suites:lint
 npx tsx scripts/validate-td-refs.ts
 npm run plugin:check
-node .claude/skills/run-vc-mcp-testing-module/driver.mjs
+node skills/run-vc-mcp-testing-module/driver.mjs
 ```
 
 All seven must exit 0. If any don't, fix and re-verify before continuing.
@@ -97,7 +97,7 @@ PR description template:
 - [x] `npm run suites:lint` exits 0
 - [x] `npx tsx scripts/validate-td-refs.ts` exits 0
 - [x] `npm run plugin:check` green
-- [x] `node .claude/skills/run-vc-mcp-testing-module/driver.mjs` 7/7 checks pass
+- [x] `node skills/run-vc-mcp-testing-module/driver.mjs` 7/7 checks pass
 
 ### Changelog
 See `CHANGELOG.md` [vX.Y.Z] section.

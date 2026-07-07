@@ -50,14 +50,14 @@ These are the artifacts customers will reference in their own docs, training, an
 
 | Artifact | Contract |
 |----------|----------|
-| `.claude/skills/qa-methodology/qa-process/test-process-lifecycle.md` | The 7 phases, their entry/exit criteria, and the phase-to-skill mapping table. |
-| `.claude/skills/qa-methodology/qa-test-cases-generator/test-case-template.md` | The 15-column Enriched CSV format. Column names, semantics, order. |
-| `.claude/skills/qa-methodology/qa-evidence/evidence-capture-policy.md` | Evidence capture rules, retention, naming. |
-| `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow states + transitions, severity-to-priority mapping. |
-| `.claude/skills/qa-methodology/qa-metrics/quality-gates.md` | Quality gate thresholds (pass rate, DRE, defect density). |
+| `skills/qa-process/test-process-lifecycle.md` | The 7 phases, their entry/exit criteria, and the phase-to-skill mapping table. |
+| `skills/qa-test-cases-generator/test-case-template.md` | The 15-column Enriched CSV format. Column names, semantics, order. |
+| `skills/qa-evidence/evidence-capture-policy.md` | Evidence capture rules, retention, naming. |
+| `skills/qa-defect/defect-lifecycle-workflow.md` | JIRA Bug Workflow states + transitions, severity-to-priority mapping. |
+| `skills/qa-metrics/quality-gates.md` | Quality gate thresholds (pass rate, DRE, defect density). |
 | `.claude/rules/reports.md` | 4 report categories, hard size caps, naming conventions. |
 | `.claude/rules/test-data.md` | `@td()` syntax, no-hardcode rule, four data layers. |
-| `.claude/agents/qa/shared-instructions.md` | Four-layer agent architecture, PASS/FAIL/AMBIGUOUS classifier, evidence standards. |
+| `knowledge/agents/qa/shared-instructions.md` | Four-layer agent architecture, PASS/FAIL/AMBIGUOUS classifier, evidence standards. |
 | BL ID convention | `BL-{DOMAIN}-{NNN}` format. Severity tags. |
 | Severity tags | `[P0-revenue]`, `[P0-security]`, `[P1-data]`, `[P1-ux]`, `[P2-ux]`. |
 

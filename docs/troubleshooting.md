@@ -74,7 +74,7 @@ git checkout main    # or the branch with the plugin migration
 **Causes:**
 1. Claude Code may need a session refresh after plugin install.
 2. Slash commands may be namespaced under the plugin: `/vc-qa:qa-status` instead of `/qa-status`.
-3. Plugin install dir's `.claude/agents/`, `.claude/skills/`, `.claude/commands/` paths may not match what Claude Code expects.
+3. Plugin install dir's `agents/`, `skills/`, `commands/` paths may not match what Claude Code expects.
 
 **Fix:**
 1. Restart Claude Code session (or the IDE if running embedded).
@@ -290,7 +290,7 @@ The system cannot find the path specified.
 node scripts/refresh-graphql-schema.mjs --dry-run
 ```
 
-Same fix for any other `npm run` script that uses bash redirects or inline `VAR=val cmd` syntax. The driver (`node .claude/skills/run-vc-mcp-testing-module/driver.mjs`) sidesteps this by invoking scripts directly.
+Same fix for any other `npm run` script that uses bash redirects or inline `VAR=val cmd` syntax. The driver (`node skills/run-vc-mcp-testing-module/driver.mjs`) sidesteps this by invoking scripts directly.
 
 ### #platform-3 · Auth token fails with 403 / 400
 

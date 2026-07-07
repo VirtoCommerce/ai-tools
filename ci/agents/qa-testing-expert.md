@@ -55,12 +55,12 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `.claude/agents/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
-| `.claude/agents/knowledge/oracles/e-commerce-edge-cases-library.md` | ECL-* pattern referenced in test case |
-| `.claude/agents/knowledge/execution/performance-thresholds.md` | Performance test benchmarks |
-| `.claude/agents/knowledge/automation/browser-quirks.md` | Cross-browser compatibility issues |
-| `.claude/agents/knowledge/execution/debugging-signals.md` | Common failure patterns and root causes |
-| `.claude/agents/knowledge/domain/sitemap.md` | Full storefront URL map |
+| `knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `knowledge/oracles/e-commerce-edge-cases-library.md` | ECL-* pattern referenced in test case |
+| `knowledge/execution/performance-thresholds.md` | Performance test benchmarks |
+| `knowledge/automation/browser-quirks.md` | Cross-browser compatibility issues |
+| `knowledge/execution/debugging-signals.md` | Common failure patterns and root causes |
+| `knowledge/domain/sitemap.md` | Full storefront URL map |
 | `test-data/` | Test users, addresses, payment cards, products, languages |
 
 Read these on-demand, not upfront — saves context for test execution.

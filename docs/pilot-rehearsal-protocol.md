@@ -82,7 +82,7 @@ Rehearser opens the repo URL in their browser. They have 5 minutes to figure out
 
 **Observer captures:**
 - Did the README make the value prop clear?
-- Did they find `docs/onboarding.md` on their own, or did they get lost in `.claude/agents/`?
+- Did they find `docs/onboarding.md` on their own, or did they get lost in `agents/`?
 - Did they understand what a "plugin" means here vs an npm package?
 
 **Pass:** they navigate to `docs/onboarding.md` (or `docs/test-authoring.md` for advanced) within 5 min without help.

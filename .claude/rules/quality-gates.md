@@ -3,7 +3,7 @@
 **This file is the only place the auto-fix gate ladder lives.** Both entry points reference it by
 gate ID — they must never restate or diverge from these criteria:
 
-- **Interactive:** `/qa-fix VCST-XXXX` (`.claude/commands/qa-fix.md`) + the `developers/` agent team
+- **Interactive:** `/qa-fix VCST-XXXX` (`commands/qa-fix.md`) + the `developers/` agent team
   (`fullstack-backend`, `backend-reviewer`).
 - **Headless CI:** `ci/run-fix-cycle.ts` + `.github/workflows/auto-fix.yml` + `ci/agents/fix-triage-agent.md`
   / `fix-backend-agent.md` / `fix-frontend-agent.md`.
@@ -157,13 +157,13 @@ time and erodes trust in the pipeline; a BAIL just leaves the bug for a human. E
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
 | Module→repo resolution, `isAllowedRepo`, `checkoutForFix`, `repoOwnership`, `computeOwnership`, `contributionPlan`, `clientUpstream`, `REPO_PROFILES` (build/test cmds) | `ci/lib/repo-router.ts` |
 | Frontend provenance decision (client customization vs platform bug) + delivery plan | `ci/lib/provenance.ts` (`classifyFrontendProvenance` / `frontendDeliveryPlan`) |
-| Tracker/host-agnostic ops (resolve/comment/transition; live transition discovery; clone/PR matrix) | `.claude/agents/knowledge/execution/tracker-ops.md` |
+| Tracker/host-agnostic ops (resolve/comment/transition; live transition discovery; clone/PR matrix) | `knowledge/execution/tracker-ops.md` |
 | PR/issue delivery by ownership (`getVcs` / `getUpstreamVcs`; GitHub fork-PR + issue dedup; Azure Repos PR) | `ci/lib/vcs/` |
 | Deployment profile (client vs platform, tracker, VCS host, upstream) — written by `/project-init` | `project-profile.json` (gitignored) · `scripts/lib/project-profile.mjs` · `project-profile.example.json` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
-| BL-* invariants the fix must preserve | `.claude/agents/knowledge/oracles/business-logic.md` (cite the ID) |
-| Historical VC failure patterns | `.claude/agents/knowledge/oracles/vc-bug-catalog.md` |
-| VC module repo anatomy + .NET 10 / xUnit / Angular conventions | `.claude/agents/knowledge/architecture/vc-module-architecture.md` |
-| vc-frontend storefront anatomy + Vue 3 / TS / vitest / Storybook conventions | `.claude/agents/knowledge/architecture/vc-frontend-architecture.md` |
-| JIRA transitions | `.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md` |
+| BL-* invariants the fix must preserve | `knowledge/oracles/business-logic.md` (cite the ID) |
+| Historical VC failure patterns | `knowledge/oracles/vc-bug-catalog.md` |
+| VC module repo anatomy + .NET 10 / xUnit / Angular conventions | `knowledge/architecture/vc-module-architecture.md` |
+| vc-frontend storefront anatomy + Vue 3 / TS / vitest / Storybook conventions | `knowledge/architecture/vc-frontend-architecture.md` |
+| JIRA transitions | `skills/qa-defect/defect-lifecycle-workflow.md` |
 | Reports policy + size caps | `.claude/rules/reports.md` |

@@ -3,7 +3,7 @@
  *
  * 1. Scans all regression suite CSVs for @td() tokens and attempts to resolve them.
  *    Reports unresolvable references, stats by domain and suite.
- * 2. Enforces DV-013 (`.claude/skills/testing/qa-review-tests/review-criteria.md`):
+ * 2. Enforces DV-013 (`skills/qa-review-tests/review-criteria.md`):
  *    flags bare UUID/GUID literals in suite CSVs that are NOT wrapped in @td() or {{VAR}}.
  *    System-generated GUIDs regenerate on every teardown+reseed and differ per env, so a
  *    literal one rots into a false BLOCKED/FAIL. Reference data by its stable business key
@@ -196,7 +196,7 @@ if (idHits.length === 0) {
     "\n  Anti-pattern: a system GUID rots on every teardown+reseed and differs per env.\n" +
     "  Fix: reference by stable business key (code / name / slug / SKU) and capture the\n" +
     "  GUID at runtime ([GQL-CAPTURE] / live-discover) if truly needed. See DV-013 / DV-020\n" +
-    "  in .claude/skills/testing/qa-review-tests/review-criteria.md." +
+    "  in skills/qa-review-tests/review-criteria.md." +
     (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
   );
 }

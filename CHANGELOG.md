@@ -10,7 +10,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.5.0. Pin to a tagged release for stability; this branch tip is unstable.
+Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; this branch tip is unstable.
+
+---
+
+## [0.6.0] — 2026-07-07
+
+**Structural fix: the plugin's components now actually load.** In v0.5.0 the plugin installed but almost nothing registered — every component lived under `.claude/`, skills were nested two levels deep, and non-agent files sat inside the agents tree. Claude Code discovers plugin components at the **plugin root** (never `./.claude/`), so this release physically relocates everything to where discovery looks. No behavior of any command/agent/skill changed — only their on-disk location and the internal path references to them.
+
+### Fixed
+
+- **Components moved to the plugin root** — `commands/`, `agents/`, `skills/`, `hooks/` are now siblings of `.claude-plugin/` (were under `.claude/`, which the plugin loader never scans). Moved with `git mv` to preserve history. (`.claude/` still holds non-plugin material: `rules/`, `architecture/`, `ROUTING.md`, `settings*`.)
+- **Skills flattened to one level** — every skill is now `skills/<name>/SKILL.md`. The four category folders (`development/`, `qa-methodology/`, `testing/`, `vc-knowledge/`) were removed and their skills promoted; plugin skill discovery is one level only, so the 30 nested skills previously never loaded. All 32 skills now register. No name collisions.
+- **Agents flattened to flat top-level files** — the 18 agents are now `agents/*.md` at the plugin root. Plugin **agent discovery is non-recursive** (confirmed against the docs + upstream issue #19202, closed "not planned"), so the previous `agents/{qa,ba,developers}/` subfolders registered **0** agents. Names are unique across teams, so the flat layout is unambiguous.
+- **Non-agent files removed from the agents discovery path** — `agents/knowledge/` → a plugin-root `knowledge/` reference dir (28 shared files, not a component type, so never scanned); the three per-team `shared-instructions.md` and the agents `README.md` → `knowledge/agents/`. This stops reference docs from being mis-registered as agents.
+- **`SKILL.md` frontmatter** — added a kebab-case `name:` (matching the folder) to the 22 skills that were missing it; every SKILL.md now has `name:` + `description:`.
+- **`plugin.json` cleanup** — removed the `category` field (belongs in the marketplace entry; emitted a validation warning) and corrected the component counts in the description (18 agents, 32 skills, 23 commands, 28 knowledge files). No component path overrides added — default root discovery covers everything (and dot-segment override paths like `./.claude/agents` fail manifest validation anyway).
+- **Reference rewrite** — updated every path reference to the moved components across the live surface (agents, skills, commands, hooks, knowledge, `.claude/rules`, `.claude/architecture`, `ci/`, `scripts/`, `config/`, `docs/`, and the top-level docs). Historical report artifacts under `reports/` and `vc/` were intentionally left untouched (point-in-time records).
+
+**Verified:** `claude plugin validate .` passes with 0 errors / 0 warnings; `claude plugin details vc-qa` reports 18 agents, 32 skills, 23 commands, 2 hooks (no `knowledge:*` / `shared-instructions` / `README` pseudo-agents).
 
 ---
 
@@ -65,16 +83,16 @@ Bug auto-fix + hotfix pipelines land, and the test-data layer becomes env-agnost
 
 #### Bug auto-fix pipeline (interactive + headless twins) — PR #20
 - **`.claude/rules/quality-gates.md`** — single source of truth for the auto-fix gate ladder **G0–G7**: fix-eligibility triage → single-repo route → reproduce-as-failing-test (red) → minimal fix (green) → code review → build/CI → E2E verification → **human review (never auto-merge)**. Both entry points reference gates by ID and share the no-auto-merge triple guard (permission deny + orchestrator + agent).
-- **`/qa-fix VCST-XXXX`** (`.claude/commands/qa-fix.md`) — interactive autonomous fix of an already-filed bug. Interactive twin of `ci/run-fix-cycle.ts` (same relationship as `/qa-regression` ↔ `ci/run-regression.ts`).
+- **`/qa-fix VCST-XXXX`** (`commands/qa-fix.md`) — interactive autonomous fix of an already-filed bug. Interactive twin of `ci/run-fix-cycle.ts` (same relationship as `/qa-regression` ↔ `ci/run-regression.ts`).
 - **`developers/` agent team** — first write-capable team, isolated from read-only QA agents: `fullstack-backend` (opus; .NET 10 / C# + module Admin SPA Angular, reproduce-as-test → minimal fix → PR) and `backend-reviewer` (opus; Gate-4 diff review before the PR). Plus `shared-instructions.md`.
 - **Headless CI auto-fix** — `ci/run-fix-cycle.ts` + `.github/workflows/auto-fix.yml` (JIRA bug → draft PR): `ci/agents/fix-triage-agent.md` / `fix-backend-agent.md` / `fix-frontend-agent.md`, repo allowlist `ci/config/fix-repos.json`, routing/checkout `ci/lib/repo-router.ts`, live module dependency graph `ci/lib/module-registry.ts` (Platform API, cached). npm scripts: `ci:fix`, `ci:fix:dry`.
-- **Development skills** (`.claude/skills/development/`, used by `fullstack-backend`): `/dotnet-unit-test` (red repro as xUnit test, never edits existing tests), `/dotnet-fix` (minimal idiomatic .NET 10 fix + build/test gate), `/angular-admin` (module Admin SPA fixes; red→green via uncommitted Node scratch harness since module repos ship no JS test runner).
-- **`.claude/agents/knowledge/vc-module-architecture.md`** — VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the fix agents.
+- **Development skills** (`skills/`, used by `fullstack-backend`): `/dotnet-unit-test` (red repro as xUnit test, never edits existing tests), `/dotnet-fix` (minimal idiomatic .NET 10 fix + build/test gate), `/angular-admin` (module Admin SPA fixes; red→green via uncommitted Node scratch harness since module repos ship no JS test runner).
+- **`knowledge/vc-module-architecture.md`** — VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the fix agents.
 - **Dedicated write token** — `GITHUB_FIX_BUGS_TOKEN` → `GH_TOKEN` for `/qa-fix` push/PR scope; QA agents stay read-only on GitHub.
 
 #### Hotfix release pipeline — PR #70
-- **`/qa-hotfix VCST-XXXX [bundles]`** (`.claude/commands/qa-hotfix.md` + skill) — release a hotfix of an already-merged-and-released fix into the bundles currently latest-stable (asks which): resolve task → linked PR → fix commit, verify MERGED + SHIPPED, then per bundle cherry-pick onto `support/<X.Y>` and trigger the repo's "Release hotfix" workflow. Deterministic core: `scripts/hotfix-precheck.ts` (read-only) + `scripts/hotfix-release.ts` (gated write). Never auto-merges; STOPs when no support branch exists. npm: `hotfix:precheck`, `hotfix:release`.
-- **`/qa-bundle-check vN | <package.json-url>`** (`.claude/commands/qa-bundle-check.md` + skill) — compare a frozen stable bundle's pinned module/Platform/Theme versions against the latest same-line hotfix on GitHub; flags only newer patches on the same major.minor line, traces each to its PR + JIRA task. Upstream discovery step for `/qa-hotfix`. npm: `bundle:check`.
+- **`/qa-hotfix VCST-XXXX [bundles]`** (`commands/qa-hotfix.md` + skill) — release a hotfix of an already-merged-and-released fix into the bundles currently latest-stable (asks which): resolve task → linked PR → fix commit, verify MERGED + SHIPPED, then per bundle cherry-pick onto `support/<X.Y>` and trigger the repo's "Release hotfix" workflow. Deterministic core: `scripts/hotfix-precheck.ts` (read-only) + `scripts/hotfix-release.ts` (gated write). Never auto-merges; STOPs when no support branch exists. npm: `hotfix:precheck`, `hotfix:release`.
+- **`/qa-bundle-check vN | <package.json-url>`** (`commands/qa-bundle-check.md` + skill) — compare a frozen stable bundle's pinned module/Platform/Theme versions against the latest same-line hotfix on GitHub; flags only newer patches on the same major.minor line, traces each to its PR + JIRA task. Upstream discovery step for `/qa-hotfix`. npm: `bundle:check`.
 
 #### Env-agnostic seeding + test-data integrity gates (VCST-5406) — PR #76
 - **Unified company-users seeder** (`scripts/seed-data/seed-company-users.mjs` + shared lib) — replaces 4 separate seeders; one entry point for personal / B2B / cross-org memberships / impersonation / loyalty users. npm: `seed:company-users`, `seed:b2b`, `seed:b2b:memberships`, `seed:users`, `seed:impersonation`, `seed:loyalty:users` (+ teardowns). Hardened against reseed id drift; B2B teardown now sweeps all `users.csv` accounts, not just the membership CSV.
@@ -107,7 +125,7 @@ Bug auto-fix + hotfix pipelines land, and the test-data layer becomes env-agnost
 
 - **`regression/suites/Backend/graphql/050j-graphql-xmarketing.csv`** — +7 cases (13 → 20): VCST-5022 `promotionCoupons` sort coverage — 3 regression guards (endDate/name honored, `;` multi-field separator, silently-ignored syntaxes) + lifecycle sync. Manifest `testCount` updated.
 - **`regression/suites/Backend/customer/026-customer-contacts.csv`** — CUST-055 updated for the new `va-filter-panel` contacts filter UI (VCST-5148, PR #24).
-- **`.claude/commands/qa-test.md`** — `/qa-test` Plan + Write steps now reuse the `/qa-plan` E2E scenario catalog (`.claude/skills/testing/qa-plan/e2e-scenario-catalog.md`): Step 2 maps the ticket to its `E2E-*` scenario(s) and inherits their regression-suite traceability; Step 3 folds those scenarios into the scoped `testing-checklist.md`. Closes the gap where `/qa-test` never consulted the 105-scenario catalog. Stays lightweight — produces the scoped checklist, **not** a full `/qa-plan` test plan / RTM / TestRail CSV (full case authoring + peer-review promotion remains a standalone `/qa-plan` run).
+- **`commands/qa-test.md`** — `/qa-test` Plan + Write steps now reuse the `/qa-plan` E2E scenario catalog (`skills/qa-plan/e2e-scenario-catalog.md`): Step 2 maps the ticket to its `E2E-*` scenario(s) and inherits their regression-suite traceability; Step 3 folds those scenarios into the scoped `testing-checklist.md`. Closes the gap where `/qa-test` never consulted the 105-scenario catalog. Stays lightweight — produces the scoped checklist, **not** a full `/qa-plan` test plan / RTM / TestRail CSV (full case authoring + peer-review promotion remains a standalone `/qa-plan` run).
 - **`ci/lib/repo-router.ts`** — marketing-xAPI routing fixed (`vc-module-x-marketing` resolution); .NET build hardening in the fix cycle.
 - **`.gitignore`** — auto-fix transient state ignored: `.fix-workspace/` (cloned product repos), `ci/config/.module-registry.cache.json`, heavy artifacts under `reports/fixes/FIX-*/` (png/har/jpg; fix-report.md + summary.json stay tracked).
 
@@ -169,7 +187,7 @@ Phase 1 substrate complete. Plugin is honestly positioned, vcst-clean at Layer 1
 
 - **`.claude-plugin/plugin.json`** — `version: "0.2.0"` → `"0.3.0"`.
 - **`.claude-plugin/marketplace.json`** — `version: "0.2.0"` → `"0.3.0"`.
-- **`.claude/agents/knowledge/storefront-selectors.md`** — paths updated from root `tests/` to `vc/vcst-qa/tests/` (Layer 2 split).
+- **`knowledge/storefront-selectors.md`** — paths updated from root `tests/` to `vc/vcst-qa/tests/` (Layer 2 split).
 
 ### Added (already covered above, kept for v0.2.0 work that landed in v0.3.0)
 
@@ -194,7 +212,7 @@ Phase 1 substrate complete. Plugin is honestly positioned, vcst-clean at Layer 1
 - `npm run suites:lint` — 99 suites, 35 selections, schema valid
 - `npx tsx scripts/validate-td-refs.ts` — all suites resolve
 - `npm run plugin:check` — manifest OK, env present
-- `node .claude/skills/run-vc-mcp-testing-module/driver.mjs` — 7/7 checks pass
+- `node skills/run-vc-mcp-testing-module/driver.mjs` — 7/7 checks pass
 - `scripts/detect-vcst-isms.ts --suites` — 0 findings
 - `scripts/detect-vcst-isms.ts --agents` — 0 findings
 
@@ -226,7 +244,7 @@ First customer-installable release. Merged via PR #21 into `main`, tagged `v0.1.
 - **`docs/pilot-runbook.md`** — internal VC playbook for running Phase 4 customer pilots: candidate qualification, kickoff agenda, solo-run gate, wrap, feedback capture template, triage workflow.
 - **`docs/versioning.md`** — **Tier A:** Tier A/B/C/D stability promises + semver rules + breaking-change definition + customer upgrade path + Tier A artifact lock list.
 - **`.claude/architecture/TIER.md`** — file-by-file tier classification (A/B/C/D). Scope: storefront + Admin SPA. Multi-env first-class.
-- **`.claude/commands/qa-onboarding.md`** — customer's post-install entry-point slash command. 7-step guided flow + `tour` / `smoke` / `troubleshoot` sub-modes.
+- **`commands/qa-onboarding.md`** — customer's post-install entry-point slash command. 7-step guided flow + `tour` / `smoke` / `troubleshoot` sub-modes.
 - **`scripts/detect-vcst-isms.ts`** — read-only scanner that finds vcst-qa hardcoded values (catalog GUIDs, org names, internal emails, vcst URLs). Allow-listed by path. Baseline scan: suite CSVs + agent prompts both 0 findings; remaining hits are knowledge-file conventions.
 - **`scripts/tag-suites-multi-env.ts`** — idempotent tagger that derives `requiresModules[]` for Backend suites from their file path. Tagged 33 Backend suites in this release.
 - **`scripts/lib/test-data-resolver.ts`** — per-env aliases override support. Loads `aliases.{TEST_ENV}.json` on top of base `aliases.json` when present.
@@ -240,12 +258,12 @@ First customer-installable release. Merged via PR #21 into `main`, tagged `v0.1.
 
 ### Changed
 
-- **`.claude/commands/qa-env-check.md`** — rewritten for dual-surface validation. Active config panel front-loaded (TEST_ENV, ENV_RISK, STOREFRONT_PROFILE, MODULES_ENABLED, JIRA_PROJECT_KEY). Storefront and Admin SPA validated independently. Platform health endpoint corrected to `/health` (not `/api/platform/healthcheck`).
-- **`.claude/commands/qa-bug.md`** — `Project: VCST` instruction now reads from `env.JIRA_PROJECT_KEY` (defaults to VCST for backwards compat).
-- **`.claude/commands/qa-status.md`** — JQL hardcoded `project = VCST` now uses `${JIRA_PROJECT_KEY}` substitution.
-- **`.claude/commands/qa-test-plan.md`** — same: 5 JQL queries parameterized.
-- **`.claude/skills/qa-methodology/qa-defect/defect-lifecycle-workflow.md`** — same: 3 JQL queries parameterized.
-- **`.claude/agents/knowledge/sitemap.md`** — B2B virtual catalog root GUID refs refactored to `@td(VIRTUAL_CATALOG_B2B.id)` with educational qualification ("vcst-qa value is X, customer differs").
+- **`commands/qa-env-check.md`** — rewritten for dual-surface validation. Active config panel front-loaded (TEST_ENV, ENV_RISK, STOREFRONT_PROFILE, MODULES_ENABLED, JIRA_PROJECT_KEY). Storefront and Admin SPA validated independently. Platform health endpoint corrected to `/health` (not `/api/platform/healthcheck`).
+- **`commands/qa-bug.md`** — `Project: VCST` instruction now reads from `env.JIRA_PROJECT_KEY` (defaults to VCST for backwards compat).
+- **`commands/qa-status.md`** — JQL hardcoded `project = VCST` now uses `${JIRA_PROJECT_KEY}` substitution.
+- **`commands/qa-test-plan.md`** — same: 5 JQL queries parameterized.
+- **`skills/qa-defect/defect-lifecycle-workflow.md`** — same: 3 JQL queries parameterized.
+- **`knowledge/sitemap.md`** — B2B virtual catalog root GUID refs refactored to `@td(VIRTUAL_CATALOG_B2B.id)` with educational qualification ("vcst-qa value is X, customer differs").
 
 ### Deprecated
 
@@ -258,7 +276,7 @@ First customer-installable release. Merged via PR #21 into `main`, tagged `v0.1.
 - Tag write-suites with `envRiskGate: "staging"` — needs read/write classification per suite.
 - Generalize the payment matrix (suite 039 split per processor).
 - Move admin role names to `aliases.json`.
-- Refactor ~1300 vcst-ism refs in `.claude/agents/knowledge/` (live-discovery, test-runner-tags, critical-ui-scope, shared-instructions, graphql-test-cases-runner) — case-by-case judgment between template-via-@td vs annotate-as-example.
+- Refactor ~1300 vcst-ism refs in `knowledge/` (live-discovery, test-runner-tags, critical-ui-scope, shared-instructions, graphql-test-cases-runner) — case-by-case judgment between template-via-@td vs annotate-as-example.
 - `docs/migrations/` directory for breaking-change migration guides (created when first such change ships).
 - `CHANGELOG.md` entry-by-entry SHA links — added when first tagged release ships.
 

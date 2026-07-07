@@ -12,7 +12,7 @@ The plugin ships as a **hybrid package**:
 |-------|-----------|-----|
 | **Agents, skills, commands, knowledge files** (`.claude/`) | **Claude Code plugin** via the plugin manager | Matches how Claude Code natively discovers and loads these artifacts. Customers add it once; Claude Code handles updates. No git operations on the customer side. |
 | **Scripts, CI orchestrators, schemas, templates** (`scripts/`, `ci/`, `config/`, `templates/`, `bootstrap/`, `manifest.json`) | **Ship in the same git-cloned plugin repo** | These are Node.js entry points run via `npm run <script>` from the plugin checkout (e.g. `npm run plugin:configure`, `npm run ci:regression`). There is no separately-published npm package; `npm install` in the checkout pulls their dependencies. |
-| **Regression suite CSVs, knowledge files** (`regression/suites/`, `.claude/agents/knowledge/`) | **Bundled in both layers** | Customers need these files locally to run suites. They're the plugin's actual value — VC-specific BLs + suites. |
+| **Regression suite CSVs, knowledge files** (`regression/suites/`, `knowledge/`) | **Bundled in both layers** | Customers need these files locally to run suites. They're the plugin's actual value — VC-specific BLs + suites. |
 | **Customer's own config** (`.env.{env}`, `.env.local`, `test-data/aliases.json`, `test-data/aliases.{env}.json`) | **Customer's repo (gitignored or per-env-committed)** | Never ships with the plugin. Customer scaffolds it via `npm run plugin:configure`. |
 
 ### Why hybrid?

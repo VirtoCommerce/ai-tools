@@ -19,9 +19,9 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 
 ---
 
-## `.claude/agents/`
+## `agents/`
 
-### QA Team (`.claude/agents/qa/`)
+### QA Team (`agents/`)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -37,7 +37,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-testing-expert.md` | **C** | Storefront-heavy interactive testing. |
 | `ui-ux-expert.md` | **C** | Storybook (vc-frontend), critical-ui-scope (storefront pages). |
 
-### BA Team (`.claude/agents/ba/`)
+### BA Team (`agents/`)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -47,7 +47,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `ba-doc-writer.md` | **A** | Pure documentation craft. Promote. |
 | `README.md` | **A** | Agent system documentation. Sanitize storefront refs. |
 
-### Knowledge (`.claude/agents/knowledge/`)
+### Knowledge (`knowledge/`)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -77,9 +77,9 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 
 ---
 
-## `.claude/skills/`
+## `skills/`
 
-### Methodology (`.claude/skills/qa-methodology/`) — Tier A (the standardization backbone)
+### Methodology (`skills/`) — Tier A (the standardization backbone)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -93,7 +93,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-sbtm/` | **A** | Session-based exploratory testing. |
 | `qa-test-cases-generator/` | **A** | Enriched CSV format. **The 15-column format is the org-wide test-case standard.** |
 
-### Testing (`.claude/skills/testing/`) — Tier B (parameterizable capability)
+### Testing (`skills/`) — Tier B (parameterizable capability)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -108,7 +108,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-plan/` | **B** | E2E scenario catalog — scenarios are C, the planning skill is B. |
 | `qa-seed-data/` | **C** | Storefront data seeding (catalogs, orgs, products). Per-project. |
 
-### VC Knowledge (`.claude/skills/vc-knowledge/`)
+### VC Knowledge (`skills/`)
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -116,7 +116,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 
 ---
 
-## `.claude/commands/`
+## `commands/`
 
 | File | Tier | Notes |
 |------|------|-------|
@@ -203,7 +203,7 @@ These don't exist yet and must be created to ship the plugin to VC customers:
 | Per-env aliases override | Loader picks `test-data/aliases.${TEST_ENV}.json` if present, falls back to `aliases.json`. Best-practice for customers with 3+ envs. | `scripts/lib/test-data-resolver.ts` |
 | Env-var bucketing | Documented split of the 33 vars into **plugin-supplied** / **customer-required** / **customer-optional**, with explicit dual-URL/dual-cred shape (storefront + admin) and multi-env workflow. | `docs/configuration.md` |
 | Payment-processor matrix | Suite 039 generalized; one tagged variant per processor (CyberSource, Skyflow, Authorize.Net, Datatrance). Customer enables via env. | `regression/suites/Frontend/payment/` |
-| JIRA project key parameterization | `JIRA_PROJECT_KEY` env var; `qa-bug` skill reads it instead of vcst-default. | `.claude/skills/testing/qa-bug/` + env |
+| JIRA project key parameterization | `JIRA_PROJECT_KEY` env var; `qa-bug` skill reads it instead of vcst-default. | `skills/qa-bug/` + env |
 | PII / secret scanner | Lints `aliases.json` for real-looking emails/phones; scrubs HAR / screenshots before they land in `reports/`. | `scripts/lint-aliases-pii.ts`, `scripts/lib/evidence-sanitizer.ts` |
 | Distribution decision | Claude Code plugin (agents/skills/commands/knowledge) + npm package (scripts/ci) — confirmed in Phase 2. | `docs/distribution.md` |
 | **Skill→script dependency manifest** | Skills now hard-depend on `scripts/` helpers via `npm run` aliases (`suites:append`, `suites:review`, `metrics:compute`, plus `scripts/lib/axe-runner.ts` imported into snippets). These calls **cross the plugin↔npm-package boundary** — a customer who installs the plugin but not the npm package gets a skill that references a command that doesn't exist. Need: (a) an enumerated list of which `npm run` aliases each skill requires, validated in CI; (b) a graceful-degradation or hard-fail message in each skill when the alias is absent; (c) the bootstrap/install step verifies the npm package is present. | `docs/distribution.md` + `bootstrap/install.ts` |
