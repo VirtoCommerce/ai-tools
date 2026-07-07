@@ -18,6 +18,8 @@ npx playwright install chromium firefox   # Edge uses the system msedge channel
 
 Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
 
+> **New deployment or new customer?** Run **`/project-init`** in Claude Code instead of hand-writing the files below. It asks only what shapes config (env name, bug tracker — Jira or Azure Boards, code host — GitHub or Azure Repos, auth per axis) and **derives** the rest (native-platform vs client project, client org, fork account) from your token + a live repo scan, then writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access. That profile is what routes each `/qa-fix` to the right repo (client custom code vs native VirtoCommerce platform) and the right tracker.
+
 ## Prerequisites
 
 - **Node.js 18+**, **Git**, and an IDE with Claude Code (VS Code + [extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code), Cursor, or Windsurf).
@@ -95,8 +97,8 @@ Five pipelines, each with an interactive + headless-CI twin:
 
 Full reference: [`.claude/rules/skills-commands.md`](.claude/rules/skills-commands.md).
 
-- **19 slash commands** — `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-onboarding`, `/ba-analyze`, `/ba-stories`, …
-- **27 skills** in [`.claude/skills/`](.claude/skills/) (VC knowledge, testing, QA methodology, development).
+- **23 slash commands** — `/project-init`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-bundle-check`, `/qa-monitoring`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-onboarding`, `/ba-analyze`, `/ba-stories`, …
+- **30 skills** in [`.claude/skills/`](.claude/skills/) (VC knowledge, testing, QA methodology, development) + 2 root-level (`project-init`, `run-vc-mcp-testing-module`).
 - **18 agents** in [`.claude/agents/`](.claude/agents/) across three teams (QA 10, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
@@ -120,9 +122,9 @@ Full list: `package.json`.
 vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
 ├── .claude/
-│   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (27 reference files)
-│   ├── skills/           # 27 skills (4 categories)
-│   ├── commands/         # 19 slash commands
+│   ├── agents/           # 18 agents (qa/ ba/ developers/) + knowledge/ (29 reference files)
+│   ├── skills/           # 30 skills (4 categories) + 2 root-level
+│   ├── commands/         # 23 slash commands
 │   └── rules/            # Reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
 ├── config/               # Playwright browser configs + test-suites.json manifest
 ├── ci/                   # CI / full-cycle / auto-fix / monitoring pipelines (gitignored)

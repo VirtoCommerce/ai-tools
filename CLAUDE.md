@@ -12,7 +12,7 @@ This repo is also the **`vc-qa` Claude Code plugin** (manifest: `.claude-plugin/
 - **Node.js**: 18+
 - **Plugin install**: `/plugin install` (Claude Code) → `npm run plugin:configure` (env setup; `plugin:check` to verify). See `docs/onboarding.md`.
 - **MCP Servers**: `.mcp.json` (gitignored, create locally)
-- **New deployment / new customer?** Run **`/project-init`** — it installs deps, asks native-platform vs CLIENT project, picks the bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos), discovers the client/platform repo split, and writes `project-profile.json` + `.mcp.json`. That profile is what makes `/qa-fix` route each bug to the right repo + tracker. **Absent profile ⇒ native-platform / Jira / GitHub defaults = the original behaviour.**
+- **New deployment / new customer?** Run **`/project-init`** — a derive-driven wizard. It installs deps, then asks only what genuinely shapes config (env **name**, bug **tracker** — Jira/Azure Boards, code **host** — GitHub/Azure Repos, **auth** per axis — PAT recommended else browser/CLI login) and **derives** the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + a live module/repo scan. Writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access with a readiness table. That profile is what makes `/qa-fix` route each bug to the right repo + tracker. **Absent profile ⇒ native-platform / Jira / GitHub defaults = the original behaviour.**
 - **New here?** See `.claude/ROUTING.md`
 
 ## Commands
@@ -51,15 +51,15 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude/agents/       # 18 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (27 files) for shared refs
-├── .claude/skills/       # 27 QA skills (vc-knowledge, testing, qa-methodology, development) + 2 root-level (project-init, run-vc-mcp-testing-module)
-├── .claude/commands/     # 20 slash commands (incl. /project-init onboarding)
-├── .claude/rules/        # Reference docs (agents, regression, skills, MCP, quality-gates)
+├── .claude/agents/       # 18 agents in qa/ + ba/ + developers/ subfolders (each w/ shared-instructions.md), knowledge/ (29 files) for shared refs
+├── .claude/skills/       # 30 QA skills (vc-knowledge, testing, qa-methodology, development) + 2 root-level (project-init, run-vc-mcp-testing-module)
+├── .claude/commands/     # 23 slash commands (incl. /project-init onboarding)
+├── .claude/rules/        # Reference docs (agents, regression, skills-commands, mcp-browsers, quality-gates, test-data, reports)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/vcst-qa/docs/prompts/)
 ├── vc/                    # Layer 2 — VC internal per-env data (vcst-qa, shared); customers ignore
-├── regression/suites/    # 104 CSV suites (~3,790 cases) in 44 module directories
+├── regression/suites/    # 110 CSV suites (~3,480 cases) in 44 module directories
 ├── tests/                # Test cases by sprint/JIRA ticket
 ├── reports/              # Bug reports + regression reports
 ├── test-data/            # Orgs, search queries, uploads
@@ -95,7 +95,7 @@ Registration/Auth, Catalog/Facets, Cart (variations, BOPIS), Search, Addresses, 
 - `.claude/architecture/TIER.md` — Tier classification (A/B/C/D) for multi-project expansion; canonical map of what's methodology vs capability vs storefront-domain vs missing. Read before any change aimed at standardization or cross-product reuse.
 - `.claude/rules/agents.md` — 18 agents (QA 10 + BA 4 + Developers 4), browser assignments, delegation rules
 - `.claude/rules/regression.md` — 4 testing modes, CI pipeline, suite manifest, selection groups
-- `.claude/rules/skills-commands.md` — 19 commands + 27 skills with arguments
+- `.claude/rules/skills-commands.md` — 23 commands + 30 skills with arguments
 - `.claude/rules/quality-gates.md` — **Single source of truth for the bug auto-fix gate ladder (G0–G7)**: shared by the interactive `/qa-fix` (+ `developers/` team — `fullstack-backend`/`backend-reviewer` for module/platform, `fullstack-frontend`/`frontend-reviewer` for vc-frontend) and the headless `ci/run-fix-cycle.ts`. Triage→reproduce→fix→review→CI/E2E→human-review; never auto-merge. Read before any change to the auto-fix flow.
 - `.claude/rules/mcp-browsers.md` — MCP servers, browser rules, Storybook setup
 - `.claude/rules/test-data.md` — `@td()` resolver + `{{VAR}}` policy: never hardcode IDs/SKUs/prices/cards/etc.; canonical sources, validation script, where the rule is enforced

@@ -10,7 +10,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.4.0. Pin to a tagged release for stability; this branch tip is unstable.
+Forward-looking work on top of v0.5.0. Pin to a tagged release for stability; this branch tip is unstable.
+
+---
+
+## [0.5.0] — 2026-07-07
+
+Headline themes since v0.4.0: **`/project-init` becomes a derive-driven onboarding wizard** with full client-vs-platform / Jira-vs-Azure-Boards / GitHub-vs-Azure-Repos support, **`/qa-fix` gains ownership-aware routing** (client repos, platform fork-PRs, frontend provenance) behind a hard client-code-containment invariant, and the **seeder is rebuilt** into a single-process, dedup-safe, store-scoped pipeline whose runtime GUIDs all land in per-env `aliases.{env}.json`. All changes remain additive.
+
+### Added
+
+#### `/project-init` — derive-driven onboarding + client/platform routing
+- **Deployment-profile onboarding** — `/project-init` now asks only what genuinely shapes config (environment **name**, bug **tracker**, code **host**, per-axis **auth preference**); everything else (native-platform vs CLIENT, client org, contribution mode, fork account) is **derived** from the token + a live module/repo scan. Writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access.
+- **Tracker + code-host adapters** — Jira **or Azure Boards**; GitHub **or Azure Repos**. CI VCS adapters (`ci/lib/vcs/`) + ownership-routed `ci/run-fix-cycle.ts`; PR VCS selected by `contributionPlan.host`.
+- **Client-repo discovery** — scans for the client theme / custom modules / storefront fork, classifies ownership, and derives the fork account. `discover-repos.mjs`.
+- **Independent auth axes** — PAT recommended, else browser/CLI login per axis; `ensure-session.mjs` drives browser login (az browser SSO + device-code, ADO tenant auto-discovery) without hand-typed commands. GitHub verified via real `gh` write-scope probe (not just "logged in").
+- **verify-access readiness table** — prints the full `/qa-fix` readiness table (repos, tracker, host, MCP servers) in chat; existing-env guard prunes inapplicable Azure blocks.
+- **Non-interactive writers** — `write-env.mjs`, always-scaffold optional `POSTMAN`/`CONTEXT7` keys in `.env.local`.
+
+#### `/qa-fix` — ownership routing + client-code containment
+- **Ownership-routed delivery (quality-gates §1a/§1b/§2a)** — `repoOwnership` / `contributionPlan` route each fix by repo: client repos → PR on the client host (GitHub or Azure Repos); platform repos → direct or **fork-PR** to `VirtoCommerce/*`; too-complex platform bugs → upstream GitHub Issue. Frontend **provenance** (`ci/lib/provenance.ts`) refines a client-storefront-fork bug to client vs unmodified-platform code.
+- **Client-code containment — hard security invariant** — client code never leaves the client's project; a platform fork-PR / issue carries only scrubbed platform-generic code. Enforced at routing, G3/G4 review, and the developers team.
+- **Platform frontend bug = upstream contribution**, not a fork-patch of the client repo.
+
+#### White-labeling
+- **BL-WL two-layer master switch** promoted; suite 067 enriched, WL fixtures wired into 070/071.
+- **Brand assets seeded** (Electronics, Fashion) — logo/favicon bytes + thumbnails uploaded via `seed-white-labeling`; `WL-ORG-A` branding wired; vcst + vcptcore WL asset-URL overrides in the per-env alias files.
+
+### Changed
+
+#### Seeding — single-process, dedup-safe, store-scoped rebuild
+- **Single-process category + product seeding** eliminates the duplicate-tree corruption from the search-index-lag race; reconcile dedups categories by **CODE**, not display name.
+- **Store-scoped catalog** — seed catalog linked into the store's virtual catalog; stock targets the **store main FFC** (all FFCs added to the store); reduced catalog/category fixtures.
+- **Auto-enrichment** — seeded products get images + descriptions; seeded categories get a placeholder image + description; complete SEO (`pageTitle`) on all seeded products **and** categories; generic "Catalog" SEO title per catalog.
+- **Configurable products** — 4 CFG seeders consolidated into one with aligned category hierarchy; CFG writeback migration completed (runtime GUIDs → `aliases.{env}.json`).
+- **Standard products** — prefixed + fully seeded from one CSV source of truth; malformed `STD-001` row repaired.
+- **Teardown** now fully sweeps BOPIS, pricelists, and B2B orgs; member-sweep batching + 503 retry hardening (PR #84).
+- **POSIX env-prefix npm scripts** use `cross-env` for cross-platform correctness.
+
+#### Test-data — every env owns its aliases
+- **All envs (including vcst) write `aliases.{env}.json`**; **no runtime platform GUIDs in committed CSVs** — an unseeded env resolves an id to `""` (clear miss) instead of leaking another env's GUID. Credential-hygiene gate added; `td:reconcile` now checks duplicates, `AGENT-TEST-` prefix, and complete SEO.
+- **Configurable-parent storefront URLs** re-pointed to `/products-with-options/cfg-parents/<slug>` after drift; `CON-001` currency corrected EUR → USD.
+
+#### Suites
+- **Suite 049** catalog API cases fixed to the real deployed contracts.
 
 ---
 
