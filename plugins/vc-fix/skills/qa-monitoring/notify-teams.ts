@@ -3,18 +3,30 @@
  * ------------------------------------------------------------------------------
  * Self-contained for the `vc-fix` plugin: extracted from the full `vc-qa`
  * plugin's `ci/notify-teams.ts`, which also sends a regression-run card — that
- * mode is dropped here since `vc-fix` ships no regression pipeline. Reads
- * `TEAMS_WEBHOOK_URL` via `config.js` (so `.env.local` resolves the same way
- * every other secret does), not directly off `process.env`, since this script
- * is meant to be run standalone (`npx tsx skills/qa-monitoring/notify-teams.ts`)
- * rather than always inside a session that already imported `config.js`.
+ * mode is dropped here since `vc-fix` ships no regression pipeline. Loads the
+ * layered `.env.defaults` / `.env.${TEST_ENV}` / `.env.local` files directly
+ * (the same precedence `config.js` uses) rather than importing `config.js`
+ * itself — this script only needs `TEAMS_WEBHOOK_URL` + `TEST_ENV`, and
+ * `config.js`'s `coreRequiredVars` check would `process.exit(1)` if unrelated
+ * vars like `FRONT_URL`/`ADMIN_PASSWORD` are unset, even though a monitoring
+ * notification doesn't touch them.
  *
  * No-ops with a clear message when `TEAMS_WEBHOOK_URL` is unset — Teams
  * notification is optional; `/qa-monitoring` still runs and reports without it.
  */
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { env } from "../../config.js";
+import { config as dotenv } from "dotenv";
+import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+
+const TEST_ENV = resolveTestEnv("vcst");
+dotenv({ path: ".env.defaults", quiet: true });
+dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
+dotenv({ path: ".env.local", override: true, quiet: true });
+const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
+for (const [key, value] of Object.entries(process.env)) {
+  if (key.endsWith(ENV_SUFFIX) && value) process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
+}
 
 const GITHUB_RUN_URL = process.env.GITHUB_RUN_URL || "";
 
@@ -75,7 +87,7 @@ function buildMonitorCard(summary: MonitorSummary | null): object {
 
   const facts: Array<{ title: string; value: string }> = [
     { title: "Status", value: `${statusEmoji} ${statusText}` },
-    { title: "Environment", value: env.TEST_ENV || "qa" },
+    { title: "Environment", value: TEST_ENV || "qa" },
     { title: "Layers", value: (summary?.layers || []).join(", ") || "none configured" },
   ];
   if (summary) {
@@ -136,7 +148,7 @@ function buildMonitorCard(summary: MonitorSummary | null): object {
 }
 
 async function sendNotification(): Promise<void> {
-  const webhookUrl = env.TEAMS_WEBHOOK_URL;
+  const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
   if (!webhookUrl) {
     console.log("TEAMS_WEBHOOK_URL not set, skipping notification.");
     return;

@@ -30,10 +30,9 @@ import { dirname } from "path";
 export type Layer = "backend" | "frontend";
 export type Row = Record<string, unknown>;
 
-// v2: env is part of the fingerprint. v1 entries were env-agnostic and their
-// hashes no longer match, so loadStore drops them — a one-time reset of the
-// shared store the first run after this change.
-export const STORE_VERSION = 2;
+// env is part of the fingerprint, so the same error signature in two envs gets
+// two independent store entries (see file header).
+export const STORE_VERSION = 1;
 export const DEFAULT_STORE_PATH = "reports/monitoring/.seen-fingerprints.json";
 
 /** A normalized error signature for one run. */
@@ -125,16 +124,7 @@ export function loadStore(path = DEFAULT_STORE_PATH): Store {
   if (existsSync(path)) {
     try {
       const parsed = JSON.parse(readFileSync(path, "utf-8")) as Store;
-      if (parsed && parsed.entries) {
-        // Drop legacy (pre-v2, env-agnostic) entries: their fingerprints no
-        // longer match and they'd never resolve again. Keep env-tagged entries.
-        if ((parsed.version ?? 1) < STORE_VERSION) {
-          for (const [fp, entry] of Object.entries(parsed.entries)) {
-            if (!entry.env) delete parsed.entries[fp];
-          }
-        }
-        return parsed;
-      }
+      if (parsed && parsed.entries) return parsed;
     } catch {
       // corrupt store — start fresh rather than crash the run
     }

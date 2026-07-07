@@ -1,6 +1,6 @@
 ---
 applicability: reference
-applicability_rationale: "Four-layer agent architecture template — universal pattern. But agent-pool table at line 210 (slot 1/2/3 with @td(AGENT_POOL_SLOT_N.*) refs) shows vcst values as 'reference'. Customer fills agent-user-pool.csv."
+applicability_rationale: "Four-layer agent architecture template — universal pattern. Env-variable table (Environment Variables section) shows vcst values as 'reference'. Customer fills its own .env.<env> / .env.local."
 ---
 
 # Shared Agent Instructions — Virto Commerce QA
@@ -143,7 +143,7 @@ also document is full `vc-qa` plugin only, not shipped here.
 
 ### 3. Verify selectors & state against the live UI
 
-Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `knowledge/automation/storefront-selectors.md`. It was verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
+Storefront DOM selectors (home, catalog, PDP, cart, checkout, account) are documented in `knowledge/automation/storefront-selectors.md`. It was verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
 
 ### 4. Verify source data and design intent before filing a bug
 

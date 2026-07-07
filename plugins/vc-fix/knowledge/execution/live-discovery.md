@@ -101,10 +101,10 @@ For interactive browser agents (Playwright-MCP, Chrome-DevTools-MCP) running tes
 
 ### Recipe 1 — random search keyword
 
-`test-data/search-queries/top-50-amazon.csv` is the curated keyword pool (50 terms across electronics, kitchen, fitness, household, books, etc.). Existing aliases (`SEARCH_KITCHEN`, `SEARCH_FITNESS`) pin one row; for randomization, the agent picks any row at runtime:
+`test-data/search-queries/top-50-amazon.csv` (a curated 50-term keyword pool across electronics, kitchen, fitness, household, books, etc., with pinned aliases `SEARCH_KITCHEN`/`SEARCH_FITNESS`) is full `vc-qa` plugin only, not shipped here. In `vc-fix`, pick a random visible search-suggestion or category term live from the storefront instead:
 
 ```
-[SETUP] read test-data/search-queries/top-50-amazon.csv, pick a random row → store as search_term
+[SETUP] open the storefront nav/category menu, pick a random visible category or product name as text → store as search_term
 [NAV] {{FRONT_URL}}
 [ACT] click [data-test-id="global-search-query-input"]
 [ACT] type {search_term}, press Enter
@@ -297,7 +297,7 @@ Agents should authenticate against their slot user (resolve at runtime via `@td(
 
 For read-only discovery (catalog root, product list, any active coupon) the shared user is fine — those calls don't mutate state.
 
-If a test genuinely needs a brand-new entity (registration, fresh org), use `random-data` with the `AGENT-TEST-` prefix so `/qa-seed-data teardown` sweeps it up after the run.
+If a test genuinely needs a brand-new entity (registration, fresh org), use `random-data` with the `AGENT-TEST-` prefix so it's identifiable for cleanup — in `vc-fix`, delete it directly via REST/GraphQL at teardown (`/qa-seed-data teardown` is full `vc-qa` plugin only, not shipped here).
 
 ---
 

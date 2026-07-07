@@ -5,7 +5,8 @@
   "main": "config.js",
   "type": "module",
   "scripts": {
-    "env:check": "node get_variables_env.js"
+    "env:check": "node get_variables_env.js",
+    "verify:paths": "node scripts/verify-plugin-paths.mjs"
   },
   "license": "TBD-internal",
   "dependencies": {

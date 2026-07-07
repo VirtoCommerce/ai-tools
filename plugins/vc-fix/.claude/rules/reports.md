@@ -2,17 +2,14 @@
 
 **This file is the only place the report policy lives.** All other files (`shared-instructions.md`, `evidence-capture-policy.md`, skill SKILLs, agent definitions) point here. Reports are read by humans on a deadline — long reports get skimmed and bugs get missed. Long-form reasoning, investigation logs, and progress updates belong in SendMessage to the orchestrator, never on disk.
 
-## 1. Only Five Report Categories Allowed
+## 1. Only Two Report Categories Ship in `vc-fix`
 
 | # | Category | Path | When |
 |---|----------|------|------|
 | 1 | Bug report | `reports/bugs/` | A confirmed defect with reproducible STR |
-| 2 | Test cases *(full `vc-qa` plugin only, not shipped here)* | `regression/suites/` (CSV) | Adding/updating test coverage |
-| 3 | BA report *(full `vc-qa` plugin only, not shipped here)* | `reports/ba/` | `/ba-analyze` deliverables |
-| 4 | Regression summary *(full `vc-qa` plugin only, not shipped here)* | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
 
-**In `vc-fix`, only categories 1 and 5 apply** — bug reports (`/qa-bug`) and monitoring summaries (`/qa-monitoring`). Categories 2–4 are kept here because this file is a verbatim copy of the full `vc-qa` policy (still the single source of truth to avoid drift if those categories are ever added back); they're inert until then.
+The full `vc-qa` plugin adds three more categories not shipped here — test cases, BA reports, regression summaries — kept out of this table (numbering preserved for cross-reference) since `vc-fix` has no `/qa-test-cases-generator`, `/ba-analyze`, or `/qa-regression`.
 
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
 

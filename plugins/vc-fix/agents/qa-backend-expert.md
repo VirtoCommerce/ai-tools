@@ -145,6 +145,7 @@ proof **before the PR opens**:
 | When | Skill | Reference |
 |------|-------|-----------|
 | **Authoring/reading GraphQL queries** | direct file reference | **`knowledge/api/graphql-test-cases-runner.md`** — tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here; query the API directly instead). |
+| **Test data — no-hardcode policy** | direct file reference | `knowledge/agents/qa/shared-instructions.md` §Live-Verification Policy — never hardcode IDs/SKUs/prices/addresses/order numbers; resolve via `{{VAR}}` or a live REST/GraphQL query against `BACK_URL`/`FRONT_URL` (`vc-fix` has no `@td()`/fixture-registry mechanism — that's full `vc-qa` plugin scope). |
 | Live xAPI schema | direct file reference | `knowledge/api/graphql-schema.md` — every query/mutation MUST validate against this before sending it. |
 | Test coverage checklists | `/qa-checklist` | `backend-admin-checklists.md`, `graphql-checklist.md` |
 | Bug investigation / filing | `/qa-investigate`, `/qa-defect` | `bug-investigation-flow.md`, `defect-report-templates.md` |
