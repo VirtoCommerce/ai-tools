@@ -17,10 +17,13 @@ and the triage agent (`monitor-triage-agent`).
 
 > **In `vc-fix`:** this is the self-contained interactive-only version of the full `vc-qa`
 > plugin's monitoring pipeline — the headless CI twin (`ci/run-monitor.ts` +
-> `.github/workflows/monitor.yml`) and the Teams-notification step (`ci/notify-teams.ts`,
-> needs `TEAMS_WEBHOOK_URL`) are full `vc-qa` plugin only, not shipped here. Every query
-> and dedup step below runs inline through Azure MCP + this plugin's own
-> `skills/qa-monitoring/` — there is no headless twin to delegate to.
+> `.github/workflows/monitor.yml`) is full `vc-qa` plugin only, not shipped here. Every
+> query and dedup step below runs inline through Azure MCP + this plugin's own
+> `skills/qa-monitoring/` — there is no headless twin to delegate to. The Teams card
+> **is** shipped, as `skills/qa-monitoring/notify-teams.ts` (a monitor-only extract of
+> `ci/notify-teams.ts` — the regression-card mode is dropped, `vc-fix` has no regression
+> pipeline); it needs `TEAMS_WEBHOOK_URL` in `.env.local` and no-ops with a clear message
+> when unset.
 
 ## Usage
 ```
@@ -78,10 +81,12 @@ and the triage agent (`monitor-triage-agent`).
   standard structure **and the `## Fix Routing` block** (so `/qa-fix` can pick it up).
   **Not reproduced** → list as NEEDS_REVIEW; do not draft.
 
-## Phase 5 — Report + STOP
+## Phase 5 — Report + notify + STOP
 - Write `reports/monitoring/MONITOR-YYYY-MM-DD-HHMM/{monitoring-report.md,summary.json}`
   (≤100 lines; confirmed / needs-review / dismissed tables — see `.claude/rules/reports.md`).
-  Persist the updated fingerprint store.
+  Persist the updated fingerprint store. Send the Teams card:
+  `MONITOR_RUN_ID=<run-id> npx tsx skills/qa-monitoring/notify-teams.ts` (no-ops if
+  `TEAMS_WEBHOOK_URL` is unset).
 - **STOP.** Present the confirmed drafts and ask the user whether to file a bug
   (`/qa-bug`) or attempt a fix (`/qa-fix`). Do not do either automatically.
 

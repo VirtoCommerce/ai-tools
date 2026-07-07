@@ -16,12 +16,14 @@ whether to run `/qa-bug` or `/qa-fix`.
 > **In `vc-fix`:** this is a self-contained extract of the full `vc-qa` plugin's
 > monitoring pipeline (`ci/run-monitor.ts` + `ci/lib/appinsights.ts` +
 > `ci/lib/fingerprint-store.ts` + `ci/monitoring/queries/` + `ci/agents/monitor-triage-agent.md`
-> — full `vc-qa` plugin only, not shipped here). The headless CI twin and its
-> `@azure/identity` REST query client are dropped; queries run through **Azure
-> MCP's `applicationinsights` tool** directly instead. The dedup logic is kept
+> + `ci/notify-teams.ts` — full `vc-qa` plugin only, not shipped here). The headless
+> CI twin and its `@azure/identity` REST query client are dropped; queries run through
+> **Azure MCP's `applicationinsights` tool** directly instead. The dedup logic is kept
 > verbatim in `skills/qa-monitoring/fingerprint-store.ts` (self-contained — no
-> import from an unshipped `ci/lib/appinsights.ts`), and the KQL probes are kept
-> verbatim in `skills/qa-monitoring/queries/`.
+> import from an unshipped `ci/lib/appinsights.ts`), the KQL probes are kept
+> verbatim in `skills/qa-monitoring/queries/`, and the Teams card is a monitor-only
+> extract in `skills/qa-monitoring/notify-teams.ts` (the regression-card mode of the
+> original is dropped — no regression pipeline is shipped here).
 
 ## Why this exists
 Real production-like defects in the QA environment (storefront JS exceptions, failed
@@ -58,8 +60,9 @@ A layer with no App ID/key is skipped with a clear message; some envs have none.
    Reproduced → draft bug report with a `## Fix Routing` block (same contract
    `/qa-bug` uses, so `/qa-fix` can pick it up); not reproduced → NEEDS_REVIEW
    (listed, not drafted).
-5. **Report + STOP** — write the monitoring report + summary, persist the store. No
-   ticket filed, no fix attempted.
+5. **Report + notify + STOP** — write the monitoring report + summary, persist the
+   store, send the Teams card via `skills/qa-monitoring/notify-teams.ts` (no-ops
+   without `TEAMS_WEBHOOK_URL`). No ticket filed, no fix attempted.
 
 ## KQL probe library (`skills/qa-monitoring/queries/`)
 | Probe | Layer | Surfaces |
@@ -93,10 +96,20 @@ ambiguous, prefer NEEDS_REVIEW over REAL_BUG — a log line alone is not a defec
 - The store is local working state (gitignored — `reports/monitoring/.seen-fingerprints.json`),
   not carried across CI runs since there's no CI twin shipped here.
 
+## Teams notification (`skills/qa-monitoring/notify-teams.ts`)
+Optional — reads `TEAMS_WEBHOOK_URL` via `config.js` (so `.env.local` resolves it the
+same way every other secret does) and posts an Adaptive Card summarizing the run
+(status, layers, signature counts, confirmed/needs-review counts, cost). No-ops with
+a clear console message when the webhook is unset; `/qa-monitoring` still completes
+and writes its report either way. Run standalone with
+`MONITOR_RUN_ID=<run-id> npx tsx skills/qa-monitoring/notify-teams.ts`, or let it pick
+up the most recent `reports/monitoring/MONITOR-*/summary.json` when `MONITOR_RUN_ID`
+is unset.
+
 ## Knobs (env)
 `MONITOR_LAYERS` (both|frontend|backend) · `MONITOR_SINCE_MIN` (35) · `MONITOR_MAX_SIGNALS`
 (15) · `MONITOR_SPIKE_FACTOR` (3) · `MONITOR_SPIKE_MIN_DELTA` (20) · `DRY_RUN` (triage
-only — no repro/drafts).
+only — no repro/drafts) · `TEAMS_WEBHOOK_URL` (optional Teams card).
 
 ## Cross-references
 - Command: `commands/qa-monitoring.md`

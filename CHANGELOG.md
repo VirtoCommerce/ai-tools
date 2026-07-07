@@ -29,6 +29,12 @@ client are not shipped; `/qa-monitoring` queries via Azure MCP's `applicationins
 directly, and the dedup logic + KQL probes live in `plugins/vc-fix/skills/qa-monitoring/`
 (`fingerprint-store.ts`, `queries/*.kql`). `vc-fix` now ships 8 agents, 14 skills, 6 commands.
 
+**Added the Teams notification card to `vc-fix`'s `/qa-monitoring`.** A monitor-only extract
+of `ci/notify-teams.ts` (the regression-card mode is dropped — no regression pipeline is
+shipped) at `plugins/vc-fix/skills/qa-monitoring/notify-teams.ts`. Reads `TEAMS_WEBHOOK_URL`
+via `config.js`/`.env.local`; no-ops with a clear message when unset, so `/qa-monitoring`
+runs and reports the same with or without it.
+
 ---
 
 ## [0.6.0] — 2026-07-07

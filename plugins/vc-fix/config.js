@@ -124,6 +124,10 @@ const featureGatedVars = {
         ],
         gates: '/qa-monitoring (App Insights online bug monitoring)',
     },
+    teams: {
+        vars: ['TEAMS_WEBHOOK_URL'],
+        gates: '/qa-monitoring Teams card (skills/qa-monitoring/notify-teams.ts) — optional, monitoring still runs without it',
+    },
 };
 
 const missingCore = coreRequiredVars.filter(v => !process.env[v]);
@@ -252,6 +256,9 @@ export const env = {
     // Resource NAMES — used only to build portal deep-links; per-env, never hardcoded.
     APPINSIGHTS_RESOURCE_BACKEND: getEnvVar('APPINSIGHTS_RESOURCE_BACKEND', ''),
     APPINSIGHTS_RESOURCE_STOREFRONT: getEnvVar('APPINSIGHTS_RESOURCE_STOREFRONT', ''),
+    // Teams webhook for the /qa-monitoring card (skills/qa-monitoring/notify-teams.ts).
+    // Optional — the script no-ops with a clear message when unset.
+    TEAMS_WEBHOOK_URL: getEnvVar('TEAMS_WEBHOOK_URL', ''),
 
     // Figma API key
     FIGMA_API_KEY: getEnvVar('FIGMA_API_KEY'),
