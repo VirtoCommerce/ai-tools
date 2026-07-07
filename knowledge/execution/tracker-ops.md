@@ -77,7 +77,7 @@ you run the matching command above.
 
 ### Write auth per host
 - **GitHub, PAT host:** all remote git/gh writes as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`);
-  the ambient MCP token is read-only. (See `developers/shared-instructions.md` §GitHub authentication.)
+  the ambient MCP token is read-only. (See `knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
 - **GitHub, browser-login host** (`vcs.auth: "gh-cli"`): the ambient `gh` already has write scope —
   drop the `GH_TOKEN=` prefix (`gh auth status` confirms).
 - **Azure Repos:** `ADO_PAT` embedded in the clone URL, or an `az login` session — never a password.

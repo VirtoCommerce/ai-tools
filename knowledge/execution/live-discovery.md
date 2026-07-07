@@ -7,7 +7,7 @@ applicability_rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- 
 
 QA agents have four ways to get data into a test. Picking the right one per data role is what keeps a suite from rotting when the catalog/seed drifts.
 
-This file is the single source of truth for that decision and for the discovery recipes. Companion code lives in [`scripts/lib/live-discover.ts`](../../../scripts/lib/live-discover.ts) and [`scripts/lib/random-data.ts`](../../../scripts/lib/random-data.ts).
+This file is the single source of truth for that decision and for the discovery recipes. Companion code lives in [`scripts/lib/live-discover.ts`](../../scripts/lib/live-discover.ts) and [`scripts/lib/random-data.ts`](../../scripts/lib/random-data.ts).
 
 ---
 
@@ -271,7 +271,7 @@ The regression orchestrator runs up to 3 browser agents in parallel (chrome / fi
 | `discoverFirstAvailableProduct(ctx)` with three agents adding it to cart | All three add the same SKU; one of them will own a cart with quantity 3 when its assertion expected quantity 1. |
 | `discoverFirstAddress(ctx, { type: "shipping" })` when the test then *deletes* the address | Sibling agents lose the address mid-run. |
 
-**Use the agent user pool** in [`test-data/users/agent-user-pool.csv`](../../../test-data/users/agent-user-pool.csv) — there are dedicated slots keyed by browser:
+**Use the agent user pool** in [`test-data/users/agent-user-pool.csv`](../../test-data/users/agent-user-pool.csv) — there are dedicated slots keyed by browser:
 
 | Slot | Browser | Personal (alias) | B2B account (alias) |
 |---|---|---|---|
@@ -303,8 +303,8 @@ When a test fails on discovered data, the diff between "what we asked for" and "
 
 ## Reused primitives
 
-- [`scripts/lib/graphql-auth.ts`](../../../scripts/lib/graphql-auth.ts) — `TokenCache` (called by `tokenForRole`)
-- [`scripts/lib/graphql-executor.ts`](../../../scripts/lib/graphql-executor.ts) — `executeOperation` (called by every `discover*`)
-- [`scripts/lib/graphql-case-parser.ts`](../../../scripts/lib/graphql-case-parser.ts) — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
+- [`scripts/lib/graphql-auth.ts`](../../scripts/lib/graphql-auth.ts) — `TokenCache` (called by `tokenForRole`)
+- [`scripts/lib/graphql-executor.ts`](../../scripts/lib/graphql-executor.ts) — `executeOperation` (called by every `discover*`)
+- [`scripts/lib/graphql-case-parser.ts`](../../scripts/lib/graphql-case-parser.ts) — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
 - [`knowledge/api/graphql-schema.md`](../api/graphql-schema.md) — schema reference; consult before writing new discovery queries
-- [`test-data/aliases.json`](../../../test-data/aliases.json) — registry for `@td()` references (the other half of the data layer)
+- [`test-data/aliases.json`](../../test-data/aliases.json) — registry for `@td()` references (the other half of the data layer)
