@@ -10,7 +10,7 @@
  * `AGENT-TEST-` prefix so `/qa-seed-data teardown` sweeps them. If you
  * pass a custom prefix, you take ownership of cleanup.
  *
- * See `knowledge/execution/live-discovery.md` for the decision tree.
+ * See `.claude/knowledge/execution/live-discovery.md` for the decision tree.
  */
 import { randomUUID } from "crypto";
 

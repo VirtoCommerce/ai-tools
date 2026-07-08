@@ -11,7 +11,7 @@
  * Use `@td(ALIAS.field)` instead when you need a specific entity you
  * assert against (e.g. CFG_LAPTOP for a configurable-product test).
  *
- * See `knowledge/execution/live-discovery.md` for the decision tree
+ * See `.claude/knowledge/execution/live-discovery.md` for the decision tree
  * and recipes (CSV-runner and interactive both).
  *
  * All functions return `null` (not throw) when nothing matches — caller

@@ -86,7 +86,7 @@ Don't guess — use the **"I want to…" decision tree** in
 ("run smoke tests", "verify a bug fix", "get a test checklist for a domain") to the exact
 command/skill and tells you whether it's a Command, Skill, or Agent. The full catalogs live in
 [`.claude/rules/skills-commands.md`](../.claude/rules/skills-commands.md) and
-[`skills/README.md`](../skills/README.md).
+[`skills/README.md`](../.claude/skills/README.md).
 
 ---
 

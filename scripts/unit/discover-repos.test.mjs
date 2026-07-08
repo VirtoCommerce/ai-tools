@@ -1,4 +1,4 @@
-// Unit tests for skills/project-init/discover-repos.mjs pure helpers:
+// Unit tests for .claude/skills/project-init/discover-repos.mjs pure helpers:
 // module→repo mapping, client/platform classification, the broadened frontend
 // heuristic (H6), ref stripping (H2), and package.json provenance (H3).
 // Pure — no env, no network. Run: `node --test` / `npm test`.
@@ -12,7 +12,7 @@ import {
   stripRef,
   frontendProvenanceFromPackage,
   vcFrontendRef,
-} from "../../skills/project-init/discover-repos.mjs";
+} from "../../.claude/skills/project-init/discover-repos.mjs";
 
 test("moduleToRepo: parses a GitHub ProjectUrl", () => {
   const r = moduleToRepo({ Id: "VirtoCommerce.Cart", ProjectUrl: "https://github.com/VirtoCommerce/vc-module-cart" });

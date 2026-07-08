@@ -3545,5 +3545,19 @@
     "account_type": "Customer",
     "store_id": "B2B-store",
     "_notes": "VCST-5135 Wholesaler-group Customer storefront user (provisioned 2026-06-24 on vcst-qa). For LOY_PP_WHOLESALE earning eligibility: when WHOLESALE is the winning program, this user earns 250xprice on QA-TIER-001 where a non-wholesaler earns the default. Creds in .env.local (LOYALTY_WHOLESALE_USER_EMAIL/PASSWORD). AGENT-TEST- prefix -> teardown sweeps it (delete security account 3aaada1a then member 47db2112)."
+  },
+  "REVIEW_PRODUCT": {
+    "_inline": true,
+    "id": "",
+    "name": "",
+    "approved_count": "",
+    "notes": "Product carrying the seeded Approved reviews (>=6, for pagination/sort/approved-only). Runtime id/name/count written to aliases.<env>.json by seed:reviews; empty on an unseeded env.",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "approved_count": "approved_count",
+      "slug": "slug"
+    },
+    "slug": ""
   }
 }

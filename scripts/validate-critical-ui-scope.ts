@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Validate that every covered cell in `knowledge/oracles/critical-ui-scope.md`
+ * Validate that every covered cell in `.claude/knowledge/oracles/critical-ui-scope.md`
  * points at a test ID that actually exists in a regression suite CSV.
  *
  * Cell value contract (per critical-ui-scope.md):
@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
 
-const SCOPE_FILE = join(".claude", "agents", "knowledge", "oracles", "critical-ui-scope.md");
+const SCOPE_FILE = join(".claude", "knowledge", "oracles", "critical-ui-scope.md");
 const SUITES_DIR = join("regression", "suites");
 
 interface Cell {

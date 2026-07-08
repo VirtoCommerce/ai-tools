@@ -22,10 +22,10 @@ make the call rather than asserting a defect from a log line alone.
 
 | File | Use it to |
 |------|-----------|
-| `knowledge/oracles/vc-bug-catalog.md` | Match against known VC failure patterns (VC-CART-*, VC-CHECKOUT-*, …). A match raises confidence it is a REAL_BUG **or** flags it as a KNOWN_ISSUE. |
-| `knowledge/execution/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests). |
-| `knowledge/oracles/business-logic.md` | A signal that implies a BL-* invariant violation (pricing, cart, checkout, orders) is **always** high severity. |
-| `knowledge/api/platform-patterns.md` | Distinguish a real defect from expected platform behavior (search-index lag, cache desync, async cart projection). |
+| `.claude/knowledge/oracles/vc-bug-catalog.md` | Match against known VC failure patterns (VC-CART-*, VC-CHECKOUT-*, …). A match raises confidence it is a REAL_BUG **or** flags it as a KNOWN_ISSUE. |
+| `.claude/knowledge/execution/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests). |
+| `.claude/knowledge/oracles/business-logic.md` | A signal that implies a BL-* invariant violation (pricing, cart, checkout, orders) is **always** high severity. |
+| `.claude/knowledge/api/platform-patterns.md` | Distinguish a real defect from expected platform behavior (search-index lag, cache desync, async cart projection). |
 
 ## Step 1 — Classify the signature
 

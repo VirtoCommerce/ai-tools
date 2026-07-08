@@ -1,11 +1,11 @@
 {
   "$schema": "./manifest.schema.json",
-  "_deprecated": "This file is NOT the Claude Code plugin manifest. The real plugin manifest is at .claude-plugin/plugin.json (per https://code.claude.com/docs/en/plugin-marketplaces). This file is kept as extended metadata documenting envSchema, requiredMcpServers, quality gates, etc. — fields that don't fit the official plugin.json spec. Consumed by bootstrap/install.ts for the post-install env-setup wizard. May be renamed to vc-qa-metadata.json or moved to docs/ in a future commit.",
-  "_status": "vc-qa is NOT currently listed in .claude-plugin/marketplace.json (only vc-fix is) — this metadata describes the dormant on-disk vc-qa content, not an installable product. `npm run plugin:check` reading this file green does not mean vc-qa is installable via the marketplace.",
+  "_deprecated": "This file is NOT a Claude Code plugin manifest. The only distributed plugin manifest is plugins/vc-fix/.claude-plugin/plugin.json (per https://code.claude.com/docs/en/plugin-marketplaces); the old root vc-qa plugin.json was deleted. This file is kept as extended metadata documenting envSchema, requiredMcpServers, quality gates, etc. — fields that don't fit the official plugin.json spec. Consumed by bootstrap/install.ts for the post-install env-setup wizard (reads name/version/envSchema/requiredMcpServers only). May be renamed to vc-qa-metadata.json or moved to docs/ in a future commit.",
+  "_status": "vc-qa is NOT a plugin and NOT listed in .claude-plugin/marketplace.json (only vc-fix is). Its components now live as project-scoped Claude Code components under .claude/ (commands/agents/skills/knowledge/hooks) — see claudeCode dirs below. This metadata describes that on-disk vc-qa content, not an installable product. `npm run plugin:check` reading this file green does not mean vc-qa is installable via the marketplace.",
   "name": "vc-qa",
   "displayName": "Virto Commerce QA Plugin",
   "version": "0.6.0",
-  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 18 agents, 30 skills, 23 commands, 28 knowledge files, 110 regression suites (universal + reference + vcst-specific subsets). Methodology + agent crew + authoring framework — customers run the universal subset and author their own for custom features.",
+  "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 18 agents, 32 skills, 23 commands, 28 knowledge files, 110 regression suites (universal + reference + vcst-specific subsets). Methodology + agent crew + authoring framework — customers run the universal subset and author their own for custom features.",
   "author": "Virto Commerce",
   "license": "TBD-internal",
   "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
@@ -13,11 +13,11 @@
 
   "claudeCode": {
     "minVersion": "1.0.0",
-    "agentsDir": "agents",
-    "skillsDir": "skills",
-    "commandsDir": "commands",
+    "agentsDir": ".claude/agents",
+    "skillsDir": ".claude/skills",
+    "commandsDir": ".claude/commands",
     "rulesDir": ".claude/rules",
-    "knowledgeDir": "knowledge"
+    "knowledgeDir": ".claude/knowledge"
   },
 
   "scope": {

@@ -55,11 +55,11 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
-| `knowledge/oracles/e-commerce-edge-cases-library.md` | ECL-* pattern referenced in test case |
-| `knowledge/domain/products.md` | Need product types, xAPI fields, test data |
-| `knowledge/domain/sitemap.md` | Need page URLs for navigation |
-| `knowledge/domain/store-settings.md` | Need store configuration details |
+| `.claude/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | ECL-* pattern referenced in test case |
+| `.claude/knowledge/domain/products.md` | Need product types, xAPI fields, test data |
+| `.claude/knowledge/domain/sitemap.md` | Need page URLs for navigation |
+| `.claude/knowledge/domain/store-settings.md` | Need store configuration details |
 | `test-data/` | Test users, addresses, payment cards, products |
 
 Read these on-demand, not upfront — saves context for test execution.

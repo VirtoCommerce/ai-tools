@@ -74,7 +74,7 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 - Customers **pin a version range**, not a specific version. Recommended: `^1.0` (any 1.x, no major bumps).
 - Customers can opt into prereleases with `1.x-beta` ranges.
-- The plugin's version is the single source of truth in [`.claude-plugin/plugin.json`](../.claude-plugin/plugin.json) (mirrored in `package.json`); the Claude Code plugin manager tracks the installed version against the pinned range.
+- The distributed plugin's version is the single source of truth in [`plugins/vc-fix/.claude-plugin/plugin.json`](../plugins/vc-fix/.claude-plugin/plugin.json) and the marketplace [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) (mirrored in `package.json`); the Claude Code plugin manager tracks the installed version against the pinned range.
 
 ## Pre-v1.0 Status
 

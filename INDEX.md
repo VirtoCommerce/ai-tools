@@ -124,8 +124,8 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gate
 
 ## Commands & Skills
 
-- **23 slash commands** — [commands/](commands/), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
-- **32 skills** — one level each under [skills/](skills/) (`skills/<name>/SKILL.md`); see [skills/README.md](skills/README.md).
+- **23 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
+- **32 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers
 
@@ -155,7 +155,7 @@ npm run ci:notify        # Teams notification
 - [README.md](README.md) — Setup & quick-start
 - [config/test-suites.json](config/test-suites.json) — Regression orchestration manifest (source of truth)
 - [regression/suites/README.md](regression/suites/README.md) — Per-module suite index
-- [knowledge/domain/sitemap.md](knowledge/domain/sitemap.md) — Storefront sitemap
-- [knowledge/domain/products.md](knowledge/domain/products.md) — Product types, xAPI fields, configurable sections
+- [knowledge/domain/sitemap.md](.claude/knowledge/domain/sitemap.md) — Storefront sitemap
+- [knowledge/domain/products.md](.claude/knowledge/domain/products.md) — Product types, xAPI fields, configurable sections
 - [test-data/README.md](test-data/README.md) — `@td()` resolver + fixture catalog
 - [vc/README.md](vc/README.md) — Layer 2 (VC internal per-env data) layout

@@ -102,7 +102,9 @@
     "hotfix:precheck": "npx tsx scripts/hotfix-precheck.ts",
     "hotfix:release": "npx tsx scripts/hotfix-release.ts",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
-    "local:health": "node skills/qa-local-env/healthcheck.mjs"
+    "local:health": "node skills/qa-local-env/healthcheck.mjs",
+    "seed:reviews": "node scripts/seed-data/seed-reviews.mjs",
+    "seed:reviews:teardown": "node scripts/seed-data/seed-reviews.mjs --teardown"
   },
   "repository": {
     "type": "git",
