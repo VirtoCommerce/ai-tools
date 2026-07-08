@@ -1,6 +1,7 @@
 {
   "$schema": "./manifest.schema.json",
   "_deprecated": "This file is NOT the Claude Code plugin manifest. The real plugin manifest is at .claude-plugin/plugin.json (per https://code.claude.com/docs/en/plugin-marketplaces). This file is kept as extended metadata documenting envSchema, requiredMcpServers, quality gates, etc. — fields that don't fit the official plugin.json spec. Consumed by bootstrap/install.ts for the post-install env-setup wizard. May be renamed to vc-qa-metadata.json or moved to docs/ in a future commit.",
+  "_status": "vc-qa is NOT currently listed in .claude-plugin/marketplace.json (only vc-fix is) — this metadata describes the dormant on-disk vc-qa content, not an installable product. `npm run plugin:check` reading this file green does not mean vc-qa is installable via the marketplace.",
   "name": "vc-qa",
   "displayName": "Virto Commerce QA Plugin",
   "version": "0.5.0",

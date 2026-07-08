@@ -12,6 +12,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; this branch tip is unstable.
 
+**`**BREAKING:**` `vc-qa` removed from the marketplace listing; added `vc-fix`.** `.claude-plugin/marketplace.json`
+now lists only `vc-fix` (`plugins/vc-fix/` — the bug-lifecycle subset: `/project-init`, `/qa-bug`, `/qa-fix`
++ dev team, `/qa-verify-fix`, `/qa-monitoring`; 8 agents, 14 skills, 6 commands). `/plugin install vc-qa@vc-tools` no longer
+resolves — use `/plugin install vc-fix@vc-tools`. `vc-qa`'s full agent crew (regression, BA, 110 suites)
+stays on disk at the repo root, unmodified, but is not currently installable via the marketplace.
+`vc-fix` is fully self-contained (its own `knowledge/`, `.claude/rules/`, `scripts/lib/`, `config.js`) —
+it does not share files with the root `vc-qa` tree at runtime, since a plugin install has no documented
+way to resolve its own install location for cross-file references.
+
+**Added `/qa-monitoring` + `monitor-triage-agent` to `vc-fix`.** Online bug monitoring from
+Application Insights (query → fingerprint dedup → triage → live repro → report; detect-and-report
+only, never files a ticket or auto-fixes) — a self-contained extract of the full `vc-qa` plugin's
+monitoring pipeline. The headless CI twin (`ci/run-monitor.ts`) and its `@azure/identity` REST
+client are not shipped; `/qa-monitoring` queries via Azure MCP's `applicationinsights` tool
+directly, and the dedup logic + KQL probes live in `plugins/vc-fix/skills/qa-monitoring/`
+(`fingerprint-store.ts`, `queries/*.kql`). `vc-fix` now ships 8 agents, 14 skills, 6 commands.
+
+**Added the Teams notification card to `vc-fix`'s `/qa-monitoring`.** A monitor-only extract
+of `ci/notify-teams.ts` (the regression-card mode is dropped — no regression pipeline is
+shipped) at `plugins/vc-fix/skills/qa-monitoring/notify-teams.ts`. Reads `TEAMS_WEBHOOK_URL`
+via `config.js`/`.env.local`; no-ops with a clear message when unset, so `/qa-monitoring`
+runs and reports the same with or without it.
+
 ---
 
 ## [0.6.0] — 2026-07-07

@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "vc-qa",
-      "source": "./",
-      "description": "Agentic QA for Virto Commerce — storefront + Admin SPA, multi-env aware. See plugin.json for full metadata."
+      "name": "vc-fix",
+      "source": "./plugins/vc-fix",
+      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, and online bug monitoring. Self-contained plugin (8 agents, 14 skills, 6 commands)."
     }
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "browser": {
+    "browserName": "firefox",
+    "launchOptions": {
+      "headless": false
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "locale": "en-US",
+      "storageState": "test-results/auth/MULTI_ORG_TF_BR.json",
+      "recordHar": {
+        "path": "./test-results/firefox/har",
+        "omitContent": true
+      }
+    }
+  },
+  "isolated": true,
+  "outputDir": "./test-results/firefox",
+  "screenshot": "only-on-failure"
+}

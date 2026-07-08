@@ -98,7 +98,7 @@ They follow `docs/onboarding.md` to install via `/plugin marketplace add` + `/pl
 - Did they understand which `.env.local` entries they needed?
 - Did `npm run plugin:check` exit clean?
 
-**Pass:** `/plugin install vc-qa@vc-tools` returns success + `npm run plugin:check` reports green.
+**Pass:** `/plugin install vc-fix@vc-tools` returns success + `npm run plugin:check` reports green.
 **Fail modes (don't help; just record):**
 - They didn't realize they needed to run `/plugin marketplace add` first
 - They pasted the wrong marketplace-source format (see `docs/troubleshooting.md` entry for this exact friction)

@@ -48,9 +48,15 @@ Or for local testing while developing:
 /plugin marketplace add ./
 ```
 
+> **`vc-qa` is not currently listed in `.claude-plugin/marketplace.json`** — only `vc-fix` is. `Plugin
+> vc-qa not found in vc-tools marketplace` is therefore the CURRENT expected result of trying to install
+> `vc-qa` specifically, not a bug to troubleshoot — use `vc-fix` below, or work from a direct clone of
+> this repo for the full agent crew. The sections below use `vc-fix` as the example plugin name; the
+> mechanics apply the same way if `vc-qa` is ever re-listed.
+
 ### #install-2 · "marketplace.json not found"
 
-**Symptom:** `/plugin marketplace add` claims success but `/plugin install vc-qa@vc-tools` fails with `Plugin vc-qa not found in vc-tools marketplace`.
+**Symptom:** `/plugin marketplace add` claims success but `/plugin install vc-fix@vc-tools` fails with `Plugin vc-fix not found in vc-tools marketplace`.
 
 **Cause:** Marketplace was added but the source repo's default branch doesn't contain `.claude-plugin/marketplace.json`. For our repo this happens if you target a branch/commit that pre-dates the plugin migration (anything before commit `ecf00c4` on `main`).
 
@@ -58,7 +64,7 @@ Or for local testing while developing:
 ```
 /plugin marketplace remove vc-tools
 /plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-qa@vc-tools
+/plugin install vc-fix@vc-tools
 ```
 
 For local testing, ensure your working tree has `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`:
@@ -69,18 +75,18 @@ git checkout main    # or the branch with the plugin migration
 
 ### #install-3 · Plugin installed but no agents or commands appear
 
-**Symptom:** `/plugin install vc-qa@vc-tools` reports success, but `/agents` doesn't list any of the QA agents, and `/qa-*` slash commands are not recognized.
+**Symptom:** `/plugin install vc-fix@vc-tools` reports success, but `/agents` doesn't list any of the plugin's agents, and its `/qa-*` slash commands are not recognized.
 
 **Causes:**
 1. Claude Code may need a session refresh after plugin install.
-2. Slash commands may be namespaced under the plugin: `/vc-qa:qa-status` instead of `/qa-status`.
+2. Slash commands may be namespaced under the plugin: `/vc-fix:qa-fix` instead of `/qa-fix`.
 3. Plugin install dir's `agents/`, `skills/`, `commands/` paths may not match what Claude Code expects.
 
 **Fix:**
 1. Restart Claude Code session (or the IDE if running embedded).
-2. Try the namespaced form: `/vc-qa:qa-status`, `/vc-qa:qa-smoke`, etc.
-3. Run `/plugin list` to confirm vc-qa shows as installed + enabled.
-4. If still broken, run `/plugin remove vc-qa@vc-tools` then re-install; the cache may be stale.
+2. Try the namespaced form: `/vc-fix:qa-fix`, `/vc-fix:qa-bug`, etc.
+3. Run `/plugin list` to confirm vc-fix shows as installed + enabled.
+4. If still broken, run `/plugin remove vc-fix@vc-tools` then re-install; the cache may be stale.
 
 ---
 
@@ -179,6 +185,12 @@ See [`docs/onboarding.md`](onboarding.md) § Configuration Buckets for the 3-buc
 - To disable the filter entirely → leave `MODULES_ENABLED` empty (the filter is a no-op when unset).
 
 ### #runtime-3 · "Failed to resolve @td() reference"
+
+> The `@td()` resolver, `test-data/aliases.json`, and `regression/suites/` belong to the full `vc-qa`
+> agent crew (regression + suite authoring) — not currently marketplace-listed; work from a direct
+> clone (see [#install-1](#install-1-invalid-marketplace-source-format)). `vc-fix`'s dev-team agents
+> reproduce a bug as an ad-hoc unit test instead of running suite CSVs, so this failure mode doesn't
+> apply to a marketplace `vc-fix` install.
 
 **Symptom:** `npx tsx scripts/validate-td-refs.ts` or a suite run logs:
 ```
@@ -326,7 +338,7 @@ curl -sk -X POST ${BACK_URL}/connect/token -d 'grant_type=password&...'
 **Fix:**
 - Check installed version: `cat .claude-plugin/plugin.json` (look for `"version"`)
 - Compare to latest: see [`CHANGELOG.md`](../CHANGELOG.md)
-- Update: `/plugin update vc-qa@vc-tools` (Claude Code refreshes from marketplace)
+- Update: `/plugin update vc-fix@vc-tools` (Claude Code refreshes from marketplace)
 
 ### #update-2 · Two marketplaces with the same name
 
@@ -379,7 +391,7 @@ Most common causes (in order of frequency):
 | Severity | Action |
 |----------|--------|
 | Install fails on a fresh clone | File a GitHub Issue with the full `npm run plugin:check` output |
-| Plugin breaks after a working install | Reproduce from a clean MCP cache (clear `~/.claude/cache/plugins/vc-qa` if exists), then file Issue |
+| Plugin breaks after a working install | Reproduce from a clean MCP cache (clear `~/.claude/cache/plugins/vc-fix` if exists), then file Issue |
 | Same suite fails on 2+ envs with same root cause | Real plugin bug — file Issue with the bug report from `/qa-bug` |
 | Customer storefront bug surfaced by a passing-suite assertion | Not a plugin bug — file in YOUR JIRA project |
 | Anything time-sensitive affecting an active pilot | Direct contact to your VC pilot owner (per [`docs/support-runbook.md`](support-runbook.md) § 1) |
