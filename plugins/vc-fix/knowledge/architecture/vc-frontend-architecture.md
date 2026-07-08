@@ -131,8 +131,10 @@ cause in a NuGet dependency".
 - **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
   `--draft`), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
   verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
-  note when the bug has a visual aspect — re-confirmed via `/qa-regression frontend` + `/qa-verify-fix`.
-  **Never** auto-merge.
+  note when the bug has a visual aspect — Gate 6 re-confirms it directly: once the PR's artifact
+  deploys, `qa-frontend-expert` re-verifies the original STR live on the deployed storefront (no
+  `/qa-regression` dependency — full `vc-qa` plugin only, not shipped here), or `/qa-verify-fix`
+  covers it post-merge if no deploy is available yet. **Never** auto-merge.
 - **Gates:** see `.claude/rules/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.
 
 ## Cross-references
