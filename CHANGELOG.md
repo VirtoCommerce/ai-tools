@@ -14,7 +14,7 @@ Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; th
 
 **`**BREAKING:**` `vc-qa` removed from the marketplace listing; added `vc-fix`.** `.claude-plugin/marketplace.json`
 now lists only `vc-fix` (`plugins/vc-fix/` — the bug-lifecycle subset: `/project-init`, `/qa-bug`, `/qa-fix`
-+ dev team, `/qa-verify-fix`; 7 agents, 13 skills, 5 commands). `/plugin install vc-qa@vc-tools` no longer
++ dev team, `/qa-verify-fix`, `/qa-monitoring`; 8 agents, 14 skills, 6 commands). `/plugin install vc-qa@vc-tools` no longer
 resolves — use `/plugin install vc-fix@vc-tools`. `vc-qa`'s full agent crew (regression, BA, 110 suites)
 stays on disk at the repo root, unmodified, but is not currently installable via the marketplace.
 `vc-fix` is fully self-contained (its own `knowledge/`, `.claude/rules/`, `scripts/lib/`, `config.js`) —
