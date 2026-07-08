@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-07-01",
-    "totalSuites": 110,
+    "generated": "2026-07-08",
+    "totalSuites": 113,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2461,6 +2461,72 @@
         "task-management"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "086",
+      "name": "Customer Reviews GraphQL (xAPI)",
+      "file": "regression/suites/Backend/customer-reviews/086-customer-reviews-graphql.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "graphql",
+      "priority": "P2",
+      "testCount": 16,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "customer-reviews",
+        "graphql",
+        "customer-reviews-suite"
+      ],
+      "requiresModules": [
+        "customer-reviews"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
+    },
+    {
+      "id": "087",
+      "name": "Customer Reviews Admin & Moderation",
+      "file": "regression/suites/Backend/customer-reviews/087-customer-reviews-admin.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P2",
+      "testCount": 14,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "customer-reviews",
+        "admin",
+        "customer-reviews-suite"
+      ],
+      "requiresModules": [
+        "customer-reviews"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
+    },
+    {
+      "id": "088",
+      "name": "Customer Reviews Storefront",
+      "file": "regression/suites/Frontend/customer-reviews/088-customer-reviews-storefront.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P2",
+      "testCount": 11,
+      "estimatedMinutes": 15,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "customer-reviews",
+        "functional",
+        "customer-reviews-suite"
+      ],
+      "requiresModules": [
+        "customer-reviews"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal"
     }
   ],
   "selections": {
@@ -2681,6 +2747,13 @@
         "075c",
         "083",
         "083b"
+      ]
+    },
+    "customer-reviews": {
+      "include": [
+        "086",
+        "087",
+        "088"
       ]
     }
   }
