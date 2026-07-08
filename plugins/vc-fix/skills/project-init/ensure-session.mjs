@@ -23,11 +23,9 @@
  *   --print. Exit 0 iff every requested session ends up authorized.
  */
 import { execSync, spawnSync } from "child_process";
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-
-const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0"; // Azure DevOps app id
+import { ADO_RESOURCE } from "./probe-lib.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -35,15 +33,12 @@ function parseArgs(argv) {
   return a;
 }
 function loadEnv() {
-  const TEST_ENV = resolveTestEnv("vcst");
-  dotenv({ path: ".env.defaults" });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true });
-  dotenv({ path: ".env.local", override: true });
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
+  try {
+    return loadLayeredEnv("vcst");
+  } catch (err) {
+    console.error(`[ensure-session] ${err.message}`);
+    process.exit(1);
   }
-  return TEST_ENV;
 }
 const log = (m) => console.log(`[ensure-session] ${m}`);
 function tryOut(cmd) {

@@ -12,6 +12,20 @@
  */
 import { execSync } from "child_process";
 
+/**
+ * Azure DevOps app id — the resource GUID `az account get-access-token
+ * --resource <this>` needs to mint an ADO-scoped bearer token. Shared here
+ * (rather than duplicated per call site) because a prior copy-paste drift
+ * across `project-init/*.mjs` shipped a wrong, transcribed GUID at several
+ * sites — a single exported constant means there's only one place to get it
+ * right. `qa-fix-routing/ado-rest.ts` needs the same value with a `/.default`
+ * suffix for MSAL scope format; it lives in a different skill directory with
+ * no cross-skill import path (see that skill's own path-resolution note), so
+ * it keeps its own copy rather than reaching across plugin boundaries for one
+ * string.
+ */
+export const ADO_RESOURCE = "499b84ac-1317-41a4-9800-7912b3d6e6e0";
+
 /** Run a command, return true on exit 0 (stdout/err suppressed). */
 export function tryCmd(cmd) {
   try { execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }); return true; } catch { return false; }
@@ -93,14 +107,14 @@ export async function resolveAdoTenant(org) {
  * Resolve an Azure DevOps auth header + how it was obtained, for an org probe.
  *   → { authHeader, via: "ADO_PAT" | "az session" | "" }
  * Prefers ADO_PAT (Basic), else mints a bearer token from the `az login` session
- * (resource GUID 499b84ac-… = the Azure DevOps app id). "" when neither is available.
+ * (see `ADO_RESOURCE` above). "" when neither is available.
  */
 export function resolveAdoAuth() {
   if (process.env.ADO_PAT) {
     return { authHeader: "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"), via: "ADO_PAT" };
   }
   if (tryCmd("az account show")) {
-    const tok = tryOut("az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv");
+    const tok = tryOut(`az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`);
     if (tok) return { authHeader: "Bearer " + tok, via: "az session" };
   }
   return { authHeader: "", via: "" };

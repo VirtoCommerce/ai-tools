@@ -97,8 +97,10 @@ ambiguous, prefer NEEDS_REVIEW over REAL_BUG — a log line alone is not a defec
   not carried across CI runs since there's no CI twin shipped here.
 
 ## Teams notification (`skills/qa-monitoring/notify-teams.ts`)
-Optional — reads `TEAMS_WEBHOOK_URL` via `config.js` (so `.env.local` resolves it the
-same way every other secret does) and posts an Adaptive Card summarizing the run
+Optional — loads the layered `.env.defaults`/`.env.${TEST_ENV}`/`.env.local` files
+directly via `scripts/lib/load-layered-env.mjs` (not `config.js`, whose `coreRequiredVars`
+check would fail the notification over unrelated missing vars like `FRONT_URL`) and posts
+an Adaptive Card summarizing the run
 (status, layers, signature counts, confirmed/needs-review counts, cost). No-ops with
 a clear console message when the webhook is unset; `/qa-monitoring` still completes
 and writes its report either way. Run standalone with

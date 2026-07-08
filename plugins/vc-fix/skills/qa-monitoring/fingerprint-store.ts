@@ -31,8 +31,12 @@ export type Layer = "backend" | "frontend";
 export type Row = Record<string, unknown>;
 
 // env is part of the fingerprint, so the same error signature in two envs gets
-// two independent store entries (see file header).
-export const STORE_VERSION = 1;
+// two independent store entries (see file header). This file has always shipped
+// at version 2 (env-in-fingerprint from day one in vc-fix) — keep the constant
+// at 2 even though the now-removed migration branch that gave version its name
+// is gone, so an on-disk store already stamped version:2 isn't silently
+// renumbered backwards on the next save.
+export const STORE_VERSION = 2;
 export const DEFAULT_STORE_PATH = "reports/monitoring/.seen-fingerprints.json";
 
 /** A normalized error signature for one run. */

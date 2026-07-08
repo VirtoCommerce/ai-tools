@@ -21,21 +21,18 @@
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { config as dotenv } from "dotenv";
 import { readFileSync } from "fs";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant } from "./probe-lib.mjs";
+import { probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE } from "./probe-lib.mjs";
 
-const TEST_ENV = resolveTestEnv("vcst");
-// quiet: dotenv v17 prints promo tips to stdout, which would garble the readiness table.
-dotenv({ path: ".env.defaults", quiet: true });
-dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-dotenv({ path: ".env.local", override: true, quiet: true });
-// Per-env suffix promotion (mirror config.js) so ADMIN_PASSWORD_<ENV> → ADMIN_PASSWORD etc.
-const SUF = `_${TEST_ENV.toUpperCase()}`;
-for (const [k, v] of Object.entries(process.env)) {
-  if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
+let TEST_ENV;
+try {
+  TEST_ENV = loadLayeredEnv("vcst");
+} catch (err) {
+  console.error(`[verify-access] ${err.message}`);
+  process.exit(1);
 }
 
 const BACK = (process.env.BACK_URL || "").replace(/\/+$/, "");
@@ -87,7 +84,7 @@ function adoAuth() {
   if (process.env.ADO_PAT) return { header: "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"), via: "ADO_PAT" };
   if (tryCmd("az account show")) {
     try {
-      const tok = execSync("az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+      const tok = execSync(`az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
       if (tok) return { header: "Bearer " + tok, via: "az session" };
     } catch { /* no token */ }
   }
@@ -168,7 +165,7 @@ async function main() {
     if (process.env.ADO_PAT) { authHeader = "Basic " + Buffer.from(":" + process.env.ADO_PAT).toString("base64"); via = "ADO_PAT"; }
     else if (tryCmd("az account show")) {
       try {
-        const tok = execSync("az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+        const tok = execSync(`az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
         if (tok) { authHeader = "Bearer " + tok; via = "az session"; }
       } catch { /* no token */ }
     }

@@ -33,8 +33,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
+import { ADO_RESOURCE } from "./probe-lib.mjs";
 
 const UPSTREAM_ORG = "VirtoCommerce";
 
@@ -185,7 +185,7 @@ function adoAuthHeaderSync() {
   if (pat) return "Basic " + Buffer.from(":" + pat).toString("base64");
   try {
     const tok = execSync(
-      "az account get-access-token --resource 499b84ac-1317-41a4-9800-7912b3d6e6e0 --query accessToken -o tsv",
+      `az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`,
       { stdio: ["ignore", "pipe", "ignore"] },
     ).toString().trim();
     if (tok) return "Bearer " + tok;
@@ -302,17 +302,7 @@ async function readPackageJsonLive(host, { org, project, name }) {
 }
 
 async function getModulesLive() {
-  const TEST_ENV = resolveTestEnv("vcst");
-  // quiet: stdout carries the machine-readable repo map (dotenv v17 prints promo tips otherwise).
-  dotenv({ path: ".env.defaults", quiet: true });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-  dotenv({ path: ".env.local", override: true, quiet: true });
-  // Per-env suffix promotion (mirror config.js / verify-access) so ADMIN_PASSWORD_<ENV>
-  // → ADMIN_PASSWORD etc. — otherwise per-env creds in .env.local are never seen.
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-  }
+  loadLayeredEnv("vcst"); // throws on a malformed TEST_ENV — let it crash loudly here
 
   const BACK_URL = (process.env.BACK_URL || "").replace(/\/$/, "");
   const ADMIN = process.env.ADMIN || "";

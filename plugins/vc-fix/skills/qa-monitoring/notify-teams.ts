@@ -4,28 +4,29 @@
  * Self-contained for the `vc-fix` plugin: extracted from the full `vc-qa`
  * plugin's `ci/notify-teams.ts`, which also sends a regression-run card — that
  * mode is dropped here since `vc-fix` ships no regression pipeline. Loads the
- * layered `.env.defaults` / `.env.${TEST_ENV}` / `.env.local` files directly
- * (the same precedence `config.js` uses) rather than importing `config.js`
- * itself — this script only needs `TEAMS_WEBHOOK_URL` + `TEST_ENV`, and
- * `config.js`'s `coreRequiredVars` check would `process.exit(1)` if unrelated
- * vars like `FRONT_URL`/`ADMIN_PASSWORD` are unset, even though a monitoring
- * notification doesn't touch them.
+ * layered `.env.defaults` / `.env.${TEST_ENV}` / `.env.local` files via the
+ * shared `scripts/lib/load-layered-env.mjs` helper (not `config.js`, whose
+ * `coreRequiredVars` check would `process.exit(1)` if unrelated vars like
+ * `FRONT_URL`/`ADMIN_PASSWORD` are unset, even though a monitoring
+ * notification doesn't touch them).
+ *
+ * `loadLayeredEnv` throws on a malformed `TEST_ENV` (kebab-case, etc.) — this
+ * script is a best-effort notifier that must never fail the `/qa-monitoring`
+ * run it's reporting on, so that's caught and only warned about; per-env
+ * secret overrides just won't apply for a malformed TEST_ENV.
  *
  * No-ops with a clear message when `TEAMS_WEBHOOK_URL` is unset — Teams
  * notification is optional; `/qa-monitoring` still runs and reports without it.
  */
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 
-const TEST_ENV = resolveTestEnv("vcst");
-dotenv({ path: ".env.defaults", quiet: true });
-dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-dotenv({ path: ".env.local", override: true, quiet: true });
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(ENV_SUFFIX) && value) process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
+let TEST_ENV = process.env.TEST_ENV || "vcst";
+try {
+  TEST_ENV = loadLayeredEnv("vcst");
+} catch (err) {
+  console.error(`[notify-teams] ${(err as Error).message} — per-env overrides may not apply.`);
 }
 
 const GITHUB_RUN_URL = process.env.GITHUB_RUN_URL || "";
