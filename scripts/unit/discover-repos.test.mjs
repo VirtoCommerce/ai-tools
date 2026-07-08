@@ -12,7 +12,7 @@ import {
   stripRef,
   frontendProvenanceFromPackage,
   vcFrontendRef,
-} from "../../skills/project-init/discover-repos.mjs";
+} from "../../.claude/skills/project-init/discover-repos.mjs";
 
 test("moduleToRepo: parses a GitHub ProjectUrl", () => {
   const r = moduleToRepo({ Id: "VirtoCommerce.Cart", ProjectUrl: "https://github.com/VirtoCommerce/vc-module-cart" });
