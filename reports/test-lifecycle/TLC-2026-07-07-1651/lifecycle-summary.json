@@ -1,0 +1,70 @@
+{
+  "runId": "TLC-2026-07-07-1651",
+  "inputType": "change-source",
+  "source": "VCST-5239",
+  "date": "2026-07-07",
+  "verdict": "APPROVED WITH WARNINGS",
+  "build": {
+    "platform": "3.1041.0",
+    "theme": "vc-theme-b2b-vue 2.53.0-pr-2354",
+    "modules": {
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1010.0-pr-137",
+      "VirtoCommerce.Customer": "3.1014.0-alpha.1002-vcst-5239"
+    }
+  },
+  "changedModules": ["Customer", "ProfileExperienceApi", "vc-frontend"],
+  "prs": [137, 304, 2354],
+  "affectedSuites": ["050d", "008", "006", "027b", "020"],
+  "casesAnalyzed": 5,
+  "casesSynced": 1,
+  "casesGenerated": 11,
+  "casesReviewed": 12,
+  "casesVerified": 6,
+  "brokenCases": 0,
+  "filesModified": [
+    "regression/suites/Backend/customer/027b-customer-org-memberships.csv",
+    "regression/suites/Frontend/b2b/008-b2b-members.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {
+    "G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS",
+    "G6": "WARN", "G7": "PASS", "G8": "PASS", "G9": "PASS"
+  },
+  "generatedCases": [
+    {"caseId": "ORGM-019", "suite": "027b", "layer": "admin", "priority": "Critical"},
+    {"caseId": "ORGM-020", "suite": "027b", "layer": "admin", "priority": "Critical"},
+    {"caseId": "ORGM-021", "suite": "027b", "layer": "admin", "priority": "Critical"},
+    {"caseId": "ORGM-022", "suite": "027b", "layer": "graphql", "priority": "Critical"},
+    {"caseId": "ORGM-023", "suite": "027b", "layer": "graphql", "priority": "High"},
+    {"caseId": "ORGM-024", "suite": "027b", "layer": "graphql", "priority": "High"},
+    {"caseId": "ORGM-025", "suite": "027b", "layer": "graphql", "priority": "Critical"},
+    {"caseId": "ORGM-026", "suite": "027b", "layer": "graphql", "priority": "Critical"},
+    {"caseId": "ORGM-027", "suite": "027b", "layer": "rest", "priority": "Medium"},
+    {"caseId": "B2C-MBR-024", "suite": "008", "layer": "storefront", "priority": "High"},
+    {"caseId": "B2C-MBR-025", "suite": "008", "layer": "storefront", "priority": "High"}
+  ],
+  "verificationResults": {
+    "graphqlContract": "VERIFIED",
+    "whitelistSettings": "VERIFIED",
+    "rolesInOrgNoArgAuthed": "VERIFIED",
+    "isLockedNoArgAuthed": "VERIFIED",
+    "adminOrgRoleWidget": "BLOCKED",
+    "membershipDropdownGating": "INCONCLUSIVE",
+    "contactsRoleIdsFilter": "VERIFIED",
+    "jwtPropagationDelta": "VERIFIED",
+    "storefrontRolesColumn": "VERIFIED",
+    "storefrontRoleFacet": "VERIFIED"
+  },
+  "settingsRestPath": "GET /api/platform/settings/v2/global/schema + /values",
+  "orgMembershipRestSurface": "/api/customer/organization-memberships/* (search, {id} GET/PUT, /lock, /unlock, /user/{userId}/org/{organizationId})",
+  "jwtDelta": {"org-maintainer": 11, "org-employee": 2, "restored": 11},
+  "productNotes": [
+    "self-demotion lockout: caller loses xapi:my_organization:edit when lowering own role; revert needs admin/REST path",
+    "admin token has no organization_id claim -> changeOrganizationContactRole requires org-context token or REST membership PUT"
+  ],
+  "blCandidates": ["merged-role dedup resolution", "whitelist-gated role dropdown"],
+  "openFollowUps": [
+    "whitelist gating: confirm intended surface (Admin vs storefront) + whether storefront/xAPI filtering shipped in Customer alpha; storefront invite dropdown ungated is NOT confirmed as a bug",
+    "admin org-role widget absent on deployed org blade (ORGM-020) - confirm whether admin SPA build includes it"
+  ]
+}

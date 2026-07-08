@@ -4,7 +4,7 @@
   "_status": "vc-qa is NOT currently listed in .claude-plugin/marketplace.json (only vc-fix is) — this metadata describes the dormant on-disk vc-qa content, not an installable product. `npm run plugin:check` reading this file green does not mean vc-qa is installable via the marketplace.",
   "name": "vc-qa",
   "displayName": "Virto Commerce QA Plugin",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Agentic QA for Virto Commerce — covers storefront + Admin SPA across multiple customer environments. Ships 18 agents, 30 skills, 23 commands, 28 knowledge files, 110 regression suites (universal + reference + vcst-specific subsets). Methodology + agent crew + authoring framework — customers run the universal subset and author their own for custom features.",
   "author": "Virto Commerce",
   "license": "TBD-internal",

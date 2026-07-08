@@ -640,3 +640,166 @@ mutation LockOrgContact($command: InputLockUnlockOrganizationContactType!) {
 [REST DELETE /api/customer/organization-memberships?ids={{F1B_TF_MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-orgm018@yopmail.com]
 [REST DELETE /api/members?ids={{F1B_MEMBER_ID}}]","VCST-5028","Automated"
+"ORGM-019","Admin Customer Roles Settings - Configure Organization and Membership Roles Whitelist","Org Memberships > Settings > Roles Whitelist","Critical","BL-B2B-005","ECL-8.1","Admin logged into backend ({{BACK_URL}}). Customer module ships two new GroupName=""Customer|Roles"" settings (VCST-5239, PR #304): Customer.OrganizationRolesWhitelist and Customer.MembershipRolesWhitelist (ValueType=ShortText, IsDictionary=true). Values not yet configured (unrestricted default) at test start.","back_url={{BACK_URL}}; org_whitelist=org-employee,org-maintainer; membership_whitelist=org-employee,org-maintainer,purchasing-agent","[NAV] Navigate to {{BACK_URL}} > Settings > Customer module > Roles
+[BLADE] Roles settings blade opens; 'Organization roles whitelist' and 'Membership roles whitelist' dictionary fields visible
+[ACT] Add dictionary values 'org-employee' and 'org-maintainer' to 'Organization roles whitelist'
+[ACT] Add dictionary values 'org-employee', 'org-maintainer', 'purchasing-agent' to 'Membership roles whitelist'
+[ACT] Click Save
+[WAIT] Save completes; success toast shown
+[NAV] Reload the Roles settings blade
+[ASSERT] Verify both whitelist fields retain the saved dictionary values after reload","[TOAST] Success notification after Save
+[BLADE] Roles settings blade shows the saved dictionary values for both whitelist settings after reload (persisted, not reset to empty)
+[STATE] Settings scoped to GroupName Customer|Roles -- does not affect unrelated Platform settings","[ADMIN] Settings persist across reload -- confirms server-side save (exact module-settings REST GET path TBD; qa-testing-expert to confirm during Phase 5 live verification and backfill)","Save button does nothing; whitelist fields reset to empty after reload; values accepted but not enforced downstream (see ORGM-020/ORGM-021); blade fails to load with error","[NAV] Navigate to Settings > Customer module > Roles; clear both whitelist dictionary fields; click Save (restores unrestricted default)","VCST-5239; PR #304 vc-module-customer; Test 2 (whitelist gating)","Draft"
+"ORGM-020","Organization Detail Blade - Add Org-Level Role Dropdown Filtered by OrganizationRolesWhitelist","Org Memberships > Settings > Roles Whitelist","Critical","BL-B2B-005","ECL-8.1","Admin logged into backend ({{BACK_URL}}). Customer.OrganizationRolesWhitelist configured with values org-employee and org-maintainer only (state from ORGM-019). TechFlow organization exists (@td(MULTI_ORG_TF_BR.org_techflow_id)).","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); whitelisted_role=org-maintainer; excluded_role=purchasing-agent","[NAV] Navigate to {{BACK_URL}} Customer module > Organizations
+[ACT] Open the TechFlow organization blade (id: @td(MULTI_ORG_TF_BR.org_techflow_id))
+[ACT] Locate the organization-level Roles widget/section (new in VCST-5239 -- add org-level OrganizationRole)
+[ACT] Open the role selector to add a new org-level role
+[ASSERT] Verify the role dropdown options are limited to the whitelisted set: org-employee, org-maintainer
+[ASSERT] Verify 'purchasing-agent' (a non-whitelisted role) does NOT appear in the dropdown
+[ACT] Select 'org-maintainer' and click Save
+[WAIT] Save completes; success toast shown","[TOAST] Success notification after Save
+[BLADE] Organization blade shows the newly-added org-level role 'org-maintainer' in its Roles section
+[DOM] Role dropdown option set == whitelist configured in ORGM-019 (org-employee, org-maintainer) -- non-whitelisted roles absent","[GQL] Follow-up rolesInOrganization query for a TechFlow member should include the newly-added org-level role in the merged set (see ORGM-022)","Dropdown shows all system roles regardless of whitelist (whitelist not enforced -- VCST-5239 regression); 'purchasing-agent' selectable despite exclusion; Save fails silently; org-level role not persisted","[ACT] Open TechFlow organization blade; remove the added org-level role 'org-maintainer'; click Save","VCST-5239; PR #304 vc-module-customer; Test 2 (whitelist gating)","Draft"
+"ORGM-021","Organization Membership Widget - Role Dropdown Filtered by MembershipRolesWhitelist","Org Memberships > Settings > Roles Whitelist","Critical","BL-B2B-005","ECL-8.1","Admin logged into backend ({{BACK_URL}}). Customer.MembershipRolesWhitelist configured with org-employee, org-maintainer, purchasing-agent (state from ORGM-019). AGENT-TEST member with a TechFlow membership created in Steps SETUP.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); excluded_role=org-manager","[AUTH role=ADMIN_DEFAULT]
+[REST-OP setup_orgm021_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""WhitelistDropdown"", ""memberType"": ""Contact""}
+[REST-EXEC setup_orgm021_member]
+[REST-CAPTURE setup_orgm021_member.body.id → ORGM021_MEMBER_ID]
+[REST-OP setup_orgm021_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgm021@yopmail.com"", ""email"": ""AGENT-TEST-orgm021@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{ORGM021_MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC setup_orgm021_account]
+[REST-OP get_orgm021_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgm021@yopmail.com
+[REST-EXEC get_orgm021_user_id]
+[REST-CAPTURE get_orgm021_user_id.body.id → ORGM021_USER_ID]
+[REST-OP setup_orgm021_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{ORGM021_USER_ID}}"", ""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""organizationName"": ""TechFlow"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC setup_orgm021_membership]
+[REST-CAPTURE setup_orgm021_membership.body.id → ORGM021_MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts
+[ACT] Search for and open the AGENT-TEST-WhitelistDropdown contact blade
+[ACT] Locate the Organization memberships widget; open the TechFlow membership row's role editor
+[ASSERT] Verify the role dropdown options are limited to org-employee, org-maintainer, purchasing-agent (the MembershipRolesWhitelist set)
+[ASSERT] Verify 'org-manager' (non-whitelisted) does NOT appear in the dropdown","[BLADE] Role editor dropdown option set == MembershipRolesWhitelist (org-employee, org-maintainer, purchasing-agent)
+[STATE] Non-whitelisted role 'org-manager' absent from dropdown options","[API] GET {{BACK_URL}}/api/customer/organization-memberships/search body {userId} confirms membership roles unaffected by this dropdown-only UI check (no mutation performed)","Dropdown shows all system roles including org-manager (whitelist not enforced); dropdown empty (over-restriction bug); widget fails to load","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{ORGM021_MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgm021@yopmail.com]
+[REST DELETE /api/members?ids={{ORGM021_MEMBER_ID}}]","VCST-5239; PR #304 vc-module-customer; Test 2 (whitelist gating)","Draft"
+"ORGM-022","rolesInOrganization - No-Arg Form Returns Merged Org-Level, Membership, and Global Roles (Deduped)","Org Memberships > rolesInOrganization > Contract Change (PR #137)","Critical","BL-B2B-005; BL-GQL-003","ECL-2.1","Runner-native. BREAKING CONTRACT CHANGE (VCST-5239 / PR #137): rolesInOrganization(organizationId: $id) argument was REMOVED -- the field is now rolesInOrganization (no arguments), resolved from the caller's JWT org context. TECHFLOW_ADMIN authenticated (TechFlow org context, org-maintainer membership role per @td(MULTI_ORG_TF_BR.techflow_role)).","back_url={{BACK_URL}}; member_id=@td(MULTI_ORG_TF_BR.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP roles_merged]
+  query {
+    contact(id: ""@td(MULTI_ORG_TF_BR.id)"") {
+      id
+      rolesInOrganization {
+        id
+        name
+      }
+    }
+  }
+[GQL-EXEC roles_merged]","[ERRORS label=roles_merged] errors[] empty -- no-arg field resolves without a schema error (contract change verified)
+[DATA label=roles_merged] data.contact.rolesInOrganization is non-null and non-empty
+[DATA label=roles_merged] data.contact.rolesInOrganization contains an entry matching @td(MULTI_ORG_TF_BR.techflow_role) (org-maintainer membership role, TechFlow context)","[EVIDENCE] rolesInOrganization list has no duplicate id entries -- merged org-level + membership + global roles must be deduped per PR #137 description","Runner DV-009/DV-011 rejects the no-arg field (schema still expects organizationId -- PR #137 not deployed as described); errors[] non-empty; rolesInOrganization returns empty despite known TechFlow membership role; duplicate role entries in the list (dedup regression)","none -- pure read","VCST-5239; PR #137 vc-module-profile-experience-api; xAPI breaking change: rolesInOrganization(organizationId) removed","Draft"
+"ORGM-023","rolesInOrganization - Legacy organizationId Argument Rejected by Schema","Org Memberships > rolesInOrganization > Contract Change (PR #137)","High","BL-GQL-001","ECL-2.1","Runner-native. Regression guard for the PR #137 breaking change -- confirms the OLD argument form is no longer part of the schema (a caller still sending organizationId must fail schema validation, not silently ignore the argument).","back_url={{BACK_URL}}; member_id=@td(MULTI_ORG_TF_BR.id); org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP roles_legacy_arg]
+  query {
+    contact(id: ""@td(MULTI_ORG_TF_BR.id)"") {
+      rolesInOrganization(organizationId: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"") {
+        id
+        name
+      }
+    }
+  }
+[GQL-EXEC roles_legacy_arg]","[ERRORS label=roles_legacy_arg] errors[] non-empty -- schema rejects the removed organizationId argument (Unknown argument)","none -- schema-validation-only case","Runner accepts the legacy argument and returns data (schema not actually updated -- PR #137 contract change did not deploy as described, or a compatibility shim silently reintroduced the old arg); 5xx instead of a GraphQL validation error","none","VCST-5239; PR #137 vc-module-profile-experience-api","Draft"
+"ORGM-024","isLockedInOrganization - No-Arg Form Resolves From JWT Context; Legacy Argument Rejected","Org Memberships > isLockedInOrganization > Contract Change (PR #137)","High","BL-AUTH-003; BL-B2B-005","ECL-2.1","Runner-native. BREAKING CONTRACT CHANGE (PR #137): isLockedInOrganization(organizationId: $id) argument REMOVED -- resolved from JWT org context. TECHFLOW_ADMIN authenticated; @td(MULTI_ORG_TF_BR.id) not locked in TechFlow at test start.","back_url={{BACK_URL}}; member_id=@td(MULTI_ORG_TF_BR.id); org_id=@td(MULTI_ORG_TF_BR.org_techflow_id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP locked_noarg]
+  query {
+    contact(id: ""@td(MULTI_ORG_TF_BR.id)"") {
+      isLockedInOrganization
+    }
+  }
+[GQL-EXEC locked_noarg]
+[GQL-OP locked_legacy_arg]
+  query {
+    contact(id: ""@td(MULTI_ORG_TF_BR.id)"") {
+      isLockedInOrganization(organizationId: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"")
+    }
+  }
+[GQL-EXEC locked_legacy_arg]","[ERRORS label=locked_noarg] errors[] empty -- no-arg field resolves
+[DATA label=locked_noarg] data.contact.isLockedInOrganization = false
+[ERRORS label=locked_legacy_arg] errors[] non-empty -- schema rejects the removed organizationId argument","[REST] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} confirms TechFlow membership isLocked=false, consistent with the GraphQL no-arg result","locked_noarg errors[] non-empty (contract change not deployed); isLockedInOrganization value disagrees with REST isLocked; locked_legacy_arg accepted (old argument still functional -- incomplete contract migration)","none -- pure read","VCST-5239; PR #137 vc-module-profile-experience-api","Draft"
+"ORGM-025","OrganizationType.contacts - roleIds Filter Returns Only Matching Members","Org Memberships > contacts(roleIds) Filter","Critical","BL-B2B-005; BL-GQL-001","ECL-3.1","Runner-native. NEW filter argument (PR #137): OrganizationType.contacts gained roleIds: [String]. TECHFLOW_ADMIN authenticated. @td(MULTI_ORG_TF_BR.id) holds org-maintainer role in TechFlow (@td(MULTI_ORG_TF_BR.techflow_role)).","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); role_filter=org-maintainer","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP contacts_by_role]
+  query {
+    organization(id: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"") {
+      contacts(first: 20, roleIds: [""org-maintainer""]) {
+        totalCount
+        items {
+          id
+          rolesInOrganization { id name }
+        }
+      }
+    }
+  }
+[GQL-EXEC contacts_by_role]
+[GQL-OP contacts_unfiltered]
+  query {
+    organization(id: ""@td(MULTI_ORG_TF_BR.org_techflow_id)"") {
+      contacts(first: 20) {
+        totalCount
+      }
+    }
+  }
+[GQL-EXEC contacts_unfiltered]","[ERRORS label=contacts_by_role] errors[] empty -- roleIds filter accepted by schema
+[DATA label=contacts_by_role] data.organization.contacts.items contains an entry with id = @td(MULTI_ORG_TF_BR.id)
+[COUNT label=contacts_by_role] data.organization.contacts.totalCount <= contacts_unfiltered.data.organization.contacts.totalCount (filtered subset)
+[ERRORS label=contacts_unfiltered] errors[] empty","[EVIDENCE] every item in contacts_by_role.items has rolesInOrganization containing id=org-maintainer -- no non-matching member leaked through the filter","errors[] non-empty (roleIds argument not recognized -- DV-008 regression, contract not deployed); contacts_by_role returns members without the org-maintainer role (filter not enforced -- data leak); contacts_by_role.totalCount > contacts_unfiltered.totalCount (impossible -- filter inverted)","none -- pure read","VCST-5239; PR #137 vc-module-profile-experience-api; New Query/Mutation Verification checklist","Draft"
+"ORGM-026","JWT Permission Propagation After Org-Role Change Requires Fresh Token (Relogin) - Test 1","Org Memberships > JWT Permission Propagation","Critical","BL-B2B-005; BL-B2B-007; BL-B2B-008","ECL-10.2","Runner-native. Fixture @td(MULTI_ORG_TF_BR.id) is TechFlow org-maintainer by default (canonical oracle state). This case flips TechFlow role DOWN to org-employee, captures a token+permissions in that state, flips it back UP to org-maintainer, then captures a FRESH token+permissions -- the Test 1 acceptance oracle: the permission set must change only on the fresh (relogin) token, mirroring the manual jwt.io decode described in the ticket. Ends in the canonical org-maintainer state (net-zero, matches PRF-GQL-066/067 restore pattern).","back_url={{BACK_URL}}; member_id=@td(MULTI_ORG_TF_BR.id)","[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP demote_to_employee]
+  mutation {
+    changeOrganizationContactRole(command: { memberId: ""@td(MULTI_ORG_TF_BR.id)"", roleIds: [""org-employee""] }) {
+      succeeded
+    }
+  }
+[GQL-EXEC demote_to_employee]
+[AUTH role=MULTI_ORG_TF_BR_EMPLOYEE]
+[GQL-OP me_before]
+  query { me { permissions } }
+[GQL-EXEC me_before]
+[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP promote_to_maintainer]
+  mutation {
+    changeOrganizationContactRole(command: { memberId: ""@td(MULTI_ORG_TF_BR.id)"", roleIds: [""org-maintainer""] }) {
+      succeeded
+    }
+  }
+[GQL-EXEC promote_to_maintainer]
+[AUTH role=MULTI_ORG_TF_BR_MAINTAINER]
+[GQL-OP me_after_relogin]
+  query { me { permissions } }
+[GQL-EXEC me_after_relogin]","[ERRORS label=demote_to_employee] errors[] empty
+[DATA label=demote_to_employee] data.changeOrganizationContactRole.succeeded = true
+[ERRORS label=me_before] errors[] empty
+[ERRORS label=promote_to_maintainer] errors[] empty
+[DATA label=promote_to_maintainer] data.changeOrganizationContactRole.succeeded = true
+[ERRORS label=me_after_relogin] errors[] empty
+[DATA label=me_after_relogin] data.me.permissions differs from me_before.data.me.permissions -- the fresh (relogin) token reflects the org-maintainer permission set that the pre-change token lacked","[EVIDENCE] runner-manual: decode the raw bearer JWT acquired by the [AUTH role=MULTI_ORG_TF_BR_MAINTAINER] step at jwt.io per the ticket's manual oracle -- organization_id claim (snake_case) = @td(MULTI_ORG_TF_BR.org_techflow_id); role/permission claims include the org-maintainer set","me_after_relogin.permissions identical to me_before.permissions (role change never reaches a fresh token -- BL-B2B-007 regression, the exact BUG-A pattern from VCST-5028); demote_to_employee or promote_to_maintainer succeeded=false; any errors[] non-empty on the me{} queries","none -- promote_to_maintainer in Steps already restores @td(MULTI_ORG_TF_BR.id) to its canonical TechFlow org-maintainer state","VCST-5239; Test 1 (JIRA acceptance scenario); BL-B2B-007; BUG-A precedent VCST-5028; Synced pattern from PRF-GQL-066/067","Draft"
+"ORGM-027","MembersSearchCriteria.ExcludedObjectIds Excludes Given Member Before Pagination","Org Memberships > REST Search > ExcludedObjectIds","Medium","BL-B2B-005","ECL-3.2","Runner-native. NEW REST search criteria field (PR #304): MembersSearchCriteria.ExcludedObjectIds excludes given member ids from search results BEFORE pagination is applied. TechFlow org has @td(MULTI_ORG_TF_BR.id) as a known member.","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); excluded_id=@td(MULTI_ORG_TF_BR.id)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP search_unfiltered]
+POST {{BACK_URL}}/api/members/search
+Content-Type: application/json
+Body: {""memberType"": ""Contact"", ""deepSearch"": true, ""objectIds"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)""]}
+[REST-EXEC search_unfiltered]
+[REST-OP search_excluded]
+POST {{BACK_URL}}/api/members/search
+Content-Type: application/json
+Body: {""memberType"": ""Contact"", ""deepSearch"": true, ""objectIds"": [""@td(MULTI_ORG_TF_BR.org_techflow_id)""], ""excludedObjectIds"": [""@td(MULTI_ORG_TF_BR.id)""]}
+[REST-EXEC search_excluded]","[ERRORS label=search_unfiltered] HTTP 200
+[ERRORS label=search_excluded] HTTP 200
+[DATA label=search_excluded] body.results does not contain an entry with id = @td(MULTI_ORG_TF_BR.id)
+[COUNT label=search_excluded] body.totalCount = search_unfiltered.body.totalCount - 1","[EVIDENCE] excludedObjectIds is honored before pagination (totalCount reflects the exclusion, not just the current page -- the ticket explicitly calls out 'exclude-before-pagination')","excludedObjectIds field not recognized by the endpoint (silently ignored -- 400/unknown-field or totalCount unchanged); excluded member still present in body.results; totalCount math does not reflect a pre-pagination exclusion","none -- read-only search","VCST-5239; PR #304 vc-module-customer; MembersSearchCriteria.ExcludedObjectIds","Draft"

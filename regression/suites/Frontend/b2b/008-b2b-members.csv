@@ -7,8 +7,9 @@ Org admin user logged in; organization has at least 3 members","url={{FRONT_URL}
 4. [ASSERT] Verify list shows member name and email and role and status columns","[DOM] Members list page loads without errors
 [DOM] Table/list shows: name and email and role and status for each member
 [DOM] At least 3 members visible
-[FORMAT] Role labels are readable (e.g. Admin or Purchaser or Approver)","[API] organization members query returns member data
-[CONSOLE] no uncaught JS errors","Members page returns 404; empty list when members exist; missing columns in member data","none","Coverage Gap Analysis","Draft"
+[FORMAT] Role labels are readable (e.g. Admin or Purchaser or Approver)
+[STATE] Role column reflects the MERGED set of org-level, membership, and global roles per member (VCST-5239, PR #2354/#137) -- not the membership role alone","[API] organization members query returns member data
+[CONSOLE] no uncaught JS errors","Members page returns 404; empty list when members exist; missing columns in member data; Role column shows only membership role and omits org-level/global roles (VCST-5239 regression)","none","Coverage Gap Analysis; Synced: VCST-5239 (2026-07-07) -- Roles column now merges org-level+membership+global roles, see B2C-MBR-024/025 for dedicated coverage","Draft"
 "B2C-MBR-002","Search Members by Name or Email","B2C Features > Members","Medium","BL-B2B-005","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org admin user logged in; organization has 5+ members","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/members
 2. [ACT] Type a member name in search input
@@ -401,3 +402,28 @@ or action menus = a REGRESSION of the VCST-5028 fix (fail the case), not an expe
 [API] After remove: same search -> TechFlow membership no longer returned for invited member","Invite button absent after TechFlow login (BUG-A: empty permissions[] regression -- BL-B2B-007 mid-journey signal); per-row action menus missing (BUG-A same cause); block action sets global ApplicationUser.LockoutEnd instead of org-scoped lock (BL-AUTH-012 violation -- critical); GET .../locked returns {locked: true} after block action (BL-AUTH-012 regression); unblock does not restore active state; remove leaves ghost row in list; success toasts absent after any write action","[SAVE] If blocked: unblock invited AGENT-TEST- member via REST POST {{BACK_URL}}/api/customer/organization-memberships/{{membership_id}}/unlock
 [SAVE] Remove invited AGENT-TEST- member from TechFlow via REST if storefront removal did not complete: POST {{BACK_URL}}/api/customer/organization-memberships/search {userId} -> get membershipId -> DELETE {{BACK_URL}}/api/customer/organization-memberships/{id}
 [SAVE] Restore actor @td(MULTI_ORG_TF_BR.email) TechFlow role to org-maintainer if changed as side effect","VCST-5028; BA-2026-06-15; BL-B2B-005; BL-B2B-007; BL-AUTH-012; Technique: State Transition (invite>active>role-changed>blocked>unblocked>removed)","Draft"
+"B2C-MBR-024","Members List Roles Column Shows Merged Org-Level, Membership, and Global Roles","B2C Features > Members > Roles Display","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+TechFlow org admin logged in. @td(MULTI_ORG_TF_BR.email) is a TechFlow member holding an org-maintainer membership role. VCST-5239 (PR #2354, useOrganizationContacts.ts) merges rolesInOrganization + securityAccounts.roles into one comma-joined, deduped display.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email)","1. [NAV] Navigate to {{FRONT_URL}}/sign-in
+2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
+3. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
+4. [ACT] Click [data-test-id=""login-button""]
+5. [WAIT] Header shows TechFlow org name
+6. [NAV] Navigate to {{FRONT_URL}}/company/members
+7. [ASSERT] Locate @td(MULTI_ORG_TF_BR.email) in the members table
+8. [ASSERT] Verify the Role column shows the member's merged role(s) joined by comma (e.g. 'Organization maintainer'), including any role also present in securityAccounts.roles, with no duplicate names","[DOM] Role column text = contact.extended.roles.map(r => r.name).join(', ') for the located member row
+[STATE] No duplicate role names shown even when a role is present in both rolesInOrganization and securityAccounts.roles (dedup on the frontend merge, useOrganizationContacts.ts)
+[DOM] Role column never renders empty for a member with at least one assigned role","[API] getOrganizationContactsQuery response includes rolesInOrganization { id name } (no-arg form) and securityAccounts { roles { id name } } for the row","Role column shows only the membership role, ignoring org-level/global roles (incomplete merge); duplicate role names rendered; Role column blank for a member with an assigned role; console error from the no-arg query contract mismatch","none -- read-only","VCST-5239; PR #2354 vc-frontend; PR #137 vc-module-profile-experience-api","Draft"
+"B2C-MBR-025","Members List - Role Facet Filter and Reset","B2C Features > Members > Roles Display","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+TechFlow org admin logged in; TechFlow has members with at least two distinct roles (e.g. @td(MULTI_ORG_TF_BR.email) = org-maintainer, plus at least one org-employee member).","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}}","1. [NAV] Navigate to {{FRONT_URL}}/company/members (already signed in as TechFlow admin)
+2. [ASSERT] Verify a role filter control is present on the page (VCST-5239, PR #2354 -- roleId param)
+3. [ACT] Select 'Organization maintainer' in the role filter
+4. [WAIT] Members list refreshes
+5. [ASSERT] Verify only members whose merged role set includes 'Organization maintainer' are shown
+6. [ACT] Click the filter's reset/clear control
+7. [WAIT] Members list refreshes
+8. [ASSERT] Verify the full, unfiltered member list is restored","[DOM] Role filter control visible on /company/members
+[STATE] Filtered list contains only members with the selected role -- verified against the Role column values
+[DOM] Reset restores the full member list (count matches the pre-filter total)
+[STATE] Empty-state message (if the filtered role has zero matching members) accounts for roleIds.length rather than falling back to the generic empty-search-results copy","[API] getOrganizationContactsQuery called with $roleIds populated on filter selection and roleIds omitted/null on reset","Role filter control absent; filtering does not narrow the list; reset does not restore the full list; wrong empty-state copy shown when a role has zero matches","none -- read-only filter interaction","VCST-5239; PR #2354 vc-frontend; members.vue role facet filter","Draft"

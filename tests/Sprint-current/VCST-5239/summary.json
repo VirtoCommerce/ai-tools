@@ -1,0 +1,53 @@
+{
+  "ticket": "VCST-5239",
+  "verdict": "FAIL",
+  "verdict_note": "All P0/P1 core RBAC behavior passes (org-level role inheritance, user-override union, per-org JWT propagation BL-B2B-007, org isolation, GraphQL). Single failure: the role whitelist (JIRA Test 2) has no enforcing consumer — settings save but filter no dropdown at any layer. Severity P2 (no security impact; whitelist was never a server boundary).",
+  "date": "2026-07-07",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1041.0",
+    "theme": "2.53.0-pr-2354",
+    "relevant_modules": {
+      "VirtoCommerce.Customer": "3.1014.0-alpha.1002-vcst-5239",
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1010.0-pr-137-5f46"
+    }
+  },
+  "agents_dispatched": ["test-management-specialist", "qa-backend-expert", "qa-frontend-expert"],
+  "ac_analysis": {
+    "story_acs": 9,
+    "weak_acs": 1,
+    "gap_acs_added": 4,
+    "impl_coverage": { "satisfied": 11, "drift": 0, "contradicts": 1, "not_found": 1 },
+    "conditions_total": 13,
+    "conditions_with_evidence": 13,
+    "artifact": "tests/Sprint-current/VCST-5239/ac-analysis.md"
+  },
+  "total_cases": 13,
+  "passed": 11,
+  "failed": 1,
+  "blocked": 0,
+  "not_applicable": 1,
+  "bugs_filed": [
+    "reports/bugs/BUG-VCST-5239-whitelist-storefront-dropdown-unfiltered.md"
+  ],
+  "business_rules_verified": ["BL-B2B-005", "BL-B2B-007", "BL-B2B-008", "BL-AUTH-005", "BL-AUTH-006"],
+  "exploratory": {
+    "charter": "Risk charter for VCST-5239 (whitelist edges, relogin timing, contract-change adjacent screens, multi-org isolation)",
+    "heuristic": "CRISP+SFDPOT",
+    "findings": { "bugs": 0, "questions": 0, "observations": 3, "risks": 1 }
+  },
+  "appinsights": {
+    "checked": true,
+    "layers": ["frontend", "backend"],
+    "window_minutes": 75,
+    "signals": { "real_bug": 0, "needs_review": 3, "dismissed": 1 },
+    "correlated_failures": []
+  },
+  "notes_for_followup": {
+    "F1": "Whitelist not server-enforced by design (verified vs source). If a server boundary was ever intended, that is a separate PO/spec decision.",
+    "F2": "PUT /api/organizations accepts duplicate OrganizationRoleEntity rows (no uniqueness guard); JWT dedupes perms so zero runtime impact; API-only data-hygiene note.",
+    "appinsights_needs_review": "Storefront TypeError 'reading status' + SyntaxError on CompanyInfo page (not in PR#2354 diff) — tangential, low count, not tied to VCST-5239.",
+    "new_suite_gaps": "027b/008 need new cases for org-level role CRUD+inheritance, whitelist CRUD+enforcement, JWT-decode perm match, server-side whitelist enforcement, org-isolation for org-level roles, permission-union override."
+  },
+  "artifacts": "tests/Sprint-current/VCST-5239/"
+}
