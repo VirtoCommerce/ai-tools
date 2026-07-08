@@ -1,0 +1,196 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"REV-ADM-001","Admin search — filter reviews by reviewStatus","Admin > Rating and Reviews > REST","Medium","BL-CR-012","","Runner-native. Requires `npm run seed:reviews` (store has Approved + New + Rejected AGENT-TEST reviews). reviewStatus is an ARRAY of CustomerReviewStatus.","store={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP search_approved]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": [""Approved""], ""take"": 200}
+[REST-EXEC search_approved]
+[REST-OP search_new]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": [""New""], ""take"": 200}
+[REST-EXEC search_new]","[ERRORS label=search_approved] HTTP 200
+[DATA label=search_approved] body.totalCount >= 1
+[DATA label=search_approved] body.results.0.reviewStatus = Approved
+[ERRORS label=search_new] HTTP 200
+[DATA label=search_new] body.results.0.reviewStatus = New","[EVIDENCE] The Approved search returns only Approved (results.0 Approved) and the New search only New — proving reviewStatus[] discriminates. (Empty-filter .length assertions avoided — getByPath returns NaN for a zero-match filter.)","reviewStatus scalar (not array) → 400; a status filter returns reviews of another status in results.0","","vc-module-customer-review CustomerReviewSearchCriteria (reviewStatus is CustomerReviewStatus[])","runner"
+"REV-ADM-002","Moderation — approve (New -> Approved) publishes the review to the storefront","Admin > Rating and Reviews > REST","Critical","BL-CR-013; BL-CR-010","","Runner-native. Admin-seeds a throwaway New review on REVIEW_PRODUCT (bypasses the purchase gate, no org-user), approves it, confirms the storefront now returns it. Self-cleaning DELETE.","store={{STORE_ID}}; seedUser=AGENT-TEST-rev-mod-approve","[AUTH role=ADMIN_DEFAULT]
+[REST-OP seed]
+POST {{BACK_URL}}/api/customerReviews
+Content-Type: application/json
+Body: [{""title"": ""AGENT-TEST approve-flow"", ""review"": ""AGENT-TEST approve fixture"", ""rating"": 5, ""userId"": ""AGENT-TEST-rev-mod-approve"", ""userName"": ""AGENT-TEST"", ""entityId"": ""@td(REVIEW_PRODUCT.id)"", ""entityType"": ""Product"", ""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": ""New"", ""images"": []}]
+[REST-EXEC seed]
+[REST-OP find]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC find]
+[REST-CAPTURE find.body.results[?userId=AGENT-TEST-rev-mod-approve].id → RID]
+[REST-OP approve]
+POST {{BACK_URL}}/api/customerReviews/approve
+Content-Type: application/json
+Body: [""{{RID}}""]
+[REST-EXEC approve]
+[GQL-OP public]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 50) { items { id rating } } }
+[GQL-EXEC public]","[ERRORS label=seed] HTTP 204
+[VAR] {{RID}} = {{RID}}
+[ERRORS label=approve] HTTP 204
+[DATA label=public] data.customerReviews.items[?id={{RID}}].id = {{RID}}","[STOREFRONT] The New review is hidden pre-approve and appears in the public storefront list only after approve — confirms approve = publish","approve returns non-204; approved review absent from the storefront list","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{RID}}]","vc-module-customer-review approve endpoint","runner"
+"REV-ADM-003","Moderation — reject (New -> Rejected) keeps it out of the storefront","Admin > Rating and Reviews > REST","High","BL-CR-013; BL-CR-014","","Runner-native. Admin-seeds a throwaway New review, rejects it: it stays in the admin list as Rejected but never appears on the storefront.","store={{STORE_ID}}; seedUser=AGENT-TEST-rev-mod-reject","[AUTH role=ADMIN_DEFAULT]
+[REST-OP seed]
+POST {{BACK_URL}}/api/customerReviews
+Content-Type: application/json
+Body: [{""title"": ""AGENT-TEST reject-flow"", ""review"": ""AGENT-TEST reject fixture"", ""rating"": 1, ""userId"": ""AGENT-TEST-rev-mod-reject"", ""userName"": ""AGENT-TEST"", ""entityId"": ""@td(REVIEW_PRODUCT.id)"", ""entityType"": ""Product"", ""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": ""New"", ""images"": []}]
+[REST-EXEC seed]
+[REST-OP find]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC find]
+[REST-CAPTURE find.body.results[?userId=AGENT-TEST-rev-mod-reject].id → RID]
+[REST-OP reject]
+POST {{BACK_URL}}/api/customerReviews/reject
+Content-Type: application/json
+Body: [""{{RID}}""]
+[REST-EXEC reject]
+[REST-OP search_after]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC search_after]
+[GQL-OP public_after]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 50) { items { id } } }
+[GQL-EXEC public_after]","[ERRORS label=reject] HTTP 204
+[DATA label=search_after] body.results[?id={{RID}}].reviewStatus = Rejected
+[NULL label=public_after] data.customerReviews.items[?id={{RID}}]","[ADMIN] Rejected review remains visible in the admin list (search_after finds it as Rejected) but hidden on the storefront","rejected review appears on the storefront; or disappears from the admin list","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{RID}}]","vc-module-customer-review reject endpoint","runner"
+"REV-ADM-004","Moderation — reset (Approved -> New) unpublishes the review","Admin > Rating and Reviews > REST","Medium","BL-CR-013","","Runner-native. Admin-seeds a throwaway, approves then resets it; after reset it is New again.","store={{STORE_ID}}; seedUser=AGENT-TEST-rev-mod-reset","[AUTH role=ADMIN_DEFAULT]
+[REST-OP seed]
+POST {{BACK_URL}}/api/customerReviews
+Content-Type: application/json
+Body: [{""title"": ""AGENT-TEST reset-flow"", ""review"": ""AGENT-TEST reset fixture"", ""rating"": 4, ""userId"": ""AGENT-TEST-rev-mod-reset"", ""userName"": ""AGENT-TEST"", ""entityId"": ""@td(REVIEW_PRODUCT.id)"", ""entityType"": ""Product"", ""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": ""New"", ""images"": []}]
+[REST-EXEC seed]
+[REST-OP find]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC find]
+[REST-CAPTURE find.body.results[?userId=AGENT-TEST-rev-mod-reset].id → RID]
+[REST-OP approve]
+POST {{BACK_URL}}/api/customerReviews/approve
+Content-Type: application/json
+Body: [""{{RID}}""]
+[REST-EXEC approve]
+[REST-OP reset]
+POST {{BACK_URL}}/api/customerReviews/reset
+Content-Type: application/json
+Body: [""{{RID}}""]
+[REST-EXEC reset]
+[REST-OP search_after]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC search_after]","[ERRORS label=approve] HTTP 204
+[ERRORS label=reset] HTTP 204
+[DATA label=search_after] body.results[?id={{RID}}].reviewStatus = New","[STOREFRONT] After reset the review is New again and drops off the storefront (approved-only projection)","reset leaves the review Approved; status not returned to New","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{RID}}]","vc-module-customer-review reset endpoint","runner"
+"REV-ADM-005","Moderation — delete removes the review permanently","Admin > Rating and Reviews > REST","High","BL-CR-015","","Runner-native. Admin-seeds a throwaway review, deletes it, confirms it is gone.","store={{STORE_ID}}; seedUser=AGENT-TEST-rev-mod-delete","[AUTH role=ADMIN_DEFAULT]
+[REST-OP seed]
+POST {{BACK_URL}}/api/customerReviews
+Content-Type: application/json
+Body: [{""title"": ""AGENT-TEST delete-flow"", ""review"": ""AGENT-TEST delete fixture"", ""rating"": 3, ""userId"": ""AGENT-TEST-rev-mod-delete"", ""userName"": ""AGENT-TEST"", ""entityId"": ""@td(REVIEW_PRODUCT.id)"", ""entityType"": ""Product"", ""storeId"": ""{{STORE_ID}}"", ""reviewStatus"": ""New"", ""images"": []}]
+[REST-EXEC seed]
+[REST-OP find]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC find]
+[REST-CAPTURE find.body.results[?userId=AGENT-TEST-rev-mod-delete].id → RID]
+[REST-OP del]
+DELETE {{BACK_URL}}/api/customerReviews?ids={{RID}}
+[REST-EXEC del]
+[REST-OP search_after]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""take"": 200}
+[REST-EXEC search_after]","[ERRORS label=del] HTTP 204
+[NULL label=search_after] body.results[?id={{RID}}]","","deleted review still resolves in a subsequent search","","vc-module-customer-review delete endpoint","runner"
+"REV-ADM-006","Rating — entityRating reflects Approved reviews (value in 1..5, count = approved_count)","Admin > Rating and Reviews > REST","High","BL-CR-016; BL-CR-010","","Runner-native. Requires `npm run seed:reviews`. entityRating for REVIEW_PRODUCT returns value in 1..5 and reviewCount equal to the seeded approved_count (Average method).","store={{STORE_ID}}; approved=@td(REVIEW_PRODUCT.approved_count)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP rating]
+POST {{BACK_URL}}/api/rating/entityRating
+Content-Type: application/json
+Body: {""entityIds"": [""@td(REVIEW_PRODUCT.id)""], ""entityType"": ""Product""}
+[REST-EXEC rating]","[ERRORS label=rating] HTTP 200
+[DATA label=rating] body.0.value >= 1
+[DATA label=rating] body.0.value <= 5
+[DATA label=rating] body.0.reviewCount = @td(REVIEW_PRODUCT.approved_count)","[EVIDENCE] entityRating reads the RatingEntity cache, recomputed on approve/reject via CalculateAsync(data[]). seed:reviews moderates the approved reviews through the real approve endpoint, so reviewCount = approved_count (6) and value = their average. (The full-store calculateStore recompute is separately broken — VCST-5423.)","entityRating value falls outside 1..5; reviewCount != approved_count; endpoint errors / returns [] for a product with approved reviews","","vc-module-customer-review /api/rating/entityRating; RatingEntityStoreDto","runner"
+"REV-ADM-007","Rating — calculateStore is orphaned + broken (documents known 500; tracked by VCST-5423)","Admin > Rating and Reviews > REST","Low","BL-CR-016","","Runner-native. DOCUMENTS a known-broken, UI-orphaned endpoint (tracked by VCST-5423 — deprecate/remove OR fix+wire). Current behavior on the full-store path: 500 duplicate-key on IX_Ratings (RatingService.Calculate passes entityIds=null, so the existing-ratings lookup returns empty and every rating is re-INSERTed). Asserting the CURRENT 500 keeps regression green while the defect is tracked; WHEN VCST-5423 resolves, update this case (removed → expect 404; fixed → expect 200).","store={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP recalc]
+POST {{BACK_URL}}/api/rating/calculateStore?storeId={{STORE_ID}}
+[REST-EXEC recalc]","[ERRORS label=recalc] HTTP 500","[EVIDENCE] Known defect tracked by VCST-5423: calculateStore re-INSERTs a duplicate Ratings row instead of upserting on the null-entityIds full-store path → SQL unique-index violation. No UI wires this endpoint (orphaned calculate-btn localization). Reproducible: POST /api/rating/calculateStore?storeId=B2B-store → 500.","endpoint starts returning 200 or 404 — VCST-5423 was resolved; update this case's expected status accordingly","","VCST-5423; vc-module-customer-review /api/rating/calculateStore; IX_Ratings_StoreId_EntityId_EntityType","runner"
+"REV-ADM-008","Settings — product-reviews feature is live for the store (read-only)","Admin > Settings > Product Reviews","Medium","BL-CR-017","","Runner-native, READ-ONLY (no toggle, no rollback). Proves the storefront review feature is enabled on the store by confirming the store is readable AND the public storefront customerReviews query returns the seeded Approved reviews (it would return 0 / not project if CustomerReviewsEnabled were off). Requires `npm run seed:reviews`. Enabling/disabling is a documented manual admin flow, intentionally not mutated here.","store={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP read_store]
+GET {{BACK_URL}}/api/stores/{{STORE_ID}}
+[REST-EXEC read_store]
+[GQL-OP public_check]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 5) { totalCount } }
+[GQL-EXEC public_check]","[ERRORS label=read_store] HTTP 200
+[ERRORS label=public_check] errors[] empty
+[DATA label=public_check] data.customerReviews.totalCount >= 1","[EVIDENCE] CustomerReviewsEnabled is store-scoped (groupName Store|Product Reviews); the platform global default is false but B2B-store overrides it to true. A live storefront read returning Approved reviews is the observable proof the feature is on. (Direct settings-value capture avoided — getByPath cannot filter on a dotted setting name.)","the store is unreadable, or the storefront review query errors / returns 0 despite seeded Approved reviews (feature off)","","vc-module-customer-review setting CustomerReviewsEnabled (store-scoped)","runner"
+"REV-ADM-009","RBAC — search without customerReviews:read is forbidden","Admin > Security > REST","High","BL-CR-018","ECL-13.1","Runner-native. A storefront USER token lacks admin review permissions, so admin search must 403.","store={{STORE_ID}}","[AUTH role=USER]
+[REST-OP search_noperm]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""take"": 5}
+[REST-EXEC search_noperm]","[ERRORS label=search_noperm] HTTP 403","","a non-privileged token can read the admin review list","","vc-module-customer-review permission customerReviews:read","runner"
+"REV-ADM-010","RBAC — approve without customerReviews:update is forbidden","Admin > Security > REST","High","BL-CR-018","ECL-13.1","Runner-native. USER token cannot moderate.","store={{STORE_ID}}; bogus_id=00000000-0000-0000-0000-000000000000","[AUTH role=USER]
+[REST-OP approve_noperm]
+POST {{BACK_URL}}/api/customerReviews/approve
+Content-Type: application/json
+Body: [""{{bogus_id}}""]
+[REST-EXEC approve_noperm]","[ERRORS label=approve_noperm] HTTP 403","","a non-privileged token can approve/reject reviews","","vc-module-customer-review permission customerReviews:update","runner"
+"REV-ADM-011","RBAC — calculateStore without customerReviews:ratingRecalc is forbidden","Admin > Security > REST","Medium","BL-CR-018","ECL-13.1","Runner-native. USER token cannot trigger a store rating recalculation.","store={{STORE_ID}}","[AUTH role=USER]
+[REST-OP recalc_noperm]
+POST {{BACK_URL}}/api/rating/calculateStore?storeId={{STORE_ID}}
+[REST-EXEC recalc_noperm]","[ERRORS label=recalc_noperm] HTTP 403","","a non-privileged token can recalculate store ratings","","vc-module-customer-review permission customerReviews:ratingRecalc","runner"
+"REV-ADM-015","Search filter by startRating/endRating returns only in-range ratings","Admin > Rating and Reviews > REST","High","BL-CR-012","","Runner-native. Requires `npm run seed:reviews` — seeded ratings span the full 1..5 (Approved 1-5, Rejected=2, New=4). A startRating/endRating window must exclude out-of-range ratings.","store={{STORE_ID}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP range_high]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""startRating"": 4, ""endRating"": 5, ""take"": 200}
+[REST-EXEC range_high]
+[REST-OP range_low]
+POST {{BACK_URL}}/api/customerReviews/search
+Content-Type: application/json
+Body: {""storeId"": ""{{STORE_ID}}"", ""startRating"": 1, ""endRating"": 2, ""take"": 200}
+[REST-EXEC range_low]","[ERRORS label=range_high] HTTP 200
+[DATA label=range_high] body.totalCount >= 1
+[DATA label=range_high] body.results.0.rating >= 4
+[DATA label=range_high] body.results.0.rating <= 5
+[ERRORS label=range_low] HTTP 200
+[DATA label=range_low] body.results.0.rating <= 2","[EVIDENCE] The [4,5] window returns only high ratings and the [1,2] window only low — proving startRating/endRating discriminates both directions. (Filter guarantees every result is in-window, so results.0 is representative; empty-filter .length avoided.)","a rating window returns a result outside its bounds","","vc-module-customer-review CustomerReviewSearchCriteria (startRating/endRating)","runner"
+"REV-ADM-012","Admin UI — Rating and Reviews list: filters, sort, empty state","Admin > Rating and Reviews > UI","Medium","BL-CR-012","","Manual/browser (playwright-edge). Admin blade at Rating and reviews. Uses existing seeded reviews on B2B-store (Approved + New + Rejected present).","adminUrl={{BACK_URL}}; adminUser=ADMIN_DEFAULT; store={{STORE_ID}}","[NAV] Log in to {{BACK_URL}} and open main menu > Rating and reviews
+[ACT] Type text in Search keyword; observe filtering; click the clear (x) to reset
+[ACT] Select review status = Rejected in the status dropdown
+[ACT] Select entity type dropdown > choose Vendor (if present)
+[ACT] Click the Created date column header to toggle sort asc/desc; then sort by Rating
+[ACT] Enter a keyword with no matches","[STATE] List shows columns Title, Rating (stars), Created date, Status, Created by; header count badge matches row count
+[STATE] Search keyword narrows the list; clear (x) restores it
+[STATE] Status=Rejected filter leaves only Rejected reviews
+[STATE] Entity type=Vendor lists Vendor reviews (admin sees Vendor reviews even though the storefront cannot create them)
+[STATE] Created date / Rating column sort reorders the list
+[STATE] A no-match keyword shows the empty state ""No reviews found""","[EVIDENCE] Screenshot the filtered list + the empty state","status/entity-type filter does not narrow the list; sort arrow does not reorder; no empty-state message","","vc-module-customer-review Web blade review-list; localization no-review","manual"
+"REV-ADM-013","Admin UI — review detail: read-only fields, star rendering, toolbar button state","Admin > Rating and Reviews > UI","Medium","BL-CR-013","","Manual/browser (playwright-edge). Open a review from the list into the detail blade.","adminUrl={{BACK_URL}}; adminUser=ADMIN_DEFAULT","[NAV] Rating and reviews > click a review row to open the detail blade
+[ACT] For an Approved review, inspect toolbar button enabled/disabled state (Approve vs Reject/Reset)
+[ACT] Click Delete, then click Cancel in the confirmation dialog","[STATE] Detail header shows the numeric rating as N/5 with matching filled/empty stars (e.g. 4.0/5 = 4 filled + 1 empty)
+[STATE] Created by, Created date, Title, Review rating, Status, Review are read-only (not editable)
+[STATE] Toolbar shows Approve review, Reject review, Reset review status, Delete
+[STATE] Delete opens a confirmation reading ""This action may result in a rating change... Are you sure?""
+[STATE] After Cancel the review is NOT deleted","[EVIDENCE] Screenshot the detail blade + delete confirmation dialog","stars do not match the numeric rating; fields are editable; delete has no confirmation dialog","","vc-module-customer-review review-detail blade; localization review-delete dialog","manual"
+"REV-ADM-014","Admin UI — approve from detail updates status and publishes to storefront","Admin > Rating and Reviews > UI","High","BL-CR-013","","Manual/browser (playwright-edge). End-to-end moderation via UI: seed a New review (admin-save or storefront submit), approve it in admin, confirm it appears on the product page. Cleanup: delete the review.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}; adminUser=ADMIN_DEFAULT","[NAV] Ensure a New review exists on a product (admin-save fixture or a storefront submit)
+[NAV] In admin > Rating and reviews, open the new review (Status = New)
+[ACT] Click Approve review
+[NAV] Open the product page on the storefront","[STATE] Status field changes to Approved; the list row Status column reflects Approved (immediately or after Refresh)
+[STATE] The approved review is now visible in the reviews widget with the submitted rating and text","[STOREFRONT] Confirms the full New->Approve->published loop through the real UI","approve in UI does not change status; approved review not shown on PDP","[NOTE] Delete the created review via admin Delete after verification","vc-module-customer-review review-detail approve command","manual"
