@@ -109,8 +109,8 @@ ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,S
 ```
 
 Authoring guides:
-- Browser-mode CSV tags: [`knowledge/execution/test-runner-tags.md`](../../knowledge/execution/test-runner-tags.md)
-- Runner-native GraphQL cases: [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md)
+- Browser-mode CSV tags: [`knowledge/execution/test-runner-tags.md`](../../.claude/knowledge/execution/test-runner-tags.md)
+- Runner-native GraphQL cases: [`knowledge/api/graphql-test-cases-runner.md`](../../.claude/knowledge/api/graphql-test-cases-runner.md)
 - Test data resolver (`@td()` + `{{VAR}}`): [`.claude/rules/test-data.md`](../../.claude/rules/test-data.md)
 
 ---
@@ -120,6 +120,6 @@ Authoring guides:
 - [test-suites.json](../../config/test-suites.json) — Regression orchestration manifest (single source of truth)
 - [CLAUDE.md](../../CLAUDE.md) — Project testing overview
 - [.claude/rules/regression.md](../../.claude/rules/regression.md) — Testing modes, CI pipeline, selection groups
-- [module-suite-map.md](../../knowledge/execution/module-suite-map.md) — Module-to-suite mapping
-- [feature-domain-map.md](../../skills/qa-coverage-gap/feature-domain-map.md) — Feature coverage tracking
+- [module-suite-map.md](../../.claude/knowledge/execution/module-suite-map.md) — Module-to-suite mapping
+- [feature-domain-map.md](../../.claude/skills/qa-coverage-gap/feature-domain-map.md) — Feature coverage tracking
 - [Bug Reports](../../reports/bugs/) — Bug documentation
