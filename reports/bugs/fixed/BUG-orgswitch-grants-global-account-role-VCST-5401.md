@@ -1,7 +1,49 @@
 # BUG — Storefront sign-in / organization switch writes a GLOBAL platform role onto the customer account (privilege escalation) `[High / P1]`
 
-## Status: READY_TO_SUBMIT
-**JIRA:** VCST-5401 (Bug, High, filed 2026-06-30; relates to VCST-5028).
+## Status: FIXED
+**JIRA:** VCST-5401 (Bug, High, filed 2026-06-30; relates to VCST-5028). **Closed as Fixed/Done.**
+
+## Resolution
+- **Fixed in:** `VirtoCommerce.Customer 3.1014.0` line (VCST-5028 / vcst-5239) — `OrganizationIdClaimProvider` reworked to claim-only, no global-role-join write. PR #300 merged 2026-06-19.
+- **JIRA:** VCST-5401 (closed Fixed/Done)
+- **Verified:** 2026-07-08
+- **Verification method:** QA re-verification — CP0→CP5 sequence, 30+ fresh-token REST polls all `roles: []` + source confirmation (see block below). JIRA comment #102389.
+- **Follow-up owed:** one-off cleanup sweep for accounts escalated by the old build (rows persisted past sign-out); `ron.wisley` confirmed clean.
+
+---
+
+## QA Re-verification — 2026-07-08 (does NOT reproduce)
+
+**Re-run of the exact CP0→CP5 sequence on the current deployed build — escalation gone.**
+
+**Build then vs now:** ticket filed against Platform 3.1041.0 · **Customer PR #300** (`3.1010.0-pr-300`) · **ProfileExperienceApi PR #135**. Currently deployed: **`VirtoCommerce.Customer 3.1014.0-alpha.1002-vcst-5239`** · **`ProfileExperienceApiModule 3.1010.0-pr-137`** · storefront theme `2.53.0-pr-2354`. The buggy build is no longer live.
+
+Account `roles[]` from `GET /api/platform/security/users/ron.wisley@hogwarts.com` (admin OAuth, fresh token per read):
+
+| CP | Action | account `roles[]` | reads | modifiedDate / by |
+|----|--------|-------------------|-------|-------------------|
+| 0 | baseline (no session) | `[]` | 5/5 stable | 10:15:28 · `http:anonymous` |
+| 1 | signed in → lands on "Quoted" | `[]` | 5/5 stable | 11:14:21 · `http:anonymous` |
+| 3 | switched active org → Müller | `[]` | 5/5 stable | 11:14:21 (unchanged) |
+| 4 | rotated all orgs (Quoted→Müller→Hogwarts) | `[]` | **15/15 stable** | 11:14:21 (unchanged) |
+| 5 | signed out, waited ~10s | `[]` | 5/5 stable | 11:14:21 (unchanged) |
+
+30+ fresh-token polls, **all `roles: []`** — no flapping, no union of membership roles, no `org-maintainer`/`purchasing-agent` written. The privilege escalation is gone. `isAdministrator` stayed `false`.
+
+**Residual (not the defect):** sign-in still bumps the account `modifiedDate` to login time via `http:anonymous` while writing **no** roles — ordinary sign-in bookkeeping (e.g. last-login/security-stamp), not a role-join write. The role-persistence part of the original bug is absent.
+
+**Source confirms the fix.** Current `dev` `OrganizationIdClaimProvider.AddOrgScopedPermissionsAsync` (`src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationIdClaimProvider.cs`) now:
+- resolves membership for the **active org only** (`GetByUserAndOrgAsync(userId, organizationId)`) — no longer iterates the union of all memberships;
+- adds each role's permission claims to the **token principal only** (`identity.AddClaim(...).SetDestinations(AccessToken)`) — permissions stay in the JWT claim layer;
+- contains **no** `UserManager`/`RoleManager.AddToRoleAsync` / `AspNetUserRoles` write — it never persists roles onto the global `ApplicationUser`.
+
+This is exactly the fix the RCA below prescribed ("keep org-membership roles in the claim layer; never mutate `ApplicationUser.Roles`"). PR #300 (VCST-5028) merged 2026-06-19; the escalation was later removed on the VCST-5028/vcst-5239 line now deployed.
+
+**Not done here (needs a human decision):** JIRA not commented/transitioned; report not moved to `fixed/`; the ticket is still In Progress with the dev. Formal closure is `/qa-verify-fix VCST-5401`. **One-off cleanup still owed** for any live accounts that had escalated rows written by the old build (the original bug persisted past sign-out) — verify `ron.wisley` and peers are clean.
+
+---
+
+<details><summary>Original report as filed 2026-06-30 (bug DID reproduce on Customer PR #300)</summary>
 
 **Env:** vcst-qa @ Platform 3.1041.0 · Customer module (VCST-5028, PR #300) · ProfileExperienceApi (VCST-5028, PR #135) · theme 2.52.0-alpha.2394.
 **Feature:** VCST-5028 — per-organization roles & access control. **Related:** `BUG-org-scoped-maintainer-perms-not-honored-VCST-5028` (fixed), VCST-5314.
@@ -64,3 +106,5 @@ A customer-type B2B account silently acquires a **global** platform role through
 - **Component / module:** Customer — `OrganizationIdClaimProvider` / sign-in (active-org) reconciliation that touches `ApplicationUser.Roles` (PR #300, VCST-5028)
 - **RCA anchor:** the VCST-5028 sign-in/claim path writing the active-org membership role into the platform account's global `Roles` (search `OrganizationIdClaimProvider` and any `SaveChangesAsync`/role-merge on the user account in the sign-in flow); confirm with `modifiedBy: http:anonymous` write at login.
 - **Routing confidence:** MEDIUM — owning layer (Layer 4 REST/platform account) is confirmed by the REST baseline-vs-post diff; exact write site to be confirmed via `search_code`. If the write turns out to originate in xProfile (ProfileExperienceApi PR #135) the route shifts to `vc-module-profile-experience-api`.
+
+</details>

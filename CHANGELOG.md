@@ -10,7 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## [Unreleased]
 
-Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; this branch tip is unstable.
+Forward-looking work on top of v0.7.0. Pin to a tagged release for stability; this branch tip is unstable.
+
+---
+
+## [0.7.0] — 2026-07-08
+
+Headline themes since v0.6.0: the **`vc-qa` surface converts from a dormant plugin layout to a project-scoped `.claude/` layout** (auto-discovered on any clone, no manifest), the **marketplace listing swaps `vc-qa` for the self-contained `vc-fix` plugin** — now carrying `/qa-monitoring` + a monitor-only Teams card — and **`/project-init` stops writing generated state into the plugin cache**, writing it into the project instead.
 
 **`**BREAKING:**` `vc-qa` surface converted from a (dormant) plugin layout to a project-scoped `.claude/` layout.**
 The full `vc-qa` component tree — `commands/` (23), `agents/` (18), `skills/` (32), `knowledge/`, `hooks/` — was
@@ -46,6 +52,21 @@ of `ci/notify-teams.ts` (the regression-card mode is dropped — no regression p
 shipped) at `plugins/vc-fix/skills/qa-monitoring/notify-teams.ts`. Reads `TEAMS_WEBHOOK_URL`
 via `config.js`/`.env.local`; no-ops with a clear message when unset, so `/qa-monitoring`
 runs and reports the same with or without it.
+
+**Fixed `/project-init` writing generated state into the plugin cache instead of the project.**
+The `vc-fix` `/project-init` generators derived their output root from `import.meta.url`, so an
+**installed** plugin wrote `project-profile.json` / `.env.*` / `.mcp.json` / `.claude/settings.local.json`
+into the versioned marketplace cache (`~/.claude/plugins/cache/vc-tools/vc-fix/<version>/`) while the
+runtime readers (`config.js`, `loadProjectProfile()`) read them from `process.cwd()` — writers and
+readers pointed at different dirs, so config never took effect and cache writes were lost on the next
+upgrade. New helper `plugins/vc-fix/skills/project-init/lib/paths.mjs` splits the two roots explicitly:
+`outputRoot()` = `VC_FIX_HOME || process.cwd()` (all generated project state, symmetric with the readers)
+vs `pluginRoot()` = `CLAUDE_PLUGIN_ROOT ||` resolved-from-`import.meta.url` (read-only plugin assets —
+`templates/`, source `config/`; never a write target). All six generators (`gen-profile`, `scaffold-env`,
+`scaffold-secrets`, `write-env`, `discover-repos`, `gen-mcp`) default output to `outputRoot()` and read
+templates from `pluginRoot()`. `gen-mcp` also copies the three Playwright MCP configs from the plugin
+into the project's `config/` (copy-if-absent), since `${CLAUDE_PLUGIN_ROOT}` does not expand inside a
+project-level `.mcp.json`. This closes the "not yet fixed" onboarding-CWD question noted in `CLAUDE.md`.
 
 ---
 

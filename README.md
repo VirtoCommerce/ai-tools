@@ -10,8 +10,9 @@ This repo hosts two things:
    filing, autonomous fixing, verification, monitoring). **This is the flagship, marketplace-installable
    offering** — see Quick Start below.
 2. **The full `vc-qa` agent crew** (regression, BA analysis, 110 suites, 18 agents) — the source
-   `vc-fix` was extracted from. It still lives at the repo root but is **dormant**: not listed in
-   the marketplace, not currently installable as a plugin. Kept for direct-clone use and as the
+   `vc-fix` was extracted from. It now lives project-scoped under `.claude/` (auto-discovered on any
+   clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
+   not currently packaged as a plugin. Kept for direct-clone use and as the
    base for a future full-regression/BA offering — see [Full `vc-qa` Agent Crew](#full-vc-qa-agent-crew-dormant--direct-clone-only) below.
 
 ## Quick Start — Install `vc-fix`
@@ -167,24 +168,26 @@ Full list: `package.json`.
 
 ### Repository Structure
 
-`vc-qa`'s component dirs (`agents/`, `skills/`, `commands/`, `hooks/`, `knowledge/`) live at the
-**repo root** — plugin discovery is non-recursive. `vc-fix`'s own copies live under `plugins/vc-fix/`.
+`vc-qa`'s component dirs (`agents/`, `skills/`, `commands/`, `hooks/`, `knowledge/`) are now
+**project-scoped under `.claude/`** — Claude Code auto-discovers them in this repo with no plugin
+manifest (the old `.claude-plugin/plugin.json` was deleted). `vc-fix`'s own copies live under
+`plugins/vc-fix/`.
 
 ```
 vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
-├── .claude-plugin/       # marketplace.json (lists only vc-fix) + plugin.json (vc-qa's own, unlisted)
+├── .claude-plugin/       # marketplace.json ONLY (lists only vc-fix; the vc-qa plugin.json was deleted)
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
 │                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
-├── agents/               # vc-qa: 18 agents, flat *.md (QA 10, BA 4, Developers 4) — no subfolders
-├── skills/               # vc-qa: 32 skills, each skills/<name>/SKILL.md (30 categorized + project-init + run-vc-mcp-testing-module)
-├── commands/             # vc-qa: 23 slash commands, flat *.md
-├── hooks/                # vc-qa: hooks.json (2 hooks) + enforce-real-user.mjs
-├── knowledge/            # vc-qa: 28 shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
-├── .claude/
-│   ├── rules/            # vc-qa reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
-│   ├── architecture/     # TIER.md classification
-│   └── ROUTING.md        # "New here?" entry point
+├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
+│   ├── agents/           #   18 agents, flat *.md (QA 10, BA 4, Developers 4) — no subfolders
+│   ├── skills/           #   32 skills, each skills/<name>/SKILL.md (30 categorized + project-init + run-vc-mcp-testing-module)
+│   ├── commands/         #   23 slash commands, flat *.md
+│   ├── hooks/            #   hooks.json (2 hooks) + enforce-real-user.mjs
+│   ├── knowledge/        #   28 shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
+│   ├── rules/            #   reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
+│   ├── architecture/     #   TIER.md classification
+│   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
 ├── ci/                   # vc-qa: CI / full-cycle / auto-fix / monitoring pipelines (tracked)
 ├── vc/                   # vc-qa: VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
