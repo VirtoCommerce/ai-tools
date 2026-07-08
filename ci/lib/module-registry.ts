@@ -12,7 +12,7 @@
  *   POST {BACK_URL}/api/platform/modules/getmissingdependencies → expand deps.
  *
  * Auth: OAuth2 password grant (no client_id), admin creds from env — see
- * `knowledge/api/api-auth.md`. The installed-modules list is disk
+ * `.claude/knowledge/api/api-auth.md`. The installed-modules list is disk
  * cached with a TTL so repeated runs don't re-hit the API.
  *
  * Everything is best-effort: if BACK_URL/creds are absent or a call fails, the

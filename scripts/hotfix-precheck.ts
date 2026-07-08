@@ -13,7 +13,7 @@
  *
  * It performs NO writes. The cherry-pick + push + "Release hotfix" workflow trigger are
  * gated, confirm-before-each-write steps owned by the /qa-hotfix orchestrator
- * (scripts/hotfix-release.ts triggers the workflow). See skills/qa-hotfix.
+ * (scripts/hotfix-release.ts triggers the workflow). See .claude/skills/qa-hotfix.
  *
  * VirtoCommerce hotfix mechanics (verified 2026-06-23):
  *   - Hotfix branch convention: `support/<major.minor>` (e.g. order 3.1000.3 → support/3.1000).

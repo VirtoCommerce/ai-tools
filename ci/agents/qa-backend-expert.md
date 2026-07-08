@@ -56,12 +56,12 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
-| `knowledge/api/api-auth.md` | OAuth2 token endpoint, credentials, headers |
-| `knowledge/api/platform-patterns.md` | Module lifecycle, blade system, Admin SPA patterns |
-| `knowledge/execution/module-suite-map.md` | Module dependencies, impact analysis |
-| `knowledge/domain/products.md` | Product types, xAPI fields, catalog structure |
-| `knowledge/api/graphiql-interaction.md` | GraphiQL UI interaction guide (CodeMirror editor) |
+| `.claude/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `.claude/knowledge/api/api-auth.md` | OAuth2 token endpoint, credentials, headers |
+| `.claude/knowledge/api/platform-patterns.md` | Module lifecycle, blade system, Admin SPA patterns |
+| `.claude/knowledge/execution/module-suite-map.md` | Module dependencies, impact analysis |
+| `.claude/knowledge/domain/products.md` | Product types, xAPI fields, catalog structure |
+| `.claude/knowledge/api/graphiql-interaction.md` | GraphiQL UI interaction guide (CodeMirror editor) |
 | `test-data/` | Test users, addresses, payment cards, products |
 
 Read these on-demand, not upfront — saves context for test execution.

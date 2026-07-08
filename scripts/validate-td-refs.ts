@@ -3,7 +3,7 @@
  *
  * 1. Scans all regression suite CSVs for @td() tokens and attempts to resolve them.
  *    Reports unresolvable references, stats by domain and suite.
- * 2. Enforces DV-013 (`skills/qa-review-tests/review-criteria.md`):
+ * 2. Enforces DV-013 (`.claude/skills/qa-review-tests/review-criteria.md`):
  *    flags bare UUID/GUID literals in suite CSVs that are NOT wrapped in @td() or {{VAR}}.
  *    System-generated GUIDs regenerate on every teardown+reseed and differ per env, so a
  *    literal one rots into a false BLOCKED/FAIL. Reference data by its stable business key
@@ -31,7 +31,7 @@ const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 const HEX32_RE = /\b[0-9a-f]{32}\b/gi;
 // Sentinel/empty GUIDs (00000000-…-0000/0001/0002) are null-id placeholders, not entity refs.
 const SENTINEL_RE = /^0{8}-0{4}-0{4}-0{4}-0{11}[0-9a-fA-F]$/;
-// Stable environment constants (documented in knowledge/domain/catalog.md & store-settings.md) — allowed.
+// Stable environment constants (documented in .claude/knowledge/domain/catalog.md & store-settings.md) — allowed.
 // Keep tiny; everything else must be @td() or runtime-resolved.
 const ALLOWED_IDS = new Set<string>([
   "fc596540864a41bf8ab78734ee7353a3", // active B2B virtual-catalog root (stable across deploys)
@@ -196,7 +196,7 @@ if (idHits.length === 0) {
     "\n  Anti-pattern: a system GUID rots on every teardown+reseed and differs per env.\n" +
     "  Fix: reference by stable business key (code / name / slug / SKU) and capture the\n" +
     "  GUID at runtime ([GQL-CAPTURE] / live-discover) if truly needed. See DV-013 / DV-020\n" +
-    "  in skills/qa-review-tests/review-criteria.md." +
+    "  in .claude/skills/qa-review-tests/review-criteria.md." +
     (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
   );
 }
