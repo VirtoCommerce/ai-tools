@@ -1,0 +1,182 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"REV-GQL-001","createReview — Happy Path (purchased product, first review) returns id, no validationErrors, status New","GraphQL > Customer Reviews > Mutation","Critical","BL-CR-001; BL-CR-002","","Runner-native. USER has >=1 Completed order with a product they have NOT yet reviewed on this store. Self-cleaning: the created review is deleted in Cleanup so the (user,product) pair stays reviewable next run.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query {
+    orders(first: 20, filter: ""status:Completed"") {
+      items { number items { productId name } }
+    }
+  }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP can_fb]
+  query { canLeaveFeedback(storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"") }
+[GQL-EXEC can_fb]
+[GQL-OP create]
+  mutation {
+    createReview(command: {
+      storeId: ""{{STORE_ID}}""
+      entityId: ""{{PID}}""
+      entityType: ""Product""
+      review: ""AGENT-TEST solid product, works as described.""
+      rating: 5
+    }) { id userName validationErrors { errorCode errorMessage } }
+  }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReview.id → NEW_REVIEW_ID]","[ERRORS label=create] errors[] empty
+[DATA label=create] data.createReview.id is non-empty GUID
+[COUNT label=create] data.createReview.validationErrors.length = 0","[ADMIN] Admin > Rating and reviews: the new review appears with Status = New (pending moderation) — createReview never auto-approves","createReview returns null id with a validationError on a genuinely eligible purchase; new review appears already Approved (should be New)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{NEW_REVIEW_ID}}]","knowledge/api/graphql-test-cases-runner.md; vc-module-customer-review CreateReviewCommandHandler","runner"
+"REV-GQL-002","createReview — INVALID_ENTITY_TYPE for non-Product entity","GraphQL > Customer Reviews > Mutation","High","BL-CR-003","","Runner-native. Reviews via xAPI are Product-only (ReviewValidator.IsProductReview). Any entityId works — the entity-type guard fires regardless of purchase.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 5, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP create_vendor]
+  mutation {
+    createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Vendor"" review: ""AGENT-TEST vendor review"" rating: 4 })
+    { id validationErrors { errorCode errorMessage } }
+  }
+[GQL-EXEC create_vendor]","[ERRORS label=create_vendor] errors[] empty
+[NULL label=create_vendor] data.createReview.id
+[DATA label=create_vendor] data.createReview.validationErrors.0.errorCode = INVALID_ENTITY_TYPE","[STOREFRONT] The storefront review widget hardcodes ENTITY_TYPE=Product, so a Vendor review is only reachable via a crafted API call — this case guards the server-side rule","createReview persists a Vendor review; validationErrors empty for entityType=Vendor","","vc-module-customer-review ReviewValidator (INVALID_ENTITY_TYPE)","runner"
+"REV-GQL-003","createReview — PRODUCT_MUST_BE_PURCHASED when user has no completed order for the product","GraphQL > Customer Reviews > Mutation","High","BL-CR-002","ECL-6.2","Runner-native. Discovers a catalog product the USER has NOT purchased (first search product; the user's completed-order products are a tiny subset, so a random catalog product is almost never purchased — the assertion tolerates the rare overlap via OR).","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP any_product]
+  query { products(storeId: ""{{STORE_ID}}"" first: 5) { items { id name } } }
+[GQL-EXEC any_product]
+[GQL-CAPTURE any_product.data.products.items.0.id → UNBOUGHT_PID]
+[GQL-OP create_noorder]
+  mutation {
+    createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{UNBOUGHT_PID}}"" entityType: ""Product"" review: ""AGENT-TEST not purchased"" rating: 3 })
+    { id validationErrors { errorCode errorMessage } }
+  }
+[GQL-EXEC create_noorder]","[ERRORS label=create_noorder] errors[] empty
+[NULL label=create_noorder] data.createReview.id
+[DATA label=create_noorder] data.createReview.validationErrors.0.errorCode = PRODUCT_MUST_BE_PURCHASED OR data.createReview.validationErrors.0.errorCode = DUPLICATE_REVIEW","","createReview succeeds for a product the user never purchased","","vc-module-customer-review ReviewValidator.OrderExists (PRODUCT_MUST_BE_PURCHASED)","runner"
+"REV-GQL-004","createReview — DUPLICATE_REVIEW on second review of the same product","GraphQL > Customer Reviews > Mutation","High","BL-CR-004","","Runner-native. One review per user per product per store (ReviewValidator.ReviewExists). Creates one review, then attempts a second; both cleaned up.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP create_first]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST first"" rating: 5 }) { id validationErrors { errorCode } } }
+[GQL-EXEC create_first]
+[GQL-CAPTURE create_first.data.createReview.id → FIRST_ID]
+[GQL-OP create_dup]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST duplicate"" rating: 4 }) { id validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_dup]","[ERRORS label=create_dup] errors[] empty
+[NULL label=create_dup] data.createReview.id
+[DATA label=create_dup] data.createReview.validationErrors.0.errorCode = DUPLICATE_REVIEW","","second createReview for the same (user,product) persists a duplicate","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{FIRST_ID}}]","vc-module-customer-review ReviewValidator.ReviewExists (DUPLICATE_REVIEW)","runner"
+"REV-GQL-005","createReview — REVIEW_IS_EMPTY on blank review text","GraphQL > Customer Reviews > Mutation","Medium","BL-CR-005","ECL-1.3","Runner-native. Blank/whitespace review is rejected. Uses a purchased product so only the empty-text rule fires.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP create_empty]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""   "" rating: 4 }) { id validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_empty]","[ERRORS label=create_empty] errors[] empty
+[NULL label=create_empty] data.createReview.id
+[DATA label=create_empty] data.createReview.validationErrors[?errorCode=REVIEW_IS_EMPTY].errorCode = REVIEW_IS_EMPTY","","whitespace-only review is accepted and persisted","","vc-module-customer-review ReviewValidator (REVIEW_IS_EMPTY)","runner"
+"REV-GQL-006","createReview — INVALID_RATING below and above the 1..5 range","GraphQL > Customer Reviews > Mutation","High","BL-CR-006","ECL-4.1; ECL-4.2","Runner-native. Rating must be 1..5 (ReviewValidator: _minRatingValue=1, _maxRatingValue=5). Probes rating=0 and rating=6.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP rating_zero]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST r0"" rating: 0 }) { id validationErrors { errorCode } } }
+[GQL-EXEC rating_zero]
+[GQL-OP rating_six]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST r6"" rating: 6 }) { id validationErrors { errorCode } } }
+[GQL-EXEC rating_six]","[NULL label=rating_zero] data.createReview.id
+[DATA label=rating_zero] data.createReview.validationErrors[?errorCode=INVALID_RATING].errorCode = INVALID_RATING
+[NULL label=rating_six] data.createReview.id
+[DATA label=rating_six] data.createReview.validationErrors[?errorCode=INVALID_RATING].errorCode = INVALID_RATING","","rating 0 or 6 is accepted; out-of-range rating persisted","","vc-module-customer-review ReviewValidator (INVALID_RATING)","runner"
+"REV-GQL-007","createReview — IMAGES_LIMIT when imageUrls exceeds ReviewMaximumImages (5)","GraphQL > Customer Reviews > Mutation","Medium","BL-CR-007","","Runner-native. ReviewMaximumImages=5 on this env; 6 image URLs must be rejected. URLs need not resolve to real files — the count guard fires first.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP create_imgs]
+  mutation { createReview(command: {
+      storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST too many images"" rating: 4
+      imageUrls: [""/api/files/a"", ""/api/files/b"", ""/api/files/c"", ""/api/files/d"", ""/api/files/e"", ""/api/files/f""]
+    }) { id validationErrors { errorCode errorMessage } } }
+[GQL-EXEC create_imgs]","[ERRORS label=create_imgs] errors[] empty
+[NULL label=create_imgs] data.createReview.id
+[DATA label=create_imgs] data.createReview.validationErrors[?errorCode=IMAGES_LIMIT].errorCode = IMAGES_LIMIT","[EVIDENCE] If ReviewMaximumImages was changed from the default 5 on this env, adjust the array length to limit+1","6 imageUrls accepted; no IMAGES_LIMIT error","","vc-module-customer-review ReviewValidator (IMAGES_LIMIT); setting CustomerReviews.ReviewMaximumImages","runner"
+"REV-GQL-008","createReview — anonymous request does not create a published review","GraphQL > Customer Reviews > Mutation","High","BL-CR-008","ECL-6.1","Runner-native. No [AUTH] line = anonymous request. Regardless of the CustomerReviewsEnabledForAnonymous setting, an anonymous caller has no completed order, so the mutation cannot create a persisted review — it is rejected by a GraphQL auth error OR returns id null with validationErrors.","store={{STORE_ID}}","[GQL-OP any_product]
+  query { products(storeId: ""{{STORE_ID}}"" first: 5) { items { id } } }
+[GQL-EXEC any_product]
+[GQL-CAPTURE any_product.data.products.items.0.id → PID]
+[GQL-OP create_anon]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST anon"" rating: 5 }) { id validationErrors { errorCode } } }
+[GQL-EXEC create_anon]","[DATA label=create_anon] data.createReview.id is null OR errors[] non-empty","[EVIDENCE] Flip CustomerReviewsEnabledForAnonymous to true only in a dedicated toggle case (087) with restore — do NOT mutate the shared store setting here","anonymous createReview persists a review while anonymous reviews are disabled","","vc-module-customer-review setting CustomerReviewsEnabledForAnonymous","runner"
+"REV-GQL-009","canLeaveFeedback — TRUE for purchased, not-yet-reviewed product","GraphQL > Customer Reviews > Query","High","BL-CR-009","","Runner-native. canLeaveFeedback = isProduct AND hasCompletedOrder AND !alreadyReviewed. Uses a purchased product; if it happens to be already reviewed the OR clause keeps the case honest.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP can_fb]
+  query { canLeaveFeedback(storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"") }
+[GQL-EXEC can_fb]","[ERRORS label=can_fb] errors[] empty
+[DATA label=can_fb] data.canLeaveFeedback = true","[EVIDENCE] USER (John) has a completed order for the discovered product and has not reviewed it (his account authored no reviews), so eligibility is true","canLeaveFeedback returns false/null for a purchased, not-yet-reviewed product","","vc-module-customer-review CanLeaveFeedbackQueryHandler","runner"
+"REV-GQL-010","canLeaveFeedback — FALSE for a product the user did not purchase","GraphQL > Customer Reviews > Query","High","BL-CR-009","","Runner-native. A random catalog product is almost never in the user's completed orders.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP any_product]
+  query { products(storeId: ""{{STORE_ID}}"" first: 5) { items { id } } }
+[GQL-EXEC any_product]
+[GQL-CAPTURE any_product.data.products.items.0.id → UNBOUGHT_PID]
+[GQL-OP can_fb_no]
+  query { canLeaveFeedback(storeId: ""{{STORE_ID}}"" entityId: ""{{UNBOUGHT_PID}}"" entityType: ""Product"") }
+[GQL-EXEC can_fb_no]","[ERRORS label=can_fb_no] errors[] empty
+[DATA label=can_fb_no] data.canLeaveFeedback = false","","canLeaveFeedback returns true for an unpurchased product","","vc-module-customer-review CanLeaveFeedbackQueryHandler.OrderExists","runner"
+"REV-GQL-011","canLeaveFeedback — FALSE after the user has already reviewed the product","GraphQL > Customer Reviews > Query","Medium","BL-CR-004; BL-CR-009","","Runner-native. Create a review, confirm canLeaveFeedback flips to false, then clean up the review.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP find_orders]
+  query { orders(first: 20, filter: ""status:Completed"") { items { items { productId } } } }
+[GQL-EXEC find_orders]
+[GQL-CAPTURE find_orders.data.orders.items.0.items.0.productId → PID]
+[GQL-OP create_one]
+  mutation { createReview(command: { storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"" review: ""AGENT-TEST review"" rating: 5 }) { id validationErrors { errorCode } } }
+[GQL-EXEC create_one]
+[GQL-CAPTURE create_one.data.createReview.id → NEW_REVIEW_ID]
+[GQL-OP can_fb_after]
+  query { canLeaveFeedback(storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Product"") }
+[GQL-EXEC can_fb_after]","[ERRORS label=can_fb_after] errors[] empty
+[DATA label=can_fb_after] data.canLeaveFeedback = false","","canLeaveFeedback stays true after the user already reviewed the product","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customerReviews?ids={{NEW_REVIEW_ID}}]","vc-module-customer-review CanLeaveFeedbackQueryHandler.ReviewExists","runner"
+"REV-GQL-012","canLeaveFeedback — FALSE for a non-Product entity type","GraphQL > Customer Reviews > Query","Medium","BL-CR-003","","Runner-native. isProductReview guard: any entityType != Product returns false.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP any_product]
+  query { products(storeId: ""{{STORE_ID}}"" first: 5) { items { id } } }
+[GQL-EXEC any_product]
+[GQL-CAPTURE any_product.data.products.items.0.id → PID]
+[GQL-OP can_fb_vendor]
+  query { canLeaveFeedback(storeId: ""{{STORE_ID}}"" entityId: ""{{PID}}"" entityType: ""Vendor"") }
+[GQL-EXEC can_fb_vendor]","[ERRORS label=can_fb_vendor] errors[] empty
+[DATA label=can_fb_vendor] data.canLeaveFeedback = false","","canLeaveFeedback returns true for entityType=Vendor","","vc-module-customer-review CanLeaveFeedbackQueryHandler.IsProductReview","runner"
+"REV-GQL-013","customerReviews — returns only Approved reviews (New/Rejected hidden)","GraphQL > Customer Reviews > Query","High","BL-CR-010","","Runner-native. Requires `npm run seed:reviews` — REVIEW_PRODUCT carries approved_count Approved reviews PLUS 1 New + 1 Rejected. The storefront query must return exactly the Approved ones, proving New+Rejected are hidden.","store={{STORE_ID}}; product=@td(REVIEW_PRODUCT.id); approved=@td(REVIEW_PRODUCT.approved_count)","[GQL-OP read]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 20) {
+      totalCount items { id userName title review rating createdDate } } }
+[GQL-EXEC read]","[ERRORS label=read] errors[] empty
+[DATA label=read] data.customerReviews.totalCount = @td(REVIEW_PRODUCT.approved_count)
+[COUNT label=read] data.customerReviews.items.length = @td(REVIEW_PRODUCT.approved_count)","[ADMIN] The seeded product also holds 1 New + 1 Rejected review (total 8 in admin) — the storefront returns only the Approved subset, so totalCount equals approved_count, NOT 8","New or Rejected reviews leak into the public items[] (totalCount > approved_count)","","vc-module-customer-review storefront query (approved-only projection)","runner"
+"REV-GQL-014","customerReviews — pagination via first/after (PAGE_SIZE 5)","GraphQL > Customer Reviews > Query","Medium","BL-CR-010","ECL-9.1","Runner-native. Requires `npm run seed:reviews` — REVIEW_PRODUCT has 6 Approved reviews (approved_count), so page 1 (first:5) returns 5 and page 2 (after:5) returns the remaining 1; totalCount is stable at approved_count on both pages.","store={{STORE_ID}}; approved=@td(REVIEW_PRODUCT.approved_count)","[GQL-OP page1]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 5) { totalCount items { id } pageInfo { hasNextPage endCursor } } }
+[GQL-EXEC page1]
+[GQL-OP page2]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 5 after: ""5"") { totalCount items { id } } }
+[GQL-EXEC page2]","[ERRORS label=page1] errors[] empty
+[DATA label=page1] data.customerReviews.totalCount = @td(REVIEW_PRODUCT.approved_count)
+[COUNT label=page1] data.customerReviews.items.length = 5
+[DATA label=page1] data.customerReviews.pageInfo.hasNextPage = true
+[ERRORS label=page2] errors[] empty
+[DATA label=page2] data.customerReviews.totalCount = @td(REVIEW_PRODUCT.approved_count)
+[COUNT label=page2] data.customerReviews.items.length >= 1","","first:5 returns more or fewer than 5 items on page 1; totalCount differs between pages; page 2 empty despite 6 approved","","vc-module-customer-review storefront query pagination","runner"
+"REV-GQL-015","customerReviews — sort by created date descending","GraphQL > Customer Reviews > Query","Low","BL-CR-010","","Runner-native. Requires `npm run seed:reviews` — REVIEW_PRODUCT has >=2 Approved reviews. sort=createddate:desc must return newest-first (item[0].createdDate >= item[1].createdDate).","store={{STORE_ID}}","[GQL-OP sorted]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 10 sort: ""createddate:desc"") { totalCount items { id createdDate } } }
+[GQL-EXEC sorted]","[ERRORS label=sorted] errors[] empty
+[DATA label=sorted] data.customerReviews.totalCount >= 2
+[DATA label=sorted] data.customerReviews.items.0.createdDate >= data.customerReviews.items.1.createdDate","[EVIDENCE] createddate:desc = newest first; item[0] must be >= item[1]","sort returns oldest-first (item[0] older than item[1]) — wrong direction","","vc-module-customer-review storefront query sort","runner"
+"REV-GQL-016","customerReviews — storeId scope: unknown entity returns empty, no error","GraphQL > Customer Reviews > Query","Low","BL-CR-011","","Runner-native. A random GUID entityId that has no reviews returns an empty connection (totalCount 0), not an error.","store={{STORE_ID}}; bogus_entity=00000000-0000-0000-0000-000000000000","[GQL-OP empty_read]
+  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""{{bogus_entity}}"" entityType: ""Product"" first: 5) { totalCount items { id } } }
+[GQL-EXEC empty_read]","[ERRORS label=empty_read] errors[] empty
+[DATA label=empty_read] data.customerReviews.totalCount = 0
+[COUNT label=empty_read] data.customerReviews.items.length = 0","","unknown entityId errors out instead of returning an empty connection","","vc-module-customer-review storefront query","runner"
