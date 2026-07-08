@@ -35,6 +35,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { ADO_RESOURCE } from "./probe-lib.mjs";
+import { outputRoot } from "./lib/paths.mjs";
 
 const UPSTREAM_ORG = "VirtoCommerce";
 
@@ -416,7 +417,9 @@ async function main() {
   }
 
   if (args.out) {
-    const outAbs = resolve(args.out);
+    // Relative --out resolves against the deployment project (process.cwd()), so the
+    // repos-json lands beside the profile that gen-profile will read. --out absolute wins.
+    const outAbs = resolve(outputRoot(), args.out);
     mkdirSync(dirname(outAbs), { recursive: true }); // ensure the --out dir exists
     writeFileSync(outAbs, JSON.stringify(out, null, 2) + "\n");
     console.error(`[discover-repos] wrote ${outAbs}`);

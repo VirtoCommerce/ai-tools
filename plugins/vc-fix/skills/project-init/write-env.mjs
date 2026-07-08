@@ -42,10 +42,8 @@
  *   --print     after writing, list the keys written per file (names only, no values)
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join, dirname, resolve } from "path";
-import { fileURLToPath } from "url";
-
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { join } from "path";
+import { outputRoot } from "./lib/paths.mjs";
 
 // Secret keys that are GLOBAL (one value across all envs) → never get the _<ENV>
 // suffix. Everything else in `secrets` is treated as a per-env credential.
@@ -155,8 +153,11 @@ function main() {
     }
   }
 
-  const envPath = join(REPO_ROOT, `.env.${envName}`);
-  const localPath = join(REPO_ROOT, ".env.local");
+  // Write into the deployment project (process.cwd()), symmetric with config.js which
+  // dotenv-loads these from cwd. VC_FIX_HOME overrides for out-of-project callers.
+  const OUTPUT_ROOT = outputRoot();
+  const envPath = join(OUTPUT_ROOT, `.env.${envName}`);
+  const localPath = join(OUTPUT_ROOT, ".env.local");
 
   // --- Bucket #2: .env.<env> (non-secret) ---
   let envReport = null;

@@ -30,11 +30,9 @@
  * profile instead of defaults), --print (echo the result).
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join, dirname, resolve } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
-
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 
 const ENUMS = {
   "project-type": ["platform", "client"],
@@ -87,7 +85,9 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   for (const k of Object.keys(ENUMS)) validateEnum(args, k);
 
-  const outPath = args.out ? resolve(args.out) : join(REPO_ROOT, "project-profile.json");
+  // Default output → the deployment project (process.cwd()), symmetric with the reader
+  // loadProjectProfile() which reads project-profile.json from cwd. --out still overrides.
+  const outPath = resolveOutPath(args.out, "project-profile.json");
 
   // Base: existing profile (with --merge) or the shipped defaults.
   let base = PROFILE_DEFAULTS;
@@ -133,7 +133,7 @@ function main() {
   // still win — they are applied after this block). Absent keys are left untouched.
   if (args["repos-json"]) {
     try {
-      const repos = JSON.parse(readFileSync(resolve(args["repos-json"]), "utf-8"));
+      const repos = JSON.parse(readFileSync(resolve(outputRoot(), args["repos-json"]), "utf-8"));
       if (repos.client || repos.platform) {
         set("repos.client", repos.client || []);
         set("repos.platform", repos.platform || []);

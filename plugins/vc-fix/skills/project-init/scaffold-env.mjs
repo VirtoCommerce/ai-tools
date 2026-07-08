@@ -34,10 +34,7 @@
  * the fix pipeline auto-creates the fork under it (`gh repo fork`). No manual entry.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { dirname, resolve, join } from "path";
-import { fileURLToPath } from "url";
-
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { resolveOutPath } from "./lib/paths.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -100,7 +97,9 @@ function main() {
     contributionMode: args["contribution-mode"] || "fork",
     clientVcs: args["client-vcs"] || "github",
   };
-  const outPath = args.out ? resolve(args.out) : join(REPO_ROOT, `.env.${env}`);
+  // Default output → the deployment project (process.cwd()); config.js dotenv-loads
+  // `.env.${env}` relative to cwd, so this must land there. --out still overrides.
+  const outPath = resolveOutPath(args.out, `.env.${env}`);
   const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
 
   const emitted = [];

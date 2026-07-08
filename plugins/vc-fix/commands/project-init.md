@@ -31,9 +31,16 @@ permissions + the filled env + a live module/repo scan.
 
 ## Flow (the skill drives this)
 
-0. Preconditions — detect **and install** missing tooling: `gh` (required),
-   `az` (only if Azure is chosen); STOP if Node 18+/`git` are absent.
-1. Install deps (`npm install` + Playwright browsers).
+0. Preconditions — **(0a)** confirm the working directory: `pwd`, show it, and confirm via
+   `AskUserQuestion` that this is the deployment project (everything is generated here and
+   read from here). Wrong folder → STOP, tell the operator to relaunch Claude Code from the
+   right directory (cwd is fixed at launch, not movable with `cd`). Resolve the plugin dir
+   once (`echo "$CLAUDE_PLUGIN_ROOT"`) — prefix every generator call with it. **(0b)** detect
+   **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen); STOP if
+   Node 18+/`git` are absent.
+1. Install deps into the **plugin** (`( cd "$CLAUDE_PLUGIN_ROOT" && npm install )` — subshell, NOT
+   a bare `npm install`, which would land in the project; scripts resolve `dotenv` from the plugin's
+   own `node_modules`) + Playwright browsers (`npx playwright install chromium firefox`).
 2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat
    question (operator replies; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`; not via
    AskUserQuestion / widget); (b) **tracker + code host** as one `AskUserQuestion` block
@@ -69,7 +76,7 @@ permissions + the filled env + a live module/repo scan.
    derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`).
    Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
-8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`
+8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
    non-TTY, and the harness runs it through a pipe) prints a full readiness table +
    READY/NOT-READY verdict (profile · core env · URLs · real admin login · storefront-user
@@ -85,4 +92,4 @@ permissions + the filled env + a live module/repo scan.
    contributionMode) + manual actions (reload IDE for `.mcp.json`, pending OAuth) + first
    run `/qa-fix <TICKET>`.
 
-For `--check`, skip to step 8: `FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs`.
+For `--check`, skip to step 8: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.

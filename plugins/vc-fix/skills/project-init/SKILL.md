@@ -29,7 +29,7 @@ platform) and to the correct bug tracker.
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `ci/lib/repo-router.ts` (client-vs-platform routing), `ci/lib/trackers/*` (which tracker) |
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (Bucket #2: URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` (Bucket #3: secrets, per-env creds `_<ENV>`-suffixed). Each placeholder carries what/where comments. |
-| `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`) |
+| `.mcp.json` + `.claude/settings.local.json` + `config/mcp-playwright-*.config.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The three playwright configs are copied from the plugin into the project so the relative `--config config/…` refs in `.mcp.json` resolve from the MCP server's cwd (= the project). |
 
 ## Pipeline
 
@@ -42,20 +42,60 @@ platform) and to the correct bug tracker.
 → 8 verify (verify-access) → 9 done
 ```
 
-All scripts live in `skills/project-init/` and are **non-interactive** —
-you (the model) collect the interview answers, run the scan + derive scripts, then
-call the writers with the results as flags. Run everything from the repo root.
-**Every generator flag you need is documented in the steps below — never inspect
-the `.mjs` scripts (and never pass `--help`: unrecognised flags are treated as
-booleans and the script runs anyway, writing a default file).**
+All scripts live in the plugin's own `skills/project-init/` directory and are
+**non-interactive** — you (the model) collect the interview answers, run the scan +
+derive scripts, then call the writers with the results as flags.
+
+### Where things go — read this once (two roots, kept separate)
+
+- **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — the versioned marketplace cache
+  when the plugin is installed, or this checkout when developing): holds the read-only
+  scripts, templates, and source MCP configs. **Invoke every generator by its ABSOLUTE
+  path here** — `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/<name>.mjs" …`. Do **not**
+  use a bare relative `node skills/…` path: your Bash working directory is the deployment
+  project, not the plugin, so a relative path won't resolve once the plugin is installed
+  from the marketplace. (The bash examples below show the bare path for brevity — always
+  prefix it with `$CLAUDE_PLUGIN_ROOT/`.)
+- **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
+  in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
+  `.env.local`, `.mcp.json`, `.claude/settings.local.json`, and the per-project
+  `config/mcp-playwright-*.config.json`. The generators default their output there
+  automatically (symmetric with the readers: `config.js` dotenv-loads `.env.*` and
+  `loadProjectProfile()` reads the profile from cwd). You do **not** pass an output path in
+  the normal flow. `VC_FIX_HOME=<dir>` overrides the output root only for out-of-project /
+  CI callers — the interactive flow never sets it.
+
+**Every generator flag you need is documented in the steps below — never inspect the
+`.mjs` scripts (and never pass `--help`: unrecognised flags are treated as booleans and
+the script runs anyway, writing a default file).**
 
 ---
 
-## 0. Preconditions — detect AND install the required tooling
+## 0. Preconditions — confirm the working directory, then detect AND install tooling
+
+### 0a. Confirm the deployment project directory (everything lands here)
+
+Run `pwd` and show the operator the current directory. **This is your deployment project
+home** — everything `/project-init` generates (profile, env files, `.mcp.json`, MCP
+configs) is written here, and every later run (`/qa-fix`, `/qa-bug`) reads its config from
+here. Confirm with `AskUserQuestion`:
+
+- **Yes — initialize here (`<cwd>`)** (Recommended) → proceed.
+- **No — wrong folder** → **STOP.** Tell the operator to relaunch Claude Code from their
+  deployment project directory, then re-run `/project-init`. (The Bash working directory is
+  fixed to wherever Claude Code was launched and cannot be moved outside it mid-session, so
+  the project home must be chosen at launch — not with `cd`.)
+
+Then resolve the **plugin directory** once, so you can invoke the generators by absolute
+path: `echo "$CLAUDE_PLUGIN_ROOT"`. If it prints a path, use it. If empty, locate the
+installed plugin (e.g. under `~/.claude/plugins/`, or the absolute directory this SKILL.md
+loaded from). Use it as the `$CLAUDE_PLUGIN_ROOT/skills/project-init/…` prefix for every
+generator call in the steps below.
+
+### 0b. Detect AND install the required tooling
 
 Run a detection pass, then **install whatever is missing** — do not just report a
-gap and move on (that leaves `/qa-fix` unable to open PRs). Confirm the current
-directory is the plugin repo root (`manifest.json` present).
+gap and move on (that leaves `/qa-fix` unable to open PRs).
 
 - **Node 18+** and **git** — hard prerequisites. If absent, STOP and ask the
   operator to install them (cannot be auto-installed reliably).
@@ -80,11 +120,17 @@ proceeding.
 Install the plugin's own package dependencies + the Playwright browsers:
 
 ```bash
-npm install                                   # Node package dependencies (package.json)
-npx playwright install chromium firefox       # browser binaries for the MCP servers
+( cd "$CLAUDE_PLUGIN_ROOT" && npm install )   # into the PLUGIN's node_modules (subshell — your cwd is unchanged)
+npx playwright install chromium firefox       # browser binaries (global cache — cwd-independent)
 ```
 (Edge uses the system `msedge` channel; WebKit is not used on Windows.) This step
-must run before any generator/verify script — they import from `node_modules`.
+must run before any generator/verify script. **Install inside the plugin (`( cd
+"$CLAUDE_PLUGIN_ROOT" && npm install )`), NOT a bare `npm install`** — several scripts
+(`discover-repos`, `derive-context`, `verify-access`, `ensure-session`) import `dotenv`,
+and Node resolves that bare specifier from the *script's own* directory (the plugin), not
+your project cwd. A bare `npm install` would install into the project and leave those
+scripts unable to find `dotenv`. The subshell `( … )` keeps your project cwd unchanged
+(don't use a bare `cd`, which the harness resets when it leaves the project).
 
 ## 2. Interview — three answers + an auth preference, THEN scaffold
 
@@ -160,9 +206,9 @@ derived by the scan (step 4), not chosen; leaving them off means scaffold-env em
 ### 3a. `.env.<env>` template (`scaffold-env.mjs`)
 
 ```bash
-node skills/project-init/scaffold-env.mjs --env myqa --tracker jira --client-vcs github --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env myqa --tracker jira --client-vcs github --print
 # Azure Repos client on Jira → ADO_ORG/ADO_PROJECT are emitted for the code host too:
-node skills/project-init/scaffold-env.mjs --env acme --tracker jira --client-vcs azure-repos --print
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env acme --tracker jira --client-vcs azure-repos --print
 ```
 Flags: `--env <name>` (required), `--tracker jira|azure`, `--client-vcs
 github|azure-repos`. `ENV_RISK` and `ADMIN` are pre-filled with safe defaults;
@@ -173,11 +219,11 @@ keys, never clobbers.
 ### 3b. `.env.local` template (`scaffold-secrets.mjs`)
 
 ```bash
-node skills/project-init/scaffold-secrets.mjs \
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
   --env myqa --tracker jira --jira-auth token \
   --client-vcs github --github-auth pat --print
 # client on Azure with session auth for both axes → app passwords + optional MCP keys only:
-node skills/project-init/scaffold-secrets.mjs \
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
   --env acme --tracker azure --client-vcs azure-repos \
   --ado-auth az-login --github-auth gh-cli --print
 ```
@@ -221,7 +267,7 @@ installed modules client-vs-platform, scans the client's code host for the
 storefront/theme repo, and **derives `projectType` + `clientOrg`**:
 
 ```bash
-TEST_ENV=<env> node skills/project-init/discover-repos.mjs \
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-repos.mjs" \
   --client-vcs <github|azure-repos> --out .local-env/repos.json --print
 # (add --insecure only for a QA env with a self-signed cert)
 ```
@@ -259,7 +305,7 @@ Run the **derive block**: it reads the filled env + live sessions and derives th
 actually present, the contribution mode, the fork account, and the operator role:
 
 ```bash
-TEST_ENV=<env> node skills/project-init/derive-context.mjs \
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/derive-context.mjs" \
   --tracker <jira|azure> --client-vcs <github|azure-repos>
 ```
 It prints ONE JSON object on stdout (notes on stderr):
@@ -285,7 +331,7 @@ come from the repos-json — no flags for them). Read the tracker connection bac
 filled `.env.<env>`:
 
 ```bash
-node skills/project-init/gen-profile.mjs \
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --repos-json .local-env/repos.json \
   --tracker jira --tracker-base-url https://acme.atlassian.net --tracker-project ABC \
   --client-vcs github \
@@ -305,7 +351,7 @@ If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 ## 7. Generate `.mcp.json`
 
 ```bash
-node skills/project-init/gen-mcp.mjs --tracker jira --client-vcs github \
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --client-vcs github \
   --with context7            # add postman,figma,devtools as needed
 ```
 Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mcp
@@ -320,7 +366,7 @@ is not a TTY and the harness runs this through a pipe, so without `FORCE_COLOR=1
 operator only ever sees a plain table.
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<env> node skills/project-init/verify-access.mjs
+FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
@@ -344,8 +390,8 @@ auto-discovers the ADO org's tenant and drives `az login --tenant <guid>` /
 `gh auth login --web`, then re-probes):
 
 ```bash
-TEST_ENV=<env> node skills/project-init/ensure-session.mjs           # establish
-TEST_ENV=<env> node skills/project-init/ensure-session.mjs --check   # probe only
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/ensure-session.mjs"           # establish
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/ensure-session.mjs" --check   # probe only
 ```
 `az login` / `gh auth login` are **blocking** — **launch `ensure-session.mjs` in the
 background** and let the operator complete the single browser consent, then re-run
@@ -414,7 +460,8 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
-| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) + enable servers for the tracker/VCS |
+| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS + copy the three `config/mcp-playwright-*.config.json` from the plugin into the project (so the relative `--config` refs resolve) |
+| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, where read-only plugin assets live). Keeps every generator writing to the project and reading templates from the plugin |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict; prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
 

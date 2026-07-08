@@ -45,10 +45,7 @@
  * Flags: --out <path> (default .env.local), --print (list the keys emitted).
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { dirname, resolve, join } from "path";
-import { fileURLToPath } from "url";
-
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { resolveOutPath } from "./lib/paths.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -131,7 +128,9 @@ function main() {
   };
 
   const SUFFIX = `_${env.toUpperCase()}`;
-  const outPath = args.out ? resolve(args.out) : join(REPO_ROOT, ".env.local");
+  // Default output → the deployment project (process.cwd()); .env.local is loaded from
+  // cwd by config.js. --out still overrides.
+  const outPath = resolveOutPath(args.out, ".env.local");
   const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
 
   const emitted = [];

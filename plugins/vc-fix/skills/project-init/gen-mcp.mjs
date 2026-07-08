@@ -18,12 +18,48 @@
  *     [--with postman,figma,context7,devtools] [--os linux|windows|mac] \
  *     [--out .mcp.json] [--settings .claude/settings.local.json] [--print]
  */
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "fs";
 import { join, dirname, resolve } from "path";
-import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// Read the shipped template + source playwright configs from the plugin's own dir
+// (works from any cwd); write .mcp.json / settings / per-project configs into the
+// deployment project. The two roots are intentionally different — that is the fix.
+const PLUGIN_ROOT = pluginRoot();
+
+// Playwright MCP servers reference their config by a RELATIVE path (config/…). The MCP
+// server process is spawned by Claude Code with cwd = the project dir, so a relative
+// --config resolves there. We therefore COPY the shipped configs into the project so a
+// portable relative reference resolves — rather than pointing at the versioned plugin
+// cache (which would break on upgrade, and ${CLAUDE_PLUGIN_ROOT} does NOT expand inside
+// a project-level .mcp.json). Copy-if-absent so per-project edits (HAR path, viewport)
+// survive a re-run.
+const PLAYWRIGHT_CONFIGS = [
+  "mcp-playwright-chrome.config.json",
+  "mcp-playwright-firefox.config.json",
+  "mcp-playwright-edge.config.json",
+];
+
+function copyPlaywrightConfigs() {
+  const srcDir = join(PLUGIN_ROOT, "config");
+  const destDir = join(outputRoot(), "config");
+  const copied = [];
+  const kept = [];
+  const missing = [];
+  for (const name of PLAYWRIGHT_CONFIGS) {
+    const src = join(srcDir, name);
+    const dest = join(destDir, name);
+    if (!existsSync(src)) { missing.push(name); continue; }
+    if (existsSync(dest)) { kept.push(name); continue; }
+    mkdirSync(destDir, { recursive: true });
+    copyFileSync(src, dest);
+    copied.push(name);
+  }
+  if (copied.length) console.log(`[gen-mcp] copied playwright configs → ${destDir}: ${copied.join(", ")}`);
+  if (kept.length) console.log(`[gen-mcp] playwright configs already present (kept): ${kept.join(", ")}`);
+  if (missing.length) console.warn(`[gen-mcp] ⚠ source config missing in plugin: ${missing.join(", ")}`);
+}
 
 function parseArgs(argv) {
   const a = {};
@@ -97,7 +133,7 @@ function main() {
   const tracker = args.tracker || "jira";
   const extras = String(args.with || "").split(",").map((s) => s.trim()).filter(Boolean);
 
-  const templatePath = join(REPO_ROOT, "templates", ".mcp.json.example");
+  const templatePath = join(PLUGIN_ROOT, "templates", ".mcp.json.example");
   if (!existsSync(templatePath)) {
     console.error(`[gen-mcp] template not found: ${templatePath}`);
     process.exit(1);
@@ -130,14 +166,19 @@ function main() {
   // Only enable servers that actually exist in the template.
   const enabledList = [...enabled].filter((n) => mcpServers[n]);
 
-  const outPath = args.out ? resolve(args.out) : join(REPO_ROOT, ".mcp.json");
+  // Copy the per-project playwright configs the relative --config refs resolve against.
+  copyPlaywrightConfigs();
+
+  const outPath = resolveOutPath(args.out, ".mcp.json");
   writeFileSync(outPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
   console.log(`[gen-mcp] wrote ${outPath} (os=${os})`);
 
-  // Sync settings.local.json enabledMcpjsonServers (gitignored).
+  // Sync settings.local.json enabledMcpjsonServers (gitignored) into the project's
+  // .claude/ (created if the fresh project has none yet).
   const settingsPath = args.settings
-    ? resolve(args.settings)
-    : join(REPO_ROOT, ".claude", "settings.local.json");
+    ? resolve(outputRoot(), args.settings)
+    : join(outputRoot(), ".claude", "settings.local.json");
+  mkdirSync(dirname(settingsPath), { recursive: true });
   let settings = {};
   if (existsSync(settingsPath)) {
     try { settings = JSON.parse(readFileSync(settingsPath, "utf-8")); } catch { settings = {}; }
