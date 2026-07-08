@@ -10,7 +10,7 @@ Test data: admin actor = `[AUTH role=ADMIN_DEFAULT]` (ORGM-* convention) / `{{AD
 ## Block A — Backend / Admin-SPA / GraphQL (assign: qa-backend-expert)
 
 **Setup / discovery (do first, before AC items below)**
-- [ ] Introspect live xAPI schema for the new org-level-role and whitelist surface (`Organization` type roles field, `changeOrganizationRole`/equivalent mutation, `Customer` module Roles settings keys) via GraphiQL at `{{BACK_URL}}/ui/graphiql` — the committed `knowledge/api/graphql-schema.md` snapshot predates this PR and does NOT yet list these fields. Record actual field/mutation names before writing runner-native cases (GAP — no suite yet, this ticket's fields are absent from the schema snapshot).
+- [ ] Introspect live xAPI schema for the new org-level-role and whitelist surface (`Organization` type roles field, `changeOrganizationRole`/equivalent mutation, `Customer` module Roles settings keys) via GraphiQL at `{{BACK_URL}}/ui/graphiql` — the committed `.claude/knowledge/api/graphql-schema.md` snapshot predates this PR and does NOT yet list these fields. Record actual field/mutation names before writing runner-native cases (GAP — no suite yet, this ticket's fields are absent from the schema snapshot).
 
 **AC1 — Admin views Global + Membership roles; user carries only the set roles**
 - [ ] AC1 — Open a test contact's member blade in Admin SPA (`{{BACK_URL}}` Customer module), inspect Global roles panel + Organization memberships widget → confirm both are visible and distinct sections (BL-AUTH-005; extends `CUST-063` which only covers per-org **membership**-role assignment, not the Global-roles panel — GAP for the dual-panel view)

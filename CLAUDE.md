@@ -6,7 +6,7 @@
 
 This repo hosts the **`vc-tools` Claude Code marketplace** (`.claude-plugin/marketplace.json`), which currently distributes **one plugin: `vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice: `/project-init`, `/qa-bug`, `/qa-fix` (+ its `fullstack-backend`/`fullstack-frontend`/`backend-reviewer`/`frontend-reviewer` dev team), `/qa-verify-fix`, `/qa-monitoring` (+ `monitor-triage-agent`) — 8 agents, 14 skills, 6 commands. Teammates/customers add the marketplace with `/plugin marketplace add VirtoCommerce/vc-mcp-testing-module`, install via `/plugin install vc-fix@vc-tools`. `vc-fix` is **fully self-contained, not repo-coupled** — its own `plugins/vc-fix/knowledge/`, `.claude/rules/`, `config.js`, `scripts/lib/`, `package.json` etc. are duplicated from the repo root, not referenced in place. This is deliberate: Claude Code doesn't document a reliable way for a plugin's commands/skills to resolve bare relative paths against "wherever the plugin got installed" (no `${CLAUDE_PLUGIN_ROOT}`-equivalent; paths resolve against the *user's* CWD, which may be an unrelated project) — see `plugins/vc-fix/skills/qa-fix-routing/SKILL.md` for the finding. `qa-fix-routing/` additionally resolves its own data-file paths (`fix-repos.json`, `.module-registry.cache.json`) off `import.meta.url` rather than `process.cwd()`, so at least that piece works regardless of working directory. The broader question — how `/project-init`'s own onboarding flow (which assumes CWD = plugin root for `npm install` etc.) should adapt — is tracked separately, not yet fixed.
 
-**The rest of the repo root** (`agents/`, `skills/`, `commands/`, `ci/`, `regression/`, `docs/`, etc. — the full 18-agent/32-skill/23-command `vc-qa` surface, plus its own `.claude-plugin/plugin.json`) **still exists on disk but is no longer listed in `marketplace.json`** — it's not currently installable as a plugin. It remains the source `vc-fix`'s agents/skills/knowledge were extracted from, and can be re-listed later if the full-regression/BA offering is revived; until then, treat it as dormant, not deleted.
+**The full `vc-qa` surface** (18 agents / 32 skills / 23 commands, plus its `knowledge/` and `hooks/`) is **no longer a plugin — it now lives under `.claude/`** (`.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.claude/knowledge/`, `.claude/hooks/`) as **project-scoped components** that Claude Code auto-discovers in *this* repo. This is the "normal project" layout: `/qa-*` and `/ba-*` commands load locally on any clone with no plugin manifest and no marketplace listing (the `.claude-plugin/plugin.json` manifest was deleted deliberately). The remaining code surfaces that consume these — `ci/` (headless pipeline), `scripts/`, `config/` — reference them at their `.claude/…` paths. It could still be re-packaged as a plugin later (a new `plugin.json` moving components back to the repo root + a `marketplace.json` entry) if the full-regression/BA offering is distributed; for now it is a plain in-repo toolset, not a distributable.
 
 ## Prerequisites
 
@@ -53,14 +53,15 @@ Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` →
 ## Repository Structure
 
 ```
-├── .claude-plugin/       # marketplace.json lists ONE plugin: vc-fix (source "./plugins/vc-fix"). plugin.json here is vc-qa's own manifest — orphaned/unlisted, kept for reference
-├── plugins/vc-fix/       # THE distributed plugin — bug lifecycle only (project-init/qa-bug/qa-fix/qa-verify-fix). Fully self-contained: own agents/skills/commands + its own copies of knowledge/.claude/rules/scripts/config.js/package.json (not shared with the root ones below — no reliable plugin-root path resolution to lean on). skills/qa-fix-routing/ additionally resolves its data files off import.meta.url, not CWD
-├── agents/       # 18 agents — the dormant vc-qa surface (QA + BA + Developers teams), NOT currently plugin-listed. FLAT *.md, non-recursive discovery
-├── skills/       # 32 skills — dormant vc-qa surface. each skills/<name>/SKILL.md (ONE level; no category subfolders — discovery is one level only)
-├── commands/     # 23 slash commands — dormant vc-qa surface, flat *.md (incl. /project-init onboarding)
-├── hooks/        # hooks.json (2 hooks) + enforce-real-user.mjs
-├── knowledge/    # 28 shared reference files + agents/ (per-team shared-instructions + README) — plain dir, NOT scanned as components
-├── .claude/rules/        # Reference docs (agents, regression, skills-commands, mcp-browsers, quality-gates, test-data, reports)
+├── .claude-plugin/       # marketplace.json ONLY — lists ONE plugin: vc-fix (source "./plugins/vc-fix"). The old vc-qa plugin.json manifest was deleted; the root surface is no longer a plugin
+├── plugins/vc-fix/       # THE distributed plugin — bug lifecycle only (project-init/qa-bug/qa-fix/qa-verify-fix). Fully self-contained: own agents/skills/commands + its own copies of knowledge/.claude/rules/scripts/config.js/package.json (not shared with the .claude/ ones below — no reliable plugin-root path resolution to lean on). skills/qa-fix-routing/ additionally resolves its data files off import.meta.url, not CWD
+├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered by Claude Code in THIS repo — no plugin). The full vc-qa surface was moved here from the repo root so /qa-* commands load locally without a plugin manifest:
+│   ├── commands/         #   23 slash commands, flat *.md (incl. /project-init onboarding)
+│   ├── agents/           #   18 agents (QA + BA + Developers teams). FLAT *.md, non-recursive discovery
+│   ├── skills/           #   32 skills, each skills/<name>/SKILL.md (ONE level; no category subfolders)
+│   ├── knowledge/        #   28 shared reference files + agents/ (per-team shared-instructions + README) — plain dir, NOT scanned as components
+│   ├── hooks/            #   hooks.json + enforce-real-user.mjs (settings.json points $CLAUDE_PROJECT_DIR/.claude/hooks/…)
+│   └── rules/            #   Reference docs (agents, regression, skills-commands, mcp-browsers, quality-gates, test-data, reports)
 ├── config/               # Playwright MCP configs + test-suites.json manifest
 ├── ci/                   # CI regression — Docker + Claude Agent SDK (gitignored)
 ├── docs/                 # Plugin distribution/onboarding docs (prompt templates: vc/shared/docs/prompts/)

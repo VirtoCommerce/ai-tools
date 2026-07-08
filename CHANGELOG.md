@@ -12,6 +12,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 Forward-looking work on top of v0.6.0. Pin to a tagged release for stability; this branch tip is unstable.
 
+**`**BREAKING:**` `vc-qa` surface converted from a (dormant) plugin layout to a project-scoped `.claude/` layout.**
+The full `vc-qa` component tree — `commands/` (23), `agents/` (18), `skills/` (32), `knowledge/`, `hooks/` — was
+moved with `git mv` (history preserved) from the repo root into `.claude/commands|agents|skills|knowledge|hooks/`,
+so Claude Code auto-discovers it as **project-scoped components in this repo** with no plugin manifest and no
+marketplace listing. The `.claude-plugin/plugin.json` (`vc-qa`) manifest was deleted. `/qa-*` and `/ba-*` commands
+now load locally on any clone. Path references updated across consumers: the `settings.json` hook path, `package.json`
+`local:*` scripts, `scripts/audit-agents-knowledge.ts` + `scripts/validate-critical-ui-scope.ts` (fs reads), `ci/`
+agent prompts + monitor oracles, and ~120 relative markdown links inside the moved files (recomputed depth-aware).
+`plugins/vc-fix/` and its marketplace listing are unaffected — `vc-fix` remains the distributable plugin.
+Migration for an existing checkout: `git pull`; project components load from `.claude/` automatically (reload the
+session). Re-packaging as a plugin later means moving the component dirs back to the repo root + restoring a manifest.
+
 **`**BREAKING:**` `vc-qa` removed from the marketplace listing; added `vc-fix`.** `.claude-plugin/marketplace.json`
 now lists only `vc-fix` (`plugins/vc-fix/` — the bug-lifecycle subset: `/project-init`, `/qa-bug`, `/qa-fix`
 + dev team, `/qa-verify-fix`, `/qa-monitoring`; 8 agents, 14 skills, 6 commands). `/plugin install vc-qa@vc-tools` no longer

@@ -101,8 +101,8 @@
     "bundle:check": "npx tsx scripts/bundle-version-check.ts",
     "hotfix:precheck": "npx tsx scripts/hotfix-precheck.ts",
     "hotfix:release": "npx tsx scripts/hotfix-release.ts",
-    "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
-    "local:health": "node skills/qa-local-env/healthcheck.mjs"
+    "local:manifest": "node .claude/skills/qa-local-env/gen-manifest.mjs",
+    "local:health": "node .claude/skills/qa-local-env/healthcheck.mjs"
   },
   "repository": {
     "type": "git",

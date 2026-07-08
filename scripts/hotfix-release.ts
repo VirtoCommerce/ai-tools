@@ -6,7 +6,7 @@
  * and VERIFY the published patch release actually contains the fix commit (step 6).
  *
  * This is the ONE write the /qa-hotfix orchestrator runs against a product repo, and only after
- * explicit human confirmation (see skills/qa-hotfix). It dispatches the
+ * explicit human confirmation (see .claude/skills/qa-hotfix). It dispatches the
  * workflow_dispatch event — equivalent to clicking "Run workflow" in the GitHub UI — it does NOT
  * merge or tag anything itself; the workflow builds, tests, and publishes.
  *

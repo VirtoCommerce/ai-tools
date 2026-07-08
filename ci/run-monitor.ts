@@ -206,10 +206,10 @@ interface SignalOutcome {
 }
 
 const ORACLES = [
-  "knowledge/oracles/vc-bug-catalog.md",
-  "knowledge/execution/debugging-signals.md",
-  "knowledge/oracles/business-logic.md",
-  "knowledge/api/platform-patterns.md",
+  ".claude/knowledge/oracles/vc-bug-catalog.md",
+  ".claude/knowledge/execution/debugging-signals.md",
+  ".claude/knowledge/oracles/business-logic.md",
+  ".claude/knowledge/api/platform-patterns.md",
 ];
 
 async function processSignal(sig: Signal, budget: number): Promise<SignalOutcome> {
