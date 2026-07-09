@@ -68,8 +68,12 @@ Invoke the development skills:
 **Workflow (mirrors `ci/agents/fix-backend-agent.md`):**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
    layer, RCA). Confirm root cause, not symptom.
-2. **Checkout** — the repo is resolved + cloned via `skills/qa-fix-routing/repo-router.ts` `checkoutForFix` into
-   `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
+2. **Checkout** — the ONE routed repo, cloned into `<paths.workspace>/<repo-basename>/` on branch
+   `<workBranchPrefix><ticket>` (e.g. `claude/qa-autofix/967`). **Base = `contribution.prTarget` /
+   `integrationBranch`** from the profile (often `dev` — do not hardcode). Clone URL + auth =
+   `contribution.cloneUrl` + `contribution.authEnv`. Use **absolute paths** + `git -C "<checkout>"`;
+   never `cd` into the workspace as a persisted cwd. (In a native agentic checkout you MAY instead call
+   `repo-router.ts` `checkoutForFix`.)
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see `/dotnet-unit-test`).
 4. **Reproduce (red)** — add a NEW test asserting expected behavior; confirm it fails. Trivial-skip
    only for one-line guards/typos (note in PR body). **Admin SPA layout/CSS bug:** instead, scaffold the
@@ -79,10 +83,13 @@ Invoke the development skills:
    untouched & still green**. **Admin SPA layout/CSS:** mirror the canonical platform classes
    (`admin-spa-ui-conventions.md`), then have `qa-backend-expert` re-render → green screenshot (iterate ≤2×,
    squash) **before** the PR — both screenshots go in the PR body.
-6. **Gate** — `dotnet build -c Debug` + `dotnet test --nologo` (+ JS test cmd if Admin UI). All clean.
-   The repo's PR CI also runs a **SonarCloud quality gate** (G5) — keep the changed lines clean (no new
-   bug/vuln/unreviewed hotspot) and cover the new code so **new-code** thresholds hold; self-review the
-   diff for it now, re-confirm at G5.
+6. **Gate — scope the cost to the diff:** `dotnet build -c Debug` + `dotnet test --nologo` **scoped to the
+   affected test project** (`dotnet test path/to/Affected.Tests.csproj`, not the whole solution — a repo's
+   `tests/` may hold many projects incl. benchmarks) (+ JS test cmd if Admin UI). All clean. **Do not
+   investigate pre-existing failures your diff didn't cause** — confirm they fail on the pristine tree,
+   note "pre-existing/unrelated" once, move on. The repo's PR CI also runs a **SonarCloud quality gate**
+   (G5) — keep the changed lines clean (no new bug/vuln/unreviewed hotspot) and cover the new code so
+   **new-code** thresholds hold; self-review the diff for it now, re-confirm at G5.
 7. **Hand to `backend-reviewer`** (Gate 4) BEFORE opening the PR. Revise ≤2 iterations on REQUEST_CHANGES.
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact

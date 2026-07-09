@@ -32,19 +32,48 @@
  * @property {{host:"github", org:string, fileIssues:boolean,
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
  * @property {{client:Array<ClientRepo>, platform:Array<object>}} repos
+ * @property {{mode:"plugin"|"agent-project", helpersRunnable:boolean}} runtime
+ * @property {{projectRoot:string, pluginRoot:string, workspace:string, reports:string, secretsEnv:string, perEnv:string}} paths
+ * @property {{source:""|"vc-deploy-dev"|"modules-endpoint"|"ticket"}} buildVerify
  *
  * @typedef {Object} ClientRepo
  * @property {string} name  owner/name of the client-owned repo
  * @property {"frontend"|"module"|"platform"} [kind]
  * @property {"github"|"azure-repos"} [host]
- * @property {string} [defaultBranch]  the repo's default branch (checkoutForFix uses it)
+ * @property {string} [repoId]  Azure Repos repository GUID (baked so ADO REST calls skip a lookup)
+ * @property {string} [defaultBranch]  the repo's default branch
+ * @property {string} [integrationBranch]  the branch feature branches base off + PRs TARGET (e.g. "dev"); falls back to defaultBranch when absent
+ * @property {string} [workBranchPrefix]  work-branch prefix (default "claude/qa-autofix/")
  * @property {string} [upstream]  the platform repo this was forked/derived from (provenance)
  * @property {string} [upstreamRef]  the platform version/tag the fork was cut from (provenance anchor)
- * @property {string} [installCmd]  toolchain override (else the kind default)
+ * @property {ContributionPlan} [contribution]  BAKED clone/PR plan so the interactive command doesn't re-derive it from repo-router.ts
+ * @property {{install?:string, build?:string, typecheck?:string, lint?:string, test?:string}} [toolchain]  resolved toolchain (kind default + overrides)
+ * @property {LocalVerify} [localVerify]  Gate-6 live local-verify facts (frontend forks)
+ * @property {string} [installCmd]  legacy toolchain override (else the kind default)
  * @property {string} [buildCmd]
  * @property {string} [typecheckCmd]
  * @property {string} [lintCmd]
  * @property {string} [testCmd]
+ *
+ * @typedef {Object} ContributionPlan
+ * @property {"client"|"platform"} ownership
+ * @property {"direct"|"fork"} mode
+ * @property {"github"|"azure-repos"} host
+ * @property {"gh"|"ado-rest"|"gh-fork"} prApi  how the PR is opened
+ * @property {string} [cloneUrl]  clone URL (PAT injected at runtime for azure-repos)
+ * @property {string} [prTarget]  target branch for the PR (usually = integrationBranch)
+ * @property {string} [authEnv]  env var holding the write credential
+ * @property {string} [forkOwner]  when mode="fork": PR head owner
+ *
+ * @typedef {Object} LocalVerify
+ * @property {string} devCmd  e.g. "yarn dev"
+ * @property {string} url  e.g. "https://localhost:3000"
+ * @property {boolean} [selfSignedCert]
+ * @property {string} backendUrlForDev  APP_BACKEND_URL for local dev — the STOREFRONT host (resolves the store AND proxies the API), NOT the admin host
+ * @property {string} [storeId]
+ * @property {string} [storeDomain]
+ * @property {string} [userEnv]  env var with the storefront login (default USER_EMAIL)
+ * @property {string} [passEnv]  env var with the storefront password (default USER_PASSWORD)
  */
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
@@ -53,17 +82,61 @@ import { join } from "path";
 export const PROFILE_DEFAULTS = {
   projectType: "platform",
   operator: "virto-engineer",
+
+  // runtime — how a skill orients itself. DEFAULT (no profile) = the original
+  // VirtoCommerce-internal agentic checkout where the .ts/.mjs helpers ACTUALLY RUN
+  // headless. /project-init generating a PLUGIN profile overrides this to
+  // { mode:"plugin", helpersRunnable:false } so the interactive command reads the
+  // baked profile facts instead of trying to execute (or mentally emulate) the helpers.
+  runtime: { mode: "agent-project", helpersRunnable: true },
+
+  // paths — absolute roots so skills never break on a drifted Bash cwd, and know where
+  // the read-only plugin assets live vs where generated state / secrets land. Empty ⇒
+  // consumers fall back to process.cwd() (projectRoot) and $CLAUDE_PLUGIN_ROOT (pluginRoot).
+  // The relative names are resolved against projectRoot.
+  paths: {
+    projectRoot: "",
+    pluginRoot: "",
+    workspace: ".fix-workspace",
+    reports: "reports",
+    secretsEnv: ".env.local",
+    perEnv: "",
+  },
+
   tracker: {
     kind: "jira",
     baseUrl: "",
     projectKey: "",
-    azure: { organization: "", project: "", team: "", stateMap: {} },
+    // ticketKeyFormat: how a ticket id looks / cross-links from a commit/PR.
+    //   "prefixed" = Jira `ABC-123`; "numeric" = Azure Boards bare `12345` (+ crossLinkToken "AB#").
+    ticketKeyFormat: "prefixed",
+    crossLinkToken: "",
+    azure: {
+      organization: "",
+      project: "",
+      team: "",
+      apiBase: "", // https://dev.azure.com/<org>/<project> — baked so skills don't reassemble it
+      projectId: "", // GUID — needed for policy-evaluation artifactIds etc.
+      // Legacy free-form status map (kept for back-compat with any consumer that reads it).
+      stateMap: {},
+      // Per-work-item-type allowed states, SCANNED live by /project-init (Bug/Task/User Story
+      // can each have a different set): { "Bug": { states:[...] }, ... }.
+      workItemTypes: {},
+      // Lifecycle role -> System.State, so /qa-fix transitions by ROLE, never a hardcoded name.
+      roleStates: {},
+      // "auto" = transition silently by role (log only); "confirm-once" = one upfront ok;
+      // "ask" = ask before each transition (the original conservative behaviour).
+      transitionPolicy: "ask",
+    },
   },
   vcs: {
     clientHost: "github",
     clientOrg: "",
-    azure: { organization: "", project: "" },
+    azure: { organization: "", project: "", apiBase: "" },
     auth: "gh-cli",
+    // authEnv: which env var carries the WRITE credential for the client host
+    //   (github PAT ⇒ "GITHUB_FIX_BUGS_TOKEN"; azure-repos ⇒ "ADO_PAT"; empty ⇒ session/gh-cli).
+    authEnv: "",
   },
   upstream: {
     host: "github",
@@ -73,6 +146,13 @@ export const PROFILE_DEFAULTS = {
     clientGithubAccount: "",
   },
   repos: { client: [], platform: [] },
+
+  // buildVerify.source — where /qa-fix confirms deployed versions in Phase 0.
+  //   "" (default) ⇒ auto by projectType/kind; "vc-deploy-dev" (native platform),
+  //   "modules-endpoint" (client backend GET /api/platform/modules), "ticket" (a
+  //   frontend-only client bug — take the storefront version from the ticket; don't
+  //   hit the admin modules endpoint, which needs a token).
+  buildVerify: { source: "" },
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

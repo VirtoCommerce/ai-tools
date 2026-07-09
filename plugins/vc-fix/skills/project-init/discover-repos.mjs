@@ -223,6 +223,7 @@ async function listClientReposLive(host, { org, project }) {
     }
     return ((await res.json()).value || []).map((r) => ({
       name: r.name,
+      id: r.id || "",
       defaultBranch: stripRef(r.defaultBranch),
     }));
   }
@@ -234,6 +235,7 @@ async function listClientReposLive(host, { org, project }) {
     if (res.ok) {
       return (await res.json()).map((r) => ({
         name: r.name,
+        id: String(r.id || ""),
         defaultBranch: r.default_branch || "",
         isFork: Boolean(r.fork),
         fullName: r.full_name || "",
@@ -300,6 +302,129 @@ async function readPackageJsonLive(host, { org, project, name }) {
   } catch {
     return null;
   }
+}
+
+/** List a repo's branch names (heads) from the code host. [] on any failure. */
+async function listRepoBranches(host, { org, project, name }) {
+  try {
+    if (host === "azure-repos") {
+      const authHeader = adoAuthHeaderSync();
+      if (!authHeader) return [];
+      const url =
+        `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/` +
+        `${encodeURIComponent(name)}/refs?filter=heads/&api-version=7.1&$top=500`;
+      const res = await fetch(url, { headers: { Authorization: authHeader, Accept: "application/json" } });
+      if (!res.ok) return [];
+      return ((await res.json()).value || []).map((r) => stripRef(r.name));
+    }
+    const res = await fetch(`https://api.github.com/repos/${org}/${name}/branches?per_page=100`, {
+      headers: githubHeaders(),
+    });
+    if (!res.ok) return [];
+    return (await res.json()).map((b) => b.name);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The branch feature branches base off + PRs TARGET. Many client teams integrate on a
+ * `dev`/`develop` branch while the repo's `defaultBranch` stays `main` (the released line).
+ * Pure. Prefers dev → develop → the default branch. Pass the branch list ([] ⇒ defaultBranch).
+ */
+export function detectIntegrationBranch(branches, defaultBranch) {
+  const set = new Set((branches || []).map((b) => b.toLowerCase()));
+  for (const cand of ["dev", "develop", "development"]) {
+    if (set.has(cand)) return branches.find((b) => b.toLowerCase() === cand);
+  }
+  return defaultBranch || "main";
+}
+
+/** Kind-default toolchain (mirrors repo-router.ts REPO_PROFILES). Pure. */
+export function kindToolchain(kind) {
+  if (kind === "frontend") {
+    return {
+      install: "yarn install --frozen-lockfile || npm ci || npm install",
+      build: "yarn build || npm run build",
+      typecheck: "yarn typecheck || npx vue-tsc --noEmit",
+      lint: "yarn lint || npm run lint",
+      test: "yarn test:unit || npx vitest run",
+    };
+  }
+  // module / platform → .NET
+  return {
+    install: "dotnet restore -p:NuGetAudit=false",
+    build: "dotnet build -c Debug -p:NuGetAudit=false",
+    test: "dotnet test --nologo -p:NuGetAudit=false",
+  };
+}
+
+/**
+ * BAKE the clone/PR contribution plan for a CLIENT repo (mirrors repo-router.ts
+ * contributionPlan for the client branch — always push directly, host per the repo).
+ * Pure. So the interactive command reads this instead of re-deriving it from TS.
+ */
+export function contributionForClient(host, { org, project, name, integrationBranch }) {
+  const bare = String(name).split("/").pop();
+  if (host === "azure-repos") {
+    return {
+      ownership: "client",
+      mode: "direct",
+      host: "azure-repos",
+      prApi: "ado-rest",
+      cloneUrl: `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${bare}`,
+      prTarget: integrationBranch,
+      authEnv: "ADO_PAT",
+    };
+  }
+  return {
+    ownership: "client",
+    mode: "direct",
+    host: "github",
+    prApi: "gh",
+    cloneUrl: `https://github.com/${name}.git`,
+    prTarget: integrationBranch,
+    authEnv: "GITHUB_FIX_BUGS_TOKEN",
+  };
+}
+
+const hostnameOf = (u) => {
+  try { return new URL(u).hostname; } catch { return ""; }
+};
+const originOf = (u) => {
+  try { return new URL(u).origin; } catch { return String(u || "").replace(/\/$/, ""); }
+};
+
+/**
+ * Probe which host both RESOLVES the store and PROXIES the storefront GraphQL — the value
+ * `APP_BACKEND_URL` must take for a LOCAL dev run (vc-frontend's app-runner.ts derives the
+ * store-resolution `domain` from APP_BACKEND_URL's hostname in dev; the ADMIN host does NOT
+ * resolve the store → blank app). Tries FRONT_URL first, then BACK_URL. Returns
+ * { backendUrlForDev, storeId, storeDomain } or null (operator fills in). Never throws.
+ */
+async function probeStorefrontBackend({ frontUrl, backUrl, storeId }) {
+  const query =
+    "query GetPageContext($domain:String,$permalink:String){pageContext(domain:$domain,permalink:$permalink){store{storeId storeName}}}";
+  for (const candidate of [frontUrl, backUrl].filter(Boolean)) {
+    const origin = originOf(candidate);
+    const domain = hostnameOf(candidate);
+    try {
+      const res = await fetch(`${origin}/graphql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ operationName: "GetPageContext", query, variables: { domain, permalink: "sign-in" } }),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const store = data?.data?.pageContext?.store;
+      if (store?.storeId) {
+        return { backendUrlForDev: origin, storeId: store.storeId || storeId || "", storeDomain: domain };
+      }
+    } catch {
+      /* try next candidate */
+    }
+  }
+  return null;
 }
 
 async function getModulesLive() {
@@ -399,6 +524,48 @@ async function main() {
                 : ` — provenance NOT derived; ASK the operator for the vc-frontend version the fork is based on (repos.client[].upstreamRef).`)
           : `[discover-repos] NO storefront/theme repo matched — ASK the operator to name it, then add { kind: "frontend" } to repos.client.`,
       );
+
+      // BAKE per-repo decisions so the interactive /qa-fix reads facts, not emulated TS:
+      // repoId, integrationBranch (PR target), workBranchPrefix, contribution plan, toolchain,
+      // and — for the storefront — localVerify (Gate-6 local run facts, incl. the probed
+      // backend host that resolves the store).
+      let feProbe = null;
+      for (const c of result.client) {
+        const bare = c.name.split("/").pop();
+        const info = byName.get(bare) || {};
+        if (info.id && !c.repoId) c.repoId = info.id;
+        const branches = await listRepoBranches(host, { org, project, name: bare });
+        c.integrationBranch = detectIntegrationBranch(branches, c.defaultBranch);
+        c.workBranchPrefix = "claude/qa-autofix/";
+        c.contribution = contributionForClient(host, {
+          org, project, name: c.name, integrationBranch: c.integrationBranch,
+        });
+        c.toolchain = kindToolchain(c.kind);
+        if (c.kind === "frontend") {
+          if (!feProbe) {
+            feProbe = await probeStorefrontBackend({
+              frontUrl: process.env.FRONT_URL || "",
+              backUrl: process.env.BACK_URL || "",
+              storeId: process.env.STORE_ID || "",
+            });
+          }
+          c.localVerify = {
+            devCmd: "yarn dev",
+            url: "https://localhost:3000",
+            selfSignedCert: true,
+            backendUrlForDev: feProbe?.backendUrlForDev || (process.env.FRONT_URL || "").replace(/\/$/, ""),
+            storeId: feProbe?.storeId || process.env.STORE_ID || "",
+            storeDomain: feProbe?.storeDomain || hostnameOf(process.env.FRONT_URL || ""),
+            userEnv: "USER_EMAIL",
+            passEnv: "USER_PASSWORD",
+          };
+          console.error(
+            feProbe
+              ? `[discover-repos] storefront local-verify backend probed: ${feProbe.backendUrlForDev} (store ${feProbe.storeId})`
+              : `[discover-repos] storefront local-verify backend NOT probed — defaulted to FRONT_URL; verify repos.client[].localVerify.backendUrlForDev resolves the store.`,
+          );
+        }
+      }
     } catch (err) {
       console.error(`[discover-repos] client-repo scan skipped (${err.message}) — ASK the operator to name the storefront/theme repo.`);
     }

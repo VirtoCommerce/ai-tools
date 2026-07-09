@@ -32,7 +32,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
-import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
+import { outputRoot, resolveOutPath, pluginRoot } from "./lib/paths.mjs";
 
 const ENUMS = {
   "project-type": ["platform", "client"],
@@ -127,6 +127,27 @@ function main() {
   set("upstream.contributionMode", args["contribution-mode"]);
   set("upstream.clientGithubAccount", args["upstream-account"]);
 
+  // vcs.authEnv — which env var carries the WRITE credential for the client host, so the
+  // interactive command doesn't guess. (github PAT ⇒ GITHUB_FIX_BUGS_TOKEN; azure-repos ⇒
+  // ADO_PAT; a session/gh-cli axis ⇒ "" = use the ambient login.)
+  const clientHost = args["client-vcs"];
+  const vcsAuth = args["vcs-auth"];
+  if (clientHost === "azure-repos") set("vcs.authEnv", vcsAuth === "pat" ? "ADO_PAT" : "");
+  else if (clientHost === "github") set("vcs.authEnv", vcsAuth === "pat" ? "GITHUB_FIX_BUGS_TOKEN" : "");
+
+  // runtime — how skills orient. When invoked with $CLAUDE_PLUGIN_ROOT set (installed
+  // plugin), interactive commands read the BAKED profile facts (helpersRunnable=false);
+  // in the native agentic checkout the .ts/.mjs helpers run headless (helpersRunnable=true).
+  const runtimeMode = args["runtime-mode"] || (process.env.CLAUDE_PLUGIN_ROOT ? "plugin" : "agent-project");
+  set("runtime.mode", runtimeMode);
+  set("runtime.helpersRunnable", runtimeMode === "agent-project");
+
+  // paths — absolute roots so skills never break on a drifted cwd and know plugin vs project.
+  set("paths.projectRoot", outputRoot());
+  set("paths.pluginRoot", pluginRoot());
+  const envName = args.env || process.env.TEST_ENV || "";
+  if (envName) set("paths.perEnv", `.env.${envName}`);
+
   // Optional repo map from discover-repos.mjs
   // ({ projectType, clientOrg, client: [...], platform: [...] }). The scan is the source
   // of projectType + clientOrg in the redesign, so ingest them here too (explicit flags
@@ -144,6 +165,29 @@ function main() {
       fail(`--repos-json: cannot read ${args["repos-json"]}: ${err.message}`);
     }
   }
+
+  // Tracker status model from discover-tracker.mjs (Azure: per-type states + role→state map;
+  // Jira: format facts only). Baked so /qa-fix transitions by role without asking.
+  if (args["tracker-json"]) {
+    try {
+      const t = JSON.parse(readFileSync(resolve(outputRoot(), args["tracker-json"]), "utf-8"));
+      if (t.ticketKeyFormat) set("tracker.ticketKeyFormat", t.ticketKeyFormat);
+      if (t.crossLinkToken !== undefined) set("tracker.crossLinkToken", t.crossLinkToken);
+      if (t.apiBase) set("tracker.azure.apiBase", t.apiBase);
+      if (t.projectId) set("tracker.azure.projectId", t.projectId);
+      if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
+      if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
+      // With a scanned role map, default to silent role-based transitions.
+      if (t.roleStates && Object.keys(t.roleStates).length) set("tracker.azure.transitionPolicy", "auto");
+    } catch (err) {
+      fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
+    }
+  }
+
+  // buildVerify.source keyed on the EFFECTIVE projectType (flag → repos-json → default).
+  const effectiveType = patch.projectType || base.projectType;
+  if (effectiveType === "client") set("buildVerify.source", "modules-endpoint");
+  else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   const profile = deepMerge(base, patch);
 

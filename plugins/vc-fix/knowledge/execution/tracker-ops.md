@@ -30,12 +30,21 @@ apply the same matrix by reading the profile.
 
 Use whichever surface is available; prefer the MCP when connected, else the CLI/REST.
 
-| Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) |
+> **Azure interactive: use the `ado.mjs` helper, NOT hand-rolled `curl`+`python`.**
+> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|comment|transition|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
+> (org/project/apiBase default from the profile; Basic-PAT/az-login auth, UTF-8, and 302-sign-in detection
+> are built in). This is the fix for last run's repeated Windows grabli — `/tmp` path mismatch between Bash
+> and Windows Python, `cp1252` `UnicodeDecodeError` on ADO JSON, emoji/`&quot;` entity breakage, `$top`
+> escaping, and ADO REST 400s from inline `-d` JSON. Hand-rolled `curl` is the fallback for a native
+> agentic checkout only. `comment --text-file` (never inline prose with em-dashes); `create-pr`/policy
+> endpoints already use the right `-preview`/`7.1` api-versions.
+
+| Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
 |---|---|---|
-| **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `az boards work-item show --id <n> --org https://dev.azure.com/<org>` (needs `az extension add --name azure-devops`), or ADO REST `GET {base}/_apis/wit/workitems/<n>?$expand=all&api-version=7.0` |
+| **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado.mjs get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
 | **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | ADO WIQL `POST {base}/_apis/wit/wiql` — `… WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'` |
-| **Comment** | Atlassian MCP `addCommentToJiraIssue` | ADO REST `POST {base}/_apis/wit/workItems/<n>/comments?api-version=7.0-preview.3` |
-| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | ADO REST `PATCH {base}/_apis/wit/workitems/<n>` op `add /fields/System.State` = the mapped state (via `tracker.azure.stateMap`) |
+| **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado.mjs comment --id <n> --text-file <path>` |
+| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado.mjs transition --id <n> --state <roleStates[role]>` — map ROLE→state via `tracker.azure.roleStates` (scanned per type), never a hardcoded name |
 
 `{base}` = `https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
@@ -52,11 +61,17 @@ them. Always resolve the *destination status* by role, then map it to the live w
 2. **Jira:** call `getTransitionsForJiraIssue` and pick the transition whose target status best
    matches the role (case-insensitive contains: "progress" / "review" / "test" / "done"). If
    none matches, ask the user which transition to use — do NOT invent an id.
-3. **Azure Boards:** map the role → a `System.State` via `tracker.azure.stateMap` (e.g.
-   `{ "in-progress":"Active", "in-review":"Resolved", "ready-for-test":"Resolved", "done":"Closed" }`).
-   If the map lacks the role, read the work item's allowed states (`GET …/workitems/<n>?$expand=all`
-   surfaces the type) and ask the user.
-4. **Ask the user before every transition** (unchanged from the Jira-only flow).
+3. **Azure Boards:** map the role → a `System.State` via `tracker.azure.roleStates` — the map
+   `/project-init` SCANNED from this deployment's process (a custom process is common; e.g. LEO's Bug is
+   `{ "in-progress":"On Dev", "in-review":"On Review", "ready-for-test":"Ready for QA", "done":"Closed" }`
+   — NOT the generic Agile `Active/Resolved`). If the map lacks the role, read the work item's allowed
+   states (`ado.mjs list-states --type <T>`) and ask the user which state fits.
+4. **Honor `tracker.azure.transitionPolicy` — this OVERRIDES the old "always ask":**
+   - `auto` (the default once states are scanned) ⇒ transition **silently by role and just log it — do
+     NOT open an `AskUserQuestion`.** This is what keeps a client run at ~0 operator questions.
+   - `confirm-once` ⇒ one upfront confirmation of the whole role→state plan, then silent.
+   - `ask` ⇒ confirm before each transition (the original conservative behaviour; Jira, or an unscanned
+     map, defaults here).
 
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 
