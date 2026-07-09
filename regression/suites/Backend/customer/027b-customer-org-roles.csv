@@ -293,7 +293,7 @@ GET {{BACK_URL}}/api/organizations/{{ORG_ID}}
 [REST-EXEC verify_org]","[ERRORS label=bypass_put] errors[] non-empty
 [COUNT label=verify_org] body.roles[?roleId=org-manager].length = 0","[API] Whitelisted role assignment still succeeds via the same PUT path -- see ORGROLE-011 (no-over-blocking twin)","bypass_put returns HTTP 204 with errors[] empty -- the CONFIRMED current behavior (backend report F1, no server check exists); verify_org shows the excluded role persisted in the organization's roles array despite the assignment attempt being non-whitelisted","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; Story EPIC-5239-03 AC-1; profile-experience-api#137 (zero whitelist refs per backend finding F1)","Draft"
-"ORGROLE-010","Direct GraphQL changeOrganizationContactRole bypass with a non-whitelisted membership role is rejected server-side","Org Roles > Server-Side Enforcement > Membership Whitelist","Critical","BL-B2B-011","","Runner-native. Same F1 finding as ORGROLE-009, applied to the membership-level mutation (Story EPIC-5239-03 AC-2). CURRENTLY FAILS -- authored against the EXPECTED post-fix behavior. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; excluded_role_id=org-manager; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+"ORGROLE-010","Direct REST bypass of the membership whitelist (PUT organization-memberships) is rejected server-side","Org Roles > Server-Side Enforcement > Membership Whitelist","Critical","BL-B2B-011","","Runner-native. Same F1 finding as ORGROLE-009, applied to the membership-level surface (Story EPIC-5239-03 AC-2). CURRENTLY FAILS -- authored against the EXPECTED post-fix behavior. Throwaway AGENT-TEST org + member + membership created in Steps. CORRECTED 2026-07-09 (live-verified): the GraphQL changeOrganizationContactRole mutation resolves its organization context from the CALLER's own JWT organization_id claim, not from an explicit argument -- an ADMIN_DEFAULT-authenticated call (no organization_id claim) fails with a generic 'OrganizationIdRequired' error unrelated to whitelist enforcement (would make this case pass for the wrong reason); a maintainer-scoped alias (TECHFLOW_ADMIN / MULTI_ORG_TF_BR_MAINTAINER) instead hits the separate, already-tracked VCST-5028 Finding #1 authorization bug (Forbidden) -- out of scope to re-litigate here. `PUT {{BACK_URL}}/api/customer/organization-memberships/{id}` (live-verified 2026-07-09: HTTP 200, no whitelist check, role persists) exercises the SAME membership-role-write surface with an ADMIN_DEFAULT token and no org-context ambiguity, so this case now bypasses via that REST endpoint instead of the GraphQL mutation.","back_url={{BACK_URL}}; excluded_role_id=org-manager; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
 [REST-OP set_membership_wl]
 POST {{BACK_URL}}/api/platform/settings
 Content-Type: application/json
@@ -327,27 +327,24 @@ Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-010"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
 [REST-EXEC create_membership]
 [REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
-[GQL-OP bypass_change_role]
-mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
-  changeOrganizationContactRole(command: $command) {
-    succeeded
-    errors { code parameter description }
-  }
-}
-[GQL-VARS bypass_change_role] {""command"": {""memberId"": ""{{MEMBER_ID}}"", ""roleIds"": [""org-manager""]}}
-[GQL-EXEC bypass_change_role]
+[REST-OP bypass_membership_put]
+PUT {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}
+Content-Type: application/json
+Body: {""id"": ""{{MEMBERSHIP_ID}}"", ""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-010"", ""roles"": [{""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC bypass_membership_put]
 [REST-OP verify_unchanged]
 POST {{BACK_URL}}/api/customer/organization-memberships/search
 Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}""}
-[REST-EXEC verify_unchanged]","[ERRORS label=bypass_change_role] errors[] non-empty
-[DATA label=bypass_change_role] data.changeOrganizationContactRole.succeeded = false
-[DATA label=verify_unchanged] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-employee","[API] Whitelisted role assignment via the same mutation still succeeds -- see ORGROLE-011","bypass_change_role returns succeeded=true with errors[] empty -- the CONFIRMED current behavior (F1, mutation has no whitelist check); verify_unchanged shows roleId=org-manager persisted despite the non-whitelisted attempt","[AUTH role=ADMIN_DEFAULT]
+[REST-EXEC verify_unchanged]","[ERRORS label=create_org] errors[] empty
+[STATUS label=bypass_membership_put] non-2xx (rejected)
+[COUNT label=verify_unchanged] body.results[?organizationId={{ORG_ID}}].roles[?roleId=org-manager].length = 0
+[DATA label=verify_unchanged] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-employee","[API] Whitelisted role assignment via the same REST path still succeeds -- see ORGROLE-011","bypass_membership_put returns HTTP 200 with the role persisted -- the CONFIRMED current behavior (F1, no whitelist check on this write path, live-verified 2026-07-09); verify_unchanged shows roleId=org-manager persisted despite the non-whitelisted attempt","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole010@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; Story EPIC-5239-03 AC-2; profile-experience-api#137 (F1)","Draft"
-"ORGROLE-011","A WHITELISTED membership role via the same direct API path still succeeds -- no over-blocking once server enforcement ships","Org Roles > Server-Side Enforcement > No Over-Blocking","High","BL-B2B-011","","Runner-native. Story EPIC-5239-03 AC-3 -- the positive twin of ORGROLE-010: server enforcement (once shipped) must not reject a WHITELISTED role. This case is TRUE today (nothing blocks anything yet) and must remain TRUE after the fix -- it is the guard that keeps ORGROLE-009/010 from becoming an over-block regression. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; whitelisted_role_id=org-maintainer; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+"ORGROLE-011","A WHITELISTED membership role via the same direct REST path still succeeds -- no over-blocking once server enforcement ships","Org Roles > Server-Side Enforcement > No Over-Blocking","High","BL-B2B-011","","Runner-native. Story EPIC-5239-03 AC-3 -- the positive twin of ORGROLE-010: server enforcement (once shipped) must not reject a WHITELISTED role. This case is TRUE today (nothing blocks anything yet) and must remain TRUE after the fix -- it is the guard that keeps ORGROLE-009/010 from becoming an over-block regression. Throwaway AGENT-TEST org + member + membership created in Steps. CORRECTED 2026-07-09 (same live finding as ORGROLE-010): uses the REST `PUT {{BACK_URL}}/api/customer/organization-memberships/{id}` write path (ADMIN_DEFAULT, live-verified 2026-07-09) instead of the GraphQL changeOrganizationContactRole mutation, which fails with a caller-org-context error (or the separate VCST-5028 Forbidden bug on a maintainer-scoped alias) unrelated to whitelist enforcement -- see ORGROLE-010's note for the full explanation.","back_url={{BACK_URL}}; whitelisted_role_id=org-maintainer; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
 [REST-OP set_membership_wl]
 POST {{BACK_URL}}/api/platform/settings
 Content-Type: application/json
@@ -381,22 +378,18 @@ Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-011"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
 [REST-EXEC create_membership]
 [REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
-[GQL-OP whitelisted_change_role]
-mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
-  changeOrganizationContactRole(command: $command) {
-    succeeded
-    errors { code parameter description }
-  }
-}
-[GQL-VARS whitelisted_change_role] {""command"": {""memberId"": ""{{MEMBER_ID}}"", ""roleIds"": [""org-maintainer""]}}
-[GQL-EXEC whitelisted_change_role]
+[REST-OP whitelisted_membership_put]
+PUT {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}
+Content-Type: application/json
+Body: {""id"": ""{{MEMBERSHIP_ID}}"", ""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-011"", ""roles"": [{""roleId"": ""org-maintainer"", ""roleName"": ""Organization maintainer""}]}
+[REST-EXEC whitelisted_membership_put]
 [REST-OP verify_changed]
 POST {{BACK_URL}}/api/customer/organization-memberships/search
 Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}""}
-[REST-EXEC verify_changed]","[ERRORS label=whitelisted_change_role] errors[] empty
-[DATA label=whitelisted_change_role] data.changeOrganizationContactRole.succeeded = true
-[DATA label=verify_changed] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-maintainer","","succeeded=false / errors[] non-empty for a WHITELISTED role (over-blocking regression once enforcement ships); role not persisted despite succeeded=true","[AUTH role=ADMIN_DEFAULT]
+[REST-EXEC verify_changed]","[ERRORS label=create_org] errors[] empty
+[STATUS label=whitelisted_membership_put] 200
+[DATA label=verify_changed] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-maintainer","[API] The same {{MEMBERSHIP_ID}} round-trips via GET {{BACK_URL}}/api/customer/organization-memberships/search -- confirms whitelisted_membership_put's 200 reflects a real persisted write, not a false-positive status code","whitelisted_membership_put returns non-2xx for a WHITELISTED role (over-blocking regression once enforcement ships); role not persisted despite a 200 response","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole011@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]
@@ -542,3 +535,149 @@ PUT {{BACK_URL}}/api/organizations
 Content-Type: application/json
 Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_A_NAME}}"", ""memberType"": ""Organization"", ""roles"": []}
 [REST-EXEC restore_org_a]","VCST-5239; ba-report-2026-07-09.md flow-8 (AC10 confirmed working)","Draft"
+"ORGROLE-015","organization.contacts(roleIds:) filters by the EFFECTIVE role set (org-inherited roles included, not membership-only); omitted/empty roleIds returns the unfiltered list","Org Roles > Contacts Role Filter > AC8","High","BL-B2B-005","ECL-2.3","Runner-native. Closes testing-checklist.md AC8 (GAP -- no prior case exercised `organization.contacts(roleIds:)` at the backend/schema layer; `B2C-MBR-025` in `008-b2b-members.csv` only exercises the storefront CONSUMER of this filter). Field/arg confirmed by LIVE introspection 2026-07-09: `Organization.contacts(after, first, searchPhrase, sort, roleIds: [String])`. LIVE-VERIFIED 2026-07-09 end-to-end on a throwaway org+member: (1) filtering by the member's DIRECT membership role returns them: totalCount 1; (2) filtering by an ORG-LEVEL role the org carries (which this member does NOT hold individually, only via inheritance) ALSO returns them: totalCount 1 -- `contacts(roleIds:)` reflects the UNION/effective role set, not membership-only (BL-B2B-005), which also grounds ORGROLE-017's technique; (3) filtering by a role nobody holds returns totalCount 0; (4) omitting `roleIds` returns the full unfiltered list; (5) `roleIds: []` (empty array) ALSO returns the full unfiltered list, NOT zero -- confirms no accidental empty-set-matches-none semantics (the exact concern testing-checklist.md AC8 flags). IMPORTANT GOTCHA discovered live: creating the `OrganizationMembership` junction record via `POST /api/customer/organization-memberships` alone does NOT make `organization.contacts` see the member -- the Contact record's own `organizations` array must also include the org id (confirmed: `contacts` returned 0 until a `PUT /api/members` set it). Steps below include that link step; omitting it would make this case falsely read as 'contacts returns nothing at all', not a filter-correctness result. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; direct_role_id=org-employee; inherited_role_id=org-manager; dead_role_id=purchasing-agent; timestamp={{TIMESTAMP}}; account_password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-015-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole015"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP link_member_to_org]
+PUT {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""id"": ""{{MEMBER_ID}}"", ""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole015"", ""memberType"": ""Contact"", ""organizations"": [""{{ORG_ID}}""]}
+[REST-EXEC link_member_to_org]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole015@yopmail.com"", ""email"": ""AGENT-TEST-orgrole015@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole015@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-015"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[REST-OP assign_org_level_role]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{ORG_ID}}"", ""name"": ""AGENT-TEST-OrgRole-015-{{TIMESTAMP}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""{{ORG_ID}}"", ""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC assign_org_level_role]
+[GQL-OP check_contacts_filter]
+query($id: String!) {
+  organization(id: $id) {
+    directRole: contacts(roleIds: [""org-employee""]) { totalCount }
+    inheritedRole: contacts(roleIds: [""org-manager""]) { totalCount }
+    deadRole: contacts(roleIds: [""purchasing-agent""]) { totalCount }
+    unfiltered: contacts { totalCount }
+    emptyFilterArg: contacts(roleIds: []) { totalCount }
+  }
+}
+[GQL-VARS check_contacts_filter] {""id"": ""{{ORG_ID}}""}
+[GQL-EXEC check_contacts_filter]","[ERRORS label=create_org] errors[] empty
+[ERRORS label=check_contacts_filter] errors[] empty
+[COUNT label=check_contacts_filter] data.organization.directRole.totalCount = 1
+[COUNT label=check_contacts_filter] data.organization.inheritedRole.totalCount = 1
+[COUNT label=check_contacts_filter] data.organization.deadRole.totalCount = 0
+[COUNT label=check_contacts_filter] data.organization.unfiltered.totalCount = 1
+[COUNT label=check_contacts_filter] data.organization.emptyFilterArg.totalCount = 1","[API] REST GET {{BACK_URL}}/api/customer/organization-memberships/search {""userId"": ""{{USER_ID}}""} shows only the DIRECT `org-employee` role -- confirming `inheritedRole`'s totalCount=1 comes from the org-level grant, not a second direct assignment","inheritedRole.totalCount = 0 (contacts() is membership-only, does not reflect the union -- BL-B2B-005 regression); emptyFilterArg.totalCount = 0 (empty roleIds treated as match-none instead of unfiltered -- the exact AC8 concern); deadRole.totalCount != 0 (filter not applied, returns everyone regardless of roleIds)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole015@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; testing-checklist.md AC8; live-verified 2026-07-09","Draft"
+"ORGROLE-016","Contract guard: rolesInOrganization and isLockedInOrganization expose NO organizationId argument (org context is JWT-only, per BL-CROSS-013 proposal)","Org Roles > GraphQL Contract > AC11","Medium","","","Runner-native, pure schema introspection -- no mutation, no fixtures. Closes testing-checklist.md AC11 first bullet (GAP -- no case previously asserted this by schema shape; ORGROLE-013/014 exercise the FUNCTIONAL no-arg-resolves-correctly-from-token behavior already, but never assert the CONTRACT itself). LIVE-VERIFIED 2026-07-09 via `{ __type(name: \""ContactType\"") { fields { name args { name } } } }`: both `rolesInOrganization` and `isLockedInOrganization` currently have an EMPTY `args` array -- the `organizationId` argument VCST-5239 dropped has not been reintroduced. This is the regression guard: if a future change re-adds an explicit `organizationId` arg to either field, this case fails, flagging the exact drift-risk the bl-proposals doc's PROPOSED-BL-CROSS-013 describes (a client-supplied org id could let a caller read another org's data by spoofing it). Business_Rule intentionally left BLANK -- BL-CROSS-013 is a pending proposal awaiting human approval (bl-proposals-2026-07-09.md), not yet promoted into business-logic.md; re-point this case's Business_Rule to the final BL-CROSS-* ID once approved.","back_url={{BACK_URL}}","[GQL-OP introspect_contact_fields]
+query {
+  __type(name: ""ContactType"") {
+    fields {
+      name
+      args { name }
+    }
+  }
+}
+[GQL-EXEC introspect_contact_fields]","[COUNT label=introspect_contact_fields] data.__type.fields[?name=rolesInOrganization].args.length = 0
+[COUNT label=introspect_contact_fields] data.__type.fields[?name=isLockedInOrganization].args.length = 0","[API] ORGROLE-013/014's existing `rolesInOrganization` queries (already written with no `organizationId` arg) continue to resolve without `errors[]` for a multi-org actor -- confirms no stale-fixture regression per testing-checklist.md AC11 second bullet","either field's args array is non-empty (an organizationId argument was reintroduced -- reopens the cross-org spoofing risk PROPOSED-BL-CROSS-013 describes); introspection itself returns null for ContactType (type renamed/removed -- broader schema drift, investigate before assuming this specific regression)","No cleanup required -- introspection only, no state mutated","VCST-5239; testing-checklist.md AC11; bl-proposals-2026-07-09.md PROPOSED-BL-CROSS-013 (pending approval)","Draft"
+"ORGROLE-017","Permission union: a member with BOTH an org-inherited role AND a distinct own membership role is discoverable under either role; changing/removing the individual role override does not strip the org-inherited grant","Org Roles > Permission Union > AC13","High","BL-B2B-005","","Runner-native. Closes testing-checklist.md AC13 (GAP -- zero direct coverage per the checklist's own note). Combines both AC13 sub-cases the BA docs flag in one lifecycle case (same assign-then-mutate-then-reassert shape as ORGROLE-013): (a) UNION -- a member holding an org-inherited role AND their own distinct membership role must be discoverable via EITHER role, not just one; (b) OVERRIDE CHANGE -- changing that member's own role does not retroactively strip the org-inherited grant (the sharp edge testing-checklist.md AC13 calls out: 'override-removal accidentally deleting the inherited base is a highly plausible implementation bug in a union-merge'). Uses the SAME `organization.contacts(roleIds:)` technique live-verified in ORGROLE-015 as the oracle -- deliberately NOT the `changeOrganizationContactRole` GraphQL mutation as the ORACLE query (that mutation is fine for the WRITE in this case since it is called via the safe REST equivalent, `PUT {{BACK_URL}}/api/customer/organization-memberships/{id}`, live-verified 2026-07-09 -- see ORGROLE-010's note for why the GraphQL mutation itself is avoided with ADMIN_DEFAULT). A fresh throwaway org+member is used (not TechFlow/MULTI_ORG_TF_BR) specifically so the member's OWN role can be safely swapped without risking a widely-shared fixture used by other suites (`027-customer-orgs-invites.csv`, `008-b2b-members.csv`) mid-run. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; own_role_id=purchasing-agent; own_role_id_after_swap=org-manager; inherited_role_id=org-employee; timestamp={{TIMESTAMP}}; account_password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-017-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole017"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP link_member_to_org]
+PUT {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""id"": ""{{MEMBER_ID}}"", ""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole017"", ""memberType"": ""Contact"", ""organizations"": [""{{ORG_ID}}""]}
+[REST-EXEC link_member_to_org]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole017@yopmail.com"", ""email"": ""AGENT-TEST-orgrole017@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole017@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-017"", ""roles"": [{""roleId"": ""purchasing-agent"", ""roleName"": ""Purchasing agent""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[REST-OP assign_org_level_role]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{ORG_ID}}"", ""name"": ""AGENT-TEST-OrgRole-017-{{TIMESTAMP}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""{{ORG_ID}}"", ""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC assign_org_level_role]
+[GQL-OP check_union_before]
+query($id: String!) {
+  organization(id: $id) {
+    ownRole: contacts(roleIds: [""purchasing-agent""]) { totalCount }
+    inheritedRole: contacts(roleIds: [""org-employee""]) { totalCount }
+  }
+}
+[GQL-VARS check_union_before] {""id"": ""{{ORG_ID}}""}
+[GQL-EXEC check_union_before]
+[REST-OP swap_own_role]
+PUT {{BACK_URL}}/api/customer/organization-memberships/{{MEMBERSHIP_ID}}
+Content-Type: application/json
+Body: {""id"": ""{{MEMBERSHIP_ID}}"", ""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-017"", ""roles"": [{""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC swap_own_role]
+[GQL-OP check_union_after]
+query($id: String!) {
+  organization(id: $id) {
+    oldOwnRole: contacts(roleIds: [""purchasing-agent""]) { totalCount }
+    newOwnRole: contacts(roleIds: [""org-manager""]) { totalCount }
+    inheritedRoleRetained: contacts(roleIds: [""org-employee""]) { totalCount }
+  }
+}
+[GQL-VARS check_union_after] {""id"": ""{{ORG_ID}}""}
+[GQL-EXEC check_union_after]","[ERRORS label=create_org] errors[] empty
+[ERRORS label=check_union_before] errors[] empty
+[ERRORS label=check_union_after] errors[] empty
+[COUNT label=check_union_before] data.organization.ownRole.totalCount = 1
+[COUNT label=check_union_before] data.organization.inheritedRole.totalCount = 1
+[COUNT label=check_union_after] data.organization.oldOwnRole.totalCount = 0
+[COUNT label=check_union_after] data.organization.newOwnRole.totalCount = 1
+[COUNT label=check_union_after] data.organization.inheritedRoleRetained.totalCount = 1","[API] REST GET {{BACK_URL}}/api/customer/organization-memberships/search {""userId"": ""{{USER_ID}}""} shows only `org-manager` on the membership record after the swap -- the org-employee grant retained above is confirmed to come from Organization.Roles (org-level), not a leftover membership entry","check_union_before.inheritedRole.totalCount = 0 (union not honored -- member with own role A cannot be found via org-inherited role B, BL-B2B-005 regression); check_union_after.inheritedRoleRetained.totalCount = 0 (the sharp edge -- changing/removing the member's own role override STRIPPED the org-inherited grant); check_union_after.oldOwnRole.totalCount != 0 (old role not actually replaced)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole017@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; testing-checklist.md AC13; live-verified 2026-07-09","Draft"

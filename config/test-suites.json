@@ -213,8 +213,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 29,
-      "estimatedMinutes": 22,
+      "testCount": 31,
+      "estimatedMinutes": 25,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2b",
@@ -641,8 +641,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 14,
-      "estimatedMinutes": 20,
+      "testCount": 17,
+      "estimatedMinutes": 25,
       "agent": "qa-backend-expert",
       "tags": [
         "customer",
