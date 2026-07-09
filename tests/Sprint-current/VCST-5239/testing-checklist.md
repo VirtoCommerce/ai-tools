@@ -14,7 +14,7 @@ Test data: admin actor = `[AUTH role=ADMIN_DEFAULT]` (ORGM-* convention) / `{{AD
 
 **AC1 — Admin views Global + Membership roles; user carries only the set roles**
 - [ ] AC1 — Open a test contact's member blade in Admin SPA (`{{BACK_URL}}` Customer module), inspect Global roles panel + Organization memberships widget → confirm both are visible and distinct sections (BL-AUTH-005; extends `CUST-063` which only covers per-org **membership**-role assignment, not the Global-roles panel — GAP for the dual-panel view)
-- [ ] AC1 — REST: `GET {{BACK_URL}}/api/platform/security/users/{userId}` for a freshly-provisioned AGENT-TEST user with exactly one membership role set → assert `roles`/claims contain only that role, no residual defaults (BL-AUTH-005; reuse ORGM-001..004 setup pattern from `027b-customer-org-memberships.csv`, but those assert membership-role change only — extend to assert **no extra roles leaked**, GAP)
+- [ ] AC1 — REST: `GET {{BACK_URL}}/api/platform/security/users/{userId}` for a freshly-provisioned AGENT-TEST user with exactly one membership role set → assert `roles`/claims contain only that role, no residual defaults (BL-AUTH-005; reuse ORGM-001..004 setup pattern from `027b-customer-org-roles.csv`, but those assert membership-role change only — extend to assert **no extra roles leaked**, GAP)
 
 **AC2 — JWT `permission[]` == permissions derived from roles (jwt.io decode)**
 - [ ] AC2 — `POST {{BACK_URL}}/connect/token` for the AC1 fixture user with `organization_id` param (snake_case, per `reference_connect_token_org_scoped`) → decode `access_token` at jwt.io (or JS `atob` on payload segment) → assert decoded `permission[]` is exactly the permission set mapped from the assigned role(s), no more, no fewer (BL-B2B-007 P0, BL-AUTH-005; `032-auth-session-rbac.csv` line 8 only asserts the token IS a JWT, never decodes/matches `permission[]` — GAP, this is the authoritative Test-1 oracle)
@@ -44,7 +44,7 @@ Test data: admin actor = `[AUTH role=ADMIN_DEFAULT]` (ORGM-* convention) / `{{AD
 - [ ] AC8 — `roleIds: []` / omitted → assert full unfiltered contact list returned (no accidental empty-set-matches-none semantics) (EP — GAP)
 
 **AC10 [adversarial/GAP] — Org-level role / whitelist change mutates only the target org**
-- [ ] AC10 — Assign an org-level role to TechFlow only → assert BuildRight (or any other org sharing the AC7 fixture member) shows NO inherited permission change (BL-B2B-008; direct analog of `ORGM-004`'s isolation pattern in `027b-customer-org-memberships.csv`, but ORGM-004 tests **membership**-role isolation — repeat the same technique for the NEW **org-level** role surface, GAP)
+- [ ] AC10 — Assign an org-level role to TechFlow only → assert BuildRight (or any other org sharing the AC7 fixture member) shows NO inherited permission change (BL-B2B-008; direct analog of `ORGM-004`'s isolation pattern in `027b-customer-org-roles.csv`, but ORGM-004 tests **membership**-role isolation — repeat the same technique for the NEW **org-level** role surface, GAP)
 - [ ] AC10 — Change TechFlow's Organization/Membership whitelist → assert BuildRight's whitelist settings are unaffected (independent settings objects, not a shared global) (BL-B2B-008 — GAP)
 - [ ] AC10 — Global `ApplicationUser.Roles` / global lockout state must NOT be touched by an org-level role or whitelist change — reuse the `GET {{BACK_URL}}/api/platform/security/users/{userId}/locked`-style global guard pattern from `ORGM-006`/`ORGM-009` (BL-AUTH-003 analog, BL-B2B-008 — GAP)
 
@@ -102,4 +102,4 @@ Test data: admin actor = `[AUTH role=ADMIN_DEFAULT]` (ORGM-* convention) / `{{AD
 
 ## Coverage gaps requiring NEW regression suite authoring (out of scope for this checklist, flag for follow-up)
 
-`027b-customer-org-memberships.csv` (Backend/GraphQL) and `008-b2b-members.csv` (Frontend) need new runner-native / journey cases for: org-level role CRUD + inheritance (AC7), whitelist settings CRUD + dropdown filtering (AC4/AC5/AC6), JWT-decode permission-match assertion (AC2/AC3), server-side whitelist enforcement (AC12), org-isolation for org-level roles (AC10), and permission-union override behavior (AC13). None of these exist as cases today — every GAP item above is a genuine hole, not a mis-mapping.
+`027b-customer-org-roles.csv` (Backend/GraphQL) and `008-b2b-members.csv` (Frontend) need new runner-native / journey cases for: org-level role CRUD + inheritance (AC7), whitelist settings CRUD + dropdown filtering (AC4/AC5/AC6), JWT-decode permission-match assertion (AC2/AC3), server-side whitelist enforcement (AC12), org-isolation for org-level roles (AC10), and permission-union override behavior (AC13). None of these exist as cases today — every GAP item above is a genuine hole, not a mis-mapping.

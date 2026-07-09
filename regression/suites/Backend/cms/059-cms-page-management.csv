@@ -377,3 +377,34 @@ Response body contains non-empty blocks array
 Content matches last archived version (verifiable by ModifiedDate or block count)
 HTTP 200 for draft=true on same archive-only group","[AUTH] Token obtained successfully (200 on /connect/token)
 [BODY] Response JSON structure validated","204 or 404 when archived content exists (pre-fix regression: filter excluded Archived status); empty body; 500 on archived page; HTTP 401 without token (verify unauth returns 401)","","VCST-4951; PR #126 (2026-04-20); Backend change in PageBuilderPageController.GetPageContent",
+"CMS-130","Rename + republish a published page preserves content (VCST-5417 data-loss guard)","Content Portability","Critical",,,"Admin logged in with PageBuilder Update permission; PageBuilder shell accessible; DevTools Network tab open. Test creates its OWN disposable page — no shared/seeded page is mutated (this is a data-loss scenario).","Self-created page, name/permalink AGENT-TEST- prefixed + unique per run (scripts/lib/random-data.ts); 2 content blocks (Text + Image via Asset Library); storeId=@td(STORE_PRIMARY.id); back_url={{BACK_URL}}; front_url={{FRONT_URL}}","[NAV] {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-draft
+[BLADE] Wait for Draft page list toolbar to render
+[ACT] Click 'Add' to create a new page. Name = 'AGENT-TEST Rename Guard <unique>', Permalink = 'agent-test-rename-guard-<unique>' (unique per run — see scripts/lib/random-data.ts; AGENT-TEST- prefix so teardown sweeps it)
+[ACT] Open the page in the designer and add 2 content blocks: a Text/markdown block (value 'VCST-5417 guard') and an Image block (select any asset from Asset Library)
+[ACT] Click 'Save'
+[ACT] Click 'Publish'
+[WAIT] Publish completes; page moves to the Active tab
+[AUTH] Obtain Bearer token via POST {{BACK_URL}}/connect/token (OAuth2 password grant)
+[HTTP] Capture the groupId from the page URL, then GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content with Bearer token
+[STATUS] Verify HTTP 200 with a NON-EMPTY body
+[BODY] Record content block count = 2 (Text + Image) — this is the baseline to preserve
+--- Cycle 1: rename a PUBLISHED page ---
+[ACT] In the page details blade change BOTH Name and Permalink (e.g. append '-r1') → click 'Save'
+[ASSERT] Status becomes 'Published · Has draft with changes' (hasChanges:true); content still intact
+[ACT] Click 'Publish'
+[WAIT] Publish completes
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content with Bearer token
+[BODY] Verify content STILL = 2 blocks and settings.name reflects the '-r1' name
+--- Cycle 2: rename + republish again ---
+[ACT] Change BOTH Name and Permalink again (append '-r2') → 'Save' → 'Publish'
+[WAIT] Publish completes
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content with Bearer token
+[BODY] Verify content STILL = 2 blocks (the newly-promoted inner version is NOT empty)
+[ACT] Close and re-open the page in the designer; then hard-reload the browser (Ctrl+F5) and open the designer again
+[ASSERT] Designer renders BOTH blocks (Text + Image) after reload — not '[no name]' / empty body (guards the VCST-5417 incidental render false-negative)","[STATUS] GET /grouped/{groupId}/content returns HTTP 200 with a non-empty body after EVERY publish (initial + both rename cycles)
+[BODY] Content block count remains 2 across all three publishes; the published inner version is never empty (content:[])
+[FORM] Name/Permalink update to the renamed values while the content blocks persist
+[STATE] pages[] holds exactly one Published inner version after each publish; superseded versions become Archived — never an empty Published version
+[DOM] Designer renders both content blocks after a hard reload of the final published version","[NETWORK] Save = PUT {{BACK_URL}}/api/page-builder-pages/grouped → 200; Publish = POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/{groupId}?publish=true → 200
+[REST] GET /grouped/{groupId}/content is the source of truth — trust it over the designer render (the designer can show stale or empty state after rapid version churn)
+[STOREFRONT] If the permalink resolves in this env, GET {{FRONT_URL}}/<permalink> after the final publish renders the blocks (may 404 at baseline in some envs — note it, do not fail on a baseline 404)","Content endpoint returns an empty body or content:[] after a rename+republish cycle (the VCST-5417 data-loss symptom); a Published version is promoted with no content; pages[] accumulates empty Archived versions; designer shows '[no name]' with an empty body after reload while REST still has the blocks; content loss is irreversible via the UI","Unpublish → Archive → delete the AGENT-TEST page (scoped to this run's groupId only); verify GET /api/page-builder-pages/grouped/{groupId} → 404","VCST-5417",

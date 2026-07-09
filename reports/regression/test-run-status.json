@@ -1,43 +1,17 @@
 {
-  "runId": "REG-2026-07-06-1958",
-  "selection": "072b (File/Text sections, P0/Critical)",
-  "startedAt": "2026-07-06T17:58:41Z",
-  "windowStartUtc": "2026-07-06T17:58:41Z",
+  "runId": "REG-2026-07-09-0706",
+  "selection": "059 (CMS Page Management, Backend/admin, P1)",
+  "startedAt": "2026-07-09T07:06:01Z",
+  "windowStartUtc": "2026-07-09T07:06:01Z",
+  "finishedAt": "2026-07-09T07:59:19Z",
   "env": "vcst-qa",
-  "build": {
-    "platform": "3.1041.0",
-    "theme": "2.53.0-pr-2366"
-  },
+  "build": {"platform": "3.1043.0", "pageBuilderModule": "3.1015.0-pr-153-f835", "theme": "2.53.0-pr-2354-c71d"},
   "status": "completed",
-  "finishedAt": "2026-07-06T19:00:00Z",
   "mode": "standard",
-  "outputDir": "reports/regression/REG-2026-07-06-1958/",
-  "report": "reports/regression/REG-2026-07-06-1958/regression-2026-07-06.md",
-  "qualityGate": "PASS",
-  "totals": {"cases": 7, "pass": 7, "fail": 0, "blocked": 0, "skip": 0, "passRate": "7/7 (100%)"},
-  "authoritativeResult": "reports/regression/REG-2026-07-06-1958/suite-072b-p0-filetext-results-chrome.json",
-  "cleanupOwed": [
-    "RING-TXT-CFG-20260706 / 9e3ee7f6-16cd-4f8f-af15-0d6f087c9aa3 (retry-created)",
-    "JERSEY-FILE-CFG-20260706 / 54310e16-d29b-4b41-996d-ab1f296f98c3 (retry-created)",
-    "RING-TXT-CFG-20260706 / 54daf6df-... (attempt-1 shell — reported deleted by retry; verify)"
-  ],
-  "cleanupStatus": "DONE — dated test products (9e3ee7f6, 54310e16, 54daf6df) removed by the retry's stand-down cleanup. Verified by owning runner: admin catalog search '20260706' -> No data; storefront jersey PDP -> 404. Seed fixtures untouched. (Cleanup072b agent was redundant + unresponsive; no harm.)",
-  "cfgE2E024": "Re-verified CLEAN post-deconflict — isolated order CO260706-00007, file preserved to admin; earlier cart-swap caveat superseded.",
-  "suites": {
-    "072b": {
-      "status": "completed",
-      "name": "Configurable Products E2E — P0 File/Text sections",
-      "priority": "P0",
-      "browser": "playwright-chrome",
-      "agent": "qa-frontend-expert",
-      "attempts": [
-        {"agent": "Reg072bFileText", "browser": "playwright-chrome", "result": "handed-off-then-resumed", "note": "Setup only (no verdicts), stood down ~18:13Z with credential+catalog handoff; user directed it to resume ~18:20Z — now the owning runner"},
-        {"agent": "Reg072bRetry", "browser": "playwright-firefox", "result": "halted-for-deconflict", "note": "Fresh replacement, halted ~18:21Z to avoid two-agent shared-env collision after Reg072bFileText resumed"}
-      ],
-      "credentialNote": "Org user password = TestPass123! (B2B_USER_PASSWORD), NOT Password1! — the original blocker",
-      "orphanToDelete": "Test Config Engraved Ring 20260706 / RING-TXT-CFG-20260706 / 54daf6df-ad9a-47c8-9572-124f894b82fa",
-      "testCount": 7,
-      "cases": ["CFG-E2E-017", "CFG-E2E-018", "CFG-E2E-020", "CFG-E2E-021", "CFG-E2E-022", "CFG-E2E-024", "CFG-E2E-030"]
-    }
-  }
+  "outputDir": "reports/regression/REG-2026-07-09-0706/",
+  "report": "reports/regression/REG-2026-07-09-0706/regression-2026-07-09.md",
+  "qualityGate": "PASS-WITH-ISSUES",
+  "totals": {"cases": 46, "pass": 44, "fail": 0, "blocked": 2, "skip": 0, "passRate": "44/44 executed (100%)"},
+  "authoritativeResult": "reports/regression/REG-2026-07-09-0706/suite-059-results-edge.json",
+  "suites": [{"id": "059", "name": "CMS Page Management", "status": "completed", "browser": "playwright-edge", "agent": "qa-backend-expert", "testCount": 46, "pass": 44, "fail": 0, "blocked": 2}]
 }

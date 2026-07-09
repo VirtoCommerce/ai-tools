@@ -213,14 +213,16 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 21,
-      "estimatedMinutes": 13,
+      "testCount": 29,
+      "estimatedMinutes": 22,
       "agent": "qa-frontend-expert",
       "tags": [
         "b2b",
         "members",
         "roles",
-        "sprint"
+        "org-level-roles",
+        "sprint",
+        "VCST-5239"
       ],
       "storefrontProfile": [
         "b2b",
@@ -633,25 +635,25 @@
     },
     {
       "id": "027b",
-      "name": "Customer Org Memberships (per-org roles & lockout)",
-      "file": "regression/suites/Backend/customer/027b-customer-org-memberships.csv",
+      "name": "Customer Org-Scoped Roles (whitelists, org-level inheritance, enforcement)",
+      "file": "regression/suites/Backend/customer/027b-customer-org-roles.csv",
       "domain": "customer-b2b",
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 27,
-      "estimatedMinutes": 30,
+      "testCount": 14,
+      "estimatedMinutes": 20,
       "agent": "qa-backend-expert",
       "tags": [
         "customer",
         "organizations",
-        "org-memberships",
+        "org-roles",
+        "whitelists",
         "rbac",
-        "lockout",
-        "invites",
+        "org-level-roles",
         "admin",
         "sprint",
-        "VCST-5028"
+        "VCST-5239"
       ],
       "requiresModules": [
         "customer"
@@ -1710,7 +1712,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 46,
       "estimatedMinutes": 35,
       "agent": "qa-backend-expert",
       "tags": [

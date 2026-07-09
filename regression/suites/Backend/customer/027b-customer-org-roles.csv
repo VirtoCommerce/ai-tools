@@ -1,0 +1,544 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORGROLE-001","Organization roles whitelist filters the org-level 'Change roles' select2 picker (CONFIRMED WORKING -- verify via removal, not addition)","Org Roles > Organization Whitelist > Dropdown Filter","High","BL-B2B-005","","Admin logged into {{BACK_URL}}. VCST-5239 (customer#304) ships Customer|Roles settings Customer.OrganizationRolesWhitelist / Customer.MembershipRolesWhitelist (ValueType=ShortText, IsDictionary=true; whitelist content lives in allowedValues, NOT value). Whitelist entries are SELECTED from the live platform roles list (GET /api/platform/security/roles/search) -- never free-text dictionary entry. VERIFIED LIVE (2026-07-09, live re-verification corrected a stale earlier read): the org-level 'Change roles' role picker DOES filter by the Organization whitelist. Picker options = (assignable roles INTERSECT whitelist) MINUS roles already assigned to that org -- so testing by ADDING a whitelisted role to an org with none yet assigned looks unfiltered (nothing to subtract) and is further confounded by the VCST-5441 clear-persist bug (ORGROLE-005). The CORRECT falsification is to REMOVE a role that is CURRENTLY VISIBLE in the picker from the whitelist and confirm it disappears. The picker is a select2 control -- open and read it via CDP (Chrome DevTools MCP); a synthetic click that never dispatches a real pointer event into the select2 search area will fail to open the dropdown and produce a false 'unfiltered/all roles' read (this is what produced the earlier incorrect DRAFT/FAIL status on this case). Settings changes require a cache-reset + full page reload (ignoreCache navigation, not an in-SPA route change) before the picker reflects them. A throwaway AGENT-TEST organization is created in Steps so the shared TechFlow/BuildRight fixtures are never touched.","back_url={{BACK_URL}}; org_whitelist_initial=Organization employee,Organization maintainer; org_whitelist_after_removal=Organization employee","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_whitelist]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_org_whitelist]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-001-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts using Chrome DevTools MCP (CDP) -- do not use a synthetic-click-only browser session for this case
+[NAV] Full page reload with cache disabled/ignored (cache-reset) so the SPA re-reads the whitelist setting just written
+[ACT] Locate the AGENT-TEST-OrgRole-001 organization row in the grid and select its row checkbox
+[ACT] Click the 'Change roles' toolbar button
+[WAIT] Change roles blade opens showing the Roles select2 picker
+[ACT] Via CDP, click into the select2 picker's search area to open its dropdown (confirm the dropdown actually rendered before proceeding)
+[ASSERT] Read the full set of role options rendered in the open dropdown -- record as BASELINE_OPTIONS
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP remove_from_whitelist]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee""], ""isDictionary"": true}]
+[REST-EXEC remove_from_whitelist]
+[NAV] Full page reload with cache disabled/ignored again so the picker's cached role list is invalidated
+[ACT] Reopen the 'Change roles' select2 picker for the same AGENT-TEST-OrgRole-001 organization row via CDP
+[ASSERT] Read the dropdown options again -- record as AFTER_REMOVAL_OPTIONS","[BLADE] BASELINE_OPTIONS == {Organization employee, Organization maintainer} -- exactly the whitelist, nothing more
+[BLADE] AFTER_REMOVAL_OPTIONS == {Organization employee} only -- 'Organization maintainer' (just removed from the whitelist) is now ABSENT
+[STATE] The removal is reflected only after the cache-reset + full reload, not from an in-SPA navigation alone","[API] GET {{BACK_URL}}/api/platform/settings/Customer.OrganizationRolesWhitelist -- allowedValues matches the whitelist body just POSTed at each stage (BASELINE then AFTER_REMOVAL), confirming the picker tracks the live setting","AFTER_REMOVAL_OPTIONS still contains 'Organization maintainer' after a genuine cache-reset+reload (stale-cache or filter-not-honored regression); BASELINE_OPTIONS contains a role outside the whitelist (filter genuinely broken); testing by ADDITION ALONE and seeing many roles is NOT valid evidence of a broken filter -- it is confounded by the picker's own (assignable ∩ whitelist) minus already-assigned subtraction and by the VCST-5441 clear-persist bug; a synthetic click that fails to actually open the select2 dropdown will also misleadingly read as 'unfiltered' -- always confirm the dropdown rendered before reading its options","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-1","Semi-Automated"
+"ORGROLE-002","Organization whitelist restricted to a single role -- picker shows exactly one option, no allow-all fallback (CONFIRMED WORKING -- verify via removal)","Org Roles > Organization Whitelist > Boundary","Medium","BL-B2B-005","","Admin logged into {{BACK_URL}}. Same confirmed-working mechanism as ORGROLE-001 (Story EPIC-5239-01 AC-4) -- boundary case exercised via the same removal-based method (start with 2 whitelisted roles neither yet assigned to the org, remove one, cache-reset + full reload, reopen the select2 picker via CDP). Throwaway AGENT-TEST organization created in Steps.","back_url={{BACK_URL}}; org_whitelist_initial=Organization maintainer,Organization employee; org_whitelist_after_removal=Organization maintainer","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_whitelist_two]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization maintainer"", ""Organization employee""], ""isDictionary"": true}]
+[REST-EXEC set_org_whitelist_two]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-002-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored
+[ACT] Locate the AGENT-TEST-OrgRole-002 organization row and select its row checkbox
+[ACT] Click the 'Change roles' toolbar button
+[ACT] Via CDP, click into the select2 picker's search area to open its dropdown
+[ASSERT] Count the role options rendered -- record as BASELINE_COUNT
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP narrow_whitelist_to_one]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC narrow_whitelist_to_one]
+[NAV] Full page reload with cache disabled/ignored
+[ACT] Reopen the 'Change roles' select2 picker for the same org via CDP
+[ASSERT] Count and read the role options again -- record as AFTER_NARROW_OPTIONS","[COUNT] BASELINE_COUNT = 2
+[BLADE] AFTER_NARROW_OPTIONS shows EXACTLY ONE option: 'Organization employee' is now absent, only 'Organization maintainer' remains
+[STATE] No implicit 'none'/wildcard entry is present that would silently allow assigning any role","[API] GET {{BACK_URL}}/api/platform/settings/Customer.OrganizationRolesWhitelist -- allowedValues == [""Organization maintainer""] (length 1) after the narrowing POST","AFTER_NARROW_OPTIONS still shows 2 options post cache-reset+reload (single-role boundary not honored); AFTER_NARROW_OPTIONS shows zero options (over-restriction, distinct from the empty-whitelist case in ORGROLE-003)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-4","Semi-Automated"
+"ORGROLE-003","Organization whitelist EMPTY -- picker must show no assignable roles, not silently fall back to allow-all","Org Roles > Organization Whitelist > Adversarial","High","BL-B2B-005","","Admin logged into {{BACK_URL}}. The GENERAL whitelist-filters-the-picker mechanism is CONFIRMED WORKING (see ORGROLE-001/002, corrected 2026-07-09) -- but the EMPTY-whitelist edge case specifically (does an empty allowedValues array show zero options, or fall back to every platform role?) was NOT part of that live re-verification and remains unconfirmed. Per ba-report-2026-07-09.md Open Question #2, the stories assume EMPTY whitelist = lock out assignment entirely, never a silent 'allow all' fallback -- this case pins that assumed-correct expected behavior as a regression guard (Story EPIC-5239-01 AC-3). Use CDP (not a synthetic click) to open the select2 picker, and a cache-reset + full page reload after writing the empty whitelist, per the interaction-method correction in ORGROLE-001. Throwaway AGENT-TEST organization created in Steps.","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP clear_org_whitelist]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [], ""isDictionary"": true}]
+[REST-EXEC clear_org_whitelist]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-003-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored so the empty whitelist is definitely current
+[ACT] Locate the AGENT-TEST-OrgRole-003 organization row and select its row checkbox
+[ACT] Click the 'Change roles' toolbar button
+[ACT] Via CDP, click into the select2 picker's search area to attempt to open its dropdown
+[ASSERT] Read the role selector state","[BLADE] Selector shows ZERO role options with an explicit message equivalent to 'no roles available -- configure the whitelist'
+[STATE] Selector does NOT fall back to listing every platform role when the whitelist is empty","[API] GET {{BACK_URL}}/api/platform/settings/Customer.OrganizationRolesWhitelist -- allowedValues == [] (length 0), confirms the empty state the selector must respect","Selector falls back to listing every platform role when the whitelist is empty (the security-adjacent gap this case exists to catch -- Story EPIC-5239-01 AC-3, ba-report Open Question #2); selector renders blank/broken with no explanatory message; do not conflate a synthetic-click failure to open the dropdown with a genuine empty-options result -- confirm the dropdown container actually rendered","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-3","Draft"
+"ORGROLE-004","Organization and Membership whitelists each persist a role subset SELECTED from the roles list, after reload and independently of each other","Org Roles > Whitelist Persistence > Round Trip","High","BL-B2B-005","","Admin logged into {{BACK_URL}}. CONFIRMED LIVE (ba-report-2026-07-09.md PP1): both whitelists already save and round-trip correctly in the ADD direction -- only the clear-to-empty direction is broken (see ORGROLE-005 / VCST-5441). Each whitelist entry is added by SELECTING a real role from the roles list (a role picker sourced live from GET /api/platform/security/roles/search) inside the Settings blade -- never by typing an arbitrary free-text dictionary string. This case exercises that UI selection flow directly (not a REST bypass) so the real add-mechanism is what's under test; use CDP for the select2 interaction and a cache-reset + full page reload before the persistence check, per the interaction-method correction in ORGROLE-001.","back_url={{BACK_URL}}; org_subset=Organization employee,Organization maintainer; membership_subset=Purchasing agent","[AUTH role=ADMIN_DEFAULT]
+[NAV] Navigate to {{BACK_URL}} > Settings > Customer module > Roles via CDP
+[BLADE] Roles settings blade opens showing the 'Organization roles whitelist' and 'Membership roles whitelist' role-picker fields
+[ACT] Open 'Organization roles whitelist'; via CDP, select role 'Organization employee' from the roles list, then select role 'Organization maintainer' from the roles list (both chosen from the live platform roles list, not typed)
+[ACT] Open 'Membership roles whitelist'; via CDP, select role 'Purchasing agent' from the roles list
+[ACT] Click Save
+[WAIT] Save completes; success toast shown
+[NAV] Full page reload with cache disabled/ignored (cache-reset)
+[ACT] Reopen both whitelist editors and read their contents","[BLADE] 'Organization roles whitelist' shows exactly {Organization employee, Organization maintainer} after reload
+[BLADE] 'Membership roles whitelist' shows exactly {Purchasing agent} after reload -- unaffected by the Organization whitelist's value","[API] GET .../settings/Customer.OrganizationRolesWhitelist -- allowedValues == [""Organization employee"",""Organization maintainer""]
+[API] GET .../settings/Customer.MembershipRolesWhitelist -- allowedValues == [""Purchasing agent""]","Either field resets to empty after reload (general persistence regression, distinct from the clear-specific VCST-5441 bug); one whitelist's values leak into the other field (cross-contamination between the two independent settings); the roles-list picker offers free-text entry instead of a constrained selection from real platform roles; NOTE: this case's own Cleanup (resetting both whitelists to empty via REST) is a KNOWN NO-OP per VCST-5441 (see ORGROLE-005) -- Cleanup will NOT actually leave the whitelists empty; they remain populated with org_subset/membership_subset until another case's own Steps overwrite them at the start of its run","[AUTH role=ADMIN_DEFAULT]
+[REST-OP clear_org_wl2] POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [], ""isDictionary"": true}]
+[REST-EXEC clear_org_wl2]
+[REST-OP clear_membership_wl2] POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [], ""isDictionary"": true}]
+[REST-EXEC clear_membership_wl2]","VCST-5239; customer#304; Story EPIC-5239-01 DoD (both whitelists tested independently)","Semi-Automated"
+"ORGROLE-005","Clearing either Roles whitelist to empty must persist after reload (VCST-5441 regression guard)","Org Roles > Whitelist Persistence > Clear-to-Empty","Critical","BL-B2B-005","","Admin logged into {{BACK_URL}}. KNOWN OPEN BUG VCST-5441 (reports/bugs/open/BUG-Customer-Roles-Whitelist-Clear-Not-Persisted.md): deleting all entries from either Customer|Roles whitelist role-picker and Saving reports success (204, no error) but the removed entries REAPPEAR immediately in the editor and after reload. This case is authored against the EXPECTED correct (symmetric with add) behavior and CURRENTLY FAILS -- it is the regression guard for VCST-5441. The seed entries below are the API-equivalent of selecting those same roles from the live roles-list picker and clicking Save (the picker is a role SELECTOR, not free-text dictionary entry -- see ORGROLE-004); the clear itself IS exercised via the UI (deselecting/removing the picker's existing tags), with a cache-reset + full page reload before reading the result, per the interaction-method correction in ORGROLE-001.","back_url={{BACK_URL}}; org_subset=Organization employee,Organization maintainer; membership_subset=Organization employee","[AUTH role=ADMIN_DEFAULT]
+[REST-OP seed_org_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC seed_org_wl]
+[REST-OP seed_membership_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee""], ""isDictionary"": true}]
+[REST-EXEC seed_membership_wl]
+[NAV] Navigate to {{BACK_URL}} > Settings > Customer module > Roles via CDP; full page reload with cache disabled/ignored so the seeded values are current
+[BLADE] Roles settings blade opens; both whitelist role-picker fields show the seeded selected roles
+[ACT] Open 'Organization roles whitelist'; via CDP, deselect/remove every currently-selected role tag until the picker is empty
+[ACT] Open 'Membership roles whitelist'; via CDP, deselect/remove every currently-selected role tag until the picker is empty
+[ACT] Click Save
+[WAIT] Save completes; success toast shown
+[NAV] Full page reload with cache disabled/ignored (cache-reset) and reopen each whitelist editor","[BLADE] BOTH 'Organization roles whitelist' and 'Membership roles whitelist' show ZERO selected roles after reload -- the cleared state persisted, no previously-removed role reappears","[API] GET .../settings/Customer.OrganizationRolesWhitelist -- allowedValues == [] (length 0)
+[API] GET .../settings/Customer.MembershipRolesWhitelist -- allowedValues == [] (length 0)","The removed role tags REAPPEAR in the picker immediately after Save or after a genuine cache-reset+reload -- this is the CONFIRMED VCST-5441 signature; Save reports success (204/toast) despite the clear being a silent no-op","No cleanup required -- Steps already leave both whitelists in the cleared (empty) state, which is the neutral reset state for this feature group","VCST-5239; VCST-5441; customer#304; boundary complement to ORGROLE-004 (clear-persist direction)","Semi-Automated"
+"ORGROLE-006","Membership roles whitelist filters the per-member role editor select2 (Organization memberships widget) -- same widget family as ORGROLE-001, filtering-works status NOT independently confirmed at this level","Org Roles > Membership Whitelist > Dropdown Filter","High","BL-B2B-005","","Admin logged into {{BACK_URL}}. The org-level 'Change roles' picker's whitelist filter is CONFIRMED WORKING (ORGROLE-001/002, corrected 2026-07-09). The per-member role editor in the Organization memberships widget renders via the SAME AngularJS ui-select/select2 widget class used platform-wide (confirmed by identical 'Select box focus' markup on unrelated fields, e.g. a contact's Status dropdown) -- consistent with being the same control family, but its OWN filtering behavior against the Membership whitelist was NOT independently re-verified live this session (distinct setting, distinct consumer code path from the org-level picker). Authored against EXPECTED behavior (Story EPIC-5239-01 AC-2); status stays unverified/Draft pending a dedicated live check. Use CDP (not a synthetic click) to open the select2, remove-a-visible-role to falsify (not add), and a cache-reset + full page reload after any whitelist change -- the same interaction-method fixes as ORGROLE-001. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; membership_whitelist_initial=Organization employee,Organization maintainer,Purchasing agent; membership_whitelist_after_removal=Organization employee,Purchasing agent; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_membership_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer"", ""Purchasing agent""], ""isDictionary"": true}]
+[REST-EXEC set_membership_wl]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-006-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole006"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole006@yopmail.com"", ""email"": ""AGENT-TEST-orgrole006@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole006@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-006"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored
+[ACT] Search for and open the AGENT-TEST-OrgRole006 contact blade
+[ACT] Locate the Organization memberships widget; via CDP, click into the role editor select2 for the AGENT-TEST-OrgRole-006 membership row to open its dropdown
+[ASSERT] Read the role options rendered in the editor -- record as BASELINE_OPTIONS
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP narrow_membership_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Purchasing agent""], ""isDictionary"": true}]
+[REST-EXEC narrow_membership_wl]
+[NAV] Full page reload with cache disabled/ignored
+[ACT] Reopen the AGENT-TEST-OrgRole006 contact blade; via CDP, reopen the role editor select2 for the same membership row
+[ASSERT] Read the role options again -- record as AFTER_REMOVAL_OPTIONS","[BLADE] BASELINE_OPTIONS == {Organization employee, Organization maintainer, Purchasing agent} -- exactly the Membership whitelist
+[BLADE] AFTER_REMOVAL_OPTIONS == {Organization employee, Purchasing agent} -- 'Organization maintainer' (just removed from the whitelist) is now ABSENT","[API] GET .../settings/Customer.MembershipRolesWhitelist -- allowedValues matches the whitelist body just POSTed at each stage","AFTER_REMOVAL_OPTIONS still contains 'Organization maintainer' after a genuine cache-reset+reload (stale-cache or filter-not-honored); BASELINE_OPTIONS contains a role outside the whitelist; testing by ADDITION alone (as opposed to removal of a currently-visible option) is confounded exactly as documented in ORGROLE-001 and must not be used to conclude 'unfiltered'; evidence in reports/bugs/BUG-VCST-5239-whitelist-storefront-dropdown-unfiltered.md documents the STOREFRONT twin of this dropdown as unfiltered -- that finding is about a different (storefront, not Admin SPA) consumer and does not by itself confirm or refute this Admin-SPA membership-level picker","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole006@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-2","Draft"
+"ORGROLE-007","Organization and Membership whitelists filter their own select2 only -- changing one does not alter the other","Org Roles > Whitelist Independence","Medium","BL-B2B-005","","Admin logged into {{BACK_URL}}. Verifies the two whitelist settings are independent objects, not a shared list (Story EPIC-5239-01 AC-2 second clause). Authored against EXPECTED behavior; this cross-setting independence was NOT independently re-verified live this session (distinct from the org-level picker filter confirmed in ORGROLE-001/002) -- status stays unverified/Draft pending a dedicated live check. Same interaction-method corrections as ORGROLE-001/006 apply: CDP to open each select2, cache-reset + full page reload after each settings write. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; org_wl=Organization maintainer; membership_wl_v1=Organization employee; membership_wl_v2=Purchasing agent; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_org_wl]
+[REST-OP set_membership_wl_v1]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee""], ""isDictionary"": true}]
+[REST-EXEC set_membership_wl_v1]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-007-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole007"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole007@yopmail.com"", ""email"": ""AGENT-TEST-orgrole007@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole007@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-007"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored
+[ACT] Open the AGENT-TEST-OrgRole007 contact blade; via CDP, open the Organization memberships widget's role editor select2 for the membership row
+[ASSERT] Read the role editor options -- expect exactly {Organization employee} (Membership whitelist v1)
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_wl_v2]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer"", ""Purchasing agent""], ""isDictionary"": true}]
+[REST-EXEC set_org_wl_v2]
+[NAV] Full page reload with cache disabled/ignored
+[ACT] Reopen the AGENT-TEST-OrgRole007 contact blade; via CDP, reopen the role editor select2 for the same membership row
+[ASSERT] Read the role editor options again after the Organization whitelist changed","[BLADE] Membership-level role editor options == {Organization employee} both BEFORE and AFTER the Organization whitelist was widened -- unaffected by the other setting
+[STATE] The Organization whitelist change never appears as an option source in the membership-level editor","[API] GET .../settings/Customer.MembershipRolesWhitelist -- allowedValues unchanged == [""Organization employee""] across the whole case, confirming no cross-write between the two settings","Membership-level dropdown option set changes after the Organization whitelist is edited (cross-contamination between two settings that should be independent); membership dropdown reflects the Organization whitelist's roles instead of its own","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole007@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-2","Draft"
+"ORGROLE-008","Membership whitelist restricted to a single role -- per-member select2 shows exactly one option","Org Roles > Membership Whitelist > Boundary","Medium","BL-B2B-005","","Admin logged into {{BACK_URL}}. Boundary twin of ORGROLE-002 for the Membership-level surface (Story EPIC-5239-01 DoD: both whitelists tested independently). Authored against EXPECTED behavior; this specific single-role Membership-level boundary was NOT independently re-verified live this session (same gap as ORGROLE-006/007 for this widget family) -- status stays unverified/Draft pending a dedicated live check. Same CDP + cache-reset + full page reload interaction-method corrections as ORGROLE-001/006 apply. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; membership_whitelist_single=Organization employee; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_membership_wl_single]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee""], ""isDictionary"": true}]
+[REST-EXEC set_membership_wl_single]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-008-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole008"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole008@yopmail.com"", ""email"": ""AGENT-TEST-orgrole008@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole008@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-008"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored
+[ACT] Open the AGENT-TEST-OrgRole008 contact blade; via CDP, open the role editor select2 for the membership row
+[ASSERT] Count the role options rendered in the editor","[BLADE] Role editor shows EXACTLY ONE option: 'Organization employee'
+[STATE] No implicit 'none'/wildcard entry present","[API] GET .../settings/Customer.MembershipRolesWhitelist -- allowedValues == [""Organization employee""] (length 1)","Editor shows more than one option with a single-role whitelist configured; editor shows zero options","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole008@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 DoD","Draft"
+"ORGROLE-009","Direct REST PUT /api/organizations bypass with a non-whitelisted org-level role is rejected server-side","Org Roles > Server-Side Enforcement > Organization Whitelist","Critical","BL-B2B-005","","Runner-native. Backend report finding F1 (ba-report-2026-07-09.md): profile-experience-api#137 and the REST organizations endpoint currently carry ZERO whitelist references -- server-side enforcement does not exist yet (BL-B2B-005 explicitly documents the whitelist as NOT a permission boundary today). This case is authored against the EXPECTED post-fix behavior (Story EPIC-5239-03 AC-1, the P0 fix -- 'ship first') and CURRENTLY FAILS. Throwaway AGENT-TEST organization created in Steps so no shared fixture is touched by the direct PUT.","back_url={{BACK_URL}}; excluded_role_id=org-manager; excluded_role_name=Organization manager","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_org_wl]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-009-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[GQL-CAPTURE create_org.data.createOrganization.name → ORG_NAME]
+[REST-OP bypass_put]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{ORG_ID}}"", ""name"": ""{{ORG_NAME}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""{{ORG_ID}}"", ""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC bypass_put]
+[REST-OP verify_org]
+GET {{BACK_URL}}/api/organizations/{{ORG_ID}}
+[REST-EXEC verify_org]","[ERRORS label=bypass_put] errors[] non-empty
+[COUNT label=verify_org] body.roles[?roleId=org-manager].length = 0","[API] Whitelisted role assignment still succeeds via the same PUT path -- see ORGROLE-011 (no-over-blocking twin)","bypass_put returns HTTP 204 with errors[] empty -- the CONFIRMED current behavior (backend report F1, no server check exists); verify_org shows the excluded role persisted in the organization's roles array despite the assignment attempt being non-whitelisted","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; Story EPIC-5239-03 AC-1; profile-experience-api#137 (zero whitelist refs per backend finding F1)","Draft"
+"ORGROLE-010","Direct GraphQL changeOrganizationContactRole bypass with a non-whitelisted membership role is rejected server-side","Org Roles > Server-Side Enforcement > Membership Whitelist","Critical","BL-B2B-005","","Runner-native. Same F1 finding as ORGROLE-009, applied to the membership-level mutation (Story EPIC-5239-03 AC-2). CURRENTLY FAILS -- authored against the EXPECTED post-fix behavior. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; excluded_role_id=org-manager; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_membership_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_membership_wl]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-010-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole010"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole010@yopmail.com"", ""email"": ""AGENT-TEST-orgrole010@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole010@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-010"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP bypass_change_role]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors { code parameter description }
+  }
+}
+[GQL-VARS bypass_change_role] {""command"": {""memberId"": ""{{MEMBER_ID}}"", ""roleIds"": [""org-manager""]}}
+[GQL-EXEC bypass_change_role]
+[REST-OP verify_unchanged]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}""}
+[REST-EXEC verify_unchanged]","[ERRORS label=bypass_change_role] errors[] non-empty
+[DATA label=bypass_change_role] data.changeOrganizationContactRole.succeeded = false
+[DATA label=verify_unchanged] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-employee","[API] Whitelisted role assignment via the same mutation still succeeds -- see ORGROLE-011","bypass_change_role returns succeeded=true with errors[] empty -- the CONFIRMED current behavior (F1, mutation has no whitelist check); verify_unchanged shows roleId=org-manager persisted despite the non-whitelisted attempt","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole010@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; Story EPIC-5239-03 AC-2; profile-experience-api#137 (F1)","Draft"
+"ORGROLE-011","A WHITELISTED membership role via the same direct API path still succeeds -- no over-blocking once server enforcement ships","Org Roles > Server-Side Enforcement > No Over-Blocking","High","BL-B2B-005","","Runner-native. Story EPIC-5239-03 AC-3 -- the positive twin of ORGROLE-010: server enforcement (once shipped) must not reject a WHITELISTED role. This case is TRUE today (nothing blocks anything yet) and must remain TRUE after the fix -- it is the guard that keeps ORGROLE-009/010 from becoming an over-block regression. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; whitelisted_role_id=org-maintainer; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_membership_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_membership_wl]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-011-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole011"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole011@yopmail.com"", ""email"": ""AGENT-TEST-orgrole011@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole011@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-011"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[GQL-OP whitelisted_change_role]
+mutation ChangeOrgContactRole($command: InputChangeOrganizationContactRoleType!) {
+  changeOrganizationContactRole(command: $command) {
+    succeeded
+    errors { code parameter description }
+  }
+}
+[GQL-VARS whitelisted_change_role] {""command"": {""memberId"": ""{{MEMBER_ID}}"", ""roleIds"": [""org-maintainer""]}}
+[GQL-EXEC whitelisted_change_role]
+[REST-OP verify_changed]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}""}
+[REST-EXEC verify_changed]","[ERRORS label=whitelisted_change_role] errors[] empty
+[DATA label=whitelisted_change_role] data.changeOrganizationContactRole.succeeded = true
+[DATA label=verify_changed] body.results[?organizationId={{ORG_ID}}].roles[0].roleId = org-maintainer","","succeeded=false / errors[] non-empty for a WHITELISTED role (over-blocking regression once enforcement ships); role not persisted despite succeeded=true","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole011@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; Story EPIC-5239-03 AC-3","Draft"
+"ORGROLE-012","Whitelist tightened after an org-level role was already assigned -- existing assignment is not purged, but re-assigning it to a different org is rejected","Org Roles > Server-Side Enforcement > Retroactive Tightening","Medium","BL-B2B-005","","Runner-native. Story EPIC-5239-03 AC-4 (state-transition / retroactive-whitelist edge case flagged in tests/Sprint-current/VCST-5239/testing-checklist.md AC12). The 'not purged' half is TRUE today (nothing purges anything, no enforcement exists); the 're-assign rejected' half CURRENTLY FAILS (F1 -- no server check). Two throwaway organizations created in Steps for isolation.","back_url={{BACK_URL}}; role_id=org-manager; role_name=Organization manager","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_org_wl_permissive]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer"", ""Organization manager""], ""isDictionary"": true}]
+[REST-EXEC set_org_wl_permissive]
+[GQL-OP create_org_a]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org_a] {""input"": {""name"": ""AGENT-TEST-OrgRole-012A-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org_a]
+[GQL-CAPTURE create_org_a.data.createOrganization.id → ORG_A_ID]
+[GQL-CAPTURE create_org_a.data.createOrganization.name → ORG_A_NAME]
+[REST-OP assign_role_org_a]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{ORG_A_ID}}"", ""name"": ""{{ORG_A_NAME}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""{{ORG_A_ID}}"", ""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC assign_role_org_a]
+[REST-OP verify_assigned]
+GET {{BACK_URL}}/api/organizations/{{ORG_A_ID}}
+[REST-EXEC verify_assigned]
+[REST-OP tighten_org_wl]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization employee"", ""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC tighten_org_wl]
+[REST-OP verify_not_purged]
+GET {{BACK_URL}}/api/organizations/{{ORG_A_ID}}
+[REST-EXEC verify_not_purged]
+[GQL-OP create_org_b]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org_b] {""input"": {""name"": ""AGENT-TEST-OrgRole-012B-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org_b]
+[GQL-CAPTURE create_org_b.data.createOrganization.id → ORG_B_ID]
+[GQL-CAPTURE create_org_b.data.createOrganization.name → ORG_B_NAME]
+[REST-OP reassign_role_org_b]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{ORG_B_ID}}"", ""name"": ""{{ORG_B_NAME}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""{{ORG_B_ID}}"", ""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC reassign_role_org_b]
+[REST-OP verify_org_b]
+GET {{BACK_URL}}/api/organizations/{{ORG_B_ID}}
+[REST-EXEC verify_org_b]","[COUNT label=verify_not_purged] body.roles[?roleId=org-manager].length = 1
+[ERRORS label=reassign_role_org_b] errors[] non-empty
+[COUNT label=verify_org_b] body.roles[?roleId=org-manager].length = 0","","verify_not_purged shows the pre-existing role silently stripped when the whitelist tightened (a retroactive-purge regression, worse than the acceptance criterion); reassign_role_org_b succeeds (errors[] empty) -- the CONFIRMED current behavior (F1, no server check) for the fresh assignment on org B post-tightening","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/members?ids={{ORG_A_ID}}]
+[REST DELETE /api/members?ids={{ORG_B_ID}}]","VCST-5239; Story EPIC-5239-03 AC-4; testing-checklist.md AC12","Draft"
+"ORGROLE-013","Org-level role lifecycle: assigning it grants ALL org members no per-member action; removing it revokes from all members simultaneously","Org Roles > Organization-Level Inheritance > Lifecycle","High","BL-B2B-005","","Runner-native. CONFIRMED WORKING LIVE (ba-report-2026-07-09.md flow-2 'functional AC3/AC7', Executive Summary: 'inheritance reaches all members'). Regression guard for the already-shipped org-level role mechanic -- Organization.Roles (OrganizationRoleEntity, PUT /api/organizations) is inherited by every member with zero per-member assignment. NOTE: rolesInOrganization/isLockedInOrganization resolve from the CALLING user's own token -- they cannot be queried for another member by an admin caller (live-verified), so this case authenticates AS two real TechFlow members (TECHFLOW_ADMIN, MULTI_ORG_TF_BR) rather than dynamically-created throwaway accounts, which the runner's [AUTH role=] alias mechanism cannot target mid-case. PUT /api/organizations fully replaces the entity (live-verified) -- Steps always resend id+name+memberType, name captured via GET rather than hardcoded. This case also removes a pre-existing orphaned test role ('AGENT-TEST-orglevel-5239') found on TechFlow from an earlier exploratory session; see suite authoring notes. Uses org-employee (not org-maintainer) as the org-level test role because both probe accounts (TECHFLOW_ADMIN, MULTI_ORG_TF_BR) already hold 'Organization maintainer' via their own persistent membership role in TechFlow -- reusing that role would make the assign/remove assertions pass or fail independent of the org-level grant itself. Steps assert the org's pre-existing roles[] count is zero (ORIGINAL_ROLES_COUNT guard) before mutating, so Cleanup's final roles: [] reset is a verified restore, not a blind assumption. NOT SAFE TO RUN IN PARALLEL WITH ORGROLE-014 -- both mutate Organization.Roles on the same shared TechFlow fixture (@td(MULTI_ORG_TF_BR.org_techflow_id)).","back_url={{BACK_URL}}; org_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_level_role_id=org-employee","[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_org]
+GET {{BACK_URL}}/api/organizations/@td(MULTI_ORG_TF_BR.org_techflow_id)
+[REST-EXEC get_org]
+[REST-CAPTURE get_org.body.name → ORG_NAME]
+[REST-CAPTURE get_org.body.roles.length → ORIGINAL_ROLES_COUNT]
+[REST-OP assign_org_role]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_NAME}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC assign_org_role]
+[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP me_after_assign_1]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_after_assign_1]
+[AUTH role=MULTI_ORG_TF_BR]
+[GQL-OP me_after_assign_2]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_after_assign_2]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_membership_untouched]
+POST {{BACK_URL}}/api/customer/organization-memberships/search
+Content-Type: application/json
+Body: {""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""userId"": ""@td(MULTI_ORG_TF_BR.userId)""}
+[REST-EXEC verify_membership_untouched]
+[REST-OP remove_org_role]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_NAME}}"", ""memberType"": ""Organization"", ""roles"": []}
+[REST-EXEC remove_org_role]
+[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP me_after_remove_1]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_after_remove_1]
+[AUTH role=MULTI_ORG_TF_BR]
+[GQL-OP me_after_remove_2]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_after_remove_2]","[COUNT label=get_org] body.roles.length = 0
+[COUNT label=me_after_assign_1] data.me.contact.rolesInOrganization[?id=org-employee].length = 1
+[COUNT label=me_after_assign_2] data.me.contact.rolesInOrganization[?id=org-employee].length = 1
+[DATA label=verify_membership_untouched] body.results[?organizationId=@td(MULTI_ORG_TF_BR.org_techflow_id)].roles[0].roleId = @td(MULTI_ORG_TF_BR.techflow_role)
+[COUNT label=me_after_remove_1] data.me.contact.rolesInOrganization[?id=org-employee].length = 0
+[COUNT label=me_after_remove_2] data.me.contact.rolesInOrganization[?id=org-employee].length = 0","[API] verify_membership_untouched proves MULTI_ORG_TF_BR's own OrganizationMembership.roles never changed (still their pre-existing techflow_role) while rolesInOrganization gained org-employee -- the grant is org-level/inherited, not a per-member write (BL-B2B-005)","TECHFLOW_ADMIN or MULTI_ORG_TF_BR does NOT show org-employee in rolesInOrganization after the org-level assignment (inheritance broken -- P0 regression on already-shipped BL-B2B-005 mechanics); role still present for either member after removal (revoke did not propagate); ORIGINAL_ROLES_COUNT != 0 at the initial GET (TechFlow's org-level roles[] baseline is not empty -- Cleanup's final roles: [] reset would not be a true restore; investigate before trusting this case's Cleanup)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_org_final]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_NAME}}"", ""memberType"": ""Organization"", ""roles"": []}
+[REST-EXEC restore_org_final]","VCST-5239; ba-report-2026-07-09.md flow-2 (AC3/AC7 confirmed working)","Draft"
+"ORGROLE-014","Org-level role assigned to one organization does not leak to another; global ApplicationUser roles and lockout stay untouched","Org Roles > Organization-Level Inheritance > Isolation","High","BL-B2B-008,BL-AUTH-012","","Runner-native. CONFIRMED WORKING LIVE (ba-report-2026-07-09.md flow-8, AC10 PASS). Regression guard, analogous to the VCST-5028 ORGM-004/ORGM-006 isolation pattern but for the NEW org-level-role surface. Uses the two real, already-isolated fixture orgs (TechFlow = org A via TECHFLOW_ADMIN, BuildRight = org B via BUILDRIGHT_ADMIN) instead of dynamically-created accounts, for the same [AUTH role=] targeting reason documented in ORGROLE-013. Uses org-employee (not org-maintainer) as the org-level test role because BUILDRIGHT_ADMIN already holds 'Organization maintainer' via its own persistent membership role in BuildRight -- reusing that role would make the isolation negative-check (me_b / verify_org_b expecting zero) fail even when isolation works correctly. Steps assert TechFlow's pre-existing roles[] count is zero (ORIGINAL_ROLES_A_COUNT guard) before mutating, so Cleanup's final roles: [] reset is a verified restore, not a blind assumption. NOT SAFE TO RUN IN PARALLEL WITH ORGROLE-013 -- both mutate Organization.Roles on the same shared TechFlow fixture (@td(MULTI_ORG_TF_BR.org_techflow_id)).","back_url={{BACK_URL}}; org_a_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_b_id=@td(MULTI_ORG_TF_BR.org_buildright_id); org_level_role_id=org-employee","[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_org_a]
+GET {{BACK_URL}}/api/organizations/@td(MULTI_ORG_TF_BR.org_techflow_id)
+[REST-EXEC get_org_a]
+[REST-CAPTURE get_org_a.body.name → ORG_A_NAME]
+[REST-CAPTURE get_org_a.body.roles.length → ORIGINAL_ROLES_A_COUNT]
+[REST-OP assign_org_role_a]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_A_NAME}}"", ""memberType"": ""Organization"", ""roles"": [{""organizationId"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC assign_org_role_a]
+[REST-OP verify_org_a]
+GET {{BACK_URL}}/api/organizations/@td(MULTI_ORG_TF_BR.org_techflow_id)
+[REST-EXEC verify_org_a]
+[REST-OP verify_org_b]
+GET {{BACK_URL}}/api/organizations/@td(MULTI_ORG_TF_BR.org_buildright_id)
+[REST-EXEC verify_org_b]
+[AUTH role=TECHFLOW_ADMIN]
+[GQL-OP me_a]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_a]
+[AUTH role=BUILDRIGHT_ADMIN]
+[GQL-OP me_b]
+query { me { contact { id rolesInOrganization { id name } } } }
+[GQL-EXEC me_b]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP verify_global_a]
+GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_ADMIN.platform_id)
+[REST-EXEC verify_global_a]
+[REST-OP verify_locked_a]
+GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_ADMIN.platform_id)/locked
+[REST-EXEC verify_locked_a]","[COUNT label=get_org_a] body.roles.length = 0
+[COUNT label=verify_org_a] body.roles[?roleId=org-employee].length = 1
+[COUNT label=verify_org_b] body.roles[?roleId=org-employee].length = 0
+[COUNT label=me_a] data.me.contact.rolesInOrganization[?id=org-employee].length = 1
+[COUNT label=me_b] data.me.contact.rolesInOrganization[?id=org-employee].length = 0
+[COUNT label=verify_global_a] body.roles[?id=org-employee].length = 0
+[DATA label=verify_locked_a] body.locked = false","[API] The org-level grant on TechFlow never appears in ApplicationUser.roles (global roles) for TECHFLOW_ADMIN -- global vs org-level roles remain distinct storage (BL-B2B-008)","verify_org_b or me_b shows the role reaching BuildRight/BUILDRIGHT_ADMIN (cross-org bleed -- P0 regression on BL-B2B-008); verify_global_a shows org-employee in the user's global roles[] (org-level role incorrectly promoted to global); verify_locked_a returns locked=true (BL-AUTH-012 violation, unrelated mechanism touched); ORIGINAL_ROLES_A_COUNT != 0 at the initial GET (TechFlow's org-level roles[] baseline is not empty -- Cleanup's final roles: [] reset would not be a true restore; investigate before trusting this case's Cleanup)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_org_a]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(MULTI_ORG_TF_BR.org_techflow_id)"", ""name"": ""{{ORG_A_NAME}}"", ""memberType"": ""Organization"", ""roles"": []}
+[REST-EXEC restore_org_a]","VCST-5239; ba-report-2026-07-09.md flow-8 (AC10 confirmed working)","Draft"

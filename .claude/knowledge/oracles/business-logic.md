@@ -475,6 +475,31 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** After registration the global `ApplicationUser.Roles` is non-empty with platform roles; or no membership/org role is created for the new organization.
 - **Agents:** qa-frontend-expert (registration flow), qa-backend-expert (members + organization-memberships + security/users API)
 
+### BL-B2B-011: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate `[P1-data]`
+- **Rule:** Two dictionary platform settings — `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`
+  (`ValueType=ShortText`, `IsDictionary=true`; content lives in `allowedValues`, never `value`) — each hold a SELECTED
+  subset of the live platform roles list (`GET /api/platform/security/roles/search`), never free-text. The Organization
+  whitelist filters the org-level "Change roles" picker in Admin SPA (org-record `Organization.Roles`, `PUT /api/organizations`);
+  the Membership whitelist filters the per-member role editor in the Organization memberships widget
+  (`OrganizationMembership.Roles`, `changeOrganizationContactRole` / `PUT /api/customer/organization-memberships/{id}`).
+  Each picker's option set = (assignable roles ∩ its own whitelist) − roles already assigned to that org/membership —
+  the two whitelists are independent settings and must never cross-contaminate each other's picker. An EMPTY whitelist
+  must lock out assignment entirely (zero options), never silently fall back to "all platform roles." **Server-side
+  enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story EPIC-5239-03): as of 2026-07,
+  `PUT /api/organizations` and `changeOrganizationContactRole` accept a non-whitelisted `roleId` with no rejection
+  (backend finding F1 — zero whitelist references in `profile-experience-api#137` or the REST organizations endpoint) —
+  the whitelist today constrains only the Admin UI picker's *offered* options, not what the API will *accept*.
+- **Verify:** Remove a currently-visible role from either whitelist → cache-reset + reload → picker no longer offers it.
+  Empty whitelist → picker shows zero options, no allow-all fallback. Add-direction persists round-trip after reload;
+  clear-to-empty currently does NOT persist (VCST-5441). Direct PUT/GraphQL bypass with a non-whitelisted role currently
+  succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the same path.
+- **Violation signal:** Picker offers a role outside its whitelist after a genuine cache-reset+reload; empty whitelist
+  falls back to listing every role; one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently
+  reverts (VCST-5441 signature); once server enforcement ships — a non-whitelisted role is accepted by the API, OR a
+  whitelisted role is rejected (over-blocking).
+- **Related:** BL-B2B-005 (org-level role union/inheritance), BL-B2B-008 (org-scoped role-change isolation), VCST-5239, VCST-5441.
+- **Agents:** qa-backend-expert (Admin SPA picker, REST/GraphQL enforcement)
+
 ---
 
 ## Domain 7: Catalog & Inventory (BL-CAT)
