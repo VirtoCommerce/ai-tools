@@ -13,6 +13,7 @@ Part of the [`vc-tools`](../../.claude-plugin/marketplace.json) marketplace host
 ```
 /plugin marketplace add VirtoCommerce/vc-mcp-testing-module
 /plugin install vc-fix@vc-tools
+/reload-plugins
 ```
 
 Then, in the plugin install directory (Claude Code shows the path after install), run:
