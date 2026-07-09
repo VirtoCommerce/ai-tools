@@ -252,7 +252,7 @@ instead (see step 8's `ensure-session.mjs` for the driven flow).
 **Then pause — wait for the operator to confirm both files are filled.** Make the
 wait VISUALLY OBVIOUS: end the message with an unmistakable, set-apart call-to-action
 on its own line — a blockquote banner such as
-`> ⏸️ **ЖДУ ТЕБЯ** — заполни оба файла, потом ответь «готово / done».`
+`> ⏸️ **WAITING FOR YOU** — fill in both files, then reply "done".`
 Do not append any further tool calls after it — the turn ends there so the prompt
 is the last thing on screen. (Reuse this banner wherever the pipeline blocks on the
 operator.)

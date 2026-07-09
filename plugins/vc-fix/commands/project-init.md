@@ -59,7 +59,7 @@ permissions + the filled env + a live module/repo scan.
    `--github-auth`; session auth emits no token line); (3c) tell the operator **two files
    created — fill both** (inline comments say what/where), then **pause**. Never a raw
    account password. **End the pause with a visually unmistakable waiting banner** (e.g. a
-   blockquote `> ⏸️ ЖДУ ТЕБЯ — заполни оба файла, потом «готово»`) as the last line, no
+   blockquote `> ⏸️ WAITING FOR YOU — fill in both files, then "done"`) as the last line, no
    tool calls after it — a plain "let me know" reads as narration, not a prompt.
 4. **Discover repos — ALWAYS** (`discover-repos.mjs --client-vcs …`, no `--client-org`):
    classify installed modules + scan the client host for the storefront/theme repo, and
