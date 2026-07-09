@@ -23,7 +23,21 @@
  * Auth (azure): ADO_PAT (Basic) or an `az login` session. NEVER prints the token.
  */
 import { execSync } from "child_process";
+import { writeFileSync, mkdirSync } from "fs";
+import { resolve, dirname } from "path";
 import { ADO_RESOURCE } from "./probe-lib.mjs";
+import { outputRoot } from "./lib/paths.mjs";
+
+/** Write the result to --out (relative to the deployment project) and/or print it. */
+function emit(out, args) {
+  if (args.out) {
+    const p = resolve(outputRoot(), args.out);
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, JSON.stringify(out, null, 2) + "\n");
+    console.error(`[discover-tracker] wrote ${p}`);
+  }
+  if (args.print || !args.out) console.log(JSON.stringify(out, null, 2));
+}
 
 function parseArgs(argv) {
   const a = {};
@@ -94,7 +108,7 @@ async function main() {
 
   if (kind === "jira") {
     // Jira: format facts only; transitions are discovered live at runtime.
-    console.log(JSON.stringify({ kind: "jira", ticketKeyFormat: "prefixed", crossLinkToken: "" }, null, 2));
+    emit({ kind: "jira", ticketKeyFormat: "prefixed", crossLinkToken: "" }, args);
     return;
   }
 
@@ -171,7 +185,7 @@ async function main() {
     `[discover-tracker] scanned ${Object.keys(workItemTypes).length} type(s); roleStates(${primary}): ` +
       JSON.stringify(roleStates),
   );
-  console.log(JSON.stringify(out, null, 2));
+  emit(out, args);
 }
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("discover-tracker.mjs")) {
