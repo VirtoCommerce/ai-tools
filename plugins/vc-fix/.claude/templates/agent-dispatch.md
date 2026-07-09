@@ -31,6 +31,22 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 {TASK_SPECIFIC_INSTRUCTIONS}
 ```
 
+## First-turn execution & path discipline (MUST)
+
+- **Execute immediately — there is NO input file coming.** The dispatched agent's task is fully specified
+  in this prompt; it must start using its tools on the first turn. Do **not** idle, wait for an attachment,
+  or emit a generic "send me the file" acknowledgement. (A developer agent once burned a whole turn doing
+  exactly that — 0 tool calls — and had to be re-driven.) If anything is genuinely missing, act on sensible
+  defaults from the profile and report; do not stall.
+- **Absolute paths only.** The orchestrator MUST pass `profile.paths` (`projectRoot`, `pluginRoot`,
+  `workspace`, `secretsEnv`) in the prompt. The agent resolves every path from `projectRoot`
+  (`.env`/secrets, workspace, reports), runs git as `git -C "<abs-checkout>"`, and **never `cd`s into the
+  workspace as a persisted directory** (the Bash cwd drifts between calls and silently breaks relative
+  `source .env.local`). Load secrets only from the absolute `join(projectRoot, secretsEnv)`.
+- **Pass the routed repo explicitly.** Include the routed repo name + its `contribution`/`integrationBranch`
+  so the agent derives `.fix-workspace/<repo-basename>/` and the branch base/target — never a hardcoded
+  `vc-frontend`/`dev`.
+
 ## Browser Assignment & Fallback Chain
 
 Each agent MUST be assigned an explicit browser server. If the primary browser fails (launch error, user data dir conflict, timeout), retry with the next browser in the fallback chain. Max 1 retry.

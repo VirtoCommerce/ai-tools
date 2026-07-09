@@ -59,7 +59,7 @@ permissions + the filled env + a live module/repo scan.
    `--github-auth`; session auth emits no token line); (3c) tell the operator **two files
    created — fill both** (inline comments say what/where), then **pause**. Never a raw
    account password. **End the pause with a visually unmistakable waiting banner** (e.g. a
-   blockquote `> ⏸️ ЖДУ ТЕБЯ — заполни оба файла, потом «готово»`) as the last line, no
+   blockquote `> ⏸️ WAITING FOR YOU — fill in both files, then "done"`) as the last line, no
    tool calls after it — a plain "let me know" reads as narration, not a prompt.
 4. **Discover repos — ALWAYS** (`discover-repos.mjs --client-vcs …`, no `--client-org`):
    classify installed modules + scan the client host for the storefront/theme repo, and
@@ -67,14 +67,23 @@ permissions + the filled env + a live module/repo scan.
    (`{ projectType, clientOrg, client, platform }`). Show the map; confirm. Ask ONLY on a
    genuine ambiguity (github host + no client modules + no org → native platform vs client
    org; or no storefront repo matched → name it).
+4b. **Discover tracker — Azure Boards only** (`discover-tracker.mjs --tracker azure --org "$ADO_ORG"
+   --project "$ADO_PROJECT" --types "Bug,Task,User story" --out .local-env/tracker.json`): scan
+   work-item types → per-type `states` + a `role→state` map (`roleStates`) + `apiBase`/`projectId`/
+   `ticketKeyFormat`/`crossLinkToken`. Confirm the `roleStates` with the operator. **Without this the
+   Azure profile's `roleStates` is empty and `/qa-fix` asks on every transition.** Jira → format facts
+   only (`--tracker jira`), transitions discovered live.
 5. **Derive block** (`derive-context.mjs --tracker … --client-vcs …`): reads the filled
    env + sessions, probes the upstream permission, prints JSON — auth actually present per
    axis, `contributionMode` (push⇒direct, else fork), `forkAccount` (token owner),
    `operator`. Capture for step 6.
 6. Write the profile (`gen-profile.mjs --repos-json .local-env/repos.json` supplies
-   projectType/clientOrg/repos; + tracker connection from the filled `.env.<env>`; +
-   derived `--operator`/`--contribution-mode`/`--upstream-account` (fork only)/`--vcs-auth`).
-   Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
+   projectType/clientOrg/repos; **`--tracker-json .local-env/tracker.json`** bakes the tracker
+   status model + flips `transitionPolicy=auto`; **`--runtime-mode plugin`** when run from an
+   installed plugin — the `$CLAUDE_PLUGIN_ROOT` env auto-detect is unreliable, so pass it explicitly;
+   + tracker connection from the filled `.env.<env>`; + derived `--operator`/`--contribution-mode`/
+   `--upstream-account` (fork only)/`--vcs-auth`). Do NOT pass `--project-type`/`--client-org` — the
+   scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`
    (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a

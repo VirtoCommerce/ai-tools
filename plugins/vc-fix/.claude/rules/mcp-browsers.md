@@ -28,6 +28,10 @@ The 6 servers in the table above are configured in `.mcp.json` (project-level). 
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
 - Browser configs set viewport to 1920x1080, HAR capture enabled, video on failure, isolated contexts.
+- **Teardown:** after a browser task, tear down what you started — kill any local dev server you launched
+  (find the PID on its port, `taskkill //PID <pid> //F` on Windows / `kill` on POSIX) and delete stray
+  helper files the MCP created that are not evidence (e.g. an empty `test-results/auth/*.json`
+  storage-state stub). Keep only intentional evidence (screenshots/HAR) under the run's reports dir.
 
 ## `.mcp.json` Setup
 

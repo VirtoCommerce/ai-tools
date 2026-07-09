@@ -5,7 +5,11 @@
  * Auth is delegated to qa-fix-routing/ado-rest (PAT via ADO_PAT, or an `az login`
  * browser/device token — no passwords). Config: org/project from env
  * ADO_ORG / ADO_PROJECT (fallback to the profile's tracker.azure.*); status
- * mapping from the profile's tracker.azure.stateMap.
+ * mapping from the profile's tracker.azure.roleStates (lifecycle ROLE key, e.g.
+ * "in-progress" → the deployment's real System.State, scanned by
+ * /project-init's discover-tracker.mjs) with tracker.azure.stateMap (legacy
+ * free-form name → state) as a fallback for any caller still passing a raw
+ * transition name instead of a role key.
  *
  * Azure Boards has no named transitions — `transition()` PATCHes System.State.
  */
@@ -35,6 +39,7 @@ export class AzureTracker implements Tracker {
   readonly enabled: boolean;
   private org: string;
   private project: string;
+  private roleStates: Record<string, string>;
   private stateMap: Record<string, string>;
   private dryRun: boolean;
   private log: (msg: string) => void;
@@ -44,6 +49,7 @@ export class AzureTracker implements Tracker {
     const az = profile.tracker?.azure || {};
     this.org = process.env.ADO_ORG || az.organization || "";
     this.project = process.env.ADO_PROJECT || az.project || "";
+    this.roleStates = az.roleStates || {};
     this.stateMap = az.stateMap || {};
     this.enabled = Boolean(this.org && this.project && adoConfigured());
     this.dryRun = deps.dryRun;
@@ -136,10 +142,13 @@ export class AzureTracker implements Tracker {
       this.log(`ADO: (skipped${this.dryRun ? " dry-run" : ""}) transition ${key} → ${transitionName}`);
       return;
     }
-    // No named transitions in Azure Boards — set System.State directly. Map the
-    // pipeline's transition name (e.g. "In Review") to the board's state via the
-    // profile stateMap; fall back to the raw name when unmapped.
-    const targetState = this.stateMap[transitionName] || transitionName;
+    // No named transitions in Azure Boards — set System.State directly. `transitionName`
+    // is normally a lifecycle ROLE key ("in-progress" | "in-review" | "ready-for-test" |
+    // "done") — resolve it via the scanned profile.tracker.azure.roleStates first (the
+    // only mechanism /project-init's discover-tracker.mjs ever populates); fall back to
+    // the legacy free-form stateMap for a caller still passing a raw display name, then
+    // to the raw name itself when neither map has it.
+    const targetState = this.roleStates[transitionName] || this.stateMap[transitionName] || transitionName;
     const res = await fetch(
       `${this.base()}/_apis/wit/workitems/${encodeURIComponent(key)}?api-version=${API_VERSION}`,
       {

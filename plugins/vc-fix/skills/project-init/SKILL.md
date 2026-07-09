@@ -37,8 +37,9 @@ platform) and to the correct bug tracker.
 0 preconditions → 1 install → 2 interview (env name · tracker · code host · auth pref)
 → 3 scaffold BOTH env templates + operator fills + pause
 → 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
+→ 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
 → 5 derive block (derive-context) → auth-fact · contributionMode · forkAccount · operator
-→ 6 write profile (gen-profile: repos-json + derived flags) → 7 MCP (gen-mcp)
+→ 6 write profile (gen-profile: repos-json + tracker-json + derived flags) → 7 MCP (gen-mcp)
 → 8 verify (verify-access) → 9 done
 ```
 
@@ -252,7 +253,7 @@ instead (see step 8's `ensure-session.mjs` for the driven flow).
 **Then pause — wait for the operator to confirm both files are filled.** Make the
 wait VISUALLY OBVIOUS: end the message with an unmistakable, set-apart call-to-action
 on its own line — a blockquote banner such as
-`> ⏸️ **ЖДУ ТЕБЯ** — заполни оба файла, потом ответь «готово / done».`
+`> ⏸️ **WAITING FOR YOU** — fill in both files, then reply "done".`
 Do not append any further tool calls after it — the turn ends there so the prompt
 is the last thing on screen. (Reuse this banner wherever the pipeline blocks on the
 operator.)
@@ -299,6 +300,35 @@ gospel. **Genuine-ambiguity asks (only these):**
 - **no** storefront/theme repo matched → ask the operator to name it; add it to
   `repos.client` as `kind:"frontend"`.
 
+## 4b. Discover the tracker status model — Azure Boards only
+
+**This step is what lets `/qa-fix` transition tickets by role WITHOUT asking the operator.**
+Scan the tracker's work-item TYPES and, per type, its allowed STATES (a custom process is
+common — Bug/Task/User story can each differ), and derive a `role → System.State` map. Skip
+for Jira (transitions are discovered live at runtime; the scan would add nothing):
+
+```bash
+# Azure Boards:
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" \
+  --tracker azure --org "$ADO_ORG" --project "$ADO_PROJECT" \
+  --types "Bug,Task,User story" --out .local-env/tracker.json --print
+# Jira (format facts only — no state scan needed):
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" --tracker jira --out .local-env/tracker.json
+```
+
+It writes `.local-env/tracker.json`: `{ kind, ticketKeyFormat, crossLinkToken, apiBase,
+projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-review,
+ready-for-test,done} }`. Auth = `ADO_PAT` (Basic) or an `az login` session — the same creds
+the operator filled in step 3; if neither is present yet, this step FAILS loudly (fix the ADO
+auth, don't skip it — an empty `roleStates` makes `/qa-fix` fall back to asking on every
+transition). Step 6 ingests it via `--tracker-json`. **Show the derived `roleStates` to the
+operator to confirm** (e.g. a custom board maps `in-progress → Active`, `in-review → On Review`,
+`ready-for-test → Ready for QA`) — the heuristic is a starting point; correct a mismapped role
+by hand-editing `.local-env/tracker.json` (or the profile) before continuing.
+
+`--out` is optional (accepts `--out <path>`; the default flag set here writes it so step 6 can
+read it). If you omit `--out`, capture the printed JSON and pass its path to step 6 another way.
+
 ## 5. Derive the rest — no questions
 
 Run the **derive block**: it reads the filled env + live sessions and derives the auth
@@ -333,6 +363,8 @@ filled `.env.<env>`:
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --repos-json .local-env/repos.json \
+  --tracker-json .local-env/tracker.json \
+  --runtime-mode plugin \
   --tracker jira --tracker-base-url https://acme.atlassian.net --tracker-project ABC \
   --client-vcs github \
   --operator <derived> --contribution-mode <derived> \
@@ -342,8 +374,16 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
 ```
 `--repos-json` supplies `projectType`, `vcs.clientOrg`, and the client/platform repo
-lists in one shot. Explicit `--project-type` / `--client-org` flags still override, but
-in the normal flow you do **not** pass them — the scan is authoritative.
+lists in one shot. **`--tracker-json .local-env/tracker.json`** (from step 4b) bakes the
+tracker status model (per-type states, `roleStates`, `apiBase`, `projectId`, `ticketKeyFormat`,
+`crossLinkToken`) and flips `transitionPolicy` to `auto` — WITHOUT it the Azure profile has an
+empty `roleStates` and `/qa-fix` falls back to asking on every transition. **`--runtime-mode
+plugin`** is REQUIRED when running from an installed plugin: gen-profile's env auto-detect
+(`$CLAUDE_PLUGIN_ROOT`) is unreliable because that var is not exported into the node process,
+so pass the flag explicitly — this sets `runtime.mode=plugin` / `helpersRunnable=false` so the
+interactive commands read the baked profile facts. (Developing directly in the agent repo?
+Omit the flag → `agent-project`.) Explicit `--project-type` / `--client-org` flags still
+override, but in the normal flow you do **not** pass them — the scan is authoritative.
 
 If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 `project-profile.json` `repos.client` to add it (or fix any miscategorised entry).
@@ -447,7 +487,7 @@ client code never leaves the client project. Gate ladder is unchanged. Never aut
 Safe to re-run. `gen-profile`/`gen-mcp` overwrite their outputs; `--merge` layers
 onto the existing profile. To reconfigure one dimension, re-run `gen-profile`
 with just those flags + `--merge`. To re-derive after a token/session change, re-run
-`discover-repos` + `derive-context` and regenerate the profile.
+`discover-repos` + `discover-tracker` + `derive-context` and regenerate the profile.
 
 ## Scripts
 
@@ -456,7 +496,8 @@ with just those flags + `--merge`. To re-derive after a token/session change, re
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent |
 | `scaffold-secrets.mjs` | write a commented `.env.local` **template** (secret placeholders + what/why/where per secret); topology-driven, idempotent |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically; idempotent |
-| `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; emits `{ projectType, clientOrg, client, platform }` |
+| `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
+| `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
