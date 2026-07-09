@@ -177,14 +177,26 @@ function main() {
       if (t.projectId) set("tracker.azure.projectId", t.projectId);
       if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
       if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
-      // With a scanned role map, default to silent role-based transitions.
-      if (t.roleStates && Object.keys(t.roleStates).length) set("tracker.azure.transitionPolicy", "auto");
+      // Default to silent role-based transitions ONLY when discover-tracker.mjs found a
+      // state for every lifecycle role. A partial map (e.g. no distinct "in-review" state
+      // was found) must keep "ask" — /qa-fix would otherwise transition a missing role
+      // silently (writing "undefined" or a wrong-but-plausible alias) with no one noticing.
+      if (t.roleStatesComplete === true) set("tracker.azure.transitionPolicy", "auto");
     } catch (err) {
       fail(`--tracker-json: cannot read ${args["tracker-json"]}: ${err.message}`);
     }
   }
 
   // buildVerify.source keyed on the EFFECTIVE projectType (flag → repos-json → default).
+  // This is the DEPLOYMENT-LEVEL default only — "ticket" is deliberately never baked
+  // here. A client deployment can have BOTH module/platform repos (source =
+  // modules-endpoint) AND a kind:"frontend" repo (source should be "ticket" — see
+  // commands/qa-fix.md Phase 0 step 3's frontend-only exception); which one applies
+  // depends on which repo the CURRENT ticket routes to at Gate 1, which isn't known
+  // until /qa-fix runs. So /qa-fix's Phase 0 is the sole place that overrides this
+  // default to "ticket" once Gate 1 resolves a kind:"frontend" route — do not try to
+  // "fix" this by baking "ticket" here; that would wrongly apply to every repo in
+  // the deployment, not just frontend-kind ones.
   const effectiveType = patch.projectType || base.projectType;
   if (effectiveType === "client") set("buildVerify.source", "modules-endpoint");
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");

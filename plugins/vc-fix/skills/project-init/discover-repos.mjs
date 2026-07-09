@@ -30,11 +30,10 @@
  *   node skills/project-init/discover-repos.mjs --modules-json mods.json --print
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
-import { execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
-import { ADO_RESOURCE } from "./probe-lib.mjs";
+import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 
 const UPSTREAM_ORG = "VirtoCommerce";
@@ -180,20 +179,6 @@ export function deriveClientOrg(client, { host, adoOrg, override } = {}) {
   return best;
 }
 
-/** Azure DevOps auth header from ADO_PAT (Basic) or an `az login` bearer token. "" if neither. */
-function adoAuthHeaderSync() {
-  const pat = process.env.ADO_PAT || "";
-  if (pat) return "Basic " + Buffer.from(":" + pat).toString("base64");
-  try {
-    const tok = execSync(
-      `az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`,
-      { stdio: ["ignore", "pipe", "ignore"] },
-    ).toString().trim();
-    if (tok) return "Bearer " + tok;
-  } catch { /* no az session */ }
-  return "";
-}
-
 /** GitHub API auth headers from the fix token (if any). */
 function githubHeaders() {
   const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
@@ -208,7 +193,7 @@ function githubHeaders() {
 async function listClientReposLive(host, { org, project }) {
   if (host === "azure-repos") {
     if (!org || !project) throw new Error("need ADO_ORG + ADO_PROJECT to list Azure Repos");
-    const authHeader = adoAuthHeaderSync();
+    const { authHeader } = resolveAdoAuth();
     if (!authHeader) throw new Error("need ADO_PAT or an `az login` session to list Azure Repos");
     const url = `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories?api-version=7.1`;
     const res = await fetch(url, { headers: { Authorization: authHeader, Accept: "application/json" } });
@@ -285,7 +270,7 @@ async function deriveFrontendProvenance(host, { org, project, name, isFork, full
 async function readPackageJsonLive(host, { org, project, name }) {
   try {
     if (host === "azure-repos") {
-      const authHeader = adoAuthHeaderSync();
+      const { authHeader } = resolveAdoAuth();
       if (!authHeader) return null;
       const url =
         `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/` +
@@ -308,7 +293,7 @@ async function readPackageJsonLive(host, { org, project, name }) {
 async function listRepoBranches(host, { org, project, name }) {
   try {
     if (host === "azure-repos") {
-      const authHeader = adoAuthHeaderSync();
+      const { authHeader } = resolveAdoAuth();
       if (!authHeader) return [];
       const url =
         `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_apis/git/repositories/` +
@@ -363,8 +348,13 @@ export function kindToolchain(kind) {
  * BAKE the clone/PR contribution plan for a CLIENT repo (mirrors repo-router.ts
  * contributionPlan for the client branch — always push directly, host per the repo).
  * Pure. So the interactive command reads this instead of re-deriving it from TS.
+ *
+ * `vcsAuth` mirrors gen-profile.mjs's `vcs.authEnv` derivation: "pat" ⇒ the write
+ * token env var; "gh-cli"/"az-login"/anything else ⇒ "" (use the ambient session —
+ * no env var to read). Defaults to "pat" only when the caller omits it, so existing
+ * callers that don't pass --vcs-auth keep today's behaviour.
  */
-export function contributionForClient(host, { org, project, name, integrationBranch }) {
+export function contributionForClient(host, { org, project, name, integrationBranch, vcsAuth = "pat" }) {
   const bare = String(name).split("/").pop();
   if (host === "azure-repos") {
     return {
@@ -374,7 +364,7 @@ export function contributionForClient(host, { org, project, name, integrationBra
       prApi: "ado-rest",
       cloneUrl: `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${bare}`,
       prTarget: integrationBranch,
-      authEnv: "ADO_PAT",
+      authEnv: vcsAuth === "pat" ? "ADO_PAT" : "",
     };
   }
   return {
@@ -384,7 +374,7 @@ export function contributionForClient(host, { org, project, name, integrationBra
     prApi: "gh",
     cloneUrl: `https://github.com/${name}.git`,
     prTarget: integrationBranch,
-    authEnv: "GITHUB_FIX_BUGS_TOKEN",
+    authEnv: vcsAuth === "pat" ? "GITHUB_FIX_BUGS_TOKEN" : "",
   };
 }
 
@@ -457,6 +447,7 @@ async function main() {
   if (args.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   const override = args["client-org"] || "";
   const host = args["client-vcs"] || "github";
+  const vcsAuth = args["vcs-auth"] || "pat";
 
   let modules;
   if (args["modules-json"]) {
@@ -528,8 +519,10 @@ async function main() {
       // BAKE per-repo decisions so the interactive /qa-fix reads facts, not emulated TS:
       // repoId, integrationBranch (PR target), workBranchPrefix, contribution plan, toolchain,
       // and — for the storefront — localVerify (Gate-6 local run facts, incl. the probed
-      // backend host that resolves the store).
-      let feProbe = null;
+      // backend host that resolves the store). The storefront probe is run PER frontend
+      // repo (not memoized across repos) — a deployment can have more than one
+      // kind:"frontend" client repo (e.g. a storefront + a separate admin-theme repo),
+      // and each may resolve a different store/backend.
       for (const c of result.client) {
         const bare = c.name.split("/").pop();
         const info = byName.get(bare) || {};
@@ -538,17 +531,15 @@ async function main() {
         c.integrationBranch = detectIntegrationBranch(branches, c.defaultBranch);
         c.workBranchPrefix = "claude/qa-autofix/";
         c.contribution = contributionForClient(host, {
-          org, project, name: c.name, integrationBranch: c.integrationBranch,
+          org, project, name: c.name, integrationBranch: c.integrationBranch, vcsAuth,
         });
         c.toolchain = kindToolchain(c.kind);
         if (c.kind === "frontend") {
-          if (!feProbe) {
-            feProbe = await probeStorefrontBackend({
-              frontUrl: process.env.FRONT_URL || "",
-              backUrl: process.env.BACK_URL || "",
-              storeId: process.env.STORE_ID || "",
-            });
-          }
+          const feProbe = await probeStorefrontBackend({
+            frontUrl: process.env.FRONT_URL || "",
+            backUrl: process.env.BACK_URL || "",
+            storeId: process.env.STORE_ID || "",
+          });
           c.localVerify = {
             devCmd: "yarn dev",
             url: "https://localhost:3000",
@@ -556,13 +547,17 @@ async function main() {
             backendUrlForDev: feProbe?.backendUrlForDev || (process.env.FRONT_URL || "").replace(/\/$/, ""),
             storeId: feProbe?.storeId || process.env.STORE_ID || "",
             storeDomain: feProbe?.storeDomain || hostnameOf(process.env.FRONT_URL || ""),
+            // false ⇒ the probe never confirmed this host resolves the store; the
+            // Gate-6 local-verify recipe must NOT trust it blindly (the "blank-app
+            // trap" frontend-local-verify.md warns about) — re-probe/confirm by hand.
+            probed: Boolean(feProbe),
             userEnv: "USER_EMAIL",
             passEnv: "USER_PASSWORD",
           };
           console.error(
             feProbe
-              ? `[discover-repos] storefront local-verify backend probed: ${feProbe.backendUrlForDev} (store ${feProbe.storeId})`
-              : `[discover-repos] storefront local-verify backend NOT probed — defaulted to FRONT_URL; verify repos.client[].localVerify.backendUrlForDev resolves the store.`,
+              ? `[discover-repos] storefront local-verify backend probed for ${bare}: ${feProbe.backendUrlForDev} (store ${feProbe.storeId})`
+              : `[discover-repos] storefront local-verify backend NOT probed for ${bare} — defaulted to FRONT_URL (localVerify.probed=false); verify repos.client[].localVerify.backendUrlForDev resolves the store before trusting it.`,
           );
         }
       }

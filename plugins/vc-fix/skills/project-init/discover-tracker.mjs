@@ -22,10 +22,9 @@
  *   node discover-tracker.mjs --tracker jira
  * Auth (azure): ADO_PAT (Basic) or an `az login` session. NEVER prints the token.
  */
-import { execSync } from "child_process";
 import { writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
-import { ADO_RESOURCE } from "./probe-lib.mjs";
+import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
@@ -49,19 +48,6 @@ function parseArgs(argv) {
     else { a[k] = n; i++; }
   }
   return a;
-}
-
-function adoAuthHeaderSync() {
-  const pat = process.env.ADO_PAT || "";
-  if (pat) return "Basic " + Buffer.from(":" + pat).toString("base64");
-  try {
-    const tok = execSync(
-      `az account get-access-token --resource ${ADO_RESOURCE} --query accessToken -o tsv`,
-      { stdio: ["ignore", "pipe", "ignore"] },
-    ).toString().trim();
-    if (tok) return "Bearer " + tok;
-  } catch { /* no az session */ }
-  return "";
 }
 
 async function adoGet(url, authHeader) {
@@ -90,7 +76,14 @@ export function deriveRoleStates(states) {
   // New → Active is correct; New → On Dev is wrong.)
   const inProgress =
     byName(/\bactive\b|\bin ?progress\b|\bstarted\b/i) || byCat("inprogress");
-  const inReview = byName(/\bon review\b|in review|code ?review|reviewing/i) || byName(/review/i) || inProgress;
+  // Deliberately NO fallback to `inProgress` here. Aliasing in-review to whatever
+  // in-progress resolved to would silently collapse two distinct pipeline milestones
+  // ("still being fixed" vs "PR open, awaiting human review") onto the same state —
+  // a wrong-but-plausible mapping that transitionPolicy:"auto" would then apply with
+  // no human catching it. Leaving the role unset when no review-like state exists is
+  // the correct signal: callers (gen-profile.mjs, tracker-ops.md's fallback) treat a
+  // missing role as "ask the operator", not "guess".
+  const inReview = byName(/\bon review\b|in review|code ?review|reviewing/i) || byName(/review/i);
   const readyForTest =
     byName(/ready for (qa|test)/i) || byName(/on qa|to test|testing|ready for/i) || byName(/resolved/i) || byCat("resolved");
   const done = byName(/closed|done|complete/i) || byCat("completed");
@@ -118,7 +111,7 @@ async function main() {
     console.error("[discover-tracker] need --org/--project (or ADO_ORG/ADO_PROJECT).");
     process.exit(2);
   }
-  const authHeader = adoAuthHeaderSync();
+  const { authHeader } = resolveAdoAuth();
   if (!authHeader) {
     console.error("[discover-tracker] need ADO_PAT or an `az login` session.");
     process.exit(2);
@@ -168,6 +161,8 @@ async function main() {
     category: workItemTypes[primary]?._categories?.[name] || "",
   }));
   const roleStates = deriveRoleStates(primaryStates);
+  const ALL_ROLES = ["in-progress", "in-review", "ready-for-test", "done"];
+  const missingRoles = ALL_ROLES.filter((r) => !roleStates[r]);
 
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
@@ -180,10 +175,17 @@ async function main() {
     projectId,
     workItemTypes,
     roleStates,
+    // Surfaced so gen-profile.mjs can require a COMPLETE map before enabling silent
+    // "auto" transitions (a partial map — e.g. no distinct review state — should keep
+    // asking, not guess).
+    roleStatesComplete: missingRoles.length === 0,
   };
   console.error(
     `[discover-tracker] scanned ${Object.keys(workItemTypes).length} type(s); roleStates(${primary}): ` +
-      JSON.stringify(roleStates),
+      JSON.stringify(roleStates) +
+      (missingRoles.length
+        ? ` — MISSING role(s): ${missingRoles.join(", ")} (no matching state found; confirm/hand-edit before relying on auto transitions)`
+        : ""),
   );
   emit(out, args);
 }

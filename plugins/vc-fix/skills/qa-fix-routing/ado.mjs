@@ -63,7 +63,40 @@ function loadProfile() {
   return {};
 }
 const PROFILE = loadProfile();
-const AZ = (PROFILE.vcs && PROFILE.vcs.azure) || (PROFILE.tracker && PROFILE.tracker.azure) || {};
+// Two DISTINCT axes, not one merged object: tracker.azure (Boards — org/project/apiBase
+// scanned by discover-tracker.mjs, plus projectId/workItemTypes/roleStates that ONLY ever
+// live here) vs vcs.azure (Repos — org/project/apiBase for the client's code host). A
+// deployment can legitimately point Boards and Repos at different orgs/projects, and even
+// when they're the same org/project, only tracker.azure ever carries projectId — so a
+// single `vcs.azure || tracker.azure` object-level fallback (the pre-fix behavior) silently
+// hid tracker.azure's fields (projectId, apiBase, workItemTypes, roleStates) the instant
+// vcs.azure was non-empty, which is exactly the case for the Azure Boards + Azure Repos
+// deployment this CLI targets. Each axis falls back to the OTHER axis's org/project only
+// (never its tracker-only-fields) for the common single-org/project setup.
+const TRACKER_AZ = (PROFILE.tracker && PROFILE.tracker.azure) || {};
+const VCS_AZ = (PROFILE.vcs && PROFILE.vcs.azure) || {};
+
+/** Boards (work-item) ops: get-workitem, comment, transition, list-types, list-states. */
+function trackerAZ() {
+  return {
+    organization: TRACKER_AZ.organization || VCS_AZ.organization,
+    project: TRACKER_AZ.project || VCS_AZ.project,
+    apiBase: TRACKER_AZ.apiBase,
+    projectId: TRACKER_AZ.projectId || VCS_AZ.projectId,
+  };
+}
+
+/** Repos (git/PR) ops: list-refs, get-file, create-pr, list-policies. */
+function vcsAZ() {
+  return {
+    organization: VCS_AZ.organization || TRACKER_AZ.organization,
+    project: VCS_AZ.project || TRACKER_AZ.project,
+    apiBase: VCS_AZ.apiBase || TRACKER_AZ.apiBase,
+    // projectId is only ever scanned onto tracker.azure today (discover-tracker.mjs is a
+    // Boards-only scan) — fall back to it for the common same-org/project deployment.
+    projectId: VCS_AZ.projectId || TRACKER_AZ.projectId,
+  };
+}
 
 // ---- args ---------------------------------------------------------------------------
 function parseArgs(argv) {
@@ -114,8 +147,10 @@ async function authHeader() {
 }
 
 // ---- base URL -----------------------------------------------------------------------
-function base(args) {
+/** axis: "tracker" (Boards work-item ops) | "vcs" (Repos git/PR ops). */
+function base(args, axis = "vcs") {
   if (args["api-base"]) return String(args["api-base"]).replace(/\/$/, "");
+  const AZ = axis === "tracker" ? trackerAZ() : vcsAZ();
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
   if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
@@ -158,7 +193,7 @@ const enc = encodeURIComponent;
 const COMMANDS = {
   async "get-workitem"(args) {
     if (!args.id) fail("--id required");
-    const d = await call("GET", `${base(args)}/_apis/wit/workitems/${args.id}?$expand=all&${V}`);
+    const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?$expand=all&${V}`);
     if (args.json) return d;
     const f = d.fields || {};
     const g = (k) => (f[k] && f[k].displayName ? f[k].displayName : f[k]);
@@ -184,7 +219,7 @@ const COMMANDS = {
     if (!text) fail("--text or --text-file required");
     const d = await call(
       "POST",
-      `${base(args)}/_apis/wit/workItems/${args.id}/comments?api-version=7.0-preview.3`,
+      `${base(args, "tracker")}/_apis/wit/workItems/${args.id}/comments?api-version=7.0-preview.3`,
       { body: { text: String(text) } },
     );
     return { id: d.id, ok: true };
@@ -194,7 +229,7 @@ const COMMANDS = {
     if (!args.id || !args.state) fail("--id and --state required");
     const d = await call(
       "PATCH",
-      `${base(args)}/_apis/wit/workitems/${args.id}?${V}`,
+      `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?${V}`,
       {
         body: [{ op: "add", path: "/fields/System.State", value: String(args.state) }],
         contentType: "application/json-patch+json",
@@ -204,20 +239,20 @@ const COMMANDS = {
   },
 
   async "list-types"(args) {
-    const d = await call("GET", `${base(args)}/_apis/wit/workitemtypes?${V}`);
+    const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitemtypes?${V}`);
     return (d.value || []).map((t) => t.name);
   },
 
   async "list-states"(args) {
     if (!args.type) fail("--type required");
-    const d = await call("GET", `${base(args)}/_apis/wit/workitemtypes/${enc(args.type)}/states?${V}`);
+    const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workitemtypes/${enc(args.type)}/states?${V}`);
     return (d.value || []).map((s) => ({ name: s.name, category: s.category }));
   },
 
   async "list-refs"(args) {
     if (!args.repo) fail("--repo required");
     const filter = args.filter ? `filter=${enc(args.filter)}&` : "";
-    const d = await call("GET", `${base(args)}/_apis/git/repositories/${enc(args.repo)}/refs?${filter}${V}&$top=500`);
+    const d = await call("GET", `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/refs?${filter}${V}&$top=500`);
     return (d.value || []).map((r) => r.name.replace("refs/heads/", ""));
   },
 
@@ -227,7 +262,7 @@ const COMMANDS = {
     const q = b
       ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
       : "";
-    const url = `${base(args)}/_apis/git/repositories/${enc(args.repo)}/items?path=${enc(args.path)}${q}&${V}&$format=text&includeContent=true`;
+    const url = `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/items?path=${enc(args.path)}${q}&${V}&$format=text&includeContent=true`;
     // items endpoint returns raw text with $format=text
     const headers = { Authorization: await authHeader() };
     const res = await fetch(url, { headers, redirect: "manual" });
@@ -252,7 +287,7 @@ const COMMANDS = {
     if (args["work-item"]) body.workItemRefs = [{ id: String(args["work-item"]) }];
     const d = await call(
       "POST",
-      `${base(args)}/_apis/git/repositories/${enc(args.repo)}/pullrequests?${V}`,
+      `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/pullrequests?${V}`,
       { body },
     );
     // Labels: ADO PR create ignores a labels body; each is a separate POST (preview api).
@@ -260,12 +295,12 @@ const COMMANDS = {
     for (const name of labels) {
       await call(
         "POST",
-        `${base(args)}/_apis/git/repositories/${enc(args.repo)}/pullRequests/${d.pullRequestId}/labels?api-version=7.1-preview.1`,
+        `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/pullRequests/${d.pullRequestId}/labels?api-version=7.1-preview.1`,
         { body: { name } },
       );
     }
-    const org = args.org || AZ.organization;
-    const project = args.project || AZ.project;
+    const org = args.org || vcsAZ().organization;
+    const project = args.project || vcsAZ().project;
     return {
       pullRequestId: d.pullRequestId,
       title: d.title,
@@ -282,11 +317,11 @@ const COMMANDS = {
 
   async "list-policies"(args) {
     if (!args.repo || !args.pr) fail("--repo and --pr required");
-    const projectId = args["project-id"] || AZ.projectId;
+    const projectId = args["project-id"] || vcsAZ().projectId;
     if (!projectId) fail("no projectId — pass --project-id or set tracker.azure.projectId in the profile");
     const artifactId = `vstfs:///CodeReview/CodeReviewId/${projectId}/${args.pr}`;
     // policy/evaluations is a PREVIEW endpoint — plain 7.1 returns HTTP 400 (observed in the run).
-    const d = await call("GET", `${base(args)}/_apis/policy/evaluations?artifactId=${enc(artifactId)}&api-version=7.1-preview.1`);
+    const d = await call("GET", `${base(args, "vcs")}/_apis/policy/evaluations?artifactId=${enc(artifactId)}&api-version=7.1-preview.1`);
     return (d.value || []).map((e) => ({
       type: e.configuration?.type?.displayName,
       status: e.status,
