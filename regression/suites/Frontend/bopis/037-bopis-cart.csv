@@ -654,3 +654,25 @@ Authenticated user; Cart contains at least one BOPIS-eligible item (added via ca
 [STATE] no stale filter or keyword applied on modal reopen","[NETWORK] cartPickupLocations GraphQL query on modal reopen from cart: response items[0].id = CART_PAGE2_LOCATION id; request includes IncludeLocationIds parameter
 [API] cartPickupLocations errors[] is empty
 [CONSOLE] no JS errors during cart-page pickup interactions","Radio button unchecked on reopen (VCST-4707 regression for cart-page entry point); CART_PAGE2_LOCATION not visible at top — requires scrolling (IncludeLocationIds not applied for cart path); Cart summary loses location name after re-confirmation; Modal errors on reopen from cart page","Clear pickup selection from cart; navigate away","VCST-4707; PR vc-module-x-pickup#8","Reviewed"
+"BOPIS-109","Load-More-Selected Pickup Location Persists Through Checkout Summary","BOPIS > Cart > Integration > Pagination","High","BL-BOPIS-002,BL-BOPIS-006,BL-BOPIS-008","ECL-14.1,ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Products in cart; pickup locations exceed one page (>@td(BOPIS.pageSize)); VCST-4646 deployed","url={{FRONT_URL}};sku=@td(BOPIS.testSku);email={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/cart
+[ACT] in Shipping details, toggle the 'Pickup' delivery option
+[ACT] click the pickup-location-section 'select-address-button' (select a pickup address)
+[WAIT] 'Pick points' dialog opens
+[SCROLL] scroll to bottom; click the 'pickup-locations-load-more' button at least once
+[WAIT] second page appended
+[ACT] note the name of a location from the Load-More page (not on the initial page) as LOAD_MORE_LOCATION
+[ACT] click that location's radio button
+[WAIT] location's info card opens automatically
+[ACT] click 'Pick up here' button
+[WAIT] dialog closes; LOAD_MORE_LOCATION shown in cart shipping section
+[ASSERT] shipping cost = $0.00 in the cart-page order summary
+[ASSERT] LOAD_MORE_LOCATION name and address visible in the cart-page order summary (not truncated/blank/wrong entry) — this cart page IS the checkout; there is no separate /checkout route or pre-payment confirmation step
+[ACT] complete payment details on the cart page
+[ACT] place the order from the cart page
+[WAIT] order confirmation page (post-payment)
+[ASSERT] order confirmation shows LOAD_MORE_LOCATION as the pickup fulfillment detail — evaluated only once the order is actually placed and paid; if payment is not exercised in a given run, the cart-page order-summary assertion above is the case's terminal check","[DOM] the cart-page order summary (cart IS checkout — no separate /checkout route) is visible and displays the exact LOAD_MORE_LOCATION name (a location selected from beyond the first page) — no fallback to a different or blank value
+[STATE] shipping cost = $0.00 in the cart-page order summary
+[DOM] order confirmation pickup-detail element is visible and matches LOAD_MORE_LOCATION exactly (no fallback to a first-page location or blank field), evaluated only when an order is actually placed and paid; if the order is not placed in a given run, the cart-page order-summary assertion above is the terminal check","[API] xAPI order shipments[].fulfillmentCenterId / pickupLocation resolves to the LOAD_MORE_LOCATION id, not a first-page location
+[CONSOLE] no JS errors during the flow","Checkout/confirmation shows a different (e.g. first-page) location than the one actually selected; pickup location blank at checkout despite being set in cart; shipping cost non-zero","Cancel order via admin","VCST-4646; VCST-4707; Coverage Gap Analysis; Load-More pagination-contract candidate BL-BOPIS-009 — future /qa-test-lifecycle --update-bl","Draft"
