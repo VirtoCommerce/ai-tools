@@ -18,6 +18,8 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 5. Each sub-agent gets an isolated browser context, executes all test cases from its CSV, writes JSON results
 6. Orchestrator collects results, handles retries with browser fallback chain, produces consolidated report
 
+**Live progress + auto-report (interactive mode):** at run start the orchestrator launches a background watcher (`npm run report:regression:watch -- --run-id {RUN_ID}`) that opens a self-refreshing `reports/regression/{RUN_ID}/regression-report.html`. It reads `test-run-status.json` (suites flip `pending → running → done` as the orchestrator updates it) plus the per-suite `suite-*-results.json` as they land, and `<meta refresh>`-reloads until the run is `completed`, then renders the final static report and exits. The HTML report is generated **automatically** — no manual `npm run report:regression` step. `scripts/generate-regression-html-report.ts` also supports one-shot (`report:regression`), portable/embedded (`report:regression:portable`), and `--open`.
+
 ### 3. Autonomous Interactive Regression (Agent Teams)
 `autonomous-regression-orchestrator` creates a team of child agents using Agent Teams API (TeamCreate, SendMessage). Each child gets an isolated browser context, fresh authentication, and exponential backoff (30s→60s→120s). The orchestrator manages a 3+1 token bucket (3 browser + 1 reporting agent), tracks failures in `results/{RUN_ID}/failures.json`, retries failed suites with browser fallback chain (max 3 attempts), and produces a consolidated report with quality gate evaluation and optional JIRA ticket creation via Atlassian MCP.
 

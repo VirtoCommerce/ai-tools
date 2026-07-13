@@ -1,17 +1,16 @@
 {
-  "runId": "REG-2026-07-09-0706",
-  "selection": "059 (CMS Page Management, Backend/admin, P1)",
-  "startedAt": "2026-07-09T07:06:01Z",
-  "windowStartUtc": "2026-07-09T07:06:01Z",
-  "finishedAt": "2026-07-09T07:59:19Z",
+  "runId": "REG-2026-07-13-1247",
+  "selection": "011 (Checkout Flow, Frontend/purchase-flow, P1)",
+  "startedAt": "2026-07-13T12:47:55Z",
+  "windowStartUtc": "2026-07-13T12:47:55Z",
+  "finishedAt": null,
   "env": "vcst-qa",
-  "build": {"platform": "3.1043.0", "pageBuilderModule": "3.1015.0-pr-153-f835", "theme": "2.53.0-pr-2354-c71d"},
-  "status": "completed",
+  "build": {"platform": "3.1043.0", "theme": "2.53.0-pr-2368-997c", "xcart": "3.1026.0", "xorder": "3.1007.0", "orders": "3.1012.0"},
+  "status": "in_progress",
   "mode": "standard",
-  "outputDir": "reports/regression/REG-2026-07-09-0706/",
-  "report": "reports/regression/REG-2026-07-09-0706/regression-2026-07-09.md",
-  "qualityGate": "PASS-WITH-ISSUES",
-  "totals": {"cases": 46, "pass": 44, "fail": 0, "blocked": 2, "skip": 0, "passRate": "44/44 executed (100%)"},
-  "authoritativeResult": "reports/regression/REG-2026-07-09-0706/suite-059-results-edge.json",
-  "suites": [{"id": "059", "name": "CMS Page Management", "status": "completed", "browser": "playwright-edge", "agent": "qa-backend-expert", "testCount": 46, "pass": 44, "fail": 0, "blocked": 2}]
+  "outputDir": "reports/regression/REG-2026-07-13-1247/",
+  "note": "Prior paused 042 smoke run context preserved at reports/regression/REG-2026-07-13-1216/paused-run-context.json (6/34 done, needs resume).",
+  "suites": [
+    {"id": "011", "name": "Checkout Flow", "status": "running", "browser": "playwright-chrome", "agent": "qa-frontend-expert", "testCount": 71, "pass": null, "fail": null, "blocked": null}
+  ]
 }

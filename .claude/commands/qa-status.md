@@ -25,6 +25,7 @@ Read `reports/regression/test-run-status.json` if it exists:
 - Suite progress: X/Y completed, current pass rate
 - If running: which suites are pending/in-progress/done
 - If completed: link to the full report
+- **Live dashboard:** point at the self-refreshing `reports/regression/{RUN_ID}/regression-report.html` — the visual companion to this text view. `/qa-regression` launches it automatically at run start (`npm run report:regression:watch`); it fills in live and settles into the final report. To (re)open it manually: `npm run report:regression:watch -- --run-id {RUN_ID}` (live) or `npm run report:regression:open -- --run-id {RUN_ID}` (static snapshot).
 
 If no status file exists, report "No active regression run."
 

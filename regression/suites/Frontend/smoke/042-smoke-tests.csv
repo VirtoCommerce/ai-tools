@@ -106,7 +106,10 @@ Catalog accessible with at least 1 category containing products","front_url={{FR
 [NETWORK] no 4xx on catalog or product queries","Catalog page loads with 0 category tiles; category loads with 0 products; PDP blank or 404; price missing or wrong decimal places (BL-PRICE-003); quantity stepper absent; breadcrumb missing","none","VCST-4499","Automated"
 "SMK-008","Add to Cart — Single Product from PDP (B2B Stepper)","Smoke > Cart","Critical","BL-CART-001, BL-CART-007","ECL-2.1, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Product @td(BUYABLE_NO_MIN_QTY.slug) in stock","email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+Product @td(BUYABLE_NO_MIN_QTY.slug) in stock","email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/catalog
+[ACT] type @td(BUYABLE_NO_MIN_QTY.sku) in the header search bar; press Enter
+[WAIT] search results load
+[ACT] click the product card for @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128) to open its PDP
 [WAIT] PDP loaded; 'Increase quantity' (+) stepper visible (B2B-store: stepper IS the add-to-cart entry point)
 [ASSERT] spinbutton shows '0'; 'Decrease quantity' button disabled (BL-CART-001)
 [ACT] click 'Increase quantity' (+) once
@@ -123,7 +126,10 @@ Product @td(BUYABLE_NO_MIN_QTY.slug) in stock","email={{USER_EMAIL}}, slug=@td(B
 [NETWORK] no 4xx/5xx on addItem","Spinner >5s after stepper click; errors[] non-empty in addItem response (ECL-7.3); cart badge unchanged; 4xx/5xx on addItem; 'Decrease quantity' clickable at qty=0 (BL-CART-001)","Remove product from cart after test","VCST-4499","Automated"
 "SMK-009","Quantity Stepper — PDP Increment and Cart Sync","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-003","ECL-2.1, ECL-7.3, ECL-5.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-In-stock product available at @td(BUYABLE_NO_MIN_QTY.slug) with stock > 3","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+In-stock product available at @td(BUYABLE_NO_MIN_QTY.slug) with stock > 3","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[NAV] {{FRONT_URL}}/catalog
+[ACT] type @td(BUYABLE_NO_MIN_QTY.sku) in the header search bar; press Enter
+[WAIT] search results load
+[ACT] click the product card for @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128) to open its PDP
 [WAIT] PDP loads; 'Increase quantity' spinbutton visible
 [ASSERT] spinbutton shows '0'; 'Decrease quantity' disabled (BL-CART-007)
 [ACT] click 'Increase quantity' once
@@ -146,7 +152,7 @@ In-stock product available at @td(BUYABLE_NO_MIN_QTY.slug) with stock > 3","fron
 [NETWORK] no 4xx/5xx on cart mutations","'Decrease quantity' clickable at qty=0 (BL-CART-007); cart badge not syncing with PDP stepper; duplicate line items appearing; line total not recalculating; negative quantity accepted (ECL-5.3)","Remove product from cart after test","VCST-4499","Manual"
 "SMK-010","Cart — View Items and Update Quantity","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-001, BL-PRICE-003, BL-PRICE-008","ECL-2.3, ECL-7.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Cart starts empty; in-stock product @td(BUYABLE_NO_MIN_QTY.sku) is reachable on storefront","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[SETUP] navigate to {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug) and click '+' (Increase Quantity) stepper once to add the item to cart
+Cart starts empty; in-stock product @td(BUYABLE_NO_MIN_QTY.sku) is reachable on storefront","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[SETUP] navigate to {{FRONT_URL}}/catalog, search @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128), open the product PDP, and click '+' (Increase Quantity) stepper once to add the item to cart
 [WAIT] cart badge increments to show 1 item
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with ≥1 item visible
@@ -165,7 +171,7 @@ Cart starts empty; in-stock product @td(BUYABLE_NO_MIN_QTY.sku) is reachable on 
 [NETWORK] no 4xx/5xx on cart update mutations","Quantity change not reflected in line total; subtotal not recalculating; errors[] non-empty on mutation; $0.01 discrepancy in subtotal (BL-PRICE-008); wrong decimal places","Restore cart to at least 1 item if decrement removed the last","VCST-4499","Automated"
 "SMK-011","Cart — Remove Item and Verify Total","Smoke > Cart","Critical","BL-CART-007, BL-PRICE-008","ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Cart starts empty; in-stock product @td(BUYABLE_NO_MIN_QTY.sku) is reachable on storefront","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[SETUP] navigate to {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug) and click '+' (Increase Quantity) stepper twice to add qty=2 to cart (B2B consolidates to one line item with qty=2 — see reference_b2b_lineitem_consolidation)
+Cart starts empty; in-stock product @td(BUYABLE_NO_MIN_QTY.sku) is reachable on storefront","front_url={{FRONT_URL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug)","[SETUP] navigate to {{FRONT_URL}}/catalog, search @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128), open the product PDP, and click '+' (Increase Quantity) stepper twice to add qty=2 to cart (B2B consolidates to one line item with qty=2 — see reference_b2b_lineitem_consolidation)
 [WAIT] cart badge shows 2 items
 [NAV] {{FRONT_URL}}/cart
 [WAIT] cart page loads with the line item at qty=2 visible
@@ -324,7 +330,10 @@ Configurable product @td(CFG_LAPTOP.url) with options at different price points"
 User logged in as {{MULTI_ORG_USER_EMAIL}} — must belong to ≥2 organizations (use {{MULTI_ORG_USER_EMAIL}}, not {{ORG_USER_EMAIL}} which is single-org); 1 item in cart under first org","email={{MULTI_ORG_USER_EMAIL}}, password={{MULTI_ORG_USER_PASSWORD}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}} (logged in as {{MULTI_ORG_USER_EMAIL}})
 [WAIT] authenticated homepage with org name in header
 [ASSERT] note current org name shown in 'OrgName / UserName' button
-[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+[NAV] {{FRONT_URL}}/catalog
+[ACT] type @td(BUYABLE_NO_MIN_QTY.sku) in the header search bar; press Enter
+[WAIT] search results load
+[ACT] click the product card for @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128) to open its PDP
 [ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
 [WAIT] cart badge > 0
 [ACT] click 'OrgName / UserName' button in top-right header
@@ -501,7 +510,10 @@ User logged in as {{USER_EMAIL}}; ≥1 saved shipping address available","front_
 "SMK-030","BOPIS — End-to-End Pickup Order Placement and Confirmation","Smoke > BOPIS","Critical","BL-BOPIS-001, BL-BOPIS-002, BL-BOPIS-006, BL-CHK-002, BL-CHK-006, BL-ORD-005, BL-CROSS-005","ECL-2.1, ECL-6.2, ECL-7.3, ECL-11.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; product @td(BUYABLE_NO_MIN_QTY.slug) in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), addr_fixture=ADDR_NY, card=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), exp=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/@td(BUYABLE_NO_MIN_QTY.slug)
+User logged in as {{USER_EMAIL}}; ≥1 active pickup location (FFC) configured; product @td(BUYABLE_NO_MIN_QTY.slug) in stock at a pickup-eligible FFC","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, slug=@td(BUYABLE_NO_MIN_QTY.slug), addr_fixture=ADDR_NY, card=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), exp=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/catalog
+[ACT] type @td(BUYABLE_NO_MIN_QTY.sku) in the header search bar; press Enter
+[WAIT] search results load
+[ACT] click the product card for @td(BUYABLE_NO_MIN_QTY.sku) (SKU ALCE0128) to open its PDP
 [WAIT] PDP loaded; quantity stepper visible
 [ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
 [WAIT] cart badge = 1

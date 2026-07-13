@@ -28,9 +28,9 @@ if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
     process.exit(1);
 }
 
-config({ path: '.env.defaults' });
-config({ path: `.env.${TEST_ENV}`, override: true });
-config({ path: '.env.local', override: true });
+config({ path: '.env.defaults', quiet: true });
+config({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
+config({ path: '.env.local', override: true, quiet: true });
 
 // Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
 // is promoted to its base name. Lets `.env.local` carry per-env password

@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-07-13T12:16:21Z",
+  "env": "vcst-qa",
+  "source": "VirtoCommerce/vc-deploy-dev @ vcst-qa",
+  "platform": "3.1043.0",
+  "theme": "2.53.0-pr-2368-997c",
+  "keyModules": {
+    "VirtoCommerce.XCart": "3.1026.0",
+    "VirtoCommerce.Cart": "3.1007.0",
+    "VirtoCommerce.XCatalog": "3.1011.0",
+    "VirtoCommerce.Catalog": "3.1034.0",
+    "VirtoCommerce.Xapi": "3.1013.0",
+    "VirtoCommerce.XOrder": "3.1007.0",
+    "VirtoCommerce.Orders": "3.1012.0",
+    "VirtoCommerce.Customer": "3.1014.0",
+    "VirtoCommerce.Skyflow": "3.1003.0",
+    "VirtoCommerce.CyberSourcePayment": "3.1002.0",
+    "VirtoCommerce.AuthorizeNetPayment": "3.1003.0",
+    "VirtoCommerce.Datatrans": "3.1002.0",
+    "VirtoCommerce.XFrontend": "3.1003.0",
+    "VirtoCommerce.ProfileExperienceApiModule": "3.1011.0"
+  }
+}
