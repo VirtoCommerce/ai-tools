@@ -1,6 +1,7 @@
 {
   "browser": {
     "browserName": "chromium",
+    "isolated": true,
     "launchOptions": {
       "headless": false,
       "channel": "msedge"
@@ -18,7 +19,6 @@
       }
     }
   },
-  "isolated": true,
   "outputDir": "./test-results/edge",
   "screenshot": "only-on-failure"
 }

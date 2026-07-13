@@ -1,6 +1,7 @@
 {
   "browser": {
     "browserName": "firefox",
+    "isolated": true,
     "launchOptions": {
       "headless": false
     },
@@ -17,7 +18,6 @@
       }
     }
   },
-  "isolated": true,
   "outputDir": "./test-results/firefox",
   "screenshot": "only-on-failure"
 }
