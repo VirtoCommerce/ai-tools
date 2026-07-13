@@ -1,0 +1,30 @@
+{
+  "runId": "TLC-2026-07-13-1530",
+  "inputType": "change-source",
+  "source": "VCST-4646, VCST-4529",
+  "date": "2026-07-13",
+  "verdict": "APPROVED WITH WARNINGS",
+  "platform": "3.1043.0",
+  "theme": "vc-theme-b2b-vue 2.53.0-pr-2368",
+  "changedModules": ["XPickup", "XCart", "Xapi", "vc-frontend"],
+  "affectedSuites": ["036", "037", "050k"],
+  "casesAnalyzed": 90,
+  "casesSynced": 1,
+  "casesGenerated": 21,
+  "casesReviewed": 111,
+  "casesVerified": "live BOPIS modal + Load More flow (feature present on pr-2368)",
+  "filesModified": [
+    "regression/suites/Frontend/bopis/036-bopis-store-selector.csv",
+    "regression/suites/Frontend/bopis/037-bopis-cart.csv",
+    "regression/suites/Backend/graphql/050k-graphql-xpickup.csv",
+    "config/test-suites.json"
+  ],
+  "gateResults": {"G1": "PASS", "G2": "PASS", "G3": "PASS", "G4": "PASS", "G5": "PASS", "G6": "PASS", "G7": "PASS", "G8": "PASS", "G9": "PASS"},
+  "findings": {"blocker": 0, "critical": 0, "high": 0, "medium": 3},
+  "mustFix": [
+    "Seed BVA pickup fixtures for BOPIS-104-107 before live run",
+    "BOPIS-108 (151-total) unreachable on 115-active pool — escalated to qa-lead-orchestrator",
+    "Live dry-run + execution of 21 new cases before Draft->Reviewed"
+  ],
+  "blProposals": {"new": [], "stale": [{"id": "BL-BOPIS-008", "observedBehavior": "totalCount NOT incremented for the IncludeLocationIds prepend", "source": "VCST-4646 BA comment + PCK-GQL-132", "suggestedAction": "amend Rule text via future --update-bl"}]}
+}

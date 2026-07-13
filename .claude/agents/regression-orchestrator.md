@@ -46,7 +46,8 @@ Suite selection (one of): `smoke` (042), `critical` (042,039,044,049), `sprint` 
 2. Resolve selection → ordered list of suite IDs (sort: P0 > P1 > P2)
 3. Generate run ID: `REG-YYYY-MM-DD-HHMM`
 4. Create output: `reports/regression/{RUN_ID}/`
-5. Write `reports/regression/test-run-status.json` with initial state (all suites `pending`, status `running`)
+5. Write `reports/regression/test-run-status.json` with initial state (all suites `pending`, run-level status `in_progress`)
+6. **Launch the live HTML dashboard in the background:** run `npm run report:regression:watch -- --run-id {RUN_ID}` **detached** (do not block). It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately and self-refreshes (reading `test-run-status.json`) as suites complete, settling into the final static report and exiting when you flip status to `completed` (Step 6). This is a Node script, not a browser action — it does not trip the real-user hook.
 
 ### Step 1.5: Categorize suites (browser vs. fast-path)
 
@@ -91,10 +92,11 @@ Launch all 3 in a SINGLE message with 3 Agent tool calls for parallel execution.
 
 ### Step 4: Monitor & Collect
 
+0. **On dispatch:** the moment a suite is dispatched in a batch, set its entry in `test-run-status.json` to `status: "running"` (with its assigned `browser`). This is what makes the live dashboard show `● RUNNING` for in-flight suites — do NOT wait until the batch completes to update.
 1. Wait for batch to complete
-2. Read output files, update `test-run-status.json`
+2. Read output files, update `test-run-status.json`: set each finished suite to `status: "done"` and fill `pass`/`fail`/`blocked` from its `suite-{ID}-results.json`
 3. Free browser slots, check for failures needing retry
-4. Dispatch next batch of pending suites
+4. Dispatch next batch of pending suites (mark them `running` per step 0)
 
 ### Step 5: Retry Logic
 
@@ -141,7 +143,9 @@ Write `reports/regression/regression-YYYY-MM-DD.md`:
 (per-suite test case results from JSON files)
 ```
 
-Update `test-run-status.json` to `completed`.
+Update `test-run-status.json` to `status: "completed"` (set `finishedAt`). The background watcher launched in Step 1 detects this, writes the final static HTML (auto-refresh removed), and exits on its own.
+
+**Guarantee the HTML report** regardless of the watcher: run `npm run report:regression -- --run-id {RUN_ID}` once. It writes `reports/regression/{RUN_ID}/regression-report.html` from the `suite-*-results.json` files and is idempotent with the watcher.
 
 ### Step 6.5: Teardown (only if `--teardown` provided)
 

@@ -11,6 +11,11 @@
  *   npx tsx scripts/generate-regression-html-report.ts --run-id REG-...
  *   npx tsx scripts/generate-regression-html-report.ts --run-id REG-... --open
  *   npx tsx scripts/generate-regression-html-report.ts --embed-images     # base64-inline screenshots (portable)
+ *   npx tsx scripts/generate-regression-html-report.ts --watch --open     # live dashboard: auto-refresh until the run completes
+ *
+ * Live mode (--watch) reads the shared reports/regression/test-run-status.json to show
+ * pending/running suites before they write results, injects a <meta refresh> while the run
+ * is in progress, and exits with a final static render once the run is marked completed.
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
@@ -45,6 +50,37 @@ interface NormSuite {
   passRate: number;
   bugs: BugLike[];
   cases: NormCase[];
+  liveStatus?: "pending" | "running" | "done";
+  isPlaceholder?: boolean;
+}
+
+type LiveState = "pending" | "running" | "done";
+
+interface RunStatusSuite {
+  id: string;
+  name?: string;
+  status?: string; // pending | running | done | ...
+  browser?: string;
+  agent?: string;
+  testCount?: number;
+  pass?: number | null;
+  fail?: number | null;
+  blocked?: number | null;
+  lane?: string;
+}
+
+interface RunStatus {
+  runId?: string;
+  selection?: string;
+  startedAt?: string;
+  windowStartUtc?: string;
+  finishedAt?: string | null;
+  env?: string;
+  build?: Record<string, string>;
+  status?: string; // in_progress | running | completed
+  mode?: string;
+  outputDir?: string;
+  suites?: RunStatusSuite[];
 }
 
 interface BugLike {
@@ -63,10 +99,18 @@ interface Args {
   openInBrowser: boolean;
   reportsRoot: string;
   embedImages: boolean;
+  watch: boolean;
+  intervalSec: number;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { openInBrowser: false, reportsRoot: "reports/regression", embedImages: false };
+  const args: Args = {
+    openInBrowser: false,
+    reportsRoot: "reports/regression",
+    embedImages: false,
+    watch: false,
+    intervalSec: 10,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--run-id") args.runId = argv[++i];
@@ -74,14 +118,19 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--reports-root") args.reportsRoot = argv[++i];
     else if (a === "--open") args.openInBrowser = true;
     else if (a === "--embed-images") args.embedImages = true;
+    else if (a === "--watch") args.watch = true;
+    else if (a === "--interval") args.intervalSec = Math.max(2, parseInt(argv[++i], 10) || 10);
+    else if (a.startsWith("--interval=")) args.intervalSec = Math.max(2, parseInt(a.slice("--interval=".length), 10) || 10);
     else if (a === "--help" || a === "-h") {
       console.log(
         [
           "Usage: npx tsx scripts/generate-regression-html-report.ts [options]",
-          "  --run-id <ID>        Specific run (default: latest REG-*)",
+          "  --run-id <ID>        Specific run (default: latest REG-*/SMOKE-* or the in-progress run)",
           "  --out <path>         Output file (default: <run>/regression-report.html)",
           "  --reports-root <p>   Reports root (default: reports/regression)",
           "  --embed-images       Inline screenshots as base64 (single-file portable)",
+          "  --watch              Live mode: regenerate on an interval until the run completes",
+          "  --interval <sec>     Watch refresh interval in seconds (default: 10)",
           "  --open               Open generated file in default browser",
         ].join("\n")
       );
@@ -94,11 +143,46 @@ function parseArgs(argv: string[]): Args {
 function findLatestRun(root: string): string {
   if (!existsSync(root)) throw new Error(`Reports root not found: ${root}`);
   const runs = readdirSync(root)
-    .filter((d) => d.startsWith("REG-"))
+    .filter((d) => (d.startsWith("REG-") || d.startsWith("SMOKE-")) && statSync(join(root, d)).isDirectory())
     .map((d) => ({ name: d, mtime: statSync(join(root, d)).mtimeMs }))
     .sort((a, b) => b.mtime - a.mtime);
-  if (runs.length === 0) throw new Error(`No REG-* runs found in ${root}`);
+  if (runs.length === 0) throw new Error(`No REG-*/SMOKE-* runs found in ${root}`);
   return runs[0].name;
+}
+
+function loadRunStatus(root: string): RunStatus | null {
+  const p = join(root, "test-run-status.json");
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf-8")) as RunStatus;
+  } catch {
+    return null;
+  }
+}
+
+/** A run is "live" (still executing) when the shared status says so. */
+function statusIsInProgress(status: RunStatus | null): boolean {
+  const s = (status?.status ?? "").toLowerCase();
+  return s === "in_progress" || s === "running";
+}
+
+function normalizeLiveState(s: unknown): LiveState {
+  const u = String(s ?? "").toLowerCase();
+  if (u === "running") return "running";
+  if (u === "done" || u === "completed" || u === "passed" || u === "failed") return "done";
+  return "pending";
+}
+
+/**
+ * Resolve which run to render.
+ *  - explicit --run-id wins
+ *  - else, if a run is in progress per test-run-status.json, use its runId
+ *  - else, newest REG- or SMOKE- dir by mtime
+ */
+function resolveRunId(root: string, explicit: string | undefined, status: RunStatus | null): string {
+  if (explicit) return explicit;
+  if (statusIsInProgress(status) && status?.runId) return status.runId;
+  return findLatestRun(root);
 }
 
 function normalizeStatus(s: unknown): Verdict {
@@ -247,10 +331,65 @@ function normalizeSuite(raw: any, screenshotIdx: Map<string, string[]>): NormSui
 
 function loadAllSuites(runDir: string): NormSuite[] {
   const shotIdx = buildScreenshotIndex(runDir);
-  return readdirSync(runDir)
-    .filter((f) => /^suite-.*-results\.json$/.test(f))
-    .map((f) => normalizeSuite(JSON.parse(readFileSync(join(runDir, f), "utf-8")), shotIdx))
+  // Broadened to catch browser-suffixed files (suite-072b-…-results-chrome.json)
+  // as well as the canonical suite-{ID}-results.json.
+  const files = readdirSync(runDir).filter((f) => /^suite-.*results.*\.json$/.test(f));
+
+  // Dedupe by suiteId: a run may hold both `…-results.json` and `…-results-chrome.json`.
+  // Keep the record with the most test cases; tie-break on newest mtime.
+  const bySuite = new Map<string, { suite: NormSuite; cases: number; mtime: number }>();
+  for (const f of files) {
+    const full = join(runDir, f);
+    const suite = normalizeSuite(JSON.parse(readFileSync(full, "utf-8")), shotIdx);
+    const cases = suite.cases.length;
+    const mtime = statSync(full).mtimeMs;
+    const prev = bySuite.get(suite.suiteId);
+    if (!prev || cases > prev.cases || (cases === prev.cases && mtime > prev.mtime)) {
+      bySuite.set(suite.suiteId, { suite, cases, mtime });
+    }
+  }
+  return [...bySuite.values()]
+    .map((v) => {
+      v.suite.liveStatus = "done";
+      return v.suite;
+    })
     .sort((a, b) => a.suiteId.localeCompare(b.suiteId));
+}
+
+/**
+ * Merge the shared run-status file into the loaded suites so a live/early run
+ * shows pending/running suites that have not yet written a results JSON.
+ * Real results always win — status only supplies placeholders for missing suites.
+ */
+function mergeStatus(suites: NormSuite[], status: RunStatus | null, runId: string): NormSuite[] {
+  if (!status || status.runId !== runId || !Array.isArray(status.suites)) return suites;
+  const have = new Set(suites.map((s) => s.suiteId));
+  const placeholders: NormSuite[] = [];
+  for (const st of status.suites) {
+    const id = String(st.id ?? "");
+    if (!id || have.has(id)) continue;
+    const state = normalizeLiveState(st.status);
+    placeholders.push({
+      suiteId: id,
+      suiteName: String(st.name ?? id),
+      category: categorize(id),
+      browser: String(st.browser ?? ""),
+      environment: String(status.env ?? ""),
+      startedAt: "",
+      completedAt: "",
+      totalCases: Number(st.testCount ?? 0),
+      passed: Number(st.pass ?? 0),
+      failed: Number(st.fail ?? 0),
+      blocked: Number(st.blocked ?? 0),
+      skipped: 0,
+      passRate: 0,
+      bugs: [],
+      cases: [],
+      liveStatus: state,
+      isPlaceholder: true,
+    });
+  }
+  return [...suites, ...placeholders].sort((a, b) => a.suiteId.localeCompare(b.suiteId));
 }
 
 function escapeHtml(s: string): string {
@@ -280,6 +419,11 @@ function imgSrc(rel: string, runDir: string, embed: boolean): string {
 
 function statusBadge(v: Verdict): string {
   return `<span class="badge b-${v.toLowerCase()}">${v}</span>`;
+}
+
+function liveBadge(state: LiveState): string {
+  const label = state === "running" ? "● RUNNING" : state === "done" ? "DONE" : "PENDING";
+  return `<span class="badge live-${state}">${label}</span>`;
 }
 
 function severityBadge(sev: BugLike["severity"]): string {
@@ -370,6 +514,21 @@ function suiteAttachmentCounts(s: NormSuite): { shots: number; ev: number } {
 }
 
 function renderSuiteRow(s: NormSuite, runDir: string, embed: boolean, openByDefault: boolean): string {
+  // Placeholder row for a suite that has not yet written results (pending/running).
+  if (s.isPlaceholder) {
+    const state = s.liveStatus ?? "pending";
+    return `
+    <tr class="suite-row placeholder" data-suite="${s.suiteId}" data-category="${s.category}" data-rate="-1">
+      <td></td>
+      <td class="mono">${s.suiteId}</td>
+      <td><span class="cat-pill cat-${s.category.toLowerCase()}">${s.category}</span></td>
+      <td>${escapeHtml(s.suiteName)}</td>
+      <td class="mono small">${escapeHtml(s.browser)}</td>
+      <td class="num">${s.totalCases || ""}</td>
+      <td class="num" colspan="5">${liveBadge(state)}</td>
+      <td class="num muted">—</td>
+    </tr>`;
+  }
   const rate = s.passRate;
   const rateClass = rate >= 90 ? "rate-good" : rate >= 70 ? "rate-warn" : "rate-bad";
   const att = suiteAttachmentCounts(s);
@@ -453,7 +612,18 @@ function renderGallery(items: AttachmentItem[], runDir: string, embed: boolean):
     .join("")}</div>`;
 }
 
-function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: boolean): string {
+interface RenderOpts {
+  status: RunStatus | null;
+  live: boolean;
+  intervalSec: number;
+}
+
+function renderHtml(runId: string, allSuites: NormSuite[], runDir: string, embed: boolean, opts: RenderOpts): string {
+  // Numeric aggregates come from suites that actually produced results;
+  // placeholders (pending/running) only appear as live rows in the table.
+  const suites = allSuites.filter((s) => !s.isPlaceholder);
+  const inProgress = statusIsInProgress(opts.status) && opts.status?.runId === runId;
+  const refreshMeta = opts.live && inProgress ? `\n<meta http-equiv="refresh" content="${opts.intervalSec}">` : "";
   const total = suites.reduce(
     (a, s) => ({
       cases: a.cases + s.totalCases,
@@ -472,8 +642,30 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   const failingSuites = suites.length - cleanSuites;
   const gateThreshold = 95;
   const gateVerdict = overallRate >= gateThreshold ? "PASSED" : "BLOCKED";
-  const env = suites[0]?.environment ?? "unknown";
+  const env = suites[0]?.environment ?? opts.status?.env ?? "unknown";
   const browsers = [...new Set(suites.map((s) => s.browser).filter(Boolean))].join(", ");
+
+  // Live run header (shown whenever the shared status file describes THIS run).
+  const statusMatches = opts.status?.runId === runId;
+  const suitesTotal = allSuites.length;
+  const suitesDone = suites.length; // non-placeholder = has results
+  const runningCount = allSuites.filter((s) => s.isPlaceholder && s.liveStatus === "running").length;
+  const pendingCount = allSuites.filter((s) => s.isPlaceholder && s.liveStatus === "pending").length;
+  const elapsed = statusMatches
+    ? formatDuration(opts.status?.startedAt ?? "", opts.status?.finishedAt || new Date().toISOString())
+    : "";
+  const donePct = suitesTotal > 0 ? ((suitesDone / suitesTotal) * 100).toFixed(0) : "0";
+  const liveBanner = statusMatches
+    ? `<div class="live-banner ${inProgress ? "running" : "done"}">
+        <span class="live-state">${inProgress ? "● RUNNING" : "✓ COMPLETED"}</span>
+        <span class="live-progress">${suitesDone}/${suitesTotal} suites
+          ${runningCount ? `· ${runningCount} running` : ""}${pendingCount ? ` · ${pendingCount} pending` : ""}</span>
+        <div class="bar live-bar" title="${suitesDone}/${suitesTotal} suites done">
+          <div class="bar-pass" style="width:${donePct}%"></div>
+        </div>
+        <span class="live-elapsed">${elapsed}${inProgress ? ` · auto-refresh ${opts.intervalSec}s` : ""}</span>
+      </div>`
+    : "";
   const earliest = suites.reduce((m, s) => (s.startedAt && (!m || s.startedAt < m) ? s.startedAt : m), "");
   const latest = suites.reduce((m, s) => (s.completedAt && (!m || s.completedAt > m) ? s.completedAt : m), "");
 
@@ -495,7 +687,7 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
     (a, s) => a + s.cases.filter((c) => c.evidenceFile).length,
     0
   );
-  const suiteRows = suites
+  const suiteRows = allSuites
     .map((s) => renderSuiteRow(s, runDir, embed, s.failed > 0))
     .join("\n");
 
@@ -528,23 +720,24 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8">${refreshMeta}
 <title>Regression Report — ${escapeHtml(runId)}</title>
 <style>
   :root {
-    --bg: #0f1419;
-    --surface: #1a2027;
-    --surface-2: #232a33;
-    --border: #2d3741;
-    --text: #e8eef5;
-    --text-dim: #8a96a5;
-    --muted: #5e6c7c;
-    --pass: #4ade80;
-    --fail: #f87171;
-    --skip: #fbbf24;
-    --blocked: #c084fc;
-    --info: #60a5fa;
-    --accent: #38bdf8;
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --border: #d8dee6;
+    --text: #1b2733;
+    --text-dim: #5e6c7c;
+    --muted: #94a3b8;
+    --pass: #16a34a;
+    --fail: #dc2626;
+    --skip: #d97706;
+    --blocked: #9333ea;
+    --info: #2563eb;
+    --accent: #0284c7;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
@@ -559,10 +752,10 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   .gate { display: inline-flex; align-items: center; gap: 8px;
     padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 13px;
     letter-spacing: 0.05em; text-transform: uppercase; }
-  .gate.ok { background: rgba(74, 222, 128, 0.15); color: var(--pass); border: 1px solid rgba(74, 222, 128, 0.4); }
-  .gate.bad { background: rgba(248, 113, 113, 0.15); color: var(--fail); border: 1px solid rgba(248, 113, 113, 0.4); }
+  .gate.ok { background: rgba(22, 163, 74, 0.12); color: var(--pass); border: 1px solid rgba(22, 163, 74, 0.4); }
+  .gate.bad { background: rgba(220, 38, 38, 0.10); color: var(--fail); border: 1px solid rgba(220, 38, 38, 0.4); }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; box-shadow: var(--shadow); }
   .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 6px; }
   .card-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
   .card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
@@ -571,23 +764,23 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   .card.skip .card-value { color: var(--skip); }
   .card.info .card-value { color: var(--info); }
   .donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: var(--shadow); }
   .donut { width: 140px; height: 140px; flex-shrink: 0; }
   .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
   .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; box-shadow: var(--shadow); }
   .cat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .cat-count { color: var(--text-dim); font-size: 11px; }
   .cat-rate { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
   .cat-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px;
     font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
-  .cat-frontend { background: rgba(96, 165, 250, 0.18); color: var(--info); }
-  .cat-backend { background: rgba(192, 132, 252, 0.18); color: var(--blocked); }
-  .cat-graphql { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+  .cat-frontend { background: rgba(37, 99, 235, 0.12); color: var(--info); }
+  .cat-backend { background: rgba(147, 51, 234, 0.12); color: var(--blocked); }
+  .cat-graphql { background: rgba(2, 132, 199, 0.12); color: var(--accent); }
   .cat-other { background: var(--surface-2); color: var(--text-dim); }
-  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); }
   th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { background: var(--surface-2); font-weight: 600; font-size: 12px; text-transform: uppercase;
     letter-spacing: 0.05em; color: var(--text-dim); }
@@ -612,15 +805,31 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   .bar-empty { color: var(--text-dim); font-size: 11px; padding: 0 8px; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px;
     font-weight: 600; letter-spacing: 0.03em; }
-  .b-pass { background: rgba(74, 222, 128, 0.15); color: var(--pass); }
-  .b-fail { background: rgba(248, 113, 113, 0.15); color: var(--fail); }
-  .b-skipped { background: rgba(251, 191, 36, 0.15); color: var(--skip); }
-  .b-blocked { background: rgba(192, 132, 252, 0.15); color: var(--blocked); }
+  .b-pass { background: rgba(22, 163, 74, 0.12); color: var(--pass); }
+  .b-fail { background: rgba(220, 38, 38, 0.10); color: var(--fail); }
+  .b-skipped { background: rgba(217, 119, 6, 0.12); color: var(--skip); }
+  .b-blocked { background: rgba(147, 51, 234, 0.12); color: var(--blocked); }
   .b-empty, .b-unknown { background: var(--surface-2); color: var(--text-dim); }
-  .sev-critical { background: rgba(220, 38, 38, 0.2); color: #fca5a5; }
-  .sev-high { background: rgba(248, 113, 113, 0.15); color: var(--fail); }
-  .sev-medium { background: rgba(251, 191, 36, 0.15); color: var(--skip); }
-  .sev-low { background: rgba(96, 165, 250, 0.15); color: var(--info); }
+  .live-pending { background: var(--surface-2); color: var(--text-dim); }
+  .live-running { background: rgba(2, 132, 199, 0.12); color: var(--accent); }
+  .live-done { background: rgba(22, 163, 74, 0.12); color: var(--pass); }
+  tr.placeholder td { color: var(--text-dim); }
+  .live-banner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  .live-banner.running { border-color: rgba(2, 132, 199, 0.45); }
+  .live-banner.done { border-color: rgba(22, 163, 74, 0.4); }
+  .live-state { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; }
+  .live-banner.running .live-state { color: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+  .live-banner.done .live-state { color: var(--pass); }
+  .live-progress { font-size: 13px; color: var(--text-dim); }
+  .live-bar { flex: 1; min-width: 160px; height: 10px; }
+  .live-elapsed { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .sev-critical { background: rgba(185, 28, 28, 0.14); color: #b91c1c; }
+  .sev-high { background: rgba(220, 38, 38, 0.10); color: var(--fail); }
+  .sev-medium { background: rgba(217, 119, 6, 0.12); color: var(--skip); }
+  .sev-low { background: rgba(37, 99, 235, 0.10); color: var(--info); }
   .toggle { background: transparent; border: none; color: var(--text-dim); cursor: pointer;
     font-size: 10px; padding: 0; width: 18px; transition: transform 0.15s; }
   .toggle.open { transform: rotate(90deg); color: var(--accent); }
@@ -656,7 +865,7 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
   .lightbox img { max-width: 95%; max-height: 95%; border-radius: 4px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
   .h2-sub { font-size: 12px; font-weight: 400; color: var(--text-dim); margin-left: 12px; letter-spacing: 0; text-transform: none; }
   .att-badge { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px;
-    background: rgba(56, 189, 248, 0.18); color: var(--accent); font-size: 11px; font-weight: 600; }
+    background: rgba(2, 132, 199, 0.12); color: var(--accent); font-size: 11px; font-weight: 600; }
   .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 24px; }
   .g-card { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     overflow: hidden; display: flex; flex-direction: column; }
@@ -680,6 +889,8 @@ function renderHtml(runId: string, suites: NormSuite[], runDir: string, embed: b
     </div>
     <div class="gate ${gateVerdict === "PASSED" ? "ok" : "bad"}">Gate: ${gateVerdict}</div>
   </header>
+
+  ${liveBanner}
 
   <div class="cards">
     <div class="card">
@@ -855,32 +1066,113 @@ function openInBrowser(path: string): void {
   spawn(cmd, args, { detached: true, stdio: "ignore" }).unref();
 }
 
-function main(): void {
-  const args = parseArgs(process.argv.slice(2));
-  const reportsRoot = resolve(args.reportsRoot);
-  const runId = args.runId ?? findLatestRun(reportsRoot);
-  const runDir = join(reportsRoot, runId);
-  if (!existsSync(runDir)) throw new Error(`Run directory not found: ${runDir}`);
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
-  const suites = loadAllSuites(runDir);
+/**
+ * Render one snapshot. Returns the run-level status ("in_progress"/"completed"/absent)
+ * so the watch loop knows when to stop. Never exits the process itself.
+ */
+function renderOnce(args: Args, reportsRoot: string): { status: RunStatus | null; runId: string; outPath: string; suitesWithResults: number } {
+  const status = loadRunStatus(reportsRoot);
+  const runId = resolveRunId(reportsRoot, args.runId, status);
+  const runDir = join(reportsRoot, runId);
+  const dirExists = existsSync(runDir);
+
+  const resultSuites = dirExists ? loadAllSuites(runDir) : [];
+  const suites = mergeStatus(resultSuites, status, runId);
+
+  // In one-shot mode with nothing to show, fail loudly (unchanged behavior).
+  // In watch mode, an empty/early run is fine — the status placeholders carry the view.
   if (suites.length === 0) {
+    if (args.watch) {
+      console.log(`[watch] ${runId}: no suite results yet — waiting…`);
+      return { status, runId, outPath: "", suitesWithResults: 0 };
+    }
+    if (!dirExists) throw new Error(`Run directory not found: ${runDir}`);
     console.error(`No suite results (suite-*-results.json) found in ${runDir}`);
     process.exit(1);
   }
 
   const outPath = args.out ? resolve(args.out) : join(runDir, "regression-report.html");
-  const html = renderHtml(runId, suites, runDir, args.embedImages);
+  const live = args.watch && statusIsInProgress(status) && status?.runId === runId;
+  const html = renderHtml(runId, suites, runDir, args.embedImages, {
+    status,
+    live,
+    intervalSec: args.intervalSec,
+  });
   writeFileSync(outPath, html, "utf-8");
 
-  const totals = suites.reduce(
-    (a, s) => ({ c: a.c + s.totalCases, p: a.p + s.passed, f: a.f + s.failed, s: a.s + s.skipped }),
-    { c: 0, p: 0, f: 0, s: 0 }
-  );
-  const shotCount = suites.reduce((a, s) => a + s.cases.reduce((b, c) => b + c.screenshots.length, 0), 0);
-  console.log(`Regression HTML report written: ${outPath}`);
-  console.log(`  Suites: ${suites.length}  Cases: ${totals.c}  Pass: ${totals.p}  Fail: ${totals.f}  Skip: ${totals.s}  Screenshots: ${shotCount}`);
-
-  if (args.openInBrowser) openInBrowser(outPath);
+  return { status, runId, outPath, suitesWithResults: resultSuites.length };
 }
 
-main();
+async function main(): Promise<void> {
+  const args = parseArgs(process.argv.slice(2));
+  const reportsRoot = resolve(args.reportsRoot);
+
+  if (!args.watch) {
+    const { runId, outPath } = renderOnce(args, reportsRoot);
+    const runDir = join(reportsRoot, runId);
+    const suites = loadAllSuites(runDir);
+    const totals = suites.reduce(
+      (a, s) => ({ c: a.c + s.totalCases, p: a.p + s.passed, f: a.f + s.failed, s: a.s + s.skipped }),
+      { c: 0, p: 0, f: 0, s: 0 }
+    );
+    const shotCount = suites.reduce((a, s) => a + s.cases.reduce((b, c) => b + c.screenshots.length, 0), 0);
+    console.log(`Regression HTML report written: ${outPath}`);
+    console.log(`  Suites: ${suites.length}  Cases: ${totals.c}  Pass: ${totals.p}  Fail: ${totals.f}  Skip: ${totals.s}  Screenshots: ${shotCount}`);
+    if (args.openInBrowser) openInBrowser(outPath);
+    return;
+  }
+
+  // Watch mode: regenerate on an interval until the run completes.
+  // Safety valve: stop after a long idle with no status/results so a stray watcher can't run forever.
+  const idleLimitMs = 45 * 60 * 1000;
+  let opened = false;
+  let lastProgressAt = Date.now();
+  let lastSignature = "";
+  console.log(`[watch] live dashboard, refresh ${args.intervalSec}s — Ctrl+C to stop`);
+
+  for (;;) {
+    let result: ReturnType<typeof renderOnce>;
+    try {
+      result = renderOnce(args, reportsRoot);
+    } catch (e) {
+      console.error(`[watch] ${(e as Error).message}`);
+      await sleep(args.intervalSec * 1000);
+      continue;
+    }
+
+    if (result.outPath && args.openInBrowser && !opened) {
+      openInBrowser(result.outPath);
+      opened = true;
+    }
+
+    const inProgress = statusIsInProgress(result.status) && result.status?.runId === result.runId;
+    const signature = `${result.runId}:${result.status?.status ?? "?"}:${result.suitesWithResults}`;
+    if (signature !== lastSignature) {
+      lastSignature = signature;
+      lastProgressAt = Date.now();
+    }
+
+    if (result.suitesWithResults > 0 && !inProgress) {
+      // Not in progress + results present → nothing left to watch. renderOnce already
+      // emitted the final static render (live=false → no refresh meta).
+      console.log(`[watch] ${result.runId} settled — final report: ${result.outPath}`);
+      return;
+    }
+
+    if (Date.now() - lastProgressAt > idleLimitMs) {
+      console.log(`[watch] no progress for ${idleLimitMs / 60000} min — stopping.`);
+      return;
+    }
+
+    await sleep(args.intervalSec * 1000);
+  }
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

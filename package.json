@@ -90,6 +90,7 @@
     "report:regression": "npx tsx scripts/generate-regression-html-report.ts",
     "report:regression:open": "npx tsx scripts/generate-regression-html-report.ts --open",
     "report:regression:portable": "npx tsx scripts/generate-regression-html-report.ts --embed-images",
+    "report:regression:watch": "npx tsx scripts/generate-regression-html-report.ts --watch --open",
     "suites:sync": "npx tsx scripts/sync-test-suites.ts",
     "suites:lint": "npx tsx scripts/sync-test-suites.ts --check",
     "suites:append": "npx tsx scripts/append-test-cases-to-suite.ts",

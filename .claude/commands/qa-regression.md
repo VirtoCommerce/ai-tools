@@ -118,8 +118,13 @@ Resolution order:
 ### Step 2 — Generate Run ID
 Create `REG-YYYY-MM-DD-HHMM` and output directory `reports/regression/{RUN_ID}/`.
 
-### Step 3 — Initialize Status Tracker
-Write `reports/regression/test-run-status.json` with all suites in `pending` state.
+### Step 3 — Initialize Status Tracker & Launch Live Dashboard
+1. Write `reports/regression/test-run-status.json` with all suites in `pending` state (run-level `status: "in_progress"`).
+2. **Launch the live HTML dashboard in the background** so the user watches progress fill in from the start:
+   ```
+   npm run report:regression:watch -- --run-id {RUN_ID}
+   ```
+   Run it **detached / in the background** (do not block on it). It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately (a "pending" view), regenerates every ~10s as suites complete, and — because it reads `test-run-status.json` — auto-refreshes the page (`<meta refresh>`) until the run is `completed`, then settles into the final static report and exits on its own. Spawning `npm run …` is a Node script, not a browser/UI action, so it does not trip the real-user hook.
 
 ### Step 4 — Dispatch Sub-Agents in Batches of 3
 
@@ -156,6 +161,14 @@ Write `reports/regression/regression-YYYY-MM-DD.md` with:
 - Retry log
 - Detailed results per suite
 
+Then flip `reports/regression/test-run-status.json` to `status: "completed"` (set `finishedAt`). The Step 3 live watcher detects this, emits the final static HTML (auto-refresh removed), and exits.
+
+**Guarantee the HTML report** (belt-and-suspenders, in case the watcher never started or was killed): run the one-shot generator once —
+```
+npm run report:regression -- --run-id {RUN_ID}
+```
+This writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files. It is idempotent with the watcher's output.
+
 ### Step 7 — Teardown (only if `--teardown` provided)
 
 1. Invoke `/qa-seed-data teardown` to remove `AGENT-TEST-*` entities.
@@ -163,7 +176,11 @@ Write `reports/regression/regression-YYYY-MM-DD.md` with:
 3. On teardown failure: log to report but do not fail the overall run — the regression results are what matter.
 
 ### Step 8 — Deliver Summary
-Output concise verdict to user with pass rate, bugs, and report path. Mention seed profile used and whether teardown ran.
+Output concise verdict to user with pass rate, bugs, and **both report paths**:
+- Markdown: `reports/regression/{RUN_ID}/regression-YYYY-MM-DD.md`
+- HTML dashboard: `reports/regression/{RUN_ID}/regression-report.html` (the live dashboard, now final)
+
+Mention seed profile used and whether teardown ran. The HTML report was generated automatically — no manual `npm run report:regression` needed.
 
 ---
 
@@ -209,7 +226,7 @@ Agents MUST resolve credentials via `@td()` at runtime — never hardcode in pro
 - Never execute tests yourself — delegate via Task tool
 - Never share browser slots between concurrent agents
 - Priority order: P0 before P1 before P2
-- Always write test-run-status.json (external tools monitor it)
+- Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change so the dashboard reflects real progress)
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-sync-tests` to check for stale test cases
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)

@@ -197,7 +197,8 @@
     "dependent_default_option_id": "c82788c4-c02a-4ad9-83f9-443cfa2b190d"
   },
   "BUYABLE_NO_MIN_QTY": {
-    "id": "0b6297e8-d100-4419-ac54-8bf240777271"
+    "id": "0b6297e8-d100-4419-ac54-8bf240777271",
+    "slug": "0b6297e8-d100-4419-ac54-8bf240777271"
   },
   "PROD_VARIATION_PARENT_SALE": {
     "id": "e5c00858-be87-4df6-9a43-f68341e86c9a",
