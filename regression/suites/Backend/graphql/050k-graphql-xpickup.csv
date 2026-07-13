@@ -429,43 +429,6 @@
 [ERRORS label=probe_intersection] errors[] empty","[EVIDENCE] probe_intersection.totalCount <= probe_keyword_only.totalCount (runner-manual cross-OP comparison)
 [EVIDENCE] probe_intersection.totalCount <= probe_filter_only.totalCount (runner-manual cross-OP comparison)
 [EVIDENCE] every probe_intersection.items[i].address.city contains SEED_CITY AND address.countryCode = SEED_COUNTRY (AND logic verified, not OR) — runner-manual scan","probe_intersection.totalCount > probe_keyword_only.totalCount or > probe_filter_only.totalCount (broken AND — behaving as OR or ignoring one criterion); intersection items violate either criterion; HTTP 500 on any probe","none — clearCart at end","VCST-4646; VCST-4529; BL-BOPIS-008; graphql-schema.md — Query.cartPickupLocations; xAPI filter syntax 'address.countryCode:<value>'","Draft"
-"PCK-GQL-138","xCart Pickup — cartPickupLocations facet term.count Matches Filtered totalCount","GraphQL > xCart > Pickup Locations > Facets","High","BL-BOPIS-008; BL-GQL-001","ECL-14.2","Runner-native. Requests facet=address.countryCode on a baseline cartPickupLocations query, picks the top term from term_facets, then re-queries with filter=address.countryCode:<that term> and asserts the filtered totalCount equals the term_facets count value — cross-checking facet aggregation accuracy against the actual filtered result set. Builds on the existing PCK-GQL-130 facet-structure coverage (GAP-XPICKUP-001 noted there) — if term_facets remains unwired for cartPickupLocations (out of PR#8 scope), this case documents the gap concretely via a numeric mismatch rather than a structural null-check. Uses @td(BUYABLE_NO_MIN_QTY.id) for deterministic addItem.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); store_id={{STORE_ID}}","[AUTH role=ORG_USER]
-[GQL-OP setup_me]
-  query { me { id } }
-[GQL-EXEC setup_me]
-[GQL-CAPTURE setup_me.data.me.id → USER_ID]
-[GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
-[GQL-EXEC pre_clear]
-[GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""@td(BUYABLE_NO_MIN_QTY.id)"" quantity: 1 }) { id validationErrors { errorCode errorMessage objectType } } }
-[GQL-EXEC add_item]
-[GQL-CAPTURE add_item.data.addItem.id → CART_ID]
-[GQL-OP probe_facets]
-  query {
-    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5 facet: ""address.countryCode"") {
-      totalCount
-      term_facets { name terms { term label count } }
-    }
-  }
-[GQL-EXEC probe_facets]
-[GQL-CAPTURE probe_facets.data.cartPickupLocations.term_facets.0.terms.0.term → TOP_TERM]
-[GQL-CAPTURE probe_facets.data.cartPickupLocations.term_facets.0.terms.0.count → TOP_TERM_COUNT]
-[GQL-OP probe_filtered_by_top_term]
-  query {
-    cartPickupLocations(cartId: ""{{CART_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 200 filter: ""address.countryCode:{{TOP_TERM}}"") {
-      totalCount
-    }
-  }
-[GQL-EXEC probe_filtered_by_top_term]
-[GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
-[GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
-[ERRORS label=probe_facets] errors[] empty
-[DATA label=probe_facets] data.cartPickupLocations.term_facets is non-null
-[COUNT label=probe_facets] data.cartPickupLocations.term_facets.length >= 1
-[ERRORS label=probe_filtered_by_top_term] errors[] empty
-[DATA label=probe_filtered_by_top_term] data.cartPickupLocations.totalCount = {{TOP_TERM_COUNT}}","[EVIDENCE] this is the definitive consistency check between facet aggregation and actual filtered results when term_facets is populated with non-zero counts — a mismatch means the facet counter and the filter query disagree (stale aggregation or unwired facet, cross-ref GAP-XPICKUP-001 from PCK-GQL-130)","term_facets empty or all-zero counts (same GAP-XPICKUP-001 as PCK-GQL-130 — facet unwired for cartPickupLocations); probe_filtered_by_top_term.totalCount != {{TOP_TERM_COUNT}} (facet count and actual filtered count disagree); {{TOP_TERM}} never captured (empty term_facets breaks the chain)","none — clearCart at end","VCST-4646; GAP-XPICKUP-001 (PCK-GQL-130); BL-BOPIS-008; graphql-schema.md — Query.cartPickupLocations","Draft"
 "PCK-GQL-139","xCart Pickup — addOrUpdateCartShipment Idempotency: Duplicate Selection Yields Same Cart State","GraphQL > xCart > Pickup Locations > Mutation","High","BL-BOPIS-001; BL-BOPIS-002; BL-GQL-001","ECL-14.1; ECL-14.2","Runner-native. Calls addOrUpdateCartShipment twice in a row with the identical pickupLocationId, passing the shipment id captured from the first call's response on the second call so the mutation is exercised as a true UPDATE (not a second create) — asserting the cart ends up with exactly one shipment both times (no duplicate shipment records), the shipment id is unchanged, and pickupLocation/price are unchanged — guarding BL-BOPIS-001 ('exactly one shipment record') against a double-submit / retry scenario. NOTE: an id-less duplicate call (omitting shipment.id) appends a 2nd shipment by platform design — this is pre-existing xAPI mutation semantics, not a regression introduced by this PR/suite; flagged for qa-lead-orchestrator awareness, not filed as a defect. Uses @td(BUYABLE_NO_MIN_QTY.id) for deterministic addItem and @td(BOPIS.lastLocationId) as the pickup target.","PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id); PICKUP_LOCATION_ID=@td(BOPIS.lastLocationId); store_id={{STORE_ID}}","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }

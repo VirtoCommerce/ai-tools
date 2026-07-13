@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-5391",
+  "verdict": "VERIFIED",
+  "date": "2026-07-13",
+  "run_type": "post-redeploy re-verification (newer PR build than 2026-06-29 run)",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1043.0",
+    "xcart": "3.1026.0-pr-132-5ff9",
+    "pr": "vc-module-x-cart#132 (OPEN, APPROVED by OlegoO, MERGEABLE, NOT merged) head 5ff9a388",
+    "prev_run_build": "3.1024.0-pr-132-175a (2026-06-29)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "test_account": "B2B-store (test-john.mitchell)",
+  "product": "configurable Bike CFG-032 / @td(CFG_BIKE)",
+  "paths_verified": {
+    "changeCartConfiguredItem_edit": "PASS 3/3 (errors[]=0, configurationItems populated non-null, extendedPrice non-null USD; line updated in place, BL-CART-010 held)",
+    "moveFromSavedForLater": "PASS 3/3 (errors[]=0, configurationItems populated non-null, extendedPrice non-null USD, config preserved through save->move)"
+  },
+  "independent_check": "orchestrator re-parsed all 6 captured /graphql response bodies: errors=0, cfgItems=1, hasNull=false, extendedPrice in USD on every run",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "console": "no NEW errors; 35 pre-existing missing-seed-image 404s only, zero JS exceptions, zero GraphQL errors[]",
+  "ci": "PR #132 head 5ff9a388 — ci / SonarCloud QG / auto-tests (mysql,postgres,sqlserver) / swagger / cla all green",
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-CART-010", "BL-CART-011"],
+  "jira_status_at_run": "Tested",
+  "jira_transition": "NONE — hold at Tested; do NOT move to Done until PR #132 is human-merged & shipped (no-auto-merge gate + ticket guidance)",
+  "artifacts": "tests/Sprint-current/VCST-5391/reverify-2026-07-13/"
+}

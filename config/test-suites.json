@@ -916,8 +916,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P0",
-      "testCount": 27,
-      "estimatedMinutes": 13,
+      "testCount": 29,
+      "estimatedMinutes": 14,
       "agent": "qa-frontend-expert",
       "tags": [
         "payment",
@@ -1482,7 +1482,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 11,
       "estimatedMinutes": 11,
       "agent": "qa-backend-expert",
       "tags": [
